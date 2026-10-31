@@ -43,28 +43,43 @@ function seededSnapshot() {
       movements: state.movements,
       units: state.units,
       bedReleases: state.bedReleases,
+      admissions: state.admissions,
     },
     NOW,
     DEFAULT_DUE_SOON_THRESHOLDS,
   );
 }
 
-describe("the Command screen's 'Since you last looked' list", () => {
+/** The desktop hero's changes chip, which opens Home's Activity panel (jsdom reports a desktop width). */
+const changesChip = () => screen.getByRole("button", { name: /· (Review|Activity)$/u });
+const activityPanel = () => screen.getByTestId("home-activity-panel");
+
+describe("the Command screen's changes since the last review (Activity panel)", () => {
   beforeEach(() => window.sessionStorage.clear());
 
-  it("shows nothing on a first look, and remembers the picture once the coordinator leaves", async () => {
+  // Home and Activity design (Josh, 31 Oct 2026): review is explicit. Leaving the screen saves nothing.
+  it("counts from the shift start on a first look, and saves no picture when the coordinator leaves", async () => {
     const { unmount } = renderCommand();
-    expect(screen.queryByTestId("ward-since-last-look")).toBeNull();
+    expect(changesChip()).toHaveTextContent(/^\d+\s*changes? since 07:00 · Review$/u);
+    fireEvent.click(changesChip());
+    expect(activityPanel()).toHaveTextContent("Since 07:00, the start of your shift");
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
+    fireEvent(window, new Event("pagehide"));
     unmount();
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))).toBeDefined();
+    expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
   });
 
   it("does not save the picture when the screen closes because the session ended (Audit 4 A4-07)", async () => {
     const { endWardFlowBrowserSession } = await import("@/components/ward-management/ward-browser-data");
     const { unmount } = renderCommand();
+    // A review made in the session is swept when the session ends, and nothing writes it back.
+    fireEvent.click(changesChip());
+    fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
+    expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))).toBeDefined();
     endWardFlowBrowserSession();
+    expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
+    fireEvent(window, new Event("pagehide"));
     unmount();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
@@ -81,23 +96,34 @@ describe("the Command screen's 'Since you last looked' list", () => {
       </WardFlowProvider>
     );
     const view = render(<Command value={account} />);
+    fireEvent.click(changesChip());
+    fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
+    expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))?.userId).toBe(
+      "synthetic-account-one",
+    );
     endWardFlowBrowserSession();
+    expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
     // The real order: the workspace drops its account context, the screen re-renders, then closes.
     view.rerender(<Command value={null} />);
+    fireEvent(window, new Event("pagehide"));
     view.unmount();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
 
-    // A new sign-in saves on the way out again.
+    // A new sign-in saves nothing on the way out either; only its own explicit review saves.
     const next = render(<Command value={{ ...account }} />);
     next.unmount();
     await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
+    render(<Command value={{ ...account }} />);
+    fireEvent.click(changesChip());
+    fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))?.userId).toBe(
       "synthetic-account-one",
     );
   });
 
-  it("lists what is new since the remembered picture, and clears when marked as seen", () => {
+  it("lists what is new since the remembered picture, and clears when marked reviewed", () => {
     const snapshot = seededSnapshot();
     const droppedReferral = snapshot.referralIds[snapshot.referralIds.length - 1]!;
     const unitId = Object.keys(snapshot.readyByUnit).find((id) => snapshot.readyByUnit[id]! > 0)!;
@@ -112,18 +138,20 @@ describe("the Command screen's 'Since you last looked' list", () => {
     );
 
     renderCommand();
-    // Owner, 10 Oct 2026: the list opens from the hero's "N new since HH:MM" count, which counts it.
-    const toggle = screen.getByRole("button", { name: /new since \d\d:\d\d/, expanded: false });
-    expect(toggle).toHaveTextContent("2");
-    fireEvent.click(toggle);
-    const panel = screen.getByRole("region", { name: "Since you last looked" });
-    expect(panel).toHaveTextContent("1 new referral");
-    expect(panel).toHaveTextContent("1 bed newly ready");
+    // Josh, 31 Oct 2026: the hero's changes chip counts the lines and opens Activity on Changes.
+    expect(changesChip()).toHaveTextContent(/^2\s*changes since your review at 09:42 · Review$/u);
+    fireEvent.click(changesChip());
+    const panel = within(activityPanel());
+    expect(panel.getByRole("tab", { name: /Changes/u, selected: true })).toBeInTheDocument();
+    expect(panel.getByRole("region", { name: /Referrals/u })).toHaveTextContent(/new referral from /u);
+    const beds = panel.getByRole("region", { name: /Beds/u });
+    const before = snapshot.readyByUnit[unitId]! - 1;
+    expect(beds).toHaveTextContent(`ready beds ${before} to ${before + 1}`);
 
-    fireEvent.click(screen.getByRole("button", { name: "Mark as seen" }));
-    expect(screen.queryByRole("region", { name: "Since you last looked" })).toBeNull();
-    expect(screen.getByTestId("ward-since-last-look")).toHaveTextContent("Nothing new since you last looked");
-    expect(screen.getByRole("button", { name: /new since \d\d:\d\d/, expanded: true })).toHaveTextContent("0");
+    fireEvent.click(panel.getByRole("button", { name: "Mark these 2 reviewed" }));
+    expect(panel.queryByRole("region", { name: /Referrals|Beds/u })).toBeNull();
+    expect(activityPanel()).toHaveTextContent("Nothing new since 10:42");
+    expect(changesChip()).toHaveTextContent(/^No new changes · Activity$/u);
   });
 });
 
