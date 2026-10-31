@@ -26,7 +26,7 @@ export function PlannedCounts({ now }: { now: Instant }) {
         ) : (
           <ul className={styles.kvList}>
             <li>
-              <span>Expected in the next 24 hours</span>
+              <span>Expected by this time tomorrow</span>
               <b>{nextDay}</b>
             </li>
             <li>

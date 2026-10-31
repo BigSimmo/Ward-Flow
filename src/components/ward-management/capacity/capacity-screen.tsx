@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 
 import { Drawer, Segmented, StatusGlyph, useIsPhone, useOptionalToast } from "@/components/wf";
 import {
@@ -94,6 +94,21 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const [firstGeneration] = useState(worldGeneration);
   const popup = (openPopup.generation ?? firstGeneration) === worldGeneration ? openPopup.popup : null;
   const setPopup = (next: Popup) => setOpenPopup({ popup: next, generation: worldGeneration });
+  // The ward a demo reset closed. The bed map redraws for the new world, so the card that opened
+  // the drawer may be a new element; focus goes to that ward's card by its id, once per reset, and
+  // only when nothing else has taken focus.
+  const resetWardId =
+    openPopup.popup?.kind === "ward" && (openPopup.generation ?? firstGeneration) !== worldGeneration
+      ? openPopup.popup.unitId
+      : undefined;
+  useEffect(() => {
+    if (resetWardId === undefined) return;
+    if (document.activeElement !== document.body && document.activeElement !== null) return;
+    const card = [...document.querySelectorAll<HTMLElement>("#capacity-bed-map [data-unit-id]")].find(
+      (candidate) => candidate.dataset.unitId === resetWardId,
+    );
+    card?.focus({ preventScroll: true });
+  }, [resetWardId, worldGeneration]);
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
   const toast = useOptionalToast();

@@ -111,10 +111,10 @@ export function BedForecast({
             />
           ) : null}
           {twoDays ? (
-            // Redesign (Josh, 30 Oct): 48 hours rests on later, softer dates, so it leads with the
+            // Redesign (Josh, 30 Oct): two days out rests on later, softer dates, so it leads with the
             // range and reads muted, as the chart's "may move" bars do.
             <Kpi
-              label="In 48 hours"
+              label="In 2 days"
               value={`${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
               tone={twoDays.likely}
               soft

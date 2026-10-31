@@ -1441,7 +1441,7 @@
   font-family: var(--wf-font);
 }
 .wdBedsFigure {
-  font-size: var(--wf-fs-24, 24px);
+  font-size: var(--wf-fs-20);
   line-height: 1;
   font-weight: 650;
   color: var(--wf-ink-1);

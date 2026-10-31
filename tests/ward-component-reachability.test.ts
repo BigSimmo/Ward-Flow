@@ -240,6 +240,18 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
     module: "src/components/ward-management/shell/ward-reconciliation-line.tsx",
     why: "unmounted from the rail by the v6 restyle — its helpers stay for hub-provenance",
   },
+  {
+    module: "src/components/ward-management/forecast/forecast-week-panel.tsx",
+    why: "the Capacity redesign (77fc85319, 31 Oct 2026) drew the seven days inside the Bed forecast card, so the old week panel lost its last route use; kept with its own tests until Josh decides on deletion through the dead-code check",
+  },
+  {
+    module: "src/components/ward-management/forecast/forecast-network-extras.tsx",
+    why: "the Capacity redesign (77fc85319, 31 Oct 2026) folded these extras into the Bed forecast card and How this is worked out; kept with its own tests until Josh decides on deletion through the dead-code check",
+  },
+  {
+    module: "src/components/ward-management/ward-controls.tsx",
+    why: "the Capacity redesign (77fc85319, 31 Oct 2026) removed its last import (the old Capacity controls row); kept with tests/ward-controls.dom.test.tsx until Josh decides on deletion through the dead-code check",
+  },
 ];
 
 describe("every ward component a test renders is one a coordinator can still reach", () => {

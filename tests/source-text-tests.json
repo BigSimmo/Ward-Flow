@@ -51,7 +51,6 @@
     "tests/ward-board-selection.dom.test.tsx",
     "tests/ward-browser-build-css.test.ts",
     "tests/ward-browser-data.test.ts",
-    "tests/ward-capacity-bed-map.dom.test.tsx",
     "tests/ward-capacity-derivations.test.ts",
     "tests/ward-capacity-figure-one-word.test.ts",
     "tests/ward-capacity-screen.dom.test.tsx",

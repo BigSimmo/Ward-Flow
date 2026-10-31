@@ -576,7 +576,7 @@ test.describe("@mockup phone navigation follows the stable header", () => {
   test.use({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
   const strips = [
     ["Patients", "/search", "census_phoneSeg__", 0],
-    ["Capacity", "/capacity", "capacity_phoneTabs__", 0],
+    ["Capacity", "/capacity", "capacity-page_phoneTabs__", 0],
     ["Home", "", "home_queueTools__", 0],
     ["Community", "/community", "community_phonePanes__", 0],
     ["ED", "/ed/rph-ed", "ed_phonePanes__", 0],

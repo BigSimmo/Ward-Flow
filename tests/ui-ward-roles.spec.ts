@@ -1564,7 +1564,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
       .getByRole("navigation", { name: "Ward Flow views" })
       .getByRole("link", { name: /^Capacity\b/u })
       .click();
-    await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("ward-capacity-screen")).toBeVisible({ timeout: 15_000 });
     const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     const rphNode = diagram.getByTestId("ward-diagram-unit-rph-adult-secure");
     await expect(rphNode).toContainText("Ready 0");

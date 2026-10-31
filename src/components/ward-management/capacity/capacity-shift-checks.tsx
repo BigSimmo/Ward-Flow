@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Button, buttonClass, Card, CardHead, StatusGlyph } from "@/components/wf";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
@@ -70,7 +70,8 @@ export function ShiftChecks({
         <p className={styles.mutedXs}>
           {first ? (
             <>
-              Waiting on <SpelledCodes text={first.name} />, last at {formatInstant(first.allocatable.confirmedAt)}
+              Waiting on <SpelledCodes text={first.name} />, last at{" "}
+              {formatInstantWithDay(first.allocatable.confirmedAt, now)}
               {confirmations.waiting.length > 1 ? `, and ${confirmations.waiting.length - 1} more` : ""}
             </>
           ) : (

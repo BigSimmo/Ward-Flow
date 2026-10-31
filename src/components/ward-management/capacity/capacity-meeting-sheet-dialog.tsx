@@ -26,8 +26,18 @@ export function BedMeetingSheetDialog({
 }) {
   const { capacity, discharges, ed, delays } = sheet;
   const figures = [
-    { label: "Ready now", value: capacity.ready, sub: `of ${capacity.beds} · ${capacity.lockedReady} locked` },
-    { label: "Waiting in ED", value: ed.waiting, sub: `${ed.overLongWait} over 24 hours · ${ed.detained} detained` },
+    {
+      label: "Ready now",
+      value: capacity.ready,
+      sub: `of ${capacity.beds} · ${capacity.lockedReady} locked${
+        capacity.pendingPreparation ? ` · ${capacity.pendingPreparation} being made ready` : ""
+      }`,
+    },
+    {
+      label: "Waiting in ED",
+      value: ed.waiting,
+      sub: `${ed.overLongWait} waiting over 24 hours · ${ed.detained} detained`,
+    },
     {
       label: "Due out today",
       value: discharges.confirmed + discharges.expected + discharges.heldUp,

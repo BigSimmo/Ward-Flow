@@ -104,7 +104,7 @@ async function followOpenMovement(page: Page, recorded: Locator): Promise<string
 /** The coordinator's capacity board, reached through the coordinator desk and its navigation. */
 async function openCapacityBoard(page: Page) {
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/ward-flow/capacity", "ward-capacity-page");
+  await goViaNav(page, "/ward-flow/capacity", "ward-capacity-screen");
 }
 
 test("Inpatient transfer: a stay on one ward is referred, accepted and held at another, moved, and the sending bed frees", async ({
@@ -120,7 +120,7 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
 
   // The coordinator's capacity board before anything moves.
   await page.goto("/ward-flow/capacity", { waitUntil: "load" });
-  await waitForScreen(page, "ward-capacity-page");
+  await waitForScreen(page, "ward-capacity-screen");
   await plantSentinel(page);
   const sendingCapacityReadyBefore = await capacityReady(page, sendingUnitId, sendingName);
   await expectAccessible(page, testInfo, "capacity board");

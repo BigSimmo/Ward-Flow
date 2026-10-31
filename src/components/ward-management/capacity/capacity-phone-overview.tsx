@@ -37,7 +37,7 @@ export function PhoneOverview({
   const weekOut = week.total.out.reduce((sum, value) => sum + value, 0);
   return (
     <>
-      <Card aria-labelledby="phone-mismatch">
+      <Card aria-labelledby="phone-mismatch" data-testid="capacity-mismatch">
         <CardHead id="phone-mismatch" title="Mismatch" />
         <ul className={styles.phoneRows}>
           {gapRows.map((row) => {
@@ -88,7 +88,7 @@ export function PhoneOverview({
               <div>
                 <b className={`${styles.small} ${styles.fcKpiSoftLabel}`}>
                   <span className={`${styles.fcSoftSwatch} ${styles.swHatch}`} aria-hidden="true" />
-                  In 48 hours
+                  In 2 days
                 </b>
                 <span className={styles.mutedXs}>Likely {gapWords(twoDays.likely)} · may move</span>
               </div>
@@ -119,7 +119,8 @@ export function PhoneOverview({
                     <SpelledCodes text={row.unit.name} />
                   </b>
                   <span className={styles.mutedXs}>
-                    {row.ready === 0 ? "No ready bed" : `${row.ready} ready`} · count{" "}
+                    {row.ready === 0 ? "No ready bed" : `${row.ready} ready`}
+                    {row.pendingPreparation ? `, ${row.pendingPreparation} being made ready` : ""} · count{" "}
                     {durMinutes(Math.max(0, now - row.confirmedAt))} old
                   </span>
                 </div>
