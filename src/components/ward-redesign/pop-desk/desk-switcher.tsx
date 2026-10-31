@@ -462,7 +462,7 @@ export function DeskSwitcherMock({ isOpen, onClose, onSelectRole }: DeskSwitcher
             <span className={styles.roleIcon}>
               <Icon icon={ROLE_ICON[here.role]} size={16} />
             </span>
-            <span className={styles.who}>
+            <span className={`${styles.who} ${mock.whoWrap}`}>
               <b>{here.name}</b>
               <span>
                 {isViewersDesk(here)
@@ -496,7 +496,7 @@ export function DeskSwitcherMock({ isOpen, onClose, onSelectRole }: DeskSwitcher
               }}
             >
               <Icon icon={ROLE_ICON[desk.role]} size={16} />
-              <span className={styles.who}>
+              <span className={`${styles.who} ${mock.whoWrap}`}>
                 <b>{deskRoleLabel(desk.role)}</b>
                 {/* Mock-up: the current desk says so in words, so its ring never reads as keyboard focus. */}
                 <span className={mock.tileLine}>
@@ -516,7 +516,7 @@ export function DeskSwitcherMock({ isOpen, onClose, onSelectRole }: DeskSwitcher
                 onClick={() => openAccessDesk({ role: "executive", scope: { kind: "statewide" } }, STATISTICS_HREF)}
               >
                 <Icon icon={Eye} size={16} />
-                <span className={styles.who}>
+                <span className={`${styles.who} ${mock.whoWrap}`}>
                   <b>Executive</b>
                   <span>Statewide figures only</span>
                 </span>
@@ -528,7 +528,7 @@ export function DeskSwitcherMock({ isOpen, onClose, onSelectRole }: DeskSwitcher
                 onClick={() => openAccessDesk({ role: "admin", scope: { kind: "statewide" } }, SETTINGS_HREF)}
               >
                 <Icon icon={Users} size={16} />
-                <span className={styles.who}>
+                <span className={`${styles.who} ${mock.whoWrap}`}>
                   <b>Access admin</b>
                   <span>Who works where, no patients</span>
                 </span>

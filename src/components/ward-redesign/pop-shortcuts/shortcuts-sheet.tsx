@@ -53,6 +53,8 @@ export function ShortcutsSheet({ onClose }: { onClose: () => void }) {
       title={SHORTCUTS_SHEET_TITLE}
       testId="ward-shortcuts-sheet"
       contentClassName={`${styles.panel} sm:max-w-4xl`}
+      // The strong scrim the other centred dialogs (`Dialog`) sit on, so the page behind dims.
+      desktopBackdropClassName={styles.scrim}
       // The list scrolls on short screens: the body takes keyboard focus and is named by the title.
       bodyTabIndex={0}
       bodyLabel={SHORTCUTS_SHEET_TITLE}

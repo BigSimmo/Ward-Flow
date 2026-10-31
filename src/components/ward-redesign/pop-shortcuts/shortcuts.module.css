@@ -3,6 +3,11 @@
   font-family: var(--wf-font);
 }
 
+/* The same strong scrim as the shared Dialog, which the other centred popups use. */
+.scrim {
+  background: var(--wf-scrim-strong, var(--wf-scrim));
+}
+
 .columns {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

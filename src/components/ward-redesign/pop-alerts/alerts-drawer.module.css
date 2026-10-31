@@ -455,7 +455,6 @@
   max-width: 100%;
   justify-self: start;
   padding: 0;
-  overflow: hidden;
   border: 0;
   border-radius: var(--wf-r-xs);
   background: none;
@@ -465,8 +464,8 @@
   font-weight: 600;
   line-height: var(--wf-lh-13);
   text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Alert titles wrap in full, as on the Alerts page: a phone has no hover to read a cut title. */
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 
@@ -483,21 +482,19 @@
 .rowMeta {
   display: flex;
   min-width: 0;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 2px 5px;
   margin: 0;
-  overflow: hidden;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .rowMeta strong {
-  overflow: hidden;
   color: var(--wf-ink-2);
   font-weight: 600;
-  text-overflow: ellipsis;
 }
 
 .rowWhen {
@@ -1234,8 +1231,7 @@
   }
 
   .rowWho {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
   }
 
   /* An acknowledged row says so while collapsed, so Acknowledge visible shows what it did. */

@@ -70,3 +70,12 @@ span.tileLine.tileLine {
   gap: 4px;
   white-space: nowrap;
 }
+
+/* Desk tile text wraps in full at phone width (no hover on a phone to read a cut line). The tag
+   selector outranks the real `.who > span` nowrap rule without reaching into its class name. */
+span.whoWrap > b,
+span.whoWrap > span {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
