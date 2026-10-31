@@ -161,7 +161,12 @@ export function StatisticsWardsCard({
                     ) : null}
                   </th>
                   <td className={styles.num}>{w.beds}</td>
-                  <td className={`${styles.num} ${w.ready === 0 ? styles.zero : ""}`}>{w.ready}</td>
+                  <td className={`${styles.num} ${w.ready === 0 ? styles.zero : ""}`}>
+                    {w.ready}
+                    {w.pendingPreparation > 0 ? (
+                      <span className={styles.cellNote}>{w.pendingPreparation} being made ready</span>
+                    ) : null}
+                  </td>
                   <td className={styles.num}>
                     <span className={styles.occBar}>
                       <span className={styles.occTrack} aria-hidden="true">

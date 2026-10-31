@@ -406,7 +406,7 @@ export function HubScreen() {
             type="button"
             className={styles.foldButton}
             aria-expanded={open}
-            aria-controls={`hub-fold-${key}`}
+            aria-controls={hubFoldId(key)}
             onClick={() => toggleFold(key)}
             disabled={searching}
           >
@@ -416,7 +416,7 @@ export function HubScreen() {
           </button>
         </h3>
         {open ? (
-          <GroupList id={`hub-fold-${key}`} entries={entries} renderRow={renderRow} selectedId={selected?.id} />
+          <GroupList id={hubFoldId(key)} entries={entries} renderRow={renderRow} selectedId={selected?.id} />
         ) : null}
       </div>
     );
@@ -433,7 +433,7 @@ export function HubScreen() {
               type="button"
               className={styles.sectionFold}
               aria-expanded={open}
-              aria-controls={`hub-fold-${key}`}
+              aria-controls={hubFoldId(key)}
               onClick={() => toggleFold(key)}
               disabled={searching}
               data-testid={key === "community" ? "hub-teams-fold" : undefined}
@@ -444,7 +444,7 @@ export function HubScreen() {
           </h2>
         </div>
         {open ? (
-          <GroupList id={`hub-fold-${key}`} entries={entries} renderRow={renderRow} selectedId={selected?.id} />
+          <GroupList id={hubFoldId(key)} entries={entries} renderRow={renderRow} selectedId={selected?.id} />
         ) : null}
       </section>
     );
@@ -536,32 +536,35 @@ export function HubScreen() {
                       {selected.stale === true ? ", stale, check with the ward before relying on it" : ""}
                     </span>
                   </dd>
-                  {deskSite !== undefined ? (
-                    // ROLE BRANCH (bed_manager): asking is the coordinator's; this desk confirms its own
-                    // wards itself, on the ward's page, and other sites' counts are not its to chase.
-                    canOpen(selected.href) ? (
-                      <Link className={buttonClass({ variant: "sec", size: "sm" })} href={selected.href}>
-                        Confirm beds
-                      </Link>
-                    ) : null
-                  ) : selectedRequest === undefined ? (
-                    <button
-                      type="button"
-                      className={buttonClass({ variant: "sec", size: "sm" })}
-                      onClick={() =>
-                        dispatch({
-                          type: "REQUEST_CAPACITY_REFRESH",
-                          role: "coordinator",
-                          now,
-                          unitId: selected.id,
-                        })
-                      }
-                    >
-                      Ask to confirm
-                    </button>
-                  ) : (
-                    <span className={styles.factMuted}>Asked {formatInstantWithDay(selectedRequest.at, now)}</span>
-                  )}
+                  {/* The action is the row's second value, so the list keeps only dt and dd (axe). */}
+                  <dd className={styles.factAction}>
+                    {deskSite !== undefined ? (
+                      // ROLE BRANCH (bed_manager): asking is the coordinator's; this desk confirms its own
+                      // wards itself, on the ward's page, and other sites' counts are not its to chase.
+                      canOpen(selected.href) ? (
+                        <Link className={buttonClass({ variant: "sec", size: "sm" })} href={selected.href}>
+                          Confirm beds
+                        </Link>
+                      ) : null
+                    ) : selectedRequest === undefined ? (
+                      <button
+                        type="button"
+                        className={buttonClass({ variant: "sec", size: "sm" })}
+                        onClick={() =>
+                          dispatch({
+                            type: "REQUEST_CAPACITY_REFRESH",
+                            role: "coordinator",
+                            now,
+                            unitId: selected.id,
+                          })
+                        }
+                      >
+                        Ask to confirm
+                      </button>
+                    ) : (
+                      <span className={styles.factMuted}>Asked {formatInstantWithDay(selectedRequest.at, now)}</span>
+                    )}
+                  </dd>
                 </div>
               )}
               {/* Review point 21: beds are read on Capacity's bed map and All wards, not here. */}
@@ -1113,6 +1116,14 @@ export function HubScreen() {
       </main>
     </div>
   );
+}
+
+/**
+ * A fold's list id, safe for `aria-controls`: a service key can carry a space ("North Metro"), and an
+ * id with a space names two ids, so the fold button would point at nothing (axe, critical).
+ */
+function hubFoldId(key: string): string {
+  return `hub-fold-${key.replace(/[^A-Za-z0-9_-]+/gu, "-")}`;
 }
 
 /**

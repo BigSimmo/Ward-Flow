@@ -228,6 +228,13 @@
   color: var(--wf-ink-3);
 }
 
+.cellNote {
+  display: block;
+  font: 400 var(--wf-fs-12) / 1.3 var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
 .codeLead {
   display: inline-block;
   min-width: 44px;

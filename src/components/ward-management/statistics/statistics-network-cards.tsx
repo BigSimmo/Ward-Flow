@@ -532,6 +532,8 @@ export type SummaryWard = {
   hospital: string;
   beds: number;
   ready: number;
+  /** Ready beds still being made ready after a discharge, said beside Ready so it is never read bare. */
+  pendingPreparation: number;
   occupancyRate: number;
   referred: StatisticsCount;
 };

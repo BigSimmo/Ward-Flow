@@ -470,6 +470,11 @@
   color: var(--wf-ink-1);
 }
 
+/* The row's action (Ask to confirm, Confirm beds, Asked at) keeps its own width at the row's end. */
+.factRow dd.factAction {
+  flex: none;
+}
+
 .metaTimestamp {
   font-family: var(--wf-mono);
   font-weight: 600;

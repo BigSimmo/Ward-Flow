@@ -159,6 +159,7 @@ function ExecutiveStatisticsScreen() {
     hospital: data.catalogue.sites.find((site) => site.code === ward.siteCode)?.name ?? ward.siteCode,
     beds: ward.beds.total,
     ready: ward.beds.ready,
+    pendingPreparation: ward.pendingPreparation,
     occupancyRate: ward.beds.total ? ward.beds.inUse / ward.beds.total : 0,
     referred: ward.awaitingAnswer,
   }));
@@ -353,6 +354,7 @@ function OperationalStatisticsScreen({
         hospital: siteByCode(u.siteCode)?.name ?? u.siteCode,
         beds: u.beds,
         ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
+        pendingPreparation: bedsPendingPreparation(u.id, sourceBedReleases),
         occupancyRate,
         referred: wardReferralTally(sourceMovements, u.id).askedAndWaiting,
       };

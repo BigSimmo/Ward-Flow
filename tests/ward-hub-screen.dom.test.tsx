@@ -984,3 +984,32 @@ describe("Ward Flow Master Search Hub — a group folds only when two or more ro
     expect(screen.queryByRole("button", { name: /^Show/u })).toBeNull();
   });
 });
+
+describe("Ward Flow Master Search Hub — fold ids and fact lists stay valid for assistive technology", () => {
+  it("names each fold's list with one id that has no space, so aria-controls points at it", () => {
+    renderHub();
+    const controls = Array.from(document.querySelectorAll("[aria-controls^='hub-fold']")).map(
+      (node) => node.getAttribute("aria-controls") ?? "",
+    );
+    expect(controls.length).toBeGreaterThan(0);
+    for (const id of controls) expect(id).not.toMatch(/\s/u);
+    for (const button of document.querySelectorAll<HTMLButtonElement>(
+      "[aria-controls^='hub-fold'][aria-expanded='true']",
+    ))
+      expect(document.getElementById(button.getAttribute("aria-controls") ?? "")).not.toBeNull();
+  });
+
+  it("keeps only dt and dd inside each row of a ward's fact list", () => {
+    renderHub();
+    fireEvent.click(categoryRadio("ward"));
+    const ward = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites }).find(
+      (entry) => entry.kind === "ward" && entry.confirmedAt !== undefined,
+    );
+    expect(ward, "no ward in the sample has a confirmed count, so the Confirmed row is not tested").toBeTruthy();
+    clickRow(ward!.name);
+    expect(screen.getByRole("button", { name: "Ask to confirm" })).toBeInTheDocument();
+    const rows = document.querySelectorAll("dl > div");
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) for (const child of row.children) expect(["DT", "DD"]).toContain(child.tagName);
+  });
+});

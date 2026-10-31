@@ -196,6 +196,8 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
             data-testid={`ward-community-cancel-transport-confirm-${transportCancelFor}`}
             // Held for Retry (pending with an answer shown): submission stays locked to that command.
             loading={save.pending}
+            // Locked while pending or held for Retry, and said so: busy alone does not announce it.
+            aria-disabled={save.pending || undefined}
             // The kit shows why it is unavailable (the earlier screen-reader-only reason, now visible).
             disabledReason={cancelTransportBlocked}
             onClick={() => submitCancelTransport(transportCancelFor, save.submit)}
