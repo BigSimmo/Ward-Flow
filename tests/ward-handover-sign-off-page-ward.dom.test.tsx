@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { useEffect } from "react";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { sheetSignOff } from "@/components/ward-management/handover/handover-sign-off-checks";
+import { HandoverHistory } from "@/components/ward-management/handover/handover-page-parts";
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -67,5 +68,19 @@ describe("Handover sign-off names its ward", () => {
     expect(sheetSignOff(signOffs, 900, undefined)).toEqual({ signedAt: null, signedBy: null });
     const wider = [{ at: 610, by: "coordinator" as const }];
     expect(sheetSignOff(wider, 900, undefined)).toEqual({ signedAt: 610, signedBy: "coordinator" });
+  });
+
+  it("History's missed sign-offs count only this sheet's own sign-offs", () => {
+    // 16:00: the 07:00 and 15:00 handovers have passed; only ward A signed the 15:00 one.
+    const signOffs = [{ at: 880, by: "ward" as const, unitId: "fsh-adult-secure" }];
+    const missed = (unitId: string | undefined) => {
+      render(<HandoverHistory signOffs={signOffs} meetings={[]} preparedAt={null} now={960} unitId={unitId} />);
+      const count = screen.queryAllByText(/^No sign-off recorded for the/).length;
+      cleanup();
+      return count;
+    };
+    expect(missed("fsh-adult-secure")).toBe(1);
+    expect(missed("fsh-older-adult")).toBe(2);
+    expect(missed(undefined)).toBe(2);
   });
 });

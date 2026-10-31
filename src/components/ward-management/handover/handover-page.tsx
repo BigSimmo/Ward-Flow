@@ -880,7 +880,13 @@ export function HandoverPage() {
           meetingOn={meetingStartedAt !== null}
           onToggleMeeting={toggleMeeting}
           history={
-            <HandoverHistory signOffs={handoverSignOffs} meetings={meetings} preparedAt={preparedAt} now={now} />
+            <HandoverHistory
+              signOffs={handoverSignOffs}
+              meetings={meetings}
+              preparedAt={preparedAt}
+              now={now}
+              unitId={signOffUnitId}
+            />
           }
         />
         <WardPrototypeFooter
@@ -1383,7 +1389,13 @@ export function HandoverPage() {
   } else if (tab === "hist") {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="hist">
-        <HandoverHistory signOffs={handoverSignOffs} meetings={meetings} preparedAt={preparedAt} now={now} />
+        <HandoverHistory
+          signOffs={handoverSignOffs}
+          meetings={meetings}
+          preparedAt={preparedAt}
+          now={now}
+          unitId={signOffUnitId}
+        />
       </TabPanel>
     );
   } else if (portrait) {
