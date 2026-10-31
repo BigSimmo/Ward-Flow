@@ -55,11 +55,9 @@ describe("transport forms pack", () => {
     );
     fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
     const pack = screen.getByTestId("ward-officer-forms-pack-WF-005");
-    const before = Number(
-      within(pack)
-        .getByText(/of 3 uploaded/)
-        .querySelector("b")?.textContent,
-    );
+    // Transport redesign (31 Oct 2026): the count is said once, beside the heading ("N to upload").
+    const before = Number(/(\d+) to upload/.exec(within(pack).getByText(/to upload/).textContent ?? "")?.[1]);
+    expect(within(pack).queryByText(/of 3 uploaded/)).toBeNull();
 
     fireEvent.click(within(pack).getByRole("button", { name: /^Upload transport order/ }));
     const dialog = screen.getByRole("dialog", { name: /Upload Form 4A/ });
@@ -72,13 +70,9 @@ describe("transport forms pack", () => {
     // H-0049: the pack shows the file type and size, never the chosen file's name.
     expect(within(after).getByText(/PDF · 1 KB/)).toBeTruthy();
     expect(within(after).queryByText(/form-4a/)).toBeNull();
-    expect(
-      Number(
-        within(after)
-          .getByText(/of 3 uploaded/)
-          .querySelector("b")?.textContent,
-      ),
-    ).toBe(before + 1);
+    expect(Number(/(\d+) to upload/.exec(within(after).getByText(/to upload/).textContent ?? "")?.[1])).toBe(
+      before - 1,
+    );
   });
 
   it("needs a legal form choice before a referral upload is recorded", () => {
