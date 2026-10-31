@@ -557,6 +557,9 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
                 label="Allocatable"
               />
               <HeroStat value={<span data-testid="ward-stat-capacity-empty">{emptyBeds}</span>} label="Empty" />
+              {/* The phone has no stay or discharge cards, so these two stay in its hero. */}
+              {isPhone && averageStay !== null ? <HeroStat value={`${averageStay} days`} label="Average stay" /> : null}
+              {isPhone ? <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" /> : null}
             </>
           ) : (
             <>
