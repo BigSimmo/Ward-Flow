@@ -47,12 +47,6 @@
 
 /* ── shell-next (Josh, 30 Oct 2026) ───────────────────────────────────────────────────────── */
 
-/* Alerts and Activity, the two tabs of the one Alerts panel. */
-.alertsTabs {
-  display: flex;
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-2);
-}
-
 /* Board time stays on tablet (it was hidden at 1000px and below for want of room; the merged
    Alerts button and the dropped Prototype pill give that room back). The time alone shows. */
 @media (min-width: 48.0625rem) and (max-width: 1000px) {
