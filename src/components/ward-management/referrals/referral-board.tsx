@@ -10,7 +10,7 @@ import { useSenderPresentation } from "../ward-sender-presentation";
 import { referralPresentation, referralPresentationLists } from "../ward-partial-view-presenters";
 import { presentationDecidedAt, outcomeLabel } from "./referral-board-model";
 import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-ward-referral";
-import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } from "lucide-react";
+import { ChevronRight, ClipboardList, ListOrdered, TriangleAlert, X } from "lucide-react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet, overlayOpener } from "@/components/wf/sheet-focus";
@@ -22,13 +22,7 @@ import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-ma
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import {
-  acceptedAddressing,
-  declinedAddressings,
-  referralDestinationLabels,
-  referralSuburbLabel,
-  referralClocks,
-} from "@/components/ward-management/ward-referrals";
+import { acceptedAddressing, declinedAddressings, referralClocks } from "@/components/ward-management/ward-referrals";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
 import {
   Avatar,
@@ -44,7 +38,6 @@ import {
   Sheet,
   TabPanel,
   Tabs,
-  TextInput,
   TierTile,
   buttonClass,
   cx,
@@ -309,7 +302,6 @@ export function ReferralBoard({
     chosenHighlight !== null && !recipientFiltersAvailable && !["overdue", "tier1"].includes(chosenHighlight)
       ? null
       : chosenHighlight;
-  const [searchQuery, setSearchQuery] = useState("");
   // The board's decisions are dispatched as the coordinator (CO-D2), so Undo is too.
   const watchDecision = useReferralDecisionUndo("coordinator");
   const [chosenTab, setInspectorTab] = useState<InspectorTab>("place");
@@ -350,7 +342,6 @@ export function ReferralBoard({
   }, []);
 
   const clearHighlights = useCallback(() => {
-    setSearchQuery("");
     setHighlight(null);
   }, []);
 
@@ -361,31 +352,12 @@ export function ReferralBoard({
     [resolverState],
   );
 
-  const matchesSearch = (referral: Referral) => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return false;
-    const siteName = (siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode).toLowerCase();
-    const destinations = referralDestinationLabels(referral).join(" ").toLowerCase();
-    const pat = resolveSubjectPatient(referral, resolverState);
-    return (
-      referral.id.toLowerCase().includes(q) ||
-      pat.displayName.toLowerCase().includes(q) ||
-      pat.umrn.toLowerCase().includes(q) ||
-      siteName.includes(q) ||
-      referral.originSiteCode.toLowerCase().includes(q) ||
-      referralSuburbLabel(referral.suburb).toLowerCase().includes(q) ||
-      referral.homeRegion.toLowerCase().includes(q) ||
-      referral.ageBand.toLowerCase().includes(q) ||
-      destinations.includes(q)
-    );
-  };
   /*
-   * v10 Referrals acceptance check: "Search narrows rows and the count line updates." The search
-   * is the one control on this board that hides rows; the hero and toolbar chips still only
-   * highlight (they dim the rest and every row stays).
+   * The queue's own "Filter queue" box went in the search and forms review (Josh, 30 Oct 2026, from
+   * the #1118 mock-up feedback): the header search already finds a queued referral by name, UMRN,
+   * id, origin or region. The hero and toolbar chips still only highlight; on a phone they filter.
    */
-  const searching = searchQuery.trim() !== "";
-  const shownQueued = searching ? queued.filter(matchesSearch) : queued;
+  const shownQueued = queued;
   const anyHighlight = highlight !== null;
   const isHighlighted = (referral: Referral) => highlight !== null && highlightTest(highlight, referral, now);
   const highlightedCount = anyHighlight ? shownQueued.filter(isHighlighted).length : 0;
@@ -696,7 +668,6 @@ export function ReferralBoard({
               bedsReady={bedsSummary.total}
               highlight={highlight}
               onHighlight={(key) => {
-                setSearchQuery("");
                 setHighlight((current) => (current === key ? null : key));
               }}
               bedsOpen={phoneSheet === "beds"}
@@ -715,7 +686,6 @@ export function ReferralBoard({
                 onHighlight={(key) => {
                   const chosen = HIGHLIGHT_KEYS.find((k) => k === key);
                   if (!chosen) return;
-                  setSearchQuery("");
                   setHighlight((current) => (current === chosen ? null : chosen));
                 }}
               />
@@ -785,7 +755,6 @@ export function ReferralBoard({
                       aria-pressed={highlight === key}
                       data-testid={`ward-referral-highlight-${key}`}
                       onClick={() => {
-                        setSearchQuery("");
                         setHighlight((current) => (current === key ? null : key));
                       }}
                     >
@@ -846,19 +815,6 @@ export function ReferralBoard({
               {phoneLayout ? <div className={cx(a.phoneViewRow, wardPin.pinnedSwitch)}>{viewSwitch}</div> : null}
               <div className={a.toolbar}>
                 {phoneLayout ? null : viewSwitch}
-                {/* The search narrows queue rows only, so History (at most ten rows) does not offer it. */}
-                {view === "queue" ? (
-                  <TextInput
-                    type="search"
-                    icon={Search}
-                    boxClassName={a.search}
-                    placeholder="Filter queue"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onClear={() => setSearchQuery("")}
-                    aria-label="Filter referrals"
-                  />
-                ) : null}
                 {/* v10: Refused once moved here from the hero, which keeps its five chips. */}
                 {view === "queue" && recipientFiltersAvailable ? (
                   <FilterChip
@@ -871,16 +827,8 @@ export function ReferralBoard({
                   </FilterChip>
                 ) : null}
                 <span className={a.toolbarNote}>
-                  {(anyHighlight || searching) && view === "queue" ? (
+                  {anyHighlight && view === "queue" ? (
                     <>
-                      {searching ? (
-                        <span data-testid="ward-referral-search-note">
-                          <b>
-                            {shownQueued.length} of {queued.length}
-                          </b>{" "}
-                          shown
-                        </span>
-                      ) : null}
                       {anyHighlight ? (
                         <span data-testid="ward-referral-highlight-note">
                           <b>
@@ -925,8 +873,8 @@ export function ReferralBoard({
                 <QueuedSection
                   progressUnavailable={presentationLists.unavailable.length > 0}
                   queued={listedQueued}
-                  searchMiss={(searching || phoneFiltered) && listedQueued.length === 0 && queued.length > 0}
-                  filterMiss={phoneFiltered && !searching}
+                  searchMiss={phoneFiltered && listedQueued.length === 0 && queued.length > 0}
+                  filterMiss={phoneFiltered}
                   now={now}
                   selectedId={selectedReferralId}
                   onSelect={handleSelect}

@@ -85,11 +85,10 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { plural } from "@/components/ward-management/ward-plural";
 import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
-import { useWardPageToast, WardPageActionToast } from "./ward-page-action-toast";
+import { useActionToast } from "@/components/ward-management/use-action-toast";
 import { useWardUnitQueues } from "./use-ward-unit-queues";
 import styles from "./ward.module.css";
-import { wardClearanceAlerts } from "./ward-clearance-alerts";
-import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
+import { wardAlerts } from "./ward-alert-counts";
 import type { WaitingReferral } from "./ward-bed-board";
 import {
   type BoardPick,
@@ -99,7 +98,7 @@ import {
   pickedUpSay,
   whyBedDoesNotFit,
 } from "./ward-bed-board-logic";
-import { buzzKeys, capacityRequestIsOpen, refreshRequestIsOpen } from "./ward-buzz-keys";
+import { capacityRequestIsOpen } from "./ward-buzz-keys";
 import type { BedItem } from "./ward-beds-matrix";
 import { openDecisionCount } from "./ward-decision-count";
 import {
@@ -114,7 +113,6 @@ import { type WardBedFilter, WardTelemetryRibbon } from "./ward-telemetry-ribbon
 import { type OpenBedAsk, WardBedMoveReasonForm } from "./ward-bed-move-reason-form";
 import { OPEN_BED_MOVE_REASON_REQUIRED } from "@/components/ward-management/ward-bed-move-reason";
 import {
-  arrivalIsLate,
   type BoardCheck,
   boardUndoEvent,
   CENSUS_BED_OPENER_TARGET,
@@ -452,7 +450,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       window.history.replaceState(state, "", url.toString());
     }
   }, [selectedBed, refusedBedParam]);
-  const [toastMessage, setToastMessage] = useWardPageToast();
+  // The shared toast region shows it: a recorded step closes itself, a refusal stays (Audit A-1).
+  const setToastMessage = useActionToast({ testId: "ward-action-toast" });
   // Walk-through WT-10: a refusal or a step that did not go through shows as a warning.
   const warnToast = (text: string) => setToastMessage({ warning: text });
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
@@ -1067,22 +1066,20 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // cannot clear (it would keep the badge lit until the ward reads it).
   const wardNotices = routeRole === "bed_manager" ? [] : notices;
 
-  const unreadAlertsCount = (() => {
-    if (!unit) return 0;
-    let count = 0;
-    if (!isRollupConfirmedToday && morningRollupDeadlinePassed) count += 1;
-    const keys = buzzKeys(refreshRequests);
-    const undismissed = refreshRequests.filter(
-      (r, i) => r.unitId === unit.id && !dismissedBuzzes.includes(keys[i] ?? ""),
-    );
-    count += undismissed.filter((r) => refreshRequestIsOpen(r, unit.allocatable)).length;
-    const overdueArrivals = movements.filter((m) => m.acceptedUnitId === unit.id && arrivalIsLate(m, now));
-    count += overdueArrivals.length;
-    count += wardClearanceAlerts(movements, unit.id).count;
-    // Notices option A (22 Oct 2026): unread coordinator notices count too, so the button matches the panel.
-    count += wardNotices.filter((n) => noticeIsForWardChrome(n, "ward", unit.id, now) && n.readAt === undefined).length;
-    return count;
-  })();
+  // The Notices button counts what the panel lists, from the same rule (ward-alert-counts.ts).
+  const unreadAlertsCount = unit
+    ? wardAlerts({
+        unitId: unit.id,
+        now,
+        movements,
+        // Notices option A (22 Oct 2026): unread coordinator notices count too.
+        notices: wardNotices,
+        refreshRequests,
+        allocatable: unit.allocatable,
+        dismissedBuzzKeys: dismissedBuzzes,
+        censusOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
+      }).counts.total
+    : 0;
   const staffedSpecialling = observationStaffOnWard(unit.id, admissions ?? []);
   const overdueLeaveBeds = unitLeaveBeds.filter(
     (leaveBed) => now - leaveBed.confirmedAt >= LEAVE_BED_OPEN_WARNING_MINUTES,
@@ -2180,6 +2177,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             handleConfirmMorningRollup={handleConfirmMorningRollup}
             handleAcknowledgeNotice={handleAcknowledgeNotice}
             handleDismissBuzz={handleDismissBuzz}
+            dismissedBuzzKeys={dismissedBuzzes}
             setNotificationCenterOpen={setNotificationCenterOpen}
             notificationTriggerRef={notificationTriggerRef}
             tabHome={tabHome}
@@ -2437,7 +2435,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           />
         ) : null}
 
-        <WardPageActionToast toast={toastMessage} onClose={() => setToastMessage(null)} />
         <WardPrototypeFooter
           testId="ward-unit-governance"
           note={`Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not approved for clinical use`}

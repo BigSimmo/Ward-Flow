@@ -88,6 +88,22 @@ behaviour are unchanged. This owner-approved alternative supersedes the older fu
 act-now box rule for these surfaces. The patient/movement hero also anchors its spoken
 live status inside the hero, preventing long stage text from overflowing tablets.
 
+## Smart Search interaction and matching update — 28 October 2026
+
+The header's deterministic matcher accepts all query words across each result's supplied
+place metadata, page keywords, form code/title or task fields. Ward, ED, team and task kind
+words can qualify those searches. Patient matching retains its patient-record allowlist;
+near spellings remain separate suggestions. Relevance uses the same accent/spacing folding
+as matching and preserves prefix/word-start precedence and stable source order.
+
+The palette leaves composition and modified editing keys to the input. Home/End move through
+results only after a row has been selected. A replacement record clears selection even when
+its destination is unchanged. Deferred results remain mounted and disabled, expose a busy
+state and announce that search is updating. Long empty-state queries wrap within the panel.
+Focused coverage lives in `tests/ward-smart-search.test.ts`,
+`tests/ward-global-search.dom.test.tsx` and the existing search-permission regressions.
+These local contracts do not establish hosted behaviour or a release.
+
 ## Current remediation seams — 8 October 2026
 
 Current routed components, not historical drawings, govern appearance. Latest canonical

@@ -487,6 +487,9 @@ test.describe("@mockup Ward scroll geometry", () => {
     const popup = page.getByTestId("ward-global-search-popup");
     await expect(popup).toBeVisible();
     const before = await columnScrollTop(page);
+    // Nothing is chosen until the arrow keys move (Smart Search, 28 Oct 2026), so End needs a
+    // first ArrowDown to enter the list.
+    await input.press("ArrowDown");
     await input.press("End");
     await expect
       .poll(() =>

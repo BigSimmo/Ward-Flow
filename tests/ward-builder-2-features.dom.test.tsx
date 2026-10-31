@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
+import { renderWithToasts as render } from "./helpers/with-toasts";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -133,7 +134,7 @@ describe("Builder 2 - Whiteboard shift actions toast feedback", () => {
       }
       const toast = screen.getByTestId("ward-board-toast");
       expect(toast).toBeInTheDocument();
-      expect(toast).toHaveAttribute("role", "status");
+      expect(toast.closest('[role="status"]')).not.toBeNull();
     } else {
       const departureSubmit = screen.queryByTestId("ward-board-record-leaving-submit");
       if (departureSubmit) {
@@ -143,7 +144,7 @@ describe("Builder 2 - Whiteboard shift actions toast feedback", () => {
         fireEvent.click(departureSubmit);
         const toast = screen.getByTestId("ward-board-toast");
         expect(toast).toBeInTheDocument();
-        expect(toast).toHaveAttribute("role", "status");
+        expect(toast.closest('[role="status"]')).not.toBeNull();
       }
     }
   });

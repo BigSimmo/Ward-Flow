@@ -1,7 +1,8 @@
 // The setup file already loads these matchers; importing them here as well lets the commit-time
 // per-file type check see them.
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
+import { renderWithToasts as render } from "./helpers/with-toasts";
 import { useLayoutEffect } from "react";
 import { describe, expect, it } from "vitest";
 

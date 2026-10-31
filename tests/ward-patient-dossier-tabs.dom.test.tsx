@@ -59,14 +59,11 @@ describe("polished patient dossier tabs", () => {
     // Nothing is open, so there is no fit to travel gate to offer.
     expect(screen.queryByTestId("ward-patient-gate-clearance")).not.toBeInTheDocument();
   });
-  it("searches history and makes unmatched filters explicit without losing the episode", () => {
+  it("filters history by kind, with no free-text box over the short list, and keeps the episode", () => {
     setup();
     const pane = tab("History");
-    fireEvent.change(pane.getByRole("textbox", { name: "Search presentation history" }), {
-      target: { value: "no-matching-place" },
-    });
-    expect(pane.getByText("No matching presentations")).toBeVisible();
-    fireEvent.change(pane.getByRole("textbox", { name: "Search presentation history" }), { target: { value: "" } });
+    // Removed in the search and forms review (Josh, 30 Oct 2026): a person's few episodes need no search.
+    expect(pane.queryByRole("textbox", { name: "Search presentation history" })).not.toBeInTheDocument();
     expect(pane.getByText("Current Presentation")).toBeVisible();
     fireEvent.click(pane.getByRole("button", { name: "Inpatient" }));
     expect(pane.getByText("No matching presentations")).toBeVisible();
@@ -103,10 +100,7 @@ describe("polished patient dossier tabs", () => {
     fireEvent.click(pane.getByText("Synthetic transport handover"));
     expect(pane.getByText("PDF · 1 KB")).toBeVisible();
     expect(pane.getByText(/Document metadata only/)).toBeVisible();
-    fireEvent.change(pane.getByRole("textbox", { name: "Search patient documents" }), {
-      target: { value: "no-match" },
-    });
-    expect(pane.getByText("No matching document records")).toBeVisible();
+    expect(pane.queryByRole("textbox", { name: "Search patient documents" })).not.toBeInTheDocument();
   });
   it("records medical clearance only after an explicit outcome and attestation", () => {
     setup();

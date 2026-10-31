@@ -1005,6 +1005,27 @@ is inferred.
 - **Not yet decided:** switching the front door on, on either hosted site. The switch stays off until Josh has seen the built screens and says yes. Setting `WARD_PASS_SECRET` and `WARD_DEMO_CODE` in Railway also needs his yes (AGENTS.md rule 3).
 - **Why:** the demo shows the whole synthetic network and should be shared on purpose, not found by chance.
 
+## D-90. Help gets How do I…, Show me runs everywhere, and Help is built without a separate mock-up step (30 October 2026)
+
+- **Date:** 30 October 2026 (`2026-10-30`). **Decided by:** Josh, in the Ward Flow project, asking for the Help menu to be reviewed against the PR #1118 mock-up and the Core Pages artifact, then perfected, with "common tasks or questions specifically for the app and when clicked on there is launched the interactive help part that highlights where it is with steps". He then answered three questions: build the real Help now; switch Show me on everywhere; and put the tasks in a new "How do I…" tab.
+- **Decision:**
+  1. Help is built in the real app straight from the PR #1118 Help, tour and shortcuts mock-ups and the artifact, as one draft pull request for Josh to review. This is an exception to the D-74 standing rule (mock-up first, then approval) for Help only. Merging still needs Josh.
+  2. The `help-ask` switch (Ask a question and Show me) is on in development, demo and production.
+  3. Help opens on a new first tab, **How do I…**, from the side menu and the phone Menu: the desk's own tasks, those on the current screen first, then in fixed groups, each with Show me. The header's ? still opens This screen (Josh, 24 October 2026).
+- **Why:** staff should be able to browse the common jobs and be walked through each one on the real screen, not only find them by typing a question.
+- **Safeguards kept:** Show me only lights controls; it never presses anything. Tasks are grouped, never ranked. Nothing typed in Help is stored or sent. Mental Health Act times stay as typed (D-70), so that how-to has no Show me.
+- **Later change:** D-91 (31 October 2026, recorded with the redesign mock-ups) overrides item 2: Show me stays off on the demo and live sites until Josh has seen it in the mock-ups, so `help-ask` is on in development only. Items 1 and 3 stand.
+
+## D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026)
+
+- **Date:** 31 October 2026 (`2026-10-31`). **Decided by:** Josh, in the Ward Flow project chat, answering three questions from the build with "Yes to all recommendations" (08:37 UTC).
+- **Decision:**
+  1. The Help redesign (PR #1119: the Help sheet, the tour and the shortcuts) goes live with the first daily release after it merges, before Josh has reviewed those screens in the mock-ups. Show me stays off on the demo and live sites (D-91).
+  2. The search update (PR #1123) also removes the Capacity matrix's own filter box, alongside the Statistics table filters D-91 already approved, so each page keeps one search box.
+  3. On Home, clicking a "Referrals to decide" row opens that referral in the right-hand panel, as the other rows do. Only its Decide button goes to the Referrals page. This goes into the Home mock-up and the Home build.
+- **Why:** D-90 and D-91 already approved building Help directly; one search box per page; every Home row behaves the same way, with the decision still one tap away.
+- **Safeguards kept:** merging each PR still needs Josh's yes. Show me only lights controls and stays off live. Legal-form times stay as typed (D-70).
+
 ## D-93. Legal form times show only as typed, never as a countdown (31 October 2026)
 
 - **Date:** 31 October 2026 (`2026-10-31`), 4:05 PM AWST (08:05 UTC). **Decided by:** Josh, in the Ward Flow project, approving the parallel build plan, whose legal-fix lane set out this change. His words: "Yes to all except 3…" (question 3 was the live site, not this).

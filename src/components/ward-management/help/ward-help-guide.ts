@@ -17,6 +17,8 @@ type GuideJob = {
   readonly how: string;
   /** Where it is done: the desk's home, or a rail entry id. Help links there when the desk can open it. */
   readonly go: string;
+  /** The how-to (`ward-help-howto.ts`) whose Show me walks this job, when there is one. */
+  readonly howTo?: string;
 };
 
 export type DeskGuide = {
@@ -45,30 +47,40 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     jobs: [
       {
         job: "Decide a referral",
+        howTo: "decide-referral",
         how: "Press Decide, read the referral, then Accept referral or Decline referral. A decline needs a reason.",
         go: "referrals",
       },
       {
         job: "Ask more wards",
+        howTo: "ask-more-wards",
         how: "Use Ask more wards and tick the wards. Wards stay in a fixed order; the app never ranks or suggests one.",
         go: "referrals",
       },
       {
         job: "Pull the bed",
+        howTo: "pull-bed",
         how: "Open the patient from Movements. Once a ward accepts, press Pull the bed. It is kept for the patient within the pull time limit.",
         go: "movements",
       },
       {
         job: "Book transport",
+        howTo: "book-transport",
         how: "Open the patient from Movements, then press Book transport, or record that none is needed. Cancel transport before you release a pulled bed.",
         go: "movements",
       },
       {
         job: "Log a call",
+        howTo: "log-call",
         how: "On a referral, use Log a call so the next person sees who was rung.",
         go: "referrals",
       },
-      { job: "Hand over", how: "Open Handover for what the next shift needs, then Sign off.", go: "handover" },
+      {
+        job: "Hand over",
+        howTo: "sign-off-handover",
+        how: "Open Handover for what the next shift needs, then Sign off.",
+        go: "handover",
+      },
     ],
     limits: [
       "A person always chooses the bed. Nothing is placed automatically.",
@@ -85,16 +97,19 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     jobs: [
       {
         job: "Confirm your beds",
+        howTo: "confirm-numbers",
         how: "Each morning fill in Confirm your beds and press Confirm by the morning bed numbers due time in Settings.",
         go: "home",
       },
       {
         job: "Read the referral",
+        howTo: "answer-ward-referrals",
         how: "Tap the patient's name or View referral. You see the whole referral before you answer.",
         go: "home",
       },
       {
         job: "Answer it",
+        howTo: "decide-referral",
         how: "Press Accept in principle and choose the pull time limit, or press Decline and pick a reason.",
         go: "home",
       },
@@ -108,7 +123,12 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
         how: "On a bed, Mark at an ED or Mark them back. Their bed is held while they are away. Record a discharge with They have left.",
         go: "home",
       },
-      { job: "Hand over", how: "Open Handover, check the sheet, then Sign off.", go: "handover" },
+      {
+        job: "Hand over",
+        howTo: "sign-off-handover",
+        how: "Open Handover, check the sheet, then Sign off.",
+        go: "handover",
+      },
     ],
     limits: [
       "You never see which other wards the patient was referred to.",
@@ -124,6 +144,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     jobs: [
       {
         job: "Raise a referral",
+        howTo: "ed-raise",
         how: "Use New referral, or Raise referral on the board. Choose one or more destinations and send it.",
         go: "referral-intake",
       },
@@ -160,7 +181,12 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     startsAt:
       "My jobs is your home: the open transport jobs, with the flags recorded on each referral. Alerts is your other screen.",
     jobs: [
-      { job: "Open a job", how: "Choose a job to see the booking, the forms and the arrival plan.", go: "home" },
+      {
+        job: "Open a job",
+        howTo: "transport-job",
+        how: "Choose a job to see the booking, the forms and the arrival plan.",
+        go: "home",
+      },
       {
         job: "Move it along",
         how: "Press Accepted, then En route, Collected and Arrived at ward as each step happens.",
@@ -189,11 +215,17 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     jobs: [
       {
         job: "Send a referral",
+        howTo: "new-referral",
         how: "Use New referral. For another team, choose the purpose and first contact time, then Send referral.",
         go: "referral-intake",
       },
       { job: "Check what you sent", how: "The Sent tab shows your referrals and whether a ward accepted.", go: "home" },
-      { job: "Answer a referral", how: "Open it, then Accept referral or Decline referral.", go: "referrals" },
+      {
+        job: "Answer a referral",
+        howTo: "decide-referral",
+        how: "Open it, then Accept referral or Decline referral.",
+        go: "referrals",
+      },
       { job: "Record contact", how: "Use Record contact after you reach the person.", go: "home" },
       {
         job: "Follow a move",
@@ -254,7 +286,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       { job: "Check beds", how: "Open Capacity for bed counts across your network or health service.", go: "capacity" },
       { job: "Compare", how: "Set two wards or departments side by side.", go: "home" },
       { job: "Look for pressure", how: "Check ED waits, blocked discharges and expected discharges.", go: "home" },
-      { job: "Export", how: "Use CSV to save a table of figures.", go: "home" },
+      { job: "Export", howTo: "statistics", how: "Use CSV to save a table of figures.", go: "home" },
     ],
     limits: [
       'Small counts of people read "fewer than 5", so no one can be picked out.',
@@ -270,6 +302,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       { job: "Answer a request", how: "Press Give for 90 days or Decline.", go: "home" },
       {
         job: "Give a role",
+        howTo: "give-access",
         how: "Choose the person, one desk and one place, then Give role. Every grant has an end date.",
         go: "home",
       },

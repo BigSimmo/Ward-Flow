@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
-import { CLINICAL_REPLY } from "@/components/ward-management/help/ward-help-search-index";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow",
@@ -13,15 +12,12 @@ vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
 }));
 
 describe("search-first Help layout", () => {
-  it("keeps the optional empty Ask box inside Reference and makes it reachable", () => {
+  it("has one box for searching and asking, and no second empty Ask box (redesign, #1118)", () => {
     render(<WardHelpSheet view="glossary" ask="" onView={vi.fn()} onClose={vi.fn()} />);
-    const input = screen.getByTestId("ward-help-ask-input");
-    expect(input).not.toBeVisible();
+    expect(screen.getByTestId("ward-help-search-field").textContent).toContain("Search Help, or ask");
+    expect(screen.queryByTestId("ward-help-ask-input")).toBeNull();
     fireEvent.click(screen.getByText("Reference", { selector: "summary" }));
-    fireEvent.click(screen.getByText("Ask a question", { selector: "summary" }));
-    expect(input).toBeVisible();
-    fireEvent.change(input, { target: { value: "what dose should I give" } });
-    expect(screen.getByTestId("ward-help-ask-clinical").textContent).toBe(CLINICAL_REPLY);
+    expect(screen.queryByText("Ask a question", { selector: "summary" })).toBeNull();
   });
 
   it("shows a handed-over answer immediately without opening Reference", () => {
@@ -30,12 +26,13 @@ describe("search-first Help layout", () => {
     expect(screen.getByTestId("ward-help-reference")).not.toHaveAttribute("open");
   });
 
-  it("keeps the tour and all four sections working from the compact controls", () => {
+  it("keeps the tour and all five sections working, with the tour at the foot of the view", () => {
     const onView = vi.fn();
     render(<WardHelpSheet view="desk" ask="" onView={onView} onClose={vi.fn()} />);
+    expect(screen.getByTestId("ward-help-end").contains(screen.getByTestId("ward-help-view-tour"))).toBe(true);
     fireEvent.click(screen.getByTestId("ward-help-view-tour"));
     expect(onView).toHaveBeenLastCalledWith("tour");
-    for (const view of ["desk", "screen", "glossary", "new"]) {
+    for (const view of ["tasks", "desk", "screen", "glossary", "new"]) {
       fireEvent.click(screen.getByTestId(`ward-help-view-${view}`));
       expect(onView).toHaveBeenLastCalledWith(view);
     }

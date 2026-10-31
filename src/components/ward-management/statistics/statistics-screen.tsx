@@ -4,7 +4,7 @@ import { readDeclinesByReason } from "./statistics-decline-reporting";
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, ChevronUp, Clock, Lock, Search, TrendingUp, Truck, X } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, Clock, Lock, TrendingUp, Truck, X } from "lucide-react";
 
 import {
   Badge,
@@ -21,7 +21,6 @@ import {
   StackBar,
   Spinner,
   StatusGlyph,
-  TextInput,
   buttonClass,
   durMinutes,
   tableClasses,
@@ -637,13 +636,13 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
     (best, ed) => (ed.longest !== null && (best === null || (best.longest ?? 0) < ed.longest) ? ed : best),
     null,
   );
-  // Table state
-  const [wardSearchQuery, setWardSearchQuery] = useState("");
+  // Table state. The two tables' typed filters went in the search and forms review (Josh, 30 Oct
+  // 2026): about 23 wards and 15 EDs sort and show more without one, and the header search finds
+  // either by name.
   const [wardOverLine, setWardOverLine] = useState(false);
   const [wardShowAll, setWardShowAll] = useState(false);
   const [wardSortCol, setWardSortCol] = useState<WardSortKey>("occ");
   const [wardSortAsc, setWardSortAsc] = useState(false);
-  const [edSearchQuery, setEdSearchQuery] = useState("");
   const [edSortCol, setEdSortCol] = useState<EdSortKey>("waiting");
   const [edSortAsc, setEdSortAsc] = useState(false);
 
@@ -669,9 +668,7 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
 
   const filteredAndSortedWards = useMemo(() => {
     if (isPhone) return [];
-    let list = allPressureWards.slice();
-    const q = wardSearchQuery.trim().toLowerCase();
-    if (q) list = list.filter((w) => `${w.name} ${w.hospital} ${w.site}`.toLowerCase().includes(q));
+    const list = allPressureWards.slice();
     const value = (w: (typeof list)[number]): number | string | null =>
       wardSortCol === "name"
         ? w.name
@@ -691,15 +688,13 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
       return a.name.localeCompare(b.name);
     });
     return list;
-  }, [isPhone, allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
+  }, [isPhone, allPressureWards, wardSortCol, wardSortAsc]);
 
   const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
 
   const filteredAndSortedEds = useMemo(() => {
     if (isPhone) return [];
-    let list = emergencyDepts.slice();
-    const q = edSearchQuery.trim().toLowerCase();
-    if (q) list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
+    const list = emergencyDepts.slice();
     const value = (d: (typeof list)[number]): number | string | null =>
       edSortCol === "name"
         ? d.site
@@ -721,7 +716,7 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
       return a.site.localeCompare(b.site);
     });
     return list;
-  }, [isPhone, emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
+  }, [isPhone, emergencyDepts, edSortCol, edSortAsc]);
 
   // The finder is desktop only, so the phone skips building and sorting its lists.
   const finderLists = useMemo<Record<FinderKind, FinderEntry[]>>(
@@ -1032,16 +1027,6 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
                 data-testid="ward-statistics-pressure"
               >
                 <div className={styles.toolbar}>
-                  <TextInput
-                    type="search"
-                    icon={Search}
-                    boxClassName={styles.search}
-                    id="wardSearchInput"
-                    placeholder="Filter wards"
-                    value={wardSearchQuery}
-                    onChange={(e) => setWardSearchQuery(e.target.value)}
-                    aria-label="Filter wards or hospitals"
-                  />
                   <FilterChip
                     pressed={wardOverLine}
                     onPressedChange={setWardOverLine}
@@ -1187,16 +1172,6 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
                 }
               >
                 <div className={styles.toolbar}>
-                  <TextInput
-                    type="search"
-                    icon={Search}
-                    boxClassName={styles.search}
-                    id="edSearchInput"
-                    placeholder="Filter departments"
-                    value={edSearchQuery}
-                    onChange={(e) => setEdSearchQuery(e.target.value)}
-                    aria-label="Filter emergency departments"
-                  />
                   <span className={styles.toolbarEnd} id="edFilterCount">
                     {`Marked from ${hoursLabel(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} and ${hoursLabel(ED_SEVERE_PRESSURE_WAIT_MINUTES)}, as the side rail`}
                   </span>

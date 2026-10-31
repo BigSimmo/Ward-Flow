@@ -1,5 +1,6 @@
 "use client";
 
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import {
   bedsPendingPreparation,
   releaseBand,
@@ -529,13 +530,11 @@ export function WardHomeTab({
     }
   };
   const query = bedQuery.trim().toLowerCase();
+  // Every word, folded, in any order: "bed 4" or a name typed without its apostrophe (31 Oct 2026).
   const matchesQuery = (row: (typeof bedRows)[number]) =>
     query === "" ||
-    row.number.includes(query) ||
-    row.bed.bedLabel.toLowerCase().includes(query) ||
-    String(row.bed.patientAlias ?? "")
-      .toLowerCase()
-      .includes(query);
+    fieldsMatchEveryWord(query, [`bed ${row.number}`, row.bed.bedLabel, String(row.bed.patientAlias ?? "")], ["bed"]) ||
+    row.number === query;
   const highlighting = bedFilter !== "all" || query !== "";
   const isLit = (row: (typeof bedRows)[number]) => matchesFilter(row) && matchesQuery(row);
   const litCount = bedRows.filter(isLit).length;

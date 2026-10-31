@@ -16,7 +16,8 @@
 /* The window: transparent, with the dim drawn as a wide shadow around it. */
 .spot {
   position: fixed;
-  border: 3px solid var(--wf-warning);
+  /* Round 2 (#1118): the focus colour, because amber means "needs a look" elsewhere in the app. */
+  border: 3px solid var(--wf-focus-ring);
   border-radius: var(--wf-r-md);
   box-shadow:
     0 0 0 200vmax var(--wf-scrim-strong),
@@ -181,6 +182,16 @@
   color: var(--wf-ink-3);
 }
 
+/* Redesign (#1118): the progress bar and "Step n of N" sit together under the header (on the
+   welcome card, beside Close in place of the who-line). */
+.progress {
+  display: grid;
+  flex: 1;
+  gap: 0.375rem;
+  min-width: 0;
+  margin-bottom: 0.125rem;
+}
+
 .bar {
   height: 4px;
   overflow: hidden;
@@ -212,6 +223,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.5rem;
   margin-bottom: -0.875rem;
   padding: 0.25rem 0 0.875rem;
@@ -238,7 +250,6 @@
 }
 
 .primary {
-  margin-left: auto;
   border-color: var(--wf-accent);
   background: var(--wf-accent);
   color: light-dark(var(--wf-on-accent), var(--wf-canvas));
@@ -249,26 +260,94 @@
   opacity: 0.45;
 }
 
-.skip,
-.close {
-  padding: 0 0.25rem;
+/* Skip tour (Replay on the last step) is the quiet way out, kept apart at the left: a ghost button
+   the same shape as Back and Next, not an underlined link (round 2, #1118). */
+.skip {
+  margin-right: auto;
+  padding: 0 0.875rem;
   border: 0;
   background: transparent;
-  color: var(--wf-ink-3);
+  color: var(--wf-ink-2);
+}
+
+.skip:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+/* Redesign (#1118): Close is an icon in the corner, named for screen readers. */
+.close {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: -0.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-2);
+}
+
+.close:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.close svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Said when a step's control is not on screen, so the card never floats with no reason. */
+.notHere {
+  margin: 0;
+  padding: 0.375rem 0.5rem;
+  border: 1px dashed var(--wf-line-2);
+  border-radius: var(--wf-r-xs, 6px);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+/* The tour's last step hands over to Help's task list. */
+.tasksLink {
+  justify-self: start;
+  min-height: var(--wf-target, 28px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-accent-ink, var(--wf-accent));
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
   text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
 }
 
 .layer[data-device="phone"] .primary,
 .layer[data-device="phone"] .secondary,
 .layer[data-device="phone"] .skip,
-.layer[data-device="phone"] .close {
+.layer[data-device="phone"] .tasksLink {
   min-height: var(--spacing-tap, 3rem);
+}
+
+/* Round 2 (Josh, 30 Oct): the same 32px close on a phone, with a larger invisible touch area. */
+.layer[data-device="phone"] .close {
+  position: relative;
+}
+
+.layer[data-device="phone"] .close::after {
+  position: absolute;
+  inset: -8px;
+  content: "";
 }
 
 .primary:focus-visible,
 .secondary:focus-visible,
 .skip:focus-visible,
-.close:focus-visible {
+.close:focus-visible,
+.tasksLink:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
@@ -284,18 +363,4 @@
   .layer {
     display: none;
   }
-}
-
-.layer[data-device="phone"] .close {
-  position: relative;
-}
-
-.layer[data-device="phone"] .close::after {
-  position: absolute;
-  content: "";
-  inset-block: 0;
-  left: 50%;
-  width: 100%;
-  min-width: var(--wf-touch);
-  transform: translateX(-50%);
 }

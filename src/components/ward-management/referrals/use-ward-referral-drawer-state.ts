@@ -1,3 +1,4 @@
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { patientRegistrationScope } from "../ward-patient-registration";
 import {
@@ -660,28 +661,22 @@ export function useWardReferralDrawerState({
     setRiskFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  // The sample patients first, then any other registered person whose name or UMRN matches.
+  // The sample patients first, then any other registered person whose name or UMRN matches. Matched
+  // as the header search matches people: every word, folded, so "OQuinn" finds O'Quinn and
+  // "UM 100001" the UMRN (search and forms review, 31 Oct 2026). Never near spellings.
   const filteredPatients = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    // "Family, Given" as lists print it: the comma only separates the two names.
+    const q = searchQuery.replace(/,/g, " ").trim();
     const profiles = Object.values(sampleProfiles).filter((p) => p.id !== NO_PATIENT_KEY);
     if (!q) return profiles;
-    const matches = profiles.filter((p) => {
-      return (
-        p.name.toLowerCase().includes(q) ||
-        p.umrn.toLowerCase().includes(q) ||
-        p.dob.toLowerCase().includes(q) ||
-        p.origin.toLowerCase().includes(q)
-      );
-    });
+    const matches = profiles.filter((p) => fieldsMatchEveryWord(q, [p.name, p.umrn, p.dob, p.origin]));
     const shown = new Set(profiles.map((p) => p.umrn));
     const record = { movements, patients, referrals, dayZero };
     const more = patients
       .filter(
         (patient) =>
           !shown.has(patient.umrn) &&
-          (`${patient.givenName} ${patient.familyName}`.toLowerCase().includes(q) ||
-            `${patient.familyName}, ${patient.givenName}`.toLowerCase().includes(q) ||
-            patient.umrn.toLowerCase().includes(q)),
+          fieldsMatchEveryWord(q, [`${patient.givenName} ${patient.familyName}`, patient.umrn]),
       )
       .slice(0, 8)
       .map((patient) => sampleProfile(patientKeyFor(patient.id, record) ?? "custom", record, now));

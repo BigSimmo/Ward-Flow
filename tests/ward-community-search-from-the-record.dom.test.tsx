@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -16,11 +16,12 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
- * The community team screen's search and patient dossier read the patient records.
+ * The community team screen's patient dossier reads the patient record.
  *
- * Until 25 Sept 2026 the search showed the same three typed hits whatever was typed (one of them
- * "Farah Davenporton · UM100010 · FSH Secure Bed 04 · In Bed 8d · Wait 4h 12m", none of it on her
- * record), and the dossier gave every person the same clinician, care tier and review date.
+ * Until 25 Sept 2026 the screen's own search showed the same three typed hits whatever was typed,
+ * and the dossier gave every person the same clinician, care tier and review date. On 30 Oct 2026
+ * Josh removed that sample-patient search as a copy of the header search, which finds the same
+ * people with the same engine (search and forms review); "/" now reaches the header search here.
  */
 const TEAM = COMMUNITY_TEAM_PAGES[0]!;
 
@@ -30,53 +31,24 @@ function renderScreen() {
       <CommunityScreen teamId={TEAM.id} />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Search sample patients by name or UMRN" }));
 }
 
-function typeSearch(text: string) {
-  fireEvent.change(screen.getByPlaceholderText("Type UMRN or name..."), { target: { value: text } });
-}
-
-describe("community team screen: search and dossier come from the patient record", () => {
-  it("shows no patient until something is typed", () => {
+// The dossier's "Not recorded in Ward Flow" check moved to ward-community-transport.dom.test.tsx,
+// which opens it from the In a bed tab now that this search is gone.
+describe("community team screen: no second patient search", () => {
+  it("offers no sample-patient search of its own", () => {
     renderScreen();
 
-    expect(screen.getByTestId("ward-community-search-hint")).toBeTruthy();
-    expect(screen.queryByTestId(/^ward-community-search-hit-/)).toBeNull();
-    expect(screen.queryByText(/Davenporton/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Search sample patients by name or UMRN" })).toBeNull();
+    expect(screen.queryByPlaceholderText("Type UMRN or name...")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Find a person" })).toBeNull();
   });
 
-  it("finds the typed patient with only what her record holds", () => {
+  it('leaves "/" for the header search', () => {
     renderScreen();
-    typeSearch("Davenport");
 
-    const hit = screen.getByTestId("ward-community-search-hit-PT-010");
-    expect(hit.textContent).toContain("Farah Davenporton · UM100010");
-    expect(hit.textContent).toContain("Involuntary inpatient");
-    expect(hit.textContent).toContain("Mirrabooka Community Team");
-    for (const invented of ["FSH Secure Bed 04", "In Bed 8d", "Wait 4h 12m", "35y"]) {
-      expect(hit.textContent, invented).not.toContain(invented);
-    }
-    expect(screen.queryByTestId("ward-community-search-hit-PT-005"), "a hit that does not match").toBeNull();
-  });
-
-  it("says so when nobody matches", () => {
-    renderScreen();
-    typeSearch("zzqq");
-
-    expect(screen.getByTestId("ward-community-search-empty").textContent).toContain("zzqq");
-    expect(screen.queryByTestId(/^ward-community-search-hit-/)).toBeNull();
-  });
-
-  it("opens a dossier that says what Ward Flow does not record", () => {
-    renderScreen();
-    typeSearch("UM100010");
-    fireEvent.click(screen.getByTestId("ward-community-search-hit-PT-010"));
-
-    const dossier = screen.getByRole("dialog", { name: "Patient record: Davenporton, Farah · UM100010" });
-    expect(within(dossier).getAllByText("Not recorded in Ward Flow")).toHaveLength(3);
-    for (const invented of ["Dr S. Chen", "Tier 1 Intensive Outreach", "25 Sep 2026", "Form 1A MHA"]) {
-      expect(dossier.textContent, invented).not.toContain(invented);
-    }
+    const slash = new KeyboardEvent("keydown", { key: "/", bubbles: true, cancelable: true });
+    document.body.dispatchEvent(slash);
+    expect(slash.defaultPrevented).toBe(false);
   });
 });

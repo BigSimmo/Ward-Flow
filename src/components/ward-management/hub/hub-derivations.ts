@@ -1,3 +1,4 @@
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
@@ -237,14 +238,8 @@ export function searchHub(entries: HubEntry[], query: string, kind: HubKind | "a
   if (needle === "") return scoped;
   // Every typed word must appear, in any order, as the header search matches EDs: "fremantle older"
   // finds the Fremantle older adult ward rather than nothing (search review, 19 October 2026).
-  const tokens = needle.split(/\s+/);
-  return scoped.filter((entry) => {
-    const haystack = [entry.name, entry.site, entry.service]
-      .filter((value): value is string => typeof value === "string")
-      .join(" ")
-      .toLowerCase();
-    return tokens.every((token) => haystack.includes(token));
-  });
+  // Folded as the header search folds it, so "St Johns" finds St John's (31 Oct 2026).
+  return scoped.filter((entry) => fieldsMatchEveryWord(needle, [entry.name, entry.site, entry.service]));
 }
 
 /**

@@ -143,6 +143,14 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/board/ward-board-toast.tsx",
+    why: "notices part A (Phase 2, 31 Oct 2026) moved every screen to the shared action-toast hooks; the wrapper is kept, with its own test, until notices part B (#1124) decides whether to delete it",
+  },
+  {
+    module: "src/components/ward-management/ward/ward-page-action-toast.tsx",
+    why: "notices part A (Phase 2, 31 Oct 2026) moved every screen to the shared action-toast hooks; the wrapper is kept, with its own test, until notices part B (#1124) decides whether to delete it",
+  },
+  {
     module: "src/components/ward-management/statistics/statistics-overview-screen.tsx",
     why: "its route became a redirect on 21 Oct 2026 (D-77, change 9): Summary and Overview are one Network page, and Overview's unique cards moved to statistics-network-cards.tsx. Deleting the screen and its tests needs Josh's yes on the dead-code check",
   },

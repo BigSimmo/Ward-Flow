@@ -1,10 +1,8 @@
 "use client";
 
-import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
-import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ComponentProps } from "react";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import { Eye, GanttChart, LayoutGrid, List, Search, SlidersHorizontal } from "lucide-react";
@@ -20,14 +18,12 @@ import {
   HeroStat,
   Icon,
   LiveChip,
-  Kbd,
   PhoneListRow,
   PhoneSheet,
   ScrollRow,
   Segmented,
   SrOnly,
   StatusGlyph,
-  TextInput,
   buttonClass,
   cx,
   useIsPhone,
@@ -150,35 +146,15 @@ export function EdIndex() {
   // Smart features idea 9: the order and layout last chosen on this device, never a filter.
   const [order, setOrder] = useDeviceChoice("ward_flow_choice_ed_index_order", ORDERS, "longest");
   const [view, setView] = useDeviceChoice("ward_flow_choice_ed_index_view", VIEWS, "cards");
-  const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [phoneView, setPhoneView] = useState<PhoneView>("list");
   const [phoneFiltersOpen, setPhoneFiltersOpen] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (!areCharacterShortcutsEnabled() || event.key !== "/" || event.defaultPrevented) return;
-      if (hasOpenSheet() || document.querySelector('[aria-modal="true"]')) return;
-      const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT" ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-      event.preventDefault();
-      searchRef.current?.focus();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  // The keyword box over these ~15 EDs went in the search and forms review (Josh, 30 Oct 2026):
+  // the header search finds an ED by name or site, and "/" now reaches it here too.
 
   const rows: EdRow[] = useMemo(() => {
     // D-14: names come through the shared resolver, the same one the ED board uses.
@@ -232,20 +208,13 @@ export function EdIndex() {
   const longestRow = [...rows].sort((a, b) => b.summary.longestWaitMinutes - a.summary.longestWaitMinutes)[0];
   const longest = longestRow?.summary.longestWaitMinutes ?? 0;
 
-  const matchesQuery = (row: EdRow) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    return [row.short, row.summary.ed.name, row.summary.siteName, row.summary.service].some((text) =>
-      text.toLowerCase().includes(q),
-    );
-  };
   const byService = (row: EdRow) => service === "all" || row.summary.service === service;
   const byStatus = (row: EdRow) =>
     status === "all" ||
     (status === "past-target" && row.pastTarget > 0) ||
     (status === "waiting" && row.summary.waiting > 0) ||
     (status === "clear" && row.summary.waiting === 0);
-  const matchesFilters = (row: EdRow) => byService(row) && byStatus(row) && matchesQuery(row);
+  const matchesFilters = (row: EdRow) => byService(row) && byStatus(row);
 
   // v10 rule 5: filters and hero chips highlight and dim. Every ED stays in place in every view.
   const matching = rows.filter(matchesFilters);
@@ -258,15 +227,14 @@ export function EdIndex() {
     return b.summary.longestWaitMinutes - a.summary.longestWaitMinutes || serviceRank(a) - serviceRank(b);
   });
 
-  const isFiltered = service !== "all" || status !== "all" || query !== "";
+  const isFiltered = service !== "all" || status !== "all";
   const resetFilters = () => {
     setService("all");
     setStatus("all");
-    setQuery("");
   };
 
   // Each service count applies the other active filters, so it matches the EDs that option keeps solid.
-  const otherFilters = (row: EdRow) => byStatus(row) && matchesQuery(row);
+  const otherFilters = (row: EdRow) => byStatus(row);
   const services = ED_HOME_SERVICE_BAND_ORDER.filter((name) => rows.some((row) => row.summary.service === name));
   const serviceItems = [
     { id: "all" as ServiceFilter, label: "All EDs", count: rows.filter(otherFilters).length },
@@ -340,24 +308,6 @@ export function EdIndex() {
   );
   const servicePicker = (
     <ServicePicker services={services} rows={rows} value={service} onPick={pickService} accessTarget={accessTarget} />
-  );
-
-  const searchField = (
-    <TextInput
-      ref={searchRef}
-      type="search"
-      id="edSearchInput"
-      icon={Search}
-      placeholder="ED, hospital or service"
-      aria-label="Highlight emergency departments by keyword"
-      value={query}
-      onChange={(event) => setQuery(event.target.value)}
-      onClear={() => setQuery("")}
-      trailing={query || isPhone ? undefined : <Kbd>/</Kbd>}
-      autoComplete="off"
-      spellCheck={false}
-      boxClassName={styles.search}
-    />
   );
 
   return (
@@ -465,10 +415,9 @@ export function EdIndex() {
               <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
             )}
             {isPhone ? (
-              // v10 phone: the status and order button sits beside the search, so the view switch
-              // below runs the full width.
+              // v10 phone: the status and order button keeps its row, so the view switch below runs
+              // the full width.
               <div className={styles.phoneSearchRow}>
-                {searchField}
                 <Button
                   variant="sec"
                   iconOnly
@@ -479,9 +428,7 @@ export function EdIndex() {
                   data-testid="ed-index-phone-filters"
                 />
               </div>
-            ) : (
-              searchField
-            )}
+            ) : null}
             {isPhone ? (
               <ScrollRow className={styles.phoneServices}>
                 <Segmented

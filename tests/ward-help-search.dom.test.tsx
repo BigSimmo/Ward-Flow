@@ -12,7 +12,7 @@ vi.mock("next/link", () => ({
 }));
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => router }));
+vi.mock("next/navigation", () => ({ useRouter: () => router, usePathname: () => "/ward-flow" }));
 
 const flags = vi.hoisted(() => ({ helpAsk: false }));
 vi.mock("@/components/ward-management/shell/ward-feature-flag-store", () => ({

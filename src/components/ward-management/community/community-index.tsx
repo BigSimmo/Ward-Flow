@@ -1,5 +1,6 @@
 "use client";
 
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -53,6 +54,7 @@ import {
   lookupCatchment,
   parseFollowUpClinicSet,
 } from "@/components/ward-management/ward-catchment";
+import { catchmentLookupsFor } from "@/components/ward-management/tools/ward-catchment-query";
 import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
 
 import styles from "./community-index.module.css";
@@ -231,17 +233,24 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     return map;
   }, [allTeams, factsFor]);
 
-  // Suburb names and service labels, so search matches the fields the page promises, not only names.
+  // Suburb names, their postcodes and service labels, so search matches what the box promises
+  // ("Team, suburb or postcode"), not only names. Postcodes added 31 Oct 2026.
   const teamSearchHaystack = useMemo(() => {
+    const postcodesBySuburb = new Map<string, Set<string>>();
+    for (const row of S2015_CATCHMENT_ROWS) {
+      if (!row.postcode) continue;
+      const bucket = postcodesBySuburb.get(row.suburb) ?? new Set<string>();
+      bucket.add(row.postcode);
+      postcodesBySuburb.set(row.suburb, bucket);
+    }
     const map = new Map<string, string>();
     for (const team of allTeams) {
       const mapping = mapClinicToServiceAndHospital(team.name);
-      const suburbs = suburbsByClinicKey.get(clinicKey(team.name));
+      const suburbs = [...(suburbsByClinicKey.get(clinicKey(team.name)) ?? [])];
+      const postcodes = suburbs.flatMap((suburb) => [...(postcodesBySuburb.get(suburb) ?? [])]);
       map.set(
         team.name,
-        [team.name, mapping.code, mapping.name, mapping.displayName, ...(suburbs ? [...suburbs] : [])]
-          .join(" ")
-          .toLowerCase(),
+        [team.name, mapping.code, mapping.name, mapping.displayName, ...suburbs, ...postcodes].join(" "),
       );
     }
     return map;
@@ -352,8 +361,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
         if (alikeOnly && !collisionByName.has(team.name)) return false;
         if (sharedSuburbOnly && !sharedSuburbs.teams.has(team.name)) return false;
         if (normalizedQuery) {
-          const haystack = teamSearchHaystack.get(team.name) ?? team.name.toLowerCase();
-          if (!haystack.includes(normalizedQuery)) return false;
+          const haystack = teamSearchHaystack.get(team.name) ?? team.name;
+          if (!fieldsMatchEveryWord(normalizedQuery, [haystack])) return false;
         }
         return true;
       }),
@@ -624,11 +633,12 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 type="search"
                 icon={Search}
                 boxClassName={styles.searchBox}
-                placeholder={isPhone ? "Team, suburb or postcode" : "Search"}
+                placeholder="Team, suburb or postcode"
                 autoComplete="off"
                 aria-label="Search team names"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
+                onClear={() => setQuery("")}
                 onKeyDown={(event) => {
                   if (event.key === "Escape" && query) {
                     event.stopPropagation();
@@ -1342,12 +1352,19 @@ function SuburbLookup({
   }, []);
   const [suburb, setSuburb] = useState(() => picks[0] ?? "");
   const trimmed = suburb.trim();
-  const lookup = useMemo(() => (trimmed ? lookupCatchment(trimmed) : null), [trimmed]);
+  // A 4-digit postcode reads every suburb filed under it, as the Tools sheet's lookup does.
+  const lookups = useMemo(() => {
+    if (!trimmed) return null;
+    const found = catchmentLookupsFor(trimmed);
+    // A postcode with no suburb filed under it still says so, through the lookup's own note.
+    return found.length > 0 ? found : [lookupCatchment(trimmed)];
+  }, [trimmed]);
+  const lookup = lookups?.[0] ?? null;
 
-  const answers = lookup && lookup.state !== "unknown" ? lookup.answers : [];
+  const answers = (lookups ?? []).flatMap((found) => (found.state !== "unknown" ? found.answers : []));
   const clinics = [...new Set(answers.flatMap((answer) => answer.clinics))];
   const postcodes = [...new Set(answers.flatMap((answer) => answer.postcodes))];
-  const named = lookup?.suburb ?? trimmed;
+  const named = lookups && lookups.length > 1 ? `postcode ${trimmed}` : (lookup?.suburb ?? trimmed);
 
   return (
     <Card className={styles.sideCard} aria-labelledby="community-suburb-lookup-title">
@@ -1360,8 +1377,8 @@ function SuburbLookup({
       <CardBody className={styles.lookupBody}>
         <TextInput
           icon={MapPin}
-          aria-label="Suburb"
-          placeholder="Suburb"
+          aria-label="Suburb or postcode"
+          placeholder="Suburb or postcode"
           autoComplete="off"
           value={suburb}
           onChange={(event) => setSuburb(event.target.value)}
@@ -1422,14 +1439,20 @@ function SuburbLookup({
                 })}
               </ul>
             ) : null}
-            {lookup.state === "reviewed" ? (
+            {(lookups ?? []).every((found) => found.state === "reviewed") ? (
               clinics.length > 1 ? (
                 <p className={styles.lookupNote}>
                   {clinics.length} teams name {named}. Check the right one.
                 </p>
               ) : null
             ) : (
-              <p className={styles.lookupNote}>{lookup.note}</p>
+              (lookups ?? []).map((found, index) =>
+                found.state === "reviewed" ? null : (
+                  <p key={`${found.suburb ?? found.query}-${index}`} className={styles.lookupNote}>
+                    {found.note}
+                  </p>
+                ),
+              )
             )}
           </div>
         )}
