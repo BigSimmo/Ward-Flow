@@ -372,3 +372,52 @@
   height: var(--wf-h-md);
   min-height: 0;
 }
+
+/* Review fix 1 and 2: the slim beds-ready strip in the dark band. */
+.bedsStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) 0;
+  margin-top: var(--wf-s-3);
+  padding-block: var(--wf-s-3) var(--wf-s-1);
+  border-top: 1px solid var(--wf-on-hero-div);
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-12);
+}
+.bedsLead,
+.bedsItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding-inline: var(--wf-s-3);
+  white-space: nowrap;
+}
+.bedsLead {
+  padding-inline-start: 0;
+  color: var(--wf-hero-ink);
+  text-decoration: none;
+}
+.bedsLead:hover {
+  text-decoration: underline;
+}
+.bedsLead svg {
+  color: var(--wf-hero-success, var(--wf-success));
+}
+.bedsItem {
+  border-inline-start: 1px solid var(--wf-on-hero-div);
+}
+.bedsStrip b {
+  color: var(--wf-hero-ink);
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+.bedsItem[data-tone="warning"] b {
+  color: var(--wf-hero-warning, var(--wf-warning));
+}
+
+/* Review fix 1: the runway takes the band's full width; beds ready sits under it as a strip. */
+.heroBandStack.heroBandStack {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
