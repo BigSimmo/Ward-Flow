@@ -270,43 +270,82 @@ function WardDays({
 }) {
   const [all, setAll] = useState(false);
   const shown = all ? rows : rows.slice(0, WARD_ROWS);
+  // Polish (Josh, 31 Oct 2026): each cell is the figure alone on a tint that deepens with the
+  // count, so the eye reads the grid as a heat map. Later days carry the chart's hatch, a planned
+  // admission is a small "+1" mark in the corner, and each row ends in its seven-day total.
   return (
     <div className={styles.heat}>
-      <table className={styles.heatTable}>
+      <table className={styles.hm}>
         <caption className={styles.srOnly}>
           Recorded discharges (out) and planned admissions (in) by ward and day
         </caption>
         <thead>
           <tr>
-            <th scope="col">Ward</th>
-            {days.map((day) => (
-              <th key={day.offset} scope="col" className={day.offset > 1 ? styles.heatLater : undefined}>
-                {day.label}
-              </th>
-            ))}
+            <th scope="col" className={styles.hmWardHead}>
+              Ward
+            </th>
+            {days.map((day) => {
+              const [weekday, date] = day.label.split(" ");
+              return (
+                <th
+                  key={day.offset}
+                  scope="col"
+                  className={`${styles.hmDay}${day.offset === 0 ? ` ${styles.hmToday}` : ""}`}
+                >
+                  <span className={styles.hmWeekday}>{weekday}</span>
+                  <span className={styles.hmDate}>{date}</span>
+                </th>
+              );
+            })}
+            <th scope="col" className={styles.hmDay}>
+              <span className={styles.hmWeekday}>Total</span>
+              <span className={styles.hmDate}>7 days</span>
+            </th>
           </tr>
         </thead>
         <tbody>
-          {shown.map((row) => (
-            <tr key={row.unitId}>
-              <th scope="row">
-                <SpelledCodes text={row.name} />
-              </th>
-              {days.map((day, index) => {
-                const out = row.out[index] ?? 0;
-                const arriving = row.arriving[index] ?? 0;
-                return (
-                  <td
-                    key={day.offset}
-                    className={`${styles.heatCell} ${styles[`heat${Math.min(out, 2)}`] ?? ""} ${day.offset > 1 ? styles.heatLater : ""}`}
-                  >
-                    {out ? <span>{out} out</span> : <span className={styles.srOnly}>none</span>}
-                    {arriving ? <em>+{arriving} in</em> : null}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+          {shown.map((row) => {
+            const total = row.out.reduce((sum, value) => sum + value, 0);
+            return (
+              <tr key={row.unitId}>
+                <th scope="row" className={styles.hmWard}>
+                  <SpelledCodes text={row.name} />
+                </th>
+                {days.map((day, index) => {
+                  const out = row.out[index] ?? 0;
+                  const arriving = row.arriving[index] ?? 0;
+                  return (
+                    <td key={day.offset} className={styles.hmCellWrap}>
+                      <span
+                        className={`${styles.hmCell} ${styles[`hm${Math.min(out, 3)}`] ?? ""}${
+                          day.offset > 1 && out > 0 ? ` ${styles.hmLater}` : ""
+                        }`}
+                      >
+                        {out ? (
+                          <>
+                            {out}
+                            <span className={styles.srOnly}> out</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className={styles.hmNone} aria-hidden="true" />
+                            <span className={styles.srOnly}>none</span>
+                          </>
+                        )}
+                        {arriving ? (
+                          <span className={styles.hmIn} title={`${arriving} planned admission`}>
+                            +{arriving}
+                            <span className={styles.srOnly}> in</span>
+                          </span>
+                        ) : null}
+                      </span>
+                    </td>
+                  );
+                })}
+                <td className={styles.hmTotal}>{total}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {rows.length > WARD_ROWS ? (

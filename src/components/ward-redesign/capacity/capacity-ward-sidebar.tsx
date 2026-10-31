@@ -14,11 +14,11 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { useCanOpenHref, useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, buttonClass, Segmented, StatusGlyph } from "@/components/wf";
+import { siteLabel } from "@/components/ward-management/ward-absence-labels";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { siteLabel } from "@/components/ward-management/ward-absence-labels";
-import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
   countCellText,
   freeingCellText,
@@ -34,7 +34,18 @@ const DISCHARGES_HREF = "/ward-flow/discharges";
 
 /** Keyed by generation, declared actor and ward: stale selection receipts never cross a scope change. */
 /** `now` is the page's clock from `usePageLive()`, so pausing the hero freezes this panel too. */
-export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack: () => void; now: Instant }) {
+export function CapacityWardSidebar({
+  row,
+  onBack,
+  now,
+  showPlace = true,
+}: {
+  row: NetworkWardRow;
+  onBack: () => void;
+  now: Instant;
+  /** False when the drawer's own header already names the hospital and service. */
+  showPlace?: boolean;
+}) {
   const canOpen = useCanOpenHref();
   const wardHref = `/ward-flow/ward/${row.unit.id}`;
   const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
@@ -97,9 +108,11 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
   // first, with a status tag on each.
   return (
     <>
-      <p className={local.wdIdentity}>
-        {siteLabel(row.unit.siteCode, site?.name)} · {site?.service ?? "Service not recorded"}
-      </p>
+      {showPlace ? (
+        <p className={local.wdIdentity}>
+          {siteLabel(row.unit.siteCode, site?.name)} · {site?.service ?? "Service not recorded"}
+        </p>
+      ) : null}
       <Segmented
         label="Ward panel view"
         className={local.wdTabs}
