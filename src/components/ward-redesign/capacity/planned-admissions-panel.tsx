@@ -75,6 +75,7 @@ import {
   type PlannedAdmissionDraft,
 } from "@/components/ward-management/capacity/planned-admissions-draft";
 import styles from "@/components/ward-management/capacity/planned-admissions.module.css";
+import redesign from "./capacity-redesign.module.css";
 import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
 
 type Draft = PlannedAdmissionDraft;
@@ -505,7 +506,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                     <span className={styles.time}>{formatInstantWithDay(planned.expectedArrivalAt, now)}</span>
                   </span>
                   <span className={styles.who}>{whoText(planned)}</span>
-                  <span className={styles.facts}>
+                  <span className={`${styles.facts} ${redesign.plannedFacts}`}>
                     <SpelledCodes text={PLANNED_ADMISSION_REASON_LABELS[planned.reason]} /> ·{" "}
                     <SpelledCodes text={unitName(planned.unitId)} />
                     {service ? (

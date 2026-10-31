@@ -135,7 +135,9 @@ type TvTileProps = {
 };
 
 function TvTile({ label, value, detail, tone, meter, age, testId }: TvTileProps) {
-  const share = meter && meter.max > 0 ? Math.min(100, Math.round((meter.value / meter.max) * 100)) : null;
+  // Final polish (31 Oct 2026): every tile draws its bar in the same place; an empty whole (nobody
+  // waiting) draws an empty track rather than leaving the row blank.
+  const share = meter && meter.max > 0 ? Math.min(100, Math.round((meter.value / meter.max) * 100)) : meter ? 0 : null;
   return (
     <div className={styles.tile} data-tone={tone ?? "neutral"} data-testid={testId}>
       <dt className={styles.tileLabel}>
@@ -525,6 +527,9 @@ function BedMeetingTvView({
             value: longest ? splitDuration(longest.waitMinutes) : 0,
             detail: longest ? `At ${edName(longest.department)}` : "No one waiting",
             tone: longest && longest.waitMinutes >= LONG_WAIT_MINUTES ? "danger" : undefined,
+            // Final polish (31 Oct 2026): every tile has its bar. Here, the wait against the long-wait
+            // line (full once past it), the same line the tile's Act now uses.
+            meter: { value: longest?.waitMinutes ?? 0, max: LONG_WAIT_MINUTES },
             testId: "bed-meeting-tv-longest",
           },
           {
@@ -562,6 +567,8 @@ function BedMeetingTvView({
             value: delays.total,
             detail: delays.groups[0] ? `Most urgent: ${delays.groups[0].title.toLowerCase()}` : "None open",
             tone: delays.total > 0 ? "warning" : undefined,
+            // Final polish: the share of open movements held by the most urgent cause the detail names.
+            meter: { value: delays.groups[0]?.count ?? 0, max: delays.total },
             testId: "bed-meeting-tv-delays",
           },
         ]}
@@ -709,6 +716,8 @@ function WardTvView({
             value: sheet.askedCount,
             detail: sheet.askedCount === 0 ? "No referral waiting on you" : "Waiting on this ward's answer",
             tone: sheet.askedCount > 0 ? "warning" : undefined,
+            // Final polish: still unanswered, of this ward's referrals (asked plus accepted).
+            meter: { value: sheet.askedCount, max: sheet.askedCount + incoming.total },
             testId: "ward-tv-asked",
           },
           {
@@ -716,6 +725,7 @@ function WardTvView({
             value: incoming.total,
             detail: `Accepted. ${incoming.onTheWay} on the way now`,
             tone: incoming.total > capacity.ready ? "warning" : undefined,
+            meter: { value: incoming.onTheWay, max: incoming.total }, // Final polish: on the way now, of all
             testId: "ward-tv-incoming",
           },
           {
@@ -848,6 +858,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
             // TV-04 (Josh, 26 Oct 2026, Part A 17): the ED board's own count and words.
             detail: `${sheet.underForm} under a form`,
             tone: summary.waiting > 0 ? "warning" : "good",
+            meter: { value: sheet.underForm, max: summary.waiting }, // Final polish: under a form, of all
             testId: "ed-tv-waiting",
           },
           {
@@ -863,6 +874,8 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
             value: summary.waiting === 0 ? 0 : splitDuration(summary.longestWaitMinutes),
             detail: summary.waiting === 0 ? "No one waiting" : "The longest anyone here has waited",
             tone: summary.longestWaitMinutes >= LONG_WAIT_MINUTES ? "danger" : undefined,
+            // Final polish: the wait against the long-wait line (full once past it), as the State TV.
+            meter: { value: summary.waiting === 0 ? 0 : summary.longestWaitMinutes, max: LONG_WAIT_MINUTES },
             testId: "ed-tv-longest",
           },
           {
@@ -879,6 +892,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
             label: "Accepted",
             value: sheet.held,
             detail: `By a ward. ${sheet.leaving} leaving now`,
+            meter: { value: sheet.leaving, max: sheet.held }, // Final polish: leaving now, of all accepted
             testId: "ed-tv-accepted",
           },
         ]}

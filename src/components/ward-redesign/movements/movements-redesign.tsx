@@ -56,7 +56,7 @@ import {
   useIsPhone,
 } from "@/components/wf";
 import { MovementDrawer } from "@/components/ward-redesign/pop-movement/movement-drawer";
-import { MovementHorizonGantt, rankCorridorPairs } from "@/components/ward-management/movements/movement-horizon-gantt";
+import { MovementHorizonGantt, rankCorridorPairs } from "@/components/ward-redesign/movements/movement-horizon-gantt";
 import { isCoordinatorStep, movementNextStep } from "@/components/ward-management/movements/movement-next-step";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { movementPresentation } from "@/components/ward-management/ward-partial-view-presenters";
@@ -745,7 +745,10 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
               {durMinutes(leg.minutesSinceBooked)}
               <span className="sr-only"> ago</span>
             </span>
-            <span className={flow.trRoute} title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}>
+            <span
+              className={cx(flow.trRoute, redesign.wrapRoute)}
+              title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}
+            >
               {shortOrigin} to {destinationLabel} · {leg.provider}
             </span>
           </button>

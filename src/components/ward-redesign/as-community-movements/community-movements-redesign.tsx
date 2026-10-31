@@ -57,7 +57,7 @@ import {
   useIsPhone,
 } from "@/components/wf";
 import { MovementDrawer } from "@/components/ward-redesign/pop-movement/movement-drawer";
-import { MovementHorizonGantt, rankCorridorPairs } from "@/components/ward-management/movements/movement-horizon-gantt";
+import { MovementHorizonGantt, rankCorridorPairs } from "@/components/ward-redesign/movements/movement-horizon-gantt";
 import { isCoordinatorStep, movementNextStep } from "@/components/ward-management/movements/movement-next-step";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { movementPresentation } from "@/components/ward-management/ward-partial-view-presenters";
@@ -103,6 +103,8 @@ import {
   movementSearchText,
   transportRouteLabels,
 } from "@/components/ward-management/movements/movements-screen-helpers";
+
+const TR_ROUTE = cx(flow.trRoute, redesign.wrapRoute); // Final polish: place names wrap, never "…"
 
 const MOVEMENT_BOARD_TABS = ["every", "resolved"] as const;
 const MOVEMENTS_ROUTE = "/ward-flow/movements";
@@ -486,9 +488,7 @@ export function CommunityMovementsRedesign({ openOnLoad }: { openOnLoad?: string
    * the Shape-of-the-day panel all keep reading the original `movements`/`openMovements`/
    * `closedToday`/`legs`/`counts` exactly as this screen already did before this task — so "the
    * headline figures and the horizon chart lanes are identical with and without a service" holds
-   * by construction: this task never touches the variables those panels render from, and never
-   * touches `movement-horizon-gantt.tsx` at all.
-   *
+   * by construction: this task never touches the variables those panels render from, or the chart.
    * Falling back to the ORIGINAL array (`stages`, `closedToday`, `causeGroups`, `withLeg`, ...)
    * rather than recomputing an equivalent one when no service is chosen is what makes "with All
    * services, it is unchanged" true by construction too — the unscoped branch below is the exact
@@ -754,7 +754,7 @@ export function CommunityMovementsRedesign({ openOnLoad }: { openOnLoad?: string
               {durMinutes(leg.minutesSinceBooked)}
               <span className="sr-only"> ago</span>
             </span>
-            <span className={flow.trRoute} title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}>
+            <span className={TR_ROUTE} title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}>
               {shortOrigin} to {destinationLabel} · {leg.provider}
             </span>
           </button>

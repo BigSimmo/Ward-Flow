@@ -107,13 +107,16 @@
   align-items: center;
   gap: var(--wf-s-2);
 }
-.heroFigures {
+/* Final polish (31 Oct 2026): the Demo pill takes the hero buttons' height (the kit pill reads
+   its height from --wf-h-chip), so the aside is one row of equal controls. Phone keeps the chip. */
+.heroLive {
   display: inline-flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-1) var(--wf-s-4);
-  padding: 0 var(--wf-s-3);
-  border-inline: 1px solid var(--wf-hero-edge);
+}
+@media (min-width: 48.0625rem) {
+  .heroLive {
+    --wf-h-chip: var(--wf-h-md);
+  }
 }
 
 /* ── Where the mismatch is ── */
@@ -932,7 +935,7 @@
   flex-direction: row;
   white-space: nowrap;
 }
-.footRow [data-testid^="ward-planned-"] [class*="_facts__"] {
+.plannedFacts.plannedFacts {
   overflow: visible;
   white-space: normal;
   text-overflow: clip;

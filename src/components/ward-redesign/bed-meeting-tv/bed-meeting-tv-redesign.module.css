@@ -422,14 +422,15 @@
   }
 }
 
-/* In a narrow tile the state word drops under the label rather than squeezing it onto two lines. */
+/* Final polish (31 Oct 2026): the state word sits top right on every tile, and a long label wraps
+   beside it, so Act now and Watch are in the same place on every tile. */
 .tileLabel {
-  flex-wrap: wrap;
-  row-gap: var(--wf-s-1);
+  flex-wrap: nowrap;
 }
 
 .tileLabel > span:first-child {
-  flex: 1 1 8em;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .tileStatus {

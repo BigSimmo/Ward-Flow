@@ -5,7 +5,6 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import Link from "next/link";
 import { PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
@@ -32,7 +31,6 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { confirmedHeldUpNote } from "@/components/ward-management/capacity/capacity-derivations";
-import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 
@@ -65,14 +63,11 @@ import {
   type ShiftTileItem,
   type Tile,
 } from "@/components/ward-management/board/ward-board-model";
-import { AlsoOnWard, StaysHero } from "@/components/ward-redesign/stays/stays-parts";
+import { AlsoOnWard, StaysHero, StaysScreenNav, StaysTools } from "@/components/ward-redesign/stays/stays-parts";
 import redesign from "@/components/ward-redesign/stays/stays-redesign.module.css";
 import { WardBoardFlowColumn } from "@/components/ward-management/board/ward-board-flow-column";
 import { WardBoardGridColumn } from "@/components/ward-redesign/stays/stays-grid-column"; // Redesign: phone shows 8 beds, then Show more
-import {
-  LeavingDestinationField,
-  WardBoardDetailPanel,
-} from "@/components/ward-management/board/ward-board-detail-panel";
+import { LeavingDestinationField, WardBoardDetailPanel } from "@/components/ward-redesign/stays/stays-detail-panel"; // Redesign: kit close, card radius
 import { WardBoardWorkBand } from "@/components/ward-management/board/ward-board-work-band";
 import { WardBoardPrintSections } from "@/components/ward-management/board/ward-board-print-sections";
 import { SAVE_NOT_CONFIRMED, saveProblem } from "@/components/ward-management/ward-save-failure";
@@ -1101,83 +1096,17 @@ export function StaysRedesign({
   );
 
   const switchUnits = deskWardIds ? liveUnits.filter((candidate) => deskWardIds.includes(candidate.id)) : liveUnits;
-  // Redesign: the screen links and the two tools move into the hero's foot, wired as before.
-  const wardNav = (
-    <nav className={styles.wardScreenNav} aria-label={`${unit.name} screens`}>
-      <Link href={unitHref(unit.id)}>Ward home</Link>
-      <span aria-current="page">Stays and discharges</span>
-    </nav>
-  );
+  // Redesign: the screen links and the two tools move into the hero's foot, wired as before; final
+  // polish draws them with the kit's hero track and hero buttons (stays-parts).
+  const wardNav = <StaysScreenNav unit={unit} />;
   const wardTools = (
-    <div className={styles.wardToolsRight}>
-      <button
-        type="button"
-        className={`${styles.topDailySheetButton}${sheetOpen ? ` ${styles.topDailySheetButtonOpen}` : ""}`}
-        onClick={() => setSheetOpen((open) => !open)}
-        aria-expanded={sheetOpen}
-        aria-controls="ward-board-sheet-body"
-        data-testid="ward-board-top-sheet-toggle"
-      >
-        <svg
-          className={styles.topDailySheetIcon}
-          viewBox="0 0 16 16"
-          width="14"
-          height="14"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M5.5 2.5h5M6 1.5h4a1 1 0 0 1 1 1v1H5v-1a1 1 0 0 1 1-1z" />
-          <rect x="3" y="3.5" width="10" height="11" rx="1.5" />
-          <path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" />
-        </svg>
-        <span>{sheetOpen ? "Hide shift brief" : "Show shift brief"}</span>
-        <span
-          className={`${styles.topDailySheetChevron}${sheetOpen ? ` ${styles.topDailySheetChevronOpen}` : ""}`}
-          aria-hidden="true"
-        >
-          ▾
-        </span>
-      </button>
-      {deskWardIds && switchUnits.length <= 1 ? null : (
-        <details className={styles.wardSwitch}>
-          <summary>
-            <svg
-              className={styles.wardSwitchIcon}
-              viewBox="0 0 24 24"
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M4 8h14l-3-3M20 16H6l3 3" />
-            </svg>
-            <span className={styles.wardSwitchLabel}>Change ward</span>{" "}
-            <span className={styles.wardSwitchCount}>{switchUnits.length} wards</span>
-          </summary>
-          <div className={styles.wardSwitchBody}>
-            <p className={styles.wardSwitchHeading}>Choose a ward</p>
-            <ul className={styles.wardSwitchList}>
-              {switchUnits.map((candidate) => (
-                <li key={candidate.id}>
-                  <Link href={wardBoardHref(candidate.id)} aria-current={candidate.id === unit.id ? "page" : undefined}>
-                    <span>{candidate.name}</span>
-                    {candidate.id === unit.id && <small>You are here</small>}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </details>
-      )}
-    </div>
+    <StaysTools
+      sheetOpen={sheetOpen}
+      onToggleSheet={() => setSheetOpen((open) => !open)}
+      units={switchUnits}
+      currentUnitId={unit.id}
+      showSwitch={!(deskWardIds && switchUnits.length <= 1)}
+    />
   );
   return (
     <div className={styles.screen} data-testid="ward-board" data-ward-design="third-edition">

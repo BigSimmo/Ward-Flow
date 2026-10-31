@@ -1,12 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { ArrowLeftRight, ChevronDown, ClipboardList } from "lucide-react";
 
 import { designationSummary } from "@/components/ward-management/ward-bed-designation";
 import type { HealthService, Site, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
-import boardStyles from "@/components/ward-management/board/board.module.css";
-import { Hero, HeroStat } from "@/components/wf";
+import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
+import { Button, Hero, HeroStat, Segmented, buttonClass, cx } from "@/components/wf";
 
 import styles from "./stays-redesign.module.css";
 
@@ -16,6 +18,10 @@ import styles from "./stays-redesign.module.css";
  * ward's name (as the h2 the board's heading rules keep, with its test id), the site and service,
  * the locked and open split, Ready now and the four band figures, the being-made-ready and
  * constraint sentences, and the As at stamp in the heading area (DB-10).
+ *
+ * Final polish (31 Oct 2026): the new header already names the ward, so the hero's big line names
+ * the page instead ("Dabakarn" over "Dabakarn" said the place twice). The ward's name stays in the
+ * heading for a screen reader, and keeps its test id.
  */
 export function StaysHero({
   available,
@@ -68,9 +74,12 @@ export function StaysHero({
         </span>
       }
       title={
-        <span id="ward-board-unit-name" className={boardStyles.unitName} data-testid="ward-board-unit-name">
-          {unit.name}
-        </span>
+        <>
+          Stays and discharges
+          <span id="ward-board-unit-name" className="sr-only" data-testid="ward-board-unit-name">
+            {`, ${unit.name}`}
+          </span>
+        </>
       }
       titleMeta={
         <span data-testid="ward-board-designation">
@@ -102,6 +111,88 @@ export function StaysHero({
       footAside={tools}
       footKind="actions"
     />
+  );
+}
+
+/**
+ * Final polish (31 Oct 2026): Ward home and Stays and discharges as the kit's hero track (route
+ * tabs, as the other redesigned heroes), in place of the board's own two-link strip.
+ */
+export function StaysScreenNav({ unit }: { unit: Unit }) {
+  return (
+    <Segmented
+      variant="hero"
+      label={`${unit.name} screens`}
+      value="stays"
+      className={styles.screenNav}
+      items={[
+        { id: "home", label: "Ward home", href: unitHref(unit.id) },
+        { id: "stays", label: "Stays and discharges", href: wardBoardHref(unit.id) },
+      ]}
+    />
+  );
+}
+
+/**
+ * Final polish (31 Oct 2026): Show shift brief and Change ward as the kit's hero buttons, in the
+ * app's font, the same height as the hero track beside them. Wired as before: the brief toggles
+ * the printed sheet, and Change ward is a disclosure listing the wards it may open.
+ */
+export function StaysTools({
+  sheetOpen,
+  onToggleSheet,
+  units,
+  currentUnitId,
+  showSwitch = true,
+}: {
+  sheetOpen: boolean;
+  onToggleSheet: () => void;
+  units: Unit[];
+  currentUnitId: string;
+  /** ROLE BRANCH (ward): left out when a ward desk opens only the one ward. */
+  showSwitch?: boolean;
+}) {
+  return (
+    <div className={styles.tools}>
+      <Button
+        variant="onHero"
+        icon={ClipboardList}
+        iconEnd={ChevronDown}
+        className={cx(styles.sheetButton, sheetOpen && styles.sheetButtonOpen)}
+        onClick={onToggleSheet}
+        aria-expanded={sheetOpen}
+        aria-controls="ward-board-sheet-body"
+        data-testid="ward-board-top-sheet-toggle"
+      >
+        {sheetOpen ? "Hide shift brief" : "Show shift brief"}
+      </Button>
+      {showSwitch ? (
+        <details className={styles.switch}>
+          <summary className={cx(buttonClass({ variant: "onHero" }), styles.switchSummary)}>
+            <ArrowLeftRight size={15} aria-hidden="true" />
+            <span className={styles.switchLabel}>Change ward</span>
+            <span className={styles.switchCount}>{units.length} wards</span>
+            <ChevronDown size={14} aria-hidden="true" className={styles.switchCaret} />
+          </summary>
+          <div className={styles.switchBody}>
+            <p className={styles.switchHeading}>Choose a ward</p>
+            <ul className={styles.switchList}>
+              {units.map((candidate) => (
+                <li key={candidate.id}>
+                  <Link
+                    href={wardBoardHref(candidate.id)}
+                    aria-current={candidate.id === currentUnitId ? "page" : undefined}
+                  >
+                    <span>{candidate.name}</span>
+                    {candidate.id === currentUnitId && <small>You are here</small>}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </details>
+      ) : null}
+    </div>
   );
 }
 

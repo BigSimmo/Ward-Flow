@@ -14,6 +14,7 @@ import {
   CardHead,
   Drawer,
   Hero,
+  HeroChip,
   HeroStat,
   Menu,
   OccupancyRing,
@@ -315,58 +316,41 @@ function CapacityHero({
             role="group"
             aria-label={deskSite ? `${deskSite.name} beds` : "Network beds"}
           >
-            <HeroStat
-              inline
+            <HeroChip
               value={model.lockedReady}
               label="Locked ready"
               pressed={highlight === "locked"}
-              onToggle={() => onHighlight("locked")}
+              onPress={() => onHighlight("locked")}
             />
-            <HeroStat
-              inline
+            <HeroChip
               value={model.openReady}
               label="Open ready"
               pressed={highlight === "open"}
-              onToggle={() => onHighlight("open")}
+              onPress={() => onHighlight("open")}
             />
-            {/* Plain figures after the highlight chips, behind a hairline, so they do not read as
-                chips that fail to press. */}
-            <span className={styles.heroFigures}>
-              <HeroStat
-                inline
-                value={model.pulled}
-                label="Beds pulled"
-                tone={model.pulled > 0 ? "warning" : undefined}
+            {/* Final polish (31 Oct 2026): one chip style for every hero figure, as Home's hero. */}
+            <HeroChip value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
+            <HeroChip value={model.dueOutToday ?? "Not tracked"} label="Due out today" />
+            {/* ROLE BRANCH (bed_manager): the site's ED, counts only, with the All EDs page's word. */}
+            {edWaiting ? (
+              <HeroChip value={edWaiting.waiting} label={<SpelledCodes text={`Waiting in ${edWaiting.short}`} />} />
+            ) : null}
+            {edWaiting && edWaiting.pastTarget > 0 ? (
+              <HeroChip
+                value={edWaiting.pastTarget}
+                label={<SpelledCodes text={`Past target in ${edWaiting.short}`} />}
+                tone="warning"
               />
-              <HeroStat inline value={model.dueOutToday ?? "Not tracked"} label="Due out today" />
-              {/* ROLE BRANCH (bed_manager): the site's ED, counts only, with the All EDs page's word. */}
-              {edWaiting ? (
-                <HeroStat
-                  inline
-                  value={edWaiting.waiting}
-                  label={<SpelledCodes text={`Waiting in ${edWaiting.short}`} />}
-                />
-              ) : null}
-              {edWaiting && edWaiting.pastTarget > 0 ? (
-                <HeroStat
-                  inline
-                  value={edWaiting.pastTarget}
-                  label={<SpelledCodes text={`Past target in ${edWaiting.short}`} />}
-                  tone="warning"
-                />
-              ) : null}
-              {deskSite ? (
-                <HeroStat inline value={elsewhereReady} label={`ready at other sites, of ${elsewhereBeds} beds`} />
-              ) : null}
-            </span>
+            ) : null}
+            {deskSite ? (
+              <HeroChip value={elsewhereReady} label={`ready at other sites, of ${elsewhereBeds} beds`} />
+            ) : null}
             {oldestCount ? (
-              <HeroStat
-                inline
-                command
+              <HeroChip
                 value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}
                 label={`Oldest count · ${oldestCount.unit.name}`}
                 tone={oldestStale ? "warning" : undefined}
-                onToggle={() => onWard(oldestCount.unit.id)}
+                onPress={() => onWard(oldestCount.unit.id)}
                 className={styles.heroJump}
               />
             ) : null}
@@ -375,7 +359,10 @@ function CapacityHero({
       }
       aside={
         <>
-          <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
+          {/* Final polish (31 Oct 2026): the Demo pill the same height as the buttons beside it. */}
+          <span className={styles.heroLive}>
+            <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
+          </span>
           {isPhone ? null : (
             <>
               <Menu

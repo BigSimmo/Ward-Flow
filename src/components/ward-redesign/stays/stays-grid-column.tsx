@@ -27,6 +27,8 @@ import {
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
+import { Segmented, Select } from "@/components/wf";
+import redesign from "./stays-redesign.module.css";
 
 /** Redesign (Josh, 30 Oct): a phone opens on this many beds, then Show more (owner rule: long lists fold). */
 const PHONE_TILE_CAP = 8;
@@ -83,7 +85,15 @@ export function WardBoardGridColumn({
     if (!capped || drawnKeys.size < PHONE_TILE_CAP || tile.key === selectedKey) drawnKeys.add(tile.key);
   }
   const foldedCount = filteredTiles.length - drawnKeys.size;
+  const bedsClass = `${styles.beds} ${redesign.beds}`;
   const countText = (filter: BoardFilter) => (filterCounts[filter] === 0 ? "none" : filterCounts[filter]);
+  // Final polish (31 Oct 2026): the kit's select, as the other redesigned pages, in place of the
+  // browser's own. Same id, name and spoken label.
+  const orderOptions = BOARD_ORDERS.map((order) => (
+    <option key={order} value={order}>
+      {BOARD_ORDER_LABELS[order]}
+    </option>
+  ));
   const orderSelect = (
     <select
       id="ward-board-order-select"
@@ -92,11 +102,7 @@ export function WardBoardGridColumn({
       onChange={(event) => setBedOrder(event.target.value as BoardOrder)}
       aria-label="Order the beds"
     >
-      {BOARD_ORDERS.map((order) => (
-        <option key={order} value={order}>
-          {BOARD_ORDER_LABELS[order]}
-        </option>
-      ))}
+      {orderOptions}
     </select>
   );
   return (
@@ -104,16 +110,17 @@ export function WardBoardGridColumn({
       {/* ✅ **THE GRID HAD NO HEADING AT ALL** — measured across the whole component, not inferred.
                 The drawing names it, and a grid of twenty tiles with nothing above it is unreachable
                 for anybody navigating this screen by heading. */}
-      <header className={styles.sectionHeading}>
+      <header className={`${styles.sectionHeading} ${redesign.gridHead}`}>
         <h2 id="ward-board-beds-heading">Every bed, and who is in it</h2>
-        <span className={styles.sectionCount}>
+        <span className={`${styles.sectionCount} ${redesign.gridCount}`}>
           Showing {drawnKeys.size} of {tiles.length} beds
         </span>
       </header>
       {isPhone ? (
-        <div className={styles.phoneFilterRow}>
-          <select
-            className={styles.phoneFilterSelect}
+        <div className={redesign.phoneBar}>
+          {/* Final polish: the kit's select for Show; the sort button is still the order select
+              itself, drawn as an icon, and its name is unchanged. */}
+          <Select
             value={bedFilter}
             onChange={(event) => chooseFilter(event.target.value as BoardFilter)}
             aria-label="Show"
@@ -124,8 +131,7 @@ export function WardBoardGridColumn({
                 {`${BOARD_FILTER_LABELS[filter]} · ${countText(filter)}`}
               </option>
             ))}
-          </select>
-          {/* The sort button is the order select itself, drawn as an icon; its name is unchanged. */}
+          </Select>
           <span className={styles.phoneSort}>
             {orderSelect}
             <svg
@@ -144,24 +150,31 @@ export function WardBoardGridColumn({
           </span>
         </div>
       ) : (
-        <div className={styles.boardBar}>
-          <div className={styles.filterSet} role="group" aria-label="Narrow stays and discharges">
-            {BOARD_FILTERS.map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                aria-pressed={bedFilter === filter}
-                onClick={() => chooseFilter(filter)}
-                data-testid={`ward-board-filter-${filter}`}
-              >
-                {BOARD_FILTER_LABELS[filter]}
-                <span className={styles.filterCount}>{countText(filter)}</span>
-              </button>
-            ))}
-          </div>
-          <label className={styles.orderControl} htmlFor="ward-board-order-select">
+        // Final polish (31 Oct 2026): the filters as the kit's segmented control and Order as the
+        // kit's select, as the other redesigned pages, in place of the board's black pills.
+        <div className={redesign.boardBar}>
+          <Segmented<BoardFilter>
+            label="Narrow stays and discharges"
+            size="md"
+            value={bedFilter}
+            onChange={chooseFilter}
+            items={BOARD_FILTERS.map((filter) => ({
+              id: filter,
+              label: BOARD_FILTER_LABELS[filter],
+              count: countText(filter),
+            }))}
+          />
+          <label className={redesign.order} htmlFor="ward-board-order-select">
             <span>Order</span>
-            {orderSelect}
+            <Select
+              id="ward-board-order-select"
+              name="wardBoardOrder"
+              value={bedOrder}
+              onChange={(event) => setBedOrder(event.target.value as BoardOrder)}
+              boxClassName={redesign.orderBox}
+            >
+              {orderOptions}
+            </Select>
           </label>
         </div>
       )}
@@ -236,7 +249,7 @@ export function WardBoardGridColumn({
                 ⚠️ **The board's other lists are a different matter and were left alone** — the
                 destinations and people lists ARE ordered and say so in visible prose. */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it */}
-      <ul className={styles.beds} data-testid="ward-board-beds" aria-label="Beds on this ward" tabIndex={0}>
+      <ul className={bedsClass} data-testid="ward-board-beds" aria-label="Beds on this ward" tabIndex={0}>
         {orderedTiles.map((tile) => {
           const index = tileIndexMap.get(tile) ?? tiles.indexOf(tile);
           const selected = tile.key === selectedKey;
@@ -272,7 +285,10 @@ export function WardBoardGridColumn({
                   <>
                     {/* UX audit, 21 Oct 2026 (Josh approved): the person leads the card. */}
                     {cardNameByKey.has(tile.key) && (
-                      <span className={styles.bedName} data-testid={`ward-board-bed-${index + 1}-name`}>
+                      <span
+                        className={`${styles.bedName} ${redesign.bedName}`}
+                        data-testid={`ward-board-bed-${index + 1}-name`}
+                      >
                         {cardNameByKey.get(tile.key)}
                       </span>
                     )}

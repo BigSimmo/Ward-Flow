@@ -12,6 +12,7 @@ import {
   CardHead,
   Drawer,
   Hero,
+  HeroChip,
   HeroStat,
   Menu,
   OccupancyRing,
@@ -273,39 +274,27 @@ function CapacityHero({
       bar={
         isPhone ? undefined : (
           <div className={styles.heroStats} role="group" aria-label="Network beds">
-            <HeroStat
-              inline
+            <HeroChip
               value={model.lockedReady}
               label="Locked ready"
               pressed={highlight === "locked"}
-              onToggle={() => onHighlight("locked")}
+              onPress={() => onHighlight("locked")}
             />
-            <HeroStat
-              inline
+            <HeroChip
               value={model.openReady}
               label="Open ready"
               pressed={highlight === "open"}
-              onToggle={() => onHighlight("open")}
+              onPress={() => onHighlight("open")}
             />
-            {/* Plain figures after the highlight chips, behind a hairline, so they do not read as
-                chips that fail to press. */}
-            <span className={styles.heroFigures}>
-              <HeroStat
-                inline
-                value={model.pulled}
-                label="Beds pulled"
-                tone={model.pulled > 0 ? "warning" : undefined}
-              />
-              <HeroStat inline value={model.dueOutToday ?? "Not tracked"} label="Due out today" />
-            </span>
+            {/* Final polish (31 Oct 2026): one chip style for every hero figure, as Home's hero. */}
+            <HeroChip value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
+            <HeroChip value={model.dueOutToday ?? "Not tracked"} label="Due out today" />
             {oldestCount ? (
-              <HeroStat
-                inline
-                command
+              <HeroChip
                 value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}
                 label={`Oldest count · ${oldestCount.unit.name}`}
                 tone={oldestStale ? "warning" : undefined}
-                onToggle={() => onWard(oldestCount.unit.id)}
+                onPress={() => onWard(oldestCount.unit.id)}
                 className={styles.heroJump}
               />
             ) : null}
@@ -314,7 +303,10 @@ function CapacityHero({
       }
       aside={
         <>
-          <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
+          {/* Final polish (31 Oct 2026): the Demo pill the same height as the buttons beside it. */}
+          <span className={styles.heroLive}>
+            <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
+          </span>
           {isPhone ? null : (
             <>
               <Menu

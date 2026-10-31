@@ -145,3 +145,12 @@
     min-height: 40px;
   }
 }
+
+/* Final polish (31 Oct 2026): a corridor's or a journey's place names wrap to a second line rather
+   than ending in "…" (names, places and roles wrap in full; a phone has no hover). */
+.wrapRoute.wrapRoute {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
