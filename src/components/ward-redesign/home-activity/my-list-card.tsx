@@ -369,6 +369,7 @@ export function MyListCard({
   phone,
   handlers,
   selectedReferralId,
+  onSelectReferral,
   decideHref,
   focus = "all",
   onShowAll,
@@ -383,6 +384,11 @@ export function MyListCard({
   phone: boolean;
   handlers: QueueHandlers;
   selectedReferralId: string | undefined;
+  /**
+   * Josh (31 Oct 2026): a referral row opens that referral in the right-hand panel, as the Act now
+   * rows and the Waiting tab do. Only its Decide button goes to the Referrals board.
+   */
+  onSelectReferral: (referralId: string) => void;
   /**
    * WS-04 (workflow speed audit, 26 Oct 2026): where Decide goes, the referral on the Referrals
    * board with Accept and Decline in view. It used to open a read-only preview with neither.
@@ -433,8 +439,8 @@ export function MyListCard({
           act: false,
           selected: selectedReferralId === referral.id,
           title,
-          openLabel: `Decide referral for ${name}`,
-          href: decideHref(referral.id),
+          openLabel: `Open referral for ${name}`,
+          onOpen: () => onSelectReferral(referral.id),
           name,
           umrn: who.umrn,
         };
