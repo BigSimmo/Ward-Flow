@@ -285,21 +285,24 @@ function requireWorkflow(source) {
     "npm run test:e2e:release-gate",
     expression("!cancelled() && steps.browsers.outcome == 'success'"),
   );
-  // Desktop and phone run as parallel legs: together exactly both device projects, neither dropped
-  // by fail-fast, and each leg's runner narrowed only through WARD_RELEASE_GATE_PROJECT.
+  // Desktop and phone each run as two parallel parts: together exactly both device projects and
+  // both parts (which partition the release-gate files), none dropped by fail-fast, and each job's
+  // runner narrowed only through WARD_RELEASE_GATE_PROJECT and WARD_RELEASE_GATE_PART.
   assert.match(
     jobs.get("release-gate"),
-    /^ {4}strategy:\n {6}fail-fast: false\n {6}matrix:\n {8}project: \[release-gate-desktop, release-gate-phone\]\n/mu,
+    /^ {4}strategy:\n {6}fail-fast: false\n {6}matrix:\n {8}project: \[release-gate-desktop, release-gate-phone\]\n {8}part: \[journeys, checks\]\n {4}steps:\n/mu,
   );
   assert.ok(
     step("release-gate", "Run the release-gate journeys").text.includes(
-      `          WARD_RELEASE_GATE_PROJECT: ${expression("matrix.project")}\n`,
+      `          WARD_RELEASE_GATE_PROJECT: ${expression("matrix.project")}\n          WARD_RELEASE_GATE_PART: ${expression("matrix.part")}\n`,
     ),
   );
   assert.ok(
     jobs
       .get("release-gate")
-      .includes(`ward-release-gate-failures-${expression("github.run_id")}-${expression("matrix.project")}`),
+      .includes(
+        `ward-release-gate-failures-${expression("github.run_id")}-${expression("matrix.project")}-${expression("matrix.part")}`,
+      ),
   );
   exact(
     "build",
