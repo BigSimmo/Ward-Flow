@@ -70,6 +70,24 @@ export function releaseGatePartFor(value) {
 }
 
 /**
+ * Why a release-gate part cannot narrow these Playwright arguments, or null when it can. A part
+ * replaces the file selection, so any file filter or test-selection option would run less than the
+ * whole part (the checks part has no named required cases to catch that).
+ * @param {readonly string[]} args
+ * @returns {string | null}
+ */
+export function releaseGatePartArgsProblem(args) {
+  if (args.some((argument) => !argument.startsWith("-")))
+    return "WARD_RELEASE_GATE_PART narrows the full release-gate preset only; remove file filters";
+  const selection = args.find((argument) =>
+    /^(?:-g|--grep|--grep-invert|--last-failed|--only-changed|--shard|--test-list|--test-list-invert)(?:=|$)/u.test(
+      argument,
+    ),
+  );
+  return selection ? `WARD_RELEASE_GATE_PART runs a whole part; remove the test-selection option ${selection}` : null;
+}
+
+/**
  * @param {boolean} required
  * @param {string | null} [only] one device project, or null for both
  * @param {string | null} [part] one release-gate part, or null for the whole gate

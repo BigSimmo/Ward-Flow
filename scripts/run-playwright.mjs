@@ -34,6 +34,7 @@ import {
   RELEASE_GATE_PARTS,
   RELEASE_GATE_PROJECTS,
   releaseGateCases,
+  releaseGatePartArgsProblem,
   releaseGatePartFor,
   releaseGateProjectFor,
 } from "./ward-flow/browser-run-contract.mjs";
@@ -104,8 +105,8 @@ if (releaseGateProject) {
 const releaseGatePart = releaseGatePartFor(process.env.WARD_RELEASE_GATE_PART);
 if (releaseGatePart) {
   if (!releaseGateProject) throw new Error("WARD_RELEASE_GATE_PART needs WARD_RELEASE_GATE_PROJECT");
-  if (playwrightArgs.some((argument) => !argument.startsWith("-")))
-    throw new Error("WARD_RELEASE_GATE_PART narrows the full release-gate preset only; remove file filters");
+  const partArgsProblem = releaseGatePartArgsProblem(playwrightArgs);
+  if (partArgsProblem) throw new Error(partArgsProblem);
   playwrightArgs.push(...RELEASE_GATE_PARTS[releaseGatePart]);
 }
 // Known-failing journeys run in their own fast-failing project (playwright.config.ts); add it

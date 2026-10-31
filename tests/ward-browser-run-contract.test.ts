@@ -5,6 +5,7 @@ import {
   RELEASE_GATE_PARTS,
   RELEASE_GATE_PROJECTS,
   releaseGateCases,
+  releaseGatePartArgsProblem,
   releaseGatePartFor,
   releaseGateProjectFor,
   sharedModeCases,
@@ -60,6 +61,15 @@ describe("complete release gate and shared-build browser selection", () => {
       expect(releaseGateCases(true, project, "checks")).toEqual([]);
     }
     expect(() => releaseGateCases(true, "release-gate-phone", "smoke")).toThrow(/WARD_RELEASE_GATE_PART/);
+  });
+
+  it("lets a release-gate part run only the whole part, never a file filter or test selection", () => {
+    const preset = ["--project=release-gate-phone"];
+    expect(releaseGatePartArgsProblem(preset)).toBeNull();
+    expect(releaseGatePartArgsProblem([...preset, "--reporter=line", "-x"])).toBeNull();
+    expect(releaseGatePartArgsProblem([...preset, "release-gate-axe-sweep.spec.ts"])).toMatch(/file filters/);
+    for (const option of ["--grep=header", "-g", "--grep-invert=x", "--last-failed", "--only-changed", "--shard=1/2"])
+      expect(releaseGatePartArgsProblem([...preset, option]), option).toMatch(/test-selection option/);
   });
 
   it("requires all six production shared-mode journeys", () => {
