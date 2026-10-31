@@ -444,10 +444,20 @@ export type RepatriationRecord = {
   escortRequired?: boolean;
 };
 
-/** Shift handover sign-off. Role and time only. */
+/** Shift handover sign-off. Role, time and, since decision 41 (31 Oct 2026), the ward. */
 export type HandoverSignOffRecord = {
   at: Instant;
   by: WardFlowRole;
+  /**
+   * The ward whose sheet was signed. Absent on a whole-network sign-off and on every sign-off saved
+   * before 31 Oct 2026; those read "Ward not recorded" and are never given a guessed ward.
+   */
+  unitId?: string;
+  /**
+   * Q67 (Josh, 31 Oct 2026): a whole-network desk's sign-off of the whole network, read in History
+   * as "Whole network". Absent on every older sign-off, which keeps "Ward not recorded".
+   */
+  network?: true;
 };
 
 /** Record that a team was contacted. Not a sent message. */

@@ -556,7 +556,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // site's bed manager (D-80): a sign-off carries no site, so one site's would mark every site's sheet.
   RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
-  RECORD_CLINICAL_CONTACT: ["community", "coordinator", "ed"],
+  // Decision 43 (Josh, 31 Oct 2026): the ED no longer holds it. It was unused: the only place to
+  // record a contact is the community team page, which an ED desk cannot open.
+  RECORD_CLINICAL_CONTACT: ["community", "coordinator"],
   // Statewide broadcast directives: coordinators and bed managers dispatch, and every desk that
   // receives one acknowledges it. The executive changes nothing and is sent none (role access plan
   // v2, D-80; the server already refused it).

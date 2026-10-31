@@ -44,8 +44,9 @@ export function setDeskRole(role: WardChromeRole, pathname = ""): void {
 
 const ROLE_DESK_LABELS: Record<WardChromeRole, string> = {
   coordinator: "Coordinator",
-  // D-80: the site bed manager is its own desk, never labelled as the coordinator's.
-  bed_manager: "Bed manager",
+  // D-80: the site bed manager is its own desk, never labelled as the coordinator's. Decision 45
+  // (Josh, 31 Oct 2026): called "Site bed manager" everywhere.
+  bed_manager: "Site bed manager",
   executive: "Executive",
   ward: "Ward",
   ed: "ED",
