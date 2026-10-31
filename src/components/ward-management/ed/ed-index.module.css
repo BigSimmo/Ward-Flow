@@ -794,14 +794,6 @@
   border-radius: var(--wf-r-sm);
 }
 
-.previewPerson[data-act-now="true"] {
-  border-color: var(--wf-line);
-
-  background: var(--wf-act-tint);
-  position: relative;
-  padding-inline-start: 14px;
-}
-
 .previewText {
   display: flex;
   flex-direction: column;
@@ -1039,14 +1031,6 @@
     border-top: 1px solid var(--wf-line);
   }
 
-  /* Act now keeps its inset rounded marker in the joined phone list. */
-  .previewList[data-phone="true"] .previewPerson[data-act-now="true"] {
-    box-shadow: none;
-
-    background: var(--wf-act-tint);
-    position: relative;
-  }
-
   .previewUmrn {
     font-family: var(--wf-mono);
     font-variant-numeric: tabular-nums;
@@ -1169,29 +1153,6 @@
 .phoneViewRow :global([role="radio"]) {
   flex: 1 1 0;
   justify-content: center;
-}
-
-/* Rounded attention markers apply at every responsive breakpoint. */
-.previewPerson[data-act-now="true"] {
-  position: relative;
-}
-
-.previewPerson[data-act-now="true"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .previewPerson[data-act-now="true"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
 }
 
 /* Phone compact chips (Josh, 12 Oct 2026): the By service chips take the shared phone pill
