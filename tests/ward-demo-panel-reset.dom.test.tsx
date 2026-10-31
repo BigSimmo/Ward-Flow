@@ -80,7 +80,7 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
         {child}
       </>
     ));
-    fireEvent.click(within(panel()).getByRole("radio", { name: /Scarce beds/ }));
+    fireEvent.click(within(panel()).getByRole("button", { name: /Scarce beds/ }));
     fireEvent.click(
       within(screen.getByRole("dialog", { name: "Load Scarce beds?" })).getByRole("button", {
         name: "Load Scarce beds",
@@ -104,7 +104,7 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
         {child}
       </>
     ));
-    fireEvent.click(within(panel()).getByRole("radio", { name: /Scarce beds/ }));
+    fireEvent.click(within(panel()).getByRole("button", { name: /Scarce beds/ }));
     const dialog = screen.getByRole("dialog", { name: "Load Scarce beds?" });
     expect(dialog).toHaveTextContent("This replaces the demo data in this browser only");
     expect(screen.getByTestId("scenario")).toHaveTextContent("standard");

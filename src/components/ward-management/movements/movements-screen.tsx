@@ -46,6 +46,7 @@ import {
   Hero,
   Legend,
   LiveChip,
+  RadioGroup,
   StackBar,
   StatusGlyph,
   TextInput,
@@ -1078,7 +1079,7 @@ export function MovementsScreen() {
               />
               <div className={flow.toolbar}>
                 {boardTab === "every" ? (
-                  <div className={styles.orderBar} role="radiogroup" aria-label="Order">
+                  <RadioGroup className={styles.orderBar} aria-label="Order">
                     <span className={styles.orderLegend} aria-hidden="true">
                       Arrange
                     </span>
@@ -1094,14 +1095,14 @@ export function MovementsScreen() {
                         type="button"
                         role="radio"
                         aria-checked={order === option.id}
-                        aria-label={option.description}
+                        title={option.description}
                         className={styles.orderBtn}
                         onClick={() => startTransition(() => setOrder(option.id))}
                       >
                         <span>{option.label}</span>
                       </button>
                     ))}
-                  </div>
+                  </RadioGroup>
                 ) : null}
                 <span className={flow.toolbarSpacer} />
                 {highlightLabel !== null && matchesSearch === null ? (

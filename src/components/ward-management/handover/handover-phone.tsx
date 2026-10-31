@@ -132,7 +132,7 @@ function ShiftSheet({
 }) {
   return (
     <Sheet open={open} onClose={onClose} title="Which handover" testId="ward-handover-phone-shift-sheet">
-      <div role="radiogroup" aria-label="Which handover" className={styles.shiftList}>
+      <div role="group" aria-label="Which handover" className={styles.shiftList}>
         {HANDOVER_SHIFTS.map((item) => {
           const at = handoverAt(item.id, now);
           const checked = item.id === shift;
@@ -140,8 +140,7 @@ function ShiftSheet({
             <button
               key={item.id}
               type="button"
-              role="radio"
-              aria-checked={checked}
+              aria-current={checked ? "true" : undefined}
               className={styles.shiftOption}
               onClick={() => {
                 onShift(item.id);

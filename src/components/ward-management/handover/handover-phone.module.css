@@ -701,7 +701,7 @@
   cursor: pointer;
 }
 
-.shiftOption[aria-checked="true"] {
+.shiftOption[aria-current="true"] {
   background: var(--wf-selected);
 }
 

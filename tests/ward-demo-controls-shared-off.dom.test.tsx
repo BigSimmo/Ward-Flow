@@ -66,7 +66,7 @@ describe("demo controls when the shared workspace switches them off", () => {
       expect(button, name).toBeDisabled();
       expect(button.getAttribute("aria-describedby"), name).toBe(note.id);
     }
-    for (const radio of within(screen.getByRole("radiogroup", { name: "Demo scenario" })).getAllByRole("radio")) {
+    for (const radio of within(screen.getByRole("group", { name: "Demo scenario" })).getAllByRole("button")) {
       expect(radio).toBeDisabled();
     }
   });
