@@ -344,3 +344,21 @@
 .heroTools {
   align-self: flex-start;
 }
+
+/* Round 4b (Josh, 31 Oct 2026): the useful buttons anchored at the bottom, subtly. */
+.bottomBar {
+  flex-shrink: 0;
+  padding: 4px var(--panel-pad);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+.bottomBar .nav a,
+.bottomBar .nav > button {
+  min-height: 28px;
+  color: var(--wf-ink-2);
+  font-weight: 500;
+}
+.bottomBar .navStep {
+  border-color: transparent;
+  background: transparent;
+}
