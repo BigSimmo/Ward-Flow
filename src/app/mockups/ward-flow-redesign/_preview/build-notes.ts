@@ -771,6 +771,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Proposals for you:** an accent-tint pressed state for the selected line in dark, and two rows of four for the strip below 1280 px so no line is hidden.",
   ],
   home: [
+    "**31 October (Josh, D-92):** clicking a referral row in My list now opens that referral in the right-hand panel, as Act now rows and the Waiting tab already do. Only its Decide button goes to the Referrals board (WS-04 kept). Build: in `coordinator/my-list-card.tsx`, the referral row gets `onOpen` (select the referral) in place of `href`, and the coordinator screen passes `onSelectReferral`.",
     "**One Home (Josh, 30 October):** this is the Home and Activity design; the earlier Home redesign and its separate Activity popup retired, so every review of Home sees one design.",
     "**Built from a copy of today's Home (with the approved Home changes)**, so the hero, Beds that fit, Placement for the person you choose, every row action and the Waiting queue work as now.",
     "**New:** three lists, My List, Waiting and Planned. Planned is the rest of the shift in time order from times the records hold (pull time limits, planned moves, expected discharges), then later today. The header says once that targets are yours, not clinical standards; target rows carry an amber edge. No legal time is counted down.",
