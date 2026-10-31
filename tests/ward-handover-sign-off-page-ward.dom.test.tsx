@@ -70,6 +70,13 @@ describe("Handover sign-off names its ward", () => {
     expect(sheetSignOff(wider, 900, undefined)).toEqual({ signedAt: 610, signedBy: "coordinator" });
   });
 
+  it("a service coordinator chooses a ward before signing off, so its sign-off is sent back to it", () => {
+    renderAtDesk({ role: "coordinator", scope: { kind: "service", service: "East Metro" } });
+    const button = screen.queryByTestId("ward-handover-sign-off-button");
+    if (button) fireEvent.click(button);
+    expect(flow.handoverSignOffs).toHaveLength(0);
+  });
+
   it("History's missed sign-offs count only this sheet's own sign-offs", () => {
     // 16:00: the 07:00 and 15:00 handovers have passed; only ward A signed the 15:00 one.
     const signOffs = [{ at: 880, by: "ward" as const, unitId: "fsh-adult-secure" }];

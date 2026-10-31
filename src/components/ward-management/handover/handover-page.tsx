@@ -522,8 +522,9 @@ export function HandoverPage() {
     [handoverSignOffs, shiftAt, signOffUnitId],
   );
   const historyProps = { signOffs: handoverSignOffs, meetings, preparedAt, now, unitId: signOffUnitId };
-  // A ward desk holding more than one ward signs off one ward's sheet at a time.
-  const chooseWardFirst = access.role === "ward" && signOffUnitId === undefined;
+  // Only a whole-network desk signs off a wider sheet; any other desk is sent back only its own
+  // wards' sign-offs, so it signs off one ward's sheet at a time.
+  const chooseWardFirst = !accessIsWholeNetwork(access) && signOffUnitId === undefined;
   // v10 pass 3: the sign-off is recorded at once and Undo takes it back (UNDO_HANDOVER_SIGN_OFF).
   const { run: runStep } = useUndoableStep({
     dispatch,
@@ -674,7 +675,7 @@ export function HandoverPage() {
   const cannotSignReason =
     signOffGate.reason ??
     signOffWaitReason(passed, nextShift) ??
-    (chooseWardFirst ? "Choose your ward to sign off its handover." : undefined);
+    (chooseWardFirst ? "Choose a ward to sign off its handover." : undefined);
 
   // ROLE BRANCH (ed): an ED desk never signs a handover off (RECORD_HANDOVER_SIGN_OFF is coordinator
   // or ward only), so the checklist, rail, bar, hero button and S shortcut are left out (Josh, 30 Oct
