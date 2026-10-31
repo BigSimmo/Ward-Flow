@@ -58,6 +58,8 @@ import {
 } from "../shell/ward-facade";
 import type { ExecutiveReportingFoundation } from "../statistics/executive-statistics-contract";
 import { isReadyBedQuery, searchBeds, type BedSearchResult } from "./search-places";
+import { searchContacts, searchSuburbs, type ContactSearchResult, type SuburbSearchResult } from "./search-directory";
+import { fieldsMatchEveryWord, fieldsNearlyMatch } from "./search-text";
 
 export type CoreSearchView = {
   key: string;
@@ -208,18 +210,29 @@ function matchesSearchWords(
   fields: readonly (string | undefined)[],
   categoryWords: readonly string[] = [],
 ): boolean {
-  const words = foldPatientSearchText(query).split(" ").filter(Boolean);
-  if (words.length === 0) return false;
-  const haystacks = fields.map((field) => foldPatientSearchText(field ?? ""));
-  return words
-    .filter((word) => !categoryWords.includes(word))
-    .every((word) => haystacks.some((hay) => hay.includes(word)));
+  return fieldsMatchEveryWord(query, fields, categoryWords);
+}
+
+/**
+ * Places and screens forgive a slip ("Graylnds", "handovr") when nothing matched exactly. People,
+ * record numbers, referrals and movements never do (`search-text.ts`).
+ */
+function withNearSpellings<T>(
+  nearly: boolean,
+  items: readonly T[],
+  exact: readonly T[],
+  query: string,
+  fieldsOf: (item: T) => readonly (string | undefined)[],
+  categoryWords: readonly string[] = [],
+): T[] {
+  if (exact.length > 0 || !nearly) return [...exact];
+  return items.filter((item) => fieldsNearlyMatch(query, fieldsOf(item), categoryWords));
 }
 
 /**
  * Matches wards by name, siteCode, unit id, or site name.
  */
-function searchWards(query: string, units?: Unit[]): WardSearchResult[] {
+function searchWards(query: string, units?: Unit[], nearly = false): WardSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
@@ -228,48 +241,46 @@ function searchWards(query: string, units?: Unit[]): WardSearchResult[] {
   // "free beds": every ward with a recorded ready bed, in the network's own order (search-places.ts).
   const readyOnly = isReadyBedQuery(needle);
 
-  return candidateUnits
-    .filter((unit) => {
-      if (readyOnly) return (unitReadyBedCount(unit) ?? 0) > 0;
-      if (isWardKeyword) return true;
-      const site = siteByCode(unit.siteCode);
-      const siteName = site?.name ?? "";
-      return matchesSearchWords(query, [unit.name, unit.siteCode, unit.id, siteName], ["ward", "wards"]);
-    })
-    .map((unit) => {
-      const site = siteByCode(unit.siteCode);
-      const siteName = site?.name ?? unit.siteCode;
-      const readyBeds = unitReadyBedCount(unit);
-      return {
-        unit,
-        readyBeds,
-        siteName,
-        href: unitHref(unit.id),
-      };
-    });
+  const wardFields = (unit: Unit) => [unit.name, unit.siteCode, unit.id, siteByCode(unit.siteCode)?.name ?? ""];
+  const exact = candidateUnits.filter((unit) => {
+    if (readyOnly) return (unitReadyBedCount(unit) ?? 0) > 0;
+    if (isWardKeyword) return true;
+    return matchesSearchWords(query, wardFields(unit), ["ward", "wards"]);
+  });
+  const matched = readyOnly
+    ? exact
+    : withNearSpellings(nearly, candidateUnits, exact, query, wardFields, ["ward", "wards"]);
+  return matched.map((unit) => {
+    const site = siteByCode(unit.siteCode);
+    const siteName = site?.name ?? unit.siteCode;
+    const readyBeds = unitReadyBedCount(unit);
+    return {
+      unit,
+      readyBeds,
+      siteName,
+      href: unitHref(unit.id),
+    };
+  });
 }
 
 /**
  * Matches emergency departments by name or siteCode.
  */
-function searchEmergencyDepartments(query: string, eds?: EmergencyDepartment[]): EdSearchResult[] {
+function searchEmergencyDepartments(query: string, eds?: EmergencyDepartment[], nearly = false): EdSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
   const candidateEds = eds ?? allEmergencyDepartments();
   const isEdKeyword = needle === "ed" || needle === "emergency";
 
-  return candidateEds
-    .filter((ed) => {
-      if (isEdKeyword) return true;
-      const site = siteByCode(ed.siteCode);
-      const siteName = site?.name ?? "";
-      return matchesSearchWords(query, [ed.name, ed.siteCode, ed.id, siteName], ["ed", "emergency"]);
-    })
-    .map((ed) => ({
-      ed,
-      href: `/ward-flow/ed/${ed.id}`,
-    }));
+  const edFields = (ed: EmergencyDepartment) => [ed.name, ed.siteCode, ed.id, siteByCode(ed.siteCode)?.name ?? ""];
+  const exact = candidateEds.filter(
+    (ed) => isEdKeyword || matchesSearchWords(query, edFields(ed), ["ed", "emergency"]),
+  );
+  return withNearSpellings(nearly, candidateEds, exact, query, edFields, ["ed", "emergency"]).map((ed) => ({
+    ed,
+    href: `/ward-flow/ed/${ed.id}`,
+  }));
 }
 
 /**
@@ -278,21 +289,20 @@ function searchEmergencyDepartments(query: string, eds?: EmergencyDepartment[]):
 function searchCommunityTeams(
   query: string,
   teams: readonly CommunityTeam[] = COMMUNITY_TEAM_PAGES,
+  nearly = false,
 ): CommunityTeamSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
   const isCommunityKeyword = needle === "community" || needle === "team" || needle === "teams";
 
-  return teams
-    .filter((team) => {
-      if (isCommunityKeyword) return true;
-      return matchesSearchWords(query, [team.name, team.id], ["community", "team", "teams"]);
-    })
-    .map((team) => ({
-      team,
-      href: teamHref(team.id),
-    }));
+  const teamFields = (team: CommunityTeam) => [team.name, team.id];
+  const teamWords = ["community", "team", "teams"];
+  const exact = teams.filter((team) => isCommunityKeyword || matchesSearchWords(query, teamFields(team), teamWords));
+  return withNearSpellings(nearly, teams, exact, query, teamFields, teamWords).map((team) => ({
+    team,
+    href: teamHref(team.id),
+  }));
 }
 
 /**
@@ -344,21 +354,19 @@ function searchLegalForms(
 export function searchCoreViews(
   query: string,
   views: readonly CoreSearchView[] = CORE_SEARCH_VIEWS,
+  nearly = false,
 ): ViewSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
   const isViewKeyword = needle === "view" || needle === "views" || needle === "tool" || needle === "tools";
 
-  return views
-    .filter((view) => {
-      if (isViewKeyword) return true;
-      return matchesSearchWords(query, [view.key, view.title, view.description, ...(view.keywords ?? [])]);
-    })
-    .map((view) => ({
-      view,
-      href: view.href,
-    }));
+  const viewFields = (view: CoreSearchView) => [view.key, view.title, view.description, ...(view.keywords ?? [])];
+  const exact = views.filter((view) => isViewKeyword || matchesSearchWords(query, viewFields(view)));
+  return withNearSpellings(nearly, views, exact, query, viewFields).map((view) => ({
+    view,
+    href: view.href,
+  }));
 }
 
 /** A structural subset of the validated aggregate report, with no domain records or figures. */
@@ -506,9 +514,12 @@ const SEARCH_GROUP_ORDER = [
   "wards",
   "eds",
   "teams",
+  "suburbs",
   "forms",
   "views",
   "tasks",
+  "contacts",
+  "help",
 ] as const;
 
 export type SearchGroupKey = (typeof SEARCH_GROUP_ORDER)[number];
@@ -594,13 +605,16 @@ export function searchGroupOrder(intent: SearchIntent, query: string): readonly 
 }
 
 function leadingGroups(intent: SearchIntent, query: string): readonly SearchGroupKey[] {
+  // "How do I pull a bed?" asks about the app, so Help's answers come first (the same test as
+  // `looksLikeHelpQuestion` in help/ward-help-events.ts, kept inline so no Help code loads here).
+  if (/^\s*(how|where|why|what)\b\s*\S/i.test(query)) return ["help"];
   switch (intent) {
     case "person":
       return ["people", "similar"];
     case "identifier":
       return /^\s*wf-/i.test(query) ? ["movements", "people"] : ["people", "movements"];
     case "place":
-      return ["beds", "wards", "eds", "teams"];
+      return ["beds", "wards", "eds", "teams", "suburbs"];
     case "form":
       return ["forms"];
     case "view":
@@ -749,6 +763,10 @@ export type SmartSearchResults = {
   legalForms: LegalFormSearchResult[];
   views: ViewSearchResult[];
   tasks: TaskSearchResult[];
+  /** On-call contacts (reference data, never people). */
+  contacts: ContactSearchResult[];
+  /** The catchment for a typed suburb or postcode. */
+  suburbs: SuburbSearchResult[];
   hasAny: boolean;
   totalCount: number;
   /** Group keys whose matching records exceed the returned per-group limit. */
@@ -840,6 +858,8 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
       legalForms: [],
       views: [],
       tasks: [],
+      contacts: [],
+      suburbs: [],
       hasAny: false,
       totalCount: 0,
       truncatedGroups: [],
@@ -902,22 +922,26 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     trimmed,
     (result) => [result.formalName, result.umrn, result.referral.id],
   );
+  // Near spellings of places and screens only when nothing of a person's matched, so a name never
+  // pulls in a ward that happens to be one letter away.
+  const nearly = people.length === 0 && movements.length === 0 && referrals.length === 0;
   const readyBedsOnly = isReadyBedQuery(typed);
   const allBeds = searchBeds(typed, input.units);
   if (allBeds.length > limit) truncatedGroups.push("beds");
   const beds = allBeds.slice(0, limit);
-  const wards = rankGroup("wards", searchWards(typed, input.units), typed, (ward) => [
+  const wards = rankGroup("wards", searchWards(typed, input.units, nearly), typed, (ward) => [
     ward.unit.name,
     ward.unit.siteCode,
     ward.unit.id,
     ward.siteName,
   ]);
-  const emergencyDepartments = rankGroup("eds", searchEmergencyDepartments(typed), typed, (department) => [
-    department.ed.name,
-    department.ed.siteCode,
-    department.ed.id,
-  ]);
-  const communityTeams = rankGroup("teams", searchCommunityTeams(typed), typed, (team) => [
+  const emergencyDepartments = rankGroup(
+    "eds",
+    searchEmergencyDepartments(typed, undefined, nearly),
+    typed,
+    (department) => [department.ed.name, department.ed.siteCode, department.ed.id],
+  );
+  const communityTeams = rankGroup("teams", searchCommunityTeams(typed, undefined, nearly), typed, (team) => [
     team.team.name,
     team.team.id,
   ]);
@@ -926,12 +950,19 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     form.title,
     `Form ${form.form.code}`,
   ]);
-  const views = rankGroup("views", searchCoreViews(typed), typed, (view) => [
+  const views = rankGroup("views", searchCoreViews(typed, undefined, nearly), typed, (view) => [
     view.view.title,
     view.view.key,
     view.view.description,
     ...(view.view.keywords ?? []),
   ]);
+
+  const contacts = rankGroup("contacts", searchContacts(typed, input.now), typed, (contact) => [
+    contact.entry.name,
+    contact.entry.place,
+    contact.entry.groupTitle,
+  ]);
+  const suburbs = searchSuburbs(typed).slice(0, limit);
 
   const shouldDeriveTasks = shouldDeriveSearchTasks(input.query);
 
@@ -977,7 +1008,9 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     communityTeams.length +
     legalForms.length +
     views.length +
-    tasks.length;
+    tasks.length +
+    contacts.length +
+    suburbs.length;
 
   return {
     people,
@@ -992,6 +1025,8 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     legalForms,
     views,
     tasks,
+    contacts,
+    suburbs,
     hasAny: totalCount > 0,
     totalCount,
     truncatedGroups,

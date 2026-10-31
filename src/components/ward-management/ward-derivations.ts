@@ -63,6 +63,7 @@ import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-fl
 /** UI-only role concept; not part of the domain model. */
 export type WardRole = "flow" | "ed" | "ward";
 
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { supportNotificationInboxItems } from "@/components/ward-management/ward-support-notifications";
 import { INFORMATIONAL_GATES, eligibleCandidatesAmong } from "./ward-derivations-shortlist";
@@ -1083,7 +1084,7 @@ export type MovementSearchQuery = {
 };
 
 export function searchMovements(movements: Movement[], units: Unit[], query: MovementSearchQuery): Movement[] {
-  const needle = query.text.trim().toLowerCase();
+  const needle = query.text.trim();
 
   return movements
     .filter(isOpen)
@@ -1102,7 +1103,8 @@ export function searchMovements(movements: Movement[], units: Unit[], query: Mov
         movement.owner,
         patientName,
       ].filter((value): value is string => value !== undefined && value.length > 0);
-      return haystack.some((value) => value.toLowerCase().includes(needle));
+      // Every typed word, in any order, folded as people are (search and forms review, 31 Oct).
+      return fieldsMatchEveryWord(needle, haystack);
     });
 }
 

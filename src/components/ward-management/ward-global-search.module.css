@@ -682,7 +682,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 4px 8px 0;
+  /* Lines up with the group heading above it; the block already has its own 8px inset. */
+  padding: 4px 0 0;
 }
 
 .commandBtn {

@@ -60,6 +60,7 @@ import {
   censusRowItem,
   patientResultTitle,
   smartSearchGroups,
+  type HelpSearchRows,
   type SearchResultGroup,
   type SearchResultItem,
 } from "./ward-global-search-groups";
@@ -189,7 +190,13 @@ export type WardGlobalSearchProps = {
   /** Caller-owned navigation permissions; the shared matcher and public place catalogue stay role-blind. */
   canOpenHref?: (href: string) => boolean;
   canRunAction?: (action: "new-referral" | "add-patient" | "advance-clock") => boolean;
+  /** Help's answers for the typed words, from the caller (`ward-global-search-help.tsx`). */
+  findHelp?: (query: string) => HelpSearchRows;
+  /** Runs a chosen Help row; false means follow its link as usual. */
+  onHelpResult?: (id: string) => boolean;
 };
+
+const NO_HELP: HelpSearchRows = { items: [] };
 
 const allowSearchChoice = () => true;
 
@@ -208,6 +215,8 @@ export function permittedSearchResult(
         : item.kind === "team"
           ? communityStatisticsHref(item.id)
           : null;
+  // A Help answer with nowhere to go opens Help itself, which every desk may open.
+  if (item.kind === "help" && item.href === "") return [item];
   if (!href || !canOpenHref(href)) return [];
   if (item.kind === "action" && !canRunAction(item.id as "new-referral" | "add-patient")) return [];
   return [href === item.href ? item : { ...item, href }];
@@ -230,7 +239,18 @@ const PATIENT_SEARCH_HREF = "/ward-flow/search";
  * more than six of one thing without leaving the page. Places folds wards, EDs and teams together,
  * the same three groups the engine leads with for a place query.
  */
-type KindFilter = "all" | "answers" | "people" | "movements" | "referrals" | "places" | "forms" | "views" | "tasks";
+type KindFilter =
+  | "all"
+  | "answers"
+  | "people"
+  | "movements"
+  | "referrals"
+  | "places"
+  | "forms"
+  | "views"
+  | "tasks"
+  | "contacts"
+  | "help";
 
 const KIND_FILTERS: readonly { key: KindFilter; label: string; groups: readonly string[] }[] = [
   { key: "all", label: "All", groups: [] },
@@ -239,10 +259,12 @@ const KIND_FILTERS: readonly { key: KindFilter; label: string; groups: readonly 
   { key: "people", label: "People", groups: ["people", "similar"] },
   { key: "movements", label: "Movements", groups: ["movements"] },
   { key: "referrals", label: "Referrals", groups: ["referrals"] },
-  { key: "places", label: "Places", groups: ["beds", "wards", "eds", "teams"] },
+  { key: "places", label: "Places", groups: ["beds", "wards", "eds", "teams", "suburbs"] },
   { key: "forms", label: "Forms", groups: ["forms"] },
   { key: "views", label: "Views", groups: ["views"] },
   { key: "tasks", label: "Tasks", groups: ["tasks"] },
+  { key: "contacts", label: "Contacts", groups: ["contacts"] },
+  { key: "help", label: "Help", groups: ["help"] },
 ];
 
 const FULL_RESULTS_PER_GROUP = 40;
@@ -316,8 +338,11 @@ function useSessionRecents(lifetime: string | null) {
   return recents;
 }
 
+/** Kinds that are not records, so they never join Recent. */
+const NOT_RECENT = new Set(["action", "help", "contact", "suburb"]);
+
 function rememberRecent(item: SearchResultItem, lifetime: string | null) {
-  if (item.kind === "action" || lifetime === null || recentsLifetime !== lifetime) return;
+  if (NOT_RECENT.has(item.kind) || lifetime === null || recentsLifetime !== lifetime) return;
   const { kind, id } = item;
   setSessionRecents(
     [{ kind, id }, ...sessionRecents.filter((recent) => recent.kind !== kind || recent.id !== id)].slice(
@@ -388,6 +413,8 @@ export function WardGlobalSearch({
   accessLifetime = "standalone",
   canOpenHref = allowSearchChoice,
   canRunAction = allowSearchChoice,
+  findHelp,
+  onHelpResult,
 }: WardGlobalSearchProps) {
   const id = useId();
   const tasksWord = useMemo(
@@ -447,6 +474,10 @@ export function WardGlobalSearch({
   );
 
   const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);
+  const help = useMemo(
+    () => (!findHelp || refusal || trimmed.length === 0 ? NO_HELP : findHelp(trimmed)),
+    [findHelp, refusal, trimmed],
+  );
 
   /*
    * The Patients page's census, built only while the palette is open: it answers the common
@@ -571,13 +602,13 @@ export function WardGlobalSearch({
   /** Every matched group in full (up to the full limit), in the engine's intent order. */
   const allGroups = useMemo(
     () =>
-      (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup, answer))
+      (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup, answer, help.items))
         .map((group) => ({
           ...group,
           items: group.items.flatMap(permittedResult),
         }))
         .filter((group) => group.items.length > 0),
-    [smartResults, refusal, trimmed, units, lookup, answer, permittedResult],
+    [smartResults, refusal, trimmed, units, lookup, answer, help, permittedResult],
   );
 
   const kindCounts = useMemo(() => {
@@ -852,6 +883,13 @@ export function WardGlobalSearch({
   }
 
   /** `confirmed` is true when the caller has already asked, so the person is never asked twice. */
+  /** A Help row runs Show me or opens Help instead of a page, when its caller says so. */
+  function openedAsHelp(item: SearchResultItem | undefined): boolean {
+    if (item?.kind !== "help" || !onHelpResult || !onHelpResult(item.id)) return false;
+    clearAfterOpen();
+    return true;
+  }
+
   function select(href: string, confirmed = false) {
     if (accessLifetime === null || recentsLifetime !== accessLifetime) return;
     if (!confirmed && !confirmLeave()) return;
@@ -949,7 +987,7 @@ export function WardGlobalSearch({
       // want it (a surrounding form), and must never be turned into a navigation nobody chose.
       if (activeIndex >= 0) {
         event.preventDefault();
-        select(options[activeIndex].href);
+        if (!openedAsHelp(options[activeIndex])) select(options[activeIndex].href);
       }
     } else if (event.key === "Tab" && !event.shiftKey && !isStart && groups.length > 1) {
       // Tab jumps to the next group's first row, the way the palette's footer says it does. From the
@@ -1039,6 +1077,11 @@ export function WardGlobalSearch({
                 {smartResults ? searchIntentLabel(smartResults.intent, trimmed) : ""}
               </p>
             )}
+            {help.note && !refusal ? (
+              <p className={styles.refusal} data-testid="ward-global-search-help-note">
+                {help.note}
+              </p>
+            ) : null}
             {refusal ? (
               <p className={styles.refusal} data-testid="ward-global-search-refusal">
                 {refusal.sentence}
@@ -1147,6 +1190,10 @@ export function WardGlobalSearch({
                               // not a result, so it keeps working.
                               onClick={(event) => {
                                 if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
+                                  if (event.button === 0 && openedAsHelp(item)) {
+                                    event.preventDefault();
+                                    return;
+                                  }
                                   onOptionClick(event, item.href);
                                   return;
                                 }

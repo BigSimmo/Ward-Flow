@@ -84,10 +84,18 @@ describe("searchGroupOrder", () => {
       "wards",
       "eds",
       "teams",
+      "suburbs",
       "forms",
       "views",
       "tasks",
+      "contacts",
+      "help",
     ]);
+  });
+
+  it("leads with Help for a how, where, why or what question", () => {
+    expect(searchGroupOrder("general", "how do I pull a bed")[0]).toBe("help");
+    expect(searchGroupOrder("person", "Howard")[0]).toBe("people");
   });
 
   it("leads with the intent group, and with the three place groups for a place query", () => {
