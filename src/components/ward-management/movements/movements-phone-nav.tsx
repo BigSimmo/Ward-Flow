@@ -17,7 +17,8 @@ import {
 } from "./movements-derivations";
 import { ArrowRightLeft, ChevronRight, ListFilter, Truck } from "lucide-react";
 import { PhoneSheet, buttonClass } from "@/components/wf";
-import { MovementHorizonGantt, rankCorridorPairs } from "./movement-horizon-gantt";
+import { MovementHorizonGantt } from "./movement-horizon-gantt-lazy";
+import type { rankCorridorPairs } from "./movement-corridor-pairs";
 import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
 import { ArrivalsAheadList } from "./arrivals-ahead-list";
