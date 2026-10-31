@@ -1102,6 +1102,15 @@ describe("admitted while already with this team — the acceptance-before-admiss
     const table = screen.getByTestId("ward-community-admitted-list");
     const accepted = within(table).getByTestId("ward-community-admitted-AD-ACCEPTED-FIRST");
     expect(cellByHeader(table, accepted, "With team before bed")).toMatch(/\d/u);
+    expect(cellByHeader(table, accepted, "Since accepted")).toMatch(/\d/u);
+  });
+
+  it("names the rows not accepted before the bed in words, on a made-up case today's data never shows (Josh, 31 Oct 2026)", () => {
+    // Synthetic fixture: one referral raised during the stay, one bed pulled with nobody arrived.
+    const { admissions, referrals } = buildThreeShapeFixture();
+    renderTeam(ACCEPTED_TEAM.id, admissions, referrals);
+
+    const table = screen.getByTestId("ward-community-admitted-list");
     const referredDuring = within(table).getByTestId("ward-community-admitted-AD-REFERRED-DURING");
     expect(cellByHeader(table, referredDuring, "With team before bed")).toBe("Referred during this stay");
     expect(cellByHeader(table, referredDuring, "Since accepted")).toBe("Not counted");

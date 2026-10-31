@@ -18,7 +18,10 @@ import {
   CommunityScreenReferralModal,
 } from "@/components/ward-management/community/community-screen-modals";
 import { CommunityScreenTransportCancelDialog } from "@/components/ward-management/community/community-screen-transport-dialogs";
-import { CommunityTeamPhone } from "@/components/ward-management/community/community-team-phone";
+import {
+  CommunityTeamPhone,
+  CommunityWorthAttention,
+} from "@/components/ward-management/community/community-team-phone";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -100,7 +103,7 @@ describe("the community desk sees its own team only", () => {
   });
 });
 
-describe("a long phone list shows eight rows, then Show more", () => {
+describe("a long list folds only when two or more rows would be hidden (Josh, 31 Oct 2026)", () => {
   function phoneWithRows(count: number) {
     const rows = Array.from({ length: count }, (_, index) => ({
       id: `row-${index}`,
@@ -134,27 +137,39 @@ describe("a long phone list shows eight rows, then Show more", () => {
     );
   }
 
-  it("shows the first eight and names how many more, then all of them", () => {
+  it("shows all nine rows, with no Show more, rather than saying Show 1 more", () => {
     asPhone();
-    phoneWithRows(11);
+    phoneWithRows(9);
+    const list = screen.getByTestId("ward-community-phone-list-ctos");
+    expect(within(list).getAllByTestId(/^fixture-row-/u)).toHaveLength(9);
+    expect(within(list).queryByRole("button", { name: /^Show/u })).toBeNull();
+  });
+
+  it("folds ten rows to eight, names the two more, then shows all of them", () => {
+    asPhone();
+    phoneWithRows(10);
     const list = screen.getByTestId("ward-community-phone-list-ctos");
     expect(within(list).getAllByTestId(/^fixture-row-/u)).toHaveLength(8);
-    const more = within(list).getByRole("button", { name: "Show 3 more in Caseload" });
+    const more = within(list).getByRole("button", { name: "Show 2 more in Caseload" });
     expect(more).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(more);
-    expect(within(list).getAllByTestId(/^fixture-row-/u)).toHaveLength(11);
+    expect(within(list).getAllByTestId(/^fixture-row-/u)).toHaveLength(10);
     expect(within(list).getByRole("button", { name: "Show fewer in Caseload" })).toHaveAttribute(
       "aria-expanded",
       "true",
     );
   });
 
-  it("draws no Show more for eight rows or fewer", () => {
-    asPhone();
-    phoneWithRows(8);
-    const list = screen.getByTestId("ward-community-phone-list-ctos");
-    expect(within(list).getAllByTestId(/^fixture-row-/u)).toHaveLength(8);
-    expect(within(list).queryByRole("button", { name: /^Show/u })).toBeNull();
+  it("Worth attention shows three items in full, and folds four to two with Show 2 more", () => {
+    const three = render(<CommunityWorthAttention items={["One", "Two", "Three"]} data-testid="fixture-attention" />);
+    expect(within(screen.getByTestId("fixture-attention")).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(screen.getByTestId("fixture-attention")).queryByRole("button", { name: /^Show/u })).toBeNull();
+    three.unmount();
+    render(<CommunityWorthAttention items={["One", "Two", "Three", "Four"]} data-testid="fixture-attention" />);
+    const attention = screen.getByTestId("fixture-attention");
+    expect(within(attention).getAllByRole("listitem")).toHaveLength(2);
+    fireEvent.click(within(attention).getByRole("button", { name: "Show 2 more" }));
+    expect(within(attention).getAllByRole("listitem")).toHaveLength(4);
   });
 });
 
