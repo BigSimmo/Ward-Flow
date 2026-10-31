@@ -1331,6 +1331,26 @@ function ReferralBoardRedesign({
                     anchored at the bottom, under the decision. */}
                 {!isPhone ? (
                   <div className={panel.bottomBar}>
+                    {/* Round 4: what can be done here, on every tab. The Place tab pins its own
+                        Decline and Accept; the other tabs offer the way back to them, and a
+                        read-only desk says so. */}
+                    {readOnly ? (
+                      <p className={panel.bottomNote} data-testid="ward-referral-read-only-foot">
+                        Read only at this desk
+                      </p>
+                    ) : inspectorTab !== "place" &&
+                      outcomeLabel(selectedReferral, sender.referralFor(selectedReferral)) === "Queued" ? (
+                      <div className={panel.bottomActions}>
+                        <Button
+                          variant="pri"
+                          size="sm"
+                          onClick={() => setInspectorTab("place")}
+                          data-testid="ward-referral-foot-decide"
+                        >
+                          {wardArm(selectedReferral) ? "Accept or decline" : "Decide"}
+                        </Button>
+                      </div>
+                    ) : null}
                     <PanelNav
                       position={(() => {
                         const index = queued.findIndex((referral) => referral.id === selectedReferral.id);

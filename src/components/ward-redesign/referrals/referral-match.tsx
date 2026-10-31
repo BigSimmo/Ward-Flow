@@ -218,7 +218,9 @@ export function ReferralMatchView({
       </section>
     );
   }
-  if (!ward && phone !== undefined && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
+  // Round 4 (Josh, 31 Oct 2026): the desktop panel uses the same ED review, so Decline and Accept
+  // presentation are anchored at the bottom there too rather than sitting mid-pane.
+  if (!ward && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
     /* v10 phone, ED review: one scrolling sheet with Decline and Accept presentation pinned in the
        foot, as the ward sheet does. Decline opens the reasons as radio rows; Accept asks once. */
     return (
