@@ -204,6 +204,40 @@ const eslintConfig = defineConfig([
       "local/require-z-index-ladder": "error",
     },
   },
+  // Josh, 31 October 2026: the kit's styled confirm ("Leave this page?") replaces the browser's own
+  // pop-up. The browser's confirm, alert and prompt boxes cannot be styled, read as a system error
+  // and block the page; use the kit's dialogs (design/v9/design-system-v9.md). The two files ignored
+  // here still call window.confirm on main; the kit pull request (#1136) moves both onto the styled
+  // confirm, after which their entries come off this list. Never add a file to it.
+  {
+    files: ["src/**/*.{js,jsx,ts,tsx}"],
+    ignores: [
+      ...MOCKUP_IGNORES,
+      "src/components/ward-management/use-dirty-state-guard.ts",
+      "src/components/ward-management/ward-tasks-drawer.tsx",
+    ],
+    rules: {
+      "no-restricted-properties": [
+        "error",
+        ...["window", "globalThis", "self"].flatMap((object) =>
+          ["confirm", "alert", "prompt"].map((property) => ({
+            object,
+            property,
+            message:
+              "Use the kit's styled dialog (ConfirmDialog or Dialog), never the browser's own box (Josh, 31 Oct 2026).",
+          })),
+        ),
+      ],
+      "no-restricted-globals": [
+        "error",
+        ...["confirm", "alert", "prompt"].map((name) => ({
+          name,
+          message:
+            "Use the kit's styled dialog (ConfirmDialog or Dialog), never the browser's own box (Josh, 31 Oct 2026).",
+        })),
+      ],
+    },
+  },
   // Import boundary: production source must not import design-scratch mockup
   // modules. Every legitimate mockup import lives under `src/app/mockups/**` (all
   // 404 in production) or inside the `*-mockups` component sources themselves;

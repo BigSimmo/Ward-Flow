@@ -6,6 +6,8 @@
 > **Ward Flow Baseline Status (Owner Decisions: 25 Sep & 2 Oct 2026):**
 > This document set describes the historical PsychSift design system and token migration layer.
 > For Ward Flow (`BigSimmo/Ward-Flow`), the owner reconfirmed the current local `main` rendered UI as the authoritative visual and behavioral baseline. Historical drawings and token prescriptions do not authorise restyling it; preserve understandable status and accessible controls.
+>
+> **Not Ward Flow rules (31 Oct 2026):** this set's 48px control height (`--spacing-tap`, `min-h-tap`, `min-h-12`) does not set how tall a Ward Flow control is drawn. Ward Flow draws phone buttons at 40px (32px small) and keeps the 48px only as the tap area, through an invisible cover. Ward Flow also allows no coloured side edges. The current Ward Flow rules are in [design-system-v9.md](../../design/v9/design-system-v9.md) section 14 and [HOW-WE-WORK section 6](../ward-flow/HOW-WE-WORK.md#6-owner-rules-that-fail-builds-or-reviews).
 
 The system of record for the v2 design system. **Rules and roles live here; values live
 only in the token files.** Source-of-truth ranking: `AGENTS.md` → `ckb-v2-tokens.css` →

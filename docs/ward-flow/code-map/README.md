@@ -121,7 +121,7 @@ apply the former Database ward-line fold procedure to this repository.
    editing, and never delete them without the owner (protected paths).
 7. **Double-clicking a drawing.** Serve it for historical comparison; opened as a bare file it renders
    differently. The rendered app is the current design authority.
-8. **Appearance and accessible controls.** Preserve the accepted app and understandable status. Historical token/edge-bar prescriptions do not authorise restyling; retain accessible tap targets. Older edge-bar and top-highlight restrictions describe drawings; inspect current scoped tests before changing controls.
+8. **Appearance and accessible controls.** A page's look changes only through a mock-up Josh has approved (D-91); historical token prescriptions do not authorise restyling. Current rules (31 October 2026): no coloured side edges or stripes anywhere, and phone controls drawn at 40px (32px small) with an invisible cover that keeps the 48px tap area. See [HOW-WE-WORK section 6](../HOW-WE-WORK.md#6-owner-rules-that-fail-builds-or-reviews) and inspect current scoped tests before changing controls.
 9. **Mental Health Act wording.** The engine does not calculate legal expiry, but it stores the expiry
    entered from the checked paper form. No screen shows section references or a computed countdown
    ([D-70](../decisions.md#d-70-no-computed-mental-health-act-periods-show-only-the-recorded-due-time-20-october-2026)
