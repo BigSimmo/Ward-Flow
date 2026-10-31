@@ -124,7 +124,7 @@ describe("Home's Activity panel: explicit review", () => {
     const saved = parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY));
     expect(saved?.at).toBe(NOW);
     expect(changesChip()).toHaveTextContent(/^No new changes · Activity$/u);
-    expect(within(panel()).getByRole("status")).toHaveTextContent("2 changes reviewed at 10:42");
+    expect(within(panel()).getByRole("status")).toHaveTextContent("2 changes to synthetic records reviewed at 10:42");
     expect(within(panel()).queryByRole("button", { name: /^Mark these/u })).toBeNull();
 
     fireEvent.click(within(panel()).getByRole("button", { name: "Undo" }));
@@ -167,7 +167,9 @@ describe("Home's Activity panel: explicit review", () => {
       });
     });
     expect(probe.world!.movements.find((movement) => movement.id === target.id)?.escalation).toBeDefined();
-    expect(within(panel()).getByText("1 more change arrived since you opened this")).toBeInTheDocument();
+    expect(
+      within(panel()).getByText("1 more change to synthetic records arrived since you opened this"),
+    ).toBeInTheDocument();
     // The captured list and its button are unchanged; the hero already counts the arrival.
     expect(markTwo).toHaveAccessibleName("Mark these 2 reviewed");
     expect(changesChip()).toHaveTextContent(/^3\s*changes since your review at 09:42 · Review$/u);
