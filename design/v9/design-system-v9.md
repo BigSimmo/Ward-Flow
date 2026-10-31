@@ -12,13 +12,17 @@ Synthetic prototype, not a medical device. This file is the written v9 standard.
 
 Elevate is adopted. Josh approved every Elevate recommendation on 10 October ("Go ahead with all your recommendations"). The appraisal and its board are at https://claude.ai/artifact/KVE47Vcu2F7577MxNtVZCu. It brings one action blue, a lit hero, glass you can see by day and a quiet slate for closed (section 3), the Elevate parts (section 12), Glare mode (section 13), and the fixes now written into sections 3 to 9. The page review calls that were pending are now decided (section 14).
 
+## Changes 31 Oct 2026
+
+The redesign mock-ups (PR #1118) and the kit (`src/components/wf`, PR #1136) changed the standard. Josh's rulings of 31 October are in section 14 and the decision record (D-94). In short: no 48px controls (phone buttons are drawn at 40px and keep a 48px tap area through an invisible cover), no coloured side edges, legal-form times only as typed, the styled "Leave this page?" confirm in place of the browser's box, a typed DD/MM/YYYY date box, and fewer warnings. The patterns that held across Home, Capacity, Waiting and Referrals are in section 17, with a short list of what is still moving.
+
 ## 1. Principles
 
 Eight principles replace the 21 numbered rules. Each one says what to do, not only what to avoid.
 
 1. **Answer first.** Every page answers one question in 5 seconds. Its focal part is in the first screen and gets the most space.
 2. **Calm, dense, aligned.** A compact scale, a 4px rhythm, flush equal columns, tables that grow, and no empty rails.
-3. **Colour means state.** Tone lives in glyphs, the hero and the thin act now edge. Red means act now and nothing else. Words stay neutral ink.
+3. **Colour means state.** Tone lives in glyphs and the hero. Red means act now and nothing else. Words stay neutral ink. No coloured side edges or stripes on rows, cards or tiles (Josh, 31 Oct 2026).
 4. **Shape tells you.** One shape per status. Raised pills press, flat pills label, circles count, dashed means unavailable.
 5. **Materials have roles.** Solid surfaces for content, frosted glass for chrome and overlays, deep slate for the hero. Never glass on data.
 6. **Live and honest.** Values show their age and mark themselves when they change. Counts reconcile. Nothing claims more than it shows.
@@ -44,7 +48,9 @@ One switch, carried from v8. Every colour token is `light-dark(day, night)`, res
 
 At night a surface gets lighter as it rises, because shadows do not show on a dark canvas.
 
-**Tone.** Glyphs, edges and marks take the tone (`--wf-danger` and so on). Words that stand alone, such as an error message, take the `-ink` partner. Cards, rows and tiles take no tinted fill, except a free or fit place, which keeps its soft fit tint. An act now item takes a thin 1px edge in `--wf-act-edge` through `.edge-act`, never a fill. On the hero, glyphs take the on-hero tones.
+**Tone.** Glyphs and marks take the tone (`--wf-danger` and so on). Words that stand alone, such as an error message, take the `-ink` partner; a figure beside its glyph may take it too. Cards, rows and tiles take no tinted fill, except a free or fit place, which keeps its soft fit tint, an act now row, which keeps the act tint, and at most one most-urgent item per page, which may take `color-mix(in srgb, var(--wf-danger) 6%, var(--wf-surface))`. On the hero, glyphs take the on-hero tones.
+
+**No side edges (Josh, 31 Oct 2026: "it feels tacky").** Never show status, selection or act now with a coloured left or right edge, a stripe, an inset bar or a tone-coloured border. Instead: the StatusGlyph before the label or value; a small tinted tag on a row; selected as the selected tint with a neutral border; borders stay neutral (`--wf-line`). `tests/wf-no-side-stripes.test.ts` keeps the kit free of them and stops the rest of the app adding more.
 
 **Accent.** One clear blue means you can act here. `--wf-accent` is `light-dark(#245a8c, #8cbcf0)`. The primary button runs from `--wf-pri-1` `light-dark(#2f6aa3, #3a72a8)` to `--wf-pri-2` `light-dark(#234f7a, #2c5c8c)`. White text holds at least 4.9:1 on every primary stop. Data bars (`--wf-data-*`) stay slate, so blue never reads as data. Red and amber keep their meanings.
 
@@ -108,7 +114,7 @@ Five sizes on a page. The 12px floor holds with no uppercase exception.
 
 **Radius.** 6, 10, 12, 16 and 22, and pills. Corners are concentric: an inner radius is the outer radius less the inset, rounded to the scale. A 16px card with an 8px inset holds 8 to 10px parts. No square corners.
 
-**Targets.** At least 28px for anything a pointer clicks on desktop (`--wf-target`). 24px only inline in running text. 44px on phone and touch: on a coarse pointer a smaller control reaches 44px through a hit area, not a bigger face. Hero chips sit on one 32px face with a 36px hit area. Passive badges and the live chip keep their size on touch.
+**Targets.** At least 28px for anything a pointer clicks on desktop (`--wf-target`). 24px only inline in running text. Desktop segmented and pill tabs are 30px at 13px. On a phone or a coarse pointer every control keeps a 48px tap area, but no control is drawn 48px tall (Josh, 31 Oct): a button is drawn at 40px (32px small) and an invisible `::after` cover above and below it (and beside an icon-only one) makes up the 48px; tabs are 32px inside a 40px track; chips are 34px; the full-width Show more row is 40px with its cover below it only, so it never takes a tap meant for the row above. Placement decisions (Accept, Pull and Decline, `data-placement-action`) keep their full-size button. Hero chips sit on one 32px face with a 36px hit area. Passive badges and the live chip keep their size on touch. Page CSS tests check the tap area with `tests/helpers/css-tap-area.ts`, which accepts either the cover or an old-style 48px `min-height`.
 
 **Density.** One setting in Settings, set as `data-density` on the shell. Every row reads `--wf-row`. Density also binds beds, controls and card heads, not just rail rows.
 
@@ -155,7 +161,7 @@ Quick in, quicker out. Nothing moves without a reason, and nothing bounces on da
 - **Checks.** A page that watches conditions lists them in the hero foot (`.hero-checks`): each with its count, zeros quiet, and what it cannot check last with a cross and the reason.
 - **Entity pages** (one ward, ED or team) carry a switcher in the title and may show their siblings as a `PressureStrip` in navigate mode.
 - **Reflow.** A 1280px desktop at 200% zoom is 640px wide. At 48rem every layout collapses to one column without losing an action (WCAG 1.4.10).
-- **Phone** is its own design at 390 by 844, never a reflow of desktop and never a change to it. A priority list, cards with their one action, bottom sheets, a sticky bottom bar and a segmented control. Names 14, meta 12, rows tap as a whole, row actions at least 36px and the bottom bar 44px. Chip rows and tabs that overflow scroll with an edge fade, never a hard cut. Phone charts compress time after 8 hours and keep the outliers.
+- **Phone** is its own design at 390 by 844, never a reflow of desktop and never a change to it. A priority list, cards with their one action, bottom sheets, a sticky bottom bar and a segmented control. Names 14, meta 12, rows tap as a whole, and row actions are kit buttons with the 48px tap cover (section 5). Chip rows show the count first and slide in one row with a soft edge fade (`phoneRows.chipRow`); a chip whose count is 0 is muted and moves to the end. Tabs that overflow scroll the same way, never a hard cut. In the dark hero band, Home's 40px pill (`phoneRows.heroPill`) replaces tall full-width hero buttons. Phone charts compress time after 8 hours and keep the outliers.
 
 ## 8. Accessibility
 
@@ -166,14 +172,14 @@ Quick in, quicker out. Nothing moves without a reason, and nothing bounces on da
 - **Live updates.** One polite live region per page, batched once a minute, announcing only act now changes, such as "2 new act now". Never a running tally.
 - **Keyboard.** Arrow keys (and J and K) move through rows and tiles, Enter opens, Escape closes the top layer only and returns focus to what opened it. Timeline marks are reachable by arrow keys. Each page has a skip link (`.skip`) to its focal part. One item in every tab list holds the tab stop.
 - **Tips.** A tip stays while the pointer moves onto it (120ms grace), Escape hides it until the next hover or focus, and it never uses `pointer-events: none` (WCAG 1.4.13).
-- **Truncation.** Truncated text shows in full on focus as well as hover, and stays in the accessible name.
+- **Truncation.** Names of people and places are never cut: they wrap onto a second line in full, surname first. Other truncated text shows in full on focus as well as hover, and stays in the accessible name.
 - **Anything revealed on hover** (row actions `.ra`, timeline links) is also revealed on focus and selection, and always shows on touch.
 - **Preferences.** Reduced motion, reduced transparency, increased contrast, forced colours and print are all handled in the sheet.
 
 ## 9. Patterns
 
 - **Actions.** The page owns its top bar action. The hero holds facts and one primary. A row has one quiet action that appears on hover, focus or selection. One primary per area.
-- **Feedback.** An action changes state at once, then a toast reports it with Undo when the step can be undone. A confirm sheet is only for steps that cannot be undone.
+- **Feedback.** An action changes state at once, then a toast reports it with Undo when the step can be undone. A confirm sheet is only for steps that cannot be undone. Leaving with unsaved work asks with the kit's styled confirm (`requestConfirm`), never the browser's own `confirm`, `alert` or `prompt` box, which ESLint blocks outside the confirm's no-host fallback.
 - **States.** Every component uses one wording and look for each state:
 
 | State          | Look                                                                                     | Words                                                              |
@@ -192,7 +198,7 @@ Quick in, quicker out. Nothing moves without a reason, and nothing bounces on da
 | Frozen         | Flat live chip, neutral dot, no pulse                                                    | "Frozen 06:00", for a snapshot on purpose                          |
 | Changed        | 1px accent edge, the saved point marked, a reset                                         | "Back to saved"                                                    |
 
-- **Filters.** At most three visible, the rest in a More menu. A filter either hides or highlights, and the control says which.
+- **Filters.** At most three visible, the rest in a More menu. A page's filter and highlight chips sit together in one row, and a chip with nobody in it is hidden (Referrals, approved 31 Oct). A filter either hides or highlights, and the control says which.
 - **Highlight.** Highlight chips (`HighlightPills`) sit in their own row and may run to six, count first. Matching rows stay as they are, the rest dim with `--wf-dim`, and a note says "2 of 7 highlighted, all rows stay" with Clear. Queues of 100 rows or fewer highlight matching rows by default and dim the rest. Delays keeps hiding rows, by owner ruling.
 - **Charts as filters.** A bar or mark may be a highlight button with `aria-pressed` and arrow keys, and the caption says what it highlights. One labelled dashed reference line per chart (`RefLine`, `.chart-ref`), drawn by one recipe through the `--wf-ref-*` tokens. A threshold you can move uses the Stepper.
 - **Inputs.** An input resets the browser's inner focus and takes the one ring. It has hover, invalid and disabled states.
@@ -200,57 +206,74 @@ Quick in, quicker out. Nothing moves without a reason, and nothing bounces on da
 - **One control per value.** A stepper or a slider, never both. The 12px floor holds inside controls, range ends included.
 - **Print.** Controls carry `data-print-hide`. Print also hides row actions, toasts, tips, menus and drawers, and repeats table headers on each page. Print is ink on white with no glass or shadow, grids collapse to one column, cards and rows never split across pages, and every printed page shows its window and when it was generated.
 - **Counts.** Each figure has one source. "N of M" only when N rows are shown, otherwise "Top 10 of 70". Hero chips, tab counts and list lengths agree.
-- **Content.** Dates as "Fri 9 Oct". 24 hour time. Durations from one formatter (`durText`) with no seconds: under 1h as 45m, under 48h as 3h 20m, from 48h as 7d 1h, never "169h 0m". A list may add a relative part in ink-3: "Fri 16 Oct, in 7d", "2d ago". Thousands separators. Percentages to one decimal place. A colon means clock time only. Counts must reconcile across a page: the hero, a tile and a list never disagree about the same thing. Legal forms are named by their Mental Health Act 2014 form name and period, not a section number, unless the section has been verified. Where the app does not check a legal limit it says "Legal limits not checked here".
+- **Content.** Dates as "Fri 9 Oct". 24 hour time. Durations from one formatter (`durText`) with no seconds: under 1h as 45m, under 48h as 3h 20m, from 48h as 7d 1h, never "169h 0m". A list may add a relative part in ink-3: "Fri 16 Oct, in 7d", "2d ago". Thousands separators. Percentages are whole numbers on cards, rows and chips (86%, Capacity, approved 31 Oct); one decimal place only in a report table where the difference matters. A colon means clock time only. Counts must reconcile across a page: the hero, a tile and a list never disagree about the same thing. Legal forms are named by their Mental Health Act 2014 form name and period, not a section number, unless the section has been verified. Where the app does not check a legal limit it says "Legal limits not checked here". Say a time once: "Sent 3 days ago · Due 2 days ago", not the clock time and the relative time side by side. Legal-form times are shown only as typed, never as a countdown, "due in" or "passed … ago", and never used to order a list (D-93, replacing D-71 item 5).
+- **Warnings.** Fewer, kept only where an owner rule or a real risk needs them (Josh, 31 Oct). Say each once, quietly, as a glyph and words rather than a coloured box. Safeguard wording stays word for word. A missing fact reads "Not recorded" in ink-3, amber only where the gap stops the next step.
 - **Age.** Every confirmed figure shows its age ("15m since confirmed"). Past its threshold it takes the amber circle and names the action.
+- **Header strip, stat rows and graphs (Josh, 31 Oct 2026: "I like your choices").** From the Waiting mock-up, rounds 5 and 6 (`ward-redesign/waiting/waiting-polish.module.css`, branch `claude/project-thread-li661n`, 33e932ea8). Full note: `waiting-mockup/design-system-note-graphs-and-header.md` in the build folder.
+  - _At a glance strip._ One slim line in the dark band under a `--wf-on-hero-div` hairline, never boxed tiles. Each item is a 14px icon in its hero night tone, a quiet 12px label (`--wf-hero-ink-2`) and a bold value; extra detail in `--wf-hero-ink-3`. 1px dividers between items. A person item opens their row and shows a chevron. At most one small on-hero action, 26px high.
+  - _Summary stat row._ One container: 1px `--wf-line` border, `--wf-surface-2` fill, 4px padding. Each stat is a 28px rounded icon chip tinted with its tone at 13%, a bold 18px mono figure, then 13px words in ink-2, with hairline dividers between stats. Never separate boxes or a side note; caveats go in the key line.
+  - _Graph cards._ Each tab has a 14px icon: accent on the selected tab, 75% opacity on the rest. Sub-switch labels (Rows, Columns) have a 13px icon. One key line under the tabs, which keeps safeguard wording word for word ("Not legally checked.").
+  - _Heat maps._ Flat 6px cells with 3px gaps and no borders, one sequential accent ramp from 6% to 42% keyed "Fewer … More". An empty cell is a faint outline with a dash. Column heads are small capitals in ink-3 at the 12px floor (Josh, 31 Oct, 09:54; the first mock-up drew them at 11px).
+  - _Dot plots._ Every other lane faintly shaded, the grid at about 55% opacity, the reference line labelled with a small pill ("8h"). Piles stack at most five high, then a "+n" pill.
+  - _Named timelines_ ("next N hours"). Names in a list in time order, each with a marker on one shared track, rather than bars counting people per slot. Never a second unlabelled scale.
+  - _Status colour._ Warning, danger, success and info carry state only, always with a glyph and words. Text uses the ink tokens, never a series colour.
 
 ## 10. Components
 
 `src/components/wf` is the one library. The v8 contracts (v8 section 8) carry over. v9 changes:
 
-| Class                                                    | Component                                           | v9                                                                                    |
-| -------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `.b`                                                     | `Button`                                            | Hover and press by colour steps. Press scale 0.97. Busy via `aria-busy`               |
-| `.pt`, `.pt.slide`                                       | `Tabs`, `Segmented`                                 | 30px items, 28 small. The sliding capsule moves under the selected item               |
-| `.hs`, `.hs.pill`                                        | `HeroStat`                                          | A compact chip: figure at 15 mono, 12px glyph, label. Flat reports, raised presses    |
-| `.st`                                                    | `Stat`                                              | Figure at 15 mono                                                                     |
-| `.k`, `.tier`                                            | `Count`, `TierTile`                                 | Mono. T1 stays neutral (ruling, 10 Oct)                                               |
-| `.row`, `.li`                                            | Rows                                                | Height from density. `.ra` row action. `.enter` and `.leave` motion. Inset focus ring |
-| `.card.click`                                            | `Card`                                              | Hover steps the edge and shadow                                                       |
-| `.cols`, `.card-scroll`                                  | `Columns` (new)                                     | Flush equal columns, `.follow` scrolls inside                                         |
-| `.glass.bar`, `.glass.sheet`                             | Bars, `Sheet`, `Drawer`                             | Glass tiers by role                                                                   |
-| `.drawer`, `.sheet-phone`, `.menu`, `.pop`, `.toast`     | Overlays                                            | `.enter` and `.leave` motion. The toast has a dark fill and an Undo button            |
-| `.pulse.tick`                                            | `LiveChip`                                          | Pulses once per refresh                                                               |
-| `.chg`, `.bump`                                          | `LiveValue` (new)                                   | Marks a changed figure and pops its glyph                                             |
-| `.skip`                                                  | `SkipLink` (new)                                    | Goes to the page's focal part                                                         |
-| `.hp-note`, `.fc[aria-pressed]`                          | `HighlightPills` (new)                              | Count first, dims the rest, says "all rows stay"                                      |
-| `.gates`, `.gate`, `.pips`                               | `GateStrip`, `Pips` (new)                           | Verdict, pips, one cell per gate with its owner. First open gate holds the primary    |
-| `.steps`, `.frac`, `.people`                             | `Steps`, `Frac`, people pips (new)                  | Legs of a trip, done of more than five, one pip per person                            |
-| `.tax`                                                   | `TimeAxis` (new)                                    | Piecewise stops, hatched compressed tail, shape marks as buttons                      |
-| `.wm`                                                    | `WaitMeter` (new)                                   | Fixed 24h with an 8h tick, quiet time hatched                                         |
-| `.age`, `.lv.held`, `.lv.frozen`                         | `Age`, `LiveChip` (new states)                      | Record age, stale words, Held and Frozen                                              |
-| `.hj`, `.hero-drawer`, `.hero-checks`                    | `HeroJump`, `HeroStat expanded`, `HeroChecks` (new) | Hero jumps, the strip under the hero, the Checking foot                               |
-| `.bs`                                                    | `BedStrip` (new)                                    | One cell per bed with named states, `aria-label` spells out the counts                |
-| `.ready`, `.ready-row`, `.lockline`                      | `ReadyList`, locked primary (new)                   | What is left, and why the primary waits                                               |
-| `.ps`                                                    | `PressureStrip` (new)                               | Flush peers. Select mode, or navigate with `aria-current`                             |
-| `.rule`, `.range`                                        | `RuleRow` (new)                                     | Value, live effect, pages that read it, saved point, Back to saved                    |
-| `.triage`                                                | `TriageColumns` (new)                               | Act now, Later today, Done. Ticked work moves across                                  |
-| `.ladder`                                                | `Ladder` (new)                                      | Who to call next and when                                                             |
-| `.bl`                                                    | `BarList` with `onPick`                             | Bars as highlight buttons with one `RefLine`                                          |
-| `.hrun`                                                  | `TimeRail` hero (new)                               | The shift on the hero: passed fill, dashed window, Now, marks as buttons              |
-| `.crail`                                                 | `TimeRail` card (new)                               | Expiries from Now in two label lanes, clusters as +n, a Passed bay                    |
-| `.dayb`                                                  | `TimeRail` day (new)                                | 24h per contact with Now, words say until when and who next                           |
-| `.gantt`, `.scrub`                                       | `Gantt`, `Scrubber` (new)                           | Ward rows of arrival capsules, a slid time recounts free beds                         |
-| `.spread`, `.lanes`                                      | `TimeLanes` (new)                                   | One lane per owner or event kind, shape marks stack, tail folded past 24h             |
-| `.ftiles`                                                | `FilterTile` (new)                                  | Ring, beds, over-threshold count and four figures. Pressing highlights the table      |
-| `.caprows`                                               | `CapacityBarRow` (new)                              | Stacked bed states with a movable dashed alert line. Rows are buttons                 |
-| `.pinc`                                                  | `PinCompare` (new)                                  | Up to three wards against the network. Worse takes the amber circle                   |
-| `.fc48`                                                  | `RangeColumns` (new)                                | Now solid, estimates with a range whisker and an estimate caption                     |
-| `.gaps`                                                  | `GapTiles` (new)                                    | Need, verdict, signed gap, fit against waiting. A real table                          |
-| `.thbar`                                                 | `ThresholdBar` (new)                                | Two settings as one bar, boundaries follow the steppers                               |
-| `.gm`                                                    | `Frac` matrix (new)                                 | Sites by requirement in fraction pills. Press a site to scope the summary             |
-| `.chart-grid`, `.chart-now`, `.chart-ref`, `.chart-tick` | Chart primitives                                    | Faint gridline, Now line, the one dashed reference, edge-aware ticks                  |
+| Class                                                    | Component                                           | v9                                                                                                                                                                                                                      |
+| -------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.b`                                                     | `Button`                                            | Hover and press by colour steps. Press scale 0.97. Busy via `aria-busy`. On a phone 40px (32px `.sm`) with the 48px tap cover; placement actions keep full size                                                         |
+| `.pt`, `.pt.slide`                                       | `Tabs`, `Segmented`                                 | 30px items at 13px, 28 small. On a phone 32px items in a 40px track. The sliding capsule moves under the selected item                                                                                                  |
+| `.hs`, `.hs.pill`                                        | `HeroStat`                                          | A compact chip: figure at 15 mono, 12px glyph, label. Flat reports, raised presses                                                                                                                                      |
+| `.st`                                                    | `Stat`                                              | Figure at 15 mono                                                                                                                                                                                                       |
+| `.k`, `.tier`                                            | `Count`, `TierTile`                                 | Mono. T1 stays neutral (ruling, 10 Oct)                                                                                                                                                                                 |
+| `.row`, `.li`                                            | Rows                                                | Height from density. `.ra` row action. `.enter` and `.leave` motion. Inset focus ring                                                                                                                                   |
+| `.card.click`                                            | `Card`                                              | Hover steps the edge and shadow                                                                                                                                                                                         |
+| `.cols`, `.card-scroll`                                  | `Columns` (new)                                     | Flush equal columns, `.follow` scrolls inside                                                                                                                                                                           |
+| `.glass.bar`, `.glass.sheet`                             | Bars, `Sheet`, `Drawer`                             | Glass tiers by role                                                                                                                                                                                                     |
+| `.drawer`, `.sheet-phone`, `.menu`, `.pop`, `.toast`     | Overlays                                            | `.enter` and `.leave` motion. The toast has a dark fill and an Undo button, and sits `--wf-toast-dock-gap` above the phone dock. The close button takes focus with a calm 2px accent ring, keyboard only                |
+| `.pulse.tick`                                            | `LiveChip`                                          | Pulses once per refresh                                                                                                                                                                                                 |
+| `.chg`, `.bump`                                          | `LiveValue` (new)                                   | Marks a changed figure and pops its glyph                                                                                                                                                                               |
+| `.skip`                                                  | `SkipLink` (new)                                    | Goes to the page's focal part                                                                                                                                                                                           |
+| `.hp-note`, `.fc[aria-pressed]`                          | `HighlightPills` (new)                              | Count first, dims the rest, says "all rows stay"                                                                                                                                                                        |
+| `.gates`, `.gate`, `.pips`                               | `GateStrip`, `Pips` (new)                           | Verdict, pips, one cell per gate with its owner. First open gate holds the primary                                                                                                                                      |
+| `.steps`, `.frac`, `.people`                             | `Steps`, `Frac`, people pips (new)                  | Legs of a trip, done of more than five, one pip per person                                                                                                                                                              |
+| `.tax`                                                   | `TimeAxis` (new)                                    | Piecewise stops, hatched compressed tail, shape marks as buttons                                                                                                                                                        |
+| `.wm`                                                    | `WaitMeter` (new)                                   | Fixed 24h with an 8h tick, quiet time hatched                                                                                                                                                                           |
+| `.age`, `.lv.held`, `.lv.frozen`                         | `Age`, `LiveChip` (new states)                      | Record age, stale words, Held and Frozen                                                                                                                                                                                |
+| `.hj`, `.hero-drawer`, `.hero-checks`                    | `HeroJump`, `HeroStat expanded`, `HeroChecks` (new) | Hero jumps, the strip under the hero, the Checking foot                                                                                                                                                                 |
+| `.bs`                                                    | `BedStrip` (new)                                    | One cell per bed with named states, `aria-label` spells out the counts                                                                                                                                                  |
+| `.ready`, `.ready-row`, `.lockline`                      | `ReadyList`, locked primary (new)                   | What is left, and why the primary waits                                                                                                                                                                                 |
+| `.ps`                                                    | `PressureStrip` (new)                               | Flush peers. Select mode, or navigate with `aria-current`                                                                                                                                                               |
+| `.rule`, `.range`                                        | `RuleRow` (new)                                     | Value, live effect, pages that read it, saved point, Back to saved                                                                                                                                                      |
+| `.triage`                                                | `TriageColumns` (new)                               | Act now, Later today, Done. Ticked work moves across                                                                                                                                                                    |
+| `.ladder`                                                | `Ladder` (new)                                      | Who to call next and when                                                                                                                                                                                               |
+| `.bl`                                                    | `BarList` with `onPick`                             | Bars as highlight buttons with one `RefLine`                                                                                                                                                                            |
+| `.hrun`                                                  | `TimeRail` hero (new)                               | The shift on the hero: passed fill, dashed window, Now, marks as buttons                                                                                                                                                |
+| `.crail`                                                 | `TimeRail` card (new)                               | Recorded times from Now in two label lanes, clusters as +n, a Passed bay. Legal-form times as typed, never a computed expiry or countdown (D-93)                                                                        |
+| `.dayb`                                                  | `TimeRail` day (new)                                | 24h per contact with Now, words say until when and who next                                                                                                                                                             |
+| `.gantt`, `.scrub`                                       | `Gantt`, `Scrubber` (new)                           | Ward rows of arrival capsules, a slid time recounts free beds                                                                                                                                                           |
+| `.spread`, `.lanes`                                      | `TimeLanes` (new)                                   | One lane per owner or event kind, shape marks stack, tail folded past 24h                                                                                                                                               |
+| `.ftiles`                                                | `FilterTile` (new)                                  | Ring, beds, over-threshold count and four figures. Pressing highlights the table                                                                                                                                        |
+| `.caprows`                                               | `CapacityBarRow` (new)                              | Stacked bed states with a movable dashed alert line. Rows are buttons                                                                                                                                                   |
+| `.pinc`                                                  | `PinCompare` (new)                                  | Up to three wards against the network. Worse takes the amber circle                                                                                                                                                     |
+| `.fc48`                                                  | `RangeColumns` (new)                                | Now solid, estimates with a range whisker and an estimate caption                                                                                                                                                       |
+| `.gaps`                                                  | `GapTiles` (new)                                    | Need, verdict, signed gap, fit against waiting. A real table                                                                                                                                                            |
+| `.thbar`                                                 | `ThresholdBar` (new)                                | Two settings as one bar, boundaries follow the steppers                                                                                                                                                                 |
+| `.gm`                                                    | `Frac` matrix (new)                                 | Sites by requirement in fraction pills. Press a site to scope the summary                                                                                                                                               |
+| `.chart-grid`, `.chart-now`, `.chart-ref`, `.chart-tick` | Chart primitives                                    | Faint gridline, Now line, the one dashed reference, edge-aware ticks                                                                                                                                                    |
+| `ShowMoreRow`                                            | `ShowMoreRow` (kit, 31 Oct)                         | The one Show more: a full-width row at a list's foot, centred 600 text, a line above, 40px. The caller's words                                                                                                          |
+| `SearchField`                                            | `SearchField` (kit, 31 Oct)                         | One look for every page search box                                                                                                                                                                                      |
+| `TimePresets`                                            | `TimePresets` (kit, 31 Oct)                         | Now, +15m, +30m, +1h beside a time. A legal-form time offers Now only                                                                                                                                                   |
+| `DateField`                                              | `DateField` (kit, 31 Oct)                           | Typed DD/MM/YYYY (also . - or space, or eight digits), hands the page YYYY-MM-DD, invalid when not a real day, never pre-filled. Never the browser's date picker                                                        |
+| `ConfirmHost`, `requestConfirm`                          | Styled confirm (kit, 31 Oct)                        | An alertdialog with no close cross. "Leave this page?", "Leave without saving", "Keep editing". Focus starts on Keep editing; Escape or a press outside keeps the work. Back and Forward are undone first, then it asks |
+| `phoneRows.chipRow`, `.chip`, `.zero`, `.heroPill`       | Phone rows (kit, 31 Oct)                            | One sliding chip row with an edge fade, 34px chips with the 48px tap area, zero chips muted and last, Home's 40px hero pill                                                                                             |
 
 Still to build as shared parts, each when its page is next touched (owner, 10 Oct): `ViewSwitch`, `WardCapacityRow`, `GroupHead`, `NeedsYou`, `KeyHints`, `RecordCard` and `RailSummary`. The live board for the new parts and the charts is the board's Parts tab.
+
+**Kit code.** A module-level variable that a component's handler reads or writes goes stale under the React Compiler: change it only in plain functions outside the component (this stopped the styled confirm answering in the built app, fixed in #1136).
 
 **State matrix.** Every interactive component documents, on the board, how it looks in each of: default, hover, pressed, focus, selected, disabled, busy, error, empty and stale, in day and night. The board's Controls tab shows the matrix for buttons, tabs, chips, rows and bed tiles.
 
@@ -288,7 +311,7 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 ## 14. Owner rulings in force
 
 - 12px floor, no uppercase exception (O-15.1).
-- Colour lives in glyphs and the hero. Red means act now. Act now items take a thin edge, never a fill (9 Oct).
+- Colour lives in glyphs and the hero. Red means act now. Act now items take the act tint and their glyph, never a side edge (31 Oct; replaces the 9 Oct thin edge).
 - Compact sizing and smaller text (9 Oct).
 - Phone is its own design (9 Oct).
 - Every page has a focal part, a part of its own and a page-specific hero (9 Oct).
@@ -300,6 +323,16 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 - From the 10 Oct page review, decided: a faint overdue zone on time axes only, highlight by default on queues, strip figures at 15 with 20 only in one focal strip per page, 8px people pips, and the shared parts in section 10 built when each page is next touched.
 - Elevate adopted (10 Oct): one action blue, the lit hero, glass you can see by day, closed in slate, the parts in section 12, Glare mode, and the fixes in sections 3 to 9.
 - Tier time thresholds remain synthetic and need clinical sign-off.
+- No 48px controls (31 Oct). A phone button is drawn at 40px (32px small) with an invisible cover that keeps the 48px tap area; tabs 32px in a 40px track; desktop segmented and pill tabs 30px at 13px. Placement decisions keep their full-size button. The 12px floor stays (section 5).
+- No coloured side edges, stripes or tone-coloured borders on rows, cards, tiles or stat boxes (31 Oct: "it feels tacky"; section 3).
+- Legal-form times only as typed, never a countdown (31 Oct, D-93 replacing D-71 item 5).
+- The styled "Leave this page?" confirm replaces the browser's pop-up (31 Oct).
+- Dates typed in the kit's DD/MM/YYYY box (31 Oct).
+- Fewer warnings, kept only where required; safeguard wording word for word (31 Oct).
+- The Waiting header strip, summary stat row and graph styles (31 Oct, 09:42: "I like your choices"; section 9).
+- Pop-ups have a status tag beside the title, tabs inside when there is a lot to show, and pinned bottom actions (31 Oct; section 17).
+- The drawer that lists what needs doing is headed "Alerts", not "Tasks". Pinned sidebar pages last for the open browser tab only (D-91).
+- Kept: surname first, names wrap in full, nothing pre-selected, safeguard wording word for word, synthetic data only.
 
 ## 15. Next steps
 
@@ -308,11 +341,59 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 3. **Point the in-app Design showcase at the v9 tokens file**, so it can no longer teach v6.
 4. **Rebuild pages against v9**, weakest first, as the 10 October appraisal set out. Bring in each Elevate part with the first page that needs it.
 5. **Check Night shift mode for contrast** before it is built.
+6. **Build the redesign (31 Oct).** The kit (#1136), then the frame, then notices and Home, then one page per pull request, each after Josh approves its mock-up and each deleting its mock-up copy (`design/core-pages-review-2026-10/BUILD-PLAN.md`). Each page build removes its own coloured side edges and lowers the baseline in `tests/wf-no-side-stripes.test.ts`.
 
 ## 16. Verified and not verified
 
 - **Verified.** Before this PR was slimmed, the reference board on the backup branch rendered from its sheet in Chromium (Playwright) in day and night, desktop and phone, with no script errors and no sideways scroll. Every `var(--wf-*)` that sheet reads is defined. Contrast figures for the new values come from the token values. The HTML board and unused v9 CSS are kept on `backup/claude/design-system-v7-4ygmui-pre-slim-20261010` and are not part of this lean PR.
 - **Not verified.** The app pages have only had a first visual check on v9 tokens (six pages, day and night, 1440 and 390). High contrast and print were checked by reading the rules, not on a ward PC or a printer. Backdrop blur performance on ward PCs is unmeasured. Edge support for `light-dark()` on WA Health desktops is unconfirmed. Glare mode has not been tried on a ward PC near a window.
+
+## 17. Redesign patterns (31 Oct 2026)
+
+Learnt from the redesign mock-ups (PR #1118: Home, Capacity, Waiting and Referrals, with the kit in `src/components/wf`). Josh approved the Waiting patterns at 09:42, every other page and pop-up except Capacity, Waiting and Referrals at 09:04, Capacity at 10:07, Referrals at 10:22 and Waiting round 8 at 10:26. The rules below are the ones that held across all four pages. Anything still moving is listed at the end.
+
+**Pages.**
+
+- **Restructure, not restyle.** For every part ask what job it does, whether that job is done elsewhere, and whether it belongs here. Each piece of information lives in one right place. One job each: Capacity's bed map shows where the free beds are now, All wards is the table to compare wards, Places is the directory.
+- **Slim header strip, not a short header.** The dark band keeps its normal height and carries the title, the one "at a glance" strip and at most one small on-hero action. Bulky blocks and boxed figure tiles in the band become the strip (Waiting, and Referrals' beds-ready line); never shrink the band itself to save space (Josh, 31 Oct).
+- **Open on something useful.** A list-and-panel page opens its panel on the first useful item, never empty, unless an owner rule says otherwise (Home's Placement panel does not open on a patient).
+- **Show the first rows, then Show more.** A list longer than about eight rows shows its first rows, then the kit's `ShowMoreRow` ("Show 8 more", "Show fewer"). Never a small box that scrolls inside a panel.
+- **Group repeats.** Several identical items become one row with one action ("Chase all").
+- **One filled button per row or panel.** The rest are quiet.
+- **One design for every desk.** Role versions of a page share one layout and differ only in what the desk may see or do (Capacity: the bed manager sees its own site's bed types, the executive sees counts only and no names). A control a desk can never use is not shown; a control that is unavailable for now stays, `aria-disabled` with its reason.
+- **Checklists** (Waiting's daily check, approved 31 Oct): one head line with the count by kind, the bulk action ("Mark all 17 checked") and Hide; the people as a grid of one-line cards, three across on a laptop, each with its time and opening that person; the first nine, then Show more. A check that needs looking first keeps that rule (open the list before marking it checked).
+- **Chips together.** A page's filter and highlight chips sit in one row, and a chip with nobody in it is hidden. Phone chip rows show the count first and slide in one row with a soft edge fade (`phoneRows.chipRow`), never cut off.
+- **Fewer warnings.** Keep a warning only where an owner rule or a real risk needs it, say it once, and keep it quiet: a small glyph and words, not a coloured box. Safeguard wording stays word for word ("Not legally checked.", "Legal limits not checked here"). Missing facts read "Not recorded" in ink-3, with amber only where the gap stops the next step. How (Capacity, approved 31 Oct): a caveat becomes one short line with the full sentence one tap away ("Distance only, not suitability"); a line that repeats "How this is worked out" goes; a conditional warning shows only when it applies (the confirmation limit only when a count is overdue); a card with nothing to note has no note line; the page foot is one short line. Keep a caveat that changes how a figure is read ("Estimate only", "range only").
+- **Names.** Surname first, in full, wrapping onto a second line rather than being cut ("Jenkinwood, Sarah"). Place names wrap in full too. The line under a name adds only what nothing else on the row says.
+- **Short time words.** Say a time once: "Sent 3 days ago · Due 2 days ago". Legal-form times are only shown as typed (D-93).
+- **Less is more.** Josh dropped extra marks that added clutter on review (names on chart bubbles, a "None fit" tag, an extra tab). Add a mark, tag or tab only when it answers a question the page cannot already answer.
+
+**Pop-ups and side panels.** One anatomy for every dialog, sheet and side panel.
+
+- **Header:** the subject's name, then a small status tag beside it ("1 ready" in green, "None ready" in amber, "Your move"), then one quiet line of context (hospital and health service, or where the person is). The close button takes focus with the calm 2px accent ring. No second "Back" link when the close button does the same job.
+- **Summary first.** The panel opens on a short Summary. Long lists move behind tabs inside the panel (Summary and Wards; Ward and Discharges), each tab showing its count ("5 declined · 13 to ask"). Switches take their natural width, not the panel's.
+- **Facts as label and value.** Key facts sit in short titled groups ("Today", "Ward") with the label on the left in ink-2 and the value on the right. Three to five facts, never a long two-column list, and nothing the header already says.
+- **Notes as one list.** Blocked, escalated and clearance notes sit together as one compact list, each with a small icon, rather than as separate boxes.
+- **Actions pinned at the foot.** The panel's actions sit in a footer pinned to the bottom of the panel, kit-sized, one filled. Actions that belong to the subject's whole story (Escalate, Journey) may stay at the top.
+- **Documents as chips.** A document is a chip you can press to open it. In the synthetic prototype it opens a clearly marked synthetic preview.
+- **Forms open blank.** Nothing is pre-selected: no day, no legal answer, no ward. Secondary forms (Close to admissions) sit behind their own row and open only when needed or already in use.
+- **Leaving with unsaved work** asks with the kit's styled confirm (`requestConfirm`, an alertdialog with no close cross): "Leave this page?", with "Leave without saving" and "Keep editing". Focus starts on "Keep editing", and Escape or a press outside keeps the work. The browser's own `confirm`, `alert` and `prompt` boxes are never used (ESLint blocks them).
+
+**Graphs and grids** (add to the Waiting patterns in section 9).
+
+- **Heat-map grids** show the number alone in each cell, the shade deepening as it grows, with an empty day as a faint dot. Days that may still move (after tomorrow) carry a fine hatch, the same hatch the chart uses, so "may move" looks the same everywhere. A planned item is a small accent "+1" in the cell's corner. Day heads are two lines (Sat over 31), today in accent blue, and each row ends with its total. Column heads stay at the 12px floor (Josh, 31 Oct).
+- **Bed pictures.** A ward's beds read as one picture: "1 ready of 20 beds", the bed type as a tag, the bed squares, then one line with occupied, on leave, pulled and closed. On a bed map card the ready figure leads on the right, green, grey at 0, with "19 of 24 occupied" under the name; the bed squares always fit one line; the small note line ("2 pulled · 3 closed · 1 on leave") shows only when there is something to note, a stale count first in amber. In rows view every value sits in a tidy column, with no separate beds column.
+- **One timeline per record:** a single rail in time order with a live Now point and the due time. History and corrections fold underneath.
+
+**Controls (the kit).**
+
+- **Sizes** are in section 5: no control drawn 48px tall, the 48px tap area kept by a cover.
+- **Dates, times, search and Show more** use the kit's `DateField`, `TimePresets`, `SearchField` and `ShowMoreRow` (section 10), never a page's own version or the browser's date picker.
+- **Toasts** sit above the phone dock, `--wf-toast-dock-gap` clear of it (12px, 24px in the new frame).
+
+**Frame.** The drawer that lists what needs doing is headed "Alerts", not "Tasks". Pinned pages in the sidebar last for the open browser tab only; remembering them per person needs a privacy decision first. The app bar has no "Synthetic prototype" pill; the footer's synthetic-data notice stays, and the TV view and printouts keep a small synthetic-data mark.
+
+**Still in flux (31 Oct, 10:35 UTC).** Capacity (10:07), Referrals (10:22) and Waiting round 8 (10:26) are approved, so their patterns are above. One item remains: the shared footer that says "Synthetic prototype" twice (with the frame). Add new items here until Josh approves them.
 
 ## Appendix: where the v8.2 rules went
 

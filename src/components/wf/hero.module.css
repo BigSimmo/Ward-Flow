@@ -727,6 +727,35 @@
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
     display: none;
   }
+
+  /* Kit (#1118 handover, build suggestion 4): every page prints through the Hero, which printed as
+     a dark band with a squeezed title. On paper it is a plain bordered box in black ink, the title
+     takes the full first line and the counts wrap under it. Status colours keep their day values. */
+  .hero.hero {
+    --wf-hero-ink: #000;
+    --wf-hero-ink-2: #222;
+    --wf-hero-ink-3: #444;
+    --wf-danger: var(--wf-danger-ink, #a3281a);
+    --wf-warning: var(--wf-warning-ink, #7a4f00);
+    --wf-success: var(--wf-success-ink, #1d6b45);
+    --wf-info: var(--wf-info-ink, #1f5a8a);
+    --wf-focus-ring: #000;
+    background: none;
+    border: 1px solid #999;
+    box-shadow: none;
+    color: #000;
+    break-inside: avoid;
+  }
+  .row {
+    flex-wrap: wrap;
+  }
+  .titleBlock {
+    flex: 1 1 100%;
+  }
+  .stats {
+    overflow: visible;
+    flex-wrap: wrap;
+  }
 }
 
 /* Phone band (v10 phone mockup, every page): the hero's text starts 6px under the lean bar, sits on
