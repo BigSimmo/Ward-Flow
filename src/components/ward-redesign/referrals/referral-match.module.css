@@ -1,9 +1,0 @@
-/* Final round (31 Oct 2026): the Referrals decision panel draws its reason and recipient choices with
-   the kit's Select (`@/components/wf`), as the other redesigned pages do, in place of the
-   browser-default select. This box only sizes it inside the decision panel's rows: full width in a
-   column, sharing a row with Decline when there is room. */
-.reasonSelect {
-  flex: 1 1 14rem;
-  width: 100%;
-  grid-column: 1 / -1;
-}

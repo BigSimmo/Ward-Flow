@@ -7,11 +7,9 @@ import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Copy, FileText, ListOrdered, TriangleAlert } from "lucide-react";
+import { FileText, TriangleAlert } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -30,24 +28,14 @@ import {
 import { Button, StatusGlyph, cx, durMinutes } from "@/components/wf";
 
 import { getReferralPriority } from "./referral-priority";
-import {
-  CLEARANCE_CHECKS,
-  CLEARANCE_CHECK_LABELS,
-  CLEARANCE_STATUS_LABELS,
-  type ClearanceStatus,
-} from "./referral-submission";
-import { ReferralDocumentLinks } from "./referral-document-links";
 import { referralInformationNeedLabel } from "./referral-information-needs";
 import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
 import { referralContactOutcomeLabel } from "./referral-owner-and-calls";
 import { referralContactTargetLabel, referralOwnerLabel } from "./referral-owner-and-calls-model";
-import { ReferralOwnerAndCalls } from "./referral-owner-and-calls-lazy";
-import { ReferralCommitments } from "./referral-commitments-lazy";
 import { referralCommitmentStepLabel } from "./referral-commitments";
 import { communityTeamById } from "../community/community-derivations";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import styles from "./referral-board.module.css";
-import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { referralPresentation, type SenderReferralPresentation } from "../ward-partial-view-presenters";
 
@@ -516,231 +504,6 @@ export const REFERRAL_SHORTCUTS: readonly (readonly [string, string])[] = [
   ["?", "These shortcuts"],
 ];
 
-const CLEARANCE_GLYPH: Record<ClearanceStatus, "success" | "neutral" | "closed"> = {
-  done: "success",
-  to_follow: "neutral",
-  not_done: "closed",
-};
-
-function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
-  return (
-    <section className={styles.pSection}>
-      <div className={styles.pSectionHead}>
-        <h3>{title}</h3>
-        {aside ? <span>{aside}</span> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-export function ReferralPatientTab({
-  referral,
-  now,
-  readyUnits,
-  readOnly = false,
-}: {
-  referral: Referral;
-  now: Instant;
-  readyUnits: number | undefined;
-  /** D-80: the owner and calls show, with no Assign or Log a call. */
-  readOnly?: boolean;
-}) {
-  const { dayZero } = useWardFlowSelect("dayZero");
-  const intake = referral.intake;
-  const ward = wardArm(referral)?.destination;
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const history = referral.history?.trim() ?? "";
-  const longHistory = history.length > 180;
-  const checks = intake?.clearanceChecklist;
-  const checkRows = checks ? CLEARANCE_CHECKS.filter((check) => checks[check] !== undefined) : [];
-  const done = checkRows.filter((check) => checks?.[check] === "done").length;
-  const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
-  const needs = [
-    { label: "Bed", value: ward ? (ward.secureBedNeeded ? "Secure" : "Open") : "Not asked", on: ward?.secureBedNeeded },
-    {
-      label: "Legal",
-      value: ward ? (ward.involuntaryBedNeeded ? "Involuntary bed" : "Not involuntary") : "Not asked",
-      on: ward?.involuntaryBedNeeded,
-    },
-    {
-      label: "Nursing",
-      value: ward ? (ward.highAcuityNursingNeeded ? "High acuity" : "Standard") : "Not asked",
-      on: ward?.highAcuityNursingNeeded,
-    },
-    { label: "Sex", value: ward ? ward.sex : "Not asked", on: false },
-    { label: "Transport", value: referral.transportNeeded ? "Requested" : "Not asked", on: referral.transportNeeded },
-    { label: "Units ready", value: readyUnits === undefined ? "No bed asked" : String(readyUnits), on: false },
-  ];
-  return (
-    <div className={styles.pTab} data-testid="ward-referral-patient-tab">
-      <Section title="Presentation" aside={intake ? "From the referral form" : "Raised before the referral form"}>
-        {intake?.reasonForReferral?.trim() ? (
-          <p className={styles.pLead}>{intake.reasonForReferral}</p>
-        ) : (
-          <p className={styles.pMuted}>Reason for referral not recorded on this referral.</p>
-        )}
-        <dl className={styles.pCells}>
-          <div>
-            <dt>Triage category</dt>
-            <dd>{referral.atsCategory !== undefined ? `ATS ${referral.atsCategory}` : "Not recorded"}</dd>
-          </div>
-          <div>
-            <dt>Home</dt>
-            <dd>{referral.suburb.kind === "named" ? referral.suburb.name : referral.homeRegion}</dd>
-          </div>
-          <div>
-            <dt>Referral raised</dt>
-            <dd>{formatInstantWithDay(referral.raisedAt, now)}</dd>
-          </div>
-        </dl>
-      </Section>
-
-      {intake ? (
-        <Section
-          title="Ready to transfer"
-          aside={
-            intake.medicalClearance.cleared ? (
-              "Medically cleared"
-            ) : (
-              <span
-                title={`Clearance expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero)}`}
-                aria-label={`Clearance expected ${formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero)}`}
-              >
-                Expected{" "}
-                {formatReferralIntakeTime(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, now)}
-              </span>
-            )
-          }
-        >
-          {checkRows.length > 0 ? (
-            <div className={styles.ready}>
-              <div className={styles.readyBar} role="img" aria-label={`${done} of ${checkRows.length} checks done`}>
-                {checkRows.map((check) => (
-                  <i key={check} data-state={checks?.[check]} />
-                ))}
-              </div>
-              <span className={styles.mono}>
-                {done} of {checkRows.length} done
-              </span>
-            </div>
-          ) : null}
-          <ul className={styles.checks}>
-            {checkRows.map((check) => (
-              <li key={check}>
-                <StatusGlyph tone={CLEARANCE_GLYPH[checks![check]!]} size={9} />
-                <span>{CLEARANCE_CHECK_LABELS[check]}</span>
-                <span className={styles.checkState}>{CLEARANCE_STATUS_LABELS[checks![check]!]}</span>
-              </li>
-            ))}
-            <li>
-              <StatusGlyph tone={intake.triageAndRampCompleted ? "success" : "neutral"} size={9} />
-              <span>Triage and RAMP</span>
-              <span className={styles.checkState}>{intake.triageAndRampCompleted ? "Done" : "Not completed"}</span>
-            </li>
-          </ul>
-        </Section>
-      ) : null}
-
-      <Section title="Bed needs">
-        <div className={styles.needGrid}>
-          {needs.map((need) => (
-            <div key={need.label} className={cx(styles.need, need.on && styles.needOn)}>
-              <span>{need.label}</span>
-              <b>{need.value}</b>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      <Section title="Referrer">
-        <div className={styles.contact}>
-          <span className={styles.who}>
-            <b>{intake?.referrer.name ?? "Not recorded"}</b>
-            <span>
-              {intake
-                ? `${intake.referrer.role} · ${intake.referrer.location}`
-                : `${REFERRAL_SOURCE_WORDS[referral.source]} · ${site}`}
-            </span>
-          </span>
-          {intake?.referrer.phone ? (
-            <>
-              <span className={styles.mono}>{intake.referrer.phone}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={Copy}
-                iconOnly
-                aria-label="Copy the referrer's number"
-                onClick={() => void copyTextToClipboard(intake.referrer.phone).catch(() => undefined)}
-              />
-            </>
-          ) : null}
-        </div>
-        <dl className={styles.pCells}>
-          <div>
-            <dt>Direct contact</dt>
-            <dd>{intake?.referrer.phone || "Not recorded"}</dd>
-          </div>
-          <div>
-            <dt>Facility</dt>
-            <dd>{site}</dd>
-          </div>
-        </dl>
-        {intake?.charts.length || intake?.chartsToFollow?.length ? (
-          <ReferralDocumentLinks charts={intake.charts} toFollow={intake.chartsToFollow} />
-        ) : null}
-      </Section>
-
-      {/* Fix plan item 4 (21 Oct 2026): the owner desk and "Log a call", replacing the unwired Call button. */}
-      <Section title="Owner and calls">
-        <ReferralOwnerAndCalls referral={referral} now={now} readOnly={readOnly} />
-      </Section>
-
-      {/* Closing-the-loop package A (24 Oct 2026): what each ward agreed to, and when to ring again. */}
-      <Section title="Response commitments">
-        <ReferralCommitments referral={referral} now={now} readOnly={readOnly} />
-      </Section>
-
-      <Section title="Recorded legal information" aside="For the receiving unit">
-        <p className={styles.pMuted}>
-          Referral details do not establish consent, detention authority or a register check.
-        </p>
-        <ul className={styles.checks}>
-          <li>
-            <StatusGlyph tone="neutral" size={9} />
-            <span>Consent or detention authority</span>
-            <span className={styles.checkState}>Not recorded in this referral</span>
-          </li>
-          <li>
-            <StatusGlyph tone="neutral" size={9} />
-            <span>Chief Psychiatrist register check</span>
-            <span className={styles.checkState}>Register check not recorded on this referral.</span>
-          </li>
-        </ul>
-        <p className={styles.pMuted}>
-          {intake?.legalStatus ?? "Legal document details are not recorded on this referral."}
-        </p>
-      </Section>
-
-      <Section title="Written history">
-        {history ? (
-          <>
-            <p className={cx(styles.pText, longHistory && !historyOpen && styles.clamp)}>{history}</p>
-            {longHistory ? (
-              <button type="button" className={styles.linkButton} onClick={() => setHistoryOpen((open) => !open)}>
-                {historyOpen ? "Show less" : "Show all"}
-              </button>
-            ) : null}
-          </>
-        ) : (
-          <p className={styles.pMuted}>Not written yet.</p>
-        )}
-      </Section>
-    </div>
-  );
-}
-
 /* ─── Selected referral: Timeline tab ───────────────────────────────────────────────────────── */
 
 type TimelineEntry = { at: Instant; tone: "success" | "closed" | "info" | "neutral" | "danger"; text: string };
@@ -904,36 +667,6 @@ export function ReferralTimeline({
 }
 
 /* ─── Small shared bits ─────────────────────────────────────────────────────────────────────── */
-
-export function HeroTools({
-  overdueCount,
-  onNextOverdue,
-  onMeeting,
-}: {
-  overdueCount: number;
-  onNextOverdue: () => void;
-  onMeeting: () => void;
-}) {
-  return (
-    <div className={styles.heroTools}>
-      <Button
-        variant="onHero"
-        size="sm"
-        icon={TriangleAlert}
-        count={overdueCount > 0 ? overdueCount : undefined}
-        disabledReason={overdueCount > 0 ? undefined : "Nothing is overdue."}
-        reasonDisplay="tooltip"
-        onClick={onNextOverdue}
-        data-testid="ward-referral-next-overdue"
-      >
-        Next overdue
-      </Button>
-      <Button variant="onHero" size="sm" icon={ListOrdered} onClick={onMeeting} data-testid="ward-referral-meeting">
-        Bed meeting list
-      </Button>
-    </div>
-  );
-}
 
 export function SummaryButton({ onClick }: { onClick: () => void }) {
   return (
