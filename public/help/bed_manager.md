@@ -1,4 +1,4 @@
-# Bed manager
+# Site bed manager
 
 <!-- Generated from in-app Help; do not edit by hand. -->
 

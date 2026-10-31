@@ -1,29 +1,24 @@
 "use client";
 
-import { ArrowRight, ChevronDown, CircleHelp, Compass, Keyboard, MousePointerClick } from "lucide-react";
-import Link from "next/link";
+import { CircleHelp, Keyboard } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useId, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 import { useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
 import barStyles from "@/components/ward-management/shell/ward-bar.module.css";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
-import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
-import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
 import { WardHelpAsk } from "./ward-help-ask";
 import { WardHelpSearch } from "./ward-help-search";
 import { ADMIN_SETTINGS_HELP, glossaryForSites, screenHelpFor } from "./ward-help-content";
 import { useWardNetwork } from "../ward-flow-provider";
-import { showWardHowTo, type HelpView } from "./ward-help-events";
-import { howToHref } from "./ward-help-href";
-import { canShowMe, HOW_TO_IDS, HOW_TOS } from "./ward-help-howto";
-import { showMeAvailable, tasksForDesk, WardHelpTasks } from "./ward-help-task-list";
-import { recordHowToUsed } from "./ward-help-usage";
+import type { HelpView } from "./ward-help-events";
+import { PointCard, WardHelpTasks } from "./ward-help-task-list";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
-import { useTourRole, type WardTourRole } from "./ward-help-store";
+import { helpDeskLabel } from "./ward-help-roles";
+import { useTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
 import { WHATS_NEW } from "./ward-whats-new";
 import styles from "./ward-help-sheet.module.css";
@@ -32,31 +27,21 @@ import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statis
 import { WardHelpGlossary } from "../help-content/ward-help-glossary-view";
 import { WardHelpReference } from "../help-content/ward-help-reference-view";
 
-const VIEWS: readonly { id: Exclude<HelpView, "tour">; label: string }[] = [
+type HelpTab = "tasks" | "glossary" | "new";
+
+/**
+ * Three sections (Josh, 31 Oct 2026): How do I… (with this screen and the desk folded in), Words
+ * (the glossary, colour code and reference) and What's new. Older ways in still arrive: "screen"
+ * and "desk" open How do I…, "glossary" opens Words.
+ */
+const VIEWS: readonly { id: HelpTab; label: string }[] = [
   { id: "tasks", label: "How do I…" },
-  { id: "screen", label: "This screen" },
-  { id: "desk", label: "Your desk" },
-  { id: "glossary", label: "Glossary" },
+  { id: "glossary", label: "Words" },
   { id: "new", label: "What's new" },
 ];
 
-type GoLink = { href: string; label: string };
-
-/**
- * Where a guide job's "Go to" link leads: the desk's own home, or a rail page this desk can open.
- * A page the desk cannot open gets no link, so Help never offers a door the guard would shut.
- */
-function goLink(
-  go: string,
-  role: WardTourRole,
-  home: { href: string | undefined; name: string },
-  entries: readonly { id: string; href: string; label: string }[],
-): GoLink | undefined {
-  if (go === "home") return home.href ? { href: home.href, label: home.name } : undefined;
-  const entry = entries.find((candidate) => candidate.id === go);
-  const screen = entry ? screenForPath(entry.href)?.screen : undefined;
-  if (!entry || !screen || !ROLE_SCREENS[role][screen]) return undefined;
-  return { href: entry.href, label: entry.label };
+function tabFor(view: HelpView): HelpTab {
+  return view === "glossary" || view === "new" ? view : "tasks";
 }
 
 /** "25 Oct" from "2026-10-25", without the time zone shifts a Date would bring. */
@@ -66,14 +51,11 @@ function formatNewDate(date: string): string {
   return `${day} ${months[(month ?? 1) - 1] ?? ""}`.trim();
 }
 
-function deskLabel(role: WardTourRole): string {
-  return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
-}
-
 /**
- * HELP: the desk's own guide, what this screen is for and a glossary, in one sheet (fix plan item
- * 12; desk guide 24 Oct 2026), with the way into the desk's tour, which runs over the screen itself
- * (`ward-tour.tsx`). The glossary filter is held in this component only and is never saved.
+ * HELP: the desk's tasks, what this screen is for, the words the app uses and what changed, in one
+ * sheet (fix plan item 12; desk guide 24 Oct 2026; Josh 31 Oct 2026: opens on How do I…, one search
+ * box, three sections, only what this login can use). The tour runs over the screen itself
+ * (`ward-tour.tsx`) and starts only when chosen. Nothing typed here is saved.
  */
 type WardHelpSheetProps = {
   view: HelpView;
@@ -136,28 +118,15 @@ function WardHelpSheetView({
     return role === "admin" && shown?.id === "settings" ? ADMIN_SETTINGS_HELP : shown;
   }, [entries, pathname, role]);
   const phone = useIsPhone();
+  const tab = tabFor(view);
+  const asked = ask?.trim() ? ask : undefined;
 
   const latest = WHATS_NEW.at(-1);
   const deskHref = deskHome ?? home;
-  // This screen's own tasks, offered as Show me under its questions (the full list is How do I…).
-  const screenTasks = useMemo(
-    () =>
-      showMeOn
-        ? tasksForDesk(role).filter(
-            (howTo) => canShowMe(howTo, phone) && howToHref(howTo.go, role, deskHref)?.split("#")[0] === pathname,
-          )
-        : [],
-    [deskHref, pathname, phone, role, showMeOn],
-  );
-  const jobShowMe = (id: string | undefined) => {
-    const howTo = id ? HOW_TOS.find((candidate) => candidate.id === id) : undefined;
-    return showMeOn &&
-      howTo &&
-      showMeAvailable(howTo, role, deskHref, phone) &&
-      (howTo.desks === "all" || howTo.desks.includes(role))
-      ? howTo
-      : undefined;
-  };
+  // Settings' "Open Help" asks for the desk: How do I… with About your desk open and in view.
+  useEffect(() => {
+    if (view === "desk") document.getElementById("ward-help-desk")?.scrollIntoView?.({ block: "start" });
+  }, [view]);
 
   return (
     <Sheet
@@ -179,14 +148,10 @@ function WardHelpSheetView({
         )
       }
       descriptionContent={
-        <>
-          {/* Redesign (artifact): whose Help this is and which screen it speaks for, under the title. */}
-          <p className={styles.context} data-testid="ward-help-context">
-            {deskLabel(role)}
-            {help ? ` · this screen: ${help.title}` : ""}
-          </p>
-          <p className={barStyles.activityFreshness}>Synthetic prototype, not approved for clinical use.</p>
-        </>
+        <p className={styles.context} data-testid="ward-help-context">
+          {helpDeskLabel(role)}
+          {help ? ` · this screen: ${help.title}` : ""}
+        </p>
       }
       placement="right"
       desktopBackdropClassName={barStyles.drawerBackdrop}
@@ -197,10 +162,11 @@ function WardHelpSheetView({
       bodyClassName={`${barStyles.drawerBody} ${styles.body}`}
       footer={
         <div className={barStyles.drawerFoot}>
-          <span>Ward Flow guide · nothing typed here is saved</span>
+          {/* The sheet's one synthetic line (Josh, 31 Oct 2026). */}
+          <span data-testid="ward-help-synthetic">Synthetic prototype, not for clinical use</span>
           {/* Round 2 (#1118): the date opens What's new, so it does something rather than repeat that
               tab. A phone has room for one line only, and What's new is a tab at the top. */}
-          {latest && view !== "new" && !phone ? (
+          {latest && tab !== "new" && !phone ? (
             <button
               type="button"
               className={styles.footLink}
@@ -214,16 +180,15 @@ function WardHelpSheetView({
       }
       footerClassName={barStyles.drawerFooter}
     >
-      {/* Redesign (#1118): one box, "Search Help, or ask"; it already finds every how-to answer. */}
+      {/* One search box (Josh, 31 Oct 2026). A question handed over from the header search fills the
+          Ask box, which then stands in for the search field rather than adding a second box. */}
       <div className={styles.searchDock}>
-        <WardHelpSearch role={role} home={deskHref} onNavigate={onClose} />
+        {asked ? (
+          <WardHelpAsk role={role} home={deskHref} initialQuery={asked} onClose={onClose} termsSource={termsSource} />
+        ) : (
+          <WardHelpSearch role={role} home={deskHref} onNavigate={onClose} />
+        )}
       </div>
-
-      {ask?.trim() ? (
-        <div className={styles.group}>
-          <WardHelpAsk role={role} home={deskHref} initialQuery={ask} onClose={onClose} termsSource={termsSource} />
-        </div>
-      ) : null}
 
       <div className={`${barStyles.segTrack} ${styles.views}`} role="group" aria-label="Help sections">
         {VIEWS.map((item) => (
@@ -231,7 +196,7 @@ function WardHelpSheetView({
             key={item.id}
             type="button"
             className={barStyles.segBtn}
-            aria-pressed={view === item.id}
+            aria-pressed={tab === item.id}
             onClick={() => onView(item.id)}
             data-testid={`ward-help-view-${item.id}`}
           >
@@ -240,142 +205,41 @@ function WardHelpSheetView({
         ))}
       </div>
 
-      {view === "tasks" ? (
-        <WardHelpTasks
-          key={task ?? ""}
-          role={role}
-          home={deskHref}
-          pathname={pathname}
-          onClose={onClose}
-          showMeOn={showMeOn}
-          openTask={task}
-        />
-      ) : null}
-
-      {view === "desk" ? (
-        <section className={styles.stack} aria-labelledby="ward-help-desk-name" data-testid="ward-help-desk">
-          <div className={styles.screenHead}>
-            <h3 id="ward-help-desk-name">{deskLabel(role)}</h3>
-            <p className={styles.text}>{guide.summary}</p>
-          </div>
-          <div className={styles.group}>
-            <h4 id="ward-help-desk-title" className={styles.groupHeading}>
-              Where you start
-            </h4>
-            <div className={styles.card}>
-              <p className={styles.paragraph}>{guide.startsAt}</p>
+      {tab === "tasks" ? (
+        <>
+          <WardHelpTasks
+            key={task ?? ""}
+            role={role}
+            home={deskHref}
+            pathname={pathname}
+            onClose={onClose}
+            showMeOn={showMeOn}
+            openTask={task}
+            screen={help}
+            onTour={() => onView("tour")}
+          />
+          <details
+            id="ward-help-desk"
+            className={styles.referenceSection}
+            open={view === "desk" ? true : undefined}
+            data-testid="ward-help-desk"
+          >
+            <summary>About your desk: {helpDeskLabel(role)}</summary>
+            <div className={styles.stack}>
+              <p className={styles.text}>{guide.summary}</p>
+              <p className={styles.text}>{guide.startsAt}</p>
+              <h4 className={styles.groupHeading}>Good to know</h4>
+              <PointCard points={guide.limits} />
+              <h4 className={styles.groupHeading}>Is it saved?</h4>
+              <PointCard points={SAVED_OR_NOT} />
+              <h4 className={styles.groupHeading}>If Ward Flow is down</h4>
+              <PointCard points={WHEN_IT_IS_DOWN} testId="ward-help-downtime" />
             </div>
-          </div>
-          <div className={styles.group}>
-            <h4 className={styles.groupHeading}>Jobs you do most</h4>
-            <ol className={styles.card}>
-              {guide.jobs.map((item, index) => {
-                const link = goLink(item.go, role, { href: deskHref, name: guide.homeName }, entries);
-                const showMe = jobShowMe(item.howTo);
-                return (
-                  <li key={item.job} className={styles.row}>
-                    <span className={styles.step} aria-hidden="true">
-                      {index + 1}
-                    </span>
-                    <span className={styles.rowText}>
-                      <strong>{item.job}</strong>
-                      <span>{item.how}</span>
-                      {link || showMe ? (
-                        <span className={styles.jobLinks}>
-                          {showMe ? (
-                            <button
-                              type="button"
-                              className={styles.goLink}
-                              onClick={() => {
-                                recordHowToUsed(showMe.id, HOW_TO_IDS);
-                                showWardHowTo(showMe.id);
-                              }}
-                              aria-label={`${item.job}: show me`}
-                              data-testid="ward-help-job-show-me"
-                            >
-                              <MousePointerClick aria-hidden="true" strokeWidth={2} />
-                              Show me
-                            </button>
-                          ) : null}
-                          {link ? (
-                            <Link
-                              href={link.href}
-                              className={styles.goLink}
-                              onClick={onClose}
-                              aria-label={`${item.job}: go to ${link.label}`}
-                              data-testid="ward-help-go"
-                            >
-                              Go to {link.label}
-                              <ArrowRight aria-hidden="true" strokeWidth={2} />
-                            </Link>
-                          ) : null}
-                        </span>
-                      ) : null}
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-          <PointList heading="Good to know" points={guide.limits} />
-          <PointList heading="Is it saved?" points={SAVED_OR_NOT} />
-          <PointList heading="If Ward Flow is down" points={WHEN_IT_IS_DOWN} testId="ward-help-downtime" />
-        </section>
+          </details>
+        </>
       ) : null}
 
-      {view === "screen" ? (
-        help ? (
-          <section className={styles.stack} aria-labelledby="ward-help-screen-title" data-testid="ward-help-screen">
-            {/* Round 2 (#1118): a plain heading and line, not a card, for the screen this Help is about. */}
-            <div className={styles.screenHead}>
-              <h3 id="ward-help-screen-title">{help.title}</h3>
-              <p className={styles.text}>{help.purpose}</p>
-            </div>
-            <PointList heading="Main actions" points={phone ? (help.phoneActions ?? help.actions) : help.actions} />
-            {screenTasks.length ? (
-              <div className={styles.group}>
-                <h4 className={styles.groupHeading}>Show me how</h4>
-                <ul className={styles.card} data-testid="ward-help-screen-tasks">
-                  {screenTasks.map((howTo) => (
-                    <li key={howTo.id}>
-                      <button
-                        type="button"
-                        className={styles.linkRow}
-                        onClick={() => {
-                          recordHowToUsed(howTo.id, HOW_TO_IDS);
-                          showWardHowTo(howTo.id);
-                        }}
-                        data-testid={`ward-help-screen-show-me-${howTo.id}`}
-                      >
-                        <span className={styles.rowIcon} aria-hidden="true">
-                          <MousePointerClick aria-hidden="true" strokeWidth={1.75} />
-                        </span>
-                        <span className={styles.answerName}>{howTo.title}</span>
-                        <span className={styles.answerMeta}>Show me</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {help.questions?.length ? (
-              <div className={styles.group}>
-                <h4 className={styles.groupHeading}>Questions</h4>
-                <Questions items={help.questions} />
-              </div>
-            ) : null}
-          </section>
-        ) : (
-          <div className={styles.group} data-testid="ward-help-screen-none">
-            <p className={styles.empty}>This screen has no help page of its own yet. Your desk guide covers it.</p>
-            <button type="button" className={styles.linkButton} onClick={() => onView("desk")}>
-              Open your desk guide
-            </button>
-          </div>
-        )
-      ) : null}
-
-      {view === "new" ? (
+      {tab === "new" ? (
         <section className={styles.group} aria-labelledby="ward-help-new-title" data-testid="ward-help-new">
           <h3 id="ward-help-new-title" className={styles.groupHeading}>
             Recent changes
@@ -392,23 +256,17 @@ function WardHelpSheetView({
         </section>
       ) : null}
 
-      {view === "glossary" ? <WardHelpGlossary termsSource={termsSource} /> : null}
+      {tab === "glossary" ? (
+        <>
+          <WardHelpGlossary termsSource={termsSource} />
+          <WardHelpReference role={role} onClose={onClose} />
+        </>
+      ) : null}
 
-      {/* Redesign (#1118): Reference (colour code, roles, more) is an extra, so it closes every view,
-          then the tour and the shortcuts. A phone has no keyboard, so it is not offered the shortcuts
-          (HF-14). */}
-      <WardHelpReference role={role} onClose={onClose} />
-      <div className={styles.endRow} data-testid="ward-help-end">
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          onClick={() => onView("tour")}
-          data-testid="ward-help-view-tour"
-        >
-          <Compass aria-hidden="true" strokeWidth={1.75} />
-          Take the tour
-        </button>
-        {phone || !onShortcuts ? null : (
+      {/* The shortcuts sheet is the one list of keys, filtered by desk. A phone has no keyboard, so
+          it is not offered the shortcuts (HF-14). */}
+      {phone || !onShortcuts ? null : (
+        <div className={styles.endRow} data-testid="ward-help-end">
           <button
             type="button"
             className={styles.secondaryButton}
@@ -418,54 +276,8 @@ function WardHelpSheetView({
             <Keyboard aria-hidden="true" strokeWidth={1.75} />
             Keyboard shortcuts
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </Sheet>
-  );
-}
-
-/** A screen's questions, each answer folded until asked for, one open at a time (redesign, #1118). */
-function Questions({ items }: { items: readonly { question: string; answer: string }[] }) {
-  const id = useId();
-  const [open, setOpen] = useState<number | null>(null);
-  return (
-    <ul className={styles.card} data-testid="ward-help-questions">
-      {items.map((item, index) => {
-        const expanded = open === index;
-        return (
-          <li key={item.question}>
-            <button
-              type="button"
-              className={styles.answerTitle}
-              aria-expanded={expanded}
-              aria-controls={`${id}-${index}`}
-              onClick={() => setOpen(expanded ? null : index)}
-            >
-              <span className={styles.answerName}>{item.question}</span>
-              <ChevronDown aria-hidden="true" className={styles.caret} strokeWidth={1.75} />
-            </button>
-            <p id={`${id}-${index}`} className={styles.answer} hidden={!expanded}>
-              {item.answer}
-            </p>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-/** A heading and a card of short points. Round 2 (#1118): the row dividers part them, so no dot. */
-function PointList({ heading, points, testId }: { heading: string; points: readonly string[]; testId?: string }) {
-  return (
-    <div className={styles.group}>
-      <h4 className={styles.groupHeading}>{heading}</h4>
-      <ul className={styles.card} data-testid={testId}>
-        {points.map((point) => (
-          <li key={point} className={styles.row}>
-            <span className={styles.text}>{point}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }

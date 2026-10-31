@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
-import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useIsPhone } from "@/components/wf";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
@@ -15,6 +14,7 @@ import { showWardHowTo } from "./ward-help-events";
 import { CLINICAL_REPLY, HELP_SEARCH_GROUPS, searchHelp, type HelpSearchResult } from "./ward-help-search-index";
 import type { WardTourRole } from "./ward-help-store";
 import { HOW_TOS } from "./ward-help-howto";
+import { helpDeskLabel } from "./ward-help-roles";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 
 /** How-tos whose controls a phone screen does not draw: on a phone they open, not Show me. */
@@ -24,10 +24,6 @@ import styles from "./ward-help-search.module.css";
 /** Native fragment navigation keeps the mounted workspace and notifies Settings. */
 function openHelpTab(tab: string) {
   if (window.location.hash !== `#${tab}`) window.location.hash = tab;
-}
-
-function roleLabel(role: WardTourRole): string {
-  return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
 }
 
 /**
@@ -50,7 +46,6 @@ function suggested(
       title: howTo.title,
       detail: howTo.answer,
       go: howTo.go,
-      desks: howTo.desks === "all" ? undefined : howTo.desks,
       howToId: howTo.id,
     }));
 }
@@ -220,7 +215,7 @@ export function WardHelpSearch({
         onClick={() => setOpen(true)}
       >
         <Search size={16} aria-hidden="true" />
-        <span>Search Help, or ask: how do I pull a bed?</span>
+        <span>Search Help: tasks, words and screens</span>
       </button>
       {open && typeof document !== "undefined"
         ? createPortal(
@@ -261,7 +256,9 @@ export function WardHelpSearch({
                   </div>
                 ) : (
                   <>
-                    {answer.kind === "empty" ? <p className={styles.group}>Suggested for {roleLabel(role)}</p> : null}
+                    {answer.kind === "empty" ? (
+                      <p className={styles.group}>Suggested for {helpDeskLabel(role)}</p>
+                    ) : null}
                     {answer.kind === "none" ? (
                       <div className={styles.notice} role="status" data-testid="ward-help-search-none">
                         <strong>No Help topics match &ldquo;{query.trim()}&rdquo;.</strong>

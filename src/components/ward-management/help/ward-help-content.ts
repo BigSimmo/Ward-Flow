@@ -14,10 +14,14 @@
 import { formTitleForCode } from "@/lib/form-register";
 import { BED_FINDER_MENU_ID, ROLE_MENUS } from "@/components/ward-management/shell/ward-rail-entries";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
+import { ROLE_SCREENS } from "@/components/ward-management/ward-role-access";
 import { CONTINUATION_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { WARD_COMMAND_HREF } from "@/components/ward-management/ward-nav";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import type { SiteIdentity } from "@/components/ward-management/ward-sites";
+
+import type { WardTourRole } from "./ward-help-store";
 
 export type ScreenHelp = {
   /** The screen's name as the rail or the page heading shows it. */
@@ -37,7 +41,7 @@ type HelpQuestion = { question: string; answer: string };
 const WHY_NO_ANSWER: HelpQuestion = {
   question: "Why can't I answer this referral?",
   answer:
-    "Only the ward itself accepts or declines its referrals. A bed manager sees them but cannot answer, so ask the ward to answer from its own desk.",
+    "Only the ward itself accepts or declines its referrals. A site bed manager sees them but cannot answer, so ask the ward to answer from its own desk.",
 };
 
 /**
@@ -76,7 +80,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     actions: [
       "Open a movement to see its bed, transport and legal form in one place.",
       "Move it on a stage once that step is done, such as pulling a bed or booking transport.",
-      "Watch the act-now edge on a row, which marks something due now.",
+      "Rows marked Act now are due now or overdue.",
     ],
   },
   referrals: {
@@ -208,7 +212,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     actions: [
       "Times are as typed from the paper form. Ward Flow does not work out legal periods, and the times are not legally checked.",
       "Switch between Clocks, Checklist and History. Choose a patient to see their form.",
-      "Use Record next form when a new form is written, and Record and tell for who to let know.",
+      "Use Record next form when a new form is written. Record and tell lists who to let know.",
     ],
   },
   governance: {
@@ -346,7 +350,7 @@ const PAGE_HELP: readonly PageHelp[] = [
     title: "ED board",
     purpose: "One emergency department's mental health patients, each row with its next step.",
     actions: [
-      "Work down My list first. Act-now items have a red edge.",
+      "Work down My list first. Act-now items carry the Act now mark.",
       "Each row's button is its next step, such as Record exam, Refer to a ward or Handover ready. A referral waiting in the inbox has Ask for a bed.",
       "Raise referral starts a new one. Tap a figure in the header to highlight those patients.",
     ],
@@ -380,7 +384,7 @@ const PAGE_HELP: readonly PageHelp[] = [
     path: /^\/ward-flow\/reports\/downtime$/u,
     title: "Downtime pack",
     purpose:
-      "A frozen, printable snapshot for when the system is down: beds by ward, the ED queue, pending moves and legal forms.",
+      "A printable copy of the last snapshot, for when the system is down: beds by ward, the ED queue, pending moves and legal forms.",
     actions: [
       "The coordinator takes a New snapshot. The pack does not update by itself.",
       "Print or save PDF to keep a paper copy.",
@@ -697,3 +701,17 @@ export const KEYBOARD_SHORTCUTS: readonly {
     group: "Open",
   },
 ];
+
+/**
+ * The keys this login can use (audit finding 11, Josh 31 Oct 2026). Shift+T and Shift+A open Alerts
+ * and Activity, which only the desks with an Alerts screen have: the executive's and access admin's
+ * header says both are unavailable. Shift+R starts a referral, which only a desk that may raise one
+ * can send (`EVENT_ROLE`). Every other key works on every desk.
+ */
+export function shortcutsForDesk(role: WardTourRole): typeof KEYBOARD_SHORTCUTS {
+  const alerts = ROLE_SCREENS[role].alerts !== undefined;
+  const refers = (EVENT_ROLE.RAISE_REFERRAL as readonly string[]).includes(role);
+  return KEYBOARD_SHORTCUTS.filter((item) =>
+    item.keys === "Shift+R" ? refers : item.keys === "Shift+T" || item.keys === "Shift+A" ? alerts : true,
+  );
+}

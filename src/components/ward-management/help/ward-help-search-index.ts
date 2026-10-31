@@ -8,7 +8,8 @@
  */
 import { SETTINGS_SEARCH_ENTRIES, SETTINGS_TABS } from "@/components/ward-management/settings/settings-search-index";
 
-import { GLOSSARY, KEYBOARD_SHORTCUTS, SCREEN_HELP, type GlossaryTerm } from "./ward-help-content";
+import { EVERY_LOGIN, howToLogins } from "./ward-help-access";
+import { GLOSSARY, KEYBOARD_SHORTCUTS, SCREEN_HELP, shortcutsForDesk, type GlossaryTerm } from "./ward-help-content";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
 import { correctedQuestionWords, HOW_TOS, questionWords } from "./ward-help-howto";
 import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
@@ -74,7 +75,8 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
           detail: howTo.answer,
           howToId: howTo.showMe?.length ? howTo.id : undefined,
           go: howTo.go,
-          desks: howTo.desks === "all" ? undefined : howTo.desks,
+          // The logins that can actually do it (audit finding 11), not only the desks it names.
+          desks: howToLogins(howTo),
         },
         `${howTo.title} ${howTo.keywords}`,
         howTo.answer,
@@ -126,7 +128,13 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
   for (const shortcut of KEYBOARD_SHORTCUTS)
     entries.push(
       entry(
-        { key: `key:${shortcut.keys}`, group: "Shortcuts", title: shortcut.keys, detail: shortcut.action },
+        {
+          key: `key:${shortcut.keys}`,
+          group: "Shortcuts",
+          title: shortcut.keys,
+          detail: shortcut.action,
+          desks: EVERY_LOGIN.filter((role) => shortcutsForDesk(role).includes(shortcut)),
+        },
         `${shortcut.keys} shortcut key keyboard`,
         shortcut.action,
       ),
@@ -254,6 +262,8 @@ export function searchHelp(query: string, role: WardTourRole, limit = 12): HelpS
     }
     if (hits === 0) return [];
     const mine = !item.desks || item.desks.includes(role);
+    // A key this login cannot use is not offered at all (audit finding 11).
+    if (item.group === "Shortcuts" && !mine) return [];
     return [{ item, hits, score: score + (mine ? 1 : 0), order }];
   });
   scored.sort((a, b) => b.hits - a.hits || b.score - a.score || a.order - b.order);

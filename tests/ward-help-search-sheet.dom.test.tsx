@@ -51,7 +51,7 @@ describe("Help sheet search field", () => {
     render(<WardHelpSheet view="screen" ask={undefined} onView={vi.fn()} onClose={vi.fn()} />);
     fireEvent.click(screen.getByTestId("ward-help-search-field"));
     expect(screen.getByRole("dialog", { name: "Search Help" })).toBeTruthy();
-    expect(screen.getByText("Suggested for Bed manager")).toBeTruthy();
+    expect(screen.getByText("Suggested for Site bed manager")).toBeTruthy();
   });
   it.each(["pointer", "Enter"])("closes the parent Help sheet when Open is used with %s", (method) => {
     function Host() {
