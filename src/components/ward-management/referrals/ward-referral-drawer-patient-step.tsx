@@ -758,37 +758,39 @@ export function ReferralPatientStep({
             {patientRecord?.address
               ? `Recorded address ${patientRecord.address}`
               : !addressUnknown
-                ? "Address not recorded, search the suburb"
+                ? "Address not recorded"
                 : addressReplied
-                  ? "Address not available, search the suburb"
+                  ? "Address not available"
                   : "Checking the recorded address"}
           </p>
-          <div className={styles.suggestion}>
-            <StatusGlyph tone={catchmentConfirmed ? "success" : "warning"} size={9} />
-            <span className={styles.suggestionText}>
-              <strong>{catchmentTeam || "Catchment needs confirmation"}</strong>
-              <small>
-                {catchmentConfirmed
-                  ? "Catchment confirmed"
-                  : catchmentSuburb
-                    ? `Suggested from suburb ${catchmentSuburb}, confirm before continuing`
-                    : "Confirm before continuing"}
-              </small>
-            </span>
-            <button
-              type="button"
-              className={styles.btn}
-              onClick={() => {
-                setCatchmentEditing(true);
-                setCatchmentConfirmed(false);
-                // With no catchment chosen the fields are already open, so moving to the suburb field
-                // is the visible answer to the press (Josh, 25 Oct 2026: "Change" did nothing).
-                window.requestAnimationFrame(() => document.getElementById(`${sectionId}-suburb`)?.focus());
-              }}
-            >
-              Change
-            </button>
-          </div>
+          {catchmentTeam ? (
+            <div className={styles.suggestion}>
+              <StatusGlyph tone={catchmentConfirmed ? "success" : "warning"} size={9} />
+              <span className={styles.suggestionText}>
+                <strong>{catchmentTeam}</strong>
+                {!catchmentConfirmed ? (
+                  <small>
+                    {catchmentSuburb &&
+                    catchmentRoutingDestinations(lookupCatchment(catchmentSuburb))?.[0] === catchmentTeam
+                      ? `Suggested from suburb ${catchmentSuburb}. Confirm catchment below.`
+                      : "Confirm catchment below."}
+                  </small>
+                ) : null}
+              </span>
+              <button
+                type="button"
+                className={styles.btn}
+                onClick={() => {
+                  setCatchmentEditing(true);
+                  setCatchmentConfirmed(false);
+                  // Move focus into the catchment fields opened by Change.
+                  window.requestAnimationFrame(() => document.getElementById(`${sectionId}-suburb`)?.focus());
+                }}
+              >
+                Change
+              </button>
+            </div>
+          ) : null}
           <p className={styles.bodyMeta} data-testid="ward-referral-suburb-note">
             Suburb on the referral: <strong>{suburbKnown ? catchmentSuburb : suburbUnknownLabels.not_known}</strong>
           </p>

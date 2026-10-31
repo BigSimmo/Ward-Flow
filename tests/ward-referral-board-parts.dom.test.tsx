@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { ReferralTimeline, wardArm } from "@/components/ward-management/referrals/referral-board-parts";
+import { ReferralAlerts, ReferralTimeline, wardArm } from "@/components/ward-management/referrals/referral-board-parts";
 import { referrals } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -30,4 +30,15 @@ describe("Referrals board parts", () => {
     expect(due, "RF-015 is no longer overdue at the anchor").toBeGreaterThanOrEqual(0);
     expect(nowAt).toBeGreaterThan(due);
   });
+});
+
+it("labels the unknown legal-status chip without mislabelling it as an unknown risk assessment", () => {
+  render(
+    <ReferralAlerts
+      referral={{ ...wardReferral, intake: { ...wardReferral.intake!, legalStatus: "Not recorded", riskFlags: [] } }}
+      readmission={null}
+    />,
+  );
+  expect(screen.getByRole("group", { name: "Alerts" })).toHaveTextContent("Legal status not recorded");
+  expect(screen.queryByText("Alerts not recorded")).toBeNull();
 });

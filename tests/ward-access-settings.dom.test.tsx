@@ -449,3 +449,84 @@ describe("the Access tab", () => {
     expect(screen.getByTestId("ward-step-up")).toBeInTheDocument();
   });
 });
+
+function renderStepUpPopup(run: () => Promise<StepUpResult>, reauthenticate: (password: string) => Promise<void>) {
+  function Check() {
+    const { guard, dialog } = useStepUp();
+    return (
+      <>
+        <button type="button" onClick={() => void guard(run)}>
+          Open protected action
+        </button>
+        {dialog}
+      </>
+    );
+  }
+  render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <StepUpReauthContext.Provider value={reauthenticate}>
+        <Check />
+      </StepUpReauthContext.Provider>
+    </WardFlowProvider>,
+  );
+}
+
+it("distinguishes an action error after successful sign-in from a rejected password", async () => {
+  const run = vi
+    .fn<() => Promise<StepUpResult>>()
+    .mockResolvedValueOnce("step-up")
+    .mockRejectedValueOnce(new Error("Synthetic action failure"));
+  const reauthenticate = vi.fn(async () => {});
+  renderStepUpPopup(run, reauthenticate);
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open protected action" })));
+  const password = screen.getByLabelText("Password");
+  fireEvent.change(password, { target: { value: "synthetic-test-password" } });
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sign in and carry on" })));
+  expect(reauthenticate).toHaveBeenCalledTimes(1);
+  expect(run).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole("alert")).toHaveTextContent("The action could not be confirmed");
+  expect(password).not.toHaveAttribute("aria-invalid", "true");
+  expect(password).toHaveValue("");
+  expect(screen.queryByText("That password was not accepted. Try again.")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+});
+
+it("keeps a rejected sign-in on the password field and does not run the protected action again", async () => {
+  const run = vi.fn<() => Promise<StepUpResult>>().mockResolvedValue("step-up");
+  const reauthenticate = vi.fn(async () => {
+    throw new Error("Synthetic rejected sign-in");
+  });
+  renderStepUpPopup(run, reauthenticate);
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open protected action" })));
+  const password = screen.getByLabelText("Password");
+  fireEvent.change(password, { target: { value: "synthetic-test-password" } });
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sign in and carry on" })));
+  expect(password).toHaveAttribute("aria-invalid", "true");
+  expect(password).toHaveAccessibleDescription(/That password was not accepted/);
+  expect(run).toHaveBeenCalledTimes(1);
+  expect(password).toHaveValue("");
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+});
+
+it("does not show a late action error in a newly opened sign-in dialog", async () => {
+  let rejectAction!: (reason: Error) => void;
+  const action = new Promise<StepUpResult>((_resolve, reject) => {
+    rejectAction = reject;
+  });
+  const run = vi
+    .fn<() => Promise<StepUpResult>>()
+    .mockResolvedValueOnce("step-up")
+    .mockImplementationOnce(() => action)
+    .mockResolvedValue("step-up");
+  renderStepUpPopup(run, async () => {});
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open protected action" })));
+  fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-test-password" } });
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sign in and carry on" })));
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open protected action" })));
+  await act(async () => rejectAction(new Error("Synthetic late action error")));
+  expect(screen.getByTestId("ward-step-up")).toBeInTheDocument();
+  expect(screen.getByLabelText("Password")).toHaveValue("");
+  expect(screen.queryByRole("alert")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+});
