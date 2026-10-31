@@ -1,0 +1,98 @@
+/*
+ * Phone rows in Home's style (Josh, 31 October 2026; from the #1118 mock-ups), shared by every page. Nothing here
+ * applies above 48rem.
+ *
+ * - `.chipRow` on a row of filter or highlight chips: one row that slides sideways, with Home's soft
+ *   fade at the right edge to show there is more. Put `.chip` on each chip (34px tall with a 48px tap
+ *   area, as Home's ED chips) and `.zero` on a chip whose count is 0 (muted, moved to the end).
+ * - `.heroPill` on a button in a page's dark hero band: Home's changes pill (40px, the app's control
+ *   corner, a soft translucent face), in place of tall full-width hero buttons. `.heroPills` lays two
+ *   or three of them side by side.
+ */
+@media (max-width: 48rem) {
+  .chipRow.chipRow {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--wf-s-2);
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 7px;
+    margin-block: -7px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    -webkit-mask-clip: no-clip;
+    mask-clip: no-clip;
+  }
+  .chipRow.chipRow::-webkit-scrollbar {
+    display: none;
+  }
+  .chipRow.chipRow > * {
+    flex: 0 0 auto;
+  }
+  /* The last chip can scroll clear of the fade. */
+  .chipRow.chipRow::after {
+    content: "";
+    flex: 0 0 28px;
+    order: 2;
+  }
+
+  .chip.chip {
+    position: relative;
+    height: 34px;
+    min-height: 0;
+    padding-inline: 12px;
+    font-size: var(--wf-fs-13);
+    white-space: nowrap;
+  }
+  .chip.chip::before {
+    content: "";
+    position: absolute;
+    inset: -7px 0;
+  }
+
+  .zero.zero {
+    order: 1;
+    color: var(--wf-ink-3);
+  }
+
+  .heroPills.heroPills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wf-s-2);
+  }
+  .heroPill.heroPill {
+    position: relative;
+    display: inline-flex;
+    flex: 0 1 auto;
+    align-items: center;
+    justify-content: center;
+    gap: var(--wf-s-2);
+    width: auto;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
+    border-radius: var(--wf-r-ctl);
+    background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+    color: var(--wf-hero-ink);
+    font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+    box-shadow: none;
+  }
+  /* A pill that cannot act now reads as such (the button's own disabled look is overridden above). */
+  .heroPill.heroPill:is([aria-disabled="true"], :disabled) {
+    background: transparent;
+    color: var(--wf-hero-ink-3);
+  }
+  .heroPill.heroPill svg {
+    width: 16px;
+    height: 16px;
+  }
+  .heroPill.heroPill::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
