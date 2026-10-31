@@ -206,13 +206,15 @@ const eslintConfig = defineConfig([
   },
   // Josh, 31 October 2026: the kit's styled confirm ("Leave this page?") replaces the browser's own
   // pop-up. The browser's confirm, alert and prompt boxes cannot be styled, read as a system error
-  // and block the page; use the kit's dialogs (design/v9/design-system-v9.md). The two files ignored
-  // here still call window.confirm on main; the kit pull request (#1136) moves both onto the styled
-  // confirm, after which their entries come off this list. Never add a file to it.
+  // and block the page; use the kit's dialogs (design/v9/design-system-v9.md). Only the styled
+  // confirm's own no-host fallback may call window.confirm: the kit's confirm-dialog.tsx and its two
+  // callers, which fall back to the browser's box only when no styled host is mounted. Never add a
+  // file to this list.
   {
     files: ["src/**/*.{js,jsx,ts,tsx}"],
     ignores: [
       ...MOCKUP_IGNORES,
+      "src/components/wf/confirm-dialog.tsx",
       "src/components/ward-management/use-dirty-state-guard.ts",
       "src/components/ward-management/ward-tasks-drawer.tsx",
     ],
