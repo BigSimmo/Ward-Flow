@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
+import { renderWithToasts as render } from "./helpers/with-toasts";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 

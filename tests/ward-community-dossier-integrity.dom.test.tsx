@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
+import { renderWithToasts as render } from "./helpers/with-toasts";
 import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -168,7 +169,9 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     start();
     fireEvent.click(screen.getByRole("button", { name: "Create referral" }));
     fireEvent.click(screen.getByRole("button", { name: "Log team contact" }));
-    expect(document.getElementById("actionToastMsg")).toHaveTextContent("does not record patient or referral contact");
+    expect(screen.getByTestId("community-action-toast")).toHaveTextContent(
+      "does not record patient or referral contact",
+    );
     fireEvent.click(screen.getByRole("button", { name: "Review" }));
     const referralId = screen.getByTestId("referral-id").textContent!;
     expect(screen.getByRole("dialog", { name: /^Referral triage: / })).toBeInTheDocument();

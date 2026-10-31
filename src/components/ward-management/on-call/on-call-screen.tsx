@@ -70,6 +70,7 @@ import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
 import { readFavourites, saveFavourites, subscribeFavourites } from "./on-call-favourites";
 import styles from "./on-call.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { useActionToast } from "@/components/ward-management/use-action-toast";
 
 export type Highlight = "now" | "soon" | "email" | "due";
 
@@ -203,11 +204,22 @@ export function OnCallScreen() {
     return () => window.removeEventListener("keydown", onKey);
   }, [isPhone, searchId]);
 
-  const say = useCallback((text: string) => {
-    setNotice(text);
-    if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(""), 4000);
-  }, []);
+  // Outside a sheet the outcome goes to the shared toast region. A sheet makes the page behind it
+  // inert, so while one is open its feedback stays inside the sheet, beside what was copied.
+  const pushNotice = useActionToast({ testId: "ward-on-call-notice", tone: "info" });
+  const inSheetRef = useRef(false);
+  const say = useCallback(
+    (text: string, warning = false) => {
+      if (!inSheetRef.current) {
+        pushNotice(warning ? { warning: text } : text);
+        return;
+      }
+      setNotice(text);
+      if (noticeTimer.current) clearTimeout(noticeTimer.current);
+      noticeTimer.current = setTimeout(() => setNotice(""), 4000);
+    },
+    [pushNotice],
+  );
 
   const copy = useCallback(
     async (text: string, label: string) => {
@@ -215,7 +227,7 @@ export function OnCallScreen() {
         await copyTextToClipboard(text);
         say(label);
       } catch {
-        say("Copy is unavailable in this browser. Select the text instead.");
+        say("Copy is unavailable in this browser. Select the text instead.", true);
       }
     },
     [say],
@@ -560,11 +572,9 @@ export function OnCallScreen() {
 
   // A sheet makes the page behind it inert, so while one is open its feedback shows inside it.
   const sheetOpen = downtimeOpen || Boolean(isPhone && sheetEntry);
-  const noticeLine = sheetOpen ? null : (
-    <p className={cx(styles.toast, notice && styles.toastOn)} role="status" data-testid="ward-on-call-notice">
-      {notice}
-    </p>
-  );
+  useEffect(() => {
+    inSheetRef.current = sheetOpen;
+  }, [sheetOpen]);
   const sheetNotice = sheetOpen ? (
     <p className={styles.sheetNotice} role="status" data-testid="ward-on-call-notice">
       {notice}
@@ -646,7 +656,6 @@ export function OnCallScreen() {
             <StatusGlyph tone="warning" size={9} />
             Synthetic records. Every number is a mock from an unassigned range.
           </p>
-          {noticeLine}
         </main>
         {sheetEntry ? (
           <PhoneSheet entry={sheetEntry} actions={actions} notice={sheetNotice} onClose={() => setSheetId(null)} />
@@ -752,7 +761,6 @@ export function OnCallScreen() {
             <ContactCard entry={slideEntry} actions={actions} headingId={`${panelHeadingId}-slide`} />
           </Drawer>
         ) : null}
-        {noticeLine}
         <WardPrototypeFooter
           testId="ward-on-call-governance"
           note="Not approved for clinical use. Synthetic records, mock numbers."

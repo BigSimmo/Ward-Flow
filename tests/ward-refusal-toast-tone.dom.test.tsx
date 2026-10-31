@@ -2,7 +2,9 @@ import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { BoardToastView } from "@/components/ward-management/board/ward-board-toast";
+import type { ActionToast } from "@/components/ward-management/ward-action-toast";
+import { useActionToast } from "@/components/ward-management/use-action-toast";
+import { ToastProvider } from "@/components/wf/toast-provider";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
@@ -19,6 +21,23 @@ function Page({
 }) {
   const { run } = useUndoableStep({ dispatch, now: 642, routeRole: "ward", rejections: [], onMessage });
   return <button onClick={() => run(event, { success: "Recorded." })}>Record</button>;
+}
+
+function BoardToast({ say }: { say: ActionToast | null }) {
+  const setToast = useActionToast({ testId: "ward-board-toast" });
+  return (
+    <button type="button" onClick={() => setToast(say)}>
+      Show
+    </button>
+  );
+}
+
+function showOnBoard(say: ActionToast | null) {
+  return render(
+    <ToastProvider>
+      <BoardToast say={say} />
+    </ToastProvider>,
+  );
 }
 
 async function press(dispatch: (event: WardFlowEvent) => Promise<WardCommandOutcome>) {
@@ -42,13 +61,14 @@ describe("refusals are told apart from successes (walk-through WT-10)", () => {
   });
 
   it("shows a bed board refusal with the warning tone and a recorded step without it", () => {
-    const { rerender } = render(<BoardToastView toast={{ warning: "Not recorded: no bed. Nothing was changed." }} />);
+    const refusal = showOnBoard({ warning: "Not recorded: no bed. Nothing was changed." });
+    fireEvent.click(screen.getByRole("button", { name: "Show" }));
     const toast = screen.getByTestId("ward-board-toast");
     expect(toast).toHaveAttribute("data-tone", "warning");
     expect(toast).toHaveTextContent(/^Not recorded: no bed\. Nothing was changed\.$/);
-    rerender(<BoardToastView toast="Patient arrived: Alex confirmed on the ward." />);
-    expect(screen.getByTestId("ward-board-toast")).not.toHaveAttribute("data-tone");
-    rerender(<BoardToastView toast={null} />);
-    expect(screen.queryByTestId("ward-board-toast")).not.toBeInTheDocument();
+    refusal.unmount();
+    showOnBoard("Patient arrived: Alex confirmed on the ward.");
+    fireEvent.click(screen.getByRole("button", { name: "Show" }));
+    expect(screen.getByTestId("ward-board-toast")).toHaveAttribute("data-tone", "success");
   });
 });

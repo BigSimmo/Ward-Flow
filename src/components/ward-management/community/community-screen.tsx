@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsPhone, useOptionalToast } from "@/components/wf";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
+import { useActionToast } from "@/components/ward-management/use-action-toast";
 import {
   admissionBelongsToTeam,
   admissionsWithNoCommunityTeam,
@@ -332,7 +333,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   useHoldOpenForm(declineOpenFor !== undefined, declineOpenFor && `referral:${declineOpenFor}`);
   const [declineDraft, setDeclineDraft] = useState<CommunityDeclineReason | undefined>(undefined);
   const [activeModal, setActiveModal] = useState<{ referral: CommunityScopedReferral } | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  // The shared toast region shows it, as every desk's outcome is shown (notifications pass).
+  const setToastMessage = useActionToast({ testId: "community-action-toast", tone: "info" });
   // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
   // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.
   const [chosenTab, setChosenTab] = useState<ActiveTabType | null>(null);
@@ -416,7 +418,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       if (source === "modal") setActiveModalType((current) => (current === "contact" ? null : current));
       else setToastMessage("Team contact logged. This does not record patient or referral contact.");
     },
-    onQuickMessage: setToastMessage,
+    // CT-09: a save that did not go through stays until it is closed, as a warning.
+    onQuickMessage: (message, warning) => setToastMessage(warning ? { warning: message } : message),
   });
   const { contactRecord, contactSaveMessage, contactSaveDisabled } = contactSave;
   const [dismissedTaskIds, setDismissedTaskIds] = useState<Set<string>>(new Set());
@@ -457,14 +460,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       setActiveModal({ referral });
     }
   }
-
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
 
   useEffect(() => {
     // Escape runs last (window), after any open layer has handled it.
@@ -979,7 +974,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     cancelTransportBlocked,
     activeModal,
     setActiveModal,
-    toastMessage,
     setToastMessage,
     chosenTab,
     setChosenTab,
@@ -1160,7 +1154,7 @@ export function CommunityScreen(props: CommunityScreenProps) {
       </div>
     );
   }
-  const { isPhone, toastMessage, activeDrawer, acceptanceMessage, acceptanceError, acceptanceRefusal } = view;
+  const { isPhone, activeDrawer, acceptanceMessage, acceptanceError, acceptanceRefusal } = view;
 
   return (
     <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
@@ -1224,17 +1218,6 @@ export function CommunityScreen(props: CommunityScreenProps) {
         {/* ── Modals (mounted only when activeModalType !== null) ── */}
         <CommunityScreenNoteModal view={view} />
 
-        <div
-          id="actionToast"
-          className={`${styles.actionToast} ${toastMessage ? styles.show : ""}`}
-          role="status"
-          aria-live="polite"
-        >
-          <span className={styles.toastIcon} aria-hidden="true">
-            ℹ
-          </span>
-          <span id="actionToastMsg">{toastMessage ?? ""}</span>
-        </div>
         {activeDrawer !== "referral" && activeDrawer !== "referralDrawer" && acceptanceMessage && (
           <p role={acceptanceError || acceptanceRefusal ? "alert" : "status"} data-testid="community-acceptance-result">
             {acceptanceMessage}
