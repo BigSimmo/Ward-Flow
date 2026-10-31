@@ -122,6 +122,12 @@
   width: auto;
 }
 
+/* Referral placement's Decide (forked panel): the kit's primary, full width as the panel's one
+   filled action, at the panel's touch height. */
+.decide {
+  flex: 1 1 auto;
+}
+
 /* Preview only: a state mock-up's extra referral actions, under the referral's own Decide. */
 .referralActions {
   display: flex;

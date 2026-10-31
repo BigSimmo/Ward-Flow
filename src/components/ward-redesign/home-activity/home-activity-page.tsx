@@ -79,7 +79,6 @@ import { MyListCard } from "./my-list-card";
 import { legalInboxDetailAsTyped } from "@/components/ward-redesign/legal-copies/legal-alert-words";
 import list from "@/components/ward-management/coordinator/home-list.module.css";
 import { PriorityQueue, type QueueHighlight } from "./priority-queue";
-import { ReferralPlacementPanel } from "@/components/ward-management/coordinator/shortlist-panel-lazy";
 import shortlistStyles from "@/components/ward-management/coordinator/shortlist-panel.module.css";
 
 import { useExplicitReview } from "./activity-changes";
@@ -90,6 +89,8 @@ import { PlacementPrompt } from "./home-activity-parts";
 import { HomeReferralActionsSlot } from "./home-preview-slot";
 import { BedsFitCard } from "./beds-fit-card";
 import { PlacementPanel } from "./placement-panel";
+// Final design check (31 Oct 2026): the forked preview, whose Decide is the kit's shared primary.
+import { ReferralPlacementPanel } from "./referral-placement-panel";
 import { PlannedList, usePlannedRows } from "./planned-list";
 
 /*

@@ -28,3 +28,21 @@
 .cadFit [class*="_withReason"] > button {
   flex: none;
 }
+
+/* Final round (31 Oct 2026): a done leg step reads as done, not as "can't do yet". It is
+   unavailable (it cannot be pressed again), so it used the kit's dashed edge like a step not open
+   yet. A done step now has a solid, quiet edge on the plain surface and its check in the success
+   ink; dashed stays only for a step not open yet. Matches the job popup. */
+.stepDone.stepDone[aria-disabled="true"] {
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}
+.stepDone svg {
+  color: var(--wf-success-ink);
+}
+@media (forced-colors: active) {
+  .stepDone.stepDone[aria-disabled="true"] {
+    border-style: solid;
+  }
+}

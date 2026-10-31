@@ -259,7 +259,9 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     return (
       <Button
         variant={isNext && !blocked ? "pri" : "sec"}
-        className={done ? `${styles.actionButton} ${styles.actionDone}` : styles.actionButton}
+        // Final round (31 Oct 2026): a done step takes `detail.stepDone` (solid quiet edge, plain
+        // surface, green check), so only a step not open yet keeps the dashed unavailable edge.
+        className={done ? `${styles.actionButton} ${styles.actionDone} ${detail.stepDone}` : styles.actionButton}
         data-testid={`${testId}-${movement.id}`}
         aria-disabled={blocked ? "true" : undefined}
         aria-describedby={blocked ? `${testId}-unavailable-${movement.id}` : undefined}
