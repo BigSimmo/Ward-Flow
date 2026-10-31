@@ -524,7 +524,7 @@ export function PlannedAdmissionsPanel({
                   <span className={`${styles.facts} ${redesign.plannedFacts}`}>
                     <SpelledCodes text={PLANNED_ADMISSION_REASON_LABELS[planned.reason]} /> ·{" "}
                     <SpelledCodes text={unitName(planned.unitId)} />
-                    {service ? (
+                    {service && !compactActions ? (
                       <>
                         {" ("}
                         <SpelledCodes text={healthServiceAcronym(service)} />
@@ -532,10 +532,17 @@ export function PlannedAdmissionsPanel({
                       </>
                     ) : null}{" "}
                     · {planned.expectedStayDays}d · {planned.legalStatus}
-                    {overdue ? (
+                    {overdue && !compactActions ? (
                       <span className={styles.overdue}>
                         {" "}
                         · arrival not recorded, {formatRemaining(minutesUntil(planned.expectedArrivalAt, now))}
+                      </span>
+                    ) : null}
+                    {/* Polish (Josh, 31 Oct 2026): on Capacity the facts are reason, ward, stay and
+                        legal status; a late arrival is a small tag under them. */}
+                    {overdue && compactActions ? (
+                      <span className={redesign.plannedLate}>
+                        Not arrived · {formatRemaining(minutesUntil(planned.expectedArrivalAt, now))}
                       </span>
                     ) : null}
                   </span>

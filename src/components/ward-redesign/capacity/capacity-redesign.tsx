@@ -45,6 +45,7 @@ import { BedMapCards, type Highlight } from "./bed-map-cards";
 import { BedMeetingSheetDialog } from "./bed-meeting-sheet-dialog";
 import { ShiftChecks } from "./capacity-side";
 import { ComingIn } from "./coming-in";
+import { RoadTimeCard } from "./road-time-card";
 import { MismatchBand, shortNeed } from "./mismatch-band";
 import { ScenarioDialog } from "./scenario-dialog";
 import { useCapacityModel, type CapacityModel } from "./use-capacity-model";
@@ -170,7 +171,7 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
           />
           <div className={styles.lowerRow}>
             <ComingIn now={now} plannedBooked={model.plannedBooked} />
-            <ReadyByRoadTime
+            <RoadTimeCard
               rows={model.networkRows}
               defaultEdId={model.roadTimeFromEdId}
               selectedUnitId={selectedRow?.unit.id}
