@@ -143,10 +143,6 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
-    module: "src/components/ward-management/shell/ward-demo-menu.tsx",
-    why: "the Demo menu under the header's Synthetic pill; the new frame drops the pill (Josh, 31 Oct 2026), so the board clock and Tools open the same Demo panel in Tools. Nothing else mounts this menu (the executive chrome has its own); deleting it and its test needs Josh's yes on the dead-code check",
-  },
-  {
     module: "src/components/ward-management/statistics/statistics-overview-screen.tsx",
     why: "its route became a redirect on 21 Oct 2026 (D-77, change 9): Summary and Overview are one Network page, and Overview's unique cards moved to statistics-network-cards.tsx. Deleting the screen and its tests needs Josh's yes on the dead-code check",
   },
