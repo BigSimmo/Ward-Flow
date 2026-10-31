@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { buttonClass } from "@/components/wf";
+import { buttonClass, phoneRows } from "@/components/wf";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -284,8 +284,13 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
     try {
       renderScreen();
       const hero = within(screen.getByTestId("ward-alerts-phone-hero"));
-      expect(hero.getByRole("button", { name: /^Next alert/u }).className).toBe(buttonClass({ variant: "light" }));
-      expect(hero.getByRole("button", { name: /^Broadcast/u }).className).toBe(buttonClass({ variant: "onHero" }));
+      // Redesign (31 Oct 2026): both sit as Home's hero pills; Next keeps the one light (primary) face.
+      expect(hero.getByRole("button", { name: /^Next alert/u }).className).toBe(
+        buttonClass({ variant: "light", className: phoneRows.heroPill }),
+      );
+      expect(hero.getByRole("button", { name: /^Broadcast/u }).className).toBe(
+        buttonClass({ variant: "onHero", className: phoneRows.heroPill }),
+      );
     } finally {
       vi.unstubAllGlobals();
     }
