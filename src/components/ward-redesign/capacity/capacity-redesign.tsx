@@ -135,7 +135,7 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
           onWard={openWard}
         />
       }
-      footNote="Modelled network bed capacity · CAHS inpatient wards are not modelled · private live feeds are unavailable · Not approved for clinical use"
+      footNote="Modelled network · CAHS wards not modelled · Not approved for clinical use"
     >
       {isPhone ? (
         <>

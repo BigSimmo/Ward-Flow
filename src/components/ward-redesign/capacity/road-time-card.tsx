@@ -17,6 +17,7 @@ import {
 } from "@/components/ward-management/reference/ward-reference-distances";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 
+import { HowWorkedOut } from "../parts/how-worked-out";
 import styles from "./capacity-redesign.module.css";
 
 export function RoadTimeCard({
@@ -106,7 +107,12 @@ export function RoadTimeCard({
           ))}
         </ol>
       )}
-      <p className={styles.rtFoot}>Distance only, not suitability. {REFERENCE_DISTANCE_CAVEAT}</p>
+      {/* Polish (Josh, 31 Oct 2026): one short line; the map-data caveat opens from it. */}
+      <div className={styles.rtFoot}>
+        <HowWorkedOut label="Distance only, not suitability">
+          <p>{REFERENCE_DISTANCE_CAVEAT}</p>
+        </HowWorkedOut>
+      </div>
     </Card>
   );
 }

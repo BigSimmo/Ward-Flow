@@ -162,10 +162,12 @@ export function CapacityWardSidebar({
                   derived={row.unit.allocatable.source !== "ward"}
                   now={now}
                 />
-                <span className={fresh ? local.mutedXs : `${local.mutedXs} ${local.warnInk}`}>
-                  {fresh ? "Within" : "Past"} this ward’s {row.unit.allocatable.staleAfterMinutes} minute confirmation
-                  threshold
-                </span>
+                {/* Polish (Josh, 31 Oct 2026): said only when the count is past its limit. */}
+                {fresh ? null : (
+                  <span className={`${local.mutedXs} ${local.warnInk}`}>
+                    Past this ward’s {row.unit.allocatable.staleAfterMinutes} minute confirmation threshold
+                  </span>
+                )}
                 {request ? (
                   <span role="status" className={local.mutedXs}>
                     Update requested {formatInstantWithDay(request.at, now)}
