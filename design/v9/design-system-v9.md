@@ -18,7 +18,7 @@ Eight principles replace the 21 numbered rules. Each one says what to do, not on
 
 1. **Answer first.** Every page answers one question in 5 seconds. Its focal part is in the first screen and gets the most space.
 2. **Calm, dense, aligned.** A compact scale, a 4px rhythm, flush equal columns, tables that grow, and no empty rails.
-3. **Colour means state.** Tone lives in glyphs, the hero and the thin act now edge. Red means act now and nothing else. Words stay neutral ink.
+3. **Colour means state.** Tone lives in glyphs and the hero. Red means act now and nothing else. Words stay neutral ink. No coloured side edges or stripes on rows, cards or tiles (Josh, 31 Oct 2026).
 4. **Shape tells you.** One shape per status. Raised pills press, flat pills label, circles count, dashed means unavailable.
 5. **Materials have roles.** Solid surfaces for content, frosted glass for chrome and overlays, deep slate for the hero. Never glass on data.
 6. **Live and honest.** Values show their age and mark themselves when they change. Counts reconcile. Nothing claims more than it shows.
@@ -44,7 +44,9 @@ One switch, carried from v8. Every colour token is `light-dark(day, night)`, res
 
 At night a surface gets lighter as it rises, because shadows do not show on a dark canvas.
 
-**Tone.** Glyphs, edges and marks take the tone (`--wf-danger` and so on). Words that stand alone, such as an error message, take the `-ink` partner. Cards, rows and tiles take no tinted fill, except a free or fit place, which keeps its soft fit tint. An act now item takes a thin 1px edge in `--wf-act-edge` through `.edge-act`, never a fill. On the hero, glyphs take the on-hero tones.
+**Tone.** Glyphs and marks take the tone (`--wf-danger` and so on). Words that stand alone, such as an error message, take the `-ink` partner; a figure beside its glyph may take it too. Cards, rows and tiles take no tinted fill, except a free or fit place, which keeps its soft fit tint, an act now row, which keeps the act tint, and at most one most-urgent item per page, which may take `color-mix(in srgb, var(--wf-danger) 6%, var(--wf-surface))`. On the hero, glyphs take the on-hero tones.
+
+**No side edges (Josh, 31 Oct 2026: "it feels tacky").** Never show status, selection or act now with a coloured left or right edge, a stripe, an inset bar or a tone-coloured border. Instead: the StatusGlyph before the label or value; a small tinted tag on a row; selected as the selected tint with a neutral border; borders stay neutral (`--wf-line`). `tests/wf-no-side-stripes.test.ts` keeps the kit free of them and stops the rest of the app adding more.
 
 **Accent.** One clear blue means you can act here. `--wf-accent` is `light-dark(#245a8c, #8cbcf0)`. The primary button runs from `--wf-pri-1` `light-dark(#2f6aa3, #3a72a8)` to `--wf-pri-2` `light-dark(#234f7a, #2c5c8c)`. White text holds at least 4.9:1 on every primary stop. Data bars (`--wf-data-*`) stay slate, so blue never reads as data. Red and amber keep their meanings.
 
@@ -202,6 +204,14 @@ Quick in, quicker out. Nothing moves without a reason, and nothing bounces on da
 - **Counts.** Each figure has one source. "N of M" only when N rows are shown, otherwise "Top 10 of 70". Hero chips, tab counts and list lengths agree.
 - **Content.** Dates as "Fri 9 Oct". 24 hour time. Durations from one formatter (`durText`) with no seconds: under 1h as 45m, under 48h as 3h 20m, from 48h as 7d 1h, never "169h 0m". A list may add a relative part in ink-3: "Fri 16 Oct, in 7d", "2d ago". Thousands separators. Percentages to one decimal place. A colon means clock time only. Counts must reconcile across a page: the hero, a tile and a list never disagree about the same thing. Legal forms are named by their Mental Health Act 2014 form name and period, not a section number, unless the section has been verified. Where the app does not check a legal limit it says "Legal limits not checked here".
 - **Age.** Every confirmed figure shows its age ("15m since confirmed"). Past its threshold it takes the amber circle and names the action.
+- **Header strip, stat rows and graphs (Josh, 31 Oct 2026: "I like your choices").** From the Waiting mock-up, rounds 5 and 6 (`ward-redesign/waiting/waiting-polish.module.css`, branch `claude/project-thread-li661n`, 33e932ea8). Full note: `waiting-mockup/design-system-note-graphs-and-header.md` in the build folder.
+  - _At a glance strip._ One slim line in the dark band under a `--wf-on-hero-div` hairline, never boxed tiles. Each item is a 14px icon in its hero night tone, a quiet 12px label (`--wf-hero-ink-2`) and a bold value; extra detail in `--wf-hero-ink-3`. 1px dividers between items. A person item opens their row and shows a chevron. At most one small on-hero action, 26px high.
+  - _Summary stat row._ One container: 1px `--wf-line` border, `--wf-surface-2` fill, 4px padding. Each stat is a 28px rounded icon chip tinted with its tone at 13%, a bold 18px mono figure, then 13px words in ink-2, with hairline dividers between stats. Never separate boxes or a side note; caveats go in the key line.
+  - _Graph cards._ Each tab has a 14px icon: accent on the selected tab, 75% opacity on the rest. Sub-switch labels (Rows, Columns) have a 13px icon. One key line under the tabs, which keeps safeguard wording word for word ("Not legally checked.").
+  - _Heat maps._ Flat 6px cells with 3px gaps and no borders, one sequential accent ramp from 6% to 42% keyed "Fewer … More". An empty cell is a faint outline with a dash. Column heads are small capitals in ink-3 at the 12px floor (the mock-up draws them at 11px, below the floor; the floor holds until Josh rules otherwise).
+  - _Dot plots._ Every other lane faintly shaded, the grid at about 55% opacity, the reference line labelled with a small pill ("8h"). Piles stack at most five high, then a "+n" pill.
+  - _Named timelines_ ("next N hours"). Names in a list in time order, each with a marker on one shared track, rather than bars counting people per slot. Never a second unlabelled scale.
+  - _Status colour._ Warning, danger, success and info carry state only, always with a glyph and words. Text uses the ink tokens, never a series colour.
 
 ## 10. Components
 
@@ -288,7 +298,7 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 ## 14. Owner rulings in force
 
 - 12px floor, no uppercase exception (O-15.1).
-- Colour lives in glyphs and the hero. Red means act now. Act now items take a thin edge, never a fill (9 Oct).
+- Colour lives in glyphs and the hero. Red means act now. Act now items take the act tint and their glyph, never a side edge (31 Oct; replaces the 9 Oct thin edge).
 - Compact sizing and smaller text (9 Oct).
 - Phone is its own design (9 Oct).
 - Every page has a focal part, a part of its own and a page-specific hero (9 Oct).
