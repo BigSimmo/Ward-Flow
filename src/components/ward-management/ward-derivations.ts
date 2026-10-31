@@ -6,6 +6,7 @@
  * consumer at once rather than needing three coordinated edits.
  */
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { formTimeAsTyped, typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
   INBOX_CATEGORIES,
   type InboxItemKind,
@@ -629,7 +630,9 @@ export function buildActionInbox(
       tone: "danger",
       icon: CircleAlert,
       title: "Legal due time passed",
-      detail: `${movement.id} · ${formatRemaining(minutesUntil(dueAt, now))}`,
+      // Legal times only as typed (31 Oct 2026): "WF-001 · Form 4C (Transfer order) · ended 10:02 as
+      // typed", never "1h 15m overdue".
+      detail: `${movement.id} · ${movement.legalForm ? formTimeAsTyped(movement.legalForm, now) : `Legal form · ${typedTimePhrase(dueAt, now)}`}`,
       owner: movement.owner,
       movementId: movement.id,
       dueAt,

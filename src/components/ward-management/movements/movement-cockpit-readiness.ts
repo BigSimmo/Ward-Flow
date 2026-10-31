@@ -20,7 +20,7 @@ export function formReadinessState(
   if (!legalForm) return "Not ready — no legal form recorded.";
   if (legalForm.dueAt === undefined) return "Recorded, with no deadline on it.";
   const state = clockState(legalForm.dueAt, now, thresholds);
-  if (state === "breached") return "Recorded, and its deadline has passed. Needs attention says by how much.";
+  if (state === "breached") return "Recorded, and its deadline has passed. Needs attention shows the time as typed.";
   if (state === "critical" || state === "due") {
     return "Recorded, and its deadline is close. Needs attention says how close.";
   }

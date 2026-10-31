@@ -27,6 +27,7 @@ import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/compon
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
+import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
 import { edHealthService } from "./ward-service-scope";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
@@ -203,8 +204,9 @@ function rowIcon(item: InboxItem) {
 
 /**
  * The value and state shown at the right of a row, read from the movement's own recorded times.
- * Nothing here is a computed deadline: an overdue row counts up from the time the record holds,
- * and a waiting transport counts up from when it was accepted.
+ * Nothing here is a computed deadline: an overdue bed pull counts up from the time the record
+ * holds, a passed legal form shows only its typed time, and a waiting transport counts up from
+ * when it was accepted.
  */
 function rowTiming(
   item: InboxItem,
@@ -216,7 +218,13 @@ function rowTiming(
     return { value: durMinutes(now - movement.pullExpiresAt), state: "Overdue", tone: "danger", stateTone: "danger" };
   }
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
-    return { value: durMinutes(now - movement.legalForm.dueAt), state: "Overdue", tone: "danger", stateTone: "danger" };
+    // Legal times only as typed (31 Oct 2026): the typed clock time, never a count past it.
+    return {
+      value: typedClock(movement.legalForm.dueAt, now),
+      state: "Ended, as typed",
+      tone: "danger",
+      stateTone: "danger",
+    };
   }
   if (movement && /transport/i.test(item.title) && movement.transport?.acceptedAt !== undefined) {
     return {

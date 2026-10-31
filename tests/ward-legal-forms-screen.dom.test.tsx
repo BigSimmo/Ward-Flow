@@ -313,7 +313,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
     fireEvent.click(within(row).getAllByRole("button")[0]!);
     const panel = screen.getByTestId("ward-legal-selected");
-    expect(within(panel).getByText("since the typed expiry")).toBeInTheDocument();
+    expect(within(panel).getByText(/^Ended, as typed from the form/u)).toBeInTheDocument();
 
     fireEvent.click(within(panel).getByRole("button", { name: "Extend recorded form" }));
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
@@ -322,10 +322,10 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:45" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
 
-    expect(within(panel).getByText("until the typed expiry")).toBeInTheDocument();
+    expect(within(panel).getByText(/^Ends, as typed from the form/u)).toBeInTheDocument();
     const undoBtn = screen.getByRole("button", { name: "Undo" });
     fireEvent.click(undoBtn);
-    expect(within(panel).getByText("since the typed expiry")).toBeInTheDocument();
+    expect(within(panel).getByText(/^Ended, as typed from the form/u)).toBeInTheDocument();
     expect(screen.getByText("Form extension undone.")).toBeInTheDocument();
   });
 

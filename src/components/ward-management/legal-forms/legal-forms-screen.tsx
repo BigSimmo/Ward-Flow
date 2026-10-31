@@ -82,19 +82,19 @@ import {
   STANDING_TONE,
   clockStanding,
   durText,
-  elapsedFraction,
   formTitle,
   handoverLines,
   hasGap,
   isActNow,
   isOwnedLegalFormCode,
-  leftText,
   receiptEventAccepts,
   recentTellSubjects,
   recordedFacts,
   standingWord,
+  typedTimeText,
   type RecordGap,
 } from "./legal-forms-view";
+import { typedClock } from "./legal-time-as-typed";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { PhoneChecklist } from "./legal-forms-phone-checklist";
 import styles from "./legal-forms.module.css";
@@ -821,7 +821,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       <div className={styles.groupHead}>
                         <span>Expiry typed</span>
                         <span className={styles.groupCount}>{withDeadline.length}</span>
-                        <span className={styles.groupOrder}>least time left</span>
+                        <span className={styles.groupOrder}>earliest typed time first</span>
                       </div>
                       <ul className={styles.phoneList}>
                         {withDeadline.map((movement) => (
@@ -903,7 +903,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                         <span className={styles.nextName}>
                           {nameOf(next)} <span className={styles.heroCode}>{next.legalForm?.code}</span>
                         </span>
-                        <span className={styles.nextTime}>{leftText(next, now)}</span>
+                        <span className={styles.nextTime}>{typedTimeText(next, now)}</span>
                       </button>
                     ) : null}
                     <Button
@@ -993,7 +993,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       {highlight
                         ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
                         : view === "clocks"
-                          ? "Act now first, then least time left"
+                          ? "Act now first, then earliest typed time"
                           : null}
                     </span>
                   }
@@ -1025,13 +1025,13 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                             <span className={tableClasses.th}>Patient</span>
                             <span className={tableClasses.th}>Form</span>
                             <span className={tableClasses.th}>Where</span>
-                            <span className={tableClasses.th}>Time left</span>
+                            <span className={tableClasses.th}>Ends, as typed</span>
                             <span className={tableClasses.th}>To record</span>
                           </DataRow>
                           <div className={styles.groupHead}>
                             <span>Expiry typed</span>
                             <span className={styles.groupCount}>{withDeadline.length}</span>
-                            <span className={styles.groupOrder}>least time left first</span>
+                            <span className={styles.groupOrder}>earliest typed time first</span>
                             <span className={styles.srOnly}>Forms with a deadline recorded</span>
                           </div>
                           {withDeadline.length > 0 ? (
@@ -1252,7 +1252,8 @@ function FormRow({
   const canAddTime = movement.formedAt === undefined && isOwnedLegalFormCode(legalForm.code);
   // Audit S-6: an ended form's typed expiry is history, so the row shows it ended, not a countdown.
   const progression = formProgression(movement);
-  const hasDue = currentLegalDueAt(movement) !== undefined;
+  const dueAt = currentLegalDueAt(movement);
+  const hasDue = dueAt !== undefined;
 
   return (
     <DataRow
@@ -1304,12 +1305,10 @@ function FormRow({
           <>
             <span className={styles.leftLine}>
               <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
-              <strong className={styles.leftValue}>{leftText(movement, now)}</strong>
+              <strong className={styles.leftValue}>{typedClock(dueAt!, now)}</strong>
               <span className={styles.sub}>{standingWord(standing, thresholds)}</span>
             </span>
-            <span className={styles.progress} data-tone={STANDING_TONE[standing]} aria-hidden="true">
-              <span style={{ width: `${Math.round(elapsedFraction(movement, now) * 100)}%` }} />
-            </span>
+            <span className={styles.sub}>{standing === "passed" ? "Ended" : "Ends"}, as typed</span>
           </>
         ) : (
           <>
@@ -1363,7 +1362,7 @@ function FormRow({
 }
 
 /**
- * Phone row (v10): the code chip, the name, the form and where, with the time left at the end.
+ * Phone row (v10): the code chip, the name, the form and where, with the typed time at the end.
  * The whole row opens the form sheet; an act now row takes the thin red edge, a dimmed row recedes
  * by colour only.
  */
@@ -1374,7 +1373,8 @@ function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onS
   const facts = recordedFacts(movement);
   const missing = facts.filter((fact) => fact.at === undefined).length;
   const where = wardName ? `${edName} to ${wardName}` : edName;
-  const hasDue = currentLegalDueAt(movement) !== undefined;
+  const dueAt = currentLegalDueAt(movement);
+  const hasDue = dueAt !== undefined;
   return (
     <PhoneListRow
       as="li"
@@ -1393,13 +1393,13 @@ function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onS
           </span>
         </>
       }
-      // Josh's no-wrap rule: the time and its word sit on one line ("1h 00m left"), not stacked.
+      // Josh's no-wrap rule: the typed time and its word on one line ("15:42 as typed"), never a count.
       value={
         hasDue ? (
           <span className={styles.leftLine}>
             <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
-            {leftText(movement, now)}
-            <span className={styles.phoneTimeWord}>{standing === "passed" ? "passed" : "left"}</span>
+            {typedClock(dueAt!, now)}
+            <span className={styles.phoneTimeWord}>{standing === "passed" ? "ended, as typed" : "as typed"}</span>
           </span>
         ) : (
           <span className={styles.leftLine}>

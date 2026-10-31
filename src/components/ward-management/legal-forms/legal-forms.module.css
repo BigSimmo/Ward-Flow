@@ -190,12 +190,11 @@
   color: var(--wf-hero-ink-2);
 }
 
+/* Names wrap in full, never cut short (owner rule). */
 .nextName {
   grid-column: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   font-weight: 600;
 }
 
@@ -210,11 +209,13 @@
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
+/* D-93: "Ends 11:42 as typed" breaks after the clock so the name keeps its room. */
 .nextTime {
   grid-column: 2;
   grid-row: 1 / span 2;
+  max-width: 10.5ch;
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
-  white-space: nowrap;
+  text-align: end;
 }
 
 /* Device sweep R3-05/L17 (24 Oct 2026): the pills wrap rather than squeeze into each other. */
@@ -548,10 +549,6 @@ button.taskLabel[aria-pressed="true"] {
   border-color: var(--wf-line);
 }
 
-.row[data-dim="true"] .progress > span {
-  background: var(--wf-glyph-dim);
-}
-
 .rowButton {
   position: absolute;
   inset: 0;
@@ -619,30 +616,6 @@ button.taskLabel[aria-pressed="true"] {
 
 .leftValue {
   font: 700 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
-}
-
-.progress {
-  display: block;
-  width: min(100%, 120px);
-  height: 4px;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-track);
-  overflow: hidden;
-}
-
-.progress > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--wf-ink-2);
-}
-
-.progress[data-tone="danger"] > span {
-  background: var(--wf-danger);
-}
-
-.progress[data-tone="warning"] > span {
-  background: var(--wf-warning);
 }
 
 .rowLink {
@@ -809,16 +782,6 @@ button.taskLabel[aria-pressed="true"] {
 
 .focusClockLine > :first-child {
   align-self: center;
-}
-
-.focusClock .progress {
-  width: 100%;
-}
-
-.clockAt {
-  margin-left: auto;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
 }
 
 .clockBig {
@@ -1224,10 +1187,6 @@ button.taskLabel[aria-pressed="true"] {
     grid-row: 1 / span 2;
     align-self: center;
     align-items: flex-end;
-  }
-
-  .row:not(.checkRow) > :nth-child(5) > .progress {
-    width: 88px;
   }
 
   /* Checklist rows: name and form on top, the three facts below, each with its own label. */

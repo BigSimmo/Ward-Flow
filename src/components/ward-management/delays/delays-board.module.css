@@ -1123,13 +1123,6 @@ button.stat:hover .statV {
   font-size: var(--wf-fs-12);
 }
 
-.big {
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-16);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .reminder,
 .note {
   margin: 0;

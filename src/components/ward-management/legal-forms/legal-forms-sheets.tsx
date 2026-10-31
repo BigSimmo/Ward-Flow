@@ -15,7 +15,6 @@ import {
   Sheet,
   StatusGlyph,
   TextInput,
-  Timer,
   cx,
   type ErrorSummaryItem,
 } from "@/components/wf";
@@ -41,9 +40,9 @@ import {
   type TellSubject,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
+import { typedTimeLine } from "./legal-time-as-typed";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
-const MS_PER_MINUTE = 60_000;
 const MINUTES_PER_DAY = 1440;
 
 /**
@@ -611,12 +610,8 @@ function ExtendSheetContent({
           {target.legalForm?.dueAt !== undefined ? (
             <div className={styles.dueLine}>
               <Badge tone={STANDING_TONE[standing]}>{standingWord(standing, thresholds)}</Badge>
-              <Timer
-                at={target.legalForm.dueAt * MS_PER_MINUTE}
-                now={now * MS_PER_MINUTE}
-                direction="left"
-                hideFlagWord
-              />
+              {/* Legal times only as typed (31 Oct 2026): the typed time in words, never a countdown. */}
+              <span className={styles.mono}>{typedTimeLine(target.legalForm.dueAt, now)}</span>
               <span className={styles.meta}>{target.legalForm ? legalFormName(target.legalForm) : ""}</span>
             </div>
           ) : null}

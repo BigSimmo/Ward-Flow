@@ -13,6 +13,7 @@ import {
   transportNeedState,
 } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { useEffect, useRef } from "react";
@@ -216,10 +217,11 @@ export function StageRow({
       legalText = `${formTitle} - no recorded expiry on this record`;
     } else if (isBreached) {
       legalTagTone = "danger";
-      legalText = `${formTitle} - recorded expiry passed ${splitDuration(now - dueAt)} ago`;
+      // Legal times only as typed (31 Oct 2026): the typed time in words, never a count.
+      legalText = `${formTitle} - ${typedTimePhrase(dueAt, now)}`;
     } else {
       if (isExpiring) legalTagTone = "warn";
-      legalText = `${formTitle} - recorded expiry in ${splitDuration(dueAt - now)}`;
+      legalText = `${formTitle} - ${typedTimePhrase(dueAt, now)}`;
     }
   } else if (movement.legalStatus === "Voluntary") {
     legalText = "Voluntary";
