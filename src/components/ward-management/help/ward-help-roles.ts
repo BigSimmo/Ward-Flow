@@ -12,7 +12,7 @@ export type RoleReferenceEntry = {
 export const HELP_BED_MANAGER_NAME = "Bed manager";
 
 /** Help names: the menu label, "Access admin" for admin and "Bed manager" for the bed manager. Summaries reuse each desk guide. */
-export function helpRoleName(role: WardAccessRole): string {
+function helpRoleName(role: WardAccessRole): string {
   if (role === "admin") return ACCESS_ROLE_LABELS.admin;
   if (role === "bed_manager") return HELP_BED_MANAGER_NAME;
   return CHROME_ROLE_LABELS[role];
