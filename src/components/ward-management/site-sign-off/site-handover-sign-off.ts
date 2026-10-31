@@ -1,5 +1,4 @@
 import { MINUTES_PER_DAY, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
-import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -23,7 +22,7 @@ import { wardsInBroadcastScope } from "@/components/ward-management/alerts/globa
  * named ward and bed call ids, never a person or typed text. The reducer works out the named lists
  * from the whole workspace when it accepts the sign-off, so a browser cannot leave a ward out.
  *
- * The reducer reads this file (through the lazily loaded slices), so it imports no screen code.
+ * The reducer slice (`site-handover-sign-off-reducer.ts`) reads this file, so it imports no screen code.
  */
 
 /** One site handover sign-off. Role, time, site and the named ids only: no person, no note. */
@@ -78,7 +77,7 @@ export function inSignOffWindow(at: Instant, shiftAt: Instant): boolean {
 }
 
 /** Why `shiftAt` cannot be signed at `now`, or null: it must be a shift start still to come within one shift. */
-function siteShiftRefusal(shiftAt: unknown, now: Instant): string | null {
+export function siteShiftRefusal(shiftAt: unknown, now: Instant): string | null {
   if (typeof shiftAt !== "number" || !Number.isFinite(shiftAt) || !Number.isInteger(shiftAt))
     return "A site sign-off names the handover it is for";
   if (!SHIFT_START_MINUTES.includes(minuteOfDay(shiftAt))) return "A site sign-off is for a handover at a shift start";
@@ -291,36 +290,4 @@ export function stillUnansweredBedCalls(
 ): string[] {
   const open = new Set(siteUnansweredBedCalls(state, record.siteCode, now).map((call) => call.alertId));
   return record.unansweredBedCallIds.filter((id) => open.has(id));
-}
-
-type Reject = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
-
-/**
- * RECORD_SITE_HANDOVER_SIGN_OFF. Who may send it is `EVENT_ROLE`; which site is the shared server's
- * check (`commandScopeRefusal`). This records the sign-off and names what was open; it changes no
- * ward sign-off, bed call or other record.
- */
-export function reduceSiteHandoverSignOff(
-  state: WardFlowState,
-  event: Extract<SiteHandoverSignOffEvent, { type: "RECORD_SITE_HANDOVER_SIGN_OFF" }>,
-  reject: Reject,
-): WardFlowState {
-  if (typeof event.siteCode !== "string" || siteWards(state.units, event.siteCode).length === 0)
-    return reject(state, event, `no site with wards found for code ${String(event.siteCode)}`);
-  const shiftRefusal = siteShiftRefusal(event.shiftAt, event.now);
-  if (shiftRefusal) return reject(state, event, shiftRefusal);
-  const existing = Array.isArray(state.siteHandoverSignOffs) ? state.siteHandoverSignOffs : [];
-  if (siteSignOffFor(existing, event.siteCode, event.shiftAt))
-    return reject(state, event, "This site's handover is already signed off");
-  const record: SiteHandoverSignOffRecord = {
-    at: event.now,
-    by: event.role,
-    siteCode: event.siteCode,
-    shiftAt: event.shiftAt,
-    unsignedUnitIds: siteWardSignOffs(state.units, state.handoverSignOffs, event.siteCode, event.shiftAt)
-      .filter((ward) => ward.signedAt === null)
-      .map((ward) => ward.unitId),
-    unansweredBedCallIds: siteUnansweredBedCalls(state, event.siteCode, event.now).map((call) => call.alertId),
-  };
-  return { ...state, siteHandoverSignOffs: [...existing, record] };
 }
