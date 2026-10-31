@@ -55,6 +55,7 @@ import { formatDateOfBirth, type Patient } from "@/components/ward-management/wa
 import { ChevronRight, CornerDownLeft, ListFilter, Search, X } from "lucide-react";
 
 import styles from "@/components/ward-management/ward-global-search.module.css";
+import local from "@/components/ward-redesign/pop-search/search.module.css";
 import {
   needsYouMeta,
   censusRowItem,
@@ -362,16 +363,25 @@ function headerBottom(root: HTMLElement | null): number {
   return Math.max(0, Math.round(bar.getBoundingClientRect().bottom));
 }
 
+type HeaderBox = { top: number; height: number; left: number; width: number };
+
 /**
  * The header's own top edge and height. The compact bar lays the open field over the bar itself,
  * so it needs the bar's height, not its bottom edge: anything above the bar (a banner, a scrolled
  * offset) once made the field as tall as the bar's bottom edge, a giant pill (Josh, 11 Oct 2026).
+ * Mock-up: also its left edge and width, the content area beside the rail, so the floating palette
+ * centres over the page rather than the whole window and never runs over the rail.
  */
-function headerBox(root: HTMLElement | null): { top: number; height: number } {
-  if (!root) return { top: 0, height: 0 };
+function headerBox(root: HTMLElement | null): HeaderBox {
+  if (!root) return { top: 0, height: 0, left: 0, width: 0 };
   const bar = root.closest("header") ?? root;
   const rect = bar.getBoundingClientRect();
-  return { top: Math.max(0, Math.round(rect.top)), height: Math.max(0, Math.round(rect.height)) };
+  return {
+    top: Math.max(0, Math.round(rect.top)),
+    height: Math.max(0, Math.round(rect.height)),
+    left: Math.max(0, Math.round(rect.left)),
+    width: Math.max(0, Math.round(rect.width)),
+  };
 }
 
 export function GlobalSearch({
@@ -424,7 +434,7 @@ export function GlobalSearch({
   const [hoverIndex, setHoverIndex] = useState(-1);
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [top, setTop] = useState(0);
-  const [barBox, setBarBox] = useState<{ top: number; height: number }>({ top: 0, height: 0 });
+  const [barBox, setBarBox] = useState<HeaderBox>({ top: 0, height: 0, left: 0, width: 0 });
   const recentRecords = useSessionRecents(accessLifetime);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
@@ -746,7 +756,14 @@ export function GlobalSearch({
       frame = 0;
       setTop(headerBottom(rootRef.current));
       const box = headerBox(rootRef.current);
-      setBarBox((current) => (current.top === box.top && current.height === box.height ? current : box));
+      setBarBox((current) =>
+        current.top === box.top &&
+        current.height === box.height &&
+        current.left === box.left &&
+        current.width === box.width
+          ? current
+          : box,
+      );
       const viewport = window.visualViewport;
       const keyboard =
         viewport && viewport.scale <= 1
@@ -1002,7 +1019,7 @@ export function GlobalSearch({
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <div
         ref={paletteRef}
-        className={styles.popup}
+        className={`${styles.popup} ${local.popupBesideRail}`}
         data-above-sheets={aboveSheets || undefined}
         // The floating palette sits 8px under the bar. The phone sheet starts at the bottom of the
         // open field, which ward-bar.module.css paints from the top of the screen (under the status
@@ -1011,6 +1028,7 @@ export function GlobalSearch({
           {
             top: isPhone ? PHONE_SHEET_TOP : top + 8,
             ...(barBox.height > 0 ? { "--wgs-bar-h": `${barBox.height}px`, "--wgs-bar-top": `${barBox.top}px` } : {}),
+            ...(barBox.width > 0 ? { "--wgs-bar-left": `${barBox.left}px`, "--wgs-bar-w": `${barBox.width}px` } : {}),
           } as CSSProperties
         }
         data-testid="ward-global-search-popup"

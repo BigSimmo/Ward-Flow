@@ -12,3 +12,13 @@ span.stepCurrent {
   max-width: none;
   overflow: visible;
 }
+
+/* The floating palette centres over the content area beside the rail (the header's span, measured by
+   the component), not the whole window, so it never runs over the rail. Phone keeps its full-width
+   sheet. Until the header is measured it falls back to the window. */
+@media (min-width: 48.0625rem) {
+  div.popupBesideRail {
+    left: calc(var(--wgs-bar-left, 0px) + var(--wgs-bar-w, 100vw) / 2);
+    width: min(48.75rem, calc(var(--wgs-bar-w, 100vw) - 2rem));
+  }
+}
