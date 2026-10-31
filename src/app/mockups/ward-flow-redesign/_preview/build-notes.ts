@@ -211,11 +211,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Still open:** the rail labels this desk 'EXECUTIVE' and has no Governance entry (shared chrome).",
     "**Round 2:** the hero's Profile button goes. Role rows read 'Nurse in charge · FSH Adult Secure · ends in 120 days · used 1 day ago', and chips show only exceptions (Ending soon, Switched off). The phone opens on Access requests and roles.",
   ],
-  "as-admin-governance": [
-    "**As the access admin**, Governance opens on Review, with only Review and Audit trail; bed operations, registers, reports and the patient chronology are removed (no clinical content).",
-    "**New:** an empty Review links to the record openings in Settings, Access log.",
-    "**Round 2:** with nothing to review, the zero chips, the '0 of 0' ring, the filter and table headings go; the page shows the tabs and one empty state with 'Open the Access log'. 'Patterns' and 'For follow-up' name their nouns.",
-  ],
   "pop-ed-actions": [
     "**Built from a copy of today's row actions menu**: the items, labels, conditions and short reasons are the menu's own, and each item presses the board's real control.",
     "**New:** only the actions you can take now, in three groups (Review and disposition, Transfer and handover, Legal and referral). The row's next step is the one filled button.",
@@ -741,16 +736,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**On a TV:** today's 1080p layout (DR-02) is kept. With one-line tiles every panel, the Brief included, now shows in full on a 1080p screen; today's cuts the Brief off. Only the one-line footer sits just below.",
     '**Kept:** the phone\'s "needs a larger screen" message, the Act now and Watch tags, and the read-only footer.',
     "**Round 2:** 'locked ready' on the Beds ready tile and table header, so it cannot be read as one locked bed (TV-11). 'Due out' matches the tile, and the last tile reads 'Open movements'. 'Most urgent:' stays, because causes are in a fixed order with form times first.",
-  ],
-  governance: [
-    "**Built from a copy of today's Governance workbench**, so the hero counts, the five header tabs (Review, Gaps by site, Audit trail, Registers, Reports), the filters, PIR chronology, Record review, Reviewed and Follow-up, and the phone layout all work as now.",
-    "**Already done in today's screen:** the tabs moved into the header and outcomes show as a tick, cross or circle after the review was written, so those points needed no change.",
-    '**New:** the review pane opens on the newest event waiting, with its facts, who opened the record and Reviewed or Follow-up, instead of "Choose an event". Closing it keeps it closed. On a phone or a portrait tablet the event still opens only when chosen, because there it covers the list.',
-    '**New:** the What and Record cells wrap instead of ending in "…", and the list runs the height of the screen.',
-    '**Kept:** the review count, PIR chronology and "Safety incidents not recorded here".',
-    '**Still open:** on a portrait tablet the session summary under the list says "Choose an event" until one is chosen. It is the screen\'s resting state, so it is left as it is.',
-    "**Round 2:** Gaps reads 'Form gaps' ('67 form gaps across 9 sites'). The phone hero drops a line that repeated the title, tabs and footer. The phone switch is back to today's size; wrapping cells now live in copied files, not overrides.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   seclusion: [
     "**Built from a copy of today's Seclusion screen**, so the room status buttons (each asking first), Record start, Record end, Record incident, the typed-time checks and the ward-only recording rule (D-80) all work as now.",

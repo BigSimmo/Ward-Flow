@@ -68,9 +68,6 @@ const OnCallRedesign = dynamic<MockupPageProps>(() =>
 const SeclusionRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/seclusion/seclusion-redesign").then((module) => module.SeclusionRedesign),
 );
-const GovernancePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/governance/governance-page").then((module) => module.GovernancePage),
-);
 const BedMeetingTvPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/bed-meeting-tv/bed-meeting-tv-page").then((module) => module.BedMeetingTvPage),
 );
@@ -283,11 +280,6 @@ const AsExecutiveSettingsPage = dynamic<MockupPageProps>(() =>
 const AsAdminHomePage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-admin-home/as-admin-home-page").then((module) => module.AsAdminHomePage),
 );
-const AsAdminGovernancePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-admin-governance/as-admin-governance-page").then(
-    (module) => module.AsAdminGovernancePage,
-  ),
-);
 
 import type { BuiltPageSlug } from "./built-pages";
 
@@ -316,7 +308,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "out-of-area": OutOfAreaPage,
   "on-call": OnCallRedesign,
   seclusion: SeclusionRedesign,
-  governance: GovernancePage,
   "bed-meeting-tv": BedMeetingTvPage,
   downtime: DowntimePage,
   chronology: ChronologyPage,
@@ -369,5 +360,4 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-executive-capacity": AsExecutiveCapacityPage,
   "as-executive-settings": AsExecutiveSettingsPage,
   "as-admin-home": AsAdminHomePage,
-  "as-admin-governance": AsAdminGovernancePage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;
