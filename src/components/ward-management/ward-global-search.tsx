@@ -35,7 +35,7 @@ import { GlobalSearchPreview } from "@/components/ward-management/search/global-
 import { buildCensus } from "@/components/ward-management/search/patient-census";
 import { answerQuestion } from "@/components/ward-management/search/search-answers";
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, useIsPhone } from "@/components/wf";
+import { useIsPhone } from "@/components/wf";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -51,20 +51,19 @@ import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-prov
 import { DEMO_CONTROLS_OFF } from "@/components/ward-management/ward-flow-raise";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
-import { formatDateOfBirth, type Patient } from "@/components/ward-management/ward-patients";
-import { ChevronRight, CornerDownLeft, Search, X } from "lucide-react";
+import { type Patient } from "@/components/ward-management/ward-patients";
+import { ChevronRight, Search, X } from "lucide-react";
 
 import styles from "./ward-global-search.module.css";
 import {
   needsYouMeta,
   censusRowItem,
-  patientResultTitle,
   smartSearchGroups,
   type HelpSearchRows,
   type SearchResultGroup,
   type SearchResultItem,
 } from "./ward-global-search-groups";
-import { SearchResultIcon } from "./ward-global-search-icon";
+import { SearchOptionBody } from "./ward-global-search-option-body";
 import { WardSearchCommands } from "./ward-global-search-commands";
 import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
@@ -1171,40 +1170,7 @@ export function WardGlobalSearch({
                     >
                       {group.items.map((item) => {
                         const index = options.indexOf(item);
-                        const optionBody = (
-                          <>
-                            <span className={styles.itemIconBox} aria-hidden="true">
-                              {item.tone ? (
-                                <StatusGlyph tone={item.tone} />
-                              ) : (
-                                <SearchResultIcon kind={item.kind} id={item.id} />
-                              )}
-                            </span>
-                            <span className={styles.resultContent}>
-                              <span className={styles.resultTitle}>{patientResultTitle(item, nameFor)}</span>
-                              <span className={styles.resultMeta}>
-                                {item.umrn ? (
-                                  <>
-                                    <span className={styles.umrn}>{item.umrn}</span>
-                                    {item.dateOfBirth ? <span>born {formatDateOfBirth(item.dateOfBirth)}</span> : null}
-                                  </>
-                                ) : item.readyBeds !== undefined && !item.meta ? (
-                                  <span>
-                                    {item.siteName} · {item.readyBeds} ready
-                                  </span>
-                                ) : item.meta ? (
-                                  <span>{item.meta}</span>
-                                ) : null}
-                              </span>
-                            </span>
-                            <span className={styles.resultKind}>
-                              {item.kind === "task" ? tasksWord.one : item.kindLabel}
-                            </span>
-                            <span className={styles.actionHint} aria-hidden="true">
-                              <CornerDownLeft className={styles.actionHintIcon} aria-hidden="true" />
-                            </span>
-                          </>
-                        );
+                        const optionBody = <SearchOptionBody item={item} nameFor={nameFor} taskWord={tasksWord.one} />;
                         return (
                           <li
                             key={`${group.key}-${item.kind}-${item.id}`}
