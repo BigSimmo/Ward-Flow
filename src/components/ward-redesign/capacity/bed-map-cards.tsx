@@ -143,7 +143,7 @@ export function BedMapCards({
                   <span className={styles.mapGroupName}>{group.service}</span>
                   <span className={styles.muted}>{group.wards.length} wards</span>
                   <span className={styles.mapGroupFigures}>
-                    <b>{ready} ready</b> · {closed} closed · {beds ? ((inUse / beds) * 100).toFixed(1) : "0"}% in use
+                    <b>{ready} ready</b> · {closed} closed · {beds ? Math.round((inUse / beds) * 100) : 0}% in use
                   </span>
                 </button>
               </h3>
@@ -210,6 +210,11 @@ function WardCard({
     ward.pendingPreparation ? `${ward.pendingPreparation} being made ready` : "",
   ].filter(Boolean);
   const occupied = ward.occupied + ward.pulled;
+  // Polish (Josh, 31 Oct 2026): the ready figure leads on the right, occupied of total beds sits
+  // under the name, the bed strip is always one line, and the note line shows only what needs a
+  // look (a stale count first, then pulled, closed, on leave, being made ready). A ward with
+  // nothing to note shows no line, instead of "All beds in use or ready".
+  const stale = !fresh && row !== undefined;
   return (
     <button
       type="button"
@@ -221,32 +226,43 @@ function WardCard({
       <span className={styles.wardName}>
         <SpelledCodes text={ward.unit.name} />
       </span>
-      <span className={styles.wardBeds}>{ward.unit.beds} beds</span>
-      <span className={styles.wardReady}>
+      <span className={`${styles.wardReady}${ward.ready ? "" : ` ${styles.wardReadyNone}`}`}>
         <b className={styles.wardReadyN}>{ward.ready}</b>
-        {ward.ready ? "ready" : "none ready"}
+        ready
       </span>
-      <span className={styles.wardOccupied}>{occupied} occupied</span>
+      <span className={styles.wardOccupied}>
+        {occupied} of {ward.unit.beds} occupied
+      </span>
       <BedCells beds={ward.unit.beds} ready={ward.ready} used={occupied} />
-      <span className={styles.wardNote}>
-        {!fresh && row ? (
-          <span className={styles.warnInk}>
-            <StatusGlyph tone="warning" size={9} /> Count {durMinutes(Math.max(0, now - row.confirmedAt))} old
-          </span>
-        ) : notes.length ? (
-          notes.join(" · ")
-        ) : (
-          "All beds in use or ready"
-        )}
-      </span>
+      {stale || notes.length ? (
+        <span className={styles.wardNote}>
+          {stale ? (
+            <span className={`${styles.wardNoteItem} ${styles.warnInk}`}>
+              <StatusGlyph tone="warning" size={8} /> Count {durMinutes(Math.max(0, now - row.confirmedAt))} old
+            </span>
+          ) : null}
+          {notes.length ? (
+            // Each note keeps its words together, so a wrapped line never starts with a dot.
+            <span>{notes.map((note) => note.replace(/ /g, "\u00a0")).join(" · ")}</span>
+          ) : null}
+        </span>
+      ) : null}
     </button>
   );
 }
 
-/** One square per bed: ready, then occupied or pulled, then closed. Decorative; the card says it in words. */
+/**
+ * One square per bed: ready, then occupied or pulled, then closed. The squares share one line at
+ * any bed count (a grid of equal columns), so a large ward never wraps. Decorative; the card says
+ * it in words.
+ */
 export function BedCells({ beds, ready, used }: { beds: number; ready: number; used: number }) {
   return (
-    <span className={styles.cells} aria-hidden="true">
+    <span
+      className={styles.cells}
+      aria-hidden="true"
+      style={{ gridTemplateColumns: `repeat(${beds}, minmax(0, var(--cell-max, 10px)))` }}
+    >
       {Array.from({ length: beds }, (_, index) => (
         <i
           key={index}

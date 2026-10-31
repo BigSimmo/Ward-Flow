@@ -89,7 +89,6 @@ export function ShiftChecks({ model, onAskWard }: { model: CapacityModel; onAskW
             ),
           )
         )}
-        <p className={styles.mutedXs}>Held-up releases count only in the best case.</p>
       </section>
       <p className={styles.srOnly}>Figures as at {formatInstant(now)}.</p>
     </Card>
