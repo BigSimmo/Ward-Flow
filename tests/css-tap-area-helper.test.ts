@@ -51,6 +51,15 @@ describe("css tap-area helper", () => {
     expect(tapAreaWidth(icon, "i").total).toBe(48);
   });
 
+  it("counts each side of a three- or four-value inset on its own", () => {
+    const topOnly = ".b { height: 40px; }\n.b::after { inset: -4px 0 0; }";
+    expect(tapAreaHeight(topOnly, "b").total).toBe(44);
+    const rightOnly = ".i { width: 40px; }\n.i::after { inset: 0 -4px 0 0; }";
+    expect(tapAreaWidth(rightOnly, "i").total).toBe(44);
+    const uneven = ".b { height: 40px; }\n.b::after { inset: -6px 0 -2px 0; }";
+    expect(tapAreaHeight(uneven, "b").total).toBe(48);
+  });
+
   it("never credits a different class that starts with the same name", () => {
     const css = ".btnPrimary { min-height: var(--ward-tap); }\n.btn { height: 36px; }";
     expect(tapAreaHeight(css, "btn").total).toBe(36);

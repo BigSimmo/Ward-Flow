@@ -69,21 +69,35 @@ export type TapArea = {
   total: number | null;
 };
 
-/** One axis of an `inset` shorthand: the vertical axis is its first value, the horizontal axis
- *  its second (or its first when only one is given). Only outward (negative) reach counts. */
+/** The four sides of an `inset` shorthand in CSS order (top, right, bottom, left): one value sets
+ *  all four, two set vertical then horizontal, three set top, horizontal, bottom. */
+function insetSides(raw: string): [string, string, string, string] | null {
+  const parts = raw.split(/\s+/u).filter(Boolean);
+  if (parts.length === 1) return [parts[0], parts[0], parts[0], parts[0]];
+  if (parts.length === 2) return [parts[0], parts[1], parts[0], parts[1]];
+  if (parts.length === 3) return [parts[0], parts[1], parts[2], parts[1]];
+  if (parts.length === 4) return [parts[0], parts[1], parts[2], parts[3]];
+  return null;
+}
+
+/** How far a length reaches outward: only a negative inset reaches beyond the drawn box. */
+function outward(raw: string | undefined): number {
+  const value = lengthPx(raw ?? "");
+  return value !== null && value < 0 ? -value : 0;
+}
+
+/** The cover's outward reach on one axis: each side counted on its own (top plus bottom, or left
+ *  plus right), from the `inset` shorthand or the side properties, whichever reaches further. */
 function insetReach(body: string, axis: "vertical" | "horizontal"): number {
-  let reach = 0;
-  for (const raw of declarations(body, "inset")) {
-    const parts = raw.split(/\s+/u);
-    const pick = axis === "vertical" ? parts[0] : (parts[1] ?? parts[0]);
-    const value = lengthPx(pick ?? "");
-    if (value !== null && value < 0) reach = Math.max(reach, -value * 2);
-  }
-  const sides = axis === "vertical" ? ["top", "bottom"] : ["left", "right"];
-  const sideReach = sides
-    .map((side) => Math.max(0, ...declarations(body, side).map((raw) => -(lengthPx(raw) ?? 0))))
-    .reduce((sum, value) => sum + value, 0);
-  return Math.max(reach, sideReach);
+  const [first, second] = axis === "vertical" ? (["top", "bottom"] as const) : (["left", "right"] as const);
+  const index = { top: 0, right: 1, bottom: 2, left: 3 } as const;
+  const sideReach = (side: "top" | "right" | "bottom" | "left"): number =>
+    Math.max(
+      0,
+      ...declarations(body, "inset").map((raw) => outward(insetSides(raw)?.[index[side]])),
+      ...declarations(body, side).map(outward),
+    );
+  return sideReach(first) + sideReach(second);
 }
 
 function measure(css: string, className: string, axis: "vertical" | "horizontal"): TapArea {
