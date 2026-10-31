@@ -128,7 +128,11 @@ describe("as a site bed manager (D-80)", () => {
 
   it("shows only the sections the desk may open, the first named Site", () => {
     asBedManager();
-    render(<StatisticsNav withSamples={false} variant="chips" />);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <StatisticsNav withSamples={false} variant="chips" />
+      </WardFlowProvider>,
+    );
     const nav = screen.getByTestId("ward-statistics-nav");
     expect(
       within(nav)

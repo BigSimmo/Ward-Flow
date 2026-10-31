@@ -46,6 +46,7 @@ import { PhoneBody, PhoneDotKey, PhoneList, phoneBodyStyles as phone } from "./s
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useCanOpenHref } from "../shell/ward-access";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import {
   ExecutiveStatisticsUnavailable,
@@ -224,6 +225,8 @@ function WardsIndexView({
   scopeLabel?: string;
   releasedBlockedTotal?: StatisticsCount;
 }) {
+  // Compare is offered only to a desk that may open it (access audit, 31 Oct 2026).
+  const canCompare = useCanOpenHref()(STATISTICS_COMPARE_HREF);
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the units section");
   const shown = (count: StatisticsCount) => statisticsCountText(count);
@@ -337,13 +340,15 @@ function WardsIndexView({
       paused={paused}
       onTogglePause={togglePause ?? undefined}
       tools={
-        <HeroTool
-          href={STATISTICS_COMPARE_HREF}
-          icon={<ArrowLeftRight size={14} aria-hidden="true" />}
-          testId="ward-statistics-wards-compare"
-        >
-          Compare wards
-        </HeroTool>
+        canCompare ? (
+          <HeroTool
+            href={STATISTICS_COMPARE_HREF}
+            icon={<ArrowLeftRight size={14} aria-hidden="true" />}
+            testId="ward-statistics-wards-compare"
+          >
+            Compare wards
+          </HeroTool>
+        ) : undefined
       }
       phone={{
         title: `${overLine} ${plural(overLine, "ward", "wards")} over ${BED_ALERT_THRESHOLD_PERCENT}%`,

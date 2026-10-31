@@ -8,6 +8,7 @@ import Link from "next/link";
 import { TrendingUp } from "lucide-react";
 
 import { Badge, Button, CardFoot, FilterChip, StatusGlyph, rowDim, tableClasses } from "@/components/wf";
+import { useCanOpenHref } from "../shell/ward-access";
 import { BED_ALERT_THRESHOLD_PERCENT } from "../shell/ward-service-bed-alerts";
 import { StatCard } from "./statistics-hero";
 import { STATISTICS_COMPARE_HREF } from "./statistics-sections";
@@ -96,6 +97,8 @@ export function StatisticsWardsCard({
     (w) => Math.round(w.occupancyRate * 100) >= BED_ALERT_THRESHOLD_PERCENT,
   ).length;
   const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
+  // Compare is linked only for a desk that may open it (access audit, 31 Oct 2026).
+  const canCompare = useCanOpenHref()(STATISTICS_COMPARE_HREF);
 
   return (
     <StatCard
@@ -182,9 +185,9 @@ export function StatisticsWardsCard({
       </div>
       {/* Bed manager: one site needs no key; the card title already names it. */}
       {siteName ? null : <SiteCodeKey sites={visibleWards.map((w) => ({ code: w.site, name: w.hospital }))} />}
-      {/* Bed manager: Compare is not one of its statistics sections, so it is not linked, and a
-        foot with nothing in it is not drawn. */}
-      {siteName && filteredAndSortedWards.length <= PRESSURE_ROWS ? null : (
+      {/* A desk that may not open Compare (the site bed manager) gets no link, and a foot with nothing
+        in it is not drawn. */}
+      {!canCompare && filteredAndSortedWards.length <= PRESSURE_ROWS ? null : (
         <CardFoot
           meta={
             filteredAndSortedWards.length > PRESSURE_ROWS ? (
@@ -194,11 +197,11 @@ export function StatisticsWardsCard({
             ) : undefined
           }
         >
-          {siteName ? null : (
+          {canCompare ? (
             <Link href={STATISTICS_COMPARE_HREF} className={styles.footLink}>
               Compare wards
             </Link>
-          )}
+          ) : null}
         </CardFoot>
       )}
     </StatCard>

@@ -90,7 +90,7 @@ import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { DECLINE_REASON_LABELS, isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
 import { occupiedBeds } from "./statistics-occupancy";
-import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { ForecastTrackRecordCard } from "@/components/ward-management/forecast/forecast-track-record";
 import { FixedQuestionsCard, WaitingStagesCard } from "@/components/ward-management/reports/closing-loop-cards-lazy";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
@@ -543,6 +543,7 @@ function StatisticsSummaryView({
     arrivalBands,
   } = model;
   const service = useServiceScope();
+  const canOpen = useCanOpenHref();
   const { small: operationalSmall } = useStatisticsCounts();
   const small = (count: StatisticsCount) => statisticsCountText(count, operationalSmall);
   const barValue = (count: StatisticsCount) => withheldBar(exactStatisticsCount(count) ?? 0, small(count));
@@ -795,10 +796,16 @@ function StatisticsSummaryView({
 
         {service === null || scopeLabel !== "whole network" ? null : (
           <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
-            {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
-            <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
-              {`Open ${service} statistics`}
-            </Link>
+            {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}
+            {/* Linked only for a desk that may open the service's page (access audit, 31 Oct 2026). */}
+            {canOpen(serviceStatisticsHref(service)) ? (
+              <>
+                {" "}
+                <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
+                  {`Open ${service} statistics`}
+                </Link>
+              </>
+            ) : null}
           </p>
         )}
 

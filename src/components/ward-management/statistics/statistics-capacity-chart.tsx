@@ -30,6 +30,7 @@ import { StatCard } from "./statistics-hero";
 import styles from "./statistics-capacity-chart.module.css";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useCanOpenHref } from "../shell/ward-access";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { ExecutiveStatisticsUnavailable } from "./statistics-small-numbers";
 
@@ -172,6 +173,8 @@ function CapacityChartView({
   title?: string;
 }) {
   const rowButtons = useRef(new Map<string, HTMLButtonElement>());
+  // A ward links to its page only where this desk may open it (access audit, 31 Oct 2026).
+  const canOpen = useCanOpenHref();
   const [groupBy, setGroupBy] = useState<"hospital" | "ward">(initialGroup);
   const [scale, setScale] = useState<"beds" | "share">("share");
   const [service, setService] = useState("all");
@@ -338,12 +341,18 @@ function CapacityChartView({
       </dl>
       <div className={styles.wardList}>
         {selected.units.map((unit) => {
-          return (
-            <Link key={unit.id} href={`/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`}>
+          const href = `/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`;
+          return canOpen(href) ? (
+            <Link key={unit.id} href={href}>
               <span>{unit.name}</span>
               <strong>{unit.available} ready</strong>
               <Icon icon={ChevronRight} size={14} />
             </Link>
+          ) : (
+            <div key={unit.id}>
+              <span>{unit.name}</span>
+              <strong>{unit.available} ready</strong>
+            </div>
           );
         })}
       </div>
