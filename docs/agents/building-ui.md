@@ -33,7 +33,7 @@ Design rules in force (31 October 2026). The full standard is
 
 - **Control size.** No 48px controls. A phone button shows at 40px (32px small) with an invisible
   cover that keeps the 48px tap area; phone tabs are 32px in a 40px track; desktop segmented and pill
-  tabs are 30px at 13px. Placement decisions keep their full-size button. Text never goes below 12px.
+  tabs are 30px at 13px. The one exception (Josh, 31 Oct): Accept, Pull and Decline stay a full 48px on phones. Text never goes below 12px.
 - **No coloured side edges** or stripes on rows, cards, tiles or stat boxes. Tone goes in the
   StatusGlyph or a small tinted tag; borders stay neutral.
 - **Legal-form times only as typed**, never a countdown, "due in" or "passed … ago" (D-93, replacing

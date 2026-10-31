@@ -205,9 +205,10 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   40px (32px for a small one) and keeps a 48px tap area through an invisible cover above and below
   it. Phone tabs are 32px inside a 40px track; desktop segmented and pill tabs are 30px at 13px.
   Never draw a control 48px tall to meet the tap floor: give it the cover. `--ward-tap` and
-  `--spacing-tap` (48px) are now the tap-area value, not a visible height. Placement decisions
-  (Accept, Pull and Decline, marked `data-placement-action`) keep their full-size button, as the
-  17 October handover required. The 12px text floor is unchanged.
+  `--spacing-tap` (48px) are now the tap-area value, not a visible height. The one exception
+  (Josh, 31 October 2026, 10:34): placement decisions (Accept, Pull and Decline, marked
+  `data-placement-action`) stay a full 48px on phones, because they are the most important taps on
+  the ward, often made in a hurry. The 12px text floor is unchanged.
 - **No coloured side edges (Josh, 31 October 2026: "it feels tacky").** No coloured left or right
   edge, stripe, inset bar or tone-coloured border on any row, card, tile or stat box. Show tone with
   the StatusGlyph before the label or value, or a small tinted tag; selected is the selected tint
