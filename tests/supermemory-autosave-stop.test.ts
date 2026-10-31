@@ -325,6 +325,14 @@ describe("quiet when Supermemory is not connected (Josh, 31 Oct 2026)", () => {
     expect(runWith([otherTools, decision], s)).not.toBeNull();
   });
 
+  it("latches a Supermemory sighting seen on an ordinary turn, before the listing leaves the tail", () => {
+    const s = session();
+    expect(runWith([toolsListed, prompt("Thanks.")], s)).toBeNull();
+    expect(s.toolsSeen()).toBe(true);
+    expect(runWith([decision], s)).not.toBeNull();
+    expect(runWith([decision], s)).not.toBeNull();
+  });
+
   it("latches the Supermemory sighting per native session", () => {
     const directory = mkdtempSync(join(tmpdir(), "memory-tools-fixture-"));
     const input = { session_id: "synthetic-native-session", cwd: "synthetic-repository" };

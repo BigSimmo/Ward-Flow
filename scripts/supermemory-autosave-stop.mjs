@@ -235,11 +235,12 @@ export function decide(input, env, readTranscript, session) {
   }
   const turn = readTurn(entries);
   if (turn && typeof input.last_assistant_message === "string") turn.agent += `\n${input.last_assistant_message}`;
+  // Latch a Supermemory sighting on every turn, ordinary ones included, so a connected session keeps
+  // its reminders after the tool listing leaves the bounded transcript tail.
+  const toolsInTail = session ? memoryToolsSeen(entries) : false;
+  if (toolsInTail) session.markToolsSeen();
   if (!hasSignal(turn)) return null;
-  if (session) {
-    if (memoryToolsSeen(entries)) session.markToolsSeen();
-    else if (!session.toolsSeen() && !session.claimQuietNudge()) return null;
-  }
+  if (session && !toolsInTail && !session.toolsSeen() && !session.claimQuietNudge()) return null;
   return { decision: "block", reason: REASON };
 }
 
