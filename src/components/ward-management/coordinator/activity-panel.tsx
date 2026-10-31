@@ -242,7 +242,10 @@ function ChangesBody({ review, now }: { review: Review; now: Instant }) {
       </p>
       {review.arrived.length > 0 ? (
         <div className={styles.arrived} role="status">
-          <span>{plural(review.arrived.length, "more change", "more changes")} arrived since you opened this</span>
+          <span>
+            {plural(review.arrived.length, "more change", "more changes")} to synthetic records arrived since you opened
+            this
+          </span>
           <Button size="sm" variant="ghost" onClick={review.showArrived}>
             Show
           </Button>
@@ -317,7 +320,8 @@ function ReviewFoot({ review, now }: { review: Review; now: Instant }) {
     <div className={styles.reviewFoot}>
       {review.lastReviewed ? (
         <p className={styles.reviewed} role="status">
-          {plural(review.lastReviewed.count, "change", "changes")} reviewed at {formatInstant(review.lastReviewed.at)}
+          {plural(review.lastReviewed.count, "change", "changes")} to synthetic records reviewed at{" "}
+          {formatInstantWithDay(review.lastReviewed.at, now)}
           <button type="button" className={styles.textButton} onClick={review.undo}>
             Undo
           </button>

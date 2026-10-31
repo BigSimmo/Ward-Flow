@@ -38,7 +38,7 @@ export function PlannedList({ now, rows }: { now: Instant; rows: readonly Planne
         id="home-planned-title"
         title="Planned"
         // Said once here; target rows carry an amber glyph and a spoken label (no side edge).
-        meta={`${formatInstant(now)}–${formatInstant(until)} · your default targets`}
+        meta={`${formatInstant(now)}–${formatInstantWithDay(until, now)} · your default targets`}
       />
       <AccessForecastRow now={now} />
       {rows.length === 0 ? (
@@ -61,7 +61,7 @@ export function PlannedList({ now, rows }: { now: Instant; rows: readonly Planne
                     <b>{row.who}</b>
                   )}
                 </span>
-                <time className={styles.rowTimeStrong}>{formatInstant(row.at)}</time>
+                <time className={styles.rowTimeStrong}>{formatInstantWithDay(row.at, now)}</time>
                 <span className={styles.rowWhat}>
                   {row.kind === "target" ? <SrOnly>Your target, not a clinical standard: </SrOnly> : null}
                   <span className={styles.rowKind}>{row.what}</span> · {row.where}

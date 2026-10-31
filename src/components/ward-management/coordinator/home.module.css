@@ -2155,8 +2155,8 @@ button.registerRow:hover {
   .screen .edGrid {
     gap: 6px;
     padding-block: 7px;
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
-    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
   }
   .screen .edButton {
     position: relative;
