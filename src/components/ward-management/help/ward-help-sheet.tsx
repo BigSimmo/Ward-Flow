@@ -242,6 +242,7 @@ function WardHelpSheetView({
 
       {view === "tasks" ? (
         <WardHelpTasks
+          key={task ?? ""}
           role={role}
           home={deskHref}
           pathname={pathname}

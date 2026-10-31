@@ -59,7 +59,8 @@ async function signIn(page: Page, desk: Desk): Promise<void> {
     window.sessionStorage.setItem("wardflow:access-desk-v1", JSON.stringify(access));
   }, desk);
   const home = homeHrefFor(desk as WardAccess, communityTeamSlug);
-  await page.goto(`${home}?flags=role-access:on`, { waitUntil: "domcontentloaded" });
+  // CI serves a production build, where help-ask (Show me) is off by default (D-91), so switch it on here.
+  await page.goto(`${home}?flags=role-access:on,help-ask:on`, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle");
 }
 

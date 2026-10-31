@@ -38,7 +38,6 @@ export function headerHelpRows(query: string, role: WardTourRole): HelpSearchRow
   const answer = searchHelp(typed, role, HEADER_HELP_LIMIT);
   if (answer.kind === "clinical") return { items: [], note: CLINICAL_REPLY };
   if (answer.kind !== "results") return { items: [] };
-  listed.clear();
   const items = answer.results.map((result): SearchResultItem => {
     listed.set(result.key, result);
     const href = isDeskJob(result, role) ? howToHref(result.go, role, undefined) : undefined;

@@ -4,8 +4,8 @@ _Updated 2026-10-31 - Help redesign handover for PR #1119; Documentation owns._
 
 ## Where it stands
 
-- **Built, not live.** The work is real app code on branch `claude/help-menu-design-review-a1isgp`, in draft
-  pull request [#1119](https://github.com/BigSimmo/Ward-Flow/pull/1119). Staff see nothing until Josh merges it;
+- **Built, not live.** The work is real app code on branch `claude/help-menu-design-review-a1isgp`, in pull
+  request [#1147](https://github.com/BigSimmo/Ward-Flow/pull/1147), which replaced draft #1119. Staff see nothing until it merges;
   the live site then picks it up at the next daily release (6 am Perth).
 - **Merging needs Josh's yes.** Merging does not switch Show me on in demo or production: D-91 and D-92 keep it off there.
 - **Screenshots** of the built Help (desktop, phone, dark mode, 31 October, synthetic data) are on a private page
