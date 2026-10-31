@@ -18,7 +18,8 @@ export function PlannedCounts({ now }: { now: Instant }) {
       <CardHead
         id="as-executive-planned-title"
         title="Planned admissions"
-        meta={`${booked.length} booked · counts only`}
+        // Polish (Josh, 31 Oct 2026): no grey line in the heading; the booked count is one tag.
+        aside={<span className={styles.tag}>{booked.length} booked</span>}
       />
       <div className={styles.sideBody}>
         {booked.length === 0 ? (
@@ -34,7 +35,7 @@ export function PlannedCounts({ now }: { now: Instant }) {
               <b>{later}</b>
             </li>
             <li>
-              <span>Past the expected time, arrival not recorded</span>
+              <span>Not arrived, past the expected time</span>
               <b>{overdue}</b>
             </li>
           </ul>

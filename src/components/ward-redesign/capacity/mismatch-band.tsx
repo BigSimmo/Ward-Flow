@@ -20,14 +20,23 @@ type Show = "all" | "short" | "enough";
  * table plus a separate "Tomorrow" strip. The network total is the forecast's Now figure, so it
  * is not repeated here as a fifth card (Josh, 30 Oct 2026).
  */
-export function MismatchBand({ model }: { model: CapacityModel }) {
+export function MismatchBand({ model, hideEmptyTypes = false }: { model: CapacityModel; hideEmptyTypes?: boolean }) {
   const { gapRows, tomorrowByKind, now } = model;
   const [show, setShow] = useState<Show>("all");
   const span = rangeSpan(tomorrowByKind);
   const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
   const until = formatInstantWithDay(tomorrowByKind.until, now);
-  const shortRows = gapRows.filter((row) => row.gap < 0);
-  const rows = show === "all" ? gapRows : show === "short" ? shortRows : gapRows.filter((row) => row.gap >= 0);
+  // Role view (site bed manager): a site holds only some bed types (Royal Perth has no youth ward),
+  // so a type with nobody waiting, no bed that fits and nothing forecast is left out, not drawn as 0.
+  const typeRows = hideEmptyTypes
+    ? gapRows.filter((row) => {
+        const next = byId.get(row.id);
+        const forecastNothing = next === undefined || (next.low === 0 && next.likely === 0 && next.high === 0);
+        return row.waiting > 0 || row.bedsThatFit > 0 || !forecastNothing;
+      })
+    : gapRows;
+  const shortRows = typeRows.filter((row) => row.gap < 0);
+  const rows = show === "all" ? typeRows : show === "short" ? shortRows : typeRows.filter((row) => row.gap >= 0);
   return (
     <Card aria-labelledby="capacity-mismatch-title">
       {/* Polish (Josh, 31 Oct 2026): the title row carries a Short / Enough filter, and the bed
@@ -40,9 +49,9 @@ export function MismatchBand({ model }: { model: CapacityModel }) {
           <Segmented
             label="Show bed types"
             items={[
-              { id: "all" as const, label: "All", count: gapRows.length },
+              { id: "all" as const, label: "All", count: typeRows.length },
               { id: "short" as const, label: "Short", count: shortRows.length },
-              { id: "enough" as const, label: "Enough", count: gapRows.length - shortRows.length },
+              { id: "enough" as const, label: "Enough", count: typeRows.length - shortRows.length },
             ]}
             value={show}
             onChange={setShow}
