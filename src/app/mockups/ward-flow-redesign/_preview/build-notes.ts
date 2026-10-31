@@ -137,13 +137,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 3:** #1124's notice stack, lifted 24px clear of the phone dock; words wrap in full and the phone pill is solid.",
   ],
   "add-patient": [
-    "**Built from a copy of today's Add a patient form**, so typing, the duplicate check, Reset with Undo, Add patient and Register & start referral work as now.",
-    "**New:** the duplicate check sits under the identity fields, inside the Identity card, and runs as you type. Before anything is typed it is one quiet line saying what it checks.",
-    '**New:** the finish buttons are greyed until the form is complete, with "Needed: UMRN, date of birth, given and family name" beside them; the list shrinks as each field is filled.',
-    "**New (D-83):** names in the duplicate check read surname first.",
-    "**Kept:** identity only (D-77), optional gender and Aboriginal status, and Recently added.",
-    '**Still open:** the save toasts and the "saved outside this desk\'s view" line still read given name first, as today.',
-    "**Phone (Josh, 31 October):** the form's buttons stack: Add patient full width on top, Reset and Register & start referral side by side under it.",
+    "**Built into the app** (lane L, 31 Oct 2026): the duplicate check under the identity fields, the greyed Add patient button naming what is still needed, a DD/MM/YYYY birth date, and no gender or Aboriginal status chosen at first. This entry is the real form, kept as the backdrop for Leave with unsaved changes.",
   ],
   patient: [
     "**Built into the app** (lane L, 31 Oct 2026): the patient record, with the community desk's view and the Journey so far timeline in the one real screen. This entry is the real screen, kept as the backdrop for Medical clearance.",

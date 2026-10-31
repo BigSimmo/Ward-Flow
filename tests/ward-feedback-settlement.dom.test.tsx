@@ -79,7 +79,9 @@ function fill() {
   fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: own.umrn } });
   fireEvent.change(screen.getByLabelText("Given name"), { target: { value: own.givenName } });
   fireEvent.change(screen.getByLabelText("Family name"), { target: { value: own.familyName } });
-  fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: own.dateOfBirth } });
+  fireEvent.change(screen.getByLabelText("Date of birth"), {
+    target: { value: own.dateOfBirth.split("-").reverse().join("/") },
+  });
 }
 
 beforeEach(() => router.push.mockClear());

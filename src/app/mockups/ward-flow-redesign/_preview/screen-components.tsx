@@ -66,8 +66,15 @@ const PatientNowBackdrop = dynamic<MockupPageProps>(() =>
       },
   ),
 );
-const AddPatientPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/add-patient/add-patient-page").then((module) => module.AddPatientPage),
+// Add a patient is built into the app (lane L, 31 Oct 2026). Its slug stays as the backdrop the
+// Leave with unsaved changes pop-up draws over, so it shows the real form, fed by the preview world.
+const AddPatientForm = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/patients/add-patient").then(
+    (module) =>
+      function AddPatientBackdrop() {
+        return <module.AddPatientForm />;
+      },
+  ),
 );
 
 import type { BuiltPageSlug } from "./built-pages";
@@ -84,5 +91,5 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "ed-board": EdBoardPage,
   "legal-forms": LegalFormsScreen,
   patient: PatientNowBackdrop,
-  "add-patient": AddPatientPage,
+  "add-patient": AddPatientForm,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;
