@@ -362,6 +362,8 @@ describe("SV-2 community transport dialogs (shared mode)", () => {
     fireEvent.change(within(dialog).getByTestId(`ward-community-transport-estimated-time-${id}`), {
       target: { value: "14:30" },
     });
+    // The redesigned form starts with neither Today nor Tomorrow chosen (Josh, 31 Oct 2026).
+    fireEvent.click(within(dialog).getByTestId(`ward-community-transport-estimated-day-today-${id}`));
     await press(within(dialog).getByTestId(`ward-community-book-transport-confirm-${id}`));
     expect(dispatch).toHaveBeenCalledTimes(1);
     if (mode === "accepted") {

@@ -23,7 +23,7 @@ import { EdAdmissionChecklist } from "@/components/ward-management/ed/ed-admissi
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { EdPlanPicker, EdPresentation } from "@/components/ward-management/ed/ed-board-controls";
 import { EdMedicalPlacementControls } from "@/components/ward-management/ed/ed-medical-placement-controls";
-import type { EdBoardRowModel } from "./ed-screen-board-row";
+import type { EdBoardRowModel } from "@/components/ward-management/ed/ed-screen-board-row";
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { formExpiryWithName } from "./ed-form-expiry";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";

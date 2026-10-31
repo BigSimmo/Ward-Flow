@@ -14,8 +14,9 @@ import { typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { JourneyStrip, PhoneSheet, StatusGlyph } from "@/components/wf";
 import { edJourneyStages } from "@/components/ward-management/ed/ed-journey";
+import { AfterSheetOpens } from "@/components/ward-management/ed/ed-screen-person-sheet";
 import { edRowReferralStatus, edStageLabel } from "@/components/ward-management/ed/ed-referral-status";
-import type { EdBoardRowModel } from "./ed-screen-board-row";
+import type { EdBoardRowModel } from "@/components/ward-management/ed/ed-screen-board-row";
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { movementMedicalClearance } from "@/components/ward-management/ed/ed-screen-model";
 import type { renderEdRowControls } from "./ed-screen-row-facts";
@@ -205,7 +206,11 @@ export function renderEdPersonSheet(
           </div>
         ) : null}
       </dl>
-      {subFormOpen ? <div className={styles.phoneSheetForm}>{subFormContent}</div> : null}
+      {subFormOpen ? (
+        <div className={styles.phoneSheetForm}>
+          <AfterSheetOpens>{subFormContent}</AfterSheetOpens>
+        </div>
+      ) : null}
       <section className={styles.phoneSheetSection} aria-label="Actions">
         <h3 className={styles.phoneSheetHeading}>Actions</h3>
         <div className={styles.nextGroup}>{nextGroupBody}</div>

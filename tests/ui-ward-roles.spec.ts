@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { edById, unitById } from "@/components/ward-management/ward-sites";
+import { openEdLists } from "./helpers/ward-ed-lists";
 import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
@@ -1031,6 +1032,8 @@ test.describe("@mockup Emergency department screen", () => {
     // Exact, not `> 0`: RF-009 is the only referral this department's inbox should hold.
     await expect(page.locator('[data-testid^="ward-ed-inbox-row-"]')).toHaveCount(1);
 
+    // The inbox sits under the board's Lists, folded shut on a desktop (ED board redesign).
+    await openEdLists(page);
     const rphRow = page.getByTestId("ward-ed-inbox-row-RF-009");
     await expect(rphRow).toBeVisible();
     await expect(rphRow).toHaveAttribute("data-ed-id", "rph-ed");
@@ -1058,6 +1061,7 @@ test.describe("@mockup Emergency department screen", () => {
     // Exact, not `> 0`: RF-013 is the only referral this department's inbox should hold.
     await expect(page.locator('[data-testid^="ward-ed-inbox-row-"]')).toHaveCount(1);
 
+    await openEdLists(page);
     const peelRow = page.getByTestId("ward-ed-inbox-row-RF-013");
     await expect(peelRow).toBeVisible();
     await expect(peelRow).toHaveAttribute("data-ed-id", "peel-ed");
@@ -1106,6 +1110,7 @@ test.describe("@mockup Emergency department screen", () => {
 
     await expect(page.locator('[data-testid^="ward-ed-inbox-row-"]')).toHaveCount(1);
 
+    await openEdLists(page);
     await page
       .getByTestId("ward-ed-inbox-row-RF-009")
       .getByRole("button", { name: /View referral/u })
@@ -1526,20 +1531,23 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
 
     // --- Step 2: confirm zero allocatable beds, on this same page, no reload. ---
     // The capacity form opens from "Confirm numbers". It is not on the Decisions queue.
+    // Redesign (31 Oct 2026): it is the shared dialog, which opens over the page from <body>, so it
+    // is found on the page rather than inside the ward screen. The beds alone are confirmed by
+    // "Confirm beds only" while the morning numbers are due, or by "Confirm beds" once they are in.
     await wardScreen.getByRole("button", { name: /Confirm (today.s )?numbers/ }).click();
-    await wardScreen.getByTestId("ward-capacity-input").fill("0");
-    await wardScreen.getByTestId("ward-capacity-submit").click();
+    const confirmDialog = page.getByRole("dialog", { name: /Confirm capacity figures/ });
+    await expect(confirmDialog).toBeVisible();
+    await confirmDialog.getByTestId("ward-capacity-input").fill("0");
+    await confirmDialog.getByRole("button", { name: /^Confirm beds( only)?$/u }).click();
 
     // --- Step 3: the ward's own screen must move. This is the exact proof the reviewer
     // performed and found failing: "typing 0 into Confirm allocatable beds ... beds: Ready 2
     // ... Currently confirmed 2" — the screen that raised the event never moved. ---
     await expect(bedGrid).toContainText("Ready 0");
     await expect(bedGrid).toContainText("Closed 2"); // the physically-empty pool is unchanged; it is now not offered rather than ready
-    await expect(wardScreen.getByText(/Currently confirmed 0 at/)).toBeVisible();
-    await wardScreen
-      .getByRole("dialog", { name: /Confirm capacity figures/ })
-      .getByRole("button", { name: "Done" })
-      .click();
+    await expect(confirmDialog.getByText(/Currently confirmed 0 at/)).toBeVisible();
+    await confirmDialog.getByRole("button", { name: "Close capacity confirmation" }).click();
+    await expect(confirmDialog).toHaveCount(0);
 
     // --- Step 4: the Hold control must stop advertising an action the reducer would now
     // refuse — the reviewer's Proof 2 ("hold button ... aria-disabled = null ... nothing

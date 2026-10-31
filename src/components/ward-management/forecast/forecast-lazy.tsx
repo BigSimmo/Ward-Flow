@@ -18,8 +18,5 @@ const loadEdAccessRisk = () => import("./ed-access-risk-card");
 export const EdAccessRiskCard = dynamic(() => loadEdAccessRisk().then((m) => m.EdAccessRiskCard), {
   loading: () => null,
 });
-export const HomeEdAccessLine = dynamic(() => loadEdAccessRisk().then((m) => m.HomeEdAccessLine), {
-  loading: () => null,
-});
 
 preloadWhenIdle(loadEdAccessRisk);

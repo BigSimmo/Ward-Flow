@@ -42,9 +42,6 @@ import { referralPresentation, type SenderReferralPresentation } from "../ward-p
 /** The page's one link for counts that open the bed picture. Places lists every ward's ready beds. */
 const REFERRAL_BEDS_HREF = "/ward-flow/hub";
 
-/** D4: the exact words for a control that is shown for review but not connected. */
-export const NOT_WIRED = "Not wired in this prototype.";
-
 export const REFERRAL_SOURCE_WORDS: Record<Referral["source"], string> = {
   community: "Community team",
   crisis_service: "Crisis service",

@@ -200,7 +200,7 @@ export const NAME_NOT_RECORDED = "Name not recorded";
 export const UMRN_NOT_RECORDED = "UMRN not recorded";
 /** The person is recorded, but this desk's access scope leaves their record out (Q29). */
 export const NAME_NOT_SHOWN = "Name not shown on this desk";
-export const UMRN_NOT_SHOWN = "UMRN not shown on this desk";
+const UMRN_NOT_SHOWN = "UMRN not shown on this desk";
 
 /** Whether a resolved name is one of the resolver's placeholders rather than a person's name. */
 export function isPlaceholderName(name: string): boolean {

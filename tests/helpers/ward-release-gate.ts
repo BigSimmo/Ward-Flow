@@ -1,8 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, type TestInfo } from "playwright/test";
 
-import { escapeForRegExp } from "./ward-place-names";
-
 /**
  * Shared steps for the four release-gate journeys (`tests/release-gate-journeys.spec.ts`).
  *
@@ -403,7 +401,7 @@ export async function wardFigure(page: Page, figure: "occupied" | "ready"): Prom
 /**
  * Ready beds for one ward on the coordinator's capacity board. Since the Capacity redesign (31 Oct
  * 2026) every ward is a card on the bed map, on a computer and in the phone's Wards view alike; a
- * card reads "<ward> <N> ready", with zero spelt "None".
+ * card reads "<ward> <N> ready", with zero spelt "None", and carries the ward's id.
  */
 export async function capacityReady(page: Page, unitId: string, unitName: string): Promise<number> {
   if (isPhoneLayout(page)) {
@@ -415,10 +413,9 @@ export async function capacityReady(page: Page, unitId: string, unitName: string
   // Services past the first few start folded; open every one so the ward's card is drawn.
   const folded = map.locator('button[aria-expanded="false"][aria-controls^="capacity-map-"]');
   while ((await folded.count()) > 0) await folded.first().click();
-  const card = map
-    .locator('button[aria-haspopup="dialog"]')
-    .filter({ hasText: new RegExp(`^${escapeForRegExp(unitName)}\\s`, "u") })
-    .first();
+  // Found by the ward's id, not its text: the card spells out a site code in the name ("BTY
+  // (Bentley Health Service) Adult Secure"), so the text does not start with the plain ward name.
+  const card = map.locator(`button[aria-haspopup="dialog"][data-unit-id="${unitId}"]`).first();
   await expect(card, `the bed map must draw ${unitName}`).toBeVisible();
   const text = (await card.textContent()) ?? "";
   const match = /(\d+|None) ready/u.exec(text);

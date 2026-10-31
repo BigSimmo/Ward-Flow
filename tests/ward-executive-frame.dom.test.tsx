@@ -200,7 +200,7 @@ describe("the executive chrome in the new frame", () => {
     expect(within(own).getAllByRole("link")[0]).toHaveTextContent("Governance");
   });
 
-  it("opens Help as the shared rail and phone Menu do: the tour until it is seen, then this screen", () => {
+  it("opens Help as the shared rail and phone Menu do: the tour until it is seen, then How do I…", () => {
     const opened = helpViews();
     const view = openChrome();
     const help = screen.getByTestId("ward-rail-help");
@@ -218,6 +218,6 @@ describe("the executive chrome in the new frame", () => {
     expect(menuHelp).toHaveAccessibleName("Help");
     fireEvent.click(menuHelp);
     opened.stop();
-    expect(opened.views).toEqual(["tour", "screen"]);
+    expect(opened.views).toEqual(["tour", "tasks"]);
   });
 });
