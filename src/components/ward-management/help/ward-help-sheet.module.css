@@ -233,19 +233,29 @@
 
 /* Phone: the full-width pill track the Activity drawer uses, each section a 44px tap. */
 @media (max-width: 48rem) {
-  /* Five sections: on a phone they wrap to two rows (three, then two) instead of scrolling sideways. */
+  /* Five sections on one sliding row at the kit's phone size (D-91): each keeps its full label and
+   * the row scrolls sideways, as the kit's segmented switch does, instead of wrapping to two rows. */
   .views {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
     padding: 2px;
     border-radius: var(--wf-r-track);
   }
 
+  .views::-webkit-scrollbar {
+    display: none;
+  }
+
   .views > button {
-    flex: 1 1 30%;
-    min-height: 44px;
-    padding: 0 4px;
+    flex: 0 0 auto;
+    min-height: 2.75rem;
+    padding: 0 12px;
     border-radius: var(--wf-r-seg-item);
     font-size: var(--wf-fs-13);
+    white-space: nowrap;
   }
 }
 
