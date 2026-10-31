@@ -1258,17 +1258,8 @@ function AlertsWorkspace() {
                         ]}
                       />
                       <span className={styles.toolbarRule} aria-hidden="true" />
-                      {anyHighlight || namedOwners.length === 0 ? null : (
-                        <span className={styles.quiet}>Highlight</span>
-                      )}
-                      {/* Alerts redesign: one owner menu, not a row of chips that ran off the panel. */}
-                      <OwnerMenu
-                        owners={namedOwners}
-                        value={ownerHighlight}
-                        onChange={setOwnerHighlight}
-                        labelFor={(owner) => ownerShort(owner, coordDesk)}
-                        countFor={(owner) => allEntries.filter((entry) => entry.owner === owner).length}
-                      />
+                      {/* Josh, 31 Oct 2026 (answer 17): the desktop keeps Owner as an Arrange by view and
+                          drops the owner menu that repeated it. Phones, with no Arrange by, keep the menu. */}
                       {anyHighlight ? (
                         <span className={styles.highlightNote} role="status">
                           {highlightedCount} of {allEntries.length} <SrOnly>synthetic rows</SrOnly> highlighted, all

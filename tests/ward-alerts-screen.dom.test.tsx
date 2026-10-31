@@ -269,18 +269,33 @@ describe("Alerts v10 pass (10 Oct 2026)", () => {
 });
 
 describe("Alerts owner menu (remaining-pages audit ops-15, 13 Oct 2026; one menu, 31 Oct 2026)", () => {
-  it("names a booking ward in the owner menu, never the bare word Ward", () => {
-    renderScreen();
-    const planned = taskItems(seedWardFlowState(), NOW).find((item) => item.plannedAdmission !== undefined);
-    expect(planned, "the seed has a planned arrival owned by its booking ward").toBeDefined();
-    const menu = screen.getByRole("combobox", { name: "Highlight by owner" });
-    const labels = within(menu)
-      .getAllByRole("option")
-      .filter((option) => (option as HTMLOptionElement).value !== "")
-      .map((option) => option.textContent ?? "");
-    expect(labels.length).toBeGreaterThan(0);
-    expect(labels.some((label) => label.includes(planned!.owner))).toBe(true);
-    for (const label of labels) expect(label.replace(/\(\d+\)/gu, "").trim(), labels.join("|")).not.toBe("Ward");
+  // Josh, 31 Oct 2026 (answer 17): the owner menu is the phone's; the desktop uses Arrange by, Owner.
+  it("names a booking ward in the phone owner menu, never the bare word Ward", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      renderScreen();
+      const planned = taskItems(seedWardFlowState(), NOW).find((item) => item.plannedAdmission !== undefined);
+      expect(planned, "the seed has a planned arrival owned by its booking ward").toBeDefined();
+      const menu = screen.getByRole("combobox", { name: "Highlight by owner" });
+      expect((menu as HTMLSelectElement).value, "nothing chosen at first").toBe("");
+      const labels = within(menu)
+        .getAllByRole("option")
+        .filter((option) => (option as HTMLOptionElement).value !== "")
+        .map((option) => option.textContent ?? "");
+      expect(labels.length).toBeGreaterThan(0);
+      expect(labels.some((label) => label.includes(planned!.owner))).toBe(true);
+      for (const label of labels) expect(label.replace(/\(\d+\)/gu, "").trim(), labels.join("|")).not.toBe("Ward");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

@@ -126,7 +126,6 @@ describe("the Forms screen", () => {
 
     renderScreen();
     // Time not written folds after six rows (redesign, 31 Oct 2026); the helper opens it.
-    openFoldedGroup();
     const lists = screen.getAllByRole("list");
     // Owner, 26 Sept 2026: the visible id slot now carries the patient's name, never the WF journey
     // number, so a row is found here by its hidden `data-record-key` (the movement id) instead.
@@ -158,7 +157,6 @@ describe("the Forms screen", () => {
   // Owner, 26 Sept 2026: the patient's name, never the WF journey number.
   it("identifies a row by the hidden movement id, and names it by the resolved patient, never the WF number", () => {
     renderScreen();
-    openFoldedGroup();
     const expectedIds = rows.map((movement) => movement.id);
     const listRegion = screen.getByRole("region", { name: "Legal forms list" });
     const rowEls = Array.from(listRegion.querySelectorAll("[data-ward-primitive='record-row']"));
@@ -281,27 +279,19 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     expect(screen.queryByTestId("ward-legal-tasks-sheet")).toBeNull();
   });
 
-  // Redesign (Josh, 31 Oct 2026; replaces audit A3-6's "never folded"): Time not written shows its
-  // first six rows, then Show more, as every long list does. A highlight still never hides a row.
-  it("shows the first six rows of Time not written, then Show more, and a highlight shows every row", () => {
-    expect(noDeadline.length, "too few rows without a deadline to fold - this case proves nothing").toBeGreaterThan(6);
+  // Josh, 31 Oct 2026 ("yes to all", answer 15): every Time not written row shows, with no Show more
+  // fold (audit A3-6's "never folded" stands). A highlight never hides a row either.
+  it("shows every Time not written row with no Show more", () => {
+    expect(noDeadline.length, "too few rows without a deadline - this case proves nothing").toBeGreaterThan(6);
     renderScreen();
     const region = screen.getByRole("region", { name: "Legal forms list" });
-    expect(region.querySelectorAll("[data-record-key]").length).toBe(withDeadline.length + 6);
+    expect(region.querySelectorAll("[data-record-key]").length).toBe(rows.length);
     expect(screen.getAllByText("Time not written").length).toBeGreaterThan(0);
-    const more = screen.getByRole("button", { name: `Show ${noDeadline.length - 6} more with no time written` });
-    fireEvent.click(more);
-    expect(region.querySelectorAll("[data-record-key]").length).toBe(rows.length);
-    fireEvent.click(screen.getByRole("button", { name: "Show fewer" }));
-    expect(region.querySelectorAll("[data-record-key]").length).toBe(withDeadline.length + 6);
-    fireEvent.click(screen.getByRole("button", { name: /to act on/ }));
-    expect(region.querySelectorAll("[data-record-key]").length).toBe(rows.length);
     expect(screen.queryByRole("button", { name: /more with no time written/ })).toBeNull();
   });
 
   it("highlights by dimming the other rows by colour, keeps every row and counts the highlighted rows", () => {
     renderScreen();
-    openFoldedGroup();
     const before = document.querySelectorAll("[data-record-key]").length;
     fireEvent.click(screen.getByRole("button", { name: /time not written/ }));
     expect(document.querySelectorAll("[data-record-key]").length).toBe(before);
@@ -425,12 +415,6 @@ function AdvanceClock({ minutes }: { minutes: number }) {
     dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: NOW_ANCHOR, minutes });
   }, [dispatch, minutes]);
   return null;
-}
-
-function openFoldedGroup() {
-  // Redesign (Josh, 31 Oct 2026): Time not written folds after six rows behind Show more.
-  const showMore = screen.queryByRole("button", { name: /^Show \d+ more with no time written$/ });
-  if (showMore) fireEvent.click(showMore);
 }
 
 it("clears an unsaved paper-form region on Clear and when the movement changes", () => {

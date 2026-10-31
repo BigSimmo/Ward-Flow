@@ -20,7 +20,6 @@ import {
   PhoneListRow,
   PhoneSheet,
   Segmented,
-  ShowMoreRow,
   StackBar,
   SrOnly,
   StatusGlyph,
@@ -126,8 +125,6 @@ type Highlight =
   | null;
 
 const CODE_FILLS: WfFill[] = ["data-1", "data-2", "data-3", "neutral", "closed"];
-/** Rows shown under Time not written before Show more (redesign, Josh 31 Oct 2026). */
-const NO_TIME_FIRST = 6;
 /** Form type chips shown before "+N" in Forms in force, so the chips stay on one line. */
 const CODE_CHIPS_SHOWN = 3;
 
@@ -213,8 +210,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // Add the time (redesign): the row's link opens the written-time form as its own pop-up.
   const [addTimeId, setAddTimeId] = useState<string | null>(null);
   const [addTimeRefusalsAtOpen, setAddTimeRefusalsAtOpen] = useState(0);
-  // Time not written shows its first rows, then Show more (the long-list rule); a highlight shows every row.
-  const [noTimeAll, setNoTimeAll] = useState(false);
   const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
   const { copied, copyNotice, copyText } = useLegalFormsCopy();
   const [tasksOpen, setTasksOpen] = useState(false);
@@ -374,14 +369,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       : `${rows.length} forms on open moves`;
   // Every count names its noun ("1 form to act on", not "1 Act now"; Josh, 30 Oct 2026).
   const forms = (count: number) => (count === 1 ? "form" : "forms");
-  // A highlight never hides a row, so it shows the whole Time not written group.
-  const noDeadlineShown = noTimeAll || highlight !== null ? noDeadline : noDeadline.slice(0, NO_TIME_FIRST);
-  const noDeadlineMore =
-    highlight === null && noDeadline.length > NO_TIME_FIRST ? (
-      <ShowMoreRow expanded={noTimeAll} onClick={() => setNoTimeAll((all) => !all)}>
-        {noTimeAll ? "Show fewer" : `Show ${noDeadline.length - NO_TIME_FIRST} more with no time written`}
-      </ShowMoreRow>
-    ) : null;
   const closedWithForms = movements
     .filter((movement) => !isOpen(movement) && movement.legalForm !== undefined)
     .sort((a, b) => (b.closure?.at ?? b.openedAt) - (a.closure?.at ?? a.openedAt));
@@ -890,11 +877,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                         <span className={styles.groupOrder}>longest open first</span>
                       </div>
                       <ul className={styles.phoneList}>
-                        {noDeadlineShown.map((movement) => (
+                        {noDeadline.map((movement) => (
                           <PhoneFormRow key={movement.id} {...rowProps(movement)} />
                         ))}
                       </ul>
-                      {noDeadlineMore}
                     </>
                   )}
                 </section>
@@ -1121,11 +1107,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                           {noDeadline.length > 0 ? (
                             <>
                               <ul className={styles.rowList}>
-                                {noDeadlineShown.map((movement) => (
+                                {noDeadline.map((movement) => (
                                   <FormRow key={movement.id} {...rowProps(movement)} />
                                 ))}
                               </ul>
-                              {noDeadlineMore}
                             </>
                           ) : (
                             <p className={styles.absent} data-testid="ward-legal-forms-none-without-deadline">

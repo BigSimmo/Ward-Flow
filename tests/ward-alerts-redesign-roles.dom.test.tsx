@@ -101,10 +101,11 @@ describe("Alerts redesign: the coordinator's page", () => {
     expect(actNow).toBeInTheDocument();
   });
 
-  it("highlights by owner from one menu, with nothing chosen at first", () => {
+  // Josh, 31 Oct 2026 (answer 17): the desktop keeps Owner under Arrange by and drops the owner menu
+  // that repeated it; the phone keeps the menu (tests/ward-alerts-screen.dom.test.tsx).
+  it("arranges by owner on desktop with no second owner menu", () => {
     renderAs({ role: "coordinator", scope: { kind: "statewide" } });
-    const menu = screen.getByRole("combobox", { name: "Highlight by owner" }) as HTMLSelectElement;
-    expect(menu.value).toBe("");
+    expect(screen.queryByRole("combobox", { name: "Highlight by owner" })).not.toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Highlight by owner" })).not.toBeInTheDocument();
     expect(within(screen.getByRole("radiogroup", { name: "Arrange by" })).getByRole("radio", { name: /Owner/u }));
   });
