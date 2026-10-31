@@ -79,21 +79,30 @@ export function NextCrossings({
 
   return (
     <div className={styles.nx} data-testid="delays-next-crossings">
-      <dl className={styles.nxSum}>
-        <div data-tone="warning">
-          <dt>{`Pass ${H8}`}</dt>
-          <dd className={styles.nxSumN}>{pass8}</dd>
+      <div className={styles.nxSum}>
+        <div>
+          <span className={styles.nxSumL}>
+            <StatusGlyph tone="warning" size={9} />
+            {`Pass ${H8}`}
+          </span>
+          <b className={styles.nxSumN}>{pass8}</b>
         </div>
-        <div data-tone="danger">
-          <dt>{`Pass ${H24}`}</dt>
-          <dd className={styles.nxSumN}>{pass24}</dd>
+        <div>
+          <span className={styles.nxSumL}>
+            <StatusGlyph tone="danger" size={9} />
+            {`Pass ${H24}`}
+          </span>
+          <b className={styles.nxSumN}>{pass24}</b>
         </div>
-        <div data-tone="info">
-          <dt>Legal times as typed</dt>
-          <dd className={styles.nxSumN}>{forms}</dd>
+        <div>
+          <span className={styles.nxSumL}>
+            <StatusGlyph tone="info" size={9} />
+            Legal times as typed
+          </span>
+          <b className={styles.nxSumN}>{forms}</b>
         </div>
         <p className={styles.nxSumNote}>In the next {RUNWAY_WINDOW / 60} hours if nobody moves. Not legally checked.</p>
-      </dl>
+      </div>
       {list.length === 0 ? (
         <p
           className={styles.nxEmpty}
@@ -135,7 +144,8 @@ export function NextCrossings({
                       <StatusGlyph tone={TONE[item.kind]} size={10} />
                     </span>
                   </span>
-                  <span className={styles.nxWhat} data-tone={TONE[item.kind]}>
+                  <span className={styles.nxWhat}>
+                    <StatusGlyph tone={TONE[item.kind]} size={9} />
                     {what(item)}
                   </span>
                 </button>
