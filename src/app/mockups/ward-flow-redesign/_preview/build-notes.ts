@@ -94,12 +94,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Removed:** the Beds tab, the beds-ready meter and the ward admitted and discharged counts: an ED holds no ward, so they were always 0.",
     "**Still open:** the greyed sign-off notice appears three times on desktop. Drop the sign-off section for this desk?",
   ],
-  "as-ed-statistics": [
-    "**As the ED clinician**, Statistics is Peel ED's own page, as the real menu opens it (D-80), not the network hub.",
-    "**New:** a counts-only ED desk leads with the time-since-opening bands and the declines counts.",
-    "**Removed:** three panels that only said people are not listed; that sentence is said once.",
-    "**Round 2:** the chart leads and Declines is the side column, so both cards end level. '8 still in ED · 1 in transit' is the chart's aside, and 'Counts only' sits once in the eyebrow. Over 24h carries the amber dot, as Longest does.",
-  ],
   "as-community-home": [
     "**As the community clinician**, the page opens on the team's own In a bed list: the people it follows into hospital.",
     "**Removed:** Change team (this desk opens its own team only), the Caseload figure the title already gives, and an all-zero Excluded box.",
@@ -122,12 +116,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the community clinician**, the record shows Emberfall, Cassia, who is on Midland's caseload (the coordinator's example is Peel's).",
     "**Removed:** the Record a change card, which held only greyed buttons; Why admitted takes its place.",
     "**Still open:** the hero chips, the On ward card and Legal now repeat the same day count, date and legal status (the coordinator's copy).",
-  ],
-  "as-community-statistics": [
-    "**As the community clinician**, Statistics opens Midland's own team page as counts, where the real menu sends this desk.",
-    "**New:** one 'Coming back to the team' card with only the new counts replaces two cards that repeated the hero.",
-    "**Round 2:** the hero keeps In a bed and With a discharge date; the follow-up figures move into the card as six tiles (2 × 3 on the phone). 'Counts only' sits in the eyebrow, as on the ED desk.",
-    "**Still open:** the app bar says 'Statewide' on Midland's own page (shared chrome).",
   ],
   "as-officer-home": [
     "**As the transport officer**, the phone opens on the next job (Open, then the one filled En route), then the job list; a long list shows its first 8 jobs, then Show all.",

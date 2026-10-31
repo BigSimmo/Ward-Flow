@@ -239,13 +239,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     role: ROLE_DESKS["ed"],
   },
   {
-    slug: "as-ed-statistics",
-    label: "Statistics",
-    group: "As ED clinician",
-    appPath: "/ward-flow/statistics",
-    role: ROLE_DESKS["ed"],
-  },
-  {
     slug: "as-community-home",
     label: "Community team",
     group: "As community clinician",
@@ -271,13 +264,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     label: "Patient record",
     group: "As community clinician",
     appPath: "/ward-flow/people/196zcp24w5t0",
-    role: ROLE_DESKS["community"],
-  },
-  {
-    slug: "as-community-statistics",
-    label: "Statistics",
-    group: "As community clinician",
-    appPath: "/ward-flow/statistics",
     role: ROLE_DESKS["community"],
   },
   {

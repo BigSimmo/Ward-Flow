@@ -187,11 +187,6 @@ const AsEdLegalFormsPage = dynamic<MockupPageProps>(() =>
 const AsEdHandoverPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ed-handover/as-ed-handover-page").then((module) => module.AsEdHandoverPage),
 );
-const AsEdStatisticsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ed-statistics/as-ed-statistics-page").then(
-    (module) => module.AsEdStatisticsPage,
-  ),
-);
 const AsCommunityHomePage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-community-home/as-community-home-page").then(
     (module) => module.AsCommunityHomePage,
@@ -210,11 +205,6 @@ const AsCommunityMovementsPage = dynamic<MockupPageProps>(() =>
 const AsCommunityPatientPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-community-patient/as-community-patient-page").then(
     (module) => module.AsCommunityPatientPage,
-  ),
-);
-const AsCommunityStatisticsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-community-statistics/as-community-statistics-page").then(
-    (module) => module.AsCommunityStatisticsPage,
   ),
 );
 const AsOfficerHomePage = dynamic<MockupPageProps>(() =>
@@ -349,12 +339,10 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-ed-waiting": AsEdWaitingPage,
   "as-ed-legal-forms": AsEdLegalFormsPage,
   "as-ed-handover": AsEdHandoverPage,
-  "as-ed-statistics": AsEdStatisticsPage,
   "as-community-home": AsCommunityHomePage,
   "as-community-referrals": AsCommunityReferralsPage,
   "as-community-movements": AsCommunityMovementsPage,
   "as-community-patient": AsCommunityPatientPage,
-  "as-community-statistics": AsCommunityStatisticsPage,
   "as-officer-home": AsOfficerHomePage,
   "as-officer-alerts": AsOfficerAlertsPage,
   "as-bed-manager-home": AsBedManagerHomePage,

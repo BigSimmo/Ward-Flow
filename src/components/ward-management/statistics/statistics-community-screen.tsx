@@ -213,6 +213,8 @@ function ExecutiveCommunityScreen({ teamId }: { teamId: string }) {
 function OperationalCommunityScreen({ teamId }: { teamId: string }) {
   const live = useStatisticsLive();
   const { countsOnly, small, parts } = useStatisticsCounts();
+  // Role view (community clinician, D-80): the team's own page as counts.
+  const ownTeamDesk = useEffectiveWardAccess().role === "community";
   const canOpen = useCanOpenHref();
   const { admissions, referrals, units } = live.state;
   const now = live.now;
@@ -347,6 +349,12 @@ function OperationalCommunityScreen({ teamId }: { teamId: string }) {
             dueOutText={dueOutText}
             pastDate={pastDate}
             pastDateText={pastDateText}
+            otherText={figures.other.kind === "measured" ? small(figures.other.value) : figureText(figures.other)}
+            noDateText={
+              figures.admitted.kind === "measured" && figures.expected.kind === "measured"
+                ? small(figures.admitted.value - figures.expected.value)
+                : figureText(figures.expected)
+            }
           />
         ),
         followUp: countsOnly ? (
@@ -385,59 +393,114 @@ function OperationalCommunityScreen({ teamId }: { teamId: string }) {
             ))}
           </ul>
         ),
-        dueOut: countsOnly ? (
-          <CardBody>
-            <PeopleNotListed testId="ward-statistics-community-due-out-not-listed" />
-          </CardBody>
-        ) : (
-          <div className={styles.tableWrap}>
-            <table className={`${tableClasses.table} ${styles.table}`}>
-              <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Admission</th>
-                  <th scope="col">Ward</th>
-                  <th scope="col">Discharge</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dueOut.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className={styles.muted}>
-                      {figures.expected.kind === "measured"
-                        ? "Nobody in a bed has a discharge date written down"
-                        : figureText(figures.expected)}
-                    </td>
-                  </tr>
-                ) : null}
-                {dueOut.map((admission) => (
-                  <tr key={admission.id}>
-                    <th scope="row">
-                      <span className={detail.primary}>{admission.id}</span>
-                    </th>
-                    <td>{unitName(admission.unitId)}</td>
-                    <td>
-                      {admission.expectedDischargeAt === null ? (
-                        <span className={styles.muted}>No date</span>
-                      ) : (
-                        <span className={styles.flagged}>
-                          {isPastDate(admission.expectedDischargeAt, now) ? (
-                            <StatusGlyph tone="warning" size={9} />
-                          ) : null}
-                          {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
-                          <span className={styles.muted}>
-                            {fromToday(admission.expectedDischargeAt, now)}
-                            {isPastDate(admission.expectedDischargeAt, now) ? ", past date" : ""}
-                          </span>
-                        </span>
-                      )}
-                    </td>
-                  </tr>
+        dueOut:
+          countsOnly && ownTeamDesk ? (
+            // Role view (community clinician): every figure the hero does not lead with, in one row of
+            // tiles (the Statistics family's card figures). Discharged here, Left another way and No
+            // follow-up yet moved here from the hero, so the follow-up measure sits in one place and
+            // the hero keeps the two that lead.
+            <CardBody className={styles.bodyStack}>
+              <dl className={styles.tiles} aria-label="Coming back to the team">
+                {[
+                  { id: "due", label: "Due out within 7 days", value: dueOutText, flag: false },
+                  { id: "past", label: "Past discharge date", value: pastDateText, flag: pastDate > 0 },
+                  {
+                    id: "nodate",
+                    label: "No discharge date",
+                    value:
+                      figures.admitted.kind === "measured" && figures.expected.kind === "measured"
+                        ? small(figures.admitted.value - figures.expected.value)
+                        : figureText(figures.expected),
+                    flag: false,
+                  },
+                  {
+                    id: "discharged",
+                    label: "Discharged here",
+                    value:
+                      figures.discharged.kind === "measured"
+                        ? small(figures.discharged.value)
+                        : figureText(figures.discharged),
+                    flag: false,
+                  },
+                  {
+                    id: "other",
+                    label: "Left another way",
+                    value: figures.other.kind === "measured" ? small(figures.other.value) : figureText(figures.other),
+                    flag: false,
+                  },
+                  {
+                    id: "nofollow",
+                    label: "No follow-up yet",
+                    value:
+                      figures.discharged.kind === "measured"
+                        ? small(notArranged.length)
+                        : figureText(figures.discharged),
+                    flag: figures.discharged.kind === "measured" && notArranged.length > 0,
+                  },
+                ].map((fact) => (
+                  <div key={fact.id} className={styles.tile}>
+                    <dt className={styles.tileLabel}>
+                      {fact.flag ? <StatusGlyph tone="warning" size={9} /> : null}
+                      {fact.label}
+                    </dt>
+                    <dd className={styles.tileValue}>{fact.value}</dd>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        ),
+              </dl>
+            </CardBody>
+          ) : countsOnly ? (
+            <CardBody>
+              <PeopleNotListed testId="ward-statistics-community-due-out-not-listed" />
+            </CardBody>
+          ) : (
+            <div className={styles.tableWrap}>
+              <table className={`${tableClasses.table} ${styles.table}`}>
+                <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Admission</th>
+                    <th scope="col">Ward</th>
+                    <th scope="col">Discharge</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dueOut.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className={styles.muted}>
+                        {figures.expected.kind === "measured"
+                          ? "Nobody in a bed has a discharge date written down"
+                          : figureText(figures.expected)}
+                      </td>
+                    </tr>
+                  ) : null}
+                  {dueOut.map((admission) => (
+                    <tr key={admission.id}>
+                      <th scope="row">
+                        <span className={detail.primary}>{admission.id}</span>
+                      </th>
+                      <td>{unitName(admission.unitId)}</td>
+                      <td>
+                        {admission.expectedDischargeAt === null ? (
+                          <span className={styles.muted}>No date</span>
+                        ) : (
+                          <span className={styles.flagged}>
+                            {isPastDate(admission.expectedDischargeAt, now) ? (
+                              <StatusGlyph tone="warning" size={9} />
+                            ) : null}
+                            {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
+                            <span className={styles.muted}>
+                              {fromToday(admission.expectedDischargeAt, now)}
+                              {isPastDate(admission.expectedDischargeAt, now) ? ", past date" : ""}
+                            </span>
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ),
       }}
     />
   );
@@ -464,6 +527,9 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
   } = model;
   const section = statisticsSectionById("community")!;
   const isPhone = useIsPhone();
+  // Role view (community clinician, D-80): this desk sees its own team only, so no network-wide
+  // wording and no one-row team comparison.
+  const ownTeamDesk = useEffectiveWardAccess().role === "community";
   const inBedCount = measuredValue(figures.admitted);
   const phoneParts = { withDate: countText(figures.expected), noDate: countText(noDischargeDate) };
   const figureRows: { key: keyof CommunityFigures; label: string; figure: CountFigure }[] = [
@@ -512,11 +578,19 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
           </HeroTool>
         ) : undefined
       }
-      eyebrowLabel="Community team"
+      // Role view (community clinician): the eyebrow says where this is and that the desk reads
+      // counts only, as on the ED desk; the card no longer repeats "Counts only".
+      eyebrowLabel={ownTeamDesk ? "Statistics" : "Community team"}
       eyebrowDetail={
-        <span>
-          {COMMUNITY_TEAM_PAGES.length} teams in the network{scopeLabel ? " · " + scopeLabel : ""}
-        </span>
+        ownTeamDesk ? (
+          <span data-testid="ward-statistics-people-not-listed">
+            Community team · Counts only<SrOnly>, so people are not listed</SrOnly>
+          </span>
+        ) : (
+          <span>
+            {COMMUNITY_TEAM_PAGES.length} teams in the network{scopeLabel ? " · " + scopeLabel : ""}
+          </span>
+        )
       }
       now={now}
       paused={paused}
@@ -536,21 +610,26 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
         ],
       }}
       phone={{
-        sub:
-          figures.expected.kind === "measured"
+        // Role view (community clinician): the due-out count sits in the card below, so not here too.
+        sub: ownTeamDesk
+          ? undefined
+          : figures.expected.kind === "measured"
             ? `${dueOutText} due out in the next 7 days`
             : `Due out in the next 7 days: ${dueOutText}`,
         stats: (
           <>
             <HeroStat value={inBedCount === null ? figureText(figures.admitted) : small(inBedCount)} label="In a bed" />
             <HeroStat value={phoneParts.withDate} label="With a date" />
-            <HeroStat value={phoneParts.noDate} label="No date" />
+            {/* Role view (community clinician): No discharge date is in the card below. */}
+            {ownTeamDesk ? null : <HeroStat value={phoneParts.noDate} label="No date" />}
           </>
         ),
       }}
       stats={
         <>
-          {figureRows.map((row) => (
+          {/* Role view (community clinician): the hero leads with In a bed and With a discharge date;
+              the outcome counts are in the card, so three noughts no longer fill the header. */}
+          {(ownTeamDesk ? figureRows.slice(0, 2) : figureRows).map((row) => (
             <HeroStat
               key={row.key}
               value={
@@ -561,25 +640,58 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
                   {row.figure.kind === "measured" ? small(row.figure.value) : figureText(row.figure)}
                 </span>
               }
-              label={HERO_LABELS[row.key]}
+              label={
+                ownTeamDesk && row.key === "admitted" ? (
+                  <>
+                    In a bed<SrOnly>, or with one pulled</SrOnly>
+                  </>
+                ) : (
+                  HERO_LABELS[row.key]
+                )
+              }
             />
           ))}
-          <HeroStat
-            value={notArrangedText}
-            label={
-              <span className={styles.flagged}>
-                {figures.discharged.kind === "measured" && positive(measuredValue(notArranged)) ? (
-                  <StatusGlyph tone="warning" size={9} />
-                ) : null}
-                No follow-up yet
-              </span>
-            }
-          />
+          {ownTeamDesk ? null : (
+            <HeroStat
+              value={notArrangedText}
+              label={
+                <span className={styles.flagged}>
+                  {figures.discharged.kind === "measured" && positive(measuredValue(notArranged)) ? (
+                    <StatusGlyph tone="warning" size={9} />
+                  ) : null}
+                  No follow-up yet
+                </span>
+              }
+            />
+          )}
         </>
       }
     >
       {isPhone ? (
         slots.phone
+      ) : ownTeamDesk ? (
+        // Role view (community clinician): the hero already gives in a bed, with a date, discharged,
+        // left another way and no follow-up, so the handover table and the follow-up card (which
+        // repeated them) give way to one card of what is still to come back to the team.
+        <StatCard
+          id="due-out"
+          className={detail.anchor}
+          icon={CalendarClock}
+          title="Coming back to the team"
+          // Role view (community clinician): the way to the caseload sits in the card head, not
+          // alone in a footer strip.
+          action={
+            <Link
+              href={communityTeamHref(team)}
+              className={buttonClass({ variant: "sec", size: "sm" })}
+              data-testid="ward-statistics-community-operational-link"
+            >
+              Open caseload
+            </Link>
+          }
+        >
+          {slots.dueOut}
+        </StatCard>
       ) : (
         <>
           <FlushRow layout="lead2">
@@ -744,6 +856,8 @@ function TeamPhone({
   dueOutText,
   pastDate,
   pastDateText,
+  otherText,
+  noDateText,
 }: {
   /** Null on the executive desk, where people are not listed. */
   people: readonly Admission[] | null;
@@ -762,106 +876,157 @@ function TeamPhone({
   dueOutText: number | string;
   pastDate: StatisticsCount | null;
   pastDateText: number | string;
+  /** Role view (community clinician): Left another way and No discharge date, for the one card. */
+  otherText?: number | string;
+  noDateText?: number | string;
 }) {
+  // Role view (community clinician): the hero's In a bed figure is the handover count, so the group
+  // that would only say "people are not listed" is left out.
+  const ownTeamDesk = useEffectiveWardAccess().role === "community";
   const sorted = [...(people ?? [])].sort(
     (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),
   );
   return (
     <PhoneBody testId="ward-statistics-community-phone">
+      {ownTeamDesk && people === null ? null : (
+        <PhoneGroup
+          title="Community handover"
+          aside={peopleMeasured ? `${peopleCount} ${peopleCount === 1 ? "person" : "people"}` : String(peopleCount)}
+        >
+          {people === null ? (
+            <PeopleNotListed testId="ward-statistics-community-phone-not-listed" />
+          ) : sorted.length === 0 ? (
+            <p className={phone.note}>
+              {inBedMeasured
+                ? "Nobody referred to this team is in a bed or has one pulled now."
+                : `In a bed: ${inBedText}`}
+            </p>
+          ) : (
+            <PhoneList label="Referred to this team, in a bed now">
+              {sorted.map((admission) => {
+                const days =
+                  admission.arrivedAt === null || admission.arrivedAt > now
+                    ? null
+                    : Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
+                return (
+                  <PhoneListRow
+                    key={admission.id}
+                    as="li"
+                    name={admission.id}
+                    meta={
+                      admission.expectedDischargeAt !== null && isPastDate(admission.expectedDischargeAt, now)
+                        ? `${unitName(admission.unitId)} · past date`
+                        : unitName(admission.unitId)
+                    }
+                    value={
+                      days === null ? (
+                        "none"
+                      ) : (
+                        <>
+                          {days} <small className={phone.unit}>d</small>
+                        </>
+                      )
+                    }
+                    time={
+                      admission.expectedDischargeAt === null ? (
+                        "no date"
+                      ) : isPastDate(admission.expectedDischargeAt, now) ? (
+                        <span className={phone.flagged}>
+                          <StatusGlyph tone="warning" size={9} />
+                          {dateOf(admission.expectedDischargeAt, dayZero)}
+                        </span>
+                      ) : (
+                        dateOf(admission.expectedDischargeAt, dayZero)
+                      )
+                    }
+                  />
+                );
+              })}
+            </PhoneList>
+          )}
+        </PhoneGroup>
+      )}
+      {/* Role view (community clinician): the same name as the desktop card. */}
+      {/* Role view (community clinician): the desktop card's six figures in its order; "Counts only"
+          is in the eyebrow. */}
       <PhoneGroup
-        title="Community handover"
-        aside={peopleMeasured ? `${peopleCount} ${peopleCount === 1 ? "person" : "people"}` : String(peopleCount)}
+        title={ownTeamDesk ? "Coming back to the team" : "Follow-up"}
+        aside={ownTeamDesk ? undefined : "discharged here"}
       >
-        {people === null ? (
-          <PeopleNotListed testId="ward-statistics-community-phone-not-listed" />
-        ) : sorted.length === 0 ? (
-          <p className={phone.note}>
-            {inBedMeasured
-              ? "Nobody referred to this team is in a bed or has one pulled now."
-              : `In a bed: ${inBedText}`}
-          </p>
+        {ownTeamDesk ? (
+          <PhoneFacts
+            label="Coming back to the team"
+            facts={[
+              { id: "due", label: "Due out within 7 days", value: dueOutText },
+              {
+                id: "past",
+                label: (
+                  <>
+                    {positive(pastDate) ? <StatusGlyph tone="warning" size={9} /> : null}
+                    Past discharge date
+                  </>
+                ),
+                value: pastDateText,
+                testId: "ward-statistics-community-past-date",
+              },
+              { id: "nodate", label: "No discharge date", value: noDateText ?? "" },
+              {
+                id: "discharged",
+                label: "Discharged here",
+                value: "text" in followUp ? followUp.text : followUp.discharged,
+              },
+              { id: "other", label: "Left another way", value: otherText ?? "" },
+              {
+                id: "not",
+                label: (
+                  <>
+                    {"flagged" in followUp && followUp.flagged ? <StatusGlyph tone="warning" size={9} /> : null}
+                    No follow-up yet
+                  </>
+                ),
+                value: "text" in followUp ? followUp.text : followUp.notArranged,
+              },
+            ]}
+          />
         ) : (
-          <PhoneList label="Referred to this team, in a bed now">
-            {sorted.map((admission) => {
-              const days =
-                admission.arrivedAt === null || admission.arrivedAt > now
-                  ? null
-                  : Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
-              return (
-                <PhoneListRow
-                  key={admission.id}
-                  as="li"
-                  name={admission.id}
-                  meta={
-                    admission.expectedDischargeAt !== null && isPastDate(admission.expectedDischargeAt, now)
-                      ? `${unitName(admission.unitId)} · past date`
-                      : unitName(admission.unitId)
-                  }
-                  value={
-                    days === null ? (
-                      "none"
-                    ) : (
-                      <>
-                        {days} <small className={phone.unit}>d</small>
-                      </>
-                    )
-                  }
-                  time={
-                    admission.expectedDischargeAt === null ? (
-                      "no date"
-                    ) : isPastDate(admission.expectedDischargeAt, now) ? (
-                      <span className={phone.flagged}>
-                        <StatusGlyph tone="warning" size={9} />
-                        {dateOf(admission.expectedDischargeAt, dayZero)}
-                      </span>
-                    ) : (
-                      dateOf(admission.expectedDischargeAt, dayZero)
-                    )
-                  }
-                />
-              );
-            })}
-          </PhoneList>
+          <PhoneFacts
+            label="Follow-up for people discharged into this area"
+            facts={[
+              {
+                id: "discharged",
+                label: "Discharged here",
+                value: "text" in followUp ? followUp.text : followUp.discharged,
+              },
+              {
+                id: "arranged",
+                label: "Follow-up arranged",
+                value: "text" in followUp ? followUp.text : followUp.arranged,
+              },
+              {
+                id: "not",
+                label: (
+                  <>
+                    {"flagged" in followUp && followUp.flagged ? <StatusGlyph tone="warning" size={9} /> : null}
+                    No follow-up yet
+                  </>
+                ),
+                value: "text" in followUp ? followUp.text : followUp.notArranged,
+              },
+              { id: "due", label: "Due out within 7 days", value: dueOutText },
+              {
+                id: "past",
+                label: (
+                  <>
+                    {positive(pastDate) ? <StatusGlyph tone="warning" size={9} /> : null}
+                    Past date
+                  </>
+                ),
+                value: pastDateText,
+                testId: "ward-statistics-community-past-date",
+              },
+            ]}
+          />
         )}
-      </PhoneGroup>
-      <PhoneGroup title="Follow-up" aside="discharged here">
-        <PhoneFacts
-          label="Follow-up for people discharged into this area"
-          facts={[
-            {
-              id: "discharged",
-              label: "Discharged here",
-              value: "text" in followUp ? followUp.text : followUp.discharged,
-            },
-            {
-              id: "arranged",
-              label: "Follow-up arranged",
-              value: "text" in followUp ? followUp.text : followUp.arranged,
-            },
-            {
-              id: "not",
-              label: (
-                <>
-                  {"flagged" in followUp && followUp.flagged ? <StatusGlyph tone="warning" size={9} /> : null}
-                  No follow-up yet
-                </>
-              ),
-              value: "text" in followUp ? followUp.text : followUp.notArranged,
-            },
-            { id: "due", label: "Due out within 7 days", value: dueOutText },
-            {
-              id: "past",
-              label: (
-                <>
-                  {positive(pastDate) ? <StatusGlyph tone="warning" size={9} /> : null}
-                  Past date
-                </>
-              ),
-              value: pastDateText,
-              testId: "ward-statistics-community-past-date",
-            },
-          ]}
-        />
       </PhoneGroup>
     </PhoneBody>
   );
