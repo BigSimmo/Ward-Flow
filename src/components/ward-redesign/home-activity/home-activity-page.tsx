@@ -2,7 +2,7 @@
 
 import { ChevronRight, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   admissionIdOfInboxId,
@@ -621,12 +621,6 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
   const review = useExplicitReview({ world: lastLookWorld, now, thresholds, lineContext });
   const changeCount = review.live.length;
   const [activityOpen, setActivityOpen] = useState(false);
-  // Preview: the sidebar and header redesign is drawn with ?shell=next (the shareable copy reads the
-  // address itself, as the preview shell does).
-  const shellParam =
-    useSearchParams()?.get("shell") ??
-    (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("shell"));
-  const nextShell = shellParam === "next";
   const [activityTab, setActivityTab] = useState<ActivityTab>("changes");
   const captureReview = review.capture;
   const openActivity = useCallback(
@@ -1227,21 +1221,6 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
             onTab={setActivityTab}
             review={review}
             now={now}
-            toAlerts={
-              nextShell
-                ? {
-                    label: "Alerts",
-                    count: actionInbox.length,
-                    onChoose: () => {
-                      // Back to the new header's Alerts panel: close this one, then open that.
-                      setActivityOpen(false);
-                      window.requestAnimationFrame(() =>
-                        document.querySelector<HTMLElement>('[data-testid="ward-bar-tasks-trigger"]')?.click(),
-                      );
-                    },
-                  }
-                : undefined
-            }
           />
         </div>
         <WardPrototypeFooter
