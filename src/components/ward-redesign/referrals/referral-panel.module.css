@@ -349,3 +349,26 @@
   border-color: transparent;
   background: transparent;
 }
+.bottomActions {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-1) 0;
+}
+.bottomActions > * {
+  flex: 1 1 0;
+}
+.bottomNote {
+  margin: 0;
+  padding: var(--wf-s-1) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+/* The ED review's pinned Decline and Accept: desktop control height, not the phone's 48px. */
+.panel.panel [data-testid="ward-referral-match-not-a-bed-question"] > :last-child {
+  margin-bottom: calc(var(--wf-s-4) * -1);
+  padding-block: var(--wf-s-2);
+}
+.panel.panel [data-testid="ward-referral-match-not-a-bed-question"] > :last-child button {
+  height: var(--wf-h-md);
+  min-height: 0;
+}
