@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { errorFields, parseSubscription } from "./push.mjs";
 import { bootstrapCoordinators } from "./auth.mjs";
 import { jsonResponse } from "./reply-cache.mjs";
-import { forecastHistoryInput } from "./forecast-history.mjs";
+import { forecastHistoryInput, forecastReasonRole } from "./forecast-history.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -485,6 +485,12 @@ export function createSharedHandler({
         if (refusal) return refusal;
         const input = forecastHistoryInput(body);
         if (!input) return reply(400, { error: "A forecast snapshot or a reason for a missed day is required" });
+        if (input.reason) {
+          // Access audit (31 Oct 2026): who chose the reason is the desk's own role, never the body's.
+          const by = forecastReasonRole(view.access.role);
+          if (!by) return reply(403, { error: "This desk does not record forecast reasons." });
+          input.reason = { ...input.reason, by };
+        }
         const result = await store.recordForecast(view, input);
         return reply(result.status, result.body);
       }

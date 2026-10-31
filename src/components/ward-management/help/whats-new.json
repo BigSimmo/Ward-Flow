@@ -5,31 +5,6 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-27-referral-panel-whats-left",
-    "date": "2026-10-27",
-    "line": "The referral form's side panel now shows what's left to fill in before you can send."
-  },
-  {
-    "id": "2026-10-27-capacity-locked-beds-in-total",
-    "date": "2026-10-27",
-    "line": "Capacity now counts locked beds within the total and labels each figure the same way on every screen."
-  },
-  {
-    "id": "2026-10-27-activity-every-desk-computer",
-    "date": "2026-10-27",
-    "line": "The Activity feed now shows recent actions from every computer at your desk, not just this one."
-  },
-  {
-    "id": "2026-10-27-closing-ward-keeps-reason",
-    "date": "2026-10-27",
-    "line": "Closing a ward keeps your reason and time if the save is refused, and reopening a ward now asks you to confirm."
-  },
-  {
-    "id": "2026-10-28-settings-plus-minus-larger",
-    "date": "2026-10-28",
-    "line": "The plus and minus buttons in Settings are now larger and easier to tap."
-  },
-  {
     "id": "2026-10-28-finder-surname-first",
     "date": "2026-10-28",
     "line": "Patient search movement rows now show surname first."
@@ -98,5 +73,30 @@
     "id": "2026-10-31-transport-cancel-names",
     "date": "2026-10-31",
     "line": "Cancelling community transport now names the patient, and the desk guides match what each desk can open."
+  },
+  {
+    "id": "2026-10-31-legal-times-as-typed",
+    "date": "2026-10-31",
+    "line": "Legal form times now show only as typed, such as \"Ends 15:42 as typed\", never as a countdown."
+  },
+  {
+    "id": "2026-10-31-settings-restore-export",
+    "date": "2026-10-31",
+    "line": "Settings: Restore now names all twelve rules, and Export saves only the saved rules."
+  },
+  {
+    "id": "2026-10-31-names-surname-first",
+    "date": "2026-10-31",
+    "line": "Names now read surname first in the downtime pack, chronology file, community record and referral slide-out."
+  },
+  {
+    "id": "2026-10-31-capacity-panel-links",
+    "date": "2026-10-31",
+    "line": "Capacity's ward panel only offers pages your desk can open."
+  },
+  {
+    "id": "2026-10-31-legal-time-24-hour",
+    "date": "2026-10-31",
+    "line": "Legal forms: Record the time written now takes a typed 24-hour time, as Record a form does."
   }
 ]

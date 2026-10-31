@@ -42,7 +42,9 @@ These source files do not establish a current hosted connection or deployment.
   when its type is not the desk's own or it names a record outside the desk's place. The audit
   row names the sender's role and place.
 - `GET /v1/workspace/audit` is the statewide coordinator's. An access admin reads role changes
-  inside their own place only. Everyone else gets 403.
+  inside their own place only. Any other desk with a place (not the executive, and not another
+  statewide desk) reads only the kind and time of changes made inside its own place, for its
+  Activity feed, from a store that can scope them (`desk-audit.mjs`). Everyone else gets 403.
 - `GET /v1/workspace/access` and `POST /v1/workspace/access/grant`, `/approve` and `/revoke` are
   for the access admin and the statewide coordinator. Nobody grants themselves a role or one wider
   than their own, and every role has an end date. All granted roles work immediately, including
@@ -57,8 +59,8 @@ These source files do not establish a current hosted connection or deployment.
   An account with no role may hold one open `POST /v1/workspace/access/request`, and an access admin answers
   it with `/access/decide`. Before 9 these routes answer 409 and say migration 9 is not applied.
 - Phone alerts: before 9 they stay with the bootstrap statewide coordinators. From 9 each device
-  records the membership that turned it on, and alerts reach bed managers, nurses in charge and ED
-  clinicians for their own place, cover included.
+  records the membership that turned it on, and alerts reach bed managers, nurses in charge, ED
+  clinicians, transport officers and community teams for their own place, cover included.
 
 ## Files
 

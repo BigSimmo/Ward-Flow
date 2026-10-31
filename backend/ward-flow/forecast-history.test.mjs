@@ -107,6 +107,43 @@ test("the route answers a store without the history as not shared, checks the bo
   ]);
 });
 
+test("a missed-day reason is recorded under the desk's own role, whatever the body says", async () => {
+  // Access audit (31 Oct 2026): `by` came from the browser, so any desk could claim to be another.
+  const actor = "22222222-2222-4222-8222-222222222222";
+  const ward = {
+    ...STATEWIDE_VIEW,
+    access: { role: "ward", scope: { kind: "ward", unitIds: ["synthetic-ward"] } },
+    actorId: actor,
+  };
+  const admin = { ...STATEWIDE_VIEW, access: { role: "admin", scope: { kind: "statewide" } }, actorId: actor };
+  const handler = (view, seen) =>
+    createSharedHandler({
+      config: { coordinatorIds: [], workspaceId: "synthetic-workspace" },
+      store: {
+        viewer: async () => view,
+        forecastHistory: async () => ({ shared: true }),
+        recordForecast: async (_view, input) => (seen.push(input), { status: 200, body: { shared: true } }),
+      },
+      authenticate: async () => actor,
+      readBody: async (incoming) => incoming.json(),
+      verifierUnavailable: Error,
+      log: () => {},
+    });
+  const post = (body) =>
+    new Request("https://example.test/v1/workspace/forecast-history", {
+      method: "POST",
+      headers: { authorization: "Bearer synthetic", "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  const seen = [];
+  const claimed = { ...reason, by: "coordinator" };
+  assert.equal((await handler(ward, seen)(post({ generation: 0, reason: claimed }))).status, 200);
+  assert.deepEqual(seen, [{ generation: 0, reason: { ...claimed, by: "ward" } }]);
+  const adminSeen = [];
+  assert.equal((await handler(admin, adminSeen)(post({ generation: 0, reason }))).status, 403);
+  assert.deepEqual(adminSeen, [], "the access admin records no reason");
+});
+
 test(
   "real PostgreSQL: one shared track record per desk, the first snapshot of a day stands, and another world generation is refused",
   { skip: !url, timeout: 60_000 },
