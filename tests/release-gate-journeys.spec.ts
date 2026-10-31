@@ -253,7 +253,9 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await medicalPlacement.getByRole("button", { name: "Confirm medically cleared", exact: true }).click();
   await expect(medicalPlacement.getByRole("status")).toContainText("Recorded medically cleared.");
   await expectAccessible(page, testInfo, "ED person sheet after clearance");
-  await personSheet.getByRole("button", { name: "Transport booked", exact: true }).click();
+  // Redesign (Josh, 31 Oct 2026): the list item is "Log transport booking", the same words as the
+  // pinned next step and the handover blocker's fix, so it is found by its test id.
+  await personSheet.getByTestId(`ward-ed-book-transport-toggle-${movementId}`).click();
   const booking = page.getByTestId(`ward-ed-book-transport-${movementId}`);
   await expect(booking).toBeVisible();
   await page.getByTestId(`ward-ed-transport-provider-${movementId}`).selectOption("Patient transport service");
@@ -261,6 +263,8 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await page.getByTestId(`ward-ed-transport-cad-number-${movementId}`).fill("CAD-GATE-0001");
   await page.getByTestId(`ward-ed-transport-legal-status-involuntary-${movementId}`).click();
   await page.getByTestId(`ward-ed-transport-estimated-time-${movementId}`).fill("14:30");
+  // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
+  await page.getByTestId(`ward-ed-transport-estimated-day-today-${movementId}`).check();
   await expectAccessible(page, testInfo, "ED transport booking, filled");
   await page.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
   await expect(booking).toHaveCount(0);

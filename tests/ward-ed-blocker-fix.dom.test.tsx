@@ -23,7 +23,9 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  */
 
 describe("a greyed item in the ED actions menu", () => {
-  it("keeps its visible why in its own group, with the fix as a menu item", () => {
+  // Redesign (pop-ed-actions, Josh 31 Oct 2026): greyed items move out of their group into "Not
+  // available yet (n)", each with its short reason and its one fix, replacing the note in the group.
+  it("folds into Not available yet with its visible why, and the fix as a menu item", () => {
     const run = vi.fn();
     render(
       <EdActionsMenu
@@ -43,10 +45,18 @@ describe("a greyed item in the ED actions menu", () => {
         />
       </EdActionsMenu>,
     );
-    const group = within(screen.getByTestId("actions-menu")).getByRole("group", {
-      name: "Transfer & handover",
-      hidden: true,
-    });
+    const menu = screen.getByTestId("actions-menu");
+    // Nothing is left in its own group once its only item is greyed.
+    expect(within(menu).queryByRole("group", { name: "Transfer and handover", hidden: true })).toBeNull();
+    const toggle = within(menu).getByRole("menuitem", { name: "Not available yet (1)", hidden: true });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    const group = within(menu).getByRole("group", { name: "Not available yet", hidden: true });
+    expect(within(group).getByRole("menuitem", { name: "Mark handover ready", hidden: true })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(within(group).getByTestId("ward-ed-unavailable-handover-m1").textContent).toContain(
       "Needs transport logged first",
     );
@@ -194,11 +204,14 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     );
     fireEvent.click(screen.getByTestId("ward-ed-unfold-WF-011"));
     const menu = screen.getByTestId("ward-ed-actions-menu-WF-011");
-    const cmht = within(menu).getByTestId("ward-ed-unavailable-cmht-WF-011");
+    // Redesign (pop-ed-actions, Josh 31 Oct 2026): the greyed item sits under "Not available yet",
+    // with its reason, why and who acts next all shown, nothing to tap open.
+    fireEvent.click(within(menu).getByRole("menuitem", { name: /^Not available yet \(\d+\)$/, hidden: true }));
+    const notAvailable = within(menu).getByRole("group", { name: "Not available yet", hidden: true });
+    const cmht = within(notAvailable).getByTestId("ward-ed-unavailable-cmht-WF-011");
     expect(cmht.textContent).toContain("Examination outcome not recorded");
-    fireEvent.focus(within(menu).getByTestId("ed-refer-cmht-WF-011"));
-    expect(within(cmht).getByTestId("ward-ed-unavailable-cmht-WF-011-detail").textContent).toContain(
-      "Next: ED clinician, Armadale ED",
+    expect(within(cmht).getByTestId("ward-ed-unavailable-cmht-WF-011-detail").textContent).toMatch(
+      /^On Form \w+, so a community referral needs the outcome first\.Next: ED clinician, Armadale ED$/,
     );
     fireEvent.click(within(cmht).getByRole("menuitem", { name: "Record examination", hidden: true }));
     expect(screen.getByTestId("ward-ed-examine-form-WF-011")).toBeTruthy();
@@ -213,9 +226,12 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     );
     const dialog = screen.getByTestId("ward-ed-book-transport-WF-011");
     const left = within(dialog).getByTestId("ward-ed-book-transport-left-WF-011");
-    // A34: legal status starts from Legal now, so it is not among the answers left. CAD to follow
-    // (Josh, 27 Oct 2026): the CAD number is not a missing answer either.
-    expect(left.textContent).toContain("3 answers left: provider, estimated time, escort answer");
+    // Josh, 31 Oct 2026: the form starts with nothing chosen, so the day and the legal status are
+    // among the answers left. CAD to follow (Josh, 27 Oct 2026): the CAD number is not.
+    expect(left.textContent).toContain(
+      "5 answers left: provider, estimated time, today or tomorrow, escort answer, legal status",
+    );
+    expect(left.getAttribute("role")).toBe("status");
     // The confirm keeps its full sentence for screen readers.
     const confirm = within(dialog).getByTestId("ward-ed-book-transport-confirm-WF-011");
     expect(confirm.title).toMatch(/choose who is collecting the patient/);
@@ -229,8 +245,15 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     fireEvent.change(within(dialog).getByTestId("ward-ed-transport-estimated-time-WF-011"), {
       target: { value: "13:30" },
     });
+    expect(within(dialog).getByTestId("ward-ed-book-transport-left-WF-011").textContent).toContain(
+      "1 answer left: today or tomorrow",
+    );
+    fireEvent.click(within(dialog).getByTestId("ward-ed-transport-estimated-day-today-WF-011"));
 
-    expect(within(dialog).queryByTestId("ward-ed-book-transport-left-WF-011")).toBeNull();
+    // With every answer given, the top line says so.
+    expect(within(dialog).getByTestId("ward-ed-book-transport-left-WF-011").textContent).toBe(
+      "Every answer given. Check them, then save.",
+    );
     const cad = within(dialog).getByTestId("ward-ed-transport-cad-number-WF-011") as HTMLInputElement;
     expect(cad.value).toBe("");
     expect(within(dialog).getByTestId("ward-ed-transport-cad-to-follow-WF-011").textContent).toContain("CAD to follow");

@@ -11,10 +11,13 @@
  * Rules carried over from the forms it replaces:
  * - Provider, escort, CAD number and time are read off the phone call and never filled in
  *   (owner's third ruling, 17 Sep 2026). Escort is never derived from legal status or the last booking.
- * - Legal status is filled in from Legal now when the record holds one (`LEGAL_STATUS_FROM_LEGAL_NOW`).
- *   An answer that differs from Legal now asks for a reason, recorded as the booking's exception.
- * - The answers still missing are named, and one button moves to the first (blocker mock-up, 26 Oct).
- *   Pressing Save early also moves to the first missing answer, rather than doing nothing.
+ * - Nothing starts chosen (Josh, 31 Oct 2026): neither Today nor Tomorrow, and neither legal answer.
+ *   Legal now is shown under the legal question as plain text to check against
+ *   (`LEGAL_STATUS_FROM_LEGAL_NOW` is off). An answer that differs from Legal now asks for a
+ *   reason, recorded as the booking's exception.
+ * - The answers still missing are named at the top, and one button moves to the first (blocker
+ *   mock-up, 26 Oct; redesign, Josh 31 Oct 2026). With none left it says so. Pressing Save early
+ *   also moves to the first missing answer, rather than doing nothing.
  * - A ward escort or a family member has no dispatch service, so no CAD number is asked for
  *   (form friction audit, 27 Oct 2026). Questions follow the call: who, CAD, when, then escort and
  *   legal status.
@@ -58,7 +61,7 @@ import styles from "./transport-booking-form.module.css";
  * Whether the legal status answer starts from Legal now. One switch for every screen, so Josh's
  * answer to the A34 question changes one line. `false` leaves both answers unticked.
  */
-const LEGAL_STATUS_FROM_LEGAL_NOW = true;
+const LEGAL_STATUS_FROM_LEGAL_NOW = false;
 
 /** Answers before anything is chosen. Re-applied on every open, so one patient's answers never reach the next. */
 export const BLANK_TRANSPORT_BOOKING: TransportBookingAnswers = {
@@ -67,7 +70,8 @@ export const BLANK_TRANSPORT_BOOKING: TransportBookingAnswers = {
   cadNumber: "",
   transportLegalStatus: undefined,
   estimatedTime: "",
-  estimatedDay: "today",
+  // Neither Today nor Tomorrow until the person picks one (Josh, 31 Oct 2026).
+  estimatedDay: undefined,
 };
 
 /** The fields `BOOK_TRANSPORT` takes from the form. */
@@ -131,6 +135,7 @@ export function transportBookingTestId(ids: TransportBookingTestIds, part: Trans
 /** Each unanswered question's short name and the part that asks it. */
 const ANSWER_PARTS: Record<TransportAnswer, [name: string, part: TransportBookingPart]> = {
   provider: ["provider", "provider"],
+  day: ["today or tomorrow", "day"],
   escort: ["escort answer", "escort"],
   legalStatus: ["legal status", "legal"],
   time: ["estimated time", "time"],
@@ -301,13 +306,35 @@ export function TransportBookingForm({
     (field?.matches("fieldset") ? field.querySelector<HTMLElement>("input") : field)?.focus();
   };
   const goToAnswer = (answer: TransportAnswer) => goToPart(ANSWER_PARTS[answer][1]);
-  // The answers still to give, with the reason it differs last: one list, beside Save.
+  // The answers still to give, with the reason it differs last: one list, at the top.
   const leftNames = reasonMissing ? [...missingNames, "reason it differs"] : missingNames;
   const goToFirstLeft = () => (missing.length > 0 ? goToAnswer(missing[0]!) : goToPart("legal-reason"));
 
   return (
     <div className={styles.form} aria-busy={pending || undefined}>
-      <Field label={`Who is collecting ${patientName}`} id={did("provider")}>
+      {/* Redesign (Josh, 31 Oct 2026): what is still to answer sits first, with a link to the first
+          one. Once everything is answered it says so, and Save is the next step. */}
+      {leftNames.length > 0 ? (
+        <p className={styles.left} data-testid={tid("left")} role="status">
+          <span>
+            <strong>
+              {leftNames.length} {leftNames.length === 1 ? "answer" : "answers"} left
+            </strong>
+            : {leftNames.join(", ")}
+          </span>
+          <button type="button" className={styles.leftFix} onClick={goToFirstLeft}>
+            Add {leftNames[0]}
+          </button>
+        </p>
+      ) : (
+        <p className={styles.allAnswered} data-testid={tid("left")} role="status">
+          <StatusGlyph tone="success" size={9} />
+          Every answer given. Check them, then save.
+        </p>
+      )}
+
+      {/* The person is named by the screen around the form (popup title, sheet or panel). */}
+      <Field label="Who is collecting" id={did("provider")}>
         <Select
           data-testid={tid("provider")}
           disabled={pending}
@@ -415,7 +442,9 @@ export function TransportBookingForm({
       ) : null}
 
       <fieldset className={styles.question} data-testid={tid("escort")} disabled={pending}>
-        <legend className={styles.legend}>Does {patientName} need an escort?</legend>
+        <legend className={styles.legend}>
+          Escort needed?<span className="sr-only"> For {patientName}.</span>
+        </legend>
         <span className={styles.choice}>
           {ESCORT_ANSWERS.map((answer) => (
             <label key={answer.label} className={styles.choiceItem}>
@@ -452,11 +481,11 @@ export function TransportBookingForm({
           ))}
         </span>
         {record ? (
+          // Legal now as plain text to check against (Josh, 31 Oct 2026), said once.
           <p className={styles.note}>
-            Legal now: {legalNowText(record)}.
             {LEGAL_STATUS_FROM_LEGAL_NOW && legalNow !== undefined && answers.transportLegalStatus === legalNow
-              ? " Filled in from Legal now. Change it if the call said otherwise."
-              : null}
+              ? `From Legal now: ${legalNowText(record)} · change if the call differs.`
+              : `Legal now: ${legalNowText(record)}.`}
           </p>
         ) : null}
       </fieldset>
@@ -495,18 +524,13 @@ export function TransportBookingForm({
         </Field>
       ) : null}
 
-      {leftNames.length > 0 ? (
-        <p className={styles.left} data-testid={tid("left")}>
-          <span>
-            {leftNames.length} {leftNames.length === 1 ? "answer" : "answers"} left: {leftNames.join(", ")}
-          </span>
-          <button type="button" className={styles.leftFix} onClick={goToFirstLeft}>
-            Add {leftNames[0]}
-          </button>
-        </p>
-      ) : null}
-
+      {/* The footer order the app uses: Cancel, then the primary at the end. */}
       <div className={styles.actions}>
+        {onCancel ? (
+          <Button data-testid={tid("cancel")} disabled={pending} onClick={onCancel}>
+            Cancel
+          </Button>
+        ) : null}
         <Button
           variant="pri"
           data-testid={tid("confirm")}
@@ -525,11 +549,6 @@ export function TransportBookingForm({
         >
           Save transport booking
         </Button>
-        {onCancel ? (
-          <Button data-testid={tid("cancel")} disabled={pending} onClick={onCancel}>
-            Cancel
-          </Button>
-        ) : null}
         {blocked ? (
           <span id={`${did("confirm")}-blocked`} className="sr-only">
             {blocked}

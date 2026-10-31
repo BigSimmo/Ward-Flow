@@ -36,7 +36,8 @@ export const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   cadNumber: "",
   transportLegalStatus: undefined,
   estimatedTime: "",
-  estimatedDay: "today",
+  // No day chosen (Josh, 31 Oct 2026): neither Today nor Tomorrow is ticked until the person picks one.
+  estimatedDay: undefined,
 };
 
 export type ActiveTabType =
