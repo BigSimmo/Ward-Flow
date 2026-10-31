@@ -157,7 +157,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 36px;
+  /* 40px, the smallest control on a computer (Josh, 31 Oct 2026). */
+  min-height: 40px;
   padding: 0 14px;
   border-radius: var(--wf-r-md);
   font: inherit;
@@ -202,7 +203,7 @@
   align-items: center;
   gap: 4px;
   width: fit-content;
-  min-height: 28px;
+  min-height: 40px;
   margin-top: 2px;
   color: var(--wf-accent-ink, var(--wf-accent-strong));
   font-size: var(--wf-fs-12);
@@ -226,15 +227,17 @@
   min-width: 0;
 }
 
+/* Three sections (Josh, 31 Oct 2026), each a 40px control on a computer. */
 .views > button {
   flex: 1 1 0;
   min-width: 0;
+  min-height: 40px;
 }
 
 /* Phone: the full-width pill track the Activity drawer uses, each section a 44px tap. */
 @media (max-width: 48rem) {
-  /* Five sections on one sliding row at the kit's phone size (D-91): each keeps its full label and
-   * the row scrolls sideways, as the kit's segmented switch does, instead of wrapping to two rows. */
+  /* Three sections share one row at the kit's phone size (D-91); a narrow screen still slides the
+   * row sideways, as the kit's segmented switch does, instead of wrapping to two rows. */
   .views {
     flex-wrap: nowrap;
     max-width: 100%;
@@ -243,6 +246,9 @@
     scrollbar-width: none;
     padding: 2px;
     border-radius: var(--wf-r-track);
+    /* The body is a grid, and a sideways-scrolling track's automatic minimum height is zero: keep
+       room for the 44px sections and the track's padding and border. */
+    min-height: calc(2.75rem + 6px);
   }
 
   .views::-webkit-scrollbar {
@@ -250,7 +256,7 @@
   }
 
   .views > button {
-    flex: 0 0 auto;
+    flex: 1 0 auto;
     min-height: 2.75rem;
     padding: 0 12px;
     border-radius: var(--wf-r-seg-item);
@@ -322,7 +328,7 @@
 .example {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: 40px;
   padding: 0 12px;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-ctl);
@@ -708,6 +714,10 @@ button.goLink {
 
 /* The footer's What's new date, as a quiet link in the footer's own type. */
 .footLink {
+  /* A 40px target in the footer's one line (Josh, 31 Oct 2026). */
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
   padding: 0;
   border: 0;
   background: transparent;

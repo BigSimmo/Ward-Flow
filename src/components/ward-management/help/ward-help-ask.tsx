@@ -10,12 +10,10 @@ import { findSettings, SETTINGS_TABS } from "@/components/ward-management/settin
 import { filterGlossary, glossaryForSites } from "./ward-help-content";
 import { askHelp, closestHowTos, questionWords, type HowTo } from "./ward-help-howto";
 import { CLINICAL_REPLY, isClinicalQuestion } from "./ward-help-search-index";
-import { HowToRow } from "./ward-help-task-list";
+import { HowToRow, tasksForDesk } from "./ward-help-task-list";
 import type { WardTourRole } from "./ward-help-store";
 import { useWardNetwork } from "../ward-flow-provider";
 import styles from "./ward-help-sheet.module.css";
-
-const EXAMPLES = ["Pull the bed", "Book transport", "Dark mode", "Sign off handover"];
 
 function settingsTabLabel(tab: string): string {
   return SETTINGS_TABS.find((item) => item.id === tab)?.label ?? "Settings";
@@ -75,6 +73,14 @@ function HelpAskView({
   const nothing = searchable && answers.length === 0 && words.length === 0 && settings.length === 0;
   const closest = useMemo(() => (nothing ? closestHowTos(query, role) : []), [nothing, query, role]);
   const [openId, setOpenId] = useState<string | undefined>(undefined);
+  // Examples are this login's own tasks, so none points at a job it cannot do (audit finding 11).
+  const examples = useMemo(
+    () =>
+      tasksForDesk(role)
+        .slice(0, 4)
+        .map((howTo) => howTo.title),
+    [role],
+  );
   const shownId = openId ?? answers[0]?.howTo.id;
 
   const answer = (howTo: HowTo, forThisDesk: boolean) => (
@@ -113,13 +119,13 @@ function HelpAskView({
             setOpenId(undefined);
           }}
           autoComplete="off"
-          placeholder="For example: how do I pull a bed?"
+          placeholder="Ask how to do something"
           data-testid="ward-help-ask-input"
         />
       </div>
       {!asked ? (
         <div className={styles.examples} aria-label="Example questions" role="group">
-          {EXAMPLES.map((example) => (
+          {examples.map((example) => (
             <button key={example} type="button" className={styles.example} onClick={() => setQuery(example)}>
               {example}
             </button>
@@ -182,7 +188,7 @@ function HelpAskView({
         ) : null}
         {nothing && !closest.length ? (
           <p className={styles.empty} data-testid="ward-help-ask-none">
-            No answer matches those words. Try fewer words, such as the button name, or look in Your desk below.
+            No answer matches those words. Try fewer words, such as the button name, or look in How do I… below.
           </p>
         ) : null}
       </div>

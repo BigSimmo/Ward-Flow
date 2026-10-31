@@ -64,6 +64,15 @@ describe("decision 41: a handover sign-off names its ward", () => {
     });
     expect(undone.rejections.at(-1)?.reason).toBeUndefined();
     expect(undone.handoverSignOffs.map((record) => record.unitId)).toEqual([wardB!.id]);
+    // The later ward's own Undo still works after the earlier ward's moved its row up the list.
+    const bothUndone = wardFlowReducer(undone, {
+      type: "UNDO_HANDOVER_SIGN_OFF",
+      role: "ward",
+      now: NOW + 2,
+      unitId: wardB!.id,
+    });
+    expect(bothUndone.rejections.at(-1)?.reason).toBeUndefined();
+    expect(bothUndone.handoverSignOffs).toEqual(seed.handoverSignOffs);
   });
 
   it("sends a ward desk only its own ward's sign-offs, never one that names no ward", () => {

@@ -79,8 +79,9 @@
   white-space: nowrap;
 }
 
+/* 40px, the smallest control on a computer (Josh, 31 Oct 2026). */
 .more {
-  min-height: var(--wf-target, 28px);
+  min-height: 40px;
   padding: 0 0.875rem;
   border: 1px solid var(--wf-line-ctl);
   border-radius: var(--wf-r-ctl, 8px);
