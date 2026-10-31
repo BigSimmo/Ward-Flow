@@ -345,6 +345,9 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** the progress bar and 'Step n of N' sit under the header; Close is an icon in the corner; the buttons read Skip tour, then Back and Next.",
     "**Changed for the mock-up:** it does not jump to the desk's home first, so it stays over the page it is drawn on.",
     "**Round 2:** the welcome card loses its repeated lines, step 1 loses its dead Back, Skip tour is a quiet button, and the spotlight uses the focus colour, because amber means 'needs a look'.",
+    "**Round 3:** restyled as #1119 (focus-blue spotlight, 32px Close with an invisible tap area, quiet Skip, a line when a step's control is not on screen, last step links to How do I…), sharing Help's spotlight engine. 'This takes about…' is removed from the tour data, not hidden at draw time.",
+    "**Round 3:** closing the tour shows the What's new corner card. On a computer a notice stands to its left; on a phone the card rests above the dock and steps back while a notice shows. Escape closes it.",
+    "**For the build:** tests/ward-tour-steps.test.ts expects the removed sentence.",
   ],
   "pop-alerts": [
     "**Built from a copy of today's Alerts drawer**, fed the same alert list as the bell, so Acknowledge, Open and each row's action work as now.",
@@ -385,12 +388,15 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** a screen's questions fold open one at a time; Take the tour and Keyboard shortcuts are buttons at the end of every view (the phone shows only Take the tour, as today).",
     "**Kept:** Your desk (now headed with the desk name), This screen, Glossary, What's new and Reference. Take the tour runs the real tour.",
     "**Round 2:** Reference moves to the end of every view. The screen's name and purpose are a plain heading and line. The footer date becomes a 'What's new 28 Oct' link on desktop. Phone rows are back to 44 px.",
+    "**Round 3 (D-91):** Help opens on How do I…, with this screen's tasks first under 'On this screen' (hidden when there are none), then the fixed groups. Each row has a quiet Show me button. The tabs are the kit's pill tabs on one row that slides sideways on a phone, never wrapping.",
+    "**Round 3:** Show me lights the matching control on the page behind, using a copy of #1119's spotlight engine. It only scrolls to and measures controls; it never clicks, and it no longer re-renders every 400 ms. The live Show me switch stays off until Josh approves (D-91).",
   ],
   "pop-shortcuts": [
     "**Built from a copy of today's Keyboard shortcuts sheet**, with the same title, hint and More in Help button.",
     "**New:** three columns (Find, Open, Move around), each key drawn beside what it does; they stack on a phone.",
     "**Kept:** every shortcut, read from the same list Help uses, so the two cannot disagree. More in Help opens today's Help sheet.",
     "**Round 2:** no card round each column, the key column fits its widest key, labels are short (the full sentence stays spoken), and the dialog is narrower.",
+    "**Round 3:** short labels and columns as #1119 (Find · Open · Move around). New row under Move around: Alt+N · Jump to newest notice (⌥N on a Mac).",
   ],
   "pop-state-loading": [
     "**Built from today's shared loading placeholder** (`ward-flow/loading.tsx`), so the 'Loading page' status, the busy marker and the pulsing grey blocks stay as now.",
@@ -424,6 +430,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Still open:** in the app this toast closes itself after 6 seconds; here it stays until closed so it can be reviewed. Nothing is saved, so the row still shows behind it.",
     "**Round 2:** the toast names the person, surname first: 'Bed pulled at Bunbury Acute Psychiatric Unit for Underbridge, Warrick', because a save confirmation should say what was saved.",
     "**For the build:** the shared toast covers the foot of Home on desktop and touches the dock on a phone; recommend lifting it above the dock.",
+    "**Round 3:** #1124's notice stack, lifted 24px clear of the phone dock; words wrap in full and the phone pill is solid.",
   ],
   "pop-state-not-wired": [
     "**Built on the kit button's own unavailable state** (D4): greyed with a dashed edge, a lock, and the exact sentence 'Not wired in this prototype.' from the app's one shared constant. It can be reached with the keyboard but does nothing.",
@@ -575,6 +582,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** the title drops '8 moving' (the pipeline's Moving stage shows it). Stages say 'longest', as the hero does, and their amber and red use the Over 8h and Past 24h lines, so colours always agree. Tier 1 reads '3 of 18 open' on one line.",
     "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
+    "**Round 3:** the row's legal line shows the form time as typed with the not-legally-checked tag; no 'expiry in' or 'passed … ago' (a copy of the stage row).",
   ],
   waiting: [
     "**Built from a copy of today's Waiting page** (the board and its wrapper), so filters, the person panel, escalation and the graphs work as they do now.",
@@ -584,6 +592,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** the header says '0 forms past their time' and 'Form due within 1h'; 'No update for 2h and over' now filters the list like its neighbours; the referrals line reads '7 referrals awaiting a decision, not yet on this list'. The By blocker form group reads 'Form due soon, as typed' (it holds forms due within your urgent window; passed ones are in Form overdue).",
     "**Phone:** the four blocker chips sit two by two, the daily check is one line ('Daily check: 17 to check') whose list shows 8 then Show more, and each row puts the ED before the UMRN.",
     "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
+    "**Round 3:** on a phone the owner chips read count first ('41 Waiting on you'), and rows wrap the name and place line in full.",
   ],
   eds: [
     "**Built from a copy of today's All EDs page**, so Cards, Table, Lanes, the filters and the preview drawer work as now.",
@@ -661,6 +670,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** the phone groups sit 3 by 2, so no label ends in '…'; phone lines wrap, so legal wording and places show in full. 'Show 20 not active records' is the same plain link as each group's Show all.",
     "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
+    "**Round 3:** the phone highlight chips read count first ('6 Over 24 hours').",
   ],
   discharges: [
     "**Built from a copy of today's Discharges page**, so the five filters, Now and History, Copy counts, Print list, Blocked first order and the release panel all work as now.",
@@ -721,6 +731,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** with nothing waiting, the Actions card is one quiet line. The title is 'Agenda' under 'Bed meeting'. 'Pulled beds, least time left' avoids 'expire', the app's word for legal expiry. Row buttons are today's small size with an invisible larger tap area.",
     "**For the build:** the phone hero shows only 3 of 5 figures; that is the shared hero's phone rule.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
+    "**Round 3:** a printed agenda carries a small synthetic-data line under its title.",
   ],
   "bed-meeting-tv": [
     "**Built from a copy of today's bed meeting TV**, so Change screen, Full screen, Lock as TV, Leave TV view, the ward and ED screens, the live refresh and the read-only footer all work as now.",
@@ -775,6 +786,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**Placement checks:** the header\'s "Checks: 9 of 9 met" and its filter are gone. They described the first ward on the list without naming it, so they read as facts about the patient; the checks now sit once, as "Checks for BTY Adult Secure", with "9 of 9 met". With a ward chosen, Refer leads on its own row and Quick send and Override share the row under it.',
     "**Changed on purpose:** today's panel never collapses wards a coordinator can act on. Here the override-only wards are behind a disclosure that states the count and opens itself while one of them is chosen. For Josh to confirm before this goes into the app.",
     '**Placement tidy (30 October):** the panel\'s content lines up with its title, the action bar runs edge to edge across the card, Refer takes the width beside Override, and why Override is unavailable sits in one quiet line under them. While someone is chosen, Beds that fit folds to one line ("23 short now · 14 short tomorrow") so Placement sits high in the column; its chevron opens the table.',
+    "**Round 3:** Placement's legal line and 'Why this wait' show the form time as typed, never 'due in' or 'passed its deadline'.",
+    "**Round 3:** notices stack above the dock (a warning that stays, '+2 more' folded, the newest naming the person surname first); Activity's Recent activity opens with a quiet Missed notices group, cleared on lock or desk switch.",
   ],
   capacity: [
     "**Figures:** every number comes from the derivations today's Capacity page uses (bed gaps, the network ward rows, the beds forecast and the forecast model). The 48-hour figure is now the real forecast, so it is no longer illustrative.",
@@ -795,5 +808,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Phone, tablet and every desk (Josh, 31 Oct 2026):** the bell and 'Alerts' on every desk, in the bar and the dock; the dock keeps its Activity tab. The phone Menu and the tablet Menu start with the desk's capacity card, with beds ready, and the tablet Menu says once under the role's heading whose counts these are, since touch has no hover. The executive and access admin desks have no shift card.",
     "**Phone dock per desk (Josh, 31 Oct 2026):** the bed coordinator's dock is kept as designed; every other desk gets the pages it uses most. Nurse in charge: My ward, Referrals, +, Alerts, Coming and going. ED: unchanged. Community: My team, Referrals, +, Alerts, Movements. Transport officer: unchanged. Site bed manager: Capacity, Wards, +, Alerts, Waiting. Executive: Statistics, Capacity, Activity. Access admin: Governance, Activity. A page that leaves the dock stays in the phone Menu. Handover stays off the phone dock for the nurse in charge and the bed manager (Josh, 31 Oct 2026); it remains on My ward and in the Menu.",
     "**Still open:** pins last for one browser tab; remembering them per person needs Josh's privacy sign-off before the real build. Closed-sidebar count badges already existed.",
+  ],
+  "pop-movement": [
+    "**Round 3:** the movement drawer's legal line shows the form time as typed with the not-legally-checked tag, never 'recorded expiry in' or 'passed … ago'. On the phone the Legal, From and To cells wrap in full and the typed time appears once (copies of the drawer parts).",
   ],
 };
