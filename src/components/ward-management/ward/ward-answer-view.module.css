@@ -1686,16 +1686,14 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* Kit phone size (Josh, 31 Oct 2026: "no 48px controls"): Accept, Decline and the bed squares
-     are drawn 40px, and an invisible cover above and below keeps the 48px tap floor, as the kit's
-     phone buttons and pills do. */
-  .decisionArea > button,
+  /* Kit phone size (Josh, 31 Oct 2026: "no 48px controls"): the bed squares are drawn 40px, and an
+     invisible cover above and below keeps the 48px tap floor, as the kit's phone pills do. Accept
+     and Decline take the kit's phone button size from the component. */
   .bedCell {
     position: relative;
     min-height: var(--wf-phone-pill-h);
   }
 
-  .decisionArea > button::after,
   .bedCell::after {
     content: "";
     position: absolute;
@@ -2202,11 +2200,9 @@ details[open] > summary > .phoneFoldChevron {
     letter-spacing: 0;
   }
 
+  /* The kit's phone button size (40px with its 48px cover) comes from the component. */
   .decisionArea > button {
     justify-content: center;
-    /* Drawn at the kit's 40px phone size with a 48px invisible cover (Josh, 31 Oct 2026). */
-    position: relative;
-    min-height: var(--wf-phone-pill-h);
     border-radius: var(--wf-r-ctl);
   }
 }
@@ -2564,6 +2560,15 @@ details[open] > summary > .phoneFoldChevron {
   }
 }
 
+/* Tablet landscape (1001px up): the frame's closed icon rail (4rem, `--rail-closed-w` in
+   ward-rail.module.css) sits beside the work, so the pinned row starts at the content column's edge
+   rather than under the rail, where it clipped "Pull time limit" (QA, 31 Oct 2026). */
+@media screen and (min-width: 1001px) and (max-width: 64rem) {
+  .decisionArea {
+    left: 4rem;
+  }
+}
+
 /* iPad portrait: the Census bed strip fits a 20-bed ward on one row (bed 19 no longer wraps). */
 @media screen and (min-width: 48.0625rem) and (max-width: 64rem) {
   .bedGrid {
@@ -2572,16 +2577,21 @@ details[open] > summary > .phoneFoldChevron {
 }
 
 /* DR-05: Accept, Decline and Confirm decline keep the 48 px tap floor on any touch screen, touch
- * tablets included, but are drawn at the kit's 40px with an invisible cover (Josh, 31 Oct 2026:
- * "no 48px controls"). */
+ * tablets included, through an invisible cover; none is drawn 48px (Josh, 31 Oct 2026: "no 48px
+ * controls"). */
 @media (pointer: coarse) {
-  .decisionArea > button,
+  /* Accept and Decline keep the kit's own button size; a cover reaches the tap floor. */
+  .decisionArea > button::after {
+    content: "";
+    position: absolute;
+    inset: calc((var(--wf-h-sm) - var(--spacing-tap, 3rem)) / 2) 0;
+  }
+
   .declineForm button[type="submit"] {
     position: relative;
     min-height: var(--wf-phone-pill-h);
   }
 
-  .decisionArea > button::after,
   .declineForm button[type="submit"]::after {
     content: "";
     position: absolute;

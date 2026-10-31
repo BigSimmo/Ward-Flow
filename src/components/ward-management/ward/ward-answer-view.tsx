@@ -798,6 +798,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 const blocked = referralAnswerBlocked(activeMovement, unit);
                 // The desk's one-step accept waits for a pull time limit; the phone sheet asks for its own.
                 const holdPending = !isPhone && !blocked && !holdChosenFor(activeMovement.id);
+                // The kit's phone button (40px, with its 48px invisible cover); the desk keeps the small one.
+                const decisionSize = isPhone ? "md" : "sm";
                 const notice = restrictionNotice(activeMovement, unit);
                 const eligibilityIssue = eligibilityWarning(activeMovement, unit, now);
                 const eligibilityVerdict = eligibility(activeMovement, unit, now);
@@ -1368,7 +1370,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           aria-describedby={blocked ? `ward-decline-unavailable-${activeMovement.id}` : undefined}
                           title={blocked ?? undefined}
                           aria-expanded={declineOpen}
-                          className={buttonClass({ variant: "sec", size: "sm" })}
+                          className={buttonClass({ variant: "sec", size: decisionSize })}
                           onClick={blocked ? undefined : () => toggleDecline(activeMovement.id)}
                         >
                           Decline
@@ -1390,7 +1392,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                                 : undefined
                           }
                           title={blocked ?? undefined}
-                          className={buttonClass({ variant: "pri", size: "sm" })}
+                          className={buttonClass({ variant: "pri", size: decisionSize })}
                           onClick={() => {
                             if (blocked || holdPending) return;
                             if (isPhone) {
