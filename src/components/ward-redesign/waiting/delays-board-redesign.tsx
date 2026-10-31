@@ -10,7 +10,7 @@
  */
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-react";
+import { Activity, ChevronDown, ChevronRight, Flag, X } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -110,6 +110,7 @@ import { TYPED_TIME_KEY } from "@/components/ward-redesign/legal-forms/typed-tim
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import waitingKeys from "@/components/ward-redesign/waiting/waiting-redesign.module.css";
 import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
+import { SearchField } from "@/components/ward-redesign/parts/search-field";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -1214,19 +1215,15 @@ export function DelaysBoardRedesign({
                   </span>
                 </span>
                 <span className={styles.sp} />
-                <label className={styles.search}>
-                  <Search size={14} aria-hidden="true" />
-                  <input
-                    type="search"
-                    value={filters.search}
-                    onChange={(event) => {
-                      set({ search: event.target.value });
-                    }}
-                    placeholder="Find a person or ED"
-                    aria-label="Find a person or ED"
-                    autoComplete="off"
-                  />
-                </label>
+                {/* D-91: the one page search field; the count stays in the head above, and the placeholder
+                    names only what is searched. */}
+                <SearchField
+                  className={waitingKeys.searchField}
+                  value={filters.search}
+                  onValueChange={(search) => set({ search })}
+                  placeholder="Name, UMRN or ED"
+                  label="Find a person or ED"
+                />
                 <div className={styles.seg} role="group" aria-label="Order the table">
                   <button
                     type="button"

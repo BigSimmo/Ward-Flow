@@ -165,3 +165,16 @@
     overflow-wrap: break-word;
   }
 }
+
+/* D-91: the one page search field (parts/search-field.tsx) in the table head, wide enough for its
+   whole placeholder at the kit's 36px box. (On a phone the board's head shows only its switch.) */
+.searchField {
+  width: 12.5rem;
+}
+
+@media (max-width: 48rem) {
+  .searchField {
+    flex: 1 1 100%;
+    width: auto;
+  }
+}

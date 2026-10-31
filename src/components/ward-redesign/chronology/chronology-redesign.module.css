@@ -1,4 +1,5 @@
-/* Patient chronology redesign: one large patient search in the header and a start page. */
+/* Patient chronology redesign: one patient search in the header (the one page search field, D-91)
+   and a start page. */
 
 .heroSearch {
   flex: 1 1 32rem;
@@ -13,38 +14,7 @@
 
 .search {
   position: relative;
-  display: flex;
-  align-items: center;
   width: 100%;
-}
-
-.searchIcon {
-  position: absolute;
-  left: var(--wf-s-3);
-  color: var(--wf-ink-3);
-  pointer-events: none;
-}
-
-.searchInput {
-  width: 100%;
-  min-height: var(--wf-h-lg);
-  padding: 0 var(--wf-s-3) 0 calc(var(--wf-s-8) + var(--wf-s-2));
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
-  box-shadow: var(--wf-e1);
-}
-
-.searchInput::placeholder {
-  color: var(--wf-ink-3);
-  font-weight: 400;
-}
-
-.searchInput:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
 }
 
 .results {
@@ -189,10 +159,6 @@
   display: grid;
   gap: var(--wf-s-3);
   padding: 0 var(--wf-s-4);
-}
-
-.searchPhone .searchInput {
-  font-size: var(--wf-fs-16);
 }
 
 @media (max-width: 64rem) {

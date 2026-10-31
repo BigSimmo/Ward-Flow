@@ -10,7 +10,7 @@ import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { isOfficerJob, officerCancellationNotices } from "@/components/ward-management/officer/officer-jobs";
 import { useTransportCommandFeedback } from "@/components/ward-management/officer/use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Clock, Copy, ListChecks, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
+import { Check, Clock, Copy, ListChecks, Lock, MapPin, ShieldCheck, X } from "lucide-react";
 
 import {
   Badge,
@@ -27,14 +27,12 @@ import {
   LiveChip,
   HeroStat,
   Icon,
-  Kbd,
   Segmented,
   SrOnly,
   StatusGlyph,
   StatusLine,
   TabPanel,
   Tabs,
-  TextInput,
   cx,
   durMinutes,
   tableClasses,
@@ -70,6 +68,7 @@ import {
   packRequired,
 } from "@/components/ward-management/officer/officer-forms-pack";
 import styles from "@/components/ward-management/officer/officer.module.css";
+import { SearchField } from "@/components/ward-redesign/parts/search-field";
 import { OfficerFormCheckDialog } from "@/components/ward-management/officer/officer-form-check-dialog";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import type { TransportExceptionInput } from "@/components/ward-management/ward-flow-events";
@@ -971,18 +970,18 @@ export function AsOfficerTransportRedesign() {
 
               <TabPanel idPrefix="ward-officer-jobs" id="jobs" hidden={jobsTab !== "jobs"}>
                 <div className={styles.toolbar} role="search" aria-label="Find transport jobs">
-                  <TextInput
-                    ref={searchInputRef}
-                    icon={Search}
-                    boxClassName={styles.searchBox}
+                  {/* D-91: the one page search field. It highlights rather than filters, so the
+                      "highlighted" note beside it stays the count line. */}
+                  <SearchField
+                    inputRef={searchInputRef}
+                    className={styles.searchBox}
                     id="officer-transfer-search"
                     name="transferSearch"
                     placeholder="Patient, UMRN, ED, ward or CAD"
-                    aria-label="Highlight transport jobs"
+                    label="Highlight transport jobs"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onClear={() => setSearchQuery("")}
-                    trailing={searchQuery ? undefined : <Kbd>/</Kbd>}
+                    onValueChange={setSearchQuery}
+                    shortcut
                   />
                   <FilterChip
                     pressed={escortHighlight}

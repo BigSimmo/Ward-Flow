@@ -28,6 +28,7 @@ import {
   Segmented,
   StatusGlyph,
   Tabs,
+  TextInput,
   Timeline,
   buttonClass,
   tableClasses,
@@ -126,83 +127,47 @@ function Marked({ text, needle }: { text: string; needle: string }) {
 /* ───────────────────────── search bar 1 ───────────────────────── */
 
 /**
- * What sits inside the 36px search pill after the typed text: the date of birth slot when it is on,
- * the live count of people found, the DOB switch, and the "/" hint while the field is empty.
+ * D-91 ("Every page search box has one look"): the census search is the one page search field, so
+ * the date of birth switch and box sit beside it rather than inside a hand-made pill. The switch.
  */
-export function SearchAdornment({
-  dobOn,
-  onDobToggle,
-  dob,
-  onDob,
-  count,
-  empty,
-  phone = false,
-}: {
-  dobOn: boolean;
-  onDobToggle: () => void;
-  dob: string;
-  onDob: (next: string) => void;
-  count: number | null;
-  empty: boolean;
-  phone?: boolean;
-}) {
+export function DobToggle({ dobOn, onDobToggle }: { dobOn: boolean; onDobToggle: () => void }) {
   return (
-    <>
-      {dobOn && !phone ? (
-        <span className={styles.dobSeg}>
-          <Icon icon={CalendarDays} size={14} />
-          <input
-            className={styles.dobInput}
-            value={dob}
-            onChange={(event) => onDob(event.target.value)}
-            placeholder="DD/MM/YYYY"
-            aria-label="Date of birth"
-            inputMode="numeric"
-            autoComplete="off"
-            enterKeyHint="search"
-          />
-        </span>
-      ) : null}
-      {count !== null ? (
-        <span className={styles.count} title="People found">
-          {count}
-          <span className="sr-only"> found</span>
-        </span>
-      ) : null}
-      <button
-        type="button"
-        className={styles.dobToggle}
-        aria-pressed={dobOn}
-        onClick={onDobToggle}
-        title={dobOn ? "Remove the date of birth" : "Add a date of birth"}
-      >
-        <Icon icon={CalendarDays} size={14} />
-        DOB
-      </button>
-      {empty && !phone ? (
-        <kbd className={styles.kbd} aria-hidden="true">
-          /
-        </kbd>
-      ) : null}
-    </>
+    <button
+      type="button"
+      className={styles.dobToggle}
+      aria-pressed={dobOn}
+      onClick={onDobToggle}
+      title={dobOn ? "Remove the date of birth" : "Add a date of birth"}
+    >
+      <Icon icon={CalendarDays} size={14} />
+      DOB
+    </button>
   );
 }
 
-/** The phone's own second field for a date of birth, a full 48px row under the search. */
-export function PhoneDobField({ dob, onDob }: { dob: string; onDob: (next: string) => void }) {
+/** The date of birth box: beside the search on a laptop, a row of its own under it on a phone. */
+export function DobField({
+  dob,
+  onDob,
+  phone = false,
+}: {
+  dob: string;
+  onDob: (next: string) => void;
+  phone?: boolean;
+}) {
   return (
-    <label className={styles.phoneDob}>
-      <Icon icon={CalendarDays} size={16} />
-      <span className="sr-only">Date of birth</span>
-      <input
-        value={dob}
-        onChange={(event) => onDob(event.target.value)}
-        placeholder="Date of birth, DD/MM/YYYY"
-        inputMode="numeric"
-        autoComplete="off"
-        enterKeyHint="search"
-      />
-    </label>
+    <TextInput
+      icon={CalendarDays}
+      boxClassName={phone ? styles.phoneDob : styles.dobField}
+      value={dob}
+      onChange={(event) => onDob(event.target.value)}
+      onClear={() => onDob("")}
+      placeholder={phone ? "Date of birth, DD/MM/YYYY" : "DD/MM/YYYY"}
+      aria-label="Date of birth"
+      inputMode="numeric"
+      autoComplete="off"
+      enterKeyHint="search"
+    />
   );
 }
 

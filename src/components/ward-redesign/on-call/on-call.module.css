@@ -42,15 +42,6 @@
   white-space: nowrap;
 }
 
-.srOnlyLabel {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* ---------- service tag: colour as a dot, the name carries the meaning ---------- */
 .svc {
   --svc: var(--wf-svc-statewide);
@@ -1537,8 +1528,9 @@
   display: inline-grid;
   flex: none;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  /* D-91: the kit's 44px phone control height, level with the one page search field beside it. */
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-ctl);
@@ -1554,8 +1546,6 @@
 
 .phoneTools .search {
   width: 100%;
-  min-height: 48px;
-  border-radius: var(--wf-r-ctl);
 }
 
 .phoneChips {

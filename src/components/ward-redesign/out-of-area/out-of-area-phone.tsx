@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Route, Search } from "lucide-react";
+import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Route } from "lucide-react";
 
 import {
   Button,
@@ -16,7 +16,6 @@ import {
   SrOnly,
   Segmented,
   StatusGlyph,
-  TextInput,
   cx,
   type WfTone,
 } from "@/components/wf";
@@ -34,6 +33,7 @@ import {
 } from "@/components/ward-management/out-of-area/out-of-area-model";
 import { TravelIcon } from "@/components/ward-management/out-of-area/out-of-area-return-plan";
 import styles from "@/components/ward-management/out-of-area/out-of-area-board.module.css";
+import { SearchField } from "@/components/ward-redesign/parts/search-field";
 import redesign from "./out-of-area-redesign.module.css";
 
 /**
@@ -448,14 +448,12 @@ export function OutOfAreaPhone({
 
       <div hidden={tab !== "all"}>
         <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-all" aria-label="Everyone">
-          <TextInput
-            icon={Search}
-            boxClassName={styles.phoneSearch}
+          {/* D-91: the one page search field. Not pinned: the tabs above already pin under the header. */}
+          <SearchField
             placeholder="Name, UMRN or ward"
-            aria-label="Highlight people by name, UMRN or ward"
+            label="Highlight people by name, UMRN or ward"
             value={query}
-            onChange={(event) => onQuery(event.target.value)}
-            onClear={() => onQuery("")}
+            onValueChange={onQuery}
           />
           {anyHighlight ? (
             <p className={styles.hlLine}>

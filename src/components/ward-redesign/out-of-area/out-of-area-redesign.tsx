@@ -5,7 +5,7 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Route, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Route, X } from "lucide-react";
 
 import {
   Button,
@@ -20,7 +20,6 @@ import {
   SrOnly,
   StatusGlyph,
   Tabs,
-  TextInput,
   cx,
   tableClasses,
   type WfTone,
@@ -71,6 +70,7 @@ import {
   type RepatDraft,
   type ReturnStatus,
 } from "@/components/ward-management/out-of-area/out-of-area-model";
+import { SearchField } from "@/components/ward-redesign/parts/search-field";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import {
   ReturnPlan,
@@ -892,15 +892,16 @@ export function OutOfAreaRedesign({ admissions }: { admissions?: Admission[] }) 
               />
               {tab === "now" ? (
                 <span className={styles.toolbarTools}>
-                  <TextInput
-                    ref={searchRef}
-                    icon={Search}
-                    boxClassName={styles.searchBox}
+                  {/* D-91: the one page search field. It highlights rather than filters, so the
+                      highlighted count below stays the count line, and the "Press / to search" line
+                      below already gives the shortcut, so the box carries no "/" of its own. */}
+                  <SearchField
+                    inputRef={searchRef}
+                    className={styles.searchBox}
                     placeholder="Name, UMRN or ward"
-                    aria-label="Highlight people by name, UMRN or ward"
+                    label="Highlight people by name, UMRN or ward"
                     value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    onClear={() => setSearchQuery("")}
+                    onValueChange={setSearchQuery}
                   />
                   <Segmented
                     label="Sort placements"

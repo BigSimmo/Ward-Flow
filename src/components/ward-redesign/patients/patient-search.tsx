@@ -48,7 +48,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "@/components/ward-management/ward-operational-defaults";
 
 import { recordSearch, type AccessEntry } from "@/components/ward-management/search/access-record";
-import { PatientTypeahead } from "@/components/ward-management/search/patient-typeahead";
+import { SearchField } from "@/components/ward-redesign/parts/search-field";
 import {
   handOffTypedPatientQuery,
   isNewTabClick,
@@ -94,8 +94,8 @@ import {
   CensusTable,
   FlowChip,
   PhoneCensus,
-  PhoneDobField,
-  SearchAdornment,
+  DobField,
+  DobToggle,
   ShiftSummary,
 } from "./patient-census-view";
 
@@ -871,40 +871,35 @@ export function PatientSearchPage() {
         setAccessRecord((l) => recordSearch(l, { words, text, dob: dobOn ? dob : undefined, at: now }));
       }}
     >
-      <PatientTypeahead
-        patients={patients}
-        referrals={referrals}
-        value={text}
-        onValueChange={(next) => {
-          setText(next);
-          setTab("now");
-        }}
-        label="Search"
-        placeholder={dobOn ? "Family or given name" : "Name, UMRN or place"}
-        offerAddPerson={false}
-        suggestions={false}
-        adornment={
-          <SearchAdornment
-            dobOn={dobOn}
-            onDobToggle={() => setDobOn((on) => !on)}
-            dob={dob}
-            onDob={setDob}
-            count={searching ? visibleRows.length : null}
-            empty={text.length === 0}
-            phone={isPhone}
-          />
-        }
-      />
-      {isPhone && dobOn ? <PhoneDobField dob={dob} onDob={setDob} /> : null}
-      <span className="sr-only">Find a person by name or record number</span>
-      {/* The census, not the typeahead, says how many people a search found. */}
-      <p className="sr-only" role="status" aria-live="polite">
-        {!searching || refusal
-          ? ""
-          : visibleRows.length === 0
-            ? "Nobody matches."
-            : `${visibleRows.length} invented ${visibleRows.length === 1 ? "person" : "people"} found.`}
-      </p>
+      {/* D-91: the one page search field, with the date of birth beside it and the count under it. */}
+      <div className={cs.searchRow}>
+        <SearchField
+          className={cs.searchMain}
+          label="Find a person by name, UMRN or place"
+          placeholder={dobOn ? "Family or given name" : "Name, UMRN or place"}
+          value={text}
+          onValueChange={(next) => {
+            setText(next);
+            setTab("now");
+          }}
+          shortcut
+          data-testid="ward-patient-typeahead-input"
+          // The census, not a suggestion list, says how many people a search found. A date of birth
+          // on its own reads as a plain total ("3 people"), as nothing was typed in the box.
+          count={
+            searching && !refusal
+              ? {
+                  shown: visibleRows.length,
+                  total: needle === "" ? visibleRows.length : census.rows.length,
+                  noun: "people",
+                }
+              : undefined
+          }
+        />
+        {dobOn && !isPhone ? <DobField dob={dob} onDob={setDob} /> : null}
+        <DobToggle dobOn={dobOn} onDobToggle={() => setDobOn((on) => !on)} />
+      </div>
+      {isPhone && dobOn ? <DobField dob={dob} onDob={setDob} phone /> : null}
     </form>
   );
 

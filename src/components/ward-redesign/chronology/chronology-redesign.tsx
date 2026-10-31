@@ -16,7 +16,6 @@ import {
   ListOrdered,
   MoreHorizontal,
   Printer,
-  Search,
   X,
 } from "lucide-react";
 
@@ -34,7 +33,6 @@ import {
   Segmented,
   Select,
   StatusGlyph,
-  TextInput,
   cx,
   tableClasses,
   useIsPhone,
@@ -63,6 +61,7 @@ import { csvCell } from "@/components/ward-management/statistics/statistics-csv"
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 
 import redesign from "./chronology-redesign.module.css";
+import { SearchField } from "@/components/ward-redesign/parts/search-field";
 
 const NOT_RECORDED = "Not recorded";
 /** Redesign: how many people the start list shows before "Show more", and how many each press adds. */
@@ -806,14 +805,13 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
 
         {chronology ? (
           <div className={styles.filterBar} data-print-hide>
-            <TextInput
-              type="search"
-              icon={Search}
-              boxClassName={styles.findBox}
-              aria-label="Find in events"
+            {/* D-91: the one page search field; the events card head keeps the "of … shown" count. */}
+            <SearchField
+              className={styles.findBox}
+              label="Find in events"
               placeholder="Find in events"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onValueChange={setQuery}
             />
             {sourceTabs("sm")}
             <Select
@@ -1136,23 +1134,20 @@ function PatientSearch({
   };
 
   return (
-    <div className={cx(redesign.search, size === "phone" && redesign.searchPhone)}>
-      <Search size={20} aria-hidden="true" className={redesign.searchIcon} />
-      <input
-        type="search"
+    <div className={redesign.search}>
+      {/* D-91: the one page search field, here the combobox that picks the patient. */}
+      <SearchField
         role="combobox"
-        className={redesign.searchInput}
-        aria-label={label}
+        label={label}
         placeholder={size === "phone" ? "Surname, first name or UMRN" : `${label} by surname or UMRN`}
         aria-autocomplete="list"
         aria-expanded={open}
         aria-controls={listId}
         aria-activedescendant={open && shown.length ? `${listId}-${activeIndex}` : undefined}
-        autoComplete="off"
         spellCheck={false}
         value={text}
-        onChange={(event) => {
-          setText(event.target.value);
+        onValueChange={(next) => {
+          setText(next);
           setActive(0);
         }}
         onFocus={() => setFocused(true)}

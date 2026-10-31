@@ -4,7 +4,7 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Search, Star, Users } from "lucide-react";
+import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Star, Users } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
 import {
   useOptionalWardFlowSelect,
@@ -23,7 +23,6 @@ import {
   HeroChips,
   HeroTrack,
   Icon,
-  Kbd,
   LiveChip,
   Menu,
   PillTabs,
@@ -31,7 +30,6 @@ import {
   SrOnly,
   StatusGlyph,
   Tabs,
-  TextInput,
   cx,
   Drawer,
   tableClasses,
@@ -73,6 +71,7 @@ import {
   saveFavourites,
   subscribeFavourites,
 } from "@/components/ward-management/on-call/on-call-favourites";
+import { SearchField } from "@/components/ward-redesign/parts/search-field";
 import styles from "./on-call.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
@@ -503,23 +502,18 @@ export function OnCallScreen() {
     { id: "mine" as const, label: "Mine", count: tabCounts.mine },
   ];
 
+  // D-91: the one page search field. Its spoken name is the full hint; the placeholder names what
+  // is searched in words that never cut off. The Matches panel and the hit count say how many match.
   const search = (
-    <>
-      <label className={styles.srOnlyLabel} htmlFor={searchId}>
-        Search by role, hospital, ward, team or number
-      </label>
-      <TextInput
-        id={searchId}
-        type="search"
-        icon={Search}
-        trailing={isPhone ? undefined : <Kbd>/</Kbd>}
-        // Redesign: a short placeholder that never cuts off; the full hint is the field's (hidden) label.
-        placeholder="Search lines"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        boxClassName={styles.search}
-      />
-    </>
+    <SearchField
+      id={searchId}
+      label="Search by role, hospital, ward, team or number"
+      placeholder="Role, place or number"
+      value={query}
+      onValueChange={setQuery}
+      shortcut={!isPhone}
+      className={styles.search}
+    />
   );
 
   const highlightChips = HIGHLIGHTS.map((item) => (
