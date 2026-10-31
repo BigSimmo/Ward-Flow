@@ -1114,10 +1114,6 @@
     /* 44px (v9 rows), as in ward.module.css: stacked radio rows at 48px left wide gaps. */
     min-height: var(--wf-touch, 2.75rem);
   }
-
-  .bedCell {
-    min-height: var(--ward-tap, 48px);
-  }
 }
 
 /* v6 (design/pages-v6/Ward_answer.png): the ward's hero band on top, sentence-case card heads. */
@@ -1681,9 +1677,21 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .decisionArea > button,
-  .bedCell {
+  .decisionArea > button {
     min-height: var(--spacing-tap, 3rem);
+  }
+
+  /* Kit phone size (Josh, 31 Oct 2026: "no 48px controls"): the square is drawn 40px and an
+     invisible cover above and below keeps the 48px tap floor, as the kit's phone pills do. */
+  .bedCell {
+    position: relative;
+    min-height: var(--wf-phone-pill-h);
+  }
+
+  .bedCell::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 }
 

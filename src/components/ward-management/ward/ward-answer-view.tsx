@@ -51,6 +51,7 @@ import {
   Stepper,
   StatusGlyph,
   buttonClass,
+  DisabledReason,
   durMinutes,
   useIsPhone,
   PhoneSheet,
@@ -97,6 +98,9 @@ export interface WardAnswerViewProps {
 }
 
 /** A decline reason in the one list's wording (D-78); a value off the list shows as written. */
+/** Why Accept waits: the pull time limit starts with nothing chosen (Josh, 31 Oct 2026). */
+const HOLD_CHOICE_REASON = "Choose a pull time limit first";
+
 /** The census squares and their key are filled by bed state, with the same colour for each. */
 const CENSUS_FILL = {
   ready: styles.fillReady,
@@ -178,6 +182,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const extendedHoldFor = (movementId: string | undefined) =>
     movementId !== undefined && holdChoice?.movementId === movementId && holdChoice.extended;
   const chooseHold = (movementId: string, extended: boolean) => setHoldChoice({ movementId, extended });
+  // Nothing pre-selected (Josh, 31 Oct 2026): Accept waits until the ward picks a pull time limit.
+  const holdChosenFor = (movementId: string) => holdChoice?.movementId === movementId;
   const holdChoices = [
     { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
     {
@@ -790,6 +796,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 // Owner, 26 Sept 2026: no WF journey number. Josh, 22 Oct 2026: the ward does see the
                 // patient's name and UMRN before it answers, never where else they were referred.
                 const blocked = referralAnswerBlocked(activeMovement, unit);
+                // The desk's one-step accept waits for a pull time limit; the phone sheet asks for its own.
+                const holdPending = !isPhone && !blocked && !holdChosenFor(activeMovement.id);
                 const notice = restrictionNotice(activeMovement, unit);
                 const eligibilityIssue = eligibilityWarning(activeMovement, unit, now);
                 const eligibilityVerdict = eligibility(activeMovement, unit, now);
@@ -1267,6 +1275,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             secondary={{ label: "Cancel", onAction: () => setPhoneSheet(null) }}
                             primary={{
                               label: "Accept in principle",
+                              disabledReason: holdChosenFor(activeMovement.id) ? undefined : HOLD_CHOICE_REASON,
                               onAction: () => {
                                 setPhoneSheet(null);
                                 handleAccept(activeMovement.id, extendedHoldFor(activeMovement.id));
@@ -1302,7 +1311,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                                     <button
                                       key={choice.label}
                                       type="button"
-                                      aria-pressed={extendedHoldFor(activeMovement.id) === choice.extended}
+                                      aria-pressed={
+                                        holdChosenFor(activeMovement.id) &&
+                                        extendedHoldFor(activeMovement.id) === choice.extended
+                                      }
                                       onClick={() => chooseHold(activeMovement.id, choice.extended)}
                                     >
                                       {choice.label}
@@ -1329,9 +1341,18 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             <select
                               id={`ward-accept-hold-${activeMovement.id}`}
                               className={styles.formSelect}
-                              value={extendedHoldFor(activeMovement.id) ? "extended" : "standard"}
+                              value={
+                                holdChosenFor(activeMovement.id)
+                                  ? extendedHoldFor(activeMovement.id)
+                                    ? "extended"
+                                    : "standard"
+                                  : ""
+                              }
                               onChange={(e) => chooseHold(activeMovement.id, e.target.value === "extended")}
                             >
+                              <option value="" disabled>
+                                Choose a time limit
+                              </option>
                               {holdChoices.map((choice) => (
                                 <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
                                   {choice.label}
@@ -1352,15 +1373,26 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         >
                           Decline
                         </button>
+                        {holdPending ? (
+                          <DisabledReason id={`ward-accept-hold-reason-${activeMovement.id}`}>
+                            {HOLD_CHOICE_REASON}
+                          </DisabledReason>
+                        ) : null}
                         <button
                           type="button"
                           data-testid={`ward-accept-${activeMovement.id}`}
-                          aria-disabled={blocked ? "true" : undefined}
-                          aria-describedby={blocked ? `ward-accept-unavailable-${activeMovement.id}` : undefined}
+                          aria-disabled={blocked || holdPending ? "true" : undefined}
+                          aria-describedby={
+                            blocked
+                              ? `ward-accept-unavailable-${activeMovement.id}`
+                              : holdPending
+                                ? `ward-accept-hold-reason-${activeMovement.id}`
+                                : undefined
+                          }
                           title={blocked ?? undefined}
                           className={buttonClass({ variant: "pri", size: "sm" })}
                           onClick={() => {
-                            if (blocked) return;
+                            if (blocked || holdPending) return;
                             if (isPhone) {
                               openPhoneAccept();
                               return;

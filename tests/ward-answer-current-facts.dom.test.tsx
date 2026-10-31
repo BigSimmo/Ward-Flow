@@ -114,6 +114,8 @@ describe("Ward answer current facts", () => {
       if (gate.info) expect(rows[index]).not.toHaveTextContent(/\bPass\b/);
     });
 
+    // Accept waits only for the pull time limit (nothing pre-selected), never for a failed capacity gate.
+    fireEvent.change(screen.getByRole("combobox", { name: "Pull time limit" }), { target: { value: "standard" } });
     const accept = screen.getByTestId(`ward-accept-${MOVEMENT.id}`);
     expect(accept).not.toHaveAttribute("aria-disabled");
     expect(accept).not.toBeDisabled();

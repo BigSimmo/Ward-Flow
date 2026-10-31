@@ -169,13 +169,22 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     const dispatch = renderAnswer("sjgm-adult-open");
     const id = shownId();
     const hold = screen.getByRole("combobox", { name: "Pull time limit" });
-    expect(hold).toHaveValue("standard");
+    // Nothing pre-selected (Josh, 31 Oct 2026): the choice starts empty and Accept says why it waits.
+    expect(hold).toHaveValue("");
     expect(
       within(hold)
         .getAllByRole("option")
         .map((option) => option.textContent),
-    ).toEqual(["240 minutes, standard", "300 minutes, extra travel"]);
+    ).toEqual(["Choose a time limit", "240 minutes, standard", "300 minutes, extra travel"]);
+    const waiting = screen.getByTestId(`ward-accept-${id}`);
+    expect(waiting).toHaveAttribute("aria-disabled", "true");
+    expect(waiting).toHaveAccessibleDescription("Choose a pull time limit first");
+    fireEvent.click(waiting);
+    expect(dispatch.mock.calls.some(([event]) => event.type === "ACCEPT_IN_PRINCIPLE")).toBe(false);
+
     fireEvent.change(hold, { target: { value: "extended" } });
+    expect(screen.getByTestId(`ward-accept-${id}`)).not.toHaveAttribute("aria-disabled");
+    expect(screen.queryByText("Choose a pull time limit first")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
     const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
     expect(accepts).toHaveLength(1);
@@ -207,7 +216,9 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     // Audit 24-1 D-01: the panel no longer swaps to the next request by itself; the user picks it.
     fireEvent.click(screen.getByRole("button", { name: /^Show request 1 of / }));
     expect(shownId()).toBe("WF-AUDIT-NEXT");
-    expect(screen.getByRole("combobox", { name: "Pull time limit" })).toHaveValue("standard");
+    // The next request starts with nothing chosen; the ward picks the standard hold for it.
+    expect(screen.getByRole("combobox", { name: "Pull time limit" })).toHaveValue("");
+    fireEvent.change(screen.getByRole("combobox", { name: "Pull time limit" }), { target: { value: "standard" } });
     fireEvent.click(screen.getByTestId("ward-accept-WF-AUDIT-NEXT"));
     const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
     expect(accepts).toHaveLength(1);

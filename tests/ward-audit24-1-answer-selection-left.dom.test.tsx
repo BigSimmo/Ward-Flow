@@ -20,6 +20,10 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 afterEach(() => cleanup());
 
+// Nothing pre-selected (Josh, 31 Oct 2026): the desk's Accept waits for a pull time limit.
+const choosePullTimeLimit = (value: "standard" | "extended" = "standard") =>
+  fireEvent.change(screen.getByRole("combobox", { name: "Pull time limit" }), { target: { value } });
+
 type Adjust = (movements: Movement[]) => Movement[];
 
 let setAdjust: (adjust: Adjust) => void = () => undefined;
@@ -150,6 +154,7 @@ describe("ward answer view: a request that leaves elsewhere is named, not swappe
     );
     const view = render(tree());
     const id = shownId();
+    choosePullTimeLimit();
     fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
     // The engine refused it, then another desk answered the same request.
     refuse = true;
@@ -188,6 +193,7 @@ describe("ward answer view: a request that leaves elsewhere is named, not swappe
       </WardFlowProvider>
     );
     const view = render(tree());
+    choosePullTimeLimit();
     fireEvent.click(screen.getByTestId(`ward-accept-${shownId()}`));
     stage = "refused";
     act(() => view.rerender(tree()));
@@ -206,6 +212,7 @@ describe("ward answer view: a request that leaves elsewhere is named, not swappe
   it("still lands on the next request after this desk's own answer", () => {
     renderAnswer(UNIT, withSecond);
     const id = shownId();
+    choosePullTimeLimit();
     fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
     act(() => setAdjust((movements) => withSecond(movements).filter((movement) => movement.id !== id)));
     expect(screen.queryByTestId("ward-answer-selection-left")).not.toBeInTheDocument();
@@ -218,6 +225,7 @@ describe("ward answer view: the Accept in principle toast names the person (B-08
     renderAnswer(UNIT);
     const id = shownId();
     const name = nameOf(id);
+    choosePullTimeLimit();
     fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
     expect(await screen.findByText(`Accepted ${name} in principle.`)).toBeInTheDocument();
   });
