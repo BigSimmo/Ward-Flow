@@ -1,29 +1,31 @@
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { durMinutes } from "@/components/wf";
-import {
-  BLOCKER_CATEGORIES,
-  barrierCategory,
-  barrierLabel,
-  type GroupKey,
-} from "@/components/ward-management/discharges/discharge-board-model";
+import { BLOCKER_CATEGORIES, barrierCategory, barrierLabel, type GroupKey } from "./discharge-board-model";
 
 /**
- * The one action a bed release row offers, named for what it needs next. Each opens the release's
- * panel on the part it names (Chase: its barriers; Confirm date: the expected departure date), so no
- * button here records anything on its own.
+ * The one action a bed release row offers, named for what it needs next (approved 31 Oct 2026). Each
+ * opens the release's panel on the part it names (Chase: its barriers; Confirm date: the expected
+ * departure date), so no button here records anything on its own.
+ *
+ * `canChangeDate`: only the ward or the coordinator can change an expected date (`canChange` in
+ * discharge-dependencies-panel.tsx). The site bed manager cannot, so there an expected release offers
+ * Open, on its milestones, rather than a Confirm date that would open no date control (Josh, 30 Oct).
  */
-export function releaseActionLabel(release: Pick<BedRelease, "state" | "blocker">): string {
+export function releaseActionLabel(release: Pick<BedRelease, "state" | "blocker">, canChangeDate = true): string {
   if (release.blocker !== null) return "Chase";
-  if (release.state === "expected") return "Confirm date";
+  if (release.state === "expected" && canChangeDate) return "Confirm date";
   return "Open";
 }
 
 /** The part of the release panel a row's action opens on. */
 export type ReleasePanelPart = "milestones" | "barriers" | "date";
 
-export function releaseActionPart(release: Pick<BedRelease, "state" | "blocker">): ReleasePanelPart {
+export function releaseActionPart(
+  release: Pick<BedRelease, "state" | "blocker">,
+  canChangeDate = true,
+): ReleasePanelPart {
   if (release.blocker !== null) return "barriers";
-  if (release.state === "expected") return "date";
+  if (release.state === "expected" && canChangeDate) return "date";
   return "milestones";
 }
 

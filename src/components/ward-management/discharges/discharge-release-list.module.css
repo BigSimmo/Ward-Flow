@@ -1,0 +1,117 @@
+/* Discharges (approved 31 Oct 2026): one action a row, and the barriers and days beside the list. */
+.actionHead {
+  width: 1%;
+}
+.actionCell {
+  width: 1%;
+  white-space: nowrap;
+  text-align: end;
+  vertical-align: middle;
+}
+
+/* Wide screens: the barrier panel, and the day chart under it, in a column beside the list. */
+.barrierSide {
+  display: none;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  align-self: start;
+  min-width: 0;
+}
+@media (min-width: 80rem) {
+  .workspace.workspace:not([data-detail-open]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+    gap: var(--wf-s-4);
+    align-items: start;
+  }
+  .barrierSide {
+    display: flex;
+  }
+  /* The tablet's pair under the list is not needed once both sit beside it. */
+  .chartsBottom.chartsBottom {
+    display: none;
+  }
+}
+
+/* The line under the title wraps on a phone rather than running off the edge. */
+.meta.meta {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Two-line timing: how far past (or the band) on top, the date whole underneath, never split. */
+.timing > span {
+  display: block;
+  white-space: nowrap;
+}
+
+/* The list header: the order line is gone, so a spacer keeps the count at the row's end. */
+.headerSpacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A group's Show more row: one full-width cell holding the shared row. */
+.moreRow.moreRow > td {
+  padding: 0;
+}
+
+/* Something a row's button focuses inside the panel: no box of its own until it has the focus. */
+.focusTarget {
+  outline: none;
+  border-radius: var(--wf-r-md);
+}
+.focusTarget:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Phone release panel: Destination takes the whole last row, now that When is one cell. */
+.factWide.factWide.factWide {
+  grid-column: 1 / -1;
+  border-right: 0;
+}
+
+/* Phone rows (Josh, 30 Oct): three lines, not four. The name and timing share the first, the ward the
+   second, the stage line the third with the row's button at its right. The button is drawn 32px tall
+   and keeps a 48px tap area through an invisible cover. */
+@media screen and (max-width: 48rem) {
+  .list td.timing.timing {
+    grid-row: 1;
+  }
+  .list td.actionCell.actionCell {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+    justify-self: end;
+    width: auto;
+    border-bottom: 0; /* the row draws its own line; the cell's left a short stray one under Chase */
+  }
+  .list .rowAction.rowAction {
+    min-height: 0;
+    height: 2rem;
+  }
+  .list .rowAction.rowAction::after {
+    content: "";
+    position: absolute;
+    inset: -0.5rem -0.25rem;
+  }
+  .moreRow.moreRow {
+    display: block;
+    padding: 0;
+  }
+  .moreRow.moreRow > td {
+    display: block;
+    grid-column: 1 / -1;
+  }
+}
+
+/* Phone "By barrier" card: the busiest barrier ("Most: Accommodation") wraps in full rather than
+   ending in "…" (owner rule, no hover on a phone). Doubled class to outrank the card's own line. */
+.phChartWrap.phChartWrap {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: break-word;
+}
