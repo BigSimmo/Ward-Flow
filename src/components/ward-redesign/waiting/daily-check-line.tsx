@@ -67,44 +67,38 @@ export function DailyCheckHeroTile({
   if (access.role !== "coordinator") return null;
   const state = items.length === 0 ? "clear" : checked ? "done" : "todo";
   return (
-    <div
-      className={polish.heroTile}
-      data-tone={state === "todo" ? "warning" : "success"}
-      data-testid="ward-missed-check"
-    >
-      <span className={polish.heroIcon} aria-hidden="true">
-        {state === "todo" ? <ListChecks size={18} aria-hidden="true" /> : <CheckCheck size={18} aria-hidden="true" />}
+    <div className={polish.strip} data-testid="ward-missed-check">
+      {state === "todo" ? (
+        <ListChecks size={14} aria-hidden="true" className={polish.stripIcon} data-tone="warning" />
+      ) : (
+        <CheckCheck size={14} aria-hidden="true" className={polish.stripIcon} data-tone="success" />
+      )}
+      <span className={polish.stripLabel} title="Bed requests missed or sent twice">
+        Daily check
       </span>
-      <span className={polish.heroTileText}>
-        <span className={polish.heroTileLabel}>Daily check</span>
-        <span className={polish.heroTileValue}>
-          {state === "clear" ? (
-            "Nobody missed today"
-          ) : state === "done" ? (
-            `All checked by ${checked?.by} at ${checked ? formatInstantWithDay(checked.at, now) : ""}`
-          ) : (
-            <>
-              <b className={polish.heroNum}>{items.length}</b>
-              {` ${items.length === 1 ? "bed request" : "bed requests"} to check`}
-            </>
-          )}
-        </span>
-        <span className={polish.heroTileSub}>
-          {state === "todo" ? "Missed or sent twice" : "Every open bed request has a ward asked."}
-        </span>
+      <span className={polish.stripValue}>
+        {state === "clear" ? (
+          "nobody missed"
+        ) : state === "done" ? (
+          `all checked by ${checked?.by} at ${checked ? formatInstantWithDay(checked.at, now) : ""}`
+        ) : (
+          <>
+            <b className={polish.heroNum}>{items.length}</b>
+            {` to check`}
+          </>
+        )}
       </span>
       {items.length > 0 ? (
-        <Button
-          variant="onHero"
-          size="sm"
-          className={polish.heroBtn}
+        <button
+          type="button"
+          className={polish.stripAct}
           aria-expanded={open}
           aria-controls={listId}
-          iconEnd={open ? ChevronUp : ChevronDown}
           onClick={onToggle}
         >
           {open ? "Hide list" : "Show list"}
-        </Button>
+          {open ? <ChevronUp size={13} aria-hidden="true" /> : <ChevronDown size={13} aria-hidden="true" />}
+        </button>
       ) : null}
     </div>
   );
