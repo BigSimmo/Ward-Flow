@@ -727,15 +727,8 @@
     margin-left: 0;
   }
 
-  /* Phone tap targets: every link and button on the page keeps 48px. */
-  .main a,
-  .main button {
-    min-height: 3rem;
-  }
-
-  .iconButton {
-    width: 3rem;
-  }
+  /* Kit standard (Josh, 31 Oct 2026: "no 48px controls"): no blanket 48px floor here. Each
+     control keeps its own kit size; Filters below is a 40px pill with an invisible 48px cover. */
 }
 
 /* Phone (simplified): one list of wards. The health service chips and the search stay; the cards
