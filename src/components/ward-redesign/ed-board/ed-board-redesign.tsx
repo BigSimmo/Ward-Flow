@@ -16,7 +16,8 @@ import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { referralDraftBlockedReason } from "@/components/ward-management/ed/ed-blocked-reasons";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
-import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
+// D-91: the arrival plan's typed ETA gets the shared time buttons (forked into this folder).
+import { ArrivalTimeModal } from "./ed-arrival-time-modal";
 import { useIsPhone, useIsTabletPortrait, useMediaQuery, useOptionalToast } from "@/components/wf";
 import { EdNeedsYou } from "@/components/ward-management/ed/ed-needs-you";
 import Link from "next/link";
@@ -34,14 +35,17 @@ import { EdBoardSection } from "./ed-screen-board";
 import { EdAccessRiskCard } from "./ed-access-risk-redesign";
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { deriveEdScreen } from "@/components/ward-management/ed/ed-screen-derivations";
-import { EdListsSection } from "@/components/ward-management/ed/ed-screen-lists";
+// Legal times (Josh, 31 Oct 2026): the Forms list, the patient dialog and Needs you show a form's time
+// only as typed, from the shared legal copies.
+import { EdListsSection } from "@/components/ward-redesign/legal-copies/ed-screen-lists";
+import { needsYouAsTyped } from "@/components/ward-redesign/legal-copies/ed-form-expiry";
 import {
   edStepSaid,
   instantFromDateAndTimeInputs,
   waitLine,
   type EdStepEvent,
 } from "@/components/ward-management/ed/ed-screen-model";
-import { EdPatientDialog } from "@/components/ward-management/ed/ed-screen-patient-dialog";
+import { EdPatientDialog } from "@/components/ward-redesign/legal-copies/ed-screen-patient-dialog";
 import { EdPhonePanes } from "@/components/ward-management/ed/ed-screen-phone";
 import { EdRaiseIntoMovementSection } from "@/components/ward-management/ed/ed-screen-raise-section";
 import { useEdInboxDecline } from "@/components/ward-management/ed/use-ed-screen-decline";
@@ -257,29 +261,32 @@ export function EdBoardRedesign({ edId }: EdScreenProps) {
   // what it closes over instead.
   const thisEdId = department.id;
 
-  const derived = deriveEdScreen({
-    movements,
-    units,
-    referrals,
-    registryPatients,
-    configuration,
-    inboxSnoozes,
-    admissions,
+  const derived = needsYouAsTyped(
+    deriveEdScreen({
+      movements,
+      units,
+      referrals,
+      registryPatients,
+      configuration,
+      inboxSnoozes,
+      admissions,
+      now,
+      accessTarget,
+      thisEdId,
+      boardFilter: boardView.boardFilter,
+      patientQuery: boardView.patientQuery,
+      patientSort: boardView.patientSort,
+      heroHighlight,
+      selectedPatientId,
+      arrivalPlanOpenFor,
+      setSelectedPatientId,
+      setPhoneSheetFor,
+      setArrivalPlanOpenFor,
+      toggleBookTransport,
+      recordEdStep,
+    }),
     now,
-    accessTarget,
-    thisEdId,
-    boardFilter: boardView.boardFilter,
-    patientQuery: boardView.patientQuery,
-    patientSort: boardView.patientSort,
-    heroHighlight,
-    selectedPatientId,
-    arrivalPlanOpenFor,
-    setSelectedPatientId,
-    setPhoneSheetFor,
-    setArrivalPlanOpenFor,
-    toggleBookTransport,
-    recordEdStep,
-  });
+  );
   const {
     patients,
     heroHighlightMatch,

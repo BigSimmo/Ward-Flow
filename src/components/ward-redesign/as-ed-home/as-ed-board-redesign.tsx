@@ -29,17 +29,18 @@ import { SinceLastLookPill } from "@/components/ward-management/since-last-look-
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { edScreenActions } from "@/components/ward-management/ed/ed-screen-actions";
-import { EdBoardSection } from "@/components/ward-management/ed/ed-screen-board";
+import { EdBoardSection } from "@/components/ward-redesign/legal-copies/ed-screen-board";
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { deriveEdScreen } from "@/components/ward-management/ed/ed-screen-derivations";
-import { EdListsSection } from "@/components/ward-management/ed/ed-screen-lists";
+import { EdListsSection } from "@/components/ward-redesign/legal-copies/ed-screen-lists";
+import { needsYouAsTyped } from "@/components/ward-redesign/legal-copies/ed-form-expiry";
 import {
   edStepSaid,
   instantFromDateAndTimeInputs,
   waitLine,
   type EdStepEvent,
 } from "@/components/ward-management/ed/ed-screen-model";
-import { EdPatientDialog } from "@/components/ward-management/ed/ed-screen-patient-dialog";
+import { EdPatientDialog } from "@/components/ward-redesign/legal-copies/ed-screen-patient-dialog";
 import { EdPhonePanes } from "@/components/ward-management/ed/ed-screen-phone";
 import { EdRaiseIntoMovementSection } from "@/components/ward-management/ed/ed-screen-raise-section";
 import { useEdInboxDecline } from "@/components/ward-management/ed/use-ed-screen-decline";
@@ -254,29 +255,33 @@ export function AsEdBoardRedesign({ edId }: EdScreenProps) {
   // what it closes over instead.
   const thisEdId = department.id;
 
-  const derived = deriveEdScreen({
-    movements,
-    units,
-    referrals,
-    registryPatients,
-    configuration,
-    inboxSnoozes,
-    admissions,
+  // Legal times as typed (Josh, 31 Oct 2026): a passed form's Needs you item says "ended … as typed".
+  const derived = needsYouAsTyped(
+    deriveEdScreen({
+      movements,
+      units,
+      referrals,
+      registryPatients,
+      configuration,
+      inboxSnoozes,
+      admissions,
+      now,
+      accessTarget,
+      thisEdId,
+      boardFilter: boardView.boardFilter,
+      patientQuery: boardView.patientQuery,
+      patientSort: boardView.patientSort,
+      heroHighlight,
+      selectedPatientId,
+      arrivalPlanOpenFor,
+      setSelectedPatientId,
+      setPhoneSheetFor,
+      setArrivalPlanOpenFor,
+      toggleBookTransport,
+      recordEdStep,
+    }),
     now,
-    accessTarget,
-    thisEdId,
-    boardFilter: boardView.boardFilter,
-    patientQuery: boardView.patientQuery,
-    patientSort: boardView.patientSort,
-    heroHighlight,
-    selectedPatientId,
-    arrivalPlanOpenFor,
-    setSelectedPatientId,
-    setPhoneSheetFor,
-    setArrivalPlanOpenFor,
-    toggleBookTransport,
-    recordEdStep,
-  });
+  );
   const {
     patients,
     heroHighlightMatch,

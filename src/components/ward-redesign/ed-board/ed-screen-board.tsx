@@ -1,6 +1,7 @@
 "use client";
 
-// Copied from src/components/ward-management/ed/ed-screen-board.tsx (ED board redesign fork: uses the forked rows).
+// Copied from src/components/ward-management/ed/ed-screen-board.tsx (ED board redesign fork: uses the forked rows,
+// and the board search is the one page search field, D-91).
 
 // "ED psychiatry": the department's board, with its filters, search and sort, as a table on wider
 // screens and a list on a phone. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6,
@@ -12,6 +13,8 @@ import { EdNeedsYou } from "@/components/ward-management/ed/ed-needs-you";
 import { renderEdBoardRow } from "./ed-screen-board-row";
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import styles from "@/components/ward-management/ed/ed.module.css";
+import { SearchField } from "@/components/ward-redesign/parts/search-field";
+import redesign from "./ed-board-redesign.module.css";
 import { TierKey } from "@/components/ward-management/tier-key";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
@@ -110,16 +113,15 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           beside Board, Needs you and Lists (ed-screen-phone.tsx). */}
       {isPhone ? null : <EdBoardChips ctx={ctx} />}
       <div className={styles.boardTools}>
-        <label className={styles.patientSearch}>
-          <span aria-hidden="true">⌕</span>
-          <input
-            type="search"
-            aria-label="Find a patient or UMRN"
-            placeholder="Find a patient or UMRN…"
-            value={patientQuery}
-            onChange={(event) => setPatientQuery(event.target.value)}
-          />
-        </label>
+        {/* D-91: the one page search field. Search highlights like the chips, so the "of … match"
+            line beside it stays the count; the placeholder names what is searched, with no "…". */}
+        <SearchField
+          className={redesign.boardSearch}
+          label="Find a patient or UMRN"
+          placeholder="Name or UMRN"
+          value={patientQuery}
+          onValueChange={setPatientQuery}
+        />
         {boardTable ? (
           <label className={styles.patientSort}>
             Sort{" "}

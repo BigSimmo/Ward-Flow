@@ -71,9 +71,14 @@ import { ExceptionDrawer, type RegisterTabId } from "@/components/ward-managemen
 import styles from "@/components/ward-management/coordinator/home.module.css";
 import { useHomeLayout } from "@/components/ward-management/coordinator/home-layout";
 import redesign from "./home-redesign.module.css";
-import { ChosenAlertCard, HomeReleaseSheet, MyListCard } from "@/components/ward-management/coordinator/home-list-lazy";
+import { HomeReleaseSheet } from "@/components/ward-management/coordinator/home-list-lazy";
+// Forked for legal times as typed (Josh, 31 Oct 2026). The real build keeps the chosen alert lazy
+// (home-list-lazy.tsx); the mock-up imports the copy directly.
+import { ChosenAlertCard } from "./chosen-alert-card";
+import { MyListCard } from "./my-list-card";
+import { legalInboxDetailAsTyped } from "@/components/ward-redesign/legal-copies/legal-alert-words";
 import list from "@/components/ward-management/coordinator/home-list.module.css";
-import { PriorityQueue, type QueueHighlight } from "@/components/ward-management/coordinator/priority-queue";
+import { PriorityQueue, type QueueHighlight } from "./priority-queue";
 import { ReferralPlacementPanel } from "@/components/ward-management/coordinator/shortlist-panel-lazy";
 import shortlistStyles from "@/components/ward-management/coordinator/shortlist-panel.module.css";
 
@@ -495,6 +500,10 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
         },
         now,
       ).map((item) => {
+        // Legal times as typed (Josh, 31 Oct 2026): "Form 4C (Transfer order) · ended 09:27 as typed",
+        // not the engine's "1h 15m overdue", wherever Home shows the alert's detail (the Registers too).
+        const legalDetail = legalInboxDetailAsTyped(item, movements, now);
+        if (legalDetail !== undefined) return { ...item, detail: legalDetail };
         if (!item.id.startsWith("bed-pull-") && item.title !== "Bed pull expired") return item;
         return {
           ...item,

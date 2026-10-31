@@ -1,0 +1,15 @@
+/* Fork-only style for priority-queue.tsx (Home mock-up). The legal mark now carries the form's name
+   and its typed time, so on a phone it wraps as one line of text inside its own mark instead of
+   running off the row. */
+.legalMark {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: normal;
+}
+
+.legalGlyph {
+  display: inline-block;
+  margin-right: var(--wf-s-1);
+  vertical-align: 0.05em;
+}

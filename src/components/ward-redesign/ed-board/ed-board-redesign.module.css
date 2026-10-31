@@ -64,3 +64,38 @@
 }
 /* Phone (Josh, 31 Oct 2026): Raise referral and Add patient are Home's hero pills, side by side
    (phone-rows.module.css), in place of two stretched half-width buttons. */
+
+/* D-91: the board's patient search is the one page search field (parts/search-field.tsx), at the
+   width the old box had; a row of its own on a phone. */
+.boardSearch {
+  flex: 1 1 14rem;
+  max-width: 300px;
+}
+
+@media (max-width: 48rem) {
+  .boardSearch {
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
+
+/* D-91: the arrival plan's time buttons sit under the typed ETA, clear of the Day label below. */
+.etaPresets {
+  margin-block: 2px var(--wf-s-3);
+}
+
+/* Legal times (Josh, 31 Oct 2026): the form's typed time under "Form 1A" wraps in full, tag and all,
+   rather than the cell's two-line clamp ending in "…". */
+.formTyped {
+  display: block;
+  white-space: normal;
+  overflow-wrap: break-word;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+/* The shared "(limits not legally checked)" tag keeps to one line elsewhere; in this narrow cell it
+   wraps rather than being cut. */
+.formTyped > span {
+  white-space: normal;
+}

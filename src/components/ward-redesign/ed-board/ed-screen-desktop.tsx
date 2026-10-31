@@ -1,14 +1,17 @@
 "use client";
 
 // Copied from src/components/ward-management/ed/ed-screen-desktop.tsx (ED board redesign fork: the Form cell shows the
-// form number only; its description moves into the cell's tooltip).
+// form number only; its description moves into the cell's tooltip). Legal times (Josh, 31 Oct 2026): under
+// the form, its typed time reads "ends Sat 15:42 as typed" (or "ended … as typed" with a red glyph once
+// passed) with the not-legally-checked tag, never a count of time left or passed.
 
 // The ED screen's wider-screen board row: one row of the full board table, read-only, with one Next
 // button and every edit in the person sheet. Split out of `ed-screen.tsx` unchanged (fix list 2.5
 // and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   examinationRevokedWhileBedHeld,
@@ -25,6 +28,7 @@ import { edRowReferralStatus } from "@/components/ward-management/ed/ed-referral
 import { edWaitTone } from "@/components/ward-management/ed/ed-screen-model";
 import type { EdRowFacts } from "@/components/ward-management/ed/ed-screen-row-facts";
 import styles from "@/components/ward-management/ed/ed.module.css";
+import redesign from "./ed-board-redesign.module.css";
 
 /** One board row as a row of the board table. */
 export function renderEdBoardTableRow(
@@ -107,9 +111,14 @@ export function renderEdBoardTableRow(
           {movement.legalForm ? legalStatusShort(movement) : noFormWords}
         </span>
       </span>
-      {formExpiryPassed ? (
-        <span className={styles.a2Sub} aria-hidden="true" data-testid={`ward-ed-form-passed-${movement.id}`}>
-          Past form expiry
+      {movement.legalForm?.dueAt !== undefined ? (
+        <span
+          className={redesign.formTyped}
+          aria-hidden="true"
+          data-testid={formExpiryPassed ? `ward-ed-form-passed-${movement.id}` : undefined}
+        >
+          {`${formExpiryPassed ? "ended" : "ends"} ${formatInstantWithDay(movement.legalForm.dueAt, now)} as typed`}{" "}
+          <LegalLimitsNotChecked variant="tag" />
         </span>
       ) : null}
     </>

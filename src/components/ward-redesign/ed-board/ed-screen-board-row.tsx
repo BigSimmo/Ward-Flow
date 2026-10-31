@@ -1,6 +1,9 @@
 "use client";
 
 // Copied from src/components/ward-management/ed/ed-screen-board-row.tsx (ED board redesign fork: uses the forked table row).
+// Legal times (Josh, 31 Oct 2026): the form's time reads only as typed ("Ends Sat 15:42 as typed"),
+// never "(3h 20m left)" or "passed … ago". The wording, person sheet and facts come from the shared
+// legal copies (../legal-copies), which make the same change for the other ED mock-ups.
 
 // One board row: what the row knows about its person, and how it is put together as a board table
 // row (wider screens) or a phone list row. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and
@@ -32,20 +35,20 @@ import {
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { renderEdBoardTableRow } from "./ed-screen-desktop";
 import {
-  formExpiryLine,
   formExpiryWarning,
   instantFromDateAndTimeInputs,
   isEdInitiatedWithdrawal,
   movementMedicalClearance,
   outstandingItem,
 } from "@/components/ward-management/ed/ed-screen-model";
-import { renderEdPersonSheet } from "@/components/ward-management/ed/ed-screen-person-sheet";
+import { formExpiryLine } from "@/components/ward-redesign/legal-copies/ed-form-expiry";
+import { renderEdPersonSheet } from "@/components/ward-redesign/legal-copies/ed-screen-person-sheet";
 import { renderEdBoardPhoneRow } from "@/components/ward-management/ed/ed-screen-phone";
 import {
   renderEdRowControls,
   renderEdRowExpandedCards,
   renderEdRowFacts,
-} from "@/components/ward-management/ed/ed-screen-row-facts";
+} from "@/components/ward-redesign/legal-copies/ed-screen-row-facts";
 import { renderEdRowForms } from "@/components/ward-management/ed/ed-screen-row-forms";
 import { renderEdRowMenuItems, renderEdRowNextGroup } from "@/components/ward-management/ed/ed-screen-row-menu";
 
