@@ -10,6 +10,7 @@ import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissio
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeOpenHandle, DischargeRecord } from "@/components/ward-management/ward-discharge-records";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { patientListName } from "@/components/ward-management/ward-patients";
 import { useCanOpenHref, useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, buttonClass, Segmented, StatusGlyph } from "@/components/wf";
@@ -384,9 +385,8 @@ function recordOrder(record: DischargeRecord, now: Instant): number {
 }
 
 function dischargeRecordName(record: DischargeRecord): string {
-  if (record.identity.kind === "linked")
-    // Polish (Josh, 31 Oct 2026): surname first, as every list in the redesign (D-83).
-    return `${record.identity.patient.familyName}, ${record.identity.patient.givenName}`;
+  // Surname first (D-83), with the list form every page uses.
+  if (record.identity.kind === "linked") return patientListName(record.identity.patient);
   return record.identity.kind === "legacy-anonymous" ? "Identity not linked" : "Patient link unavailable";
 }
 

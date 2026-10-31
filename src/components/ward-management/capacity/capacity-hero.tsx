@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ChevronDown, Monitor, Printer } from "lucide-react";
 
 import { buttonClass, durMinutes, Hero, HeroChip, HeroStat, Menu, OccupancyRing, SrOnly } from "@/components/wf";
@@ -10,6 +9,7 @@ import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy
 import { PageLiveChip } from "@/components/ward-management/ward-page-live";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
+import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 
 import type { Highlight } from "./capacity-bed-map-cards";
 import { isConfirmationFresh } from "./capacity-gap-words";
@@ -49,7 +49,8 @@ export function CapacityHero({
   onSheet: () => void;
   onWard: (unitId: string) => void;
 }) {
-  const router = useRouter();
+  // Optional, so the screen also renders outside the app router (its tests, the design preview).
+  const router = useOptionalRouter();
   const { totals, gapTotals, occupancy, live, now, oldestCount, site, otherSiteRows } = model;
   // Site bed manager (D-80): the hero is the site's; the rest of the network is one plain count.
   const place = site ? site.name : "Modelled network";
@@ -149,7 +150,8 @@ export function CapacityHero({
                   {
                     id: "agenda",
                     label: "Open the meeting agenda",
-                    onSelect: () => router.push(BED_MEETING_AGENDA_HREF),
+                    onSelect: () =>
+                      router ? router.push(BED_MEETING_AGENDA_HREF) : window.location.assign(BED_MEETING_AGENDA_HREF),
                   },
                 ]}
                 trigger={(props) => (

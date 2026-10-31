@@ -1,0 +1,96 @@
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import "@testing-library/jest-dom/vitest";
+
+import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
+import { networkTotals, networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
+
+/**
+ * Capacity, built from the October 2026 redesign (Josh, 31 Oct 2026): one screen for every desk.
+ * The coordinator sees the modelled network; a site bed manager (D-80) sees its own site's wards
+ * and every other site as counts only; the executive sees counts only, with no bed meeting, no
+ * asking a ward and no list of people.
+ */
+
+afterEach(() => {
+  act(() => {
+    setWardFeatureFlagOnDevice("role-access", null);
+    resetWardAccessStoreForTests();
+  });
+});
+
+function asDesk(access: WardAccess) {
+  act(() => {
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess(access);
+  });
+}
+
+function renderCapacity() {
+  return render(
+    <WardFlowProvider>
+      <CapacityScreen />
+    </WardFlowProvider>,
+  );
+}
+
+describe("Capacity for the bed coordinator", () => {
+  it("leads with the network's ready beds and draws the mismatch, forecast and bed map", () => {
+    const seed = seedWardFlowState();
+    const rows = networkWardRows(seed.units, NOW_ANCHOR, seed.bedReleases, seed.admissions, seed.leaveBeds);
+    const totals = networkTotals(rows);
+    renderCapacity();
+    const hero = screen.getByRole("heading", { level: 1 });
+    expect(hero).toHaveTextContent(`${totals.ready} beds ready of ${totals.beds}`);
+    expect(screen.getByRole("heading", { name: "Mismatch" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Bed forecast" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Bed map" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Bed meeting/ })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-capacity-governance")).toBeInTheDocument();
+  });
+
+  it("opens a ward's drawer from the bed map", () => {
+    renderCapacity();
+    const map = screen.getByRole("region", { name: "Bed map" });
+    const first = within(map)
+      .getAllByRole("button")
+      .find((button) => button.getAttribute("aria-haspopup") === "dialog" && /occupied/.test(button.textContent ?? ""));
+    expect(first).toBeDefined();
+    fireEvent.click(first!);
+    expect(screen.getByTestId("ward-capacity-ward-drawer")).toBeInTheDocument();
+  });
+});
+
+describe("Capacity for the executive", () => {
+  it("shows counts only: no bed meeting, no planned list of people", () => {
+    asDesk({ role: "executive", scope: { kind: "statewide" } });
+    renderCapacity();
+    expect(screen.queryByRole("button", { name: /Bed meeting/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Open on TV/ })).not.toBeInTheDocument();
+    expect(screen.getByTestId("as-executive-planned-counts")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-planned-book")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Ask / })).not.toBeInTheDocument();
+  });
+});
+
+describe("Capacity for a site bed manager", () => {
+  it("names its own site in the hero and lists other sites as bed counts only", () => {
+    const seed = seedWardFlowState();
+    const siteCode = seed.units[0].siteCode;
+    asDesk({ role: "bed_manager", scope: { kind: "site", siteCode } });
+    renderCapacity();
+    const own = seed.units.filter((unit) => unit.siteCode === siteCode);
+    const rows = networkWardRows(own, NOW_ANCHOR, seed.bedReleases, seed.admissions, seed.leaveBeds);
+    const totals = networkTotals(rows);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(`${totals.ready} beds ready of ${totals.beds}`);
+    expect(screen.getByRole("heading", { name: "Other sites" })).toBeInTheDocument();
+    expect(screen.getByText(/Other sites show beds, never the people in them\./)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Ask / })).not.toBeInTheDocument();
+  });
+});
