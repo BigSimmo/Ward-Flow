@@ -33,6 +33,10 @@ export function subjectId(event: WardFlowEvent): string {
       return undoStepSubjectId(event);
     case "UNDO_HANDOVER_SIGN_OFF":
       return "none";
+    // Q61 (31 Oct 2026): a site handover sign-off and its Undo are filed against the site.
+    case "RECORD_SITE_HANDOVER_SIGN_OFF":
+    case "UNDO_SITE_HANDOVER_SIGN_OFF":
+      return event.siteCode;
     case "RAISE_REFERRAL":
       // D-76: a journey from an accepted community referral starts at no ED; its ward is the subject.
       return event.edId ?? event.acceptedUnitId ?? "none";

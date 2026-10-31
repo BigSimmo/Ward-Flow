@@ -78,6 +78,8 @@ export const UNDO_STEP_ACTIONS = {
   UNDO_SUPPORT_NOTIFICATION: ["RECORD_SUPPORT_NOTIFICATION"],
   UNDO_REPATRIATION: ["RECORD_REPATRIATION"],
   UNDO_HANDOVER_SIGN_OFF: ["RECORD_HANDOVER_SIGN_OFF"],
+  // Q61 (Josh, 31 Oct 2026): the site bed manager's site sign-off, filed against its site.
+  UNDO_SITE_HANDOVER_SIGN_OFF: ["RECORD_SITE_HANDOVER_SIGN_OFF"],
   UNDO_ED_STEP: [
     "RECORD_ARRIVED_IN_DEPARTMENT",
     "RECORD_EXAMINATION",
@@ -112,7 +114,16 @@ export function undoStepSubjectId(event: object): string {
     action?: unknown;
     type?: unknown;
     unitId?: unknown;
+    siteCode?: unknown;
   };
+  // Q61 (31 Oct 2026): a site handover sign-off is filed against its site, so one site's Undo never
+  // takes back another site's sign-off, and never a ward's.
+  if (
+    (fields.type === "RECORD_SITE_HANDOVER_SIGN_OFF" || fields.type === "UNDO_SITE_HANDOVER_SIGN_OFF") &&
+    typeof fields.siteCode === "string" &&
+    fields.siteCode.length > 0
+  )
+    return `site-handover:${fields.siteCode}`;
   // Decision 41 (31 Oct 2026): a handover sign-off naming a ward is filed against that ward, so one
   // ward's Undo never takes back another ward's sign-off. One naming none stays the network's.
   if (

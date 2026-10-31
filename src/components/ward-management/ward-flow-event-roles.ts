@@ -555,6 +555,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // The handover sheet is signed by whoever is handing over: the coordinator or the ward. Not yet the
   // site's bed manager (D-80): a sign-off carries no site, so one site's would mark every site's sheet.
   RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
+  // Q61 (Josh, 31 Oct 2026): the site bed manager signs off its own site's handover (D-80), never a
+  // ward's. The statewide coordinator may too, as it may sign any sheet; the shared server refuses
+  // every other desk, and a bed manager any site but its own (`commandScopeRefusal`).
+  RECORD_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
   // Decision 43 (Josh, 31 Oct 2026): the ED no longer holds it. It was unused: the only place to
   // record a contact is the community team page, which an ED desk cannot open.
@@ -603,6 +607,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
   UNDO_REPATRIATION: ["coordinator"],
   UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
+  UNDO_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
   UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
   UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
   UNDO_DEPARTURE: ["ward", "coordinator"],

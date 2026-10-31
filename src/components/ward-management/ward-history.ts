@@ -197,6 +197,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   UNSNOOZE_INBOX_ITEM: { category: "neither", plainWording: "Snoozed action item returned" },
   UPLOAD_PATIENT_FORM: { category: "patient", plainWording: "Clinical document uploaded" },
   RECORD_HANDOVER_SIGN_OFF: { category: "patient", plainWording: "Ward transfer handover signed off" },
+  // Q61 (31 Oct 2026): a site's handover, signed by its site bed manager. About no one patient.
+  RECORD_SITE_HANDOVER_SIGN_OFF: { category: "neither", plainWording: "Site handover signed off" },
   RECORD_CLINICAL_CONTACT: { category: "patient", plainWording: "Clinical liaison contact recorded" },
   DISPATCH_BROADCAST_ALERT: { category: "neither", plainWording: "Statewide broadcast directive dispatched" },
   ACKNOWLEDGE_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast directive acknowledged" },
@@ -228,6 +230,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   UNDO_SUPPORT_NOTIFICATION: { category: "patient", plainWording: "Carer, PSP or MHAS record undone" },
   UNDO_REPATRIATION: { category: "patient", plainWording: "Repatriation record undone" },
   UNDO_HANDOVER_SIGN_OFF: { category: "neither", plainWording: "Handover sign-off undone" },
+  UNDO_SITE_HANDOVER_SIGN_OFF: { category: "neither", plainWording: "Site handover sign-off undone" },
   UNDO_ED_STEP: { category: "patient", plainWording: "Emergency department step undone" },
   UNDO_TRANSPORT_STEP: { category: "both", plainWording: "Transport step undone" },
   UNDO_DEPARTURE: { category: "neither", plainWording: "Departure undone" },

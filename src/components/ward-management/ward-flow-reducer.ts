@@ -28,6 +28,7 @@ export {
 import { reduceHomeServiceReturn, type HomeServiceReturnRecord } from "./out-of-area/home-service-return";
 import { withDischargeMoveDemo } from "./coordinator/since-last-look-seed";
 import { reduceDirectoryCheck, type DirectoryCheckRecord } from "./on-call/on-call-checks";
+import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
@@ -392,6 +393,11 @@ export type WardFlowState = WardAuditState & {
    * (`RECORD_DIRECTORY_CHECK`). Entry id, time and desk only. Optional: absent in older saves.
    */
   directoryChecks?: DirectoryCheckRecord[];
+  /**
+   * Q61 (Josh, 31 Oct 2026): site handover sign-offs (`RECORD_SITE_HANDOVER_SIGN_OFF`). Site, handover,
+   * time, role and the named unsigned wards and unanswered bed calls only. Optional: absent in older saves.
+   */
+  siteHandoverSignOffs?: SiteHandoverSignOffRecord[];
   /** Handover sign-offs — role and time only. `RECORD_HANDOVER_SIGN_OFF` appends here. */
   handoverSignOffs: HandoverSignOffRecord[];
   /**
@@ -1472,6 +1478,7 @@ export const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_SUPPORT_NOTIFICATION: "There is no Tell record on this move to undo",
   UNDO_REPATRIATION: "There is no repatriation on this stay to undo",
   UNDO_HANDOVER_SIGN_OFF: "There is no handover sign-off to undo",
+  UNDO_SITE_HANDOVER_SIGN_OFF: "There is no site handover sign-off to undo",
   UNDO_ED_STEP: "There is no ED step on this patient to undo",
   UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
   UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
@@ -1713,6 +1720,7 @@ export function reduceClinicalEvent(
     case "UNDO_SUPPORT_NOTIFICATION":
     case "UNDO_REPATRIATION":
     case "UNDO_HANDOVER_SIGN_OFF":
+    case "UNDO_SITE_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
@@ -2295,6 +2303,9 @@ export function reduceClinicalEvent(
       return reduceHomeServiceReturn(state, event, reject);
     case "RECORD_DIRECTORY_CHECK":
       return reduceDirectoryCheck(state, event, reject);
+    // Q61 (31 Oct 2026): a site handover sign-off; its Undo is a step undo above.
+    case "RECORD_SITE_HANDOVER_SIGN_OFF":
+      return reducerSlices().reduceSiteHandoverSignOff(state, event, reject);
     default: {
       const _exhaustive: never = event;
       void _exhaustive;
