@@ -1093,8 +1093,8 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
               tasksAreAlerts={oneAlertsQueue}
               plannedAdmissions={plannedAdmissions}
               now={now}
-              // shell-next: the box says what it finds; its "/" key hint is unchanged.
-              placeholder="Search patients"
+              // Josh, 31 Oct 2026: search also finds Help, contacts and suburbs (#1123), so it names the app.
+              placeholder="Search Ward Flow"
             />
           </div>
         )}
