@@ -37,7 +37,8 @@ function Harness({
   const state = useWardFlow();
   const movements = adjust(state.movements);
   useLayoutEffect(() => {
-    nameOf = (id) => state.resolvePatientIdentity(movements.find((movement) => movement.id === id)!).displayName;
+    // The answer view names people surname first (D-83, redesign approved 31 Oct 2026).
+    nameOf = (id) => state.resolvePatientIdentity(movements.find((movement) => movement.id === id)!).formalName;
   });
   return <WardFlowOverride value={{ ...state, dispatch, movements }}>{children}</WardFlowOverride>;
 }

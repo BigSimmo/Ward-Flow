@@ -2185,28 +2185,6 @@ details[open] > summary > .phoneFoldChevron {
     letter-spacing: 0;
   }
 
-  .phoneClear {
-    display: flex;
-    flex-direction: column;
-    gap: var(--wf-s-1);
-    padding: var(--wf-s-3) var(--wf-s-4);
-  }
-
-  .phoneClearTitle {
-    display: flex;
-    align-items: center;
-    gap: var(--wf-s-2);
-    margin: 0;
-    font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
-    color: var(--wf-ink-1);
-  }
-
-  .phoneClearText {
-    margin: 0;
-    font-size: var(--wf-fs-13);
-    color: var(--wf-ink-2);
-  }
-
   .decisionArea > button {
     justify-content: center;
     /* DA-19 (design audit): the project's 48 px touch size, not 44 px. */
@@ -2572,4 +2550,135 @@ details[open] > summary > .phoneFoldChevron {
   .declineForm button[type="submit"] {
     min-height: var(--spacing-tap, 3rem);
   }
+}
+
+/* Redesign (Josh, 31 Oct 2026). Nothing to answer: one line, not a full-width panel holding one
+ * sentence. Doubled classes outrank the panel's own layout rules above. */
+.allAnsweredPanel.allAnsweredPanel {
+  flex-direction: row;
+  align-items: center;
+  box-shadow: none;
+}
+
+.allAnswered {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  min-width: 0;
+}
+
+.allAnswered > p {
+  margin: 0;
+}
+
+.allAnsweredLine {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+/* Census squares filled by state. The words stay in each square's name for screen readers. Doubled
+ * classes outrank the `.bedCell.vacant` style rules above on every width. Borders stay neutral and
+ * the tinted fill carries the state (no side edges or tone borders, Josh, 31 Oct 2026). */
+.cell.cell.fillReady {
+  border: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-success) 30%, var(--wf-surface));
+}
+
+.cell.cell.fillPulled {
+  border: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-info) 30%, var(--wf-surface));
+}
+
+.cell.cell.fillClosed {
+  border: 1px dashed var(--wf-line-ctl);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--wf-warning) 30%, var(--wf-surface)) 0 4px,
+    var(--wf-surface) 4px 8px
+  );
+}
+
+.cell.cell.fillOccupied {
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.cell.cell > span:first-child {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+}
+
+.cell.cell.fillReady > span:first-child {
+  color: var(--wf-success-ink);
+}
+
+.cell.cell.fillPulled > span:first-child {
+  color: var(--wf-info-ink);
+}
+
+.cell.cell.fillClosed > span:first-child {
+  color: var(--wf-warning-ink);
+}
+
+.cell.cell.fillOccupied > span:first-child {
+  color: var(--wf-ink-3);
+}
+
+/* The census key: a swatch per state with its count. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  margin: 0;
+  padding: 0 var(--wf-s-4) var(--wf-s-2);
+  list-style: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.legendCount {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.swatch {
+  display: inline-block;
+  width: var(--wf-s-3);
+  height: var(--wf-s-3);
+  border-radius: calc(var(--wf-r-xs) / 2);
+  box-sizing: border-box;
+}
+
+.swatch.fillReady {
+  border: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-success) 30%, var(--wf-surface));
+}
+
+.swatch.fillPulled {
+  border: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-info) 30%, var(--wf-surface));
+}
+
+.swatch.fillClosed {
+  border: 1px dashed var(--wf-line-ctl);
+  background: color-mix(in srgb, var(--wf-warning) 30%, var(--wf-surface));
+}
+
+.swatch.fillOccupied {
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
 }

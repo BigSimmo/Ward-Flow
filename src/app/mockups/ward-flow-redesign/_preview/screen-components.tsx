@@ -95,9 +95,6 @@ const PatientPage = dynamic<MockupPageProps>(() =>
 const AddPatientPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/add-patient/add-patient-page").then((module) => module.AddPatientPage),
 );
-const WardAnswerPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/ward-answer/ward-answer-page").then((module) => module.WardAnswerPage),
-);
 const SettingsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/settings/settings-page").then((module) => module.SettingsPage),
 );
@@ -325,7 +322,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "community-team": CommunityTeamPage,
   patient: PatientPage,
   "add-patient": AddPatientPage,
-  "ward-answer": WardAnswerPage,
   settings: SettingsPage,
   "sign-in": SignInPage,
   "statistics-compare": StatisticsComparePage,

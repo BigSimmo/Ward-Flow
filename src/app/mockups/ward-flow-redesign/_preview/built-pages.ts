@@ -30,7 +30,6 @@ export const MOCKUP_PAGE_SLUGS = [
   "community-team",
   "patient",
   "add-patient",
-  "ward-answer",
   "settings",
   "sign-in",
   "statistics-compare",

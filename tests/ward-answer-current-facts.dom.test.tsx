@@ -263,10 +263,11 @@ describe("Ward answer current facts", () => {
     fireEvent.click(within(form).getByRole("radio", { name: "Capability mismatch" }));
     fireEvent.click(within(form).getByRole("button", { name: /^Decline for \S/u }));
 
-    // Empty state: the v6 card head reads "Bed request" with a quiet "none waiting" count
-    // (design/pages-v6/Ward_answer.png), not a coloured badge.
-    expect(screen.getByText("none waiting")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Bed request" })).toBeInTheDocument();
+    // Empty state (redesign approved by Josh, 31 Oct 2026): the hero already says "Nothing to
+    // answer", so the Bed request panel is one quiet line, not a card head with a coloured badge.
+    expect(screen.getByTestId("ward-answer-all-answered")).toHaveTextContent("Requests land here as they are sent.");
+    expect(screen.queryByText("none waiting")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Bed request" })).not.toBeInTheDocument();
     expect(screen.queryByText("Emergency department origin")).not.toBeInTheDocument();
     expect(screen.queryByText(/^Tier\b/)).not.toBeInTheDocument();
   });
