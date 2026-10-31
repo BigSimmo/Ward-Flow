@@ -55,7 +55,7 @@ import {
   durMinutes,
   useIsPhone,
 } from "@/components/wf";
-import { MovementDrawer } from "@/components/ward-management/movements/movement-drawer";
+import { MovementDrawer } from "@/components/ward-redesign/pop-movement/movement-drawer";
 import { MovementHorizonGantt, rankCorridorPairs } from "@/components/ward-management/movements/movement-horizon-gantt";
 import { isCoordinatorStep, movementNextStep } from "@/components/ward-management/movements/movement-next-step";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
@@ -80,7 +80,7 @@ import {
   PhoneGroupHeading,
   StageRow,
   TierPill,
-} from "@/components/ward-management/movements/movements-stage-row";
+} from "@/components/ward-redesign/movements/movements-stage-row";
 import {
   CAUSES,
   GROUP_CAP,
@@ -945,7 +945,7 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
                     type="button"
                     className={buttonClass({ variant: "onHero", size: "sm", className: flow.jump })}
                     onClick={() => openFromHero(nextExpiry.id)}
-                    title="The soonest recorded legal expiry still ahead"
+                    title="The soonest legal expiry still ahead, as typed on the form. Not legally checked."
                   >
                     <span className={flow.jumpLabel}>Next expiry</span>
                     <span className={flow.jumpName}>{surname(nextExpiry)}</span>

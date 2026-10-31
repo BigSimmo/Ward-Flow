@@ -56,7 +56,7 @@ import {
   durMinutes,
   useIsPhone,
 } from "@/components/wf";
-import { MovementDrawer } from "@/components/ward-management/movements/movement-drawer";
+import { MovementDrawer } from "@/components/ward-redesign/pop-movement/movement-drawer";
 import { MovementHorizonGantt, rankCorridorPairs } from "@/components/ward-management/movements/movement-horizon-gantt";
 import { isCoordinatorStep, movementNextStep } from "@/components/ward-management/movements/movement-next-step";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
@@ -83,7 +83,7 @@ import {
   PhoneGroupHeading,
   StageRow,
   TierPill,
-} from "@/components/ward-management/movements/movements-stage-row";
+} from "@/components/ward-redesign/movements/movements-stage-row";
 import {
   CAUSES,
   GROUP_CAP,

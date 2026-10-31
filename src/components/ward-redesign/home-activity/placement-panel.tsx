@@ -54,7 +54,6 @@ import {
   isClockBreached,
   MINUTES_PER_DAY,
   minuteOfDayFromClockText,
-  minutesUntil,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
@@ -96,7 +95,7 @@ import type { WardCommandDispatch } from "@/components/ward-management/ward-shar
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
-import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
+import { FORM_TIMING_FACTOR_LABEL, urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
 import {
   REFERENCE_DISTANCE_CAVEAT,
   referenceDistance,
@@ -239,14 +238,11 @@ function legalFormLine(movement: Movement, now: Instant) {
     // States what the record holds, never what the Act requires (tests/ward-legal-figure-guard.test.ts).
     return `${formCode} · no deadline recorded (${elapsedLabel(movement, now)} in ED)`;
   }
-  const remaining = minutesUntil(dueAt, now);
-  // "passed its deadline" is pinned by tests/ward-legal-figure-guard.test.ts (finding 7).
-  // Plain times on every layout ("2d 8h ago", "6h 40m"), never a bare count of minutes: the same
-  // formatter as the queue's form line in ward-priority.ts (Home placement redesign, Josh 19 Oct
-  // 2026). Only the recorded deadline is reformatted; nothing new is computed.
-  return remaining < 0
-    ? `${formCode} passed its deadline ${splitDuration(Math.abs(remaining))} ago`
-    : `${formCode} due in ${splitDuration(remaining)}`;
+  // Mock-up (Josh, 31 Oct 2026): the form time only as typed, never "due in" or "passed … ago".
+  // A passed typed time says so in words, with no elapsed count.
+  const typed = formatInstantWithDay(dueAt, now);
+  const name = legalFormName(movement.legalForm);
+  return dueAt < now ? `${name} · ended ${typed} as typed` : `${name} · ends ${typed} as typed`;
 }
 
 /**
@@ -693,7 +689,11 @@ export function PlacementPanel({
     "Choose at least one candidate ward before overriding — nothing is overridden against a default.";
   const activeNotice = activeUnit ? restrictionNotice(movement, activeUnit) : undefined;
 
-  const factors = waitFactors(movement, now, thresholds);
+  // Mock-up (Josh, 31 Oct 2026): the shared factor list words the form time as a countdown
+  // ("due in …", "passed its deadline … ago"); here it reads as typed, like the legal line above.
+  const factors = waitFactors(movement, now, thresholds).map((factor) =>
+    factor.label === FORM_TIMING_FACTOR_LABEL ? { ...factor, detail: legalFormLine(movement, now) } : factor,
+  );
 
   /** Adds or removes a unit from the referral selection, capped at the coordinator-configured
    * `parallelReferralCap` (Task 7 of the audit-wiring plan, 2026-09-16 — previously the constant
@@ -1259,6 +1259,8 @@ export function PlacementPanel({
         }
         {movement.legalForm ? (
           <p className={shortlistStyles.legalLine} data-urgent={legalBreached ? "true" : undefined}>
+            {/* Mock-up: a passed typed time is marked red, with its words and no elapsed count. */}
+            {legalBreached ? <StatusGlyph tone="danger" size={9} /> : null}
             {`${legalFormLine(movement, now)} · ${movement.legalStatus}`}
             {legalDueAt !== undefined ? <LegalLimitsNotChecked variant="tag" /> : null}
           </p>
