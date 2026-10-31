@@ -189,7 +189,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);
-  min-height: var(--wf-row-touch);
+  /* Browser check (31 Oct 2026): a 40px control at every width (Josh's rule), not the 52px row touch. */
+  min-height: 40px;
   padding: 0 var(--wf-s-4);
   border: 1px solid var(--wf-line-ctl);
   border-radius: var(--wf-r-md);
@@ -309,7 +310,7 @@
   .pickerMenu a {
     display: flex;
     align-items: center;
-    min-block-size: var(--wf-row-touch);
+    min-block-size: 40px;
   }
 }
 
@@ -646,6 +647,13 @@
   overflow-wrap: normal;
 }
 
+/* Browser check (31 Oct 2026): the fixed column widths left the Bed column no width at 1024 and
+ * 1440, so "Bed" ran into "Waiting" ("BedWaiting") and "Locked" into its count. The columns now size
+ * to their words, as on a phone; the fixed widths are a starting share, not a floor. */
+.panels [data-area="fit"] .table {
+  table-layout: auto;
+}
+
 .table th,
 .table td {
   padding: calc(var(--wf-s-2) * 0.85) 0;
@@ -855,8 +863,24 @@
 }
 
 @media (max-width: 1100px) {
+  /* Browser check (31 Oct 2026): five tiles at three a row left a gap after the last two. A six part
+   * grid gives three tiles a third each, and the last row's two tiles a half each (one alone takes
+   * the row), so every row is filled edge to edge. */
   .tiles {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .tile {
+    grid-column: span 2;
+  }
+
+  .tile:nth-child(3n + 1):nth-last-child(2),
+  .tile:nth-child(3n + 2):last-child {
+    grid-column: span 3;
+  }
+
+  .tile:nth-child(3n + 1):last-child {
+    grid-column: 1 / -1;
   }
 
   .panels,
@@ -875,6 +899,10 @@
 @media (max-width: 40rem) {
   .tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tiles > .tile:nth-child(n) {
+    grid-column: auto;
   }
 
   .panels,
@@ -910,7 +938,8 @@
 @container (min-width: 60rem) and (max-width: 89.99rem) {
   .panels[data-layout="meeting"]:has(> [data-area="brief"]) {
     grid-auto-flow: row;
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+    /* Beds that fit never gets narrower than its five columns' words (browser check, 31 Oct 2026). */
+    grid-template-columns: minmax(0, 1.25fr) minmax(min-content, 1fr) minmax(0, 1fr);
     grid-template-rows: auto 1fr;
     grid-template-areas:
       "main fit waits"

@@ -746,7 +746,7 @@ function GovernanceSession({
     <div className={thirdEdition.governanceWorkspace} data-testid="ward-governance-workbench" data-ward-design="v8">
       <Hero
         level={2}
-        eyebrow="Governance · This session"
+        eyebrow={<span className={thirdEdition.heroEyebrow}>Governance · This session</span>}
         title={heroTitle}
         stats={heroStats}
         aside={

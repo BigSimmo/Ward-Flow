@@ -701,6 +701,21 @@ describe("the ward and ED TV views", () => {
     }
   });
 
+  it("keeps 40px controls, a Bed column with room, and full tile rows at 1024 (browser check, 31 Oct 2026)", () => {
+    const css = readFileSync("src/components/ward-management/bed-meeting/bed-meeting-tv.module.css", "utf8");
+    // Change screen, Full screen, Lock as TV and Leave TV view: 40px, not the 52px row touch.
+    expect(css).not.toMatch(/var\(--wf-row-touch\)/u);
+    expect(css).toMatch(/\.action \{[^}]*min-height: 40px;/u);
+    // Beds that fit sizes its columns to their words, so "Bed" never runs into "Waiting".
+    expect(css).toMatch(/\.panels \[data-area="fit"\] \.table \{\s*table-layout: auto;/u);
+    // Five tiles at three a row: the last two take half a row each, so no row ends in a gap.
+    expect(css).toMatch(
+      /\.tile:nth-child\(3n \+ 1\):nth-last-child\(2\),\s*\.tile:nth-child\(3n \+ 2\):last-child \{\s*grid-column: span 3;/u,
+    );
+    renderTv();
+    expect(screen.getByTestId("bed-meeting-tv-tiles").children).toHaveLength(5);
+  });
+
   it("says the ready beds' locked share plainly and counts releases held up (TV-11, NA3-02)", () => {
     renderTv();
     expect(screen.getByTestId("bed-meeting-tv-discharges")).toHaveTextContent(/\d+ releases? held up/u);
