@@ -55,12 +55,14 @@ retain conservative full selection; inspect the actual planner output and requir
   local receipt store.
 
 `npm run verify:pr-local -- --base <task-base> --dry-run` previews the shared classifier's
-local commands; omit `--dry-run` for the normal selected local readiness stage. Source, tooling,
-unknown, deleted or renamed inputs retain the full unit population and production Ward journeys.
+local commands; omit `--dry-run` for the normal selected local readiness stage. By default it runs
+the affected unit tests (`test:related`) and lists the whole-suite gates it leaves to hosted CI:
+the full unit suite with its expected-reds comparison, the PostgreSQL backend tests, the production
+build and the browser journeys. `--full` runs those locally too; for source, tooling, unknown,
+deleted or renamed inputs it keeps the full unit population and production Ward journeys. Use
+`--full` only when no CI-checked pull request carries the change before it merges, or when asked.
 A declared workflow does not supply an observed equivalent CI verdict or authorise implicit
-provider reads.
-When browser work is selected, the local planner uses `test:e2e:ward-journeys`; `--extended`
-is retained for compatibility and does not change its coverage.
+provider reads. `--extended` is retained for compatibility and does not change the plan.
 
 CI observation is separately authorised and provider-gated. Any permitted evidence reuse or
 deferral needs the exact Ward repository, head, `ward-flow.yml` workflow and check scope;
