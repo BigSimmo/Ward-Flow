@@ -1015,3 +1015,13 @@ is inferred.
 - **Why:** staff should be able to browse the common jobs and be walked through each one on the real screen, not only find them by typing a question.
 - **Safeguards kept:** Show me only lights controls; it never presses anything. Tasks are grouped, never ranked. Nothing typed in Help is stored or sent. Mental Health Act times stay as typed (D-70), so that how-to has no Show me.
 - **Later change:** D-91 (31 October 2026, recorded with the redesign mock-ups) overrides item 2: Show me stays off on the demo and live sites until Josh has seen it in the mock-ups, so `help-ask` is on in development only. Items 1 and 3 stand.
+
+## D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026)
+
+- **Date:** 31 October 2026 (`2026-10-31`). **Decided by:** Josh, in the Ward Flow project chat, answering three questions from the build with "Yes to all recommendations" (08:37 UTC).
+- **Decision:**
+  1. The Help redesign (PR #1119: the Help sheet, the tour and the shortcuts) goes live with the first daily release after it merges, before Josh has reviewed those screens in the mock-ups. Show me stays off on the demo and live sites (D-91).
+  2. The search update (PR #1123) also removes the Capacity matrix's own filter box, alongside the Statistics table filters D-91 already approved, so each page keeps one search box.
+  3. On Home, clicking a "Referrals to decide" row opens that referral in the right-hand panel, as the other rows do. Only its Decide button goes to the Referrals page. This goes into the Home mock-up and the Home build.
+- **Why:** D-90 and D-91 already approved building Help directly; one search box per page; every Home row behaves the same way, with the decision still one tap away.
+- **Safeguards kept:** merging each PR still needs Josh's yes. Show me only lights controls and stays off live. Legal-form times stay as typed (D-70).
