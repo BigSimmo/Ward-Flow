@@ -1167,7 +1167,7 @@ export function DelaysBoardRedesign({
           />
 
           <div
-            className={styles.split}
+            className={`${styles.split} ${polish.split}`}
             data-person-open={selected !== null || undefined}
             data-portrait={portrait ? "slide" : undefined}
           >

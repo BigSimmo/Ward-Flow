@@ -680,3 +680,125 @@ button.strip:disabled {
     margin-top: 4px;
   }
 }
+
+/* ---------- Person panel and rail (round 7, Josh 31 Oct 2026) ---------- */
+/* About 10% wider beside the list on a laptop, so names, places and ward lists wrap less. */
+@media (min-width: 64.0625rem) {
+  .split.split {
+    grid-template-columns: minmax(0, 2.4fr) minmax(19rem, 1fr);
+  }
+}
+.pHead {
+  align-items: flex-start;
+  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-3);
+}
+.pName.pName {
+  margin: 0;
+  font-size: var(--wf-fs-16, 16px);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.pSub.pSub {
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.pBody.pBody {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+.pCause.pCause {
+  align-items: flex-start;
+  background: var(--wf-surface);
+}
+.pCause > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.pCause > span:last-child {
+  margin-left: auto;
+  white-space: nowrap;
+}
+/* Laptop and tablet only; the phone sheet keeps its own fact table. */
+@media (min-width: 48.0625rem) {
+  .pFacts.pFacts {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 8px 12px;
+    padding: var(--wf-s-1) 0;
+    font-size: var(--wf-fs-13);
+  }
+  .pFacts dt {
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+  }
+  .pFacts dd {
+    margin: 0;
+    color: var(--wf-ink-1);
+    overflow-wrap: anywhere;
+  }
+}
+
+.pNote.pNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.pNoteIcon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--wf-ink-3);
+}
+.pSec.pSec {
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+.pSec h4 {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pWards.pWards {
+  gap: 2px;
+}
+.pWards.pWards > li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 1px;
+  padding: 6px 8px;
+  border-radius: var(--wf-r-md);
+}
+.pWards > li:hover {
+  background: var(--wf-surface-2);
+}
+.pWards span,
+.pWards small {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+.pWards.pWards small {
+  align-self: stretch;
+  max-width: none;
+  padding-left: 15px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.pFoot.pFoot {
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  background: var(--wf-surface-2);
+}
+.pFoot p {
+  color: var(--wf-ink-3);
+  font-size: 11px;
+  line-height: 1.45;
+}
