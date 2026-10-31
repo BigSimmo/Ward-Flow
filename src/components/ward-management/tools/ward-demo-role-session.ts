@@ -64,13 +64,17 @@ export function selectDemoRole(next: WardAccess, original: DemoRoleSession) {
   publish();
 }
 
-export function exitDemoRole(): WardAccess | null {
+export function exitDemoRole(returnDesk?: WardAccess): WardAccess | null {
   if (!session) return null;
   const original = session;
   session = null;
-  setWardAccess(original.desk);
-  syncPersona(original.persona, original.personaDeskId);
+  const desk = returnDesk ?? original.desk;
+  setWardAccess(desk);
+  syncPersona(
+    desk === original.desk ? original.persona : desk.role === "admin" ? "executive" : desk.role,
+    desk === original.desk ? original.personaDeskId : undefined,
+  );
   setWardFeatureFlagOnDevice("role-access", original.deviceFlag);
   publish();
-  return original.desk;
+  return desk;
 }

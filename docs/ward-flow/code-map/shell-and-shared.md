@@ -550,6 +550,31 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   apart from the store so the header loads only it. `ward-help-host.tsx` lazy-loads the sheet, the
   tour and the auto-start. `ward-help-link.tsx` is the rail and phone menu row, marked New until the
   tour is seen. The rail's demo people live in `shell/ward-desk-personas.ts`.
+  Help search uses `correctedQuestionWords` from `ward-help-howto.ts` to correct spelling before
+  stemming, including transposed letters. The clinical-question guard checks the original question;
+  questions stay in component state and never become stored values or navigation parameters.
+  Search consumes Escape before closing its modal layer, so the same key cannot close the Help
+  sheet underneath; focus returns to that sheet's search field. Internal destinations use the client
+  router, preserving memory-only workspace text while opening the result. Another tab on the current Settings
+  page uses its native hash-change path. Transfer-safety decisions receive the existing clinical
+  reply instead of transport how-tos.
+  The index also covers Roles, colour meanings and shapes, saved-state guidance and downtime
+  guidance, reusing their approved source content. Exact indexed words survive typo correction.
+  `ward-help-ask.tsx` applies the same clinical-question guard and fixed reply as main search,
+  suppressing ordinary results for those questions. With no matching answer, glossary term or setting,
+  it offers up to three closest how-tos; another desk's topics retain their read-only presentation.
+  Ask results, fallback suggestions and the clinical reply share a polite live region.
+  Ask accepts an explicit public `termsSource` without reading the operational network hook,
+  retaining PR #997's aggregate-host interface; its default host still uses the current site's glossary.
+  Search listbox options have one action each, shared by pointer and Enter; Open/Show me labels
+  are plain text within the option rather than nested interactive controls.
+  `help-content/` supplies the compact Reference group, accessible grouped glossary and quiet
+  first-visit hints. Definitions remain in the existing Help sources; related-term links and group
+  filters never save typed words. Hints are lazy, wait for the tour and other overlays, and retain
+  only whitelisted role/topic ids in `ward_flow_choice_help_hints_seen`. The shared print-data
+  adapter feeds `scripts/build-help-cheat-sheets.mjs`; `public/help/` holds nine generated A4 guides.
+  Regeneration is checked in `ward-help-cheat-sheets.test.ts`. Executive Help retains its separate
+  aggregate-host glossary and never obtains site terms through the operational network hook.
 - **`shell/ward-service-store.ts`** (113 lines) — the one `sessionStorage`-backed module store for
   the chosen `HealthService | null` (`SERVICE_SCOPE_STORAGE_KEY = "ward-flow-service"`), read by
   `WardBar`'s Service selector, `WardRail`'s dot, and any scoped screen. `sessionStorage`, never

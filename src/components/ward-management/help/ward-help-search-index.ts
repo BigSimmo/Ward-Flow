@@ -9,8 +9,12 @@
 import { SETTINGS_SEARCH_ENTRIES, SETTINGS_TABS } from "@/components/ward-management/settings/settings-search-index";
 
 import { GLOSSARY, KEYBOARD_SHORTCUTS, SCREEN_HELP, type GlossaryTerm } from "./ward-help-content";
-import { DESK_GUIDES } from "./ward-help-guide";
-import { HOW_TOS, questionWords } from "./ward-help-howto";
+import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
+import { correctedQuestionWords, HOW_TOS, questionWords } from "./ward-help-howto";
+import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
+import { ACCESSIBILITY_HELP, COMMON_QUESTIONS, INTERACTIONS_HELP } from "../help-content/ward-help-reference";
+import { SAVE_HELP_TERMS } from "../help-content/ward-help-glossary";
+import { ROLE_REFERENCE } from "./ward-help-roles";
 import type { WardTourRole } from "./ward-help-store";
 
 export type HelpSearchGroup = "Guides" | "This screen" | "Glossary" | "Shortcuts" | "Settings";
@@ -46,7 +50,7 @@ export const CLINICAL_REPLY =
  * "Community treatment order" still search Help.
  */
 const CLINICAL =
-  /\b(dose|dosage|dosing|mg|medicat\w*|prescri\w*|(what|which) (\w+ )?(diagnosis|treatment)|(diagnosis|treatment) (for|of)|side effects?|symptoms?|suicid\w*|self[- ]harm|overdose|sedat\w*|should (i|we) (admit|discharge|section|detain|restrain|seclude|give|treat|diagnose))\b/iu;
+  /\b(dose|dosage|dosing|mg|medicat\w*|prescri\w*|(what|which) (\w+ )?(diagnosis|treatment)|(diagnosis|treatment) (for|of)|side effects?|symptoms?|suicid\w*|self[- ]harm|overdose|sedat\w*|safe (to|for) transfer|should (i|we) (admit|discharge|transfer|section|detain|restrain|seclude|give|treat|diagnose))\b/iu;
 
 export function isClinicalQuestion(query: string): boolean {
   return CLINICAL.test(query);
@@ -111,7 +115,7 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
       ),
     );
   }
-  for (const term of glossary)
+  for (const term of [...glossary, ...SAVE_HELP_TERMS])
     entries.push(
       entry(
         { key: `term:${term.term}`, group: "Glossary", title: term.term, detail: term.meaning },
@@ -143,10 +147,64 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
       ),
     );
   }
+  for (const role of ROLE_REFERENCE)
+    entries.push(
+      entry(
+        { key: `role:${role.id}`, group: "Guides", title: role.name, detail: role.summary },
+        `${role.name} roles desk`,
+        role.summary,
+      ),
+    );
+  entries.push(
+    entry(
+      { key: "reference:colour-code", group: "Glossary", title: "Colour code", detail: COLOUR_LEGEND_NOTE },
+      "Colour code colour color legend shape",
+      COLOUR_LEGEND_NOTE,
+    ),
+  );
+  for (const colour of COLOUR_LEGEND)
+    entries.push(
+      entry(
+        { key: `colour:${colour.tone}`, group: "Glossary", title: colour.meaning, detail: colour.shape },
+        `${colour.meaning} ${colour.shape} colour color code legend`,
+        COLOUR_LEGEND_NOTE,
+      ),
+    );
+  entries.push(
+    entry(
+      { key: "guide:saved", group: "Guides", title: "Is it saved?", detail: SAVED_OR_NOT.join(" ") },
+      "Is it saved? saving save",
+      SAVED_OR_NOT.join(" "),
+    ),
+  );
+  entries.push(
+    entry(
+      { key: "guide:downtime", group: "Guides", title: "If Ward Flow is down", detail: WHEN_IT_IS_DOWN.join(" ") },
+      "If Ward Flow is down downtime offline paper",
+      WHEN_IT_IS_DOWN.join(" "),
+    ),
+  );
+  for (const item of [...ACCESSIBILITY_HELP, ...INTERACTIONS_HELP])
+    entries.push(
+      entry(
+        { key: `accessibility:${item.title}`, group: "Guides", title: item.title, detail: item.text },
+        `${item.title} accessibility`,
+        item.text,
+      ),
+    );
+  for (const item of COMMON_QUESTIONS)
+    entries.push(
+      entry(
+        { key: `faq:${item.question}`, group: "Guides", title: item.question, detail: item.answer },
+        item.question,
+        item.answer,
+      ),
+    );
   return entries;
 }
 
 let cached: readonly Entry[] | undefined;
+let knownWords: ReadonlySet<string> | undefined;
 function defaultIndex(): readonly Entry[] {
   cached ??= buildIndex(GLOSSARY);
   return cached;
@@ -169,11 +227,22 @@ function strip(item: Entry): HelpSearchResult {
  * With no match, the closest topics are those sharing any one word.
  */
 export function searchHelp(query: string, role: WardTourRole, limit = 12): HelpSearchAnswer {
-  const words = questionWords(query);
-  if (words.length === 0) return { kind: "empty" };
   if (isClinicalQuestion(query)) return { kind: "clinical" };
+  const index = defaultIndex();
+  const vocabulary = (knownWords ??= new Set(index.flatMap((item) => [...item.strong, ...item.weak])));
+  // Keep exact words from every indexed reference. Only unknown words need correction against
+  // the how-to vocabulary, and correcting before stemming preserves typos such as "thme".
+  const words = [
+    ...new Set(
+      query.split(/[\s,.?!/]+/).flatMap((word) => {
+        const exact = questionWords(word);
+        return exact.every((stem) => vocabulary.has(stem)) ? exact : correctedQuestionWords(word);
+      }),
+    ),
+  ];
+  if (words.length === 0) return { kind: "empty" };
   const needed = Math.max(1, Math.ceil(words.length / 2));
-  const scored = defaultIndex().flatMap((item, order) => {
+  const scored = index.flatMap((item, order) => {
     let hits = 0;
     let score = 0;
     for (const word of words) {

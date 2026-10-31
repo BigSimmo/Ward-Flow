@@ -10,6 +10,7 @@ import type { WardRecordActor } from "../ward-discharge-records";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import { useHoldOpenForm } from "../use-hold-open-form";
 import { useWardSharedSave } from "../shell/ward-shared-save-context";
+import { saveProblem } from "../ward-save-failure";
 import { refusalReasonText } from "../ward-refusal-words";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useUndoableStep } from "../use-undoable-step";
@@ -72,6 +73,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   // Try again only reads the board again (a refused close leaves nothing waiting to send); it never sends the
   // close a second time. The chosen reason stays, so the coordinator redoes the close from what the board shows.
   const tryAgain = () => {
+    if (shared?.unconfirmedSave) return;
     setRefusedWords(null);
     setOvertakenBy(null);
     shared?.retry();
@@ -200,7 +202,11 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         {/* Beneath the button, not beside it: the ward panel is too narrow for both on one line. */}
         {closeRefusal ? <DisabledReason id={`${reasonId}-close`}>{closeRefusal}</DisabledReason> : null}
         {refusedWords !== null ? (
-          <ClosureAlert words={CLOSE_CONFLICT_DRAFT_WORDING.refused(refusedWords)} onTryAgain={tryAgain} />
+          <ClosureAlert
+            words={CLOSE_CONFLICT_DRAFT_WORDING.refused(refusedWords)}
+            onTryAgain={tryAgain}
+            pendingSave={shared?.unconfirmedSave}
+          />
         ) : null}
         <Dialog
           open={confirming}
@@ -254,6 +260,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
             wardClosureReasonLabel(overtakenBy),
           )}
           onTryAgain={tryAgain}
+          pendingSave={shared?.unconfirmedSave}
         />
       ) : null}
       {closure ? (
@@ -314,11 +321,24 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   );
 }
 
-function ClosureAlert({ words, onTryAgain }: { words: string; onTryAgain: () => void }) {
+function ClosureAlert({
+  words,
+  onTryAgain,
+  pendingSave,
+}: {
+  words: string;
+  onTryAgain: () => void;
+  pendingSave?: boolean;
+}) {
   return (
     <div className={styles.alert} role="alert" data-testid="ward-closure-alert">
       <p className={styles.alertText}>{words}</p>
-      <Button size="sm" variant="sec" onClick={onTryAgain}>
+      <Button
+        size="sm"
+        variant="sec"
+        onClick={onTryAgain}
+        disabledReason={pendingSave ? saveProblem("connectionLost") : undefined}
+      >
         {CLOSE_CONFLICT_DRAFT_WORDING.tryAgain}
       </Button>
     </div>

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ED clinician — Ward Flow</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          11pt/1.35 Arial,
+          sans-serif;
+        color: CanvasText;
+        background: Canvas;
+      }
+      main {
+        max-width: 182mm;
+        margin: auto;
+      }
+      h1 {
+        font-size: 21pt;
+        margin: 0 0 3mm;
+      }
+      h2 {
+        font-size: 12pt;
+        margin: 5mm 0 2mm;
+      }
+      header {
+        border-bottom: 1pt solid;
+        padding-bottom: 3mm;
+      }
+      header p,
+      footer p {
+        margin: 0;
+      }
+      li {
+        margin-bottom: 2.5mm;
+      }
+      ul,
+      ol {
+        padding-left: 5mm;
+        margin: 0;
+      }
+      .columns {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 9mm;
+      }
+      section,
+      li {
+        break-inside: avoid;
+      }
+      footer {
+        border-top: 0.5pt solid;
+        margin-top: 5mm;
+        padding-top: 3mm;
+        font-size: 10pt;
+      }
+      .draft {
+        font-size: 10pt;
+      }
+      @media screen {
+        body {
+          padding: 5mm;
+        }
+        .draft {
+          padding: 2mm 0;
+        }
+      }
+      @media screen and (max-width: 600px) {
+        .columns {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media print {
+        .draft {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>ED clinician</h1>
+        <p>Ward Flow · My ED board</p>
+      </header>
+      <p class="draft">Print on A4 at 100%. Use your browser’s Print command.</p>
+      <div class="columns">
+        <div>
+          <section>
+            <h2>Jobs you do most</h2>
+            <ol>
+              <li>
+                Raise a referral. Use New referral, or Raise referral on the board. Choose one or more destinations and
+                send it.
+              </li>
+              <li>
+                Record ED steps. On a patient, use Record examination, Record medically cleared and Mark handover ready.
+              </li>
+              <li>
+                Legal paperwork. Use Change legal status and Mark Form 1A received. Type any expiry time from the paper
+                form.
+              </li>
+            </ol>
+          </section>
+          <section>
+            <h2>What you cannot do</h2>
+            <ul>
+              <li>The board never re-sorts the queue. It stays longest wait first.</li>
+              <li>You cannot accept for a ward or place a patient.</li>
+              <li>
+                The app never works out Mental Health Act times. It shows only times someone typed from the paper form.
+              </li>
+            </ul>
+          </section>
+        </div>
+        <div>
+          <section>
+            <h2>Colour code</h2>
+            <ul>
+              <li>Triangle: act now.</li>
+              <li>Filled amber circle: at risk.</li>
+              <li>Tick: done.</li>
+              <li>Capsule: moving.</li>
+              <li>Ring: waiting.</li>
+              <li>Cross: declined or closed.</li>
+            </ul>
+          </section>
+          <section>
+            <h2>Keyboard shortcuts</h2>
+            <ul>
+              <li>/: Search, from the box in the header. On Settings it finds a setting.</li>
+              <li>Ctrl+K: Search, even with single-key shortcuts off. Cmd+K on a Mac.</li>
+              <li>Shift+T: Open Alerts, called Tasks on some desks.</li>
+              <li>Shift+A: Open Activity.</li>
+              <li>Shift+R: Start a new referral.</li>
+              <li>[: Fold the side menu to icons, or open it again.</li>
+              <li>Esc: Close what is open, or step back.</li>
+              <li>?: Show these shortcuts. On Handover and Referrals, list that page's own keys.</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+      <footer>
+        <p>Prototype on synthetic data. Not for real patients.</p>
+      </footer>
+    </main>
+  </body>
+</html>
