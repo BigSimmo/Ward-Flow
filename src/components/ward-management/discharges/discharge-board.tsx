@@ -41,11 +41,13 @@ import {
   releaseActionLabel,
   releaseActionPart,
   type ReleasePanelPart,
+  useOpenGroupsForPrint,
 } from "./discharge-release-actions";
 import pageStyles from "./discharges-third-edition.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 import {
   PHONE_GROUP_TONES,
+  GROUP_ORDER,
   BAND_LABELS,
   unitLabel,
   healthServiceLabel,
@@ -109,6 +111,7 @@ export function DischargeBoard({ initialAdmissionId }: { initialAdmissionId?: st
 
 function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: string }) {
   const base = useDischargeWorkspaceState({ initialAdmissionId });
+  useOpenGroupsForPrint(base.setPhoneGroupsOpen, GROUP_ORDER);
   /* Josh, 30 Oct: on Now the barrier panel and the day chart count bed releases, the list's
      own rows, and a click on either highlights within Now; it never switches to History. History keeps
      today's admission-record counts and behaviour. */
@@ -766,6 +769,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 data-act={(key === "blocked" && index === 0) || undefined}
                                 onClick={(e) => openReleaseOn(release.id, e.currentTarget, "milestones")}
                                 onKeyDown={(e) => {
+                                  // Only the row's own key press: Enter on Chase or Confirm date must reach that button.
+                                  if (e.target !== e.currentTarget) return;
                                   if (e.key === "Enter" || e.key === " ") {
                                     e.preventDefault();
                                     openReleaseOn(release.id, e.currentTarget, "milestones");

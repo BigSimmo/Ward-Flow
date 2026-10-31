@@ -27,21 +27,7 @@ import styles from "./ward-board-hero.module.css";
  * over "Dabakarn" said the place twice). The ward's name stays in the heading for a screen reader,
  * and keeps its test id.
  */
-export function WardBoardHero({
-  available,
-  constraint,
-  incoming,
-  outgoing,
-  pendingPreparation,
-  pulledIn,
-  service,
-  site,
-  stamp,
-  states,
-  unit,
-  nav,
-  tools,
-}: {
+export function WardBoardHero(props: {
   available: number;
   constraint: string | null;
   incoming: number;
@@ -58,6 +44,9 @@ export function WardBoardHero({
   /** Show shift brief and Change ward, wired as today. */
   tools: ReactNode;
 }) {
+  const { available, constraint, incoming, outgoing, pulledIn, service, site, stamp, states, unit, nav, tools } = props;
+  // The ready figure always says how many of those beds are still being made ready.
+  const pendingPreparation = props.pendingPreparation;
   // Each sentence keeps its own test id, as the old header's paragraphs did, inside one quiet line.
   const sentences: { testId: string; text: string }[] = [];
   if (pendingPreparation > 0)

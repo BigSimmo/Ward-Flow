@@ -1,3 +1,5 @@
+import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { flushSync } from "react-dom";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { durMinutes } from "@/components/wf";
 import { BLOCKER_CATEGORIES, barrierCategory, barrierLabel, type GroupKey } from "./discharge-board-model";
@@ -78,4 +80,35 @@ export function heldUpByReason(heldUp: readonly BedRelease[]): { id: string; lab
       count: heldUp.filter((release) => release.blocker !== null && barrierCategory(release.blocker) === id).length,
     }))
     .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Printing shows every release, whatever the screen shows: each group on screen stops at its
+ * first rows behind Show more, so the print opens every group first and puts the screen back after.
+ * Covers the Print list button and the browser's own print command alike.
+ */
+export function useOpenGroupsForPrint(
+  setGroupsOpen: Dispatch<SetStateAction<Partial<Record<GroupKey, boolean>>>>,
+  keys: readonly GroupKey[],
+) {
+  useEffect(() => {
+    let onScreen: Partial<Record<GroupKey, boolean>> | null = null;
+    const openAll = () =>
+      flushSync(() =>
+        setGroupsOpen((open) => {
+          onScreen = open;
+          return Object.fromEntries(keys.map((key) => [key, true]));
+        }),
+      );
+    const putBack = () => {
+      if (onScreen) setGroupsOpen(onScreen);
+      onScreen = null;
+    };
+    window.addEventListener("beforeprint", openAll);
+    window.addEventListener("afterprint", putBack);
+    return () => {
+      window.removeEventListener("beforeprint", openAll);
+      window.removeEventListener("afterprint", putBack);
+    };
+  }, [setGroupsOpen, keys]);
 }
