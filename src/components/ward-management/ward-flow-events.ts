@@ -2456,6 +2456,8 @@ export type WardFlowEvent =
   | import("./out-of-area/home-service-return").HomeServiceReturnEvent
   // Closing-the-loop (package E): an on-call directory entry checked now.
   | import("./on-call/on-call-checks").DirectoryCheckEvent
+  // Q61 (Josh, 31 Oct 2026): the site bed manager's site handover sign-off, and its Undo.
+  | import("./site-sign-off/site-handover-sign-off").SiteHandoverSignOffEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within

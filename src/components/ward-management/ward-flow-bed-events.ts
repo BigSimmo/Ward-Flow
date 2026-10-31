@@ -461,6 +461,7 @@ export function reduceBedEvent(
         // A blocker already recorded on the stay carries over when the flag supplies none.
         blocker: event.blocker ?? flaggedAdmission.blockReason ?? null,
         blockedBy: event.blocker !== undefined || flaggedAdmission.blockReason !== null ? flaggingRole : null,
+        ...(event.blocker !== undefined ? { blockerRecordedAt: event.now } : {}),
         // A bed nobody has yet left is not being made ready. Preparation only ever begins after
         // `RELEASE_BED`, and only through `SET_BED_PREPARATION` — see that case.
         preparing: false,
@@ -586,6 +587,7 @@ export function reduceBedEvent(
         blocker: event.blocker,
         blockedBy: recordedByLabel(event.role, blockedUnit.name),
         confirmedAt: event.now,
+        blockerRecordedAt: event.now,
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";

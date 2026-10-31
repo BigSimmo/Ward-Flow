@@ -277,6 +277,7 @@ export function reduceRecordedStayEvent(
                 ...release,
                 blocker: event.blocker,
                 blockedBy: recordedByLabel(event.role, findUnit(state, admission.unitId)?.name ?? admission.unitId),
+                blockerRecordedAt: event.now,
                 confirmedAt: event.now,
               }
             : release,

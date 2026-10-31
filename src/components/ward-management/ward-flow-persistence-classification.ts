@@ -232,6 +232,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_CLINICAL_CONTACT",
   "RECORD_EXAMINATION",
   "RECORD_HANDOVER_SIGN_OFF",
+  // Q61 (31 Oct 2026): a site code from the registry and a shift start. No typed text.
+  "RECORD_SITE_HANDOVER_SIGN_OFF",
   "RECORD_LEAVE_BED",
   // Owner approval 9 Oct 2026: ids, a fixed `AbsenceStep` choice and the caller's role. No typed text.
   "RECORD_ABSENT_WITHOUT_LEAVE",
@@ -354,6 +356,7 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "UNDO_SUPPORT_NOTIFICATION",
   "UNDO_REPATRIATION",
   "UNDO_HANDOVER_SIGN_OFF",
+  "UNDO_SITE_HANDOVER_SIGN_OFF",
   "UNDO_ED_STEP",
   "UNDO_TRANSPORT_STEP",
   "UNDO_DEPARTURE",
@@ -488,6 +491,9 @@ type WardFlowReviewedStringOrUnknownKey =
   // reducer refuses anything but a short slug. Neither is about a person; neither is typed.
   | "homeHospital"
   | "entryId"
+  // Q61 (31 Oct 2026): the site handover sign-off names a site code; the reducer refuses a code with
+  // no wards, and the shared server any site but the caller's own. Not about a person; never typed.
+  | "siteCode"
   // Optional reassessmentNote on `ACCEPT_REFERRAL`; checked at runtime in `eventCarriesTypedTextPayload`
   // so any dispatch carrying `reassessmentNote` locks persistence just like `overrideSignOff`.
   | "reassessmentNote";
