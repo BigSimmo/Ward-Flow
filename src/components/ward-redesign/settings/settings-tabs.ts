@@ -3,7 +3,7 @@
 // and Shortcuts move out of Display; "Data and about" becomes Help and data. The index is today's
 // (src/components/ward-management/settings/settings-search-index.ts) moved to the new tabs, with
 // rows today's cannot find: each reply target and forecast alert, clinical values, the alerts check,
-// Copy diagnostics, Show changed only, Access and the proposals.
+// Copy diagnostics, Show changed only, Access and the two new browser settings.
 import { Bell, CircleHelp, Clock, KeyRound, Palette, UserRound } from "lucide-react";
 
 import {
@@ -61,14 +61,8 @@ const ADDED: readonly SettingsSearchEntry[] = [
   { id: "clinical-values", label: "Clinical values", tab: "data", keywords: "signed reference clinical" },
   { id: "access", label: "Access", tab: "access", keywords: "roles cover grant give remove admin" },
   { id: "who-can", label: "Who can change what", tab: "access", keywords: "permissions roles rules cover" },
-  { id: "start-page", label: "Open Ward Flow on", tab: "display", keywords: "start page first home proposal" },
-  {
-    id: "theme-follows-shift",
-    label: "Theme follows the shift",
-    tab: "display",
-    keywords: "night dark automatic shift proposal",
-  },
-  { id: "text-size", label: "Text size", tab: "display", keywords: "larger font bigger accessibility proposal" },
+  { id: "start-page", label: "Open Ward Flow on", tab: "display", keywords: "start page first home" },
+  { id: "text-size", label: "Text size", tab: "display", keywords: "larger font bigger accessibility" },
 ];
 
 const INDEX: readonly SettingsSearchEntry[] = [

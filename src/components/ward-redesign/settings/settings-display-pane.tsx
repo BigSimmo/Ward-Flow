@@ -2,17 +2,17 @@
 // Settings round 3 (mock-up, 30 Oct 2026): the Display card, copied from DisplayPane in
 // src/components/ward-management/settings/settings-panes.tsx. Shortcuts and Help and tour move to
 // the Help and data tab, so this tab holds only how the app looks on this browser, beside the round 2
-// profile card. Below it, three proposed personal settings that work in this preview only and are
-// not saved anywhere; each is for Josh to keep or drop on review.
+// profile card. Below it, the two new browser settings Josh agreed on 31 Oct 2026 (Open Ward Flow on
+// and Text size; Theme follows the shift was dropped). They work in this preview only and are not
+// saved anywhere: the app must read them before they can be built (D-72). "Agreed" is said once, in
+// the card head, so no row carries a tag that a phone would cut short.
 
 import { useState, type ReactNode } from "react";
 import { Palette, Sparkles } from "lucide-react";
 
-import type { Instant } from "@/components/ward-management/ward-clock";
-import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import type { RowDensity } from "@/components/ward-management/settings/row-density";
 import { THEME_CHOICES, type ThemeChoice } from "@/components/ward-management/settings/settings-panes";
-import { Badge, Card, CardHead, Segmented, Select, SrOnly, Switch } from "@/components/wf";
+import { Card, CardHead, Segmented, Select, SrOnly, Switch } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-redesign.module.css";
@@ -45,7 +45,6 @@ export function SettingsDisplayPane({
   characterShortcuts,
   onCharacterShortcutsChange,
   startPages,
-  now,
 }: {
   profileCard: ReactNode;
   theme: ThemeChoice;
@@ -60,16 +59,12 @@ export function SettingsDisplayPane({
   onRowDensityChange: (next: RowDensity) => void;
   characterShortcuts: boolean;
   onCharacterShortcutsChange: (next: boolean) => void;
-  /** The pages this desk can open, for the proposed Open Ward Flow on. */
+  /** The pages this desk can open, for Open Ward Flow on. */
   startPages: readonly string[];
-  now: Instant;
 }) {
-  // Proposals: held in this page only, never stored, so nothing outlives the preview.
+  // Held in this page only, never stored, so nothing outlives the preview.
   const [startPage, setStartPage] = useState(startPages[0] ?? "Home");
-  const [followShift, setFollowShift] = useState(false);
   const [textSize, setTextSize] = useState<"standard" | "larger">("standard");
-  const shift = currentShift(now);
-  const nightNow = shift.name === "Night Shift";
 
   return (
     <>
@@ -138,18 +133,10 @@ export function SettingsDisplayPane({
               iconPlain
               id="proposals-title"
               icon={Sparkles}
-              title="Proposed for this browser"
-              meta="Works in this preview. Not saved"
+              title="New for this browser"
+              meta="Agreed 31 Oct. Works in this preview only, not saved"
             />
-            <SettingRow
-              setting="start-page"
-              title={
-                <>
-                  Open Ward Flow on <Badge size="sm">Proposal</Badge>
-                </>
-              }
-              sub="The page this browser opens first"
-            >
+            <SettingRow setting="start-page" title="Open Ward Flow on" sub="The page this browser opens first">
               <Select
                 aria-label="Open Ward Flow on"
                 value={startPage}
@@ -163,27 +150,8 @@ export function SettingsDisplayPane({
               </Select>
             </SettingRow>
             <SettingRow
-              setting="theme-follows-shift"
-              title={
-                <>
-                  Theme follows the shift <Badge size="sm">Proposal</Badge>
-                </>
-              }
-              sub={
-                followShift
-                  ? `Now ${shift.name.replace(" Shift", "").toLowerCase()} shift: ${nightNow ? "Dark" : "Light"}. Dark from 23:00 to 07:00`
-                  : "Dark on the night shift, light by day"
-              }
-            >
-              <RowSwitch name="Theme follows the shift" checked={followShift} onCheckedChange={setFollowShift} />
-            </SettingRow>
-            <SettingRow
               setting="text-size"
-              title={
-                <>
-                  Text size <Badge size="sm">Proposal</Badge>
-                </>
-              }
+              title="Text size"
               sub={
                 <span className={textSize === "larger" ? rx.textLarger : undefined}>
                   {textSize === "larger" ? "Every page one step larger, like this line" : "The app's standard sizes"}

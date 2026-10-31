@@ -1,6 +1,6 @@
 # Settings mock-up, round 3
 
-_Updated 2026-10-30 - Settings round 3 built as a mock-up for Josh's review; Design owns._
+_Updated 2026-10-31 - Josh answered the three round 3 questions; Theme follows the shift dropped; Design owns._
 
 **Status: mock-up only. No real `/ward-flow` screen has changed (D-74).** Built on branch
 `claude/settings-mockup-improvements-9j8gcz` of `BigSimmo/Ward-Flow`, which starts from
@@ -46,20 +46,21 @@ structure, design, usability and logic, including new smart and general settings
 12. **Styling** uses this folder's own classes; the `[class*="_x__"]` overrides that the shareable copy
     dropped are gone. The profile card's Appearance row went (it repeated Display beside it).
 
-## Questions for Josh
+## Josh's answers (31 October)
 
-1. **Proposed browser settings:** keep, drop or change each of Open Ward Flow on, Theme follows the
-   shift, and Text size? My recommendation: keep Text size and Open Ward Flow on; drop Theme follows
-   the shift unless night staff ask for it (Glare and Dark already cover most needs).
-2. **Review before saving:** keep it for every save, or only when three or more rules change?
-   My recommendation: every save, because rules change every screen and each save is audited.
-3. **Who can change what:** show it to every desk with an Access tab, or the access admin and
-   statewide coordinator only? My recommendation: every desk with Access, since it explains why a
-   control is read only.
+Josh answered "Yes to all recommendations" to the three questions below. These answer the mock-up's
+questions; they are not approval to build into the real app, which still needs Josh's explicit approval
+of the mock-up (D-74).
+
+1. **Proposed browser settings:** keep Open Ward Flow on and Text size (shown under "New for this browser · Agreed 31 Oct");
+   Theme follows the shift is dropped and removed from the mock-up.
+2. **Review before saving:** on every save. Already drawn that way.
+3. **Who can change what:** on every desk with an Access tab. Already drawn that way.
 
 ## For the real build (after approval)
 
 - One Settings file with role branches; the rule list (`settings-rule-catalogue.ts`) replaces the
   hand-written lists in `reset-baseline-modal.tsx`, `settings-search-index.ts` and `ruleDiffs`.
 - The restore dialog's "nine rules" text and the Export/Import mismatch are real-app bugs today.
-- The proposals need the app to read them (front door, theme, text scale) before they can ship (D-72).
+- The two agreed browser settings need the app to read them (the front door for Open Ward Flow on, the
+  text scale for Text size) before they can ship (D-72).

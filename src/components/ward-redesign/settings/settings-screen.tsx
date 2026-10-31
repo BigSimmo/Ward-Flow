@@ -144,12 +144,12 @@ import {
  * data replaces Data and about); the Rules tab in its own file with live impact, honest Surge, the
  * last change as one line and Show changed only; Save opens a review first, and a loaded rules file
  * lands in the same review; Download writes the saved rules; Restore lists all twelve rules and asks
- * whether this browser comes back too; an alerts check; three proposed browser settings; a Who can
+ * whether this browser comes back too; an alerts check; two new browser settings (agreed 31 Oct); a Who can
  * change what table under Access. The nurse in charge, access admin and executive views are this one
  * component, their differences marked `ROLE BRANCH (...)`, as the real component will serve them.
  */
 
-/** Pages each desk could open first, for the proposed Open Ward Flow on (its rail's own pages). */
+/** Pages each desk could open first, for Open Ward Flow on (its rail's own pages). */
 const START_PAGES: Partial<Record<string, readonly string[]>> = {
   coordinator: ["Home", "Referrals", "Waiting", "Capacity", "Movements"],
   ward: ["My ward", "Referrals", "Alerts", "Statistics"],
@@ -906,7 +906,6 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       characterShortcuts={characterShortcuts}
       onCharacterShortcutsChange={setCharacterShortcuts}
       startPages={START_PAGES[desk.role] ?? ["Home"]}
-      now={now}
     />
   );
 

@@ -449,7 +449,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 3, Alerts:** a 'Will alerts reach you here?' card beside the switches: how many of the four ways are ready, one next step, and Send a test alert (a real browser notification). It repeats none of the switches.",
     "**Round 3, Find a setting:** finds rows today's could not (each reply target and forecast alert, clinical values, Copy diagnostics, the alerts card, Access, Who can change what), and only on the tabs this desk has.",
     "**Round 3, Access:** a read-only Who can change what table, read from the app's own permission table, so it cannot drift. The third-edition drawings' statutory switches are not taken (D5, D-70, D-71).",
-    "**Proposal for you (keep or drop):** three browser settings that work in this preview only and are not saved: Open Ward Flow on (start page), Theme follows the shift (dark 23:00 to 07:00), and Text size (Standard or Larger). Each needs the app to read it before it can be built (D-72).",
+    "**Answered (31 Oct, all recommendations):** keep Open Ward Flow on and Text size, under 'New for this browser · Agreed 31 Oct'; Theme follows the shift is dropped. Both kept settings work in this preview only and need the app to read them before they can be built (D-72).",
+    "**Answered (31 Oct):** the review opens on every save, and Who can change what shows on every desk with an Access tab. Both were already drawn that way.",
     "**For the build:** the nurse in charge, access admin and executive views are this one component, so the real build is one file with role branches. The restore dialog and Find a setting read one list of the twelve rules (settings-rule-catalogue.ts), which fixes the 'nine rules' miscount at its source.",
   ],
   "sign-in": [

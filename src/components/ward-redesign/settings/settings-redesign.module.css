@@ -99,6 +99,7 @@
 /* Profile and shift, inside Display. */
 .profileWho {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-3);
   padding: var(--wf-s-3) var(--wf-s-4);
