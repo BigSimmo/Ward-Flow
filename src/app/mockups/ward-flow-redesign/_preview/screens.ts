@@ -50,7 +50,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "capacity", label: "Capacity", group: "Coordinator", appPath: "/ward-flow/capacity" },
   { slug: "movements", label: "Movements", group: "Coordinator", appPath: "/ward-flow/movements" },
   { slug: "waiting", label: "Waiting", group: "Coordinator", appPath: "/ward-flow/waiting" },
-  { slug: "eds", label: "All EDs", group: "Coordinator", appPath: "/ward-flow/ed" },
   { slug: "referrals", label: "Referrals", group: "Coordinator", appPath: "/ward-flow/referrals" },
   {
     slug: "new-referral",
@@ -70,7 +69,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "statistics", label: "Statistics", group: "Work and reports", appPath: "/ward-flow/statistics" },
   { slug: "alerts", label: "Alerts", group: "Reference", appPath: "/ward-flow/alerts" },
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
-  { slug: "out-of-area", label: "Out of area", group: "Reference", appPath: "/ward-flow/out-of-area" },
   { slug: "on-call", label: "On-call", group: "Reference", appPath: "/ward-flow/on-call" },
   { slug: "seclusion", label: "Seclusion", group: "Reference", appPath: "/ward-flow/seclusion" },
   { slug: "governance", label: "Governance", group: "Reference", appPath: "/ward-flow/governance" },

@@ -594,11 +594,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
     "**Round 3:** on a phone the owner chips read count first ('41 Waiting on you'), and rows wrap the name and place line in full.",
   ],
-  eds: [
-    "**Built from a copy of today's All EDs page**, so Cards, Table, Lanes, the filters and the preview drawer work as now.",
-    '**New:** the title counts every department ("62 waiting across 10 EDs", with "8 with someone waiting" beside it), hospital names wrap on the cards, and departments with nobody waiting share one line with an Enter button each.',
-    "**Round 2:** cards say '3 under a form' (the chip's own words) and figures wrap instead of ending in '…'. 'No one waiting' is one wording at every width and dims with the filters. The standing highlight hint is gone.",
-  ],
   referrals: [
     "**Built from a copy of today's Referrals board**, so the queue, History, highlights, the keyboard shortcuts, the decline-reason rule and Accept presentation all work as now.",
     "**New:** queue rows wrap instead of cutting the patient line off, and Offered to wards is a table (patient, ward offered to, waiting time and what the wards have answered so far).",
@@ -714,13 +709,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New (point 18, D5, D-70):** times show only as typed: \"Ends 11:42, as typed on the form\". The countdown, the band word and the progress bar that were worked out from the typed time are gone, here and on the phone. The rows' warning glyph and the Act now edge are today's own rules and stay.",
     '**New:** the form number stays in its tag and Form 1A\'s name is shortened to "Referral for examination" (the full title is in the record and the tooltip). Time not written shows its first 6 rows with Show more. Copy for handover and Record and tell are drawn as buttons, apart from the figures.',
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
-  "out-of-area": [
-    "**Built from a copy of today's Out of area page**, so Away now and History, the Days away, Region and Name orders, the filters, Plan next return, This shift and Ready to go home all work as now.",
-    "**New (D-83):** every list and notice names the person surname first; the Name order now sorts by surname.",
-    '**New:** the hero drops the hard-to-read "since the 08:30 bed meeting" strip (This shift carries the shift\'s changes) and the Checking line drops "Other records without home area or travel time 200", which was not about this list.',
-    "**New:** Home regions is a column of bars that highlight their rows; a region's nearby confirmed beds open when you choose it, instead of every region listing its wards at once.",
-    "**Round 2:** the phone hero matches the wide screen. Phone cards read 'Date passed 3 days ago · 6 days away'. Names use the record's formal name (surname first) directly.",
   ],
   agenda: [
     "**Built from a copy of today's meeting agenda**, so the four lists, Actions from earlier meetings, Done with its Undo, and recording an action (pick-list, owner, due time) all work as now.",

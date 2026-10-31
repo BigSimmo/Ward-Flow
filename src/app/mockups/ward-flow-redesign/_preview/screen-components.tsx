@@ -8,9 +8,6 @@ import type { ComponentType } from "react";
 const CapacityRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/capacity/capacity-redesign").then((module) => module.CapacityRedesign),
 );
-const EdIndexRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/eds/eds-redesign").then((module) => module.EdIndexRedesign),
-);
 const HandoverRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/handover/handover-redesign").then((module) => module.HandoverRedesign),
 );
@@ -58,9 +55,6 @@ const AlertsRedesign = dynamic<MockupPageProps>(() =>
 );
 const LegalFormsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/legal-forms/legal-forms-page").then((module) => module.LegalFormsPage),
-);
-const OutOfAreaPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/out-of-area/out-of-area-page").then((module) => module.OutOfAreaPage),
 );
 const OnCallRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/on-call/on-call-redesign").then((module) => module.OnCallRedesign),
@@ -299,7 +293,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   home: HomeActivityPage,
   movements: MovementsRedesign,
   waiting: WaitingRedesign,
-  eds: EdIndexRedesign,
   referrals: ReferralsRedesign,
   "new-referral": NewReferralRedesign,
   handover: HandoverRedesign,
@@ -313,7 +306,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   statistics: StatisticsPage,
   alerts: AlertsRedesign,
   "legal-forms": LegalFormsPage,
-  "out-of-area": OutOfAreaPage,
   "on-call": OnCallRedesign,
   seclusion: SeclusionRedesign,
   governance: GovernancePage,
