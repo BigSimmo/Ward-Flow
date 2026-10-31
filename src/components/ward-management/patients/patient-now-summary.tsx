@@ -36,6 +36,7 @@ import {
   type JourneyStage,
   StatusGlyph,
   buttonClass,
+  phoneRows,
 } from "@/components/wf";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { PhoneClearFact, getStageBedflowDetail } from "./patient-now-screen-helpers";
@@ -82,7 +83,6 @@ export type PatientNowSummaryProps = {
   movementTimeLeft: FormTimeLeft | undefined;
   now: number;
   openOperations: () => void;
-  phoneLegal: { tone?: "danger" | "warning" | undefined; value: string; label: string };
   phoneMovement: boolean;
   phoneStayStages: JourneyStage[] | undefined;
   preferredName: string | undefined;
@@ -131,7 +131,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     movementTimeLeft,
     now,
     openOperations,
-    phoneLegal,
     phoneMovement,
     phoneStayStages,
     preferredName,
@@ -187,14 +186,21 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         phoneFootKind="actions"
         phoneFoot={
           phoneMovement ? (
-            <div className={styles.phHeroActions}>
-              <Button variant="onHero" icon={Copy} onClick={handleCopySummary}>
+            <div className={phoneRows.heroPills}>
+              <Button variant="onHero" icon={Copy} className={phoneRows.heroPill} onClick={handleCopySummary}>
                 {copied ? "Copied" : "Copy handover"}
               </Button>
             </div>
           ) : undefined
         }
         location={where}
+        // Redesign: "Patient record · On ward" only repeated the pill beside the name, so it is
+        // spoken, not shown, unless it says more (a closed referral, an arrival, a CTO).
+        statusShown={
+          Boolean(liveMovement?.closure && liveMovement.stage !== "arrived") ||
+          liveMovement?.stage === "arrived" ||
+          modeMeta.label !== modeMeta.pill
+        }
         statusDetail={
           isLiveBedflow
             ? `Stage ${currentStageIndex + 1} / 7 · ${STAGES[currentStageIndex].label}`
@@ -204,6 +210,9 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 ? "Arrived · transfer complete"
                 : modeMeta.label
         }
+        // Redesign (Josh, 30 Oct): one place per fact. Legal status lives in Legal now (or the Not
+        // active card's Legal status row); on the ward the day count and discharge date live in the
+        // On ward card. With nothing left to add, the ward, Not active and CTO heroes carry no chips.
         facts={
           phoneMovement ? (
             <span className={styles.v6HeroFacts} data-testid="ward-patient-phone-figures">
@@ -230,7 +239,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 </span>
               ) : null}
             </span>
-          ) : isPhone && !isLiveBedflow ? (
+          ) : isPhone && !isLiveBedflow && mode === "ward" ? undefined : isPhone && !isLiveBedflow ? (
             /* v10 Patient, phone: three figures, the value over its label, from the record. */
             <span className={styles.v6HeroFacts} data-testid="ward-patient-phone-figures">
               {(mode === "idle" || mode === "cto"
@@ -264,7 +273,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                       now > stayLeaveBed.expectedReturn
                         ? { key: "from", value: dur(now - stayLeaveBed.expectedReturn), label: "Overdue" }
                         : { key: "from", value: dur(stayLeaveBed.expectedReturn - now), label: "From now" },
-                      { key: "legal", ...phoneLegal },
                     ]
                   : mode === "awol" && stayLeaveBed?.absentWithoutLeave
                     ? [
@@ -280,7 +288,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                           value: `${absenceStepsFor(voluntaryNow).filter((step) => stayLeaveBed.absentWithoutLeave!.steps.some((done) => done.step === step)).length}/${absenceStepsFor(voluntaryNow).length}`,
                           label: "Steps done",
                         },
-                        { key: "legal", ...phoneLegal },
                       ]
                     : mode === "ed" && awaySince !== undefined
                       ? [
@@ -298,7 +305,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                                 : "Bed",
                             label: "Held",
                           },
-                          { key: "legal", ...phoneLegal },
                         ]
                       : [
                           {
@@ -307,7 +313,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                             label: "On ward",
                             tone: "success" as const,
                           },
-                          { key: "legal", ...phoneLegal },
                           {
                             key: "out",
                             value:
@@ -372,17 +377,8 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 </span>
               ) : null}
             </span>
-          ) : (
+          ) : mode === "ward" || mode === "idle" || mode === "cto" ? undefined : (
             <span className={styles.v6HeroFacts}>
-              <span className={styles.v6HeroFact}>
-                <Scale size={14} aria-hidden="true" />
-                {/* Not active: the patient record's own status, not a closed movement's. */}
-                {mode === "cto"
-                  ? "Community treatment order, Form 5A"
-                  : ((mode === "idle"
-                      ? livePatient?.legalStatus
-                      : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ?? "Legal status not recorded")}
-              </span>
               {(mode === "leave" || mode === "awol" || mode === "ed") && (
                 <span className={styles.v6HeroFact}>
                   <BedDouble size={14} aria-hidden="true" />
@@ -398,7 +394,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                   absent since {clock(stayLeaveBed.absentWithoutLeave.since)}
                 </span>
               ) : null}
-              {(mode === "ward" || mode === "leave" || mode === "ed") && stayDay !== undefined ? (
+              {(mode === "leave" || mode === "ed") && stayDay !== undefined ? (
                 <span className={styles.v6HeroFact}>
                   <strong className={styles.v6HeroWait}>Day {stayDay}</strong>
                   on the ward

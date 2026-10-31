@@ -1,6 +1,7 @@
 "use client";
 
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import { resolveSubjectPatient } from "../ward-patient-resolver";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
@@ -369,8 +370,11 @@ export function PatientNowScreen({
 
   const targetMovement = liveMovement;
 
-  // Display names
-  const displayName = resolved.displayName;
+  // Display names. Redesign (owner rule D-83): surname first, "Surname, First", read from the
+  // resolver's formal name rather than the given-name-first display name.
+  const displayName = livePatient
+    ? resolveSubjectPatient({ patientId: livePatient.id }, { patients: [livePatient] }).formalName
+    : resolved.displayName;
   const preferredName = resolved.preferredName;
 
   // Copy handover summary
@@ -586,34 +590,10 @@ export function PatientNowScreen({
   })();
   const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
   const ctoInForce = activeCommunityTreatmentOrder(livePatient);
-  // Audit A3-3: one time left for a typed expiry, the same the Forms and Delays pages show.
-  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now, thresholds);
   const movementTimeLeft =
     isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now, thresholds) : undefined;
-  // Audit S-6: an ended form with Form 6A still to record says so, never "In force".
-  const formMovementNext = formProgression(formMovement);
-  const phoneLegal = ctoInForce
-    ? { value: ctoInForce.form, label: "In force" }
-    : formMovementNext
-      ? { value: formMovementNext.nextCode, label: "To record", tone: "warning" as const }
-      : formMovement?.legalForm
-        ? {
-            value: formMovement.legalForm.code,
-            label: formMovementLeft ? formMovementLeft.text : "In force",
-            ...(formMovementLeft && formMovementLeft.standing !== "later"
-              ? { tone: formMovementLeft.actNow ? ("danger" as const) : ("warning" as const) }
-              : {}),
-          }
-        : {
-            // A figure, so the status's first word ("Voluntary"); the full words are on Legal now.
-            value:
-              (
-                (mode === "idle"
-                  ? livePatient?.legalStatus
-                  : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ?? "Not recorded"
-              ).split(" ")[0] ?? "Not recorded",
-            label: "Legal status",
-          };
+  // Redesign (Josh, 30 Oct 2026): one place per fact. The phone hero no longer repeats the legal
+  // figure; Legal now carries the form, its typed end and Form 6A still to record.
   // Audit S-32: the leave sheet names the form in force and says when the person is on an order.
   const stayLegalStatusNow = liveMovement?.legalStatus ?? livePatient?.legalStatus;
   const leaveLegal = {
@@ -1068,7 +1048,6 @@ export function PatientNowScreen({
           movementTimeLeft={movementTimeLeft}
           now={now}
           openOperations={openOperations}
-          phoneLegal={phoneLegal}
           phoneMovement={phoneMovement}
           phoneStayStages={phoneStayStages}
           preferredName={preferredName}

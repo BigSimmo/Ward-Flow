@@ -3003,26 +3003,9 @@
   }
 }
 
-/* v10 Movement, phone (11 Oct 2026): three figures, the stage dots, Copy handover as one full-width
- * button (Back moved to the header, 20 Oct 2026), then Journey so far, Destination, the facts and
+/* v10 Movement, phone (11 Oct 2026): three figures, the stage dots, Copy handover as the kit's hero
+ * pill (31 Oct 2026; Back moved to the header, 20 Oct 2026), then Journey so far, Destination, the facts and
  * Who to call on the page. These classes render only on phone. */
-.phHeroActions {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--wf-s-2);
-  width: 100%;
-}
-
-.phHeroActions > button {
-  box-sizing: border-box;
-  width: 100%;
-  height: 48px;
-  min-height: 0;
-  justify-content: center;
-  border-radius: var(--wf-r-ctl);
-  white-space: nowrap;
-}
-
 .phFigLabel {
   display: inline-flex;
   align-items: center;
