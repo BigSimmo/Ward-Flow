@@ -35,7 +35,7 @@
   /* The last chip can scroll clear of the fade. */
   .chipRow.chipRow::after {
     content: "";
-    flex: 0 0 16px;
+    flex: 0 0 28px;
     order: 2;
   }
 

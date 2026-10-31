@@ -802,8 +802,9 @@
     scroll-padding-bottom: var(--wf-s-4);
   }
 
-  /* The three buttons wrap rather than set a row wider than the phone (F-03): Reset and Register
-     share a line when they fit, and Add patient takes its own full line. */
+  /* The three buttons stack as the Placement panel's do (Josh, 31 Oct 2026): Add patient, the one
+     main action, on its own full-width row on top, then Reset and Register sharing the row under
+     it, so nothing wraps unevenly or runs off the phone's edge. */
   .main[data-phone-form="true"] .submitActions {
     flex: 1 1 100%;
     flex-wrap: wrap;
@@ -811,10 +812,29 @@
   }
 
   .main[data-phone-form="true"] .submitActions > * {
+    flex: 0 0 auto;
     max-width: 100%;
   }
 
-  .main[data-phone-form="true"] .submitActions > :last-child {
+  /* A button held back by its reason sits in a wrapper; the button fills it. */
+  .main[data-phone-form="true"] .submitActions > :not(button) > button {
+    width: 100%;
+  }
+
+  .main[data-phone-form="true"]
+    .submitActions
+    > :is(
+      [data-testid="ward-add-patient-register-and-refer"],
+      :has(> [data-testid="ward-add-patient-register-and-refer"])
+    ) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .main[data-phone-form="true"]
+    .submitActions
+    > :is([data-testid="ward-add-patient-submit"], :has(> [data-testid="ward-add-patient-submit"])) {
+    order: -1;
     flex: 1 1 100%;
   }
 

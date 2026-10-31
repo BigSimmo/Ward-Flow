@@ -1356,39 +1356,22 @@ tr:has(+ .moreRow) > td {
   width: 100%;
 }
 
-.phoneHeroActions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--wf-s-2);
-}
+/* Add patient is Home's hero pill and the highlight chips one sliding row (the shared
+ * `phone-rows.module.css` `.heroPill`, `.chipRow` and `.chip`, Josh 31 Oct 2026). The screen's
+ * "every control 48px" rule would stretch both, so they keep Home's 40px pill and 34px chip; each
+ * keeps its own invisible 48px tap area. */
+@media (max-width: 48rem) {
+  .heroPhone .heroPill.heroPill.heroPill {
+    min-height: 40px;
+  }
 
-.phoneHeroActions > a,
-.phoneHeroActions > button {
-  width: 100%;
-  min-height: 48px;
-  justify-content: center;
-  border-radius: var(--wf-r-ctl);
-  white-space: nowrap;
-}
-
-.phoneChips {
-  display: flex;
-  gap: var(--wf-s-2);
-  margin: 0 calc(-1 * var(--wf-s-3));
-  padding: 2px var(--wf-s-3);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.phoneChips::-webkit-scrollbar {
-  display: none;
+  .phoneChips .phoneChip.phoneChip.phoneChip {
+    min-height: 0;
+  }
 }
 
 .phoneChip.phoneChip {
-  flex: none;
   gap: 6px;
-  min-height: var(--spacing-tap, 3rem);
-  white-space: nowrap;
 }
 
 /* The glyph, the words and the count each keep 6px between them (the label is its own box). */

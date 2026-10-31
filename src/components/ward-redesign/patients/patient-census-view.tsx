@@ -58,6 +58,7 @@ import {
 
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import styles from "./census.module.css";
+import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 
@@ -1164,11 +1165,11 @@ export function PhoneCensus(props: PhoneCensusProps) {
           );
         })}
       </div>
-      <div className={styles.phoneChips} role="group" aria-label="Highlight">
+      <div className={cx(styles.phoneChips, phoneRows.chipRow)} role="group" aria-label="Highlight">
         {CENSUS_HIGHLIGHTS.map((chip) => (
           <FilterChip
             key={chip.id}
-            className={styles.phoneChip}
+            className={cx(styles.phoneChip, phoneRows.chip, props.highlightCounts[chip.id] === 0 && phoneRows.zero)}
             pressed={highlight === chip.id}
             onPressedChange={() => {
               props.onTab("now");

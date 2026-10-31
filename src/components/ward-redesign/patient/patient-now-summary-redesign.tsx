@@ -27,6 +27,7 @@ import { type Patient } from "@/components/ward-management/ward-patients";
 import { dayLabel, type PatientStatusContext } from "@/components/ward-management/patients/patient-status-card";
 import { type PatientNowRecord, STAGES, clock, dur } from "@/components/ward-management/patients/patient-now-records";
 import styles from "@/components/ward-management/patients/patient-now.module.css";
+import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import {
   Badge,
   Button,
@@ -190,8 +191,8 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         phoneFootKind="actions"
         phoneFoot={
           phoneMovement ? (
-            <div className={styles.phHeroActions}>
-              <Button variant="onHero" icon={Copy} onClick={handleCopySummary}>
+            <div className={phoneRows.heroPills}>
+              <Button variant="onHero" icon={Copy} className={phoneRows.heroPill} onClick={handleCopySummary}>
                 {copied ? "Copied" : "Copy handover"}
               </Button>
             </div>

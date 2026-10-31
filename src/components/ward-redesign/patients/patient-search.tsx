@@ -101,6 +101,7 @@ import {
 
 import styles from "@/components/ward-management/search/search.module.css";
 import cs from "./census.module.css";
+import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { isCommunityReferral } from "@/components/ward-management/search/community-referral";
 import {
   LONG_WAIT_HOURS,
@@ -1029,10 +1030,10 @@ export function PatientSearchPage() {
                       11 Oct 2026): a three-up here repeated 51 / 41 / 242 directly above it. */}
                   {/* shell-17 (13 Oct 2026): no phone Commands sheet. It repeated Add patient, Menu
                       and the chips, and offered a bulk copy of patient rows on a handheld. */}
-                  <div className={cs.phoneHeroActions}>
+                  <div className={phoneRows.heroPills}>
                     <Link
                       href={WARD_ADD_PERSON_HREF}
-                      className={buttonClass({ variant: "onHero" })}
+                      className={cx(buttonClass({ variant: "onHero" }), phoneRows.heroPill, cs.heroPill)}
                       data-testid="ward-patient-search-add"
                       onClick={addPatientClick}
                     >
