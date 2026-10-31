@@ -20,11 +20,19 @@ import rx from "./settings-redesign.module.css";
  * Profile and shift, joined to Display (settings redesign, review point 10). Every line is read from
  * what the app already holds: the desk profile Settings names in its band, the access in force, the
  * service chosen in the bar, the one shift pattern every screen uses, and this browser's appearance.
- * Nothing here is typed or saved; "Go to a desk" opens the same desk switcher as the band.
+ * Nothing here is typed or saved; "Go to a desk" opens the same desk switcher as the band. In the new
+ * frame (D-91) the sidebar's who-you-are row offers it instead, so the card leaves it out.
  * Round 3: the card sits beside the Display card, so its Appearance row (which repeated Display) is
  * gone, and its rows stack in one column to fit the half-width column.
  */
-export function SettingsProfileCard({ now, onGoToDesk }: { now: Instant; onGoToDesk: () => void }) {
+export function SettingsProfileCard({
+  now,
+  onGoToDesk,
+}: {
+  now: Instant;
+  /** Left out in the new frame, whose sidebar already offers Go to a desk (D-91). */
+  onGoToDesk?: () => void;
+}) {
   const deskProfile = useSettingsDeskProfile();
   const access = useEffectiveWardAccess();
   const service = useServiceScope();
@@ -45,7 +53,7 @@ export function SettingsProfileCard({ now, onGoToDesk }: { now: Instant; onGoToD
         title="Profile and shift"
         meta={wardDesk ? "Read only" : "Read from this desk. Nothing here is saved."}
         action={
-          wardDesk ? undefined : (
+          wardDesk || !onGoToDesk ? undefined : (
             <Button variant="sec" size="sm" icon={Layers} className={styles.pill} onClick={onGoToDesk}>
               Go to a desk
             </Button>

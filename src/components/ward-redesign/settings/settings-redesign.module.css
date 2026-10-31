@@ -25,15 +25,46 @@
 /* Compact steppers on a desktop: the kit's own 36px buttons in a squared control, the value boxed
  * between them, not floating in a wide pill. Coarse pointers keep the kit's 44px buttons. */
 @media (min-width: 48.0625rem) {
+  /* Final round: the effect column is at least 13rem, so "No referrals past target if saved" fits
+   * on one line beside the stepper instead of running into it. */
   .ruleRow {
-    grid-template-columns: minmax(8rem, 1fr) 28px 9rem minmax(10.5rem, 1fr);
+    grid-template-columns: minmax(8rem, 1fr) 28px 9rem minmax(13rem, 1fr);
     min-height: 56px;
   }
 
-  /* Today's narrow-column rule (effect on its own line) keeps working with the narrower stepper. */
-  @container (max-width: 34rem) {
+  /* Today's narrow-column rule (effect on its own line under the rule) keeps working with the
+   * narrower stepper, and now starts at 38rem rather than 34rem: a 1440px screen with the sidebar
+   * leaves each column about 35rem, too tight for four tracks (the range ran under the stepper). */
+  @container (max-width: 38rem) {
     .ruleRow {
       grid-template-columns: minmax(0, 1fr) 28px 9rem;
+    }
+
+    .ruleRow .effectCell {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      column-gap: var(--wf-s-3);
+      text-align: left;
+    }
+
+    /* "Shown on…" keeps the right edge on every row, with or without a count beside it. */
+    .ruleRow .usedBy {
+      margin-inline-start: auto;
+      text-align: right;
+    }
+
+    /* A read-only rule has no stepper, so its value and "Shown on…" still fit side by side. */
+    .ruleRow:has(.ruleReadValue) {
+      grid-template-columns: minmax(8rem, 1fr) 28px 5rem minmax(13rem, 1fr);
+    }
+
+    .ruleRow:has(.ruleReadValue) .effectCell {
+      grid-column: auto;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
     }
   }
 
@@ -348,4 +379,43 @@
   overflow: visible;
   text-overflow: clip;
   white-space: normal;
+}
+
+/* Final round: the phone Theme and Row density switches at the kit standard (parts/kit-standard.css):
+ * 32px options on a 40px track with a 48px invisible tap area, drawn by the kit's own phone `.seg`.
+ * Today's `.phoneSeg` raised each option to 44px; this keeps only its full width and equal options. */
+.phoneSeg {
+  width: 100%;
+}
+
+.phoneSeg > button[role="radio"] {
+  flex: 1 1 0;
+  justify-content: center;
+}
+
+/* Access: the cards keep the pane's own gap inside their wrapper. */
+.accessStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+/* Final round: should a count still not fit, it wraps rather than running left into the stepper.
+ * Scoped to the row so it outranks today's nowrap. */
+.ruleRow .effectLine {
+  white-space: normal;
+}
+
+/* Phone: the count and "Shown on…" stack on the left under the rule, so a two-line "Shown on" never
+ * sits beside a count that drops to its last line. */
+@media (max-width: 760px) {
+  .ruleRow .effectCell {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .ruleRow .effectLine {
+    justify-content: flex-start;
+  }
 }

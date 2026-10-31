@@ -445,7 +445,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   ],
   settings: [
     "**Built from a copy of today's Settings screen**, so rule drafts, Standard and Surge, Save with Undo, Discard, Find a setting, Go to a desk and the phone layout work as now.",
-    '**New:** a sticky save bar on the Rules tab shows how many rules changed and what changed, with Full audit, Discard and Save rules (the one filled button); with nothing changed it says "No unsaved changes".',
+    '**New:** a sticky save bar on the Rules tab shows how many rules changed and what changed, with Discard and Save changes (the one filled button, "Save 3 changes"); with nothing changed it says "No unsaved changes".',
     '**New:** "Save to apply" and "Applies now" are plain words, not boxes that look like buttons, and desktop number steppers are compact (touch screens keep 44 px).',
     "**New:** Profile and shift joins Display as one tab, Display and profile. Its Profile card shows only what the app holds: desk profile, role, desk, scope, service in view, shift pattern and this browser's appearance.",
     "**Answered (30 Oct):** keep the real-data Profile card.",
@@ -460,10 +460,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 3, Alerts:** a 'Will alerts reach you here?' card beside the switches: how many of the four ways are ready, one next step, and Send a test alert (a real browser notification). It repeats none of the switches.",
     "**Round 3, Find a setting:** finds rows today's could not (each reply target and forecast alert, clinical values, Copy diagnostics, the alerts card, Access, Who can change what), and only on the tabs this desk has.",
     "**Round 3, Access:** a read-only Who can change what table. Its rules row is read from the app's own permission table (EVENT_ROLE); the cover, roles, access log and browser rows are written text matching today's Access screen, so they would need updating by hand if those rules change. The third-edition drawings' statutory switches are not taken (D5, D-70, D-71).",
-    "**Answered (31 Oct, all recommendations):** keep Open Ward Flow on and Text size, under 'New for this browser · Agreed 31 Oct'; Theme follows the shift is dropped. Both kept settings work in this preview only and need the app to read them before they can be built (D-72).",
+    "**Answered (31 Oct, all recommendations):** keep Open Ward Flow on and Text size, under 'New for this browser' (agreed 31 Oct; the date is kept here, not on the page); Theme follows the shift is dropped. Both work in this preview only and need the app to read them first (D-72).",
     "**Answered (31 Oct):** the review opens on every save, and Who can change what shows on every desk with an Access tab. Both were already drawn that way.",
     "**For the build:** the nurse in charge, access admin and executive views are this one component, so the real build is one file with role branches. The restore dialog and Find a setting read one list of the twelve rules (settings-rule-catalogue.ts), which fixes the 'nine rules' miscount at its source.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
+    "**Phone (Josh, 31 October):** On this phone switches are the kit's 32px options on a 40px track; Go to a desk is Home's 40px hero pill in today's frame.",
+
+    "**New frame (D-91):** Settings drops its own Go to a desk (hero and Profile card); the sidebar's or Menu's who-you-are row opens it. The review is 'Save 3 rule changes?' / 'Save changes'; zero counts name their noun ('No one past target').",
   ],
   "sign-in": [
     "**Built from a copy of today's Sign in screen**, so catchment, shift, role, the appearance switch and the Actions and Limits tabs work as now.",

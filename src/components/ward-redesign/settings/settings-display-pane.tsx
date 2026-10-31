@@ -4,11 +4,11 @@
 // the Help and data tab, so this tab holds only how the app looks on this browser, beside the round 2
 // profile card. Below it, the two new browser settings Josh agreed on 31 Oct 2026 (Open Ward Flow on
 // and Text size; Theme follows the shift was dropped). They work in this preview only and are not
-// saved anywhere: the app must read them before they can be built (D-72). "Agreed" is said once, in
-// the card head, so no row carries a tag that a phone would cut short.
+// saved anywhere: the app must read them before they can be built (D-72). Final round: the agreed
+// date lives in the build notes, not on the page, and the card's icon is the quiet Monitor glyph.
 
 import { useState, type ReactNode } from "react";
-import { Palette, Sparkles } from "lucide-react";
+import { Monitor, Palette } from "lucide-react";
 
 import type { RowDensity } from "@/components/ward-management/settings/row-density";
 import { THEME_CHOICES, type ThemeChoice } from "@/components/ward-management/settings/settings-panes";
@@ -132,9 +132,9 @@ export function SettingsDisplayPane({
             <CardHead
               iconPlain
               id="proposals-title"
-              icon={Sparkles}
+              icon={Monitor}
               title="New for this browser"
-              meta="Agreed 31 Oct. Works in this preview only, not saved"
+              meta="Works in this preview only, not saved"
             />
             <SettingRow setting="start-page" title="Open Ward Flow on" sub="The page this browser opens first">
               <Select

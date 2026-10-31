@@ -53,7 +53,8 @@ export function ruleImpact(
       return {
         count:
           publishedThresholds(movements, now, configuration).find((row) => row.id === "ed-access-target")?.reached ?? 0,
-        words: "over",
+        // Final round: "past target", as the referral, transfer and booking counts read.
+        words: "past target",
       };
     case "soon":
       return { count: formsInWarning(movements, now, configuration, "due"), words: "in Early warning" };
@@ -78,9 +79,12 @@ export function bedsPulledNow(movements: readonly Movement[]): number {
   return movements.filter((movement) => !movement.closure && movement.stage === "pulled").length;
 }
 
-/** "1 form in Early warning", "None over", with the noun named (round 2 wording rule). */
+/** "1 form in Early warning", "No one past target", with the noun named, zero too (round 2 wording rule). */
 export function impactText(impact: RuleImpact, noun: { one: string; many: string } | null): string {
-  if (impact.count === 0) return `None ${impact.words}`;
+  if (impact.count === 0) {
+    const none = noun === null ? "None" : noun.many === "people" ? "No one" : `No ${noun.many}`;
+    return `${none} ${impact.words}`;
+  }
   const named = noun ? ` ${impact.count === 1 ? noun.one : noun.many}` : "";
   return `${impact.count}${named} ${impact.words}`;
 }

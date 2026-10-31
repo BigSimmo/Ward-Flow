@@ -58,7 +58,7 @@ export function SettingsReviewDialog({
           : "Every screen that reads these rules changes when you save. Each save is recorded in the audit."
       }
       primary={{
-        label: saving ? "Saving…" : count === 1 ? "Save rule" : `Save ${count} rules`,
+        label: saving ? "Saving…" : count === 1 ? "Save change" : "Save changes",
         onAction: onSave,
         loading: saving,
         disabledReason: blockReason ?? (count === 0 ? "No rule has changed." : undefined),

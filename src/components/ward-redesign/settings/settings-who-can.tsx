@@ -1,9 +1,9 @@
 "use client";
 // Settings round 3 (mock-up, 30 Oct 2026): a read-only "Who can change what" table under Access, the
 // one useful idea in the third-edition HTML drawings (their statutory switches are not taken: D5,
-// D-70, D-71). Each row is read from where the app decides it, so the table cannot drift from the
-// rule: EVENT_ROLE for the rules, the configuration gate's statewide rule, showsAccessTab and
-// AccessSettings for cover and roles.
+// D-70, D-71). Only the rules row is read from the app (EVENT_ROLE.SET_CONFIGURATION and the rule
+// count); the other rows are written text that matches today's Access screen (showsAccessTab and
+// AccessSettings), so the real build must read them from there or they can drift.
 
 import { Users } from "lucide-react";
 

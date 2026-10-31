@@ -60,7 +60,7 @@ Josh answered "Yes to all recommendations" to the three questions below. These a
 questions; they are not approval to build into the real app, which still needs Josh's explicit approval
 of the mock-up (D-74).
 
-1. **Proposed browser settings:** keep Open Ward Flow on and Text size (shown under "New for this browser · Agreed 31 Oct");
+1. **Proposed browser settings:** keep Open Ward Flow on and Text size (shown under "New for this browser"; the agreed date is kept in the build notes, not on the page);
    Theme follows the shift is dropped and removed from the mock-up.
 2. **Review before saving:** on every save. Already drawn that way.
 3. **Who can change what:** on every desk with an Access tab. Already drawn that way.

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import {
   areCharacterShortcutsEnabled,
   useCharacterShortcutsPreference,
@@ -237,6 +238,14 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     if (source.kind === "executive") source.switchRole?.();
     else setIsOperatorModalOpen(true);
   };
+  // D-91 (Josh, 31 Oct 2026): in the new frame (`?shell=next`) the sidebar's who-you-are row, and on a
+  // phone the Menu's, already opens Go to a desk, so the hero and the Profile card drop their own.
+  // Find a setting still finds Go to a desk and opens the same switcher. Read as the preview's
+  // shell reads it: the router's copy, else the browser's (the shareable copy has no router context).
+  const shellParam =
+    useSearchParams()?.get("shell") ??
+    (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("shell"));
+  const heroGoToDesk = shellParam !== "next";
   const [reducedMotion, setReducedMotion] = useWardAccessibilityPreference("reduced-motion");
   const [highContrast, setHighContrast] = useWardAccessibilityPreference("high-contrast");
   const [rowDensity, setRowDensity] = useRowDensity();
@@ -310,7 +319,12 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     const next: SettingsTab = requested === "profile" ? "display" : requested;
     setTab(next);
     try {
-      window.history.replaceState(null, "", next === "rules" ? window.location.pathname : `#${next}`);
+      // Final round: Rules keeps the query (the preview's ?screen and ?shell); only the #tab goes.
+      window.history.replaceState(
+        null,
+        "",
+        next === "rules" ? `${window.location.pathname}${window.location.search}` : `#${next}`,
+      );
     } catch {
       // An address the browser refuses to rewrite only loses the deep link.
     }
@@ -884,7 +898,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
 
   const displayContent = (
     <SettingsDisplayPane
-      profileCard={<SettingsProfileCard now={now} onGoToDesk={goToDesk} />}
+      profileCard={<SettingsProfileCard now={now} onGoToDesk={heroGoToDesk ? goToDesk : undefined} />}
       theme={theme}
       onThemeChange={chooseTheme}
       railOpen={railOpen}
@@ -937,7 +951,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
 
   // Round 3: the Access tab adds the read-only Who can change what table under today's panels.
   const accessContent = accessOn ? (
-    <div data-setting="access">
+    // Final round: the wrapper keeps the pane's card gap, which a plain block dropped (the cards touched).
+    <div data-setting="access" className={rx.accessStack}>
       <AccessSettings />
       <SettingsWhoCan />
     </div>
@@ -1065,9 +1080,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             // are what this hero is for. The save strip still appears when a rule is unsaved.
             // Phone (Josh, 31 Oct 2026): Go to a desk is Home's hero pill, not a full-width button.
             actions={
-              <Button variant="onHero" icon={Layers} className={rows.heroPill} onClick={goToDesk}>
-                Go to a desk
-              </Button>
+              heroGoToDesk ? (
+                <Button variant="onHero" icon={Layers} className={rows.heroPill} onClick={goToDesk}>
+                  Go to a desk
+                </Button>
+              ) : undefined
             }
           />
 
@@ -1087,7 +1104,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             <div className={styles.phoneCard}>
               <SettingRow setting="theme" title="Theme" stacked testId="ward-settings-phone-theme">
                 <Segmented<ThemeChoice>
-                  className={styles.phoneSeg}
+                  className={rx.phoneSeg}
                   size="md"
                   label="Theme"
                   items={[...THEME_CHOICES]}
@@ -1097,7 +1114,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               </SettingRow>
               <SettingRow setting="density" title="Row density" stacked>
                 <Segmented<RowDensity>
-                  className={styles.phoneSeg}
+                  className={rx.phoneSeg}
                   size="md"
                   label="Row density"
                   items={[
@@ -1253,9 +1270,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           aside={
             <>
               {findSetting}
-              <Button variant="onHero" size="sm" icon={Layers} onClick={goToDesk}>
-                Go to a desk
-              </Button>
+              {heroGoToDesk ? (
+                <Button variant="onHero" size="sm" icon={Layers} onClick={goToDesk}>
+                  Go to a desk
+                </Button>
+              ) : null}
               {/* ROLE BRANCH (ward, admin): these desks open on Display or Access, so no Profile jump. */}
               {readsRulesOnly || adminDesk ? null : (
                 <Button variant="light" size="sm" icon={UserRound} onClick={() => chooseTab("display")}>

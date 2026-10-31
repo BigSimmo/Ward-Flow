@@ -440,7 +440,7 @@ grouped alerts (needs a new command, so it stays unbuilt).
 
 Settings round 3 was built on branch `claude/settings-mockup-improvements-9j8gcz` (started from this
 branch at 9da375a1): tabs by job, live rule impact, review before saving, an honest restore, an alerts
-check, three proposed browser settings and one component for every role. See
+check, two new browser settings (Open Ward Flow on, Text size) and one component for every role. See
 [SETTINGS-ROUND-3.md](SETTINGS-ROUND-3.md). It edits only Settings folders and their preview entries.
 
 ## Things found while building (for the real app)

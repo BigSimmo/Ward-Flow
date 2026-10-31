@@ -84,7 +84,13 @@ export function SettingsSaveBar({
         }
         data-testid="btn-save-draft"
       >
-        {saving ? "Saving…" : unsavedCount > 1 ? `Save ${unsavedCount} rules` : "Save rules"}
+        {saving
+          ? "Saving…"
+          : unsavedCount > 1
+            ? `Save ${unsavedCount} changes`
+            : unsavedCount === 1
+              ? "Save 1 change"
+              : "Save changes"}
       </Button>
     </div>
   );

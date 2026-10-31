@@ -210,11 +210,11 @@ export function RuleRow({
           </span>
         ) : null}
       </span>
-      <span className={styles.effectCell}>
+      <span className={cx(styles.effectCell, rx.effectCell)}>
         {/* Site review (12 Oct 2026): plain words, no build notes. */}
-        {effect ? <span className={styles.effectLine}>{effect}</span> : null}
+        {effect ? <span className={cx(styles.effectLine, rx.effectLine)}>{effect}</span> : null}
         {usedBy ? (
-          <span className={styles.usedBy} title={shownOn(usedBy)}>
+          <span className={cx(styles.usedBy, rx.usedBy)} title={shownOn(usedBy)}>
             {shownOn(usedBy)}
           </span>
         ) : null}
