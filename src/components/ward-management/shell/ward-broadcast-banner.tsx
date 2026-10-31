@@ -15,10 +15,16 @@ import {
   formatTimeRemaining,
   type WardBroadcastAlert,
 } from "@/components/ward-management/alerts/ward-broadcast-model";
-import { bannerEntriesForDesk, type BannerEntry } from "@/components/ward-management/alerts/global-alert-view";
+import {
+  bannerEntriesForDesk,
+  type AlertDesk,
+  type BannerEntry,
+} from "@/components/ward-management/alerts/global-alert-view";
 import { useActNowNotificationPreference } from "@/components/ward-management/shell/ward-act-now-notifications";
-import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
-import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { OFFICER_DESK_ID, currentDeskId } from "@/components/ward-management/settings/workstation-desks";
+import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
+import { useAccessShellRole, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { calendarDateOf, type Instant } from "@/components/ward-management/ward-clock";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
@@ -169,6 +175,34 @@ function ControlledBroadcastBanner({
   );
 }
 
+/**
+ * The desk the banner speaks for. A coordinator, and every desk while the role-access flag is off,
+ * keeps the route's desk as before. Another desk keeps the route's desk only on a place's page (a
+ * ward, ED, team or officer page, which its access gate already let it open): D-80 has a site bed
+ * manager answer for the ward whose page it is on. On any other page it is its own desk, with the
+ * place its access names, and never the coordinator's desk (access audit, 31 Oct 2026).
+ */
+function bannerDesk(
+  routeRole: WardChromeRole,
+  routeDeskId: string | null,
+  access: WardAccess,
+  accessRole: WardChromeRole,
+): AlertDesk {
+  if (access.role === "coordinator" || routeRole !== "coordinator") {
+    return { role: routeRole, id: routeRole === "coordinator" ? COORDINATOR_DESK_ACKNOWLEDGER_ID : routeDeskId };
+  }
+  const scope = access.scope;
+  const id =
+    scope.kind === "ward"
+      ? (scope.unitIds[0] ?? null)
+      : scope.kind === "ed"
+        ? scope.edId
+        : access.role === "officer"
+          ? OFFICER_DESK_ID
+          : null;
+  return { role: accessRole, id };
+}
+
 function ContextBroadcastBanner({ currentUnitId }: { currentUnitId?: string }) {
   const { broadcastAlerts, dispatch, units, movements, patients, referrals } = useWardFlowSelect(
     "broadcastAlerts",
@@ -181,9 +215,11 @@ function ContextBroadcastBanner({ currentUnitId }: { currentUnitId?: string }) {
   const now = useWardFlowClock();
   const pathname = usePathname() ?? "";
   const routeRole = wardChromeRole(pathname);
-  const role = currentUnitId ? "ward" : routeRole;
-  const routeDesk = currentUnitId ?? currentDeskId(pathname);
-  const desk = { role, id: role === "coordinator" ? COORDINATOR_DESK_ACKNOWLEDGER_ID : routeDesk };
+  const access = useEffectiveWardAccess();
+  const accessRole = useAccessShellRole(routeRole);
+  const desk: AlertDesk = currentUnitId
+    ? { role: "ward", id: currentUnitId }
+    : bannerDesk(routeRole, currentDeskId(pathname), access, accessRole);
 
   const entries = bannerEntriesForDesk(broadcastAlerts, movements, desk, now, units);
   const top = entries[0];
