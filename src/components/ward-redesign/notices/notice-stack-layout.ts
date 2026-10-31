@@ -16,7 +16,7 @@ const TOAST_STACK_VISIBLE_DEPTH = 3;
 
 type StackableToast = { id: string; tone: string; leaving?: boolean };
 
-export type ToastStackSlot = {
+type ToastStackSlot = {
   /** Grid row, from 1. Folded cards share the newest folded card's row. */
   row: number;
   /** 0 for a card in full view; 1, 2… for cards folded behind the newest. */

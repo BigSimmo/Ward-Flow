@@ -114,7 +114,7 @@ const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent fi
  * the NAMED branch is unreachable from the seed and is tested with a hand-built fixture;
  * `RAISE_REFERRAL` links one raised live, so it is unreachable-from-the-seed, not dead.**
  */
-export function personLine(movement: Movement, referrals: Referral[], patients: readonly Patient[]): string {
+function personLine(movement: Movement, referrals: Referral[], patients: readonly Patient[]): string {
   const referral = referralForMovement(movement, referrals);
   if (referral === undefined) {
     return "No referral is recorded against this movement, so there is no person to name.";

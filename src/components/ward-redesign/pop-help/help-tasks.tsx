@@ -17,7 +17,7 @@ import local from "./help.module.css";
  * Whether Show me can walk this task for this desk on this device (#1119's `showMeAvailable`): it has
  * steps, the device draws them, and any screen it opens is one this desk may open.
  */
-export function canShowTask(task: MockTask, role: WardTourRole, home: string | undefined, phone: boolean): boolean {
+function canShowTask(task: MockTask, role: WardTourRole, home: string | undefined, phone: boolean): boolean {
   if (!task.showMe?.length || (phone && task.computerOnly)) return false;
   return !task.go || howToHref(task.go, role, home) !== undefined;
 }

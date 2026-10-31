@@ -64,7 +64,7 @@ function joinedWords(query: string): string[] {
  * True when every typed word occurs in at least one of `fields`. `ignoreWords` are category words
  * ("ward", "team") that only choose a kind of record, so "Graylands ward" still finds Graylands.
  */
-export function fieldsMatchEveryWord(query: string, fields: Fields, ignoreWords: readonly string[] = []): boolean {
+function fieldsMatchEveryWord(query: string, fields: Fields, ignoreWords: readonly string[] = []): boolean {
   const words = joinedWords(query).filter((word) => !ignoreWords.includes(word));
   if (words.length === 0) return false;
   const { text, digits } = folded(fields);
@@ -80,7 +80,7 @@ export function fieldsMatchEveryWord(query: string, fields: Fields, ignoreWords:
  * letters out from a word in the fields (none under four letters). Callers use it only when the
  * exact pass found nothing, and never for people or record numbers.
  */
-export function fieldsNearlyMatch(query: string, fields: Fields, ignoreWords: readonly string[] = []): boolean {
+function fieldsNearlyMatch(query: string, fields: Fields, ignoreWords: readonly string[] = []): boolean {
   const words = joinedWords(query).filter((word) => !ignoreWords.includes(word));
   if (words.length === 0) return false;
   const { text } = folded(fields);

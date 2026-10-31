@@ -38,6 +38,4 @@ export const MAX_LINES_BASELINE = {
   "src/components/ward-redesign/ward/ward-screen.tsx": 2600,
   "src/components/ward-redesign/ward/ward-home-tab.tsx": 2300,
   "src/components/ward-redesign/home-activity/placement-panel.tsx": 2750,
-  "src/components/ward-redesign/as-ward-waiting/delays-board-redesign.tsx": 1600,
-  "src/components/ward-redesign/as-ed-waiting/as-ed-delays-board-redesign.tsx": 1600,
 };

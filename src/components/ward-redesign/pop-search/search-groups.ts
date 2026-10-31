@@ -17,7 +17,7 @@ import type { SearchResultGroup, SearchResultItem } from "@/components/ward-mana
 import type { ContactSearchResult, SuburbSearchResult } from "@/components/ward-redesign/pop-search/search-directory";
 
 /** The same question test as Help's `looksLikeHelpQuestion` and #1123's `leadingGroups`. */
-export function isAppQuestion(query: string): boolean {
+function isAppQuestion(query: string): boolean {
   return /^\s*(how|where|why|what)\b\s*\S/i.test(query);
 }
 
