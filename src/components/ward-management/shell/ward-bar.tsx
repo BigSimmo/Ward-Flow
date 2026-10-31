@@ -88,6 +88,7 @@ import {
 } from "./ward-bar-model";
 import { useBandScrolled, useBarScrolled } from "./ward-bar-scroll";
 import {
+  confirmLeavingShell,
   PhoneMenuEntry,
   WardBarBack,
   WardBarDrawerTriggers,
@@ -345,7 +346,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
   // The slide-out fills this with its guarded close, which asks before discarding a draft.
   const referralCloseRef = useRef<(() => void) | null>(null);
-  const tasksDismissalGuardRef = useRef<(() => boolean) | null>(null);
+  // The drawer's guard takes the step to repeat after a styled Discard (kit confirm).
+  const tasksDismissalGuardRef = useRef<((retry?: () => void) => boolean) | null>(null);
+  // The latest close and open, for that repeated step (set after each render, below).
+  const popoverStepsRef = useRef<{
+    close: (id: WardBarPopoverId, announce?: boolean) => void;
+    open: (id: WardBarPopoverId) => void;
+  } | null>(null);
   // `ward-service-store.ts` — a `sessionStorage`-backed module store, not component-local state, so
   // the choice survives a remount (a route change unmounts and remounts this bar) and stays in sync
   // with any other reader (`WardRail`, a future scoped screen) in the same tab. See that file's own
@@ -493,7 +500,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     (id: WardBarPopoverId, announce = true) => {
       // Do not issue another Back while the first one is still waiting for popstate.
       if (closingViaHistoryRef.current !== null) return;
-      if (id === "tasks" && tasksDismissalGuardRef.current?.() === false) return;
+      if (
+        id === "tasks" &&
+        tasksDismissalGuardRef.current?.(() => popoverStepsRef.current?.close(id, announce)) === false
+      )
+        return;
       if (typeof window === "undefined" || !window.history) {
         setOpenPanel((current) => (current === id ? null : current));
         if (announce) announceToWardShell("Closed.");
@@ -549,7 +560,12 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // A replacement open must wait for the pending Back; otherwise its popstate would
       // be indistinguishable from the drawer that initiated the close.
       if (closingViaHistoryRef.current !== null) return;
-      if (openPanel === "tasks" && id !== "tasks" && tasksDismissalGuardRef.current?.() === false) return;
+      if (
+        openPanel === "tasks" &&
+        id !== "tasks" &&
+        tasksDismissalGuardRef.current?.(() => popoverStepsRef.current?.open(id)) === false
+      )
+        return;
       setOpenPanel(id);
       if (typeof window !== "undefined" && window.history && isDrawerPanel(id)) {
         if (window.history.state?.wardDrawer) {
@@ -591,6 +607,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       tasksActiveCount,
     ],
   );
+  useEffect(() => {
+    popoverStepsRef.current = { close: closePopover, open: openPopover };
+  }, [closePopover, openPopover]);
   const activitySheet = usePhoneActivitySheet(isPhone, phoneReturnTarget, activityTriggerRef, openPopover);
   /**
    * Opens the referral slide-out with `request`. Every open gets a new id, so the slide-out mounts
@@ -778,25 +797,24 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const openMovement = useCallback(
     (movementId: string, action?: "refer" | "contact", href?: string) => {
-      const globalWindow =
-        typeof window !== "undefined"
-          ? (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
-          : null;
-      if (globalWindow?.__wardFlowConfirmNavigation && !globalWindow.__wardFlowConfirmNavigation()) return;
-      // A task row is an in-drawer navigation affordance. Close the Sheet in the same event before
-      // routing so its portal cannot remain over the destination while the new page mounts.
-      setOpenPanel(null);
-      if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
-        const nextState = { ...window.history.state };
-        delete nextState.wardDrawer;
-        window.history.replaceState(nextState, "");
-      }
-      startTransition(() => {
-        router.push(
-          href ??
-            `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
-        );
-      });
+      // With the styled confirm, Leave without saving runs `go` afterwards; the browser's confirm runs it now.
+      const go = () => {
+        // A task row is an in-drawer navigation affordance. Close the Sheet in the same event before
+        // routing so its portal cannot remain over the destination while the new page mounts.
+        setOpenPanel(null);
+        if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
+          const nextState = { ...window.history.state };
+          delete nextState.wardDrawer;
+          window.history.replaceState(nextState, "");
+        }
+        startTransition(() => {
+          router.push(
+            href ??
+              `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+          );
+        });
+      };
+      if (confirmLeavingShell(go)) go();
     },
     [router, setOpenPanel],
   );
@@ -804,20 +822,18 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // A discharge notification task opens the stay's checklist on the discharges board.
   const openDischarge = useCallback(
     (admissionId: string) => {
-      const globalWindow =
-        typeof window !== "undefined"
-          ? (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
-          : null;
-      if (globalWindow?.__wardFlowConfirmNavigation && !globalWindow.__wardFlowConfirmNavigation()) return;
-      setOpenPanel(null);
-      if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
-        const nextState = { ...window.history.state };
-        delete nextState.wardDrawer;
-        window.history.replaceState(nextState, "");
-      }
-      startTransition(() => {
-        router.push(dischargeHref(admissionId));
-      });
+      const go = () => {
+        setOpenPanel(null);
+        if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
+          const nextState = { ...window.history.state };
+          delete nextState.wardDrawer;
+          window.history.replaceState(nextState, "");
+        }
+        startTransition(() => {
+          router.push(dischargeHref(admissionId));
+        });
+      };
+      if (confirmLeavingShell(go)) go();
     },
     [router, setOpenPanel],
   );

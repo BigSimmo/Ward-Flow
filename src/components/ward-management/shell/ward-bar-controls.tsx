@@ -40,10 +40,14 @@ import styles from "./ward-bar.module.css";
  * it. With no Ward Flow history it replaces the page, and a half-typed form was dropped without the
  * question the desktop Back link asks. Ask the same mounted guards first.
  */
-function confirmLeavingForms(): boolean {
-  const confirmNavigation = (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
-    .__wardFlowConfirmNavigation;
-  return confirmNavigation ? confirmNavigation() : true;
+export function confirmLeavingShell(proceed?: () => void): boolean {
+  if (typeof window === "undefined") return true;
+  // With the kit's styled confirm mounted, the guard returns false at once, asks, and on Leave
+  // without saving runs `proceed`, which passes this check once. Without it, the browser asks.
+  const confirmNavigation = (
+    window as typeof window & { __wardFlowConfirmNavigation?: (proceed?: () => void) => boolean }
+  ).__wardFlowConfirmNavigation;
+  return confirmNavigation ? confirmNavigation(proceed) : true;
 }
 
 export function WardBarBack({
@@ -67,9 +71,11 @@ export function WardBarBack({
         aria-label="Back"
         data-testid="ward-bar-phone-back"
         data-sheet-inert-skip={liveOverSheet ? "" : undefined}
-        onClick={() =>
-          navigateContextuallyBack(router, parentHref, hasMovedInWardFlow, markWardRouteReplace, confirmLeavingForms)
-        }
+        onClick={function goBack() {
+          navigateContextuallyBack(router, parentHref, hasMovedInWardFlow, markWardRouteReplace, () =>
+            confirmLeavingShell(goBack),
+          );
+        }}
       >
         <ArrowLeft aria-hidden="true" strokeWidth={1.75} />
       </button>
