@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button, buttonClass, Card, CardHead, StatusGlyph } from "@/components/wf";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
 import { HELD_UP_HREF, HELD_UP_LINK_LABEL } from "./held-up";
 import type { CapacityModel } from "./use-capacity-model";
@@ -13,8 +14,21 @@ import styles from "./capacity-redesign.module.css";
  * shift", in the row under the bed map. Who has not confirmed is one line with its button beside
  * it; held-up releases keep Discharges' two groups and names (Josh, 30 Oct 2026) and its link.
  */
-export function ShiftChecks({ model, onAskWard }: { model: CapacityModel; onAskWard: (unitId: string) => void }) {
+export function ShiftChecks({
+  model,
+  onAskWard,
+  siteName,
+}: {
+  model: CapacityModel;
+  /** Absent for a desk that may not ask a ward to confirm (asking is the coordinator's step). */
+  onAskWard?: (unitId: string) => void;
+  /** Role view (site bed manager): the site whose wards this card counts. */
+  siteName?: string;
+}) {
   const { confirmations, heldUp, now } = model;
+  // Role view: a site bed manager confirms its own wards' beds on the ward's page, so it gets that
+  // link instead of Ask; a desk that can open neither (executive) gets the figure alone.
+  const canOpen = useCanOpenHref();
   const first = confirmations.waiting[0];
   const groups = [
     { title: "Same day", rows: heldUp.sameDay },
@@ -32,7 +46,7 @@ export function ShiftChecks({ model, onAskWard }: { model: CapacityModel; onAskW
             {confirmations.confirmed} of {confirmations.total}
             <span className={styles.shiftNoun}>confirmed</span>
           </span>
-          {first ? (
+          {first && onAskWard ? (
             <Button
               size="sm"
               variant="ghost"
@@ -42,6 +56,14 @@ export function ShiftChecks({ model, onAskWard }: { model: CapacityModel; onAskW
             >
               Ask
             </Button>
+          ) : first && canOpen(`/ward-flow/ward/${first.id}`) ? (
+            <Link
+              href={`/ward-flow/ward/${first.id}`}
+              aria-label={`Confirm beds on ${first.name}`}
+              className={buttonClass({ variant: "ghost", size: "sm" })}
+            >
+              Confirm
+            </Link>
           ) : null}
         </div>
         <p className={styles.mutedXs}>
@@ -51,7 +73,7 @@ export function ShiftChecks({ model, onAskWard }: { model: CapacityModel; onAskW
               {confirmations.waiting.length > 1 ? `, and ${confirmations.waiting.length - 1} more` : ""}
             </>
           ) : (
-            "Every open ward has confirmed since the shift began"
+            `Every open ward${siteName ? ` at ${siteName}` : ""} has confirmed since the shift began`
           )}
         </p>
       </section>
@@ -61,13 +83,15 @@ export function ShiftChecks({ model, onAskWard }: { model: CapacityModel; onAskW
             {heldUp.total}
             <span className={styles.shiftNoun}>held-up {heldUp.total === 1 ? "release" : "releases"}</span>
           </span>
-          <Link
-            href={HELD_UP_HREF}
-            aria-label={HELD_UP_LINK_LABEL}
-            className={buttonClass({ variant: "ghost", size: "sm" })}
-          >
-            See all
-          </Link>
+          {canOpen(HELD_UP_HREF) ? (
+            <Link
+              href={HELD_UP_HREF}
+              aria-label={HELD_UP_LINK_LABEL}
+              className={buttonClass({ variant: "ghost", size: "sm" })}
+            >
+              See all
+            </Link>
+          ) : null}
         </div>
         {heldUp.total === 0 ? (
           <p className={styles.mutedXs}>No bed release has a recorded blocker.</p>

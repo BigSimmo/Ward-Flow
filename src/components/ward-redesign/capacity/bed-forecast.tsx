@@ -7,6 +7,7 @@ import { ChevronRight } from "lucide-react";
 import { Button, Card, CardHead, Segmented } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { BEDS_FORECAST_LIMITS } from "@/components/ward-management/capacity/beds-forecast";
 import type { ForecastLever } from "@/components/ward-management/forecast/forecast-levers";
 import type { HorizonDay } from "@/components/ward-management/forecast/forecast-horizon";
@@ -35,10 +36,13 @@ export function BedForecast({
   model,
   onTryScenario,
   stacked = false,
+  siteName,
 }: {
   model: CapacityModel;
   onTryScenario: () => void;
   stacked?: boolean;
+  /** Role view (site bed manager): the forecast covers this site's wards, so it is named for it. */
+  siteName?: string;
 }) {
   const [view, setView] = useState<"network" | "ward">("network");
   const { forecast, gapTotals, days, week, forecastModel, sourceSummary, now } = model;
@@ -61,7 +65,7 @@ export function BedForecast({
       <Segmented
         label="Forecast view"
         items={[
-          { id: "network" as const, label: "Network" },
+          { id: "network" as const, label: siteName ? "Site" : "Network" },
           { id: "ward" as const, label: "By ward" },
         ]}
         value={view}
@@ -152,12 +156,17 @@ export function BedForecast({
             leads "How this is worked out". */}
         <span>Estimate only</span>
         <HowWorkedOut>
-          <p>New ED arrivals are not predicted, and a free bed may not suit the person waiting.</p>
           <p>
-            From {sourceSummary.discharges} recorded discharges on {sourceSummary.wards} wards and planned admissions.{" "}
-            {sourceSummary.overdueNotHeldUp} releases are overdue and not held up; {weekOut} beds are due out in the
-            next {bars.length} days. Not yet counted: {forecastModel.notCounted.leaveBeds} beds held for people on
-            leave, {forecastModel.notCounted.repatriations} repatriations booked.
+            {siteName ? `Estimate for the wards at ${siteName}. ` : ""}New ED arrivals are not predicted, and a free bed
+            may not suit the person waiting.
+          </p>
+          <p>
+            From {plural(sourceSummary.discharges, "recorded discharge", "recorded discharges")} on{" "}
+            {plural(sourceSummary.wards, "ward", "wards")} and planned admissions.{" "}
+            {plural(sourceSummary.overdueNotHeldUp, "release is", "releases are")} overdue and not held up;{" "}
+            {plural(weekOut, "bed is", "beds are")} due out in the next {bars.length} days. Not yet counted:{" "}
+            {plural(forecastModel.notCounted.leaveBeds, "bed", "beds")} held for people on leave,{" "}
+            {plural(forecastModel.notCounted.repatriations, "repatriation", "repatriations")} booked.
           </p>
           <p>
             Tomorrow&apos;s figure takes the ready beds that fit, adds the discharges recorded for today and tomorrow,
@@ -220,8 +229,12 @@ function daySub(day: HorizonDay): string {
   return day.weekend ? "Weekend" : "May move";
 }
 
+function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
 function LeverItem({ lever }: { lever: ForecastLever }) {
-  const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+  const canOpen = useCanOpenHref();
   const content =
     lever.kind === "clear_held_up"
       ? {
@@ -247,16 +260,28 @@ function LeverItem({ lever }: { lever: ForecastLever }) {
             detail: "Dates passed: they widen the range only",
             uplift: 0,
           };
+  const inner = (
+    <>
+      <span className={styles.helpTitle}>{content.title}</span>
+      <span className={styles.srOnly}>. {content.detail}. </span>
+      <span className={`${styles.tag} ${content.uplift > 0 ? styles.tagGood : ""}`}>
+        {content.uplift > 0 ? `up to +${content.uplift}` : "range only"}
+      </span>
+    </>
+  );
+  // Role view: a desk that cannot open Discharges (executive) reads the step without a link.
   return (
     <li>
-      <Link href={content.action.href} className={styles.helpLink} title={content.detail}>
-        <span className={styles.helpTitle}>{content.title}</span>
-        <span className={styles.srOnly}>. {content.detail}. </span>
-        <span className={`${styles.tag} ${content.uplift > 0 ? styles.tagGood : ""}`}>
-          {content.uplift > 0 ? `up to +${content.uplift}` : "range only"}
+      {canOpen(content.action.href) ? (
+        <Link href={content.action.href} className={styles.helpLink} title={content.detail}>
+          {inner}
+          <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
+        </Link>
+      ) : (
+        <span className={`${styles.helpLink} ${styles.helpStatic}`} title={content.detail}>
+          {inner}
         </span>
-        <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
-      </Link>
+      )}
     </li>
   );
 }
