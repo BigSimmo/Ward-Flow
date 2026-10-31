@@ -1,5 +1,6 @@
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { groupOf, wardIsStale, type HandoverRow, type HandoverWard } from "./handover-model";
+import { groupOf, handoverSignedBefore, wardIsStale, type HandoverRow, type HandoverWard } from "./handover-model";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { SignOffCheck } from "./handover-panels";
 
 /**
@@ -71,4 +72,20 @@ export function handoverSignOffChecks({
       ? { id: "meet", done: true, text: `Meeting timed, ${meetings[0]!.minutes} min` }
       : { id: "meet", done: false, text: "Meeting not timed" },
   ];
+}
+
+/**
+ * Decision 41 (Josh, 31 Oct 2026): this sheet's sign-off. Given a ward, only that ward's sign-off
+ * counts; a wider sheet counts only sign-offs that name no ward, so one ward's sign-off never marks
+ * another sheet signed. Returns the time and role of the latest one before the handover at `shiftAt`.
+ */
+export function sheetSignOff(
+  signOffs: readonly { at: Instant; by: WardFlowRole; unitId?: string }[],
+  shiftAt: Instant,
+  unitId: string | undefined,
+): { signedAt: Instant | null; signedBy: WardFlowRole | null } {
+  const own = signOffs.filter((record) => record.unitId === unitId);
+  const signedAt = handoverSignedBefore(own, shiftAt);
+  const signedBy = signedAt === null ? null : ([...own].reverse().find((record) => record.at === signedAt)?.by ?? null);
+  return { signedAt, signedBy };
 }
