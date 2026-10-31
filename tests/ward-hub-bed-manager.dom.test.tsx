@@ -116,7 +116,14 @@ describe("Places as the site bed manager (D-80)", () => {
     expect(preview().queryByRole("button", { name: /^ask to confirm$/iu })).not.toBeInTheDocument();
     const greyed = preview().getByRole("button", { name: new RegExp(`^Open ${OTHER_WARD.name}`, "u") });
     expect(greyed).toHaveAttribute("aria-disabled", "true");
-    expect(preview().getByText("This screen is not part of the Site bed manager desk.")).toBeInTheDocument();
+    // Shown in full as its own line (QA 31 Oct), and read out with the greyed button.
+    const sentence = "This screen is not part of the Site bed manager desk.";
+    const shown = preview()
+      .getAllByText(sentence)
+      .filter((node) => node.getAttribute("aria-hidden") === "true");
+    expect(shown).toHaveLength(1);
+    const describedBy = greyed.getAttribute("aria-describedby") ?? "";
+    expect(describedBy.split(" ").some((id) => document.getElementById(id)?.textContent === sentence)).toBe(true);
   });
 
   it("leaves the statewide coordinator's Places without a Your site group", () => {

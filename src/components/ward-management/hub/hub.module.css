@@ -837,7 +837,8 @@
  * (`.seg .segItem`), so at 360px the four kinds ran 15px past the track and cut "Teams 64". Here
  * they share the track and tighten their sides instead. Doubled class to outrank the kit rule. */
 .phoneKindBar.phoneKindBar > div > button {
-  flex: 1 1 0;
+  /* QA 31 Oct: widths follow the labels, so "Teams 64" keeps its own room off the track's edge. */
+  flex: 1 1 auto;
   min-width: 0;
   padding-inline: 6px;
 }
@@ -1039,23 +1040,6 @@
   }
 }
 
-/* Audit 11 Oct 2026, iPad: pinning moves to the preview, so the rows lose their column of stars.
-   Device sweep (24 Oct 2026): the header and the rows keep the same right padding instead of the
-   star's 36px, so the confirmed column sits over its figures. */
-@media (min-width: 48.0625rem) and (max-width: 73.75rem) {
-  .pinButton {
-    display: none;
-  }
-
-  .listHead {
-    padding-right: var(--wf-s-3);
-  }
-
-  .resultMain {
-    padding-right: var(--wf-s-3);
-  }
-}
-
 /* Review point 21 (Josh approved 31 Oct 2026): Places is a directory. Search sits in the header. */
 .heroSearch {
   flex: 1 1 32rem;
@@ -1202,4 +1186,26 @@
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
   line-height: var(--wf-lh-13);
+}
+
+/* QA 31 Oct: the confirmed column's heading sits over its right-aligned figures and wraps rather
+   than running past the card edge. */
+.listHead > :last-child {
+  justify-self: end;
+  text-align: right;
+  white-space: normal;
+}
+
+/* ROLE BRANCH (bed_manager): the closed page's sentence beside a greyed Open, in full. */
+.closedReason {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-align: right;
+}
+
+.phonePreviewSheet .closedReason {
+  margin-top: var(--wf-s-2);
+  text-align: left;
 }

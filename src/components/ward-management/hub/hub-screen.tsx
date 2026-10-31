@@ -297,6 +297,14 @@ export function HubScreen() {
           )
           .at(-1);
 
+  // Phone sheet footer: Ask to confirm (coordinator, a ward with a confirmation and no open ask), else Pin.
+  const phoneFooterAsks =
+    selected !== undefined &&
+    deskSite === undefined &&
+    selected.kind === "ward" &&
+    selected.confirmedAt !== undefined &&
+    selectedRequest === undefined;
+
   function select(id: string) {
     setSelectedId(id);
   }
@@ -433,13 +441,18 @@ export function HubScreen() {
     );
   }
 
-  /** Phone: Pin and Statistics stay reachable as quiet links under the preview. */
-  function renderPhonePreviewLinks(selected: HubEntry) {
+  /**
+   * Phone: Statistics stays reachable as a quiet link under the preview, and Pin too when the
+   * sheet's footer holds Ask to confirm instead (QA 31 Oct: one Pin control, never two).
+   */
+  function renderPhonePreviewLinks(selected: HubEntry, pinInFooter: boolean) {
     return (
       <div className={styles.phonePreviewLinks}>
-        <button type="button" onClick={() => toggleHubPin(selected.id)} aria-pressed={isPinned(selected.id)}>
-          {isPinned(selected.id) ? "Unpin" : "Pin"}
-        </button>
+        {pinInFooter ? null : (
+          <button type="button" onClick={() => toggleHubPin(selected.id)} aria-pressed={isPinned(selected.id)}>
+            {isPinned(selected.id) ? "Unpin" : "Pin"}
+          </button>
+        )}
         {selected.kind === "ward" && canOpen(wardStatisticsHref(selected.id)) ? (
           <Link href={wardStatisticsHref(selected.id)}>View statistics</Link>
         ) : selected.kind === "ed" && canOpen(edStatisticsHref(selected.id)) ? (
@@ -589,6 +602,13 @@ export function HubScreen() {
               Statistics are unavailable for this regional entry. Community directory; no page for this regional entry.
             </p>
           ) : null}
+          {/* ROLE BRANCH (bed_manager): the closed page's sentence in full, wrapping (QA 31 Oct). The
+              greyed button below carries it for a screen reader. */}
+          {canOpen(selected.href) ? null : (
+            <p className={styles.closedReason} aria-hidden="true">
+              {closedSentence}
+            </p>
+          )}
           <div className={styles.ctaActions}>
             {/* Ward and ED only: the statistics builders resolve against a real id this entry carries. */}
             {selected.kind === "ward" && canOpen(wardStatisticsHref(selected.id)) ? (
@@ -613,7 +633,7 @@ export function HubScreen() {
               </Link>
             ) : (
               // ROLE BRANCH (bed_manager and every scoped desk): greyed, with the closed page's sentence.
-              <Button size="sm" variant="sec" disabledReason={closedSentence}>
+              <Button size="sm" variant="sec" disabledReason={closedSentence} reasonDisplay="tooltip">
                 {openLabel}
               </Button>
             )}
@@ -1022,10 +1042,7 @@ export function HubScreen() {
             secondary={
               selected === undefined
                 ? undefined
-                : deskSite === undefined &&
-                    selected.kind === "ward" &&
-                    selected.confirmedAt !== undefined &&
-                    selectedRequest === undefined
+                : phoneFooterAsks
                   ? {
                       label: "Ask to confirm",
                       onAction: () =>
@@ -1063,7 +1080,13 @@ export function HubScreen() {
             {selected === undefined ? null : (
               <>
                 {renderPreview(selected)}
-                {renderPhonePreviewLinks(selected)}
+                {renderPhonePreviewLinks(selected, !phoneFooterAsks)}
+                {/* ROLE BRANCH (bed_manager): the greyed footer Open's sentence, visible (QA 31 Oct). */}
+                {canOpen(selected.href) ? null : (
+                  <p className={styles.closedReason} aria-hidden="true">
+                    {closedSentence}
+                  </p>
+                )}
               </>
             )}
           </PhoneSheet>
