@@ -89,38 +89,54 @@ type ResolvedDockSlot =
  * C2 (Josh, 19 Oct 2026): a bottom bar per role. Two places left of the +, two slots right of it.
  * A ward gets My ward, Referrals, +, Alerts, Handover; the other roles in the B1 table get the same
  * idea from their own menu. A slot the desk cannot open is left out.
- * shell-next (Josh, 31 Oct 2026): Activity keeps its own tab, as today (the Home and Activity
- * redesign gave it Changes, Recent activity and Notices).
  */
 const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonly right: readonly DockSlot[] }> = {
+  // The bed coordinator's dock is the perfected one (Josh, 31 Oct 2026): unchanged.
   coordinator: {
     left: [page("command", "Home"), page("referrals", "Referrals")],
     right: [{ kind: "queue" }, { kind: "activity" }],
   },
+  // shell-next (Josh, 31 Oct 2026: "decide what is the most useful, specific to the role"). Alerts
+  // sits straight after the + on every desk that has one.
+  // Nurse in charge: who is arriving and leaving all shift beats Handover, which stays a button on
+  // My ward and in the Menu.
   ward: {
     left: [page("wards", "My ward"), page("referrals", "Referrals")],
-    right: [{ kind: "alerts" }, page("handover", "Handover")],
+    right: [{ kind: "alerts" }, page("movements", "Coming and going")],
   },
+  // ED clinician: its board, its referrals and finding a bed are the whole job. Unchanged.
   ed: {
     left: [page("ed", "My ED"), page("referrals", "Referrals")],
     right: [{ kind: "alerts" }, { kind: "bed-finder", label: "Find a bed" }],
   },
+  // Transport officer: the desk opens only these pages, and Activity carries its jobs' events.
   officer: {
     left: [page("officer", "My jobs"), page("alerts", "Alerts")],
     right: [page("on-call", "On-call"), { kind: "activity" }],
   },
+  // Community clinician: where the team's patients are in the bed journey (admitted, coming back)
+  // matters more than the network's event log.
   community: {
     left: [page("community", "My team"), page("referrals", "Referrals")],
-    right: [{ kind: "alerts" }, { kind: "activity" }],
+    right: [{ kind: "alerts" }, page("movements", "Movements")],
   },
+  // Site bed manager: the site's people waiting in ED for a bed beat Handover, which stays in the Menu.
   bed_manager: {
     left: [page("capacity", "Capacity"), page("wards", "Wards")],
-    right: [{ kind: "alerts" }, page("handover", "Handover")],
+    right: [{ kind: "alerts" }, page("delays", "Waiting")],
   },
+  // Executive: the overview. The Alerts list is the bed coordinator's and is empty here, so its slot
+  // goes to Capacity. (Home is not open to this desk, so the dock reads Statistics, Capacity, Activity.)
   executive: {
     left: [page("command", "Home"), page("statistics", "Statistics")],
-    right: [{ kind: "queue" }, { kind: "activity" }],
+    right: [page("capacity", "Capacity"), { kind: "activity" }],
   },
+};
+
+/** ROLE BRANCH (admin): the access admin borrows the executive's chrome but works in Governance. */
+const ADMIN_DOCK: { readonly left: readonly DockPage[]; readonly right: readonly DockSlot[] } = {
+  left: [page("governance", "Governance")],
+  right: [{ kind: "activity" }],
 };
 
 /** Counted pages that are work waiting on someone. Capacity counts free beds, so it is not here. */
@@ -162,8 +178,9 @@ function phoneMenuModel(
     const entry = byId.get(slot.id);
     return entry ? [{ kind: "page", entry, label: slot.label }] : [];
   };
-  const dock = DOCK[dockRole].left.flatMap(resolve);
-  const dockRight = DOCK[dockRole].right.flatMap(resolve);
+  const dockSlots = accessAdmin ? ADMIN_DOCK : DOCK[dockRole];
+  const dock = dockSlots.left.flatMap(resolve);
+  const dockRight = dockSlots.right.flatMap(resolve);
   const needs = strictNeeds(byId, counts);
   // Nothing twice: a page in the dock or under Needs you leaves its group, and New referral is the +.
   const shown = new Set([
