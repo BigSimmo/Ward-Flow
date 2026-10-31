@@ -15,6 +15,7 @@ import {
   StatusGlyph,
   cx,
   durMinutes,
+  ShowMoreRow,
 } from "@/components/wf";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
@@ -26,7 +27,6 @@ import { StatisticsNav } from "./statistics-nav";
 import { PhoneDotKey } from "./statistics-phone-parts";
 import { STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import styles from "./statistics-phone.module.css";
-import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { SmallNumberNote } from "./statistics-count-list";
 import note from "./statistics-count-list.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
