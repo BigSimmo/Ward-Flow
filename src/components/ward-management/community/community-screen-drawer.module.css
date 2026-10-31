@@ -1,6 +1,7 @@
-/* Redesign of the community team's record drawer (dossier, referral triage and samples) on the kit
-   Sheet: a side sheet on a computer, a full-height sheet on a phone, cards on the glass as the bed
-   record. Kit tokens only. Names, places and legal wording wrap in full. */
+/* The community team's record drawer (dossier, referral triage and samples) on the kit Sheet
+   (redesign, approved 31 Oct 2026): a side sheet on a computer, a full-height sheet on a phone, cards on the glass as the bed
+   record. Kit tokens only. Names, places and legal wording wrap in full. Imported only by
+   `community-screen-drawer.tsx`. */
 .panel {
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);

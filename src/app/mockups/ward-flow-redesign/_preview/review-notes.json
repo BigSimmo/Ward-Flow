@@ -652,42 +652,6 @@
     ],
     "keep": "Names that read alike, Teams by service, Catchment guide and Raise referral."
   },
-  "community-team": {
-    "role": "One community team's page: its caseload, who is in a bed, how to reach the team and who is on duty.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**Names and UMRNs are set in bold monospace**, unlike every other page."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "**The same nine people appear in two tables** (\"In a bed\" and \"Admitted while already with the team\")."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "Nine large \"Open record\" buttons, and \"This table scrolls sideways on narrow screens\" written under each table."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "How to reach carries four lines of disclaimer."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**One table** that holds both: days in the bed, time with the team before the bed, and time since acceptance."
-      },
-      {
-        "text": "Names in the normal font, UMRN in mono. The whole row opens the record."
-      },
-      {
-        "text": "The disclaimers become one footnote line."
-      },
-      {
-        "text": "The tabs (Sent, Waiting answer, In a bed, Expected back, Caseload) move into the header."
-      }
-    ],
-    "keep": "Worth attention, On duty today, Record contact, CTO register and Refer from team."
-  },
   "patient": {
     "role": "One person's journey: where they are, what blocks the move, why they came, their legal status and who to call. Movement records open the same screen.",
     "issues": [

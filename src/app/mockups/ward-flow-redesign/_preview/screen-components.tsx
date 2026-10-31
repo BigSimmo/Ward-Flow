@@ -55,9 +55,6 @@ const LegalFormsPage = dynamic<MockupPageProps>(() =>
 const OnCallRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/on-call/on-call-redesign").then((module) => module.OnCallRedesign),
 );
-const CommunityTeamPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/community-team/community-team-page").then((module) => module.CommunityTeamPage),
-);
 const PatientPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/patient/patient-page").then((module) => module.PatientPage),
 );
@@ -122,11 +119,6 @@ const AsEdStatisticsPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsEdStatisticsPage,
   ),
 );
-const AsCommunityHomePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-community-home/as-community-home-page").then(
-    (module) => module.AsCommunityHomePage,
-  ),
-);
 const AsCommunityReferralsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-community-referrals/as-community-referrals-page").then(
     (module) => module.AsCommunityReferralsPage,
@@ -184,7 +176,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   alerts: AlertsRedesign,
   "legal-forms": LegalFormsPage,
   "on-call": OnCallRedesign,
-  "community-team": CommunityTeamPage,
   patient: PatientPage,
   "add-patient": AddPatientPage,
   settings: SettingsPage,
@@ -201,7 +192,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-ed-referrals": AsEdReferralsPage,
   "as-ed-legal-forms": AsEdLegalFormsPage,
   "as-ed-statistics": AsEdStatisticsPage,
-  "as-community-home": AsCommunityHomePage,
   "as-community-referrals": AsCommunityReferralsPage,
   "as-community-movements": AsCommunityMovementsPage,
   "as-community-patient": AsCommunityPatientPage,

@@ -1,9 +1,0 @@
-/* The five list tabs share one row on a phone (Caseload is longer than the CTOs label it replaced). */
-.oneRow.oneRow {
-  flex-wrap: nowrap;
-}
-.oneRow.oneRow.oneRow > * {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding-inline: 4px;
-}

@@ -54,12 +54,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Removed:** three panels that only said people are not listed; that sentence is said once.",
     "**Round 2:** the chart leads and Declines is the side column, so both cards end level. '8 still in ED · 1 in transit' is the chart's aside, and 'Counts only' sits once in the eyebrow. Over 24h carries the amber dot, as Longest does.",
   ],
-  "as-community-home": [
-    "**As the community clinician**, the page opens on the team's own In a bed list: the people it follows into hospital.",
-    "**Removed:** Change team (this desk opens its own team only), the Caseload figure the title already gives, and an all-zero Excluded box.",
-    "**Still open:** the app bar's place chip says 'Statewide' (shared chrome); the phone In a bed list has 9 rows and no Show more.",
-    "**Changed (Josh, 30 October):** one caseload figure on phone and desktop. The phone's last list is Caseload (the same 9 as desktop's Caseload and CTOs), opening on the whole caseload; Show community treatment orders only narrows it. The five list tabs share one row.",
-  ],
   "as-community-referrals": [
     "**As the community clinician**, the board is read only, and with nothing waiting it opens on History with the latest decided referral, not an empty queue.",
     "**Removed:** the runway, statewide Beds ready, bed-type highlights and the all-zero decisions chart; 'Open the team's Waiting list' replaces the Bed meeting list.",
@@ -319,15 +313,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
 
     "**New frame (D-91):** Settings drops its own Go to a desk (hero and Profile card); the sidebar's or Menu's who-you-are row opens it. The review is 'Save 3 rule changes?' / 'Save changes'; zero counts name their noun ('No one past target').",
   ],
-  "community-team": [
-    "**Built from a copy of today's community team screen**, so the tabs, Record contact, CTO register, Refer from team, the record drawer and transport booking work as now.",
-    "**New:** one table instead of two. Each person's row shows unit, legal status, days in bed, time with the team before the bed and time since acceptance.",
-    '**New (D-83):** names surname first in the normal font, with the UMRN under them. A click anywhere on the row opens the record, so the nine Open record buttons and the "scrolls sideways" line are gone.',
-    "**New:** How to reach folds its caveat and recorded lines into one small footnote, in the same words.",
-    "**Kept:** Worth attention, On duty today, Record contact, CTO register, Refer from team, and the Excluded and acceptance footnotes word for word.",
-    '**Please check:** rows not accepted before the bed would read "Referred during this stay" or "Not arrived", and "Not counted" for time since acceptance. Today\'s data has none, so the wording is unseen. The record drawer is today\'s and still names the person first name first.',
-    "**Changed (Josh, 30 October):** one caseload figure on phone and desktop: the phone's last list is Caseload (the same 9 as desktop), opening on the whole caseload, with Show community treatment orders only to narrow it.",
-  ],
   patient: [
     "**Built from a copy of today's Patient screen**, so the stepper, tabs, Cannot move checks, Destination, Withdraw, Copy handover and the forms work as now.",
     "**New:** Journey so far is a timeline of what was recorded, newest first (opened, examination, declines, escalation), each with its recorded time, read the same way as the History tab and computing nothing. Over 8 events it shows the first 6, then Show more.",
@@ -478,41 +463,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   ],
   "pop-movement": [
     "**Round 3:** the movement drawer's legal line shows the form time as typed with the not-legally-checked tag, never 'recorded expiry in' or 'passed … ago'. On the phone the Legal, From and To cells wrap in full and the typed time appears once (copies of the drawer parts).",
-  ],
-  "pop-community-referral": [
-    "**Built from a copy of today's Assign referral dialog** (`community/community-screen-modals.tsx`), so Take for this team records the same desk assignment as now, now on the shared dialog.",
-    "**New:** the person is named once, surname first, under the title; urgency, origin and region are label-and-value rows; Close and one filled button at the foot.",
-    "**Kept:** 'This names the team's desk, not a clinician.', word for word.",
-    "**Still open:** no community referral is waiting in the sample, so the page never offers Assign; this is drawn on its own for Midland's oldest referral (Kettlewell, Baxter).",
-    "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
-  ],
-  "pop-community-note": [
-    "**Built from a copy of today's Record contact, Catchment counts and crisis dialogs** (`community/community-screen-modals.tsx`), so saving a contact, printing and closing work as now.",
-    "**New:** each sits on the shared dialog. Record contact shows what it logs and the last confirmed contact; Catchment counts shows its three numbers as tiles; one filled button at the right.",
-    "**Kept:** every sentence word for word, including 'Synthetic figures, not a record of any real day.'",
-    "**Still open:** the crisis dialog is kept in the copy, but nothing on the redesigned page opens it.",
-    "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
-  ],
-  "pop-community-record": [
-    "**Built from a copy of today's community record drawer** (`community/community-screen-drawer.tsx`, through its surname-first copy), so the record, referral triage, Record contact, Arrange follow-up, Accept and Decline work as now.",
-    "**New:** a side sheet on a computer and full height on a phone, like the bed record: name surname first, UMRN and date of birth, legal status exactly as recorded, facts in cards, one filled button in the footer.",
-    "**Kept:** 'Catchment record view for clinical coordination. Not connected to any health record.', 'Not recorded in Ward Flow' and every illustrative-only line, word for word. Legal status shows as recorded, never as a countdown.",
-    "**Still open:** the Tools sample's state buttons are all plain now, so none looks chosen. The referral triage view cannot be opened with Midland's data (no referral waiting). The care journey section inside is the shared `DischargeCareJourney`, left as it is.",
-    "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
-  ],
-  "pop-community-transport-book": [
-    "**Built from a copy of today's community Log transport booking dialog** (`community/community-screen-transport-dialogs.tsx`), so the draft and the save work as now.",
-    "**New:** it uses the same redesigned booking form as the ED board's Log transport mock-up (shared, not copied), with the person surname first under a one-line title.",
-    "**Still open:** no community person has a pulled bed in the sample, so it is drawn on its own as Midland for the first pulled, unbooked movement (Cadwaller, Rhys).",
-    "**Josh, 31 Oct 2026 (yes):** the shared booking form now starts with nothing chosen: neither Today nor Tomorrow, and neither legal answer. The recorded legal status shows under the legal question as plain text ('Legal now: ...') to check against. Build: make `estimatedDay` optional in the shared transport draft (`ward-transport-checks.ts`), with 'choose today or tomorrow' as a missing answer, and set `LEGAL_STATUS_FROM_LEGAL_NOW` to false.",
-    "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
-  ],
-  "pop-community-transport-cancel": [
-    "**Built from a copy of today's Cancel this team's transport booking dialog** (`community/community-screen-transport-dialogs.tsx`), so the reasons, the check and the save work as now.",
-    "**New:** the title names the person surname first instead of the movement number; the reason starts at 'Choose a reason…'; Confirm cancel says why it is unavailable until a reason is chosen.",
-    "**Kept:** 'Why is the job being cancelled? The provider is told.', word for word.",
-    "**Still open:** no booking in the sample belongs to a community team, so it is drawn as Midland for the first open booking (Tremalow, Noor), and Confirm cancel is refused with today's message. That is correct; a Midland booking would show the happy path.",
-    "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
   ],
   "pop-clearance": [
     "**Built from a copy of today's medical clearance form** (the `showClearanceModal` block in `patients/patient-now-screen.tsx`), with its permission check and save, so saving and errors work as now.",

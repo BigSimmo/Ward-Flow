@@ -312,11 +312,12 @@ export function communityHowToReachPanel(view: CommunityScreenView) {
                       </div>
                     )}
                   </dl>
-                  <p className={v6.sideNote}>{REFERENCE_TEAM_CAVEAT}</p>
-                  <p className={v6.sideNote}>
-                    Recorded {contact.recordedOn ?? "on a date the register does not give"}
+                  {/* Redesign (31 Oct 2026): the caveat and the recorded and paired lines are one
+                      footnote under the details, in the same words, on phone and desktop. */}
+                  <p className={styles.contactFootnote}>
+                    {REFERENCE_TEAM_CAVEAT} Recorded {contact.recordedOn ?? "on a date the register does not give"}
                     {decision === null
-                      ? null
+                      ? "."
                       : `. Paired with ${decision.serviceName} by ${decision.decidedBy} on ${decision.decidedOn}.`}
                   </p>
                 </>
@@ -633,6 +634,7 @@ export function communityCoveragePanel(view: CommunityScreenView) {
           >
             <div className={styles.noticeGroup}>
               <p className={styles.notice} data-testid="ward-community-placeholder-notice">
+                <StatusGlyph tone="warning" className={styles.noticeGlyph} />
                 <strong>This team name comes from the S2015 catchment table.</strong> It is referral vocabulary, not a
                 current roster of Western Australian community services. No team has agreed to be represented and this
                 page does not identify who currently provides care.{" "}
@@ -688,6 +690,7 @@ export function communityCoveragePanel(view: CommunityScreenView) {
               ) : null}
 
               <p className={styles.notice} data-testid="ward-community-unattributable">
+                <StatusGlyph tone="warning" className={styles.noticeGlyph} />
                 <strong>
                   {unattributable.length}{" "}
                   {unattributable.length === 1

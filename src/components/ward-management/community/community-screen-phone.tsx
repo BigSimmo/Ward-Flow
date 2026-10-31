@@ -356,11 +356,11 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
         },
         {
           id: "ctos",
-          label: "CTOs",
+          label: "Caseload",
           groups: [
             {
               id: "ctos",
-              // F-16: the tab says CTOs to fit, so the list spells the term out.
+              // The toggle below narrows the list to CTOs, so the term is spelt out here (F-16).
               before: <p className={phoneCss.quiet}>CTOs are community treatment orders.</p>,
               rows: phoneCaseloadShown.map((row) => {
                 const person = phonePerson(row.patientId);
@@ -588,12 +588,14 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
             label: "Back",
             tone: pastPlannedDateCount > 0 ? "warning" : undefined,
           },
-          { id: "ctos", value: phoneCtoRows.length, label: "On a CTO" },
+          // Josh, 30 Oct 2026: one caseload figure on phone and desktop (desktop's "Caseload and CTOs").
+          { id: "ctos", value: isDemoMode ? teamConfig.caseload : caseloadRows.length, label: "Caseload" },
         ]}
         list={phoneList}
         onList={(id) => setActiveTab(phoneListTab[id])}
         onIntake={openNewReferral}
         onSwitchTeam={() => setSwitchOpen(true)}
+        ownTeamOnly={view.ownTeamOnly}
         switchTriggerRef={switchTriggerRef}
         since={sinceElement}
         notices={noticesSection}

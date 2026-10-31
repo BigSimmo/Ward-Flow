@@ -65,29 +65,6 @@ const PopRecordExam = dynamic<{ page: ReactNode }>(() =>
 const PopAddTime = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-add-time/pop-add-time").then((module) => module.PopAddTime),
 );
-const PopCommunityReferral = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-community-referral/pop-community-referral").then(
-    (module) => module.PopCommunityReferral,
-  ),
-);
-const PopCommunityNote = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-community-note/pop-community-note").then((module) => module.PopCommunityNote),
-);
-const PopCommunityRecord = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-community-record/pop-community-record").then(
-    (module) => module.PopCommunityRecord,
-  ),
-);
-const PopCommunityTransportBook = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-community-transport-book/pop-community-transport-book").then(
-    (module) => module.PopCommunityTransportBook,
-  ),
-);
-const PopCommunityTransportCancel = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-community-transport-cancel/pop-community-transport-cancel").then(
-    (module) => module.PopCommunityTransportCancel,
-  ),
-);
 const PopClearance = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-clearance/pop-clearance").then((module) => module.PopClearance),
 );
@@ -182,11 +159,6 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   "record-form": PopRecordForm,
   "record-exam": PopRecordExam,
   "add-time": PopAddTime,
-  "community-referral": PopCommunityReferral,
-  "community-note": PopCommunityNote,
-  "community-record": PopCommunityRecord,
-  "community-transport-book": PopCommunityTransportBook,
-  "community-transport-cancel": PopCommunityTransportCancel,
   clearance: PopClearance,
   "idle-warning": PopIdleWarning,
   "idle-lock": PopIdleLock,

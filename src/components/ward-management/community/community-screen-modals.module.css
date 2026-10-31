@@ -1,4 +1,8 @@
-/* Redesign of the community team's Record contact, Catchment counts and crisis dialogs. Kit tokens only. */
+/*
+ * The community team screen's dialogs on the kit Dialog (redesign, approved 31 Oct 2026): Assign
+ * referral, Record contact, Catchment counts and the crisis example. Kit tokens only. Imported only
+ * by `community-screen-modals.tsx`.
+ */
 .body {
   display: flex;
   flex-direction: column;
@@ -176,5 +180,49 @@
   .factRow {
     grid-template-columns: minmax(0, 1fr);
     gap: 2px;
+  }
+}
+
+/* Assign referral: the person under the title, and the command's answer above the buttons. */
+.who {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.result {
+  margin: 0;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+/* The catchment counts print alone and flow on A4. The kit hides an open dialog on paper, so the
+   counts dialog's scrim and panel are put back as plain blocks (the page itself is hidden by
+   community.module.css). */
+@media print {
+  :global(div):has(> .handoverPrint) {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    padding: 0 !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+  }
+
+  .handoverPrint {
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .handoverPrint button,
+  .handoverPrint .actions {
+    display: none !important;
   }
 }
