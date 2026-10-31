@@ -170,6 +170,9 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     board: "own",
     discharges: "own",
     "bed-meeting": "own",
+    // Decision 46 (Josh, 31 Oct 2026): its own site's bed meeting agenda, read only. The server sends
+    // it only its own site's records, and refuses it the agenda's action (RECORD_BED_MEETING_ACTION).
+    "bed-meeting-agenda": "own",
     // D-80: read only, its own wards' incoming lines. The board offers it no action and the server
     // refuses every referral change from it (no bed manager in EVENT_ROLE for one).
     referrals: "own",
@@ -352,7 +355,8 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
   if (first === undefined) return { screen: "home" };
   if (first === "transport" && second === "officer") return { screen: "officer" };
   if (REDIRECT_TARGETS[first] !== undefined && second === undefined) return { screen: REDIRECT_TARGETS[first] };
-  // The bed meeting agenda (smart features idea 5): coordinator only, because no other role lists it.
+  // The bed meeting agenda (smart features idea 5): the coordinator's, and the site bed manager's read
+  // only (decision 46, 31 Oct 2026). No other role lists it.
   if (first === "bed-meeting" && second === "agenda")
     return third === undefined ? { screen: "bed-meeting-agenda" } : undefined;
   switch (first) {
@@ -534,6 +538,16 @@ export function screenDecision(
   return { open: true, grant };
 }
 
+/**
+ * Decision 47 (Josh, 31 Oct 2026): the transport officer and the access admin need no network bed
+ * figures, so Tools offers them neither "Find a bed" nor "All figures".
+ */
+const NO_NETWORK_BED_FIGURES: readonly WardAccessRole[] = ["officer", "admin"];
+
+export function seesNetworkBedFigures(role: WardAccessRole): boolean {
+  return !NO_NETWORK_BED_FIGURES.includes(role);
+}
+
 /** Roles that may break glass on one patient record (plan section 7). Never officer, executive or admin. */
 const BREAK_GLASS_ROLES: readonly WardAccessRole[] = ["bed_manager", "ward", "ed", "community"];
 
@@ -558,7 +572,8 @@ export const ACCESS_ROLE_LABELS: Record<WardAccessRole, string> = {
   bed_manager: "Site bed manager",
   ward: "Nurse in charge",
   ed: "ED clinician",
-  community: "Community clinician",
+  // Q66 (Josh, 31 Oct 2026): "Community team", as new records save it.
+  community: "Community team",
   officer: "Transport officer",
   executive: "Executive",
   admin: "Access admin",

@@ -39,7 +39,7 @@ describe("on-call directory last checked", () => {
     const updated = withRecordedChecks(entries, state.directoryChecks, NOW_ANCHOR);
     const after = updated.find((candidate) => candidate.id === entry.id)!;
     expect(after).toMatchObject({ checkedDaysAgo: 0, checkedBy: "bed_manager" });
-    expect(lastCheckText(lastCheckOf(after, undefined, NOW_ANCHOR))).toBe("Checked today by Bed manager");
+    expect(lastCheckText(lastCheckOf(after, undefined, NOW_ANCHOR))).toBe("Checked today by Site bed manager");
     expect(notCheckedNote(lastCheckOf(after, undefined, NOW_ANCHOR))).toBeUndefined();
     // Order unchanged: the directory is never re-sorted by checks.
     expect(updated.map((candidate) => candidate.id)).toEqual(entries.map((candidate) => candidate.id));

@@ -75,6 +75,12 @@ const keep =
   (context: Context): WardFlowState[K] =>
     context.state[key];
 
+/** Every ward of the site is inside the desk's scope (and the site has a ward). */
+function siteWithinScope(context: Pick<Context, "state" | "unitIn">, siteCode: string): boolean {
+  const wards = context.state.units.filter((unit) => unit.siteCode === siteCode);
+  return wards.length > 0 && wards.every((unit) => context.unitIn(unit.id));
+}
+
 /** The desks that may book a planned admission (`BOOK_PLANNED_ADMISSION`), and so see whom they booked. */
 function bookingDesk(role: WardAccess["role"]): boolean {
   return (EVENT_ROLE.BOOK_PLANNED_ADMISSION as readonly string[]).includes(role);
@@ -229,8 +235,22 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
     );
   },
   morningRollupConfirmations: keep("morningRollupConfirmations"),
-  // Role and time only, no person.
-  handoverSignOffs: keep("handoverSignOffs"),
+  // Role, time and ward only, no person. Decision 41 (Josh, 31 Oct 2026): a desk is sent the
+  // sign-offs of its own wards' sheets. One that names no ward (a whole-network sign-off, or any
+  // saved before 31 Oct 2026) is never given a guessed ward, so only the statewide desk, which is
+  // sent the state unchanged, sees it, as "Ward not recorded".
+  handoverSignOffs: (context) =>
+    (Array.isArray(context.state.handoverSignOffs) ? context.state.handoverSignOffs : []).filter(
+      (signOff) => typeof signOff.unitId === "string" && context.unitIn(signOff.unitId),
+    ),
+  // Q61 (Josh, 31 Oct 2026): a site's handover sign-off goes to the site bed manager of that site, and
+  // to a coordinator whose scope holds every ward of the site. No ward, ED or team desk is sent one.
+  siteHandoverSignOffs: (context) =>
+    (Array.isArray(context.state.siteHandoverSignOffs) ? context.state.siteHandoverSignOffs : []).filter((record) =>
+      context.access.role === "bed_manager"
+        ? context.access.scope.kind === "site" && context.access.scope.siteCode === record.siteCode
+        : context.coordinator && siteWithinScope(context, record.siteCode),
+    ),
   // Which team was contacted and when: a team's own desk sees its own, and nobody else's.
   clinicalContacts: (context) =>
     context.state.clinicalContacts.filter((contact) => teamIsOwn(context.access, contact.teamId, context.places)),
@@ -382,6 +402,7 @@ export function scopeWardFlowState(
   // An optional field the saved state never had stays absent, as the stored-state check expects.
   if (state.supportNotifications === undefined) delete next.supportNotifications;
   if (state.undoRecords === undefined) delete next.undoRecords;
+  if (state.siteHandoverSignOffs === undefined) delete next.siteHandoverSignOffs;
   return {
     state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state, access.role !== "executive"),
     breakGlassPatientIds: scoped.breakGlassPatientIds,
@@ -626,6 +647,24 @@ export function commandScopeRefusal(
   if (command.type === "SET_CONFIGURATION") return "Only the statewide coordinator may change global settings.";
   const scope = access.scope;
   const placeIn = (id: string) => unitInScope(scope, id, places) || edInScope(scope, id, places);
+  // Decision 41 (Josh, 31 Oct 2026): a ward signs off, or takes back, its own ward's handover only,
+  // so its command names that ward (the target check below keeps it inside the desk's wards).
+  if (
+    access.role === "ward" &&
+    (command.type === "RECORD_HANDOVER_SIGN_OFF" || command.type === "UNDO_HANDOVER_SIGN_OFF") &&
+    typeof command.unitId !== "string"
+  )
+    return "A ward's handover sign-off names its ward.";
+  // Q67 (Josh, 31 Oct 2026): only a whole-network desk (returned above) signs off the whole network.
+  if (command.type === "RECORD_HANDOVER_SIGN_OFF" && command.network !== undefined)
+    return "Only the statewide coordinator signs off the whole network.";
+  // Q61 (Josh, 31 Oct 2026): a site bed manager signs off, or takes back, its own site's handover only.
+  // Every other desk short of the whole network (returned above) is refused, a service coordinator too.
+  if (
+    (command.type === "RECORD_SITE_HANDOVER_SIGN_OFF" || command.type === "UNDO_SITE_HANDOVER_SIGN_OFF") &&
+    !(access.role === "bed_manager" && scope.kind === "site" && command.siteCode === scope.siteCode)
+  )
+    return "Only the site bed manager signs off its own site's handover.";
   // Resolve the recipients from the whole workspace before projecting it for the caller. Seeing
   // one part of an alert permits a local answer, not extending or ending it for every recipient.
   if (command.type === "DISPATCH_BROADCAST_ALERT") {

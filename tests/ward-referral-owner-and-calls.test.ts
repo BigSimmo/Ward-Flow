@@ -108,7 +108,7 @@ describe("ASSIGN_REFERRAL", () => {
     expect(referralIn(taken, f.referralId).ownerHistory?.[0]).toEqual({
       owner: "community",
       at: NOW,
-      by: "Community service",
+      by: "Community team",
     });
     const handedOn = wardFlowReducer(f.state, assign(f.referralId, { role: "ed", owner: "coordinator" }));
     expect(handedOn.rejections).toHaveLength(1);

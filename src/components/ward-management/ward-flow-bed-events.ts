@@ -1,6 +1,6 @@
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { type CountedFigure, nextUnchangedShifts } from "./capacity/shift-confirmations";
-import { isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
+import { DISCHARGE_ROLE_LABELS, isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { nextStepUndoSeq, withUndoRecord } from "./ward-undo";
 import { numberedBedKind } from "./ward-bed-designation";
@@ -244,9 +244,10 @@ export function reduceBedEvent(
         expectedDischargeAt: event.expectedDischargeAt,
         dischargeDateMoves: isDateMove ? admission.dischargeDateMoves + 1 : admission.dischargeDateMoves,
         dischargeDateSetAt: event.now,
-        // Walkthrough D8 (25 Sept 2026): "Ward manager" only when a ward set it. A coordinator is not
-        // a ward manager, and the approved role list has no other label, so the role is not recorded.
-        dischargeDateSetBy: event.role === "ward" ? "Ward manager" : null,
+        // Walkthrough D8 (25 Sept 2026): the ward's role only when a ward set it. A coordinator is not
+        // the ward, and the approved role list has no other label, so the role is not recorded. Q66
+        // (31 Oct 2026): new records save "Nurse in charge"; older ones keep "Ward manager".
+        dischargeDateSetBy: event.role === "ward" ? DISCHARGE_ROLE_LABELS[0] : null,
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
@@ -460,6 +461,7 @@ export function reduceBedEvent(
         // A blocker already recorded on the stay carries over when the flag supplies none.
         blocker: event.blocker ?? flaggedAdmission.blockReason ?? null,
         blockedBy: event.blocker !== undefined || flaggedAdmission.blockReason !== null ? flaggingRole : null,
+        ...(event.blocker !== undefined ? { blockerRecordedAt: event.now } : {}),
         // A bed nobody has yet left is not being made ready. Preparation only ever begins after
         // `RELEASE_BED`, and only through `SET_BED_PREPARATION` — see that case.
         preparing: false,
@@ -585,6 +587,7 @@ export function reduceBedEvent(
         blocker: event.blocker,
         blockedBy: recordedByLabel(event.role, blockedUnit.name),
         confirmedAt: event.now,
+        blockerRecordedAt: event.now,
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";

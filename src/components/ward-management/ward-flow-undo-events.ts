@@ -45,6 +45,7 @@ export type UndoEvent = Extract<
       | "UNDO_SUPPORT_NOTIFICATION"
       | "UNDO_REPATRIATION"
       | "UNDO_HANDOVER_SIGN_OFF"
+      | "UNDO_SITE_HANDOVER_SIGN_OFF"
       | "UNDO_ED_STEP"
       | "UNDO_TRANSPORT_STEP"
       | "UNDO_DEPARTURE"
@@ -248,6 +249,7 @@ export function reduceUndoEvent(
     case "UNDO_SUPPORT_NOTIFICATION":
     case "UNDO_REPATRIATION":
     case "UNDO_HANDOVER_SIGN_OFF":
+    case "UNDO_SITE_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
@@ -259,8 +261,15 @@ export function reduceUndoEvent(
       // An older toast's Undo must not take back a newer step that replaced its record.
       if (event.recordSeq !== undefined && record.seq !== event.recordSeq)
         return reject(state, event, "A later step replaced this one, so this Undo no longer applies");
+      // Q75 (Josh, 31 Oct 2026): only the site bed manager takes a site sign-off back, including a
+      // statewide coordinator's cover sign-off. `EVENT_ROLE` already admits only the bed manager and
+      // `commandScopeRefusal` only for its own site, so the "role that acted" rule does not apply.
+      const roleRefusal =
+        event.type === "UNDO_SITE_HANDOVER_SIGN_OFF"
+          ? null
+          : undoRoleRefusal(record, event.role, "actingUnitId" in event ? event.actingUnitId : undefined);
       const refusal =
-        undoRoleRefusal(record, event.role, "actingUnitId" in event ? event.actingUnitId : undefined) ??
+        roleRefusal ??
         undoWindowRefusal(record.at, event.now) ??
         (stepChangedSince(state, record) ? "This has changed since, so it cannot be undone" : null);
       if (refusal) return reject(state, event, refusal);
