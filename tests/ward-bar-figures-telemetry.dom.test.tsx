@@ -84,7 +84,7 @@ describe("Figures in the Tools sheet", () => {
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
   });
 
-  it("keeps catchment and form times in the same sheet, with no tab bar and no demo panel", async () => {
+  it("keeps catchment, form times and the demo row in the same sheet, with no tab bar", async () => {
     const tools = await openTools();
     expect(within(tools).queryByRole("group", { name: "Tools sections" })).toBeNull();
     expect(within(tools).queryByRole("button", { name: "Shift desk" })).toBeNull();
@@ -92,8 +92,9 @@ describe("Figures in the Tools sheet", () => {
     expect(within(tools).getByTestId("ward-form-times")).toBeVisible();
     fireEvent.click(within(tools).getByTestId("ward-tools-toggle-catchment"));
     expect(await within(tools).findByTestId("ward-catchment-resolver", {}, { timeout: 15_000 })).toBeVisible();
-    // Change 8 (D-77): on a desktop the demo controls open from the Synthetic pill, not Tools.
-    expect(within(tools).queryByTestId("ward-tools-toggle-demo")).toBeNull();
+    // The app bar no longer has a Synthetic pill, so on a desktop the demo controls sit in Tools as
+    // one Demo row (the board clock opens them). There is still no separate demo trigger.
+    expect(within(tools).getByTestId("ward-tools-toggle-demo")).toBeVisible();
     expect(within(tools).queryByTestId("ward-demo-controls-trigger")).toBeNull();
   });
 

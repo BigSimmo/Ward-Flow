@@ -3,18 +3,7 @@
 // The bar's own controls, moved out of `ward-bar.tsx` to keep it under the line cap: the phone
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Bell,
-  Plus,
-  Check,
-  ChevronDown,
-  ClipboardCheck,
-  ListChecks,
-  Menu as MenuIcon,
-  RotateCcwClock,
-  Wrench,
-} from "lucide-react";
+import { ArrowLeft, Bell, Plus, Check, ChevronDown, Menu as MenuIcon, RotateCcwClock, Wrench } from "lucide-react";
 import type { RefObject } from "react";
 
 import { ContextualBackLink, navigateContextuallyBack } from "@/components/contextual-back-link";
@@ -180,6 +169,7 @@ export function WardBarServiceSelector({
   selectService,
   allWaitingCount,
   waiting,
+  deskPlace,
 }: {
   serviceTriggerRef: RefObject<HTMLButtonElement | null>;
   servicePanelRef: RefObject<HTMLDivElement | null>;
@@ -198,6 +188,12 @@ export function WardBarServiceSelector({
   selectService: (next: HealthService | null) => void;
   allWaitingCount: number;
   waiting: ReturnType<typeof waitingInEds>;
+  /**
+   * Every desk but the coordinator: the desk's own place in words ("Dabakarn", "Peel ED", "Midland
+   * team", "Royal Perth Hospital"). The chip then names the place, locked, and its dot keeps the
+   * place's service colour; the service stays in the spoken name.
+   */
+  deskPlace?: string;
 }) {
   // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
   // inside WardBar, which the compiler skips. Memoising it changed nothing visible but added
@@ -218,8 +214,18 @@ export function WardBarServiceSelector({
         aria-haspopup={isFixedJurisdiction ? undefined : isPhone ? "dialog" : "true"}
         aria-expanded={isFixedJurisdiction ? undefined : openPanel === "service"}
         aria-controls={isFixedJurisdiction ? undefined : "ward-bar-service-panel"}
-        aria-label={isFixedJurisdiction ? `Jurisdiction: ${activeService}` : `Service: ${activeServiceBadgeLabel}`}
+        aria-label={
+          deskPlace
+            ? `Your place: ${deskPlace}${activeService ? `, ${activeService}` : ""}`
+            : isFixedJurisdiction
+              ? `Jurisdiction: ${activeService}`
+              : `Service: ${activeServiceBadgeLabel}`
+        }
         onClick={() => {
+          if (deskPlace) {
+            announceToWardShell(`Your place is ${deskPlace}${activeService ? `, in ${activeService}` : ""}.`);
+            return;
+          }
           if (isFixedJurisdiction) {
             announceToWardShell(`${routeTitle} is in ${activeService}.`);
             return;
@@ -232,11 +238,12 @@ export function WardBarServiceSelector({
         }}
       >
         <span className={styles.scopeDot} aria-hidden="true" />
-        <span className={styles.scopeBadgeLabel}>{activeServiceBadgeLabel}</span>
+        <span className={styles.scopeBadgeLabel}>{deskPlace ?? activeServiceBadgeLabel}</span>
         {!isFixedJurisdiction && <ChevronDown className={styles.scopeCaret} aria-hidden="true" strokeWidth={1.75} />}
-        <span className="sr-only">{activeServiceBadgeLabel}</span>
+        <span className="sr-only">{deskPlace ?? activeServiceBadgeLabel}</span>
       </button>
       {isPhone ? (
+        // The waiting figure is the service's, so its line keeps the service's name.
         <span className={styles.scopeLive} aria-hidden="true">
           {scopeWaitingCount} waiting · {activeServiceBadgeLabel}
         </span>
@@ -339,8 +346,11 @@ export function WardBarDrawerTriggers({
 }) {
   // Opted out of the React Compiler, like the component above.
   "use no memo";
+  const directToScreen = oneAlertsQueue && (isPhone || onAlertsScreen);
   return (
     <div className={styles.drawerTriggers}>
+      {/* Josh, 31 Oct 2026: Activity keeps its own button beside the Alerts bell (its panel holds
+          Changes, Recent activity and Notices), so it is not folded into Alerts. */}
       <button
         type="button"
         ref={activityTriggerRef}
@@ -367,26 +377,16 @@ export function WardBarDrawerTriggers({
         className={styles.drawerTrigger}
         data-bar-mode="tasks"
         data-testid="ward-bar-tasks-trigger"
-        aria-haspopup={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : "dialog"}
-        aria-expanded={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : openPanel === "tasks"}
-        aria-controls={oneAlertsQueue && (isPhone || onAlertsScreen) ? undefined : "ward-bar-tasks-drawer"}
+        aria-haspopup={directToScreen ? undefined : "dialog"}
+        aria-expanded={directToScreen ? undefined : openPanel === "tasks"}
+        aria-controls={directToScreen ? undefined : "ward-bar-tasks-drawer"}
         aria-current={onAlertsScreen ? "page" : undefined}
         onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
       >
-        {oneAlertsQueue ? (
-          <Bell className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
-        ) : (
-          <>
-            <ListChecks className={`${styles.triggerIcon} ${styles.tasksWide}`} aria-hidden="true" strokeWidth={1.75} />
-            {/* Phone (v10 lean bar): the clipboard. CSS shows one of the two, so desktop is unchanged. */}
-            <ClipboardCheck
-              className={`${styles.triggerIcon} ${styles.tasksPhone}`}
-              aria-hidden="true"
-              strokeWidth={1.75}
-            />
-          </>
-        )}
-        <span className={styles.triggerLabel}>{oneAlertsQueue ? "Alerts" : "Tasks"}</span>
+        {/* Josh, 31 Oct 2026: one name and one icon on every desk, the bell and "Alerts". A desk whose
+            list is the bed coordinator's opens the same panel, under the same name. */}
+        <Bell className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+        <span className={styles.triggerLabel}>Alerts</span>
         <span className={styles.badge} data-zero={tasksActiveCount === 0 || undefined}>
           {tasksActiveCount}
         </span>
@@ -448,7 +448,8 @@ export function WardBarPrimaryAction({
           <button
             type="button"
             ref={primaryTriggerRef}
-            className={`${styles.primary} ${styles.referralPrimary}`}
+            // Josh, 30 Oct 2026: even padding and its neighbours' height.
+            className={`${styles.primary} ${styles.referralPrimary} ${styles.primaryEven}`}
             data-testid="ward-bar-primary-action"
             onClick={() => {
               openReferral({ category: roleCategory }, primaryTriggerRef.current);

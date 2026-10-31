@@ -42,12 +42,11 @@ async function gotoCoordinator(page: Page) {
   // before the first interaction. Mirrors `gotoWardFlow` in ui-ward-management.spec.ts (Task 4
   // review Important 6: a retry loop around the click was masking this instead of fixing it).
   await page.waitForLoadState("networkidle");
-  // Network idle does not prove the shell has settled. The server renders the "Data mode" bar above
-  // the app; once hydrated, the header's Prototype pill takes its place and the whole screen moves
-  // up by the bar's height. A queue click issued across that re-render takes the pointerdown on one
-  // row and the pointerup on the grid, so no row is selected (seen 11 Oct 2026, intermittently).
-  // Wait until the pill is in the header and the bar is gone before the first interaction.
-  await expect(page.locator("[data-wf-data-mode-slot]")).not.toBeEmpty({ timeout: 15_000 });
+  // Network idle does not prove the shell has settled. A queue click issued across a re-render that
+  // moves the screen takes the pointerdown on one row and the pointerup on the grid, so no row is
+  // selected (seen 11 Oct 2026, intermittently). The header no longer has a Prototype pill to wait
+  // for (Josh, 30-31 Oct 2026), so wait for the bar itself and for no Data mode bar above the app.
+  await expect(page.getByTestId("ward-bar")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
   // Home v7 (Josh, 22 Oct 2026): Home opens on My list; these journeys read the priority queue.
   await showEveryoneWaitingOn(page);

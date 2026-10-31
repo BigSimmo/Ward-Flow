@@ -478,7 +478,6 @@ test.describe("@mockup complete care dossier", () => {
     const p = seed.patients.find((p) => p.id === a.patientId)!;
     await page.goto("/ward-flow/discharges");
     await page.waitForLoadState("networkidle");
-    await expect(page.locator("[data-wf-data-mode-slot]")).not.toBeEmpty();
     await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
     const history = page.getByTestId("ward-discharge-history");
     await history.click();
