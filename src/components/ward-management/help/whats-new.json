@@ -15,11 +15,6 @@
     "line": "The Demo chip now shows the ward clock time, such as Demo 14:20, instead of a seconds counter."
   },
   {
-    "id": "2026-10-27-movements-wait-labels",
-    "date": "2026-10-27",
-    "line": "The ED wait labels on Movements rows now say Long wait and Over target instead of Due soon and Overdue."
-  },
-  {
     "id": "2026-10-27-seclusion-room-confirm",
     "date": "2026-10-27",
     "line": "Marking a seclusion room available or out of service now asks you to confirm first."
@@ -98,5 +93,10 @@
     "id": "2026-10-28-help-expansion",
     "date": "2026-10-28",
     "line": "Help adds spelling fixes, grouped words, accessibility, first-visit hints and printable desk guides."
+  },
+  {
+    "id": "2026-10-31-capacity-panel-links",
+    "date": "2026-10-31",
+    "line": "Capacity's ward panel only offers pages your desk can open."
   }
 ]
