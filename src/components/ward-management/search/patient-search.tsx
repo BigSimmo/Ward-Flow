@@ -29,13 +29,8 @@ import {
   stageCopy,
   type MovementSearchQuery,
 } from "@/components/ward-management/ward-derivations";
-import {
-  calendarDateOf,
-  formatInstant,
-  formatInstantWithDay,
-  formatRemaining,
-  minutesUntil,
-} from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -442,7 +437,8 @@ export function PatientSearchPage() {
         let legalExpires = "Voluntary status";
         if (legal !== "Voluntary") {
           if (movementDueAt !== undefined) {
-            legalExpires = formatRemaining(minutesUntil(movementDueAt, now));
+            // Legal times only as typed (31 Oct 2026): never a running "1h 15m overdue".
+            legalExpires = typedTimeLine(movementDueAt, now);
           } else {
             legalExpires = "No due time recorded";
           }

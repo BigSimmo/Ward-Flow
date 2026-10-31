@@ -126,11 +126,11 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     fireEvent.click(within(rphRow).getByRole("button", { name: "Dabakarn" }));
     fireEvent.click(screen.getByRole("tab", { name: "Discharges" }));
 
-    const opener = screen.getByRole("button", { name: /Ines Marrowby/u });
+    const opener = screen.getByRole("button", { name: /Marrowby, Ines/u });
     fireEvent.click(opener);
 
     const detail = screen.getByRole("region", { name: "Discharge record detail" });
-    expect(within(detail).getByRole("heading", { name: "Ines Marrowby" })).toHaveFocus();
+    expect(within(detail).getByRole("heading", { name: "Marrowby, Ines" })).toHaveFocus();
     expect(detail).toHaveTextContent("UM100003");
   });
 

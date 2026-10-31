@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { legalDeadlineMinutes } from "@/components/ward-management/delays/delays-derivations";
-import { clockState, DEFAULT_DUE_SOON_THRESHOLDS, splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -104,7 +105,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
     }
   });
 
-  it("names the form and the minutes remaining, for every movement whose deadline is in range", () => {
+  it("names the form and its typed time, for every movement whose deadline is in range (D-93)", () => {
     /*
      * ⚠️ **RE-POINTED 2026-09-07.** The delays screen no longer renders every patient's full state
      * chips at once — only the SELECTED one's, inside the panel named "The person you have chosen".
@@ -120,7 +121,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
       const form = movement.legalForm;
       expect(form, `${movement.id} lost its form between the filter and the assertion`).toBeDefined();
       expect(
-        screen.getAllByText(`${legalFormName(form!)} due in ${splitDuration(minutes!)}`).length,
+        screen.getAllByText(`${legalFormName(form!)} · ${typedTimePhrase(NOW_ANCHOR + minutes!, NOW_ANCHOR)}`).length,
         `${movement.id}: the delays row does not state its legal deadline`,
       ).toBeGreaterThan(0);
     }
@@ -141,7 +142,10 @@ describe("the delays screen states the legal deadline it is already reacting to"
     // "RE-POINTED" note above), so WF-006 must be chosen before its wording can be read at all.
     inspectDelayPerson("WF-006");
     expect(
-      screen.getAllByText(`${legalFormName(wf006!.legalForm!)} passed its deadline ${splitDuration(10)} ago`).length,
+      // D-93 (31 Oct 2026): "ended 15:42 as typed", never "passed its deadline 10m ago".
+      screen.getAllByText(
+        `${legalFormName(wf006!.legalForm!)} · ${typedTimePhrase(dueAt as number, (dueAt as number) + 10)}`,
+      ).length,
     ).toBeGreaterThan(0);
     expect(screen.queryByText(/due in -\d+ min/), "a passed deadline is counting down past zero").toBeNull();
   });

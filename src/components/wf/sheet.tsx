@@ -294,6 +294,9 @@ export function Sheet({
       // stop propagation.
       if (!isTopmostSheet(sheetId)) return;
       if (event.key === "Escape") {
+        // A field or nested picker may consume Escape before it reaches the sheet.
+        if (event.defaultPrevented) return;
+        if (event.target instanceof HTMLElement && event.target.tagName === "SELECT") return;
         event.preventDefault();
         onCloseRef.current();
         return;

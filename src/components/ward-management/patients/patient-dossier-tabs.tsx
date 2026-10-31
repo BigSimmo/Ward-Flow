@@ -794,7 +794,7 @@ export function PatientDocumentsTab({
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  // Top 25 item 19: the typed paper expiry reads its time left through the
+  // Top 25 item 19: the typed paper expiry reads as typed through the
   // one shared rule (`formTimeLeft`, Settings due soon warnings), as on the Forms and Patient pages.
   const thresholds = useDueSoonThresholds();
   const paperTimeLeft = movementInForce ? formTimeLeft(movement, now, thresholds) : undefined;
@@ -919,8 +919,8 @@ export function PatientDocumentsTab({
                       <span className={styles.cellSub} data-testid="dossier-paper-expiry-time-left">
                         {" "}
                         <StatusGlyph tone={paperTimeLeft.tone} size={9} />
-                        Paper expiry typed {paperTimeLeft.at}, {paperTimeLeft.text},{" "}
-                        {standingWord(paperTimeLeft.standing, thresholds)} <LegalLimitsNotChecked variant="tag" />
+                        Paper expiry: {paperTimeLeft.text}, {standingWord(paperTimeLeft.standing, thresholds)}{" "}
+                        <LegalLimitsNotChecked variant="tag" />
                       </span>
                     ) : f.due !== undefined ? (
                       <span className={styles.cellSub}>

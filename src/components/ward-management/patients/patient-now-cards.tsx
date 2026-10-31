@@ -93,8 +93,8 @@ export function PatientWhyCard({
 
 /**
  * Legal now: only the authority in force and the form still needed. Forms show when they were
- * recorded; a lapse time shows only when a person typed the expiry from the form (D5), with the
- * same time left the Forms and Delays pages show (audit A3-3). Superseded and ended forms are in
+ * recorded; a lapse time shows only when a person typed the expiry from the form (D5), as typed,
+ * the same words the Forms and Delays pages show (audit A3-3; legal times only as typed, 31 Oct 2026). Superseded and ended forms are in
  * Documents.
  */
 export function PatientLegalNowCard({
@@ -107,7 +107,7 @@ export function PatientLegalNowCard({
   movement?: Movement;
   patient?: Patient;
   onAllForms: () => void;
-  /** The demo clock, for the time left on a typed expiry. */
+  /** The demo clock, for the typed expiry's words ("Ends 15:42 as typed"). */
   now?: Instant;
   /** Absent without leave: an order stays in force while the person is missing (audit A3-2). */
   absent?: boolean;
@@ -137,7 +137,8 @@ export function PatientLegalNowCard({
       name: progression
         ? `Ended ${progression.endedWhen}`
         : (formTitleForCode(movement.legalForm.code) ?? "Title not in the forms register"),
-      time: expiry ? expiry.at : recordedAt !== undefined ? clock(recordedAt) : undefined,
+      // The typed expiry is already in `left` ("Ends 15:42 as typed"), so the time is not said twice.
+      time: expiry ? undefined : recordedAt !== undefined ? clock(recordedAt) : undefined,
       left: expiry?.text,
       ended: progression !== undefined,
     });

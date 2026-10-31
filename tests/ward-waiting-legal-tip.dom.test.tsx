@@ -37,7 +37,9 @@ describe("P197 Waiting Legal column tip", () => {
     act(() => chip!.focus());
     const tip = screen.getByTestId("tooltip");
     expect(tip.textContent).toMatch(
-      new RegExp(`^Form ${code}${title ? ` \\(${title.replace(/[()]/g, "\\$&")}\\)` : ""}(, .+ (left|overdue))?$`),
+      new RegExp(
+        `^Form ${code}${title ? ` \\(${title.replace(/[()]/g, "\\$&")}\\)` : ""}(, (ends|ended) .+ as typed)?$`,
+      ), // D-93: as typed, never "left" or "overdue"
     );
   });
 

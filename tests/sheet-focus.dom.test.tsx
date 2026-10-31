@@ -46,6 +46,24 @@ function panelOf(title: string) {
   return heading?.closest('[role="dialog"]') as HTMLElement;
 }
 
+it("keeps the sheet open when a picker consumes Escape or a native select owns it", () => {
+  const onClose = vi.fn();
+  const { getByRole } = render(
+    <Sheet open onClose={onClose} title="Picker sheet">
+      <input aria-label="Search picker" onKeyDown={(event) => event.key === "Escape" && event.preventDefault()} />
+      <select aria-label="Native choice">
+        <option>Choose</option>
+      </select>
+      <button type="button">Ordinary control</button>
+    </Sheet>,
+  );
+  fireEvent.keyDown(getByRole("textbox"), { key: "Escape" });
+  fireEvent.keyDown(getByRole("combobox"), { key: "Escape" });
+  expect(onClose).not.toHaveBeenCalled();
+  fireEvent.keyDown(getByRole("button", { name: "Ordinary control" }), { key: "Escape" });
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
 it("locks the desktop work column until the last stacked sheet closes and preserves its position", () => {
   const scroller = document.createElement("div");
   scroller.setAttribute("data-wf-scroller", "");

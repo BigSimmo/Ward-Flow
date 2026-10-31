@@ -292,3 +292,14 @@ describe("planned admissions panel for a desk that does not book", () => {
     expect(screen.queryByTestId("ward-planned-PA-SEED-02")).toBeNull();
   });
 });
+
+it("distinguishes existing patients by record number and carries the selected identity into booking review", () => {
+  renderPanel();
+  fireEvent.click(screen.getByTestId("ward-planned-book"));
+  const select = screen.getByTestId("ward-planned-patient") as HTMLSelectElement;
+  const option = Array.from(select.options).find((candidate) => candidate.value !== "" && !candidate.disabled)!;
+  expect(option.textContent).toMatch(/UM\d{6}/);
+  fireEvent.change(select, { target: { value: option.value } });
+  expect(screen.getByTestId("ward-planned-selected-identity")).toHaveTextContent(option.textContent!);
+  expect(screen.getByTestId("ward-planned-submit")).toHaveAccessibleDescription(/UM\d{6}/);
+});

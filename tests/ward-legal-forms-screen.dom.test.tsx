@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -313,7 +313,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
     fireEvent.click(within(row).getAllByRole("button")[0]!);
     const panel = screen.getByTestId("ward-legal-selected");
-    expect(within(panel).getByText("since the typed expiry")).toBeInTheDocument();
+    expect(within(panel).getByText(/^Ended, as typed from the form/u)).toBeInTheDocument();
 
     fireEvent.click(within(panel).getByRole("button", { name: "Extend recorded form" }));
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
@@ -322,10 +322,10 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:45" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
 
-    expect(within(panel).getByText("until the typed expiry")).toBeInTheDocument();
+    expect(within(panel).getByText(/^Ends, as typed from the form/u)).toBeInTheDocument();
     const undoBtn = screen.getByRole("button", { name: "Undo" });
     fireEvent.click(undoBtn);
-    expect(within(panel).getByText("since the typed expiry")).toBeInTheDocument();
+    expect(within(panel).getByText(/^Ended, as typed from the form/u)).toBeInTheDocument();
     expect(screen.getByText("Form extension undone.")).toBeInTheDocument();
   });
 
@@ -421,3 +421,35 @@ function openFoldedGroup() {
   const showAll = screen.queryByRole("button", { name: /^Show all \d+$/ });
   if (showAll) fireEvent.click(showAll);
 }
+
+it("clears an unsaved paper-form region on Clear and when the movement changes", () => {
+  expect(openMovements.length).toBeGreaterThan(1);
+  function RegionForm() {
+    const [draft, setDraft] = useState<{ form: string; movement: string }>({
+      form: "1A",
+      movement: openMovements[0]!.id,
+    });
+    return (
+      <RecordFormSheet
+        open
+        onClose={() => undefined}
+        draft={draft}
+        onDraft={setDraft}
+        openMovements={openMovements}
+        labelOf={(movement) => movement.id}
+        now={NOW_ANCHOR}
+      />
+    );
+  }
+  render(<RegionForm />);
+  fireEvent.change(screen.getByTestId("ward-legal-forms-record-region"), { target: { value: "country" } });
+  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: openMovements[1]!.id } });
+  expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("");
+  // Empty the movement first, so Clear (not the movement-change reset) must clear the region.
+  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: "" } });
+  fireEvent.change(screen.getByTestId("ward-legal-forms-record-region"), { target: { value: "metro" } });
+  expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("metro");
+  fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+  fireEvent.change(screen.getByLabelText("Form type"), { target: { value: "1A" } });
+  expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("");
+});

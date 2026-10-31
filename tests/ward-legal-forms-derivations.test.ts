@@ -154,12 +154,14 @@ describe("isLegalDeadlineBreached", () => {
 describe("legalDeadlineText (byte-for-byte — the wording the build contract's §5 pins)", () => {
   it("states a real, upcoming deadline", () => {
     const movement = synthetic({ legalForm: { code: "4A", kind: "transport", dueAt: NOW + 90 } });
-    expect(legalDeadlineText(movement, NOW)).toBe("Form expires in 1h 30m");
+    // D-93 (31 Oct 2026): the typed time only, never "Form expires in 1h 30m".
+    expect(legalDeadlineText(movement, NOW)).toBe("Form expiry ends 12:12 as typed");
   });
 
   it("states a real, passed deadline", () => {
     const movement = synthetic({ legalForm: { code: "4C", kind: "transfer", dueAt: NOW - 45 } });
-    expect(legalDeadlineText(movement, NOW)).toBe("Form expiry passed 45m ago");
+    // D-93 (31 Oct 2026): the typed time only, never "Form expiry passed 45m ago".
+    expect(legalDeadlineText(movement, NOW)).toBe("Form expiry ended 09:57 as typed");
   });
 
   it("uses the shortlist panel's exact wording for a structurally clockless form (1A, 3B, 3D), always paired with real elapsed time", () => {

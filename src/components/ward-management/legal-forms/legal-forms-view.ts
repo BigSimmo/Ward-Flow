@@ -30,6 +30,7 @@ import {
   legalExpiryReminderOf,
   reminderHours,
 } from "./legal-forms-derivations";
+import { typedTimeLine } from "./legal-time-as-typed";
 
 /**
  * Small view helpers for the Forms page. Everything here reads what a person typed or recorded on
@@ -115,23 +116,38 @@ export function standingWord(standing: ClockStanding, thresholds: DueSoonThresho
   return "Time not written";
 }
 
+/**
+ * A typed legal time's colour and its words, from the user's own warning settings (amber within the
+ * first, red within the second or passed). Words always come with the colour; never a count (D-70).
+ */
+export type TypedTimeStanding = {
+  /** The glyph tone: danger, warning, or neutral when the typed time is not inside a warning. */
+  tone: WfTone;
+  /** "within 1h", "within 3h" or "passed"; undefined when no colour is shown. */
+  word: string | undefined;
+  /** Red: within the second warning or passed. */
+  urgent: boolean;
+};
+
+/** How the movement's typed legal time stands against the user's warning settings. */
+export function typedTimeStanding(movement: Movement, now: Instant, thresholds: DueSoonThresholds): TypedTimeStanding {
+  const standing = clockStanding(movement, now, thresholds);
+  const coloured = standing === "passed" || standing === "urgent" || standing === "soon";
+  return {
+    tone: coloured ? STANDING_TONE[standing] : "neutral",
+    word: coloured ? standingWord(standing, thresholds).toLowerCase() : undefined,
+    urgent: standing === "passed" || standing === "urgent",
+  };
+}
+
+/** " · within 1h" after a typed time, or nothing when the time carries no colour. */
+export function standingSuffix(standing: TypedTimeStanding): string {
+  return standing.word ? ` · ${standing.word}` : "";
+}
+
 /** Act now means passed or inside the first warning window. */
 export function isActNow(standing: ClockStanding): boolean {
   return standing === "passed" || standing === "urgent";
-}
-
-/**
- * How much of the typed window has gone, from the written time (or when the move opened, when no
- * written time is recorded) to the typed expiry. 1 once the expiry has passed.
- */
-export function elapsedFraction(movement: Movement, now: Instant): number {
-  const dueAt = movement.legalForm?.dueAt;
-  if (dueAt === undefined) return 0;
-  const start = movement.formedAt ?? movement.openedAt;
-  if (now >= dueAt) return 1;
-  const span = dueAt - start;
-  if (span <= 0) return 1;
-  return Math.min(1, Math.max(0, (now - start) / span));
 }
 
 /**
@@ -182,12 +198,13 @@ export function durText(minutes: number): string {
   return `${Math.floor(v / (24 * 60))}d ${Math.floor((v % (24 * 60)) / 60)}h`;
 }
 
-/** "48m" left, or "37m ago" once passed. */
-export function leftText(movement: Movement, now: Instant): string {
+/**
+ * "Ends 15:42 as typed", or "Ended 15:42 as typed" once the typed time has gone by; empty when no
+ * expiry was typed. Never a running figure (legal times only as typed, 31 Oct 2026).
+ */
+export function typedTimeText(movement: Movement, now: Instant): string {
   const dueAt = movement.legalForm?.dueAt;
-  if (dueAt === undefined) return "";
-  const remaining = minutesUntil(dueAt, now);
-  return remaining < 0 ? `${durText(-remaining)} ago` : durText(remaining);
+  return dueAt === undefined ? "" : typedTimeLine(dueAt, now);
 }
 
 export type FormEventItem = { id: string; sortAt: Instant; tone: WfTone; text: string };
