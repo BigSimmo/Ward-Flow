@@ -131,7 +131,11 @@ describe("executive Settings from public authority only", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Dark" }));
     const appearance = renderHook(() => useAppearanceStore());
     expect(appearance.result.current).toBe("dark");
-    fireEvent.click(screen.getAllByRole("button", { name: "Go to a desk" })[0]);
+    // D-91 (Josh, 31 Oct 2026): Settings has no Go to a desk button of its own; Find a setting still
+    // finds it, and choosing it calls the authenticated role switch.
+    expect(screen.queryByRole("button", { name: "Go to a desk" })).toBeNull();
+    fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), { target: { value: "workstation" } });
+    fireEvent.click(screen.getByRole("option", { name: /Go to a desk/ }));
     expect(switchRole).toHaveBeenCalledOnce();
     expect(raw).not.toHaveBeenCalled();
   });
