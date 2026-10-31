@@ -1,6 +1,6 @@
 # Redesign mock-ups: handover and plan
 
-_Updated 2026-10-30 - round 2 polish done on every page, popup, state and role view; ownership split with the Home and Activity chat; waiting on Josh's review; Design owns._
+_Updated 2026-10-31 - review round, phone round and the new sidebar and header merged; the Home and Activity chat has handed everything back to this branch's chat; waiting on Josh's review; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed (D-74).** Everything below lives on
 branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown in draft pull request #1118
@@ -18,9 +18,10 @@ branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown i
 3. Recreate the sign-out claim file the commit hook needs (one line naming the paths under "Checks before
    each commit" below, with `repo=BigSimmo/Ward-Flow`), and pass it as `WARD_SIGNOUT_FILE` on each commit.
 4. Run `npm run ensure` and open `/mockups/ward-flow-redesign` at the printed address.
-5. Everything in "Remaining plan" and "Round 2" is done. Next is Josh's page-by-page review: apply his
-   answers to the build notes' "Still open" and "Question for you" points, then refresh the private preview.
-6. Check "Who owns what (30 October, evening)" below before editing any folder.
+5. Everything in "Remaining plan", "Round 2" and "Review round and phone round (30-31 October)" is done.
+   Next: Josh's two open decisions and his page-by-page review (see "Open now" in that section), then
+   refresh the private preview the way that section describes.
+6. One chat owns every folder again (see "Who owns what"); a new helper or chat should agree a split first.
 
 Josh's standing go-ahead: push to this branch only (draft PR #1118, not to be merged or marked ready), no change to the real `/ward-flow`
 screens (D-74), and apply every recommendation without waiting for answers.
@@ -281,16 +282,13 @@ word; legal times still only as typed. The viewer has a Redesign / Today switch:
 a picture of today's coordinator page beside each redesign (pictures in `output/redesign-preview/today/`,
 not committed; role views have none).
 
-### Who owns what (30 October, evening)
+### Who owns what (31 October)
 
-Josh approved a split with the Home and Activity chat (branch `claude/home-activity-mockup`):
-
-- **That chat:** Home (one Home, from the Home and Activity design), Activity, the empty and loading
-  states, `shell/`, Placement, the deep-review fixes to Waiting, Referrals, Capacity and Discharges
-  (handed over at 719093ff7), and afterwards one size per control and a wording sweep across all pages,
-  including the role copies.
-- **This branch:** everything else, until it hands over. Recommended next: one chat owns all the mock-ups,
-  to stop two writers clashing.
+On 30 October the Home and Activity chat (branch `claude/home-activity-mockup`) took Home, Activity,
+Placement, `shell/`, the deep-review fixes and the whole-site sweeps, then the final check and publish.
+On 31 October it handed **everything back to this branch's chat**: every folder, `_preview/*`,
+`parts/*`, `shell/`, `shell-next/`, the preview artifact and PR #1118. `claude/home-activity-mockup` and
+`claude/shell-next-mockup` are fully merged here (both at or behind this branch); do not push to them.
 
 ### Lessons from round 2
 
@@ -316,6 +314,66 @@ belongs to the Home and Activity chat. 4 and 5 need no change.
 5. Bed manager Home: the rail's "Waiting 6" (every ED on the desk) sits beside the hero's "5 waiting in
    RPH ED". Recommend accepting, since the hero names its ED.
 
+## Review round and phone round (30-31 October)
+
+All approved by Josh; each page's build notes carry "Review round" and "Phone (Josh, 31 October)" lines.
+
+- **One Home.** The `home` slug draws the Home and Activity design (`home-activity/`: My List, Waiting,
+  Planned; Activity with explicit review; the redesigned Placement panel `placement-panel.tsx`, a D-89
+  copy of the shortlist panel; Beds that fit folds while someone is chosen). The old `home/` redesign and
+  the separate Activity drawer were removed; Empty, Loading and Not wired draw over the one Home.
+- **One size per control:** `parts/kit-standard.css`, switched on by `html[data-mockup-kit]` (set only by
+  `_preview/preview-screen.tsx`, so it never reaches `/ward-flow`): segmented and pill tabs 30px/13px on a
+  laptop, 32px on a 40px track with a 48px tap area on a phone; the real `showMore`/`queueMore` rows and
+  `headLink`/`footLink` links. `parts/show-more-row.tsx` is the one Show more control (about 35 places).
+  For the real build these belong in `src/components/wf`.
+- **Phone rows:** `parts/phone-rows.module.css`: `.chipRow` + `.chip` (+ `.zero`) is Home's ED-chip slider
+  (one row, soft right-edge fade, zero chips muted at the end); `.heroPills` + `.heroPill` is Home's 40px
+  changes pill for hero buttons. Used on every page whose phone chips wrapped or whose hero buttons were
+  tall or full width.
+- **Deep-review fixes** to Waiting, Referrals, Capacity and Discharges, carried into their role copies
+  (proposals and rulings: Discharges "59 to work now · of 207 open", "Held up", closed wards left out of
+  the day chart; Capacity's held-up count from `capacity/held-up.ts`, Discharges' derivation; Waiting
+  "Form due soon, as typed"; Referrals counting wards, naming declined wards, "Legal status not
+  recorded", "Decision overdue").
+- **Header:** no "Synthetic prototype" pill or mark in the mock-ups' app bar (`shell/preview-bar.tsx`);
+  the footer notice stays on every page. For the real app Josh wants it removed too, keeping the footer.
+- **Josh's other answers (30-31 October):** Alerts drawer legal rows "Due <time> as typed · Not legally
+  checked"; no tentative diagnoses on the shift brief; the bed manager's Discharges offers Open for
+  expected releases; no access forecast card on the ED desk; one caseload figure on the community pages
+  (the phone's last tab is Caseload, opening on the whole caseload).
+- **New sidebar and header** (`shell-next/`, from the sidebar and header chat): drawn with `?shell=next`
+  or the viewer's "Sidebar and header: Today's frame / New frame" switch (default Today's). The redesigned
+  Alerts sheet and Home's Activity panel carry its Alerts | Activity tabs in the new frame.
+- **Final break check:** every page, popup and role view looked at on the built copy by three reviewers;
+  about 30 small breaks fixed.
+
+**How it was checked (repeat before each publish):** full `npm run typecheck`, ESLint and Prettier on the
+changed files, `check:knip`, `check:ward-text-size`, `check:mockups`, `check:ward-legal-language`,
+`docs:facts`; then the built copy (`node scripts/ward-flow/build-redesign-preview.mjs`, serve
+`output/redesign-preview` on 8791) through `final-qa.js` (HANDOVER-TOOLS.md) at 1440 and 390, light, and
+390 with `&shell=next`: no page errors, no sideways scroll, no text under 12px, nothing past the edge.
+One known false alarm: the Placement sheet's icon-only Close (its text is hidden on purpose).
+
+**Publishing the private preview:** publish `output/redesign-preview/index.html` to
+https://claude.ai/artifact/BL86wBgPv41hzMG2QWMwB3 with `files` for frame.html, global.css, preview.css,
+preview.js and the two fonts only. The 152 Today pictures (`today/<slug>-<width>.jpg`) are already there
+and are kept when left out of the files map. Version 7 is the latest (31 October).
+
+**Open now (for Josh):**
+
+1. Count first on the phone chips of Waiting and Patients ("41 Waiting on you"), as Referrals and Home do.
+   Recommended yes; not built.
+2. Which sidebar and header becomes the default once he has compared them. Recommended the new frame.
+3. His page-by-page review of the preview, then which pages to build into the real app (start with Home).
+
+**Small leftovers (known, recorded in build notes):** the Empty state's rail and bell keep live counts by
+design (only the page reads the quiet world); a white strip in the phone tour spotlight; Statistics'
+"Show all 22" and Movements' footer "Show all 77" keep their style beside other controls.
+
+**Not run yet:** the full verify gates and Playwright suites, and hosted CI on PR #1118. Run both before
+the PR is ever marked ready (only with Josh's yes).
+
 ## Josh's answers (30 October, evening)
 
 Josh agreed with **every recommendation**: all picks below stand, and the items marked "to do" are now
@@ -339,6 +397,14 @@ grouped alerts (needs a new command, so it stays unbuilt).
   arrived", "Not counted") is unseen on today's data.
 
 ## Things found while building (for the real app)
+
+- (31 October) Capacity's "See Waiting" / "Open Waiting" link opens the patients-waiting list, not the
+  held-up releases; the real Capacity has the same wrong link. Discharges has no query for its Held up
+  group, so a deep link needs one.
+- (31 October) Remove the app bar's "Synthetic prototype" pill (Josh), keeping the footer's synthetic-data
+  notice; the Demo menu then opens from the board clock and Tools (`requestDemoMenu` falls back to Tools).
+- (31 October) One size per control and Home-style phone chips and hero pills belong in `src/components/wf`
+  (see `parts/kit-standard.css` and `parts/phone-rows.module.css`).
 
 - **Shareable copy drops scoped styles (found 30 October).** `build-redesign-preview.mjs` minified CSS
   module class names, so every scoped override written as `[class*="_name__"]` (On-call, Governance,

@@ -500,3 +500,100 @@ For each slug:
   "**New:** ...", "**Kept:** ...", "**Still open:** ..." (anything you could not do, or a question for Josh).
 - `checked`: which widths/themes you looked at and anything left imperfect.
 - Any file over 1,500 lines (path, count). Anything you were unsure about.
+
+## final-qa.js: every page and popup in the built copy (31 October)
+
+Build the shareable copy, serve it (`cd output/redesign-preview && python3 -m http.server 8791 &`), then run
+from a scratch folder with the system Node and Playwright, for example:
+`PATH=/usr/local/bin:/usr/bin:/bin NODE_PATH=$(PATH=/usr/local/bin:/usr/bin:/bin npm root -g) node final-qa.js 390`
+(add `SHELLQ="&shell=next"` for the new sidebar and header). `all-items.json` is the list of
+`{slug, screen, pop}` built from `_preview/screens.ts` (screens, then popups with their `over` and `pop`).
+It writes one viewport screenshot per item and prints only flagged items.
+
+```js
+// node final-qa.js <width> [theme]  -- QA every page/popup in the built copy on :8791
+const { chromium } = require("playwright");
+const fs = require("fs");
+const W = +process.argv[2];
+const theme = process.argv[3] || "light";
+const phone = W < 500;
+const items = JSON.parse(fs.readFileSync(__dirname + "/all-items.json", "utf8"));
+const OUT = `${__dirname}/final4/${W}-${theme}${process.env.SHELLQ ? "-next" : ""}/`;
+fs.mkdirSync(OUT, { recursive: true });
+(async () => {
+  const b = await chromium.launch();
+  const ctx = await b.newContext({
+    viewport: { width: W, height: phone ? 844 : 900 },
+    isMobile: phone,
+    hasTouch: phone,
+    reducedMotion: "reduce",
+  });
+  const results = [];
+  for (const it of items) {
+    const p = await ctx.newPage();
+    const errs = [];
+    p.on("pageerror", (e) => errs.push(e.message.slice(0, 140)));
+    const url = `http://localhost:8791/frame.html?screen=${it.screen}&theme=${theme}${process.env.SHELLQ || ""}${it.pop ? "&pop=" + it.pop : ""}`;
+    let r = {};
+    try {
+      await p.goto(url, { waitUntil: "networkidle", timeout: 90000 });
+      await p.waitForTimeout(1200);
+      r = await p.evaluate(() => {
+        const vis = (e) => {
+          const b = e.getBoundingClientRect();
+          const cs = getComputedStyle(e);
+          return b.width > 0 && b.height > 0 && cs.visibility !== "hidden" && cs.opacity !== "0";
+        };
+        const leaves = [...document.querySelectorAll("body *")].filter(
+          (e) => e.children.length === 0 && e.textContent.trim() && vis(e),
+        );
+        const srOnly = (e) => {
+          const b = e.getBoundingClientRect();
+          return b.width <= 1 || b.height <= 1;
+        };
+        const small = leaves
+          .filter((e) => !srOnly(e) && parseFloat(getComputedStyle(e).fontSize) < 12)
+          .map((e) => e.textContent.trim().slice(0, 30));
+        const W = window.innerWidth;
+        const off = leaves
+          .filter((e) => {
+            if (srOnly(e)) return false;
+            const b = e.getBoundingClientRect();
+            if (b.right <= W + 1) return false;
+            let a = e.parentElement;
+            while (a) {
+              const ov = getComputedStyle(a).overflowX;
+              if (ov === "auto" || ov === "scroll" || ov === "hidden" || ov === "clip") return false;
+              a = a.parentElement;
+            }
+            return true;
+          })
+          .map((e) => e.textContent.trim().slice(0, 30));
+        const main = document.querySelector("main");
+        return {
+          hs: document.documentElement.scrollWidth > W + 1,
+          small: [...new Set(small)].slice(0, 6),
+          off: [...new Set(off)].slice(0, 6),
+          main: main ? main.innerText.length : 0,
+          h: document.documentElement.scrollHeight,
+        };
+      });
+      await p.screenshot({ path: `${OUT}${it.slug}.png` });
+    } catch (e) {
+      errs.push("LOAD " + e.message.slice(0, 80));
+    }
+    const flags = [];
+    if (errs.length) flags.push("ERR " + errs.join(" | "));
+    if (r.hs) flags.push("HSCROLL");
+    if (r.off && r.off.length) flags.push("OFFEDGE " + r.off.join(" ; "));
+    if (r.small && r.small.length) flags.push("SMALL " + r.small.join(" ; "));
+    if (r.main !== undefined && r.main < 40) flags.push("EMPTY main=" + r.main);
+    results.push({ slug: it.slug, flags });
+    if (flags.length) console.log(`${it.slug}: ${flags.join(" || ")}`);
+    await p.close();
+  }
+  fs.writeFileSync(`${OUT}results.json`, JSON.stringify(results, null, 1));
+  console.log(`done ${results.length} items, ${results.filter((x) => x.flags.length).length} flagged`);
+  await b.close();
+})();
+```
