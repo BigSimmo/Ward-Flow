@@ -27,7 +27,7 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { WARD_ALERTS_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
-import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
+import { WardBarActivityBody, WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import {
@@ -95,7 +95,6 @@ import {
   WardBarPrimaryAction,
   WardBarServiceSelector,
 } from "./ward-bar-controls";
-import { WardBarActivityBody } from "./ward-bar-activity";
 import { usePhoneActivitySheet } from "./ward-phone-menu";
 import styles from "./ward-bar.module.css";
 
