@@ -246,7 +246,9 @@ describe("settings screen: deleted Preview controls stay out of every build", ()
       (entry) => entry.tab !== "access" && findSettings(entry.label, SETTINGS_SEARCH_ENTRIES.length).includes(entry),
     );
     expect(offered.length).toBeGreaterThan(0);
-    expect(offered.filter((entry) => !targets.has(entry.id)).map((entry) => entry.id)).toEqual([]);
+    // D-91: Go to a desk is an action, not a row. Choosing it opens the desk drawer (the case below).
+    const rows = offered.filter((entry) => entry.id !== "go-to-desk");
+    expect(rows.filter((entry) => !targets.has(entry.id)).map((entry) => entry.id)).toEqual([]);
   });
 
   it.each(["production", "development"] as const)(
@@ -254,7 +256,11 @@ describe("settings screen: deleted Preview controls stay out of every build", ()
     (build) => {
       vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", build);
       renderSettings();
-      fireEvent.click(screen.getByRole("button", { name: "Go to a desk" }));
+      // D-91 (Josh, 31 Oct 2026): Settings opens Go to a desk from Find a setting, not a button of its own.
+      fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
+        target: { value: "workstation" },
+      });
+      fireEvent.click(screen.getByRole("option", { name: /Go to a desk/ }));
       const drawer = screen.getByRole("dialog", { name: "Go to a desk" });
       expect(within(drawer).queryByRole("button", { name: /Bed manager/ })).toBeNull();
       expect(within(drawer).queryByRole("button", { name: /Executive/ })).toBeNull();

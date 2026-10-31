@@ -44,10 +44,10 @@ async function afterFrames() {
 it("keeps focus on the connected opener after a modal drawer closes and unmounts", async () => {
   const previous = opener();
   render(<Harness />);
-  const drawer = screen.getByRole("dialog", { name: "Tasks" });
+  const drawer = screen.getByRole("dialog", { name: "Alerts" });
   expect(drawer.contains(document.activeElement)).toBe(true);
-  fireEvent.click(screen.getByRole("button", { name: "Close tasks panel" }));
-  expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Close alerts panel" }));
+  expect(screen.queryByRole("dialog", { name: "Alerts" })).toBeNull();
   expect(previous).toHaveFocus();
   await afterFrames();
   expect(previous).toHaveFocus();
@@ -56,9 +56,9 @@ it("keeps focus on the connected opener after a modal drawer closes and unmounts
 it("does not attempt to restore focus to an opener removed while the drawer is open", async () => {
   const previous = opener();
   render(<Harness />);
-  expect(screen.getByRole("dialog", { name: "Tasks" }).contains(document.activeElement)).toBe(true);
+  expect(screen.getByRole("dialog", { name: "Alerts" }).contains(document.activeElement)).toBe(true);
   previous.remove();
-  fireEvent.click(screen.getByRole("button", { name: "Close tasks panel" }));
+  fireEvent.click(screen.getByRole("button", { name: "Close alerts panel" }));
   await afterFrames();
   expect(previous.isConnected).toBe(false);
   expect(document.activeElement).toBe(document.body);
@@ -76,9 +76,9 @@ it("registers the open drawer on the sheet stack and stops Escape from reaching 
   try {
     const { unmount } = render(<Harness />);
     expect(hasOpenSheet()).toBe(true);
-    const closeBtn = screen.getByRole("button", { name: "Close tasks panel" });
+    const closeBtn = screen.getByRole("button", { name: "Close alerts panel" });
     fireEvent.keyDown(closeBtn, { key: "Escape" });
-    expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Alerts" })).toBeNull();
     expect(hasOpenSheet()).toBe(false);
     expect(boardEscapeSpy).not.toHaveBeenCalled();
     expect(previous).toHaveFocus();
@@ -88,7 +88,7 @@ it("registers the open drawer on the sheet stack and stops Escape from reaching 
     render(<Harness />);
     expect(hasOpenSheet()).toBe(true);
     fireEvent.keyDown(document.body, { key: "Escape" });
-    expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Alerts" })).toBeNull();
     expect(hasOpenSheet()).toBe(false);
     expect(boardEscapeSpy).not.toHaveBeenCalled();
   } finally {

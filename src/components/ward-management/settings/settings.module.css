@@ -813,12 +813,6 @@
   min-width: 0;
 }
 
-.phoneGrow {
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: var(--wf-touch);
-}
-
 /* Find a setting sits on the page here, not on the band: page ink and a 44px box. */
 .phoneFind .find {
   width: 100%;

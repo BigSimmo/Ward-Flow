@@ -228,13 +228,13 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
 
       fireEvent.click(triggerBtn);
 
-      const drawer = screen.getByRole("dialog", { name: "Tasks" });
+      const drawer = screen.getByRole("dialog", { name: "Alerts" });
       expect(drawer).toBeInTheDocument();
       expect(drawer.contains(document.activeElement)).toBe(true);
 
       fireEvent.keyDown(window, { key: "Escape" });
 
-      expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
+      expect(screen.queryByRole("dialog", { name: "Alerts" })).toBeNull();
       expect(document.activeElement).toBe(triggerBtn);
     });
   });

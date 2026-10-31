@@ -116,7 +116,9 @@ type AckFilter = "all" | "open" | "unacknowledged" | "acknowledged" | "completed
  * every other row is waiting, the same split `inboxItemIsActNow` makes for the Alerts screen.
  */
 type DrawerWords = { name: string; plural: string; act: string; wait: string; running?: string };
-const TASKS_WORDS: DrawerWords = { name: "Tasks", plural: "tasks", act: "Critical", wait: "Review" };
+// The drawer is called Alerts on every desk, as its button is (Josh, 31 Oct 2026). Desks without the
+// one Alerts queue keep their own filters and row behaviour, which follow these words by identity.
+const TASKS_WORDS: DrawerWords = { name: "Alerts", plural: "alerts", act: "Critical", wait: "Review" };
 const ALERTS_WORDS: DrawerWords = {
   name: "Alerts",
   plural: "alerts",
@@ -1023,7 +1025,7 @@ export function WardTasksDrawer({
       >
         <div className={styles.header}>
           <span className={styles.headerIcon} aria-hidden="true">
-            {words === ALERTS_WORDS ? <Bell aria-hidden="true" /> : <ListChecks aria-hidden="true" />}
+            <Bell aria-hidden="true" />
           </span>
           <div className={styles.headerText}>
             <h2 className={styles.heading}>{words.name}</h2>
@@ -1116,15 +1118,7 @@ export function WardTasksDrawer({
           <div className={styles.filterMeta}>
             <span role="status" className={styles.filterStatus}>
               <strong className={styles.mono}>{filteredItems.length}</strong> of {items.length}{" "}
-              {words === ALERTS_WORDS ? (
-                <>
-                  <span className="sr-only">invented </span>alerts
-                </>
-              ) : (
-                <>
-                  <span className="sr-only">invented </span>tasks
-                </>
-              )}
+              <span className="sr-only">invented </span>alerts
             </span>
             {oneAction ? null : (
               <>

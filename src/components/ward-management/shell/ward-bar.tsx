@@ -47,15 +47,13 @@ const loadToolsSheet = () =>
 // test clock never fires (ui-ward-roles.spec.ts demo clock journey).
 const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"));
 preloadWhenIdle(loadToolsSheet);
-// The Demo menu under the Synthetic pill (change 8, D-77), loaded on first open.
-const loadDemoMenu = () => import("./ward-demo-menu").then((m) => m.WardDemoMenu);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { useDemoMenuFromSheet } from "@/components/ward-management/tools/ward-demo-menu-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
 import { announceToWardShell } from "./ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
-import { WardHelpHost, WardHelpScreenButton } from "@/components/ward-management/help/ward-help-host";
+import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
 import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
@@ -64,10 +62,11 @@ import { useWardChecks } from "./ward-checks";
 import { useDeskRoleLabel } from "./ward-access-store";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
-import { WardDataModeSlot } from "../ward-shared-access";
 import { useAccessNavFilter, useDeskHomeHref } from "./ward-access";
 import { useNavigationPendingRef, useWardBarActivity, useWardBarTasks } from "./ward-bar-state";
 import { useEffectiveWardAccess } from "./ward-access-store";
+import { deskHomeRouteTitle, deskPlaceLabel } from "./ward-bar-desk-place";
+import { CLOSE_MENUS_EVENT } from "./ward-rail-parts";
 import { noteWardRoute, wardBackParent } from "./ward-back";
 import {
   ALERTS_ACCESS_ENTRY,
@@ -89,6 +88,7 @@ import {
 } from "./ward-bar-model";
 import { useBandScrolled, useBarScrolled } from "./ward-bar-scroll";
 import {
+  confirmLeavingShell,
   PhoneMenuEntry,
   WardBarBack,
   WardBarDrawerTriggers,
@@ -346,7 +346,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
   // The slide-out fills this with its guarded close, which asks before discarding a draft.
   const referralCloseRef = useRef<(() => void) | null>(null);
-  const tasksDismissalGuardRef = useRef<(() => boolean) | null>(null);
+  // The drawer's guard takes the step to repeat after a styled Discard (kit confirm).
+  const tasksDismissalGuardRef = useRef<((retry?: () => void) => boolean) | null>(null);
+  // The latest close and open, for that repeated step (set after each render, below).
+  const popoverStepsRef = useRef<{
+    close: (id: WardBarPopoverId, announce?: boolean) => void;
+    open: (id: WardBarPopoverId) => void;
+  } | null>(null);
   // `ward-service-store.ts` — a `sessionStorage`-backed module store, not component-local state, so
   // the choice survives a remount (a route change unmounts and remounts this bar) and stays in sync
   // with any other reader (`WardRail`, a future scoped screen) in the same tab. See that file's own
@@ -411,7 +417,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   }, []);
 
   const place = wardPlaceFor(pathname, units);
-  const routeTitle = wardBarRouteTitle(pathname, place, isPhone);
+  const appRouteTitle = wardBarRouteTitle(pathname, place, isPhone);
   // Back (Josh, 20 Oct 2026): drill-down screens lead with Back; rail and dock pages keep Menu.
   const deskHomeHref = useDeskHomeHref();
   const backHref = wardBackParent(pathname, deskHomeHref);
@@ -494,7 +500,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     (id: WardBarPopoverId, announce = true) => {
       // Do not issue another Back while the first one is still waiting for popstate.
       if (closingViaHistoryRef.current !== null) return;
-      if (id === "tasks" && tasksDismissalGuardRef.current?.() === false) return;
+      if (
+        id === "tasks" &&
+        tasksDismissalGuardRef.current?.(() => popoverStepsRef.current?.close(id, announce)) === false
+      )
+        return;
       if (typeof window === "undefined" || !window.history) {
         setOpenPanel((current) => (current === id ? null : current));
         if (announce) announceToWardShell("Closed.");
@@ -550,7 +560,12 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // A replacement open must wait for the pending Back; otherwise its popstate would
       // be indistinguishable from the drawer that initiated the close.
       if (closingViaHistoryRef.current !== null) return;
-      if (openPanel === "tasks" && id !== "tasks" && tasksDismissalGuardRef.current?.() === false) return;
+      if (
+        openPanel === "tasks" &&
+        id !== "tasks" &&
+        tasksDismissalGuardRef.current?.(() => popoverStepsRef.current?.open(id)) === false
+      )
+        return;
       setOpenPanel(id);
       if (typeof window !== "undefined" && window.history && isDrawerPanel(id)) {
         if (window.history.state?.wardDrawer) {
@@ -592,6 +607,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       tasksActiveCount,
     ],
   );
+  useEffect(() => {
+    popoverStepsRef.current = { close: closePopover, open: openPopover };
+  }, [closePopover, openPopover]);
   const activitySheet = usePhoneActivitySheet(isPhone, phoneReturnTarget, activityTriggerRef, openPopover);
   /**
    * Opens the referral slide-out with `request`. Every open gets a new id, so the slide-out mounts
@@ -671,6 +689,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       if (!request) return;
       event.preventDefault();
       event.stopPropagation();
+      // This capture stops the click before the rail's More or Menu sheet sees it, so tell those
+      // sheets to close, or the referral opens over a menu that stays open underneath.
+      window.dispatchEvent(new Event(CLOSE_MENUS_EVENT));
       const search = new URL(anchor.href, window.location.origin).searchParams;
       openReferral(withRoleCategory(request, search, roleCategory), anchor);
       // Show the route in the address bar (P150) on the drawer's own history entry, so Back and close
@@ -776,25 +797,24 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   const openMovement = useCallback(
     (movementId: string, action?: "refer" | "contact", href?: string) => {
-      const globalWindow =
-        typeof window !== "undefined"
-          ? (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
-          : null;
-      if (globalWindow?.__wardFlowConfirmNavigation && !globalWindow.__wardFlowConfirmNavigation()) return;
-      // A task row is an in-drawer navigation affordance. Close the Sheet in the same event before
-      // routing so its portal cannot remain over the destination while the new page mounts.
-      setOpenPanel(null);
-      if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
-        const nextState = { ...window.history.state };
-        delete nextState.wardDrawer;
-        window.history.replaceState(nextState, "");
-      }
-      startTransition(() => {
-        router.push(
-          href ??
-            `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
-        );
-      });
+      // With the styled confirm, Leave without saving runs `go` afterwards; the browser's confirm runs it now.
+      const go = () => {
+        // A task row is an in-drawer navigation affordance. Close the Sheet in the same event before
+        // routing so its portal cannot remain over the destination while the new page mounts.
+        setOpenPanel(null);
+        if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
+          const nextState = { ...window.history.state };
+          delete nextState.wardDrawer;
+          window.history.replaceState(nextState, "");
+        }
+        startTransition(() => {
+          router.push(
+            href ??
+              `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+          );
+        });
+      };
+      if (confirmLeavingShell(go)) go();
     },
     [router, setOpenPanel],
   );
@@ -802,20 +822,18 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // A discharge notification task opens the stay's checklist on the discharges board.
   const openDischarge = useCallback(
     (admissionId: string) => {
-      const globalWindow =
-        typeof window !== "undefined"
-          ? (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
-          : null;
-      if (globalWindow?.__wardFlowConfirmNavigation && !globalWindow.__wardFlowConfirmNavigation()) return;
-      setOpenPanel(null);
-      if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
-        const nextState = { ...window.history.state };
-        delete nextState.wardDrawer;
-        window.history.replaceState(nextState, "");
-      }
-      startTransition(() => {
-        router.push(dischargeHref(admissionId));
-      });
+      const go = () => {
+        setOpenPanel(null);
+        if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
+          const nextState = { ...window.history.state };
+          delete nextState.wardDrawer;
+          window.history.replaceState(nextState, "");
+        }
+        startTransition(() => {
+          router.push(dischargeHref(admissionId));
+        });
+      };
+      if (confirmLeavingShell(go)) go();
     },
     [router, setOpenPanel],
   );
@@ -939,10 +957,25 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const reconciledCheckCount = publishedChecks.filter((check) => check.ok).length;
 
   // The route's place, else the desk's own place (#838): a ward desk never reads "Statewide".
-  const { scope } = useEffectiveWardAccess();
-  const fixedService = useMemo(() => fixedServiceFor(pathname, place, units, scope), [pathname, place, units, scope]);
+  // Every desk but the coordinator: the chip names the desk's own place (Josh, 30 Oct 2026), and a
+  // placed desk's own home page is named for the page, then the place ("My ward / Dabakarn").
+  const deskAccess = useEffectiveWardAccess();
+  const { fixedService, deskPlace, routeTitle } = useMemo(() => {
+    const ownPlace = deskPlaceLabel(deskAccess, units);
+    return {
+      fixedService: fixedServiceFor(pathname, place, units, deskAccess.scope),
+      deskPlace: ownPlace,
+      routeTitle: deskHomeRouteTitle(appRouteTitle, pathname, deskHomeHref, deskAccess, ownPlace),
+    };
+  }, [pathname, place, units, deskAccess, appRouteTitle, deskHomeHref]);
 
-  const isFixedJurisdiction = fixedService !== undefined;
+  const isFixedJurisdiction = fixedService !== undefined || deskPlace !== undefined;
+  // A placed desk with no service of its own (a team, the transport desk) has no picker, so a
+  // service chosen earlier in this tab would narrow its lists with no way back. It reads the whole
+  // of its own place instead.
+  useEffect(() => {
+    if (deskPlace !== undefined && fixedService === undefined && service !== null) setServiceScope(null);
+  }, [deskPlace, fixedService, service]);
   const activeService = isFixedJurisdiction ? fixedService : service;
   const activeSwatchKey = activeService ? (SERVICE_SWATCH_KEY[activeService] ?? "statewide") : "statewide";
   const activeServiceBadgeLabel = activeService ?? "Statewide";
@@ -968,6 +1001,30 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const scopeWaitingCount = activeService
     ? (waiting.byService.get(activeService as HealthService) ?? 0)
     : allWaitingCount;
+  const serviceSelector = (
+    <WardBarServiceSelector
+      serviceTriggerRef={serviceTriggerRef}
+      servicePanelRef={servicePanelRef}
+      activeSwatchKey={activeSwatchKey}
+      isPhone={isPhone}
+      bandState={bandState}
+      isFixedJurisdiction={isFixedJurisdiction}
+      openPanel={openPanel}
+      activeService={activeService}
+      activeServiceBadgeLabel={activeServiceBadgeLabel}
+      routeTitle={routeTitle}
+      closePopover={closePopover}
+      openPopover={openPopover}
+      scopeWaitingCount={scopeWaitingCount}
+      service={service}
+      selectService={selectService}
+      allWaitingCount={allWaitingCount}
+      waiting={waiting}
+      deskPlace={deskPlace}
+    />
+  );
+  // The place is never said twice: where the page's own title is the place, the chip steps aside.
+  const placeIsTitle = deskPlace !== undefined && routeTitle.trim() === deskPlace.trim();
 
   return (
     <WardBarFrame
@@ -997,6 +1054,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           target, not the 91 x 18 line alone. A title tap forwards to the service button, the one keyboard
           and screen-reader control; taps in its own container (button, sheet, scrim) are left to it. */}
       {backHref ? <WardBarBack parentHref={backHref} phone={false} /> : null}
+      {/* Josh, 31 Oct 2026: the page name first and then the place's dropdown, with no "?" beside the
+          title (Help stays in the rail). A desk's own home page reads "My ward", "My ED", "My team" or
+          "My jobs", then its place (`ward-bar-desk-place.ts`). */}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route */}
       <div
         className={styles.title}
@@ -1017,39 +1077,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           >
             {routeTitle}
           </span>
-          {isPhone ? null : <WardHelpScreenButton title={routeTitle} className={styles.screenHelp} />}
         </div>
 
-        <WardBarServiceSelector
-          serviceTriggerRef={serviceTriggerRef}
-          servicePanelRef={servicePanelRef}
-          activeSwatchKey={activeSwatchKey}
-          isPhone={isPhone}
-          bandState={bandState}
-          isFixedJurisdiction={isFixedJurisdiction}
-          openPanel={openPanel}
-          activeService={activeService}
-          activeServiceBadgeLabel={activeServiceBadgeLabel}
-          routeTitle={routeTitle}
-          closePopover={closePopover}
-          openPopover={openPopover}
-          scopeWaitingCount={scopeWaitingCount}
-          service={service}
-          selectService={selectService}
-          allWaitingCount={allWaitingCount}
-          waiting={waiting}
-        />
+        {placeIsTitle && !isPhone ? null : serviceSelector}
 
         {/* A page's own header tools land here (`ward-bar-page-tools.tsx`). Empty on most pages. */}
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
 
-        {/* v10: the Prototype pill beside the service pill, in place of the Data mode bar. */}
-        <WardDataModeSlot className={styles.dataMode} menu={loadDemoMenu} />
+        {/* Josh, 30-31 Oct 2026: no "Synthetic prototype" pill in the header. The page footer's
+            synthetic-data notice stays on every page, and the Demo menu opens from the board clock
+            and from Tools (`requestDemoMenu` falls back to Tools without the pill). */}
 
-        {/* A7 (overall review, 20 Oct 2026): the demo clock's one place. It opens the demo
-            controls in Tools; the rail no longer repeats it. At 1000px and below the bar has no
-            room (CSS hides it): the tablet Menu sheet keeps its "Board time" line and phone page
-            Live chips read the same time (`publishLiveClock` above). */}
+        {/* A7 (overall review, 20 Oct 2026): the demo clock's one place. It opens the Demo menu
+            (in Tools); the rail no longer repeats it. Board time stays on tablet (Josh, 30 Oct 2026:
+            the dropped pill gives that room back). The phone bar has no room (CSS hides it), and
+            phone page Live chips read the same time (`publishLiveClock` above). */}
         <WardDemoClockPopover
           className={styles.demoClock}
           testId="ward-bar-demo-clock"
@@ -1062,6 +1104,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           <span className={styles.demoClockTz}>AWST</span>
         </WardDemoClockPopover>
 
+        {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
         <span
           className={styles.mark}
           title="Patient and flow data are synthetic; service names depend on the selected demonstration scenario. Not approved for clinical use."
@@ -1093,7 +1136,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               tasksAreAlerts={oneAlertsQueue}
               plannedAdmissions={plannedAdmissions}
               now={now}
-              placeholder="Search"
+              // Josh, 31 Oct 2026: search also finds Help, contacts and suburbs, so it names the app.
+              placeholder="Search Ward Flow"
             />
           </div>
         )}
@@ -1232,7 +1276,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         id="ward-bar-tasks-drawer"
         open={openPanel === "tasks"}
         onClose={() => closePopover("tasks")}
-        ariaLabel={oneAlertsQueue ? "Alerts" : "Tasks"}
+        ariaLabel="Alerts"
         headerHidden
         placement="right"
         testId="ward-bar-tasks-sheet"

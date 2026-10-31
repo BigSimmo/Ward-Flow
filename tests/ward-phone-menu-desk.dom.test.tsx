@@ -109,7 +109,8 @@ describe("Create sheet asks the access check for Add patient (role access plan v
   });
 
   // Help thread (26 Oct 2026): a desk with nothing to start shows no + at all, rather than a + that
-  // opens a sheet saying so. The dock keeps its five cells, so the places either side stay put.
+  // opens a sheet saying so. The new frame (Josh, 30 Oct 2026): with no + and no hump, the dock's
+  // tabs share its width evenly instead of leaving blank cells (the officer's dock had an empty slot).
   it.each([
     ["officer", "/ward-flow/transport/officer", { kind: "jobs" }],
     ["executive", "/ward-flow", { kind: "statewide" }],
@@ -123,7 +124,9 @@ describe("Create sheet asks the access check for Add patient (role access plan v
       openMenu();
       expect(screen.queryByTestId("ward-phone-create")).toBeNull();
       const dock = screen.getByTestId("ward-phone-dock");
-      expect(dock.children).toHaveLength(5);
+      const cells = [...dock.children];
+      expect(cells.filter((cell) => cell.getAttribute("aria-hidden") === "true")).toEqual([]);
+      expect(dock.style.gridTemplateColumns).toBe(`repeat(${cells.length}, minmax(0, 1fr))`);
       expect(dock.closest("[data-wf-page-dock]")).toHaveAttribute("data-wf-create", "none");
     } finally {
       act(() => {

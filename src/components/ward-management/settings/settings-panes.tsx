@@ -327,7 +327,7 @@ export function DisplayPane({
 
 /* Profile and shift ------------------------------------------------------------------------- */
 
-export function ProfilePane({ onGoToDesk }: { onGoToDesk: () => void }) {
+export function ProfilePane() {
   const service = useServiceScope();
   const deskProfile = useSettingsDeskProfile();
   return (
@@ -339,15 +339,8 @@ export function ProfilePane({ onGoToDesk }: { onGoToDesk: () => void }) {
             <CardHead iconPlain id="profile-title" icon={UserRound} title="Profile" />
             <SettingRow setting="role" title="Role">
               <span className={styles.readout}>{deskProfile.role}</span>
-              {/* Audit settings-27: the role row leads to the desk drawer, not a dead end. */}
-              <button
-                type="button"
-                className={buttonClass({ variant: "sec", size: "sm", className: styles.pill })}
-                onClick={onGoToDesk}
-                data-setting="go-to-desk"
-              >
-                Go to a desk
-              </button>
+              {/* D-91 (Josh, 31 Oct 2026): the sidebar's who-you-are row, and on a phone the Menu's,
+                  opens Go to a desk, so the role row no longer repeats it. */}
             </SettingRow>
             <SettingRow
               setting="service"

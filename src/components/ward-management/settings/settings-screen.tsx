@@ -19,19 +19,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import {
-  Bell,
-  Check,
-  ChevronRight,
-  Clock,
-  Database,
-  Gavel,
-  KeyRound,
-  Layers,
-  Palette,
-  Search,
-  UserRound,
-} from "lucide-react";
+import { Bell, Check, ChevronRight, Clock, Database, Gavel, KeyRound, Palette, Search, UserRound } from "lucide-react";
 
 import { useWardAccessibilityPreference } from "@/components/ward-management/shell/ward-accessibility";
 import {
@@ -1091,7 +1079,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
 
   const profileContent = (
     <>
-      <ProfilePane onGoToDesk={goToDesk} />
+      <ProfilePane />
     </>
   );
 
@@ -1239,13 +1227,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             eyebrow={deskProfile.location}
             chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
             sub={deskProfile.role}
-            // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
-            // are what this hero is for. The save strip still appears when a rule is unsaved.
-            actions={
-              <Button variant="onHero" icon={Layers} className={styles.phoneGrow} onClick={goToDesk}>
-                Go to a desk
-              </Button>
-            }
+            // Device audit 11 Oct 2026: no figures on a phone; the name and role are what this hero is
+            // for. The save strip still appears when a rule is unsaved. D-91 (Josh, 31 Oct 2026): the
+            // Menu's who-you-are row already opens Go to a desk, so this hero drops its own button.
           />
 
           <div className={styles.phoneFind}>{findSetting}</div>
@@ -1416,9 +1400,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           aside={
             <>
               {findSetting}
-              <Button variant="onHero" size="sm" icon={Layers} onClick={goToDesk}>
-                Go to a desk
-              </Button>
+              {/* D-91 (Josh, 31 Oct 2026): the sidebar's who-you-are row already opens Go to a desk, so
+                  the hero drops its own. Find a setting still finds Go to a desk. */}
               <Button variant="light" size="sm" icon={UserRound} onClick={() => chooseTab("profile")}>
                 Edit profile
               </Button>
