@@ -127,7 +127,6 @@ describe("executive Settings from public authority only", () => {
       </PublicExecutive>,
     );
     expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
     fireEvent.click(screen.getByRole("radio", { name: "Dark" }));
     const appearance = renderHook(() => useAppearanceStore());
     expect(appearance.result.current).toBe("dark");

@@ -97,11 +97,8 @@ describe("settings screen configuration draft", () => {
       resolve = settle;
     });
     renderSettings(() => completion);
-    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
     fireEvent.click(screen.getByRole("radio", { name: "Dark" }));
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     setEdToMinimum();
-    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
     fireEvent.click(screen.getByTestId("confirm-restore-defaults-btn"));
     expect(screen.queryByText("Defaults restored and recorded.")).not.toBeInTheDocument();
@@ -109,7 +106,6 @@ describe("settings screen configuration draft", () => {
     await act(async () => resolve({ commandId: "restore", status: "refused", message: "Rules changed elsewhere." }));
     expect(screen.queryByText("Defaults restored and recorded.")).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Unsaved rule changes" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     expect(edStepper()).toHaveAttribute("aria-valuenow", "720");
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
     act(() => applyAppearance("auto"));
@@ -122,7 +118,6 @@ describe("settings screen configuration draft", () => {
       resolve = settle;
     });
     renderSettings((event, dispatch) => (defer ? completion : dispatch(event)));
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     setEdToMinimum();
     fireEvent.click(screen.getByRole("button", { name: /^Save 1 change$/ }));
     const savedToast = within(screen.getByTestId("toast-region"))
@@ -141,7 +136,6 @@ describe("settings screen configuration draft", () => {
   it("undoes only an older save's own rule after a later save, never replacing the newer rule", () => {
     renderSettings();
     const edTargetBefore = screen.getByTestId("probe-ed-target").textContent;
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     setEdToMinimum();
     fireEvent.click(screen.getByRole("button", { name: /^Save 1 change$/ }));
     const firstToast = within(screen.getByTestId("toast-region"))
@@ -195,7 +189,6 @@ describe("settings screen configuration draft", () => {
       setEdToMinimum();
       expect(savedTarget).not.toBe(ED_ACCESS_TARGET_RANGE_MINUTES.min);
       expect(edStepper()).toHaveAttribute("aria-valuenow", String(ED_ACCESS_TARGET_RANGE_MINUTES.min));
-      fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
       fireEvent.click(screen.getByRole("button", { name: "Copy diagnostics" }));
       await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
       // D-71 item 7: the synthetic line first, then the JSON payload.
@@ -212,11 +205,9 @@ describe("settings screen configuration draft", () => {
   it("exports the saved rules only, never the unsaved draft or this browser's display settings", async () => {
     download.mockClear();
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     const savedTarget = Number(screen.getByTestId("probe-ed-target").textContent);
     setEdToMinimum();
     expect(savedTarget).not.toBe(ED_ACCESS_TARGET_RANGE_MINUTES.min);
-    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     fireEvent.click(screen.getByTestId("btn-export-config"));
     expect(download).toHaveBeenCalledOnce();
     const exported = JSON.parse(await download.mock.calls[0][0].text());
@@ -290,7 +281,6 @@ describe("settings screen configuration draft", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
 
-    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Restore all defaults" }).at(-1)!);
 
@@ -309,7 +299,6 @@ describe("settings screen configuration draft", () => {
   // reads the saved value as the row shows it, not raw minutes.
   it("labels a draft ED count as if saved and reads the saved value in hours", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     setEdToMinimum();
     const row = screen.getByTestId("ward-settings-screen").querySelector<HTMLElement>('[data-setting="ed-target"]')!;
     expect(row).toHaveTextContent(/over if saved/);
@@ -321,12 +310,10 @@ describe("settings screen configuration draft", () => {
     renderSettings();
     const beforeAuditCount = Number(screen.getByTestId("probe-audit-count").textContent);
     // The open area is remembered per browser; the previous case left it on Data and about.
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     setEdToMinimum();
     fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
 
-    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
     const modal = screen.getByTestId("ward-reset-baseline-modal");
     // Bug list row 1: a restore saves twelve rules, the three forecast alerts among them.
@@ -358,12 +345,10 @@ describe("settings screen configuration draft", () => {
 
   it("gives unsaved rule edits back on Undo after a restore, without saving them", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     const saved = screen.getByTestId("probe-ed-target").textContent;
     setEdToMinimum();
     expect(screen.getByRole("button", { name: /^Save 1 change$/ })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Restore all defaults" }).at(-1)!);
     const restored = within(screen.getByTestId("toast-region")).getByText("Defaults restored and recorded.");
@@ -371,7 +356,6 @@ describe("settings screen configuration draft", () => {
       within(restored.closest<HTMLElement>('[data-testid="toast"]')!).getByRole("button", { name: "Undo" }),
     );
 
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     // The unsaved edit is back as a draft; the saved rules are the ones from before the restore.
     expect(screen.getByRole("button", { name: /^Save 1 change$/ })).toBeInTheDocument();
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(saved);

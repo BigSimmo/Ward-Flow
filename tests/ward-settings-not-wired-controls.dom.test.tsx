@@ -95,7 +95,6 @@ describe("settings screen: every Preview control says it is not wired", () => {
   // Audit settings-17 (Josh, 13 Oct 2026): one hold length, the Pull time limit (D-81, was Pull hold). No second Preview timer.
   it("keeps one bed hold rule: Pull time limit, with no separate Bed hold expires row", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     expect(screen.getByText("Pull time limit")).toBeInTheDocument();
     expect(screen.queryByText("Bed hold expires")).not.toBeInTheDocument();
     expect(SETTINGS_SEARCH_ENTRIES.some((entry) => entry.label === "Bed hold expires")).toBe(false);
@@ -103,7 +102,6 @@ describe("settings screen: every Preview control says it is not wired", () => {
 
   it("wires Row density: Compact sets dense rows on the page and Comfortable clears them", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
     const row = screen.getByTestId("ward-settings-density");
     fireEvent.click(within(row).getByRole("radio", { name: "Compact" }));
     expect(within(row).getByRole("radio", { name: "Compact" })).toHaveAttribute("aria-checked", "true");
@@ -138,7 +136,6 @@ describe("settings screen — the three controls Task 9 actually wired", () => {
   it("are not aria-disabled", () => {
     renderSettings();
     // An earlier case leaves another tab in the address; the rules live on Rules.
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     for (const name of WIRED_STEPPERS) {
       const control = screen.getByRole("spinbutton", { name });
       expect(control).not.toHaveAttribute("aria-disabled");
@@ -160,7 +157,6 @@ describe("settings screen — the three controls Task 9 actually wired", () => {
     );
 
     const before = screen.getByTestId("probe-ed-target").textContent;
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     fireEvent.keyDown(screen.getByRole("spinbutton", { name: "ED access target" }), { key: "Home" });
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(before);
 

@@ -76,7 +76,6 @@ describe("the settings screen", () => {
    */
   it("has no Handover settings card, since none of its rows was wired", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Profile and shift/ }));
     expect(screen.queryByTestId("ward-settings-handover")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-settings-default-service")).toBeInTheDocument();
   });
@@ -153,7 +152,6 @@ describe("the settings screen", () => {
 describe("the settings screen's thresholds panel", () => {
   it("opens the Ward Flow Digest from About in a new tab, now that Tools no longer carries it", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     const digest = screen.getByRole("link", { name: "Ward Flow Digest" });
     expect(digest).toHaveAttribute("href", "/mockups/ward-flow-digest");
     expect(digest).toHaveAttribute("target", "_blank");
@@ -162,13 +160,11 @@ describe("the settings screen's thresholds panel", () => {
 
   it("shows the policy version in About, moved from the rail's Menu foot (A7)", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     expect(screen.getByTestId("ward-settings-policy-version")).toHaveTextContent(/^Policy2026\.3$/u);
   });
 
   it("renders a row for each published threshold and no others", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     const panel = screen.getByTestId("ward-settings-thresholds");
     expect(within(panel).getAllByRole("row").length, "no rows rendered").toBeGreaterThan(1);
     expect(within(panel).queryByTestId("ward-settings-threshold-ed-access-target")).toBeInTheDocument();
@@ -255,7 +251,6 @@ describe("settings screen elevations: touch envelopes, focus-visible, and the re
 
   it("renders the reference note with its tone, saying where figures change", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     const callout = screen.getByTestId("ward-settings-thresholds").querySelector('[data-tone="accent"]');
     expect(callout).toBeInTheDocument();
     expect(callout?.textContent).toContain("Figures here change only in Rules");
@@ -269,7 +264,6 @@ describe("accessibility switches when browser storage refuses writes", () => {
     });
     try {
       renderSettings();
-      fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
       const control = screen.getByRole("switch", { name: /Reduce motion/ });
       expect(control).toHaveAttribute("aria-checked", "false");
       fireEvent.click(control);

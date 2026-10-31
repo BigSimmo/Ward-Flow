@@ -62,7 +62,8 @@ function renderSettings(extra?: ReactNode) {
     </ToastProvider>,
   );
 }
-const selectData = () => fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+// Settings is one page of sections (31 Oct 2026): Demo tools are always in the page.
+const selectData = () => undefined;
 const edit = () => fireEvent.keyDown(screen.getByRole("spinbutton", { name: "ED access target" }), { key: "Home" });
 const save = () => fireEvent.click(screen.getByRole("button", { name: /^Save \d+ change/ }));
 const undo = (title: RegExp) =>
@@ -292,7 +293,6 @@ describe("settings audited journey recovery", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     const target = screen.getByRole("spinbutton", { name: "ED access target" });
     const original = target.getAttribute("aria-valuenow");
     expect(target).toHaveAttribute("aria-disabled", "true");

@@ -52,7 +52,6 @@ function renderSettings() {
       </WardFlowProvider>
     </ToastProvider>,
   );
-  fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
 }
 
 function themeAttribute(): string | null {

@@ -53,7 +53,6 @@ describe("the browser's single-key shortcut preference", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
     const toggle = screen.getByRole("switch", { name: "Single-key shortcuts" });
     expect(toggle).toBeChecked();
     expect(isGlobalSearchShortcut(new KeyboardEvent("keydown", { key: "/" }))).toBe(true);

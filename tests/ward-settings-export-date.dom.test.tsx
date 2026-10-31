@@ -33,7 +33,6 @@ it("names the rules export for the Perth date during the first eight hours", () 
       <SettingsScreen />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
   fireEvent.click(screen.getByRole("button", { name: "Export" }));
   expect(click).toHaveBeenCalledTimes(1);
   expect(filename).toBe("ward-flow-rules-2026-10-16.json");

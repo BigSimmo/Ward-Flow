@@ -1,5 +1,7 @@
 "use client";
 
+// Forked from src/components/ward-management/settings/access-settings.tsx (role view: access admin, polish r2).
+
 /**
  * **THE ACCESS TAB — who holds which role, and cover for a second ward or ED (role access plan,
  * later pass, Josh's go 16 Oct 2026).**
@@ -59,11 +61,11 @@ import {
   useLocalAccessAdmin,
 } from "@/components/ward-management/shell/ward-access-admin-store";
 import { useStepUp, type StepUpResult } from "@/components/ward-management/shell/ward-step-up";
-import { useSharedAdminSource, useSharedCoverSource } from "./access-shared-source";
-import { AccessLog } from "./access-log";
-import { SharedAccessContext } from "../shell/ward-shared-access-context";
+import { useSharedAdminSource, useSharedCoverSource } from "@/components/ward-management/settings/access-shared-source";
+import { AccessLog } from "@/components/ward-management/settings/access-log";
+import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 
-import styles from "./access-settings.module.css";
+import styles from "@/components/ward-management/settings/access-settings.module.css";
 
 /** The desks that see the Access tab. Everyone else has nothing to give. */
 export function showsAccessTab(desk: WardAccess): boolean {
@@ -171,18 +173,21 @@ function AccessAdminPanel() {
   const [result, say] = useResult();
 
   const run = (action: () => Promise<StepUpResult>, done: string) => void guard(action).then((r) => say(r, done));
-  const describe = (access: WardAccess) => `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, units)}`;
+  // Polish r2: the place's synthetic "(placeholder)" tag is left off; the footer says every record is synthetic.
+  const place = (access: WardAccess) => accessPlaceLabel(access, units).replace(/ \(placeholder\)$/, "");
+  const describe = (access: WardAccess) => `${ACCESS_ROLE_LABELS[access.role]}, ${place(access)}`;
   const live = source.memberships.filter((m) => membershipStatus(m, now) !== "ended");
   const open = source.requests.filter((r) => r.decision === null);
   const defaultEnd = now + 90 * MINUTES_PER_DAY;
 
   return (
     <>
+      {/* Polish r2: the end date is said once, on Give a role. */}
       <p className={styles.intro}>
         {desk.role === "admin"
-          ? "You give and remove roles. You see no patients from this desk. "
+          ? "No patients are shown on this desk. "
           : "As a statewide coordinator you also give and remove roles. "}
-        Nobody grants themselves a role. Granted roles work immediately and have an end date.
+        Nobody grants themselves a role.
       </p>
       {source.problem ? (
         <p className={styles.result} role="alert">
@@ -254,15 +259,19 @@ function AccessAdminPanel() {
                 <li key={m.id} className={styles.row} data-testid="ward-access-role-row">
                   <span className={styles.who}>
                     <span className={styles.name}>{source.label(m.actorId)}</span>
+                    {/* Polish r2: the app's " · " meta line, not three sentences. */}
                     <span className={styles.meta}>
-                      {describe(m.access)}. Ends {whenText(m.expiresAt, now)}. Last used{" "}
-                      {m.lastUsedAt === null ? "never" : whenText(m.lastUsedAt, now)}.
+                      {ACCESS_ROLE_LABELS[m.access.role]} · {place(m.access)} · ends {whenText(m.expiresAt, now)} ·{" "}
+                      {m.lastUsedAt === null ? "never used" : `used ${whenText(m.lastUsedAt, now)}`}
                     </span>
                   </span>
+                  {/* Polish r2: a status chip only for an exception; an active role needs no green chip. */}
                   <span className={styles.notes}>
-                    <Badge tone={STATUS[status].tone} size="sm">
-                      {STATUS[status].label}
-                    </Badge>
+                    {status === "active" ? null : (
+                      <Badge tone={STATUS[status].tone} size="sm">
+                        {STATUS[status].label}
+                      </Badge>
+                    )}
                     {notes.endingSoon ? (
                       <Badge tone="warning" size="sm">
                         Ending soon
@@ -278,6 +287,8 @@ function AccessAdminPanel() {
                         ? "You cannot remove your own admin role. Ask another admin."
                         : undefined
                     }
+                    // Polish r2: the reason on the control, so the row stays one line.
+                    reasonDisplay="tooltip"
                     onClick={() => run(() => source.revoke(m.id), `Removed: ${describe(m.access)}.`)}
                   >
                     Remove
@@ -305,12 +316,24 @@ function GrantForm({
   now: Instant;
   onRun: (action: () => Promise<StepUpResult>, done: string) => void;
 }) {
-  const [person, setPerson] = useState(source.people?.[0]?.id ?? "");
-  const [role, setRole] = useState<WardAccessRole>("ward");
-  const options = useMemo(() => placeOptions(role, units), [role, units]);
+  // Audit (31 Oct 2026): nothing is chosen for the admin. Each field starts empty, so a role is never
+  // given to whoever happened to be first in a list.
+  const [person, setPerson] = useState("");
+  const [role, setRole] = useState<WardAccessRole | "">("");
+  const options = useMemo(() => (role ? placeOptions(role, units) : []), [role, units]);
   const [placeKey, setPlaceKey] = useState<string>("");
-  const [days, setDays] = useState<number>(90);
-  const place = options.find((option) => option.key === placeKey) ?? options[0];
+  const [days, setDays] = useState<number | null>(null);
+  // A role with only one place (statewide) needs no choice.
+  const place = options.find((option) => option.key === placeKey) ?? (options.length === 1 ? options[0] : undefined);
+  const missing = !person
+    ? "Choose who first."
+    : !role
+      ? "Choose a role."
+      : !place
+        ? "Choose a place."
+        : days === null
+          ? "Choose when it ends."
+          : undefined;
 
   return (
     <Card data-testid="ward-access-grant">
@@ -319,6 +342,9 @@ function GrantForm({
         <Field label={source.people ? "Person" : "Account id"}>
           {source.people ? (
             <Select value={person} onChange={(event) => setPerson(event.target.value)}>
+              <option value="" disabled>
+                Choose a person
+              </option>
               {source.people.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label}
@@ -337,6 +363,9 @@ function GrantForm({
               setPlaceKey("");
             }}
           >
+            <option value="" disabled>
+              Choose a role
+            </option>
             {WARD_ACCESS_ROLES.map((option) => (
               <option key={option} value={option}>
                 {ACCESS_ROLE_LABELS[option]}
@@ -345,7 +374,10 @@ function GrantForm({
           </Select>
         </Field>
         <Field label="Place">
-          <Select value={place?.key ?? ""} onChange={(event) => setPlaceKey(event.target.value)}>
+          <Select value={place?.key ?? ""} onChange={(event) => setPlaceKey(event.target.value)} disabled={!role}>
+            <option value="" disabled>
+              {role ? "Choose a place" : "Choose a role first"}
+            </option>
             {options.map((option) => (
               <option key={option.key} value={option.key}>
                 {option.label}
@@ -354,7 +386,10 @@ function GrantForm({
           </Select>
         </Field>
         <Field label="Ends">
-          <Select value={String(days)} onChange={(event) => setDays(Number(event.target.value))}>
+          <Select value={days === null ? "" : String(days)} onChange={(event) => setDays(Number(event.target.value))}>
+            <option value="" disabled>
+              Choose an end
+            </option>
             {GRANT_DAYS.map((option) => (
               <option key={option} value={option}>
                 In {option} days
@@ -367,9 +402,9 @@ function GrantForm({
         <Button
           variant="pri"
           size="sm"
-          disabledReason={!person ? "Choose who first." : undefined}
+          disabledReason={missing}
           onClick={() => {
-            if (!place || !person) return;
+            if (!place || !person || !role || days === null) return;
             const access: WardAccess = { role, scope: place.scope };
             onRun(
               () => source.grant({ actorId: person, access, expiresAt: now + days * MINUTES_PER_DAY }),
@@ -416,16 +451,30 @@ function CoverPanel() {
       ),
     [desk, deskId, units, places],
   );
+  // Audit (31 Oct 2026): nothing is chosen for you; the place, colleague and length start empty.
   const [placeKey, setPlaceKey] = useState("");
-  const place = givable.find((option) => option.key === placeKey) ?? givable[0];
+  const place = givable.find((option) => option.key === placeKey) ?? (givable.length === 1 ? givable[0] : undefined);
   const recipients = useMemo(
     () =>
       place ? placeOptions(place.scope.kind === "ed" ? "ed" : "ward", units).filter((o) => o.key !== place.key) : [],
     [place, units],
   );
   const [recipientKey, setRecipientKey] = useState("");
-  const recipient = recipients.find((option) => option.key === recipientKey) ?? recipients[0];
-  const [hours, setHours] = useState<number>(COVER_HOURS[COVER_HOURS.length - 1] ?? 1);
+  const recipient = recipients.find((option) => option.key === recipientKey);
+  const [hours, setHours] = useState<number | null>(null);
+  const coverMissing = !place
+    ? "Choose the ward or ED first."
+    : shared
+      ? !account
+        ? "Enter the account id first."
+        : hours === null
+          ? "Choose how long."
+          : undefined
+      : !recipient
+        ? "Choose who holds it."
+        : hours === null
+          ? "Choose how long."
+          : undefined;
   // A desk sees the cover it gave or holds; a coordinator also sees any cover inside its place.
   const mine = covers.filter(
     (cover) =>
@@ -436,6 +485,7 @@ function CoverPanel() {
   const label = (access: WardAccess) => `${ACCESS_ROLE_LABELS[access.role]}, ${accessPlaceLabel(access, units)}`;
 
   const give = () => {
+    if (hours === null) return;
     if (shared) {
       if (!place) return;
       const actorId = account;
@@ -481,7 +531,16 @@ function CoverPanel() {
           <>
             <div className={styles.form}>
               <Field label="Cover of">
-                <Select value={place?.key ?? ""} onChange={(event) => setPlaceKey(event.target.value)}>
+                <Select
+                  value={place?.key ?? ""}
+                  onChange={(event) => {
+                    setPlaceKey(event.target.value);
+                    setRecipientKey("");
+                  }}
+                >
+                  <option value="" disabled>
+                    Choose a ward or ED
+                  </option>
                   {givable.map((option) => (
                     <option key={option.key} value={option.key}>
                       {option.label}
@@ -499,7 +558,14 @@ function CoverPanel() {
                 </Field>
               ) : (
                 <Field label="Held by">
-                  <Select value={recipient?.key ?? ""} onChange={(event) => setRecipientKey(event.target.value)}>
+                  <Select
+                    value={recipient?.key ?? ""}
+                    onChange={(event) => setRecipientKey(event.target.value)}
+                    disabled={!place}
+                  >
+                    <option value="" disabled>
+                      {place ? "Choose a colleague" : "Choose the place first"}
+                    </option>
                     {recipients.map((option) => (
                       <option key={option.key} value={option.key}>
                         {option.scope.kind === "ed" ? "ED clinician" : "Nurse in charge"}, {option.label}
@@ -509,7 +575,13 @@ function CoverPanel() {
                 </Field>
               )}
               <Field label="For">
-                <Select value={String(hours)} onChange={(event) => setHours(Number(event.target.value))}>
+                <Select
+                  value={hours === null ? "" : String(hours)}
+                  onChange={(event) => setHours(Number(event.target.value))}
+                >
+                  <option value="" disabled>
+                    Choose how long
+                  </option>
                   {COVER_HOURS.map((option) => (
                     <option key={option} value={option}>
                       {plural(option, "hour")}
@@ -523,7 +595,7 @@ function CoverPanel() {
                 variant="pri"
                 size="sm"
                 onClick={give}
-                disabledReason={shared && !account ? "Enter the account id first." : undefined}
+                disabledReason={coverMissing}
                 data-testid="ward-access-cover-submit"
               >
                 Give cover

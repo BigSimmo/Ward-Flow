@@ -194,7 +194,7 @@ const APPEARANCE_CHOICES = [
   { id: "auto", label: "Auto" },
   { id: "light", label: "Light" },
   { id: "dark", label: "Dark" },
-  { id: "glare", label: "Glare" },
+  { id: "glare", label: "Bright light" },
 ] as const;
 
 type AppearanceChoice = (typeof APPEARANCE_CHOICES)[number]["id"];

@@ -37,7 +37,7 @@ import {
 import { Card, CardHead, Segmented, StatusGlyph, Switch, cx } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
-import rx from "./settings-redesign.module.css";
+import rx from "./settings-layout.module.css";
 import { DEFAULT_RULES, RULES, rulesAwayFromDefault, surgeChanges, type RuleKey } from "./settings-rule-catalogue";
 import { IMPACT_NOUNS, bedsPulledNow, impactText, ruleImpact } from "./settings-rule-impact";
 import { RuleRow, type RuleRange } from "./settings-rows";
@@ -150,7 +150,7 @@ export function SettingsRulesPane({
       <div className={rx.rulesTopLine}>
         <span className={rx.lastChange} data-testid="ward-settings-recent-changes" data-setting="recent-changes">
           {ruleChanges === null ? (
-            "Individual changes are unavailable for executive reporting."
+            "Rule-save history is not shown on this desk."
           ) : lastAccepted?.at != null ? (
             <>
               <StatusGlyph tone="success" size={9} />

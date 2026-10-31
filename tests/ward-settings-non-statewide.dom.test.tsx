@@ -59,7 +59,6 @@ function renderRules(access: typeof SERVICE_COORDINATOR | typeof STATEWIDE_COORD
       </WardFlowProvider>
     </ToastProvider>,
   );
-  fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
 }
 
 const edStepper = () => screen.getByRole("spinbutton", { name: "ED access target" });

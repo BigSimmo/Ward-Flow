@@ -64,7 +64,6 @@ describe("settings: decision targets", () => {
 
 describe("settings: browser notifications", () => {
   function openAlerts() {
-    fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
     return screen.getByTestId("setting-browser-notifications-row");
   }
 

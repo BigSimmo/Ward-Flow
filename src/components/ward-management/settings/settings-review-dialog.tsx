@@ -8,7 +8,7 @@ import type { WardConfiguration } from "@/components/ward-management/ward-config
 import type { Movement } from "@/components/ward-management/ward-model";
 import { Dialog, SrOnly, StatusGlyph } from "@/components/wf";
 
-import rx from "./settings-redesign.module.css";
+import rx from "./settings-layout.module.css";
 import { ruleChanges } from "./settings-rule-catalogue";
 import { IMPACT_NOUNS, impactText, ruleImpact } from "./settings-rule-impact";
 

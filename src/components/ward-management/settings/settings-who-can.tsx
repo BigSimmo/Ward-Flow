@@ -12,7 +12,7 @@ import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
 import { Card, CardHead } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
-import rx from "./settings-redesign.module.css";
+import rx from "./settings-layout.module.css";
 import { RULES } from "./settings-rule-catalogue";
 
 const ruleSetters = EVENT_ROLE.SET_CONFIGURATION.map((role) => WARD_FLOW_ROLE_LABELS[role]).join(", ");
