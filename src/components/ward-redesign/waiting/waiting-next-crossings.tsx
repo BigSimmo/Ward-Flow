@@ -11,6 +11,7 @@
  * legal times are as typed, not legally checked.
  */
 import { useState } from "react";
+import { Clock8, FileClock, Hourglass } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -79,29 +80,29 @@ export function NextCrossings({
 
   return (
     <div className={styles.nx} data-testid="delays-next-crossings">
-      <div className={styles.nxSum}>
-        <div>
-          <span className={styles.nxSumL}>
-            <StatusGlyph tone="warning" size={9} />
-            {`Pass ${H8}`}
+      {/* Round 6 (Josh, 31 Oct 2026): one quiet summary row, each figure with its own icon. */}
+      <div className={styles.nxSum} role="group" aria-label={`Next ${RUNWAY_WINDOW / 60} hours, if nobody moves`}>
+        <span className={styles.nxStat} data-tone="warning">
+          <span className={styles.nxStatIcon} aria-hidden="true">
+            <Clock8 size={15} aria-hidden="true" />
           </span>
           <b className={styles.nxSumN}>{pass8}</b>
-        </div>
-        <div>
-          <span className={styles.nxSumL}>
-            <StatusGlyph tone="danger" size={9} />
-            {`Pass ${H24}`}
+          <span className={styles.nxSumL}>{`pass ${H8}`}</span>
+        </span>
+        <span className={styles.nxStat} data-tone="danger">
+          <span className={styles.nxStatIcon} aria-hidden="true">
+            <Hourglass size={15} aria-hidden="true" />
           </span>
           <b className={styles.nxSumN}>{pass24}</b>
-        </div>
-        <div>
-          <span className={styles.nxSumL}>
-            <StatusGlyph tone="info" size={9} />
-            Legal times as typed
+          <span className={styles.nxSumL}>{`pass ${H24}`}</span>
+        </span>
+        <span className={styles.nxStat} data-tone="info">
+          <span className={styles.nxStatIcon} aria-hidden="true">
+            <FileClock size={15} aria-hidden="true" />
           </span>
           <b className={styles.nxSumN}>{forms}</b>
-        </div>
-        <p className={styles.nxSumNote}>In the next {RUNWAY_WINDOW / 60} hours if nobody moves. Not legally checked.</p>
+          <span className={styles.nxSumL}>{forms === 1 ? "legal time as typed" : "legal times as typed"}</span>
+        </span>
       </div>
       {list.length === 0 ? (
         <p

@@ -370,38 +370,51 @@ button.strip:disabled {
 .nxSum {
   display: flex;
   flex-wrap: wrap;
-  align-items: stretch;
-  gap: var(--wf-s-2);
-  margin: 0;
-}
-.nxSum > div {
-  display: flex;
-  flex-direction: column;
-  min-width: 8.5rem;
-  padding: 8px 12px;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-}
-.nxSumL {
-  display: flex;
   align-items: center;
-  gap: 6px;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
+  align-self: flex-start;
+  gap: 0;
+  padding: 4px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}
+.nxStat {
+  --tone: var(--wf-info);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 6px 8px;
+}
+.nxStat + .nxStat {
+  border-left: 1px solid var(--wf-line);
+  padding-left: 14px;
+}
+.nxStat[data-tone="warning"] {
+  --tone: var(--wf-warning);
+}
+.nxStat[data-tone="danger"] {
+  --tone: var(--wf-danger);
+}
+.nxStatIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tone) 13%, var(--wf-surface));
+  color: var(--tone);
 }
 .nxSumN {
   color: var(--wf-ink-1);
   font-family: var(--wf-mono);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1;
 }
-.nxSumNote {
-  flex: 1 1 14rem;
-  align-self: center;
-  margin: 0;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
+.nxSumL {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
 }
 .nxList {
   display: flex;
@@ -517,22 +530,71 @@ button.strip:disabled {
   font-size: var(--wf-fs-13);
 }
 
-/* ---------- Graph: where and whose move, as a plain heat map ---------- */
+/* ---------- Graph card (round 6): tabs with icons, quieter chrome ---------- */
+.tabIcon {
+  flex: none;
+  margin-right: 6px;
+  opacity: 0.75;
+}
+.graphs [role="tab"] {
+  align-items: center;
+}
+.graphs [role="tab"][aria-selected="true"] .tabIcon {
+  opacity: 1;
+  color: var(--wf-accent);
+}
+.subLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.lgNote {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+}
+
+/* ---------- Graph: where and whose move, a calm heat map ---------- */
+.mx.mx {
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+.mx > div {
+  gap: 3px;
+}
+.mx > div > span:not([class*="mxR"]):not([class*="mxT"]) {
+  color: var(--wf-ink-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 .mx button {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-height: 56px;
-  border-color: transparent;
+  gap: 3px;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  transition: box-shadow 120ms ease;
+}
+.mx button:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px var(--wf-line-3) inset;
 }
 .mx button:disabled {
-  background: var(--wf-surface-2);
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--wf-line) inset;
+}
+.mx button:disabled .mxN {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+  font-weight: 400;
 }
 .mxN.mxN {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.1;
 }
 .mxO {
   display: inline-flex;
@@ -541,26 +603,68 @@ button.strip:disabled {
   color: var(--wf-ink-2);
   font-size: 11px;
 }
-.mxKey {
+.mxKey.mxKey {
   display: inline-block;
-  width: 28px;
-  height: 10px;
-  border-radius: 3px;
+  width: 44px;
+  height: 8px;
+  border-radius: 999px;
   background: linear-gradient(
     to right,
-    color-mix(in srgb, var(--wf-accent) 8%, var(--wf-surface)),
-    color-mix(in srgb, var(--wf-accent) 48%, var(--wf-surface))
+    color-mix(in srgb, var(--wf-accent) 6%, var(--wf-surface)),
+    color-mix(in srgb, var(--wf-accent) 42%, var(--wf-surface))
   );
 }
 
 /* ---------- Graph: wait spread, a pile over "+n" ---------- */
 .spreadMore {
   position: absolute;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  box-shadow: 0 0 0 1px var(--wf-line) inset;
   color: var(--wf-ink-2);
   font-family: var(--wf-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
+  line-height: 16px;
   transform: translateX(-50%);
+}
+/* Round 6: the spread's lanes. Lighter grid, alternate lanes faintly shaded, the past-24h zone
+   quieter, the 8h mark labelled. */
+.spread > div:nth-child(even):not(:last-child) {
+  background: color-mix(in srgb, var(--wf-surface-2) 60%, transparent);
+}
+.spread > div > button,
+.spread > div > div:first-child {
+  padding-left: 10px;
+}
+.spread [class*="gGrid"] {
+  opacity: 0.55;
+}
+.spread [class*="gBeyond"] {
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0 6px,
+    color-mix(in srgb, var(--wf-line) 70%, transparent) 6px 7px
+  );
+}
+.spread [class*="gTicks"] {
+  font-size: 11px;
+}
+.mark8 {
+  position: absolute;
+  top: 2px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--wf-surface);
+  box-shadow: 0 0 0 1px var(--wf-line-2) inset;
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 @media (max-width: 64rem) {

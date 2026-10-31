@@ -10,6 +10,7 @@
  * filter hides, while the runway and the matrix keep counting everyone so the whole picture stays.
  */
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { ChartScatter, Clock4, Columns3, Grid2x2, Rows3, type LucideIcon } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -169,7 +170,7 @@ function Spread({
     </>
   );
   return (
-    <div className={styles.gDots}>
+    <div className={`${styles.gDots} ${polish.spread}`}>
       {laneList.map((lane, laneIndex) => {
         const sorted = [...lane.rows].sort((a, b) => b.waited - a.waited);
         const placed: { x: number; y: number; row: BoardRow }[] = [];
@@ -218,6 +219,11 @@ function Spread({
             )}
             <div className={styles.gPlot} style={{ height }} ref={laneIndex === 0 ? measureRef : undefined}>
               {grid}
+              {laneIndex === 0 ? (
+                <span className={polish.mark8} style={{ left: `${spreadX(OVER_8H)}%` }} aria-hidden="true">
+                  {H8}
+                </span>
+              ) : null}
               {placed.map(({ x, y, row }) => {
                 const name = patientOf(row.movement).formalName;
                 const label = `${name}, waited ${splitDuration(row.waited)}, ${causeTitle(row.cause)}`;
@@ -446,10 +452,11 @@ export function DelaysBoardGraphs(props: Props) {
     }
     setTip({ x: event.clientX, y: event.clientY, body });
   };
-  const tabs: { id: Graph; label: string }[] = [
-    { id: "runway", label: `Next ${hoursWord(RUNWAY_WINDOW)}` },
-    { id: "matrix", label: "Where and whose move" },
-    { id: "spread", label: "Wait spread" },
+  // Round 6: each tab carries its own icon.
+  const tabs: { id: Graph; label: string; Icon: LucideIcon }[] = [
+    { id: "runway", label: `Next ${hoursWord(RUNWAY_WINDOW)}`, Icon: Clock4 },
+    { id: "matrix", label: "Where and whose move", Icon: Grid2x2 },
+    { id: "spread", label: "Wait spread", Icon: ChartScatter },
   ];
   const onTabKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const index = tabs.findIndex((entry) => entry.id === graph);
@@ -502,15 +509,16 @@ export function DelaysBoardGraphs(props: Props) {
         </span>
         <span className={styles.lg}>
           <StatusGlyph tone="info" size={9} />
-          Recorded legal time, as typed
+          Recorded legal time, as typed. Not legally checked.
         </span>
-        <span className={styles.lg}>Choose a person to open their row</span>
+        <span className={`${styles.lg} ${polish.lgNote}`}>If nobody moves · choose a person to open their row</span>
       </>
     ) : (
       <>
         <span className={styles.lg}>
+          Fewer
           <i className={polish.mxKey} />
-          Darker means more people waiting
+          More waiting
         </span>
         <span className={styles.lg}>
           <StatusGlyph tone="warning" size={9} />
@@ -520,7 +528,7 @@ export function DelaysBoardGraphs(props: Props) {
           {WAIT_BANDS.map((band, index) => (
             <i key={band} className={styles[`band${index}`]} title={band} />
           ))}
-          Wait bands, in the totals
+          Wait bands in the totals
         </span>
       </>
     );
@@ -528,7 +536,10 @@ export function DelaysBoardGraphs(props: Props) {
   const sub =
     graph === "spread" ? (
       <>
-        <span className={styles.eyebrow}>Rows</span>
+        <span className={`${styles.eyebrow} ${polish.subLabel}`}>
+          <Rows3 size={13} aria-hidden="true" />
+          Rows
+        </span>
         <div className={styles.seg} role="group" aria-label="Spread rows">
           <button
             type="button"
@@ -552,7 +563,10 @@ export function DelaysBoardGraphs(props: Props) {
       </>
     ) : graph === "matrix" ? (
       <>
-        <span className={styles.eyebrow}>Columns</span>
+        <span className={`${styles.eyebrow} ${polish.subLabel}`}>
+          <Columns3 size={13} aria-hidden="true" />
+          Columns
+        </span>
         <div className={styles.seg} role="group" aria-label="Matrix columns">
           <button
             type="button"
@@ -579,7 +593,11 @@ export function DelaysBoardGraphs(props: Props) {
     ) : null;
 
   return (
-    <section className={`${styles.card} ${styles.gCard}`} aria-label="Delay graphs" data-ward-primitive="panel">
+    <section
+      className={`${styles.card} ${styles.gCard} ${polish.graphs}`}
+      aria-label="Delay graphs"
+      data-ward-primitive="panel"
+    >
       <div className={styles.chead}>
         {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
         <div className={`${styles.seg} ${styles.gTabs}`} role="tablist" aria-label="Delay graph" onKeyDown={onTabKey}>
@@ -596,6 +614,7 @@ export function DelaysBoardGraphs(props: Props) {
                 setGraph(entry.id);
               }}
             >
+              <entry.Icon size={14} aria-hidden="true" className={polish.tabIcon} />
               {entry.label}
             </button>
           ))}
