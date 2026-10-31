@@ -18,7 +18,7 @@ Eight principles replace the 21 numbered rules. Each one says what to do, not on
 
 1. **Answer first.** Every page answers one question in 5 seconds. Its focal part is in the first screen and gets the most space.
 2. **Calm, dense, aligned.** A compact scale, a 4px rhythm, flush equal columns, tables that grow, and no empty rails.
-3. **Colour means state.** Tone lives in glyphs, the hero and the thin act now edge. Red means act now and nothing else. Words stay neutral ink.
+3. **Colour means state.** Tone lives in glyphs and the hero. Red means act now and nothing else. Words stay neutral ink. No coloured side edges or stripes on rows, cards or tiles (Josh, 31 Oct 2026).
 4. **Shape tells you.** One shape per status. Raised pills press, flat pills label, circles count, dashed means unavailable.
 5. **Materials have roles.** Solid surfaces for content, frosted glass for chrome and overlays, deep slate for the hero. Never glass on data.
 6. **Live and honest.** Values show their age and mark themselves when they change. Counts reconcile. Nothing claims more than it shows.
@@ -44,7 +44,9 @@ One switch, carried from v8. Every colour token is `light-dark(day, night)`, res
 
 At night a surface gets lighter as it rises, because shadows do not show on a dark canvas.
 
-**Tone.** Glyphs, edges and marks take the tone (`--wf-danger` and so on). Words that stand alone, such as an error message, take the `-ink` partner. Cards, rows and tiles take no tinted fill, except a free or fit place, which keeps its soft fit tint. An act now item takes a thin 1px edge in `--wf-act-edge` through `.edge-act`, never a fill. On the hero, glyphs take the on-hero tones.
+**Tone.** Glyphs and marks take the tone (`--wf-danger` and so on). Words that stand alone, such as an error message, take the `-ink` partner; a figure beside its glyph may take it too. Cards, rows and tiles take no tinted fill, except a free or fit place, which keeps its soft fit tint, an act now row, which keeps the act tint, and at most one most-urgent item per page, which may take `color-mix(in srgb, var(--wf-danger) 6%, var(--wf-surface))`. On the hero, glyphs take the on-hero tones.
+
+**No side edges (Josh, 31 Oct 2026: "it feels tacky").** Never show status, selection or act now with a coloured left or right edge, a stripe, an inset bar or a tone-coloured border. Instead: the StatusGlyph before the label or value; a small tinted tag on a row; selected as the selected tint with a neutral border; borders stay neutral (`--wf-line`). `tests/wf-no-side-stripes.test.ts` keeps the kit free of them and stops the rest of the app adding more.
 
 **Accent.** One clear blue means you can act here. `--wf-accent` is `light-dark(#245a8c, #8cbcf0)`. The primary button runs from `--wf-pri-1` `light-dark(#2f6aa3, #3a72a8)` to `--wf-pri-2` `light-dark(#234f7a, #2c5c8c)`. White text holds at least 4.9:1 on every primary stop. Data bars (`--wf-data-*`) stay slate, so blue never reads as data. Red and amber keep their meanings.
 
@@ -288,7 +290,7 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 ## 14. Owner rulings in force
 
 - 12px floor, no uppercase exception (O-15.1).
-- Colour lives in glyphs and the hero. Red means act now. Act now items take a thin edge, never a fill (9 Oct).
+- Colour lives in glyphs and the hero. Red means act now. Act now items take the act tint and their glyph, never a side edge (31 Oct; replaces the 9 Oct thin edge).
 - Compact sizing and smaller text (9 Oct).
 - Phone is its own design (9 Oct).
 - Every page has a focal part, a part of its own and a page-specific hero (9 Oct).
