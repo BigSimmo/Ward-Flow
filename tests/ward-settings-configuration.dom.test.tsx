@@ -13,6 +13,9 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+// Bug list row 2: catch the rules file the Export button writes.
+const download = vi.hoisted(() => vi.fn<(blob: Blob, name: string) => void>());
+vi.mock("@/components/ward-management/ward-download", () => ({ downloadBlob: download }));
 
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
@@ -206,6 +209,22 @@ describe("settings screen configuration draft", () => {
     }
   });
 
+  it("exports the saved rules only, never the unsaved draft or this browser's display settings", async () => {
+    download.mockClear();
+    renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    const savedTarget = Number(screen.getByTestId("probe-ed-target").textContent);
+    setEdToMinimum();
+    expect(savedTarget).not.toBe(ED_ACCESS_TARGET_RANGE_MINUTES.min);
+    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+    fireEvent.click(screen.getByTestId("btn-export-config"));
+    expect(download).toHaveBeenCalledOnce();
+    const exported = JSON.parse(await download.mock.calls[0][0].text());
+    // Import reads rules only, so the file carries nothing else.
+    expect(Object.keys(exported).sort()).toEqual(["configuration", "exportedAt", "product", "version"]);
+    expect(exported.configuration.edAccessTargetMinutes).toBe(savedTarget);
+  });
+
   it("Save dispatches the edited draft and records exactly one audit event", () => {
     renderSettings();
     const beforeAuditCount = Number(screen.getByTestId("probe-audit-count").textContent);
@@ -310,8 +329,17 @@ describe("settings screen configuration draft", () => {
     fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
     const modal = screen.getByTestId("ward-reset-baseline-modal");
-    expect(modal).toHaveTextContent("all nine rules");
-    for (const name of ["Referral decision", "Transfer acceptance", "Transport booked", "Glare"]) {
+    // Bug list row 1: a restore saves twelve rules, the three forecast alerts among them.
+    expect(modal).toHaveTextContent("all twelve rules");
+    for (const name of [
+      "Referral decision",
+      "Transfer acceptance",
+      "Transport booked",
+      "Bed type short tomorrow",
+      "Access target forecast",
+      "Forecast got worse",
+      "Glare",
+    ]) {
       expect(modal, name).toHaveTextContent(name);
     }
     expect(modal).not.toHaveTextContent("six coordination rules");
