@@ -36,6 +36,14 @@ import { communityReferralPurposeLabel } from "@/components/ward-management/ward
 const OUTCOME_CONSEQUENCE =
   "This ends the bed search: live ward requests are withdrawn, a pulled bed is released and uncollected transport is cancelled.";
 
+/**
+ * Search and forms review (31 Oct 2026): a row's form opens with the cursor in its first field,
+ * ready to answer. A stable function, so React calls it once as the form opens, not every render.
+ */
+function focusFirstField(form: HTMLFormElement | null) {
+  form?.querySelector<HTMLElement>("input:not([type=hidden]):not(:disabled), select:not(:disabled), textarea")?.focus();
+}
+
 /** Every panel a row can open. Each renders only while it is the open one. */
 export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): ReactNode {
   const {
@@ -265,6 +273,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
 
       {examOpen && !examBlocked ? (
         <form
+          ref={focusFirstField}
           className={styles.declineForm}
           onSubmit={(event) => submitExamination(event, movement.id)}
           data-testid={`ward-ed-examine-form-${movement.id}`}
@@ -398,6 +407,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
 
       {urgencyChangeOpen ? (
         <form
+          ref={focusFirstField}
           className={styles.declineForm}
           onSubmit={(event) => submitUrgencyChange(event, movement.id)}
           data-testid={`ward-change-urgency-${movement.id}`}
@@ -467,6 +477,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
 
       {legalStatusChangeOpen ? (
         <form
+          ref={focusFirstField}
           className={styles.declineForm}
           onSubmit={(event) => submitLegalStatusChange(event, movement.id)}
           data-testid={`ward-change-legal-status-${movement.id}`}
@@ -550,6 +561,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
 
       {legalFormExpiryOpen ? (
         <form
+          ref={focusFirstField}
           className={styles.declineForm}
           onSubmit={(event) => submitLegalFormExpiry(event, movement.id, movement.legalForm?.dueAt)}
           data-testid={`ward-ed-legal-form-expiry-${movement.id}`}
@@ -628,6 +640,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
 
       {receiptCorrectionOpen ? (
         <form
+          ref={focusFirstField}
           className={styles.declineForm}
           onSubmit={(event) => submitReceiptCorrection(event, movement.id)}
           data-testid={`ed-correct-form-receipt-${movement.id}`}

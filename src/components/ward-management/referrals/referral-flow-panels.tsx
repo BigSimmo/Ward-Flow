@@ -518,6 +518,18 @@ const CONTACT_FIELDS = [
   ["location", "Location or service", "text", "Ward, ED or team"],
 ] as const;
 
+/**
+ * The browser's own saved details for the referrer, staff contact only, never a patient's (search
+ * and forms review, 31 Oct 2026): a phone offers the number and email it already knows.
+ */
+const CONTACT_AUTOCOMPLETE: Record<(typeof CONTACT_FIELDS)[number][0], string> = {
+  name: "name",
+  email: "email",
+  phone: "tel",
+  role: "organization-title",
+  location: "organization",
+};
+
 export function ContactFields({
   contact,
   onChange,
@@ -550,6 +562,8 @@ export function ContactFields({
               id={`${id}-${key}`}
               className={styles.fieldInput}
               type={type}
+              autoComplete={CONTACT_AUTOCOMPLETE[key]}
+              enterKeyHint="next"
               required={key !== "email"}
               placeholder={placeholder}
               aria-invalid={error ? true : undefined}
