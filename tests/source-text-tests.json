@@ -222,6 +222,7 @@
     "tests/wf-no-side-stripes.test.ts",
     "tests/wf-phone-parts.dom.test.tsx",
     "tests/wf-primitives.dom.test.tsx",
-    "tests/wf-segmented-text-spacing.dom.test.tsx"
+    "tests/wf-segmented-text-spacing.dom.test.tsx",
+    "tests/wf-title-wrap.test.ts"
   ]
 }
