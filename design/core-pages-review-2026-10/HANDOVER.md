@@ -343,8 +343,11 @@ All approved by Josh; each page's build notes carry "Review round" and "Phone (J
   expected releases; no access forecast card on the ED desk; one caseload figure on the community pages
   (the phone's last tab is Caseload, opening on the whole caseload).
 - **New sidebar and header** (`shell-next/`, from the sidebar and header chat): drawn with `?shell=next`
-  or the viewer's "Sidebar and header: Today's frame / New frame" switch (default Today's). The redesigned
-  Alerts sheet and Home's Activity panel carry its Alerts | Activity tabs in the new frame.
+  or the viewer's "Sidebar and header: Today's frame / New frame" switch (default Today's). Josh's eight
+  31 October changes are in (page name first, no "?", the shift card names the person, Activity keeps
+  its own button beside the Alerts bell, the bell and "Alerts" on every desk, the capacity card in the
+  phone and tablet Menu, no shift card on the executive and admin desks, and a phone dock per desk), so
+  the Alerts sheet and Home's Activity panel no longer carry Alerts | Activity tabs.
 - **Final break check:** every page, popup and role view looked at on the built copy by three reviewers;
   about 30 small breaks fixed.
 
@@ -373,6 +376,43 @@ design (only the page reads the quiet world); a white strip in the phone tour sp
 
 **Not run yet:** the full verify gates and Playwright suites, and hosted CI on PR #1118. Run both before
 the PR is ever marked ready (only with Josh's yes).
+
+## Alignment review of the other design pull requests (31 October)
+
+Four read-only reviews (31 October) of the pull requests that touch the same screens, against this branch
+at cb4d8c79c and `claude/shell-next-mockup` at 629fd7286:
+
+- **#1119 Help** (`claude/help-menu-design-review-a1isgp`): a good spotlight engine and "Show me"
+  (highlights, never clicks), but it ships an unmocked fifth "How do I…" tab and wrapped phone tabs, makes the
+  rail's Help open How do I… (at odds with the new frame, which drops the "?"), and turns the
+  `help-ask` flag on for production. D-90 quotes no words from Josh. It removes the `howToHref` export that #1123
+  imports, and its shortcuts need `short` and `group`, which #1124's Alt+N row lacks. Forks that go stale:
+  `pop-help`, `pop-tour`, `pop-shortcuts`.
+- **#1122 Settings round 3** (into this branch): strong and mock-up only. It conflicts in 4 files, not 1:
+  `settings-rows.tsx` (keep its ScopeLine), `build-notes.ts` (keep both), and the two deleted role
+  `settings-screen.tsx` copies (accept the deletion). Before merging: phone Theme and Row density at the kit
+  size, the stale "cannot drift" comment, "Save 3 rule changes?" against "Save 3 rules", "None over" with no noun.
+  Its two real-app bugs (restore says nine rules, not twelve; Export and Import do not match) belong in a
+  small PR from main.
+- **#1123 Search and forms** (`claude/search-forms-optimization-44anqi`): a careful shared matcher, Help,
+  contact and suburb results, the approved removals, and form time savers. To fix: contact typo matching
+  ignores the "no person matched" gate (`search-directory.ts`); ED row forms take focus on phones; the
+  mock-up's +15m/+30m/+1h on "time the form was written" (Now only). The full gate was never finished. It
+  breaks `as-community-home` (`communitySearchRenderer`, `v6.searchPanel`); the `pop-search`, `eds`,
+  `statistics`, `as-executive-home` and `community-team` forks go stale. Its stand-alone mock-up should move
+  into this viewer (a re-forked `pop-search`, and a page search field in `parts/`). Its visible removals
+  should be logged as a decision.
+- **#1124 Notifications** (`claude/notifications-popups-design-qarfyt`): a sound core (one toast system,
+  read once, one bell count, z-index fixes), but the Recent chip, folded stack, corner-card moves and
+  shadow are new design with no mock-up. It deletes `board/ward-board-toast.tsx`,
+  `ward/ward-page-action-toast.tsx` and toast CSS classes that six forks use. Community save failures still
+  vanish (CT-09). Recent is not cleared on idle lock, and a second "Recent" clashes with Activity's
+  "Recent activity". The toast is not lifted above the dock.
+
+**Recommended approach:** all visual design lives in this viewer. The real-app PRs carry only behaviour
+and accessibility until Josh approves a page. Merge order to main: #1119, then #1124's behaviour part
+(with re-exports kept for the forks), then #1123 (rebased on `ward-help-href.ts`). Then merge main into
+this branch once, refresh the stale forks, and republish.
 
 ## Josh's answers (30 October, evening)
 
