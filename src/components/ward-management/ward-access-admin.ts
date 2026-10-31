@@ -103,8 +103,11 @@ export function scopeNamesPlace(scope: WardAccessScope, places: AccessPlaces): b
 
 /**
  * Whether `inner` lies wholly inside `outer`, so nobody grants, approves or removes a role wider
- * than their own. A service covers that service's sites, wards and EDs only; statewide, team and
- * jobs scopes need a statewide place.
+ * than their own. A service covers that service's sites, wards and EDs, and, since decision 42
+ * (Josh, 31 Oct 2026), its own community teams and its own transport officers' jobs, so a service's
+ * access admin gives those roles inside its service. A team whose service is unknown, a job list
+ * naming no service, and a statewide scope still need a statewide place. Granting stays with the
+ * access admin and the statewide coordinator (`managesAccess`): a service coordinator gains nothing.
  */
 export function scopeWithinScope(inner: WardAccessScope, outer: WardAccessScope, places: AccessPlaces): boolean {
   if (outer.kind === "statewide") return true;
@@ -120,6 +123,10 @@ export function scopeWithinScope(inner: WardAccessScope, outer: WardAccessScope,
       return inner.unitIds.every((id) => places.unitService(id) === outer.service);
     case "ed":
       return places.edService(inner.edId) === outer.service;
+    case "team":
+      return places.teamService?.(places.teamSlug(inner.teamName)) === outer.service;
+    case "jobs":
+      return inner.service === outer.service;
     default:
       return false;
   }

@@ -102,7 +102,7 @@ export function undoStepTypeFor(action: string): UndoStepType | undefined {
   return UNDO_STEP_TYPES.find((type) => (UNDO_STEP_ACTIONS[type] as readonly string[]).includes(action));
 }
 
-/** One subject id from an event's own fields: movement, then referral, then stay; else the network. */
+/** One subject id from an event's own fields: movement, then referral, then stay; a sign-off's ward; else the network. */
 export function undoStepSubjectId(event: object): string {
   const fields = event as {
     movementId?: unknown;
@@ -110,7 +110,17 @@ export function undoStepSubjectId(event: object): string {
     admissionId?: unknown;
     subject?: { id?: unknown };
     action?: unknown;
+    type?: unknown;
+    unitId?: unknown;
   };
+  // Decision 41 (31 Oct 2026): a handover sign-off naming a ward is filed against that ward, so one
+  // ward's Undo never takes back another ward's sign-off. One naming none stays the network's.
+  if (
+    (fields.type === "RECORD_HANDOVER_SIGN_OFF" || fields.type === "UNDO_HANDOVER_SIGN_OFF") &&
+    typeof fields.unitId === "string" &&
+    fields.unitId.length > 0
+  )
+    return `handover:${fields.unitId}`;
   // A bed meeting action is filed per record and kind, so marking two actions done on one person
   // keeps an Undo for each (H-0150).
   if (typeof fields.subject?.id === "string" && typeof fields.action === "string")

@@ -17,6 +17,11 @@ import {
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
 
+/** Whether a broadcast is about one person: a Pull now, or any alert naming a journey. */
+export function broadcastLinksPatient(alert: BroadcastAlert): boolean {
+  return alert.kind === "pull_now" || alert.movementId !== undefined;
+}
+
 /**
  * The broadcast alerts a desk other than the coordinator may read (review on PR #330). A directive
  * reaches every desk, or only the desks its target covers. A bed call or Pull now keeps only the
@@ -30,9 +35,12 @@ export function scopeBroadcastAlerts(
   places: PlaceLookup,
 ): BroadcastAlert[] {
   if (access.role === "executive") return [];
+  // Decision 44 (Josh, 31 Oct 2026): the access admin sees no patients, so it is sent no alert about
+  // one (a Pull now names a person's journey). Notices that name nobody, such as downtime, still reach it.
+  const readable = access.role === "admin" ? alerts.filter((alert) => !broadcastLinksPatient(alert)) : alerts;
   const unitIn = (unitId: string) => unitInScope(access.scope, unitId, places);
   const deskIn = (id: string) => unitIn(id) || edInScope(access.scope, id, places);
-  return alerts.flatMap((alert) => {
+  return readable.flatMap((alert) => {
     if (alert.targetUnitIds === undefined) {
       if (alert.targetScope !== "all" && !directiveDesks(alert, units).some(deskIn)) return [];
       // Only the desk's own acknowledgements, so no desk counts or names another's (review on PR #330).

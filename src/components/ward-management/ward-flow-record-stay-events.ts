@@ -425,10 +425,18 @@ export function reduceRecordedStayEvent(
     }
 
     case "RECORD_HANDOVER_SIGN_OFF": {
-      // Role and time only. Never a note, a name, or a claim that anyone was notified.
+      // Role, time and the ward only. Never a note, a name, or a claim that anyone was notified.
+      // Decision 41: a ward signs off its own ward's sheet, so its sign-off names that ward. The
+      // shared server refuses a ward desk's sign-off that names none (`commandScopeRefusal`).
+      if (event.unitId !== undefined && !findUnit(state, event.unitId))
+        return reject(state, event, `no ward found for id ${event.unitId}`);
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      const recorded: HandoverSignOffRecord = { at: event.now, by: event.role };
+      const recorded: HandoverSignOffRecord = {
+        at: event.now,
+        by: event.role,
+        ...(event.unitId === undefined ? {} : { unitId: event.unitId }),
+      };
       const existing = Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : [];
       return { ...state, handoverSignOffs: [...existing, recorded] };
     }

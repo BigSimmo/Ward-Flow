@@ -76,22 +76,29 @@ export function movementInHandoverScope(
 }
 
 /**
- * Shift handover sign-off. The engine stores role and time only. This helper dispatches first
- * and returns a record only when that call is allowed and does not throw — never a claim that
- * the sheet was signed before the reducer accepted it, and never a claim that anyone was notified.
+ * Shift handover sign-off. The engine stores role, time and, when the sheet is one ward's, that
+ * ward (decision 41, 31 Oct 2026). This helper dispatches first and returns a record only when that
+ * call is allowed and does not throw — never a claim that the sheet was signed before the reducer
+ * accepted it, and never a claim that anyone was notified.
  */
 export function recordHandoverSignOff(
   dispatch: Dispatch<WardFlowEvent>,
   now: Instant,
   role: WardFlowRole = "coordinator",
-): { role: WardFlowRole; at: Instant } | null {
+  unitId?: string,
+): { role: WardFlowRole; at: Instant; unitId?: string } | null {
   if (!canDispatch(role, "RECORD_HANDOVER_SIGN_OFF")) return null;
   try {
-    dispatch({ type: "RECORD_HANDOVER_SIGN_OFF", role, now });
+    dispatch({ type: "RECORD_HANDOVER_SIGN_OFF", role, now, ...(unitId === undefined ? {} : { unitId }) });
   } catch {
     return null;
   }
-  return { role, at: now };
+  return { role, at: now, ...(unitId === undefined ? {} : { unitId }) };
+}
+
+/** Decision 41: the ward a handover scope's sign-off names, or none for a wider sheet. */
+export function handoverSignOffUnitId(scope: HandoverScope): string | undefined {
+  return scope.kind === "ward" ? scope.id : undefined;
 }
 
 /** URGENT, FOR THE PURPOSE OF THE "OUTSIDE THIS FILTER" FOOTER */

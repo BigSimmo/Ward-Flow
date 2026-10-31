@@ -444,10 +444,15 @@ export type RepatriationRecord = {
   escortRequired?: boolean;
 };
 
-/** Shift handover sign-off. Role and time only. */
+/** Shift handover sign-off. Role, time and, since decision 41 (31 Oct 2026), the ward. */
 export type HandoverSignOffRecord = {
   at: Instant;
   by: WardFlowRole;
+  /**
+   * The ward whose sheet was signed. Absent on a whole-network sign-off and on every sign-off saved
+   * before 31 Oct 2026; those read "Ward not recorded" and are never given a guessed ward.
+   */
+  unitId?: string;
 };
 
 /** Record that a team was contacted. Not a sent message. */
