@@ -14,7 +14,7 @@
 import { useCallback } from "react";
 
 import { howToHref } from "./help/ward-help-href";
-import { askWardHelp, showWardHowTo } from "./help/ward-help-events";
+import { askWardHelp, openWardHelp, showWardHowTo } from "./help/ward-help-events";
 import { CLINICAL_REPLY, searchHelp, type HelpSearchResult } from "./help/ward-help-search-index";
 import { useTourRole, type WardTourRole } from "./help/ward-help-store";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
@@ -67,6 +67,11 @@ export function openHelpResult(id: string, role: WardTourRole, showMeOn: boolean
     return true;
   }
   if (isDeskJob(result, role) && howToHref(result.go, role, undefined)) return false;
+  // Without Show me, Help's Ask box is off too, so the desk's own task opens in How do I… instead.
+  if (!showMeOn && result.howToId && isDeskJob(result, role)) {
+    openWardHelp("tasks", result.howToId);
+    return true;
+  }
   askWardHelp(result.title);
   return true;
 }

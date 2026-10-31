@@ -52,8 +52,8 @@ export function HowToRow({
   const id = useId();
   const phone = useIsPhone();
   const href = actions ? howToHref(howTo.go, role, home) : undefined;
-  // Go there is offered only when the job is done somewhere else.
-  const goThere = href && href.split("#")[0] !== pathname ? href : undefined;
+  // Go there is offered only when the job is done somewhere else, or on a tab of this page (Settings).
+  const goThere = href && (href.includes("#") || href !== pathname) ? href : undefined;
   const showMe = actions && showMeOn && showMeAvailable(howTo, role, home, phone);
   // A phone screen without the button says where the job is done instead of offering Show me.
   const computerOnly = actions && showMeOn && phone && Boolean(howTo.computerOnly);

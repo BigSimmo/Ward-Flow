@@ -121,6 +121,13 @@ describe("How do I… task list", () => {
     expect(within(row).queryByTestId("ward-help-task-go")).toBeNull();
   });
 
+  it("keeps Go there to another Settings tab while Help is open on Settings", () => {
+    route.pathname = "/ward-flow/settings";
+    renderTasks({ openTask: "theme", showMeOn: false });
+    const row = screen.getByTestId("ward-help-task-answer-theme");
+    expect(within(row).getByTestId("ward-help-task-go").getAttribute("href")).toBe("/ward-flow/settings#display");
+  });
+
   it("tells a phone that a computer-only task is done on a computer, instead of offering Show me", () => {
     phone.on = true;
     renderTasks({ openTask: "print-handover" });
