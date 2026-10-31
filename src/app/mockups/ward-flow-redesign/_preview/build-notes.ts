@@ -144,12 +144,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** as the coordinator's Capacity: the network total shows once, a muted 48-hour range, a stacked phone forecast sheet, and the ward drawer's own title in place of Back to network. Held-up releases count only Royal Perth's (2), so the figure matches this desk's Discharges, named as Discharges names them.",
     "**Carried from the approved Capacity design (31 Oct 2026):** the same Mismatch strip (the site's own bed types only), forecast (named Site), full-width bed map with Other sites under it, and the lower row. Nearest ready beds ranks every site from the site's own ED; This shift offers Confirm on the ward's page instead of Ask, which is the coordinator's step.",
   ],
-  "as-bed-manager-places": [
-    "**As the site bed manager**, Places opens on '2 wards at your site', Dabakarn in the preview.",
-    "**Changed:** a place this desk cannot open shows Open greyed with the app's own sentence; Ask to confirm becomes Confirm beds on the site's wards.",
-    "**Still open:** RPH ED is not listed as one of the site's places, because this role cannot open ED pages. Should it?",
-    "**Round 2:** the site's two wards are listed once, under Your site; the network group reads 'Other wards 20'. Network totals leave the eyebrow. The preview's pills become one quiet line, with only the warning kept as a pill.",
-  ],
   "as-bed-manager-ward": [
     "**As the site bed manager**, the real gating already works: Confirm numbers is offered, Raise referral is greyed, answering and placing are blocked.",
     "**New:** no Start the round, drug count, seclusion check or sign-off reminders, and Morning bed numbers with Confirm first in This shift (role branches in the one My ward copy).",
@@ -504,15 +498,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** recorded and typed times only; nothing is calculated.",
     "**Still open:** the CSV's patient line keeps today's first-name-first export format, as it is a file format rather than the screen.",
     "**Round 2:** the phone eyebrow is just 'Generated 10:42'. 356 shows once ('6 of 356'). Show more is offered once, then points to the search, because 356 rows would take about 30 presses. The filter says 'Ward manager', the app's role name.",
-  ],
-  places: [
-    "**Built from a copy of today's Places screen**, so search (the / shortcut, arrows, Enter, Escape), stars, Ask to confirm, View statistics, Open and the phone preview sheet work as now.",
-    "**Point 21:** Places is now a directory with no bed figures of its own. Bed squares, ready and pulled counts, the header bed chips, Ready beds only and the network bed bar are gone; rows and the preview point to Capacity's bed map and All wards.",
-    "**New:** search sits first, in the header. Services after the first two fold, and in All the EDs and teams fold to one row each. Long groups show 8 rows, then Show more.",
-    "**New:** the preview opens on the first place listed, so the right side is never empty. A stale count says Stale count on its row.",
-    "**Kept:** All, Wards, EDs and Teams; Service order; stars; At a glance; Needs a check (stale counts only, in the existing words). Wards by service now counts wards, not beds.",
-    "**Question for you:** with no beds shown, the Most ready order is replaced by A to Z. Is that right, or should Most ready stay?",
-    "**Round 2:** in All, the EDs' and teams' heading is itself the fold row, so the count shows once. 'Stale 5h' sits beside its two lines on a phone. Security reads 'Open ward' / 'Locked ward', because 'Open' sat next to Open buttons.",
   ],
   "statistics-unit": [
     "**Built from a copy of today's ward statistics screen**, so Change ward, the next and previous arrows, Export the figures, the roster search, filters and CSV, and the phone view work as now.",

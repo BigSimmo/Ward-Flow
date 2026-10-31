@@ -68,9 +68,6 @@ const DowntimePage = dynamic<MockupPageProps>(() =>
 const ChronologyPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/chronology/chronology-page").then((module) => module.ChronologyPage),
 );
-const PlacesPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/places/places-page").then((module) => module.PlacesPage),
-);
 const CommunityTeamPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/community-team/community-team-page").then((module) => module.CommunityTeamPage),
 );
@@ -206,11 +203,6 @@ const AsBedManagerHomePage = dynamic<MockupPageProps>(() =>
     (module) => module.AsBedManagerHomePage,
   ),
 );
-const AsBedManagerPlacesPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-bed-manager-places/as-bed-manager-places-page").then(
-    (module) => module.AsBedManagerPlacesPage,
-  ),
-);
 const AsBedManagerWardPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-bed-manager-ward/as-bed-manager-ward-page").then(
     (module) => module.AsBedManagerWardPage,
@@ -287,7 +279,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "bed-meeting-tv": BedMeetingTvPage,
   downtime: DowntimePage,
   chronology: ChronologyPage,
-  places: PlacesPage,
   "community-team": CommunityTeamPage,
   patient: PatientPage,
   "add-patient": AddPatientPage,
@@ -321,7 +312,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-community-statistics": AsCommunityStatisticsPage,
   "as-officer-alerts": AsOfficerAlertsPage,
   "as-bed-manager-home": AsBedManagerHomePage,
-  "as-bed-manager-places": AsBedManagerPlacesPage,
   "as-bed-manager-ward": AsBedManagerWardPage,
   "as-bed-manager-discharges": AsBedManagerDischargesPage,
   "as-bed-manager-referrals": AsBedManagerReferralsPage,

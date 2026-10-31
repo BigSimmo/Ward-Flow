@@ -95,7 +95,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     group: "Bed meeting and reports",
     appPath: "/ward-flow/reports/chronology",
   },
-  { slug: "places", label: "Places", group: "Places and records", appPath: "/ward-flow/hub" },
   {
     slug: "community-team",
     label: "Community team",
@@ -280,13 +279,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     label: "Capacity",
     group: "As site bed manager",
     appPath: "/ward-flow/capacity",
-    role: ROLE_DESKS["bed-manager"],
-  },
-  {
-    slug: "as-bed-manager-places",
-    label: "Places",
-    group: "As site bed manager",
-    appPath: "/ward-flow/hub",
     role: ROLE_DESKS["bed-manager"],
   },
   {

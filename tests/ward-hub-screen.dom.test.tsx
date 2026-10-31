@@ -63,6 +63,7 @@ import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/com
 const A_REAL_TEAM = COMMUNITY_TEAM_PAGES[0].name;
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 
 function renderHub() {
   render(
@@ -70,6 +71,43 @@ function renderHub() {
       <HubScreen />
     </WardFlowProvider>,
   );
+}
+
+/**
+ * Review point 21 (Josh approved 31 Oct 2026): Places is a directory. The search NARROWS the list
+ * (it no longer highlights and dims), services after the first two fold, in All the EDs and teams
+ * fold to one row each, and a long group shows eight rows then Show more. These helpers read the
+ * results list alone, because the preview (which now always shows a place on a wider screen)
+ * repeats the selected place's name.
+ */
+const resultsList = () => {
+  const list = document.getElementById("hub-results");
+  if (list === null) throw new Error("the hub's results list (#hub-results) is not on the page");
+  return list;
+};
+const results = () => within(resultsList());
+const listed = (name: string) => results().queryByText(name);
+/** Opens every fold and presses Show more until every row of the current view is on the list. */
+function expandAll() {
+  for (let round = 0; round < 50; round += 1) {
+    const folded = Array.from(resultsList().querySelectorAll<HTMLButtonElement>('button[aria-expanded="false"]'));
+    const more = results().queryAllByRole("button", { name: /^show more/i });
+    const next = folded[0] ?? more[0];
+    if (next === undefined) return;
+    fireEvent.click(next);
+  }
+  throw new Error("the list never finished expanding");
+}
+function clickRow(name: string) {
+  expandAll();
+  fireEvent.click(results().getByText(name));
+}
+/** The number the list foot states ("12 of 96 match" or "22 of 96 listed"). */
+function footCount(): number {
+  const text = screen.getByTestId("hub-shown-count").textContent ?? "";
+  const match = /^(\d+) of \d+/u.exec(text);
+  if (match === null) throw new Error(`the list foot reads "${text}"`);
+  return Number(match[1]);
 }
 
 /**
@@ -97,7 +135,8 @@ const CATEGORY_LABEL: Record<string, RegExp> = {
   all: /^All\s*\d+$/u,
   ward: /^Wards\s*\d+$/u,
   ed: /^EDs\s*\d+$/u,
-  community: /^Community\s*\d+$/u,
+  // Round 2 of the redesign: the switch reads Teams.
+  community: /^Teams\s*\d+$/u,
 };
 function categoryRadio(value: string): HTMLElement {
   const label = CATEGORY_LABEL[value];
@@ -112,6 +151,8 @@ describe("Ward Flow Master Search Hub — fixture assumptions (floors the discri
     expect(screen.getByRole("heading", { level: 1, name: /^Places\b/u })).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Start of shift" })).not.toBeInTheDocument();
   });
+  // The "both numbers" ruling now lives on Capacity and All wards (review point 21); this floor
+  // stays because the fixture is shared with those pages' own guards.
   it("Mental Health Unit has two DIFFERENT non-zero capacity figures, so a collapsed-into-one screen has something to disagree with", () => {
     expect(SCGH_ADULT_OPEN, "fixture no longer has scgh-adult-open — re-point this case").toBeDefined();
     expect(SCGH_CAPACITY?.available, "Mental Health Unit's ready-to-admit figure moved").toBe(2);
@@ -138,37 +179,41 @@ describe("Ward Flow Master Search Hub — fixture assumptions (floors the discri
 describe("Ward Flow Master Search Hub — search and the type filter", () => {
   it("shows a result from every one of the three kinds when the search box is empty", () => {
     renderHub();
+    // In All, the EDs and the teams start folded to one heading row each, with their count.
+    expect(results().getByRole("button", { name: /^Emergency departments\s*\d+$/iu })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expandAll();
     // One name from each kind, each guaranteed present in the live fixture rather than invented.
-    expect(screen.getByText("Dabakarn")).toBeInTheDocument();
-    expect(screen.getByText(edById("peel-ed")?.name ?? "__missing-ed__")).toBeInTheDocument();
-    expect(screen.getByText(A_REAL_TEAM)).toBeInTheDocument();
+    expect(listed("Dabakarn")).toBeInTheDocument();
+    expect(listed(edById("peel-ed")?.name ?? "__missing-ed__")).toBeInTheDocument();
+    expect(listed(A_REAL_TEAM)).toBeInTheDocument();
   });
 
-  // v10 pass 3 (rule: filters highlight and dim, they do not hide): the search lights what it
-  // matches and dims every other row, and every row stays on the list.
-  it("highlights what the query actually matches and dims the rest, hiding nothing", () => {
+  // Review point 21: the search narrows the list to what it matches, on every screen size.
+  it("narrows the list to what the query actually matches", () => {
     renderHub();
-    const row = (name: string) => screen.getByText(name).closest("li");
     const search = screen.getByRole("searchbox", { name: /search/i });
     fireEvent.change(search, { target: { value: "Mental Health Unit" } });
 
-    // The one item the query names is lit...
-    expect(row("Mental Health Unit")).not.toHaveAttribute("data-dim");
-    // ...and an unrelated ward and an unrelated community team stay on the list, dimmed. A screen
-    // that ignored the query would leave them undimmed; one that narrowed would remove them.
-    expect(row("Dabakarn")).toHaveAttribute("data-dim", "true");
-    expect(row(A_REAL_TEAM)).toHaveAttribute("data-dim", "true");
-    expect(screen.getByTestId("hub-highlight-note")).toHaveTextContent(/highlighted\. All rows stay/);
+    // The one item the query names is listed...
+    expect(listed("Mental Health Unit")).toBeInTheDocument();
+    // ...and an unrelated ward and an unrelated community team are not. A screen that ignored the
+    // query would still list them.
+    expect(listed("Dabakarn")).not.toBeInTheDocument();
+    expect(listed(A_REAL_TEAM)).not.toBeInTheDocument();
+    expect(screen.getByTestId("hub-shown-count")).toHaveTextContent(/of \d+ match/u);
   });
 
-  it("says when nothing matches and offers Clear search, with every row still listed", () => {
+  it("says when nothing matches and offers Clear search, which brings the list back", () => {
     renderHub();
     fireEvent.change(screen.getByRole("searchbox", { name: /search/i }), { target: { value: "zzzz-no-place" } });
     expect(screen.getByTestId("hub-no-match")).toHaveTextContent(/matches “zzzz-no-place”/);
-    expect(screen.getByText("Dabakarn").closest("li")).toHaveAttribute("data-dim", "true");
+    expect(results().queryAllByRole("listitem")).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
     expect(screen.queryByTestId("hub-no-match")).not.toBeInTheDocument();
-    expect(screen.getByText("Dabakarn").closest("li")).not.toHaveAttribute("data-dim");
+    expect(results().getAllByRole("listitem").length).toBeGreaterThan(0);
   });
 
   /**
@@ -177,104 +222,69 @@ describe("Ward Flow Master Search Hub — search and the type filter", () => {
    * worth guarding is the one a coordinator reads: the number printed ON a tab is how many rows
    * pressing that tab produces.
    *
-   * The second half — that the number is not the unfiltered population — is what gives this teeth.
-   * Without it, a screen that ignored the query in its counts (as this one did: "fremantle" showed
-   * two wards under a tab reading "Wards 23") passes the first half whenever the query happens to
-   * match everything.
-   *
-   * 🔴 **THE QUERY IS "metro" AND IT WAS "fremantle", WHICH PROVED LESS THAN IT LOOKED.** Mutating
-   * the ward tally to count every kind instead of only wards left this case GREEN, because
-   * "fremantle" matches wards and nothing else — so "all matches" and "ward matches" were the same
-   * number and the two behaviours were indistinguishable. "metro" matches wards AND emergency
-   * departments, which is what makes the mutant die; the floor below refuses to run the case at all
-   * if a fixture change ever takes that property away.
+   * 🔴 **THE QUERY IS "metro" AND IT WAS "fremantle", WHICH PROVED LESS THAN IT LOOKED.** "fremantle"
+   * matches wards and nothing else, so "all matches" and "ward matches" were the same number. "metro"
+   * matches wards AND emergency departments, and the floor below refuses to run the case at all if
+   * a fixture change ever takes that property away.
    */
-  // v10 pass 3: the search highlights rather than narrows, so the rows a category shows no longer
-  // follow the query, and neither does its count. The lit rows follow the query instead.
-  it("the count in the category filter option is how many rows selecting that category actually shows, and the search lights a subset of them", () => {
+  // The tab counts do not follow the query; the search narrows the rows that tab lists.
+  it("the count in the category filter option is how many rows selecting that category actually shows, and the search narrows them", () => {
     renderHub();
-    const results = () => within(screen.getByRole("region", { name: /search results/i }));
-    // v6: the category control is a segmented radio group; each radio carries its count in `.k`.
     const categoryOptionCount = (value: string) => {
       const match = categoryRadio(value).textContent?.match(/(\d+)$/u);
       return match ? Number(match[1]) : 0;
     };
 
-    fireEvent.change(screen.getByRole("searchbox", { name: /search/i }), { target: { value: "metro" } });
     const claimed = categoryOptionCount("ward");
-
     fireEvent.click(categoryRadio("ward"));
-    const rows = results().getAllByRole("listitem");
-    expect(rows).toHaveLength(claimed);
-    const lit = rows.filter((row) => !row.hasAttribute("data-dim"));
-    // The discriminating floor: "metro" lights some wards and dims others. A search that lit
-    // everything or nothing could not tell highlighting from ignoring the query.
-    expect(lit.length).toBeGreaterThan(0);
-    expect(lit.length).toBeLessThan(claimed);
-    expect(screen.getByTestId("hub-highlight-note")).toHaveTextContent(new RegExp(`${lit.length} of ${claimed}`));
+    expect(footCount()).toBe(claimed);
+    expandAll();
+    expect(results().getAllByRole("listitem")).toHaveLength(claimed);
+
+    fireEvent.change(screen.getByRole("searchbox", { name: /search/i }), { target: { value: "metro" } });
+    // The tab's own count does not follow the query...
+    expect(categoryOptionCount("ward")).toBe(claimed);
+    // ...and the discriminating floor: "metro" keeps some wards and drops others.
+    const matched = footCount();
+    expect(matched).toBeGreaterThan(0);
+    expect(matched).toBeLessThan(claimed);
+    expandAll();
+    expect(results().getAllByRole("listitem")).toHaveLength(matched);
   });
 
   it("restricts the list to one kind when that kind is selected in the category dropdown, with an empty query", () => {
     renderHub();
     fireEvent.click(categoryRadio("ward"));
+    expandAll();
 
     // Wards are still there...
-    expect(screen.getByText("Dabakarn")).toBeInTheDocument();
-    expect(screen.getByText("Mental Health Unit")).toBeInTheDocument();
+    expect(listed("Dabakarn")).toBeInTheDocument();
+    expect(listed("Mental Health Unit")).toBeInTheDocument();
     // ...but no emergency department or community team survives the filter. A toggle that only
     // decorated itself as pressed, without actually filtering, would fail only this half.
-    expect(screen.queryByText(edById("peel-ed")?.name ?? "__missing-ed__")).not.toBeInTheDocument();
-    expect(screen.queryByText(A_REAL_TEAM)).not.toBeInTheDocument();
+    expect(listed(edById("peel-ed")?.name ?? "__missing-ed__")).not.toBeInTheDocument();
+    expect(listed(A_REAL_TEAM)).not.toBeInTheDocument();
   });
 });
 
-describe("Ward Flow Master Search Hub — the owner's 2026-09-05 ruling: both numbers, never one", () => {
-  /**
-   * ⚠️ **THIS CASE ASSERTED AGAINST `document.body.textContent` AND COULD NOT SEE THE NUMBERS IT
-   * WAS GUARDING.** `textContent` concatenates sibling elements with no separator, so the screen's
-   * perfectly correct "2 / Ready to admit / 3 / Closed, not offered" arrives as
-   * `…North Metro2Ready to admit3Closed…` — where `/\b2\b/` cannot match, because "o2" and "2R"
-   * are both word-character pairs with no boundary between them. It failed against a screen that
-   * was right, which is the worse of the two ways a guard can be wrong (a guard that reddens on
-   * correct work gets widened until it means nothing).
-   *
-   * Scoped to the preview pane and matched as whole leaf nodes instead, it is now *stronger* than
-   * the version it replaces: `getByText("2")` will not match "24 Beds" or "North Metro2", and the
-   * collapsed total can finally be asserted absent — impossible in the old whole-page form, where
-   * another ward's own legitimate "5" would have tripped it.
-   */
-  it("a ward whose ready count includes beds still being cleaned shows BOTH figures, never only the larger one collapsed into a single count", () => {
+/**
+ * Review point 21 (Josh approved 31 Oct 2026): Places shows no bed figures of its own. The owner's
+ * 2026-09-05 "both numbers, never one" ruling is guarded where the figures now live (Capacity's bed
+ * map and All wards). This case replaced the one that read Ready and Closed out of this preview.
+ */
+describe("Ward Flow Master Search Hub — a directory with no bed figures of its own (review point 21)", () => {
+  it("a ward's row and preview carry no bed figure, and the preview points to Capacity's bed map and All wards", () => {
     renderHub();
-    fireEvent.click(screen.getByText("Mental Health Unit"));
+    clickRow("Mental Health Unit");
 
-    const glance = within(screen.getByRole("complementary", { name: /at a glance/i }));
-    // The disclosure footer also describes capacity. Assert the selected ward's Beds section.
-    const bedsSection = glance.getByRole("heading", { name: "Beds" }).parentElement;
-    if (!bedsSection) throw new Error("Selected ward Beds section is missing");
-    const preview = within(bedsSection);
+    const row = results().getByText("Mental Health Unit").closest("li");
+    expect(row?.textContent ?? "").not.toMatch(/\bready\b|\bpulled\b|\bbeds\b/iu);
 
-    // The ready-to-admit figure (2) stands as its own labelled fact... Each figure is read inside
-    // its own labelled cell: the ward also has 2 pulled patients, so a bare "2" now appears twice.
-    const cellOf = (label: RegExp): HTMLElement => {
-      const cell = preview.getByText(label).parentElement;
-      if (!cell) throw new Error(`No cell holds the label ${String(label)}`);
-      return cell;
-    };
-    expect(within(cellOf(/^ready to admit$/i)).getByText(String(SCGH_CAPACITY?.available))).toBeInTheDocument();
-    // ...and the Closed figure (3; empty, not offered — the box once mislabelled "Held") as its own,
-    // separately labelled. No live pull is made here, so the ruled Closed equals
-    // `unitCapacity().held`. A screen that
-    // collapsed both into the physically-empty total would still satisfy the "2" above by
-    // accident; this pair is what a collapse actually breaks.
-    expect(within(cellOf(/^Closed, not offered$/i)).getByText(String(SCGH_CAPACITY?.held))).toBeInTheDocument();
-    expect(preview.queryByText(/^Held$/i), "Held now means only a leave bed, never this box").not.toBeInTheDocument();
-    // And the collapsed total (5 = 2 + 3) must not appear in this ward's own capacity at all. It
-    // is the `empty` count doing a job neither `available` nor `held` may do alone: it reads as
-    // availability, and the reducer refuses `PULL_PATIENT` into three of those five beds.
-    expect(
-      preview.queryByText(String((SCGH_CAPACITY?.available ?? 0) + (SCGH_CAPACITY?.held ?? 0))),
-      "the physically-empty total is standing where one of the two real figures belongs",
-    ).not.toBeInTheDocument();
+    const preview = within(screen.getByRole("region", { name: /^preview, mental health unit$/iu }));
+    expect(preview.queryByText(/^ready to admit$/iu)).not.toBeInTheDocument();
+    expect(preview.queryByText(/^Closed, not offered$/iu)).not.toBeInTheDocument();
+    expect(preview.getByRole("link", { name: /capacity.s bed map/iu })).toHaveAttribute("href", WARD_CAPACITY_HREF);
+    expect(preview.getByRole("link", { name: /^all wards$/iu })).toHaveAttribute("href", "/ward-flow/wards");
   });
 });
 
@@ -282,7 +292,7 @@ describe("Ward Flow Master Search Hub — an unknown or an absence is stated in 
   it("an emergency department with no on-site ward says so in words rather than printing a bare 0", () => {
     renderHub();
     const edName = JOONDALUP_ED?.name ?? "__missing-ed__";
-    fireEvent.click(screen.getByText(edName));
+    clickRow(edName);
 
     const preview = document.body.textContent ?? "";
     // A screen that printed "0 on-site units" would fail this — the fact must read as a sentence
@@ -312,7 +322,7 @@ function previewTextFor(wardName: string): string {
 describe("Ward Flow Master Search Hub — every flagged state carries a word, not only a colour", () => {
   it("an unauthorised ward states the Mental Health Act fact in words when selected", () => {
     renderHub();
-    fireEvent.click(screen.getByText("SJGS Adult Secure"));
+    clickRow("SJGS Adult Secure");
 
     /*
      * Whatever colour or icon the screen also uses, the sentence itself must be readable — this is
@@ -370,7 +380,7 @@ describe("Ward Flow Master Search Hub — every flagged state carries a word, no
      * The positive case alone cannot notice that.
      */
     renderHub();
-    fireEvent.click(screen.getByText("Dabakarn"));
+    clickRow("Dabakarn");
 
     expect(
       previewTextFor("Dabakarn"),
@@ -428,12 +438,10 @@ describe("Ward Flow Master Search Hub — a search must not change what the scre
     // Before any query the two are trivially equal, so this is measured only after narrowing —
     // and the narrowing is proven to have happened before anything is compared.
     fireEvent.change(screen.getByRole("searchbox", { name: /search/i }), { target: { value: "fremantle" } });
-    const lit = within(screen.getByRole("region", { name: /search results/i }))
-      .getAllByRole("listitem")
-      .filter((row) => !row.hasAttribute("data-dim"));
+    const narrowed = footCount();
     expect(
-      lit.length,
-      'the query "fremantle" no longer narrows the highlight — this case can no longer tell a filtered figure from an unfiltered one',
+      narrowed,
+      'the query "fremantle" no longer narrows the list — this case can no longer tell a filtered figure from an unfiltered one',
     ).toBeLessThan(10);
 
     const subtitle = networkSentence().textContent ?? "";
@@ -464,31 +472,31 @@ describe("Ward Flow Master Search Hub — the keyboard reaches everything the mo
 
   it("arrow keys move the preview through the results, and the preview follows", () => {
     renderHub();
-    // Nothing is previewed until a row is reached, so the pane shows the overview.
-    expect(previewed()).toMatch(/at a glance/i);
-
-    fireEvent.keyDown(search(), { key: "ArrowDown" });
+    // Review point 21 (no empty panels): on a wider screen the preview opens on the first place listed.
     const first = previewed();
+    expect(first, "nothing is previewed on arrival").not.toMatch(/at a glance/i);
+
     fireEvent.keyDown(search(), { key: "ArrowDown" });
     const second = previewed();
 
     // Two different wards, not the same one twice — a handler that fired but never advanced the
-    // cursor would satisfy "something is previewed" and fail this.
-    expect(first, "the first arrow key previewed nothing").not.toMatch(/at a glance/i);
-    expect(second, "the second arrow key did not move the cursor").not.toBe(first);
+    // cursor would fail this.
+    expect(second, "the arrow key did not move the cursor").not.toBe(first);
 
     // ...and Up returns to exactly where Down started, which a one-directional handler fails.
     fireEvent.keyDown(search(), { key: "ArrowUp" });
     expect(previewed()).toBe(first);
   });
 
-  it("Escape clears the search, restoring rows the query had dimmed", () => {
+  it("Escape clears the search, restoring rows the query had left out", () => {
     renderHub();
     fireEvent.change(search(), { target: { value: "scgh" } });
-    expect(screen.getByText("Dabakarn").closest("li")).toHaveAttribute("data-dim", "true");
+    expect(listed("Dabakarn")).not.toBeInTheDocument();
 
     fireEvent.keyDown(search(), { key: "Escape" });
-    expect(screen.getByText("Dabakarn").closest("li")).not.toHaveAttribute("data-dim");
+    expect((search() as HTMLInputElement).value).toBe("");
+    expandAll();
+    expect(listed("Dabakarn")).toBeInTheDocument();
   });
 
   it("with a search typed, the arrow keys step through the matches only", () => {
@@ -501,11 +509,13 @@ describe("Ward Flow Master Search Hub — the keyboard reaches everything the mo
   it("selecting different categories in the dropdown updates the list accordingly", () => {
     renderHub();
     fireEvent.click(categoryRadio("ward"));
-    expect(screen.getByText("Dabakarn")).toBeInTheDocument();
+    expandAll();
+    expect(listed("Dabakarn")).toBeInTheDocument();
 
     fireEvent.click(categoryRadio("ed"));
-    expect(screen.queryByText("Dabakarn")).not.toBeInTheDocument();
-    expect(screen.getByText(edById("peel-ed")?.name ?? "__missing-ed__")).toBeInTheDocument();
+    expandAll();
+    expect(listed("Dabakarn")).not.toBeInTheDocument();
+    expect(listed(edById("peel-ed")?.name ?? "__missing-ed__")).toBeInTheDocument();
   });
 
   it("the category control is in the tab order as a single focus stop", () => {
@@ -516,24 +526,18 @@ describe("Ward Flow Master Search Hub — the keyboard reaches everything the mo
     expect(categoryRadio("all").tabIndex).toBe(0);
   });
 
-  it("toggling the ready beds quick filter highlights wards with available beds and dims the rest", () => {
+  // Review point 21 replaced this case: "Ready beds only" and the hero bed chips are gone, and
+  // Reset still clears what the reader chose.
+  it("has no Ready beds only control or bed chips, and Reset clears a kind the reader chose", () => {
     renderHub();
-    const results = () => within(document.getElementById("hub-results") as HTMLElement);
-    const row = (name: string) => results().getByText(name).closest("li");
-    const readyToggle = screen.getByRole("button", { name: /ready beds only/i });
-    fireEvent.click(readyToggle);
+    expect(screen.queryByRole("button", { name: /ready beds only/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/^beds ready$/i)).not.toBeInTheDocument();
 
-    // Mental Health Unit has 2 ready beds, so it stays lit.
-    expect(row("Mental Health Unit")).not.toHaveAttribute("data-dim");
-
-    // v10: Graylands Older Adult has 0 ready beds, so it is dimmed by colour, never hidden.
-    expect(row("Graylands Older Adult")).toHaveAttribute("data-dim", "true");
-    expect(screen.getByTestId("hub-highlight-note")).toHaveTextContent(/highlighted\. All rows stay/);
-
-    // Reset button appears and resets the filter
-    const resetBtn = screen.getByRole("button", { name: /reset all filters/i });
-    fireEvent.click(resetBtn);
-    expect(row("Graylands Older Adult")).not.toHaveAttribute("data-dim");
+    fireEvent.click(categoryRadio("ward"));
+    expect(categoryRadio("ward")).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("button", { name: /reset all filters/i }));
+    expect(categoryRadio("all")).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("button", { name: /reset all filters/i })).not.toBeInTheDocument();
   });
 });
 
@@ -608,6 +612,7 @@ describe("Ward Flow Master Search Hub — pinned places and recently opened", ()
   };
 
   const glance = () => within(screen.getByRole("complementary", { name: /at a glance/i }));
+  const pinnedList = () => within(screen.getByRole("list", { name: "Pinned places" }));
 
   it("shows neither section until something is pinned or opened, so a fresh browser sees the screen unchanged", () => {
     clearMemory();
@@ -620,10 +625,11 @@ describe("Ward Flow Master Search Hub — pinned places and recently opened", ()
     clearMemory();
     renderHub();
 
+    expandAll();
     fireEvent.click(screen.getByRole("button", { name: /^pin Mental Health Unit$/i }));
     const heading = glance().getByRole("heading", { name: /^pinned/i });
     expect(heading).toBeInTheDocument();
-    expect(glance().getByText("Mental Health Unit")).toBeInTheDocument();
+    expect(pinnedList().getByText("Mental Health Unit")).toBeInTheDocument();
 
     // The reverse half. A toggle that only ever added would pass the first half alone.
     fireEvent.click(screen.getByRole("button", { name: /^unpin Mental Health Unit$/i }));
@@ -652,10 +658,10 @@ describe("Ward Flow Master Search Hub — pinned places and recently opened", ()
       "an arrow-key preview was recorded as a visit",
     ).not.toBeInTheDocument();
 
-    // ...and the preview must be re-established before opening, since Escape cleared it.
-    fireEvent.keyDown(screen.getByRole("searchbox", { name: /search/i }), { key: "ArrowDown" });
-
-    fireEvent.click(glance().getByRole("link", { name: /^open /i }));
+    // Review point 21: with the choice cleared, the preview is back on the first place listed.
+    const preview = screen.getByRole("region", { name: /^preview,/iu });
+    const opened = within(preview).getByRole("heading", { level: 2 }).textContent ?? "";
+    fireEvent.click(within(preview).getByRole("link", { name: /^open /i }));
 
     // ⚠️ **THE PANE IS SHOWING THE WARD'S DETAIL AT THIS POINT, NOT THE OVERVIEW**, so the list
     // cannot be seen until the selection is cleared. That is the screen's actual behaviour and
@@ -664,7 +670,7 @@ describe("Ward Flow Master Search Hub — pinned places and recently opened", ()
     // ward, which is precisely when they need it.
     fireEvent.keyDown(screen.getByRole("searchbox", { name: /search/i }), { key: "Escape" });
     expect(glance().getByRole("heading", { name: /recently opened/i })).toBeInTheDocument();
-    expect(glance().getByText("Dabakarn")).toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Recently opened places" })).getByText(opened)).toBeInTheDocument();
   });
 
   /**
@@ -678,7 +684,7 @@ describe("Ward Flow Master Search Hub — pinned places and recently opened", ()
     window.dispatchEvent(new Event("ward-hub-memory-change"));
     renderHub();
 
-    expect(glance().getByText("Mental Health Unit")).toBeInTheDocument();
+    expect(pinnedList().getByText("Mental Health Unit")).toBeInTheDocument();
     expect(glance().queryByText(/ward-that-was-retired/)).not.toBeInTheDocument();
     // ...and the count beside the heading reports what is SHOWN, not what is stored — otherwise it
     // would claim two while displaying one, which is this screen's own recurring defect.
@@ -714,7 +720,7 @@ describe("Ward Flow Master Search Hub — pinned places and recently opened", ()
     try {
       renderHub();
       // The screen still renders its actual job; the two lists simply remember nothing.
-      expect(screen.getByText("Dabakarn")).toBeInTheDocument();
+      expect(screen.getAllByText("Dabakarn").length).toBeGreaterThan(0);
       expect(
         glance().queryByRole("heading", { name: /^pinned/i }),
         "a pin seeded before storage broke is still on screen, so reads are not actually failing",
@@ -809,11 +815,8 @@ describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and 
   // preview heading (`selected.name` as the `<h2>`) — `screen.getByText` unscoped would then match
   // two elements and throw. The list carries `id="hub-results"` already, from the component's own
   // markup.
-  function clickResultRow(name: string) {
-    const resultsList = document.getElementById("hub-results");
-    if (resultsList === null) throw new Error("the hub's results list (#hub-results) is not on the page");
-    fireEvent.click(within(resultsList).getByText(name));
-  }
+  // Review point 21: groups fold and long ones show Show more, so the row is revealed first.
+  const clickResultRow = clickRow;
 
   const glance = () => within(screen.getByRole("complementary", { name: /at a glance/i }));
 
@@ -907,5 +910,49 @@ describe("Ward Flow Master Search Hub — one search on the page", () => {
   it("carries exactly one search control, the hub's own", () => {
     renderHub();
     expect(screen.getAllByRole("searchbox")).toHaveLength(1);
+  });
+});
+
+describe("Ward Flow Master Search Hub — the preview and Enter follow what the list shows", () => {
+  const search = () => screen.getByRole("searchbox", { name: /search/i });
+  const preview = () => screen.getByRole("region", { name: /^preview,/i });
+  const previewName = () => within(preview()).getAllByRole("heading")[0]?.textContent ?? "";
+
+  it("a pinned place does not take over a search: the preview and Enter use the top match", () => {
+    window.localStorage.setItem("ward-hub-pinned", JSON.stringify(["scgh-adult-open"]));
+    window.dispatchEvent(new Event("ward-hub-memory-change"));
+    router.push.mockClear();
+    renderHub();
+    // With nothing typed, the pinned place leads the preview.
+    expect(previewName()).toMatch(/Mental Health Unit/);
+
+    fireEvent.change(search(), { target: { value: "Dabakarn" } });
+    expect(previewName(), "the pinned place stayed in the preview while the list showed another").toMatch(/Dabakarn/);
+    const href = within(preview())
+      .getByRole("link", { name: /^open /i })
+      .getAttribute("href");
+    fireEvent.keyDown(search(), { key: "Enter" });
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith(href);
+
+    window.localStorage.clear();
+    window.dispatchEvent(new Event("ward-hub-memory-change"));
+  });
+
+  it("Enter opens nothing when the search matches nothing", () => {
+    router.push.mockClear();
+    renderHub();
+    fireEvent.change(search(), { target: { value: "zzqqxx no such place" } });
+    fireEvent.keyDown(search(), { key: "Enter" });
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
+  it("the arrow keys past the eighth team open the list down to the row they preview", () => {
+    renderHub();
+    fireEvent.click(categoryRadio("community"));
+    for (let press = 0; press < 10; press += 1) fireEvent.keyDown(search(), { key: "ArrowDown" });
+    const name = previewName();
+    expect(name).not.toBe("");
+    expect(listed(name), `the previewed team "${name}" is not on the list`).toBeInTheDocument();
   });
 });
