@@ -501,18 +501,20 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // The rail's More holds the rest; the sheet also leads with the role's menu when the rail is hidden.
   // Every group in the sheet leaves Handover out under the sheet's countdown, More's groups too
   // (an ED desk keeps Handover under More).
-  const sheetGroups = (sheetShowsMain ? [{ label: menuLabel, entries: menu.main }, ...menu.more] : menu.more).map(
-    (group: { label: string; entries: readonly (RailEntry | RoleMenuAction)[] }) => ({
-      label: group.label,
-      entries: withoutHandover([...group.entries]),
-    }),
-  );
-  const firstSheetId = sheetGroups[0]?.entries[0]?.id;
   // Pinned pages (shell-next): any page in More the person pinned, under the role's own menu.
   const mainIds = new Set(menu.main.map((item) => item.id));
   const pinnedEntries = pinnedIds
     .map((id) => entries.find((entry) => entry.id === id))
     .filter((entry): entry is RailEntry => entry !== undefined && !mainIds.has(entry.id));
+  // The Menu sheet (no rail on screen) lists the pinned pages after the role's menu, as the rail does.
+  const pinnedGroup = sheetShowsMain && pinnedEntries.length > 0 ? [{ label: "Pinned", entries: pinnedEntries }] : [];
+  const sheetGroups = (
+    sheetShowsMain ? [{ label: menuLabel, entries: menu.main }, ...pinnedGroup, ...menu.more] : menu.more
+  ).map((group: { label: string; entries: readonly (RailEntry | RoleMenuAction)[] }) => ({
+    label: group.label,
+    entries: withoutHandover([...group.entries]),
+  }));
+  const firstSheetId = sheetGroups[0]?.entries[0]?.id;
   const capacityOpen = canOpen(WARD_CAPACITY_HREF);
   const handoverCountdown = (
     <>
