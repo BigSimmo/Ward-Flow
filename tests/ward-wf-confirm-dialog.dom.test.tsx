@@ -4,7 +4,7 @@ import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ConfirmHost, hasConfirmHost, requestConfirm } from "@/components/wf";
+import { ConfirmHost, hasConfirmHost, requestConfirm, type ConfirmRequest } from "@/components/wf";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 
 afterEach(() => {
@@ -12,7 +12,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const REQUEST = {
+const REQUEST: ConfirmRequest = {
   title: "Leave this page?",
   message: "You have unsaved changes. Are you sure you want to leave?",
   confirmLabel: "Leave without saving",

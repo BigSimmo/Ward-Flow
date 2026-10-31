@@ -5,7 +5,14 @@ import { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { SearchField, ShowMoreRow, TimePresets, phoneRows, timePresetClockText } from "@/components/wf";
+import {
+  SearchField,
+  ShowMoreRow,
+  TimePresets,
+  phoneRows,
+  timePresetClockText,
+  type SearchFieldProps,
+} from "@/components/wf";
 
 describe("kit standard parts (lane C, from the #1118 mock-ups)", () => {
   it("ShowMoreRow keeps the caller's words and reports the list's open state", () => {
@@ -26,17 +33,17 @@ describe("kit standard parts (lane C, from the #1118 mock-ups)", () => {
   it("SearchField counts, clears and hands focus back to the box", () => {
     function Harness() {
       const [query, setQuery] = useState("");
-      return (
-        <SearchField
-          id="find-ward"
-          label="Find a ward"
-          placeholder="Ward or hospital"
-          value={query}
-          onValueChange={setQuery}
-          count={{ shown: query ? 3 : 40, total: 40, noun: "wards" }}
-          shortcut
-        />
-      );
+      // A page passes the kit's own prop type through, as a wrapper would.
+      const props: SearchFieldProps = {
+        id: "find-ward",
+        label: "Find a ward",
+        placeholder: "Ward or hospital",
+        value: query,
+        onValueChange: setQuery,
+        count: { shown: query ? 3 : 40, total: 40, noun: "wards" },
+        shortcut: true,
+      };
+      return <SearchField {...props} />;
     }
     render(<Harness />);
     const box = screen.getByRole("searchbox", { name: "Find a ward" });
