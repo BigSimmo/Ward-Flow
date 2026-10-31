@@ -21,6 +21,7 @@ import {
 
 import { bedMeetingSheet } from "../capacity/bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "../capacity/bed-meeting-sheet";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
@@ -89,6 +90,9 @@ function BedMeetingAgenda() {
   );
   const patientOf = usePatientOf();
   const thresholds = useDueSoonThresholds();
+  // Decision 46 (Josh, 31 Oct 2026): the site bed manager reads its own site's agenda only, so the
+  // chair's controls (Action and Done) are the bed coordinator's alone.
+  const chairs = useEffectiveWardAccess().role === "coordinator";
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
   // The same printed sheet Capacity opens, built only while it is open, for every service.
   const buildSheet = () =>
@@ -208,7 +212,7 @@ function BedMeetingAgenda() {
                     now={now}
                     name={patientOf(row.record).formalName}
                     owner={ownerText(row.action)}
-                    onMarkDone={markActionDone}
+                    onMarkDone={chairs ? markActionDone : undefined}
                     claimDone={() => {
                       if (!claimDone()) return false;
                       markDone(index);
@@ -239,6 +243,7 @@ function BedMeetingAgenda() {
                       now={now}
                       name={patientOf(item.record).formalName}
                       wardName={unitName(item.unitId)}
+                      chairs={chairs}
                     />
                   ))}
                 </ul>
@@ -248,6 +253,7 @@ function BedMeetingAgenda() {
         ))}
       </div>
       <p className={styles.note}>
+        {chairs ? null : "Read only. The bed coordinator records and completes actions. "}
         Actions are tasks for people. Recording or completing one changes nothing else, and an overdue action is shown
         here, never escalated.
       </p>
@@ -269,7 +275,8 @@ function ActionRow({
   name: string;
   owner: string;
   claimDone: () => boolean;
-  onMarkDone: MarkBedMeetingActionDone;
+  /** Absent for a desk that reads the agenda only. */
+  onMarkDone?: MarkBedMeetingActionDone;
 }) {
   const overdue = row.action.dueAt < now;
   return (
@@ -283,18 +290,20 @@ function ActionRow({
           {owner} · {overdue ? "was due" : "due"} {formatInstantWithDay(row.action.dueAt, now)}
         </span>
       </div>
-      <Button
-        size="sm"
-        variant="sec"
-        onClick={(event) => {
-          // The second click of a double click is never a fresh Done.
-          if (event.detail > 1 || !claimDone()) return;
-          onMarkDone(row.subject, row.action.kind);
-        }}
-        data-testid="bed-meeting-action-done"
-      >
-        Done
-      </Button>
+      {onMarkDone ? (
+        <Button
+          size="sm"
+          variant="sec"
+          onClick={(event) => {
+            // The second click of a double click is never a fresh Done.
+            if (event.detail > 1 || !claimDone()) return;
+            onMarkDone(row.subject, row.action.kind);
+          }}
+          data-testid="bed-meeting-action-done"
+        >
+          Done
+        </Button>
+      ) : null}
     </li>
   );
 }
@@ -305,12 +314,15 @@ function AgendaRow({
   now,
   name,
   wardName,
+  chairs,
 }: {
   sectionId: string;
   item: AgendaItem;
   now: Instant;
   name: string;
   wardName: string | undefined;
+  /** Whether this desk chairs the meeting and so may add an action. */
+  chairs: boolean;
 }) {
   const [adding, setAdding] = useState(false);
   const formId = useId();
@@ -334,22 +346,24 @@ function AgendaRow({
           ) : null}
         </div>
         {/* A small link-weight control on every row, rather than about 20 equal buttons. */}
-        <Button
-          size="sm"
-          variant="ghost"
-          ref={toggle}
-          className={styles.addAction}
-          aria-expanded={adding}
-          aria-controls={formId}
-          icon={adding ? undefined : Plus}
-          aria-label={adding ? `Cancel the action for ${name}` : `Add an action for ${name}`}
-          onClick={() => setAdding((value) => !value)}
-          data-testid="bed-meeting-add-action"
-        >
-          {adding ? "Cancel" : "Action"}
-        </Button>
+        {chairs ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            ref={toggle}
+            className={styles.addAction}
+            aria-expanded={adding}
+            aria-controls={formId}
+            icon={adding ? undefined : Plus}
+            aria-label={adding ? `Cancel the action for ${name}` : `Add an action for ${name}`}
+            onClick={() => setAdding((value) => !value)}
+            data-testid="bed-meeting-add-action"
+          >
+            {adding ? "Cancel" : "Action"}
+          </Button>
+        ) : null}
       </div>
-      {adding ? (
+      {chairs && adding ? (
         <ActionForm
           id={formId}
           item={item}

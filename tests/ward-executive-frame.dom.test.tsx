@@ -200,11 +200,12 @@ describe("the executive chrome in the new frame", () => {
     expect(within(own).getAllByRole("link")[0]).toHaveTextContent("Governance");
   });
 
-  it("opens Help as the shared rail and phone Menu do: the tour until it is seen, then How do I…", () => {
+  // Josh, 31 Oct 2026 (Help, question 11): Help opens on How do I… and never starts the tour by itself.
+  it("opens Help on How do I… from the rail and the phone Menu, as the shared chrome does", () => {
     const opened = helpViews();
     const view = openChrome();
     const help = screen.getByTestId("ward-rail-help");
-    expect(help).toHaveAccessibleName("Help, new: take the tour");
+    expect(help).toHaveAccessibleName("Help, new");
     fireEvent.click(help);
     view.unmount();
     window.localStorage.setItem(
@@ -218,6 +219,6 @@ describe("the executive chrome in the new frame", () => {
     expect(menuHelp).toHaveAccessibleName("Help");
     fireEvent.click(menuHelp);
     opened.stop();
-    expect(opened.views).toEqual(["tour", "tasks"]);
+    expect(opened.views).toEqual(["tasks", "tasks"]);
   });
 });
