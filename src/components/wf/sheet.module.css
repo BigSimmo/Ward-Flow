@@ -68,6 +68,18 @@
   outline-offset: 2px;
 }
 
+/* Kit standard (#1118 mock-ups, final round): the close button takes focus when a sheet opens, so
+   its ring shows only for keyboard focus, as a calm 2px accent ring, never for a pointer press. */
+.close.close:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+.close.close:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
 :where(.grip) {
   background: var(--wf-line-3);
 }

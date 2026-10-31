@@ -111,8 +111,8 @@
   --wf-phone-pill-fs: var(--wf-fs-13);
   --wf-phone-pill-count-fs: var(--wf-fs-12);
   --wf-phone-pill-hit: calc((var(--spacing-tap, 3rem) - var(--wf-phone-pill-h)) / 2);
-  --wf-phone-seg-h: 44px;
-  --wf-phone-seg-item-h: 38px;
+  --wf-phone-seg-h: 40px; /* kit standard (Josh, 30 Oct 2026; was 44px) */
+  --wf-phone-seg-item-h: 32px; /* kit standard (Josh, 30 Oct 2026; was 38px) */
   --wf-phone-seg-item-hit: calc((var(--spacing-tap, 3rem) - var(--wf-phone-seg-item-h)) / 2);
   --wf-phone-seg-band: calc((var(--spacing-tap, 3rem) - var(--wf-phone-seg-h)) / 2);
   --wf-row: 52px;
