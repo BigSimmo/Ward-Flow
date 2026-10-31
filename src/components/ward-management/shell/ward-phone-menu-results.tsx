@@ -166,26 +166,46 @@ function ResultRow({
 }) {
   const nameFor = usePatientNameDisplay();
   const title = patientResultTitle(item, nameFor);
+  const body = (
+    <>
+      <SearchResultIcon kind={item.kind} id={item.id} className={styles.rowIcon} />
+      <span className={styles.rowText}>
+        <span className={styles.rowLabel}>{title}</span>
+        {item.meta ? <span className={styles.rowMeta}>{item.meta}</span> : null}
+      </span>
+      <Chevron />
+    </>
+  );
   return (
     <li>
       {/* Announce the name as shown, so the discreet form is never read out in full. */}
-      <Link
-        href={item.href}
-        className={styles.row}
-        onClick={(event) => {
-          // A Help answer runs Show me or opens in Help rather than following its link.
-          if (item.kind === "help" && onHelpResult(item.id)) event.preventDefault();
-          onGo({ ...item, title });
-        }}
-        data-testid="ward-phone-menu-result"
-      >
-        <SearchResultIcon kind={item.kind} id={item.id} className={styles.rowIcon} />
-        <span className={styles.rowText}>
-          <span className={styles.rowLabel}>{title}</span>
-          {item.meta ? <span className={styles.rowMeta}>{item.meta}</span> : null}
-        </span>
-        <Chevron />
-      </Link>
+      {item.href === "" ? (
+        // A Help answer with nowhere to go opens in Help itself, so it is a button, never a link.
+        <button
+          type="button"
+          className={styles.row}
+          onClick={() => {
+            onHelpResult(item.id);
+            onGo({ ...item, title });
+          }}
+          data-testid="ward-phone-menu-result"
+        >
+          {body}
+        </button>
+      ) : (
+        <Link
+          href={item.href}
+          className={styles.row}
+          onClick={(event) => {
+            // A Help answer runs Show me or opens in Help rather than following its link.
+            if (item.kind === "help" && onHelpResult(item.id)) event.preventDefault();
+            onGo({ ...item, title });
+          }}
+          data-testid="ward-phone-menu-result"
+        >
+          {body}
+        </Link>
+      )}
     </li>
   );
 }

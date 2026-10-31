@@ -922,8 +922,8 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     trimmed,
     (result) => [result.formalName, result.umrn, result.referral.id],
   );
-  // Near spellings of places and screens only when nothing of a person's matched, so a name never
-  // pulls in a ward that happens to be one letter away.
+  // Near spellings of places, screens and contacts only when nothing of a person's matched, so a
+  // name never pulls in a ward or a contact that happens to be one letter away.
   const nearly = people.length === 0 && movements.length === 0 && referrals.length === 0;
   const readyBedsOnly = isReadyBedQuery(typed);
   const allBeds = searchBeds(typed, input.units);
@@ -957,7 +957,7 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     ...(view.view.keywords ?? []),
   ]);
 
-  const contacts = rankGroup("contacts", searchContacts(typed, input.now), typed, (contact) => [
+  const contacts = rankGroup("contacts", searchContacts(typed, input.now, undefined, nearly), typed, (contact) => [
     contact.entry.name,
     contact.entry.place,
     contact.entry.groupTitle,

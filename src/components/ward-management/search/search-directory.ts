@@ -45,23 +45,24 @@ const CONTACT_WORDS = ["contact", "contacts", "phone", "number", "call", "ring",
 
 /**
  * On-call contacts for a query of at least three characters. A single bare kind word ("contacts")
- * finds nothing here; the On-call screen row already answers it.
+ * finds nothing here; the On-call screen row already answers it. `nearly` allows near spellings;
+ * the header search turns it off once a person, movement or referral matched, so a patient's
+ * name never pulls in a contact one letter away.
  */
 export function searchContacts(
   query: string,
   now: number | undefined,
   entries: readonly DirectoryEntry[] = onCallDirectory(),
+  nearly = true,
 ): ContactSearchResult[] {
   if (query.trim().length < 3) return [];
   // `now` is the board's clock in minutes; without it the first listed line is shown.
   const minute = now === undefined ? null : minuteOfDay(now);
-  return filterBySearchText(entries, query, entrySearchFields, { ignoreWords: CONTACT_WORDS, nearly: true }).map(
-    (entry) => ({
-      entry,
-      number: minute === null ? (entry.lines[0]?.number ?? null) : numberAt(entry, minute),
-      href: "/ward-flow/on-call",
-    }),
-  );
+  return filterBySearchText(entries, query, entrySearchFields, { ignoreWords: CONTACT_WORDS, nearly }).map((entry) => ({
+    entry,
+    number: minute === null ? (entry.lines[0]?.number ?? null) : numberAt(entry, minute),
+    href: "/ward-flow/on-call",
+  }));
 }
 
 /**

@@ -83,6 +83,15 @@ describe("contacts and suburbs in the header search", () => {
     expect(searchContacts("0000 1001", undefined)[0]?.number).toBe("08 0000 1001");
   });
 
+  it("allows a contact's near spelling only when the header search lets it", () => {
+    expect(searchContacts("bed flow coordinatr", undefined).map((c) => c.entry.id)).toContain("sw-bfc");
+    // The header search passes false once a person, movement or referral matched.
+    expect(searchContacts("bed flow coordinatr", undefined, undefined, false)).toEqual([]);
+    expect(searchContacts("bed flow coordinator", undefined, undefined, false).map((c) => c.entry.id)).toContain(
+      "sw-bfc",
+    );
+  });
+
   it("lists no contacts for a bare kind word or a short query", () => {
     expect(searchContacts("contacts", undefined)).toEqual([]);
     expect(searchContacts("on call", undefined)).toEqual([]);

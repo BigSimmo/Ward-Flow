@@ -1,10 +1,15 @@
 # Search and forms review: handover
 
-_Updated 2026-10-31 - first handover for the search and forms task; Design owns._
+_Updated 2026-10-31 - stand-alone search mock-up removed (it lives in #1118's pop-search now); Design owns._
 
 **Status:** behaviour changes are built and pushed. The visual changes are a mock-up waiting for
 Josh's approval under the [D-74 standing rule](../../docs/ward-flow/decisions.md#d-74-owner-answers-to-the-21-october-open-questions-21-october-2026).
 Nothing is merged, released or deployed.
+
+**Later (31 Oct 2026, Phase 2 merges lane):** the stand-alone mock-up (`/mockups/ward-flow-search` and
+`ward-management/search-redesign/`) is removed from this PR. Round 3 rebuilt it as `pop-search` in the
+redesign viewer on PR #1118, which is now the design home (D-91). Its legal time buttons offer Now only.
+The mock-up sections below are history.
 
 - **Branch:** `claude/search-forms-optimization-44anqi` on `BigSimmo/Ward-Flow`, based on `main` at
   `b6aa5cdef`.

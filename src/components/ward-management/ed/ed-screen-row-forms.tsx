@@ -30,6 +30,7 @@ import {
 import { EdConfirmedStep } from "./ed-screen-row-menu";
 import { renderEdTransportDialog } from "./ed-screen-transport-dialog";
 import styles from "./ed.module.css";
+import { isPhoneWidth } from "@/components/ward-management/ward-phone-width";
 import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-model-referral-parts";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 
@@ -37,11 +38,14 @@ const OUTCOME_CONSEQUENCE =
   "This ends the bed search: live ward requests are withdrawn, a pulled bed is released and uncollected transport is cancelled.";
 
 /**
- * Search and forms review (31 Oct 2026): a row's form opens with the cursor in its first field,
- * ready to answer. A stable function, so React calls it once as the form opens, not every render.
+ * Search and forms review (31 Oct 2026): on a larger screen a row's form opens with the cursor in
+ * its first field, ready to answer. A phone keeps the page still, as Add a patient does, because
+ * the keyboard would rise over the form. A stable function, so React calls it once as the form
+ * opens, not every render.
  */
 function focusFirstField(form: HTMLFormElement | null) {
-  form?.querySelector<HTMLElement>("input:not([type=hidden]):not(:disabled), select:not(:disabled), textarea")?.focus();
+  if (!form || isPhoneWidth()) return;
+  form.querySelector<HTMLElement>("input:not([type=hidden]):not(:disabled), select:not(:disabled), textarea")?.focus();
 }
 
 /** Every panel a row can open. Each renders only while it is the open one. */

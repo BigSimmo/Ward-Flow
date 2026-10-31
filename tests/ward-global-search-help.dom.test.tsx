@@ -76,6 +76,19 @@ describe("Help in the header search (search and forms review, 31 Oct 2026)", () 
     expect(input).toHaveValue("");
   });
 
+  it("shows an answer with nowhere to go as a button, not a link, and opens it in Help on a click", () => {
+    const { input, onHelpResult, onNavigate } = renderSearch(() => ({ items: [answer] }));
+    fireEvent.change(input, { target: { value: "how do I pull a bed" } });
+    const row = within(screen.getByTestId("ward-global-search-popup")).getByTestId(
+      "ward-global-search-result-help-howto:pull",
+    );
+    expect(row.tagName).toBe("BUTTON");
+    expect(row).not.toHaveAttribute("href");
+    fireEvent.click(row);
+    expect(onHelpResult).toHaveBeenCalledWith("howto:pull");
+    expect(onNavigate).not.toHaveBeenCalled();
+  });
+
   it("follows the row's own link when the Help action declines it", () => {
     const go = { ...answer, href: "/ward-flow/capacity" };
     const { input, onNavigate } = renderSearch(

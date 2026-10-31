@@ -40,14 +40,7 @@ import { describe, expect, it } from "vitest";
  * and bar around every child, and the front door must load none of them. Unlike that screen it signs
  * a person in with Ward Flow's own Supabase hooks, so it IS ward code and moves with Ward Flow.
  */
-// The search and forms mock-up page (D-74, 31 Oct 2026) is Ward Flow's own design study, built from
-// its components; it leaves with Ward Flow, so it sits inside the seam.
-const WARD_DIRS = [
-  "src/components/ward-management",
-  "src/app/ward-flow",
-  "src/app/sign-in",
-  "src/app/mockups/ward-flow-search",
-];
+const WARD_DIRS = ["src/components/ward-management", "src/app/ward-flow", "src/app/sign-in"];
 
 /**
  * The shared modules Ward Flow may reach outward for, each with the reason it is not worth

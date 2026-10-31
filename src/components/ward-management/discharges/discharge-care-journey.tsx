@@ -25,6 +25,7 @@ import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { formatInstantWithDay, perthDateTimeLocal } from "../ward-clock";
 import { useWardFormSave } from "../use-ward-form-save";
+import { isPhoneWidth } from "@/components/ward-management/ward-phone-width";
 import styles from "./discharges-third-edition.module.css";
 const words = (value: string) => value.replaceAll("_", " ");
 /** Fresh audit W-4: stored values read as plain labels, never as raw codes. */
@@ -129,8 +130,9 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
   const section = (title: string, children: ReactNode, change: (data: FormData) => unknown) => (
     <details
       onToggle={(e) => {
-        // Opening a section puts the cursor in its first field, ready to type.
-        if (!e.currentTarget.open) return;
+        // Opening a section on a larger screen puts the cursor in its first field, ready to type.
+        // A phone keeps the page still, as the keyboard would cover the form.
+        if (!e.currentTarget.open || isPhoneWidth()) return;
         e.currentTarget.querySelector<HTMLElement>("input:not([type=hidden]), select, textarea")?.focus();
       }}
     >

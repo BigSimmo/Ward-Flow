@@ -1171,79 +1171,111 @@ export function WardGlobalSearch({
                     >
                       {group.items.map((item) => {
                         const index = options.indexOf(item);
+                        const optionBody = (
+                          <>
+                            <span className={styles.itemIconBox} aria-hidden="true">
+                              {item.tone ? (
+                                <StatusGlyph tone={item.tone} />
+                              ) : (
+                                <SearchResultIcon kind={item.kind} id={item.id} />
+                              )}
+                            </span>
+                            <span className={styles.resultContent}>
+                              <span className={styles.resultTitle}>{patientResultTitle(item, nameFor)}</span>
+                              <span className={styles.resultMeta}>
+                                {item.umrn ? (
+                                  <>
+                                    <span className={styles.umrn}>{item.umrn}</span>
+                                    {item.dateOfBirth ? <span>born {formatDateOfBirth(item.dateOfBirth)}</span> : null}
+                                  </>
+                                ) : item.readyBeds !== undefined && !item.meta ? (
+                                  <span>
+                                    {item.siteName} · {item.readyBeds} ready
+                                  </span>
+                                ) : item.meta ? (
+                                  <span>{item.meta}</span>
+                                ) : null}
+                              </span>
+                            </span>
+                            <span className={styles.resultKind}>
+                              {item.kind === "task" ? tasksWord.one : item.kindLabel}
+                            </span>
+                            <span className={styles.actionHint} aria-hidden="true">
+                              <CornerDownLeft className={styles.actionHintIcon} aria-hidden="true" />
+                            </span>
+                          </>
+                        );
                         return (
                           <li
                             key={`${group.key}-${item.kind}-${item.id}`}
                             role="presentation"
                             className={styles.optionItem}
                           >
-                            <Link
-                              id={`${id}-opt-${index}`}
-                              href={item.href}
-                              role="option"
-                              aria-selected={resultsCurrent && activeIndex === index}
-                              aria-disabled={!resultsCurrent || undefined}
-                              tabIndex={-1}
-                              // Stale rows stay mounted to avoid the popup flash, but never open a
-                              // result for text that is no longer in the field. The footer link is
-                              // not a result, so it keeps working.
-                              onClick={(event) => {
-                                if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
-                                  if (event.button === 0 && openedAsHelp(item)) {
-                                    event.preventDefault();
+                            {item.href === "" ? (
+                              // A Help answer with nowhere to go opens in Help itself, so it is a
+                              // button, never a link to this same page.
+                              <button
+                                type="button"
+                                id={`${id}-opt-${index}`}
+                                role="option"
+                                aria-selected={resultsCurrent && activeIndex === index}
+                                aria-disabled={!resultsCurrent || undefined}
+                                tabIndex={-1}
+                                onClick={() => {
+                                  if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
+                                    openedAsHelp(item);
+                                  }
+                                }}
+                                onMouseEnter={() => setHoverIndex(index)}
+                                className={styles.option}
+                                data-active={(resultsCurrent && activeIndex === index) || undefined}
+                                data-previewed={previewIndex === index || undefined}
+                                data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
+                              >
+                                {optionBody}
+                              </button>
+                            ) : (
+                              <Link
+                                id={`${id}-opt-${index}`}
+                                href={item.href}
+                                role="option"
+                                aria-selected={resultsCurrent && activeIndex === index}
+                                aria-disabled={!resultsCurrent || undefined}
+                                tabIndex={-1}
+                                // Stale rows stay mounted to avoid the popup flash, but never open a
+                                // result for text that is no longer in the field. The footer link is
+                                // not a result, so it keeps working.
+                                onClick={(event) => {
+                                  if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
+                                    if (event.button === 0 && openedAsHelp(item)) {
+                                      event.preventDefault();
+                                      return;
+                                    }
+                                    onOptionClick(event, item.href);
                                     return;
                                   }
-                                  onOptionClick(event, item.href);
-                                  return;
-                                }
-                                event.preventDefault();
-                                event.stopPropagation();
-                              }}
-                              onAuxClick={(event) => {
-                                if (!resultsCurrent || accessLifetime === null || recentsLifetime !== accessLifetime) {
                                   event.preventDefault();
                                   event.stopPropagation();
-                                }
-                              }}
-                              onMouseEnter={() => setHoverIndex(index)}
-                              className={styles.option}
-                              data-active={(resultsCurrent && activeIndex === index) || undefined}
-                              data-previewed={previewIndex === index || undefined}
-                              data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
-                            >
-                              <span className={styles.itemIconBox} aria-hidden="true">
-                                {item.tone ? (
-                                  <StatusGlyph tone={item.tone} />
-                                ) : (
-                                  <SearchResultIcon kind={item.kind} id={item.id} />
-                                )}
-                              </span>
-                              <span className={styles.resultContent}>
-                                <span className={styles.resultTitle}>{patientResultTitle(item, nameFor)}</span>
-                                <span className={styles.resultMeta}>
-                                  {item.umrn ? (
-                                    <>
-                                      <span className={styles.umrn}>{item.umrn}</span>
-                                      {item.dateOfBirth ? (
-                                        <span>born {formatDateOfBirth(item.dateOfBirth)}</span>
-                                      ) : null}
-                                    </>
-                                  ) : item.readyBeds !== undefined && !item.meta ? (
-                                    <span>
-                                      {item.siteName} · {item.readyBeds} ready
-                                    </span>
-                                  ) : item.meta ? (
-                                    <span>{item.meta}</span>
-                                  ) : null}
-                                </span>
-                              </span>
-                              <span className={styles.resultKind}>
-                                {item.kind === "task" ? tasksWord.one : item.kindLabel}
-                              </span>
-                              <span className={styles.actionHint} aria-hidden="true">
-                                <CornerDownLeft className={styles.actionHintIcon} aria-hidden="true" />
-                              </span>
-                            </Link>
+                                }}
+                                onAuxClick={(event) => {
+                                  if (
+                                    !resultsCurrent ||
+                                    accessLifetime === null ||
+                                    recentsLifetime !== accessLifetime
+                                  ) {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                  }
+                                }}
+                                onMouseEnter={() => setHoverIndex(index)}
+                                className={styles.option}
+                                data-active={(resultsCurrent && activeIndex === index) || undefined}
+                                data-previewed={previewIndex === index || undefined}
+                                data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
+                              >
+                                {optionBody}
+                              </Link>
+                            )}
                           </li>
                         );
                       })}
