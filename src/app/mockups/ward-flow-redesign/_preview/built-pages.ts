@@ -16,7 +16,6 @@ export const MOCKUP_PAGE_SLUGS = [
   "alerts",
   "legal-forms",
   "on-call",
-  "governance",
   "bed-meeting-tv",
   "downtime",
   "chronology",
@@ -58,7 +57,6 @@ export const MOCKUP_PAGE_SLUGS = [
   "as-executive-capacity",
   "as-executive-settings",
   "as-admin-home",
-  "as-admin-governance",
 ] as const;
 
 export type BuiltPageSlug = (typeof MOCKUP_PAGE_SLUGS)[number];

@@ -238,18 +238,14 @@ describe("GovernanceView", () => {
         .filter((button) => button.getAttribute("data-audit-row") === "audit-1"),
     ).toHaveLength(0);
     expect(resetRegister.querySelectorAll('[data-audit-row^="audit-seed"]').length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: "Event detail" })).toBeInTheDocument();
-    // Since 26 Sept 2026 the override list starts empty (no typed example is pre-selected), so the
-    // inspector's own empty state carries the same instruction beside the header's screen-reader copy.
-    expect(screen.getAllByText("Select an event from the register").length).toBeGreaterThan(0);
+    // Redesign (Josh, 31 Oct 2026): the reset starts a fresh session, so the pane opens on the newest
+    // event in the reset world, never on the captured event that no longer exists, and nothing has
+    // been reviewed yet.
+    const pressed = resetRegister.querySelectorAll('[data-audit-row][aria-pressed="true"]');
+    expect(pressed).toHaveLength(1);
+    expect(pressed[0]?.getAttribute("data-audit-row")).toMatch(/^audit-seed/);
     const reviewPanel = screen.getByTestId("ward-governance-decision-record");
-    expect(reviewPanel).toHaveTextContent("No event selected");
-    // Greyed with a reason (site review B3): aria-disabled keeps the tab stop and names why.
-    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toHaveAttribute("aria-disabled", "true");
-    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toHaveAccessibleDescription();
-    // Greyed with a reason (site review B3): aria-disabled keeps the tab stop and names why.
-    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toHaveAttribute("aria-disabled", "true");
-    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toHaveAccessibleDescription();
+    expect(reviewPanel).toHaveTextContent("No review recorded for this event.");
   });
 
   it("does not offer a legacy facts tab or a change-audit panel", () => {

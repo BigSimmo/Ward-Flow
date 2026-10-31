@@ -68,7 +68,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "alerts", label: "Alerts", group: "Reference", appPath: "/ward-flow/alerts" },
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "on-call", label: "On-call", group: "Reference", appPath: "/ward-flow/on-call" },
-  { slug: "governance", label: "Governance", group: "Reference", appPath: "/ward-flow/governance" },
   {
     slug: "bed-meeting-tv",
     label: "Bed meeting TV",
@@ -313,13 +312,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     label: "Settings",
     group: "As access admin",
     appPath: "/ward-flow/settings",
-    role: ROLE_DESKS["admin"],
-  },
-  {
-    slug: "as-admin-governance",
-    label: "Governance",
-    group: "As access admin",
-    appPath: "/ward-flow/governance",
     role: ROLE_DESKS["admin"],
   },
 ];
