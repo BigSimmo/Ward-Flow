@@ -22,18 +22,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Still open:** the hero's Raise referral and the app bar's New referral open the same sheet. Keep only one on this desk?",
     "**Changed (Josh, 30 October):** no access forecast card on the ED desk. Worked out from the records this desk can see, it disagreed with the coordinator's board for the same ED; the coordinator's ED board keeps it.",
   ],
-  "as-ed-statistics": [
-    "**As the ED clinician**, Statistics is Peel ED's own page, as the real menu opens it (D-80), not the network hub.",
-    "**New:** a counts-only ED desk leads with the time-since-opening bands and the declines counts.",
-    "**Removed:** three panels that only said people are not listed; that sentence is said once.",
-    "**Round 2:** the chart leads and Declines is the side column, so both cards end level. '8 still in ED · 1 in transit' is the chart's aside, and 'Counts only' sits once in the eyebrow. Over 24h carries the amber dot, as Longest does.",
-  ],
-  "as-community-statistics": [
-    "**As the community clinician**, Statistics opens Midland's own team page as counts, where the real menu sends this desk.",
-    "**New:** one 'Coming back to the team' card with only the new counts replaces two cards that repeated the hero.",
-    "**Round 2:** the hero keeps In a bed and With a discharge date; the follow-up figures move into the card as six tiles (2 × 3 on the phone). 'Counts only' sits in the eyebrow, as on the ED desk.",
-    "**Still open:** the app bar says 'Statewide' on Midland's own page (shared chrome).",
-  ],
   "as-executive-settings": [
     "**As the executive (new in round 3)**, Settings reads the executive report's public rules: Rules are read only with the timing set in words and no save bar, the last-change line and record counts say they are unavailable, and the live counts are left out because this desk holds no individual records.",
     "**Kept:** Alerts, Display and profile, and Help and data work as on any desk; Restore offers this browser's settings only.",

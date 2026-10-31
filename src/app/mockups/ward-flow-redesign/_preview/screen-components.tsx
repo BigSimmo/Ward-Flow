@@ -95,16 +95,6 @@ const AsWardSettingsPage = dynamic<MockupPageProps>(() =>
 const AsEdHomePage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ed-home/as-ed-home-page").then((module) => module.AsEdHomePage),
 );
-const AsEdStatisticsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ed-statistics/as-ed-statistics-page").then(
-    (module) => module.AsEdStatisticsPage,
-  ),
-);
-const AsCommunityStatisticsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-community-statistics/as-community-statistics-page").then(
-    (module) => module.AsCommunityStatisticsPage,
-  ),
-);
 const AsExecutiveSettingsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-executive-settings/as-executive-settings-page").then(
     (module) => module.AsExecutiveSettingsPage,
@@ -137,8 +127,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-ward-statistics": AsWardStatisticsPage,
   "as-ward-settings": AsWardSettingsPage,
   "as-ed-home": AsEdHomePage,
-  "as-ed-statistics": AsEdStatisticsPage,
-  "as-community-statistics": AsCommunityStatisticsPage,
   "as-executive-settings": AsExecutiveSettingsPage,
   "as-admin-home": AsAdminHomePage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

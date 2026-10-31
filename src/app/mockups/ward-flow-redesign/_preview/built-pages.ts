@@ -17,8 +17,6 @@ export const MOCKUP_PAGE_SLUGS = [
   "as-ward-statistics",
   "as-ward-settings",
   "as-ed-home",
-  "as-ed-statistics",
-  "as-community-statistics",
   "as-executive-settings",
   "as-admin-home",
 ] as const;
