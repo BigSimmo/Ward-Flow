@@ -6,7 +6,11 @@ import { describe, expect, it, vi } from "vitest";
 import { heldUpReleases } from "@/components/ward-management/capacity/capacity-held-up";
 import type { CapacityModel } from "@/components/ward-management/capacity/capacity-model";
 import { ShiftChecks } from "@/components/ward-management/capacity/capacity-shift-checks";
-import { shiftConfirmations } from "@/components/ward-management/capacity/shift-confirmations";
+import {
+  type CountedFigure,
+  shiftConfirmations,
+  unchangedConfirmations,
+} from "@/components/ward-management/capacity/shift-confirmations";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { formatInstant } from "@/components/ward-management/ward-clock";
@@ -39,6 +43,7 @@ const spelt = (text: string) => render(<SpelledCodes text={text} />).container.t
 function shiftModel(units: readonly Unit[]): CapacityModel {
   return {
     confirmations: shiftConfirmations(units, NOW_ANCHOR),
+    unchanged: unchangedConfirmations(units),
     heldUp: heldUpReleases([], NOW_ANCHOR),
     now: NOW_ANCHOR,
   } as unknown as CapacityModel;
@@ -81,5 +86,24 @@ describe("This shift card: bed counts confirmed", () => {
     expect(section.getByText(/^2 of 2/u)).toHaveTextContent("2 of 2confirmed");
     expect(section.getByText("Every open ward has confirmed since the shift began")).toBeInTheDocument();
     expect(section.queryByRole("button")).toBeNull();
+  });
+});
+
+describe("This shift card: the same number confirmed shift after shift (Josh, 31 Oct 2026)", () => {
+  const [a, b] = seedWardFlowState().units;
+  const since = currentShiftStartInstant(NOW_ANCHOR);
+
+  it("names each ward whose count has not changed for 3 or more shifts, with how many", () => {
+    const allocatable: CountedFigure = { ...a!.allocatable, confirmedAt: since, unchangedShifts: 4 };
+    render(<ShiftChecks model={shiftModel([{ ...a!, allocatable }, confirmedAt(b!, since)])} />);
+    const list = screen.getByRole("list", { name: "Same number confirmed shift after shift" });
+    expect(screen.getByText(/^Same number confirmed 3 or more shifts in a row, worth a look$/u)).toBeInTheDocument();
+    expect(list).toHaveTextContent(`${spelt(a!.name)} · 4 shifts`);
+    expect(list).not.toHaveTextContent(spelt(b!.name) ?? "");
+  });
+
+  it("says nothing when no ward has such a run", () => {
+    render(<ShiftChecks model={shiftModel([confirmedAt(a!, since), confirmedAt(b!, since)])} />);
+    expect(screen.queryByRole("list", { name: "Same number confirmed shift after shift" })).toBeNull();
   });
 });

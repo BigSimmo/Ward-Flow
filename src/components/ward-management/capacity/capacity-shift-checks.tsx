@@ -7,6 +7,7 @@ import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
 import { HELD_UP_HREF, HELD_UP_LINK_LABEL } from "./capacity-held-up";
 import type { CapacityModel } from "./capacity-model";
+import { UNCHANGED_SHIFTS_LISTED } from "./shift-confirmations";
 import styles from "./capacity-page.module.css";
 
 /**
@@ -25,7 +26,7 @@ export function ShiftChecks({
   /** Role view (site bed manager): the site whose wards this card counts. */
   siteName?: string;
 }) {
-  const { confirmations, heldUp, now } = model;
+  const { confirmations, heldUp, unchanged, now } = model;
   // Role view: a site bed manager confirms its own wards' beds on the ward's page, so it gets that
   // link instead of Ask; a desk that can open neither (executive) gets the figure alone.
   const canOpen = useCanOpenHref();
@@ -76,6 +77,21 @@ export function ShiftChecks({
             `Every open ward${siteName ? ` at ${siteName}` : ""} has confirmed since the shift began`
           )}
         </p>
+        {/* Josh, 31 Oct 2026: a count confirmed unchanged for a day or more is worth a look. */}
+        {unchanged.length > 0 ? (
+          <div className={styles.shiftTags}>
+            <span className={styles.shiftTagsLabel}>
+              Same number confirmed {UNCHANGED_SHIFTS_LISTED} or more shifts in a row, worth a look
+            </span>
+            <ul className={styles.shiftTagList} aria-label="Same number confirmed shift after shift">
+              {unchanged.map(({ unit, shifts }) => (
+                <li key={unit.id} className={`${styles.tag} ${styles.tagWrap}`}>
+                  <SpelledCodes text={unit.name} /> · {shifts} shifts
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </section>
       <section className={styles.shiftSection} aria-label="Held-up releases">
         <div className={styles.shiftTop}>

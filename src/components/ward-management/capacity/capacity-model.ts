@@ -17,7 +17,7 @@ import {
 import { bedsForecast } from "./beds-forecast";
 import { bedMapWards, groupBedMapWardsByService } from "./bed-map";
 import { isConfirmationFresh } from "./capacity-gap-words";
-import { shiftConfirmations } from "./shift-confirmations";
+import { shiftConfirmations, unchangedConfirmations } from "./shift-confirmations";
 import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
 import { horizonDays, sevenDayHorizon } from "@/components/ward-management/forecast/forecast-horizon";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
@@ -146,6 +146,9 @@ export function useCapacityModel() {
     [weekUnits, forecastModel.admissions, forecastModel.planned, now],
   );
   const confirmations = useMemo(() => shiftConfirmations(units, now), [units, now]);
+  // Josh, 31 Oct 2026: the wards that confirmed the same number 3 or more shifts running come back
+  // into This shift (smart features idea 6's safety note), named only.
+  const unchanged = useMemo(() => unchangedConfirmations(units), [units]);
   const sources = forecast.sources;
   const upcoming = sources.windows.filter((window) => window.id !== "overdue");
   const sourceSummary = {
@@ -192,6 +195,7 @@ export function useCapacityModel() {
     days,
     week,
     confirmations,
+    unchanged,
     sourceSummary,
     heldUp,
     wardsToCheck,
