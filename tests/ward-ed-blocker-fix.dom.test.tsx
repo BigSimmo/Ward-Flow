@@ -22,6 +22,12 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * is on this screen. Screen readers keep the full sentence through the button's description.
  */
 
+/** Opens the sheet's "Not available yet" fold, where the greyed actions sit (Josh, 31 Oct 2026). */
+function openNotAvailable(actions: HTMLElement) {
+  const fold = within(actions).queryByRole("button", { name: /^Not available yet \(\d+\)$/ });
+  if (fold && fold.getAttribute("aria-expanded") !== "true") fireEvent.click(fold);
+}
+
 describe("a greyed item in the ED actions menu", () => {
   // Redesign (pop-ed-actions, Josh 31 Oct 2026): greyed items move out of their group into "Not
   // available yet (n)", each with its short reason and its one fix, replacing the note in the group.
@@ -97,8 +103,12 @@ describe("greyed actions on the ED board", () => {
       fireEvent.click(within(row).getByRole("button"));
       const actions = screen.queryByTestId(`ward-ed-phone-actions-${id}`);
       if (actions) {
+        openNotAvailable(actions);
+        // Josh (31 Oct 2026): the greyed actions sit under "Not available yet", as on the desktop menu.
         for (const greyed of Array.from(
-          actions.querySelectorAll<HTMLButtonElement>(':scope > button[aria-disabled="true"]'),
+          actions.querySelectorAll<HTMLButtonElement>(
+            '[role="group"][aria-label="Not available yet"] button[aria-disabled="true"]',
+          ),
         )) {
           const note = greyed.nextElementSibling;
           expect(note?.hasAttribute("data-unavailable-note"), greyed.textContent ?? "").toBe(true);
@@ -121,6 +131,7 @@ describe("greyed actions on the ED board", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(within(screen.getByTestId("ward-ed-patient-WF-011")).getByRole("button"));
+    openNotAvailable(screen.getByTestId("ward-ed-phone-actions-WF-011"));
     const note = screen.getByTestId("ward-ed-unavailable-handover-WF-011");
     expect(note.textContent).toContain("Transport not logged");
     fireEvent.click(within(note).getByRole("button", { name: "Log transport booking" }));
@@ -163,17 +174,18 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(within(screen.getByTestId("ward-ed-patient-WF-011")).getByRole("button"));
+    openNotAvailable(screen.getByTestId("ward-ed-phone-actions-WF-011"));
   }
 
   it("state 1: names the missing transport, why, and the ED nurse in charge, with no second copy below", () => {
     openSheet();
+    // Josh (31 Oct 2026): under "Not available yet" the reason, why and who acts next all show at
+    // once, as on the desktop menu, with nothing to tap open.
     const detail = screen.getByTestId("ward-ed-unavailable-handover-WF-011-detail");
-    expect(detail.textContent).toBe("");
-    fireEvent.click(screen.getByTestId("ward-ed-handover-WF-011"));
     expect(detail.textContent).toBe(
       "A handover is marked ready once the transport booking is logged.Next: ED nurse in charge, Armadale ED",
     );
-    expect(detail.getAttribute("role")).toBe("status");
+    fireEvent.click(screen.getByTestId("ward-ed-handover-WF-011"));
     // The sheet's own reason line under the list stays away: the block already says it.
     expect(
       screen.getByTestId("ward-ed-phone-actions-WF-011").parentElement?.querySelector("p[role='status']"),

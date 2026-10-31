@@ -530,8 +530,12 @@ function sortEdMenuItems(children: ReactNode, menu: boolean) {
   return { groups, blocked, other };
 }
 
-/** The menu's body: the record items, the actions open now in their groups, then the greyed ones folded. */
-function EdActionList({
+/**
+ * The menu's body: the record items, the actions open now in their groups, then the greyed ones
+ * folded. The phone person sheet lists the same body (Josh, 31 Oct 2026), without View patient
+ * record, because the sheet is the record and its footer opens the full one.
+ */
+export function EdActionList({
   children,
   menu,
   testId,
@@ -542,7 +546,8 @@ function EdActionList({
   children: ReactNode;
   menu: boolean;
   testId: string;
-  onViewRecord: () => void;
+  /** Left out where the record is already open (the phone person sheet). */
+  onViewRecord?: () => void;
   onEditPresentation: () => void;
   onEditPlan: () => void;
 }) {
@@ -557,9 +562,11 @@ function EdActionList({
         <span aria-hidden="true" className={styles.menuGroupLabel}>
           Patient record
         </span>
-        <button type="button" role={menu ? "menuitem" : undefined} onClick={onViewRecord}>
-          View patient record
-        </button>
+        {onViewRecord ? (
+          <button type="button" role={menu ? "menuitem" : undefined} onClick={onViewRecord}>
+            View patient record
+          </button>
+        ) : null}
         <button type="button" role={menu ? "menuitem" : undefined} onClick={onEditPresentation}>
           Edit presentation
         </button>
