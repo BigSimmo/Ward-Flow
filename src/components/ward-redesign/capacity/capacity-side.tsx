@@ -3,101 +3,118 @@ import Link from "next/link";
 import { Button, buttonClass, Card, CardHead, StatusGlyph } from "@/components/wf";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
-import { ReadyByRoadTime } from "@/components/ward-management/capacity/capacity-road-time";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
-import { Kicker } from "../parts/how-worked-out";
 import { HELD_UP_HREF, HELD_UP_LINK_LABEL } from "./held-up";
 import type { CapacityModel } from "./use-capacity-model";
 import styles from "./capacity-redesign.module.css";
 
 /**
- * The column beside the bed map: nearest ready beds, who has not confirmed this shift, and beds
- * held up by a blocker. Each is a short card with one action, in that order. Held-up releases are
- * counted and named as Discharges counts them (Josh, 30 Oct 2026), and the link opens that list.
+ * Polish (Josh, 31 Oct 2026): "Confirmed this shift" and "Held-up releases" are one card, "This
+ * shift", in the row under the bed map. Who has not confirmed is one line with its button beside
+ * it; held-up releases keep Discharges' two groups and names (Josh, 30 Oct 2026) and its link.
  */
-export function CapacitySide({
+export function ShiftChecks({
   model,
-  selectedUnitId,
-  onSelectWard,
   onAskWard,
+  siteName,
 }: {
   model: CapacityModel;
-  selectedUnitId?: string;
-  onSelectWard: (unitId: string) => void;
-  onAskWard: (unitId: string) => void;
+  /** Absent for a desk that may not ask a ward to confirm (asking is the coordinator's step). */
+  onAskWard?: (unitId: string) => void;
+  /** Role view (site bed manager): the site whose wards this card counts. */
+  siteName?: string;
 }) {
-  const { networkRows, roadTimeFromEdId, confirmations, heldUp, now } = model;
+  const { confirmations, heldUp, now } = model;
+  // Role view: a site bed manager confirms its own wards' beds on the ward's page, so it gets that
+  // link instead of Ask; a desk that can open neither (executive) gets the figure alone.
+  const canOpen = useCanOpenHref();
   const first = confirmations.waiting[0];
+  const groups = [
+    { title: "Same day", rows: heldUp.sameDay },
+    { title: "Escalate", rows: heldUp.escalate },
+  ];
   return (
-    <div className={styles.sideColumn}>
-      <ReadyByRoadTime
-        rows={networkRows}
-        defaultEdId={roadTimeFromEdId}
-        selectedUnitId={selectedUnitId}
-        onSelectUnit={(unitId) => onSelectWard(unitId)}
-      />
-      <Card aria-labelledby="capacity-confirmed-title">
-        <CardHead
-          id="capacity-confirmed-title"
-          title="Confirmed this shift"
-          aside={
-            <span className={confirmations.waiting.length ? styles.warnInk : styles.okInk}>
-              <StatusGlyph tone={confirmations.waiting.length ? "warning" : "success"} size={9} />{" "}
-              {confirmations.confirmed} of {confirmations.total} wards
-            </span>
-          }
-        />
-        <div className={styles.sideBody}>
+    <Card aria-labelledby="capacity-shift-title">
+      <CardHead id="capacity-shift-title" title="This shift" />
+      {/* Polish (Josh, 31 Oct 2026): two short sections, each a headline figure with one line
+          under it. The held-up reasons are small tags instead of an eight-row table. */}
+      <section className={styles.shiftSection} aria-label="Bed counts confirmed">
+        <div className={styles.shiftTop}>
+          <span className={styles.shiftFigure}>
+            <StatusGlyph tone={first ? "warning" : "success"} size={9} />
+            {confirmations.confirmed} of {confirmations.total}
+            <span className={styles.shiftNoun}>confirmed</span>
+          </span>
+          {first && onAskWard ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onAskWard(first.id)}
+              aria-haspopup="dialog"
+              aria-label={`Ask ${first.name} to confirm its beds`}
+            >
+              Ask
+            </Button>
+          ) : first && canOpen(`/ward-flow/ward/${first.id}`) ? (
+            <Link
+              href={`/ward-flow/ward/${first.id}`}
+              aria-label={`Confirm beds on ${first.name}`}
+              className={buttonClass({ variant: "ghost", size: "sm" })}
+            >
+              Confirm
+            </Link>
+          ) : null}
+        </div>
+        <p className={styles.mutedXs}>
           {first ? (
             <>
-              <p className={styles.small}>
-                <SpelledCodes text={first.name} /> has not confirmed since{" "}
-                {formatInstant(first.allocatable.confirmedAt)}
-                {confirmations.waiting.length > 1 ? `, and ${confirmations.waiting.length - 1} more` : ""}.
-              </p>
-              <Button size="sm" variant="sec" onClick={() => onAskWard(first.id)} aria-haspopup="dialog">
-                Ask the ward
-              </Button>
+              Waiting on <SpelledCodes text={first.name} />, last at {formatInstant(first.allocatable.confirmedAt)}
+              {confirmations.waiting.length > 1 ? `, and ${confirmations.waiting.length - 1} more` : ""}
             </>
           ) : (
-            <p className={styles.small}>Every open ward has confirmed its count since the shift began.</p>
+            `Every open ward${siteName ? ` at ${siteName}` : ""} has confirmed since the shift began`
           )}
+        </p>
+      </section>
+      <section className={styles.shiftSection} aria-label="Held-up releases">
+        <div className={styles.shiftTop}>
+          <span className={styles.shiftFigure}>
+            {heldUp.total}
+            <span className={styles.shiftNoun}>held-up {heldUp.total === 1 ? "release" : "releases"}</span>
+          </span>
+          {canOpen(HELD_UP_HREF) ? (
+            <Link
+              href={HELD_UP_HREF}
+              aria-label={HELD_UP_LINK_LABEL}
+              className={buttonClass({ variant: "ghost", size: "sm" })}
+            >
+              See all
+            </Link>
+          ) : null}
         </div>
-      </Card>
-      <Card aria-labelledby="capacity-blockers-title">
-        <CardHead id="capacity-blockers-title" title="Held-up releases" meta={`${heldUp.total} recorded`} />
-        <div className={`${styles.sideBody} ${styles.blockers}`}>
-          {heldUp.total === 0 ? (
-            <p className={styles.small}>No bed release has a recorded blocker.</p>
-          ) : (
-            [
-              { title: "Same day", rows: heldUp.sameDay },
-              { title: "Escalate", rows: heldUp.escalate },
-            ].map((group) => (
-              <div key={group.title}>
-                <Kicker>
-                  {group.title} · {group.rows.reduce((sum, row) => sum + row.count, 0)}
-                </Kicker>
-                <ul className={styles.kvList}>
+        {heldUp.total === 0 ? (
+          <p className={styles.mutedXs}>No bed release has a recorded blocker.</p>
+        ) : (
+          groups.map((group) =>
+            group.rows.length === 0 ? null : (
+              <div key={group.title} className={styles.shiftTags}>
+                <span className={styles.shiftTagsLabel}>
+                  {group.title} {group.rows.reduce((sum, row) => sum + row.count, 0)}
+                </span>
+                <ul className={styles.shiftTagList}>
                   {group.rows.map((row) => (
-                    <li key={row.id}>
-                      <span>{row.label}</span>
-                      <b>{row.count}</b>
+                    <li key={row.id} className={styles.tag}>
+                      {row.label} {row.count}
                     </li>
                   ))}
                 </ul>
               </div>
-            ))
-          )}
-        </div>
-        <div className={styles.cardFoot}>
-          <span>Held-up releases count only in the best case.</span>
-          <Link href={HELD_UP_HREF} className={buttonClass({ variant: "ghost", size: "sm" })}>
-            {HELD_UP_LINK_LABEL}
-          </Link>
-        </div>
-      </Card>
+            ),
+          )
+        )}
+      </section>
       <p className={styles.srOnly}>Figures as at {formatInstant(now)}.</p>
-    </div>
+    </Card>
   );
 }

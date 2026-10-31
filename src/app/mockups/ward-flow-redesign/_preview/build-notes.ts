@@ -142,6 +142,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** uses Capacity's copied ward panel, Planned admissions and Step down board, so their links are checked against this desk and names are surname first.",
     "**Question for you:** the rail says 'Waiting 6' (every ED this desk covers) beside the hero's '5 waiting in RPH ED'. The hero names its ED so the two read apart. Is that acceptable?",
     "**Review round (30 October):** as the coordinator's Capacity: the network total shows once, a muted 48-hour range, a stacked phone forecast sheet, and the ward drawer's own title in place of Back to network. Held-up releases count only Royal Perth's (2), so the figure matches this desk's Discharges, named as Discharges names them.",
+    "**Carried from the approved Capacity design (31 Oct 2026):** the same Mismatch strip (the site's own bed types only), forecast (named Site), full-width bed map with Other sites under it, and the lower row. Nearest ready beds ranks every site from the site's own ED; This shift offers Confirm on the ward's page instead of Ask, which is the coordinator's step.",
   ],
   "as-bed-manager-wards": [
     "**As the site bed manager**, All wards leads with Royal Perth's 2 wards in full, then other sites as bed counts only (first 6, then Show all 20).",
@@ -194,6 +195,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the executive**, Capacity keeps the bed picture and leaves out links to pages this desk cannot open.",
     "**Replaced:** Planned admissions listed people with legal status under 'Name not shown'; it is now one card of counts.",
     "**Review round (30 October):** as the coordinator's Capacity: the network total once, a muted 48-hour range, a stacked phone forecast sheet, held-up releases counted and named as Discharges does (11), and the drawer's own title. This desk has no Discharges, so no link to it; Ask the ward shows disabled, as before.",
+    "**Carried from the approved Capacity design (31 Oct 2026):** the same layout, counts only. What would help tomorrow reads without links, This shift has no Ask or See all, the ward drawer shows no locked Ask button and Discharges stays unavailable to this desk, and the booked counts card sits in the lower row.",
   ],
   "as-executive-settings": [
     "**As the executive (new in round 3)**, Settings reads the executive report's public rules: Rules are read only with the timing set in words and no save bar, the last-change line and record counts say they are unavailable, and the live counts are left out because this desk holds no individual records.",
@@ -768,6 +770,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** the network total shows once (the All four together card is gone; on a phone the forecast card starts at tomorrow). Held-up releases are counted and named as Discharges counts them (11 recorded, Clean / prep, Family / carer), and See held-up releases opens Discharges, not the waiting list.",
     "**Review round (30 October):** the 48-hour figure leads with its range in muted ink (may move); the overdue figure shows once (34 overdue, not held up). The phone Bed forecast sheet stacks figures, bars, then levers. Highlight chips name their noun (Open bed ready · 15 wards) and open the service groups that hold a match.",
     "**Review round (30 October):** Ask the ward is the one name for the request, on the kit's small button; the ward drawer's own title and close replace Back to network. Planned admissions and Step down board use the card title style.",
+    "**Approved (Josh, 31 Oct 2026):** the polished design is locked in: the Mismatch strip with its filter, the simplified forecast with Estimate only and How this is worked out, the full-width bed map with its highlights in the title row, one lower row (Coming in, Nearest ready beds, This shift) and the redesigned ward drawer. The road-time caveat sits one tap away and the footer no longer mentions private live feeds.",
   ],
   "shell-next": [
     "**Header:** Activity keeps its own button beside the Alerts bell (Josh, 31 Oct 2026: its panel now holds Changes, Recent activity and Notices). As today, the page name comes first and then the place's dropdown; the help ? beside the title is gone (Help stays in the rail). Board time stays on tablet. The search box reads 'Search Ward Flow', since search also finds Help, contacts and suburbs (Josh, 31 Oct 2026).",

@@ -61,6 +61,8 @@ import styles from "@/components/ward-management/referrals/referrals.module.css"
 import ph from "@/components/ward-management/referrals/referral-match-phone.module.css";
 // Final round: the kit Select box sizing for this panel (see the file).
 import rs from "./referral-match.module.css";
+import tabs from "./referral-tabs.module.css";
+import { Check, X } from "lucide-react";
 import { Button, Select, StatusGlyph } from "@/components/wf";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
@@ -218,7 +220,9 @@ export function ReferralMatchView({
       </section>
     );
   }
-  if (!ward && phone !== undefined && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
+  // Round 4 (Josh, 31 Oct 2026): the desktop panel uses the same ED review, so Decline and Accept
+  // presentation are anchored at the bottom there too rather than sitting mid-pane.
+  if (!ward && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
     /* v10 phone, ED review: one scrolling sheet with Decline and Accept presentation pinned in the
        foot, as the ward sheet does. Decline opens the reasons as radio rows; Accept asks once. */
     return (
@@ -578,27 +582,31 @@ export function ReferralMatchView({
          * The paragraph below carries the proper wording, from the one home. Do not reintroduce a
          * short state word here: a second, shorter spelling is how the first one got in.
          */}
-        <h2 className={styles.matchHeading}>
-          {patientInfo ? (
-            <>
-              <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
-              <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
-            </>
-          ) : (
-            "This referral"
-          )}
+        {/* Round 5 (Josh, 31 Oct 2026): the panel header already names the person, so the
+            heading is for screen readers only and the outcome reads as one card. */}
+        <h2 className="sr-only">
+          {patientInfo ? `${formatUmrn(patientInfo.umrn)} ${patientInfo.displayName}` : "This referral"}
         </h2>
-        <p data-testid="ward-referral-match-decided">
-          {ward.state === "accepted"
-            ? acceptedUnit
-              ? `Accepted at ${acceptedUnit.name}.`
-              : // The board's own spelling of this identical gap (`outcomeDetail`, "Unit not
-                // recorded") rather than a second one. The previous text — `Accepted, but no
-                // synthetic unit matches "<id>"` — was developer prose on a clinical screen: it
-                // named an internal id and the word "synthetic" to somebody deciding about a bed.
-                "Accepted — unit not recorded."
-            : referralAddressingStateLabel(ward)}
-        </p>
+        <div className={tabs.outcome} data-tone={ward.state === "accepted" ? "success" : "closed"}>
+          <span className={tabs.outcomeIcon} aria-hidden="true">
+            {ward.state === "accepted" ? <Check size={16} aria-hidden="true" /> : <X size={16} aria-hidden="true" />}
+          </span>
+          <div className={tabs.outcomeText}>
+            <b data-testid="ward-referral-match-decided">
+              {" "}
+              {ward.state === "accepted"
+                ? acceptedUnit
+                  ? `Accepted at ${acceptedUnit.name}.`
+                  : // The board's own spelling of this identical gap (`outcomeDetail`, "Unit not
+                    // recorded") rather than a second one. The previous text — `Accepted, but no
+                    // synthetic unit matches "<id>"` — was developer prose on a clinical screen: it
+                    // named an internal id and the word "synthetic" to somebody deciding about a bed.
+                    "Accepted — unit not recorded."
+                : referralAddressingStateLabel(ward)}
+            </b>
+            {ward.decidedAt !== undefined ? <span>Recorded {formatInstant(ward.decidedAt)}</span> : null}
+          </div>
+        </div>
         {/* Every ward declining leaves a community referral open, so the coordinator can still ask more (D-76). */}
         <AskMoreWardsCard ask={askMore} />
         {askMore.open ? (

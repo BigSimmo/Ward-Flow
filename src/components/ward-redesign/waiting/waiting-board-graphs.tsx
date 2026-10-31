@@ -9,7 +9,8 @@
  * dot opens that person's row. Every graph draws everyone waiting: the spread dims the dots a
  * filter hides, while the runway and the matrix keep counting everyone so the whole picture stays.
  */
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { ChartScatter, Clock4, Columns3, Grid2x2, Rows3, type LucideIcon } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -34,7 +35,6 @@ import {
   bandCounts,
   catchmentName,
   hasFilters,
-  projectedOver8,
   rowTone,
   spreadX,
   type BoardFilters,
@@ -44,6 +44,8 @@ import {
 import { BandBar } from "@/components/ward-management/delays/delays-board-parts";
 import { waitingCauseTitle as causeTitle } from "./wait-bands";
 import styles from "@/components/ward-management/delays/delays-board.module.css";
+import polish from "./waiting-polish.module.css";
+import { NextCrossings } from "./waiting-next-crossings";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
@@ -83,6 +85,8 @@ const hoursOrDuration = (minutes: number) => (minutes % 60 === 0 ? `${minutes / 
 /** Width assumed before the plot is measured (and in jsdom); the real width replaces it. */
 const ASSUMED_PLOT_WIDTH = 900;
 const DOT = 15;
+/** Round 4: the most dots stacked at one wait before the pile says "+n". */
+const STACK = 5;
 
 function LaneLabel({ label, count, over8 }: { label: string; count: number; over8: number }) {
   return (
@@ -166,27 +170,33 @@ function Spread({
     </>
   );
   return (
-    <div className={styles.gDots}>
+    <div className={`${styles.gDots} ${polish.spread}`}>
       {laneList.map((lane, laneIndex) => {
         const sorted = [...lane.rows].sort((a, b) => b.waited - a.waited);
         const placed: { x: number; y: number; row: BoardRow }[] = [];
+        const overflow: { x: number; n: number; laneIndex: number }[] = [];
         for (const row of sorted) {
           // Clamped so a dot at 0h or 7d keeps its whole circle inside the lane.
           const x = Math.min(PLOT_WIDTH - DOT / 2, Math.max(DOT / 2, (spreadX(row.waited) / 100) * PLOT_WIDTH));
-          // Nearest free slot, alternating above and below, however many share a wait.
-          let y = 0;
-          for (let step = 0; ; step += 1) {
-            const k = step % 2 === 0 ? step / 2 : -(step + 1) / 2;
-            const candidate = k * DOT;
-            if (!placed.some((p) => Math.abs(p.x - x) < DOT && p.y === candidate)) {
-              y = candidate;
+          // Round 4: dots stack upward from one baseline, at most STACK high; a taller pile ends in
+          // a "+n" so a crowd of short waits no longer towers over the lane.
+          let y = -1;
+          for (let step = 0; step < STACK; step += 1) {
+            if (!placed.some((p) => Math.abs(p.x - x) < DOT && p.y === step)) {
+              y = step;
               break;
             }
           }
+          if (y < 0) {
+            const pile = overflow.find((o) => Math.abs(o.x - x) < DOT);
+            if (pile) pile.n += 1;
+            else overflow.push({ x, n: 1, laneIndex });
+            continue;
+          }
           placed.push({ x, y, row });
         }
-        const spreadY = Math.max(0, ...placed.map((p) => Math.abs(p.y)));
-        const height = Math.max(56, spreadY * 2 + 34);
+        const rowsUsed = Math.max(1, ...placed.map((p) => p.y + 1));
+        const height = rowsUsed * DOT + 26;
         const over8 = lane.rows.filter((row) => row.waited >= OVER_8H).length;
         return (
           <div key={lane.id} className={styles.gLane}>
@@ -209,6 +219,11 @@ function Spread({
             )}
             <div className={styles.gPlot} style={{ height }} ref={laneIndex === 0 ? measureRef : undefined}>
               {grid}
+              {laneIndex === 0 ? (
+                <span className={polish.mark8} style={{ left: `${spreadX(OVER_8H)}%` }} aria-hidden="true">
+                  {H8}
+                </span>
+              ) : null}
               {placed.map(({ x, y, row }) => {
                 const name = patientOf(row.movement).formalName;
                 const label = `${name}, waited ${splitDuration(row.waited)}, ${causeTitle(row.cause)}`;
@@ -220,7 +235,7 @@ function Spread({
                     data-dim={anyFilter && !visible.has(row.movement.id) ? "true" : undefined}
                     aria-pressed={selectedId === row.movement.id}
                     aria-label={label}
-                    style={{ left: `${(x / PLOT_WIDTH) * 100}%`, top: `calc(50% + ${y}px)` }}
+                    style={{ left: `${(x / PLOT_WIDTH) * 100}%`, top: `calc(100% - ${13 + y * DOT + DOT / 2}px)` }}
                     onClick={() => {
                       onTip(null);
                       onPick(row.movement.id);
@@ -250,6 +265,15 @@ function Spread({
                   </button>
                 );
               })}
+              {overflow.map((pile) => (
+                <span
+                  key={pile.x}
+                  className={polish.spreadMore}
+                  style={{ left: `${(pile.x / PLOT_WIDTH) * 100}%`, bottom: `${13 + STACK * DOT}px` }}
+                >
+                  {`+${pile.n}`}
+                </span>
+              ))}
               {lane.rows.length === 0 ? <span className={`${styles.mute} ${styles.gNone}`}>Nobody waiting</span> : null}
             </div>
           </div>
@@ -265,168 +289,6 @@ function Spread({
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Runway({
-  rows,
-  bins,
-  now,
-  filters,
-  onFilters,
-  onTip,
-}: Pick<Props, "rows" | "bins" | "now" | "filters" | "onFilters"> & {
-  onTip: (event: React.MouseEvent | null, body?: ReactNode) => void;
-}) {
-  const W = 1100;
-  const H = 200;
-  const L = 44;
-  const R = 16;
-  const T = 14;
-  const B = 28;
-  const barWidth = 64;
-  const pw = W - L - R;
-  const ph = H - T - B;
-  const max = Math.max(0, ...bins.map((bin) => bin.cross8.length + bin.cross24.length + bin.formDue.length));
-  const ymax = Math.max(3, Math.ceil(max / 3) * 3);
-  const y = (v: number) => T + ph - (v / ymax) * ph;
-  const xc = (i: number) => L + (pw * (i + 0.5)) / bins.length;
-  const projection = projectedOver8(rows, bins);
-  const ptop = 26;
-  const pH = 54;
-  const lo = projection[0] - 2;
-  const hi = projection[projection.length - 1] + 2;
-  const py = (v: number) => ptop + pH - ((v - lo) / Math.max(1, hi - lo)) * pH;
-  let path = `M${L},${py(projection[0])}`;
-  projection.slice(1).forEach((v, i) => {
-    path += ` H${L + (pw * (i + 1)) / bins.length} V${py(v)}`;
-  });
-  const at = (minutes: number) => formatInstantWithDay(now + minutes, now);
-  const last = projection[projection.length - 1];
-  return (
-    <div className={styles.gRw}>
-      <svg
-        className={styles.rwSvg}
-        viewBox={`0 0 ${W} ${H + 96}`}
-        role="group"
-        aria-label={`People crossing ${H8} or ${H24} and recorded legal times falling due in each half hour for the next ${hoursWord(RUNWAY_WINDOW)}`}
-      >
-        <text x={L} y={12} className={styles.rwCap}>
-          {`Over ${H8} if nobody moves`}
-        </text>
-        <line x1={L} x2={L + pw} y1={ptop + pH} y2={ptop + pH} className={styles.rwGrid} />
-        <path d={path} className={styles.rwProj} />
-        <circle cx={L} cy={py(projection[0])} r={4} className={styles.rwDot} />
-        <text x={L + 8} y={py(projection[0]) - 8} className={styles.rwLbl}>
-          {`${projection[0]} now`}
-        </text>
-        <circle cx={L + pw} cy={py(last)} r={4} className={styles.rwDot} />
-        <text x={L + pw - 8} y={py(last) - 8} textAnchor="end" className={styles.rwLbl}>
-          {`${last} by ${at(RUNWAY_WINDOW)}`}
-        </text>
-        <g transform="translate(0,96)">
-          {[0, 1, 2, 3].map((g) => {
-            const v = (ymax / 3) * g;
-            return (
-              <g key={g}>
-                <line x1={L} x2={L + pw} y1={y(v)} y2={y(v)} className={styles.rwGrid} />
-                <text x={L - 10} y={y(v) + 4} textAnchor="end" className={styles.rwAx}>
-                  {v}
-                </text>
-              </g>
-            );
-          })}
-          {bins.map((bin) => {
-            const total = bin.cross8.length + bin.cross24.length + bin.formDue.length;
-            const on = filters.bin === bin.index;
-            const label = `${at(bin.from)} to ${at(bin.to)}: ${bin.cross8.length} cross ${H8}, ${bin.cross24.length} cross ${H24}, ${bin.formDue.length} recorded legal times due`;
-            let acc = 0;
-            const press = () => {
-              onFilters({ bin: on ? null : bin.index }, !on);
-            };
-            // A half hour with nothing in it is drawn but not pressable, unless it is the active filter.
-            const pressable = total > 0 || on;
-            return (
-              <g
-                key={bin.index}
-                className={`${styles.rwCol} ${on ? styles.rwOn : ""} ${pressable ? "" : styles.rwEmpty}`}
-                {...(pressable
-                  ? {
-                      role: "button",
-                      tabIndex: 0,
-                      "aria-pressed": on,
-                      "aria-label": label,
-                      onClick: press,
-                      onKeyDown: (event: KeyboardEvent<SVGGElement>) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          press();
-                        }
-                      },
-                    }
-                  : { "aria-hidden": true })}
-                onMouseMove={(event) =>
-                  onTip(
-                    event,
-                    <>
-                      <b className={styles.num}>{`${at(bin.from)} to ${at(bin.to)}`}</b>
-                      <br />
-                      {`${bin.cross8.length} cross ${H8} · ${bin.cross24.length} cross ${H24} · ${bin.formDue.length} form due`}
-                    </>,
-                  )
-                }
-                onMouseLeave={() => {
-                  onTip(null);
-                }}
-              >
-                <rect
-                  x={xc(bin.index) - pw / 16 + 4}
-                  y={T - 6}
-                  width={pw / bins.length - 8}
-                  height={ph + 6}
-                  rx={16}
-                  className={styles.rwHit}
-                />
-                {(
-                  [
-                    [bin.cross8.length, styles.r8],
-                    [bin.cross24.length, styles.r24],
-                    [bin.formDue.length, styles.rf],
-                  ] as const
-                ).map(([n, cls]) => {
-                  if (n === 0) return null;
-                  const h = (n / ymax) * ph - 2;
-                  const rect = (
-                    <rect
-                      key={cls}
-                      x={xc(bin.index) - barWidth / 2}
-                      y={y(acc + n) + 1}
-                      width={barWidth}
-                      height={Math.max(h, 4)}
-                      rx={8}
-                      className={cls}
-                    />
-                  );
-                  acc += n;
-                  return rect;
-                })}
-                <text
-                  x={xc(bin.index)}
-                  y={total ? y(total) - 8 : y(0) - 8}
-                  textAnchor="middle"
-                  className={total ? styles.rwLbl : styles.rwAx}
-                >
-                  {total}
-                </text>
-                <text x={xc(bin.index)} y={H - 6} textAnchor="middle" className={styles.rwAx}>
-                  {at(bin.from)}
-                </text>
-              </g>
-            );
-          })}
-        </g>
-      </svg>
     </div>
   );
 }
@@ -471,7 +333,7 @@ function Matrix({
     else onFilters({ origin, cause: id as DelayCause, owner: null });
   };
   return (
-    <div className={styles.gMx}>
+    <div className={`${styles.gMx} ${polish.mx}`}>
       <div
         className={styles.mxG}
         style={{
@@ -498,7 +360,7 @@ function Matrix({
               const n = cell.length;
               const over8 = cell.filter((row) => row.waited >= OVER_8H).length;
               const on = isOn(origin, column.id);
-              const strength = n ? Math.round(5 + (n / max) * 28) : 0;
+              const strength = n ? Math.round(8 + (n / max) * 40) : 0;
               return (
                 <button
                   key={`${origin}-${column.id}`}
@@ -535,16 +397,14 @@ function Matrix({
                     onTip(null);
                   }}
                 >
-                  <span className={styles.mxTop}>
-                    <span className={`${styles.mxN} ${styles.num}`}>{n}</span>
-                    {over8 > 0 ? (
-                      <span className={styles.mxO}>
-                        <StatusGlyph tone="warning" size={9} />
-                        <span className={styles.num}>{over8}</span>
-                      </span>
-                    ) : null}
-                  </span>
-                  <BandBar bands={bandCounts(cell)} />
+                  <span className={`${styles.mxN} ${styles.num} ${polish.mxN}`}>{n === 0 ? "–" : n}</span>
+                  {over8 > 0 ? (
+                    <span className={polish.mxO}>
+                      <StatusGlyph tone="warning" size={9} />
+                      <span className={styles.num}>{over8}</span>
+                      {` over ${H8}`}
+                    </span>
+                  ) : null}
                 </button>
               );
             }),
@@ -578,7 +438,9 @@ function Matrix({
 export function DelaysBoardGraphs(props: Props) {
   const thresholds = useDueSoonThresholds();
   const { rows, shown, filters, onFilters, onClear, onToTable } = props;
-  const [graph, setGraph] = useState<Graph>("spread");
+  // Round 4 (Josh, 31 Oct 2026): the named next four hours open first; it is the one that says who
+  // to ring. Where and whose move second, the whole spread last.
+  const [graph, setGraph] = useState<Graph>("runway");
   const [lanes, setLanes] = useState<"owner" | "origin">("owner");
   const [cols, setCols] = useState<"owner" | "cause">("owner");
   const [tip, setTip] = useState<Tip>(null);
@@ -590,10 +452,11 @@ export function DelaysBoardGraphs(props: Props) {
     }
     setTip({ x: event.clientX, y: event.clientY, body });
   };
-  const tabs: { id: Graph; label: string }[] = [
-    { id: "spread", label: "Wait spread" },
-    { id: "runway", label: `Next ${hoursWord(RUNWAY_WINDOW)}` },
-    { id: "matrix", label: "Where and whose move" },
+  // Round 6: each tab carries its own icon.
+  const tabs: { id: Graph; label: string; Icon: LucideIcon }[] = [
+    { id: "runway", label: `Next ${hoursWord(RUNWAY_WINDOW)}`, Icon: Clock4 },
+    { id: "matrix", label: "Where and whose move", Icon: Grid2x2 },
+    { id: "spread", label: "Wait spread", Icon: ChartScatter },
   ];
   const onTabKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const index = tabs.findIndex((entry) => entry.id === graph);
@@ -637,33 +500,35 @@ export function DelaysBoardGraphs(props: Props) {
     ) : graph === "runway" ? (
       <>
         <span className={styles.lg}>
-          <i className={styles.band2} />
-          {`Crosses ${H8}`}
+          <StatusGlyph tone="warning" size={9} />
+          {`Passes ${H8}`}
         </span>
         <span className={styles.lg}>
-          <i className={styles.band3} />
-          {`Crosses ${H24}`}
+          <StatusGlyph tone="danger" size={9} />
+          {`Passes ${H24}`}
         </span>
         <span className={styles.lg}>
-          <i className={styles.keyAccent} />
-          Recorded legal time due
+          <StatusGlyph tone="info" size={9} />
+          Recorded legal time, as typed. Not legally checked.
         </span>
-        <span className={styles.lg}>
-          <span className={`${styles.lg8} ${styles.lg8Amber}`} />
-          {`Over ${H8} if nobody moves`}
-        </span>
+        <span className={`${styles.lg} ${polish.lgNote}`}>If nobody moves · choose a person to open their row</span>
       </>
     ) : (
       <>
-        {WAIT_BANDS.map((band, index) => (
-          <span key={band} className={styles.lg}>
-            <i className={styles[`band${index}`]} />
-            {band}
-          </span>
-        ))}
+        <span className={styles.lg}>
+          Fewer
+          <i className={polish.mxKey} />
+          More waiting
+        </span>
         <span className={styles.lg}>
           <StatusGlyph tone="warning" size={9} />
           {`Over ${H8} in that cell`}
+        </span>
+        <span className={styles.lg}>
+          {WAIT_BANDS.map((band, index) => (
+            <i key={band} className={styles[`band${index}`]} title={band} />
+          ))}
+          Wait bands in the totals
         </span>
       </>
     );
@@ -671,7 +536,10 @@ export function DelaysBoardGraphs(props: Props) {
   const sub =
     graph === "spread" ? (
       <>
-        <span className={styles.eyebrow}>Rows</span>
+        <span className={`${styles.eyebrow} ${polish.subLabel}`}>
+          <Rows3 size={13} aria-hidden="true" />
+          Rows
+        </span>
         <div className={styles.seg} role="group" aria-label="Spread rows">
           <button
             type="button"
@@ -695,7 +563,10 @@ export function DelaysBoardGraphs(props: Props) {
       </>
     ) : graph === "matrix" ? (
       <>
-        <span className={styles.eyebrow}>Columns</span>
+        <span className={`${styles.eyebrow} ${polish.subLabel}`}>
+          <Columns3 size={13} aria-hidden="true" />
+          Columns
+        </span>
         <div className={styles.seg} role="group" aria-label="Matrix columns">
           <button
             type="button"
@@ -722,7 +593,11 @@ export function DelaysBoardGraphs(props: Props) {
     ) : null;
 
   return (
-    <section className={`${styles.card} ${styles.gCard}`} aria-label="Delay graphs" data-ward-primitive="panel">
+    <section
+      className={`${styles.card} ${styles.gCard} ${polish.graphs}`}
+      aria-label="Delay graphs"
+      data-ward-primitive="panel"
+    >
       <div className={styles.chead}>
         {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
         <div className={`${styles.seg} ${styles.gTabs}`} role="tablist" aria-label="Delay graph" onKeyDown={onTabKey}>
@@ -739,6 +614,7 @@ export function DelaysBoardGraphs(props: Props) {
                 setGraph(entry.id);
               }}
             >
+              <entry.Icon size={14} aria-hidden="true" className={polish.tabIcon} />
               {entry.label}
             </button>
           ))}
@@ -756,7 +632,7 @@ export function DelaysBoardGraphs(props: Props) {
         {graph === "spread" ? (
           <Spread {...props} lanes={lanes} onTip={onTip} />
         ) : graph === "runway" ? (
-          <Runway {...props} onTip={onTip} />
+          <NextCrossings rows={props.rows} now={props.now} selectedId={props.selectedId} onPick={props.onPick} />
         ) : (
           <Matrix {...props} cols={cols} onTip={onTip} />
         )}

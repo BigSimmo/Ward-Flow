@@ -180,7 +180,7 @@
 /* ── Bed forecast ── */
 .fcBody {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr) 300px;
+  grid-template-columns: 184px minmax(0, 1fr) 272px;
   border-top: 1px solid var(--wf-line);
 }
 .fcKpis {
@@ -348,6 +348,51 @@
 .leverAction {
   margin-top: var(--wf-s-1);
 }
+/* Polish (31 Oct 2026): "What would help tomorrow" as one quiet row per action, the whole row
+   the link, with the likely gain as a tag and a chevron. */
+.helpList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.helpLink {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 14px;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-inline: calc(-1 * var(--wf-s-2));
+  padding: var(--wf-s-2);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  text-decoration: none;
+}
+.helpList li + li .helpLink {
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0 0 var(--wf-r-sm) var(--wf-r-sm);
+}
+.helpLink:hover {
+  background: var(--wf-hover);
+}
+.helpLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.helpStatic.helpStatic {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.helpStatic:hover {
+  background: none;
+}
+.helpTitle {
+  font-weight: 600;
+}
+.helpChevron {
+  color: var(--wf-ink-3);
+}
+
 .fcSources {
   margin-top: auto;
   padding-top: var(--wf-s-2);
@@ -432,7 +477,14 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
-  padding-bottom: var(--wf-s-2);
+}
+/* Polish (31 Oct 2026): highlight chips and the Grid/Rows switch share the title row. */
+.mapControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-2) var(--wf-s-3);
 }
 .mapGroup {
   border-top: 1px solid var(--wf-line);
@@ -508,21 +560,22 @@
 .wardCard {
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
-    "name beds"
-    "ready occupied"
+    "name ready"
+    "occupied ready"
     "cells cells"
     "note note";
-  gap: var(--wf-s-1) var(--wf-s-2);
+  align-content: start;
+  gap: 2px var(--wf-s-3);
   padding: var(--wf-s-3);
   border-radius: var(--wf-r-md);
 }
 .wardRow {
-  grid-template-columns: minmax(160px, 1.4fr) 64px 96px 96px minmax(120px, 2fr) minmax(120px, 1.2fr);
-  grid-template-areas: "name beds ready occupied cells note";
+  grid-template-columns: minmax(160px, 1.5fr) 72px 120px minmax(140px, 2fr) minmax(140px, 1.4fr);
+  grid-template-areas: "name ready occupied cells note";
   align-items: center;
-  gap: var(--wf-s-2);
-  min-height: var(--wf-row-default);
-  padding: var(--wf-s-1) var(--wf-s-2);
+  gap: var(--wf-s-3);
+  min-height: 44px;
+  padding: var(--wf-s-2) var(--wf-s-2);
   border-width: 0 0 1px;
   border-radius: 0;
 }
@@ -551,56 +604,68 @@
   font-weight: 600;
   overflow-wrap: anywhere;
 }
-.wardBeds {
-  grid-area: beds;
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
-  text-align: end;
-}
 .wardReady {
   grid-area: ready;
   display: flex;
-  align-items: baseline;
-  gap: var(--wf-s-1);
-  font-size: var(--wf-fs-12);
-}
-.wardReadyN {
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-20);
-  line-height: var(--wf-lh-20);
-  font-weight: 600;
-}
-.wardOccupied {
-  grid-area: occupied;
-  align-self: center;
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
-  text-align: end;
-}
-.wardNote {
-  grid-area: note;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
+  flex-direction: column;
+  align-items: flex-end;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
   color: var(--wf-ink-3);
 }
-.wardNote .warnInk {
+.wardRow .wardReady {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+}
+.wardReadyN {
+  font-size: var(--wf-fs-20);
+  line-height: 1;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-success-ink);
+}
+.wardReadyNone .wardReadyN {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+.wardOccupied {
+  grid-area: occupied;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.wardNote {
+  grid-area: note;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.wardCard .wardNote {
+  margin-top: 4px;
+}
+.wardNoteItem {
   display: inline-flex;
   align-items: center;
-  gap: var(--wf-s-1);
+  gap: 4px;
+  white-space: nowrap;
 }
 .cells {
   grid-area: cells;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 2px;
+  max-width: 100%;
+}
+.wardCard .cells {
+  margin-top: var(--wf-s-2);
 }
 .cells i {
   display: block;
-  width: 8px;
   height: 8px;
   border-radius: 2px;
 }
@@ -866,10 +931,9 @@
     grid-row: span 2;
   }
   .wardRow {
-    grid-template-columns: minmax(140px, 1.4fr) 84px 84px minmax(100px, 2fr);
+    grid-template-columns: minmax(140px, 1.4fr) 72px 110px minmax(100px, 2fr);
     grid-template-areas: "name ready occupied cells";
   }
-  .wardRow .wardBeds,
   .wardRow .wardNote {
     display: none;
   }
@@ -935,7 +999,7 @@
   flex-direction: row;
   white-space: nowrap;
 }
-.plannedFacts.plannedFacts {
+.plannedFacts.plannedFacts.plannedFacts {
   overflow: visible;
   white-space: normal;
   text-overflow: clip;
@@ -962,4 +1026,686 @@
   margin: 0;
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   color: var(--wf-ink-1);
+}
+
+/* ── Polish (31 Oct 2026): the row under the full-width bed map ── */
+.lowerRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: start;
+  gap: var(--wf-s-3);
+}
+@media (max-width: 80rem) {
+  .lowerRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lowerRow > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 48rem) {
+  .lowerRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.shiftSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.shiftSection p {
+  margin: 0;
+}
+.shiftTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 28px;
+}
+.shiftFigure {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  font-weight: 600;
+}
+.shiftNoun {
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+.shiftTags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+}
+.shiftTagsLabel {
+  min-width: 76px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+.shiftTagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.shiftTagList .tag {
+  font-family: var(--wf-font);
+}
+
+/* Nearest ready beds (road-time-card.tsx). */
+.rtPicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 var(--wf-s-2) 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.rtPicker:hover {
+  background: var(--wf-hover);
+}
+.rtPicker[aria-expanded="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-selected);
+}
+.rtPicker:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.rtPicker > svg {
+  color: var(--wf-ink-3);
+}
+.rtPickerFrom {
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.rtList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+.rtList li + li .rtRow {
+  border-top: 1px solid var(--wf-line);
+}
+.rtRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.rtRow:hover {
+  background: var(--wf-hover);
+}
+.rtRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.rtRowSelected {
+  background: var(--wf-selected);
+}
+.rtText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.rtName {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+}
+.rtMeta {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.rtTime {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rtEmpty,
+.rtFoot {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.plannedLate {
+  display: block;
+  width: fit-content;
+  margin-top: 4px;
+  padding: 1px 6px;
+  border-radius: var(--wf-r-tag);
+  background: color-mix(in srgb, var(--wf-warning) 12%, var(--wf-surface));
+  color: var(--wf-warning-ink);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+/* Planned admissions in the Capacity card: time and name, facts under them, Arrived and More on
+   the right, so each booking is two lines. */
+.plannedItem.plannedItem.plannedItem {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "when who actions"
+    "facts facts actions";
+}
+
+/* ── Polish 2 (31 Oct 2026): Mismatch as one compact strip ── */
+.mmStrip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(208px, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+.mmTile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-inline-start: 1px solid var(--wf-line);
+  scroll-snap-align: start;
+}
+.mmTile:first-child {
+  border-inline-start: 0;
+}
+.mmTileHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+.mmTileTitle {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.mmTileNow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.mmTileTomorrow {
+  display: grid;
+  grid-template-columns: auto minmax(40px, 1fr) auto;
+  align-items: center;
+  gap: 2px var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+}
+.mmTileLabel {
+  color: var(--wf-ink-3);
+}
+.mmTileRange {
+  grid-column: 2 / -1;
+  justify-self: start;
+  text-align: start;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.mmEmpty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+/* ── Polish 2: the forecast's three figures ── */
+.fcFigs.fcFigs {
+  justify-content: flex-start;
+}
+.fcFig {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.fcFig:first-child {
+  border-top: 0;
+}
+.fcFigLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.fcFigLabel .fcSoftSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.fcFigBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+}
+.fcFigValue {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.fcFigSoft {
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  color: var(--wf-ink-2);
+}
+.fcFigSub {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+/* ── Polish 4 (31 Oct 2026): the ward panel (capacity-ward-sidebar.tsx) ── */
+.wdIdentity {
+  margin: 0 0 var(--wf-s-3);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+.wdTabs {
+  align-self: flex-start;
+}
+.wdHeadTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-inline-start: var(--wf-s-2);
+  padding: 2px 8px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.wdBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  padding-block: var(--wf-s-4);
+}
+.wdBeds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}
+.wdBeds p {
+  margin: 0;
+}
+.wdBedsHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-14);
+  color: var(--wf-ink-2);
+}
+.wdKind {
+  margin-inline-start: auto;
+  font-family: var(--wf-font);
+}
+.wdBedsFigure {
+  font-size: var(--wf-fs-24, 24px);
+  line-height: 1;
+  font-weight: 650;
+  color: var(--wf-ink-1);
+  font-variant-numeric: tabular-nums;
+}
+.wdBeds .cells {
+  --cell-max: 14px;
+}
+.wdBeds .cells i {
+  height: 10px;
+  border-radius: 3px;
+}
+.wdConfirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+.wdConfirmMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
+}
+.wdNotices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+}
+.wdNotices li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+}
+.wdGroups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-4);
+}
+@media (max-width: 30rem) {
+  .wdGroups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.wdGroup {
+  min-width: 0;
+}
+.wdGroupTitle {
+  margin: 0 0 var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+.wdFacts {
+  margin: 0;
+}
+.wdFacts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+.wdFacts dt {
+  color: var(--wf-ink-3);
+}
+.wdFacts dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: end;
+}
+.wdClosure {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+.wdClosure > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+  list-style: none;
+}
+.wdClosure > summary::-webkit-details-marker {
+  display: none;
+}
+.wdClosure > summary > svg {
+  color: var(--wf-ink-3);
+  transition: transform 0.15s;
+}
+.wdClosure[open] > summary > svg {
+  transform: rotate(90deg);
+}
+.wdClosure > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+  border-radius: var(--wf-r-md);
+}
+.wdClosureBody {
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}
+.wdSummary {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+}
+.wdList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+.wdList > li {
+  border-bottom: 1px solid var(--wf-line);
+}
+.wdListRow,
+.wdListStatic {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 14px;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  padding: var(--wf-s-2) var(--wf-s-1);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+.wdListRow {
+  cursor: pointer;
+}
+.wdListRow:hover {
+  background: var(--wf-hover);
+}
+.wdListRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.wdListStatic {
+  grid-template-columns: minmax(0, 1fr);
+}
+.wdListMain {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.wdListName {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.wdTagWarn {
+  background: color-mix(in srgb, var(--wf-warning) 12%, var(--wf-surface));
+  color: var(--wf-warning-ink);
+}
+.wdRecord {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+.wdBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-13) / 1.4 var(--wf-font);
+  cursor: pointer;
+}
+.wdRecordName {
+  margin: 0;
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+}
+.wdRecordName:focus {
+  outline: none;
+}
+.wdFoot {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* ── Polish 5 (31 Oct 2026): the By ward grid as a heat map ── */
+.hm {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 4px 3px;
+  font-variant-numeric: tabular-nums;
+}
+.hmWardHead {
+  padding: 0 var(--wf-s-2) var(--wf-s-1) 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  text-align: start;
+  color: var(--wf-ink-3);
+}
+.hmDay {
+  padding: 0 0 var(--wf-s-1);
+  text-align: center;
+  white-space: nowrap;
+}
+.hmWeekday {
+  display: block;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.hmDate {
+  display: block;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.hmToday .hmWeekday,
+.hmToday .hmDate {
+  color: var(--wf-accent-ink);
+}
+.hmWard {
+  max-width: 220px;
+  padding: 0 var(--wf-s-3) 0 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  text-align: start;
+  color: var(--wf-ink-1);
+}
+.hmCellWrap {
+  padding: 0;
+}
+.hmCell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 48px;
+  height: 34px;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.hm1 {
+  background: color-mix(in srgb, var(--wf-data-1) 14%, var(--wf-surface));
+}
+.hm2 {
+  background: color-mix(in srgb, var(--wf-data-1) 30%, var(--wf-surface));
+}
+.hm3 {
+  background: color-mix(in srgb, var(--wf-data-1) 46%, var(--wf-surface));
+}
+/* Later days may move: the same tint under the chart's fine hatch. */
+.hmLater {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--wf-surface) 38%, transparent) 0 1.5px,
+    transparent 1.5px 6px
+  );
+}
+.hmNone {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--wf-line-2);
+}
+.hmIn {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  font-size: 10px;
+  line-height: 13px;
+  font-weight: 600;
+}
+.hmTotal {
+  padding: 0 0 0 var(--wf-s-2);
+  font-size: var(--wf-fs-14);
+  font-weight: 650;
+  text-align: center;
+  color: var(--wf-ink-1);
+  border-left: 1px solid var(--wf-line);
+}
+@media (forced-colors: active) {
+  .hmCell {
+    border: 1px solid CanvasText;
+  }
 }

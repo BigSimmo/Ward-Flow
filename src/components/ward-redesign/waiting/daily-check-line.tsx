@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, ListChecks } from "lucide-react";
+import { CheckCheck, ChevronDown, ChevronUp, ListChecks } from "lucide-react";
 
 import { Button, StatusGlyph, useIsPhone } from "@/components/wf";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
@@ -22,6 +22,7 @@ import { markAllLabel } from "@/components/ward-management/coordinator/missed-re
 import panel from "@/components/ward-management/coordinator/missed-requests-panel.module.css";
 
 import styles from "./waiting-redesign.module.css";
+import polish from "./waiting-polish.module.css";
 
 /**
  * The daily check, redesigned as one notice line (October 2026 design review). The same check as
@@ -30,6 +31,175 @@ import styles from "./waiting-redesign.module.css";
  * stays written down (design review, 22 Oct 2026) without a card and a disabled button.
  */
 const CHECK_LIMIT = 8;
+/** Round 8: the laptop grid shows three rows of three before Show more. */
+const GRID_LIMIT = 9;
+
+/** The daily check's items and record, shared by the header tile and the list under it. */
+function useDailyCheck() {
+  const { movements, referrals, patients, inboxCompletions } = useWardFlowSelect(
+    "movements",
+    "referrals",
+    "patients",
+    "inboxCompletions",
+  );
+  const now = useWardFlowClock();
+  const items = useMemo(
+    () => missedRequestCheck({ movements, referrals, patients, now }),
+    [movements, referrals, patients, now],
+  );
+  return { items, checked: dailyCheckRecord(inboxCompletions, now), now, referrals };
+}
+
+/**
+ * Waiting redesign, round 4 (Josh, 31 Oct 2026): on a laptop the daily check moves into the dark
+ * header as one tile with its own icon, so the page opens on the work instead of a notice strip.
+ * The rule stays: the list is opened before it can be marked checked.
+ */
+export function DailyCheckHeroTile({
+  open,
+  onToggle,
+  listId,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  listId: string;
+}) {
+  const access = useEffectiveWardAccess();
+  const { items, checked, now } = useDailyCheck();
+  if (access.role !== "coordinator") return null;
+  const state = items.length === 0 ? "clear" : checked ? "done" : "todo";
+  return (
+    <div className={polish.strip} data-testid="ward-missed-check">
+      {state === "todo" ? (
+        <ListChecks size={14} aria-hidden="true" className={polish.stripIcon} data-tone="warning" />
+      ) : (
+        <CheckCheck size={14} aria-hidden="true" className={polish.stripIcon} data-tone="success" />
+      )}
+      <span className={polish.stripLabel} title="Bed requests missed or sent twice">
+        Daily check
+      </span>
+      <span className={polish.stripValue}>
+        {state === "clear" ? (
+          "nobody missed"
+        ) : state === "done" ? (
+          `all checked by ${checked?.by} at ${checked ? formatInstantWithDay(checked.at, now) : ""}`
+        ) : (
+          <>
+            <b className={polish.heroNum}>{items.length}</b>
+            {` to check`}
+          </>
+        )}
+      </span>
+      {items.length > 0 ? (
+        <button
+          type="button"
+          className={polish.stripAct}
+          aria-expanded={open}
+          aria-controls={listId}
+          onClick={onToggle}
+        >
+          {open ? "Hide list" : "Show list"}
+          {open ? <ChevronUp size={13} aria-hidden="true" /> : <ChevronDown size={13} aria-hidden="true" />}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The daily check's opened list, under the header on a laptop (see `DailyCheckHeroTile`).
+ * Round 8 (Josh, 31 Oct 2026): no wasted width. A head line with a count by kind and the one
+ * action, then the people as a grid of compact cards across the page, first nine then Show more.
+ * Each card opens that person. The rule stays: the list is open before it can be marked checked.
+ */
+export function DailyCheckList({ open, listId, onClose }: { open: boolean; listId: string; onClose: () => void }) {
+  const access = useEffectiveWardAccess();
+  const { items, checked, now, referrals } = useDailyCheck();
+  const raise = useWardRaise("coordinator");
+  const patientOf = usePatientOf();
+  const [all, setAll] = useState(false);
+  if (access.role !== "coordinator" || !open || items.length === 0) return null;
+  const kinds = Object.entries(
+    items.reduce<Record<string, number>>((counts, item) => {
+      counts[item.kind] = (counts[item.kind] ?? 0) + 1;
+      return counts;
+    }, {}),
+  ) as [keyof typeof MISSED_REQUEST_LABELS, number][];
+  const shownItems = all ? items : items.slice(0, GRID_LIMIT);
+  return (
+    <section className={polish.dc} aria-labelledby={`${listId}-title`}>
+      <div className={polish.dcHead}>
+        <ListChecks size={16} aria-hidden="true" className={polish.dcIcon} />
+        <h2 id={`${listId}-title`} className={polish.dcTitle}>
+          Daily check
+        </h2>
+        <span className={polish.dcKinds}>
+          {kinds.map(([kind, count]) => (
+            <span key={kind} className={polish.dcKind}>
+              <StatusGlyph tone="warning" size={8} />
+              <b>{count}</b> {MISSED_REQUEST_LABELS[kind].toLowerCase()}
+            </span>
+          ))}
+        </span>
+        <span className={polish.dcSpacer} />
+        {checked ? (
+          <span className={polish.dcDone}>
+            <StatusGlyph tone="success" size={9} />{" "}
+            {`Checked by ${checked.by} at ${formatInstantWithDay(checked.at, now)}`}
+          </span>
+        ) : (
+          <Button
+            variant="sec"
+            size="sm"
+            icon={CheckCheck}
+            onClick={() => raise("COMPLETE_INBOX_ITEM", { inboxItemId: dailyCheckId(now) })}
+          >
+            {markAllLabel(items.length)}
+          </Button>
+        )}
+        <Button variant="ghost" size="sm" iconEnd={ChevronUp} onClick={onClose}>
+          Hide
+        </Button>
+      </div>
+      <ul id={listId} className={polish.dcGrid}>
+        {shownItems.map((item) => {
+          const referralId = item.referralIds[0];
+          const movementId = item.movementIds[0];
+          const referral = referralId ? referrals.find((candidate) => candidate.id === referralId) : undefined;
+          const person = movementId ? patientOf({ movementId }) : referral ? patientOf(referral) : undefined;
+          const href = movementId ? movementHref(movementId) : referralId ? referralBoardHref(referralId) : undefined;
+          const extra = item.referralIds.length + item.movementIds.length - 1;
+          return (
+            <li key={item.key} data-kind={item.kind}>
+              {href ? (
+                <Link href={href} className={polish.dcCard}>
+                  <span className={polish.dcWho}>
+                    <b>{person?.formalName ?? "Referral"}</b>
+                    <small>{person?.umrn}</small>
+                  </span>
+                  {/* One kind only: the head line already names it, so each card is one line. */}
+                  {kinds.length > 1 || extra > 0 ? (
+                    <span className={polish.dcWhat}>
+                      <StatusGlyph tone="warning" size={8} />
+                      {MISSED_REQUEST_LABELS[item.kind]}
+                      {extra > 0 ? ` · +${extra} more` : ""}
+                    </span>
+                  ) : null}
+                  <span className={polish.dcFor}>{splitDuration(Math.max(0, now - item.since))}</span>
+                </Link>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      {items.length > GRID_LIMIT ? (
+        <ShowMoreRow onClick={() => setAll((current) => !current)} expanded={all} controls={listId}>
+          {all ? "Show fewer" : `Show ${items.length - GRID_LIMIT} more`}
+        </ShowMoreRow>
+      ) : null}
+    </section>
+  );
+}
 
 export function DailyCheckLine() {
   const access = useEffectiveWardAccess();

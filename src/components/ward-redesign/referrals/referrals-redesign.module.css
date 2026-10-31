@@ -232,3 +232,17 @@
     border-inline-start: 0;
   }
 }
+
+/* No side edges (Josh, 31 Oct 2026): the selected row keeps the selected tint with a neutral
+   border, not a coloured stripe on its left. */
+.wrapRows.wrapRows tr:has([aria-pressed="true"]) {
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+}
+/* The overdue row's red left bar goes too; the wait cell's warning glyph and "overdue" carry it. */
+.wrapRows.wrapRows tr > td:first-child::before {
+  display: none;
+}
+/* Review fix 9: the phone card's red left bar goes as well; its "overdue" tag carries it. */
+.wrapRows.wrapRows [data-overdue="true"]::before {
+  display: none;
+}
