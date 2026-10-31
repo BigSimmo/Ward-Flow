@@ -62,8 +62,6 @@ import redesign from "./referrals-redesign.module.css";
 import { getReferralPriority, referralPriorityLabel } from "@/components/ward-management/referrals/referral-priority";
 import {
   BedsReady,
-  DecisionClock,
-  HeroTools,
   REFERRAL_SOURCE_WORDS,
   ReferralPatientTab,
   ReferralTimeline,
@@ -76,7 +74,6 @@ import {
   readyUnitCount,
   referralTimeline,
   wardArm,
-  type MeetingRow,
 } from "@/components/ward-management/referrals/referral-board-parts";
 import styles from "@/components/ward-management/referrals/referrals.module.css";
 import {
@@ -87,12 +84,13 @@ import {
 import { DecidedSection, QueuedSection } from "./referral-board-sections";
 import { WaitRunway } from "./wait-runway";
 import { ReferralAlerts } from "./referral-alerts";
+import { HeroTools, LiveDecisionClock, PanelNav } from "./referral-panel-parts";
+import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import type { ScopedMeetingRow } from "./bed-meeting-sheet";
+import panel from "./referral-panel.module.css";
 
 // The bed meeting, ISBAR and shortcut sheets open only on request, so they load after first render.
-const BedMeetingSheet = dynamic(
-  () => import("@/components/ward-management/referrals/referral-board-sheets").then((m) => m.BedMeetingSheet),
-  { ssr: false },
-);
+const BedMeetingSheet = dynamic(() => import("./bed-meeting-sheet").then((m) => m.BedMeetingSheet), { ssr: false });
 const IsbarSheet = dynamic(
   () => import("@/components/ward-management/referrals/referral-board-sheets").then((m) => m.IsbarSheet),
   { ssr: false },
@@ -479,17 +477,6 @@ function ReferralBoardRedesign({
         : Math.round(
             (decisionMinutes[decisionMinutes.length / 2 - 1]! + decisionMinutes[decisionMinutes.length / 2]!) / 2,
           );
-  // Redesign (Josh, 30 Oct 2026): the median says what it covers, every decided referral with a
-  // decision time, so it is not read as today's.
-  const medianWords =
-    medianDecision === undefined ? undefined : (
-      <>
-        median time to decide <b>{durMinutes(medianDecision)}</b>{" "}
-        {decisionMinutes.length === decidedTotal
-          ? `(all ${decisionMinutes.length} decided)`
-          : `(${decisionMinutes.length} decided)`}
-      </>
-    );
   const nowHour = Math.floor(minuteOfDay(now) / 60);
   const decisionHours = Array.from({ length: 8 }, (_, index) => nowHour - 7 + index).filter((hour) => hour >= 0);
   const decisionsByHour = decisionHours.map((hour) => ({
@@ -501,10 +488,31 @@ function ReferralBoardRedesign({
     () => bedsReadySummary(units, admissions, bedReleases, now),
     [units, admissions, bedReleases, now],
   );
-  const meetingRows: MeetingRow[] = queued.map((referral) => {
-    const person = resolveSubjectPatient(referral, resolverState);
-    return { referral, name: person.formalName, umrn: person.umrn };
-  });
+  // Round 4 (Josh, 31 Oct 2026): the bed meeting list follows access and filters. It keeps to the
+  // header's service (by the referring site), opens on the highlighted referrals, and marks rows
+  // whose destination details this desk may not see.
+  const serviceScope = useServiceScope();
+  const meetingRows: ScopedMeetingRow[] = queued
+    .filter((referral) => serviceScope === null || siteByCode(referral.originSiteCode)?.service === serviceScope)
+    .map((referral) => {
+      const person = resolveSubjectPatient(referral, resolverState);
+      return {
+        referral,
+        name: person.formalName,
+        umrn: person.umrn,
+        restricted: sender.referralFor(referral) !== undefined,
+      };
+    });
+  const meetingHighlightIds = anyHighlight
+    ? new Set(meetingRows.filter((row) => isHighlighted(row.referral)).map((row) => row.referral.id))
+    : undefined;
+  const meetingHighlightLabel =
+    highlight === null
+      ? undefined
+      : highlight === "refused"
+        ? "Refused once"
+        : HIGHLIGHT_LABELS.find(([key]) => key === highlight)?.[1];
+  const meetingScopeLabel = serviceScope ?? "Statewide";
   const selectedPriority = selectedReferral ? getReferralPriority(selectedReferral, now) : undefined;
   // Audit 1 (CS-15, Josh 20 Oct): the toast names the person decided on, and the detail stays on
   // them. A default "first in queue" detail used to slide to the next person, Accept showing, as
@@ -636,10 +644,10 @@ function ReferralBoardRedesign({
     <>
       {referralPresentation(r, sender.referralFor(r)).kind !== "unavailable" &&
       outcomeLabel(r, sender.referralFor(r)) === "Queued" ? (
-        <DecisionClock referral={r} now={now} />
+        <LiveDecisionClock referral={r} now={now} />
       ) : null}
 
-      <dl className={a.strip}>
+      <dl className={cx(a.strip, panel.facts)}>
         <div>
           <dt>From</dt>
           <dd>{siteByCode(r.originSiteCode)?.name ?? r.originSiteCode}</dd>
@@ -658,10 +666,20 @@ function ReferralBoardRedesign({
             </dd>
           </div>
         ) : null}
-        <div data-testid="ward-referral-detail-legal-status">
-          <dt>Legal status</dt>
-          <dd>{r.intake?.legalStatus?.trim() || "Not recorded"}</dd>
-        </div>
+        {(() => {
+          // Round 4: the one place the legal status shows in the panel, amber when it is missing.
+          const legal = r.intake?.legalStatus?.trim();
+          const missing = !legal || /^not recorded$/i.test(legal);
+          return (
+            <div data-testid="ward-referral-detail-legal-status" className={missing ? panel.legalMissing : undefined}>
+              <dt>Legal status</dt>
+              <dd>
+                {missing ? <TriangleAlert size={13} aria-hidden="true" /> : null}
+                {missing ? "Not recorded" : legal}
+              </dd>
+            </div>
+          );
+        })()}
         {/* v10 phone: the facts read as a two by two grid, so the needs get their own cell. */}
         {/* Hidden above the phone by CSS, so screen readers meet it only where it shows. */}
         <div className={a.stripPhone}>
@@ -715,7 +733,13 @@ function ReferralBoardRedesign({
             <ReferralPhoneHero
               count={queued.length}
               oldest={oldestClocks ? durMinutes(oldestClocks.sinceReferral) : undefined}
-              median={medianWords}
+              median={
+                medianDecision === undefined ? undefined : (
+                  <>
+                    decided in <b>{durMinutes(medianDecision)}</b> (median)
+                  </>
+                )
+              }
               overdue={overdueQueued.length}
               tier1={queued.filter((r) => highlightTest("tier1", r, now)).length}
               bedsReady={bedsSummary.total}
@@ -783,39 +807,67 @@ function ReferralBoardRedesign({
               eyebrow="Referrals"
               title={`${queued.length} awaiting decision`}
               titleMeta={
-                <span className={a.heroMeta}>
+                <span className={cx(a.heroMeta, panel.heroMeta)}>
+                  {/* Round 4: shorter. The full median wording stays in its tooltip. */}
                   Oldest <b>{oldestClocks ? durMinutes(oldestClocks.sinceReferral) : "none"}</b>
-                  {medianWords !== undefined ? <span className={a.heroMedian}> · {medianWords}</span> : null}
+                  {medianDecision !== undefined ? (
+                    <span
+                      className={a.heroMedian}
+                      title={`Median time to decide across ${decisionMinutes.length} decided referrals`}
+                    >
+                      {" "}
+                      · decided in <b>{durMinutes(medianDecision)}</b> (median)
+                    </span>
+                  ) : null}
                 </span>
               }
               className={a.heroA}
               // v10: no New referral in the hero. The header's New referral is the page's one primary.
               aside={<LiveChip state="live" onHero />}
               bar={
-                <div className={a.pills} role="group" aria-label="Highlight referrals">
+                <div className={cx(a.pills, panel.pills)} role="group" aria-label="Highlight referrals">
                   {HIGHLIGHT_LABELS.filter(
                     ([key]) => recipientFiltersAvailable || key === "overdue" || key === "tier1",
-                  ).map(([key, label]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      className={a.pill}
-                      aria-pressed={highlight === key}
-                      data-testid={`ward-referral-highlight-${key}`}
-                      onClick={() => {
-                        setHighlight((current) => (current === key ? null : key));
-                      }}
-                    >
-                      <span className={a.pillCount}>{queued.filter((r) => highlightTest(key, r, now)).length}</span>
-                      {key === "overdue" ? <TriangleAlert size={12} aria-hidden="true" /> : null}
-                      {label}
-                    </button>
-                  ))}
+                  ).map(([key, label]) => {
+                    const count = queued.filter((r) => highlightTest(key, r, now)).length;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        className={cx(a.pill, panel.pill)}
+                        aria-pressed={highlight === key}
+                        data-tone={
+                          count === 0
+                            ? undefined
+                            : key === "overdue"
+                              ? "danger"
+                              : key === "tier1"
+                                ? "warning"
+                                : undefined
+                        }
+                        data-empty={count === 0 ? "true" : undefined}
+                        data-testid={`ward-referral-highlight-${key}`}
+                        onClick={() => {
+                          setHighlight((current) => (current === key ? null : key));
+                        }}
+                      >
+                        <span className={a.pillCount}>{count}</span>
+                        {key === "overdue" ? <TriangleAlert size={12} aria-hidden="true" /> : null}
+                        {label}
+                        {highlight === key ? (
+                          <span className={panel.pillX} aria-hidden="true">
+                            <X size={12} aria-hidden="true" />
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
                 </div>
               }
               barAside={
                 <HeroTools
                   overdueCount={overdueQueued.length}
+                  meetingCount={meetingHighlightIds ? meetingHighlightIds.size : meetingRows.length}
                   onNextOverdue={selectNextOverdue}
                   onMeeting={() => setSheet("meeting")}
                 />
@@ -993,21 +1045,21 @@ function ReferralBoardRedesign({
             data-has-selection={selectedReferral ? "true" : "false"}
           >
             {selectedReferral ? (
-              <Card className={cx(styles.v6DetailCard, a.panel)}>
-                <div className={a.panelTop}>
-                  <div className={a.panelHead}>
+              <Card className={cx(styles.v6DetailCard, a.panel, panel.panel)}>
+                <div className={cx(a.panelTop, panel.top)}>
+                  <div className={cx(a.panelHead, panel.head)}>
                     <Avatar name={selectedPatientInfo.displayName} size="lg" decorative />
                     <div className={a.panelWho}>
-                      <h2 className={a.panelName}>
+                      <h2 className={cx(a.panelName, panel.name)}>
                         {/* "Surname, First", as the queue beside it (simplification A8, 19 Oct 2026). */}
                         {selectedPatientInfo.formalName}
                         <span className="sr-only"> {selectedPatientInfo.umrn}</span>
                       </h2>
-                      <p className={a.panelMeta}>
+                      <p className={cx(a.panelMeta, panel.meta)}>
                         {/* Shown, never copied: no UMRN goes on the clipboard (D-71 item 7, 21 Oct 2026). */}
                         <span className={umrnCopyable ? a.mono : undefined}>{selectedUmrn}</span>
                         <span aria-hidden="true">·</span>
-                        <span className={a.truncate}>{demographicLabel(selectedReferral)}</span>
+                        <span>{demographicLabel(selectedReferral)}</span>
                       </p>
                     </div>
                     <span
@@ -1066,15 +1118,6 @@ function ReferralBoardRedesign({
                               Pull the bed
                             </Link>
                           )}
-                          {selectedReferral.patientId && !isPhone ? (
-                            <Link
-                              href={patientHref(selectedReferral.patientId)}
-                              className={buttonClass({ variant: "ghost", size: "sm" })}
-                              data-testid="ward-referral-open-patient"
-                            >
-                              Patient
-                            </Link>
-                          ) : null}
                         </>
                       );
                     })()}
@@ -1089,17 +1132,33 @@ function ReferralBoardRedesign({
                     />
                   </div>
 
+                  {!isPhone ? (
+                    <PanelNav
+                      position={(() => {
+                        const index = queued.findIndex((referral) => referral.id === selectedReferral.id);
+                        return index === -1 ? undefined : index + 1;
+                      })()}
+                      total={queued.length}
+                      onPrevious={() => selectAt(-1)}
+                      onNext={() => selectAt(1)}
+                      onSummary={() => setSheet("summary")}
+                      patientHref={selectedReferral.patientId ? patientHref(selectedReferral.patientId) : undefined}
+                    />
+                  ) : null}
                   {readOnly ? (
                     <p className={a.panelMeta} data-testid="ward-referral-read-only">
                       Read only. The coordinator and the receiving ward answer this referral.
                     </p>
                   ) : null}
-                  <ReferralAlerts
-                    referral={selectedReferral}
-                    readmission={
-                      selectedReadmission ? <ReadmissionFlag flag={selectedReadmission} expandable={false} /> : null
-                    }
-                  />
+                  <div className={panel.alerts}>
+                    <ReferralAlerts
+                      hideLegal
+                      referral={selectedReferral}
+                      readmission={
+                        selectedReadmission ? <ReadmissionFlag flag={selectedReadmission} expandable={false} /> : null
+                      }
+                    />
+                  </div>
                   {!isPhone ? renderDetailFacts(selectedReferral) : null}
 
                   {!isPhone ? (
@@ -1281,21 +1340,6 @@ function ReferralBoardRedesign({
                   </TabPanel>
                 )}
 
-                {!isPhone ? (
-                  <div className={a.panelFoot}>
-                    <span className={a.spacer} />
-                    <SummaryButton onClick={() => setSheet("summary")} />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={ChevronRight}
-                      onClick={() => selectAt(1)}
-                      title="Next referral (J)"
-                    >
-                      Next
-                    </Button>
-                  </div>
-                ) : null}
                 <IsbarSheet
                   open={sheet === "summary"}
                   onClose={() => setSheet(null)}
@@ -1337,6 +1381,9 @@ function ReferralBoardRedesign({
           open={sheet === "meeting"}
           onClose={() => setSheet(null)}
           rows={meetingRows}
+          highlightedIds={meetingHighlightIds}
+          highlightLabel={meetingHighlightLabel}
+          scopeLabel={meetingScopeLabel}
           now={now}
           summary={bedsSummary}
         />
