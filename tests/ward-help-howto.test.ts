@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { looksLikeHelpQuestion } from "@/components/ward-management/help/ward-help-events";
-import { HOW_TOS, askHelp, questionWords } from "@/components/ward-management/help/ward-help-howto";
+import { HOW_TOS, askHelp, closestHowTos, questionWords } from "@/components/ward-management/help/ward-help-howto";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 
 /**
@@ -78,6 +78,19 @@ describe("askHelp", () => {
     expect(forWard.find((match) => match.howTo.id === "pull-bed")?.forThisDesk).toBe(false);
     expect(askHelp("xyzzy plover", "coordinator")).toEqual([]);
     expect(askHelp("how do I", "coordinator")).toEqual([]);
+  });
+
+  it("never points a login at another desk's twin with the same title", () => {
+    const desks = HOW_TOS.find((howTo) => howTo.id === "downtime-paper")?.desks;
+    const paperOnly = Array.isArray(desks) ? desks[0] : undefined;
+    expect(paperOnly).toBeDefined();
+    if (!paperOnly) return;
+    for (const matches of [askHelp("ward flow down", paperOnly), closestHowTos("down", paperOnly, 50)]) {
+      const ids = matches.map((match) => match.howTo.id);
+      expect(ids).toContain("downtime-paper");
+      expect(ids).not.toContain("downtime");
+    }
+    expect(askHelp("ward flow down", "coordinator").map((match) => match.howTo.id)).toContain("downtime");
   });
 
   it("gives the same answers for the same words", () => {

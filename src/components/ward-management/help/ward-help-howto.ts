@@ -917,6 +917,15 @@ export function correctedQuestionWords(query: string): readonly string[] {
 export type HowToMatch = { readonly howTo: HowTo; readonly forThisDesk: boolean };
 
 /**
+ * Drops another desk's how-to when this desk has its own with the same title (the downtime pair),
+ * so no login is pointed at a twin it cannot follow.
+ */
+function withoutOtherDeskTwins<T extends HowToMatch>(matches: readonly T[]): T[] {
+  const ownTitles = new Set(matches.filter((entry) => entry.forThisDesk).map((entry) => entry.howTo.title));
+  return matches.filter((entry) => entry.forThisDesk || !ownTitles.has(entry.howTo.title));
+}
+
+/**
  * The how-tos that answer `query`. A how-to answers when at least half the question's words are
  * in it. Those holding more of the words come first, then this desk's own, then those whose title
  * or keywords hold the words (three times a word in the answer). Ties keep the list's own order,
@@ -945,7 +954,7 @@ export function askHelp(query: string, role: WardTourRole, limit = 6): readonly 
   });
   // An answer far weaker than the best (one shared word such as "bed") is noise, not a lead.
   const best = Math.max(0, ...scored.map((entry) => entry.score));
-  return scored
+  return withoutOtherDeskTwins(scored)
     .filter((entry) => entry.score * 2 >= best)
     .sort(
       (a, b) =>
@@ -962,12 +971,13 @@ export function askHelp(query: string, role: WardTourRole, limit = 6): readonly 
 export function closestHowTos(query: string, role: WardTourRole, limit = 3): readonly HowToMatch[] {
   const words = correctedQuestionWords(query);
   if (words.length === 0) return [];
-  return HOW_TOS.flatMap((howTo, order) => {
+  const scored = HOW_TOS.flatMap((howTo, order) => {
     const { strong, weak } = wordsOf(howTo);
     const score = words.reduce((sum, word) => sum + (strong.has(word) ? 3 : weak.has(word) ? 1 : 0), 0);
     const forThisDesk = howToFor(howTo, role);
     return score ? [{ howTo, forThisDesk, score, order }] : [];
-  })
+  });
+  return withoutOtherDeskTwins(scored)
     .sort((a, b) => b.score - a.score || Number(b.forThisDesk) - Number(a.forThisDesk) || a.order - b.order)
     .slice(0, limit)
     .map(({ howTo, forThisDesk }) => ({ howTo, forThisDesk }));
