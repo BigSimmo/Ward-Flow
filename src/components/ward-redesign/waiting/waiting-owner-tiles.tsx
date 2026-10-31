@@ -33,7 +33,7 @@ export function WaitingOwnerTiles({
       aria-label="Whose move"
       data-ward-primitive="panel"
     >
-      <div className={isPhone ? undefined : styles.ownGrid}>
+      <div className={isPhone ? styles.ownContents : styles.ownGrid}>
         {tiles.map((tile) => {
           const longest = tile.rows.reduce((most, row) => Math.max(most, row.waited), 0);
           const over8 = tile.rows.filter((row) => row.waited >= OVER_8H).length;

@@ -8,7 +8,19 @@
 // countdown. Everything else is today's file.
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import Link from "next/link";
-import { Ban, CircleCheck, Flag, MoonStar, ServerCog, Stethoscope, TriangleAlert, X } from "lucide-react";
+import {
+  Ban,
+  CircleCheck,
+  Flag,
+  Hospital,
+  LayoutDashboard,
+  MoonStar,
+  ServerCog,
+  Stethoscope,
+  TriangleAlert,
+  UserRound,
+  X,
+} from "lucide-react";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { moveWord } from "./waiting-hero-bar";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
@@ -39,7 +51,7 @@ import {
 } from "@/components/ward-management/delays/delays-board-model";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
+import { edHref, movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import styles from "@/components/ward-management/delays/delays-board.module.css";
 import { ago, originLabel } from "@/components/ward-management/delays/delays-board-rows";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
@@ -87,6 +99,14 @@ export function PersonPanel({
   // Round 7 (Josh, 31 Oct 2026): the candidate list shows its first five, then Show more, in place
   // of a small box that scrolled inside the panel.
   const [allCandidates, setAllCandidates] = useState(false);
+  // Round 8 (Josh, 31 Oct 2026): "a lot of information". The panel opens on Summary; the ward
+  // lists sit behind a Wards tab. A new person always opens on Summary.
+  const [tabState, setTabState] = useState<{ id: string; tab: "summary" | "wards" }>({
+    id: movement.id,
+    tab: "summary",
+  });
+  const panelTab = tabState.id === movement.id ? tabState.tab : "summary";
+  const setPanelTab = (tab: "summary" | "wards") => setTabState({ id: movement.id, tab });
   // v10 phone: a journey bar from arrival to now leads the person sheet.
   const isPhonePanel = useIsPhone();
   const pullHolder = units.find((unit) => unit.id === movement.acceptedUnitId);
@@ -237,183 +257,220 @@ export function PersonPanel({
           </div>
         ) : null}
 
+        {/* Round 8: three lines. "From" is already in the header; bed and legal status share one. */}
         <dl className={`${styles.facts} ${polish.pFacts}`}>
           <dt>Last update</dt>
           <dd>
             <Glyph tone={row.silent ? "warning" : undefined} />
             {row.activity === undefined ? "Nothing recorded since arrival" : `${ago(row.quiet)}, ${row.activity.what}`}
           </dd>
-          <dt>Bed needed</dt>
-          <dd>{row.locked ? "A locked bed" : "An open bed suits"}</dd>
-          <dt>Legal status</dt>
-          <dd>{movement.legalStatus}</dd>
-          <dt>From</dt>
-          <dd data-testid="delays-panel-from">{originLabel(movement)}</dd>
+          <dt>Needs</dt>
+          <dd>{`${row.locked ? "A locked bed" : "An open bed"} · ${movement.legalStatus}`}</dd>
           <dt>Stage</dt>
-          <dd data-testid="delays-panel-stage">{stageCopy[movement.stage].label}</dd>
-          <dt>Held by</dt>
-          <dd>{movement.owner}</dd>
+          <dd data-testid="delays-panel-stage">{`${stageCopy[movement.stage].label} · held by ${movement.owner}`}</dd>
         </dl>
 
-        {activeBlocker ? (
-          <p className={`${styles.note} ${polish.pNote}`} data-testid="delays-blocker">
-            <Ban size={14} aria-hidden="true" className={polish.pNoteIcon} />
-            <span>
-              <strong>Blocked:</strong> {blockerText}
-            </span>
-          </p>
-        ) : null}
-        {escalation !== undefined ? (
-          <p className={styles.note} data-testid="delays-escalation">
-            <strong>Escalated {ago(now - escalation.at)}</strong> ({formatInstantWithDay(escalation.at, now)}) to{" "}
-            {escalation.contact}
-            {triedUnits.length === 0 ? (
-              <span data-testid="delays-tried-none">{" · No units recorded"}</span>
-            ) : (
-              <>
-                {" · tried "}
-                {triedUnits.map((unit, index) => (
-                  <span key={unit.id} data-testid="delays-tried-unit">
-                    {index > 0 ? ", " : ""}
-                    {unit.name}
-                  </span>
-                ))}
-              </>
-            )}
-          </p>
-        ) : null}
-
-        <p
-          className={`${styles.note} ${polish.pNote} ${cleared === false ? styles.noteWarn : ""}`}
-          data-testid={`delays-clearance-${movement.id}`}
-        >
-          <Stethoscope size={14} aria-hidden="true" className={polish.pNoteIcon} />
-          <span>
-            <strong>
-              {cleared === undefined ? "Not assessed" : cleared ? "Medically cleared" : "Not medically cleared"}
-            </strong>{" "}
-            {cleared === undefined
-              ? "Nobody has recorded whether this person is fit to travel."
-              : cleared
-                ? "Cleared to travel."
-                : "A bed becoming free does not release this person."}
-          </span>
-        </p>
-
-        <div className={`${styles.sec} ${polish.pSec}`}>
-          <h4 className={styles.h4r}>
+        <div className={polish.pTabs} role="tablist" aria-label="Person details">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={panelTab === "summary"}
+            onClick={() => setPanelTab("summary")}
+          >
+            Summary
+          </button>
+          <button type="button" role="tab" aria-selected={panelTab === "wards"} onClick={() => setPanelTab("wards")}>
             Wards
-            {movement.declines.length > 0 ? (
-              <span className={styles.mut}>{`${movement.declines.length} declined`}</span>
-            ) : null}
-          </h4>
-          {lines.length === 0 ? (
-            <p className={styles.mute}>No ward asked yet</p>
-          ) : (
-            <ul className={styles.wards}>
-              {lines.map((line) => (
-                <li key={`${line.unitId}-${line.text}`}>
-                  <span className={styles.lg}>
-                    <Glyph tone={line.tone} />
-                    <span className={styles.ell}>{line.name}</span>
-                  </span>
-                  <small className={styles.ell}>{line.text}</small>
-                </li>
-              ))}
-            </ul>
-          )}
+            <span className={polish.pTabCount}>
+              {movement.declines.length > 0
+                ? `${movement.declines.length} declined · ${candidates.offerable.length} to ask`
+                : `${candidates.offerable.length} to ask`}
+            </span>
+          </button>
         </div>
 
-        {/* Candidate wards: the coordinator shortlist's own verdicts for the wards not yet asked.
+        <div role="tabpanel" hidden={panelTab !== "summary"} className={polish.pNotes}>
+          {activeBlocker ? (
+            <p className={`${styles.note} ${polish.pNote}`} data-testid="delays-blocker">
+              <Ban size={14} aria-hidden="true" className={polish.pNoteIcon} />
+              <span>
+                <strong>Blocked:</strong> {blockerText}
+              </span>
+            </p>
+          ) : null}
+          {escalation !== undefined ? (
+            <p className={`${styles.note} ${polish.pNote}`} data-testid="delays-escalation">
+              <Flag size={14} aria-hidden="true" className={polish.pNoteIcon} />
+              <span>
+                <strong>Escalated {ago(now - escalation.at)}</strong>
+                {` (${formatInstantWithDay(escalation.at, now)}) to ${escalation.contact}`}
+                {triedUnits.length === 0
+                  ? " · No units recorded"
+                  : ` · tried ${triedUnits.length} ${triedUnits.length === 1 ? "ward" : "wards"}`}
+              </span>
+            </p>
+          ) : null}
+
+          <p
+            className={`${styles.note} ${polish.pNote} ${cleared === false ? styles.noteWarn : ""}`}
+            data-testid={`delays-clearance-${movement.id}`}
+          >
+            <Stethoscope size={14} aria-hidden="true" className={polish.pNoteIcon} />
+            <span>
+              <strong>
+                {cleared === undefined ? "Not assessed" : cleared ? "Medically cleared" : "Not medically cleared"}
+              </strong>{" "}
+              {cleared === undefined
+                ? "Nobody has recorded whether this person is fit to travel."
+                : cleared
+                  ? "Cleared to travel."
+                  : "A bed becoming free does not release this person."}
+            </span>
+          </p>
+        </div>
+
+        <div role="tabpanel" hidden={panelTab !== "wards"} className={polish.pWardsPane}>
+          <div className={`${styles.sec} ${polish.pSec}`}>
+            <h4 className={styles.h4r}>
+              Asked
+              {movement.declines.length > 0 ? (
+                <span className={styles.mut}>{`${movement.declines.length} declined`}</span>
+              ) : null}
+            </h4>
+            {lines.length === 0 ? (
+              <p className={styles.mute}>No ward asked yet</p>
+            ) : (
+              <ul className={styles.wards}>
+                {lines.map((line) => (
+                  <li key={`${line.unitId}-${line.text}`}>
+                    <span className={styles.lg}>
+                      <Glyph tone={line.tone} />
+                      <span className={styles.ell}>{line.name}</span>
+                    </span>
+                    <small className={styles.ell}>{line.text}</small>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Candidate wards: the coordinator shortlist's own verdicts for the wards not yet asked.
             Eligible and overridable wards are both actionable, so neither is collapsed or cut to a
             count (see shortlistCandidates); the list scrolls instead. Wards no reason can buy sit
             behind a disclosure that states how many, each with the gate that blocks it. */}
-        <div className={`${styles.sec} ${polish.pSec}`} data-testid={`delays-candidates-${movement.id}`}>
-          <h4 className={styles.h4r}>
-            Candidate wards <span className={styles.k}>{candidates.offerable.length}</span>
-          </h4>
-          {candidates.offerable.length === 0 ? (
-            <p className={styles.mute}>No other ward could take this person now.</p>
-          ) : (
-            <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that could take this person">
-              {(allCandidates ? candidates.offerable : candidates.offerable.slice(0, CANDIDATE_LIMIT)).map(
-                (candidate) => (
-                  <li key={candidate.unitId}>
-                    <span className={styles.lg}>
-                      <Glyph tone={candidate.tone} />
-                      <span className={styles.ell}>{candidate.name}</span>
-                    </span>
-                    <small>
-                      {candidate.text}
-                      {candidate.waitlist ? ". In catchment, waiting list for a locked bed" : ""}
-                    </small>
-                  </li>
-                ),
-              )}
-            </ul>
-          )}
-          {candidates.offerable.length > CANDIDATE_LIMIT ? (
-            <ShowMoreRow onClick={() => setAllCandidates((current) => !current)} expanded={allCandidates}>
-              {allCandidates ? "Show fewer" : `Show ${candidates.offerable.length - CANDIDATE_LIMIT} more`}
-            </ShowMoreRow>
-          ) : null}
-          {candidates.unavailable.length > 0 ? (
-            <>
-              <button
-                type="button"
-                className={styles.lnk}
-                aria-expanded={unavailableOpen}
-                onClick={() => {
-                  setUnavailableOpen((open) => !open);
-                }}
-                data-testid={`delays-candidates-unavailable-${movement.id}`}
-              >
-                {`${candidates.unavailable.length} ${candidates.unavailable.length === 1 ? "ward cannot" : "wards cannot"} take this person`}
-              </button>
-              {unavailableOpen ? (
-                <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that cannot take this person">
-                  {candidates.unavailable.map((ward) => (
-                    <li key={ward.unitId}>
+          <div className={`${styles.sec} ${polish.pSec}`} data-testid={`delays-candidates-${movement.id}`}>
+            <h4 className={styles.h4r}>
+              Candidate wards <span className={styles.k}>{candidates.offerable.length}</span>
+            </h4>
+            {candidates.offerable.length === 0 ? (
+              <p className={styles.mute}>No other ward could take this person now.</p>
+            ) : (
+              <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that could take this person">
+                {(allCandidates ? candidates.offerable : candidates.offerable.slice(0, CANDIDATE_LIMIT)).map(
+                  (candidate) => (
+                    <li key={candidate.unitId}>
                       <span className={styles.lg}>
-                        <Glyph tone="closed" />
-                        <span className={styles.ell}>{ward.name}</span>
+                        <Glyph tone={candidate.tone} />
+                        <span className={styles.ell}>{candidate.name}</span>
                       </span>
-                      <small>{`Unavailable: ${ward.reason}`}</small>
+                      <small>
+                        {candidate.text}
+                        {candidate.waitlist ? ". In catchment, waiting list for a locked bed" : ""}
+                      </small>
                     </li>
-                  ))}
-                </ul>
-              ) : null}
-            </>
+                  ),
+                )}
+              </ul>
+            )}
+            {candidates.offerable.length > CANDIDATE_LIMIT ? (
+              <ShowMoreRow onClick={() => setAllCandidates((current) => !current)} expanded={allCandidates}>
+                {allCandidates ? "Show fewer" : `Show ${candidates.offerable.length - CANDIDATE_LIMIT} more`}
+              </ShowMoreRow>
+            ) : null}
+            {candidates.unavailable.length > 0 ? (
+              <>
+                <button
+                  type="button"
+                  className={styles.lnk}
+                  aria-expanded={unavailableOpen}
+                  onClick={() => {
+                    setUnavailableOpen((open) => !open);
+                  }}
+                  data-testid={`delays-candidates-unavailable-${movement.id}`}
+                >
+                  {`${candidates.unavailable.length} ${candidates.unavailable.length === 1 ? "ward cannot" : "wards cannot"} take this person`}
+                </button>
+                {unavailableOpen ? (
+                  <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that cannot take this person">
+                    {candidates.unavailable.map((ward) => (
+                      <li key={ward.unitId}>
+                        <span className={styles.lg}>
+                          <Glyph tone="closed" />
+                          <span className={styles.ell}>{ward.name}</span>
+                        </span>
+                        <small>{`Unavailable: ${ward.reason}`}</small>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+
+          {cause === "bed_pull_expired" && pullHolder ? (
+            <Link
+              className={styles.inlineAction}
+              href={unitHref(pullHolder.id)}
+              data-testid={`delays-release-pull-${movement.id}`}
+            >
+              Open {pullHolder.name} to release the bed or set a new pull time limit
+            </Link>
+          ) : null}
+          {movement.declines.length > 0 ? (
+            <Link
+              className={styles.inlineAction}
+              href="/ward-flow"
+              data-testid={`delays-override-${movement.id}`}
+              onClick={() => {
+                setFocusMovementId(movement.id);
+              }}
+            >
+              Override a refusal on the coordinator screen
+            </Link>
           ) : null}
         </div>
-
-        {cause === "bed_pull_expired" && pullHolder ? (
-          <Link
-            className={styles.inlineAction}
-            href={unitHref(pullHolder.id)}
-            data-testid={`delays-release-pull-${movement.id}`}
-          >
-            Open {pullHolder.name} to release the bed or set a new pull time limit
-          </Link>
-        ) : null}
-        {movement.declines.length > 0 ? (
-          <Link
-            className={styles.inlineAction}
-            href="/ward-flow"
-            data-testid={`delays-override-${movement.id}`}
-            onClick={() => {
-              setFocusMovementId(movement.id);
-            }}
-          >
-            Override a refusal on the coordinator screen
-          </Link>
-        ) : null}
       </div>
       {isPhonePanel ? actions : null}
       {/* Q-12: delays with no named person are never dropped, so the note stays while a person is open. */}
       <section aria-label="Delays with no named person" className={`${styles.personSystem} ${polish.pFoot}`}>
         <NoStatewideDelays />
       </section>
+      {/* Round 8: the places to go next, pinned at the panel's foot on a laptop. */}
+      {isPhonePanel ? null : (
+        <nav className={polish.pLinks} aria-label="Open elsewhere">
+          <Link
+            href="/ward-flow"
+            onClick={() => {
+              setFocusMovementId(movement.id);
+            }}
+          >
+            <LayoutDashboard size={14} aria-hidden="true" />
+            Coordinator
+          </Link>
+          {movement.originEdId ? (
+            <Link href={edHref(movement.originEdId)}>
+              <Hospital size={14} aria-hidden="true" />
+              ED board
+            </Link>
+          ) : null}
+          {movement.patientId ? (
+            <Link href={patientHref(movement.patientId)}>
+              <UserRound size={14} aria-hidden="true" />
+              Record
+            </Link>
+          ) : null}
+        </nav>
+      )}
     </section>
   );
 }
