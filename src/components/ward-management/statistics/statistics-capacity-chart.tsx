@@ -491,7 +491,7 @@ function CapacityChartView({
           </div>
           {rows.length === 0 ? (
             <div className={styles.empty}>
-              <strong>No matching wards</strong>
+              <strong>{groupBy === "hospital" ? "No matching hospitals" : "No matching wards"}</strong>
               <Button size="sm" variant="ghost" onClick={reset}>
                 Clear filters
               </Button>

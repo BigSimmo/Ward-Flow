@@ -4,7 +4,7 @@
 
 ## Where you start
 
-My list
+Home
 
 ## Jobs you do most
 

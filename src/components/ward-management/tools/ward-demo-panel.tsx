@@ -44,14 +44,13 @@ function ExecutiveDemoPanel() {
       <p className={styles.note} data-testid="ward-tools-demo-off">
         {DEMO_CONTROLS_OFF}
       </p>
-      <div className={styles.scenarioGrid} role="radiogroup" aria-label="Demo scenario">
+      <div className={styles.scenarioGrid} role="group" aria-label="Demo scenario">
         {WARD_SCENARIOS.map((scenario) => (
           <button
             key={scenario}
             type="button"
-            role="radio"
             disabled
-            aria-checked={report?.sampleScenario === scenario}
+            aria-current={report?.sampleScenario === scenario ? "true" : undefined}
             className={styles.scenarioCard}
           >
             <strong>{scenarioLabels[scenario]}</strong>
@@ -187,13 +186,12 @@ function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
           {DEMO_CONTROLS_OFF}
         </p>
       )}
-      <div className={styles.scenarioGrid} role="radiogroup" aria-label="Demo scenario">
+      <div className={styles.scenarioGrid} role="group" aria-label="Demo scenario">
         {pickable.map((candidate) => (
           <button
             key={candidate}
             type="button"
-            role="radio"
-            aria-checked={scenario === candidate}
+            aria-current={scenario === candidate ? "true" : undefined}
             className={styles.scenarioCard}
             {...lock}
             onClick={() => setConfirming({ kind: "load", scenario: candidate })}

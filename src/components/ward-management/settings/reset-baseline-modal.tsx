@@ -11,6 +11,9 @@ import { MORNING_ROLLUP_TIME_MINUTES } from "../ward-model";
 import {
   DUE_SOON_MINUTES,
   DUE_SOON_URGENT_MINUTES,
+  FORECAST_ED_RISK_LEAD_MINUTES,
+  FORECAST_SHORT_ALERT_BEDS,
+  FORECAST_WORSE_ALERT_BEDS,
   TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   TRANSPORT_BOOKED_TARGET_MINUTES,
   WARD_ANSWER_TARGET_MINUTES,
@@ -21,6 +24,10 @@ function shortDuration(minutes: number): string {
   if (minutes < 60) return `${minutes}m`;
   const rest = minutes % 60;
   return rest === 0 ? `${minutes / 60}h` : `${Math.floor(minutes / 60)}h ${rest}m`;
+}
+
+function bedsText(beds: number): string {
+  return `${beds} ${beds === 1 ? "bed" : "beds"}`;
 }
 
 function clock24(minutes: number): string {
@@ -43,6 +50,10 @@ function restoredValues(): readonly (readonly [string, string])[] {
       shortDuration(defaults.transferAcceptanceTargetMinutes ?? TRANSFER_ACCEPTANCE_TARGET_MINUTES),
     ],
     ["Transport booked", shortDuration(defaults.transportBookedTargetMinutes ?? TRANSPORT_BOOKED_TARGET_MINUTES)],
+    // The three forecast alerts are rules too: a restore saves them at their defaults (bug list row 1).
+    ["Bed type short tomorrow", bedsText(defaults.forecastShortBeds ?? FORECAST_SHORT_ALERT_BEDS)],
+    ["Access target forecast", shortDuration(defaults.forecastEdLeadMinutes ?? FORECAST_ED_RISK_LEAD_MINUTES)],
+    ["Forecast got worse", bedsText(defaults.forecastWorseBeds ?? FORECAST_WORSE_ALERT_BEDS)],
     ["Theme", "Auto"],
     ["Glare", "Off"],
     ["Sidebar", "Full"],
@@ -100,7 +111,7 @@ export function ResetBaselineModal({ isOpen, onClose, onConfirm, pending = false
 
         <div className={styles.modalBody}>
           <p id="reset-modal-desc">
-            This saves all nine rules at their defaults and records the change in the audit. It also resets this
+            This saves all twelve rules at their defaults and records the change in the audit. It also resets this
             browser&rsquo;s theme, glare, sidebar and buzz sound. You can undo it from the toast.
           </p>
 
