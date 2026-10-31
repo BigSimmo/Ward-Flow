@@ -84,7 +84,7 @@ const ED_CARD: TourTarget = { sel: '[data-testid^="ward-ed-card-"]' };
 const ED_ROW: TourTarget = { sel: '[data-testid^="ward-ed-patient-"]' };
 const STATS_NAV: TourTarget = { sel: '[data-testid="ward-statistics-nav"]' };
 const TRENDS: TourTarget = { sel: '[data-testid="ward-statistics-session-trends"]' };
-const MISMATCH: TourTarget = { sel: 'section[aria-label="Where the mismatch is"]' };
+const MISMATCH: TourTarget = { sel: '[data-testid="capacity-mismatch"]' };
 
 function count(value: number, one: string, many: string): string {
   return `${value} ${value === 1 ? one : many}`;
@@ -553,22 +553,22 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Your daily work",
           "mismatch",
           MISMATCH,
-          "Where the mismatch is",
+          "Mismatch",
           "For each kind of bed: how many are spare, how many people are waiting and how many beds fit them.",
         ),
         step(
           "Your daily work",
           "meeting",
-          { sel: '[data-testid="bed-meeting-sheet-open"]' },
+          { sel: '[data-testid="capacity-bed-meeting"]' },
           "The bed meeting",
-          "Bed meeting sheet and Meeting agenda prepare the meeting. Open on TV puts it on the meeting room screen.",
+          "Bed meeting prints the meeting sheet and opens the agenda. Open on TV puts it on the meeting room screen.",
         ),
         step(
           "Finding your way",
           "map",
-          { sel: 'section[aria-label="Bed map"]' },
+          { sel: "#capacity-bed-map" },
           "Bed map",
-          "Every ward with ready, occupied and closed beds. Switch between Grid, Rows and Table.",
+          "Every ward with ready, occupied and closed beds. Switch between Grid and Rows.",
         ),
         step(
           "Finding your way",
@@ -887,7 +887,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Your daily work",
           "mismatch",
           MISMATCH,
-          "Where the mismatch is",
+          "Mismatch",
           "For each kind of bed, how many people are waiting and how many beds fit them.",
         ),
         phoneDock(
