@@ -141,7 +141,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           `Discharges, bed releases, as of ${formatSheetMoment(base.now, base.dayZero)}. ` +
           `${toWorkCount} to work now of ${openReleases.length} open: ${groups.blocked.length} held up, ` +
           `${groups.confirmed.length} confirmed, ${groups.expected.length} expected · ` +
-          `${groups["discharged-today"].length} discharged in last 24h. ` +
+          `${groups["discharged-today"].length} discharged today. ` +
           `${base.datePassed.length} past the ward's date, ${base.bedDaysPast} bed days.`;
         copyTextToClipboard(text).then(
           () => base.setCopyNote("Summary copied."),
@@ -571,7 +571,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 {population === "releases" ? "Bed releases" : "Admission records"}: {counts.blocked} held up,{" "}
                 {counts.confirmed} confirmed, {counts.expected} expected, {counts.departed} departed.
               </span>
-              <span aria-live="polite" className={pageStyles.shownCountBadge}>
+              {/* Not a live region: the screen-reader summary above (discharge-pipeline-announcement)
+                  already speaks these counts as one sentence, so this badge is for the eye only. */}
+              <span className={pageStyles.shownCountBadge}>
                 {/* Device audit, 11 Oct 2026: the hero says 53 open and the list holds 57, so the
                     list names both parts rather than a bare "57 shown". */}
                 {population === "records" && guarded.status === "denied"

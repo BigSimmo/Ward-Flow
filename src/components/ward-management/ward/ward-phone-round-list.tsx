@@ -15,7 +15,7 @@ import styles from "./ward-home-tab.module.css";
 import { WalkRoundRowMarks, WalkRoundTick, type WalkRoundMark } from "./ward-walk-round";
 
 /** Beds the phone round list shows before Show more. */
-export const ROUND_FIRST = 8;
+const ROUND_FIRST = 8;
 
 /** The parts of a Home bed row the phone list draws. */
 export type PhoneRoundRow = {
