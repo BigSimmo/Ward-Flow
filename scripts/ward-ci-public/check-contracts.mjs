@@ -369,6 +369,18 @@ function requireWorkflow(source) {
     "Check for an identical tree already verified on its pull request",
     "node scripts/ward-ci-public/main-reuse.mjs",
   );
+  // The tree each pull request run tests, read back by main reuse (main-reuse.mjs TESTED_TREE_TITLE)
+  // through the plan job's check run annotations, which needs checks: read and nothing more.
+  exact(
+    "plan",
+    "Record the tested tree",
+    `echo "::notice title=Ward tested tree::$(git rev-parse 'HEAD^{tree}')"`,
+    expression("github.event_name == 'pull_request'"),
+  );
+  assert.match(
+    jobs.get("reuse"),
+    /^ {4}permissions:\n {6}contents: read\n {6}pull-requests: read\n {6}actions: read\n {6}checks: read\n {4}outputs:\n/mu,
+  );
   assert.match(jobs.get("secret-scan"), /GITLEAKS_SHA256: [0-9a-f]{64}\n/u);
   assert.match(jobs.get("secret-scan"), /echo "\$\{GITLEAKS_SHA256\}  \$\{archive\}" \| sha256sum -c -/u);
   const scan = step("secret-scan", "Scan git history for secrets");
