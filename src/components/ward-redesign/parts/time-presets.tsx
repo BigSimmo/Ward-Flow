@@ -33,7 +33,7 @@ import styles from "./time-presets.module.css";
 const OFFSETS = [0, 15, 30, 60] as const;
 
 /** A minute of the day as "HH:MM", wrapping past midnight. */
-export function clockText(minute: number): string {
+function clockText(minute: number): string {
   const day = ((minute % 1440) + 1440) % 1440;
   return `${String(Math.floor(day / 60)).padStart(2, "0")}:${String(day % 60).padStart(2, "0")}`;
 }

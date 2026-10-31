@@ -191,8 +191,8 @@ function OperationalCompareScreen({
   );
 }
 
-export type ComparisonUnit = Pick<Unit, "id" | "name" | "siteCode" | "beds" | "lockedBeds"> & { cohort: string };
-export type ComparisonDepartment = Pick<EmergencyDepartment, "id" | "name" | "siteCode"> & { openable?: boolean };
+type ComparisonUnit = Pick<Unit, "id" | "name" | "siteCode" | "beds" | "lockedBeds"> & { cohort: string };
+type ComparisonDepartment = Pick<EmergencyDepartment, "id" | "name" | "siteCode"> & { openable?: boolean };
 type ComparisonStatistics = {
   averageLengthOfStayDays: number | null;
   readyToLeaveCannot: StatisticsCount;
