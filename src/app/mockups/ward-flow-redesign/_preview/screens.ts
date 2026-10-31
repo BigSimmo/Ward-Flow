@@ -116,7 +116,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     appPath: "/ward-flow/ward/rph-adult-secure/answer",
   },
   { slug: "settings", label: "Settings", group: "Places and records", appPath: "/ward-flow/settings" },
-  { slug: "sign-in", label: "Sign in", group: "Places and records", appPath: "/ward-flow-sign-in", bare: true },
   { slug: "statistics-compare", label: "Compare", group: "Statistics pages", appPath: "/ward-flow/statistics/compare" },
   { slug: "statistics-list", label: "Ward list", group: "Statistics pages", appPath: "/ward-flow/statistics/wards" },
   {

@@ -32,7 +32,6 @@ export const MOCKUP_PAGE_SLUGS = [
   "add-patient",
   "ward-answer",
   "settings",
-  "sign-in",
   "statistics-compare",
   "statistics-list",
   "statistics-unit",
