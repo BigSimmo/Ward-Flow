@@ -380,6 +380,12 @@
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
 }
+.helpStatic.helpStatic {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.helpStatic:hover {
+  background: none;
+}
 .helpTitle {
   font-weight: 600;
 }
