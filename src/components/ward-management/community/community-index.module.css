@@ -60,7 +60,8 @@
 
 .heroChips {
   display: flex;
-  flex-wrap: nowrap;
+  /* Core pages review (31 Oct 2026): the longer title leaves less room, so the two chips wrap rather than clip. */
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   min-width: 0;
@@ -113,7 +114,8 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow: hidden;
+  /* Core pages review (31 Oct 2026): clip, not hidden, so the letter rail and column heading can stick to the page scroll. */
+  overflow: clip;
 }
 
 .resultLine {
@@ -155,6 +157,10 @@
 }
 
 .azRail {
+  /* Core pages review (31 Oct 2026): the list uses the page scroll, so the letter rail sticks under the bar instead. */
+  position: sticky;
+  top: var(--ward-sticky-top, 4.5rem);
+  align-self: start;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -192,24 +198,10 @@
   --cti-row-cols: minmax(0, 1fr) 4.5rem 3.5rem 10rem 1rem;
 
   min-width: 0;
-  max-height: 46rem;
-  overflow: auto;
 }
 
-/* Desktop: the A to Z card is a rail (ward-shell.module.css, data-wf-rail, from 1025px). The body
-   under its heading fills the card, and only the list scrolls inside it, so the letter rail and
-   the column heading stay in view instead of the list stopping at a fixed 46rem. */
-@media (min-width: 1025px) {
-  .directoryBody {
-    grid-template-rows: minmax(0, 1fr);
-  }
-
-  .listWrap {
-    height: 100%;
-    min-height: 0;
-    max-height: none;
-  }
-}
+/* Core pages review (31 Oct 2026): the A to Z no longer scrolls inside a fixed box. The whole list sits in the page and
+   the page scrolls, so nothing is left blank below it. */
 
 .listWrap:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
@@ -218,7 +210,7 @@
 
 .columnHead {
   position: sticky;
-  top: 0;
+  top: var(--ward-sticky-top, 4.5rem);
   z-index: 2;
   display: grid;
   grid-template-columns: 2.5rem var(--cti-row-cols);
@@ -247,7 +239,7 @@
 /* v10: the letter row is the shared GroupHead (letter variant); this wrapper keeps the jump target. */
 .letterHeading {
   margin: 0;
-  scroll-margin-top: 2.5rem;
+  scroll-margin-top: calc(var(--ward-sticky-top, 4.5rem) + 2.5rem);
 }
 
 /* Desktop and tablet: the letter sits in the gutter beside its names, as in the mockup. */
@@ -401,95 +393,17 @@
   font-family: var(--wf-mono);
 }
 
-.lookupBody,
 .familyBody {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
 }
 
-.picks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-2);
-}
+/* ---- Core pages review: the suburb lookup as a full-width bar above the list ---- */
 
-.picks [aria-pressed="true"] {
-  border-color: var(--wf-ink-1);
-  background: var(--wf-selected);
-}
-
-.lookupResult {
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-md);
-}
-
-.lookupList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.lookupRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line-2);
-}
-
-.lookupName {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.suburbBar {
+  grid-column: 1 / -1;
   min-width: 0;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.lookupName a {
-  color: var(--wf-ink-1);
-  text-decoration: none;
-}
-
-.lookupName a:hover {
-  text-decoration: underline;
-}
-
-.lookupMeta {
-  color: var(--wf-ink-2);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.lookupAside {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  white-space: nowrap;
-}
-
-.oneOf {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.lookupNote {
-  margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  color: var(--wf-ink-1);
-  font-weight: 600;
-}
-
-.lookupList + .lookupNote {
-  border-top: 0;
-}
-
-.lookupList:last-child .lookupRow:last-child {
-  border-bottom: 0;
 }
 
 .family {
@@ -609,89 +523,6 @@
   gap: var(--wf-s-1);
   min-width: 2rem;
   color: var(--wf-ink-2);
-}
-
-/* ---- Catchment guide drawer ---- */
-
-.guide {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-4);
-  color: var(--wf-ink-1);
-  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.guideSection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  padding-bottom: var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line-2);
-}
-
-.guideSection:last-child {
-  border-bottom: 0;
-}
-
-.guideHead {
-  margin: 0;
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.guideList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  margin: 0;
-}
-
-.guideList div {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  white-space: nowrap;
-}
-
-.guideList dt {
-  color: var(--wf-ink-2);
-}
-
-.guideList dd {
-  margin: 0;
-  font-weight: 600;
-}
-
-.guideLegend {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.guideLegend li {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  white-space: nowrap;
-}
-
-.guideLegend span {
-  color: var(--wf-ink-2);
-}
-
-.guideActions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-}
-
-.guideActions > * {
-  justify-content: flex-start;
 }
 
 /* ---- Phone ---- */
@@ -1087,18 +918,13 @@
   }
 }
 
-/* v10 phone second pass (11 Oct 2026): the hero's Guide and Raise referral share a row with
- * Raise referral taking the rest; the view switch spans the width; the search is a 44px pill; the
- * health services and Reads alike are separate pill chips, the picked one edged in the accent. */
+/* v10 phone second pass (11 Oct 2026): the view switch spans the width; the search is a 44px pill;
+ * the health services and Reads alike are separate pill chips, the picked one edged in the accent.
+ * (31 Oct 2026: the hero's Guide and Raise referral are Home's hero pills, phone-rows.module.css.) */
 @media (max-width: 48rem) {
   .heroActions {
     width: 100%;
     gap: var(--wf-s-2);
-  }
-
-  .heroActions > [data-testid="community-action-raise-referral"] {
-    flex: 1 1 auto;
-    justify-content: center;
   }
 
   .phonePanes :global([role="radiogroup"]) {
@@ -1140,8 +966,10 @@
 
   .toolbar > :global([role="radiogroup"]) > :global([role="radio"][aria-checked="true"]),
   .toolbar > button[aria-pressed="true"] {
-    border-color: var(--wf-accent);
-    box-shadow: inset 0 0 0 1px var(--wf-accent);
+    /* No side edges (Josh, 31 Oct 2026): the picked chip takes the selected tint with a neutral
+       border, never an accent-coloured edge. */
+    border-color: var(--wf-line);
+    background: var(--wf-selected);
   }
 
   .toolbar > :global([role="radiogroup"]) > :global([role="radio"]) > span:last-child {
@@ -1173,120 +1001,25 @@
   }
 }
 
-/* v10 phone Suburb pane: no card chrome around the lookup; a pill search; the suburbs as one
- * sideways row of pill chips; the contested note above the teams, which sit in one card. */
+/* v10 phone panes run the full width. The Suburb pane's lookup draws no card chrome of its own
+ * (the shared card's `plainOnPhone`, D-91). */
 @media (max-width: 48rem) {
   .phonePanes > div,
   .phonePanes :global([role="radiogroup"]) {
     flex: 1 1 auto;
     width: 100%;
   }
-
-  [data-pane="suburb"] > .sideCard {
-    overflow: visible;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: none;
-    box-shadow: none;
-  }
-
-  [data-pane="suburb"] > .sideCard > :first-child {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  [data-pane="suburb"] .lookupBody {
-    padding: 0;
-  }
-
-  [data-pane="suburb"] .lookupBody > :first-child {
-    min-height: 44px;
-    border-radius: var(--wf-r-ctl);
-  }
-
-  .picks {
-    flex-wrap: nowrap;
-    margin: 0 calc(-1 * var(--wf-s-3));
-    padding: 2px var(--wf-s-3);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .picks::-webkit-scrollbar {
-    display: none;
-  }
-
-  .picks > button {
-    flex: 0 0 auto;
-    min-height: 44px;
-    padding: 0 12px;
-    border: 1px solid var(--wf-line-2);
-    border-radius: var(--wf-r-seg-item);
-    background: var(--wf-surface);
-    color: var(--wf-ink-1);
-    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-    box-shadow: none;
-  }
-
-  .picks > button[aria-pressed="true"] {
-    border-color: var(--wf-accent);
-    background: var(--wf-surface);
-    box-shadow: inset 0 0 0 1px var(--wf-accent);
-  }
-
-  .lookupResult {
-    display: flex;
-    flex-direction: column;
-    gap: var(--wf-s-3);
-    border: 0;
-    border-radius: 0;
-  }
-
-  .lookupResult > .lookupNote {
-    order: -1;
-    padding: 0;
-    font-weight: 400;
-  }
-
-  .lookupList {
-    overflow: hidden;
-    border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-lg);
-    background: var(--wf-surface);
-    box-shadow: var(--wf-e1);
-  }
-
-  .lookupRow {
-    min-height: 60px;
-    border-bottom-color: var(--wf-line);
-  }
-
-  .lookupList .lookupRow:last-child {
-    border-bottom: 0;
-  }
-
-  .lookupAside {
-    flex-direction: row;
-    align-items: center;
-  }
 }
 
 /* The 44px chips reach a 48px hit area. */
 @media (max-width: 48rem) {
   .toolbar > :global([role="radiogroup"]) > :global([role="radio"]),
-  .toolbar > button[aria-pressed],
-  .picks > button {
+  .toolbar > button[aria-pressed] {
     position: relative;
   }
 
   .toolbar > :global([role="radiogroup"]) > :global([role="radio"])::after,
-  .toolbar > button[aria-pressed]::after,
-  .picks > button::after {
+  .toolbar > button[aria-pressed]::after {
     content: "";
     position: absolute;
     inset: -2px 0;
@@ -1331,12 +1064,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-}
-
-/* v10 phone catchment guide: the pinned "Look up a suburb" runs the width of the sheet foot. */
-.guideFootAction {
-  width: 100%;
-  justify-content: center;
 }
 
 /* Device audit 11 Oct 2026, phone: the letter heads stick under the view switch while 64 names
@@ -1385,24 +1112,6 @@
 
   .note span {
     white-space: normal;
-  }
-}
-
-/* Site review 12 Oct 2026, phone only: a team name in the postcode lookup is a 44px target, and
-   "Show in list" keeps to one line beside it. */
-@media (max-width: 48rem) {
-  .lookupName a {
-    display: flex;
-    align-items: center;
-    min-height: 3rem;
-  }
-
-  .lookupAside {
-    flex: none;
-  }
-
-  .lookupAside button {
-    white-space: nowrap;
   }
 }
 
