@@ -478,6 +478,8 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     const legalReason = page.getByTestId(`ward-ed-transport-legal-reason-${movementId}`);
     if (await legalReason.isVisible()) await legalReason.selectOption("treating_team_confirmed");
     await page.getByTestId(`ward-ed-transport-estimated-time-${movementId}`).fill("14:30");
+    // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
+    await page.getByTestId(`ward-ed-transport-estimated-day-today-${movementId}`).check();
     await page.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
 
     const handoverButton = edScreen.getByTestId(`ward-ed-handover-${movementId}`);

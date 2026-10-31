@@ -17,6 +17,9 @@ import type { TransportBookingAnswers } from "@/components/ward-management/ward-
 /*
  * A34 (26 Oct 2026): one transport booking form for the ED, community, patient page and transit
  * deck. These pin the rules every screen now shares, on synthetic records only.
+ *
+ * Josh, 31 Oct 2026 (yes): the form starts with nothing chosen, neither Today nor Tomorrow and
+ * neither legal answer, with Legal now shown as plain text under the legal question.
  */
 
 afterEach(cleanup);
@@ -62,18 +65,73 @@ function answerTheCall() {
   fireEvent.click(screen.getByTestId(id("escort", "no")));
   fireEvent.change(screen.getByTestId(id("cad")), { target: { value: "CAD-48213" } });
   fireEvent.change(screen.getByTestId(id("time")), { target: { value: "11:15" } });
+  fireEvent.click(screen.getByTestId(id("day", "today")));
+  fireEvent.click(screen.getByTestId(id("legal", "involuntary")));
 }
 
 describe("the one transport booking form", () => {
-  it("fills legal status from Legal now, and nothing else", () => {
+  it("starts with nothing chosen, and shows Legal now as plain text to check against", () => {
     render(<Harness record={INVOLUNTARY} onSubmit={vi.fn()} />);
-    expect(screen.getByTestId(id("legal", "involuntary"))).toBeChecked();
+    expect(screen.getByTestId(id("legal", "involuntary"))).not.toBeChecked();
+    expect(screen.getByTestId(id("legal", "voluntary"))).not.toBeChecked();
+    expect(screen.getByTestId(id("day", "today"))).not.toBeChecked();
+    expect(screen.getByTestId(id("day", "tomorrow"))).not.toBeChecked();
+    for (const preset of within(screen.getByTestId(id("presets"))).getAllByRole("button")) {
+      expect(preset).toHaveAttribute("aria-pressed", "false");
+    }
     expect(screen.getByTestId(id("escort", "yes"))).not.toBeChecked();
     expect(screen.getByTestId(id("escort", "no"))).not.toBeChecked();
     expect(screen.getByTestId(id("provider"))).toHaveValue("");
     expect(screen.getByTestId(id("cad"))).toHaveValue("");
     expect(screen.getByTestId(id("time"))).toHaveValue("");
-    expect(screen.getByTestId(id("left"))).toHaveTextContent("3 answers left: provider, estimated time, escort answer");
+    expect(screen.getByTestId(id("legal"))).toHaveTextContent("Legal now: Involuntary inpatient.");
+    // The answers left sit at the top of the form, announced as they change.
+    const left = screen.getByTestId(id("left"));
+    expect(left).toHaveAttribute("role", "status");
+    expect(left).toHaveTextContent(
+      "5 answers left: provider, estimated time, today or tomorrow, escort answer, legal status",
+    );
+    expect(left.parentElement?.firstElementChild).toBe(left);
+    expect(screen.getByTestId(id("confirm"))).toHaveAttribute(
+      "title",
+      expect.stringContaining("choose today or tomorrow"),
+    );
+  });
+
+  it("asks for the day as its own answer, and its link moves to Today", () => {
+    render(<Harness record={INVOLUNTARY} onSubmit={vi.fn()} />);
+    fireEvent.change(screen.getByTestId(id("provider")), { target: { value: "Ward escort" } });
+    fireEvent.change(screen.getByTestId(id("time")), { target: { value: "11:15" } });
+    const left = screen.getByTestId(id("left"));
+    expect(left).toHaveTextContent("3 answers left: today or tomorrow, escort answer, legal status");
+    fireEvent.click(within(left).getByRole("button", { name: "Add today or tomorrow" }));
+    expect(screen.getByTestId(id("day", "today"))).toHaveFocus();
+  });
+
+  it("names the person once around it, says Escort needed, and puts Cancel before Save", () => {
+    const onCancel = vi.fn();
+    render(
+      <TransportBookingForm
+        answers={BLANK_TRANSPORT_BOOKING}
+        onAnswers={vi.fn()}
+        legalReason=""
+        onLegalReason={vi.fn()}
+        record={INVOLUNTARY}
+        patientName="PERSON, Synthetic"
+        now={NOW}
+        testIds={{ prefix: "t", suffix: "WF-1" }}
+        onSubmit={vi.fn()}
+        onCancel={onCancel}
+      />,
+    );
+    expect(screen.getByLabelText("Who is collecting")).toBe(screen.getByTestId(id("provider")));
+    const escort = within(screen.getByTestId(id("escort"))).getByText("Escort needed?", { exact: false });
+    expect(escort.textContent).toBe("Escort needed? For PERSON, Synthetic.");
+    const cancel = screen.getByTestId(id("cancel"));
+    const save = screen.getByTestId(id("confirm"));
+    expect(cancel.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(cancel);
+    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
   it("leaves legal status blank when the record holds none", () => {
@@ -179,7 +237,9 @@ describe("the one transport booking form", () => {
     expect(screen.getByTestId(id("cad"))).toHaveValue("");
     fireEvent.click(screen.getByTestId(id("escort", "yes")));
     fireEvent.change(screen.getByTestId(id("time")), { target: { value: "11:15" } });
-    expect(screen.queryByTestId(id("left"))).toBeNull();
+    fireEvent.click(screen.getByTestId(id("day", "today")));
+    fireEvent.click(screen.getByTestId(id("legal", "involuntary")));
+    expect(screen.getByTestId(id("left"))).toHaveTextContent("Every answer given. Check them, then save.");
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ provider: "Ward escort", cadNumber: "" }));
   });
@@ -191,9 +251,11 @@ describe("the one transport booking form", () => {
     fireEvent.change(screen.getByTestId(id("provider")), { target: { value: "Ambulance (St John)" } });
     fireEvent.click(screen.getByTestId(id("escort", "yes")));
     fireEvent.change(screen.getByTestId(id("time")), { target: { value: "11:15" } });
+    fireEvent.click(screen.getByTestId(id("day", "today")));
+    fireEvent.click(screen.getByTestId(id("legal", "involuntary")));
     expect(screen.getByTestId(id("cad"))).toHaveValue("");
     expect(screen.getByTestId(id("cad-to-follow"))).toHaveTextContent("CAD to follow");
-    expect(screen.queryByTestId(id("left"))).toBeNull();
+    expect(screen.getByTestId(id("left"))).toHaveTextContent("Every answer given. Check them, then save.");
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ provider: "Ambulance (St John)", cadNumber: "" }));
   });
@@ -204,6 +266,8 @@ describe("the one transport booking form", () => {
     fireEvent.change(screen.getByTestId(id("provider")), { target: { value: "Family or carer" } });
     fireEvent.click(screen.getByTestId(id("escort", "no")));
     fireEvent.change(screen.getByTestId(id("time")), { target: { value: "11:15" } });
+    fireEvent.click(screen.getByTestId(id("day", "today")));
+    fireEvent.click(screen.getByTestId(id("legal", "involuntary")));
     fireEvent.change(screen.getByTestId(id("cad")), { target: { value: "TBC" } });
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).not.toHaveBeenCalled();
