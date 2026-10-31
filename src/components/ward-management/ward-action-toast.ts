@@ -1,7 +1,7 @@
 "use client";
 
 import { type Dispatch, type SetStateAction, useCallback, useMemo, useRef } from "react";
-import { type ToastInput, useOptionalToast } from "@/components/wf/toast-provider";
+import { type ToastInput, useOptionalToast } from "@/components/wf";
 
 /**
  * Walk-through WT-10 (26 Oct 2026): a screen's own action toast showed a refusal with the same
