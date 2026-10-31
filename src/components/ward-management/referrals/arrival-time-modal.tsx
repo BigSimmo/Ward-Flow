@@ -11,7 +11,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, minuteOfDay, minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
@@ -19,6 +19,7 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+import { TimePresets } from "@/components/wf";
 import styles from "./arrival-time-modal.module.css";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
@@ -93,16 +94,13 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   const cadFromBooking = movement.arrivalDetails?.trackingNumber === undefined && bookedCad !== undefined;
   const [trackingNumber, setTrackingNumber] = useState(movement.arrivalDetails?.trackingNumber ?? bookedCad ?? "");
   // The ETA is the recorded one, else the booking's estimate, else blank. Nothing is guessed.
-  const [presetEta, setPresetEta] = useState<number | undefined>(
-    movement.arrivalDetails?.estimatedArrivalAt ?? liveJob?.estimatedAt,
-  );
+  const recordedEta = movement.arrivalDetails?.estimatedArrivalAt ?? liveJob?.estimatedAt;
   const etaFromBooking = movement.arrivalDetails === undefined && liveJob?.estimatedAt !== undefined;
-  const [activePreset, setActivePreset] = useState<string | null>(null);
   const [etaText, setEtaText] = useState("");
   const [etaDay, setEtaDay] = useState<"today" | "tomorrow">("today");
   const typedEta = etaText.trim() ? instantFromEstimatedTimeInputs(etaText, etaDay, now) : undefined;
   const etaTypedBadly = etaText.trim() !== "" && typedEta === undefined;
-  const etaMinutes = etaText.trim() ? typedEta : presetEta;
+  const etaMinutes = etaText.trim() ? typedEta : recordedEta;
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const pending = useRef(false);
@@ -167,15 +165,15 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
     }
   }
 
-  const etaPresets = [
-    { label: "Now", offset: 0 },
-    { label: "+15m", offset: 15 },
-    { label: "+30m", offset: 30 },
-    { label: "+1h", offset: 60 },
-    { label: "+2 hours", offset: 120 },
-    { label: "+3 hours", offset: 180 },
-    { label: "+4 hours", offset: 240 },
-  ];
+  // D-91 (Josh, 31 Oct 2026, "starting with ED expected arrival"): the kit's time buttons (Now, +15m,
+  // +30m, +1h) write "HH:MM" from the board clock into the typed box, in place of this dialog's own
+  // row of seven presets. Nothing is filled until a button is pressed (D-71), the person can type
+  // over it, and a time that lands past midnight is tomorrow's, so the day follows.
+  const pickEta = (hhmm: string) => {
+    setEtaText(hhmm);
+    const picked = minuteOfDayFromClockText(hhmm);
+    setEtaDay(picked !== undefined && picked < minuteOfDay(now) ? "tomorrow" : "today");
+  };
 
   return (
     <div
@@ -277,36 +275,16 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
           </div>
 
           <div className={styles.etaField}>
-            <div id={`${baseId}-eta-presets-label`} className={styles.label}>
+            <div className={styles.label}>
               Estimated time of arrival (ETA):{" "}
               <strong>{etaMinutes === undefined ? "Not set" : `${formatInstantWithDay(etaMinutes, now)} AWST`}</strong>
-              {etaFromBooking && !etaText.trim() && activePreset === null ? " (from the transport booking)" : null}
-            </div>
-
-            <div className={styles.presets} role="group" aria-labelledby={`${baseId}-eta-presets-label`}>
-              {etaPresets.map((preset) => (
-                <button
-                  key={preset.label}
-                  type="button"
-                  disabled={saving}
-                  onClick={() => {
-                    setPresetEta(now + preset.offset);
-                    setActivePreset(preset.label);
-                    setEtaText("");
-                  }}
-                  className={styles.preset}
-                  data-active={activePreset === preset.label ? "true" : undefined}
-                  aria-pressed={activePreset === preset.label}
-                >
-                  {preset.label}
-                </button>
-              ))}
+              {etaFromBooking && !etaText.trim() ? " (from the transport booking)" : null}
             </div>
           </div>
 
           <div className={styles.field}>
             <label htmlFor={`${baseId}-eta-time-input`} className={styles.label}>
-              Or type the ETA
+              Type the ETA
             </label>
             <input
               id={`${baseId}-eta-time-input`}
@@ -318,11 +296,14 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
               value={etaText}
               aria-invalid={etaTypedBadly || undefined}
               aria-describedby={etaTypedBadly ? `${baseId}-eta-time-problem` : undefined}
-              onChange={(e) => {
-                setEtaText(e.target.value);
-                setActivePreset(null);
-              }}
+              onChange={(e) => setEtaText(e.target.value)}
               className={styles.control}
+            />
+            <TimePresets
+              label="Estimated time of arrival"
+              boardMinuteOfDay={minuteOfDay(now)}
+              onPick={pickEta}
+              className={styles.presets}
             />
             {etaTypedBadly ? <small id={`${baseId}-eta-time-problem`}>Type the time as 14:40 or 1440.</small> : null}
             <label htmlFor={`${baseId}-eta-day-select`} className={styles.label}>
