@@ -135,9 +135,8 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       const trackingInput = screen.getByLabelText("CAD or tracking number");
       fireEvent.change(trackingInput, { target: { value: "RFDS-9912" } });
 
-      // Click +2 hours preset
-      const plus2hBtn = screen.getByRole("button", { name: /\+2 Hours/i });
-      fireEvent.click(plus2hBtn);
+      // The kit's time buttons (Now, +15m, +30m, +1h) replaced the seven presets (ED board redesign).
+      fireEvent.click(screen.getByRole("button", { name: /^\+1h/u }));
 
       // Submit
       const confirmBtn = screen.getByTestId("save-arrival-plan-button");

@@ -113,12 +113,13 @@ describe("list order lines", () => {
   it("the ED board table is named for the Sort it is in", () => {
     inProvider(<EdScreen edId="rph-ed" />);
     expect(screen.getByRole("table", { name: "Emergency department board, longest in ED first" })).toBeInTheDocument();
-    const sort = screen.getByRole("combobox", { name: /Sort/u });
-    fireEvent.change(sort, { target: { value: "name" } });
+    // The sort is the kit's Segmented now (ED board redesign, 31 Oct 2026), not a select.
+    const sort = screen.getByRole("radiogroup", { name: "Sort patients" });
+    fireEvent.click(within(sort).getByRole("radio", { name: "Patient name" }));
     expect(
       screen.getByRole("table", { name: "Emergency department board, A to Z by patient name" }),
     ).toBeInTheDocument();
-    fireEvent.change(sort, { target: { value: "current" } });
+    fireEvent.click(within(sort).getByRole("radio", { name: "Current order" }));
     expect(screen.getByRole("table", { name: "Emergency department board, in current order" })).toBeInTheDocument();
   });
 
