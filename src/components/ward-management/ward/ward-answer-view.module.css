@@ -664,7 +664,7 @@
   color: inherit;
   width: 100%;
   box-sizing: border-box;
-  min-height: 48px;
+  min-height: 2.5rem;
   align-content: center;
   justify-content: center;
 }
@@ -1105,9 +1105,18 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Kit phone size (Josh, 31 Oct 2026: "no 48px controls"): drawn 40px, with an invisible cover
+     above and below for the 48px tap floor. */
   .btn {
-    min-height: var(--ward-tap, 48px);
+    position: relative;
+    min-height: var(--wf-phone-pill-h);
     padding: 0 1rem;
+  }
+
+  .btn::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 
   .declineOption {
@@ -1677,17 +1686,16 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .decisionArea > button {
-    min-height: var(--spacing-tap, 3rem);
-  }
-
-  /* Kit phone size (Josh, 31 Oct 2026: "no 48px controls"): the square is drawn 40px and an
-     invisible cover above and below keeps the 48px tap floor, as the kit's phone pills do. */
+  /* Kit phone size (Josh, 31 Oct 2026: "no 48px controls"): Accept, Decline and the bed squares
+     are drawn 40px, and an invisible cover above and below keeps the 48px tap floor, as the kit's
+     phone buttons and pills do. */
+  .decisionArea > button,
   .bedCell {
     position: relative;
     min-height: var(--wf-phone-pill-h);
   }
 
+  .decisionArea > button::after,
   .bedCell::after {
     content: "";
     position: absolute;
@@ -1774,7 +1782,8 @@
   .capacityInput {
     flex: 1 1 auto;
     min-width: 0;
-    min-height: var(--spacing-tap, 3rem);
+    /* The kit's phone field height (44px), not 48px. */
+    min-height: var(--wf-touch, 2.75rem);
   }
 
   .capacityRow > button {
@@ -2195,8 +2204,9 @@ details[open] > summary > .phoneFoldChevron {
 
   .decisionArea > button {
     justify-content: center;
-    /* DA-19 (design audit): the project's 48 px touch size, not 44 px. */
-    min-height: var(--spacing-tap, 3rem);
+    /* Drawn at the kit's 40px phone size with a 48px invisible cover (Josh, 31 Oct 2026). */
+    position: relative;
+    min-height: var(--wf-phone-pill-h);
     border-radius: var(--wf-r-ctl);
   }
 }
@@ -2303,7 +2313,8 @@ details[open] > summary > .phoneFoldChevron {
   display: flex;
   align-items: center;
   gap: var(--wf-s-3);
-  min-height: var(--spacing-tap, 3rem);
+  /* The kit's choice row height (44px), not 48px (Josh, 31 Oct 2026). */
+  min-height: var(--wf-touch, 2.75rem);
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
@@ -2353,10 +2364,18 @@ details[open] > summary > .phoneFoldChevron {
   margin-top: 5px;
 }
 
+/* Drawn at the kit's 40px phone size; the cover keeps the 48px tap floor (Josh, 31 Oct 2026). */
 .phoneWaitlist > button {
+  position: relative;
   width: 100%;
-  min-height: var(--spacing-tap, 3rem);
+  min-height: var(--wf-phone-pill-h);
   border-radius: var(--wf-r-ctl);
+}
+
+.phoneWaitlist > button::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
 }
 
 .phoneAcceptFacts {
@@ -2428,7 +2447,8 @@ details[open] > summary > .phoneFoldChevron {
 }
 
 .phoneSheetInput {
-  min-height: var(--spacing-tap, 3rem);
+  /* The kit's phone field height (44px), not 48px. */
+  min-height: var(--wf-touch, 2.75rem);
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
@@ -2551,12 +2571,21 @@ details[open] > summary > .phoneFoldChevron {
   }
 }
 
-/* DR-05: Accept, Decline and Confirm decline keep the owner's 48 px floor on any touch screen,
- * touch tablets included, not only in the phone width block above. */
+/* DR-05: Accept, Decline and Confirm decline keep the 48 px tap floor on any touch screen, touch
+ * tablets included, but are drawn at the kit's 40px with an invisible cover (Josh, 31 Oct 2026:
+ * "no 48px controls"). */
 @media (pointer: coarse) {
   .decisionArea > button,
   .declineForm button[type="submit"] {
-    min-height: var(--spacing-tap, 3rem);
+    position: relative;
+    min-height: var(--wf-phone-pill-h);
+  }
+
+  .decisionArea > button::after,
+  .declineForm button[type="submit"]::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 }
 
