@@ -52,7 +52,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { HubScreen } from "@/components/ward-management/hub/hub-screen";
+import { GroupList, HubScreen } from "@/components/ward-management/hub/hub-screen";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { allUnits, edById, NOW_ANCHOR, unitById, wardSites } from "@/components/ward-management/ward-sites";
 import { MINUTES_PER_DAY, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -91,7 +91,7 @@ const listed = (name: string) => results().queryByText(name);
 function expandAll() {
   for (let round = 0; round < 50; round += 1) {
     const folded = Array.from(resultsList().querySelectorAll<HTMLButtonElement>('button[aria-expanded="false"]'));
-    const more = results().queryAllByRole("button", { name: /^show more/i });
+    const more = results().queryAllByRole("button", { name: /^show \d+ more$/i });
     const next = folded[0] ?? more[0];
     if (next === undefined) return;
     fireEvent.click(next);
@@ -954,5 +954,33 @@ describe("Ward Flow Master Search Hub — the preview and Enter follow what the 
     const name = previewName();
     expect(name).not.toBe("");
     expect(listed(name), `the previewed team "${name}" is not on the list`).toBeInTheDocument();
+  });
+});
+
+describe("Ward Flow Master Search Hub — a group folds only when two or more rows would be hidden", () => {
+  const fixture = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({ id: `fixture-${index + 1}`, name: `Fixture place ${index + 1}` }));
+  const renderGroup = (count: number) =>
+    render(
+      <GroupList
+        id="fixture-group"
+        entries={fixture(count) as never}
+        renderRow={(entry) => <li key={entry.id}>{entry.name}</li>}
+        selectedId={undefined}
+      />,
+    );
+
+  it("shows a group of nine in full, with no Show more", () => {
+    renderGroup(9);
+    expect(screen.getAllByRole("listitem")).toHaveLength(9);
+    expect(screen.queryByRole("button", { name: /^Show/u })).toBeNull();
+  });
+
+  it("folds a group of ten to eight with Show 2 more, which opens the rest", () => {
+    renderGroup(10);
+    expect(screen.getAllByRole("listitem")).toHaveLength(8);
+    fireEvent.click(screen.getByRole("button", { name: "Show 2 more" }));
+    expect(screen.getAllByRole("listitem")).toHaveLength(10);
+    expect(screen.queryByRole("button", { name: /^Show/u })).toBeNull();
   });
 });

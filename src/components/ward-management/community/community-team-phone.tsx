@@ -16,6 +16,7 @@ import {
   SrOnly,
   StatusGlyph,
   buttonClass,
+  foldHidden,
   type PhoneRowAction,
   type WfTone,
   useWfBandBleed,
@@ -95,21 +96,13 @@ type InfoSheet = "reach" | "duty" | "samples";
 const LIST_ROWS_SHOWN = 8;
 
 /**
- * Josh, 31 Oct 2026 (12:09 UTC): a list folds only when two or more rows would be hidden, so it
- * never says "Show 1 more"; nine rows show in full.
+ * One list group's rows: the first eight, then Show more for the rest, so a long list stays short. The
+ * kit's `foldHidden` folds only when two or more rows would be hidden (Josh, answer 21), so nine
+ * rows show in full and there is never "Show 1 more".
  */
-const FOLD_HIDES_AT_LEAST = 2;
-
-/** How many items a list of `count` hides behind Show more when it shows `shown` (0 when it does not fold). */
-function communityListHiddenCount(count: number, shown: number): number {
-  const hidden = count - shown;
-  return hidden >= FOLD_HIDES_AT_LEAST ? hidden : 0;
-}
-
-/** One list group's rows: the first eight, then Show more for the rest, so a long list stays short. */
 function PhoneGroupRows({ rows, label }: { rows: CommunityPhoneRow[]; label: string }) {
   const [open, setOpen] = useState(false);
-  const hidden = communityListHiddenCount(rows.length, LIST_ROWS_SHOWN);
+  const hidden = foldHidden(rows.length, LIST_ROWS_SHOWN);
   const shown = open || hidden === 0 ? rows : rows.slice(0, LIST_ROWS_SHOWN);
   return (
     <div className={css.card}>
@@ -333,7 +326,7 @@ export function CommunityWorthAttention({
   "data-testid"?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const hidden = communityListHiddenCount(items.length, ATTENTION_SHOWN);
+  const hidden = foldHidden(items.length, ATTENTION_SHOWN);
   const shown = open || hidden === 0 ? items : items.slice(0, ATTENTION_SHOWN);
   return (
     <section className={css.section} aria-label="Worth attention" data-testid={testId}>

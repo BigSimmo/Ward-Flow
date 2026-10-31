@@ -62,7 +62,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
 import styles from "./ward-index.module.css";
-import { OTHER_SITE_CARDS, OtherSitesMore, SiteHead } from "./ward-index-site-desk";
+import { OtherSitesMore, SiteHead, otherSitesFolded } from "./ward-index-site-desk";
 
 /**
  * All wards (v10). One hero band with the ready-bed answer, the statewide occupancy ring and the
@@ -415,7 +415,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const [otherOpen, setOtherOpen] = useState(false);
   const ownOrdered = ordered.filter((row) => isOwn(row.unit));
   const otherOrdered = ordered.filter((row) => !isOwn(row.unit));
-  const otherShown = otherOpen || isFiltered ? otherOrdered : otherOrdered.slice(0, OTHER_SITE_CARDS);
+  const otherShown =
+    otherOpen || isFiltered ? otherOrdered : otherOrdered.slice(0, otherSitesFolded(otherOrdered.length));
   const otherMore = (
     <OtherSitesMore
       shown={otherShown.length}
