@@ -2,9 +2,9 @@
 
 import { Button } from "@/components/wf";
 
-import compare from "./statistics-compare-redesign.module.css";
+import compare from "./statistics-compare.module.css";
 
-/** Redesign: each chart lists its first eight rows, the rest behind Show all. */
+/** each chart lists its first eight rows, the rest behind Show all. */
 export const FIRST_ROWS = 8;
 
 export function ShowAllRow({

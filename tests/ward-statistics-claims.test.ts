@@ -97,6 +97,8 @@ const PRESENTATION_RETIRED_PAGE_CLAIM_IDS = new Set([
 ]);
 const RETIRED_PAGE_CLAIM_IDS = new Set([
   ...PRESENTATION_RETIRED_PAGE_CLAIM_IDS,
+  // Compare's own chooser went with D-91 (Josh, 31 Oct 2026); the one finder is on the hub page.
+  "statistics-compare-screen/chooser/a-site-code-may-resolve-to-nothing",
   "statistics-screen/bed-readiness/confirming-the-discharge-overwrites-it",
   "statistics-screen/bed-readiness/blocking-the-bed-overwrites-it",
   "statistics-screen/bed-readiness/clearing-the-block-overwrites-it",
@@ -382,16 +384,18 @@ describe("the model-claims register", () => {
     ).toBe(EXPECTED_MODEL_CLAIMS);
     const retired = MODEL_CLAIMS.filter((claim) => claim.retiredPageProse !== undefined);
     expect(retired.map((claim) => claim.id).sort()).toEqual([...RETIRED_PAGE_CLAIM_IDS].sort());
-    expect(retired).toHaveLength(52);
-    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(25);
+    expect(retired).toHaveLength(53);
+    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(24);
     for (const claim of retired) {
       expect(claim.retiredPageProse?.date).toBe(
         PRESENTATION_RETIRED_PAGE_CLAIM_IDS.has(claim.id)
           ? "2026-10-07"
-          : claim.id === "statistics-compare-screen/chooser/one-dynamic-route-serves-every-ward" ||
-              claim.id === "statistics-compare-screen/chooser/another-serves-every-department"
-            ? "2026-10-02"
-            : "2026-09-13",
+          : claim.id === "statistics-compare-screen/chooser/a-site-code-may-resolve-to-nothing"
+            ? "2026-10-31"
+            : claim.id === "statistics-compare-screen/chooser/one-dynamic-route-serves-every-ward" ||
+                claim.id === "statistics-compare-screen/chooser/another-serves-every-department"
+              ? "2026-10-02"
+              : "2026-09-13",
       );
       expect(claim.retiredPageProse?.reason.trim()).not.toBe("");
       expect(

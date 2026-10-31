@@ -66,7 +66,9 @@ it("keeps a historical selected week and its honest occupied-time label when the
   });
 
   expect(screen.getByTestId("ward-weekly-phone")).toBeInTheDocument();
-  expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent("Mon 5 Oct to Sun 11 Oct");
+  // The phone hero names the week; the line under the week switch says only when it was made.
+  expect(document.body).toHaveTextContent("Mon 5 Oct to Sun 11 Oct");
+  expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent(/^Generated /);
   expect(screen.getByTestId("ward-weekly-period")).toHaveTextContent("Mon, 5 Oct 2026, 00:00 AWST (inclusive)");
   expect(screen.getByTestId("ward-weekly-occupancy")).toHaveTextContent(historicalPercent!);
   expect(screen.queryByText("Average in use, this week so far")).not.toBeInTheDocument();

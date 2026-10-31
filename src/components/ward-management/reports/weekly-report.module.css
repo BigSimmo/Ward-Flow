@@ -1,5 +1,5 @@
 /*
- * Weekly operations report, redesigned: declines and overrides in one card, a sentence where there
+ * Weekly operations report: declines and overrides in one card, a sentence where there
  * is not enough history, and the pilot measures as one table beside a small panel for the measures
  * counted outside Ward Flow. Tokens only; the report's own module still sets tables and print.
  */
@@ -97,10 +97,12 @@
   font-weight: 600;
 }
 
-/* Phone: the week switch meets the 48 px touch floor. */
-.phoneSeg.phoneSeg :is(a, button) {
-  height: 48px;
-  min-height: 48px;
+/* The exact period line: the phone already gives the week in the hero and under the week switch,
+   so the line is hidden on a phone screen only. Print keeps it at every width. */
+@media screen and (max-width: 48rem) {
+  .phoneScreenHidden {
+    display: none;
+  }
 }
 
 @media (max-width: 64rem) {

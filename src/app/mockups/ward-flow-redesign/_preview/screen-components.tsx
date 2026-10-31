@@ -66,19 +66,6 @@ const AddPatientPage = dynamic<MockupPageProps>(() =>
 const SettingsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/settings/settings-page").then((module) => module.SettingsPage),
 );
-const StatisticsComparePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/statistics-compare/statistics-compare-page").then(
-    (module) => module.StatisticsComparePage,
-  ),
-);
-const StatisticsListPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/statistics-list/statistics-list-page").then((module) => module.StatisticsListPage),
-);
-const StatisticsWeeklyPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/statistics-weekly/statistics-weekly-page").then(
-    (module) => module.StatisticsWeeklyPage,
-  ),
-);
 const AsWardSettingsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ward-settings/as-ward-settings-page").then(
     (module) => module.AsWardSettingsPage,
@@ -112,9 +99,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   patient: PatientNowBackdrop,
   "add-patient": AddPatientPage,
   settings: SettingsPage,
-  "statistics-compare": StatisticsComparePage,
-  "statistics-list": StatisticsListPage,
-  "statistics-weekly": StatisticsWeeklyPage,
   "as-ward-settings": AsWardSettingsPage,
   "as-ed-home": AsEdHomePage,
   "as-executive-settings": AsExecutiveSettingsPage,

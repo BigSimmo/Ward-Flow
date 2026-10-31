@@ -62,9 +62,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/ward-flow/people/196zcp24w5t0" },
   { slug: "add-patient", label: "Add a patient", group: "Places and records", appPath: "/ward-flow/people/new" },
   { slug: "settings", label: "Settings", group: "Places and records", appPath: "/ward-flow/settings" },
-  { slug: "statistics-compare", label: "Compare", group: "Statistics pages", appPath: "/ward-flow/statistics/compare" },
-  { slug: "statistics-list", label: "Ward list", group: "Statistics pages", appPath: "/ward-flow/statistics/wards" },
-  { slug: "statistics-weekly", label: "Weekly", group: "Statistics pages", appPath: "/ward-flow/statistics/weekly" },
   {
     slug: "as-ward-settings",
     label: "Settings",
@@ -154,7 +151,6 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
 
 /** Prefix routes: any address under these opens the one example drawn for them. */
 const PREFIX_SCREENS: readonly (readonly [prefix: string, slug: string])[] = [
-  ["/ward-flow/statistics/", "statistics-list"],
   ["/ward-flow/ward/", "ward"],
   ["/ward-flow/ed/", "ed-board"],
   ["/ward-flow/people/", "patient"],

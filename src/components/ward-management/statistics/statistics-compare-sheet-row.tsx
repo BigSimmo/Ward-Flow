@@ -4,15 +4,16 @@
  * Compare's phone "Compare two wards" row: a copy of the shared `PhoneSheetRow` and `PhoneNavRow`
  * (`ward-management/statistics/statistics-phone-parts.tsx`) whose second line wraps in full. The
  * shared row cuts that line with "…", which hid the second ward's name on a 390 phone (a phone has
- * no hover). Build note: the real build lets the shared row's second line wrap and deletes this copy.
+ * no hover). It goes once the shared row's second line wraps (statistics-phone-parts.tsx is shared by
+ * every Statistics page, so that change is left to its own pull request).
  */
 import { useState, type ReactNode } from "react";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 
 import { IconTile, PhoneSheet } from "@/components/wf";
-import { phoneBodyStyles as styles } from "@/components/ward-management/statistics/statistics-phone-parts";
+import { phoneBodyStyles as styles } from "./statistics-phone-parts";
 
-import compare from "./statistics-compare-redesign.module.css";
+import compare from "./statistics-compare.module.css";
 
 /** A nav row whose target is a bottom sheet; its title and its one line wrap rather than cut. */
 export function CompareSheetRow({

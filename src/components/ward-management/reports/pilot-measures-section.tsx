@@ -3,13 +3,14 @@
 import { useMemo, type ReactNode } from "react";
 import { BedDouble, ClipboardCheck, Clock, NotebookPen, Route, Truck, UserX } from "lucide-react";
 
+import { tableClasses } from "@/components/wf";
 import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import { StatCard } from "@/components/ward-management/statistics/statistics-hero";
-import { PhoneCard, PhoneFacts, PhoneGroup } from "@/components/ward-management/statistics/statistics-phone-parts";
+import { StatCard } from "../statistics/statistics-hero";
+import { PhoneCard, PhoneFacts, PhoneGroup } from "../statistics/statistics-phone-parts";
 
 import type { ExecutiveReportingWeek } from "../statistics/executive-statistics-contract";
 import {
@@ -26,6 +27,7 @@ import {
 } from "./pilot-measures";
 import type { ReportWeek } from "./weekly-report";
 import styles from "./reports.module.css";
+import weekly from "./weekly-report.module.css";
 
 type Figure = { id: string; label: string; value: ReactNode; note?: string; testId?: string };
 type ReportCount = StatisticsCount;
@@ -110,18 +112,25 @@ function Card({
       </PhoneCard>
     );
   }
+  // on a wider screen each measure is a group of rows in one table, a row per figure.
   return (
-    <StatCard title={title} icon={icon} meta={meta} data-testid={testId}>
-      <dl className={styles.figures}>
-        {figures.map((figure) => (
-          <div key={figure.id} className={styles.figure}>
-            <dt>{figure.label}</dt>
-            <dd data-testid={figure.testId}>{figure.value}</dd>
-            {figure.note ? <dd className={styles.figureNote}>{figure.note}</dd> : null}
-          </div>
-        ))}
-      </dl>
-    </StatCard>
+    <tbody data-testid={testId} className={weekly.measureGroup}>
+      {figures.map((figure, index) => (
+        <tr key={figure.id}>
+          {index === 0 ? (
+            <th scope="rowgroup" rowSpan={figures.length} className={weekly.measureName}>
+              <span className={weekly.measureTitle}>{title}</span>
+              <span className={weekly.measureMeta}>{meta}</span>
+            </th>
+          ) : null}
+          <td>{figure.label}</td>
+          <td className={styles.num} data-testid={figure.testId}>
+            {figure.value}
+          </td>
+          <td className={styles.muted}>{figure.note ?? ""}</td>
+        </tr>
+      ))}
+    </tbody>
   );
 }
 
@@ -243,18 +252,6 @@ export function PilotMeasuresView({
       ]}
     />,
     <Card
-      key="paper"
-      isPhone={isPhone}
-      icon={NotebookPen}
-      title="Counted on paper"
-      meta="Measures 2 and 4"
-      testId="ward-pilot-paper"
-      figures={[
-        { id: "calls", label: "Calls per placed referral", value: "Paper tally" },
-        { id: "safety", label: "Wrong-patient and lost changes", value: "Incident route" },
-      ]}
-    />,
-    <Card
       key="held"
       isPhone={isPhone}
       icon={Clock}
@@ -358,6 +355,18 @@ export function PilotMeasuresView({
     };
   });
 
+  // the two measures counted outside Ward Flow are said in words, not set as figures.
+  const outside = (
+    <ul className={weekly.outsideList} data-testid="ward-pilot-paper">
+      <li>
+        <b>Calls per placed referral</b> (measure 2) are counted on a paper tally.
+      </li>
+      <li>
+        <b>Wrong-patient and lost changes</b> (measure 4) are counted through the incident route.
+      </li>
+    </ul>
+  );
+
   const disclosure = (
     <p className={styles.disclosure}>
       The pilot&apos;s four agreed measures come first, then supporting figures, all counted from the times this
@@ -374,7 +383,11 @@ export function PilotMeasuresView({
         <h2 id="ward-pilot-heading" className={styles.sectionHeading}>
           Pilot measures
         </h2>
-        {cards}
+        {cards.slice(0, 2)}
+        <PhoneCard icon={NotebookPen} title="Counted outside Ward Flow" aside="Measures 2 and 4">
+          {outside}
+        </PhoneCard>
+        {cards.slice(2)}
         <PhoneGroup title="Where the time goes" aside="Typical time per step">
           <PhoneFacts
             flush
@@ -397,23 +410,43 @@ export function PilotMeasuresView({
       <h2 id="ward-pilot-heading" className={styles.sectionHeading}>
         Pilot measures
       </h2>
-      <div className={styles.grid3}>{cards.slice(0, 3)}</div>
-      <div className={styles.grid3}>{cards.slice(3, 6)}</div>
-      <div className={styles.grid3}>
-        {cards.slice(6)}
-        <StatCard title="Where the time goes" icon={Route} meta="Typical per step" data-testid="ward-pilot-steps">
-          <ul className={styles.reasons}>
-            {stepRows.map((row) => (
-              <li key={row.id}>
-                <span>
-                  {row.label}
-                  <span className={styles.stepNote}> · {row.note}</span>
-                </span>
-                <span className={styles.num}>{row.typical}</span>
-              </li>
-            ))}
-          </ul>
+      <div className={weekly.pilotGrid}>
+        <StatCard title="Measures this week" icon={ClipboardCheck} meta="Agreed measures, then supporting">
+          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Pilot measures, scrollable table">
+            <table className={`${tableClasses.table} ${styles.table} ${weekly.measureTable}`}>
+              <caption className={styles.srOnly}>Pilot measures for the week, synthetic</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Measure</th>
+                  <th scope="col">Figure</th>
+                  <th scope="col" className={styles.num}>
+                    Value
+                  </th>
+                  <th scope="col">Detail</th>
+                </tr>
+              </thead>
+              {cards}
+            </table>
+          </div>
         </StatCard>
+        <div className={weekly.pilotSide}>
+          <StatCard title="Counted outside Ward Flow" icon={NotebookPen} meta="Measures 2 and 4">
+            {outside}
+          </StatCard>
+          <StatCard title="Where the time goes" icon={Route} meta="Typical per step" data-testid="ward-pilot-steps">
+            <ul className={styles.reasons}>
+              {stepRows.map((row) => (
+                <li key={row.id}>
+                  <span>
+                    {row.label}
+                    <span className={styles.stepNote}> · {row.note}</span>
+                  </span>
+                  <span className={styles.num}>{row.typical}</span>
+                </li>
+              ))}
+            </ul>
+          </StatCard>
+        </div>
       </div>
       {disclosure}
     </section>

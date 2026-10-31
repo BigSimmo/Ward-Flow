@@ -651,46 +651,6 @@
     ],
     "keep": "No input fields, the right-hand action list with ticks and crosses, and the synthetic notice."
   },
-  "statistics-compare": {
-    "role": "Wards and EDs ranked against each other, with the network mean marked.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**\"Open a unit\" repeats the menu** as a full grid of 22 ward buttons."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "Open a unit becomes a search button in the statistics tab row, as on the main Statistics mockup."
-      },
-      {
-        "text": "Both charts show the first eight with \"Show all\", and mark wards more than 1 SD above the mean."
-      }
-    ],
-    "keep": "Chart and Data, the measure switches, Pinned wards and CSV."
-  },
-  "statistics-list": {
-    "role": "Every ward (or ED, team or service) in one sortable table. One template serves all four lists.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "The page works well. The ward list is long and the filter chips wrap onto two lines."
-      },
-      {
-        "devices": ["All"],
-        "text": "**The Teams list is nearly empty**: 63 of 64 teams show \"Nobody in a bed\"."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "Filter chips on one row. Services after the first two collapse with \"Show more\"."
-      },
-      {
-        "text": "On the Teams list, teams with nobody in a bed should fold into one \"63 teams with nobody in a bed\" row. Not mocked separately."
-      }
-    ],
-    "keep": "Every column and the By service and One list views."
-  },
   "statistics-unit": {
     "role": "One ward's statistics: bed map by length of stay, discharges, referrals and the admission roster. The ED, team and service pages share the frame.",
     "issues": [
@@ -712,35 +672,6 @@
       }
     ],
     "keep": "Change ward and the next and previous arrows, Export the figures, the roster with CSV."
-  },
-  "statistics-weekly": {
-    "role": "The weekly operations report for the pilot measures.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**\"Paper tally\" and \"Incident route\" are set in large monospace**, as if they were figures."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "\"Not known\" is shown the same way, as a big value."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "Empty Declines and Overrides take two full cards each saying \"None recorded\"."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**Measures counted outside Ward Flow sit in their own small panel**, as plain words."
-      },
-      {
-        "text": "\"Not enough history yet\" is a sentence, not a figure."
-      },
-      {
-        "text": "Declines and overrides share one card. Pilot measures become one table."
-      }
-    ],
-    "keep": "The week picker, Print, the period line and every measure."
   },
   "pop-alerts": {
     "role": "The Alerts drawer: the alerts on every page, without leaving it.",

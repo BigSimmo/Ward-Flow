@@ -136,7 +136,7 @@ describe("Weekly executive aggregate adoption", () => {
       for (const title of [
         "Referral to arrival",
         "Bed figures on time",
-        "Counted on paper",
+        "Counted outside Ward Flow",
         "Request to bed pulled",
         "Missed requests",
         "Bed pulls",
