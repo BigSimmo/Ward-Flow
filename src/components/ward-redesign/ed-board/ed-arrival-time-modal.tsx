@@ -35,31 +35,11 @@ import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failu
  * Late when an arrival plan exists, now is more than the late-arrival grace period past that
  * time, and the person has not been marked arrived. Reads only fields already on the movement.
  */
-export function isArrivalLate(movement: Movement, now: number): boolean {
+function isArrivalLate(movement: Movement, now: number): boolean {
   const estimatedArrivalAt = movement.arrivalDetails?.estimatedArrivalAt;
   if (estimatedArrivalAt === undefined) return false;
   if (movement.stage === "arrived") return false;
   return now > estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES;
-}
-
-export function arrivalModeLabel(mode: ArrivalMode | undefined): string {
-  return mode ? ARRIVAL_MODE_LABELS[mode] : "Not recorded";
-}
-
-export function arrivalEtaLabel(estimatedArrivalAt: number | undefined, now: number): string {
-  return estimatedArrivalAt === undefined ? "Not recorded" : formatInstantWithDay(estimatedArrivalAt, now);
-}
-
-/**
- * A referrer can set or edit the ward arrival plan once a bed is held or they
- * are already moving, or when a plan is already recorded. Arrived and closed
- * journeys are not offered a new plan.
- */
-export function canSetArrivalPlan(movement: Movement): boolean {
-  if (movement.stage === "arrived") return false;
-  if (movement.closure) return false;
-  if (movement.arrivalDetails) return true;
-  return movement.stage === "pulled" || movement.stage === "handover_ready" || movement.stage === "moving";
 }
 
 /** The booked provider as an arrival mode, when it is one of the shared travel words; blank otherwise. */

@@ -20,7 +20,7 @@ export function legalDetailAsTyped(movements: readonly Movement[], now: Instant)
 }
 
 /** The typed time of a passed legal form, or undefined for any other alert. */
-export function legalEndedAt(entry: AgedEntry): Instant | undefined {
+function legalEndedAt(entry: AgedEntry): Instant | undefined {
   return alertKindOf(entry.item.id) === "legal" ? entry.item.dueAt : undefined;
 }
 

@@ -69,7 +69,7 @@ import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/wa
 import { TierKey } from "@/components/ward-management/tier-key";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 /** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
-export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
+function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
   if (unitIds.length === 1) {
     const name = units.find((unit) => unit.id === unitIds[0])?.name;
     return `Offered to ${name ? name.split(" — ")[0] : "a ward"}`;
@@ -93,14 +93,14 @@ const MS_PER_MINUTE = 60_000;
  * `tierOverdueAfterMinutes` (`ward-shared-figures.ts`). A row is overdue past its target and "due
  * in" within the hour (or half the window, if shorter) before it. Signed for the prototype (D-56).
  */
-export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue: number } {
+function queueWaitThresholds(urgency: number): { dueSoon: number; overdue: number } {
   const overdue = tierOverdueAfterMinutes(urgency);
   return { dueSoon: overdue - Math.min(60, overdue / 2), overdue };
 }
 
 /** Shown wherever the tier targets drive a figure. The status is read from
  *  `ward-clinical-values.ts`, so the note changes by itself once the tier values are signed. */
-export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
+const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
   allClinicalValuesSigned(["tierOneOverdue", "tierTwoOverdue", "tierThreeOverdue", "anyTierOverdue"])
     ? "signed for the prototype"
     : "pending clinical sign-off"
