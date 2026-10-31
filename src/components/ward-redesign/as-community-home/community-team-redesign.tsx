@@ -1,6 +1,7 @@
 // Forked from src/components/ward-redesign/community-team/community-team-redesign.tsx (role view: community clinician).
 "use client";
 
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { currentCareContactCompleted } from "@/components/ward-management/ward-care-journey";
@@ -408,6 +409,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const [phoneDepartureId, setPhoneDepartureId] = useState<string | null>(null);
   // The phone's Caseload list opens on the whole caseload, matching its count (Josh, 30 Oct 2026).
   const [phoneShowWholeCaseload, setPhoneShowWholeCaseload] = useState(true);
+  const ownTeamOnly = useEffectiveWardAccess().role === "community";
   const [switchQuery, setSwitchQuery] = useState("");
   const switchTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -1007,6 +1009,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     switchQuery,
     setSwitchQuery,
     switchTriggerRef,
+    // The real view's one desk-role read (built 31 Oct 2026); this copy reads the desk as the forks do.
+    ownTeamOnly,
     acceptanceError,
     setAcceptanceError,
     showCareEditor,
