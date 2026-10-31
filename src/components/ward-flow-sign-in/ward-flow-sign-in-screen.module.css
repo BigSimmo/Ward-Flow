@@ -99,8 +99,7 @@
   min-width: 0;
 }
 
-.titleRow > :last-child,
-.reachHead > :last-child {
+.titleRow > :last-child {
   margin-left: auto;
 }
 
@@ -289,7 +288,7 @@
 
 .roleRow {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--wf-s-3);
   min-height: var(--wf-row);
@@ -368,10 +367,6 @@
   white-space: nowrap;
 }
 
-.roleKey {
-  flex: 0 0 auto;
-}
-
 /* Go in: the context line and the one primary button on this half. */
 .go {
   display: flex;
@@ -382,7 +377,7 @@
   padding-top: var(--wf-s-3);
 }
 
-.go > button {
+.go > .goButton {
   flex: 0 0 auto;
 }
 
@@ -416,7 +411,7 @@
 .panelHeading {
   margin: var(--wf-s-3) 0 var(--wf-s-1);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -578,8 +573,7 @@
     min-height: 48px;
   }
 
-  .roleScope,
-  .roleKey {
+  .roleScope {
     display: none;
   }
 
@@ -597,9 +591,9 @@
     flex-wrap: wrap;
   }
 
-  .go > button {
+  /* Full width on a phone, with no 48px height of its own (Josh's rule); the kit button sets it. */
+  .go > .goButton {
     flex: 1 1 100%;
-    min-height: 48px;
   }
 
   .item {
@@ -633,8 +627,7 @@
   .roleBrief,
   .goContext,
   .itemWords,
-  .itemNoteLine,
-  .reachHead > .labelMeta {
+  .itemNoteLine {
     white-space: normal;
     overflow-wrap: break-word;
   }
