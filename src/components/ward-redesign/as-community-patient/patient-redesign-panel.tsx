@@ -159,32 +159,36 @@ export function PatientRedesignPanel(props: PatientNowPanelProps) {
       />
     ) : null;
   const whyMovesLeft = ownTeamDesk && mode === "ward" && !wardChangeOpen && !isPhone;
+  const copyLabel = copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary";
+  const referralMain = isPhone && (mode === "idle" || mode === "cto");
+  // Role view (community clinician): with no ward change to record, the phone bar held only the copy
+  // icon in an otherwise empty band. Copy takes the bar as its labelled main action instead, as Ask
+  // more wards does on the coordinator's patient page.
+  const copyAsMain = ownTeamDesk && isPhone && !phoneMovement && !referralMain;
   return (
     <PatientNowLayout
       mode={mode}
       context={statusContext}
       statusCardProps={{
         barLead:
-          isPhone && !phoneMovement ? (
-            <Button
-              iconOnly
-              icon={Copy}
-              aria-label={copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary"}
-              onClick={handleCopySummary}
-            />
+          isPhone && !phoneMovement && !copyAsMain ? (
+            <Button iconOnly icon={Copy} aria-label={copyLabel} onClick={handleCopySummary} />
           ) : undefined,
         // Phone keeps the patient's own New referral (preselected) when there is no stay to act on.
-        barMain:
-          isPhone && (mode === "idle" || mode === "cto") ? (
-            <Link
-              href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new"}
-              className={buttonClass({ variant: "pri" })}
-              data-testid="ward-person-refer-outpatient"
-            >
-              <FileText size={16} aria-hidden="true" />
-              New referral
-            </Link>
-          ) : undefined,
+        barMain: referralMain ? (
+          <Link
+            href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new"}
+            className={buttonClass({ variant: "pri" })}
+            data-testid="ward-person-refer-outpatient"
+          >
+            <FileText size={16} aria-hidden="true" />
+            New referral
+          </Link>
+        ) : copyAsMain ? (
+          <Button variant="pri" icon={Copy} onClick={handleCopySummary}>
+            {copyLabel}
+          </Button>
+        ) : undefined,
         phoneFoot: phoneStatusFoot,
       }}
       legal={

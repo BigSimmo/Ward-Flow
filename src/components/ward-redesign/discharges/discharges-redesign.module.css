@@ -288,3 +288,12 @@
     min-height: var(--spacing-tap, 3rem);
   }
 }
+
+/* Phone "By barrier" card: the busiest barrier ("Most: Accommodation") wraps in full rather than
+   ending in "…" (owner rule, no hover on a phone). Doubled class to outrank the card's own line. */
+.phChartWrap.phChartWrap {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: break-word;
+}

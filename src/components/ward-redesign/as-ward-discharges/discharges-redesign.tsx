@@ -464,7 +464,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               <OctagonAlert size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
               <span className={pageStyles.phChartText}>
                 <span className={pageStyles.phChartTitle}>By barrier</span>
-                <span className={pageStyles.phChartMeta}>
+                <span className={`${pageStyles.phChartMeta} ${redesign.phChartWrap}`}>
                   {barrierCounts[0] && barrierCounts[0].count > 0 ? `Most: ${barrierCounts[0].label}` : "None held up"}
                 </span>
               </span>

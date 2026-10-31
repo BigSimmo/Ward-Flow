@@ -207,13 +207,13 @@ export function AlertRow({
         <OpenButton entry={entry} handlers={handlers} />
         <Who entry={entry} />
       </span>
-      <span className={`${styles.cell} ${styles.cellWhere}`}>
+      <span className={`${styles.cell} ${styles.cellWhere} ${redesign.cellWrap}`}>
         <span className={styles.cellMain}>{entry.subject.to ?? entry.subject.from}</span>
         <span className={styles.quiet}>
           {entry.subject.to ? `from ${entry.subject.from}` : (entry.subject.legalStatus ?? "Status not recorded")}
         </span>
       </span>
-      <span className={styles.cell}>
+      <span className={`${styles.cell} ${redesign.cellWrap}`}>
         <span className={styles.cellMain}>{entry.mine ? "You" : ownerShort(entry.owner, false)}</span>
         <span className={styles.quiet}>{state ?? entry.owner}</span>
       </span>

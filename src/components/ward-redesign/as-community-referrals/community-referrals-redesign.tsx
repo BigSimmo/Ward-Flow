@@ -127,6 +127,7 @@ import {
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { useIsPhone } from "@/components/wf";
 import mph from "@/components/ward-management/referrals/referral-match-phone.module.css";
+import wrap from "./community-referrals-wrap.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { recordIdFromParam } from "@/components/ward-management/shell/ward-record-address";
@@ -693,7 +694,7 @@ function ReferralBoardRedesign({
         <DecisionClock referral={r} now={now} />
       ) : null}
 
-      <dl className={a.strip}>
+      <dl className={cx(a.strip, wrap.wrapCells)}>
         <div>
           <dt>From</dt>
           <dd>{siteByCode(r.originSiteCode)?.name ?? r.originSiteCode}</dd>
@@ -1246,7 +1247,7 @@ function ReferralBoardRedesign({
                 </div>
 
                 {isPhone ? (
-                  <div className={cx(styles.registerDetailBody, a.panelBody, mph.body)}>
+                  <div className={cx(styles.registerDetailBody, a.panelBody, mph.body, wrap.wrapCells)}>
                     {renderDetailFacts(selectedReferral)}
                     {(() => {
                       const stages = referralJourneyStages(selectedReferral, now, sender.referralFor(selectedReferral));
@@ -1356,7 +1357,7 @@ function ReferralBoardRedesign({
                     key={`${selectedReferral.id}-${inspectorTab}`}
                     idPrefix="ward-referral-inspector"
                     id={inspectorTab}
-                    className={cx(styles.registerDetailBody, a.panelBody)}
+                    className={cx(styles.registerDetailBody, a.panelBody, wrap.wrapCells)}
                   >
                     {inspectorTab === "place" && !readOnly ? (
                       <HistoryFoldProvider

@@ -789,7 +789,10 @@ export function AsOfficerTransportRedesign() {
           level={1}
           className={styles.dispatchHero}
           // P195 (audit 27 Oct 2026, Josh 27 Oct): the h1 is the screen name. Redesign: the eyebrow
-          // no longer repeats it, and the work it holds sits beside the title.
+          // no longer repeats it, and the work it holds sits beside the title. Role view (transport
+          // officer): a short eyebrow names the desk, as the other role homes do, so the phone hero's
+          // first row is not the Demo chip alone.
+          eyebrow={officerDesk ? "Jobs · Transport desk" : undefined}
           title="Transport"
           titleMeta={jobsLine}
           aside={isPhone ? <LiveChip state="live" onHero /> : heroTools}

@@ -196,3 +196,11 @@
 .actionsRow.actionsRow > button {
   width: auto;
 }
+
+/* Place and owner names wrap in full rather than ending in "…" (no hover on a phone). */
+.cellWrap.cellWrap > * {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: break-word;
+}

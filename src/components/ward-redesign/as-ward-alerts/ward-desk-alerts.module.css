@@ -17,3 +17,28 @@
 .head svg {
   color: var(--wf-success-ink);
 }
+
+/* The checks were built for the dark hero, so on this white panel they read in hero inks (pale grey
+   on white). Here they take the page's own inks: words in secondary ink, counts in primary, zero
+   counts quieter, as the phone Checking sheet does. Doubled class to outrank the hero rules. */
+.clear.clear li > :is(a, button, span) {
+  color: var(--wf-ink-2);
+}
+.clear.clear li > :is(a, button, span) > span {
+  color: var(--wf-ink-1);
+}
+.clear.clear li[data-zero] > :is(a, button, span) > span {
+  color: var(--wf-ink-3);
+}
+.clear.clear li > :is(a, button):hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+.clear.clear li > button[aria-pressed="true"] {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+.clear.clear li > :is(a, button):focus-visible {
+  outline-color: var(--wf-focus-ring);
+}
