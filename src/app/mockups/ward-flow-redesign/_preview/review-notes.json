@@ -223,31 +223,6 @@
     ],
     "keep": "Queue and History, the keyboard shortcuts, the decline-reason rule and Accept presentation."
   },
-  "handover": {
-    "role": "The shift handover sheet: who to hand over, in meeting order, and signing it off.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**Since previous handover uses four large boxes**, mostly showing 0."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "**The sign-off panel sits at the very bottom**, below about 70 rows, so its checklist is easy to miss."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "Since previous handover becomes one line of figures, with the \"Changed since previous handover\" link at its end."
-      },
-      {
-        "text": "**A sticky sign-off bar** stays at the bottom of the screen, showing how many checks are clear, the ones still open, and Sign off."
-      },
-      {
-        "text": "Due by 15:00 shows its first rows, and the rest sit behind \"Show more\"."
-      }
-    ],
-    "keep": "The shift switcher, the meeting-order groups, highlights, Copy summary and the downtime pack."
-  },
   "ward": {
     "role": "The nurse in charge's ward page: every bed, who is coming and going, and this shift's tasks.",
     "issues": [
@@ -283,38 +258,6 @@
       }
     ],
     "keep": "Every bed, the filters, Place or move, This shift's three columns, and Confirm numbers."
-  },
-  "stays": {
-    "role": "Each bed's occupant and length of stay, for discharge planning on the ward.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**The header looks different from every other page**: a rounded dark card inside the page, not the full-width header."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "**The figures appear twice**: five in the header and ten more boxes below, several the same."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "A \"Who is in a bed: choose a bed\" panel takes the right side while empty."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "The same full-width header as Ward home, with this tab selected."
-      },
-      {
-        "text": "The extra figures become one \"Also on this ward\" line."
-      },
-      {
-        "text": "**Bed cards use the full width**, five to a row. Choosing a bed opens the record in a side panel only when needed."
-      },
-      {
-        "text": "Worth a look and Your part in tomorrow's forecast merge into one notice."
-      }
-    ],
-    "keep": "The filters, the order, and the length-of-stay bands."
   },
   "ed-board": {
     "role": "One emergency department's psychiatry board: who is in the department, their review, form and referral.",
@@ -396,35 +339,6 @@
       }
     ],
     "keep": "Most of this page works well: the search with date of birth, the stage chips, highlights and the This shift panel."
-  },
-  "discharges": {
-    "role": "Every expected discharge across the network, blocked first, so beds can be freed.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**Rows lead with the ward, not the person**, and the right third of the table is empty. There is no action on any row."
-      },
-      {
-        "devices": ["All"],
-        "text": "**Totals disagree without explanation**: 207 open in the header, \"All statuses · 63\" in the filter and \"59 listed\" on the list. Not checked: what each total counts."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "Barriers are a separate tab, so the blocker counts are out of sight while working the list."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**Person first**, then ward and service, expected date (with how many days past), blocker, and one action (Chase, Book transport, Confirm date)."
-      },
-      {
-        "text": "**Barriers move to the side column**, beside the list, with Same day or Escalate on each."
-      },
-      {
-        "text": "The headline totals need one agreed meaning before build. The mock-up keeps today's numbers."
-      }
-    ],
-    "keep": "The five filters, Now and History, Copy counts, and Blocked first order."
   },
   "wards": {
     "role": "Every ward's beds at a glance, filterable by service, status and cohort.",

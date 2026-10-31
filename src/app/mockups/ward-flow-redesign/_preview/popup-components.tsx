@@ -35,9 +35,6 @@ const PopCreate = dynamic<{ page: ReactNode }>(() =>
 const PopWardSwitcher = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-ward-switcher/pop-ward-switcher").then((module) => module.PopWardSwitcher),
 );
-const PopShiftBrief = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-shift-brief/pop-shift-brief").then((module) => module.PopShiftBrief),
-);
 const PopDesk = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-desk/pop-desk").then((module) => module.PopDesk),
 );
@@ -105,9 +102,6 @@ const PopCommunityTransportCancel = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-community-transport-cancel/pop-community-transport-cancel").then(
     (module) => module.PopCommunityTransportCancel,
   ),
-);
-const PopBoardBlocker = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-board-blocker/pop-board-blocker").then((module) => module.PopBoardBlocker),
 );
 const PopWardAccept = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-ward-accept/pop-ward-accept").then((module) => module.PopWardAccept),
@@ -196,7 +190,6 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   menu: PopMenuForFrame,
   create: PopCreate,
   "ward-switcher": PopWardSwitcher,
-  "shift-brief": PopShiftBrief,
   desk: PopDesk,
   "service-picker": PopServicePicker,
   "more-pages": PopMorePages,
@@ -217,7 +210,6 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   "community-record": PopCommunityRecord,
   "community-transport-book": PopCommunityTransportBook,
   "community-transport-cancel": PopCommunityTransportCancel,
-  "board-blocker": PopBoardBlocker,
   "ward-accept": PopWardAccept,
   clearance: PopClearance,
   "idle-warning": PopIdleWarning,

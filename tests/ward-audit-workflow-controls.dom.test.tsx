@@ -77,14 +77,14 @@ describe("discharge actions stay usable and accessible across filters", () => {
         .map((option) => option.textContent),
     ).toEqual(labels);
     fireEvent.change(screen.getByRole("combobox", { name: "Blocker" }), { target: { value: "pharmacy" } });
-    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Bed releases: \d+ blocked/);
+    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Bed releases: \d+ held up/);
     fireEvent.click(screen.getByRole("button", { name: /^History/ }));
     expect(within(screen.getByRole("combobox", { name: "Blocker" })).getAllByRole("option")).toHaveLength(
       labels.length,
     );
     fireEvent.change(screen.getByRole("combobox", { name: "Blocker" }), { target: { value: "pharmacy" } });
     expect(screen.getByRole("combobox", { name: "Blocker" })).toHaveValue("pharmacy");
-    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Admission records: \d+ blocked/);
+    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Admission records: \d+ held up/);
   });
 });
 
