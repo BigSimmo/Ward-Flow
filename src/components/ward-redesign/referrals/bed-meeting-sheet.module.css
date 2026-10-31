@@ -1,0 +1,40 @@
+/* Referrals redesign, round 4: the bed meeting list's scope switch, colour on the counts, and
+   withheld destination cells. */
+
+.scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin-bottom: var(--wf-s-2);
+}
+.hot b,
+.hot {
+  color: var(--wf-danger-ink);
+}
+.warm b,
+.warm {
+  color: var(--wf-warning-ink);
+}
+.note {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.empty {
+  margin: var(--wf-s-3) 0;
+  color: var(--wf-ink-3);
+}
+.withheld {
+  color: var(--wf-ink-3);
+  font-style: italic;
+}
+.withheld svg {
+  vertical-align: -1px;
+}
+/* Names wrap in full. */
+.who.who b {
+  white-space: normal;
+}
