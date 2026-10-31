@@ -1,4 +1,4 @@
-/* Handover, redesigned: the since line, Show more under Due by, and the sign-off bar. */
+/* Handover sheet parts: the since line, Show more under Due by, the sign-off bar and the phone chip row. */
 .mono {
   font-family: var(--wf-mono);
   font-feature-settings: "tnum" 1;

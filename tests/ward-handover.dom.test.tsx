@@ -68,6 +68,8 @@ describe("Handover page", () => {
 
   it("groups every open patient in meeting order", () => {
     renderHandover();
+    // Approved redesign (31 Oct 2026): Due by shows its first 4 rows, the rest behind Show more.
+    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more/ }));
     const ids = ["act", "due", "bed", "acc", "mov"].map((id) => screen.getByTestId(`ward-handover-group-${id}`));
     for (let index = 1; index < ids.length; index += 1) {
       expect(ids[index - 1]!.compareDocumentPosition(ids[index]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -92,6 +94,7 @@ describe("Handover page", () => {
 
   it("names patients by name and UMRN and never shows a journey number", () => {
     renderHandover();
+    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more/ }));
     const page = screen.getByTestId("ward-handover-page").textContent ?? "";
     expect(page).not.toMatch(/WF-\d/);
     const identity = resolveSubjectPatient(
@@ -219,7 +222,8 @@ describe("Handover page", () => {
     expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent(
       "Signed off at 10:42 as bed coordinator",
     );
-    expect(screen.getByTestId("ward-handover-hero-sign-off")).toHaveTextContent("Signed 10:42");
+    // Approved redesign (31 Oct 2026): on the Patients tab the sign-off bar, not the hero, carries Sign off.
+    expect(screen.getByTestId("ward-handover-sign-bar")).toHaveTextContent("Signed 10:42");
     // A4-27 (audit round 2): once signed there is no second sign-off primary, only Undo.
     expect(screen.queryByTestId("ward-handover-sign-off-button")).toBeNull();
     expect(screen.getByTestId("ward-handover-sign-off-undo")).toHaveTextContent("Undo sign-off");
