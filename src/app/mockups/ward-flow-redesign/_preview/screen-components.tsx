@@ -43,14 +43,8 @@ const RealWardScreen = dynamic<MockupPageProps>(() =>
 const EdBoardPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/ed-board/ed-board-page").then((module) => module.EdBoardPage),
 );
-const TransportRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/transport/transport-redesign").then((module) => module.TransportRedesign),
-);
 const PatientsRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/patients/patients-redesign").then((module) => module.PatientsRedesign),
-);
-const WardsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/wards/wards-page").then((module) => module.WardsPage),
 );
 const AlertsRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/alerts/alerts-redesign").then((module) => module.AlertsRedesign),
@@ -58,20 +52,8 @@ const AlertsRedesign = dynamic<MockupPageProps>(() =>
 const LegalFormsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/legal-forms/legal-forms-page").then((module) => module.LegalFormsPage),
 );
-const OutOfAreaPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/out-of-area/out-of-area-page").then((module) => module.OutOfAreaPage),
-);
 const OnCallRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/on-call/on-call-redesign").then((module) => module.OnCallRedesign),
-);
-const SeclusionRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/seclusion/seclusion-redesign").then((module) => module.SeclusionRedesign),
-);
-const PlacesPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/places/places-page").then((module) => module.PlacesPage),
-);
-const CommunityPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/community/community-page").then((module) => module.CommunityPage),
 );
 const CommunityTeamPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/community-team/community-team-page").then((module) => module.CommunityTeamPage),
@@ -82,14 +64,8 @@ const PatientPage = dynamic<MockupPageProps>(() =>
 const AddPatientPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/add-patient/add-patient-page").then((module) => module.AddPatientPage),
 );
-const WardAnswerPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/ward-answer/ward-answer-page").then((module) => module.WardAnswerPage),
-);
 const SettingsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/settings/settings-page").then((module) => module.SettingsPage),
-);
-const SignInPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/sign-in/sign-in-page").then((module) => module.SignInPage),
 );
 const StatisticsComparePage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/statistics-compare/statistics-compare-page").then(
@@ -120,11 +96,6 @@ const AsWardLegalFormsPage = dynamic<MockupPageProps>(() =>
 const AsWardStatisticsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ward-statistics/as-ward-statistics-page").then(
     (module) => module.AsWardStatisticsPage,
-  ),
-);
-const AsWardSeclusionPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ward-seclusion/as-ward-seclusion-page").then(
-    (module) => module.AsWardSeclusionPage,
   ),
 );
 const AsWardAlertsPage = dynamic<MockupPageProps>(() =>
@@ -176,32 +147,14 @@ const AsCommunityStatisticsPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsCommunityStatisticsPage,
   ),
 );
-const AsOfficerHomePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-officer-home/as-officer-home-page").then((module) => module.AsOfficerHomePage),
-);
 const AsOfficerAlertsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-officer-alerts/as-officer-alerts-page").then(
     (module) => module.AsOfficerAlertsPage,
   ),
 );
-const AsBedManagerWardsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-bed-manager-wards/as-bed-manager-wards-page").then(
-    (module) => module.AsBedManagerWardsPage,
-  ),
-);
-const AsBedManagerPlacesPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-bed-manager-places/as-bed-manager-places-page").then(
-    (module) => module.AsBedManagerPlacesPage,
-  ),
-);
 const AsBedManagerReferralsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-bed-manager-referrals/as-bed-manager-referrals-page").then(
     (module) => module.AsBedManagerReferralsPage,
-  ),
-);
-const AsBedManagerSeclusionPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-bed-manager-seclusion/as-bed-manager-seclusion-page").then(
-    (module) => module.AsBedManagerSeclusionPage,
   ),
 );
 const AsExecutiveSettingsPage = dynamic<MockupPageProps>(() =>
@@ -227,22 +180,14 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "new-referral": NewReferralRedesign,
   ward: RealWardScreen,
   "ed-board": EdBoardPage,
-  transport: TransportRedesign,
   patients: PatientsRedesign,
-  wards: WardsPage,
   alerts: AlertsRedesign,
   "legal-forms": LegalFormsPage,
-  "out-of-area": OutOfAreaPage,
   "on-call": OnCallRedesign,
-  seclusion: SeclusionRedesign,
-  places: PlacesPage,
-  community: CommunityPage,
   "community-team": CommunityTeamPage,
   patient: PatientPage,
   "add-patient": AddPatientPage,
-  "ward-answer": WardAnswerPage,
   settings: SettingsPage,
-  "sign-in": SignInPage,
   "statistics-compare": StatisticsComparePage,
   "statistics-list": StatisticsListPage,
   "statistics-unit": StatisticsUnitPage,
@@ -250,7 +195,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-ward-referrals": AsWardReferralsPage,
   "as-ward-legal-forms": AsWardLegalFormsPage,
   "as-ward-statistics": AsWardStatisticsPage,
-  "as-ward-seclusion": AsWardSeclusionPage,
   "as-ward-alerts": AsWardAlertsPage,
   "as-ward-settings": AsWardSettingsPage,
   "as-ed-home": AsEdHomePage,
@@ -262,12 +206,8 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-community-movements": AsCommunityMovementsPage,
   "as-community-patient": AsCommunityPatientPage,
   "as-community-statistics": AsCommunityStatisticsPage,
-  "as-officer-home": AsOfficerHomePage,
   "as-officer-alerts": AsOfficerAlertsPage,
-  "as-bed-manager-wards": AsBedManagerWardsPage,
-  "as-bed-manager-places": AsBedManagerPlacesPage,
   "as-bed-manager-referrals": AsBedManagerReferralsPage,
-  "as-bed-manager-seclusion": AsBedManagerSeclusionPage,
   "as-executive-settings": AsExecutiveSettingsPage,
   "as-admin-home": AsAdminHomePage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;
