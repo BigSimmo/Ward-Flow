@@ -69,22 +69,6 @@ const PatientNowBackdrop = dynamic<MockupPageProps>(() =>
 const AddPatientPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/add-patient/add-patient-page").then((module) => module.AddPatientPage),
 );
-const SettingsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/settings/settings-page").then((module) => module.SettingsPage),
-);
-const AsWardSettingsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ward-settings/as-ward-settings-page").then(
-    (module) => module.AsWardSettingsPage,
-  ),
-);
-const AsExecutiveSettingsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-executive-settings/as-executive-settings-page").then(
-    (module) => module.AsExecutiveSettingsPage,
-  ),
-);
-const AsAdminHomePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-admin-home/as-admin-home-page").then((module) => module.AsAdminHomePage),
-);
 
 import type { BuiltPageSlug } from "./built-pages";
 
@@ -101,8 +85,4 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "legal-forms": LegalFormsScreen,
   patient: PatientNowBackdrop,
   "add-patient": AddPatientPage,
-  settings: SettingsPage,
-  "as-ward-settings": AsWardSettingsPage,
-  "as-executive-settings": AsExecutiveSettingsPage,
-  "as-admin-home": AsAdminHomePage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

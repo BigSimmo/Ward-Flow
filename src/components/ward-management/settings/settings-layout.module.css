@@ -75,7 +75,7 @@
   }
 
   .ruleStepper > span:first-child > button {
-    width: 36px;
+    width: 40px;
   }
 
   .ruleStepper > span:first-child > [role="spinbutton"] {
@@ -356,18 +356,65 @@
   line-height: var(--wf-lh-15);
 }
 
-/* For developers, folded at the foot of Help and data. */
+/* Settings by login (Josh, 31 Oct 2026): one page of sections, each shown only to the desks that use it. */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-6);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  scroll-margin-top: var(--wf-s-6);
+}
+
+/* The section jumps in the band: a row of buttons that wraps, never a tab track. */
+.sectionNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+/* Demo tools: closed until opened, a plain bordered row with no coloured edge. */
 .devFold {
-  margin-block-start: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
 }
 
 .devSummary {
-  min-height: var(--wf-h-md);
-  padding: var(--wf-s-2) 0;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-13);
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 48px;
+  padding: 0 var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
   font-weight: 600;
   cursor: pointer;
+}
+
+.devSummary:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.demoBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: 0 var(--wf-s-4) var(--wf-s-4);
+}
+
+/* Rules that affect you: a short read-only list. */
+.summaryValue {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .quietCell {

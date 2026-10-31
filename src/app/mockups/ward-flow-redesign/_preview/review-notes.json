@@ -600,35 +600,6 @@
     ],
     "keep": "Recent answers, and \"writes to this ward only\"."
   },
-  "settings": {
-    "role": "The coordinator's rules (timings, targets, warnings, forecast alerts), display options and profile.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**\"Save to apply\" looks like a button** but is a label. There is no save bar to show unsaved changes."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The Profile and shift tab is almost empty (two lines)."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "Number controls are large pills with the value floating."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**A sticky save bar** at the bottom: unsaved changes, Discard, Save rules and Full audit."
-      },
-      {
-        "text": "Compact number steppers, with the range under each rule's name and where it shows on the right."
-      },
-      {
-        "text": "The tabs move into the header. Profile and shift should join Display. Not mocked: that tab's contents."
-      }
-    ],
-    "keep": "Standard and Surge, every rule and range, \"your defaults, not clinical standards\"."
-  },
   "sign-in": {
     "role": "Pick a role, catchment and shift to preview the prototype. No account is created and there is no password field.",
     "issues": [

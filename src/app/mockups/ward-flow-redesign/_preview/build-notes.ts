@@ -6,21 +6,6 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
-  "as-ward-settings": [
-    "**As the nurse in charge**, Settings opens on Display and profile, not on rules the desk cannot change. Rules read 'Read only' and the save bar is gone.",
-    "**Removed:** profile rows the header already shows, and Service in view (a one-ward desk picks no service).",
-    "**Round 3:** this view is now the one Settings component with its ward differences marked ROLE BRANCH (ward), not a second copy. Rules show values as words (the near-empty steppers were fixed in round 2), the timing set reads 'Standard timings' instead of a greyed switch, and the profile card's Appearance row is gone (it repeated the Display card beside it).",
-  ],
-  "as-executive-settings": [
-    "**As the executive (new in round 3)**, Settings reads the executive report's public rules: Rules are read only with the timing set in words and no save bar, the last-change line and record counts say they are unavailable, and the live counts are left out because this desk holds no individual records.",
-    "**Kept:** Alerts, Display and profile, and Help and data work as on any desk; Restore offers this browser's settings only.",
-  ],
-  "as-admin-home": [
-    "**As the access admin**, Settings opens on Access as the first tab; Rules and Alerts (no use to this desk) are removed.",
-    "**Round 3:** the one Settings component with ROLE BRANCH (admin) marks, not a second copy; the Access tab adds the read-only Who can change what table under the roles.",
-    "**Still open:** the rail labels this desk 'EXECUTIVE' and has no Governance entry (shared chrome).",
-    "**Round 2:** the hero's Profile button goes. Role rows read 'Nurse in charge · FSH Adult Secure · ends in 120 days · used 1 day ago', and chips show only exceptions (Ending soon, Switched off). The phone opens on Access requests and roles.",
-  ],
   "pop-refer-ward": [
     "**Built from the ED row's own Refer to a ward link**, read into the same request the app bar opens, for the first person on the Peel ED board whose next step is Refer to a ward: ward chosen, sent from Peel ED, patient and referral filled in.",
     "**Kept:** it reuses the redesigned referral slide-out from the New referral mock-up, in the app bar's own sheet, so the two read the same.",
@@ -45,12 +30,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** New referral is the one filled button, then Log a delay, Update a bed and Add patient (today's order).",
     "**New:** a small 'Or record' heading over the three secondary rows.",
     "**Round 2:** the subtitle goes, and Log a delay reads 'Patient and reason', the same as Tools.",
-  ],
-  "pop-desk": [
-    "**Built from a copy of today's Go to a desk drawer**, so search, recents, the statewide tiles and opening a desk work as now.",
-    "**New:** each health service folds to one summary row (hospitals, people awaiting a bed in its EDs, beds ready), so the drawer opens short.",
-    "**New:** the service of your current desk opens by itself, and a search opens every match. A hospital with nobody waiting says 'None awaiting in ED'.",
-    "**Round 2:** red glyphs come with words ('· 2 past target'). The current tile says 'Current', so its ring never reads as keyboard focus. Counts read 'waiting in ED', the rail's words. Rows are back to the kit's size.",
   ],
   "pop-service-picker": [
     "**Built on today's Service picker's own figures and save**, so choosing a service narrows the lists and announces it as now.",
@@ -165,30 +144,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** identity only (D-77), optional gender and Aboriginal status, and Recently added.",
     '**Still open:** the save toasts and the "saved outside this desk\'s view" line still read given name first, as today.',
     "**Phone (Josh, 31 October):** the form's buttons stack: Add patient full width on top, Reset and Register & start referral side by side under it.",
-  ],
-  settings: [
-    "**Built from a copy of today's Settings screen**, so rule drafts, Standard and Surge, Save with Undo, Discard, Find a setting, Go to a desk and the phone layout work as now.",
-    '**New:** a sticky save bar on the Rules tab shows how many rules changed and what changed, with Discard and Save changes (the one filled button, "Save 3 changes"); with nothing changed it says "No unsaved changes".',
-    '**New:** "Save to apply" and "Applies now" are plain words, not boxes that look like buttons, and desktop number steppers are compact (touch screens keep 44 px).',
-    "**New:** Profile and shift joins Display as one tab, Display and profile. Its Profile card shows only what the app holds: desk profile, role, desk, scope, service in view, shift pattern and this browser's appearance.",
-    "**Answered (30 Oct):** keep the real-data Profile card.",
-    "**Round 3, tabs by job:** Rules · Alerts · Display and profile · Help and data · Access. Help, the tour and Shortcuts left Display (they are not display settings); Data and about became Help and data.",
-    "**Round 3, Rules:** four cards by job: ED and placement, Form warnings, Deadlines and reply targets, Forecast alerts. Morning bed numbers joined the reply targets rather than sitting alone in a one-row card. 'Your defaults, not legal limits' and 'not clinical standards' are kept word for word.",
-    "**Round 3, live impact:** each rule says what it reaches on today's records, read with the app's own checks (ED target, form warnings on recorded due times only, the three reply targets), and 'if saved' while you change it. Pull time limit counts beds pulled now and says a change applies from the next pull, because a pull keeps the limit it was made with. Morning bed numbers and the forecast alerts show no count: the app has no single check to read for them.",
-    "**Round 3, honest Surge:** Surge set Wards asked at once to 3, which is already the default, so the card now says 'Surge changes 2 rules' and names them.",
-    "**Round 3, Show changed only:** each rule away from its default says 'Default 24h' after its range, and a switch hides the rest (and any card left empty).",
-    "**Round 3, one line for history:** the five-row Recent changes card became one line at the top, last save, who and what, with Full audit. Full audit left the save bar so it lives in one place.",
-    "**Round 3, review before saving:** Save opens a short review: each change before and after, where it shows and its count after saving. A loaded rules file lands in the same review, so a file never changes a rule unseen. Download now writes the saved rules only (it wrote the unsaved draft plus display settings that Load never read).",
-    "**Round 3, Restore:** lists all twelve rules (today's dialog says nine but restores twelve) and asks 'Rules only' or 'Rules and this browser', naming the seven browser settings that come back. A desk that cannot change rules restores its own browser only.",
-    "**Round 3, Alerts:** a 'Will alerts reach you here?' card beside the switches: how many of the four ways are ready, one next step, and Send a test alert (a real browser notification). It repeats none of the switches.",
-    "**Round 3, Find a setting:** finds rows today's could not (each reply target and forecast alert, clinical values, Copy diagnostics, the alerts card, Access, Who can change what), and only on the tabs this desk has.",
-    "**Round 3, Access:** a read-only Who can change what table. Its rules row is read from the app's own permission table (EVENT_ROLE); the cover, roles, access log and browser rows are written text matching today's Access screen, so they would need updating by hand if those rules change. The third-edition drawings' statutory switches are not taken (D5, D-70, D-71).",
-    "**Answered (31 Oct, all recommendations):** keep Open Ward Flow on and Text size, under 'New for this browser' (agreed 31 Oct; the date is kept here, not on the page); Theme follows the shift is dropped. Both work in this preview only and need the app to read them first (D-72).",
-    "**Answered (31 Oct):** the review opens on every save, and Who can change what shows on every desk with an Access tab. Both were already drawn that way.",
-    "**For the build:** the nurse in charge, access admin and executive views are this one component, so the real build is one file with role branches. The restore dialog and Find a setting read one list of the twelve rules (settings-rule-catalogue.ts), which fixes the 'nine rules' miscount at its source.",
-    "**Phone (Josh, 31 October):** On this phone switches are the kit's 32px options on a 40px track; Go to a desk is Home's 40px hero pill in today's frame.",
-
-    "**New frame (D-91):** Settings drops its own Go to a desk (hero and Profile card); the sidebar's or Menu's who-you-are row opens it. The review is 'Save 3 rule changes?' / 'Save changes'; zero counts name their noun ('No one past target').",
   ],
   patient: [
     "**Built into the app** (lane L, 31 Oct 2026): the patient record, with the community desk's view and the Journey so far timeline in the one real screen. This entry is the real screen, kept as the backdrop for Medical clearance.",

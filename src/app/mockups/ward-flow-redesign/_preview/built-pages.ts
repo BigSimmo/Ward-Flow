@@ -9,10 +9,6 @@ export const MOCKUP_PAGE_SLUGS = [
   "legal-forms",
   "patient",
   "add-patient",
-  "settings",
-  "as-ward-settings",
-  "as-executive-settings",
-  "as-admin-home",
 ] as const;
 
 export type BuiltPageSlug = (typeof MOCKUP_PAGE_SLUGS)[number];

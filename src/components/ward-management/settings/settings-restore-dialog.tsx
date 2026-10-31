@@ -1,15 +1,14 @@
 "use client";
-// Settings round 3 (mock-up, 30 Oct 2026): a copy of today's restore dialog
-// (src/components/ward-management/settings/reset-baseline-modal.tsx) on the kit's Dialog. Today's
-// says "all nine rules" but restores twelve (the three forecast alerts too), and resets only theme,
-// glare, sidebar and buzz. This one lists every rule from the one rule list, and asks whether this
-// browser's settings come back too, naming each one.
+// Restore defaults (Settings round 3, built 31 Oct 2026), on the kit's Dialog. It replaces the old
+// restore dialog, which said "all nine rules" but restored twelve and reset only some of this
+// browser's settings. This one lists every rule from the one rule list, and every setting this
+// browser keeps, and asks whether this browser's settings come back too.
 
 import { useState } from "react";
 
 import { Dialog, Segmented } from "@/components/wf";
 
-import rx from "./settings-redesign.module.css";
+import rx from "./settings-layout.module.css";
 import { DEFAULT_RULES, RULES } from "./settings-rule-catalogue";
 
 export type RestoreScope = "rules" | "rules-and-browser";

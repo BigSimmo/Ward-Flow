@@ -994,7 +994,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             aria-pressed={preferences.glare}
             onClick={() => applyGlare(true)}
           >
-            Glare
+            Bright light
           </button>
         </div>
       </Sheet>

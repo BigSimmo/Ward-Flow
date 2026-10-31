@@ -66,6 +66,7 @@ vi.mock("@/components/ward-management/shell/ward-access-context", async (load) =
   useUnscopedWardFlow: raw,
 }));
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
+import { copyExecutiveSettingsDiagnostics } from "@/components/ward-management/settings/settings-operational-source";
 import { useSettingsDeskProfile } from "@/components/ward-management/settings/settings-desk-profile";
 import {
   WardShellAuthorityProvider,
@@ -120,23 +121,23 @@ describe("executive Settings from public authority only", () => {
     expect(hook.result.current.location).toBe("North Metro");
     expect(raw).not.toHaveBeenCalled();
   });
-  it("keeps desktop panels, appearance controls and the authenticated role switch with no operational hooks", () => {
+  // Settings by login (Josh, 31 Oct 2026): "Switch login (demo)" is the demo's desk switcher and is
+  // hidden once real sign-in is on, so a signed-in executive is not offered it, here or in Find.
+  it("keeps desktop sections and appearance controls, with no demo login switch once signed in", () => {
     render(
       <PublicExecutive>
         <SettingsScreen />
       </PublicExecutive>,
     );
     expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
     fireEvent.click(screen.getByRole("radio", { name: "Dark" }));
     const appearance = renderHook(() => useAppearanceStore());
     expect(appearance.result.current).toBe("dark");
-    // D-91 (Josh, 31 Oct 2026): Settings has no Go to a desk button of its own; Find a setting still
-    // finds it, and choosing it calls the authenticated role switch.
     expect(screen.queryByRole("button", { name: "Go to a desk" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Switch login/ })).toBeNull();
     fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), { target: { value: "workstation" } });
-    fireEvent.click(screen.getByRole("option", { name: /Go to a desk/ }));
-    expect(switchRole).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("option", { name: /Switch login|Go to a desk/ })).toBeNull();
+    expect(switchRole).not.toHaveBeenCalled();
     expect(raw).not.toHaveBeenCalled();
   });
   it("keeps the phone's quick preferences and Settings area sheets without a world", () => {
@@ -147,7 +148,7 @@ describe("executive Settings from public authority only", () => {
       </PublicExecutive>,
     );
     expect(screen.getByTestId("ward-settings-phone-theme")).toBeInTheDocument();
-    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-display")).getByRole("button"));
+    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-device")).getByRole("button"));
     expect(screen.getByTestId("ward-settings-phone-sheet")).toBeInTheDocument();
     expect(raw).not.toHaveBeenCalled();
   });
@@ -157,55 +158,42 @@ describe("executive Settings from public authority only", () => {
         <SettingsScreen />
       </PublicExecutive>,
     );
-    expect(screen.getByRole("spinbutton", { name: "ED access target" })).toHaveTextContent("20h");
-    expect(
-      screen.getByText("Individual changes and audit entries are unavailable for executive reporting."),
-    ).toBeInTheDocument();
+    // Settings by login (31 Oct 2026): the executive reads "How the figures are worked out", the rules
+    // behind its figures, read only, from the supplied report (20h, not the 24h default).
+    const summary = screen.getByTestId("ward-settings-rules-summary");
+    expect(summary).toHaveTextContent("How the figures are worked out");
+    expect(screen.getByTestId("ward-settings-rule-ed-target")).toHaveTextContent("20h");
+    expect(screen.queryAllByRole("spinbutton")).toHaveLength(0);
     expect(screen.queryByText("No rule saves this session.")).toBeNull();
     expect(screen.queryByText("None over now")).toBeNull();
-    fireEvent.click(screen.getByRole("radio", { name: /Data and about/ }));
-    expect(screen.getByText("Aggregate reports only")).toBeVisible();
-    expect(screen.queryByText("Movements held")).toBeNull();
-    expect(screen.queryByText("Events recorded this session")).toBeNull();
-    expect(screen.getByTestId("ward-settings-thresholds-unavailable")).toBeVisible();
-    expect(screen.getByText("Feature flags")).toBeVisible();
+    // No Demo tools for the executive, so no record counts of any kind.
+    expect(screen.queryByTestId("ward-settings-demo-tools")).toBeNull();
+    expect(screen.queryByText(/movements held|events this session/u)).toBeNull();
     expect(raw).not.toHaveBeenCalled();
   });
-  it("retains public diagnostics, allowed export and own-browser clearing with no operational payload", async () => {
+  // Settings by login (31 Oct 2026): the rules file, diagnostics and reset are Demo tools, for the
+  // coordinator and access admin only. The executive keeps its own browser's Restore. The aggregate-only
+  // diagnostics stay guarded at their source.
+  it("offers the executive no rules file, diagnostics or reset, and keeps any diagnostics aggregate-only", async () => {
     render(
       <PublicExecutive>
         <SettingsScreen />
       </PublicExecutive>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /Data and about/ }));
-    fireEvent.click(screen.getByTestId("btn-copy-diagnostics"));
+    for (const id of ["btn-copy-diagnostics", "btn-export-config", "btn-clear-cache", "input-import-config"]) {
+      expect(screen.queryByTestId(id), id).toBeNull();
+    }
+    fireEvent.click(screen.getByTestId("btn-restore-baseline"));
+    const restore = screen.getByRole("dialog", { name: "Restore this browser's settings?" });
+    expect(restore).toHaveTextContent("Only this browser changes.");
+    fireEvent.click(within(restore).getByRole("button", { name: "Cancel" }));
+
+    await copyExecutiveSettingsDiagnostics(report.configuration);
     const diagnostics = JSON.parse(browser.copy.mock.calls[0][0]);
     expect(diagnostics.configuration).toEqual(report.configuration);
     expect(diagnostics.dataAccess).toBe("aggregate-only");
     expect(diagnostics).not.toHaveProperty("movementCount");
     expect(diagnostics).not.toHaveProperty("patients");
-    fireEvent.click(screen.getByTestId("btn-export-config"));
-    expect(browser.download).toHaveBeenCalledOnce();
-    expect(browser.download.mock.calls[0][1]).toMatch(/^ward-flow-rules-.*\.json$/);
-    const exported = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = reject;
-      reader.readAsText(browser.download.mock.calls[0][0]);
-    });
-    expect(JSON.parse(exported)).toMatchObject({
-      product: "Ward Flow Statewide Bed Coordination",
-      version: 6,
-      configuration: report.configuration,
-    });
-    expect(Object.keys(JSON.parse(exported)).sort()).toEqual(
-      ["product", "version", "exportedAt", "configuration"].sort(),
-    );
-    sessionStorage.setItem("wf-draft:synthetic-preview", "synthetic");
-    fireEvent.click(screen.getByTestId("btn-clear-cache"));
-    expect(sessionStorage.getItem("wf-draft:synthetic-preview")).toBeNull();
-    expect(screen.getByRole("button", { name: /Import/ })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByTestId("btn-restore-baseline")).toHaveAttribute("aria-disabled", "true");
     expect(raw).not.toHaveBeenCalled();
   });
   it("does not substitute defaults or operational selectors when the bound report is absent", () => {

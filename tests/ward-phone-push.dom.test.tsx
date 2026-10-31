@@ -104,7 +104,6 @@ describe("phone alerts row", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
     const row = screen.getByTestId("setting-phone-alerts-row");
     expect(row).toHaveTextContent("Needs the shared workspace");
     expect(within(row).getByRole("switch", { name: "Phone alerts" })).toHaveAttribute("aria-disabled", "true");
