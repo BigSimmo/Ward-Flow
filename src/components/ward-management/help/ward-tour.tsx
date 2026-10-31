@@ -1,7 +1,9 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+
+import { X } from "lucide-react";
 
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 
@@ -14,135 +16,12 @@ import {
   tourSteps,
   type TourDevice,
   type TourStep,
-  type TourTarget,
 } from "./ward-tour-steps";
+import { openWardHelp } from "./ward-help-events";
+import { SPOT_NOT_HERE, usePlacedCard, useSpotlight } from "./ward-spotlight";
 import styles from "./ward-tour.module.css";
 
-type Box = { top: number; left: number; width: number; height: number };
-
-/** How long a step waits for its control to appear (a page still loading) before it shows without one. */
-const FIND_TIMEOUT_MS = 2000;
-/** How often the spotlight re-measures, so a notice that shifts the page cannot leave it behind. */
-const REMEASURE_MS = 400;
-const GAP = 12;
-const EDGE = 8;
-/** A control taller than this share of the window is shown from its top, at this share. */
-const TALL_SHARE = 0.45;
-/** Room left above a control scrolled to the top, for the header that sits over the page. */
-const HEADER_ROOM = 72;
-
-function tall(rect: DOMRect): boolean {
-  return rect.height > window.innerHeight * TALL_SHARE;
-}
-
-/** Brings the control into view: centred, or a tall one to just under the header. */
-function bringIntoView(element: HTMLElement): void {
-  const behavior: ScrollBehavior = "instant";
-  if (!tall(element.getBoundingClientRect())) {
-    element.scrollIntoView({ block: "center", inline: "nearest", behavior });
-    return;
-  }
-  const margin = element.style.scrollMarginTop;
-  element.style.scrollMarginTop = `${HEADER_ROOM}px`;
-  element.scrollIntoView({ block: "start", inline: "nearest", behavior });
-  element.style.scrollMarginTop = margin;
-}
-
-function shown(element: HTMLElement): boolean {
-  if (element.getClientRects().length === 0) return false;
-  // A control laid out but hidden (the phone dock under another dialog) is not on screen.
-  return element.checkVisibility?.({ visibilityProperty: true }) ?? true;
-}
-
-/** The step's control on screen now, or null. See `TourTarget`. */
-export function findTourTarget(target: TourTarget): HTMLElement | null {
-  const match = Array.from(document.querySelectorAll<HTMLElement>(target.sel)).find(
-    (element) => shown(element) && (!target.text || (element.textContent ?? "").includes(target.text)),
-  );
-  let element: HTMLElement | null = match ?? null;
-  for (let level = 0; element && level < (target.up ?? 0); level++) element = element.parentElement;
-  return element;
-}
-
-/** The spotlight's box: the control with a little room, kept inside the window. */
-function spotBox(element: HTMLElement): Box {
-  const rect = element.getBoundingClientRect();
-  const pad = rect.width < 120 || rect.height < 40 ? 6 : 4;
-  const top = Math.max(EDGE / 2, rect.top - pad);
-  const left = Math.max(EDGE / 2, rect.left - pad);
-  // A tall control is lit from its top only, leaving room under it for the card.
-  const tallest = tall(rect) ? window.innerHeight * TALL_SHARE : Infinity;
-  const bottom = Math.min(window.innerHeight - EDGE / 2, rect.bottom + pad, top + tallest);
-  const right = Math.min(window.innerWidth - EDGE / 2, rect.right + pad);
-  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
-}
-
-/**
- * Where the card goes. On a desktop it sits beside the control (right, left, below, then above),
- * kept inside the window. On a phone it spans the width, docked to whichever end has more room.
- * With no control it sits in the middle.
- *
- * H-0376 / H-0890 (L1 re-measure, 26 Oct 2026): the card stays at the window's top left and moves
- * by transform only, so settling from the middle to beside its control, or a phone card changing
- * height at the foot, never counts as a layout shift.
- */
-function placeCard(card: HTMLElement, box: Box | null, device: TourDevice): void {
-  const style = card.style;
-  style.maxHeight = "";
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const moveTo = (left: number, top: number) => {
-    style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
-  };
-  // A phone card spans the width from its CSS insets, so it only ever moves down.
-  const dock = (end: "top" | "bottom") => {
-    card.dataset.place = end;
-    moveTo(0, end === "top" ? EDGE : Math.max(EDGE, vh - EDGE - card.offsetHeight));
-  };
-  if (!box) {
-    // B6-20 (device sweep, 24 Oct 2026): on a phone a step with no control still docks to the foot
-    // like every other phone step, rather than floating mid-screen over the page.
-    if (device === "phone") {
-      dock("bottom");
-      return;
-    }
-    card.dataset.place = "centre";
-    moveTo((vw - card.offsetWidth) / 2, (vh - card.offsetHeight) / 2);
-    return;
-  }
-  if (device === "phone") {
-    const above = box.top;
-    const below = vh - (box.top + box.height);
-    const room = Math.max(above, below) - GAP - EDGE;
-    // Never cover the control when there is room for a readable card, else take just over half,
-    // and on a short screen (a phone on its side) at least 260px, so a step reads with Next in view.
-    style.maxHeight = `${room >= 200 ? room : Math.round(Math.max(vh * 0.56, Math.min(vh - EDGE * 2, 260)))}px`;
-    dock(above > below ? "top" : "bottom");
-    return;
-  }
-  card.dataset.place = "beside";
-  const cw = card.offsetWidth;
-  const ch = card.offsetHeight;
-  // D2 (device sweep, 24 Oct 2026): twice the edge below, so Next and its focus ring never touch the
-  // bottom of the window.
-  const clampTop = (top: number) => Math.min(Math.max(EDGE, top), Math.max(EDGE, vh - ch - EDGE * 2));
-  const clampLeft = (left: number) => Math.min(Math.max(EDGE, left), Math.max(EDGE, vw - cw - EDGE));
-  const bottom = box.top + box.height;
-  const right = box.left + box.width;
-  // Right, left, below, above, each kept in the window; the first that leaves the control clear
-  // wins, else whichever covers least of it.
-  const candidates = [
-    { left: clampLeft(right + GAP), top: clampTop(box.top) },
-    { left: clampLeft(box.left - GAP - cw), top: clampTop(box.top) },
-    { left: clampLeft(box.left), top: clampTop(bottom + GAP) },
-    { left: clampLeft(box.left), top: clampTop(box.top - GAP - ch) },
-  ];
-  const covered = ({ left, top }: { left: number; top: number }) =>
-    Math.max(0, Math.min(left + cw, right) - Math.max(left, box.left)) *
-    Math.max(0, Math.min(top + ch, bottom) - Math.max(top, box.top));
-  const best = candidates.reduce((chosen, candidate) => (covered(candidate) < covered(chosen) ? candidate : chosen));
-  moveTo(best.left, best.top);
-}
+export { findTourTarget } from "./ward-spotlight";
 
 /**
  * THE ROLE-TAILORED TOUR PLAYER. A spotlight on each step's control with the card beside it, Back
@@ -164,8 +43,6 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   });
   const found = steps.findIndex((candidate) => candidate.id === place.id);
   const index = found >= 0 ? found : Math.min(place.at, Math.max(0, steps.length - 1));
-  // The box belongs to the step's control it measured, so a new step starts with no spotlight.
-  const [spot, setSpot] = useState<{ target: TourTarget; box: Box | null } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const spotRef = useRef<HTMLDivElement>(null);
@@ -183,64 +60,11 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     if (pathname !== home) router.push(home);
   }, [home, pathname, router]);
 
-  // Find the step's control (waiting a moment for a page still drawing), bring it into view and
-  // follow it while the window scrolls or resizes.
+  // Find the step's control, light it and keep the card clear of it (`ward-spotlight.ts`).
   const target = step?.target;
-  const box = spot && spot.target === target ? spot.box : null;
-  useEffect(() => {
-    if (!target) return;
-    let element: HTMLElement | null = null;
-    let frame = 0;
-    let follow = 0;
-    const measure = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() =>
-        setSpot({ target, box: element && element.isConnected ? spotBox(element) : null }),
-      );
-    };
-    const started = Date.now();
-    const poll = window.setInterval(() => {
-      element = findTourTarget(target);
-      if (!element && Date.now() - started < FIND_TIMEOUT_MS) return;
-      window.clearInterval(poll);
-      if (!element) return;
-      bringIntoView(element);
-      measure();
-      follow = window.setInterval(measure, REMEASURE_MS);
-    }, 100);
-    window.addEventListener("scroll", measure, true);
-    window.addEventListener("resize", measure);
-    return () => {
-      window.clearInterval(poll);
-      window.clearInterval(follow);
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", measure, true);
-      window.removeEventListener("resize", measure);
-    };
-  }, [target, pathname]);
-
-  useLayoutEffect(() => {
-    // The card is placed by transform, so a step with no control is placed again when the window
-    // changes size (one with a control follows it through the spotlight's own re-measure).
-    const card = cardRef.current;
-    if (!card || box) return;
-    const place = () => placeCard(card, null, device);
-    window.addEventListener("resize", place);
-    return () => window.removeEventListener("resize", place);
-  }, [box, device]);
-
-  useLayoutEffect(() => {
-    if (cardRef.current) placeCard(cardRef.current, box, device);
-    // A tall control with no room beside it: the light stops short of the card below it.
-    const spotElement = spotRef.current;
-    const card = cardRef.current;
-    if (!spotElement || !card || !box) return;
-    const rect = card.getBoundingClientRect();
-    const stop = rect.top - GAP / 2 - box.top;
-    const sideBySide = rect.left >= box.left + box.width || rect.right <= box.left;
-    spotElement.style.height =
-      !sideBySide && rect.top > box.top && stop < box.height ? `${Math.max(24, stop)}px` : `${box.height}px`;
-  }, [box, device, index, step]);
+  const targets = useMemo(() => (target ? [target] : undefined), [target]);
+  const { box, missing } = useSpotlight(targets, `${step?.id ?? ""}|${pathname}`);
+  usePlacedCard(cardRef, spotRef, box, device, step);
 
   const finish = useCallback(() => {
     markTourSeen(role);
@@ -295,6 +119,19 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     .filter(Boolean)
     .join(", ");
 
+  // Round 2 (#1118): the welcome card's title and body already say who you are and the meta says
+  // how long is left, so it drops the who-line (the progress takes its place) and its own sentence.
+  const welcome = step.id === "welcome";
+  const body = welcome ? step.body.replace(/\s*This takes about [^.]*\./u, "") : step.body;
+  const progress = (
+    <div className={styles.progress}>
+      <div className={styles.bar} aria-hidden="true">
+        <i style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
+      </div>
+      <p className={styles.meta}>{meta}</p>
+    </div>
+  );
+
   return (
     <OverlayPortal layer="modal" name="ward-tour">
       <div ref={rootRef} className={styles.layer} data-testid="ward-tour" data-device={device}>
@@ -323,23 +160,26 @@ export function WardTour({ onClose }: { onClose: () => void }) {
           data-step={step.id}
         >
           <div className={styles.head}>
-            <p className={styles.who}>{who}</p>
+            {welcome ? progress : <p className={styles.who}>{who}</p>}
             <button
               type="button"
               className={styles.close}
               onClick={close}
               aria-label="Close the tour. Pick it up again from Help."
+              title="Close"
               data-testid="ward-tour-close"
             >
-              Close
+              <X aria-hidden="true" strokeWidth={1.75} />
             </button>
           </div>
+          {/* Redesign (#1118): how far through, straight under the header. */}
+          {welcome ? null : progress}
           <p className={styles.chapter}>{step.chapter}</p>
           <h2 id="ward-tour-title" className={styles.title} aria-live="polite">
             {step.title}
           </h2>
           <p id="ward-tour-body" className={styles.body}>
-            {step.body}
+            {body}
           </p>
           {step.tryIt ? (
             <p className={styles.try}>
@@ -381,14 +221,25 @@ export function WardTour({ onClose }: { onClose: () => void }) {
               ) : null}
             </div>
           ) : null}
-          <div className={styles.bar} aria-hidden="true">
-            <i style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
-          </div>
-          <p className={styles.meta}>{meta}</p>
-          <div className={styles.buttons}>
-            <button type="button" className={styles.secondary} disabled={index === 0} onClick={() => go(index - 1)}>
-              Back
+          {step.target && missing ? (
+            <p className={styles.notHere} data-testid="ward-tour-not-here">
+              {SPOT_NOT_HERE}
+            </p>
+          ) : null}
+          {step.canDo ? (
+            <button
+              type="button"
+              className={styles.tasksLink}
+              onClick={() => {
+                finish();
+                openWardHelp("tasks");
+              }}
+              data-testid="ward-tour-tasks"
+            >
+              See common tasks, with Show me
             </button>
+          ) : null}
+          <div className={styles.buttons}>
             <button
               type="button"
               className={styles.skip}
@@ -397,6 +248,12 @@ export function WardTour({ onClose }: { onClose: () => void }) {
             >
               {last ? "Replay" : "Skip tour"}
             </button>
+            {/* Round 2 (#1118): no dead Back on the first card. */}
+            {index > 0 ? (
+              <button type="button" className={styles.secondary} onClick={() => go(index - 1)}>
+                Back
+              </button>
+            ) : null}
             <button
               ref={nextRef}
               type="button"

@@ -652,19 +652,48 @@ export function filterGlossary(
  * but Ctrl+K, Alt+N and Esc is a single-key shortcut, which Settings can turn off. `short` and `group`
  * are the shortcuts sheet's few words and heading, where a row has them.
  */
-export const KEYBOARD_SHORTCUTS: readonly { keys: string; action: string; short?: string; group?: string }[] = [
-  { keys: "/", action: "Search, from the box in the header. On Settings it finds a setting." },
-  { keys: "Ctrl+K", action: "Search, even with single-key shortcuts off. Cmd+K on a Mac." },
-  { keys: "Shift+T", action: "Open Alerts, called Tasks on some desks." },
-  { keys: "Shift+A", action: "Open Activity." },
-  { keys: "Shift+R", action: "Start a new referral." },
-  { keys: "[", action: "Fold the side menu to icons, or open it again." },
+/** The columns the shortcuts sheet sorts the keys into (redesign, #1118). */
+export const SHORTCUT_GROUPS = ["Find", "Open", "Move around"] as const;
+
+export const KEYBOARD_SHORTCUTS: readonly {
+  keys: string;
+  action: string;
+  /** The few words the shortcuts sheet shows (round 2, #1118); `action` stays the spoken sentence. */
+  short: string;
+  group: (typeof SHORTCUT_GROUPS)[number];
+}[] = [
+  {
+    keys: "/",
+    action: "Search, from the box in the header. On Settings it finds a setting.",
+    short: "Search",
+    group: "Find",
+  },
+  {
+    keys: "Ctrl+K",
+    action: "Search, even with single-key shortcuts off. Cmd+K on a Mac.",
+    short: "Search, even with shortcuts off (⌘K on a Mac)",
+    group: "Find",
+  },
+  { keys: "Shift+T", action: "Open Alerts, called Tasks on some desks.", short: "Open Alerts or Tasks", group: "Open" },
+  { keys: "Shift+A", action: "Open Activity.", short: "Open Activity", group: "Open" },
+  { keys: "Shift+R", action: "Start a new referral.", short: "New referral", group: "Open" },
+  {
+    keys: "[",
+    action: "Fold the side menu to icons, or open it again.",
+    short: "Fold or open the side menu",
+    group: "Move around",
+  },
   {
     keys: "Alt+N",
     action: "Jump to the newest notice's button, and back. Option+N on a Mac.",
     short: "Jump to the newest notice, and back",
     group: "Move around",
   },
-  { keys: "Esc", action: "Close what is open, or step back." },
-  { keys: "?", action: "Show these shortcuts. On Handover and Referrals, list that page's own keys." },
+  { keys: "Esc", action: "Close what is open, or step back.", short: "Close, or step back", group: "Move around" },
+  {
+    keys: "?",
+    action: "Show these shortcuts. On Handover and Referrals, list that page's own keys.",
+    short: "Show shortcuts",
+    group: "Open",
+  },
 ];
