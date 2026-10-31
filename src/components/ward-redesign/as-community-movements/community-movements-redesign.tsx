@@ -62,6 +62,7 @@ import { isCoordinatorStep, movementNextStep } from "@/components/ward-managemen
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { movementPresentation } from "@/components/ward-management/ward-partial-view-presenters";
 import flow from "@/components/ward-management/movements/movement-flow.module.css";
+import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import styles from "@/components/ward-management/movements/movements.module.css";
 import redesign from "@/components/ward-redesign/movements/movements-redesign.module.css";
 import { StagePipeline } from "@/components/ward-redesign/movements/stage-pipeline";
@@ -763,14 +764,14 @@ export function CommunityMovementsRedesign({ openOnLoad }: { openOnLoad?: string
   );
   // The stage highlight buttons: in the hero foot on the larger screen, under the band on phone.
   const stageTrack = (trackClass: string, buttonClassName: string, countClass: string) => (
-    <div className={trackClass} role="group" aria-label="Highlight a stage">
+    <div className={cx(trackClass, phoneRows.chipRow)} role="group" aria-label="Highlight a stage">
       {openStages
         .filter((stage) => stage.id !== "arrived")
         .map((stage) => (
           <button
             key={stage.id}
             type="button"
-            className={buttonClassName}
+            className={cx(buttonClassName, phoneRows.chip, stage.movements.length === 0 && phoneRows.zero)}
             aria-pressed={highlight === `stage:${stage.id}`}
             onClick={() => toggleHighlight(`stage:${stage.id}`)}
             title={stage.label}
@@ -781,6 +782,7 @@ export function CommunityMovementsRedesign({ openOnLoad }: { openOnLoad?: string
         ))}
     </div>
   );
+  const phoneHeroPill = isPhone ? phoneRows.heroPill : undefined; // Phone: Home's hero pill (Josh, 31 Oct).
   function openFromHero(id: string) {
     const target = movements.find((candidate) => candidate.id === id);
     if (target !== undefined && isInServiceScope !== null && !isInServiceScope(target)) {
@@ -981,7 +983,7 @@ export function CommunityMovementsRedesign({ openOnLoad }: { openOnLoad?: string
               </div>
             }
             barAside={
-              <div className={flow.heroTools}>
+              <div className={cx(flow.heroTools, isPhone && phoneRows.heroPills, isPhone && redesign.phHeroPills)}>
                 {isPhone || community ? null : (
                   <>
                     {/* Phone: Transport opens from the "Transport now" card below the hero. */}
@@ -999,7 +1001,11 @@ export function CommunityMovementsRedesign({ openOnLoad }: { openOnLoad?: string
                     type="button"
                     // One primary per screen (device audit): the shell's "Record a decision" is the
                     // primary beside this on tablet and desktop; phone has no shell primary.
-                    className={buttonClass({ variant: isPhone ? "light" : "onHero", size: "sm" })}
+                    className={buttonClass({
+                      variant: isPhone ? "light" : "onHero",
+                      size: "sm",
+                      className: phoneHeroPill,
+                    })}
                     onClick={() => openFromHero(myQueue[0].id)}
                     title={`Top of your queue: ${resolveSubjectPatient(myQueue[0], { patients, referrals }).formalName}. ${myQueue.length} open movements wait on a coordinator step.`}
                   >

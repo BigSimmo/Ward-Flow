@@ -23,6 +23,7 @@ import {
   SrOnly,
   StatusGlyph,
   StatusPill,
+  cx,
   durMinutes,
   type SinceItem,
   type WfTone,
@@ -50,6 +51,8 @@ import {
 } from "@/components/ward-management/handover/handover-model";
 import { wardClosedLine } from "@/components/ward-management/capacity/ward-closure";
 import styles from "@/components/ward-management/handover/handover-phone.module.css";
+import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
+import redesign from "@/components/ward-redesign/handover/handover-redesign.module.css";
 import { peopleToHandOver } from "./handover-ward-desk";
 
 type HandoverPhoneProps = {
@@ -526,9 +529,10 @@ export function HandoverPhone({
               ]),
         ]}
         actions={
-          <div className={styles.heroActions}>
+          <div className={phoneRows.heroPills}>
             <Button
               variant="onHero"
+              className={phoneRows.heroPill}
               icon={Clock}
               aria-haspopup="dialog"
               aria-expanded={shiftSheetOpen}
@@ -540,6 +544,7 @@ export function HandoverPhone({
             {/* Labelled, not a bare round icon (device audit 11 Oct 2026). */}
             <Button
               variant="onHero"
+              className={phoneRows.heroPill}
               icon={Timer}
               aria-pressed={meetingOn}
               aria-label={meetingOn ? "Stop the meeting timer" : "Start the meeting timer"}
@@ -598,15 +603,23 @@ export function HandoverPhone({
             aria-labelledby="ward-handover-phone-tab-pts"
             className={styles.panel}
           >
-            <div className={styles.chips} role="group" aria-label="Highlight">
+            <div
+              className={cx(styles.chips, phoneRows.chipRow, redesign.phChipRow)}
+              role="group"
+              aria-label="Highlight"
+            >
               {chips.map((chip) => (
                 <FilterChip
                   key={chip.id}
                   pressed={chip.pressed}
                   onPressedChange={chip.onToggle}
-                  className={styles.chip}
+                  className={cx(styles.chip, phoneRows.chip, chip.count === 0 && phoneRows.zero)}
                 >
                   <b className={styles.chipCount}>{chip.count}</b>
+                  {/* Home-style touch: the one urgent highlight carries the danger dot before its words. */}
+                  {chip.id === "esc" && chip.count > 0 ? (
+                    <StatusGlyph tone="danger" size={9} className={redesign.chipGlyph} />
+                  ) : null}
                   {chip.label}
                 </FilterChip>
               ))}
