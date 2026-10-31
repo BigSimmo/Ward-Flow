@@ -7,13 +7,13 @@ import shell from "@/components/ward-management/shell/ward-bar.module.css";
 
 import styles from "./new-referral-redesign.module.css";
 import { ReferralsRedesign } from "../referrals/referrals-redesign";
-import { ReferralDrawerRedesign } from "./referral-drawer-redesign";
+import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 
 /**
- * New referral, redesigned: the Referrals board with the referral slide-out open over it, as the
- * app's `/ward-flow/referrals/new` does. The slide-out is a copy of today's with the calmer
- * Catchment card, mounted here in the same Sheet and classes the app bar uses, so it opens,
- * closes and asks before discarding a draft exactly as now.
+ * New referral: the Referrals board with the referral slide-out open over it, as the app's
+ * `/ward-flow/referrals/new` does. The slide-out is the app's own (the redesign is built in), mounted
+ * here in the same Sheet and classes the app bar uses, so it opens, closes and asks before
+ * discarding a draft exactly as the app does.
  */
 export function NewReferralRedesign() {
   const [open, setOpen] = useState(true);
@@ -48,7 +48,7 @@ export function NewReferralRedesign() {
         bodyClassName={shell.referralCarrierBody}
       >
         {open ? (
-          <ReferralDrawerRedesign key={round} initialCategory="ward" closeRequestRef={closeRef} onClose={close} />
+          <WardReferralDrawer key={round} initialCategory="ward" closeRequestRef={closeRef} onClose={close} />
         ) : null}
       </Sheet>
     </>

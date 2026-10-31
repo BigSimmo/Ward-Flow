@@ -9,7 +9,7 @@ import shell from "@/components/ward-management/shell/ward-bar.module.css";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { Sheet } from "@/components/wf/sheet";
-import { ReferralDrawerRedesign } from "@/components/ward-redesign/new-referral/referral-drawer-redesign";
+import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 
 /** The emergency department the ED board mock-up draws. */
 const ED_ID = "peel-ed";
@@ -57,7 +57,7 @@ export function ReferWardHost() {
       bodyClassName={shell.referralCarrierBody}
     >
       {open ? (
-        <ReferralDrawerRedesign
+        <WardReferralDrawer
           initialCategory={request.category}
           initialDestination={request.destination}
           initialPatientId={request.personId}

@@ -3521,3 +3521,79 @@ details.refCard > summary {
     white-space: normal;
   }
 }
+
+/* New referral redesign (approved mock-up, 31 Oct 2026). */
+
+/* The calmer Catchment card: one status line, the fields, then one row to mark it not known or
+   confirm it. */
+.catchmentStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+
+.catchmentFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.confirmEnd.confirmEnd {
+  margin: 0;
+  margin-inline-start: auto;
+}
+
+/* Before you send: a long value wraps under its own column instead of being cut off. Short labels
+   take their own width, so a long value has room to wrap once, not four times. */
+.railWrap.railWrap > div {
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: start;
+}
+
+.railWrap.railWrap dd {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* The rail's figure card with one figure: one column, the same type as the pair. */
+.railSingle.railSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* On a phone the pre-filled banner keeps the same side inset as the step card and checklist around
+   it, instead of running edge to edge. */
+@media (max-width: 48rem) {
+  .fastTrackInset.fastTrackInset {
+    margin-inline: var(--wf-s-4);
+  }
+}
+
+/* The locked Send's padlock at the drawer's 14px button icon size (it drew at lucide's own 24px). */
+.sendLocked.sendLocked {
+  gap: 6px;
+}
+
+.sendLocked.sendLocked svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.75;
+}
+
+/* Phone step rows: the hint under a step (the sending place, the patient) wraps in full rather than
+   ending in "…". */
+.phStepHintWrap.phStepHintWrap {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-overflow: clip;
+}

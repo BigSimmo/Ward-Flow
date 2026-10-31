@@ -39,7 +39,8 @@ describe("phone referral hero", () => {
     );
     const hero = screen.getByTestId("ward-referral-phone-hero");
     expect(hero).not.toHaveTextContent(/items left/iu);
-    expect(within(hero).getByText("Urgency")).toBeInTheDocument();
+    // New referral redesign (approved 31 Oct 2026): no "–" Urgency figure before one is chosen.
+    expect(within(hero).queryByText("Urgency")).not.toBeInTheDocument();
     const steps = screen.getByRole("group", { name: "Referral sections" });
     expect(steps).toHaveTextContent(/\d+ needed/u);
   });
