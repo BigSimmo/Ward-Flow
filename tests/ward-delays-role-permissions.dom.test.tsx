@@ -70,6 +70,26 @@ describe("Delays escalation follows the existing desk permission", () => {
     expect(sent.filter((event) => event.type === "RECORD_ESCALATION")).toHaveLength(0);
   });
 
+  it("widens the ward desk's list to the full width while the person panel is closed (Josh, 31 Oct 2026)", () => {
+    installMatchMediaStub(false);
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [state.units[0]!.id] } });
+    });
+    renderAllDelays(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DelaysScreen />
+      </WardFlowProvider>,
+    );
+    // On a laptop the ward desk opens on its first person, so the panel starts in the second column.
+    const split = () => document.getElementById("delays-table")!.parentElement!;
+    expect(split(), "the open person panel takes the second column").not.toHaveAttribute("data-single");
+    fireEvent.click(screen.getByTestId("delays-close-detail"));
+    expect(split()).toHaveAttribute("data-single");
+    openPerson(movement.id);
+    expect(split()).not.toHaveAttribute("data-single");
+  });
+
   it.each(["bed_manager", "coordinator"] as const)("keeps the action visible and gates %s before dispatch", (role) => {
     installMatchMediaStub(false);
     act(() => {

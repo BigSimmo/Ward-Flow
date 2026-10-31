@@ -68,7 +68,7 @@ export function tightHours(text: string): string {
  * The blocker titles on this page. The "due soon" form group's real title reads "Form due time (as
  * written) running out"; Josh (30 Oct 2026) renamed it here, keeping "as typed" beside legal times.
  * Its people are those whose typed time falls within the urgent window (a setting, so the title names
- * no hours); a passed time moves the person to the "Form overdue" group above it.
+ * no hours); a passed time moves the person to the "Form time passed, as typed" group above it.
  */
 export function waitingCauseTitle(cause: DelayCause): string {
   return cause === "legal_expiring" ? "Form due soon, as typed" : causeTitle(cause);

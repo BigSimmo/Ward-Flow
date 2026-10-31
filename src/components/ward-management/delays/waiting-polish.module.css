@@ -692,6 +692,10 @@ button.strip:disabled {
     grid-template-columns: minmax(0, 2.3fr) minmax(20rem, 1fr);
   }
 }
+/* Nurse in charge with the person panel closed: nothing beside the list, so it takes the full width. */
+.split.split[data-single] {
+  grid-template-columns: minmax(0, 1fr);
+}
 .pHead {
   align-items: flex-start;
   padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-3);

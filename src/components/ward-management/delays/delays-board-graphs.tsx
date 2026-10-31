@@ -14,7 +14,13 @@ import { ChartScatter, Clock4, Columns3, Grid2x2, Rows3, type LucideIcon } from 
 import { type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { StatusGlyph } from "@/components/wf";
-import { DELAY_CAUSE_ORDER, SEVERE_CAUSES, type DelayCause, type DelayOwnerId } from "./delays-derivations";
+import {
+  DELAY_CAUSE_ORDER,
+  FORM_TIME_PASSED_TITLE,
+  SEVERE_CAUSES,
+  type DelayCause,
+  type DelayOwnerId,
+} from "./delays-derivations";
 import type { CatchmentOrigin } from "./delays-view-model";
 import {
   BOARD_OWNERS,
@@ -47,7 +53,7 @@ import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-
 type Graph = "spread" | "runway" | "matrix";
 
 const SHORT_CAUSE: Record<DelayCause, string> = {
-  legal_breached: "Form overdue",
+  legal_breached: FORM_TIME_PASSED_TITLE,
   legal_expiring: "Form due",
   no_eligible_bed: "No bed",
   awaiting_ward_answer: "Ward answer",

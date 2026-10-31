@@ -1080,7 +1080,7 @@ export function DelaysBoard({
       />
       {banner}
       {empty !== undefined ? (
-        <div className={styles.split}>
+        <div className={styles.split} data-single={wardDesk || undefined}>
           <section className={`${styles.card} ${styles.emptyCard}`} aria-label="Waiting">
             {empty}
             {referralsLine}
@@ -1106,6 +1106,9 @@ export function DelaysBoard({
             className={`${styles.split} ${polish.split}`}
             data-person-open={selected !== null || undefined}
             data-portrait={portrait ? "slide" : undefined}
+            // Role view (nurse in charge, Josh 31 Oct 2026): no registers rail, so with the person panel
+            // closed the list takes the full width instead of leaving an empty column.
+            data-single={(wardDesk && selected === null) || undefined}
           >
             <section
               ref={tableRef}
