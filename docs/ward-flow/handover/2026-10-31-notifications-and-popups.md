@@ -100,6 +100,8 @@ still unverified are below.
   - `check:diff-integrity`: 93 → 117 test cases, no lost tests.
   - `docs:check-scripts`, `docs:check-links`, `docs:check-index` and `docs:check-inventory`.
   - `check:runtime` and `check:installed-lock-parity`.
+  - `check:ward-expected-reds` on the committed tree at `5b150020`: 18 of 18 batches, 0 failures.
+  - `ward:organise:check` and `docs:maintain:check`.
   - Typecheck (`tsconfig.typecheck.json`) and lint on every changed file. The pre-commit hook passed on each commit.
 - **Browser look** (local dev server, Chromium):
   - Desktop light on Settings and On-call: toast motion, the Undo line, Alt+N reaching Undo, and the Recent chip and popover opening upward.
@@ -107,8 +109,7 @@ still unverified are below.
 
 **Not verified, or still open**
 
-- **`check:ward-expected-reds`** was running when this note was written. Its result is in the PR or the final chat message, not here.
-- **Full-repository checks:** `npm run lint` and `npm run typecheck` were run only per changed file. The push hook skipped its own run because the expected-reds check held the run lock.
+- **Full-repository checks:** `npm run lint` and `npm run typecheck` were run only per changed file. The push hook skipped its own run because the expected-reds check held the run lock. CI on the PR runs both.
 - **Not run:**
   - `npm run build` and the phone script budget (`scripts/check-script-budget.mjs`). The provider adds roughly 3–5 KB to every route. If a route goes over its limit, lazy-load the Recent panel before raising any limit.
   - Playwright journeys (`npm run test:e2e:ward-journeys`).
