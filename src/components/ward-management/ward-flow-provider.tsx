@@ -110,6 +110,7 @@ import {
   type AssertNever,
   type UnreviewedStringOrUnknownKeys,
 } from "@/components/ward-management/ward-flow-persistence-classification";
+import { withCurrentRoleWords } from "@/components/ward-management/ward-role-words-display";
 import type { ScenarioFileBuild } from "@/components/ward-management/ward-flow-scenario-file";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
 import { WardShellAuthorityProvider, WardShellPublicProvider } from "./shell/ward-shell-public-context";
@@ -1210,6 +1211,9 @@ function WardFlowWorld({
   // The readers and the two record actions close over `state`, so they are rebuilt when it changes,
   // and only then: in the value memo below they were rebuilt on every clock tick as well, which woke
   // every screen that reads one of them.
+  // Q77 (Josh, 31 Oct 2026): screens read records saved before the role names changed under the new
+  // names. Display only: `state` itself, which is saved, synced and reduced, keeps the saved words.
+  const shown = useMemo(() => withCurrentRoleWords(state), [state]);
   const stateBound = useMemo(
     () =>
       ({
@@ -1251,12 +1255,12 @@ function WardFlowWorld({
             expectedRevision: state.dischargeRevisions[admissionId] ?? 0,
           });
         },
-        readDischargeRecords: (actor, unitId) => selectDischargeRecords(state, actor, unitId),
+        readDischargeRecords: (actor, unitId) => selectDischargeRecords(shown, actor, unitId),
         readDischargeRecord: (actor, admissionId, handle) =>
-          readOpenedDischargeRecord(state, actor, admissionId, handle),
-        readAuditEvents: (actor) => readAuditEvents(state, actor),
-        readGovernanceAuditEvents: (actor) => readGovernanceAuditEvents(state, actor),
-        readAuditReviews: (actor) => readAuditReviews(state, actor),
+          readOpenedDischargeRecord(shown, actor, admissionId, handle),
+        readAuditEvents: (actor) => readAuditEvents(shown, actor),
+        readGovernanceAuditEvents: (actor) => readGovernanceAuditEvents(shown, actor),
+        readAuditReviews: (actor) => readAuditReviews(shown, actor),
         openDischargeRecord: (actor, admissionId) => {
           if (!safeCounter(openRequestSequence.current) || openRequestSequence.current >= Number.MAX_SAFE_INTEGER)
             throw new Error("Record request allocation unavailable");
@@ -1277,7 +1281,7 @@ function WardFlowWorld({
           });
           return handle;
         },
-        wardReferralInbox: (unitId: string) => wardReferralInboxEntries(state.referrals, unitId),
+        wardReferralInbox: (unitId: string) => wardReferralInboxEntries(shown.referrals, unitId),
         resolvePatientIdentity: (subject) =>
           resolveSubjectPatient(subject, {
             patients: state.patients,
@@ -1287,7 +1291,7 @@ function WardFlowWorld({
             plannedAdmissions: state.plannedAdmissions,
           }),
       }) satisfies Partial<WardFlowContextValue>,
-    [state, dispatch],
+    [state, shown, dispatch],
   );
 
   // One object per change of status, so readers of `shared` do not wake on every clock tick.
@@ -1296,36 +1300,36 @@ function WardFlowWorld({
 
   const value = useMemo<WardFlowContextValue>(
     () => ({
-      worldGeneration: state.worldGeneration,
+      worldGeneration: shown.worldGeneration,
       sessionAdopted: container.sessionAdopted === true,
       captureCommandLifetime,
       ...stateBound,
-      movements: state.movements,
-      units: state.units,
-      referrals: state.referrals,
-      rejections: state.rejections,
-      bedReleases: state.bedReleases,
-      leaveBeds: state.leaveBeds,
-      refreshRequests: state.refreshRequests,
-      handoverSignOffs: Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : EMPTY_ARRAY,
-      repatriations: Array.isArray(state.repatriations) ? state.repatriations : EMPTY_ARRAY,
-      ...closingLoop.closingLoopContext(state),
-      inboxAcknowledgements: state.inboxAcknowledgements,
-      inboxCompletions: state.inboxCompletions,
-      inboxOwnership: state.inboxOwnership,
-      inboxSnoozes: state.inboxSnoozes,
-      undoRecords: state.undoRecords,
-      notices: state.notices,
-      morningRollupConfirmations: state.morningRollupConfirmations,
-      patients: state.patients,
-      admissions: state.admissions,
+      movements: shown.movements,
+      units: shown.units,
+      referrals: shown.referrals,
+      rejections: shown.rejections,
+      bedReleases: shown.bedReleases,
+      leaveBeds: shown.leaveBeds,
+      refreshRequests: shown.refreshRequests,
+      handoverSignOffs: Array.isArray(shown.handoverSignOffs) ? shown.handoverSignOffs : EMPTY_ARRAY,
+      repatriations: Array.isArray(shown.repatriations) ? shown.repatriations : EMPTY_ARRAY,
+      ...closingLoop.closingLoopContext(shown),
+      inboxAcknowledgements: shown.inboxAcknowledgements,
+      inboxCompletions: shown.inboxCompletions,
+      inboxOwnership: shown.inboxOwnership,
+      inboxSnoozes: shown.inboxSnoozes,
+      undoRecords: shown.undoRecords,
+      notices: shown.notices,
+      morningRollupConfirmations: shown.morningRollupConfirmations,
+      patients: shown.patients,
+      admissions: shown.admissions,
       now,
       dayZero,
-      scenario: state.scenario,
-      configuration: state.configuration,
-      broadcastAlerts: state.broadcastAlerts ?? EMPTY_ARRAY,
-      plannedAdmissions: state.plannedAdmissions ?? EMPTY_ARRAY,
-      supportNotifications: state.supportNotifications ?? EMPTY_ARRAY,
+      scenario: shown.scenario,
+      configuration: shown.configuration,
+      broadcastAlerts: shown.broadcastAlerts ?? EMPTY_ARRAY,
+      plannedAdmissions: shown.plannedAdmissions ?? EMPTY_ARRAY,
+      supportNotifications: shown.supportNotifications ?? EMPTY_ARRAY,
       eventLog: shared.enabled ? (shared.eventLog ?? EMPTY_ARRAY) : (container.eventLog ?? EMPTY_ARRAY),
       dispatch,
       focusMovementId,
@@ -1347,7 +1351,8 @@ function WardFlowWorld({
       // mutated one, so every field below is already covered by `state` itself changing reference —
       // `react-hooks/exhaustive-deps` flagged the individual fields as redundant once `state` was
       // added, not as a reason to remove `state` and go back to naming fields one at a time.
-      state,
+      // `shown` is `state` read for display (Q77), so it changes exactly when `state` does.
+      shown,
       stateBound,
       container.sessionAdopted,
       captureCommandLifetime,
