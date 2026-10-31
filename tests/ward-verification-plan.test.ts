@@ -42,6 +42,10 @@ describe("actual Ward local verification plan", () => {
     const scope = { entries: [{ file: "src/app/page.tsx", status: "M" }] };
     expect(deferredToHostedCi(scope).join(" ")).toMatch(/check:ward-expected-reds.*build.*test:e2e:ward-journeys/);
     expect(deferredToHostedCi(scope, { full: true })).toEqual([]);
+    // An explicit --files scope cannot be followed by test:related, so it keeps the full unit gate.
+    expect(selectedScripts(scope, false, { explicitFiles: true })).toContain("check:ward-expected-reds");
+    expect(selectedScripts(scope, false, { explicitFiles: true })).not.toContain("test:related");
+    expect(deferredToHostedCi(scope, { explicitFiles: true }).join(" ")).not.toMatch(/check:ward-expected-reds/);
     expect(deferredToHostedCi({ entries: [{ file: "README.md", status: "M" }] })).toEqual([]);
     expect(summarizePrLocalRun(["lint"], { completed: ["lint"], deferred: ["production build (build)"] })).toContain(
       "left to hosted CI",

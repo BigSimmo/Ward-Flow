@@ -26,7 +26,7 @@ const common = [
 // branch gets none) and the work will not reach a CI-checked PR first, or when asked.
 // `--extended` is still accepted (callers pass it) and does not change the plan.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for call-site compatibility
-export function selectedScripts(scope, _extended = false, { full = false } = {}) {
+export function selectedScripts(scope, _extended = false, { full = false, explicitFiles = false } = {}) {
   const plan = Array.isArray(scope.entries) ? classifyChanges(scope.entries) : scope;
   const scripts = [...common];
   if (plan.full) scripts.push("check:installed-lock-parity");
@@ -34,18 +34,19 @@ export function selectedScripts(scope, _extended = false, { full = false } = {})
   if (plan.backend) scripts.push("typecheck:backend");
   if (plan.backend && full) scripts.push("test:backend");
   if (plan.frontend_static) scripts.push("lint", "typecheck");
-  if (plan.unit) scripts.push(full ? "check:ward-expected-reds" : "test:related");
+  // test:related reads the Git diff, not a --files list, so an explicit scope keeps the full unit gate.
+  if (plan.unit) scripts.push(full || explicitFiles ? "check:ward-expected-reds" : "test:related");
   if (plan.build && full) scripts.push("build");
   if (plan.browser && full) scripts.push("test:e2e:ward-journeys");
   return [...new Set(scripts)];
 }
 
 /** Gates the lean plan leaves to hosted CI for this scope; empty under `--full`. */
-export function deferredToHostedCi(scope, { full = false } = {}) {
+export function deferredToHostedCi(scope, { full = false, explicitFiles = false } = {}) {
   if (full) return [];
   const plan = Array.isArray(scope.entries) ? classifyChanges(scope.entries) : scope;
   return [
-    ...(plan.unit ? ["full unit suite (check:ward-expected-reds)"] : []),
+    ...(plan.unit && !explicitFiles ? ["full unit suite (check:ward-expected-reds)"] : []),
     ...(plan.backend ? ["PostgreSQL backend tests (test:backend)"] : []),
     ...(plan.build ? ["production build (build)"] : []),
     ...(plan.browser ? ["browser journeys (test:e2e:ward-journeys)"] : []),
@@ -167,8 +168,9 @@ async function main() {
   }
   const scope = readScope({ files, base });
   const full = args.includes("--full");
-  const scripts = selectedScripts(scope, args.includes("--extended"), { full });
-  const deferred = deferredToHostedCi(scope, { full });
+  const explicitFiles = files !== undefined;
+  const scripts = selectedScripts(scope, args.includes("--extended"), { full, explicitFiles });
+  const deferred = deferredToHostedCi(scope, { full, explicitFiles });
   validateSelectedScripts(scripts);
   if (args.includes("--json")) {
     console.log(JSON.stringify({ scope, scripts, deferred, executed: false }, null, 2));
