@@ -514,22 +514,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Phone:** today's phone layout, without the timeline; record tabs keep today's size.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
-  "statistics-compare": [
-    "**Built from a copy of today's Compare screen**, so Chart and Data, the measure switches, Pinned wards, CSV and the phone Compare two wards sheet all work as now.",
-    "**New:** Open a unit is a button on the statistics tab row. It opens today's chooser above the charts instead of a grid of 22 wards under them; a link to the chooser still opens it.",
-    "**New:** both charts show the first eight rows, with Show all. Wards and EDs more than one standard deviation above the mean get an amber dot. The Data tables and phone charts follow the same rule.",
-    "**New:** Occupancy is the first ward measure and the first Data column, from the app's existing beds-in-use count, so this page matches the main Statistics page. The CSV now includes it too, so it differs from today's export.",
-    "**Question for you:** with both charts cut to eight rows, the ward card ends about 150 px above the ED and Pinned column at 1440. Should Pinned wards move under the ward chart?",
-    "**Round 2:** phone switches and Show all are back to their normal size, with an invisible larger touch area (your ruling, 30 October). The 'Blockers' measure reads 'Held up', the same word as the other statistics pages. Chart names drop a trailing 'ED' so they stay on one line; the spoken label keeps the full name.",
-    "**Kept:** 'Open' as the ward type, because it is the clinical term and part of ward names.",
-  ],
-  "statistics-list": [
-    "**Built from a copy of today's All wards screen**, so every column, sorting, By service and One list, and the highlight chips work as now.",
-    "**New:** the highlight chips sit on one row (they scroll sideways on a narrow card), and the By service / One list switch and the ward count move into the card heading.",
-    '**New:** By service opens on the first two services, then "Show 3 more services, 11 wards"; One list opens on the first eight wards. Pressing a chip shows every ward, because highlighting never hides one.',
-    '**Still open:** folding the empty teams into one "teams with nobody in a bed" row is not built here.',
-    "**Round 2:** the phone title reads 'All wards', as on desktop; it said '14 wards over 85%', which the toggle under it already shows. Phone rows say 'held up' and show only parts that are not nought.",
-  ],
   downtime: [
     "**Built from a copy of today's Downtime pack screen**, so New snapshot, Print or save PDF, the freeze time, the stale line and the phone layout work as now.",
     "**New:** on screen one table shows at a time. Tabs with counts (Beds ready, ED queue, Pending moves, Legal forms) replace the jump buttons, and the header chips switch tabs too.",
@@ -565,14 +549,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**Kept:** every figure, the legend, the screen-reader wording and the executive "people not listed" privacy notice.',
     "**Still open:** the Referrals card ends with some empty space, and the phone bed strip is not yet shaded by stay.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
-  "statistics-weekly": [
-    "**Built from a copy of today's weekly report**, so the week picker, Print, the period line and every measure work as now, all from the app's own weekly and pilot measures.",
-    "**New:** declines and overrides share one card, one line each with placement and referral counts (reasons listed only when there are some), with Occupancy beside it.",
-    "**New:** the pilot measures are one table, one group of rows per measure. Beside it, Counted outside Ward Flow says plainly that calls per placed referral use a paper tally and wrong-patient or lost changes go through the incident route; Where the time goes sits under it.",
-    '**New:** when no expected date was held for the week, Delayed discharge says "Not enough history yet…" instead of two Not known figures. The demo data never reaches that case, so it is built but not yet seen on screen.',
-    "**Kept:** all disclosure and synthetic-data wording, the waits table and the phone cards.",
-    "**Still open:** on a phone, declines and overrides are still two cards.",
   ],
   movements: [
     "**Built from a copy of today's Movements screen**, so the timeline, worklist, drawer and every action work as they do now.",
