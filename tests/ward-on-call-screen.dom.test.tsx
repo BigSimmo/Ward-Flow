@@ -167,6 +167,16 @@ describe("the on-call screen", () => {
     expect(row("nmhs-scon")).toHaveAttribute("data-dim", "true");
   });
 
+  it("names the ending-soon state one way, and says the filter counts are this tab's", () => {
+    renderOnCall();
+    const hud = within(screen.getByTestId("ward-on-call-hud-island"));
+    expect(hud.getByRole("button", { name: /ending soon/u })).toBeVisible();
+    expect(screen.getByRole("button", { name: /^Ending soon/u })).toBeVisible();
+    expect(screen.getByText("Highlight in Hospitals")).toBeVisible();
+    expect(screen.queryByText(/within the hour/iu)).not.toBeInTheDocument();
+    expect(screen.queryByText("Prototype data, invented numbers")).not.toBeInTheDocument();
+  });
+
   it("v10: the title count equals the hero answering chip, and Downtime card is a dashed Preview", () => {
     renderOnCall();
     const hud = screen.getByTestId("ward-on-call-hud-island");

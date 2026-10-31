@@ -74,7 +74,7 @@ describe("the browser's single-key shortcut preference", () => {
         <OnCallScreen />
       </WardFlowProvider>,
     );
-    const search = screen.getByRole("searchbox", { name: "Search contacts" });
+    const search = screen.getByRole("searchbox", { name: "Search by role, hospital, ward, team or number" });
     act(() => setCharacterShortcutsEnabled(false));
     fireEvent.keyDown(document.body, { key: "/" });
     expect(search).not.toHaveFocus();
