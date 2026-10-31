@@ -164,15 +164,15 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     renderSheet(true);
     fireEvent.click(screen.getByTestId("ward-tools-toggle-demo"));
     const panel = screen.getByTestId("ward-tools-demo-panel");
-    expect(within(panel).getByRole("radiogroup", { name: "Demo scenario" })).toBeTruthy();
+    expect(within(panel).getByRole("group", { name: "Demo scenario" })).toBeTruthy();
     expect(within(panel).getByRole("button", { name: "+15 min" })).toBeTruthy();
     expect(within(panel).getByRole("button", { name: "Reset demo" })).toBeTruthy();
     // The one tap Demo reset (#298) lives in the same panel, behind its own flag.
     expect(within(panel).getByTestId("ward-demo-reset-winter-surge")).toBeTruthy();
     // Its three scenarios load from the reset, after a confirm, so the picker does not repeat them.
-    const picker = within(panel).getByRole("radiogroup", { name: "Demo scenario" });
-    expect(within(picker).queryByRole("radio", { name: /Winter surge/u })).toBeNull();
-    expect(within(picker).getByRole("radio", { name: /Standard day/u })).toBeTruthy();
+    const picker = within(panel).getByRole("group", { name: "Demo scenario" });
+    expect(within(picker).queryByRole("button", { name: /Winter surge/u })).toBeNull();
+    expect(within(picker).getByRole("button", { name: /Standard day/u })).toBeTruthy();
   });
 
   it("opens every figure in place without repeating the headline figures (simplification A2)", () => {

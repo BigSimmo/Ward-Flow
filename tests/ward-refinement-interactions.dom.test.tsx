@@ -54,7 +54,7 @@ describe("Q004 refinement interaction regressions", () => {
     expect(recordFor(movementId)).toHaveFocus();
     expect(screen.queryByRole("dialog")).toBeNull();
 
-    const transportOrder = screen.getByRole("radio", { name: "By transport leg, and what has none" });
+    const transportOrder = screen.getByRole("radio", { name: "Transport" });
     transportOrder.focus();
     fireEvent.click(transportOrder);
     expect(transportOrder).toHaveAttribute("aria-checked", "true");
