@@ -119,11 +119,8 @@ const PullAcceptedReferral = dynamic(
 import a from "@/components/ward-management/referrals/referral-board.module.css";
 import p from "@/components/ward-management/referrals/referral-board-phone.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
-import {
-  ReferralPhoneCard,
-  ReferralPhoneChips,
-  ReferralPhoneTop,
-} from "@/components/ward-management/referrals/referral-board-phone";
+import { ReferralPhoneCard, ReferralPhoneTop } from "@/components/ward-management/referrals/referral-board-phone";
+import { ReferralPhoneChips } from "@/components/ward-redesign/referrals/referral-phone-chips";
 import { BedManagerReferralPhoneHero } from "./bed-manager-referral-phone-hero";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { useIsPhone } from "@/components/wf";

@@ -5,9 +5,10 @@ import { ChevronRight, Clock, ListOrdered, TriangleAlert } from "lucide-react";
 import { useId, useRef, type ReactNode } from "react";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { Button, LiveChip, ScrollRow, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
+import { Button, LiveChip, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
 
 import styles from "@/components/ward-management/referrals/referral-board-phone.module.css";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import local from "@/components/ward-redesign/referrals/referrals-redesign.module.css";
 
 /**
@@ -167,11 +168,11 @@ export function ReferralPhoneHero({
         </div>
       )}
       {edDesk && edHero.asked === 0 ? null : (
-        <div className={styles.actions}>
+        <div className={cx(styles.actions, rows.heroPills)}>
           <Button
             variant="onHero"
             icon={TriangleAlert}
-            className={styles.action}
+            className={rows.heroPill}
             disabledReason={overdue > 0 ? undefined : "Nothing is overdue."}
             reasonDisplay="tooltip"
             onClick={onNextOverdue}
@@ -179,7 +180,7 @@ export function ReferralPhoneHero({
             Next overdue
           </Button>
           {edDesk ? null : (
-            <Button variant="onHero" icon={ListOrdered} className={styles.action} onClick={onMeeting}>
+            <Button variant="onHero" icon={ListOrdered} className={rows.heroPill} onClick={onMeeting}>
               Bed meeting list
             </Button>
           )}
@@ -226,17 +227,12 @@ export function ReferralPhoneChips({
   onHighlight: (key: string) => void;
 }) {
   return (
-    <ScrollRow
-      className={styles.chipsFrame}
-      rowClassName={styles.chips}
-      role="group"
-      aria-label="Highlight by what is asked"
-    >
+    <div className={cx(rows.chipRow)} role="group" aria-label="Highlight by what is asked">
       {chips.map((chip) => (
         <button
           key={chip.key}
           type="button"
-          className={styles.chip}
+          className={cx(styles.chip, rows.chip, chip.count === 0 && rows.zero)}
           aria-pressed={highlight === chip.key}
           onClick={() => onHighlight(chip.key)}
           data-testid={`ward-referral-phone-chip-${chip.key}`}
@@ -245,7 +241,7 @@ export function ReferralPhoneChips({
           {chip.label}
         </button>
       ))}
-    </ScrollRow>
+    </div>
   );
 }
 

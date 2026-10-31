@@ -1,7 +1,8 @@
 "use client";
 // Referrals redesign: the phone hero copied from src/components/ward-management/referrals/referral-board-phone.tsx
 // (30 October 2026). Changed: the figure reads "Decision overdue", as the desktop chip does, and the
-// median names what it covers. The chips, card and top stay the real ones.
+// median names what it covers. 31 October: Next overdue and Bed meeting list are Home's hero pills,
+// side by side. The chips, card and top stay the real ones.
 
 import { ListOrdered, TriangleAlert } from "lucide-react";
 import { useId, useRef, type ReactNode } from "react";
@@ -9,6 +10,7 @@ import { useId, useRef, type ReactNode } from "react";
 import { Button, LiveChip, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
 
 import styles from "@/components/ward-management/referrals/referral-board-phone.module.css";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import local from "./referrals-redesign.module.css";
 
 /**
@@ -106,18 +108,18 @@ export function ReferralPhoneHero({
           </span>
         </button>
       </div>
-      <div className={styles.actions}>
+      <div className={cx(styles.actions, rows.heroPills)}>
         <Button
           variant="onHero"
           icon={TriangleAlert}
-          className={styles.action}
+          className={rows.heroPill}
           disabledReason={overdue > 0 ? undefined : "Nothing is overdue."}
           reasonDisplay="tooltip"
           onClick={onNextOverdue}
         >
           Next overdue
         </Button>
-        <Button variant="onHero" icon={ListOrdered} className={styles.action} onClick={onMeeting}>
+        <Button variant="onHero" icon={ListOrdered} className={rows.heroPill} onClick={onMeeting}>
           Bed meeting list
         </Button>
       </div>

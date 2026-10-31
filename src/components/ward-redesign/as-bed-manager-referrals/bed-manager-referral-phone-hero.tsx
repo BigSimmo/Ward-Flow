@@ -9,6 +9,7 @@ import { useId, useRef, type ReactNode } from "react";
 import { Button, LiveChip, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
 
 import styles from "@/components/ward-management/referrals/referral-board-phone.module.css";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import local from "@/components/ward-redesign/referrals/referrals-redesign.module.css";
 
 /**
@@ -120,18 +121,18 @@ export function BedManagerReferralPhoneHero({
           ) : null}
         </div>
       )}
-      <div className={styles.actions}>
+      <div className={cx(styles.actions, rows.heroPills)}>
         <Button
           variant="onHero"
           icon={TriangleAlert}
-          className={styles.action}
+          className={rows.heroPill}
           disabledReason={overdue > 0 ? undefined : "Nothing is overdue."}
           reasonDisplay="tooltip"
           onClick={onNextOverdue}
         >
           Next overdue
         </Button>
-        <Button variant="onHero" icon={ListOrdered} className={styles.action} onClick={onMeeting}>
+        <Button variant="onHero" icon={ListOrdered} className={rows.heroPill} onClick={onMeeting}>
           Bed meeting list
         </Button>
       </div>

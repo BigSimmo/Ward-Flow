@@ -3,12 +3,13 @@
 
 import phone from "@/components/ward-management/referrals/referral-board-phone.module.css";
 import type { PhoneChip } from "@/components/ward-management/referrals/referral-board-phone";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
+import { cx } from "@/components/wf";
 
-import styles from "./referrals-redesign.module.css";
 
 /**
- * The highlight chips under the phone hero, the same chips as today. Josh, 30 Oct 2026: they wrap
- * onto a second row instead of scrolling sideways and ending in "0 Com…".
+ * The highlight chips under the phone hero, the same chips as today. Josh, 31 Oct 2026: one row that
+ * slides sideways in Home's style, with chips at 0 muted at the end, instead of wrapping onto two rows.
  */
 export function ReferralPhoneChips({
   chips,
@@ -20,12 +21,12 @@ export function ReferralPhoneChips({
   onHighlight: (key: string) => void;
 }) {
   return (
-    <div className={styles.phoneChips} role="group" aria-label="Highlight by what is asked">
+    <div className={cx(rows.chipRow)} role="group" aria-label="Highlight by what is asked">
       {chips.map((chip) => (
         <button
           key={chip.key}
           type="button"
-          className={phone.chip}
+          className={cx(phone.chip, rows.chip, chip.count === 0 && rows.zero)}
           aria-pressed={highlight === chip.key}
           onClick={() => onHighlight(chip.key)}
           data-testid={`ward-referral-phone-chip-${chip.key}`}
