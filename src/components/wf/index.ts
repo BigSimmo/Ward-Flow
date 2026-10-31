@@ -97,7 +97,7 @@ export { PortraitList, PortraitRail, type PortraitGroup } from "./portrait";
 
 export { RadioGroup } from "./radio-group";
 // Kit standard (lane C, from the #1118 mock-ups; Josh, 30-31 October 2026).
-export { ShowMoreRow } from "./show-more-row";
+export { ShowMoreRow, SHOW_MORE_MIN_HIDDEN, foldHidden, foldLimit } from "./show-more-row";
 export { SearchField, type SearchFieldProps } from "./search-field";
 export { TimePresets, timePresetClockText } from "./time-presets";
 export { phoneRows } from "./phone-rows";
