@@ -1,0 +1,410 @@
+/* Mock-up copy of draft PR #1124's toast styles (src/components/wf/overlay.module.css: .glass, .toast,
+   .toastList, .toastTools and the phone pill), so the redesign preview can draw the folded stack
+   before it is built (D-91). The real wf toast is not touched.
+
+   Redesign changes from #1124, each marked "Redesign" below:
+   - the phone stack rests 24px above the dock (it touched the dock's + before);
+   - the title and body wrap in full on every width (no "…" on a name or a ward);
+   - desktop cards share one width, so folded cards line up behind the newest;
+   - the fold control sits just above the stack it opens. */
+
+/* The region: bottom right on desktop, as the app's ToastProvider places it. It never blocks the
+   page; each card opts back in. */
+.region {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-toast, 90);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: var(--wf-s-4, 16px);
+  pointer-events: none;
+}
+
+/* #1124: popover glass (82%, blur 24px) with a top highlight and a soft sheen. */
+.glass {
+  background-color: var(--wf-glass);
+  background-image: var(--wf-sheen);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid var(--wf-line-2);
+  box-shadow:
+    inset 0 1px 0 var(--wf-glass-hl),
+    var(--wf-e2);
+  color: var(--wf-ink-1);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background-color: var(--wf-overlay);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background-color: var(--wf-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* The cards. One column; older self-closing notices fold behind the newest when there are three or
+   more (notice-stack-layout.ts places them in one grid row). A warning keeps its own row.
+   Redesign: one width for every desktop card (#1124 let each card size to its words). */
+.list {
+  display: grid;
+  grid-template-columns: min(25rem, calc(100vw - 32px));
+  justify-items: stretch;
+  align-items: end;
+  gap: var(--wf-s-2, 8px);
+  pointer-events: none;
+}
+
+/* The live region holds the cards but draws no box of its own, so they sit in the list's grid
+   beside the fold control, which stays outside the live region and is never read as an outcome. */
+.live {
+  display: contents;
+}
+
+/* #1124's .toast, with its motion: quick in, rising 4px; quicker out. */
+.card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2, 8px);
+  min-height: var(--wf-h-lg, 40px);
+  padding: 0 var(--wf-s-1, 4px) 0 var(--wf-s-3, 12px);
+  box-sizing: border-box;
+  border-radius: var(--wf-r-md);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  pointer-events: auto;
+  animation: noticeIn var(--wf-t-enter, 220ms) var(--wf-ease-out, ease-out);
+  transition:
+    translate var(--wf-t-enter, 220ms) var(--wf-ease-out, ease-out),
+    scale var(--wf-t-enter, 220ms) var(--wf-ease-out, ease-out),
+    opacity var(--wf-t-enter, 220ms) var(--wf-ease-out, ease-out);
+}
+
+.card[data-leaving="true"] {
+  animation: noticeOut var(--wf-t-exit, 160ms) var(--wf-ease-in, ease-in) forwards;
+  pointer-events: none;
+}
+
+/* Folded: cards share one row; each one further back rises 8px and shrinks 4%. */
+.list[data-stack="folded"] > .live > .card {
+  grid-column: 1;
+  translate: 0 calc(var(--notice-depth, 0) * -8px);
+  scale: calc(1 - var(--notice-depth, 0) * 0.04);
+  transform-origin: bottom center;
+}
+
+/* Redesign: in a folded stack every card fills the row, so a one-line card behind a two-line newest
+   one still peeks above it. The newest card turns solid, so the cards behind show only as their top
+   edges, never through its glass; those cards show no words of their own. */
+.list[data-stack="folded"] > .live > .card {
+  align-self: stretch;
+}
+
+@media (min-width: 48.0625rem) {
+  .list[data-stack="folded"] > .live > .card:not([data-depth]) {
+    background-color: var(--wf-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .card[data-depth] {
+    background-color: var(--wf-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: var(--wf-e1, none);
+  }
+}
+
+.card[data-depth] > * {
+  visibility: hidden;
+}
+
+@keyframes noticeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes noticeOut {
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+@keyframes noticeFadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes noticeFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+.glyph {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  /* Centred on the first line of words (padding 8px + half a 13px line). */
+  margin-top: calc(var(--wf-s-2, 8px) + (var(--wf-lh-13, 18px) - 10px) / 2);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: var(--wf-s-2, 8px) 0;
+}
+
+/* Redesign: wraps in full (D-83 round rule: names, places and wards never end in "…"). */
+.title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--wf-ink-1);
+  text-wrap: pretty;
+}
+
+.body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-wrap: pretty;
+}
+
+.action,
+.close {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin-top: calc((var(--wf-h-lg, 40px) - 28px) / 2);
+}
+
+.close {
+  color: var(--wf-ink-3);
+}
+
+/* "+N more": a small, quiet pill just above the stack it opens. Outside the live region.
+   Room below it for the two cards peeking up behind the newest (8px and 16px). */
+.fold {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 12px;
+  pointer-events: none;
+}
+
+.foldButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1, 4px);
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill, 999px);
+  background: var(--wf-overlay);
+  box-shadow: var(--wf-e1, var(--wf-e2));
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+  pointer-events: auto;
+  animation: noticeFadeIn var(--wf-t-enter, 220ms) var(--wf-ease-out, ease-out);
+  transition:
+    color var(--wf-t-micro, 100ms) var(--wf-ease-out, ease-out),
+    border-color var(--wf-t-micro, 100ms) var(--wf-ease-out, ease-out);
+}
+
+/* The kit's invisible tap area around a small control (48px tall). */
+.foldButton::after {
+  content: "";
+  position: absolute;
+  inset: -11px -4px;
+}
+
+.foldButton:hover {
+  border-color: var(--wf-line-3, var(--wf-line-2));
+  color: var(--wf-ink-1);
+}
+
+.foldButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.foldCount {
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  color: var(--wf-ink-1);
+}
+
+.foldChevron {
+  color: var(--wf-ink-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation-name: noticeFadeIn;
+    animation-duration: 120ms;
+    transition-property: opacity;
+  }
+
+  .card[data-leaving="true"] {
+    animation-name: noticeFadeOut;
+    animation-duration: 120ms;
+  }
+}
+
+/* Phone (#1124 and the v10 mockup): a dark pill, not glass, 12px in from each side; the words wrap.
+   Ink on light, the track colour in dark with a line-2 ring (the tooltip's recipe). A notice that
+   closes itself shows no X.
+   Redesign (D-91): the stack rests 24px above the dock's top (#1124 used 12px, which put the pill
+   against the dock's + hump). --wf-dock-clear (72px dock plus the home indicator) is set on the
+   body wherever the dock is drawn; pages without the dock use the same sum. */
+@media (max-width: 48rem) {
+  .region {
+    --notice-rest: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 24px);
+    left: 12px;
+    right: 12px;
+    bottom: var(--notice-rest);
+    padding: 0;
+    align-items: stretch;
+  }
+
+  /* A sheet or dialog is open: sit higher so its footer buttons stay clear (as #1124). */
+  :global(html:has([role="dialog"][aria-modal="true"])) .region {
+    bottom: calc(var(--notice-rest) + 44px);
+  }
+
+  .list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fold {
+    justify-content: center;
+  }
+
+  .card {
+    /* Redesign: solid (#1124 used 92% and 97%), so the page's words never show through the pill. */
+    --notice-bg: light-dark(var(--wf-ink-1), var(--wf-track));
+    --notice-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
+    --notice-ring: light-dark(transparent, var(--wf-line-2));
+    gap: 10px;
+    min-height: 44px;
+    padding: 0 6px 0 14px;
+    border: 0;
+    border-radius: var(--wf-r-lg);
+    background: var(--notice-bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow:
+      0 0 0 1px var(--notice-ring),
+      var(--wf-e2);
+    color: var(--notice-ink);
+  }
+
+  .text {
+    padding: 11px 0;
+  }
+
+  .glyph {
+    margin-top: calc(11px + (var(--wf-lh-13, 18px) - 10px) / 2);
+  }
+
+  .title,
+  .body {
+    color: var(--notice-ink);
+  }
+
+  .body {
+    opacity: 0.8;
+  }
+
+  /* Success and info read from the words alone, as drawn; a warning or danger keeps its glyph. */
+  .card:is([data-tone="success"], [data-tone="info"]) > .glyph {
+    display: none;
+  }
+
+  .card .action,
+  .card .close {
+    height: 28px;
+    min-height: 28px;
+    margin-top: 8px;
+    padding: 0 12px;
+    border-color: transparent;
+    border-radius: var(--wf-r-sm);
+    box-shadow: none;
+    color: var(--notice-ink);
+    background: color-mix(in srgb, var(--notice-ink) 14%, transparent);
+  }
+
+  .card .close {
+    width: 28px;
+    min-width: 28px;
+    padding: 0;
+    background: transparent;
+  }
+
+  .card .close:hover,
+  .card .close:active {
+    background: color-mix(in srgb, var(--notice-ink) 14%, transparent);
+  }
+
+  .card .action::after,
+  .card .close::after {
+    content: "";
+    position: absolute;
+    inset: -10px -4px;
+  }
+
+  .card[data-auto-dismiss="true"] .close {
+    display: none;
+  }
+
+  /* Redesign: the folded pills. Each one behind the newest is a step paler, so its top edge reads
+     as a card waiting behind. */
+  .card[data-depth="1"] {
+    background: light-dark(
+      color-mix(in srgb, var(--wf-ink-1) 78%, var(--wf-surface)),
+      color-mix(in srgb, var(--wf-track) 88%, var(--wf-ink-1))
+    );
+  }
+
+  .card[data-depth="2"] {
+    background: light-dark(
+      color-mix(in srgb, var(--wf-ink-1) 58%, var(--wf-surface)),
+      color-mix(in srgb, var(--wf-track) 80%, var(--wf-ink-1))
+    );
+  }
+}
+
+/* A help corner card (the tour offer, What's new) holds the bottom right on desktop: notices stand
+   to its left, as #1124 builds it. Inert until a mock-up draws a card with data-wf-corner-card. */
+@media (min-width: 48.0625rem) {
+  :global(html:has([data-wf-corner-card])) .region {
+    right: calc(min(23rem, 100vw - 2rem) + 1rem);
+  }
+}
+
+@media (forced-colors: active) {
+  .glass,
+  .card {
+    border: 1px solid CanvasText;
+  }
+}
+
+@media print {
+  .region {
+    display: none !important;
+  }
+}

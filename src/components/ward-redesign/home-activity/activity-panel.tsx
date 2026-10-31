@@ -21,6 +21,7 @@ import {
 import { useUmrnText } from "@/components/ward-management/ward-patient-name";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 
+import { MissedNotices } from "../notices/missed-notices";
 import { CHANGE_GROUPS, type ChangeLine, type useExplicitReview } from "./activity-changes";
 import styles from "./home-activity.module.css";
 
@@ -217,6 +218,8 @@ export function ActivityPanel({
         {tally}
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="recent" hidden={tab !== "recent"}>
+        {/* Final round (D-91): missed notices sit at the top of Recent activity; no Recent chip. */}
+        <MissedNotices now={now} />
         <RecentBody events={events} tones={activity.tones} />
         {tally}
       </TabPanel>

@@ -8,8 +8,8 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
-import { useOptionalToast } from "@/components/wf";
 
+import { NoticeStack } from "../notices/notice-stack";
 import styles from "./pop-state-offline.module.css";
 
 /**
@@ -43,46 +43,30 @@ function usePretendOffline(): boolean {
 /**
  * The Offline mock-up: Home with the device offline. The real offline notice
  * (shell/ward-offline-banner.tsx) sits pinned under the header, where the app's banner holder puts
- * it, and a save made now shows its toast with the provider's offline note, "Saved on this device
- * only." (ward-offline-copy.ts). The header's live chip turns to Offline by itself. The toast is today's Pull the bed toast for the first accepted
- * referral still waiting for its bed, worded as the app words it, plus the person's name (round 2).
+ * it, and the header's live chip turns to Offline by itself. A save made now shows its notice with the
+ * provider's offline note, "Saved on this device only." (ward-offline-copy.ts), word for word.
+ *
+ * Final round (D-91): the save notice is drawn in the same notice style as the Toast mock-up (draft
+ * PR #1124's card and phone pill, copied into notices/), so it rests clear of the phone's dock too.
+ * It is today's Pull the bed toast for the first accepted referral still waiting for its bed, naming
+ * the person surname first (round 2). The app adds the offline note itself only while a device is
+ * saving, and the preview's pinned world never saves, so the note is written in here.
  */
 export function PopStateOffline({ page }: { page: ReactNode }) {
   usePretendOffline();
-  const toast = useOptionalToast();
   const { referrals, units, movements } = useWardFlowSelect("referrals", "units", "movements");
   const first = useMemo(
     () => acceptedReferralsAwaitingPull(referrals, units, movements)[0],
     [referrals, units, movements],
   );
-  const unitName = first?.unitName;
-  // Redesign: the toast names who the bed was pulled for, surname first (D-83), through the same
-  // name display Pull the bed uses (so discreet names still apply).
+  const unitName = first?.unitName ?? "Bunbury Acute Psychiatric Unit";
+  // The notice names who the bed was pulled for, surname first (D-83), through the same name
+  // display Pull the bed uses (so discreet names still apply).
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
   const who = first ? patientOf(first.referral) : undefined;
   const name = who ? nameFor(who.formalName, who.umrn) : undefined;
-
-  useEffect(() => {
-    if (!toast || !unitName) return;
-    let id: string | undefined;
-    // The app's toast provider adds "Saved on this device only." itself, but only while the world is
-    // being kept on this device, and the preview's pinned world never saves. So the note is written in
-    // here, as it reads on a device that is saving (the same words, from ward-offline-copy.ts).
-    const timer = window.setTimeout(() => {
-      id = toast.push({
-        tone: "success",
-        title: name ? `Bed pulled at ${unitName} for ${name}` : `Bed pulled at ${unitName}`,
-        body: WARD_OFFLINE_SAVED_NOTE,
-        skipOfflineNote: true,
-        duration: 0,
-      });
-    }, 50);
-    return () => {
-      window.clearTimeout(timer);
-      if (id) toast.dismiss(id);
-    };
-  }, [toast, unitName, name]);
+  const title = name ? `Bed pulled at ${unitName} for ${name}` : `Bed pulled at ${unitName}`;
 
   return (
     <>
@@ -90,6 +74,10 @@ export function PopStateOffline({ page }: { page: ReactNode }) {
         <WardOfflineBanner />
       </div>
       {page}
+      <NoticeStack
+        key={title}
+        notices={[{ id: "pulled-offline", tone: "success", title, body: WARD_OFFLINE_SAVED_NOTE, autoDismiss: true }]}
+      />
     </>
   );
 }
