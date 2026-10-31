@@ -8,7 +8,9 @@
 // countdown. Everything else is today's file.
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import Link from "next/link";
-import { CircleCheck, Flag, MoonStar, ServerCog, TriangleAlert, X } from "lucide-react";
+import { Ban, CircleCheck, Flag, MoonStar, ServerCog, Stethoscope, TriangleAlert, X } from "lucide-react";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
+import { moveWord } from "./waiting-hero-bar";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
@@ -30,7 +32,6 @@ import {
   SILENT_MINUTES,
   hoursWord,
   catchmentName,
-  ownerName,
   wardLines,
   candidateWards,
   waitTone,
@@ -44,6 +45,9 @@ import { ago, originLabel } from "@/components/ward-management/delays/delays-boa
 import { standingSuffix, typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
 import redesign from "./waiting-redesign.module.css";
 import polish from "./waiting-polish.module.css";
+
+/** Round 7: candidate wards shown before Show more. */
+const CANDIDATE_LIMIT = 5;
 
 export function PersonPanel({
   row,
@@ -80,6 +84,9 @@ export function PersonPanel({
   const lines = wardLines(row, units);
   const candidates = useMemo(() => candidateWards(movement, units, now), [movement, units, now]);
   const [unavailableOpen, setUnavailableOpen] = useState(false);
+  // Round 7 (Josh, 31 Oct 2026): the candidate list shows its first five, then Show more, in place
+  // of a small box that scrolled inside the panel.
+  const [allCandidates, setAllCandidates] = useState(false);
   // v10 phone: a journey bar from arrival to now leads the person sheet.
   const isPhonePanel = useIsPhone();
   const pullHolder = units.find((unit) => unit.id === movement.acceptedUnitId);
@@ -133,13 +140,11 @@ export function PersonPanel({
       tabIndex={-1}
       ref={panelRef}
     >
-      <div className={styles.sideH}>
+      <div className={`${styles.sideH} ${polish.pHead}`}>
         <div className={styles.sideTitle}>
-          <button type="button" className={styles.lnk} onClick={onClose}>
-            Back
-          </button>
-          <h3 className={styles.ell}>{patient.formalName}</h3>
-          <p className={`${styles.sub} ${styles.ell}`} data-testid="delays-panel-sub">
+          {/* Round 7: the name and its line wrap in full; the close button is the one way back. */}
+          <h3 className={polish.pName}>{patient.formalName}</h3>
+          <p className={`${styles.sub} ${polish.pSub}`} data-testid="delays-panel-sub">
             {[patient.umrn, originLabel(movement), catchmentName(row.origin)].filter(Boolean).join(" · ")}
           </p>
         </div>
@@ -155,7 +160,7 @@ export function PersonPanel({
         </button>
       </div>
       {isPhonePanel ? null : actions}
-      <div className={styles.sideB}>
+      <div className={`${styles.sideB} ${polish.pBody}`}>
         {isPhonePanel ? (
           <div className={styles.phJourney} data-testid={`delays-phone-journey-${movement.id}`}>
             <div className={styles.phJourneyBar} aria-hidden="true">
@@ -186,11 +191,13 @@ export function PersonPanel({
             </div>
           </div>
         ) : null}
-        <div className={`${styles.inset} ${styles.causeInset}`}>
+        <div className={`${styles.inset} ${styles.causeInset} ${polish.pCause}`}>
           <TierTile tier={movement.urgency} label={urgencyTierLabel(movement.urgency)} />
           <div className={styles.grow}>
             <b className={redesign.wrapTitle}>{causeTitle(cause)}</b>
-            <span className={styles.mute}>{`${ownerName(row.owner)} to clear`}</span>
+            <span className={polish.ownerTag} data-owner={row.owner}>
+              {moveWord(row.owner)}
+            </span>
           </div>
           <span
             className={`${styles.wt} ${styles.num}`}
@@ -230,7 +237,7 @@ export function PersonPanel({
           </div>
         ) : null}
 
-        <dl className={styles.facts}>
+        <dl className={`${styles.facts} ${polish.pFacts}`}>
           <dt>Last update</dt>
           <dd>
             <Glyph tone={row.silent ? "warning" : undefined} />
@@ -249,8 +256,11 @@ export function PersonPanel({
         </dl>
 
         {activeBlocker ? (
-          <p className={styles.note} data-testid="delays-blocker">
-            <strong>Blocked:</strong> {blockerText}
+          <p className={`${styles.note} ${polish.pNote}`} data-testid="delays-blocker">
+            <Ban size={14} aria-hidden="true" className={polish.pNoteIcon} />
+            <span>
+              <strong>Blocked:</strong> {blockerText}
+            </span>
           </p>
         ) : null}
         {escalation !== undefined ? (
@@ -274,20 +284,23 @@ export function PersonPanel({
         ) : null}
 
         <p
-          className={`${styles.note} ${cleared === false ? styles.noteWarn : ""}`}
+          className={`${styles.note} ${polish.pNote} ${cleared === false ? styles.noteWarn : ""}`}
           data-testid={`delays-clearance-${movement.id}`}
         >
-          <strong>
-            {cleared === undefined ? "Not assessed" : cleared ? "Medically cleared" : "Not medically cleared"}
-          </strong>{" "}
-          {cleared === undefined
-            ? "Nobody has recorded whether this person is fit to travel."
-            : cleared
-              ? "Cleared to travel."
-              : "A bed becoming free does not release this person."}
+          <Stethoscope size={14} aria-hidden="true" className={polish.pNoteIcon} />
+          <span>
+            <strong>
+              {cleared === undefined ? "Not assessed" : cleared ? "Medically cleared" : "Not medically cleared"}
+            </strong>{" "}
+            {cleared === undefined
+              ? "Nobody has recorded whether this person is fit to travel."
+              : cleared
+                ? "Cleared to travel."
+                : "A bed becoming free does not release this person."}
+          </span>
         </p>
 
-        <div className={styles.sec}>
+        <div className={`${styles.sec} ${polish.pSec}`}>
           <h4 className={styles.h4r}>
             Wards
             {movement.declines.length > 0 ? (
@@ -315,28 +328,35 @@ export function PersonPanel({
             Eligible and overridable wards are both actionable, so neither is collapsed or cut to a
             count (see shortlistCandidates); the list scrolls instead. Wards no reason can buy sit
             behind a disclosure that states how many, each with the gate that blocks it. */}
-        <div className={styles.sec} data-testid={`delays-candidates-${movement.id}`}>
+        <div className={`${styles.sec} ${polish.pSec}`} data-testid={`delays-candidates-${movement.id}`}>
           <h4 className={styles.h4r}>
             Candidate wards <span className={styles.k}>{candidates.offerable.length}</span>
           </h4>
           {candidates.offerable.length === 0 ? (
             <p className={styles.mute}>No other ward could take this person now.</p>
           ) : (
-            <ul className={`${styles.wards} ${styles.candidates}`} aria-label="Wards that could take this person">
-              {candidates.offerable.map((candidate) => (
-                <li key={candidate.unitId}>
-                  <span className={styles.lg}>
-                    <Glyph tone={candidate.tone} />
-                    <span className={styles.ell}>{candidate.name}</span>
-                  </span>
-                  <small>
-                    {candidate.text}
-                    {candidate.waitlist ? ". In catchment, waiting list for a locked bed" : ""}
-                  </small>
-                </li>
-              ))}
+            <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that could take this person">
+              {(allCandidates ? candidates.offerable : candidates.offerable.slice(0, CANDIDATE_LIMIT)).map(
+                (candidate) => (
+                  <li key={candidate.unitId}>
+                    <span className={styles.lg}>
+                      <Glyph tone={candidate.tone} />
+                      <span className={styles.ell}>{candidate.name}</span>
+                    </span>
+                    <small>
+                      {candidate.text}
+                      {candidate.waitlist ? ". In catchment, waiting list for a locked bed" : ""}
+                    </small>
+                  </li>
+                ),
+              )}
             </ul>
           )}
+          {candidates.offerable.length > CANDIDATE_LIMIT ? (
+            <ShowMoreRow onClick={() => setAllCandidates((current) => !current)} expanded={allCandidates}>
+              {allCandidates ? "Show fewer" : `Show ${candidates.offerable.length - CANDIDATE_LIMIT} more`}
+            </ShowMoreRow>
+          ) : null}
           {candidates.unavailable.length > 0 ? (
             <>
               <button
@@ -351,7 +371,7 @@ export function PersonPanel({
                 {`${candidates.unavailable.length} ${candidates.unavailable.length === 1 ? "ward cannot" : "wards cannot"} take this person`}
               </button>
               {unavailableOpen ? (
-                <ul className={`${styles.wards} ${styles.candidates}`} aria-label="Wards that cannot take this person">
+                <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that cannot take this person">
                   {candidates.unavailable.map((ward) => (
                     <li key={ward.unitId}>
                       <span className={styles.lg}>
@@ -391,7 +411,7 @@ export function PersonPanel({
       </div>
       {isPhonePanel ? actions : null}
       {/* Q-12: delays with no named person are never dropped, so the note stays while a person is open. */}
-      <section aria-label="Delays with no named person" className={styles.personSystem}>
+      <section aria-label="Delays with no named person" className={`${styles.personSystem} ${polish.pFoot}`}>
         <NoStatewideDelays />
       </section>
     </section>
