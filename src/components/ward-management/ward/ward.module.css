@@ -642,16 +642,6 @@
   padding: var(--ward-space-12) 0;
 }
 
-.confirmRow[data-fresh="confirmed"] {
-  border-left: 0.1875rem solid var(--ward-success);
-  padding-left: var(--ward-space-10);
-}
-
-.confirmRow[data-fresh="waiting"] {
-  border-left: 0.1875rem solid var(--ward-warning);
-  padding-left: var(--ward-space-10);
-}
-
 /**
  * Daily-return rows 4 and 5, which are NOT confirmations — see the long comment beside them in
  * `ward-screen.tsx`. They deliberately carry `data-kind` rather than `data-fresh`, so neither
@@ -673,7 +663,6 @@
    * `--ward-border-strong` is `var(--muted)` and is genuinely distinct from both, so the
    * claim and the pixels now agree.
    */
-  border-left: 0.1875rem solid var(--ward-border-strong);
   padding-left: var(--ward-space-10);
 }
 
@@ -1817,31 +1806,9 @@
   border-radius: 0.75rem;
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
-    inset 3px 0 0 var(--warn),
     0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
   backdrop-filter: blur(16px) saturate(1.2);
-}
-
-.noticeRow[data-tone="warning"] {
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
-    inset 3px 0 0 var(--warn),
-    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
-}
-
-.noticeRow[data-tone="good"] {
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
-    inset 3px 0 0 var(--good),
-    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
-}
-
-.noticeRow[data-tone="critical"] {
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
-    inset 3px 0 0 var(--danger),
-    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
 }
 
 @media (max-width: 40rem) {
@@ -2285,7 +2252,6 @@
 .bedCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--line-strong);
   border-radius: var(--r2, 6px);
   padding: 10px 12px;
   display: flex;
@@ -2309,20 +2275,7 @@
 
 .bedCard.ready {
   border: 1px solid var(--line);
-  border-left: 4px solid var(--good);
   background: var(--surface);
-}
-
-.bedCard.occupied {
-  border-left-color: var(--ink-soft);
-}
-
-.bedCard.leave {
-  border-left-color: var(--warn);
-}
-
-.bedCard.incoming {
-  border-left-color: var(--accent);
 }
 
 .bedCard.ready .bedNum {
@@ -2331,7 +2284,6 @@
 
 .bedCard.hdu {
   border: 1px solid var(--line);
-  border-left: 4px solid var(--danger);
 }
 
 .bedCard.specialling {
@@ -2872,7 +2824,6 @@
 .inboundCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
   border-radius: var(--r2, 6px);
   padding: 14px 16px;
   display: flex;

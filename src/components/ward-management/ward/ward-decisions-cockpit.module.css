@@ -529,20 +529,4 @@
   position: relative;
 }
 
-.phoneRow[data-act="true"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .phoneRow[data-act="true"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-}
+/* No side marker (owner ruling, 31 Oct 2026): the row's glyph and words carry act now. */
