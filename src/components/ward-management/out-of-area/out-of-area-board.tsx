@@ -1,5 +1,6 @@
 "use client";
 
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -261,7 +262,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     if (!query) return false;
     const info = patientOf(entry);
     const site = siteByCode(entry.unit.siteCode);
-    return [
+    const fields = [
       info.displayName,
       info.formalName,
       info.umrn,
@@ -270,7 +271,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       entry.unit.name,
       site?.name ?? "",
       site?.service ?? "",
-    ].some((value) => value.toLowerCase().includes(query));
+    ];
+    // Every word, folded, in any order (search and forms review, 31 Oct 2026).
+    return fieldsMatchEveryWord(query, fields);
   };
   const anyHighlight = highlight !== null || region !== null || query.length > 0;
   const isHighlighted = (entry: OutOfAreaEntry) =>

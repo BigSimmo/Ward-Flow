@@ -327,3 +327,25 @@ export function formatCatchmentSummary(entry: ResolvedCatchment): string {
 
   return lines.join("\n");
 }
+
+/**
+ * One lookup per suburb the typed text names: a 4-digit postcode reads every suburb filed under it,
+ * anything else is read as one suburb or alias. Shared by the Community and ward suburb lookups so
+ * all three take a postcode as the Tools sheet's resolver does (search and forms review, 31 Oct 2026).
+ */
+export function catchmentLookupsFor(rawQuery: string): readonly CatchmentLookup[] {
+  const query = rawQuery.trim();
+  if (!query) return [];
+  if (/^\d{4}$/.test(query)) {
+    const seen = new Set<string>();
+    const lookups: CatchmentLookup[] = [];
+    for (const row of ROWS_BY_POSTCODE.get(query) ?? []) {
+      const key = normaliseSuburbKey(row.suburb);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      lookups.push(lookupCatchment(row.suburb));
+    }
+    return lookups;
+  }
+  return [lookupCatchment(query)];
+}

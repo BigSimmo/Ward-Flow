@@ -6,8 +6,8 @@
  *
  * - Text folds as `findPatients` folds it (accents, apostrophes and hyphens dropped).
  * - Every typed word must occur somewhere in the record's fields, in any order.
- * - A word of digits also matches the fields' digits with spaces and punctuation ignored, so
- *   "9224 2000" finds "08 9224 2000" and "100001" finds "UM 100001".
+ * - A word of digits also matches the fields' digits with spaces and punctuation ignored, so a
+ *   phone number typed in groups finds it written another way, and "100001" finds "UM 100001".
  * - Near spellings (`fieldsNearlyMatch`) are for places, screens and contacts only. They are never
  *   used for a person or a record number: a near miss there is the classic wrong-patient error.
  *
@@ -40,7 +40,7 @@ function digitWord(word: string): string | null {
 }
 
 /**
- * Groups typed digit runs ("08 9224 2000") into one number, so a phone number typed with spaces
+ * Groups typed digit runs into one number, so a phone number typed with spaces
  * is one word rather than three short ones that each match almost anything.
  */
 function joinedWords(query: string): string[] {

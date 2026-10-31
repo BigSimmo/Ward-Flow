@@ -1,5 +1,6 @@
 "use client";
 
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { setServiceScope, useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import Link from "next/link";
@@ -314,13 +315,10 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const pulled = rows.reduce((sum, row) => sum + row.states.pulled, 0);
   const staleCount = rows.filter((row) => row.stale).length;
 
-  const matchesQuery = (row: WardRow) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    return [row.unit.name, row.siteName, row.unit.cohort, row.service ?? ""].some((text) =>
-      text.toLowerCase().includes(q),
-    );
-  };
+  // Every word, folded, in any order: "SCGH older" finds the SCGH older adult ward (31 Oct 2026).
+  const matchesQuery = (row: WardRow) =>
+    query.trim() === "" ||
+    fieldsMatchEveryWord(query, [row.unit.name, row.siteName, row.unit.siteCode, row.unit.cohort, row.service ?? ""]);
 
   // v10 rule: these filters highlight the wards they match and dim the rest by colour. No ward is
   // hidden, so the cards keep their places and every Enter stays reachable. Counts for each control
@@ -572,7 +570,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               type="search"
               id="wardSearchInput"
               icon={Search}
-              placeholder="Ward, hospital or suburb"
+              placeholder="Ward, hospital or service"
               aria-label="Filter wards by keyword"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
