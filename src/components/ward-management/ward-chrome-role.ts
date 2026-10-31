@@ -135,7 +135,8 @@ export const CHROME_ROLE_LABELS: Record<WardChromeRole, string> = {
   ward: "Nurse in charge",
   ed: "ED clinician",
   officer: "Transport officer",
-  community: "Community clinician",
+  // Q66 (Josh, 31 Oct 2026): one name per role, as new records save it (`WARD_FLOW_ROLE_LABELS`).
+  community: "Community team",
   bed_manager: "Site bed manager",
   executive: "Executive",
 };

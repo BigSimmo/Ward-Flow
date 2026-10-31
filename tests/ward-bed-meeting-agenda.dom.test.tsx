@@ -16,7 +16,37 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+// Decision 46: the site bed manager reads the agenda only. Off by default, so the desk is the coordinator's.
+const desk = vi.hoisted(() => ({ readOnly: false }));
+vi.mock("@/components/ward-management/shell/ward-access-store", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/components/ward-management/shell/ward-access-store")>();
+  return {
+    ...original,
+    useEffectiveWardAccess: () => {
+      const access = original.useEffectiveWardAccess();
+      return desk.readOnly ? { ...access, role: "bed_manager" as const } : access;
+    },
+  };
+});
+
 describe("bed meeting agenda", () => {
+  it("offers a site bed manager no Action or Done, only the agenda to read (decision 46)", () => {
+    desk.readOnly = true;
+    try {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <BedMeetingAgendaScreen />
+        </WardFlowProvider>,
+      );
+      expect(screen.getByTestId("bed-meeting-agenda-ed-waits")).toBeInTheDocument();
+      expect(screen.queryByTestId("bed-meeting-add-action")).toBeNull();
+      expect(screen.queryByTestId("bed-meeting-action-done")).toBeNull();
+      expect(screen.getByText(/Read only\. The bed coordinator records and completes actions\./)).toBeInTheDocument();
+    } finally {
+      desk.readOnly = false;
+    }
+  });
+
   it("records a picked action against a person on the agenda and marks it done", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

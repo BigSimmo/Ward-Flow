@@ -154,6 +154,13 @@ export type BedRelease = {
    */
   blockedBy: string | null;
   /**
+   * When the blocker was last recorded or recorded again, which is what reviewing it means. Kept
+   * apart from `confirmedAt`, which every stage report and bed preparation change also restates,
+   * so an unrelated update never reads as a review. Absent on a release whose blocker was carried
+   * over or derived without being recorded, and on records saved before 31 Oct 2026.
+   */
+  blockerRecordedAt?: Instant;
+  /**
    * Q4 of the 2026-08-28 decisions: this bed is being MADE READY (cleaning and the like).
    * **Informational only — it must NEVER gate allocation.** A bed being prepared is still
    * offered, still counts in `availableNow`, and still appears in every figure, because the pull

@@ -331,8 +331,12 @@ export type PullReleaseReason = (typeof PULL_RELEASE_REASONS)[number];
  * source of truth rather than hand-copying a list that can drift from it — see
  * `ward-admissions-seed.ts` and `tests/ward-admissions-seed.test.ts`.
  */
-export const DISCHARGE_ROLE_LABELS = ["Ward manager"] as const;
-type DischargeRoleLabel = (typeof DISCHARGE_ROLE_LABELS)[number];
+export const DISCHARGE_ROLE_LABELS = ["Nurse in charge"] as const;
+/**
+ * Q66 (Josh, 31 Oct 2026): new records save "Nurse in charge"; one saved before then holds "Ward
+ * manager" for the same ward role. It is never rewritten, so the field's type reads both.
+ */
+type DischargeRoleLabel = (typeof DISCHARGE_ROLE_LABELS)[number] | "Ward manager";
 
 /**
  * A person inside a bed — or on their way to one, or gone from one.

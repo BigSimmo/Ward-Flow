@@ -65,7 +65,7 @@ describe("pending bed releases follow an edited stay discharge date", () => {
       expectedDischargeAt: MOVED_DATE,
       dischargeDateMoves: 3,
       dischargeDateSetAt: NOW_ANCHOR,
-      dischargeDateSetBy: role === "ward" ? "Ward manager" : null,
+      dischargeDateSetBy: role === "ward" ? "Nurse in charge" : null,
     });
     expect(changed.bedReleases[0]).toEqual({ ...release, expectedAt: MOVED_DATE });
     expect(changed.bedReleases[1]).toBe(historical);

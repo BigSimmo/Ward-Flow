@@ -54,8 +54,11 @@ describe("canDispatch", () => {
   });
 
   it("lets the coordinator take every action apart from the demonstration controls (Josh, 10 Oct 2026)", () => {
+    // Q75 (Josh, 31 Oct 2026): the coordinator may sign a site sign-off as cover but never undo one.
+    const NOT_THE_COORDINATORS = new Set<string>(["UNDO_SITE_HANDOVER_SIGN_OFF"]);
     for (const type of EVENT_TYPES) {
-      expect(EVENT_ROLE[type].includes("coordinator"), type).toBe(!EVENT_ROLE[type].includes("demo"));
+      const expected = !EVENT_ROLE[type].includes("demo") && !NOT_THE_COORDINATORS.has(type);
+      expect(EVENT_ROLE[type].includes("coordinator"), type).toBe(expected);
     }
   });
 

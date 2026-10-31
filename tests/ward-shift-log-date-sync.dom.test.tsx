@@ -170,7 +170,7 @@ describe("shift log separates a release report from a later discharge plan", () 
     const update = within(log).getByText("Expected departure updated").closest("li")!;
     expect(update).toHaveTextContent(formatInstantWithDay(EDITED_AT, EDITED_AT));
     expect(update).toHaveTextContent(`Departure ${formatInstant(NEW_DATE)}`);
-    expect(update).toHaveTextContent("Ward manager");
+    expect(update).toHaveTextContent("Nurse in charge");
     expect(changed.bedReleases[0].confirmedAt).toBe(state.bedReleases[0].confirmedAt);
     expect(changed.bedReleases[0].confirmedBy).toBe(state.bedReleases[0].confirmedBy);
   });

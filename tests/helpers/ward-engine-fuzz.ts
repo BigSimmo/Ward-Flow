@@ -39,6 +39,7 @@ import {
   WARD_BUZZ_MESSAGES,
   type WardFlowEvent,
 } from "@/components/ward-management/ward-flow-events";
+import { defaultHandoverShift, handoverAt } from "@/components/ward-management/handover/handover-model";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { STAGE_TRANSITION_BLOCKERS, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -1456,6 +1457,30 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
   [0.5, admissionEvent("UNDO_REPATRIATION", ["occupied"])],
   [0.5, () => ({ type: "UNDO_HANDOVER_SIGN_OFF" })],
   [0.5, () => ({ type: "RECORD_HANDOVER_SIGN_OFF" })],
+  // Q61 (31 Oct 2026): a site's handover sign-off, mostly for the next handover, and its Undo aimed
+  // at the newest site sign-off record so the coverage sweep can see it accepted.
+  [
+    0.5,
+    (state, random) => ({
+      type: "RECORD_SITE_HANDOVER_SIGN_OFF",
+      siteCode: pick(random, state.units)?.siteCode ?? MISSING_ID,
+      shiftAt: chance(random, 0.85) ? handoverAt(defaultHandoverShift(currentNow), currentNow) : currentNow,
+    }),
+  ],
+  [
+    0.5,
+    (state) => {
+      const record = (state.undoRecords ?? []).findLast(
+        (candidate) => candidate.kind === "step" && candidate.undoType === "UNDO_SITE_HANDOVER_SIGN_OFF",
+      );
+      if (!record || record.kind !== "step") return { type: "UNDO_SITE_HANDOVER_SIGN_OFF", siteCode: MISSING_ID };
+      return {
+        type: "UNDO_SITE_HANDOVER_SIGN_OFF",
+        role: record.role,
+        siteCode: record.subjectId.replace(/^site-handover:/, ""),
+      };
+    },
+  ],
   // Planned admissions: moving a booking.
   [
     1.5,

@@ -1,4 +1,4 @@
-# Desk guide: Community clinician
+# Desk guide: Community team
 
 <!-- last-checked: 2026-10-26 -->
 
@@ -7,7 +7,8 @@ _Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; brows
 You work for one community mental health team. You send referrals and answer the ones sent to
 your team.
 
-This desk is **Community clinician**; its recorded role label is **Community service**.
+This desk is **Community team**, and new records name it **Community team** (31 Oct 2026). Records
+saved before then say **Community service** and are kept as they are.
 
 ## What you see first
 
