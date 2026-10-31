@@ -11,6 +11,9 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
+
 const flags = vi.hoisted(() => ({ helpAsk: false }));
 vi.mock("@/components/ward-management/shell/ward-feature-flag-store", () => ({
   useWardFeatureFlag: (name: string) => (name === "help-ask" ? flags.helpAsk : false),
@@ -27,6 +30,57 @@ function openSearch() {
 }
 
 describe("WardHelpSearch", () => {
+  it.each(["pointer", "Enter"])("opens internal destinations through the client router using %s", (method) => {
+    flags.helpAsk = false;
+    router.push.mockClear();
+    const input = openSearch();
+    fireEvent.change(input, { target: { value: "dark mode" } });
+    const option = screen.getByTestId("ward-help-search-result-howto:theme");
+    if (method === "pointer") fireEvent.click(option);
+    else fireEvent.keyDown(input, { key: "Enter" });
+    expect(router.push).toHaveBeenCalledExactlyOnceWith("/ward-flow/settings#display");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("changes a Settings tab through the native hash event when already on Settings", async () => {
+    const before = window.location.href;
+    const changed = vi.fn();
+    window.history.replaceState(null, "", "/ward-flow/settings#rules");
+    window.addEventListener("hashchange", changed);
+    router.push.mockClear();
+    try {
+      const input = openSearch();
+      fireEvent.change(input, { target: { value: "dark mode" } });
+      fireEvent.click(screen.getByTestId("ward-help-search-result-howto:theme"));
+      await waitFor(() => expect(changed).toHaveBeenCalled());
+      expect(window.location.hash).toBe("#display");
+      expect(router.push).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("hashchange", changed);
+      window.history.replaceState(null, "", before);
+    }
+  });
+
+  it.each(["pointer", "Enter"])("opens Show me through the option using %s", (method) => {
+    flags.helpAsk = true;
+    const show = vi.fn();
+    window.addEventListener("ward-flow-open-help", show);
+    try {
+      const input = openSearch();
+      fireEvent.change(input, { target: { value: "dark mode" } });
+      const option = screen.getByTestId("ward-help-search-result-howto:theme");
+      expect(option.querySelector("button, a, input, [tabindex]")).toBeNull();
+      if (method === "pointer") fireEvent.click(option);
+      else fireEvent.keyDown(input, { key: "Enter" });
+      expect(show).toHaveBeenCalledOnce();
+      expect((show.mock.calls[0][0] as CustomEvent).detail).toEqual({ showMe: "theme" });
+      expect(screen.queryByRole("dialog")).toBeNull();
+    } finally {
+      flags.helpAsk = false;
+      window.removeEventListener("ward-flow-open-help", show);
+    }
+  });
+
   it("opens a dialog with suggestions for the desk, focused on the box", () => {
     const input = openSearch();
     expect(screen.getByRole("dialog", { name: "Search Help" })).toBeTruthy();
@@ -117,10 +171,23 @@ describe("WardHelpSearch", () => {
     flags.helpAsk = false;
   });
 
-  it("never writes typed words to storage", () => {
+  it("never writes typed words to either storage or the URL, including after choosing a result", () => {
+    const write = vi.spyOn(Storage.prototype, "setItem");
+    const push = vi.spyOn(window.history, "pushState");
+    const replace = vi.spyOn(window.history, "replaceState");
+    const before = window.location.href;
     const input = openSearch();
     fireEvent.change(input, { target: { value: "unique-typed-words" } });
-    const stored = [...Array(localStorage.length).keys()].map((i) => localStorage.getItem(localStorage.key(i) ?? ""));
-    expect(stored.join(" ")).not.toContain("unique-typed-words");
+    fireEvent.change(input, { target: { value: "unique-typed-words dark mode" } });
+    const links = screen.getAllByRole("option");
+    fireEvent.click(links[0]);
+    expect(JSON.stringify(write.mock.calls)).not.toContain("unique-typed-words");
+    expect(JSON.stringify([...push.mock.calls, ...replace.mock.calls])).not.toContain("unique-typed-words");
+    for (const storage of [localStorage, sessionStorage]) {
+      const stored = Object.keys(storage).map((key) => [key, storage.getItem(key)]);
+      expect(JSON.stringify(stored)).not.toContain("unique-typed-words");
+    }
+    expect(window.location.href).toBe(before);
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

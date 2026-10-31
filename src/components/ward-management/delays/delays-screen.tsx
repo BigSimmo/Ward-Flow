@@ -13,6 +13,7 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -52,6 +53,7 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
   const service = useServiceScope();
   const now = useWardFlowClock();
   const raise = useWardRaise("coordinator");
+  const escalationGate = useRoleGate()("RECORD_ESCALATION");
 
   const allMovements = movementsOverride ?? liveMovements;
   const movements = useMemo(
@@ -136,6 +138,10 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
 
   const escalationPendingRef = useRef(new Set<string>());
   const escalate = async (movement: Movement) => {
+    if (!escalationGate.allowed) {
+      showNotice(escalationGate.reason ?? "Coordinator only");
+      return;
+    }
     if (escalationPendingRef.current.has(movement.id)) return;
     escalationPendingRef.current.add(movement.id);
     showNotice("Recording escalation…");

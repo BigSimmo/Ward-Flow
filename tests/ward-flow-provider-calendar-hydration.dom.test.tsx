@@ -127,6 +127,8 @@ describe("provider calendar origin across server/client midnight", () => {
     vi.spyOn(sharedAccess, "useWardShared").mockReturnValue({
       enabled: true,
       signedIn: true,
+      actorId: "synthetic-shared-account",
+      access: { role: "coordinator", scope: { kind: "statewide" } },
       status: "ready",
       error: null,
       eventLog: [],

@@ -122,10 +122,25 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   const movementId = raised[0]!.replace("ward-ed-patient-", "");
   await expectNoReloadSince(page, "raising the ED referral");
 
+  // The referral's Open row toast stays until acknowledged. Close its visible notice after the
+  // raised movement is verified; this does not undo or otherwise change the referral.
+  const raisedNotice = page.getByTestId("toast").filter({
+    has: page.getByRole("button", { name: "Dismiss: Referral raised", exact: true }),
+  });
+  await expect(raisedNotice).toBeVisible();
+  await raisedNotice.getByRole("button", { name: "Dismiss: Referral raised", exact: true }).click();
+  await expect(raisedNotice).toHaveCount(0);
+
   // The coordinator offers a ward. Override offers the chosen ward directly, with a reason and a
   // second sign-off (D-30), which is the one path that offers a ward without a second referral.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
   await expectAccessible(page, testInfo, "coordinator Home");
+  // Tours are already seen in this journey, while the first-visit Home hint is still offered.
+  // Acknowledge its visible control before using the queue below it.
+  const homeHelp = page.getByRole("complementary", { name: "Home help", exact: true });
+  await expect(homeHelp).toBeVisible();
+  await homeHelp.getByRole("button", { name: "Got it", exact: true }).click();
+  await expect(homeHelp).toHaveCount(0);
   // The phone queue shows the first twenty; a new tier 3 movement can sit below them.
   await showEveryoneWaitingOn(page);
   const queueRow = page.getByTestId(`ward-queue-row-${movementId}`);

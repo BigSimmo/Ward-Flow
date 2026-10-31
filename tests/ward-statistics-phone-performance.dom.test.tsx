@@ -63,7 +63,8 @@ function desktopWork() {
     return Reflect.apply(sort, this, [compare]) as T[];
   });
   vi.spyOn(Array.prototype, "slice").mockImplementation(function <T>(this: T[], start?: number, end?: number): T[] {
-    if (has(this[0], "waits", "over24", "median", "site")) counts.edTableCopy++;
+    // An ED summary row: it no longer carries each person's wait, only the counts and times.
+    if (has(this[0], "over8", "over24", "median", "site")) counts.edTableCopy++;
     return Reflect.apply(slice, this, [start, end]) as T[];
   });
   vi.spyOn(Array.prototype, "map").mockImplementation(function <T, U>(

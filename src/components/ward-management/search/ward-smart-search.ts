@@ -47,7 +47,16 @@ import {
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { allEmergencyDepartments, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES, type CommunityTeam } from "@/components/ward-management/community/community-derivations";
-import { movementHref, teamHref, unitHref } from "../shell/ward-facade";
+import {
+  movementHref,
+  teamHref,
+  unitHref,
+  wardStatisticsHref,
+  edStatisticsHref,
+  communityStatisticsHref,
+  serviceStatisticsHref,
+} from "../shell/ward-facade";
+import type { ExecutiveReportingFoundation } from "../statistics/executive-statistics-contract";
 import { isReadyBedQuery, searchBeds, type BedSearchResult } from "./search-places";
 
 export type CoreSearchView = {
@@ -324,7 +333,10 @@ function searchLegalForms(
 /**
  * Matches core views and navigation pages by title, key, keywords, or description.
  */
-function searchCoreViews(query: string, views: readonly CoreSearchView[] = CORE_SEARCH_VIEWS): ViewSearchResult[] {
+export function searchCoreViews(
+  query: string,
+  views: readonly CoreSearchView[] = CORE_SEARCH_VIEWS,
+): ViewSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
@@ -344,6 +356,107 @@ function searchCoreViews(query: string, views: readonly CoreSearchView[] = CORE_
       view,
       href: view.href,
     }));
+}
+
+/** A structural subset of the validated aggregate report, with no domain records or figures. */
+export type ExecutiveSearchCatalogue = {
+  wards: readonly Pick<ExecutiveReportingFoundation["wards"][number], "id" | "name" | "siteCode" | "service">[];
+  emergencyDepartments: readonly Pick<
+    ExecutiveReportingFoundation["emergencyDepartments"][number],
+    "id" | "name" | "siteCode" | "service"
+  >[];
+  teams: readonly Pick<ExecutiveReportingFoundation["teams"][number], "id" | "name" | "code" | "service">[];
+  services: readonly Pick<ExecutiveReportingFoundation["services"][number], "service">[];
+  catalogue: ExecutiveReportingFoundation["catalogue"];
+  openableEmergencyDepartmentIds: readonly string[];
+  openableCommunityTeamIds: readonly string[];
+  openableServiceIds: readonly string[];
+};
+export type PublicSearchChoice = {
+  key: string;
+  title: string;
+  description?: string;
+  href: string;
+  kind: "ward" | "ed" | "team" | "site" | "service" | "view";
+  kindLabel: string;
+};
+
+/** Match only public metadata actually present in the report, with the engine's existing ranking. */
+export function searchExecutiveCatalogue(query: string, report: ExecutiveSearchCatalogue): PublicSearchChoice[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return [];
+  const sites = new Map(report.catalogue.sites.map((site) => [site.code, site]));
+  const matches = (fields: readonly (string | null | undefined)[], aliases: readonly string[]) =>
+    aliases.includes(needle) ||
+    needle.split(/\s+/).every((word) => fields.some((field) => field?.toLowerCase().includes(word)));
+  const choices: PublicSearchChoice[] = [
+    ...report.wards
+      .filter((ward) => matches([ward.name, ward.id, ward.siteCode, sites.get(ward.siteCode)?.name], ["ward", "wards"]))
+      .map((ward) => ({
+        key: ward.id,
+        title: ward.name,
+        description: sites.get(ward.siteCode)?.name ?? ward.siteCode,
+        href: wardStatisticsHref(ward.id),
+        kind: "ward" as const,
+        kindLabel: "Ward",
+      })),
+    ...report.emergencyDepartments
+      .filter(
+        (ed) =>
+          report.openableEmergencyDepartmentIds.includes(ed.id) &&
+          matches([ed.name, ed.id, ed.siteCode, sites.get(ed.siteCode)?.name], ["ed", "emergency"]),
+      )
+      .map((ed) => ({
+        key: ed.id,
+        title: ed.name,
+        description: sites.get(ed.siteCode)?.name ?? ed.siteCode,
+        href: edStatisticsHref(ed.id),
+        kind: "ed" as const,
+        kindLabel: "ED",
+      })),
+    ...report.teams
+      .filter(
+        (team) =>
+          report.openableCommunityTeamIds.includes(team.id) &&
+          matches([team.name, team.id, team.code], ["community", "team", "teams"]),
+      )
+      .map((team) => ({
+        key: team.id,
+        title: team.name,
+        description: team.service ?? "Community team",
+        href: communityStatisticsHref(team.id),
+        kind: "team" as const,
+        kindLabel: "Team",
+      })),
+    ...report.catalogue.sites
+      .filter(
+        (site) =>
+          report.openableServiceIds.includes(site.service) &&
+          matches([site.name, site.code, site.service], ["site", "sites"]),
+      )
+      .map((site) => ({
+        key: site.code,
+        title: site.name,
+        description: site.service,
+        href: serviceStatisticsHref(site.service),
+        kind: "site" as const,
+        kindLabel: "Site",
+      })),
+    ...report.services
+      .filter(
+        (service) =>
+          report.openableServiceIds.includes(service.service) && matches([service.service], ["service", "services"]),
+      )
+      .map((service) => ({
+        key: service.service,
+        title: service.service,
+        description: "Health service",
+        href: serviceStatisticsHref(service.service),
+        kind: "service" as const,
+        kindLabel: "Service",
+      })),
+  ];
+  return rankAndLimit(choices, needle, (choice) => [choice.title, choice.key, choice.description], choices.length);
 }
 
 /**

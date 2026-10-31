@@ -8,6 +8,15 @@ import { BED_STATE_DETAILS, bedStates } from "@/components/ward-management/ward-
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./statistics-bed-map.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import {
+  PeopleNotListed,
+  ExecutiveStatisticsUnavailable,
+  statisticsCountText,
+  exactStatisticsCount,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
 
 export type BedMapKind = "occupied" | "leave" | "pulled" | "ready" | "prep" | "closed";
 
@@ -29,6 +38,7 @@ export type BedMap = {
   /** Admissions recorded on the ward that no cell could hold (the ward's bed observation disagrees). */
   unplacedRecords: number;
 };
+export type AggregateBedMap = { counts: Record<BedMapKind, number>; unplacedRecords: StatisticsCount };
 
 const BED_MAP_ORDER: readonly BedMapKind[] = ["occupied", "leave", "pulled", "ready", "prep", "closed"];
 
@@ -151,6 +161,8 @@ function cellTitle(entry: BedMapCell, countsOnly = false): string {
 /** The bed map's key: one swatch per state, the same shape and colour as the cells, with counts. */
 export function StatisticsBedMapLegend({ counts }: { counts: Record<BedMapKind, number> }) {
   const { countsOnly } = useStatisticsCounts();
+  const control = useExecutiveStatisticsControl();
+  const access = useEffectiveWardAccess();
   return (
     <ul className={styles.legend} aria-hidden="true">
       {BED_MAP_ORDER.map((kind) => (
@@ -162,7 +174,7 @@ export function StatisticsBedMapLegend({ counts }: { counts: Record<BedMapKind, 
           <b className={styles.legendCount}>{counts[kind]}</b>
         </li>
       ))}
-      {countsOnly ? null : (
+      {countsOnly || control.executive || access.role === "executive" ? null : (
         <li className={styles.legendItem}>
           <StatusGlyph tone="warning" size={9} />
           Discharge blocked
@@ -176,7 +188,59 @@ export function StatisticsBedMapLegend({ counts }: { counts: Record<BedMapKind, 
  * The ward's beds as cells, one per bed: shape and colour carry the state, so it reads without
  * colour. The grid is drawn for the eye and said once in words beside it.
  */
-export function StatisticsBedMap({ map, wardName }: { map: BedMap; wardName: string }) {
+export function StatisticsBedMap(
+  props: { wardName: string } & ({ map: BedMap; aggregate?: never } | { aggregate: AggregateBedMap; map?: never }),
+) {
+  const control = useExecutiveStatisticsControl();
+  const access = useEffectiveWardAccess();
+  const current = useExecutiveStatistics();
+  if ((control.executive || access.role === "executive") && !current) return <ExecutiveStatisticsUnavailable />;
+  if (props.aggregate) return <AggregateStatisticsBedMap aggregate={props.aggregate} wardName={props.wardName} />;
+  if (control.executive || access.role === "executive") return <PeopleNotListed />;
+  return <OperationalStatisticsBedMap map={props.map} wardName={props.wardName} />;
+}
+
+function AggregateStatisticsBedMap({ aggregate, wardName }: { aggregate: AggregateBedMap; wardName: string }) {
+  const { counts, unplacedRecords } = aggregate;
+  const total = BED_MAP_ORDER.reduce((sum, kind) => sum + counts[kind], 0);
+  const said = BED_MAP_ORDER.filter((kind) => counts[kind] > 0)
+    .map((kind) => `${counts[kind]} ${BED_MAP_LABELS[kind].toLowerCase()}`)
+    .join(", ");
+  const unplaced = statisticsCountText(unplacedRecords);
+  return (
+    <div className={styles.map} data-testid="ward-statistics-bed-map">
+      <SrOnly>{`${wardName} has ${total} ${total === 1 ? "bed" : "beds"}: ${said || "none recorded"}.`}</SrOnly>
+      <ol className={styles.grid} aria-label={`${wardName} beds, one item per bed`}>
+        {BED_MAP_ORDER.flatMap((kind) =>
+          Array.from({ length: counts[kind] }, (_, index) => (
+            <li
+              key={`${kind}-${index}`}
+              className={cx(styles.cell, styles[kind])}
+              title={BED_MAP_LABELS[kind]}
+              data-bed-kind={kind}
+            >
+              <SrOnly>{BED_MAP_LABELS[kind]}</SrOnly>
+              <span className={styles.glyph} aria-hidden="true">
+                <CellGlyph kind={kind} />
+              </span>
+              <span className={styles.state} aria-hidden="true">
+                {CELL_WORDS[kind]}
+              </span>
+            </li>
+          )),
+        )}
+      </ol>
+      <p className={styles.note}>
+        Grouped by state. Bed numbers are not recorded.
+        {exactStatisticsCount(unplacedRecords) !== 0
+          ? ` ${unplaced} recorded admissions are not shown because the ward's bed count has no bed for them.`
+          : ""}
+      </p>
+    </div>
+  );
+}
+
+function OperationalStatisticsBedMap({ map, wardName }: { map: BedMap; wardName: string }) {
   const { countsOnly, small } = useStatisticsCounts();
   const { counts, unplacedRecords } = map;
   // Executive desk (counts only): a cell keeps its bed state but names no admission, stay or blocker.

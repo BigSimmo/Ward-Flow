@@ -648,6 +648,31 @@ describe("a command from a desk", () => {
     expect(send({ type: "UNDO_AUDIT_REVIEW", reviewId: "review-out" })).toMatch(/outside/);
   });
 
+  it("needs the server's opening allowlist before exposing or undoing a scoped break glass review", () => {
+    const serviceCoordinator = desksFor(state).serviceCoordinator;
+    const eventId = "audit-break-glass-21";
+    const foreignEventId = "audit-break-glass-22";
+    const reviews = [eventId, foreignEventId].map((id, index) => ({
+      id: `audit-review-${index + 1}`,
+      eventId: id,
+      generation: state.worldGeneration,
+      at: NOW_ANCHOR,
+      byRole: "coordinator" as const,
+      decision: "reviewed" as const,
+    }));
+    const world = { ...state, auditReviews: reviews };
+    expect(scopeWardFlowState(world, serviceCoordinator, options).state.auditReviews).toEqual([]);
+    const authorised = { ...options, reviewableBreakGlassEventIds: new Set([eventId]) };
+    expect(scopeWardFlowState(world, serviceCoordinator, authorised).state.auditReviews).toEqual([reviews[0]]);
+    const undo = (reviewId: string) => ({ type: "UNDO_AUDIT_REVIEW", role: "coordinator", reviewId });
+    expect(commandScopeRefusal(world, serviceCoordinator, undo(reviews[0].id), authorised)).toBeNull();
+    const foreign = commandScopeRefusal(world, serviceCoordinator, undo(reviews[1].id), authorised);
+    expect(foreign).toMatch(/outside/);
+    expect(commandScopeRefusal(world, serviceCoordinator, undo("audit-review-absent"), authorised)).toBe(foreign);
+    expect(commandScopeRefusal(world, serviceCoordinator, undo(reviews[0].id), options)).toBe(foreign);
+    expect(scopeWardFlowState(world, STATEWIDE_COORDINATOR, options).state.auditReviews).toEqual(reviews);
+  });
+
   it("lets a service coordinator see and review just the seeded governance entries its own screens show", () => {
     const withReviews = (world: WardFlowState): WardFlowState => ({
       ...world,

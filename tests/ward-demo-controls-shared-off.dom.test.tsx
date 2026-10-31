@@ -109,7 +109,8 @@ describe("demo controls when the shared workspace switches them off", () => {
     const note = screen.getByTestId("ward-global-search-demo-off");
     expect(note).toHaveTextContent(DEMO_CONTROLS_OFF);
     const clock = screen.getByTestId("ward-global-search-cmd-advance-clock");
-    expect(clock).toBeDisabled();
+    // Unavailable but still focusable, so the reason beside it can be reached and read.
+    expect(clock).toHaveAttribute("aria-disabled", "true");
     expect(clock.getAttribute("aria-describedby")).toBe(note.id);
   });
 });

@@ -19,6 +19,10 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ExecutiveStatisticsProvider } from "@/components/ward-management/statistics/executive-statistics-context";
+import { projectExecutiveReportingFoundation } from "@/components/ward-management/statistics/executive-statistics-projector";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
 /**
  * Issue #618: a small count of people in an executive CSV export reads "fewer than 5", the same as
@@ -49,7 +53,9 @@ async function exportedCsv(button: HTMLElement): Promise<string[][]> {
   }
 }
 
+let executive = false;
 function asDesk(role: "executive" | "coordinator") {
+  executive = role === "executive";
   act(() => {
     setWardFeatureFlagOnDevice("role-access", true);
     setWardAccess({ role, scope: { kind: "statewide" } });
@@ -64,6 +70,33 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/**
+ * An executive account gets the released aggregate report, never the operational world, so its
+ * screens are rendered from the report projected out of the same synthetic state.
+ */
+function executiveReport(state: WardFlowState, children: ReactNode) {
+  const data = projectExecutiveReportingFoundation(
+    state,
+    { role: "executive", scope: { kind: "statewide" } },
+    {
+      now: NOW_ANCHOR,
+      dayZero: "2026-10-24T00:00:00.000Z",
+      startedAt: "2026-10-24T00:00:00.000Z",
+      places: wardPlaceLookup(state.units),
+    },
+  );
+  const binding = { actorId: "synthetic-csv-report", accessContext: "c".repeat(64), epoch: 0, revision: 1 };
+  return (
+    <ExecutiveStatisticsProvider
+      binding={binding}
+      snapshot={{ binding, receivedAt: 100, expiresAt: 200, data }}
+      now={150}
+    >
+      {children}
+    </ExecutiveStatisticsProvider>
+  );
+}
+
 const figure = (rows: string[][], label: string) => rows.find((row) => row[0] === label)?.[1];
 const isSmall = (cell: string | undefined) => cell !== undefined && /^[1-4]$/u.test(cell);
 
@@ -75,9 +108,13 @@ describe("the network figures export (issue #618)", () => {
 
   async function networkFigures() {
     const view = render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <StatisticsScreen movements={movements} />
-      </WardFlowProvider>,
+      executive ? (
+        executiveReport({ ...seedWardFlowStateAt(0), movements }, <StatisticsScreen />)
+      ) : (
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <StatisticsScreen movements={movements} />
+        </WardFlowProvider>
+      ),
     );
     const rows = await exportedCsv(screen.getByTestId("ward-statistics-export"));
     view.unmount();
@@ -101,9 +138,13 @@ describe("the network figures export (issue #618)", () => {
 describe("the ward and ED comparison exports (issue #618)", () => {
   async function comparison(card: "statistics-compare-ed-chart" | "statistics-compare-ward-chart") {
     const view = render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <StatisticsCompareScreen />
-      </WardFlowProvider>,
+      executive ? (
+        executiveReport(seedWardFlowStateAt(0), <StatisticsCompareScreen />)
+      ) : (
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <StatisticsCompareScreen />
+        </WardFlowProvider>
+      ),
     );
     const rows = await exportedCsv(within(screen.getByTestId(card)).getByRole("button", { name: "CSV" }));
     view.unmount();
@@ -122,6 +163,8 @@ describe("the ward and ED comparison exports (issue #618)", () => {
     const worded = await comparison(card);
     expect(worded.body).toHaveLength(exact.body.length);
 
+    // The complete release may also withhold a larger cell ("not shown") so a small one cannot be
+    // worked out from a total. A small count is never exact; any figure shown is the exact one.
     let small = 0;
     for (const column of columns) {
       const index = exact.header.indexOf(column);
@@ -130,9 +173,9 @@ describe("the ward and ED comparison exports (issue #618)", () => {
         const shown = worded.body[place]![index];
         if (isSmall(row[index])) {
           small += 1;
-          expect(shown, `${row[0]} ${column}`).toBe("fewer than 5");
+          expect(["fewer than 5", "not shown"], `${row[0]} ${column}`).toContain(shown);
         } else {
-          expect(shown, `${row[0]} ${column}`).toBe(row[index]);
+          expect([row[index], "not shown"], `${row[0]} ${column}`).toContain(shown);
         }
       });
     }

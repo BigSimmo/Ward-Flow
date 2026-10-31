@@ -434,8 +434,21 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.getByRole("button", { name: "Record departure", exact: true }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
       await clickRailLink(page, "/ward-flow/discharges");
-      await page.getByTestId("ward-discharge-history").click();
-      await page.locator("#discharges-filter-destination").selectOption(destination.id);
+      await page.waitForURL((url) => url.pathname === "/ward-flow/discharges");
+      // Settle navigation and the saved workspace before selecting History. A click during the
+      // screen transition must not leave this journey searching the Now view for a History field.
+      await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
+      await expect(page.getByTestId("ward-discharge-board")).toBeVisible();
+      await expect(page.getByRole("group", { name: "Now or history", exact: true })).toHaveAttribute(
+        "aria-busy",
+        "false",
+      );
+      const history = page.getByTestId("ward-discharge-history");
+      await history.click();
+      await expect(history).toHaveAttribute("aria-pressed", "true");
+      const destinationFilter = page.locator("#discharges-filter-destination");
+      await destinationFilter.selectOption(destination.id);
+      await expect(destinationFilter).toHaveValue(destination.id);
       await page.getByRole("button", { name, exact: true }).click();
       const detail = page.getByRole("region", { name: "Selected discharge details" });
       await expect(detail).toContainText(destination.label);

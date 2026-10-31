@@ -33,6 +33,7 @@ import {
   type BoardRow,
 } from "./delays-board-model";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import styles from "./delays-board.module.css";
 import { ago, originLabel } from "./delays-board-rows";
@@ -55,6 +56,7 @@ export function PersonPanel({
   const thresholds = useDueSoonThresholds();
   const { referrals, setFocusMovementId } = useWardFlowSelect("referrals", "setFocusMovementId");
   const patientOf = usePatientOf();
+  const escalationGate = useRoleGate()("RECORD_ESCALATION");
   const { movement, cause } = row;
   const patient = patientOf(movement);
   const escalation = movement.escalation;
@@ -355,8 +357,10 @@ export function PersonPanel({
         ) : (
           <button
             type="button"
-            className={`${styles.btn} ${styles.btnPri}`}
+            className={`${styles.btn} ${escalationGate.allowed ? styles.btnPri : styles.btnOff}`}
+            {...escalationGate.buttonProps}
             onClick={() => {
+              if (!escalationGate.allowed) return;
               onEscalate(movement);
             }}
             data-testid={`delays-escalate-${movement.id}`}
@@ -367,6 +371,7 @@ export function PersonPanel({
             <span className="sr-only"> to State bed coordination desk</span>
           </button>
         )}
+        {escalation === undefined ? escalationGate.note : null}
         <Link className={styles.btn} href={movementHref(movement.id)}>
           Journey
         </Link>

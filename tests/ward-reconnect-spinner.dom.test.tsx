@@ -48,7 +48,13 @@ it("shows a spinner with no text, not the sign-in or Reconnect screen, until the
     "fetch",
     vi.fn(async (url) =>
       String(url).includes("/v1/workspace")
-        ? workspace.then(() => Response.json({ snapshot }))
+        ? workspace.then(() =>
+            Response.json({
+              snapshot,
+              actorId: user.id,
+              access: { role: "coordinator", scope: { kind: "statewide" } },
+            }),
+          )
         : String(url).endsWith("/user")
           ? Response.json(user)
           : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),

@@ -24,11 +24,51 @@ import { bedsPendingPreparation } from "../ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "../ward-bed-states";
 import type { Admission } from "../ward-admissions";
 import { siteByCode } from "../ward-sites";
-import type { BedRelease, LeaveBed, Unit } from "../ward-model";
+import type { BedRelease, HealthService, LeaveBed, Unit } from "../ward-model";
 import { statisticsChartScale } from "./statistics-chart-scale";
 import { downloadCsv } from "./statistics-csv";
 import { StatCard } from "./statistics-hero";
 import styles from "./statistics-capacity-chart.module.css";
+import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { ExecutiveStatisticsUnavailable } from "./statistics-small-numbers";
+
+type CapacityWard = {
+  id: string;
+  name: string;
+  siteCode: string;
+  hospital: string;
+  service: string;
+  beds: number;
+  states: Pick<ReturnType<typeof bedStates>, "occupied" | "ready" | "pulled" | "closed" | "onLeave">;
+  pending: number;
+  available: number;
+};
+type CapacityOptions = {
+  initialGroup?: "hospital" | "ward";
+  scopeLabel?: string;
+  asAt?: string;
+  title?: string;
+  serviceId?: HealthService;
+};
+type CapacityInput = CapacityOptions &
+  (
+    | {
+        aggregate: ExecutiveReportingFoundation;
+        units?: never;
+        bedReleases?: never;
+        admissions?: never;
+        leaveBeds?: never;
+      }
+    | {
+        aggregate?: undefined;
+        units: Unit[];
+        bedReleases: BedRelease[];
+        admissions?: readonly Admission[];
+        leaveBeds?: readonly LeaveBed[];
+      }
+  );
 
 type CapacityRow = {
   id: string;
@@ -42,7 +82,7 @@ type CapacityRow = {
   onLeave: number;
   pending: number;
   services: Set<string>;
-  units: Unit[];
+  units: Pick<CapacityWard, "id" | "name" | "available">[];
 };
 
 const occupancyOf = (row: CapacityRow) => (row.beds ? ((row.occupied + row.pulled) / row.beds) * 100 : 0);
@@ -66,20 +106,64 @@ const shortService = (name: string) => name.replace(/ Metro$/, "");
  * Occupied. The dashed alert line marks occupancy at the bed alert threshold; a row at or over it
  * carries an amber circle beside its ready count.
  */
-export function StatisticsCapacityChart({
+export function StatisticsCapacityChart(props: CapacityInput) {
+  const control = useExecutiveStatisticsControl();
+  const access = useEffectiveWardAccess();
+  const current = useExecutiveStatistics();
+  const executive = control.executive || access.role === "executive";
+  const aggregate = executive ? current : props.aggregate;
+  if (executive && !aggregate) return <ExecutiveStatisticsUnavailable />;
+  const wards: CapacityWard[] =
+    aggregate !== undefined && aggregate !== null
+      ? aggregate!.wards
+          .filter((ward) => !props.serviceId || ward.service === props.serviceId)
+          .map((ward) => ({
+            id: ward.id,
+            name: ward.name,
+            siteCode: ward.siteCode,
+            hospital: aggregate.catalogue.sites.find((site) => site.code === ward.siteCode)?.name ?? ward.siteCode,
+            service: ward.service,
+            beds: ward.beds.total,
+            states: {
+              occupied: ward.beds.occupied,
+              ready: ward.beds.ready,
+              pulled: ward.beds.pulled,
+              closed: ward.beds.closed,
+              onLeave: ward.beds.onLeave,
+            },
+            pending: ward.pendingPreparation,
+            available: ward.capacityReady,
+          }))
+      : props.units!.map((unit) => ({
+          id: unit.id,
+          name: unit.name,
+          siteCode: unit.siteCode,
+          hospital: siteByCode(unit.siteCode)?.name ?? unit.siteCode,
+          service: siteByCode(unit.siteCode)?.service ?? "Service not recorded",
+          beds: unit.beds,
+          states: bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? []),
+          pending: bedsPendingPreparation(unit.id, props.bedReleases!),
+          available: unitCapacity(unit, props.bedReleases!).available,
+        }));
+  return (
+    <CapacityChartView
+      units={wards}
+      initialGroup={props.initialGroup}
+      scopeLabel={props.scopeLabel}
+      asAt={props.asAt}
+      title={props.title}
+    />
+  );
+}
+
+function CapacityChartView({
   units,
-  bedReleases,
-  admissions = [],
-  leaveBeds = [],
   initialGroup = "hospital",
   scopeLabel = "across the network",
   asAt = "Not recorded",
   title = "Where beds are available",
 }: {
-  units: Unit[];
-  bedReleases: BedRelease[];
-  admissions?: readonly Admission[];
-  leaveBeds?: readonly LeaveBed[];
+  units: CapacityWard[];
   initialGroup?: "hospital" | "ward";
   scopeLabel?: string;
   asAt?: string;
@@ -96,23 +180,18 @@ export function StatisticsCapacityChart({
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const services = [
-    ...new Set(
-      units
-        .map((unit) => siteByCode(unit.siteCode)?.service)
-        .filter((name): name is NonNullable<typeof name> => !!name),
-    ),
+    ...new Set(units.map((unit) => unit.service).filter((name): name is NonNullable<typeof name> => !!name)),
   ].sort();
 
   const { rows, allCount } = useMemo(() => {
-    const group = (list: Unit[]) => {
+    const group = (list: CapacityWard[]) => {
       const grouped = new Map<string, CapacityRow>();
       for (const unit of list) {
-        const site = siteByCode(unit.siteCode);
         const id = groupBy === "hospital" ? unit.siteCode : unit.id;
         const row = grouped.get(id) ?? {
           id,
-          name: groupBy === "hospital" ? (site?.name ?? unit.siteCode) : unit.name,
-          context: groupBy === "hospital" ? (site?.service ?? "Service not recorded") : (site?.name ?? unit.siteCode),
+          name: groupBy === "hospital" ? unit.hospital : unit.name,
+          context: groupBy === "hospital" ? unit.service : unit.hospital,
           beds: 0,
           occupied: 0,
           ready: 0,
@@ -123,15 +202,15 @@ export function StatisticsCapacityChart({
           services: new Set<string>(),
           units: [],
         };
-        if (site?.service) row.services.add(site.service);
-        const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+        row.services.add(unit.service);
+        const states = unit.states;
         row.beds += unit.beds;
         row.occupied += states.occupied;
         row.ready += states.ready;
         row.pulled += states.pulled;
         row.closed += states.closed;
         row.onLeave += states.onLeave;
-        row.pending += bedsPendingPreparation(unit.id, bedReleases);
+        row.pending += unit.pending;
         row.units.push(unit);
         grouped.set(id, row);
       }
@@ -140,8 +219,7 @@ export function StatisticsCapacityChart({
     const needle = query.trim().toLowerCase();
     // The service choice highlights and dims (v10 filter rule); only the typed search narrows.
     const matched = units.filter((unit) => {
-      const site = siteByCode(unit.siteCode);
-      const search = `${unit.name} ${site?.name ?? unit.siteCode} ${unit.siteCode}`.toLowerCase();
+      const search = `${unit.name} ${unit.hospital} ${unit.siteCode}`.toLowerCase();
       return !needle || search.includes(needle);
     });
     const sorted = group(matched).sort((a, b) => {
@@ -156,7 +234,7 @@ export function StatisticsCapacityChart({
       return difference || a.name.localeCompare(b.name);
     });
     return { rows: sorted, allCount: group(units).length };
-  }, [units, bedReleases, admissions, leaveBeds, query, groupBy, sort]);
+  }, [units, query, groupBy, sort]);
 
   const inService = (row: CapacityRow) => service === "all" || row.services.has(service);
   const isLit = (row: CapacityRow) => inService(row) && (!overOnly || occupancyOf(row) >= alertLine);
@@ -264,11 +342,10 @@ export function StatisticsCapacityChart({
       </dl>
       <div className={styles.wardList}>
         {selected.units.map((unit) => {
-          const capacity = unitCapacity(unit, bedReleases);
           return (
             <Link key={unit.id} href={`/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`}>
               <span>{unit.name}</span>
-              <strong>{capacity.available} ready</strong>
+              <strong>{unit.available} ready</strong>
               <Icon icon={ChevronRight} size={14} />
             </Link>
           );
