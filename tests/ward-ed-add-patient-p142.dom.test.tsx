@@ -60,13 +60,23 @@ afterEach(() => {
 
 describe("P142: the ED home offers Add patient", () => {
   it("shows Add patient beside Raise referral, going to /ward-flow/people/new", () => {
-    act(() => setWardFeatureFlagOnDevice("role-access", true));
-    act(() => setWardAccess(ED_DESK));
     render(overview);
     const add = screen.getAllByTestId("ward-ed-add-patient")[0]!;
     expect(add).toHaveTextContent("Add patient");
     expect(add).toHaveAttribute("href", "/ward-flow/people/new");
     const raise = screen.getAllByTestId("ward-ed-raise-referral-toggle")[0]!;
     expect(raise.parentElement).toBe(add.parentElement);
+  });
+
+  // ED desk redesign (Josh, 30 Oct 2026): the hero's Raise referral repeated the app bar's New
+  // referral, which opens the same slide-out, so the ED desk keeps only Add patient here. (Before
+  // this, the test above ran on the ED desk; it now runs on the coordinator's, which keeps both.)
+  it("keeps Add patient on the ED desk, without the hero's Raise referral", () => {
+    act(() => setWardFeatureFlagOnDevice("role-access", true));
+    act(() => setWardAccess(ED_DESK));
+    render(overview);
+    const add = screen.getAllByTestId("ward-ed-add-patient")[0]!;
+    expect(add).toHaveAttribute("href", "/ward-flow/people/new");
+    expect(screen.queryByTestId("ward-ed-raise-referral-toggle")).toBeNull();
   });
 });

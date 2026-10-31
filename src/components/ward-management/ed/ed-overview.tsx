@@ -18,6 +18,7 @@ import {
   StatusGlyph,
   buttonClass,
   cx,
+  phoneRows,
   useIsPhone,
   type CheckingItem,
   type WfTone,
@@ -57,7 +58,10 @@ type Props = {
   /** "N of M past 24h, everyone stays on the board" while a chip is pressed. */
   highlightNote?: ReactNode;
   checks: CheckingItem[];
-  /** Opens the one referral slide-out, from this department (option B, 13 Oct 2026). */
+  /**
+   * Opens the one referral slide-out, from this department (option B, 13 Oct 2026). An ED desk does
+   * not get this button: the app bar's New referral opens the same slide-out (Josh, 30 Oct 2026).
+   */
   onRaiseReferral: () => void;
 };
 
@@ -91,8 +95,10 @@ export function EdOverview({
   const tvViewsOn = useWardFeatureFlag("bed-meeting-tv");
   // DA-09: an ED desk opens only its own department and not the TV, so those links follow the role filter.
   const canOpen = useCanOpenHref();
-  // WT-24: an ED desk's copy holds only its own department's people, so another department's 0 would
-  // be a false figure. Those tiles say the figure is not shown here instead.
+  // WT-24 and the ED desk redesign (Josh, 30 Oct 2026): an ED desk's copy holds only its own
+  // department's people, so every other tile could only say "Not shown at this desk". The strip is
+  // left out for that desk (the title already gives its own count), and so is the hero's Raise
+  // referral, which repeated the app bar's New referral. Every other desk keeps both.
   const edDesk = useEffectiveWardAccess().role === "ed";
   const current = departments.find((department) => department.id === departmentId);
   if (!current) return null;
@@ -103,10 +109,11 @@ export function EdOverview({
   // Only worth saying when the board holds somebody who is not waiting; otherwise it repeats the title.
   const boardSplit = onBoardParts.length > 1 ? onBoardParts.join(", ") : null;
   const checkValue = (id: string) => checks.find((check) => check.id === id)?.value;
-  const raiseButton = (
+  // Phone (Josh, 31 Oct 2026): the hero buttons are Home's 40px hero pills side by side (`phoneRows`).
+  const raiseButton = edDesk ? null : (
     <button
       type="button"
-      className={buttonClass({ variant: "light", size: "sm", className: styles.raiseReferral })}
+      className={buttonClass({ variant: "light", size: "sm", className: cx(styles.raiseReferral, phoneRows.heroPill) })}
       data-testid="ward-ed-raise-referral-toggle"
       onClick={onRaiseReferral}
     >
@@ -122,7 +129,11 @@ export function EdOverview({
       {canOpen(addPatientHref) ? (
         <Link
           href={addPatientHref}
-          className={buttonClass({ variant: "light", size: "sm", className: styles.raiseReferral })}
+          className={buttonClass({
+            variant: "light",
+            size: "sm",
+            className: cx(styles.raiseReferral, phoneRows.heroPill),
+          })}
           data-testid="ward-ed-add-patient"
         >
           <Plus size={14} aria-hidden="true" />
@@ -185,7 +196,7 @@ export function EdOverview({
                 </span>
               ) : null}
               {sinceLastLook}
-              {actions}
+              <div className={phoneRows.heroPills}>{actions}</div>
             </>
           }
         />
@@ -248,58 +259,60 @@ export function EdOverview({
           }
         />
       )}
-      <nav className={styles.strip} aria-label="Emergency departments">
-        <ul className={styles.list}>
-          {departments.map((department) => {
-            const isCurrent = department.id === departmentId;
-            const href = `/ward-flow/ed/${department.id}`;
-            const notShown = edDesk && !isCurrent && !canOpen(href);
-            const tile = {
-              className: cx(styles.tile, isCurrent && styles.current),
-              "data-ed": department.id,
-              "data-service": department.service,
-              title: `${department.name} (${department.service})`,
-            };
-            const body = (
-              <>
-                <span className={styles.tileTop}>
-                  <strong className={styles.code}>{department.code}</strong>
-                  <span className={styles.service}>{serviceShort(department.service)}</span>
-                </span>
-                <span className={styles.waiting}>
-                  {notShown ? <small>Not shown at this desk</small> : <b>{department.waiting}</b>}
-                  {notShown ? null : <small>waiting</small>}
-                </span>
-                <span className={styles.longest}>
-                  {notShown ? null : department.waiting === 0 ? (
-                    <span className={styles.quiet}>No one waiting</span>
+      {edDesk ? null : (
+        <nav className={styles.strip} aria-label="Emergency departments">
+          {/* Phone (31 Oct 2026): the department pills slide sideways with the kit's soft right-edge fade. */}
+          <ul className={cx(styles.list, phoneRows.chipRow, styles.deptRow)}>
+            {departments.map((department) => {
+              const isCurrent = department.id === departmentId;
+              const href = `/ward-flow/ed/${department.id}`;
+              const tile = {
+                className: cx(styles.tile, isCurrent && styles.current),
+                "data-ed": department.id,
+                "data-service": department.service,
+                title: `${department.name} (${department.service})`,
+              };
+              const body = (
+                <>
+                  <span className={styles.tileTop}>
+                    <strong className={styles.code}>{department.code}</strong>
+                    <span className={styles.service}>{serviceShort(department.service)}</span>
+                  </span>
+                  <span className={styles.waiting}>
+                    <b>{department.waiting}</b>
+                    <small>waiting</small>
+                  </span>
+                  <span className={styles.longest}>
+                    {department.waiting === 0 ? (
+                      <span className={styles.quiet}>No one waiting</span>
+                    ) : (
+                      <>
+                        {department.breaches > 0 ? <StatusGlyph tone="danger" size={8} /> : null}
+                        <span className={styles.mono}>{department.longest}</span> max
+                        {department.breaches > 0 ? (
+                          <span className={styles.srOnly}>, {department.breaches} over target</span>
+                        ) : null}
+                      </>
+                    )}
+                  </span>
+                </>
+              );
+              return (
+                <li key={department.id}>
+                  {/* DA-09: a department this desk cannot open keeps its figures but is not a link. */}
+                  {canOpen(href) ? (
+                    <Link href={href} aria-current={isCurrent ? "page" : undefined} {...tile}>
+                      {body}
+                    </Link>
                   ) : (
-                    <>
-                      {department.breaches > 0 ? <StatusGlyph tone="danger" size={8} /> : null}
-                      <span className={styles.mono}>{department.longest}</span> max
-                      {department.breaches > 0 ? (
-                        <span className={styles.srOnly}>, {department.breaches} over target</span>
-                      ) : null}
-                    </>
+                    <div {...tile}>{body}</div>
                   )}
-                </span>
-              </>
-            );
-            return (
-              <li key={department.id}>
-                {/* DA-09: a department this desk cannot open keeps its figures but is not a link. */}
-                {canOpen(href) ? (
-                  <Link href={href} aria-current={isCurrent ? "page" : undefined} {...tile}>
-                    {body}
-                  </Link>
-                ) : (
-                  <div {...tile}>{body}</div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
     </section>
   );
 }

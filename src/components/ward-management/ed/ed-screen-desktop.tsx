@@ -7,6 +7,8 @@ import type { ReactNode } from "react";
 import { formTitleForCode } from "@/lib/form-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   examinationRevokedWhileBedHeld,
@@ -89,8 +91,8 @@ export function renderEdBoardTableRow(
   const destinationName = acceptedUnit && !movement.closure ? acceptedUnit.name.split(" — ")[0] : undefined;
   // U4 (site review 12 Oct 2026): the form reads "Form 4A" on one line, the same chip
   // wording as New referral; its register name, typed expiry and any warning sit in the
-  // title and for screen readers, so the cell never wraps to three lines. A passed expiry
-  // also says so on a second line (CS-11).
+  // title and for screen readers, so the cell never wraps to three lines. The typed time sits
+  // under it, "ended … as typed" once passed (CS-11).
   const formTitle = movement.legalForm
     ? [`${legalStatusFull(movement)}.`, formExpiryText, formExpiryWarningText].filter(Boolean).join(" ")
     : undefined;
@@ -111,9 +113,16 @@ export function renderEdBoardTableRow(
           {legalFormTitle}
         </span>
       ) : null}
-      {formExpiryPassed ? (
-        <span className={styles.a2Sub} aria-hidden="true" data-testid={`ward-ed-form-passed-${movement.id}`}>
-          Past form expiry
+      {/* Legal times (Josh, 31 Oct 2026): the typed time reads "ends Sat 15:42 as typed", or "ended …
+          as typed" with the danger glyph once passed, with the not-legally-checked tag; never a count
+          of time left or passed. The screen-reader facts beside the cell say the same. */}
+      {movement.legalForm?.dueAt !== undefined ? (
+        <span
+          className={styles.formTyped}
+          aria-hidden="true"
+          data-testid={formExpiryPassed ? `ward-ed-form-passed-${movement.id}` : undefined}
+        >
+          {typedTimePhrase(movement.legalForm.dueAt, now)} <LegalLimitsNotChecked variant="tag" />
         </span>
       ) : null}
     </>

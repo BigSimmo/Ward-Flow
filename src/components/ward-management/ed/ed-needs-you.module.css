@@ -65,8 +65,7 @@
   pointer-events: none;
 }
 
-.open,
-.link {
+.open {
   display: flex;
   flex: 1 1 auto;
   align-items: center;
@@ -82,22 +81,11 @@
   cursor: pointer;
 }
 
-.link {
-  padding-right: var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.link:last-child {
-  border-bottom: 0;
-}
-
-.open:hover,
-.link:hover {
+.open:hover {
   background: var(--wf-hover);
 }
 
 .open:focus-visible,
-.link:focus-visible,
 .action:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
@@ -147,9 +135,32 @@
   cursor: pointer;
 }
 
-.chev {
-  flex: none;
-  color: var(--wf-ink-3);
+/* ED board redesign (31 Oct 2026): the links to other pages, as one quiet footer line under the board. */
+.linksFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-6);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+}
+
+.linksFoot a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-height: 32px;
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.linksFoot a:hover {
+  text-decoration: underline;
+}
+
+.linksFoot a:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 @media (pointer: coarse) {

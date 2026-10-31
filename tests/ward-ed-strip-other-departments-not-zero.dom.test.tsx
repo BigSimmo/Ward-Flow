@@ -27,7 +27,9 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 /**
  * Walk-through WT-24 (26 Oct 2026): on an ED desk the other departments read "0 waiting, No one
  * waiting". An ED desk's copy holds only its own department's people, so those zeros were false.
- * The other tiles now say the figure is not shown at this desk. Synthetic figures only.
+ * The other tiles then said the figure was not shown at this desk; with that the only thing every
+ * other tile could say, the ED desk redesign (Josh, 30 Oct 2026) leaves the strip out for that desk.
+ * Synthetic figures only.
  */
 const ED_DESK: WardAccess = { role: "ed", scope: { kind: "ed", edId: "peel-ed" } };
 const department = (id: string, code: string, waiting: number) => ({
@@ -63,16 +65,15 @@ afterEach(() => {
 });
 
 describe("an ED desk shows no false zero for another department (WT-24)", () => {
-  it("says the other department's figure is not shown, and keeps its own", () => {
+  it("leaves the department strip out on the ED desk, so no other department reads a false zero", () => {
     act(() => setWardFeatureFlagOnDevice("role-access", true));
     act(() => setWardAccess(ED_DESK));
     render(overview);
-    const strip = screen.getByRole("navigation", { name: "Emergency departments" });
-    const rph = within(strip).getByText("RPH").closest("li")!;
-    expect(within(rph).getByText("Not shown at this desk")).toBeInTheDocument();
-    expect(within(rph).queryByText("No one waiting")).toBeNull();
-    const peel = within(strip).getByText("PEEL").closest("li")!;
-    expect(within(peel).getByText("2")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Emergency departments" })).toBeNull();
+    expect(screen.queryByText("RPH")).toBeNull();
+    expect(screen.queryByText("No one waiting")).toBeNull();
+    // Its own figure stays in the hero title.
+    expect(screen.getByText("on the board", { exact: false })).toHaveTextContent("2 on the board");
   });
 
   it("keeps every figure for the coordinator", () => {
@@ -80,6 +81,6 @@ describe("an ED desk shows no false zero for another department (WT-24)", () => 
     const strip = screen.getByRole("navigation", { name: "Emergency departments" });
     const rph = within(strip).getByText("RPH").closest("li")!;
     expect(within(rph).getByText("No one waiting")).toBeInTheDocument();
-    expect(within(strip).queryByText("Not shown at this desk")).toBeNull();
+    expect(within(strip).getAllByRole("link")).toHaveLength(2);
   });
 });
