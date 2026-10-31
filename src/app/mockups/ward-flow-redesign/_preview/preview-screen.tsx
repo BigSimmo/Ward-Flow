@@ -43,6 +43,23 @@ export function PreviewScreen({ slug, pop, theme }: { slug: string; pop: string 
     document.documentElement.setAttribute("data-mockup-kit", "");
     return () => document.documentElement.removeAttribute("data-mockup-kit");
   }, []);
+  // The kit standard shows a dialog's focus ring for keyboard users only. A popup that opens on load
+  // gets focus the browser treats as keyboard focus, so the frame marks how input last arrived.
+  useEffect(() => {
+    const root = document.documentElement;
+    const pointer = () => root.setAttribute("data-kit-input", "pointer");
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === "Tab" || event.key.startsWith("Arrow")) root.setAttribute("data-kit-input", "keyboard");
+    };
+    pointer();
+    window.addEventListener("pointerdown", pointer, true);
+    window.addEventListener("keydown", keyboard, true);
+    return () => {
+      window.removeEventListener("pointerdown", pointer, true);
+      window.removeEventListener("keydown", keyboard, true);
+      root.removeAttribute("data-kit-input");
+    };
+  }, []);
   const inBrowser = useSyncExternalStore(
     subscribeNothing,
     () => true,
