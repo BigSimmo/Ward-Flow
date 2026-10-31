@@ -119,12 +119,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "sign-in", label: "Sign in", group: "Places and records", appPath: "/ward-flow-sign-in", bare: true },
   { slug: "statistics-compare", label: "Compare", group: "Statistics pages", appPath: "/ward-flow/statistics/compare" },
   { slug: "statistics-list", label: "Ward list", group: "Statistics pages", appPath: "/ward-flow/statistics/wards" },
-  {
-    slug: "statistics-unit",
-    label: "One ward",
-    group: "Statistics pages",
-    appPath: "/ward-flow/statistics/ward/fsh-adult-secure",
-  },
   { slug: "statistics-weekly", label: "Weekly", group: "Statistics pages", appPath: "/ward-flow/statistics/weekly" },
   {
     slug: "as-ward-home",
@@ -173,13 +167,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     label: "Handover",
     group: "As nurse in charge",
     appPath: "/ward-flow/handover",
-    role: ROLE_DESKS["ward"],
-  },
-  {
-    slug: "as-ward-statistics",
-    label: "Statistics",
-    group: "As nurse in charge",
-    appPath: "/ward-flow/statistics",
     role: ROLE_DESKS["ward"],
   },
   {
@@ -510,7 +497,6 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
 
 /** Prefix routes: any address under these opens the one example drawn for them. */
 const PREFIX_SCREENS: readonly (readonly [prefix: string, slug: string])[] = [
-  ["/ward-flow/statistics/ward/", "statistics-unit"],
   ["/ward-flow/statistics/", "statistics-list"],
   ["/ward-flow/ward/", "ward"],
   ["/ward-flow/board/", "stays"],

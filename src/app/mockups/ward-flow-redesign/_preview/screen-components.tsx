@@ -112,9 +112,6 @@ const StatisticsComparePage = dynamic<MockupPageProps>(() =>
 const StatisticsListPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/statistics-list/statistics-list-page").then((module) => module.StatisticsListPage),
 );
-const StatisticsUnitPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/statistics-unit/statistics-unit-page").then((module) => module.StatisticsUnitPage),
-);
 const StatisticsWeeklyPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/statistics-weekly/statistics-weekly-page").then(
     (module) => module.StatisticsWeeklyPage,
@@ -150,11 +147,6 @@ const AsWardLegalFormsPage = dynamic<MockupPageProps>(() =>
 const AsWardHandoverPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ward-handover/as-ward-handover-page").then(
     (module) => module.AsWardHandoverPage,
-  ),
-);
-const AsWardStatisticsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ward-statistics/as-ward-statistics-page").then(
-    (module) => module.AsWardStatisticsPage,
   ),
 );
 const AsWardSeclusionPage = dynamic<MockupPageProps>(() =>
@@ -330,7 +322,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "sign-in": SignInPage,
   "statistics-compare": StatisticsComparePage,
   "statistics-list": StatisticsListPage,
-  "statistics-unit": StatisticsUnitPage,
   "statistics-weekly": StatisticsWeeklyPage,
   agenda: AgendaRedesign,
   "as-ward-home": AsWardHomePage,
@@ -340,7 +331,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-ward-waiting": AsWardWaitingPage,
   "as-ward-legal-forms": AsWardLegalFormsPage,
   "as-ward-handover": AsWardHandoverPage,
-  "as-ward-statistics": AsWardStatisticsPage,
   "as-ward-seclusion": AsWardSeclusionPage,
   "as-ward-alerts": AsWardAlertsPage,
   "as-ward-settings": AsWardSettingsPage,
