@@ -2586,6 +2586,19 @@ export function createWorkspaceStore(
       ) {
         event = { ...event, sendingTeamName: view.access.scope.teamName };
       }
+      // Decision 41 (Josh, 31 Oct 2026): a ward's handover sign-off names its ward. A one-ward desk's
+      // ward comes from its membership, as the team does above; a desk working several wards must
+      // name one, and commandRefusal keeps it to the desk's own wards.
+      if (
+        view?.access?.role === "ward" &&
+        view.access.scope.kind === "ward" &&
+        Array.isArray(view.access.scope.unitIds) &&
+        view.access.scope.unitIds.length === 1 &&
+        (event?.type === "RECORD_HANDOVER_SIGN_OFF" || event?.type === "UNDO_HANDOVER_SIGN_OFF") &&
+        event.unitId === undefined
+      ) {
+        event = { ...event, unitId: view.access.scope.unitIds[0] };
+      }
       const supplied = event;
       const storable = engine.storableCommand(event);
       // H-0694, H-0179: a whole-network desk is recorded under its own role, never the screen's.

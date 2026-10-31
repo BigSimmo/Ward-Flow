@@ -493,7 +493,7 @@ describe("who may raise which event", () => {
     RECORD_HOME_SERVICE_RETURN: ["coordinator"],
     RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
     RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
-    RECORD_CLINICAL_CONTACT: ["community", "coordinator", "ed"],
+    RECORD_CLINICAL_CONTACT: ["community", "coordinator"],
     DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager"],
     ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],
     STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager"],

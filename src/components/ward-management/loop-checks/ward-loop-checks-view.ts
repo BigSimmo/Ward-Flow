@@ -33,7 +33,8 @@ export const ACCEPTANCE_CONDITION_LABELS: Record<AcceptanceConditionKind, string
 export const ACCEPTANCE_AGREED_WITH_LABELS: Record<AcceptanceConditionAgreedWith, string> = {
   coordinator: "Bed coordinator",
   ed: "ED clinician",
-  community: "Community service",
+  // Decision 45 (Josh, 31 Oct 2026): one name per role on screen. Stored values keep their keys.
+  community: "Community team",
   sending_ward: "Sending ward",
 };
 
@@ -46,7 +47,7 @@ export const WARD_RESTRICTION_LABELS: Record<WardRestrictionKind, string> = {
 export const RESTRICTION_REVIEWER_LABELS: Record<RestrictionReviewerRole, string> = {
   nurse_unit_manager: "Nurse unit manager",
   consultant_psychiatrist: "Consultant psychiatrist",
-  site_bed_manager: "Bed manager",
+  site_bed_manager: "Site bed manager",
   flow_coordinator: "Bed coordinator",
   after_hours_manager: "After-hours manager",
   service_director: "Service director",

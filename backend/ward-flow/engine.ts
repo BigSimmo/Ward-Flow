@@ -604,9 +604,15 @@ export function archivePartialViewForWorld(
  * which names the notice's addressee (`reduceInboxEvent`).
  */
 export function deskCommand(access: WardAccess, supplied: unknown): unknown {
-  const fields = supplied as Record<string, unknown> | null;
-  if (access.role !== "coordinator" || typeof fields?.role !== "string") return supplied;
-  if (fields.role === "demo" || fields.role === access.role || fields.type === "MARK_NOTICE_READ") return supplied;
+  // Q67 (Josh, 31 Oct 2026): a whole-network desk's handover sign-off that names no ward is recorded
+  // as the whole network's, from the desk's membership, so History reads "Whole network". Sign-offs
+  // saved before this carry no mark and keep "Ward not recorded"; nothing is guessed for them.
+  const sent = supplied as Record<string, unknown> | null;
+  const networkSignOff =
+    sent?.type === "RECORD_HANDOVER_SIGN_OFF" && accessIsWholeNetwork(access) && sent.unitId === undefined;
+  const fields = networkSignOff ? { ...sent, network: true } : sent;
+  if (access.role !== "coordinator" || typeof fields?.role !== "string") return fields;
+  if (fields.role === "demo" || fields.role === access.role || fields.type === "MARK_NOTICE_READ") return fields;
   return { ...fields, role: access.role };
 }
 
