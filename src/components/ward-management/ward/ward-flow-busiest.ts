@@ -17,12 +17,13 @@ export function busiestFlowTab(counts: Readonly<Record<WardFlowTab, number>>): W
 /**
  * Once, when the ward first has any list, an empty chosen list gives way to the busiest one, instead
  * of opening on an empty Referrals list. A list that already has rows (picked by the person or named
- * in the address) is kept, and later changes in the counts never move the person's choice.
+ * in the address) is kept, and later changes in the counts never move the person's choice. The
+ * caller shows the busiest list without writing it to the address, so arriving changes no URL.
  */
 export function useBusiestFlowTabDefault(
   counts: Readonly<Record<WardFlowTab, number>>,
   flowTab: WardFlowTab,
-  setFlowTab: (next: WardFlowTab) => void,
+  showBusiest: (next: WardFlowTab) => void,
 ): void {
   const picked = useRef(false);
   const busiest = busiestFlowTab(counts);
@@ -31,6 +32,6 @@ export function useBusiestFlowTabDefault(
   useEffect(() => {
     if (picked.current || busiestCount === 0) return;
     picked.current = true;
-    if (chosenCount === 0 && busiest !== flowTab) setFlowTab(busiest);
-  }, [busiest, busiestCount, chosenCount, flowTab, setFlowTab]);
+    if (chosenCount === 0 && busiest !== flowTab) showBusiest(busiest);
+  }, [busiest, busiestCount, chosenCount, flowTab, showBusiest]);
 }

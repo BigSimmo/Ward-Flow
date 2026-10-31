@@ -42,8 +42,8 @@ function Probe() {
   );
   return (
     <>
-      <output data-testid="held-name">{held ? resolvePatientIdentity(held).displayName : ""}</output>
-      <output data-testid="candidate-name">{candidate ? resolvePatientIdentity(candidate).displayName : ""}</output>
+      <output data-testid="held-name">{held ? resolvePatientIdentity(held).formalName : ""}</output>
+      <output data-testid="candidate-name">{candidate ? resolvePatientIdentity(candidate).formalName : ""}</output>
       <button
         type="button"
         onClick={() => {

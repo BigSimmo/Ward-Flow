@@ -290,8 +290,13 @@ export function WardHomeTab({
   }
 
   const [innerFlowTab, setInnerFlowTab] = useState<WardFlowTab>("referrals");
-  const flowTab = flowTabProp ?? innerFlowTab;
+  // Ward flow opens on its busiest list (approved 31 Oct 2026). Shown only: it is never written to
+  // the address, and any list the person picks replaces it.
+  const [busiestFlowTab, setBusiestFlowTab] = useState<WardFlowTab | null>(null);
+  const chosenFlowTab = flowTabProp ?? innerFlowTab;
+  const flowTab = busiestFlowTab ?? chosenFlowTab;
   const setFlowTab = (next: WardFlowTab) => {
+    setBusiestFlowTab(null);
     startTransition(() => {
       (onFlowTabChange ?? setInnerFlowTab)(next);
     });
@@ -694,8 +699,8 @@ export function WardHomeTab({
   // Ward flow opens on its busiest list instead of an empty one (approved 31 Oct 2026).
   useBusiestFlowTabDefault(
     { referrals: incoming.length, admissions: expectedRows.length + leaveRows.length, discharges: outRows.length },
-    flowTab,
-    setFlowTab,
+    chosenFlowTab,
+    setBusiestFlowTab,
   );
 
   // This shift: one to do list, sorted into act now, later today and done. Every row is a recorded
