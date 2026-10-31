@@ -169,6 +169,8 @@ function fillAndConfirmBooking(movementId: string) {
   fireEvent.change(within(dialog).getByTestId(`ward-community-transport-estimated-time-${movementId}`), {
     target: { value: "14:30" },
   });
+  // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
+  fireEvent.click(within(dialog).getByTestId(`ward-community-transport-estimated-day-today-${movementId}`));
   const confirm = within(dialog).getByTestId(`ward-community-book-transport-confirm-${movementId}`);
   expect(confirm).not.toHaveAttribute("aria-disabled");
   fireEvent.click(confirm);

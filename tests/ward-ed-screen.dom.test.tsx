@@ -379,7 +379,7 @@ describe("emergency department intake picker", () => {
     raiseReferralWithForm("3B");
     fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${FIRST_RAISED_ID}`));
     fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
     // Still a 3B. The examination no longer replaces the clinician's chosen form.
     expect(screen.getByTestId("probe")).toHaveTextContent(`${FIRST_RAISED_ID}|3B|`);
@@ -398,7 +398,7 @@ describe("emergency department intake picker", () => {
     raiseReferralWithForm("3B");
     fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${FIRST_RAISED_ID}`));
     fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
     expect(screen.getByTestId(`ward-ed-next-${FIRST_RAISED_ID}`)).toHaveTextContent("Refer to a ward");
     expect(screen.getByTestId(`ward-ed-outcome-toggle-${FIRST_RAISED_ID}`)).toBeInTheDocument();
   });
@@ -1120,14 +1120,17 @@ describe("direct CMHT referral pathway from ED screen", () => {
     // Record an examination outcome for WF-001
     fireEvent.click(screen.getByTestId("ward-ed-examine-toggle-WF-001"));
     fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
-    // Now referral is unlocked
-    expect(cmhtToggle).not.toHaveAttribute("aria-disabled");
+    // Now referral is unlocked. Redesign (pop-ed-actions, Josh 31 Oct 2026): a greyed item sits
+    // under "Not available yet" in the row menu and moves to its group once open, so the control is
+    // found again rather than held from before.
+    const unlockedCmhtToggle = screen.getByTestId("ed-refer-cmht-WF-001");
+    expect(unlockedCmhtToggle).not.toHaveAttribute("aria-disabled");
     expect(screen.queryByTestId("ward-ed-cmht-unavailable-WF-001")).not.toBeInTheDocument();
 
     // Open the panel
-    fireEvent.click(cmhtToggle);
+    fireEvent.click(unlockedCmhtToggle);
     const panel = screen.getByTestId("ward-ed-cmht-panel-WF-001");
     expect(panel).toBeInTheDocument();
 
@@ -1193,7 +1196,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
 
     fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${FIRST_RAISED_ID}`));
     fireEvent.click(screen.getByRole("radio", { name: "Further examination ordered" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
     // The control is offered again — the repeat-examination guard's own precondition — rather
     // than reporting "already examined" the way it would for any other outcome.
@@ -1201,7 +1204,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
     expect(toggle).not.toHaveAttribute("aria-disabled");
     fireEvent.click(toggle);
     fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
     const history = screen.getByTestId(`ward-ed-examination-history-${FIRST_RAISED_ID}`);
     expect(history).toHaveTextContent("further examination ordered");
@@ -1235,13 +1238,15 @@ describe("emergency department — repeat examination (owner item 7)", () => {
     fireEvent.change(screen.getByTestId(`ward-ed-transport-estimated-time-${revokedId}`), {
       target: { value: "14:30" },
     });
+    // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
+    fireEvent.click(screen.getByTestId(`ward-ed-transport-estimated-day-today-${revokedId}`));
     fireEvent.click(screen.getByTestId(`ward-ed-book-transport-confirm-${revokedId}`));
 
     fireEvent.click(screen.getByTestId(`ward-ed-handover-${revokedId}`));
 
     fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${revokedId}`));
     fireEvent.click(screen.getByRole("radio", { name: "Revoked — does not proceed" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
     const flag = screen.getByTestId(`ward-ed-examination-revoked-flag-${revokedId}`);
     expect(flag).toHaveTextContent("The examination was revoked and this movement still has a bed pulled.");

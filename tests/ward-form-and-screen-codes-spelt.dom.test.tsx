@@ -1,6 +1,6 @@
 // H-0842 and H-0187 (27 Oct 2026): a form code reads with its register title, and the codes on
 // Home and Capacity carry their full names (DA-17 `SpelledCodes`).
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -65,11 +65,24 @@ describe("H-0842: form codes carry their register titles", () => {
     expect(formTitleForCode("6A")).not.toBeNull();
     expect(stayLegalShort(stay, onForm)).toBe(`Form 6A (${formTitleForCode("6A")})`);
   });
-  it("the ED board shows the register title under each form chip", () => {
+  // Josh (31 Oct 2026): no line under the chip; the chip names the register title on tap, on
+  // keyboard focus and to screen readers, never on hover only.
+  it("the ED board's form chip names its register title to screen readers and on a tap", () => {
     const view = renderInProvider(<EdScreen edId="arm-ed" />);
-    const titles = [...view.container.querySelectorAll('[data-testid^="ward-ed-form-title-"]')];
-    expect(titles.length).toBeGreaterThan(0);
-    for (const title of titles) expect(title.textContent?.trim().length).toBeGreaterThan(0);
+    const chips = [...view.container.querySelectorAll<HTMLButtonElement>('[data-testid^="ward-ed-form-chip-"]')];
+    expect(chips.length).toBeGreaterThan(0);
+    for (const chip of chips) {
+      const tip = view.container.querySelector(`#${CSS.escape(chip.getAttribute("aria-describedby") ?? "")}`);
+      expect(tip?.textContent?.trim().length).toBeGreaterThan(0);
+      expect(chip).toHaveAccessibleDescription(tip?.textContent ?? "");
+    }
+    const [first] = chips;
+    const tip = view.container.querySelector(`#${CSS.escape(first.getAttribute("aria-describedby") ?? "")}`);
+    expect(tip).not.toHaveAttribute("data-open");
+    fireEvent.click(first);
+    expect(tip).toHaveAttribute("data-open", "true");
+    fireEvent.keyDown(first, { key: "Escape" });
+    expect(tip).not.toHaveAttribute("data-open");
   });
 });
 

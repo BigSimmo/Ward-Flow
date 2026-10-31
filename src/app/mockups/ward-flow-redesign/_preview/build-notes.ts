@@ -11,12 +11,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Removed:** profile rows the header already shows, and Service in view (a one-ward desk picks no service).",
     "**Round 3:** this view is now the one Settings component with its ward differences marked ROLE BRANCH (ward), not a second copy. Rules show values as words (the near-empty steppers were fixed in round 2), the timing set reads 'Standard timings' instead of a greyed switch, and the profile card's Appearance row is gone (it repeated the Display card beside it).",
   ],
-  "as-ed-home": [
-    "**As the ED clinician**, the page opens on Peel ED's own board. The strip of other EDs is gone: with scoped data each tile only said 'Not shown at this desk'.",
-    "**New:** on the phone the board comes first, then the access-target card.",
-    "**Still open:** the hero's Raise referral and the app bar's New referral open the same sheet. Keep only one on this desk?",
-    "**Changed (Josh, 30 October):** no access forecast card on the ED desk. Worked out from the records this desk can see, it disagreed with the coordinator's board for the same ED; the coordinator's ED board keeps it.",
-  ],
   "as-executive-settings": [
     "**As the executive (new in round 3)**, Settings reads the executive report's public rules: Rules are read only with the timing set in words and no save bar, the last-change line and record counts say they are unavailable, and the live counts are left out because this desk holds no individual records.",
     "**Kept:** Alerts, Display and profile, and Help and data work as on any desk; Restore offers this browser's settings only.",
@@ -26,26 +20,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 3:** the one Settings component with ROLE BRANCH (admin) marks, not a second copy; the Access tab adds the read-only Who can change what table under the roles.",
     "**Still open:** the rail labels this desk 'EXECUTIVE' and has no Governance entry (shared chrome).",
     "**Round 2:** the hero's Profile button goes. Role rows read 'Nurse in charge · FSH Adult Secure · ends in 120 days · used 1 day ago', and chips show only exceptions (Ending soon, Switched off). The phone opens on Access requests and roles.",
-  ],
-  "pop-ed-actions": [
-    "**Built from a copy of today's row actions menu**: the items, labels, conditions and short reasons are the menu's own, and each item presses the board's real control.",
-    "**New:** only the actions you can take now, in three groups (Review and disposition, Transfer and handover, Legal and referral). The row's next step is the one filled button.",
-    "**New:** greyed actions fold into 'Not available yet (n)', each with its short reason, who acts next and its one fix.",
-    "**Kept:** every action, including View patient record, Edit presentation and Edit plan. A bottom sheet on a phone, at the kit's row size.",
-    "**Round 2:** items are verbs ('Log transport booking', 'Record no referral'), the first three get a 'Patient record' heading, and the phone rows are back to today's size.",
-  ],
-  "pop-log-transport": [
-    "**Built from a copy of today's transport booking form**: every field, the check and the save work as now.",
-    "**New:** '3 answers left' moves to the top with a link to the first one; with nothing left it reads 'Every answer given. Check them, then save.'",
-    "**New:** phone answer buttons keep the kit's size with a larger tap area, and the pinned Save row matches the popup background in dark.",
-    "**Kept:** all fields, and Save greyed until every answer is in. **Changed (Josh, 31 Oct 2026):** no legal-status prefill and no day chosen when the form opens; Legal now shows under the legal question as plain text.",
-    "**Round 2:** the title fits one line and the patient is named once below it. Repeated names and help sentences go. The footer follows the app's order, Cancel then Save, with '3 answers left' beside Save.",
-  ],
-  "pop-record-exam": [
-    "**Built from today's ED examination form**: the same four outcomes in the same words, the same 'Choose an outcome first' check and the same save, with Undo.",
-    "**New:** its own popup, each outcome a kit radio and the button full width on a phone.",
-    "**Still open:** today Legal forms does not record the exam; it sends you to the ED board ('Record on ED'). Drawn over Legal forms as a proposal: should Legal forms record it directly, or keep the link?",
-    "**Round 2:** the title reads 'Examination outcome' with the person (surname first) under it, and the button 'Save outcome'. The four outcomes use the kit radio at its own size; their words are unchanged.",
   ],
   "pop-refer-ward": [
     "**Built from the ED row's own Refer to a ward link**, read into the same request the app bar opens, for the first person on the Peel ED board whose next step is Refer to a ward: ward chosen, sent from Peel ED, patient and referral filled in.",

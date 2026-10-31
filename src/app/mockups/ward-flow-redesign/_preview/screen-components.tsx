@@ -71,9 +71,6 @@ const AsWardSettingsPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsWardSettingsPage,
   ),
 );
-const AsEdHomePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ed-home/as-ed-home-page").then((module) => module.AsEdHomePage),
-);
 const AsExecutiveSettingsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-executive-settings/as-executive-settings-page").then(
     (module) => module.AsExecutiveSettingsPage,
@@ -100,7 +97,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "add-patient": AddPatientPage,
   settings: SettingsPage,
   "as-ward-settings": AsWardSettingsPage,
-  "as-ed-home": AsEdHomePage,
   "as-executive-settings": AsExecutiveSettingsPage,
   "as-admin-home": AsAdminHomePage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

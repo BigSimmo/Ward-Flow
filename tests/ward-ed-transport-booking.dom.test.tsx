@@ -113,8 +113,8 @@ const escortRadios = (movementId: string) => ({
 
 /**
  * Owner's third ruling, 2026-09-17: the three facts logged from the phone call — the popup's whole
- * reason to exist. `"today"` is the draft's own opening selection, so no day radio needs clicking
- * for the ordinary case.
+ * reason to exist. Josh, 31 Oct 2026: the form starts with neither Today nor Tomorrow chosen, so
+ * the day is answered too.
  */
 function fillPhoneLoggedFields(movementId: string, cadNumber: string, status: "voluntary" | "involuntary") {
   fireEvent.change(screen.getByTestId(`ward-ed-transport-cad-number-${movementId}`), {
@@ -124,6 +124,7 @@ function fillPhoneLoggedFields(movementId: string, cadNumber: string, status: "v
   fireEvent.change(screen.getByTestId(`ward-ed-transport-estimated-time-${movementId}`), {
     target: { value: "14:30" },
   });
+  fireEvent.click(screen.getByTestId(`ward-ed-transport-estimated-day-today-${movementId}`));
 }
 
 describe("booking transport from the sending emergency department", () => {
@@ -201,8 +202,12 @@ describe("booking transport from the sending emergency department", () => {
     const dialog = screen.getByTestId(`ward-ed-book-transport-${movement.id}`);
     expect(dialog).toHaveAttribute("role", "dialog");
     expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(dialog).toHaveAttribute("aria-labelledby", `ward-ed-book-transport-title-${movement.id}`);
-    expect(document.getElementById(`ward-ed-book-transport-title-${movement.id}`)).toBeInTheDocument();
+    // Redesign (pop-log-transport, Josh 31 Oct 2026): the kit dialog names itself with its
+    // one-line title, and the person, surname first, is named once under it.
+    expect(screen.getByRole("dialog", { name: "Log transport booking" })).toBe(dialog);
+    expect(document.getElementById(dialog.getAttribute("aria-describedby")!)?.textContent).toMatch(
+      /^[^,]+, .+ · booked by phone\. Fill in each answer as the provider gives it\.$/,
+    );
 
     fireEvent.change(screen.getByTestId(`ward-ed-transport-provider-${movement.id}`), {
       target: { value: TRANSPORT_PROVIDERS[1] },

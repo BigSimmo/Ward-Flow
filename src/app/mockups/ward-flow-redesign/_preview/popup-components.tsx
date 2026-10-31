@@ -47,15 +47,6 @@ const PopTour = dynamic<{ page: ReactNode }>(() =>
 const PopReferWard = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-refer-ward/pop-refer-ward").then((module) => module.PopReferWard),
 );
-const PopEdActions = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-ed-actions/pop-ed-actions").then((module) => module.PopEdActions),
-);
-const PopLogTransport = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-log-transport/pop-log-transport").then((module) => module.PopLogTransport),
-);
-const PopRecordExam = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-record-exam/pop-record-exam").then((module) => module.PopRecordExam),
-);
 const PopClearance = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-clearance/pop-clearance").then((module) => module.PopClearance),
 );
@@ -139,9 +130,6 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   "more-pages": PopMorePages,
   tour: PopTour,
   "refer-ward": PopReferWard,
-  "ed-actions": PopEdActions,
-  "log-transport": PopLogTransport,
-  "record-exam": PopRecordExam,
   clearance: PopClearance,
   "idle-warning": PopIdleWarning,
   "idle-lock": PopIdleLock,

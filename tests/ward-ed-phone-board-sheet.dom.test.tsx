@@ -79,9 +79,11 @@ describe("ED board on phone", () => {
     // Change 2 (D-77): the pinned next step is Record exam, so the list does not offer it again.
     expect(within(actions).queryByRole("button", { name: "Record examination" })).toBeNull();
 
-    // The pinned next step opens the inline examination form inside the sheet.
+    // The pinned next step opens the examination outcome popup over the sheet (redesign,
+    // pop-record-exam, Josh 31 Oct 2026; it was a form inside the sheet before).
     fireEvent.click(within(sheet).getByRole("button", { name: "Record exam" }));
-    expect(within(sheet).getByText(/Examination outcome for/)).toBeTruthy();
+    const exam = screen.getByRole("dialog", { name: "Examination outcome" });
+    expect(within(exam).getByText(/Examination outcome for/)).toBeTruthy();
   });
 
   it("opens the outcome form from the sheet's action list", () => {

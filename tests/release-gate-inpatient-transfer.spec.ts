@@ -221,6 +221,10 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
   await booking.getByTestId("ward-patient-eta-presets").getByRole("button", { name: "+30m", exact: true }).click();
   await booking.getByTestId("ward-patient-select-provider").selectOption("Patient transport service");
   await booking.getByTestId("ward-patient-escort-no").check();
+  // Josh, 31 Oct 2026: neither legal answer starts ticked. A status that differs from Legal now asks why.
+  await booking.getByTestId("ward-patient-legal-involuntary").check();
+  const legalReason = booking.getByTestId("ward-patient-legal-reason");
+  if (await legalReason.isVisible()) await legalReason.selectOption("treating_team_confirmed");
   await expectAccessible(page, testInfo, "transfer transport booking, filled");
   await booking.getByTestId("ward-patient-confirm-transport-btn").click();
   await expect(page.getByTestId("ward-patient-cad-number")).toHaveText("CAD-GATE-0004");

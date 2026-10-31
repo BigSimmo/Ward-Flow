@@ -70,13 +70,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     role: ROLE_DESKS["ward"],
   },
   {
-    slug: "as-ed-home",
-    label: "ED board",
-    group: "As ED clinician",
-    appPath: "/ward-flow/ed/peel-ed",
-    role: ROLE_DESKS["ed"],
-  },
-  {
     slug: "as-executive-settings",
     label: "Settings",
     group: "As executive",
@@ -108,9 +101,6 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
   { slug: "pop-more-pages", label: "More pages", group: "Shell popups", over: "home", pop: "more-pages" },
   { slug: "pop-tour", label: "Tour", group: "Shell popups", over: "home", pop: "tour" },
   { slug: "pop-refer-ward", label: "Refer to a ward", group: "Page popups", over: "ed-board", pop: "refer-ward" },
-  { slug: "pop-ed-actions", label: "ED actions", group: "Page popups", over: "ed-board", pop: "ed-actions" },
-  { slug: "pop-log-transport", label: "Log transport", group: "Page popups", over: "ed-board", pop: "log-transport" },
-  { slug: "pop-record-exam", label: "Record exam", group: "Page popups", over: "legal-forms", pop: "record-exam" },
   { slug: "pop-clearance", label: "Medical clearance", group: "Older popups", over: "patient", pop: "clearance" },
   { slug: "pop-idle-warning", label: "Idle warning", group: "Older popups", over: "home", pop: "idle-warning" },
   { slug: "pop-idle-lock", label: "Idle lock", group: "Older popups", over: "home", pop: "idle-lock" },

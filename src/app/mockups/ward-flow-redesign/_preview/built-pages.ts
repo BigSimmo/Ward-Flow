@@ -11,7 +11,6 @@ export const MOCKUP_PAGE_SLUGS = [
   "add-patient",
   "settings",
   "as-ward-settings",
-  "as-ed-home",
   "as-executive-settings",
   "as-admin-home",
 ] as const;

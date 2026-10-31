@@ -47,7 +47,7 @@ export function renderEdPersonSheet(
     <PhoneSheet
       open
       onClose={closeSheet}
-      title={patientInfo.displayName}
+      title={patientInfo.formalName}
       description={
         <>
           <span className={styles.phoneSheetUmrn}>{patientInfo.umrn}</span> · {department.siteCode} ED ·{" "}

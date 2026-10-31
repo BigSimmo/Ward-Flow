@@ -865,6 +865,8 @@ test.describe("@mockup Emergency department screen", () => {
     const legalReason016 = page.getByTestId("ward-ed-transport-legal-reason-WF-016");
     if (await legalReason016.isVisible()) await legalReason016.selectOption("treating_team_confirmed");
     await page.getByTestId("ward-ed-transport-estimated-time-WF-016").fill("14:30");
+    // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
+    await page.getByTestId("ward-ed-transport-estimated-day-today-WF-016").check();
     await page.getByTestId("ward-ed-book-transport-confirm-WF-016").click();
 
     await expect(readyHandover).not.toHaveAttribute("aria-disabled", "true");
@@ -1268,7 +1270,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     const examineForm = page.getByTestId("ward-ed-examine-form-WF-315");
     await expect(examineForm).toBeVisible();
     await examineForm.getByRole("radio", { name: "Inpatient treatment order" }).check();
-    await examineForm.getByRole("button", { name: "Confirm examination outcome" }).click();
+    await examineForm.getByRole("button", { name: "Save outcome" }).click();
     // Since 2026-08-24 the examination does NOT change the form — WF-315 stays on its 1A — and
     // the movement remains referable. What changes is that the examination is now recorded, so
     // the outstanding item for WF-315 must no longer read "Examination" once this submits. The
@@ -1375,6 +1377,8 @@ test.describe("@mockup Role switcher — the loop", () => {
     const legalReason315 = page.getByTestId("ward-ed-transport-legal-reason-WF-315");
     if (await legalReason315.isVisible()) await legalReason315.selectOption("treating_team_confirmed");
     await page.getByTestId("ward-ed-transport-estimated-time-WF-315").fill("14:30");
+    // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
+    await page.getByTestId("ward-ed-transport-estimated-day-today-WF-315").check();
     await page.getByTestId("ward-ed-book-transport-confirm-WF-315").click();
     // Proves the booking actually landed rather than just asserting the clicks happened: before
     // this, `handoverBlockedReason` renders the control `aria-disabled="true"` and a click on it

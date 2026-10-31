@@ -128,7 +128,7 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       fireEvent.click(trigger!);
 
       // Dialog opens
-      const dialog = screen.getByRole("dialog", { name: /Log the transport booking/i });
+      const dialog = screen.getByRole("dialog", { name: /Log transport booking/i });
       expect(dialog).toBeInTheDocument();
 
       // Cancel button inside dialog
@@ -136,7 +136,7 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       fireEvent.click(cancelBtn);
 
       // Dialog closed and focus restored to trigger button
-      expect(screen.queryByRole("dialog", { name: /Log the transport booking/i })).toBeNull();
+      expect(screen.queryByRole("dialog", { name: /Log transport booking/i })).toBeNull();
       expect(document.activeElement).toBe(menuTrigger);
     });
   });

@@ -831,35 +831,5 @@
       }
     ],
     "keep": "Everything."
-  },
-  "pop-ed-actions": {
-    "role": "The actions menu on an ED board row.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**About 15 items**, several greyed with \"Needs a ward to accept first\"."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "Only the actions you can take now, in three groups. Unavailable ones fold into \"Not available yet (3)\", with the reason."
-      }
-    ],
-    "keep": "Every action."
-  },
-  "pop-log-transport": {
-    "role": "Log a transport booking made by phone.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "Good. The \"3 answers left\" summary sits at the bottom."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "\"3 answers left\" moves to the top, with a link to the first. Save booking stays greyed until all are answered."
-      }
-    ],
-    "keep": "All fields and the legal-status prefill."
   }
 }
