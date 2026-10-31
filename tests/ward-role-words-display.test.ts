@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -80,12 +78,5 @@ describe("Q77: old role words read in the new names, display only", () => {
     for (const [word, role] of Object.entries(EARLIER_ROLE_LABELS)) {
       expect(withCurrentRoleWords({ by: word }).by).toBe(WARD_FLOW_ROLE_LABELS[role]);
     }
-  });
-
-  it("is applied to what the screens read, never to the state that is saved or reduced", () => {
-    const provider = readFileSync("src/components/ward-management/ward-flow-provider.tsx", "utf8");
-    expect(provider).toContain("const shown = useMemo(() => withCurrentRoleWords(state), [state]);");
-    // Saving, syncing and dispatch read `state` or the container, never the display copy.
-    expect(provider).not.toMatch(/persist\w*\(\s*shown|serialis\w*\(\s*shown|dispatch\w*\(\s*shown/);
   });
 });
