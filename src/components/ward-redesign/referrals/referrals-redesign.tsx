@@ -46,7 +46,6 @@ import {
   Card,
   ColumnChart,
   EmptyState,
-  FilterChip,
   Hero,
   JourneyStrip,
   Kbd,
@@ -91,7 +90,7 @@ import {
 import { DecidedSection, QueuedSection } from "./referral-board-sections";
 import { WaitRunway } from "./wait-runway";
 import { ReferralAlerts } from "./referral-alerts";
-import { HeroTools, LiveDecisionClock, PanelNav } from "./referral-panel-parts";
+import { BedsStrip, HeroTools, LiveDecisionClock, PanelNav, personLine } from "./referral-panel-parts";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import type { ScopedMeetingRow } from "./bed-meeting-sheet";
 import panel from "./referral-panel.module.css";
@@ -808,11 +807,14 @@ function ReferralBoardRedesign({
             />
             {recipientFiltersAvailable ? (
               <ReferralPhoneChips
-                chips={(["ward", "ed", "both", "community", "refused"] as const).map((key) => ({
-                  key,
-                  label: key === "refused" ? "Refused once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
-                  count: queued.filter((r) => highlightTest(key, r, now)).length,
-                }))}
+                chips={(["ward", "ed", "both", "community", "refused"] as const)
+                  .map((key) => ({
+                    key,
+                    label: key === "refused" ? "Refused once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
+                    count: queued.filter((r) => highlightTest(key, r, now)).length,
+                  }))
+                  // Review fix 3: an empty highlight hides unless it is the one pressed.
+                  .filter((chip) => chip.count > 0 || highlight === chip.key)}
                 highlight={highlight}
                 onHighlight={(key) => {
                   const chosen = HIGHLIGHT_KEYS.find((k) => k === key);
@@ -880,42 +882,45 @@ function ReferralBoardRedesign({
               aside={<LiveChip state="live" onHero />}
               bar={
                 <div className={cx(a.pills, panel.pills)} role="group" aria-label="Highlight referrals">
-                  {HIGHLIGHT_LABELS.filter(
-                    ([key]) => recipientFiltersAvailable || key === "overdue" || key === "tier1",
-                  ).map(([key, label]) => {
-                    const count = queued.filter((r) => highlightTest(key, r, now)).length;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        className={cx(a.pill, panel.pill)}
-                        aria-pressed={highlight === key}
-                        data-tone={
-                          count === 0
-                            ? undefined
-                            : key === "overdue"
-                              ? "danger"
-                              : key === "tier1"
-                                ? "warning"
-                                : undefined
-                        }
-                        data-empty={count === 0 ? "true" : undefined}
-                        data-testid={`ward-referral-highlight-${key}`}
-                        onClick={() => {
-                          setHighlight((current) => (current === key ? null : key));
-                        }}
-                      >
-                        <span className={a.pillCount}>{count}</span>
-                        {key === "overdue" ? <TriangleAlert size={12} aria-hidden="true" /> : null}
-                        {label}
-                        {highlight === key ? (
-                          <span className={panel.pillX} aria-hidden="true">
-                            <X size={12} aria-hidden="true" />
-                          </span>
-                        ) : null}
-                      </button>
-                    );
-                  })}
+                  {/* Review fix 3: every highlight in one place. Refused once joins the set, and a
+                      highlight with nobody in it hides unless it is the one pressed. */}
+                  {[...HIGHLIGHT_LABELS, ["refused", "Refused once"] as const]
+                    .filter(([key]) => recipientFiltersAvailable || key === "overdue" || key === "tier1")
+                    .map(([key, label]) => {
+                      const count = queued.filter((r) => highlightTest(key, r, now)).length;
+                      if (count === 0 && highlight !== key) return null;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          className={cx(a.pill, panel.pill)}
+                          aria-pressed={highlight === key}
+                          data-tone={
+                            count === 0
+                              ? undefined
+                              : key === "overdue"
+                                ? "danger"
+                                : key === "tier1"
+                                  ? "warning"
+                                  : undefined
+                          }
+                          data-empty={count === 0 ? "true" : undefined}
+                          data-testid={`ward-referral-highlight-${key}`}
+                          onClick={() => {
+                            setHighlight((current) => (current === key ? null : key));
+                          }}
+                        >
+                          <span className={a.pillCount}>{count}</span>
+                          {key === "overdue" ? <TriangleAlert size={12} aria-hidden="true" /> : null}
+                          {label}
+                          {highlight === key ? (
+                            <span className={panel.pillX} aria-hidden="true">
+                              <X size={12} aria-hidden="true" />
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
                 </div>
               }
               barAside={
@@ -927,7 +932,7 @@ function ReferralBoardRedesign({
                 />
               }
               foot={
-                <div className={cx(a.heroBand, redesign.heroBand)}>
+                <div className={cx(a.heroBand, redesign.heroBand, panel.heroBandStack)}>
                   <WaitRunway
                     queued={queued}
                     now={now}
@@ -939,7 +944,7 @@ function ReferralBoardRedesign({
                       handleSelect(id);
                     }}
                   />
-                  <BedsReady summary={bedsSummary} />
+                  <BedsStrip summary={bedsSummary} />
                 </div>
               }
             />
@@ -964,17 +969,6 @@ function ReferralBoardRedesign({
                 {phoneLayout ? null : viewSwitch}
                 {/* Redesign (Josh, 30 Oct 2026): no Filter queue box. Seven rows need no search, and the
                     highlights and the app search cover finding one person. */}
-                {/* v10: Refused once moved here from the hero, which keeps its five chips. */}
-                {view === "queue" && recipientFiltersAvailable ? (
-                  <FilterChip
-                    pressed={highlight === "refused"}
-                    onPressedChange={(pressed) => setHighlight(pressed ? "refused" : null)}
-                    count={queued.filter((r) => highlightTest("refused", r, now)).length}
-                    className={a.toolbarChip}
-                  >
-                    <span data-testid="ward-referral-highlight-refused">Refused once</span>
-                  </FilterChip>
-                ) : null}
                 <span className={a.toolbarNote}>
                   {anyHighlight && view === "queue" ? (
                     <>
@@ -1113,7 +1107,7 @@ function ReferralBoardRedesign({
                         {/* Shown, never copied: no UMRN goes on the clipboard (D-71 item 7, 21 Oct 2026). */}
                         <span className={umrnCopyable ? a.mono : undefined}>{selectedUmrn}</span>
                         <span aria-hidden="true">·</span>
-                        <span>{demographicLabel(selectedReferral)}</span>
+                        <span>{personLine(selectedReferral)}</span>
                       </p>
                     </div>
                     <span
