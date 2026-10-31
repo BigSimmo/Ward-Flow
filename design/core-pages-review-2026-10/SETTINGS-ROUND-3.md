@@ -1,12 +1,32 @@
 # Settings mock-up, round 3
 
-_Updated 2026-10-31 - Josh answered the three round 3 questions; Theme follows the shift dropped; Design owns._
+_Updated 2026-10-31 - handover added and draft PR opened into the design branch; Design owns._
 
 **Status: mock-up only. No real `/ward-flow` screen has changed (D-74).** Built on branch
 `claude/settings-mockup-improvements-9j8gcz` of `BigSimmo/Ward-Flow`, which starts from
 `claude/core-pages-design-review-f5vf4g` at `9da375a1` (itself carrying `main` at `b6aa5cd`, the commit
 these pages depict, per D-75). It was not merged with `claude/home-activity-mockup`, which conflicts
 with the design branch in four files outside Settings.
+
+## Handover (start here)
+
+- **Branch:** `claude/settings-mockup-improvements-9j8gcz`, four commits on top of the design branch at
+  `9da375a1`, pushed. A draft pull request opens it into `claude/core-pages-design-review-f5vf4g`
+  (draft PR #1118), so its diff shows only the Settings work. Do not merge it into `main`; do not arm
+  auto-merge.
+- **Review page for Josh:** https://claude.ai/artifact/DYY3QFivR4pKS6LkPFNpL3 (private screenshots with
+  the reason for each change and Josh's answers). The full clickable bundle was not published.
+- **Known conflict:** after this branch started, the design branch (b976c0f86) deleted `ScopeLine` from
+  `settings/settings-rows.tsx` because nothing there used it. Round 3 uses it (Display and Alerts tabs),
+  so the fix is to keep it. Merging the design branch in needs Josh's yes (divergent history).
+- **To see it locally:** Node 24 at `/opt/node24/bin`, `npm ci --include=dev`, `npm run ensure`, then
+  open `/mockups/ward-flow-redesign/settings` at the printed address. Commits need a
+  `WARD_SIGNOUT_FILE` claim covering the Settings folders (see HANDOVER.md, "Checks before each commit").
+- **Checks run:** prettier, eslint with no warnings, typecheck, knip (no Settings findings), check:mockups,
+  ward-text-size, type-scale, the docs checks, ward:organise:check and the commit hook. Pages looked at
+  1440, 820 and 390 px, light and dark. No hosted CI was watched.
+- **Next:** Josh approves the Settings mock-up for building (D-74), or names changes. Approval then means
+  one real Settings file with role branches, built from these copies; see "For the real build" below.
 
 ## What Josh asked for
 
