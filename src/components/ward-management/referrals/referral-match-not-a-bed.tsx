@@ -2,7 +2,7 @@
 
 import { type Dispatch, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { RadioGroup } from "@/components/wf/radio-group";
+import { RadioGroup } from "@/components/wf";
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import {

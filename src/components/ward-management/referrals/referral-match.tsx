@@ -53,8 +53,7 @@ import { getReferralPriority, referralPriorityLabel, PriorityGlyph } from "./ref
 import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
 import ph from "./referral-match-phone.module.css";
-import { Button, StatusGlyph } from "@/components/wf";
-import { RadioGroup } from "@/components/wf/radio-group";
+import { Button, RadioGroup, StatusGlyph } from "@/components/wf";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
   GATE_LABELS,

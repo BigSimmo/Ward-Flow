@@ -46,6 +46,7 @@ import {
   Hero,
   Legend,
   LiveChip,
+  RadioGroup,
   StackBar,
   StatusGlyph,
   TextInput,
@@ -55,7 +56,6 @@ import {
   durMinutes,
   useIsPhone,
 } from "@/components/wf";
-import { RadioGroup } from "@/components/wf/radio-group";
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt, rankCorridorPairs } from "./movement-horizon-gantt";
 import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
