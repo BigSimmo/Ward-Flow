@@ -22,10 +22,10 @@ describe("printable Help guides from the app's content", () => {
       expect(sheet.homeName).toBe(source.homeName);
     }
   });
-  it("prepares nine guides including Bed manager and omits unavailable referral shortcuts", async () => {
+  it("prepares nine guides including Site bed manager and omits unavailable referral shortcuts", async () => {
     expect(sheets).toHaveLength(9);
     expect(await readCheatSheets()).toEqual(sheets);
-    expect(sheets.find((sheet) => sheet.id === "bed_manager")?.title).toBe("Bed manager");
+    expect(sheets.find((sheet) => sheet.id === "bed_manager")?.title).toBe("Site bed manager");
     expect(new Set(sheets.map((sheet) => sheet.id)).size).toBe(9);
     for (const sheet of sheets) {
       expect(sheet.jobs.length).toBeGreaterThan(0);

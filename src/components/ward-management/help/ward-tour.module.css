@@ -241,6 +241,14 @@
   cursor: pointer;
 }
 
+/* 40px, the smallest control on a computer (Josh, 31 Oct 2026). The close keeps its own 32px
+   square (Josh, 30 Oct 2026). */
+.primary,
+.secondary,
+.skip {
+  min-height: 40px;
+}
+
 .primary,
 .secondary {
   padding: 0 0.875rem;
@@ -312,7 +320,7 @@
 /* The tour's last step hands over to Help's task list. */
 .tasksLink {
   justify-self: start;
-  min-height: var(--wf-target, 28px);
+  min-height: 40px;
   padding: 0;
   border: 0;
   background: transparent;

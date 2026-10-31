@@ -5,32 +5,26 @@ import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
-import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useIsPhone } from "@/components/wf";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 
+import type { GlossaryTerm } from "./ward-help-content";
 import { howToHref } from "./ward-help-href";
 import { showWardHowTo } from "./ward-help-events";
 import { CLINICAL_REPLY, HELP_SEARCH_GROUPS, searchHelp, type HelpSearchResult } from "./ward-help-search-index";
 import type { WardTourRole } from "./ward-help-store";
 import { HOW_TOS } from "./ward-help-howto";
+import { helpDeskLabel } from "./ward-help-roles";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 
 /** How-tos whose controls a phone screen does not draw: on a phone they open, not Show me. */
 const COMPUTER_ONLY = new Set(HOW_TOS.filter((howTo) => howTo.computerOnly).map((howTo) => howTo.id));
-import { HELP_BED_MANAGER_NAME } from "./ward-help-roles";
 import styles from "./ward-help-search.module.css";
 
 /** Native fragment navigation keeps the mounted workspace and notifies Settings. */
 function openHelpTab(tab: string) {
   if (window.location.hash !== `#${tab}`) window.location.hash = tab;
-}
-
-function roleLabel(role: WardTourRole): string {
-  if (role === "admin") return "Access admin";
-  if (role === "bed_manager") return HELP_BED_MANAGER_NAME;
-  return CHROME_ROLE_LABELS[role];
 }
 
 /**
@@ -53,7 +47,6 @@ function suggested(
       title: howTo.title,
       detail: howTo.answer,
       go: howTo.go,
-      desks: howTo.desks === "all" ? undefined : howTo.desks,
       howToId: howTo.id,
     }));
 }
@@ -67,10 +60,16 @@ export function WardHelpSearch({
   role,
   home,
   onNavigate,
+  onGlossaryTerm,
+  glossary,
 }: {
   role: WardTourRole;
   home: string | undefined;
   onNavigate?: () => void;
+  /** Opens Words at a glossary term the search found, so a word result does something. */
+  onGlossaryTerm?: (term: string) => void;
+  /** The sheet's own glossary (site directory), so the site codes shown in Words can be found. */
+  glossary?: readonly GlossaryTerm[];
 }) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -83,7 +82,7 @@ export function WardHelpSearch({
   const [active, setActive] = useState(0);
   const input = useRef<HTMLInputElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
-  const answer = useMemo(() => searchHelp(query, role), [query, role]);
+  const answer = useMemo(() => searchHelp(query, role, undefined, glossary), [query, role, glossary]);
   const rows =
     answer.kind === "results"
       ? answer.results
@@ -126,6 +125,11 @@ export function WardHelpSearch({
   }
 
   function act(result: HelpSearchResult) {
+    if (result.key.startsWith("term:") && onGlossaryTerm) {
+      close(false);
+      onGlossaryTerm(result.title);
+      return;
+    }
     const mine = !result.desks || result.desks.includes(role);
     if (result.howToId && walks(result, mine)) {
       close(false);
@@ -223,7 +227,7 @@ export function WardHelpSearch({
         onClick={() => setOpen(true)}
       >
         <Search size={16} aria-hidden="true" />
-        <span>Search Help, or ask: how do I pull a bed?</span>
+        <span>Search Help: tasks, words and screens</span>
       </button>
       {open && typeof document !== "undefined"
         ? createPortal(
@@ -264,7 +268,9 @@ export function WardHelpSearch({
                   </div>
                 ) : (
                   <>
-                    {answer.kind === "empty" ? <p className={styles.group}>Suggested for {roleLabel(role)}</p> : null}
+                    {answer.kind === "empty" ? (
+                      <p className={styles.group}>Suggested for {helpDeskLabel(role)}</p>
+                    ) : null}
                     {answer.kind === "none" ? (
                       <div className={styles.notice} role="status" data-testid="ward-help-search-none">
                         <strong>No Help topics match &ldquo;{query.trim()}&rdquo;.</strong>

@@ -872,6 +872,10 @@ describe("the inactive full reporting bundle", () => {
       }
       expect(reporting(state, service)).toEqual(expected);
     },
+    // The full statewide seed runs the whole release twice (old and current traversal). That takes
+    // about 13 s locally and passed the 30 s default under CI coverage only some of the time, so this
+    // test gets its own limit. The equivalence assertion is unchanged.
+    90_000,
   );
 });
 

@@ -25,7 +25,7 @@ describe("who confirmed a ward's bed figure", () => {
 
   it.each([
     ["ward", `NUM ${unit.name}`],
-    ["bed_manager", "Bed manager"],
+    ["bed_manager", "Site bed manager"],
     ["coordinator", "Bed coordinator"],
   ] as const)("a figure confirmed as %s reads as %s", (role, label) => {
     const next = confirmAs(role);

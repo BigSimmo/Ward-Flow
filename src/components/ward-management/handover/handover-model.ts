@@ -127,11 +127,20 @@ export function handoverSignedAt(
   return handoverSignedBefore(signOffs, handoverAt(id, now));
 }
 
-/** The latest sign-off in the window before the handover at `to`, or null. */
-export function handoverSignedBefore(signOffs: readonly { at: Instant }[], to: Instant): Instant | null {
+/**
+ * The latest sign-off in the window before the handover at `to`, or null. Decision 41 (31 Oct
+ * 2026): given a ward, only a sign-off naming that ward counts, so another ward's sign-off, or one
+ * that names no ward, never marks this ward's sheet signed.
+ */
+export function handoverSignedBefore(
+  signOffs: readonly { at: Instant; unitId?: string }[],
+  to: Instant,
+  unitId?: string,
+): Instant | null {
   const from = to - 8 * 60;
   let signed: Instant | null = null;
   for (const record of signOffs) {
+    if (unitId !== undefined && record.unitId !== unitId) continue;
     if (record.at >= from && record.at < to && (signed === null || record.at > signed)) signed = record.at;
   }
   return signed;
@@ -202,6 +211,19 @@ export type HandoverRow = {
    */
   actNow?: boolean;
 };
+
+/**
+ * History's place for a handover sign-off, read only from what the record holds: its ward (decision
+ * 41), "Whole network" for a whole-network desk's sign-off (Q67, Josh, 31 Oct 2026), or "Ward not
+ * recorded" for one that holds neither, such as any saved before 31 Oct 2026. Never guessed.
+ */
+export function handoverSignOffPlace(
+  record: { unitId?: string; network?: true },
+  units: readonly Unit[] | undefined,
+): string {
+  if (record.unitId !== undefined) return units?.find((unit) => unit.id === record.unitId)?.name ?? "Ward not recorded";
+  return record.network === true ? "Whole network" : "Ward not recorded";
+}
 
 function unitName(units: Unit[], id: string): string {
   return units.find((unit) => unit.id === id)?.name ?? "Ward not recorded";
