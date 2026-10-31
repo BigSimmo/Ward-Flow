@@ -105,6 +105,10 @@ button.strip:disabled {
 .owners {
   overflow: hidden;
 }
+/* Phone: the tiles stay direct children of the sliding chip row. */
+.ownContents {
+  display: contents;
+}
 .ownGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -682,10 +686,10 @@ button.strip:disabled {
 }
 
 /* ---------- Person panel and rail (round 7, Josh 31 Oct 2026) ---------- */
-/* About 10% wider beside the list on a laptop, so names, places and ward lists wrap less. */
+/* About 15% wider than before beside the list on a laptop (rounds 7 and 8), so names, places and ward lists wrap less. */
 @media (min-width: 64.0625rem) {
   .split.split {
-    grid-template-columns: minmax(0, 2.4fr) minmax(19rem, 1fr);
+    grid-template-columns: minmax(0, 2.3fr) minmax(20rem, 1fr);
   }
 }
 .pHead {
@@ -801,4 +805,205 @@ button.strip:disabled {
   color: var(--wf-ink-3);
   font-size: 11px;
   line-height: 1.45;
+}
+
+/* Round 8: Summary and Wards tabs inside the person panel. */
+.pTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-track);
+  background: var(--wf-track);
+}
+.pTabs > button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-seg-item, 8px);
+  background: none;
+  color: var(--wf-ink-2);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+.pTabs > button[aria-selected="true"] {
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  box-shadow: var(--wf-e1);
+}
+.pTabCount {
+  color: var(--wf-ink-3);
+  font-size: 11px;
+  font-weight: 500;
+}
+.pNotes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pNotes[hidden],
+.pWardsPane[hidden] {
+  display: none;
+}
+.pWardsPane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+.pWardsPane > div:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.pNotes > .pNote.pNote {
+  padding: 7px 10px;
+}
+.pLinks {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 6px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+.pLinks > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-ctl);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pLinks > a:hover {
+  background: var(--wf-surface-2);
+}
+.pLinks svg {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+/* ---------- Daily check list (round 8): a head line and a grid of compact cards ---------- */
+.dc {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+.dcHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: 10px var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.dcIcon {
+  flex: none;
+  color: var(--wf-warning);
+}
+.dcTitle {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 650;
+}
+.dcKinds {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.dcKind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+.dcKind b {
+  color: var(--wf-ink-1);
+}
+.dcSpacer {
+  flex: 1 1 auto;
+}
+.dcDone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+.dcGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  list-style: none;
+}
+.dcCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "who for"
+    "what what";
+  gap: 2px 8px;
+  height: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-1);
+  text-decoration: none;
+}
+.dcCard:hover {
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface-2);
+}
+.dcWho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  grid-area: who;
+  min-width: 0;
+}
+.dcWho b {
+  font-size: var(--wf-fs-13);
+  overflow-wrap: anywhere;
+}
+.dcWho small {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.dcWhat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  grid-area: what;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+.dcFor {
+  grid-area: for;
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  white-space: nowrap;
 }
