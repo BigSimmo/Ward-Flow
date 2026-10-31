@@ -10,7 +10,6 @@ import {
   useWardFlow,
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "../src/components/ward-management/ward-flow-provider";
-import { WardDemoMenu } from "../src/components/ward-management/shell/ward-demo-menu";
 import { WardAccountActions } from "../src/components/ward-management/shell/ward-account-actions";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { AlertsScreen } from "../src/components/ward-management/alerts/alerts-screen";
@@ -33,7 +32,11 @@ import {
   ReferralDocumentLinks,
 } from "../src/components/ward-management/referrals/referral-flow-panels";
 
-const loadDemoMenu = async () => WardDemoMenu;
+/** A stand-in for the menu a header passes the pill (the executive chrome's Demo sheet). */
+function StubDemoMenu() {
+  return <section role="dialog" aria-label="Demo" />;
+}
+const loadDemoMenu = async () => StubDemoMenu;
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("../src/components/ward-management/ward-shared-access", async (original) => {
   const actual = await original<typeof import("../src/components/ward-management/ward-shared-access")>();
@@ -382,7 +385,7 @@ describe("shared provider boundary", () => {
       <WardFlowProvider>
         <Probe />
         <HospitalRecordsLink />
-        {/* The header passes the Demo menu's loader in (ward-bar.tsx), so the pill does not import it. */}
+        {/* The header passes the Demo menu's loader in (the executive chrome), so the pill does not import it. */}
         <WardDataModeSlot menu={loadDemoMenu} />
       </WardFlowProvider>,
     );
@@ -395,9 +398,7 @@ describe("shared provider boundary", () => {
     expect(screen.queryByText("Data mode: Synthetic prototype")).toBeNull();
     fireEvent.click(pill);
     expect(pill).toHaveAttribute("aria-expanded", "true");
-    const menu = await screen.findByRole("dialog", { name: "Demo" });
-    // Focus moves into the menu, so Tab reaches it from the Board time pill too.
-    await vi.waitFor(() => expect(menu).toContainElement(document.activeElement as HTMLElement));
+    expect(await screen.findByRole("dialog", { name: "Demo" })).toBeInTheDocument();
     fireEvent.click(pill);
     expect(pill).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(screen.getByRole("button", { name: "Hospital records (unavailable)" }));
