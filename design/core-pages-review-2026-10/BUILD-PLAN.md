@@ -370,6 +370,13 @@ Real paths are under `src/components/ward-management/` unless shown. "unknown" m
 | pop-movement                                                               | opens from the `movements` fork; builds with Movements                                                 |
 | pop-activity                                                               | Home's Activity panel (`home-activity/activity-panel.tsx`); builds with Home                           |
 
+### Phase 5: older pop-ups to mock up, then build
+
+About 20 hand-built pop-ups in today's app are not in the viewer (listed in HANDOVER.md, "Older pop-ups
+still to mock up"). Mock each one in the redesign style on the shared `Dialog` or `Sheet`, get Josh's
+approval, then build it like a page. Replace the three `window.confirm` boxes with a styled confirm
+dialog.
+
 ## 6. Real-app bug list
 
 Real paths are under `src/components/ward-management/` unless shown. Rows 36 to 50 were found in round 3 (31 October).

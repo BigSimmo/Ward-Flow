@@ -376,6 +376,107 @@ design (only the page reads the quiet world); a white strip in the phone tour sp
 **Not run yet:** the full verify gates and Playwright suites, and hosted CI on PR #1118. Run both before
 the PR is ever marked ready (only with Josh's yes).
 
+## Lessons, suggestions and context for whoever builds next (31 October)
+
+Written at the end of round 3 for the project chat and any fresh chat. Read with BUILD-PLAN.md.
+
+### What worked, and what to repeat
+
+1. **One design home.** Four chats changed the same screens in different directions until D-91 put all
+   visual design in this viewer and kept the real-app pull requests to behaviour. Keep that rule while
+   building: a visual change starts as a mock-up, and Josh approves before it reaches `/ward-flow`.
+2. **Copies of the real file, not drawings.** Every mock-up is a copy of today's file with the design
+   applied, so building is applying a difference. Keep role differences as commented branches in one copy.
+3. **Shared parts first.** The kit standard, one Show more, one search field, the time buttons, the
+   phone chip rows, the notice stack and the new frame removed dozens of one-off fixes. Build them into
+   `src/components/wf` before any page.
+4. **Audit, fix, then check the whole site by eye.** Automated checks catch errors, sideways scroll and
+   tiny text. Only a person or a helper looking at every screenshot catches cut names, uneven tiles,
+   mismatched controls and countdowns. Three whole-site passes found about 50 polish items that the
+   script missed (it also misses text drawn in charts, which are SVG).
+5. **Helpers with clear folders.** Up to ten helpers at once worked when each owned named folders, the
+   coordinator alone edited shared files (`build-notes.ts`, `screens.ts`, the handover), and overlaps were
+   handed over by message. Give every helper the same written brief (rules, how to check, report shape).
+
+### What went wrong, and how to avoid it
+
+1. **The shared dev server was the bottleneck.** With several helpers it took up to 10 minutes per
+   screenshot, ran out of memory three times (each Next server grows to 6–10 GB in a 15 GB container) and
+   once took the container down. Check with the shareable copy instead: give each helper its own build
+   (`node scripts/ward-flow/build-redesign-preview.mjs --out output/rp-<name>`) and its own static port.
+   For heavy runs against the dev server (the Today pictures), restart the server every 12 pages.
+2. **The push guard checks the working tree, not the commit.** Helpers' unfinished files blocked pushes,
+   and once a broken commit passed because the tree held the fix. Push finished work from a separate
+   clean worktree (`git worktree add --detach <dir> HEAD`, link `node_modules`, push
+   `HEAD:<branch>`); never bypass the guard.
+3. **Two writers on one branch or one artifact clash.** Several chats pushed to related branches and
+   republished the same preview; the artifact refuses a publish built on an older version. Name one owner
+   per branch and per artifact, and hand over by message with the commit hash.
+4. **`pgrep -f` and `pkill -f` match their own command line.** Waiting loops never ended and one
+   `pkill` killed its own shell. Find the PID with `ps -eo pid,args | awk` and kill that.
+5. **A container restart** removes `/opt/node24` but keeps the checkout, uncommitted work and the scratch
+   folder; stopped helpers resume from their transcripts.
+6. **Legal countdowns hide in reused real parts.** The mock-ups showed "expiry in 5h", "passed … ago" and
+   "due in" through real components (movements, the drawer, Placement, Home's queue, the ED board). Grep
+   for `formatRemaining`, `splitDuration`, "due in", "expiry in" and "passed its deadline" before
+   approving any page, and copy the part rather than reuse it. The live app still does this in 11 places.
+7. **knip reports unused exports one layer at a time.** Run `npx knip | grep ward-redesign` for the
+   whole list before fixing, then `npm run check:knip`.
+8. **Attribute-selector overrides (`[class*="_x__"]`) break silently** in the shareable copy and when
+   class names change. Copy the component and give it a class instead.
+9. **Preview addresses:** a popup is `frame.html?screen=<page>&pop=<name>`, not `screen=pop-<name>`.
+   Full-page screenshots draw the fixed dock mid-page; that is the capture, not a fault.
+10. **The 1,500-line cap:** copies may pass it under D-89 with a baseline entry, and the test fails when a
+    copy drops back under, so remove the entry then.
+
+### Suggestions for the build
+
+1. Start with the 11 live-app legal countdowns (BUILD-PLAN.md bug list). They break Josh's "as typed" rule
+   in the app staff use today, so they are a safety fix, not a design one.
+2. Merge the real-app pull requests in D-91's order, then refresh the mock-ups once before any page build.
+   The copies in `legal-copies/`, `notices/`, `pop-search/` and the forks of reused real parts mostly
+   become changes to the real files.
+3. Build the shared frame (`shell-next`) and the kit into `src/components/wf` first, then Home, then one
+   page per pull request, deleting each copy in the same pull request.
+4. The shared Hero prints as a dark band with a squeezed title. Fix it with the kit, because every page
+   prints through it.
+5. Add a What's new entry with each page that staff will notice.
+6. Keep one chat per stream, and move to a fresh chat with a short summary when a chat gets long.
+
+### Older pop-ups still to mock up (not part of this redesign)
+
+Today's app has about 20 hand-built pop-ups that do not use the shared dialog or sheet. #1124 listed them
+for moving onto the standard `Dialog`. They are not in the viewer yet. Mock each one in the redesign style
+before it is built. Found in these files (some hold several pop-ups), all under
+`src/components/ward-management/`:
+
+| File                                               | What it holds                               | Mocked already?               |
+| -------------------------------------------------- | ------------------------------------------- | ----------------------------- |
+| `community/community-screen-modals.tsx`            | several community team modals               | No                            |
+| `community/community-screen-drawer.tsx`            | the community record drawer                 | No                            |
+| `community/community-screen-transport-dialogs.tsx` | community transport dialogs                 | No                            |
+| `board/ward-board-work-band.tsx`                   | board confirmations                         | No                            |
+| `ed/ed-screen-transport-dialog.tsx`                | ED transport dialog                         | No                            |
+| `ward/ward-screen-overlays.tsx`                    | My ward overlays (bed dossier, patient-now) | Partly (the bed record popup) |
+| `ward/ward-answer-accept-dialog.tsx`               | accepting a request on Ward answer          | No                            |
+| `shell/ward-bar-controls.tsx`                      | header popovers                             | Partly (new frame)            |
+| `front-door/lock-cards.tsx`                        | the front-door lock cards                   | No                            |
+| `capacity/bed-meeting-sheet.tsx`                   | the bed meeting sheet                       | Yes (`pop-bed-meeting-sheet`) |
+| `shell/ward-demo-menu.tsx`                         | the demo menu                               | Yes (`pop-demo`)              |
+| `referrals/arrival-time-modal.tsx`                 | the arrival plan                            | Yes (copied into `ed-board/`) |
+
+Three `window.confirm` boxes remain: `use-dirty-state-guard.ts` lines 135 and 372, and
+`ward-tasks-drawer.tsx` line 330. They need a styled confirm dialog.
+
+### Small things for Josh at review
+
+- My ward's hero reads "Ward home", with a quiet "Switch ward" button, because the top bar names the
+  ward. Recommended: keep.
+- The bed meeting TV now gives every tile a bar ("Longest ED wait" against the long-wait line; "Open
+  movements" by the most urgent cause). Recommended: keep. The meanings are his call.
+- Remembering pinned pages per person needs his privacy decision before the real build.
+- A real screen-reader pass (VoiceOver or NVDA) needs a person on a device.
+
 ## Round 3 (31 October)
 
 Built from D-91 (Josh's answers to the alignment review below: "Yes to all your recommendations"). Each
