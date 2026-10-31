@@ -38,3 +38,8 @@
 .who.who b {
   white-space: normal;
 }
+
+/* No side edges (Josh, 31 Oct 2026): an overdue row reads from its warning glyph and words. */
+.table.table tr[data-overdue] td {
+  box-shadow: none;
+}
