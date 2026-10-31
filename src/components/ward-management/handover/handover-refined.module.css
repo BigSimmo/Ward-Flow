@@ -1146,28 +1146,4 @@
   white-space: nowrap;
 }
 
-/* Rounded attention markers apply at every responsive breakpoint. */
-.row[data-act="true"] > td:first-child,
-.box_act {
-  position: relative;
-}
-
-.row[data-act="true"] > td:first-child::before,
-.box_act::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .row[data-act="true"] > td:first-child::before,
-  .box_act::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-}
+/* No side edges (Josh, 31 Oct 2026): act-now rows sit under the Act now group's danger glyph, with no left stripe. */
