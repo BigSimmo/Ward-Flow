@@ -443,7 +443,7 @@ describe("ACCEPT_REFERRAL", () => {
       decided.destinations[0].decidedBy,
       "the ward accepted, so the ward is who decided. Recording the coordinator would put a party " +
         "that took no part in the decision into the one field naming who answered.",
-    ).toBe("Ward manager");
+    ).toBe("Nurse in charge");
 
     // And a coordinator still writes the coordinator's label -- so this does not pass merely
     // because the lookup returns one string for everybody.
@@ -1326,7 +1326,7 @@ describe("a referral addressed to several destinations", () => {
     // replaced. And the ward is not shut out of anything later.
     expect(byKind.get("psychiatric_ward")!.declineReason).toBe("no_suitable_bed");
     expect(byKind.get("psychiatric_ward")!.decidedAt).toBe(NOW + 3);
-    expect(byKind.get("psychiatric_ward")!.decidedBy).toBe("Ward manager");
+    expect(byKind.get("psychiatric_ward")!.decidedBy).toBe("Nurse in charge");
   });
 
   it("does not overwrite a decline when a later acceptance cancels the rest", () => {

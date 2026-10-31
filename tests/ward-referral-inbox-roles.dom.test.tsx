@@ -103,7 +103,7 @@ describe("the referral inbox answers as the route's role (B1)", () => {
     pathname = `/ward-flow/ward/${ELSEWHERE.id}`;
     const inbox = setup("community");
     fireEvent.click(inbox.getByRole("button", { name: "Accept referral" }));
-    expect(screen.getByTestId("decided")).toHaveTextContent("accepted|Ward manager");
+    expect(screen.getByTestId("decided")).toHaveTextContent("accepted|Nurse in charge");
   });
 
   it("greys every answer on another ward's route and on a role with no ward seat", () => {

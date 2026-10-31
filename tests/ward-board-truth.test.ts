@@ -43,7 +43,7 @@ describe("D8: who set a discharge date is recorded truthfully", () => {
     return { state, found };
   }
 
-  it("a ward setting the date is recorded as Ward manager", () => {
+  it("a ward setting the date is recorded as Nurse in charge (Q66; older records keep Ward manager)", () => {
     const { state, found } = occupant();
     const after = wardFlowReducer(state, {
       type: "UPDATE_EXPECTED_DISCHARGE",
@@ -53,7 +53,7 @@ describe("D8: who set a discharge date is recorded truthfully", () => {
       actingUnitId: found.unitId,
       expectedDischargeAt: NOW_ANCHOR + 120,
     });
-    expect(after.admissions.find((a) => a.id === found.id)?.dischargeDateSetBy).toBe("Ward manager");
+    expect(after.admissions.find((a) => a.id === found.id)?.dischargeDateSetBy).toBe("Nurse in charge");
   });
 
   it("a coordinator setting the date is not recorded as a ward manager", () => {
