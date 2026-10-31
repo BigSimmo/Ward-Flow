@@ -8,17 +8,17 @@ import { Button, Card, CardHead, Segmented } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import { BEDS_FORECAST_LIMITS } from "@/components/ward-management/capacity/beds-forecast";
+import { BEDS_FORECAST_LIMITS } from "./beds-forecast";
 import type { ForecastLever } from "@/components/ward-management/forecast/forecast-levers";
 import type { HorizonDay } from "@/components/ward-management/forecast/forecast-horizon";
 
-import { DayBars, type DayBar } from "../parts/day-bars";
-import { HowWorkedOut, Legend } from "../parts/how-worked-out";
-import { gapWords } from "../parts/range-line";
-import { ShowMoreRow } from "../parts/show-more-row";
-import { HELD_UP_HREF, tallyBarriers } from "./held-up";
-import type { CapacityModel } from "./use-capacity-model";
-import styles from "./capacity-redesign.module.css";
+import { DayBars, type DayBar } from "./capacity-day-bars";
+import { HowWorkedOut, Legend } from "./capacity-how-worked-out";
+import { gapWords } from "./capacity-range-line";
+import { ShowMoreRow } from "@/components/wf";
+import { HELD_UP_HREF, tallyBarriers } from "./capacity-held-up";
+import type { CapacityModel } from "./capacity-model";
+import styles from "./capacity-page.module.css";
 
 const WARD_ROWS = 8;
 

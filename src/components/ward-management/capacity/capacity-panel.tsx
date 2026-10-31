@@ -1,10 +1,9 @@
-// Fork of src/components/ward-management/ward-panel.tsx (Capacity redesign): the same panel, with
-// its title in the card-title style every other card on this page uses (sentence case, 600, ink-1)
+// Capacity's version of `ward-panel.tsx`: the same panel, with its title in the card-title style every other card on this page uses (sentence case, 600, ink-1)
 // instead of the Board panel's small capitals (Josh, 30 Oct 2026). Only the header changes.
 import type { ReactNode } from "react";
 
 import wardPanel from "@/components/ward-management/ward-panel.module.css";
-import styles from "./capacity-redesign.module.css";
+import styles from "./capacity-page.module.css";
 
 export function CapacityPanel({
   title,

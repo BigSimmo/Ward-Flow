@@ -4,12 +4,12 @@ import { useState } from "react";
 
 import { Card, CardHead, Segmented, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import type { BedKindGap } from "@/components/ward-management/capacity/capacity-derivations";
+import type { BedKindGap } from "./capacity-derivations";
 import type { ForecastByKind, KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
 
-import { gapWords, RangeLine } from "../parts/range-line";
-import type { CapacityModel } from "./use-capacity-model";
-import styles from "./capacity-redesign.module.css";
+import { gapWords, RangeLine } from "./capacity-range-line";
+import type { CapacityModel } from "./capacity-model";
+import styles from "./capacity-page.module.css";
 
 type Range = Pick<KindForecast, "low" | "likely" | "high">;
 type Show = "all" | "short" | "enough";

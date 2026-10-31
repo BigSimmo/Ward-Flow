@@ -12,8 +12,8 @@ import {
 } from "@/components/ward-management/forecast/forecast-scenario";
 import type { ForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 
-import { gapWords } from "../parts/range-line";
-import styles from "./capacity-redesign.module.css";
+import { gapWords } from "./capacity-range-line";
+import styles from "./capacity-page.module.css";
 
 type Toggle = "clearHeldUp" | "confirmDates" | "overdueGoAhead";
 
@@ -58,7 +58,7 @@ export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClos
           disabledReason: scenarioIsEmpty(scenario) ? "Nothing is ticked yet." : undefined,
         },
       ]}
-      data-testid="redesign-scenario-dialog"
+      data-testid="ward-capacity-scenario-dialog"
     >
       <div className={styles.scenarioAnswer} aria-live="polite">
         <span className={styles.kickerInline}>Tomorrow</span>

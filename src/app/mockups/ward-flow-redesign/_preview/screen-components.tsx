@@ -5,8 +5,10 @@ import dynamic from "next/dynamic";
 
 import type { ComponentType } from "react";
 
-const CapacityRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/capacity/capacity-redesign").then((module) => module.CapacityRedesign),
+// Capacity is built into the app (lane R, 31 Oct 2026). Its slug stays as the backdrop the Loading
+// state pop-up draws over, so it shows the real screen, fed by the preview world.
+const CapacityScreen = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/capacity/capacity-screen").then((module) => module.CapacityScreen),
 );
 const EdIndexRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/eds/eds-redesign").then((module) => module.EdIndexRedesign),
@@ -225,11 +227,6 @@ const AsOfficerAlertsPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsOfficerAlertsPage,
   ),
 );
-const AsBedManagerHomePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-bed-manager-home/as-bed-manager-home-page").then(
-    (module) => module.AsBedManagerHomePage,
-  ),
-);
 const AsBedManagerWardsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-bed-manager-wards/as-bed-manager-wards-page").then(
     (module) => module.AsBedManagerWardsPage,
@@ -270,11 +267,6 @@ const AsExecutiveHomePage = dynamic<MockupPageProps>(() =>
     (module) => module.AsExecutiveHomePage,
   ),
 );
-const AsExecutiveCapacityPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-executive-capacity/as-executive-capacity-page").then(
-    (module) => module.AsExecutiveCapacityPage,
-  ),
-);
 const AsExecutiveSettingsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-executive-settings/as-executive-settings-page").then(
     (module) => module.AsExecutiveSettingsPage,
@@ -295,7 +287,7 @@ export type MockupPageProps = { openOnLoad?: string };
 
 /** Preview only: the redesigned page drawn for each mock-up slug. */
 export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps>>> = {
-  capacity: CapacityRedesign,
+  capacity: CapacityScreen,
   home: HomeActivityPage,
   movements: MovementsRedesign,
   waiting: WaitingRedesign,
@@ -357,7 +349,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-community-statistics": AsCommunityStatisticsPage,
   "as-officer-home": AsOfficerHomePage,
   "as-officer-alerts": AsOfficerAlertsPage,
-  "as-bed-manager-home": AsBedManagerHomePage,
   "as-bed-manager-wards": AsBedManagerWardsPage,
   "as-bed-manager-places": AsBedManagerPlacesPage,
   "as-bed-manager-ward": AsBedManagerWardPage,
@@ -366,7 +357,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-bed-manager-statistics": AsBedManagerStatisticsPage,
   "as-bed-manager-seclusion": AsBedManagerSeclusionPage,
   "as-executive-home": AsExecutiveHomePage,
-  "as-executive-capacity": AsExecutiveCapacityPage,
   "as-executive-settings": AsExecutiveSettingsPage,
   "as-admin-home": AsAdminHomePage,
   "as-admin-governance": AsAdminGovernancePage,

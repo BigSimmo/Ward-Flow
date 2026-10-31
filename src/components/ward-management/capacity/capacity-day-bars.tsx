@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import styles from "./day-bars.module.css";
+import styles from "./capacity-day-bars.module.css";
 
 export type DayBar = {
   key: string | number;

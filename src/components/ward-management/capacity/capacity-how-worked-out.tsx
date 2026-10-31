@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 
-import styles from "./parts.module.css";
+import styles from "./capacity-parts.module.css";
 
 /**
  * The method behind a figure, folded to one line. Replaces paragraphs of caveats under a panel:

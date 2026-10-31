@@ -6,13 +6,13 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 
 import { Card, CardHead, FilterChip, Segmented, StatusGlyph, durMinutes } from "@/components/wf";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
-import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
-import type { NetworkWardRow } from "@/components/ward-management/capacity/capacity-derivations";
-import type { BedMapWard } from "@/components/ward-management/capacity/bed-map";
+import { isConfirmationFresh } from "./capacity-gap-words";
+import type { NetworkWardRow } from "./capacity-derivations";
+import type { BedMapWard } from "./bed-map";
 
-import { Legend } from "../parts/how-worked-out";
-import type { CapacityModel } from "./use-capacity-model";
-import styles from "./capacity-redesign.module.css";
+import { Legend } from "./capacity-how-worked-out";
+import type { CapacityModel } from "./capacity-model";
+import styles from "./capacity-page.module.css";
 
 export type Highlight = "any" | "locked" | "open" | "stale";
 

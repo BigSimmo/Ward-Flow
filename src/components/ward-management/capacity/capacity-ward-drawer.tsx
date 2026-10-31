@@ -1,10 +1,9 @@
-// Fork of src/components/ward-management/capacity/capacity-ward-sidebar.tsx (Capacity redesign).
 "use client";
 
-// The side panel for one ward on the capacity screen, with its tabs and discharge record facts.
-// Split out of `capacity-screen.tsx` (18 October 2026) to keep that file under the line cap.
+// The ward drawer on Capacity (October 2026 redesign): one ward's beds as a picture, whether its
+// count is fresh, its facts, closing the ward behind its own button, and its discharge records.
 
-import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
+import { capacityConfirmer } from "./capacity-confirmer";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
@@ -19,15 +18,11 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import {
-  countCellText,
-  freeingCellText,
-  type NetworkWardRow,
-} from "@/components/ward-management/capacity/capacity-derivations";
-import local from "./capacity-redesign.module.css";
-import { BedCells } from "./bed-map-cards";
-import { WardClosurePanel } from "@/components/ward-management/capacity/ward-closure-panel";
-import { bedKindsServed, isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
+import { countCellText, freeingCellText, type NetworkWardRow } from "./capacity-derivations";
+import local from "./capacity-page.module.css";
+import { BedCells } from "./capacity-bed-map-cards";
+import { WardClosurePanel } from "./ward-closure-panel";
+import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
 
 const DISCHARGES_HREF = "/ward-flow/discharges";

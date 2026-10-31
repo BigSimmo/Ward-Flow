@@ -140,16 +140,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Removed:** Take, Acknowledge, Snooze and Escalate (the coordinator's), with the app's own 'Only the coordinator can change alerts.' once in their place; the always-0 Yours, Broadcast and the owner parts.",
     "**Round 2:** empty Broadcast, Notices and History tabs go on this desk, and so does Copy for handover (the officer's copy is on My jobs). No stray ' · ' when the UMRN is withheld.",
   ],
-  "as-bed-manager-home": [
-    "**As the site bed manager**, Capacity opens on Royal Perth Hospital: 2 ready of 34, with the site's own mismatch, forecast and bed map. Before, the site's waiting list was set against all 304 network beds.",
-    "**New:** an Other sites card, bed counts only, and 'Confirm beds on <ward>' in place of the coordinator's Ask the ward.",
-    "**Still open:** the rail's 'Capacity 26' and a first-visit hint still use the network's figure and wording (shared chrome).",
-    "**Round 2:** the hero adds '5 waiting in RPH ED' (counts only, no names), from the All EDs page's own figures. 'Past target in RPH ED' shows only when someone is past target.",
-    "**Round 2:** uses Capacity's copied ward panel, Planned admissions and Step down board, so their links are checked against this desk and names are surname first.",
-    "**Question for you:** the rail says 'Waiting 6' (every ED this desk covers) beside the hero's '5 waiting in RPH ED'. The hero names its ED so the two read apart. Is that acceptable?",
-    "**Review round (30 October):** as the coordinator's Capacity: the network total shows once, a muted 48-hour range, a stacked phone forecast sheet, and the ward drawer's own title in place of Back to network. Held-up releases count only Royal Perth's (2), so the figure matches this desk's Discharges, named as Discharges names them.",
-    "**Carried from the approved Capacity design (31 Oct 2026):** the same Mismatch strip (the site's own bed types only), forecast (named Site), full-width bed map with Other sites under it, and the lower row. Nearest ready beds ranks every site from the site's own ED; This shift offers Confirm on the ward's page instead of Ask, which is the coordinator's step.",
-  ],
   "as-bed-manager-wards": [
     "**As the site bed manager**, All wards leads with Royal Perth's 2 wards in full, then other sites as bed counts only (first 6, then Show all 20).",
     "**Removed from other sites' cards:** Enter, Stays and discharges and ask NUM, which this desk cannot use.",
@@ -196,12 +186,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** beds, occupancy and the ward and ED tables, exact as released.",
     "**Round 2:** Empty to ready and Occupancy by health service match Statistics. When every Admission stages count is held back, the card is one line. The phone adds a 304 Beds figure beside Beds in use.",
     "**Still open:** the rail's 'Handover in 4h 18m' shows on a desk that hands nothing over (shared chrome).",
-  ],
-  "as-executive-capacity": [
-    "**As the executive**, Capacity keeps the bed picture and leaves out links to pages this desk cannot open.",
-    "**Replaced:** Planned admissions listed people with legal status under 'Name not shown'; it is now one card of counts.",
-    "**Review round (30 October):** as the coordinator's Capacity: the network total once, a muted 48-hour range, a stacked phone forecast sheet, held-up releases counted and named as Discharges does (11), and the drawer's own title. This desk has no Discharges, so no link to it; Ask the ward shows disabled, as before.",
-    "**Carried from the approved Capacity design (31 Oct 2026):** the same layout, counts only. What would help tomorrow reads without links, This shift has no Ask or See all, the ward drawer shows no locked Ask button and Discharges stays unavailable to this desk, and the booked counts card sits in the lower row.",
   ],
   "as-executive-settings": [
     "**As the executive (new in round 3)**, Settings reads the executive report's public rules: Rules are read only with the timing set in words and no save bar, the last-change line and record counts say they are unavailable, and the live counts are left out because this desk holds no individual records.",
@@ -793,17 +777,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 3:** notices stack above the dock (a warning that stays, '+2 more' folded, the newest naming the person surname first); Activity's Recent activity opens with a quiet Missed notices group, cleared on lock or desk switch.",
   ],
   capacity: [
-    "**Figures:** every number comes from the derivations today's Capacity page uses (bed gaps, the network ward rows, the beds forecast and the forecast model). The 48-hour figure is now the real forecast, so it is no longer illustrative.",
-    "**New components:** the mismatch cards with a range line, the full-width bed forecast with a 7-day bar chart and a By ward view, the bed map cards with one square per bed, and the side column.",
-    "**Reused unchanged:** the hero parts, Ready beds by road time, the ward panel that opens from a bed map card, Planned admissions and the Step down board.",
-    "**Working actions:** Ask the ward sends the app's own request for a ward update; Try a scenario uses the app's scenario sum and saves nothing; the hero's ready figures and the Highlight chips light the matching wards.",
-    "**Changed from the HTML mock-up:** the bed map has Grid and Rows. The Table layout is dropped because All wards is that table, so each ward is listed once.",
-    "**Round 2:** the ward panel's Open ward and Discharge board links show only when this desk can open them. Planned admissions and the Step down board name people surname first, and Book has its icon beside the word.",
-    "**For the build:** the real Planned admissions Book button stacks its icon over the word; the fix is one line.",
-    "**Review round (30 October):** the network total shows once (the All four together card is gone; on a phone the forecast card starts at tomorrow). Held-up releases are counted and named as Discharges counts them (11 recorded, Clean / prep, Family / carer), and See held-up releases opens Discharges, not the waiting list.",
-    "**Review round (30 October):** the 48-hour figure leads with its range in muted ink (may move); the overdue figure shows once (34 overdue, not held up). The phone Bed forecast sheet stacks figures, bars, then levers. Highlight chips name their noun (Open bed ready · 15 wards) and open the service groups that hold a match.",
-    "**Review round (30 October):** Ask the ward is the one name for the request, on the kit's small button; the ward drawer's own title and close replace Back to network. Planned admissions and Step down board use the card title style.",
-    "**Approved (Josh, 31 Oct 2026):** the polished design is locked in: the Mismatch strip with its filter, the simplified forecast with Estimate only and How this is worked out, the full-width bed map with its highlights in the title row, one lower row (Coming in, Nearest ready beds, This shift) and the redesigned ward drawer. The road-time caveat sits one tap away and the footer no longer mentions private live feeds.",
+    "**Built into the app** (lane R, 31 Oct 2026), with the site bed manager's and the executive's views as branches of the one real screen. This entry is the real Capacity screen, kept as the backdrop for the Loading state.",
   ],
   "shell-next": [
     "**Header:** Activity keeps its own button beside the Alerts bell (Josh, 31 Oct 2026: its panel now holds Changes, Recent activity and Notices). As today, the page name comes first and then the place's dropdown; the help ? beside the title is gone (Help stays in the rail). Board time stays on tablet. The search box reads 'Search Ward Flow', since search also finds Help, contacts and suburbs (Josh, 31 Oct 2026).",
