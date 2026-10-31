@@ -22,6 +22,12 @@
   white-space: nowrap;
 }
 
+/* Names (and the words a person typed) wrap in full, never cut with "…". */
+.wrap {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .grow {
   flex: 1 1 0;
 }
@@ -47,185 +53,69 @@
   min-width: min(300px, 100%);
 }
 
-/* The typeahead's own label is kept for screen readers; the pill shows the icon instead. */
+/* D-91 ("Every page search box has one look"): the census search is the kit's one page search field
+   (`SearchField`) on the hero, with the date of birth switch and box beside it instead of inside a
+   hand-made pill. */
 /* With the date of birth open, the name keeps room to be read; the group pills scroll instead. */
-.searchForm:has(.dobSeg) {
-  flex-basis: 400px;
-  min-width: min(380px, 100%);
+.searchForm:has(.dobField) {
+  flex-basis: 520px;
+  max-width: 560px;
 }
 
-.searchForm > div > label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.searchForm > div > div:first-of-type {
-  min-width: 0;
-  min-height: 36px;
-  height: auto;
-  flex-wrap: wrap;
+.searchRow {
+  display: flex;
+  align-items: flex-start;
   gap: var(--wf-s-2);
-  padding: 0 4px 0 12px;
-  border-radius: var(--wf-r-ctl);
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 60%, transparent);
-  background: var(--wf-hero-ink);
-  color: color-mix(in srgb, var(--wf-hero-2) 70%, transparent);
-  box-shadow: 0 2px 6px -2px color-mix(in srgb, var(--wf-hero-edge) 70%, transparent);
-}
-
-.searchForm > div > div:first-of-type:focus-within {
-  /* A solid ring contrasts with the hero's painted gradient in both themes. */
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-  border-color: var(--wf-hero-ink);
-  box-shadow:
-    0 2px 6px -2px color-mix(in srgb, var(--wf-hero-edge) 70%, transparent),
-    0 0 0 3px color-mix(in srgb, var(--wf-hero-ink) 30%, transparent);
-}
-
-.searchForm > div > div:first-of-type svg {
-  flex: none;
-}
-
-/* Device sweep L08/R3-10 (24 Oct 2026): a 100% width made the input its own wrapped line, so the
- * icon, the placeholder and the DOB chip stacked on three lines. It now shares the pill's one row
- * and only wraps when the date of birth field opens and there is no room. */
-.searchForm input {
-  flex: 1 1 8rem;
-  width: auto;
   min-width: 0;
-  min-height: 0;
-  align-self: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--wf-hero-2);
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-.searchForm input::placeholder {
-  color: color-mix(in srgb, var(--wf-hero-2) 70%, transparent);
-  font-weight: 400;
+.searchMain {
+  flex: 1 1 12rem;
+  min-width: 11rem;
 }
 
-.searchForm input:focus {
-  outline: none;
+/* The count line sits on the hero's navy, so it takes the hero's quiet ink. */
+.searchMain p {
+  color: var(--wf-hero-ink-2);
 }
 
-/* The typeahead's own Clear: a small pill at the end of the field (never the DOB switch, which is
-   the last button while the field is empty). */
-.searchForm > div > div:first-of-type > button:last-child:not(.dobToggle) {
-  flex: none;
-  align-self: center;
-  min-height: 0;
-  height: 26px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: var(--wf-r-seg-item);
-  background: color-mix(in srgb, var(--wf-hero-2) 8%, transparent);
-  color: var(--wf-hero-2);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-  cursor: pointer;
+.dobField {
+  flex: 0 0 9.5rem;
 }
 
-.dobSeg {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 6px;
-  height: 20px;
-  padding-left: 10px;
-  border-left: 1px solid color-mix(in srgb, var(--wf-hero-2) 18%, transparent);
+.dobField input {
+  font-family: var(--wf-mono);
 }
 
-.searchForm .dobInput {
-  flex: none;
-  /* Layout sweep CRIT-05 (25 Oct 2026): sized by its own font, so the 16px touch size still shows
-   * the whole "DD/MM/YYYY" (88px cut it to "DD/MM/YYY" on an iPad). */
-  width: 11ch;
-  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
-}
-
-/* CRIT-05: with the date of birth open, the name field gives up width first, so the DOB switch stays
- * on the box's one line at a 380px box (iPad, 16px text). */
-.searchForm:has(.dobSeg) input:not(.dobInput) {
-  flex-basis: 5rem;
-}
-
-/* CRIT-05: with the date of birth open the "/" hint has no room and dropped onto a second line
- * inside the box. The field already has focus by then, so the hint goes. */
-.dobSeg ~ .kbd {
-  display: none;
-}
-
-@media (max-width: 48rem), (pointer: coarse) {
-  .searchForm input,
-  .searchForm .dobInput {
-    font-size: max(1rem, 16px);
-  }
-}
-
-.count {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  box-sizing: border-box;
-  border-radius: var(--wf-r-tag);
-  background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
-  color: var(--wf-hero-2);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-}
-
+/* The switch beside the field: a quiet hero button at the field's height. */
 .dobToggle {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 4px;
-  height: 26px;
-  padding: 0 10px 0 8px;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-2) 22%, transparent);
-  border-radius: var(--wf-r-seg-item);
-  background: transparent;
-  color: var(--wf-hero-2);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px 0 10px;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
+  border-radius: var(--wf-r-ctl);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
   cursor: pointer;
 }
 
 .dobToggle:hover {
-  background: color-mix(in srgb, var(--wf-hero-2) 8%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
 }
 
 .dobToggle[aria-pressed="true"] {
-  border-color: var(--wf-hero-2);
-  background: var(--wf-hero-2);
-  color: var(--wf-hero-ink);
+  border-color: var(--wf-hero-ink);
+  background: var(--wf-hero-ink);
+  color: var(--wf-hero-2);
 }
 
 .dobToggle:focus-visible {
-  outline: 2px solid var(--wf-hero-2);
-  outline-offset: 1px;
-}
-
-.kbd {
-  flex: none;
-  margin-right: 4px;
-  padding: 4px 8px;
-  border-radius: var(--wf-r-tag);
-  background: color-mix(in srgb, var(--wf-hero-2) 8%, transparent);
-  color: var(--wf-hero-2);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
 }
 
 /* "Today ✓ 6 arrived ✕ 2 left – 1 did not proceed" */
@@ -460,9 +350,11 @@
   display: flex;
   align-items: center;
   gap: var(--wf-s-2);
+  /* Redesign (Josh, 30 Oct): the highlight chips wrap instead of running off the card's edge. */
+  flex-wrap: wrap;
   min-height: 44px;
   padding: 6px var(--wf-s-3);
-  overflow-x: auto;
+  overflow-x: visible;
   scrollbar-width: none;
   border-bottom: 1px solid var(--wf-line);
 }
@@ -561,6 +453,16 @@ table.censusTable {
 
 .censusTable td {
   vertical-align: middle;
+}
+
+/* Redesign: every cell wraps instead of ending in "…" ("Sent to 1 pla…", "RPH Com…"), over the
+   shared wf table's one-line cells and this page's own truncating spans (screen-reader-only text
+   keeps its own clipping). */
+table.censusTable td,
+table.censusTable td *:not(:global(.sr-only)) {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
 }
 
 .censusTable .num {
@@ -681,8 +583,14 @@ table.censusTable {
   font-weight: 500;
 }
 
-.moreRow td {
-  height: 44px;
+/* The one Show more row fills its cell and draws the only line above it, so the row before it
+   drops its own. */
+.moreRow.moreRow > td:is(:first-child, :last-child) {
+  height: auto;
+  padding: 0;
+}
+tr:has(+ .moreRow) > td {
+  border-bottom-color: transparent;
 }
 
 .two {
@@ -1058,55 +966,20 @@ table.censusTable {
 .searchFormPhone {
   flex: 1 1 auto;
   width: 100%;
+  max-width: none;
 }
 
-/* The field is 56px so the input, DOB and Clear inside it each keep the 48px tap floor. */
-.searchFormPhone > div > div:first-of-type {
-  min-height: 56px;
-  height: 56px;
-  padding: 0 4px 0 16px;
-}
-
-.searchFormPhone input {
-  height: 48px;
-  font-size: var(--wf-fs-16);
-}
-
+/* The kit's 44px phone control height, level with the search field (never 48px). */
 .searchFormPhone .dobToggle {
-  height: 48px;
-  padding: 0 12px 0 10px;
+  height: 44px;
 }
 
-.searchFormPhone .count {
-  min-width: 26px;
-  height: 26px;
-}
-
-.searchFormPhone > div > div:first-of-type > button:last-child:not(.dobToggle) {
-  height: 48px;
-  padding: 0 14px;
-}
-
-.phoneDob {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  height: 48px;
+.phoneDobField {
   margin-top: var(--wf-s-2);
-  padding: 0 16px;
-  box-sizing: border-box;
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-hero-ink);
-  color: color-mix(in srgb, var(--wf-hero-2) 70%, transparent);
 }
 
-.phoneDob input {
-  flex: 1 1 auto;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: var(--wf-hero-2);
-  font: 500 var(--wf-fs-16) / 1 var(--wf-mono);
+.phoneDobField input {
+  font-family: var(--wf-mono);
 }
 
 .phone {
@@ -1116,9 +989,10 @@ table.censusTable {
   min-width: 0;
 }
 
+/* Redesign: six groups as 3 by 2, so no label ends in "…" and "Not active" never sits alone on a row. */
 .phoneGroups {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2px;
   padding: 3px;
   border: 1px solid var(--wf-line);
@@ -1290,14 +1164,10 @@ table.censusTable {
    The compact desktop pills keep their approved 26px and 28px look, but the Ward Flow rule is
    48px tap targets with no desktop exemption. An invisible pseudo-element grows each hit area
    vertically to 48px; width is untouched so neighbouring pills never overlap. */
-.dobToggle,
-.searchForm > div > div:first-of-type > button:last-child:not(.dobToggle),
 .flow {
   position: relative;
 }
 
-.dobToggle::after,
-.searchForm > div > div:first-of-type > button:last-child:not(.dobToggle)::after,
 .flow::after {
   content: "";
   position: absolute;
@@ -1310,26 +1180,6 @@ table.censusTable {
 
 /* ───── phone v10 (11 Oct 2026): rendered only by the phone census, its hero foot and Commands ───── */
 
-/* The field is 48px on phone, as drawn; the input, DOB and Clear inside it keep 48px each. */
-.searchFormPhone > div > div:first-of-type {
-  min-height: 48px;
-  height: 48px;
-  padding: 0 0 0 16px;
-  /* One row: the icon, the input, then DOB, the count and Clear at the end (F-04). Wrapping put
-     the input and DOB below the 48px pill, on the navy. */
-  flex-wrap: nowrap;
-}
-
-.searchFormPhone input {
-  flex: 1 1 0;
-  width: auto;
-}
-
-/* The DOB switch reads as a chip inside the pill; its ::after hit area above keeps the full tap. */
-.searchFormPhone .dobToggle {
-  height: 32px;
-}
-
 .phoneHeroFoot {
   display: flex;
   flex-direction: column;
@@ -1337,39 +1187,22 @@ table.censusTable {
   width: 100%;
 }
 
-.phoneHeroActions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--wf-s-2);
-}
+/* Add patient is Home's hero pill and the highlight chips one sliding row (the kit's `phoneRows`
+ * `.heroPill`, `.chipRow` and `.chip`, Josh 31 Oct 2026). The screen's "every control 48px" rule
+ * would stretch both, so they keep Home's 40px pill and 34px chip; each keeps its own invisible
+ * 48px tap area. */
+@media (max-width: 48rem) {
+  .heroPhone .heroPill.heroPill.heroPill {
+    min-height: 40px;
+  }
 
-.phoneHeroActions > a,
-.phoneHeroActions > button {
-  width: 100%;
-  min-height: 48px;
-  justify-content: center;
-  border-radius: var(--wf-r-ctl);
-  white-space: nowrap;
-}
-
-.phoneChips {
-  display: flex;
-  gap: var(--wf-s-2);
-  margin: 0 calc(-1 * var(--wf-s-3));
-  padding: 2px var(--wf-s-3);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.phoneChips::-webkit-scrollbar {
-  display: none;
+  .phoneChips .phoneChip.phoneChip.phoneChip {
+    min-height: 0;
+  }
 }
 
 .phoneChip.phoneChip {
-  flex: none;
   gap: 6px;
-  min-height: var(--spacing-tap, 3rem);
-  white-space: nowrap;
 }
 
 /* The glyph, the words and the count each keep 6px between them (the label is its own box). */
@@ -1492,6 +1325,11 @@ table.censusTable {
   white-space: nowrap;
 }
 
+/* Redesign: the meta lines wrap, so a legal line and a place are never cut with "…". */
+.phoneMetaWrap {
+  white-space: normal;
+}
+
 .phoneEnd {
   display: flex;
   flex-direction: column;
@@ -1509,32 +1347,6 @@ table.censusTable {
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;
-}
-
-.phoneShowAll,
-.phoneOffMore {
-  display: block;
-  width: 100%;
-  min-height: 48px;
-  padding: 0 var(--wf-s-3);
-  border: 0;
-  border-top: 1px solid var(--wf-line);
-  background: transparent;
-  color: var(--wf-accent);
-  font: 600 var(--wf-fs-14) / 1 var(--wf-font);
-  cursor: pointer;
-}
-
-.phoneOffMore {
-  border: 1px solid var(--wf-line);
-  border-radius: 16px;
-  background: var(--wf-surface);
-}
-
-.phoneShowAll:focus-visible,
-.phoneOffMore:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
 }
 
 .phoneSheet {

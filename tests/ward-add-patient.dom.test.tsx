@@ -42,6 +42,9 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { decodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
+// The Patients census search is the kit's one page search field (D-91, Patients redesign).
+const SEARCH_LABEL = "Find a person by name, UMRN or place";
+
 /** Echoes the live patient count so a test can observe `ADD_PATIENT` actually reaching state,
  *  without reaching into the reducer directly — same technique as `ClockAdvancer` in the sibling
  *  search suite. */
@@ -194,7 +197,7 @@ describe("PatientSearchPage empty state", () => {
   it("offers a real link to /ward-flow/people/new when nobody is found, and hands off what was typed in memory rather than in the link", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "Zzzznotarealname" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "Zzzznotarealname" } });
 
     expect(screen.getByTestId("ward-patient-search-people-empty")).toBeInTheDocument();
     const link = screen.getByTestId("ward-patient-search-people-empty-add");
@@ -214,7 +217,7 @@ describe("PatientSearchPage empty state", () => {
   it("states the search scope and asks for an identity check before adding", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "Zzzznotarealname" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "Zzzznotarealname" } });
 
     expect(screen.getByTestId("ward-patient-search-people-empty")).toHaveTextContent(
       /No matching person, waiting referral or open movement\. Check the spelling or (record number|UMRN) before adding a patient\./i,
@@ -226,7 +229,7 @@ describe("PatientSearchPage empty state", () => {
   it("hands off a multi-word query whole, unsplit, through the in-memory channel", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "Mary Anne Halloway" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "Mary Anne Halloway" } });
 
     const link = screen.getByTestId("ward-patient-search-people-empty-add");
     expect(link).toHaveAttribute("href", "/ward-flow/people/new");

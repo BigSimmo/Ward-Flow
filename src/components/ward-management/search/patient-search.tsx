@@ -6,7 +6,18 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { UserPlus } from "lucide-react";
 
-import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx, useMediaQuery } from "@/components/wf";
+import {
+  Card,
+  Drawer,
+  Hero,
+  Icon,
+  LiveChip,
+  SearchField,
+  buttonClass,
+  cx,
+  phoneRows,
+  useMediaQuery,
+} from "@/components/wf";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage } from "@/components/ward-management/ward-model";
@@ -47,7 +58,6 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "@/components/ward-management/ward-operational-defaults";
 
 import { recordSearch, type AccessEntry } from "./access-record";
-import { PatientTypeahead } from "./patient-typeahead";
 import { handOffTypedPatientQuery, isNewTabClick, takeHandedOffPatientSearchText } from "./patient-query-handoff";
 import { RecordPreview, type PreviewSelection } from "./record-preview";
 import { refusalFor } from "./search-refusals";
@@ -85,8 +95,8 @@ import {
   CensusTable,
   FlowChip,
   PhoneCensus,
-  PhoneDobField,
-  SearchAdornment,
+  DobField,
+  DobToggle,
   ShiftSummary,
 } from "./patient-census-view";
 
@@ -855,40 +865,35 @@ export function PatientSearchPage() {
         setAccessRecord((l) => recordSearch(l, { words, text, dob: dobOn ? dob : undefined, at: now }));
       }}
     >
-      <PatientTypeahead
-        patients={patients}
-        referrals={referrals}
-        value={text}
-        onValueChange={(next) => {
-          setText(next);
-          setTab("now");
-        }}
-        label="Search"
-        placeholder={dobOn ? "Family or given name" : "Name, UMRN or place"}
-        offerAddPerson={false}
-        suggestions={false}
-        adornment={
-          <SearchAdornment
-            dobOn={dobOn}
-            onDobToggle={() => setDobOn((on) => !on)}
-            dob={dob}
-            onDob={setDob}
-            count={searching ? visibleRows.length : null}
-            empty={text.length === 0}
-            phone={isPhone}
-          />
-        }
-      />
-      {isPhone && dobOn ? <PhoneDobField dob={dob} onDob={setDob} /> : null}
-      <span className="sr-only">Find a person by name or record number</span>
-      {/* The census, not the typeahead, says how many people a search found. */}
-      <p className="sr-only" role="status" aria-live="polite">
-        {!searching || refusal
-          ? ""
-          : visibleRows.length === 0
-            ? "Nobody matches."
-            : `${visibleRows.length} invented ${visibleRows.length === 1 ? "person" : "people"} found.`}
-      </p>
+      {/* D-91: the kit's one page search field, with the date of birth beside it and the count under it. */}
+      <div className={cs.searchRow}>
+        <SearchField
+          className={cs.searchMain}
+          label="Find a person by name, UMRN or place"
+          placeholder={dobOn ? "Family or given name" : "Name, UMRN or place"}
+          value={text}
+          onValueChange={(next) => {
+            setText(next);
+            setTab("now");
+          }}
+          shortcut
+          data-testid="ward-patient-typeahead-input"
+          // The census, not a suggestion list, says how many people a search found. A date of birth
+          // on its own reads as a plain total ("3 people"), as nothing was typed in the box.
+          count={
+            searching && !refusal
+              ? {
+                  shown: visibleRows.length,
+                  total: needle === "" ? visibleRows.length : census.rows.length,
+                  noun: "people",
+                }
+              : undefined
+          }
+        />
+        {dobOn && !isPhone ? <DobField dob={dob} onDob={setDob} /> : null}
+        <DobToggle dobOn={dobOn} onDobToggle={() => setDobOn((on) => !on)} />
+      </div>
+      {isPhone && dobOn ? <DobField dob={dob} onDob={setDob} phone /> : null}
     </form>
   );
 
@@ -1014,10 +1019,10 @@ export function PatientSearchPage() {
                       11 Oct 2026): a three-up here repeated 51 / 41 / 242 directly above it. */}
                   {/* shell-17 (13 Oct 2026): no phone Commands sheet. It repeated Add patient, Menu
                       and the chips, and offered a bulk copy of patient rows on a handheld. */}
-                  <div className={cs.phoneHeroActions}>
+                  <div className={phoneRows.heroPills}>
                     <Link
                       href={WARD_ADD_PERSON_HREF}
-                      className={buttonClass({ variant: "onHero" })}
+                      className={cx(buttonClass({ variant: "onHero" }), phoneRows.heroPill, cs.heroPill)}
                       data-testid="ward-patient-search-add"
                       onClick={addPatientClick}
                     >
