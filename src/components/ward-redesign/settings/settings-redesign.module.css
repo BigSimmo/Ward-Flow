@@ -1,0 +1,421 @@
+/* Settings redesign (mock-up, 30 Oct 2026). Layered over today's settings.module.css.
+ * Round 3: no `[class*="_name__"]` overrides any more (the shareable copy minifies class names, so
+ * they silently did nothing there); each element carries one of this file's classes instead. */
+
+/* "Save to apply" was a bordered tag that read as a button. It is plain words now. */
+.scopeWords {
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-2);
+}
+
+.scopeWords > strong {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* The other tabs' "Applies now" and "Read only" tags lose their box for the same reason. */
+.scopeTagPlain {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+/* Compact steppers on a desktop: the kit's own 36px buttons in a squared control, the value boxed
+ * between them, not floating in a wide pill. Coarse pointers keep the kit's 44px buttons. */
+@media (min-width: 48.0625rem) {
+  /* Final round: the effect column is at least 13rem, so "No referrals past target if saved" fits
+   * on one line beside the stepper instead of running into it. */
+  .ruleRow {
+    grid-template-columns: minmax(8rem, 1fr) 28px 9rem minmax(13rem, 1fr);
+    min-height: 56px;
+  }
+
+  /* Today's narrow-column rule (effect on its own line under the rule) keeps working with the
+   * narrower stepper, and now starts at 38rem rather than 34rem: a 1440px screen with the sidebar
+   * leaves each column about 35rem, too tight for four tracks (the range ran under the stepper). */
+  @container (max-width: 38rem) {
+    .ruleRow {
+      grid-template-columns: minmax(0, 1fr) 28px 9rem;
+    }
+
+    .ruleRow .effectCell {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      column-gap: var(--wf-s-3);
+      text-align: left;
+    }
+
+    /* "Shown on…" keeps the right edge on every row, with or without a count beside it. */
+    .ruleRow .usedBy {
+      margin-inline-start: auto;
+      text-align: right;
+    }
+
+    /* A read-only rule has no stepper, so its value and "Shown on…" still fit side by side. */
+    .ruleRow:has(.ruleReadValue) {
+      grid-template-columns: minmax(8rem, 1fr) 28px 5rem minmax(13rem, 1fr);
+    }
+
+    .ruleRow:has(.ruleReadValue) .effectCell {
+      grid-column: auto;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+    }
+  }
+
+  .ruleStepper > span:first-child {
+    width: auto;
+    height: var(--wf-h-md);
+    border-radius: var(--wf-r-md);
+  }
+
+  .ruleStepper > span:first-child > button {
+    width: 36px;
+  }
+
+  .ruleStepper > span:first-child > [role="spinbutton"] {
+    flex: 1 1 auto;
+    min-width: 4.5rem;
+    border-inline: 1px solid var(--wf-line);
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 48.0625rem) and (pointer: coarse) {
+  .ruleStepper > span:first-child > button {
+    width: 44px;
+  }
+}
+
+/* The save bar stays on the Rules tab, so where Save lives never moves. */
+.saveBar {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-1);
+}
+
+/* An unavailable Discard or Save is greyed, not dashed, so it never reads as a placeholder. */
+.saveBar button[aria-disabled="true"] {
+  border-style: solid;
+  border-color: var(--wf-line);
+}
+
+.saveCount {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.saveClean {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-2);
+}
+
+.saveMeta {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+/* Profile and shift, inside Display. */
+.profileWho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.profileName {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.profileName > strong {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+}
+
+/* Round 3: one column, since the card shares the row with the Display card. */
+.profileGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* A read-only rule: its value as plain text where the stepper sat, no empty control. */
+.ruleReadValue {
+  display: block;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Round 3 ----------------------------------------------------------------------------------- */
+
+/* "· Default 24h" after the range, only while a rule sits away from its default. */
+.defaultMark {
+  color: var(--wf-ink-2);
+  font-weight: 600;
+}
+
+/* The last change and Show changed only, one line above the rule cards. */
+.rulesTopLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  margin-block-end: var(--wf-s-3);
+}
+
+.lastChange {
+  display: inline-flex;
+  flex: 1 1 22rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  min-width: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.inlineLink {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.inlineLink:hover,
+.inlineLink:focus-visible {
+  text-decoration: underline;
+}
+
+.changedOnlySwitch {
+  flex: 0 0 auto;
+  font-size: var(--wf-fs-13);
+}
+
+/* Show changed only: rules at their default step out, and so does a card left with none. */
+.changedOnly [data-at-default="true"] {
+  display: none;
+}
+
+.changedOnly [data-rule-card]:not(:has([data-at-default="false"])) {
+  display: none;
+}
+
+.calmLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0 0 var(--wf-s-3);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+.timingWords {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+/* What Surge changes, in one line under the card head. */
+.surgeLine {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+/* The review before saving. */
+.reviewList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reviewRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--wf-s-3);
+  padding: var(--wf-s-3) 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.reviewRow:first-child {
+  border-top: 0;
+}
+
+.reviewName {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+}
+
+.reviewValues {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-14);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.reviewBefore {
+  color: var(--wf-ink-3);
+  text-decoration: line-through;
+}
+
+.reviewMeta {
+  grid-column: 1 / -1;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+/* The restore dialog's lists. */
+.restoreLists {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--wf-s-4);
+  margin-block-start: var(--wf-s-4);
+}
+
+.restoreHead {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+
+.restoreList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+}
+
+.restoreList > li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: 4px 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.restoreList strong {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Will alerts reach you here? One next step and a test, beside the switches it counts. */
+.checkNext {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.checkFoot {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* The proposed Text size, previewed on its own line. */
+.textLarger {
+  font-size: var(--wf-fs-15);
+  line-height: var(--wf-lh-15);
+}
+
+/* For developers, folded at the foot of Help and data. */
+.devFold {
+  margin-block-start: var(--wf-s-4);
+}
+
+.devSummary {
+  min-height: var(--wf-h-md);
+  padding: var(--wf-s-2) 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.quietCell {
+  color: var(--wf-ink-2);
+}
+
+/* Change lists wrap instead of ending in "…". */
+.wrapText {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+/* Final round: the phone Theme and Row density switches at the kit standard (parts/kit-standard.css):
+ * 32px options on a 40px track with a 48px invisible tap area, drawn by the kit's own phone `.seg`.
+ * Today's `.phoneSeg` raised each option to 44px; this keeps only its full width and equal options. */
+.phoneSeg {
+  width: 100%;
+}
+
+.phoneSeg > button[role="radio"] {
+  flex: 1 1 0;
+  justify-content: center;
+}
+
+/* Access: the cards keep the pane's own gap inside their wrapper. */
+.accessStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+/* Final round: should a count still not fit, it wraps rather than running left into the stepper.
+ * Scoped to the row so it outranks today's nowrap. */
+.ruleRow .effectLine {
+  white-space: normal;
+}
+
+/* Phone: the count and "Shown on…" stack on the left under the rule, so a two-line "Shown on" never
+ * sits beside a count that drops to its last line. */
+@media (max-width: 760px) {
+  .ruleRow .effectCell {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .ruleRow .effectLine {
+    justify-content: flex-start;
+  }
+}
