@@ -68,9 +68,10 @@ import { DischargePopulationSwitch, DischargeFilterCard } from "./discharge-boar
 import { DischargeRecordDetail, DischargeReleaseDetail, DischargeRestingDetail } from "./discharge-detail-panes";
 import { useDischargeDeskView } from "./discharge-desk-view";
 import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
-// Closing-the-loop package B (24 Oct 2026): the weekend and holiday list, loaded when idle; since the
-// redesign (approved 31 Oct 2026) a compact notice above the list.
-import { DischargeWeekendPrep } from "./discharge-logistics-lazy";
+// Closing-the-loop package B (24 Oct 2026): the weekend and holiday list. Since the redesign (approved
+// 31 Oct 2026) it is a compact notice ABOVE the list, so it loads with the board: loaded lazily, the
+// server's copy vanished on hydration and came back, and the whole list jumped (layout shift 0.21).
+import { DischargeWeekendPrep } from "./discharge-weekend-prep";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
