@@ -56,11 +56,12 @@ function renderTasks(props: Partial<Parameters<typeof WardHelpTasks>[0]> = {}) {
 }
 
 describe("How do I… task list", () => {
-  it("files every how-to under a known group, and keeps Show me off the two answer-only ones", () => {
+  it("files every how-to under a known group, and keeps Show me off the answer-only ones", () => {
     for (const howTo of HOW_TOS) expect(HOW_TO_TOPICS, howTo.id).toContain(howTo.topic);
     const answerOnly = HOW_TOS.filter((howTo) => !howTo.showMe?.length).map((howTo) => howTo.id);
-    // Legal times are shown only as typed (D-70) and Undo has no single control to point at.
-    expect(answerOnly.toSorted()).toEqual(["mha-times", "undo"]);
+    // Legal times are shown only as typed (D-70), Undo has no single control to point at, and the
+    // paper downtime answer is for logins with no Handover screen to point at.
+    expect(answerOnly.toSorted()).toEqual(["downtime-paper", "mha-times", "undo"]);
   });
 
   it("lists only this desk's own tasks", () => {
@@ -85,7 +86,7 @@ describe("How do I… task list", () => {
     route.pathname = "/ward-flow/somewhere-else";
     renderTasks({ pathname: route.pathname });
     expect(
-      within(screen.getByTestId("ward-help-tasks-here")).getByText(/No task here starts on this screen/),
+      within(screen.getByTestId("ward-help-tasks-here")).getByText(/No task of yours starts on this screen/),
     ).toBeTruthy();
   });
 
@@ -139,11 +140,12 @@ describe("How do I… task list", () => {
     expect(within(screen.getByTestId("ward-help-task-answer-sign-off-handover")).getByText("3 steps")).toBeTruthy();
   });
 
-  it("offers no Show me for a task on a screen this desk cannot open", () => {
-    renderTasks({ role: "executive", home: "/ward-flow/statistics", openTask: "downtime" });
-    const row = screen.getByTestId("ward-help-task-answer-downtime");
+  it("does not list a task on a screen this desk cannot open, and answers it another way", () => {
+    renderTasks({ role: "executive", home: "/ward-flow/statistics" });
+    expect(screen.queryByTestId("ward-help-task-answer-downtime")).toBeNull();
+    const row = screen.getByTestId("ward-help-task-answer-downtime-paper");
     expect(within(row).queryByTestId("ward-help-task-show-me")).toBeNull();
-    expect(within(row).queryByText("1 step")).toBeNull();
+    expect(row.textContent).not.toContain("Handover");
   });
 
   it("reads as answers only, with no step counts, when Show me is off", () => {
@@ -155,16 +157,10 @@ describe("How do I… task list", () => {
 });
 
 describe("How do I… in the Help sheet", () => {
-  it("is the first section and opens a task handed back from Show me", () => {
+  it("is the first of three sections and opens a task handed back from Show me", () => {
     render(<WardHelpSheet view="tasks" task="sign-off-handover" showMeOn onView={vi.fn()} onClose={vi.fn()} />);
     const sections = within(screen.getByRole("group", { name: "Help sections" })).getAllByRole("button");
-    expect(sections.map((button) => button.textContent)).toEqual([
-      "How do I…",
-      "This screen",
-      "Your desk",
-      "Glossary",
-      "What's new",
-    ]);
+    expect(sections.map((button) => button.textContent)).toEqual(["How do I…", "Words", "What's new"]);
     expect(sections[0]?.getAttribute("aria-pressed")).toBe("true");
     const row = screen.getByTestId("ward-help-task-answer-sign-off-handover");
     expect(
@@ -174,14 +170,17 @@ describe("How do I… in the Help sheet", () => {
     ).toBe("true");
   });
 
-  it("offers this screen's tasks as Show me on This screen, and Show me beside a desk job", () => {
+  it("opens How do I… for the older This screen and Your desk ways in, with this screen's tasks first", () => {
     const { unmount } = render(<WardHelpSheet view="screen" showMeOn onView={vi.fn()} onClose={vi.fn()} />);
+    const sections = within(screen.getByRole("group", { name: "Help sections" })).getAllByRole("button");
+    expect(sections[0]?.getAttribute("aria-pressed")).toBe("true");
     expect(
-      within(screen.getByTestId("ward-help-screen-tasks")).getByTestId("ward-help-screen-show-me-sign-off-handover"),
+      within(screen.getByTestId("ward-help-tasks-here")).getByTestId("ward-help-task-answer-sign-off-handover"),
     ).toBeTruthy();
     unmount();
     render(<WardHelpSheet view="desk" showMeOn onView={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getAllByTestId("ward-help-job-show-me").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("ward-help-desk")).toHaveAttribute("open");
+    expect(screen.getByTestId("ward-help-tasks")).toBeTruthy();
   });
 
   it("names the desk and the screen under the title", () => {

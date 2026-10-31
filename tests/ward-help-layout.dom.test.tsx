@@ -12,29 +12,31 @@ vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
 }));
 
 describe("search-first Help layout", () => {
-  it("has one box for searching and asking, and no second empty Ask box (redesign, #1118)", () => {
+  it("has one box for searching and asking, and no second empty Ask box (Josh, 31 Oct 2026)", () => {
     render(<WardHelpSheet view="glossary" ask="" onView={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getByTestId("ward-help-search-field").textContent).toContain("Search Help, or ask");
+    expect(screen.getByTestId("ward-help-search-field").textContent).toContain("Search Help");
     expect(screen.queryByTestId("ward-help-ask-input")).toBeNull();
-    fireEvent.click(screen.getByText("Reference", { selector: "summary" }));
     expect(screen.queryByText("Ask a question", { selector: "summary" })).toBeNull();
   });
 
-  it("shows a handed-over answer immediately without opening Reference", () => {
+  it("shows a handed-over answer in the Ask box, which stands in for the search field", () => {
     render(<WardHelpSheet view="screen" ask="how do I pull a bed" onView={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByTestId("ward-help-ask-answer-pull-bed")).toBeVisible();
-    expect(screen.getByTestId("ward-help-reference")).not.toHaveAttribute("open");
+    expect(screen.queryByTestId("ward-help-search-field")).toBeNull();
+    expect(screen.getAllByRole("searchbox")).toHaveLength(1);
   });
 
-  it("keeps the tour and all five sections working, with the tour at the foot of the view", () => {
+  it("keeps the tour as How do I…'s first row and all three sections working", () => {
     const onView = vi.fn();
     render(<WardHelpSheet view="desk" ask="" onView={onView} onClose={vi.fn()} />);
-    expect(screen.getByTestId("ward-help-end").contains(screen.getByTestId("ward-help-view-tour"))).toBe(true);
+    expect(screen.getByTestId("ward-help-tasks").contains(screen.getByTestId("ward-help-view-tour"))).toBe(true);
     fireEvent.click(screen.getByTestId("ward-help-view-tour"));
     expect(onView).toHaveBeenLastCalledWith("tour");
-    for (const view of ["tasks", "desk", "screen", "glossary", "new"]) {
+    for (const view of ["tasks", "glossary", "new"]) {
       fireEvent.click(screen.getByTestId(`ward-help-view-${view}`));
       expect(onView).toHaveBeenLastCalledWith(view);
     }
+    expect(screen.queryByTestId("ward-help-view-screen")).toBeNull();
+    expect(screen.queryByTestId("ward-help-view-desk")).toBeNull();
   });
 });

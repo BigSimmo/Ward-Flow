@@ -85,7 +85,7 @@ describe("WardHelpSearch", () => {
     const input = openSearch();
     expect(screen.getByRole("dialog", { name: "Search Help" })).toBeTruthy();
     expect(document.activeElement).toBe(input);
-    expect(screen.getByText("Suggested for Bed manager")).toBeTruthy();
+    expect(screen.getByText("Suggested for Site bed manager")).toBeTruthy();
   });
 
   it("shows grouped results and the approved clinical reply", () => {

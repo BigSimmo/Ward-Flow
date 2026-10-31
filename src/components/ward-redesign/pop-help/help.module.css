@@ -245,7 +245,7 @@ div.screenHead {
   display: inline-flex;
   flex: none;
   align-items: center;
-  height: 28px;
+  height: 40px;
   padding: 0 10px;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-ctl, 8px);
@@ -281,7 +281,7 @@ div.screenHead {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
+  height: 40px;
   padding: 0 10px;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-ctl, 8px);

@@ -90,8 +90,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
   },
   ward: {
     homeName: "My ward",
-    summary:
-      "You run your own ward's beds and answer the referrals sent to it. This desk is Nurse in charge; its recorded role label is Ward manager.",
+    summary: "You run your own ward's beds and answer the referrals sent to it.",
     startsAt:
       "My ward is your home: the bed board, this shift's jobs and Awaiting your answer. Your menu holds Coming and going, Referrals to answer and Handover. On a desktop, On TV in the ward's toolbar opens a read only screen for the ward's own TV.",
     jobs: [
@@ -110,7 +109,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       {
         job: "Answer it",
         howTo: "decide-referral",
-        how: "Press Accept in principle and choose the pull time limit, or press Decline and pick a reason.",
+        how: "Press Accept referral and choose the pull time limit, or press Decline referral and pick a reason.",
         go: "home",
       },
       {
@@ -208,8 +207,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
   },
   community: {
     homeName: "My team",
-    summary:
-      "You work for one community mental health team. You send referrals and answer the ones sent to your team. This desk is Community clinician; its recorded role label is Community service.",
+    summary: "You work for one community mental health team. You send referrals and answer the ones sent to your team.",
     startsAt:
       "My team is your home: referrals waiting for your answer, people in a bed and your caseload. Your menu holds Referrals and New referral. Find Movements under More on desktop or Menu on a phone.",
     jobs: [
@@ -286,7 +284,12 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       { job: "Check beds", how: "Open Capacity for bed counts across your network or health service.", go: "capacity" },
       { job: "Compare", how: "Set two wards or departments side by side.", go: "home" },
       { job: "Look for pressure", how: "Check ED waits, blocked discharges and expected discharges.", go: "home" },
-      { job: "Export", howTo: "statistics", how: "Use CSV to save a table of figures.", go: "home" },
+      {
+        job: "Export",
+        howTo: "statistics",
+        how: "Use Export the figures to save the figures as a spreadsheet file, on a computer.",
+        go: "home",
+      },
     ],
     limits: [
       'Small counts of people read "fewer than 5", so no one can be picked out.',

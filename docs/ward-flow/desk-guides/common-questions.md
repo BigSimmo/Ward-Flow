@@ -34,7 +34,7 @@ Source: Help, When it is down (`WHEN_IT_IS_DOWN`). Screen: Downtime.
 
 ### Why can't I answer this referral?
 
-> Only the ward itself accepts or declines its referrals. A bed manager sees them but cannot answer, so ask the ward to answer from its own desk.
+> Only the ward itself accepts or declines its referrals. A site bed manager sees them but cannot answer, so ask the ward to answer from its own desk.
 
 Source: Help, screen questions (`screenHelpFor`). Screen: Referrals.
 
