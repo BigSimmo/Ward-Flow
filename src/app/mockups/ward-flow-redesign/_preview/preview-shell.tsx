@@ -17,6 +17,7 @@ import layoutStyles from "../../../ward-flow/ward-flow-layout.module.css";
 import { mockupHrefForAppPath } from "./screens";
 
 const NOT_DRAWN = "That page is not drawn in this mock-up.";
+const NOT_DRAWN_FOR_ROLE = "That page is not drawn for this desk in the mock-up.";
 
 /** A link from a page drawn in the redesigned frame stays in that frame. */
 function keepShell(target: string | null, nextShell: boolean): string | null {
@@ -65,7 +66,7 @@ export function PreviewShell({
       if (target) {
         if (replace) realRouter.replace(target);
         else realRouter.push(target);
-      } else toast?.push({ tone: "info", title: NOT_DRAWN });
+      } else toast?.push({ tone: "info", title: rolePrefix ? NOT_DRAWN_FOR_ROLE : NOT_DRAWN });
     };
     return {
       ...realRouter,
@@ -91,7 +92,7 @@ export function PreviewShell({
     event.stopPropagation();
     const target = keepShell(mockupHrefForAppPath(href, rolePrefix), nextShell);
     if (target) realRouter.push(target);
-    else toast?.push({ tone: "info", title: NOT_DRAWN });
+    else toast?.push({ tone: "info", title: rolePrefix ? NOT_DRAWN_FOR_ROLE : NOT_DRAWN });
   };
 
   return (
