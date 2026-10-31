@@ -131,7 +131,10 @@ export function KindGroup({
         : first?.group === "wait"
           ? "warning"
           : "neutral";
-  const raised = group.entries.flatMap((entry) => (entry.raised === undefined ? [] : [entry.raised]));
+  // A passed legal form adds no age here: its time reads as typed (Josh, 31 Oct 2026).
+  const raised = group.entries.flatMap((entry) =>
+    entry.raised === undefined || alertKindOf(entry.item.id) === "legal" ? [] : [entry.raised],
+  );
   const oldest = raised.length > 0 ? Math.min(...raised) : undefined;
   return (
     <li className={styles.kindGroup} data-testid="redesign-alerts-kind-group">

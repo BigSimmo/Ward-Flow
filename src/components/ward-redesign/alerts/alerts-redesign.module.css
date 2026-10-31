@@ -204,3 +204,26 @@
   text-overflow: clip;
   overflow-wrap: break-word;
 }
+
+/* Final round (Josh, 31 Oct 2026): a passed legal form's time as typed ("Ended Mon 09:27 as typed"),
+ * in place of its age. Legal wording wraps in full on every row; doubled for the row-line rules. */
+.legalEnded.legalEnded {
+  display: block;
+  overflow: visible;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: 16px;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: break-word;
+  -webkit-line-clamp: unset;
+}
+
+/* Places, roles and legal wording wrap in full in the phone sheet's facts (owner rule: a phone has
+ * no hover), not "Fiona Stanley Hospit…". */
+.phFactsWrap.phFactsWrap dd {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: break-word;
+}

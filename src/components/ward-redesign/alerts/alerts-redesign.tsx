@@ -64,7 +64,6 @@ import {
   escalationAppliesTo,
   effectiveOwner,
   isQueueItem,
-  minutesText,
   admissionIdOfInboxId,
   raisedAt,
   resolveAlertSubject,
@@ -96,6 +95,7 @@ import { BroadcastComposer } from "@/components/ward-management/alerts/broadcast
 
 import { ForecastAlertsGroup } from "./forecast-alerts-group";
 import styles from "@/components/ward-management/alerts/alerts.module.css";
+import { ageTimes, copyAge, legalDetailAsTyped } from "@/components/ward-redesign/alerts/legal-alert-queue";
 import redesign from "./alerts-redesign.module.css";
 import {
   Button,
@@ -220,7 +220,9 @@ function AlertsWorkspace() {
           stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
         },
         now,
-      ).filter(isQueueItem),
+      )
+        .filter(isQueueItem)
+        .map(legalDetailAsTyped(movements, now)), // Legal times as typed (legal-alert-queue.ts).
     [
       movements,
       units,
@@ -467,9 +469,7 @@ function AlertsWorkspace() {
   const activeEntries = useMemo(() => toEntries(inbox, false), [toEntries, inbox]);
   const snoozedEntries = useMemo(() => toEntries(snoozedInbox, true), [toEntries, snoozedInbox]);
   const oldestRaised = useMemo(() => {
-    const times = activeEntries.flatMap((entry) =>
-      entry.group === "running" || entry.raised === undefined ? [] : [entry.raised],
-    );
+    const times = activeEntries.flatMap((entry) => (entry.group === "running" ? [] : ageTimes(entry)));
     return times.length > 0 ? Math.min(...times) : undefined;
   }, [activeEntries]);
   const actEntries = activeEntries.filter((entry) => entry.group === "act");
@@ -481,7 +481,7 @@ function AlertsWorkspace() {
   const needYouCount = actEntries.filter((entry) => entry.mine && !entry.seen).length;
   const highlightedCount = allEntries.filter((entry) => entry.highlighted).length;
   const anyHighlight = highlightOn;
-  const maxAge = Math.max(1, ...allEntries.map((entry) => (entry.raised === undefined ? 0 : now - entry.raised)));
+  const maxAge = Math.max(1, ...allEntries.flatMap(ageTimes).map((at) => now - at));
   const owners = useMemo(() => {
     const names = [...new Set(allEntries.map((entry) => entry.owner))];
     return names.sort((a, b) => (a === COORDINATOR ? -1 : b === COORDINATOR ? 1 : a.localeCompare(b)));
@@ -804,7 +804,7 @@ function AlertsWorkspace() {
     setBroadcastRequest(null);
     setActionRequest(null);
     const line = (entry: QueueEntry) =>
-      `- ${entry.item.title}. ${entry.subject.displayName}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${entry.raised !== undefined ? ` Open ${minutesText(Math.max(0, now - entry.raised))}.` : ""}`;
+      `- ${entry.item.title}. ${entry.subject.displayName}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${copyAge(entry, now)}`;
     const sections: [string, QueueEntry[]][] = [
       ["Act now", actEntries],
       ["Waiting", waitEntries],

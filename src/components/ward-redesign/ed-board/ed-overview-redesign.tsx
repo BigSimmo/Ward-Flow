@@ -259,7 +259,9 @@ export function EdOverview({
         />
       )}
       <nav className={styles.strip} aria-label="Emergency departments">
-        <ul className={styles.list}>
+        {/* Final round (31 Oct 2026): on a phone the department pills slide sideways with the kit's soft
+            right-edge fade (parts/phone-rows.module.css .chipRow), as every other chip row does. */}
+        <ul className={cx(styles.list, rows.chipRow, redesign.deptRow)}>
           {departments.map((department) => {
             const isCurrent = department.id === departmentId;
             const href = `/ward-flow/ed/${department.id}`;

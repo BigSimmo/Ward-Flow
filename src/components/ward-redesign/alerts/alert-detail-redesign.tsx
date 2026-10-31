@@ -43,6 +43,7 @@ import { PullNowButton } from "@/components/ward-management/alerts/global-alert-
 import { HandBackButton } from "./alert-hand-back";
 import redesign from "./alerts-redesign.module.css";
 import styles from "@/components/ward-management/alerts/alerts.module.css";
+import { legalAlertEnded } from "@/components/ward-redesign/legal-copies/legal-alert-words";
 
 export type AlertDetailHandlers = {
   onTake: (item: InboxItem) => void;
@@ -102,6 +103,9 @@ export function AlertDetail({
   const kind = alertKindOf(item.id);
   const group = alertGroupOf(item);
   const opened = raisedAt(item, movement);
+  // Final round (Josh, 31 Oct 2026): a passed legal form reads "Ended Mon 09:27 as typed" in place of
+  // "open 1h 15m" and the times strip's elapsed figure; never a running count on a legal time.
+  const legalEnded = kind === "legal" && item.dueAt !== undefined ? legalAlertEnded(item.dueAt, now) : undefined;
   const seen = acknowledgements?.at(-1);
   const action = alertActionFor(item, subject);
   // P085 (27 Oct 2026): when the action already opens the patient, one link to them is enough. A
@@ -206,9 +210,12 @@ export function AlertDetail({
       <section className={styles.detailSection} aria-label="Recorded times">
         <div className={styles.sectionHead}>
           <span className={styles.eyebrow}>{kind === "hold" ? "Time in ED" : "Recorded times"}</span>
-          <span className={`${styles.quiet} ${styles.mono}`}>
-            {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
-          </span>
+          {/* A passed legal form: the line above already reads it as typed, so no figure here. */}
+          {legalEnded !== undefined ? null : (
+            <span className={`${styles.quiet} ${styles.mono}`}>
+              {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
+            </span>
+          )}
         </div>
         <WaitTrack points={track} now={now} />
       </section>
@@ -332,7 +339,9 @@ export function AlertDetail({
                 {group === "act" ? "Act now" : "Waiting"}
               </span>
             ) : null}
-            {opened !== undefined ? (
+            {legalEnded !== undefined ? (
+              <span className={styles.phChip}>{legalEnded}</span>
+            ) : opened !== undefined ? (
               <span className={styles.phChip}>
                 open <span className={styles.mono}>{minutesText(Math.max(0, now - opened))}</span>
               </span>
@@ -341,7 +350,10 @@ export function AlertDetail({
         </div>
 
         {declines.length > 0 ? null : (
-          <dl className={styles.phFacts} data-testid={booking ? "alerts-drawer-booking" : undefined}>
+          <dl
+            className={`${styles.phFacts} ${redesign.phFactsWrap}`}
+            data-testid={booking ? "alerts-drawer-booking" : undefined}
+          >
             {phoneFacts.map(([label, value]) => (
               <div key={label}>
                 <dt>{label}</dt>
@@ -485,7 +497,9 @@ export function AlertDetail({
       <div className={styles.detailState}>
         <StatusGlyph tone={group === "act" ? "danger" : group === "wait" ? "warning" : "neutral"} />
         <span className={styles.detailTitle}>{item.title}</span>
-        {opened !== undefined ? (
+        {legalEnded !== undefined ? (
+          <span className={styles.quiet}>{legalEnded}</span>
+        ) : opened !== undefined ? (
           <span className={styles.quiet}>
             open <span className={styles.mono}>{minutesText(Math.max(0, now - opened))}</span>
           </span>
@@ -512,9 +526,12 @@ export function AlertDetail({
         <section className={styles.detailSection} aria-label="Recorded times">
           <div className={styles.sectionHead}>
             <span className={styles.eyebrow}>{kind === "hold" ? "Time in ED" : "Recorded times"}</span>
-            <span className={`${styles.quiet} ${styles.mono}`}>
-              {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
-            </span>
+            {/* A passed legal form: the line above already reads it as typed, so no figure here. */}
+            {legalEnded !== undefined ? null : (
+              <span className={`${styles.quiet} ${styles.mono}`}>
+                {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
+              </span>
+            )}
           </div>
           <WaitTrack points={track} now={now} />
         </section>

@@ -41,7 +41,6 @@ import {
 } from "@/components/ward-management/shell/ward-rail-entries";
 import { nextRoleMenu } from "@/components/ward-redesign/shell-next/next-role-menu";
 import { NextPhoneMenuTop } from "@/components/ward-redesign/shell-next/next-phone-menu-top";
-import nextParts from "@/components/ward-redesign/shell-next/next-rail.module.css";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { useAccessNavFilter } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlagCheck } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -51,6 +50,7 @@ import { CountChip, countIn } from "@/components/ward-management/shell/ward-phon
 import { usePhoneCreateOptions } from "@/components/ward-management/shell/ward-phone-create-options";
 import styles from "@/components/ward-management/shell/ward-phone-menu.module.css";
 import pageDock from "@/components/ward-management/shell/ward-phone-page-dock.module.css";
+import dockStyles from "@/components/ward-redesign/shell-next/next-phone-dock.module.css";
 
 /**
  * Phone menu (Josh, 10 Oct 2026, locked from the phone header and navigation mockups, set 9 with
@@ -293,6 +293,16 @@ function dockTail(label: string, value: number | undefined, detail: string, plai
   return plain.startsWith(label) ? plain.slice(label.length) : "";
 }
 
+/** A dock tab: today's face, with its icon held at the top (next-phone-dock.module.css). */
+const DOCK_ITEM = `${styles.dockItem} ${dockStyles.item}`;
+
+/**
+ * Final round (Josh, 31 Oct 2026): a label longer than this ("Coming and going") takes two lines.
+ * Its dock then gives every tab the same two-line label area under a top-aligned icon, so the icons
+ * and the labels' first lines sit level across the dock.
+ */
+const DOCK_ONE_LINE_CHARS = 12;
+
 function DockFace({
   icon: Icon,
   label,
@@ -310,7 +320,7 @@ function DockFace({
         <Icon aria-hidden="true" strokeWidth={1.75} />
         <CountChip value={count} className={styles.dockCount} />
       </span>
-      <span className={styles.dockLabel}>{label}</span>
+      <span className={`${styles.dockLabel} ${dockStyles.label}`}>{label}</span>
       {tail ? <SrOnly>{tail}</SrOnly> : null}
     </>
   );
@@ -349,7 +359,7 @@ function PhoneDock({
       key="alerts"
       href={WARD_ALERTS_HREF}
       prefetch={true}
-      className={styles.dockItem}
+      className={DOCK_ITEM}
       aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
       data-testid="ward-phone-menu-alerts"
       onClick={() => announceToWardShell("Alerts.")}
@@ -372,7 +382,7 @@ function PhoneDock({
             key={entry.id}
             href={entry.href}
             prefetch={true}
-            className={styles.dockItem}
+            className={DOCK_ITEM}
             aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
             data-testid="ward-phone-dock-link"
             onClick={() => onGo(entry)}
@@ -394,7 +404,7 @@ function PhoneDock({
           <button
             key="tasks"
             type="button"
-            className={styles.dockItem}
+            className={DOCK_ITEM}
             aria-haspopup="dialog"
             data-testid="ward-phone-menu-tasks"
             onClick={() => onDrawer("tasks")}
@@ -415,7 +425,7 @@ function PhoneDock({
           <button
             key="activity"
             type="button"
-            className={styles.dockItem}
+            className={DOCK_ITEM}
             aria-haspopup="dialog"
             data-testid="ward-phone-menu-activity"
             onClick={(event) => onDrawer("activity", event.currentTarget)}
@@ -433,7 +443,7 @@ function PhoneDock({
           <button
             key="bed-finder"
             type="button"
-            className={styles.dockItem}
+            className={DOCK_ITEM}
             aria-haspopup="dialog"
             data-testid="ward-phone-dock-bed-finder"
             onClick={(event) => {
@@ -459,9 +469,10 @@ function PhoneDock({
         ))
       : null;
   const tabCount = places.length + right.length;
+  const twoLine = [...places, ...right].some((item) => "label" in item && item.label.length > DOCK_ONE_LINE_CHARS);
   return (
     <nav
-      className={`${styles.dock} ${nextParts.dockLabels}`}
+      className={`${styles.dock} ${dockStyles.dock} ${twoLine ? dockStyles.twoLine : ""}`}
       aria-label="Quick open"
       data-testid="ward-phone-dock"
       style={canCreate || tabCount === 0 ? undefined : { gridTemplateColumns: `repeat(${tabCount}, minmax(0, 1fr))` }}

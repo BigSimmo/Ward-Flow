@@ -19,13 +19,7 @@ import {
   stageCopy,
   type MovementSearchQuery,
 } from "@/components/ward-management/ward-derivations";
-import {
-  calendarDateOf,
-  formatInstant,
-  formatInstantWithDay,
-  formatRemaining,
-  minutesUntil,
-} from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -186,7 +180,6 @@ interface UnifiedCaseloadPatient {
   setting: string;
   service: string;
   legalStatus: string;
-  legalExpires: string;
   urgency: string;
   waitHours: number;
   openedAt: string;
@@ -444,15 +437,8 @@ export function PatientSearchPage() {
         const urgency = `Tier ${m.urgency}`;
         const patientAge = recordedAge(info.patient, calendarDateOf(now, dayZero));
 
-        const movementDueAt = m.legalForm?.dueAt;
-        let legalExpires = "Voluntary status";
-        if (legal !== "Voluntary") {
-          if (movementDueAt !== undefined) {
-            legalExpires = formatRemaining(minutesUntil(movementDueAt, now));
-          } else {
-            legalExpires = "No due time recorded";
-          }
-        }
+        // Final round (Josh, 31 Oct 2026): a computed "legal expires in" figure (formatRemaining) was
+        // built here and never shown. Legal times read only as typed, so it is gone.
 
         list.push({
           id: m.id,
@@ -467,7 +453,6 @@ export function PatientSearchPage() {
           setting: operational.setting,
           service: svc,
           legalStatus: legal,
-          legalExpires,
           urgency,
           waitHours: waitH,
           openedAt: formatInstantWithDay(m.openedAt, now),
@@ -501,7 +486,6 @@ export function PatientSearchPage() {
         // A referral carries no legal status or form; "Voluntary" used to be assumed for a community
         // one.
         const refLegal = "Not recorded";
-        const refLegalExpires = "No due time recorded";
 
         list.push({
           id: ref.id,
@@ -516,7 +500,6 @@ export function PatientSearchPage() {
           setting: isComm ? "community" : "ed",
           service: svc,
           legalStatus: refLegal,
-          legalExpires: refLegalExpires,
           urgency: `Tier ${ref.urgency}`,
           waitHours: waitH,
           openedAt: formatInstantWithDay(ref.raisedAt, now),

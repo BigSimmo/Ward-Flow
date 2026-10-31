@@ -99,3 +99,12 @@
 .formTyped > span {
   white-space: normal;
 }
+
+/* Final round (31 Oct 2026): the department pills use the kit's sliding chip row (.chipRow, soft
+   fade at the right edge). The row bleeds 12px past each side of the page (ed-overview.module.css),
+   so the kit's max-width: 100% would stop it, and its fade, 12px short of the screen's edge. */
+@media (max-width: 48rem) {
+  .deptRow.deptRow.deptRow {
+    max-width: none;
+  }
+}

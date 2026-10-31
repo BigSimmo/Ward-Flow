@@ -45,6 +45,7 @@ import { HandBackButton } from "@/components/ward-redesign/alerts/alert-hand-bac
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import redesign from "@/components/ward-redesign/alerts/alerts-redesign.module.css";
 import styles from "@/components/ward-management/alerts/alerts.module.css";
+import { legalAlertEnded } from "@/components/ward-redesign/legal-copies/legal-alert-words";
 
 export type AlertDetailHandlers = {
   onTake: (item: InboxItem) => void;
@@ -104,6 +105,9 @@ export function AlertDetail({
   const kind = alertKindOf(item.id);
   const group = alertGroupOf(item);
   const opened = raisedAt(item, movement);
+  // Final round (Josh, 31 Oct 2026): a passed legal form reads "Ended Mon 09:27 as typed" in place of
+  // "open 1h 15m" and the times strip's elapsed figure; never a running count on a legal time.
+  const legalEnded = kind === "legal" && item.dueAt !== undefined ? legalAlertEnded(item.dueAt, now) : undefined;
   const seen = acknowledgements?.at(-1);
   // Role view (transport officer): the officer opens only its own jobs, Alerts, On-call and Settings
   // (ROLE_SCREENS). The coordinator's forward link (a movement, a patient, the bed search) is a page
@@ -217,9 +221,12 @@ export function AlertDetail({
       <section className={styles.detailSection} aria-label="Recorded times">
         <div className={styles.sectionHead}>
           <span className={styles.eyebrow}>{kind === "hold" ? "Time in ED" : "Recorded times"}</span>
-          <span className={`${styles.quiet} ${styles.mono}`}>
-            {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
-          </span>
+          {/* A passed legal form: the sheet's chip above already reads it as typed. */}
+          {legalEnded !== undefined ? null : (
+            <span className={`${styles.quiet} ${styles.mono}`}>
+              {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
+            </span>
+          )}
         </div>
         <WaitTrack points={track} now={now} />
       </section>
@@ -343,7 +350,9 @@ export function AlertDetail({
                 {group === "act" ? "Act now" : "Waiting"}
               </span>
             ) : null}
-            {opened !== undefined ? (
+            {legalEnded !== undefined ? (
+              <span className={styles.phChip}>{legalEnded}</span>
+            ) : opened !== undefined ? (
               <span className={styles.phChip}>
                 open <span className={styles.mono}>{minutesText(Math.max(0, now - opened))}</span>
               </span>
@@ -352,7 +361,10 @@ export function AlertDetail({
         </div>
 
         {declines.length > 0 ? null : (
-          <dl className={styles.phFacts} data-testid={booking ? "alerts-drawer-booking" : undefined}>
+          <dl
+            className={`${styles.phFacts} ${redesign.phFactsWrap}`}
+            data-testid={booking ? "alerts-drawer-booking" : undefined}
+          >
             {phoneFacts.map(([label, value]) => (
               <div key={label}>
                 <dt>{label}</dt>
@@ -507,7 +519,9 @@ export function AlertDetail({
         <StatusGlyph tone={group === "act" ? "danger" : group === "wait" ? "warning" : "neutral"} />
         <span className={styles.detailTitle}>{item.title}</span>
         {/* Role view (transport officer): the age shows once, on Recorded times just below, when they show. */}
-        {opened !== undefined && (track.length === 0 || (kind === "declines" && declines.length > 0)) ? (
+        {legalEnded === undefined &&
+        opened !== undefined &&
+        (track.length === 0 || (kind === "declines" && declines.length > 0)) ? (
           <span className={styles.quiet}>
             open <span className={styles.mono}>{minutesText(Math.max(0, now - opened))}</span>
           </span>
@@ -534,9 +548,13 @@ export function AlertDetail({
         <section className={styles.detailSection} aria-label="Recorded times">
           <div className={styles.sectionHead}>
             <span className={styles.eyebrow}>{kind === "hold" ? "Time in ED" : "Recorded times"}</span>
-            <span className={`${styles.quiet} ${styles.mono}`}>
-              {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
-            </span>
+            {legalEnded !== undefined ? (
+              <span className={styles.quiet}>{legalEnded}</span>
+            ) : (
+              <span className={`${styles.quiet} ${styles.mono}`}>
+                {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
+              </span>
+            )}
           </div>
           <WaitTrack points={track} now={now} />
         </section>
