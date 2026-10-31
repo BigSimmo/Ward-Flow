@@ -123,6 +123,17 @@ const nextConfig: NextConfig = {
           path.join(projectRoot, "src/app/mockups/ward-flow-redesign/_preview/preview-screen-production.tsx"),
         ),
       );
+    // Phone size trim (31 Oct 2026): the kit barrel (src/components/wf/index.ts) only re-exports.
+    // Marking it free of side effects lets webpack link each import straight to the kit file that
+    // defines it, so a kit part used only by a lazy panel (the confirm dialog, for one) stays in
+    // that panel's chunk instead of riding in the shared chunk every page downloads first.
+    config.module = {
+      ...config.module,
+      rules: [
+        ...(config.module?.rules ?? []),
+        { test: /[\\/]src[\\/]components[\\/]wf[\\/]index\.ts$/, sideEffects: false },
+      ],
+    };
     return config;
   },
   async headers() {

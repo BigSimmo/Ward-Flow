@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Dialog } from "./dialog";
+import type { Dialog } from "./dialog";
 
 /**
  * The kit's styled confirm (#1118 handover: "Three window.confirm boxes remain ... They need a styled
@@ -14,6 +14,8 @@ import { Dialog } from "./dialog";
  * - Nothing is pre-selected and nothing happens until a choice is pressed.
  * - With no host mounted (a test, or a page outside the app frame) it falls back to the browser's
  *   own confirm box, so a guard never silently lets a change go.
+ * - Phone size trim (31 Oct 2026): the dialog's code is fetched just after the page starts, not in
+ *   the first download. If that fetch fails (offline), a question uses the browser's box instead.
  */
 export type ConfirmRequest = {
   /** Short title, for example "Leave this page?". */
@@ -67,8 +69,20 @@ function abandonOpenRequest() {
   current?.resolve(false);
 }
 
+type DialogPart = typeof Dialog;
+
+function loadDialog(): Promise<DialogPart> {
+  return import("./dialog").then((module) => module.Dialog);
+}
+
+/** The dialog code could not be fetched: ask in the browser's box so the question is still answered. */
+function answerInBrowserBox(current: Pending) {
+  settle(current, typeof window !== "undefined" ? window.confirm(current.message) : false);
+}
+
 export function ConfirmHost() {
   const [request, setRequest] = useState<Pending | null>(null);
+  const [LoadedDialog, setLoadedDialog] = useState<DialogPart | null>(null);
 
   useEffect(() => {
     showRequest = setRequest;
@@ -78,14 +92,34 @@ export function ConfirmHost() {
     };
   }, []);
 
+  // Fetches the dialog once the page has started. A question asked before it arrives waits for it.
+  useEffect(() => {
+    if (LoadedDialog) return;
+    let live = true;
+    loadDialog().then(
+      (part) => {
+        if (live) setLoadedDialog(() => part);
+      },
+      () => {
+        if (!live || !request) return;
+        setRequest(null);
+        answerInBrowserBox(request);
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [LoadedDialog, request]);
+
   // The question shown is the one answered: it comes from this host's state.
   const answer = (confirmed: boolean) => {
     setRequest(null);
     settle(request, confirmed);
   };
 
+  if (!LoadedDialog) return null;
   return (
-    <Dialog
+    <LoadedDialog
       open={request !== null}
       onClose={() => answer(false)}
       title={request?.title ?? ""}
