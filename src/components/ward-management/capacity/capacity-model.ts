@@ -37,7 +37,7 @@ const NO_PLANNED: never[] = [];
 export function useCapacityModel() {
   const {
     movements,
-    units: allUnits,
+    units: everyUnit,
     bedReleases,
     admissions,
     leaveBeds,
@@ -52,8 +52,8 @@ export function useCapacityModel() {
   // would read as a mismatch that is not there. Other sites stay as bed counts (`otherSiteRows`).
   const siteCode = access.role === "bed_manager" && access.scope.kind === "site" ? access.scope.siteCode : undefined;
   const units = useMemo(
-    () => (siteCode === undefined ? allUnits : [...ownUnits(access, allUnits)]),
-    [siteCode, access, allUnits],
+    () => (siteCode === undefined ? everyUnit : [...ownUnits(access, everyUnit)]),
+    [siteCode, access, everyUnit],
   );
 
   const gapRows = useMemo(() => bedKindGaps(movements, units, now, admissions), [movements, units, now, admissions]);
@@ -99,13 +99,13 @@ export function useCapacityModel() {
       siteCode === undefined
         ? []
         : networkWardRows(
-            allUnits.filter((unit) => unit.siteCode !== siteCode),
+            everyUnit.filter((unit) => unit.siteCode !== siteCode),
             now,
             bedReleases,
             admissions,
             leaveBeds,
           ),
-    [siteCode, allUnits, now, bedReleases, admissions, leaveBeds],
+    [siteCode, everyUnit, now, bedReleases, admissions, leaveBeds],
   );
   const otherSiteGroups = useMemo(
     () =>
@@ -113,13 +113,13 @@ export function useCapacityModel() {
         ? []
         : groupBedMapWardsByService(
             bedMapWards(
-              allUnits.filter((unit) => unit.siteCode !== siteCode),
+              everyUnit.filter((unit) => unit.siteCode !== siteCode),
               [...bedReleases],
               admissions,
               leaveBeds,
             ),
           ),
-    [siteCode, allUnits, bedReleases, admissions, leaveBeds],
+    [siteCode, everyUnit, bedReleases, admissions, leaveBeds],
   );
 
   const mapGroups = useMemo(
