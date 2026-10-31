@@ -106,22 +106,12 @@
   color: var(--wf-glyph-dim);
 }
 
-/* Act now (#249, site review 12 Oct 2026): the approved faint coral tint and a rounded coral
- * marker at the row's start, never a red box. `.row` is the positioned parent. */
+/* Act now (#249, site review 12 Oct 2026): the approved faint coral tint, never a red box. The
+ * coral marker at the row's start is gone (Josh, 31 Oct 2026: no coloured side edges); the row's
+ * glyph carries the tone. */
 .actNow {
   position: relative;
   background: var(--wf-act-tint);
-}
-
-.actNow::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-act-edge);
-  pointer-events: none;
 }
 
 .rowButton {
@@ -235,11 +225,4 @@
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-2);
-}
-
-@media (forced-colors: active) {
-  .actNow::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
 }

@@ -685,3 +685,38 @@
     mask-clip: no-clip;
   }
 }
+
+/*
+ * Kit standard (Josh, 30 October 2026; drawn and approved in the #1118 mock-ups as
+ * parts/kit-standard.css): one size for each kind of control on every page.
+ * - Segmented and pill tabs: 30px at 13px on a laptop or desktop.
+ * - On a phone the pill tabs sit on a 40px track with 32px options and a 48px tap area (an invisible
+ *   cover above and below), as Home's list tabs. The phone track sizes are the --wf-phone-seg-*
+ *   tokens. Underline tabs (`.tab`) are a different control and keep their 34px.
+ * Written as `html .x.x` so it wins over the size rules above at the same weight the mock-ups used.
+ */
+@media (min-width: 48.0625rem) {
+  :global(html) .segItem.segItem,
+  :global(html) .ptItem.ptItem {
+    height: 30px;
+    font-size: var(--wf-fs-13);
+  }
+}
+
+@media (max-width: 48rem) {
+  :global(html) .pt.pt {
+    padding: 3px;
+    overflow: visible;
+  }
+  :global(html) .ptItem.ptItem {
+    position: relative;
+    height: 32px;
+    min-height: 0;
+    font-weight: 600;
+  }
+  :global(html) .ptItem.ptItem::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+  }
+}
