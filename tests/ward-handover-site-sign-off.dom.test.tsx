@@ -111,6 +111,13 @@ describe("Site bed manager's site sign-off on Handover", () => {
     expect(screen.getByTestId("ward-handover-hero")).toHaveTextContent(rph[1]!.name);
   });
 
+  it("shows only beside the handover sheet, so opening a ward always lands on its sheet", async () => {
+    renderAtDesk(rphManager);
+    await screen.findByTestId("ward-handover-site-sign-off");
+    fireEvent.click(screen.getByRole("tab", { name: /History/ }));
+    expect(screen.queryByTestId("ward-handover-site-sign-off")).toBeNull();
+  });
+
   it("is not shown to any other desk", async () => {
     renderAtDesk({ role: "coordinator", scope: { kind: "statewide" } });
     await screen.findByTestId("ward-handover-hero");

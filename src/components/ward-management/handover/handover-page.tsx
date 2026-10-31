@@ -1476,7 +1476,7 @@ export function HandoverPage() {
     >
       {hero}
       {pastBanner}
-      {sheetOpen ? null : siteSignOff}
+      {sheetOpen || tab !== "pts" ? null : siteSignOff}
       {sheetOpen ? null : sinceStrip}
       {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} />}
       {sheetOpen ? null : toolbar}

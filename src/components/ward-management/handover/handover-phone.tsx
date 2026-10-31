@@ -98,7 +98,8 @@ export type HandoverPhoneProps = {
   meetingOn: boolean;
   onToggleMeeting: () => void;
   history: ReactNode;
-  /** Q61 to Q63: the site bed manager's site sign-off, first in the body; null for any other desk. */
+  /** Q61 to Q63: the site bed manager's site sign-off, first on the sheet tab only, so opening a ward lands on its
+   * sheet; null for any other desk. */
   siteSignOff?: ReactNode;
 };
 
@@ -569,7 +570,7 @@ export function HandoverPhone({
       />
 
       <div className={styles.main}>
-        {siteSignOff}
+        {tab === "pts" ? siteSignOff : null}
         <button
           type="button"
           className={styles.sinceCard}
