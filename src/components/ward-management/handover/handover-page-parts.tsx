@@ -11,9 +11,9 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 import { HEALTH_SERVICES, type Unit } from "@/components/ward-management/ward-model";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { accessIsWholeNetwork, edInScope, unitInScope } from "@/components/ward-management/ward-role-access";
-import { useWardNetwork } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { Card, Select, SrOnly, StatusGlyph } from "@/components/wf";
-import { HANDOVER_SHIFTS, handoverAt, handoverSignedAt } from "./handover-model";
+import { HANDOVER_SHIFTS, handoverAt, handoverSignOffPlace, handoverSignedAt } from "./handover-model";
 import styles from "./handover-refined.module.css";
 import { NETWORK_SCOPE_VALUE, handoverScopeValue } from "./handover-scope";
 import { allRecordsScopeLabel } from "./handover-scope-rules";
@@ -29,11 +29,15 @@ export function HandoverHistory({
   preparedAt,
   now,
 }: {
-  signOffs: readonly { at: Instant; by: WardFlowRole }[];
+  signOffs: readonly { at: Instant; by: WardFlowRole; unitId?: string; network?: true }[];
   meetings: { at: Instant; minutes: number }[];
   preparedAt: Instant | null;
   now: Instant;
 }) {
+  // Decision 41 (Josh, 31 Oct 2026): each sign-off says whose ward's sheet it signed; Q67: a
+  // whole-network desk's reads "Whole network". One saved before sign-offs named a ward reads "Ward
+  // not recorded"; a ward is never guessed for it (`handoverSignOffPlace`).
+  const units = useOptionalWardFlowSelect("units")?.units;
   const unsigned = HANDOVER_SHIFTS.filter((shift) => {
     return handoverAt(shift.id, now) <= now && handoverSignedAt(signOffs, shift.id, now) === null;
   });
@@ -41,10 +45,13 @@ export function HandoverHistory({
     <Card as="section" aria-label="Handover history" data-testid="ward-handover-history">
       <ul className={styles.history}>
         {[...signOffs].reverse().map((record) => (
-          <li key={`sign-${record.at}-${record.by}`}>
+          <li key={`sign-${record.at}-${record.by}-${record.unitId ?? (record.network ? "network" : "")}`}>
             <span className={styles.mono}>{formatInstantWithDay(record.at, now)}</span>
             <StatusGlyph tone="success" size={9} />
-            <span>Handover signed off as {record.by === "coordinator" ? "bed coordinator" : record.by}</span>
+            <span>
+              Handover signed off as {record.by === "coordinator" ? "bed coordinator" : record.by} ·{" "}
+              {handoverSignOffPlace(record, units)}
+            </span>
           </li>
         ))}
         {preparedAt !== null ? (

@@ -1,5 +1,6 @@
 // Closing the loop, package D (24 Oct 2026).
 import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";
+import { defaultHandoverShift, handoverAt } from "@/components/ward-management/handover/handover-model";
 import {
   activeWardRestrictions,
   closureTransitionItems,
@@ -722,6 +723,14 @@ export function candidateEvents(
     case "EVALUATE_LEAVE_BED_WARNINGS":
     case "RECORD_HANDOVER_SIGN_OFF":
       return [{ type, role, now }];
+    case "RECORD_SITE_HANDOVER_SIGN_OFF":
+      return [...new Set(state.units.map((unit) => unit.siteCode))].map((siteCode) => ({
+        type,
+        role,
+        now,
+        siteCode,
+        shiftAt: handoverAt(defaultHandoverShift(now), now),
+      }));
     case "CONFIRM_MORNING_ROLLUP":
       return unitIds.map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId, expectedDischarges: 0 }));
     case "SEND_WARD_BUZZ":
@@ -2082,6 +2091,7 @@ export function undoOf(
     ...(fields.admissionId !== undefined ? { admissionId: fields.admissionId } : {}),
     ...(actingUnitId !== undefined ? { actingUnitId } : {}),
     ...(event.type === "COMPLETE_BED_MEETING_ACTION" ? { subject: event.subject, action: event.action } : {}),
+    ...(event.type === "RECORD_SITE_HANDOVER_SIGN_OFF" ? { siteCode: event.siteCode } : {}),
   } as WardFlowEvent;
   const state = wardFlowReducer(applied, undo);
   return state.rejections.length === applied.rejections.length ? { type: undoType, state } : undefined;

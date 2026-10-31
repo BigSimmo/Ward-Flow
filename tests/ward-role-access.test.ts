@@ -34,6 +34,7 @@ import {
   homeHrefFor,
   screenDecision,
   screenForPath,
+  seesNetworkBedFigures,
   type WardAccess,
 } from "../src/components/ward-management/ward-role-access";
 import {
@@ -64,6 +65,19 @@ describe("the access table", () => {
     for (const screen of WARD_SCREEN_IDS) expect(ROLE_SCREENS.coordinator[screen], screen).toBe("all");
   });
 
+  it("hides the network bed figures from the transport officer and the access admin (decision 47)", () => {
+    expect(WARD_ACCESS_ROLES.filter((role) => !seesNetworkBedFigures(role))).toEqual(["officer", "admin"]);
+  });
+
+  it("opens the bed meeting agenda to the site bed manager, and to no other desk but the coordinator (decision 46)", () => {
+    const places = wardPlaceLookup(seedWardFlowState().units);
+    const address = screenForPath("/ward-flow/bed-meeting/agenda");
+    expect(address).toEqual({ screen: "bed-meeting-agenda" });
+    const bedManager: WardAccess = { role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } };
+    expect(screenDecision(bedManager, address, places)).toEqual({ open: true, grant: "own" });
+    expect(screenDecision(wardDesk, address, places)).toEqual({ open: false, why: "role" });
+  });
+
   it("gives the transport officer only transport, alerts, on-call and settings", () => {
     expect(Object.keys(ROLE_SCREENS.officer).sort()).toEqual(["alerts", "officer", "on-call", "settings"]);
   });
@@ -75,6 +89,8 @@ describe("the access table", () => {
       bed_manager: {
         alerts: "own",
         "bed-meeting": "own",
+        // Decision 46 (31 Oct 2026): its own site's agenda, read only.
+        "bed-meeting-agenda": "own",
         board: "own",
         capacity: "own",
         delays: "own",

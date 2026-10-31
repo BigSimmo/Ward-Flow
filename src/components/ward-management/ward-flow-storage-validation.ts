@@ -1047,6 +1047,19 @@ const storedState = z.looseObject({
       .check(z.refine((rows) => new Set(rows.map((row) => row.admissionId)).size === rows.length)),
   ),
   handoverSignOffs: z.array(stamped),
+  // Q61 (31 Oct 2026): site handover sign-offs, absent in older saves. Ids, times and a role only.
+  siteHandoverSignOffs: z.optional(
+    z.array(
+      z.strictObject({
+        at: finite,
+        by: role,
+        siteCode: id,
+        shiftAt: finite,
+        unsignedUnitIds: strings,
+        unansweredBedCallIds: strings,
+      }),
+    ),
+  ),
   clinicalContacts: z.array(
     z.extend(stamped, { teamId: text.check(z.refine((teamId) => communityTeamById(teamId) !== null)) }),
   ),

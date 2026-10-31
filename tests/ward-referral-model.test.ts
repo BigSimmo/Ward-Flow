@@ -700,6 +700,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // handlers changes a referral or placement decision or declines a named subject.
     RECORD_REPATRIATION: false,
     RECORD_HANDOVER_SIGN_OFF: false,
+    // Q61 (31 Oct 2026): a site handover sign-off names wards and bed calls; it refuses nobody.
+    RECORD_SITE_HANDOVER_SIGN_OFF: false,
     RECORD_CLINICAL_CONTACT: false,
     DISPATCH_BROADCAST_ALERT: false,
     ACKNOWLEDGE_BROADCAST_ALERT: false,
@@ -742,6 +744,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     UNDO_ABSENT_WITHOUT_LEAVE: false,
     // H-0150: takes back marking a bed meeting action done; refuses nobody.
     UNDO_BED_MEETING_ACTION: false,
+    UNDO_SITE_HANDOVER_SIGN_OFF: false,
   };
 
   /**

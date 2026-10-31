@@ -45,6 +45,7 @@ export type UndoEvent = Extract<
       | "UNDO_SUPPORT_NOTIFICATION"
       | "UNDO_REPATRIATION"
       | "UNDO_HANDOVER_SIGN_OFF"
+      | "UNDO_SITE_HANDOVER_SIGN_OFF"
       | "UNDO_ED_STEP"
       | "UNDO_TRANSPORT_STEP"
       | "UNDO_DEPARTURE"
@@ -248,6 +249,7 @@ export function reduceUndoEvent(
     case "UNDO_SUPPORT_NOTIFICATION":
     case "UNDO_REPATRIATION":
     case "UNDO_HANDOVER_SIGN_OFF":
+    case "UNDO_SITE_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":

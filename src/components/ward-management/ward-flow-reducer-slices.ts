@@ -25,6 +25,7 @@ import { reduceUndoEvent } from "./ward-flow-undo-events";
 import { reduceWardClosureEvent } from "./ward-flow-ward-closure-events";
 import { reducePatientArchive } from "./ward-patient-archive-reducer";
 import { reducePatientRegistration } from "./ward-patient-registration-reducer";
+import { reduceSiteHandoverSignOff } from "./site-sign-off/site-handover-sign-off-reducer";
 // A local command can seed a demonstration scenario, so its networks load with the slices.
 import "./ward-scenario-networks";
 
@@ -49,6 +50,7 @@ const slices = {
   reduceReferralSendEvent,
   reduceReleaseNoticeEvent,
   reduceRestrictivePracticeEvent,
+  reduceSiteHandoverSignOff,
   reduceTransportEvent,
   reduceUndoEvent,
   reduceWardClosureEvent,
