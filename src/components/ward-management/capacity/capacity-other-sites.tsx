@@ -69,7 +69,9 @@ export function OtherSitesCounts({ model, focusUnitId }: { model: CapacityModel;
                 onClick={() => toggle(group.service)}
               >
                 {isOpen ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
-                <span className={styles.name}>{group.service}</span>
+                <span className={styles.name}>
+                  <SpelledCodes text={group.service} />
+                </span>
                 <span className={styles.muted}>{group.wards.length} wards</span>
                 <span className={styles.figures}>
                   <b>{groupReady} ready</b> · {groupClosed} closed · {percent(groupInUse, groupBeds)} in use

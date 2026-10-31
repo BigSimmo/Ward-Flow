@@ -73,9 +73,11 @@ describe("capacity labels say what each figure counts", () => {
   it("Capacity phone hero says occupancy includes pulled beds", () => {
     const seed = seedWardFlowState();
     renderCapacity(true);
-    const pulled = screen.getAllByText(/^Of beds in use, including (\d+) pulled$/u);
-    expect(pulled.length).toBeGreaterThan(0);
-    expect(Number(/(\d+) pulled/u.exec(pulled[0]!.textContent ?? "")?.[1])).toBeGreaterThan(0);
+    // The pulled count is the "Beds pulled" stat beside it; this label says occupancy includes them.
+    expect(screen.getAllByText(/^In use, including pulled$/u).length).toBeGreaterThan(0);
+    expect(Number(screen.getAllByText("Beds pulled")[0]!.previousElementSibling?.textContent ?? "0")).toBeGreaterThan(
+      0,
+    );
     expect(seed.units.length).toBeGreaterThan(0);
   });
 

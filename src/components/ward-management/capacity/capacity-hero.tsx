@@ -91,8 +91,9 @@ export function CapacityHero({
             <HeroStat value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
             <HeroStat
               value={formatWardOccupancy(occupancy, "Not known")}
-              // Occupancy counts pulled beds as in use (audit P100, D-81), so the label says so.
-              label={model.pulled > 0 ? `Of beds in use, including ${model.pulled} pulled` : "Of beds in use"}
+              // Occupancy counts pulled beds as in use (audit P100, D-81), so the label says so; the count
+              // itself is the Beds pulled stat beside it, which keeps the label to two lines.
+              label={model.pulled > 0 ? "In use, including pulled" : "Of beds in use"}
             />
           </>
         ) : undefined

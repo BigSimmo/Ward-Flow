@@ -120,6 +120,8 @@ export function BedMapCards({
           // An empty service is said in words, never dropped: a missing service reads as no such
           // beds exist (census §8 and the old network table's sentence).
           if (group.wards.length === 0) {
+            // A site bed manager's map holds its own site only; the other services are in Other sites.
+            if (model.site) return null;
             return (
               <p key={group.service} className={styles.mapEmpty}>
                 <SpelledCodes text={`${group.service} has no inpatient unit reporting to this board.`} />
