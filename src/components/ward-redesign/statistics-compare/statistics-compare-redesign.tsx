@@ -43,7 +43,7 @@ import { wardReferralTally } from "@/components/ward-management/statistics/stati
 import { PhoneBody, phoneBodyStyles as phone } from "@/components/ward-management/statistics/statistics-phone-parts";
 import compare from "./statistics-compare-redesign.module.css";
 import { CompareSheetRow } from "./statistics-compare-sheet-row";
-import { FindUnitLink } from "@/components/ward-redesign/statistics/statistics-view-switch";
+import { FindUnitLink } from "@/components/ward-management/statistics/statistics-view-switch";
 import { FIRST_ROWS, ShowAllRow } from "./statistics-compare-show-all";
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
 import {

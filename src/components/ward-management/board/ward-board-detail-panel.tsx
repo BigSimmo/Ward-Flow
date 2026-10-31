@@ -1,10 +1,13 @@
 "use client";
 
+// Redesign (approved 31 Oct 2026): the kit's small close, and the inner cards on the card radius.
+
 // The bed board's right column: the detail panel for the chosen tile, with the person's plan and
 // the ward's recording controls. Split out of ward-board.tsx to keep that file under the line cap;
 // WardBoard still owns every value and passes it in.
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
-import { Field, Select, TextInput } from "@/components/wf";
+import { Button, Field, Select, TextInput, buttonClass, cx } from "@/components/wf";
+import { X } from "lucide-react";
 import {
   LEAVING_DESTINATIONS,
   DISCHARGE_BARRIERS,
@@ -19,6 +22,7 @@ import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { parseReleaseDayInstant } from "@/components/ward-management/ward/release-day";
 import styles from "./board.module.css";
+import redesign from "./ward-board-panels.module.css";
 import { departureTimeInputValue, type Occupant, type ShiftTileItem, type Tile } from "./ward-board-model";
 
 import type { Dispatch, RefObject, SetStateAction } from "react";
@@ -26,6 +30,12 @@ import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { PersonEntry } from "./ward-board-person-entry";
 import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
+
+/** Redesign: the record's buttons are the kit's, so the panel matches the rest of the page. */
+// Long labels ("Record that they have gone to an emergency department") wrap inside the panel
+// instead of running past its edge (QA 31 Oct 2026).
+const SEC_BUTTON = cx(buttonClass({ variant: "sec" }), redesign.detailButtonWrap);
+const PRI_BUTTON = cx(buttonClass({ variant: "pri" }), redesign.detailButtonWide, redesign.detailButtonWrap);
 
 export function WardBoardDetailPanel({
   admissions,
@@ -100,7 +110,7 @@ export function WardBoardDetailPanel({
 }) {
   return (
     <aside
-      className={styles.detail}
+      className={cx(styles.detail, redesign.detail)}
       id="ward-board-detail"
       aria-labelledby="ward-board-detail-heading"
       data-testid="ward-board-detail"
@@ -108,8 +118,8 @@ export function WardBoardDetailPanel({
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it
       tabIndex={0}
     >
-      <div className={styles.detailBar}>
-        <h2 id="ward-board-detail-heading" className={styles.detailHeading}>
+      <div className={cx(styles.detailBar, redesign.detailBar)}>
+        <h2 id="ward-board-detail-heading" className={cx(styles.detailHeading, redesign.detailHeading)}>
           {selectedTile === null
             ? "Who is in a bed"
             : selectedTile.kind === "occupied" || selectedTile.kind === "waiting"
@@ -123,14 +133,19 @@ export function WardBoardDetailPanel({
         {/* No Close on an empty panel — there is nothing to close, and a control that does
                 nothing is worse than no control. */}
         {selectedTile !== null && (
-          <button
-            type="button"
-            className={styles.detailClose}
+          // Redesign: the kit's small close (a ghost icon button with a 40px invisible tap area), in
+          // place of the board's tall square Close.
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={X}
+            // Today's accessible name, so it never doubles the phone sheet's own "Close bed record".
+            aria-label="Close"
+            className={redesign.detailClose}
             onClick={closeDetail}
             data-testid="ward-board-detail-close"
-          >
-            Close
-          </button>
+          />
         )}
       </div>
 
@@ -143,7 +158,7 @@ export function WardBoardDetailPanel({
         <>
           {selectedTile.kind === "occupied" || selectedTile.kind === "waiting" ? (
             selectedOccupant !== null ? (
-              <div className={styles.person} data-testid="ward-board-detail-person">
+              <div className={cx(styles.person, redesign.person)} data-testid="ward-board-detail-person">
                 <PersonEntry
                   occupant={selectedOccupant}
                   idPrefix="ward-board-selected-person"
@@ -177,7 +192,7 @@ export function WardBoardDetailPanel({
                     />
                     <button
                       type="button"
-                      className={styles.leavingButton}
+                      className={PRI_BUTTON}
                       data-testid="ward-board-record-leaving-submit"
                       onClick={(e) => {
                         const executeLeaving = (leavingDestination: LeavingDestination) => {
@@ -220,7 +235,7 @@ export function WardBoardDetailPanel({
                   <div className={styles.detailSecondaryActions}>
                     <button
                       type="button"
-                      className={styles.detailSecondaryBtn}
+                      className={SEC_BUTTON}
                       data-tone="warn"
                       onClick={() => {
                         dialogTriggerRef.current =
@@ -296,17 +311,17 @@ export function WardBoardDetailPanel({
                             onChange={(event) => setDateEdit({ ...dateEdit, time: event.target.value })}
                           />
                         </Field>
-                        <button type="submit" className={styles.detailSecondaryBtn}>
+                        <button type="submit" className={SEC_BUTTON}>
                           Save departure date
                         </button>
-                        <button type="button" className={styles.detailSecondaryBtn} onClick={() => setDateEdit(null)}>
+                        <button type="button" className={SEC_BUTTON} onClick={() => setDateEdit(null)}>
                           Cancel date change
                         </button>
                       </form>
                     ) : (
                       <button
                         type="button"
-                        className={styles.detailSecondaryBtn}
+                        className={SEC_BUTTON}
                         onClick={() => {
                           const admission = admissions.find((row) => row.id === selectedTile.key);
                           if (admission)
@@ -324,7 +339,7 @@ export function WardBoardDetailPanel({
                       {selectedOccupant.awayAtEdHours === null ? (
                         <button
                           type="button"
-                          className={`${styles.detailSecondaryBtn} ${styles.fullWidthBtn}`}
+                          className={`${SEC_BUTTON} ${styles.fullWidthBtn}`}
                           data-testid="ward-board-record-away-submit"
                           onClick={(e) => {
                             const executeAway = () => {
@@ -356,7 +371,7 @@ export function WardBoardDetailPanel({
                       ) : (
                         <button
                           type="button"
-                          className={`${styles.detailSecondaryBtn} ${styles.fullWidthBtn}`}
+                          className={`${SEC_BUTTON} ${styles.fullWidthBtn}`}
                           data-tone="good"
                           data-testid="ward-board-record-returned-submit"
                           onClick={() =>
@@ -385,7 +400,7 @@ export function WardBoardDetailPanel({
                     <div data-testid="ward-board-stepdown-container" className={styles.fullRowSpaced}>
                       <button
                         type="button"
-                        className={`${styles.detailSecondaryBtn} ${styles.fullWidthBtn}`}
+                        className={`${SEC_BUTTON} ${styles.fullWidthBtn}`}
                         data-tone={selectedOccupant.stepDownCandidate ? "good" : undefined}
                         data-testid="ward-board-stepdown-toggle"
                         onClick={() => {
@@ -414,12 +429,14 @@ export function WardBoardDetailPanel({
                           className={`${styles.barrierSelectGroup} ${styles.fullRowSpaced}`}
                           data-testid="ward-board-barrier-container"
                         >
-                          <label htmlFor="ward-board-barrier-select" className={styles.leavingLabel}>
+                          <label
+                            htmlFor="ward-board-barrier-select"
+                            className={cx(styles.leavingLabel, redesign.fieldLabel)}
+                          >
                             Primary Discharge Barrier (Stay: {selectedOccupant.days} days)
                           </label>
-                          <select
+                          <Select
                             id="ward-board-barrier-select"
-                            className={styles.leavingSelect}
                             data-testid="ward-board-barrier-select"
                             value={selectedOccupant.dischargeBarrier ?? "None"}
                             onChange={(e) => {
@@ -441,7 +458,7 @@ export function WardBoardDetailPanel({
                                 {barrier}
                               </option>
                             ))}
-                          </select>
+                          </Select>
                         </div>
                       )}
                   </div>
@@ -502,12 +519,11 @@ export function LeavingDestinationField({
 }) {
   return (
     <>
-      <label className={styles.leavingLabel} htmlFor={id}>
+      <label className={cx(styles.leavingLabel, redesign.fieldLabel)} htmlFor={id}>
         Where are they going?
       </label>
-      <select
+      <Select
         id={id}
-        className={styles.leavingSelect}
         data-testid={id}
         value={value}
         required
@@ -521,7 +537,7 @@ export function LeavingDestinationField({
             {destination.label}
           </option>
         ))}
-      </select>
+      </Select>
     </>
   );
 }

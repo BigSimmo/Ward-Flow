@@ -58,7 +58,9 @@ function openFutureDepartureEditor() {
   fireEvent.click(screen.getByRole("button", { name: "Set future departure fixture" }));
   const probe = screen.getByTestId("departure-probe");
   expect(probe).toHaveAttribute("data-date", String(RECORDED_DEPARTURE));
-  fireEvent.click(document.getElementById(`ward-board-tile-${probe.getAttribute("data-admission")}`)!);
+  const tile = document.getElementById(`ward-board-tile-${probe.getAttribute("data-admission")}`)!;
+  // The record already opens on the first bed that needs a look (redesign point 16), so press only a closed tile.
+  if (tile.getAttribute("aria-pressed") !== "true") fireEvent.click(tile);
   fireEvent.click(screen.getByRole("button", { name: "Move the date" }));
   expect(screen.getByLabelText("Expected departure time")).toHaveAttribute("type", "time");
   expect(screen.getByLabelText("Expected departure time")).toHaveValue("14:07");

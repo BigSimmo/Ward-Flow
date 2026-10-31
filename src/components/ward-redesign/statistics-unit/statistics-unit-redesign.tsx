@@ -47,7 +47,7 @@ import {
   STATISTICS_WARDS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 // D-91: the one unit finder, on the Summary page.
-import { STATISTICS_UNIT_FINDER_HREF } from "@/components/ward-redesign/statistics/statistics-view-switch";
+import { STATISTICS_UNIT_FINDER_HREF } from "@/components/ward-management/statistics/statistics-view-switch";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";

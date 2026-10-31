@@ -16,6 +16,7 @@ import { ReferralMatchView } from "@/components/ward-management/referrals/referr
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { getBedStep, queryBedStep } from "./helpers/ward-bed-steps";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { WardBedDossierDrawer } from "@/components/ward-management/ward/ward-bed-dossier-drawer";
@@ -77,14 +78,14 @@ describe("discharge actions stay usable and accessible across filters", () => {
         .map((option) => option.textContent),
     ).toEqual(labels);
     fireEvent.change(screen.getByRole("combobox", { name: "Blocker" }), { target: { value: "pharmacy" } });
-    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Bed releases: \d+ blocked/);
+    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Bed releases: \d+ held up/);
     fireEvent.click(screen.getByRole("button", { name: /^History/ }));
     expect(within(screen.getByRole("combobox", { name: "Blocker" })).getAllByRole("option")).toHaveLength(
       labels.length,
     );
     fireEvent.change(screen.getByRole("combobox", { name: "Blocker" }), { target: { value: "pharmacy" } });
     expect(screen.getByRole("combobox", { name: "Blocker" })).toHaveValue("pharmacy");
-    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Admission records: \d+ blocked/);
+    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Admission records: \d+ held up/);
   });
 });
 
@@ -135,8 +136,8 @@ describe("bed dossier inbound bed", () => {
         />
       </WardFlowProvider>,
     );
-    expect(screen.queryByRole("button", { name: /Record blocker/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Mark at an ED/ })).toBeNull();
+    expect(queryBedStep(/Record blocker/)).toBeNull();
+    expect(queryBedStep(/Mark at an ED/)).toBeNull();
   });
 
   it("still offers the blocker and ED actions on a bed with an admission", () => {
@@ -164,8 +165,9 @@ describe("bed dossier inbound bed", () => {
         />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("button", { name: /Record blocker/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Mark at an ED/ })).toBeInTheDocument();
+    // Redesign (31 Oct 2026): steps past the first two sit under More, so they are found wherever they are.
+    expect(getBedStep(/Record blocker/)).toBeInTheDocument();
+    expect(getBedStep(/Mark at an ED/)).toBeInTheDocument();
   });
 });
 
@@ -232,7 +234,8 @@ describe("ward board departure correction uses the real admission", () => {
     );
     const tileButton = document.getElementById(`ward-board-tile-${admission.id}`)!;
     expect(tileButton).not.toBeNull();
-    fireEvent.click(tileButton);
+    // The record already opens on the first bed that needs a look (redesign point 16), so press only a closed tile.
+    if (tileButton.getAttribute("aria-pressed") !== "true") fireEvent.click(tileButton);
     const probe = screen.getByTestId("admission-date-probe");
     const original = probe.getAttribute("data-date");
     const leaveCount = probe.getAttribute("data-leave-count");

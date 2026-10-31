@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 /**
- * Population guards exercise every live row. The Delays board folds the lower blocker groups and
- * shows five rows per group, so this opens every group and every "Show N more" before returning.
+ * Population guards exercise every live row. The Waiting board folds the lower blocker groups (By
+ * blocker) or wait bands (Longest wait) and shows the first few rows of each, so this opens every
+ * group and band and every "Show N more" before returning.
  */
 export function renderAllDelays(...args: Parameters<typeof render>): ReturnType<typeof render> {
   const result = render(...args);
@@ -12,11 +13,11 @@ export function renderAllDelays(...args: Parameters<typeof render>): ReturnType<
   return result;
 }
 
-/** Opens every folded blocker group and every "Show N more" row in the Waiting table. */
+/** Opens every folded blocker group or wait band, and every "Show N more" row, in the Waiting table. */
 export function showEveryDelayRow(): void {
   const waiting = screen.queryByRole("region", { name: "Waiting" });
   if (waiting === null) return;
-  for (const header of within(waiting).queryAllByTestId(/^delays-cause-/u)) {
+  for (const header of within(waiting).queryAllByTestId(/^delays-(?:cause|band)-/u)) {
     if (header.getAttribute("aria-expanded") === "false") fireEvent.click(header);
   }
   for (const more of within(waiting).queryAllByRole("button", { name: /^Show \d+ more$/u })) {

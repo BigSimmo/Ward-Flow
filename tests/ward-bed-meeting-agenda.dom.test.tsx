@@ -23,7 +23,9 @@ describe("bed meeting agenda", () => {
         <BedMeetingAgendaScreen />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent("No actions are waiting.");
+    expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent(
+      "No actions waiting from earlier meetings",
+    );
     const waits = screen.getByTestId("bed-meeting-agenda-ed-waits");
     fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[0]!);
 
@@ -45,7 +47,7 @@ describe("bed meeting agenda", () => {
 
     fireEvent.click(within(list).getByTestId("bed-meeting-action-done"));
     expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent(
-      "No actions are waiting · 1 done in the last day.",
+      "No actions waiting from earlier meetings · 1 done in the last day",
     );
   });
 
@@ -73,5 +75,22 @@ describe("bed meeting agenda", () => {
     expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent(
       "1 done in the last day · 0 overdue · 1 still open",
     );
+  });
+
+  it("opens the same bed meeting sheet as Capacity and starts the meeting on the TV (core pages redesign)", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Agenda");
+    expect(screen.getByTestId("agenda-start-meeting")).toHaveAttribute("href", "/ward-flow/bed-meeting");
+    fireEvent.click(screen.getByTestId("bed-meeting-sheet-open"));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("bed-meeting-sheet-print")).toBeInTheDocument();
+    // The lists keep a small action button on every row, named for the person.
+    const waits = screen.getByTestId("bed-meeting-agenda-ed-waits");
+    const [first] = within(waits).getAllByTestId("bed-meeting-add-action");
+    expect(first).toHaveAccessibleName(/^Add an action for /u);
   });
 });

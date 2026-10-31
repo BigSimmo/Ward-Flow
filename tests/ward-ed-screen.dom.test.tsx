@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { showWardTable } from "./helpers/capacity-ward-table";
+import { bedMapCards, wardCardName } from "./helpers/capacity-ward-table";
 import { expectSays } from "./helpers/ward-caption";
 
 // Same reason as the sibling dom suites (ward-screen.dom.test.tsx,
@@ -70,8 +70,15 @@ function renderCapacity() {
       <CapacityScreen />
     </WardFlowProvider>,
   );
-  showWardTable();
   return view;
+}
+
+/** One ward's card on Capacity's bed map, folded group or not. */
+function bedMapCard(unitId: string): HTMLButtonElement {
+  const name = allUnits().find((unit) => unit.id === unitId)!.name;
+  const card = bedMapCards().find((candidate) => wardCardName(candidate) === name);
+  if (!card) throw new Error(`The bed map draws no card for ${unitId}.`);
+  return card;
 }
 
 function renderEd() {
@@ -828,7 +835,9 @@ describe("the statewide capacity table the ED page links to says which ready bed
   /*
    * ED A2 (owner pick, 11 Oct 2026): the ED page no longer repeats the statewide capacity table; it
    * links to the Capacity screen, which owns it. The ruling below travels with the table, so these
-   * assertions now read that screen's network table and also pin the ED page's link to it.
+   * assertions read that screen and also pin the ED page's link to it. Since the Capacity redesign
+   * (31 Oct 2026) the network table is gone and each ward is a card on the bed map, so they read
+   * the ward's card: its Ready figure and its note line.
    */
   /*
    * 🔴 **OWNER RULING 2026-09-05, CARRIED TO THIS SCREEN 2026-09-06.** "Ready" counts beds the
@@ -862,19 +871,19 @@ describe("the statewide capacity table the ED page links to says which ready bed
     );
     cleanup();
     renderCapacity();
-    const row = screen.getByTestId(`ward-capacity-network-row-${PREPARING_UNIT}`);
-    const cell = within(row).getByTestId("ward-capacity-network-ready");
-    const note = within(cell).getByTestId("ward-capacity-network-pending");
+    const card = bedMapCard(PREPARING_UNIT);
+    const note = card.querySelector<HTMLElement>('[class*="wardNote"]');
+    expect(note, "the ward's card shows no note line").not.toBeNull();
 
-    expect(note).toHaveTextContent(/still being made ready/u);
+    expect(note).toHaveTextContent(/being made ready/u);
 
     /*
-     * The figure is read with the note stripped out, and compared against `unitCapacity` — the same
-     * derivation the screen calls. Asserting the whole cell's text would conflate the ruling working
-     * with the defect it forbids, which is exactly how the sibling guard on the ward screen came to
-     * go red for the right behaviour.
+     * The figure is read on its own, and compared against `unitCapacity`, the ward's availability
+     * before any cleaning count (the bed map draws it from `bedStates`). Asserting the whole card's text would conflate the ruling working with the
+     * defect it forbids, which is exactly how the sibling guard on the ward screen came to go red
+     * for the right behaviour.
      */
-    const figure = (cell.textContent ?? "").replace(note.textContent ?? "", "").trim();
+    const figure = (card.querySelector('[class*="wardReadyN"]')?.textContent ?? "").trim();
     const unit = allUnits().find((candidate) => candidate.id === PREPARING_UNIT)!;
     expect(figure, "the cleaning count was subtracted from Ready; the owner ruled the number does not move").toBe(
       String(unitCapacity(unit, bedReleases).available),
@@ -890,11 +899,10 @@ describe("the statewide capacity table the ED page links to says which ready bed
       (unit) => !bedReleases.some((r) => r.unitId === unit.id && r.state === "discharged" && r.preparing),
     )!;
     renderCapacity();
-    const quietRow = screen.getByTestId(`ward-capacity-network-row-${quiet.id}`);
     expect(
-      within(quietRow).queryByTestId("ward-capacity-network-pending"),
+      bedMapCard(quiet.id).textContent,
       `${quiet.id} has nothing being made ready and must not claim it does`,
-    ).toBeNull();
+    ).not.toMatch(/being made ready/u);
   });
 });
 

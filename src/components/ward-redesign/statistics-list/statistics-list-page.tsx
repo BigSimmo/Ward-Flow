@@ -1,7 +1,7 @@
 "use client";
 
 import { StatisticsListRedesign } from "./statistics-list-redesign";
-import chipFade from "@/components/ward-redesign/statistics/statistics-chip-fade.module.css";
+import chipFade from "@/components/ward-management/statistics/statistics-nav.module.css";
 
 /** Every ward in one table, as the app's `/ward-flow/statistics/wards` opens. */
 export function StatisticsListPage() {

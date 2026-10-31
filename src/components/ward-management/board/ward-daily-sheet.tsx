@@ -24,7 +24,6 @@ import {
   stayDayNumber,
   type Admission,
 } from "@/components/ward-management/ward-admissions";
-import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { arrowTargets, sinceYesterday } from "@/components/ward-management/ward-board-derivations";
 import { releaseBand } from "@/components/ward-management/ward-bed-availability";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
@@ -73,8 +72,6 @@ export type DailySheetPerson = {
   /** `null` for an admission created by an ED arrival - Task 17, 2026-08-30. The sheet says so in
    *  words; it never omits the person and never guesses a region. */
   homeRegion: string | null;
-  /** Already phrased by `tentativeDiagnosisPhrase`, never a bare block code. */
-  tentativeDiagnosis: string | null;
   /**
    * Whole hours at an emergency department, or `null` while the person is on the ward.
    *
@@ -155,7 +152,6 @@ export function dailySheetPeople(admissions: readonly Admission[], unitId: strin
       pastDate: isPastExpectedDischarge(admission, now),
       sex: admission.sex,
       homeRegion: admission.homeRegion,
-      tentativeDiagnosis: tentativeDiagnosisPhrase(admission.tentativeDiagnosis),
       awayAtEdHours:
         admission.awayAtEmergencyDepartmentSince === null
           ? null
@@ -226,7 +222,7 @@ function SheetPerson({ person, testId, tone }: { person: DailySheetPerson; testI
         </p>
         {/*
          * DIRECTLY AFTER THE LEAD, and above everything else about them, because it changes what
-         * every line below it means: a day count, a discharge plan and a diagnosis all read
+         * every line below it means: a day count and a discharge plan both read
          * differently about somebody who is not on the ward. Only for the people it applies to, and
          * it says the bed is still theirs in the same breath: "away" on a bed sheet otherwise reads
          * as "so the bed is free", and it is not — the ward is holding it.
@@ -239,15 +235,8 @@ function SheetPerson({ person, testId, tone }: { person: DailySheetPerson; testI
           </p>
         )}
         <p className={styles.rowLine}>{personFacts(person)}</p>
-        {/* "Tentative" leads the line, as it does on the board's own panel and for the same reason: a
-          reader scanning a column takes the first words of each row, so a qualification at the end is
-          the half that gets skipped. Both states are stated; silence would leave a reader unable to
-          tell "nobody wrote one down" from "this sheet does not show them". */}
-        <p className={styles.rowLine}>
-          {person.tentativeDiagnosis !== null
-            ? `Tentative diagnosis: ${person.tentativeDiagnosis}.`
-            : "Tentative diagnosis: none recorded."}
-        </p>
+        {/* Josh, 30 Oct 2026: no tentative diagnosis on the shift brief, because the brief is printed
+          and a printed sheet can be left lying around. The board's own panel still shows it. */}
         {person.blockReason !== null && <p className={styles.rowLine}>Held up by: {person.blockReason}.</p>}
         {person.pastDate && person.expectedDays !== null && (
           <p className={styles.rowLine}>
@@ -515,17 +504,16 @@ export function WardDailySheet({
         that takes no box, so the line still reads "3 left this ward" end to end. */}
       <div className={styles.tiles}>
         <FigureTile value={resolvedOutgoingCount} label={outgoingTileLabel(resolvedOutgoingBasis)} />
-        <FigureTile value={resolvedIncomingPulled} label="pulled" />
+        {/* Each tile names its period, so "pulled now" and "pulled in 24h" no longer read as one
+            figure with two values. */}
+        <FigureTile value={resolvedIncomingPulled} label="pulled now" />
         <FigureTile value={resolvedIncomingWaitlisted} label="waiting, no bed" />
         <div className={styles.tileGroup} data-testid="ward-daily-sheet-since" style={TNUM}>
-          <FigureTile value={resolvedMovement.discharged} label="left this ward" />
-          <FigureTile
-            value={resolvedMovement.pulled}
-            label={`bed${resolvedMovement.pulled === 1 ? "" : "s"} given away`}
-          />
+          <FigureTile value={resolvedMovement.discharged} label="left in 24h" />
+          <FigureTile value={resolvedMovement.pulled} label="pulled in 24h" />
           <FigureTile
             value={resolvedMovement.datesMoved}
-            label={`expected date${resolvedMovement.datesMoved === 1 ? "" : "s"} moved`}
+            label={`date${resolvedMovement.datesMoved === 1 ? "" : "s"} moved in 24h`}
           />
         </div>
       </div>
@@ -557,17 +545,7 @@ export function WardDailySheet({
               <p className={styles.empty}>Nobody is recorded as coming in to this ward.</p>
             ) : (
               <ul className={styles.rows}>
-                <li className={styles.row}>
-                  <span className={styles.rowGlyph}>
-                    <StatusGlyph tone="info" />
-                  </span>
-                  <p className={styles.rowLead}>
-                    <span className={styles.rowLeadText}>Bed already given away</span>{" "}
-                    <span className={styles.rowValue} style={TNUM}>
-                      {resolvedIncomingPulled}
-                    </span>
-                  </p>
-                </li>
+                {/* Josh, 31 Oct 2026: no "Bed already given away" row; the Pulled now tile above says it. */}
                 <li className={styles.row}>
                   <span className={styles.rowGlyph}>
                     <StatusGlyph tone="neutral" />
@@ -739,15 +717,6 @@ export function WardDailySheet({
       ) : null}
 
       <style>{`
-        [data-testid="ward-daily-sheet"] button,
-        [data-testid="ward-daily-sheet"] [role="button"],
-        [data-testid="ward-daily-sheet"] a {
-          min-height: var(--ward-tap, 48px);
-          min-width: var(--ward-tap, 48px);
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
         @media print {
           [data-testid="ward-daily-sheet"],
           [data-testid="ward-daily-sheet"] * {
@@ -810,6 +779,8 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
     stamp === null || stamp.time === null
       ? null
       : [`As at ${stamp.time}`, stamp.dayNote, sheetProps.shiftTimestamp ?? null].filter(Boolean).join(" · ");
+  // One short line on screen; the full stamp is its tooltip, and the copied brief keeps it word for word.
+  const shortStamp = stamp === null || stamp.time === null ? null : `As at ${stamp.time} · synthetic figures`;
 
   // The shared modal contract (`useModalFocus`): the page behind stops scrolling and is inert while
   // the brief is open, focus moves to the dialog itself, Tab stays inside it, Escape closes only the
@@ -874,9 +845,14 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
             <h2 id={`${dialogId}-ward-daily-sheet-dialog-title`} className={styles.dialogTitle}>
               {title}
             </h2>
-            {stampLine ? (
-              <span className={styles.dialogStamp} data-testid="ward-daily-sheet-dialog-stamp" style={TNUM}>
-                {stampLine}
+            {shortStamp ? (
+              <span
+                className={styles.dialogStamp}
+                data-testid="ward-daily-sheet-dialog-stamp"
+                title={stampLine ?? undefined}
+                style={TNUM}
+              >
+                {shortStamp}
               </span>
             ) : null}
           </div>
@@ -884,7 +860,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
             {canCopy ? (
               <button
                 type="button"
-                className={buttonClass({ variant: "ghost", size: "sm", className: styles.copyButton })}
+                className={buttonClass({ variant: "sec", size: "sm", className: styles.copyButton })}
                 onClick={copyBrief}
                 data-testid="ward-daily-sheet-copy"
               >

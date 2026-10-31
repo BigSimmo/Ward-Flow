@@ -193,7 +193,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   },
   {
     // U1 (site review, 12 Oct 2026): the action never truncates, so Next step takes the widest share
-    // and Patient, Status and From and to give way (names truncate first).
+    // and Patient, Status and From and to give way (their words wrap in full; names never truncate).
     id: "next",
     header: "Next step",
     width: 270,

@@ -299,10 +299,6 @@
   background: var(--wf-accent-tint);
 }
 
-.workTable tr[data-highlighted="true"] td:first-child {
-  box-shadow: inset 3px 0 0 var(--wf-accent);
-}
-
 .barrierShare {
   flex: 0 1 8rem;
   height: 6px;
@@ -469,10 +465,6 @@
 
 .workTable tr[data-selected="true"] td {
   background: var(--wf-selected);
-}
-
-.workTable tr[data-selected="true"] td:first-child {
-  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
 }
 
 .interactiveRow {
@@ -1171,13 +1163,30 @@
 
 /* Phone and tablet: every control keeps the 48px tap floor. */
 @media (max-width: 62.5rem) {
+  /* Kit standard (Josh, 31 Oct 2026: "no 48px controls"): buttons draw 40px and an invisible cover
+     above and below keeps the 48px tap floor. A resting item is a whole row and keeps its height. */
   .kpi,
   .populationSwitch button,
   .drawerTab,
   .recordButton,
-  .restingItem,
   .quietButton,
   .viewSwitch button {
+    position: relative;
+    min-height: 40px;
+  }
+
+  .kpi::after,
+  .populationSwitch button::after,
+  .drawerTab::after,
+  .recordButton::after,
+  .quietButton::after,
+  .viewSwitch button::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+
+  .restingItem {
     min-height: var(--ward-tap, 3rem);
   }
 
@@ -1374,8 +1383,9 @@
     margin-top: var(--wf-s-2);
   }
 
+  /* 40px drawn, with the tablet rule's invisible cover keeping the 48px tap floor. */
   .kpi {
-    min-height: var(--spacing-tap, 3rem);
+    min-height: 40px;
     padding: 0 0 0 var(--wf-s-3);
   }
 
@@ -1447,17 +1457,6 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--wf-s-1) var(--wf-s-3);
     padding: var(--wf-s-2) var(--wf-s-3);
-  }
-
-  /* R1-24 / R2-11 / R3-20 / B6-26 (device sweep, 24 Oct 2026): the act-now row keeps its first
-     cell where every other row has it; its red edge moves into the row's own left padding below. */
-  .workTable tr[data-act="true"] > td:first-child {
-    padding-inline-start: 0;
-  }
-
-  /* Doubled class: outranks the every-breakpoint marker rule further down this file. */
-  .workTable.workTable tr[data-act="true"] > td:first-child::before {
-    inset-inline-start: calc(-1 * var(--wf-s-3) + 4px);
   }
 
   /* R3-20 / B6-26: rows are cards here, so the column head (which split over two rows with broken
@@ -1635,7 +1634,8 @@
   background: var(--wf-act-tint);
 }
 
-/* A4-23 (audit round 2): on the phone the act-now row keeps its thin edge without the tint. */
+/* A4-23 (audit round 2): on the phone the act-now row has no tint. Owner ruling (31 Oct 2026): no side
+   edges either; the Held up badge's glyph carries the tone. */
 @media screen and (max-width: 48rem) {
   .workTable tr[data-act="true"] {
     background: none;
@@ -2032,15 +2032,23 @@
   .phMore {
     display: flex;
     align-items: center;
+    position: relative;
     justify-content: center;
     width: 100%;
-    min-height: 48px;
+    /* Drawn 40px (kit standard); the cover below keeps the 48px tap floor. */
+    min-height: 40px;
     border: 0;
     border-top: 1px solid var(--wf-line);
     background: var(--wf-surface);
     color: var(--wf-accent);
     font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
     cursor: pointer;
+  }
+
+  .phMore::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
   }
 
   .tabPane + .phMore {
@@ -2058,9 +2066,10 @@
     background: var(--wf-surface-2);
   }
 
+  /* Kit buttons: 40px drawn, with the kit's own 48px tap cover. */
   .detailFooter > a,
   .detailFooter > button {
-    min-height: 48px;
+    min-height: 40px;
     border-radius: var(--wf-r-ctl);
   }
 
@@ -2086,23 +2095,31 @@
     justify-content: center;
   }
 
-  /* v10 group header: glyph, label, count and a fold chevron, the whole row one 48px target. */
+  /* v10 group header: glyph, label, count and a fold chevron, the whole row one target, drawn 40px
+     with the kit's invisible cover keeping the 48px tap floor. */
   .workTable .groupRow th:has(> .phGroupToggle) {
     padding: 0;
   }
 
   .phGroupToggle {
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--wf-s-2);
     width: 100%;
-    min-height: 48px;
+    min-height: 40px;
     padding: 0 var(--wf-s-3);
     border: 0;
     background: transparent;
     color: var(--wf-ink-2);
     text-align: left;
     cursor: pointer;
+  }
+
+  .phGroupToggle::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
   }
 
   .phGroupToggle h3 {
@@ -2218,28 +2235,8 @@
   }
 }
 
-/* Rounded attention markers apply at every responsive breakpoint. */
-.workTable tr[data-act="true"] > td:first-child {
-  position: relative;
-}
-
-.workTable tr[data-act="true"] > td:first-child::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .workTable tr[data-act="true"] > td:first-child::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-}
+/* Owner ruling (Josh, 31 Oct 2026): rows carry no coloured side edges. The act-now row keeps only its
+   tint (the page's one most urgent row), and highlighted and selected rows their background. */
 
 /* Phone (Josh, 12 Oct 2026): Now and History pin under the phone header with the filter button,
  * through the shared `pinnedSwitch` (ward-pinned-switch.module.css), as Home's queue switch does.

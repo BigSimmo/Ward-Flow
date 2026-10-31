@@ -18,6 +18,7 @@ import { DischargeFollowUp } from "./discharge-follow-up";
 import { ReadyToLeave } from "./discharge-ready-to-leave";
 import { SupportNotificationChecklist } from "../movements/support-notification-checklist";
 import pageStyles from "./discharges-third-edition.module.css";
+import releaseList from "./discharge-release-list.module.css";
 import {
   BAND_LABELS,
   unitLabel,
@@ -29,6 +30,7 @@ import {
 import { RecordedDischargeMilestones } from "./discharge-board-parts";
 // Closing-the-loop package B (24 Oct 2026): discharge arrangements, loaded when idle.
 import { DischargeDependenciesPanel } from "./discharge-logistics-lazy";
+import { HELD_UP, pastWords, type ReleasePanelPart } from "./discharge-release-actions";
 import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
 
 /* The discharge detail panel's three states, moved unchanged from `discharge-board.tsx`. */
@@ -422,13 +424,21 @@ export function DischargeRecordDetail({
   );
 }
 
-/** A bed release opened from Now: the phone sheet or the desktop panel, milestones, barriers and dossier. */
+/**
+ * A bed release opened from Now. Redesign (Josh, 30 Oct): the phone leads with the person, surname
+ * first, then the ward; "When" says once how the release stands against its date; the badge says
+ * "Held up". `openOn` is the part a row's button promised: Chase opens on the barriers, and Confirm
+ * date on the release's own "New expected out" control, in its discharge arrangements beside the
+ * barriers (`RECORD_DISCHARGE_PLAN_CHANGE`, which also marks earlier confirmations to check again).
+ */
 export function DischargeReleaseDetail({
   s,
   detailRelease,
+  openOn,
 }: {
   s: DischargeWorkspaceState;
   detailRelease: BedRelease;
+  openOn: ReleasePanelPart | null;
 }) {
   const tabIdPrefix = useId();
   const {
@@ -452,6 +462,33 @@ export function DischargeReleaseDetail({
     detailBadgeLabel,
     releasePaneClass,
   } = s;
+  const barrierRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // The part a row's button named gets the focus, after the panel's own first-control focus. The
+  // arrangements (with the release's own "New expected out" date control) load when idle, so the
+  // date control is looked for a few times before giving up.
+  useEffect(() => {
+    if (openOn === null || openOn === "milestones") return;
+    let tries = 0;
+    let timer = 0;
+    const look = () => {
+      const target =
+        openOn === "date"
+          ? panelRef.current?.querySelector<HTMLElement>(
+              '[data-testid="ward-discharge-dependencies"] select[aria-label="Day"]',
+            )
+          : barrierRef.current;
+      if (target) {
+        target.focus({ preventScroll: true });
+        target.scrollIntoView?.({ block: "center" });
+      } else if (tries++ < 20) timer = window.setTimeout(look, 100);
+    };
+    timer = window.setTimeout(look, 0);
+    return () => window.clearTimeout(timer);
+  }, [openOn]);
+  const overdue = detailRelease.state !== "discharged" && detailRelease.expectedAt < now;
+  const heldUp = detailRelease.state !== "discharged" && detailRelease.blocker !== null;
+  const badgeLabel = heldUp ? HELD_UP : detailBadgeLabel;
   const tabList = (hasBlocker: boolean) => (
     <DischargeDetailTabs
       idPrefix={tabIdPrefix}
@@ -462,25 +499,27 @@ export function DischargeReleaseDetail({
   );
   const releasePanelProps = (tab: DischargeWorkspaceState["drawerTab"]) =>
     isPhone ? {} : tabPanelProps(tabIdPrefix, tab, drawerTab);
+  const personName = linkedReleaseRecord ? recordName(linkedReleaseRecord) : null;
+  const wardName = unitLabel(selectedUnit, detailRelease.unitId);
   return (
     <>
       {isPhone ? (
         <>
-          {/* v10 phone release sheet: the ward leads; person and UMRN on one subline. */}
+          {/* Redesign (Josh, 30 Oct): the person leads, surname first; the ward second. */}
           <div className={pageStyles.phIdentity}>
-            <h3 className={pageStyles.patientFullName}>{unitLabel(selectedUnit, detailRelease.unitId)}</h3>
+            <h3 className={pageStyles.patientFullName}>{personName ?? wardName}</h3>
             <p className={pageStyles.phIdentityMeta}>
               {[
+                personName ? wardName : null,
                 healthServiceLabel(selectedUnit),
-                linkedReleaseRecord ? recordName(linkedReleaseRecord) : null,
                 linkedReleaseRecord?.identity.kind === "linked" ? linkedReleaseRecord.identity.patient.umrn : null,
               ]
                 .filter(Boolean)
-                .join("\u00a0· ")}
+                .join(" · ")}
             </p>
             {detailTone ? (
               <Badge tone={detailTone} size="sm">
-                {detailBadgeLabel}
+                {badgeLabel}
               </Badge>
             ) : null}
           </div>
@@ -494,31 +533,22 @@ export function DischargeReleaseDetail({
                 )}
               </dd>
             </div>
+            {/* One cell for how the release stands against its date (was When and Against date). */}
             <div>
               <dt>When</dt>
               <dd>
-                {detailRelease.state === "discharged"
-                  ? "Departed"
-                  : detailRelease.expectedAt < now
-                    ? "Past the ward's date"
-                    : BAND_LABELS[releaseBand(detailRelease, now) as ReleaseBand]}
-              </dd>
-            </div>
-            <div>
-              <dt>Against date</dt>
-              <dd>
-                {detailRelease.state !== "discharged" && detailRelease.expectedAt < now ? (
+                {detailRelease.state === "discharged" ? (
+                  "Departed"
+                ) : overdue ? (
                   <>
-                    <StatusGlyph tone="danger" size={9} /> {durMinutes(now - detailRelease.expectedAt)} past
+                    <StatusGlyph tone="danger" size={9} /> {pastWords(now - detailRelease.expectedAt)}
                   </>
-                ) : detailRelease.state !== "discharged" ? (
-                  `In ${durMinutes(detailRelease.expectedAt - now)}`
                 ) : (
-                  "Met"
+                  `${BAND_LABELS[releaseBand(detailRelease, now) as ReleaseBand]} · in ${durMinutes(detailRelease.expectedAt - now)}`
                 )}
               </dd>
             </div>
-            <div>
+            <div className={releaseList.factWide}>
               <dt>Destination</dt>
               <dd>
                 {LEAVING_DESTINATIONS.find((item) => item.id === linkedReleaseRecord?.leavingDestination)?.label ??
@@ -531,28 +561,26 @@ export function DischargeReleaseDetail({
         <>
           <div className={pageStyles.identity}>
             <div className={pageStyles.identityText}>
-              <h3 className={pageStyles.patientFullName}>
-                {linkedReleaseRecord ? recordName(linkedReleaseRecord) : unitLabel(selectedUnit, detailRelease.unitId)}
-              </h3>
+              <h3 className={pageStyles.patientFullName}>{personName ?? wardName}</h3>
               <p className={pageStyles.identityMeta}>
                 {linkedReleaseRecord?.identity.kind === "linked" && (
                   <span className={pageStyles.mono}>UMRN {linkedReleaseRecord.identity.patient.umrn}</span>
                 )}
-                <span>{unitLabel(selectedUnit, detailRelease.unitId)}</span>
+                <span>{wardName}</span>
                 <span>{healthServiceLabel(selectedUnit)}</span>
               </p>
             </div>
             {detailTone ? (
               <Badge tone={detailTone} size="sm">
-                {detailBadgeLabel}
+                {badgeLabel}
               </Badge>
             ) : null}
           </div>
           <dl className={pageStyles.detailStats}>
-            {detailRelease.state !== "discharged" && detailRelease.expectedAt < now ? (
+            {overdue ? (
               <div>
                 <dt>Overdue</dt>
-                <dd>{durMinutes(now - detailRelease.expectedAt)}</dd>
+                <dd>{pastWords(now - detailRelease.expectedAt).replace(/ past$/, "")}</dd>
               </div>
             ) : detailRelease.state !== "discharged" ? (
               <div>
@@ -658,26 +686,28 @@ export function DischargeReleaseDetail({
         />
       </div>
 
-      <div {...releasePanelProps("barriers")} className={releasePaneClass("barriers")}>
-        {detailRelease.blocker ? (
-          <div className={pageStyles.barrierBox}>
-            <div className={pageStyles.barrierText}>
-              <span className={pageStyles.barrierCause}>
-                <StatusGlyph tone="danger" size={9} />
-                {detailRelease.blocker}
-              </span>
-              <span className={pageStyles.secondary}>Recorded discharge blocker</span>
+      <div ref={panelRef} {...releasePanelProps("barriers")} className={releasePaneClass("barriers")}>
+        <div ref={barrierRef} tabIndex={-1} className={releaseList.focusTarget} aria-label="Barriers">
+          {detailRelease.blocker ? (
+            <div className={pageStyles.barrierBox}>
+              <div className={pageStyles.barrierText}>
+                <span className={pageStyles.barrierCause}>
+                  <StatusGlyph tone="danger" size={9} />
+                  {detailRelease.blocker}
+                </span>
+                <span className={pageStyles.secondary}>Recorded discharge blocker</span>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className={pageStyles.barrierBox}>
-            <span className={pageStyles.barrierCause}>
-              <StatusGlyph tone="success" size={9} />
-              No discharge blocker recorded
-            </span>
-            <p className={pageStyles.note}>Clinical, pharmacy and transit clearance are not recorded here.</p>
-          </div>
-        )}
+          ) : (
+            <div className={pageStyles.barrierBox}>
+              <span className={pageStyles.barrierCause}>
+                <StatusGlyph tone="success" size={9} />
+                No discharge blocker recorded
+              </span>
+              <p className={pageStyles.note}>Clinical, pharmacy and transit clearance are not recorded here.</p>
+            </div>
+          )}
+        </div>
         <DischargeDependenciesPanel
           release={detailRelease}
           now={now}
@@ -704,7 +734,7 @@ export function DischargeReleaseDetail({
           <dt>Provider</dt>
           <dd>Not recorded</dd>
           <dt>Unit</dt>
-          <dd>{unitLabel(selectedUnit, detailRelease.unitId)}</dd>
+          <dd>{wardName}</dd>
         </dl>
       </div>
 
