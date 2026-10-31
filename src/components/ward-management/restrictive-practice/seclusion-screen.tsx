@@ -386,11 +386,10 @@ function WardTable({
                     <td className={cx(tableClasses.num, styles.wide)}>{row.incidents}</td>
                     <td className={styles.wide}>
                       <span className={styles.detail}>
+                        {/* Josh, 31 Oct 2026: "Not recorded" is the one wording, on every desk. */}
                         {row.recorded
                           ? `${row.recorded.by}, ${formatInstantWithDay(row.recorded.at, now)}`
-                          : siteName
-                            ? "Not recorded"
-                            : "Never"}
+                          : "Not recorded"}
                       </span>
                     </td>
                   </tr>

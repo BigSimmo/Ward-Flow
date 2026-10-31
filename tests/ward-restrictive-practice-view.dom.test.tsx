@@ -125,8 +125,10 @@ describe("seclusion, restraint and incidents view", () => {
     renderScreen();
     const first = wardRows()[0]!;
     const wardId = first.getAttribute("data-testid")!.replace("seclusion-ward-row-", "");
-    expect(first).toHaveTextContent("Not recorded");
-    expect(first).toHaveTextContent("Never");
+    // The room column and the Room last marked column both say "Not recorded" (never "Never").
+    expect(within(first).getAllByRole("cell")[1]).toHaveTextContent("Not recorded");
+    expect(within(first).getAllByRole("cell")[4]!.textContent).toBe("Not recorded");
+    expect(screen.getByTestId("seclusion-ward-table")).not.toHaveTextContent("Never");
     const outBefore = Number.parseInt(heroFigure("Seclusion rooms Out of service"), 10);
     fireEvent.click(screen.getByTestId("seclusion-room-out-of-service"));
     // P090: it asks first, and nothing changes until it is confirmed.
@@ -136,7 +138,8 @@ describe("seclusion, restraint and incidents view", () => {
     // The table row and the header count follow the mark at once.
     const row = screen.getByTestId(`seclusion-ward-row-${wardId}`);
     expect(row).toHaveTextContent("Out of service");
-    expect(row).not.toHaveTextContent("Never");
+    expect(within(row).getAllByRole("cell")[4]!.textContent).toMatch(/^.+, .+$/u);
+    expect(within(row).getAllByRole("cell")[4]).not.toHaveTextContent("Not recorded");
     expect(Number.parseInt(heroFigure("Seclusion rooms Out of service"), 10)).toBe(outBefore + 1);
     fireEvent.change(screen.getByTestId("seclusion-incident-category"), { target: { value: "fall" } });
     fireEvent.change(screen.getByTestId("seclusion-incident-time"), { target: { value: clock(30) } });
