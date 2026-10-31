@@ -36,6 +36,7 @@ import {
   durMinutes,
   phoneRows,
   tableClasses,
+  useIsPhone,
   useModalFocus,
   type WfTone,
 } from "@/components/wf";
@@ -132,15 +133,9 @@ export function OfficerScreen() {
     "dayZero",
     "notices",
   );
-  const [isPhone, setIsPhone] = useState(false);
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(max-width: 48rem)");
-    const sync = () => setIsPhone(query.matches);
-    sync();
-    query.addEventListener?.("change", sync);
-    return () => query.removeEventListener?.("change", sync);
-  }, []);
+  // Release gate (layout shift 0.144 on a phone, 31 Oct 2026): the kit's hook reads the server's
+  // phone guess on first paint, so the phone hero is drawn at once instead of after the code runs.
+  const isPhone = useIsPhone();
   const officerPatientName = useCallback(
     (movement: Movement) => {
       const info = resolveSubjectPatient(movement, { patients, referrals, movements });
