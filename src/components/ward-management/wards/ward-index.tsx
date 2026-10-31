@@ -22,6 +22,7 @@ import {
   PhoneSheet,
   Popover,
   Segmented,
+  Select,
   SrOnly,
   StatusGlyph,
   TextInput,
@@ -57,7 +58,10 @@ import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-pag
 import { BedStrip, BedStripLegend } from "@/components/ward-management/wards/bed-strip";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+
 import styles from "./ward-index.module.css";
+import { OTHER_SITE_CARDS, OtherSitesMore, SiteHead } from "./ward-index-site-desk";
 
 /**
  * All wards (v10). One hero band with the ready-bed answer, the statewide occupancy ring and the
@@ -66,6 +70,11 @@ import styles from "./ward-index.module.css";
  * row beside a sticky rail with occupancy by service (shared `WardCapacityRow`). Every figure
  * is read from the provider: bed states from `bedStates`, discharges from `capacityBreakdown`,
  * confirmation age from the ward's own allocatable figure.
+ *
+ * Redesign (approved by Josh, 31 Oct 2026): Status, Cohort and Order are menus on the one filter
+ * row (the phone keeps its Filters rows), card text and ward names wrap, and bed strips sit at each
+ * card's foot. A site bed manager's desk (D-80) sees its own site's wards in full, then every other
+ * site as bed counts only (`ward-index-site-desk.tsx`).
  */
 
 /**
@@ -216,6 +225,13 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     leaveBeds,
   } = useWardFlowSelect("units", "bedReleases", "movements", "admissions", "leaveBeds");
   const units = unitsOverride ?? liveUnits;
+  // Site bed manager (D-80): a site bed manager's hero, checks and first cards are its own
+  // site's wards. Every other site stays on the page as bed counts only: no Enter, no stays link,
+  // because its ward pages are not this desk's to open.
+  const access = useEffectiveWardAccess();
+  const siteCode = access.role === "bed_manager" && access.scope.kind === "site" ? access.scope.siteCode : undefined;
+  const deskSite = siteCode === undefined ? undefined : siteByCode(siteCode);
+  const isOwn = (unit: Unit) => siteCode === undefined || unit.siteCode === siteCode;
   const { now, paused, togglePause } = usePageLive();
 
   const [pickedService, setPickedService] = useState<ServiceFilter>("all");
@@ -300,19 +316,21 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const placed = rows.filter((row) => row.service !== null);
   const unplaced = rows.filter((row) => row.service === null);
 
-  // Statewide hero counts.
-  const totalBeds = rows.reduce((sum, row) => sum + row.unit.beds, 0);
-  const totalOccupied = rows.reduce((sum, row) => sum + Math.round(row.occupancy * row.unit.beds), 0);
-  const readyNow = rows.reduce((sum, row) => sum + row.ready, 0);
+  // Statewide hero counts; a site bed manager's are its own site's wards only.
+  const heroRows = siteCode === undefined ? rows : rows.filter((row) => isOwn(row.unit));
+  const heroUnits = siteCode === undefined ? units : units.filter(isOwn);
+  const totalBeds = heroRows.reduce((sum, row) => sum + row.unit.beds, 0);
+  const totalOccupied = heroRows.reduce((sum, row) => sum + Math.round(row.occupancy * row.unit.beds), 0);
+  const readyNow = heroRows.reduce((sum, row) => sum + row.ready, 0);
   const shiftEnd = shiftEndInstant(now);
   const freeingByShiftEnd = bedReleases.filter(
     (release) =>
       release.state !== "discharged" &&
       release.expectedAt <= shiftEnd &&
-      units.some((unit) => unit.id === release.unitId),
+      heroUnits.some((unit) => unit.id === release.unitId),
   ).length;
-  const pulled = rows.reduce((sum, row) => sum + row.states.pulled, 0);
-  const staleCount = rows.filter((row) => row.stale).length;
+  const pulled = heroRows.reduce((sum, row) => sum + row.states.pulled, 0);
+  const staleCount = heroRows.filter((row) => row.stale).length;
 
   const matchesQuery = (row: WardRow) => {
     const q = query.trim().toLowerCase();
@@ -380,17 +398,39 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     };
   });
 
-  const nearFullCount = placed.filter((row) => row.occupancy >= NEAR_FULL).length;
-  const noReadyCount = placed.filter((row) => row.ready === 0).length;
-  const staleRows = [...rows.filter((row) => row.stale)].sort((a, b) => a.confirmedAt - b.confirmedAt);
-  const mostReady = [...placed].sort((a, b) => b.ready - a.ready || a.unit.name.localeCompare(b.unit.name))[0];
+  const heroPlaced = placed.filter((row) => isOwn(row.unit));
+  const nearFullCount = heroPlaced.filter((row) => row.occupancy >= NEAR_FULL).length;
+  const noReadyCount = heroPlaced.filter((row) => row.ready === 0).length;
+  const staleRows = [...heroRows.filter((row) => row.stale)].sort((a, b) => a.confirmedAt - b.confirmedAt);
+  const wardsWithReady = heroPlaced.filter((row) => row.ready > 0).length;
+  const [mostReady, runnerUp] = [...heroPlaced].sort(
+    (a, b) => b.ready - a.ready || a.unit.name.localeCompare(b.unit.name),
+  );
+  // A site desk names its most ready ward only when one ward leads, so a tie names neither.
+  const showMostReady =
+    mostReady !== undefined &&
+    mostReady.ready > 0 &&
+    (deskSite === undefined || (runnerUp?.ready ?? -1) < mostReady.ready);
   const statewidePercent = totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : null;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Site bed manager: its own site first, then the rest as counts, folded after a few cards.
+  const [otherOpen, setOtherOpen] = useState(false);
+  const ownOrdered = ordered.filter((row) => isOwn(row.unit));
+  const otherOrdered = ordered.filter((row) => !isOwn(row.unit));
+  const otherShown = otherOpen || isFiltered ? otherOrdered : otherOrdered.slice(0, OTHER_SITE_CARDS);
+  const otherMore = (
+    <OtherSitesMore
+      shown={otherShown.length}
+      total={otherOrdered.length}
+      open={otherOpen}
+      onToggle={() => setOtherOpen((value) => !value)}
+    />
+  );
 
   // The statewide rail. Phone (v10) opens it as a sheet from one link row under the list.
   const rail = (
     <aside className={styles.rail} data-wf-rail="1121" aria-label="Statewide by service">
-      <Card as="section" className={styles.railCard} aria-labelledby="ward-service-occupancy">
+      <Card as="section" className={cx(styles.railCard, styles.wrapText)} aria-labelledby="ward-service-occupancy">
         <div className={styles.serviceHead}>
           <h2 id="ward-service-occupancy" className={styles.railTitle}>
             Occupancy by service
@@ -417,7 +457,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
         <p className={styles.railNote}>Press a service to highlight its wards.</p>
       </Card>
 
-      <Card as="section" className={styles.railCard} aria-labelledby="ward-counts-to-check">
+      <Card as="section" className={cx(styles.railCard, styles.wrapText)} aria-labelledby="ward-counts-to-check">
         <div className={styles.serviceHead}>
           <h2 id="ward-counts-to-check" className={styles.railTitle}>
             Counts to check <Count n={staleRows.length} />
@@ -454,7 +494,14 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     >
       <main id="main-content" className={styles.main}>
         <Hero
-          eyebrow={isPhone ? "Wards · Statewide" : `Wards · Statewide · ${units.length} wards, ${totalBeds} beds`}
+          // A site desk says its ward and bed totals once, on its section head below.
+          eyebrow={
+            deskSite
+              ? `Wards · ${deskSite.name}`
+              : isPhone
+                ? "Wards · Statewide"
+                : `Wards · Statewide · ${units.length} wards, ${totalBeds} beds`
+          }
           level={1}
           title={
             <>
@@ -464,22 +511,30 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           }
           titleMeta={
             isPhone
-              ? `${units.length} wards · ${statewidePercent === null ? "share in use not recorded" : `${statewidePercent.toFixed(1)}% in use`} · ${pulled} pulled`
-              : undefined
+              ? `${heroUnits.length} wards · ${statewidePercent === null ? "share in use not recorded" : `${statewidePercent.toFixed(1)}% in use`} · ${pulled} pulled`
+              : deskSite
+                ? // A site desk: figures that filter nothing read as one quiet line, not as look-alike chips.
+                  `${readyNow + freeingByShiftEnd} ready by ${formatInstantWithDay(shiftEnd, now)} · ${pulled} pulled`
+                : undefined
           }
           stats={
             isPhone ? (
               <>
+                {/* Each figure names its noun, with the menu's own words ("Full", "Ready by"). */}
                 <HeroStat
                   value={noReadyCount}
-                  label="No bed ready"
+                  label={
+                    <>
+                      Wards full<SrOnly>, no bed ready</SrOnly>
+                    </>
+                  }
                   tone={noReadyCount > 0 ? "warning" : undefined}
                   pressed={status === "full"}
                   onToggle={() => setStatus(status === "full" ? "all" : "full")}
                 />
                 <HeroStat
                   value={readyNow + freeingByShiftEnd}
-                  label={`By ${formatInstantWithDay(shiftEnd, now)}`}
+                  label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
                   tone="info"
                 />
                 <HeroStat
@@ -494,27 +549,49 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           }
           lead={
             isPhone ? undefined : (
-              <OccupancyRing percent={statewidePercent} alertAt={SERVICE_LINE * 100} scope="Statewide" />
+              <OccupancyRing
+                percent={statewidePercent}
+                alertAt={SERVICE_LINE * 100}
+                scope={deskSite?.name ?? "Statewide"}
+              />
             )
           }
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
           bar={
             isPhone ? undefined : (
-              <div className={styles.heroChips} role="group" aria-label="Statewide counts">
-                <HeroStat
-                  inline
-                  value={readyNow}
-                  label="Ready now"
-                  tone="success"
-                  pressed={status === "has-ready"}
-                  onToggle={() => setStatus(status === "has-ready" ? "all" : "has-ready")}
-                />
-                <HeroStat
-                  inline
-                  value={readyNow + freeingByShiftEnd}
-                  label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
-                />
-                <HeroStat inline value={pulled} label="Pulled" />
+              <div
+                className={styles.heroChips}
+                role="group"
+                aria-label={deskSite ? `${deskSite.name} counts` : "Statewide counts"}
+              >
+                {deskSite ? (
+                  // A site desk: the title counts ready beds; this filter counts the wards that have one.
+                  <HeroStat
+                    inline
+                    value={wardsWithReady}
+                    label={wardsWithReady === 1 ? "Ward with a ready bed" : "Wards with a ready bed"}
+                    tone="success"
+                    pressed={status === "has-ready"}
+                    onToggle={() => setStatus(status === "has-ready" ? "all" : "has-ready")}
+                  />
+                ) : (
+                  <>
+                    <HeroStat
+                      inline
+                      value={readyNow}
+                      label="Ready now"
+                      tone="success"
+                      pressed={status === "has-ready"}
+                      onToggle={() => setStatus(status === "has-ready" ? "all" : "has-ready")}
+                    />
+                    <HeroStat
+                      inline
+                      value={readyNow + freeingByShiftEnd}
+                      label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
+                    />
+                    <HeroStat inline value={pulled} label="Pulled" />
+                  </>
+                )}
                 <HeroStat
                   inline
                   value={staleCount}
@@ -527,7 +604,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             )
           }
           barAside={
-            !isPhone && mostReady && mostReady.ready > 0 ? (
+            !isPhone && showMostReady ? (
               <Link
                 className={styles.heroJump}
                 href={`/ward-flow/ward/${mostReady.unit.id}`}
@@ -542,13 +619,9 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           foot={
             isPhone ? undefined : (
               <CheckingFoot
+                // Stale counts are the hero's own chip (which also filters) and the rail's Counts to
+                // check, so the checking line no longer repeats the figure.
                 items={[
-                  {
-                    id: "stale",
-                    label: "Stale bed counts",
-                    value: staleCount,
-                    tone: staleCount > 0 ? "warning" : undefined,
-                  },
                   {
                     id: "near-full",
                     label: `Near full, ${NEAR_FULL * 100}% and over`,
@@ -567,12 +640,50 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             {isPhone ? null : (
               <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
             )}
+            {/* Status, Cohort and Order are three menus on this one row; the phone keeps its Filters rows. */}
+            {isPhone ? null : (
+              <>
+                <Select
+                  aria-label="Status"
+                  value={status}
+                  onChange={(event) => setStatus(event.target.value as StatusFilter)}
+                  boxClassName={styles.menu}
+                >
+                  <option value="all">Any status</option>
+                  <option value="has-ready">Has a ready bed</option>
+                  <option value="full">Full</option>
+                  <option value="stale">Stale count</option>
+                </Select>
+                <Select
+                  aria-label="Cohort"
+                  value={cohort}
+                  onChange={(event) => setCohort(event.target.value as CohortFilter)}
+                  boxClassName={styles.menu}
+                >
+                  <option value="all">Any cohort</option>
+                  <option value="adult">Adult</option>
+                  <option value="older-adult">Older adult</option>
+                  <option value="youth">Youth</option>
+                  <option value="perinatal">Perinatal</option>
+                </Select>
+                <Select
+                  aria-label="Order"
+                  value={order}
+                  onChange={(event) => setOrder(event.target.value as OrderBy)}
+                  boxClassName={styles.menu}
+                >
+                  <option value="service">{deskSite ? "By site" : "By service"}</option>
+                  <option value="most-ready">Most ready first</option>
+                  <option value="fullest">Fullest first</option>
+                </Select>
+              </>
+            )}
             <TextInput
               ref={searchRef}
               type="search"
               id="wardSearchInput"
               icon={Search}
-              placeholder="Ward, hospital or suburb"
+              placeholder="Ward, hospital or service"
               aria-label="Filter wards by keyword"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -608,7 +719,11 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               ) : null}
             </button>
           </div>
-          <div className={styles.filterRow} id="ward-index-more-filters" data-open={filtersOpen ? "true" : undefined}>
+          <div
+            className={cx(styles.filterRow, styles.phoneOnly)}
+            id="ward-index-more-filters"
+            data-open={filtersOpen ? "true" : undefined}
+          >
             <span className={styles.filterGroup}>
               <span className={styles.filterLabel} id="ward-status-label">
                 Status
@@ -645,7 +760,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               <Segmented
                 label="Order"
                 items={[
-                  { id: "service" as OrderBy, label: "Service" },
+                  { id: "service" as OrderBy, label: deskSite ? "Site" : "Service" },
                   { id: "most-ready" as OrderBy, label: "Most ready" },
                   { id: "fullest" as OrderBy, label: "Fullest" },
                 ]}
@@ -655,35 +770,42 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             </span>
           </div>
           {/* Audit 11 Oct 2026: the bed strip key is one line under the filters, not a rail card. */}
-          {isPhone ? null : (
-            <div className={styles.legendLine} aria-label="Reading a ward" role="note">
-              <BedStripLegend />
-              <span>One cell a bed.</span>
+          {/* A site desk's phone has its own site headings, so no "Every ward"; unfiltered, the row is empty. */}
+          {isPhone && deskSite && !isFiltered ? null : (
+            <div className={styles.keyRow}>
+              {isPhone ? null : (
+                <div className={styles.legendLine} aria-label="Reading a ward" role="note">
+                  <BedStripLegend />
+                  <span>One cell a bed.</span>
+                </div>
+              )}
+              <p className={styles.shownCount} data-testid="ward-index-count-note">
+                {isPhone && !deskSite ? <b className={styles.phoneListTitle}>Every ward</b> : null}
+                {isFiltered ? (
+                  <>
+                    {/* A short label; that every ward stays is said to screen readers only. */}
+                    <span>
+                      <b className={styles.num}>{lit.length}</b> of <b className={styles.num}>{placed.length}</b> wards
+                      highlighted<SrOnly>. All wards stay.</SrOnly>
+                    </span>
+                    {lit.length === 0 ? <span>No match.</span> : null}
+                    {/* On a phone the service is the header's own choice, so Reset never offers to undo it. */}
+                    {isPhone && status === "all" && cohort === "all" && query === "" ? null : (
+                      <Button variant="ghost" size="sm" onClick={resetFilters}>
+                        Reset filters
+                      </Button>
+                    )}
+                  </>
+                ) : isPhone ? null : (
+                  // shell-15: the phone shows no count while nothing is filtered. "22 wards", since
+                  // "22 of 22" says nothing while nothing is filtered.
+                  <span>
+                    <b className={styles.num}>{placed.length}</b> {placed.length === 1 ? "ward" : "wards"}
+                  </span>
+                )}
+              </p>
             </div>
           )}
-          <p className={styles.shownCount} data-testid="ward-index-count-note">
-            {isPhone ? <b className={styles.phoneListTitle}>Every ward</b> : null}
-            {isFiltered ? (
-              <>
-                <span>
-                  <b className={styles.num}>{lit.length}</b> of <b className={styles.num}>{placed.length}</b> wards
-                  highlighted. All wards stay.
-                </span>
-                {lit.length === 0 ? <span>No match.</span> : null}
-                {/* On a phone the service is the header's own choice, so Reset never offers to undo it. */}
-                {isPhone && status === "all" && cohort === "all" && query === "" ? null : (
-                  <Button variant="ghost" size="sm" onClick={resetFilters}>
-                    Reset filters
-                  </Button>
-                )}
-              </>
-            ) : isPhone ? null : (
-              // shell-15: the phone shows no "22 of 22" while nothing is filtered.
-              <span>
-                <b className={styles.num}>{placed.length}</b> of <b className={styles.num}>{placed.length}</b> wards
-              </span>
-            )}
-          </p>
         </section>
 
         {/* Service anchors: the canonical service order, one heading each, for in-page links. */}
@@ -698,9 +820,31 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
         <div className={styles.layout}>
           <div className={styles.wardsColumn}>
             {placed.length === 0 ? (
-              <Card className={styles.emptyCard}>
+              <Card className={cx(styles.emptyCard, styles.wrapText)}>
                 <EmptyState icon={Search} title="No wards recorded" meta="The network has no placed wards." />
               </Card>
+            ) : isPhone && deskSite ? (
+              <>
+                <SiteHead title={deskSite.name} meta={`${ownOrdered.length} wards`} />
+                <WardPhoneList
+                  rows={ownOrdered}
+                  now={now}
+                  dotKey={false}
+                  grouped={false}
+                  isDim={(row) => isFiltered && !isLit(row)}
+                  onOpen={(row) => setPhoneWardId(row.unit.id)}
+                />
+                <SiteHead title="Other sites" meta="Bed counts only" />
+                <WardPhoneList
+                  rows={otherShown}
+                  now={now}
+                  countsOnly
+                  grouped={order === "service"}
+                  isDim={(row) => isFiltered && !isLit(row)}
+                  onOpen={(row) => setPhoneWardId(row.unit.id)}
+                />
+                {otherMore}
+              </>
             ) : isPhone ? (
               <WardPhoneList
                 rows={ordered}
@@ -709,6 +853,25 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 isDim={(row) => isFiltered && !isLit(row)}
                 onOpen={(row) => setPhoneWardId(row.unit.id)}
               />
+            ) : view === "cards" && deskSite ? (
+              <>
+                <SiteHead title={deskSite.name} meta={`${ownOrdered.length} wards, ${totalBeds} beds`} />
+                <section className={styles.cardGrid} aria-label={`${deskSite.name} ward cards`}>
+                  {ownOrdered.map((row) => (
+                    <WardCard key={row.unit.id} row={row} now={now} dim={isFiltered && !isLit(row)} />
+                  ))}
+                </section>
+                <SiteHead
+                  title="Other sites"
+                  meta={`Bed counts only · ${otherOrdered.length} wards, ${otherOrdered.reduce((sum, row) => sum + row.ready, 0)} ready`}
+                />
+                <section className={styles.cardGrid} aria-label="Other sites, bed counts">
+                  {otherShown.map((row) => (
+                    <WardCard key={row.unit.id} row={row} now={now} dim={isFiltered && !isLit(row)} countsOnly />
+                  ))}
+                </section>
+                {otherMore}
+              </>
             ) : view === "cards" ? (
               <section className={styles.cardGrid} aria-label="Ward cards">
                 {ordered.map((row) => (
@@ -716,7 +879,12 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 ))}
               </section>
             ) : (
-              <WardTable rows={ordered} now={now} isDim={(row) => isFiltered && !isLit(row)} />
+              <WardTable
+                rows={deskSite ? [...ownOrdered, ...otherOrdered] : ordered}
+                now={now}
+                isDim={(row) => isFiltered && !isLit(row)}
+                countsOnly={(row) => !isOwn(row.unit)}
+              />
             )}
           </div>
 
@@ -776,6 +944,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             row={rows.find((row) => row.unit.id === phoneWardId)}
             now={now}
             onClose={() => setPhoneWardId(null)}
+            countsOnly={phoneWardId !== null && !rows.some((row) => row.unit.id === phoneWardId && isOwn(row.unit))}
           />
         ) : null}
 
@@ -786,6 +955,11 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
       </main>
     </div>
   );
+}
+
+/** "Maali (Ward 4.2)", not "Maali (Ward 4.2) — open"; the security label already says it. */
+function shortWardName(unit: Pick<Unit, "name">): string {
+  return unit.name.split(" — ")[0];
 }
 
 function slug(service: HealthService): string {
@@ -812,12 +986,13 @@ function OccupancyFigure({ row }: { row: WardRow }) {
   );
 }
 
-function Confirmed({ row, now }: { row: WardRow; now: Instant }) {
+function Confirmed({ row, now, countsOnly = false }: { row: WardRow; now: Instant; countsOnly?: boolean }) {
   const age = durMinutes(Math.max(0, now - row.confirmedAt));
   return row.stale ? (
     <span className={styles.confirmed}>
       <StatusGlyph tone="warning" size={8} />
-      <b className={styles.num}>{age}</b> stale, ask NUM
+      {/* Site bed manager: another site's count is its own ward's to chase, not this desk's. */}
+      <b className={styles.num}>{age}</b> {countsOnly ? "stale" : "stale, ask NUM"}
     </span>
   ) : (
     <span className={styles.confirmed}>
@@ -826,7 +1001,18 @@ function Confirmed({ row, now }: { row: WardRow; now: Instant }) {
   );
 }
 
-function WardCard({ row, now, dim = false }: { row: WardRow; now: Instant; dim?: boolean }) {
+function WardCard({
+  row,
+  now,
+  dim = false,
+  countsOnly = false,
+}: {
+  row: WardRow;
+  now: Instant;
+  dim?: boolean;
+  /** Site bed manager: another site's ward, drawn as bed counts with no way in. */
+  countsOnly?: boolean;
+}) {
   const { unit } = row;
   return (
     <article
@@ -838,45 +1024,57 @@ function WardCard({ row, now, dim = false }: { row: WardRow; now: Instant; dim?:
       data-acuity={unitHasLockedBeds(unit) ? "high" : "standard"}
     >
       <div className={styles.cardHead}>
-        <h3 className={styles.wardTitle} title={unit.name}>
-          {unit.name}
+        <h3 className={cx(styles.wardTitle, styles.wrapLine)} title={unit.name}>
+          {shortWardName(unit)}
         </h3>
         <SecurityLabel unit={unit} />
       </div>
       <p className={styles.meta} title={`${row.service ?? ""} · ${row.siteName} · ${unit.cohort}`}>
         {row.service} · {row.siteShort} · {cohortLabel(unit)}
       </p>
+      {/* The strip and all below it sit at the card's foot, so strips line up across a row. */}
       <BedStrip
         counts={{ ...row.states, pendingPreparation: row.pendingPreparation }}
         wardName={unit.name}
-        className={styles.strip}
+        className={cx(styles.strip, styles.stripFoot)}
       />
       <div className={styles.figures}>
         <OccupancyFigure row={row} />
-        <span className={styles.flow}>
-          <b className={styles.num}>{row.ready}</b> ready <span aria-hidden="true">·</span>{" "}
-          <b className={styles.num}>{row.out}</b> out <span aria-hidden="true">·</span>{" "}
-          <b className={styles.num}>{row.incoming}</b> in
-        </span>
+        {/* Site bed manager: out and in are read from people records a site desk is not
+            given for other sites, so they would read 0. Its counts-only cards show beds alone. */}
+        {countsOnly ? (
+          <span className={styles.flow}>
+            <b className={styles.num}>{row.ready}</b> ready <span aria-hidden="true">·</span>{" "}
+            <b className={styles.num}>{row.unit.beds}</b> beds
+          </span>
+        ) : (
+          <span className={styles.flow}>
+            <b className={styles.num}>{row.ready}</b> ready <span aria-hidden="true">·</span>{" "}
+            <b className={styles.num}>{row.out}</b> out <span aria-hidden="true">·</span>{" "}
+            <b className={styles.num}>{row.incoming}</b> in
+          </span>
+        )}
       </div>
       <div className={styles.cardFoot}>
-        <Confirmed row={row} now={now} />
-        <WardProfile row={row} />
+        <Confirmed row={row} now={now} countsOnly={countsOnly} />
+        <WardProfile row={row} countsOnly={countsOnly} />
         {/* Audit 11 Oct 2026: the whole card is the Enter target, so 22 repeated buttons go. */}
-        <Link
-          className={styles.cardLink}
-          href={`/ward-flow/ward/${unit.id}`}
-          data-testid={`ward-index-link-${unit.id}`}
-          aria-label={`Enter ${unit.name}`}
-        >
-          <ChevronRight size={16} aria-hidden="true" />
-        </Link>
+        {countsOnly ? null : (
+          <Link
+            className={styles.cardLink}
+            href={`/ward-flow/ward/${unit.id}`}
+            data-testid={`ward-index-link-${unit.id}`}
+            aria-label={`Enter ${unit.name}`}
+          >
+            <ChevronRight size={16} aria-hidden="true" />
+          </Link>
+        )}
       </div>
     </article>
   );
 }
 
-function WardProfile({ row }: { row: WardRow }) {
+function WardProfile({ row, countsOnly = false }: { row: WardRow; countsOnly?: boolean }) {
   const { unit } = row;
   return (
     <Popover
@@ -889,7 +1087,7 @@ function WardProfile({ row }: { row: WardRow }) {
         </button>
       )}
     >
-      {(close) => <WardProfileBody row={row} close={close} />}
+      {(close) => <WardProfileBody row={row} close={close} inSheet={countsOnly} />}
     </Popover>
   );
 }
@@ -992,9 +1190,15 @@ function WardPhoneList({
   grouped,
   isDim,
   onOpen,
+  countsOnly = false,
+  dotKey = true,
 }: {
   rows: WardRow[];
   now: Instant;
+  /** With two lists on the page (a site desk), the amber dot's key is said once, under the last. */
+  dotKey?: boolean;
+  /** Site bed manager: other sites' wards, whose stale counts are not this desk's to chase. */
+  countsOnly?: boolean;
   grouped: boolean;
   isDim: (row: WardRow) => boolean;
   onOpen: (row: WardRow) => void;
@@ -1036,12 +1240,15 @@ function WardPhoneList({
                       onClick={() => onOpen(row)}
                     >
                       <span className={styles.phoneRowText}>
-                        <span className={styles.phoneRowName}>{row.unit.name}</span>
+                        <span className={cx(styles.phoneRowName, styles.wrapLine)}>{shortWardName(row.unit)}</span>
                         <span className={styles.phoneRowSub}>
                           {row.stale ? (
                             <>
                               <StatusGlyph tone="warning" size={8} />
-                              <span>Count {durMinutes(Math.max(0, now - row.confirmedAt))} old, ask the ward</span>
+                              <span>
+                                Count {durMinutes(Math.max(0, now - row.confirmedAt))} old
+                                {countsOnly ? "" : ", ask the ward"}
+                              </span>
                             </>
                           ) : (
                             <>
@@ -1074,16 +1281,29 @@ function WardPhoneList({
         );
       })}
       {/* Phone review F-25: the amber dot marks two things here, so the key names both. */}
-      <p className={styles.phoneDotKey} data-testid="ward-index-phone-dot-key">
-        <StatusGlyph tone="warning" size={8} />
-        <span>{`Amber dot: ${NEAR_FULL * 100}% or more in use, or a bed count not confirmed in time`}</span>
-      </p>
+      {dotKey ? (
+        <p className={styles.phoneDotKey} data-testid="ward-index-phone-dot-key">
+          <StatusGlyph tone="warning" size={8} />
+          <span>{`Amber dot: ${NEAR_FULL * 100}% or more in use, or a bed count not confirmed in time`}</span>
+        </p>
+      ) : null}
     </section>
   );
 }
 
 /** Phone: the ward's card as a bottom sheet, with Enter ward in the footer. */
-function WardPhoneSheet({ row, now, onClose }: { row: WardRow | undefined; now: Instant; onClose: () => void }) {
+function WardPhoneSheet({
+  row,
+  now,
+  onClose,
+  countsOnly = false,
+}: {
+  row: WardRow | undefined;
+  now: Instant;
+  onClose: () => void;
+  /** Site bed manager: another site's ward, with no Enter or stays action. */
+  countsOnly?: boolean;
+}) {
   // The router is read here, not in the index: this sheet mounts only on phone, so the index
   // still renders where no app router is mounted (unit tests).
   const router = useRouter();
@@ -1094,8 +1314,14 @@ function WardPhoneSheet({ row, now, onClose }: { row: WardRow | undefined; now: 
       onClose={onClose}
       title={row.unit.name}
       description={`${row.service ?? "Not placed"} · ${row.siteShort} · ${cohortLabel(row.unit)}`}
-      secondary={{ label: "Stays and discharges", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }}
-      primary={{ label: "Enter ward", onAction: () => router.push(`/ward-flow/ward/${row.unit.id}`) }}
+      secondary={
+        countsOnly
+          ? undefined
+          : { label: "Stays and discharges", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }
+      }
+      primary={
+        countsOnly ? undefined : { label: "Enter ward", onAction: () => router.push(`/ward-flow/ward/${row.unit.id}`) }
+      }
       className={styles.phoneSheet}
       data-testid="ward-index-phone-sheet"
     >
@@ -1113,17 +1339,26 @@ function WardPhoneSheet({ row, now, onClose }: { row: WardRow | undefined; now: 
           <dt>Ready</dt>
           <dd>{row.ready}</dd>
         </div>
-        <div>
-          <dt>Out today</dt>
-          <dd>{row.out}</dd>
-        </div>
-        <div>
-          <dt>Coming in</dt>
-          <dd>{row.incoming}</dd>
-        </div>
+        {countsOnly ? (
+          <div>
+            <dt>Beds</dt>
+            <dd>{row.unit.beds}</dd>
+          </div>
+        ) : (
+          <>
+            <div>
+              <dt>Out today</dt>
+              <dd>{row.out}</dd>
+            </div>
+            <div>
+              <dt>Coming in</dt>
+              <dd>{row.incoming}</dd>
+            </div>
+          </>
+        )}
       </dl>
       <p className={styles.phoneSheetConfirmed}>
-        <Confirmed row={row} now={now} />
+        <Confirmed row={row} now={now} countsOnly={countsOnly} />
       </p>
       <WardProfileBody row={row} inSheet />
     </PhoneSheet>
@@ -1132,7 +1367,18 @@ function WardPhoneSheet({ row, now, onClose }: { row: WardRow | undefined; now: 
 
 const TABLE_COLUMNS = "minmax(200px, 2.2fr) 100px 80px minmax(120px, 1.4fr) 76px 56px 64px 92px 72px";
 
-function WardTable({ rows, now, isDim }: { rows: WardRow[]; now: Instant; isDim: (row: WardRow) => boolean }) {
+function WardTable({
+  rows,
+  now,
+  isDim,
+  countsOnly,
+}: {
+  rows: WardRow[];
+  now: Instant;
+  isDim: (row: WardRow) => boolean;
+  /** Site bed manager: rows for another site's ward, with no Enter. */
+  countsOnly: (row: WardRow) => boolean;
+}) {
   return (
     <Card className={styles.tableCard} as="section" aria-label="Ward table">
       <div role="table" aria-label="Wards" className={styles.table}>
@@ -1165,7 +1411,7 @@ function WardTable({ rows, now, isDim }: { rows: WardRow[]; now: Instant; isDim:
               data-dim={isDim(row) ? "true" : undefined}
             >
               <span role="cell" className={styles.wardCell}>
-                <span className={styles.wardTitle}>{row.unit.name}</span>
+                <span className={styles.wardTitle}>{shortWardName(row.unit)}</span>
                 <span className={styles.meta}>
                   {row.siteShort} · {cohortLabel(row.unit)}
                 </span>
@@ -1190,21 +1436,25 @@ function WardTable({ rows, now, isDim }: { rows: WardRow[]; now: Instant; isDim:
                 {row.ready}
               </span>
               <span role="cell" className={cx(styles.end, styles.num)}>
-                {row.out}, {row.incoming}
+                {countsOnly(row) ? <span className={styles.countsOnly}>Not shown</span> : `${row.out}, ${row.incoming}`}
               </span>
               <span role="cell" className={styles.num}>
                 {row.stale ? <StatusGlyph tone="warning" size={8} /> : null}{" "}
                 {durMinutes(Math.max(0, now - row.confirmedAt))}
               </span>
               <span role="cell" className={styles.end}>
-                <Link
-                  className={buttonClass({ variant: "sec", size: "sm" })}
-                  href={`/ward-flow/ward/${row.unit.id}`}
-                  data-testid={`ward-index-link-${row.unit.id}`}
-                  aria-label={`Enter ${row.unit.name}`}
-                >
-                  Enter
-                </Link>
+                {countsOnly(row) ? (
+                  <span className={styles.countsOnly}>Counts only</span>
+                ) : (
+                  <Link
+                    className={buttonClass({ variant: "sec", size: "sm" })}
+                    href={`/ward-flow/ward/${row.unit.id}`}
+                    data-testid={`ward-index-link-${row.unit.id}`}
+                    aria-label={`Enter ${row.unit.name}`}
+                  >
+                    Enter
+                  </Link>
+                )}
               </span>
             </div>
           ))}

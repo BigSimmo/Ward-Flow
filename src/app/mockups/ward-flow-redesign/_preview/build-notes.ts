@@ -22,12 +22,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** one barrier panel and the shared Discharges changes (see Discharges).",
     "**Review round (30 October):** as the coordinator's Discharges: '4 to work now · of 14 open', '4 to work · 1 discharged', Held up as the one word, barrier and day clicks stay on Now, the day chart counts releases (closed wards left out), Chase opens Barriers and Confirm date the date control. Own-ward wording and filters kept.",
   ],
-  "as-ward-seclusion": [
-    "**As the nurse in charge**, the page opens straight on Dabakarn's record: room status, what is in use and incidents. The one-row rooms-by-ward table is gone.",
-    "**New:** the header counts this ward (seclusion in use, restraint in use, incidents in the last day).",
-    "**Kept:** the operational-only safeguard wording, word for word.",
-    "**Round 2:** the card head drops 'Dabakarn' (the eyebrow names it). 'None in use.' and 'None recorded.'; the section reads 'Incidents, last day', as the hero does.",
-  ],
   "as-ward-handover": [
     "**As the nurse in charge**, the sheet is titled for Dabakarn, with no scope picker.",
     "**New:** empty groups fold into one line, so the table opens on real rows; the footer says '1 bed ready on Dabakarn' instead of the statewide finding-a-ward bar.",
@@ -144,18 +138,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** as the coordinator's Capacity: the network total shows once, a muted 48-hour range, a stacked phone forecast sheet, and the ward drawer's own title in place of Back to network. Held-up releases count only Royal Perth's (2), so the figure matches this desk's Discharges, named as Discharges names them.",
     "**Carried from the approved Capacity design (31 Oct 2026):** the same Mismatch strip (the site's own bed types only), forecast (named Site), full-width bed map with Other sites under it, and the lower row. Nearest ready beds ranks every site from the site's own ED; This shift offers Confirm on the ward's page instead of Ask, which is the coordinator's step.",
   ],
-  "as-bed-manager-wards": [
-    "**As the site bed manager**, All wards leads with Royal Perth's 2 wards in full, then other sites as bed counts only (first 6, then Show all 20).",
-    "**Removed from other sites' cards:** Enter, Stays and discharges and ask NUM, which this desk cannot use.",
-    "**Round 2:** Ready by 15:00 and Pulled become one quiet line beside the title, because they filter nothing. The Ready now chip reads 'Wards with a ready bed'. Order 'By service' reads 'By site', and the phone says 'Wards full', the Status filter's word.",
-    "**Question for you:** Occupancy by service still shows network services on a site desk. Recommend scoping it to the site.",
-  ],
-  "as-bed-manager-places": [
-    "**As the site bed manager**, Places opens on '2 wards at your site', Dabakarn in the preview.",
-    "**Changed:** a place this desk cannot open shows Open greyed with the app's own sentence; Ask to confirm becomes Confirm beds on the site's wards.",
-    "**Still open:** RPH ED is not listed as one of the site's places, because this role cannot open ED pages. Should it?",
-    "**Round 2:** the site's two wards are listed once, under Your site; the network group reads 'Other wards 20'. Network totals leave the eyebrow. The preview's pills become one quiet line, with only the warning kept as a pill.",
-  ],
   "as-bed-manager-ward": [
     "**As the site bed manager**, the real gating already works: Confirm numbers is offered, Raise referral is greyed, answering and placing are blocked.",
     "**New:** no Start the round, drug count, seclusion check or sign-off reminders, and Morning bed numbers with Confirm first in This shift (role branches in the one My ward copy).",
@@ -178,11 +160,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Still open:** the shared counts hook treats this desk as full detail although its grant is counts; the copy applies counts only.",
     "**Round 2:** with one ED, Open ED journeys is one row of five figures. The one-site 'Site codes' key, the ward filter (two wards) and the title's meta are gone. The first tab reads 'Site', not 'Network'.",
     "**Still open:** the rail's 'Capacity 26' is the network figure on a site desk (shared chrome).",
-  ],
-  "as-bed-manager-seclusion": [
-    "**As the site bed manager**, the page is headed for Royal Perth ('1 secure ward of 2 at the site').",
-    "**Kept:** Mark available or out of service (this desk may), and the operational-only safeguard note.",
-    "**Round 2:** with one secure ward at the site, the page opens straight on Dabakarn's record, as the ward desk's view does. The header counts Seclusion in use, Restraint in use and Incidents, last day. 'Not recorded' is the one wording. The scope note stays word for word.",
   ],
   "as-executive-home": [
     "**As the executive**, one line under the hero explains the small-number rule once, instead of unexplained 'not shown' values in every card.",
@@ -436,14 +413,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**Still open:** the save toasts and the "saved outside this desk\'s view" line still read given name first, as today.',
     "**Phone (Josh, 31 October):** the form's buttons stack: Add patient full width on top, Reset and Register & start referral side by side under it.",
   ],
-  "ward-answer": [
-    "**Built from a copy of today's Ward answer view**, so answering, declining, Confirm your beds and the phone layout work as now.",
-    '**New:** with nothing to answer, the full-width Bed request panel becomes one line: "All answered. No referral is currently awaiting an answer from Dabakarn."',
-    "**New:** census squares are coloured by state (ready green, pulled blue, closed hatched amber, occupied grey), with a key giving the same counts as the header. Bed numbers go from 11 to 12 px.",
-    '**Kept:** Confirm your beds with its stepper and Confirm, Recent answers, and "Writes to Dabakarn only, never any other ward".',
-    "**Not seen:** the screen with a request waiting, because this ward has none in the synthetic world. This copy is over the 1,500-line cap under D-89.",
-    "**Round 2:** with nothing to answer, the notice is 'Requests land here as they are sent.' Figures show once. Confirm your beds leads with Confirmed free, then Ready. 'Only a ready bed can take a request' shows only while a request is open.",
-  ],
   settings: [
     "**Built from a copy of today's Settings screen**, so rule drafts, Standard and Surge, Save with Undo, Discard, Find a setting, Go to a desk and the phone layout work as now.",
     '**New:** a sticky save bar on the Rules tab shows how many rules changed and what changed, with Discard and Save changes (the one filled button, "Save 3 changes"); with nothing changed it says "No unsaved changes".',
@@ -467,25 +436,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Phone (Josh, 31 October):** On this phone switches are the kit's 32px options on a 40px track; Go to a desk is Home's 40px hero pill in today's frame.",
 
     "**New frame (D-91):** Settings drops its own Go to a desk (hero and Profile card); the sidebar's or Menu's who-you-are row opens it. The review is 'Save 3 rule changes?' / 'Save changes'; zero counts name their noun ('No one past target').",
-  ],
-  "sign-in": [
-    "**Built from a copy of today's Sign in screen**, so catchment, shift, role, the appearance switch and the Actions and Limits tabs work as now.",
-    '**New:** an "Open as <role>" button (the one filled button) ends the choices and opens the screen the role names. It signs nobody in, stores nothing and grants nothing.',
-    "**New:** the boxed role numbers 1 to 7 are gone; the action counts stay, and number keys still pick a role.",
-    "**Kept:** no input fields, the action list with ticks and crosses, every synthetic and no-password notice, and the footer.",
-    "**Question for you:** four of the seven roles have no home of their own, so they open Home. Should the button navigate at all?",
-    "**Round 2:** places use the menu's names, the ward role is 'Ward manager', and shifts are Day / Evening / Night from the app's own pattern, so they match the rail.",
-    "**Proposals for you:** list the app's eight desks instead of seven roles, and open the matching role mock-up from Open as.",
-  ],
-  community: [
-    "**Built from a copy of today's Community directory**, so search, service filters, Reads alike, the letter jump, Catchment guide, Raise referral and the phone tabs work as now.",
-    '**New:** the heading reads "64 community teams" (a live count), with one line under it: "Names from referral catchment documents, not verified services".',
-    '**New:** the suburb lookup is a full-width bar above the list. Its warning ("2 teams name Barragup. Check the right one.") comes first, and each team has its own Open button plus Show in list.',
-    "**New:** the A to Z list uses the page scroll; the letter rail and column heading stick under the bar, and the shorter side column stays pinned.",
-    "**Kept:** Names that read alike, Teams by service, Catchment guide, Raise referral and the footer wording.",
-    "**Round 2:** the hero drops its Referrals link (the menu opens the board). 'Shared suburbs' and 'Read alike' are the one label each. Phone suburb chips wrap instead of running off the edge.",
-    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "community-team": [
     "**Built from a copy of today's community team screen**, so the tabs, Record contact, CTO register, Refer from team, the record drawer and transport booking work as now.",
@@ -537,15 +487,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** recorded and typed times only; nothing is calculated.",
     "**Still open:** the CSV's patient line keeps today's first-name-first export format, as it is a file format rather than the screen.",
     "**Round 2:** the phone eyebrow is just 'Generated 10:42'. 356 shows once ('6 of 356'). Show more is offered once, then points to the search, because 356 rows would take about 30 presses. The filter says 'Ward manager', the app's role name.",
-  ],
-  places: [
-    "**Built from a copy of today's Places screen**, so search (the / shortcut, arrows, Enter, Escape), stars, Ask to confirm, View statistics, Open and the phone preview sheet work as now.",
-    "**Point 21:** Places is now a directory with no bed figures of its own. Bed squares, ready and pulled counts, the header bed chips, Ready beds only and the network bed bar are gone; rows and the preview point to Capacity's bed map and All wards.",
-    "**New:** search sits first, in the header. Services after the first two fold, and in All the EDs and teams fold to one row each. Long groups show 8 rows, then Show more.",
-    "**New:** the preview opens on the first place listed, so the right side is never empty. A stale count says Stale count on its row.",
-    "**Kept:** All, Wards, EDs and Teams; Service order; stars; At a glance; Needs a check (stale counts only, in the existing words). Wards by service now counts wards, not beds.",
-    "**Question for you:** with no beds shown, the Most ready order is replaced by A to Z. Is that right, or should Most ready stay?",
-    "**Round 2:** in All, the EDs' and teams' heading is itself the fold row, so the count shows once. 'Stale 5h' sits beside its two lines on a phone. Security reads 'Open ward' / 'Locked ward', because 'Open' sat next to Open buttons.",
   ],
   "statistics-unit": [
     "**Built from a copy of today's ward statistics screen**, so Change ward, the next and previous arrows, Export the figures, the roster search, filters and CSV, and the phone view work as now.",
@@ -659,13 +600,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** Chase opens the release on its barriers and Confirm date on its 'New expected out' control. Before the weekend or public holiday is a short notice above the list, person first. Each group shows its first 6 rows then Show more; on a wide screen the day chart sits under the barrier panel. Phone rows are three lines with the button beside the stage.",
     "**Agrees with Capacity:** the day chart leaves closed wards out, as Capacity's forecast does (Josh, 30 October).",
   ],
-  wards: [
-    "**Built from a copy of today's All wards page**, so the cards, the Table view, Occupancy by service, Counts to check and every filter work as now.",
-    "**New:** Status, Cohort and Order are three menus beside the service tabs, so the controls take two short rows instead of four. The bed key and the ward count share one line above the cards.",
-    '**New:** card text wraps ("Sir Charles Gairdner · Older adult") instead of ending in "…". The stale-count warning was already on the card and stays.',
-    "**Point 21 (my pick for you to confirm):** All wards stays as the page to compare wards side by side. Capacity's bed map shows where the free beds are now, and Places becomes the directory to find a place.",
-    "**Round 2:** the count reads '22 wards', or '3 of 22 wards highlighted' when filtered. Names drop ' — open' (the security label shows it) and wrap. Bed strips sit at each card's foot, so they line up across a row.",
-  ],
   statistics: [
     "**Built from a copy of today's Statistics page**, so the Network, Compare, Services, Wards, EDs, Teams and Weekly tabs, the 85% alert line, Samples and Export all work as now.",
     "**New:** Bed board, Journey and Map are one switch instead of three large cards, and Open a unit is one button beside it that shows today's unit finder in place, instead of a panel repeating the menu.",
@@ -720,16 +654,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**Still open:** on a portrait tablet the session summary under the list says "Choose an event" until one is chosen. It is the screen\'s resting state, so it is left as it is.',
     "**Round 2:** Gaps reads 'Form gaps' ('67 form gaps across 9 sites'). The phone hero drops a line that repeated the title, tabs and footer. The phone switch is back to today's size; wrapping cells now live in copied files, not overrides.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
-  seclusion: [
-    "**Built from a copy of today's Seclusion screen**, so the room status buttons (each asking first), Record start, Record end, Record incident, the typed-time checks and the ward-only recording rule (D-80) all work as now.",
-    "**New:** one table of every secure ward's seclusion room (in use, available, out of service or not recorded), with what is in use, the last day's incident count and who last marked the room. The header counts rooms in each state. Rows needing a look come first.",
-    "**New:** choosing a ward opens its record beside the table, on the first ward that needs a look rather than an empty panel. On a phone the record sits under the table and the page scrolls to it.",
-    "**Which wards:** a secure ward here is one with locked beds, plus any ward with something recorded, so no record is hidden. Please confirm that is the right list.",
-    "**Kept word for word:** the Operational view only notice. Nothing works out an order length, a review or a legal limit; times show as typed.",
-    "**Demo night:** nothing is recorded yet, so every room starts as Not recorded. Marking a room or recording a start updates the table and header at once.",
-    "**Round 2:** the phone hero shows In use, Out of service and Not recorded (it missed '7 Not recorded', the only figure that is not nought); Available moves into the phone title line. Short labels such as 'In use', with 'Seclusion rooms' spoken.",
-    "**Proposals for you:** amber with words for out of service, and one line instead of a table of empty rows until something is recorded.",
   ],
   "on-call": [
     "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
@@ -824,13 +748,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** no reason starts chosen; Confirm blocker says 'Choose a reason first' until one is tapped.",
     "**Kept:** every reason word for word, and the page's own focus handling.",
     "**Removed:** 'Bed / Subject:' and 'Timing indicator:' labels; the tile's label and tag show under the title instead.",
-    "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
-  ],
-  "pop-ward-accept": [
-    "**Built from a copy of today's Accept in principle dialog** (`ward/ward-answer-accept-dialog.tsx`), so the time limit, the focus return and accept with Undo work as now.",
-    "**New:** on the shared dialog: the person surname first with cohort, tier and referral time (not a legal time), the target unit, then 'Pull time limit' as two choices with neither chosen; Confirm acceptance waits for a choice.",
-    "**Kept:** 'Accepting does not allocate a bed. No bed number is recorded.', word for word.",
-    "**Still open:** no request waits on Dabakarn at 10:42, so this shows the first waiting request for any ward (Sallowfield, Edmund, for FSH Older Adult) over Dabakarn's page.",
     "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
   ],
   "pop-clearance": [

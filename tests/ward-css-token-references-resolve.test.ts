@@ -141,11 +141,12 @@ function read(paths: string[]) {
 /**
  * 🔴 **THE DECLARATION SURFACE IS WIDER THAN THE FILE TYPE, AND THIS GUARD LEARNED THAT TWICE.**
  *
- * A custom property can also be declared at RUNTIME, from a JSX inline style — and the hub does
- * exactly that: `hub-screen.tsx:497-499` sets `--bar-ready`, `--bar-not-yet` and `--bar-pulled`
- * per bed bar from `barWidth(...)`, which `hub.module.css:814-824` then reads as
- * `width: var(--bar-ready, 0%)`. **Those are per-row values that cannot live in a stylesheet: one
- * declared width would be one width for every ward.**
+ * A custom property can also be declared at RUNTIME, from a JSX inline style — and the bed strip
+ * does exactly that: `wards/bed-strip.tsx` sets `--strip-ready`, `--strip-pulled` and
+ * `--strip-closed` per ward from its counts, which `bed-strip.module.css` then reads as
+ * `flex-grow: var(--strip-ready)`. **Those are per-row values that cannot live in a stylesheet: one
+ * declared value would be one strip for every ward.** (The hub's own `--bar-*` widths, the first
+ * case found, left with the Places bed bar under review point 21, 31 Oct 2026.)
  *
  * ⚠️ **Scanning only `.css` reported all three as undeclared, and the correct-looking repair would
  * have been to point them at a shared token — pinning every bed bar on that screen to a single
@@ -276,9 +277,9 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
 
   it("SEES RUNTIME DECLARATIONS TOO, or a per-row value reads as an undeclared token", () => {
     /*
-     * The canary for the second widening. If the JSX scan silently stopped matching, the three hub
-     * bar-width properties would come back as "undeclared" and the obvious repair — point them at a
-     * shared token — would pin every bed bar on that screen to one width. **A guard is at its most
+     * The canary for the second widening. If the JSX scan silently stopped matching, the bed
+     * strip's per-ward properties would come back as "undeclared" and the obvious repair — point
+     * them at a shared token — would pin every strip to one shape. **A guard is at its most
      * dangerous when it is wrong AND specific**, so this pins that the runtime surface is genuinely
      * being read rather than trusting that it is.
      */
@@ -286,8 +287,8 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
       runtimeDeclared.size,
       "no custom property was collected from JSX — the runtime scan is dead",
     ).toBeGreaterThan(0);
-    for (const name of ["--bar-ready", "--bar-not-yet", "--bar-pulled"]) {
-      expect(runtimeDeclared, `${name} is set from hub-screen.tsx and must count as declared`).toContain(name);
+    for (const name of ["--strip-ready", "--strip-pulled", "--strip-closed"]) {
+      expect(runtimeDeclared, `${name} is set from bed-strip.tsx and must count as declared`).toContain(name);
     }
   });
 
@@ -349,10 +350,11 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
      */
     /*
      * 🔴 **THE THREE `--bar-*` NAMES ARE NOT UNDECLARED — THEY ARE DECLARED SOMEWHERE THIS SCANNER
-     * CANNOT SEE, AND "FIXING" THEM WOULD BREAK THE SCREEN.**
+     * CANNOT SEE, AND "FIXING" THEM WOULD BREAK THE SCREEN.** (History: the Places bed bar that set
+     * and read them was removed on 31 Oct 2026, review point 21; the lesson stands.)
      *
-     *     hub-screen.tsx:497-499   style={{ "--bar-ready": barWidth(network.ready, network.beds), … }}
-     *     hub.module.css:814,819,841   width: var(--bar-ready, 0%);
+     *     hub-screen.tsx (then)   style={{ "--bar-ready": barWidth(network.ready, network.beds), … }}
+     *     hub.module.css (then)   width: var(--bar-ready, 0%);
      *
      * A custom property assigned per instance from a JSX `style` object is the correct idiom for a
      * value only JavaScript can compute, and the `0%` fallback is deliberate: a bar has no width
@@ -369,7 +371,7 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
     expect(withFallback, "an undeclared token appeared behind a fallback").toEqual(
       /*
        * ⚠️ **`--bar-pulled` (once `--bar-blocked`), `--bar-not-yet` and `--bar-ready` WERE ON THIS LIST AND ARE NOT MISSES.**
-       * They are declared at RUNTIME from JSX (`hub-screen.tsx:497-499`, one width per bed bar) and
+       * They were declared at RUNTIME from JSX (the Places bed bar, removed 31 Oct 2026) and
        * read as `var(--bar-ready, 0%)`. A scan of `.css` alone cannot see a runtime declaration, so
        * they arrived here looking like undeclared names — and the obvious repair, pointing them at a
        * shared token, would have pinned every bed bar on that screen to a single width. They are
