@@ -161,7 +161,7 @@ describe("the ED screen's form-expiry line never reads formedAt", () => {
   it("Form 1A with a typed dueAt: shows the written expiry, never a computed statutory window", () => {
     render(<EdScreen edId="arm-ed" />);
     const row = screen.getByTestId(`ward-ed-form-expiry-${FORM_1A_NOT_FORMED_ID}`);
-    expect(row).toHaveTextContent(/Expiry written on the form:/);
+    expect(row).toHaveTextContent(/^(Ends|Ended) .+ as typed$/); // D-93: the typed time only
     expect(row.textContent ?? "", "the line must never invent a 72h or 24h statutory figure from formedAt").not.toMatch(
       /\b(72|24)h\b|remaining \(/,
     );
@@ -170,7 +170,7 @@ describe("the ED screen's form-expiry line never reads formedAt", () => {
   it("Form 1A with dueAt still shows the written expiry — formedAt does not invent a different figure (control)", () => {
     render(<EdScreen edId="peel-ed" />);
     const row = screen.getByTestId(`ward-ed-form-expiry-${FORM_1A_FORMED_ID}`);
-    expect(row).toHaveTextContent(/Expiry written on the form:/);
+    expect(row).toHaveTextContent(/^(Ends|Ended) .+ as typed$/); // D-93: the typed time only
     expect(row.textContent ?? "").not.toMatch(/\b(72|24)h\b|remaining \(/);
   });
 

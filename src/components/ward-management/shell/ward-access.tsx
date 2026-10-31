@@ -23,7 +23,11 @@ import { IdleLockScreen, IdleWarningSheet } from "@/components/ward-management/f
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { WARD_BED_MEETING_TV_HREF } from "@/components/ward-management/ward-nav";
-import { plannedAdmissionsForDesk, supportNotificationsForDesk } from "@/components/ward-management/ward-access-state";
+import {
+  plannedAdmissionsForDesk,
+  supportNotificationsForDesk,
+  withStayReferralsInView,
+} from "@/components/ward-management/ward-access-state";
 import {
   coordinatorRecordScope,
   countsOnlyBedRelease,
@@ -320,9 +324,16 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
       ready: sharedCollectionReady,
       now,
     });
+    const shownReferrals =
+      collection.referrals === baseScoped.referrals ? baseScoped.referrals : [...collection.referrals];
     const scoped = {
       ...baseScoped,
-      referrals: collection.referrals === baseScoped.referrals ? baseScoped.referrals : [...collection.referrals],
+      referrals: shownReferrals,
+      admissions: withStayReferralsInView(
+        baseScoped.admissions,
+        new Set(shownReferrals.map((referral) => referral.id)),
+        new Set(context.referrals.map((referral) => referral.id)),
+      ),
       patients: collection.patients === baseScoped.patients ? baseScoped.patients : [...collection.patients],
       breakGlassPatientIds: collection.breakGlassPatientIds,
     };

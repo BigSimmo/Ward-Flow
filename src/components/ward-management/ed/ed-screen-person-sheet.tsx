@@ -5,7 +5,8 @@
 // 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
-import { minutesUntil, splitDuration } from "@/components/ward-management/ward-clock";
+import { splitDuration } from "@/components/ward-management/ward-clock";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { JourneyStrip, PhoneSheet } from "@/components/wf";
 import { edJourneyStages } from "./ed-journey";
@@ -179,11 +180,8 @@ export function renderEdPersonSheet(
           <div>
             <dt>Form due (as written)</dt>
             <dd className={movement.legalForm.dueAt === undefined ? undefined : styles.phoneSheetMono}>
-              {movement.legalForm.dueAt === undefined
-                ? "Not written"
-                : minutesUntil(movement.legalForm.dueAt, now) >= 0
-                  ? `in ${splitDuration(minutesUntil(movement.legalForm.dueAt, now))}`
-                  : `passed ${splitDuration(Math.abs(minutesUntil(movement.legalForm.dueAt, now)))} ago`}
+              {/* Legal times only as typed (31 Oct 2026): never "in 3h 20m" or "passed … ago". */}
+              {movement.legalForm.dueAt === undefined ? "Not written" : typedTimeLine(movement.legalForm.dueAt, now)}
             </dd>
           </div>
         ) : null}

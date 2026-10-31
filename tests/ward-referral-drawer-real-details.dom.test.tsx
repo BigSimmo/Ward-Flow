@@ -82,8 +82,8 @@ describe("the referral drawer shows only what the record holds", () => {
     // record instead, and the made-up profile's other details stay forbidden below.
     expect(recorded.patient?.id).toBe("PT-023");
 
-    // The identity banner carries the recorded name.
-    expect(screen.getByText(new RegExp(`^${recorded.displayName} \\(`))).toBeInTheDocument();
+    // The identity banner carries the recorded name, surname first (D-83, bug list row 18).
+    expect(screen.getByText(new RegExp(`^${recorded.formalName} \\(`))).toBeInTheDocument();
     // v6 (ReferralDrawer.webp): "UMRN UM100052 · DOB … · Medicare Not recorded", no colons.
     expect(document.body.textContent).toContain(`UMRN ${recorded.umrn}`);
     expect(document.body.textContent).toContain("Medicare Not recorded");

@@ -33,10 +33,13 @@ import {
   alertGroupOf,
   alertKindOf,
   escalationAppliesTo,
+  legalTypedEnd,
   minutesText,
   raisedAt,
+  shownAgeFrom,
   type AlertSubject,
 } from "./alerts-model";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { DeclineLadder, WaitTrack, type TrackPoint } from "./alerts-visuals";
 import { AlertArrivedAtWard } from "./alert-arrived-at-ward";
 import { PullNowButton } from "./global-alert-panels";
@@ -99,7 +102,10 @@ export function AlertDetail({
   const isPhone = useIsPhone();
   const kind = alertKindOf(item.id);
   const group = alertGroupOf(item);
+  // A passed legal form shows its typed time, never an age since it (legal times only as typed).
+  const legalEnded = legalTypedEnd(item);
   const opened = raisedAt(item, movement);
+  const openedShown = shownAgeFrom(item, opened);
   const seen = acknowledgements?.at(-1);
   const action = alertActionFor(item, subject);
   // P085 (27 Oct 2026): when the action already opens the patient, one link to them is enough. A
@@ -205,7 +211,9 @@ export function AlertDetail({
         <div className={styles.sectionHead}>
           <span className={styles.eyebrow}>{kind === "hold" ? "Time in ED" : "Recorded times"}</span>
           <span className={`${styles.quiet} ${styles.mono}`}>
-            {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
+            {legalEnded !== undefined
+              ? typedTimeLine(legalEnded, now)
+              : minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
           </span>
         </div>
         <WaitTrack points={track} now={now} />
@@ -335,10 +343,12 @@ export function AlertDetail({
                 {group === "act" ? "Act now" : "Waiting"}
               </span>
             ) : null}
-            {opened !== undefined ? (
+            {openedShown !== undefined ? (
               <span className={styles.phChip}>
-                open <span className={styles.mono}>{minutesText(Math.max(0, now - opened))}</span>
+                open <span className={styles.mono}>{minutesText(Math.max(0, now - openedShown))}</span>
               </span>
+            ) : legalEnded !== undefined ? (
+              <span className={styles.phChip}>{typedTimeLine(legalEnded, now)}</span>
             ) : null}
           </div>
         </div>
@@ -488,10 +498,12 @@ export function AlertDetail({
       <div className={styles.detailState}>
         <StatusGlyph tone={group === "act" ? "danger" : group === "wait" ? "warning" : "neutral"} />
         <span className={styles.detailTitle}>{item.title}</span>
-        {opened !== undefined ? (
+        {openedShown !== undefined ? (
           <span className={styles.quiet}>
-            open <span className={styles.mono}>{minutesText(Math.max(0, now - opened))}</span>
+            open <span className={styles.mono}>{minutesText(Math.max(0, now - openedShown))}</span>
           </span>
+        ) : legalEnded !== undefined ? (
+          <span className={styles.quiet}>{typedTimeLine(legalEnded, now)}</span>
         ) : null}
       </div>
 
@@ -516,7 +528,9 @@ export function AlertDetail({
           <div className={styles.sectionHead}>
             <span className={styles.eyebrow}>{kind === "hold" ? "Time in ED" : "Recorded times"}</span>
             <span className={`${styles.quiet} ${styles.mono}`}>
-              {minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
+              {legalEnded !== undefined
+                ? typedTimeLine(legalEnded, now)
+                : minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
             </span>
           </div>
           <WaitTrack points={track} now={now} />

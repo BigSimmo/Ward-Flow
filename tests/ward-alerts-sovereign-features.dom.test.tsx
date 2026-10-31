@@ -90,7 +90,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     [48 * 60, "2d overdue"],
     [3 * 60 + 5, "3h 05m overdue"],
     [5, "5m overdue"],
-  ] as const)("preserves the full recorded overdue duration of %s minutes", (elapsed, expected) => {
+  ] as const)("shows a legal form %s minutes past its typed time as typed, never as %s (D-93)", (elapsed, expected) => {
     function SetExpiry() {
       const { movements, dispatch } = useWardFlow();
       const movement = movements.find((m) => !m.closure && m.legalForm)!;
@@ -117,7 +117,10 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Set recorded expiry" }));
-    expect(screen.getByText(expected, { exact: true })).toBeVisible();
+    // D-93 (31 Oct 2026): legal form times only as typed. The row shows "Ended 09:42 as typed",
+    // and the overdue duration this test used to pin is gone.
+    expect(screen.getAllByText(/^Ended .+ as typed$/u)[0]).toBeVisible();
+    expect(screen.queryByText(expected, { exact: true })).toBeNull();
   });
 
   it("renders synthetic prototype badge in the subheader (FF8)", () => {

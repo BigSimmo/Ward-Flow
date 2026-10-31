@@ -4,9 +4,9 @@ import {
   clockState,
   type DueSoonThresholds,
   type Instant,
-  minutesUntil,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
@@ -147,13 +147,10 @@ export function waitFactors(movement: Movement, now: Instant, thresholds: DueSoo
   const legalForm = movement.legalForm;
   const dueAt = currentLegalDueAt(movement);
   if (legalForm && dueAt !== undefined && clockState(dueAt, now, thresholds) !== "clear") {
-    const remaining = minutesUntil(dueAt, now);
+    // Legal times only as typed (31 Oct 2026): "Form 4C ends 15:42 as typed", never a count.
     factors.push({
       label: FORM_TIMING_FACTOR_LABEL,
-      detail:
-        remaining < 0
-          ? `Form ${legalForm.code} passed its deadline ${splitDuration(Math.abs(remaining))} ago`
-          : `Form ${legalForm.code} due in ${splitDuration(remaining)}`,
+      detail: `Form ${legalForm.code} ${typedTimePhrase(dueAt, now)}`,
     });
   }
 

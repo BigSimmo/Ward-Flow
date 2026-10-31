@@ -464,7 +464,8 @@ describe("finding 3 — a statutory deadline must carry its day and its breach s
     // simply on the page and needs no navigation to reach.
     expect(screen.queryByRole("button", { name: /legal & forms/i })).toBeNull();
     const legalPanel = screen.getByTestId("ward-console-legal-panel");
-    expect(within(legalPanel).getByText(/due 15:42/)).toBeInTheDocument();
+    // D-93 (31 Oct 2026): the typed time in words, never a count.
+    expect(within(legalPanel).getByText(/ends 15:42 as typed/)).toBeInTheDocument();
     expect(within(legalPanel).queryByText(/overdue/i)).toBeNull();
 
     // Readiness states the verdict and points at the panel above. It must not carry a second copy
@@ -476,14 +477,17 @@ describe("finding 3 — a statutory deadline must carry its day and its breach s
     // Advance `now` by 350 minutes: the deadline (NOW_ANCHOR + 300) is now 50 minutes in the past.
     fireEvent.click(screen.getByTestId("test-advance-clock"));
 
-    expect(within(legalPanel).getByText(/due 15:42 — 50m overdue/)).toBeInTheDocument();
+    // The breach still says so in words with its day-and-time, never "50m overdue" (D-93).
+    expect(within(legalPanel).getByText(/ended 15:42 as typed/)).toBeInTheDocument();
+    expect(within(legalPanel).queryByText(/overdue/i)).toBeNull();
     // And the breach reaches the reader who is scanning rather than reading: the attention rail
-    // carries the minutes, and Readiness says the deadline has passed and where to read it.
+    // carries the typed time, and Readiness says the deadline has passed and where to read it.
     expect(
-      within(readiness).getByText("Recorded, and its deadline has passed. Needs attention says by how much."),
+      within(readiness).getByText("Recorded, and its deadline has passed. Needs attention shows the time as typed."),
     ).toBeInTheDocument();
     const rail = screen.getByTestId("ward-console-attention");
-    expect(within(rail).getByText(/50m overdue/)).toBeInTheDocument();
+    expect(within(rail).getByText(/ended 15:42 as typed/)).toBeInTheDocument();
+    expect(within(rail).queryByText(/50m overdue/)).toBeNull();
   });
 });
 

@@ -10,7 +10,6 @@ import { EVENT_ROLE } from "@/components/ward-management/ward-flow-events";
 import { LEGAL_CLOCK_FORM_CODES } from "@/components/ward-management/ward-legal-clock";
 import { legalFormReadinessLine } from "@/components/ward-management/movements/movement-workspace-derivations";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
-import { elapsedFraction } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { queueOrder, waitFactors } from "@/components/ward-management/ward-priority";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -189,7 +188,6 @@ describe("never-build: no computed Mental Health Act time, including the under-1
         const read = (subject: Movement) => ({
           timeLeft: formTimeLeft(subject, now, DEFAULT_DUE_SOON_THRESHOLDS),
           readiness: legalFormReadinessLine(subject.legalForm!, now),
-          elapsed: elapsedFraction(subject, now),
           reasons: waitFactors(subject, now, DEFAULT_DUE_SOON_THRESHOLDS),
         });
         const adult = read(band(movement, "adult"));
