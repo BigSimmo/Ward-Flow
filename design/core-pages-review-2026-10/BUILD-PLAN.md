@@ -372,10 +372,19 @@ Real paths are under `src/components/ward-management/` unless shown. "unknown" m
 
 ### Phase 5: older pop-ups to mock up, then build
 
-About 20 hand-built pop-ups in today's app are not in the viewer (listed in HANDOVER.md, "Older pop-ups
-still to mock up"). Mock each one in the redesign style on the shared `Dialog` or `Sheet`, get Josh's
-approval, then build it like a page. Replace the three `window.confirm` boxes with a styled confirm
-dialog.
+**Mock-ups done (31 October)** on branch `claude/project-thread-16fd72` (draft pull request into this
+branch): twelve pop-ups in the viewer under "Older popups", and one styled confirm dialog replacing the
+three `window.confirm` boxes. See HANDOVER.md, "Older pop-ups mocked up (31 October)".
+
+Next:
+
+1. Josh reviews the twelve pop-ups with the pages they open over.
+2. After Phase 3 refreshes this branch, merge it into the pop-ups branch, refresh the copies against the
+   new main (they were taken from `b6aa5cde`), then merge the pop-ups branch here.
+3. Build them with the kit (Phase 4), each with its page or in small groups, deleting each copy. The kit
+   first needs a `role` prop and first-focus choice on `Dialog`, and the phone button size fix.
+4. Replacing `window.confirm` changes how the unsaved-changes guard works (it must hold the navigation
+   and replay it); build it as its own pull request with tests.
 
 ## 6. Real-app bug list
 

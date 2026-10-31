@@ -1,6 +1,6 @@
 # Redesign mock-ups: handover and plan
 
-_Updated 2026-10-31 (evening) - round 3 done: the new frame is the default, Settings round 3 is in, Help, search and notices are mocked up; every other chat has handed back to this branch; waiting on Josh's review; Design owns._
+_Updated 2026-10-31 (evening; older pop-ups mocked on their own branch) - round 3 done: the new frame is the default, Settings round 3 is in, Help, search and notices are mocked up; every other chat has handed back to this branch; waiting on Josh's review; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed (D-74).** Everything below lives on
 branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown in draft pull request #1118
@@ -450,23 +450,23 @@ for moving onto the standard `Dialog`. They are not in the viewer yet. Mock each
 before it is built. Found in these files (some hold several pop-ups), all under
 `src/components/ward-management/`:
 
-| File                                               | What it holds                               | Mocked already?               |
-| -------------------------------------------------- | ------------------------------------------- | ----------------------------- |
-| `community/community-screen-modals.tsx`            | several community team modals               | No                            |
-| `community/community-screen-drawer.tsx`            | the community record drawer                 | No                            |
-| `community/community-screen-transport-dialogs.tsx` | community transport dialogs                 | No                            |
-| `board/ward-board-work-band.tsx`                   | board confirmations                         | No                            |
-| `ed/ed-screen-transport-dialog.tsx`                | ED transport dialog                         | No                            |
-| `ward/ward-screen-overlays.tsx`                    | My ward overlays (bed dossier, patient-now) | Partly (the bed record popup) |
-| `ward/ward-answer-accept-dialog.tsx`               | accepting a request on Ward answer          | No                            |
-| `shell/ward-bar-controls.tsx`                      | header popovers                             | Partly (new frame)            |
-| `front-door/lock-cards.tsx`                        | the front-door lock cards                   | No                            |
-| `capacity/bed-meeting-sheet.tsx`                   | the bed meeting sheet                       | Yes (`pop-bed-meeting-sheet`) |
-| `shell/ward-demo-menu.tsx`                         | the demo menu                               | Yes (`pop-demo`)              |
-| `referrals/arrival-time-modal.tsx`                 | the arrival plan                            | Yes (copied into `ed-board/`) |
+| File                                               | What it holds                               | Mocked already?                                                                             |
+| -------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `community/community-screen-modals.tsx`            | several community team modals               | Yes (`pop-community-referral`, `pop-community-note`)                                        |
+| `community/community-screen-drawer.tsx`            | the community record drawer                 | Yes (`pop-community-record`)                                                                |
+| `community/community-screen-transport-dialogs.tsx` | community transport dialogs                 | Yes (`pop-community-transport-book`, `-cancel`)                                             |
+| `board/ward-board-work-band.tsx`                   | board confirmations                         | Yes (`pop-board-blocker`)                                                                   |
+| `ed/ed-screen-transport-dialog.tsx`                | ED transport dialog                         | Yes, already (`pop-log-transport`)                                                          |
+| `ward/ward-screen-overlays.tsx`                    | My ward overlays (bed dossier, patient-now) | Yes (`pop-bed-record`, `pop-confirm-beds`; patient-now's clearance form is `pop-clearance`) |
+| `ward/ward-answer-accept-dialog.tsx`               | accepting a request on Ward answer          | Yes (`pop-ward-accept`)                                                                     |
+| `shell/ward-bar-controls.tsx`                      | header popovers                             | Yes, except the unreachable 'Not wired' primary popover                                     |
+| `front-door/lock-cards.tsx`                        | the front-door lock cards                   | Yes (`pop-idle-warning`, `pop-idle-lock`)                                                   |
+| `capacity/bed-meeting-sheet.tsx`                   | the bed meeting sheet                       | Yes (`pop-bed-meeting-sheet`)                                                               |
+| `shell/ward-demo-menu.tsx`                         | the demo menu                               | Yes (`pop-demo`)                                                                            |
+| `referrals/arrival-time-modal.tsx`                 | the arrival plan                            | Yes (copied into `ed-board/`)                                                               |
 
 Three `window.confirm` boxes remain: `use-dirty-state-guard.ts` lines 135 and 372, and
-`ward-tasks-drawer.tsx` line 330. They need a styled confirm dialog.
+`ward-tasks-drawer.tsx` line 330. They need a styled confirm dialog. Done on 31 October: `pop-confirm-leave` and `pop-confirm-discard` (see "Older pop-ups mocked up (31 October)" below).
 
 ### Small things for Josh at review
 
@@ -629,3 +629,75 @@ Merged into this branch and polished on 31 October (534584d60, 14dcaef34).
   writes "— open"; the Quick commands block in Search shows "+15m" twice.
 - Bed 12 on the nurse in charge's My ward reads "Name not recorded": the client's workspace scoping keeps
   an out-of-scope `referralId`, and the resolver treats it as a broken link.
+
+## Older pop-ups mocked up (31 October)
+
+BUILD-PLAN Phase 5, done on branch `claude/project-thread-16fd72` (taken from this branch at `c4104380`,
+draft pull request into it), so the build was never held up. Mock-ups only: no real `/ward-flow` screen
+changed (D-74). Copies taken from main `b6aa5cde`; refresh them against main after Phase 3.
+
+Twelve new pop-ups, in the viewer under **Older popups**, each with build notes:
+
+| Mock-up                          | Drawn over     | Copy of (real file under `src/components/ward-management/`)              |
+| -------------------------------- | -------------- | ------------------------------------------------------------------------ |
+| `pop-community-referral`         | community-team | `community/community-screen-modals.tsx` (Assign referral)                |
+| `pop-community-note`             | community-team | `community/community-screen-modals.tsx` (Record contact, counts)         |
+| `pop-community-record`           | community-team | `community/community-screen-drawer.tsx`                                  |
+| `pop-community-transport-book`   | community-team | `community/community-screen-transport-dialogs.tsx` (book)                |
+| `pop-community-transport-cancel` | community-team | `community/community-screen-transport-dialogs.tsx` (cancel)              |
+| `pop-board-blocker`              | stays          | `board/ward-board-work-band.tsx` (Record a blocker)                      |
+| `pop-ward-accept`                | ward-answer    | `ward/ward-answer-accept-dialog.tsx`                                     |
+| `pop-clearance`                  | patient        | `patients/patient-now-screen.tsx` (medical clearance form)               |
+| `pop-idle-warning`               | home           | `front-door/lock-cards.tsx` (`IdleWarningSheet`)                         |
+| `pop-idle-lock`                  | home           | `front-door/lock-cards.tsx` (`IdleLockScreen`)                           |
+| `pop-confirm-leave`              | add-patient    | new `StyledConfirmDialog`, replacing `use-dirty-state-guard.ts` 135, 372 |
+| `pop-confirm-discard`            | home           | the same dialog, replacing `ward-tasks-drawer.tsx` 330                   |
+
+Already mocked before, so skipped: the ED transport dialog (`pop-log-transport`), the bed dossier
+(`pop-bed-record`), the capacity confirm (`pop-confirm-beds`), the bed meeting sheet, the demo menu and
+the arrival plan. The ward bar's "Not wired in this prototype." primary popover has no mock-up: no route
+opens it today (`ward-nav.ts` gives every route `new-referral` or `none`).
+
+Outside the pages' own folders, only import lines changed, so each page copy draws the redesigned
+pop-up: `community-team/community-team-redesign.tsx` (five imports), `stays/stays-redesign.tsx` and
+`as-ward-stays/stays-redesign.tsx` (one each), `ward-answer/ward-answer-view.tsx` (one).
+
+### What the build needs from the kit
+
+- The kit `Dialog` needs a `role` prop (`alertdialog` for the idle warning and the confirm; the mock-ups
+  pass it through spare props) and a way to choose which footer button gets focus first.
+- Replacing `window.confirm`: the browser box answers at once and a styled one cannot. The guard has to
+  stop the navigation, keep the target and replay it on "Leave without saving";
+  `__wardFlowConfirmNavigation` and the tasks drawer's callers (lines 384, 549, 655, 940) must wait for
+  the answer. The messages stay word for word.
+
+### Sample-data gaps (the pop-up is drawn on its own with the nearest real record)
+
+- No community referral is waiting and no community booking exists, so Assign, Log transport and Cancel
+  transport cannot be opened from the Midland page (Cancel is refused with today's message, correctly).
+- No request waits on Dabakarn at 10:42, so Accept in principle shows the first waiting request for any
+  ward (Sallowfield, Edmund, for FSH Older Adult) over Dabakarn's page.
+
+### Other hand-built dialogs not in the Phase 5 list (not checked)
+
+A search for `role="dialog"` outside the kit also finds: `board/ward-board.tsx`, `board/ward-daily-sheet.tsx`,
+`handover/handover-page.tsx`, `officer/officer-form-check-dialog.tsx`, `officer/officer-forms-pack.tsx`,
+`officer/officer-screen.tsx`, `referrals/upload-forms-modal.tsx`, `referrals/ward-referral-drawer-rail.tsx`,
+`settings/reset-baseline-modal.tsx`, `shell/ward-executive-chrome.tsx`, `shell/ward-rail.tsx`,
+`ward-shared-save-status.tsx` and the Help parts. Some may already be drawn inside page mock-ups; check
+each against the viewer before building.
+
+### Lessons from this round
+
+1. Give the pop-ups their own branch off the design branch: the build planning went ahead untouched, and
+   the shared preview files took only appended lines.
+2. The preview build takes about 5 seconds, so three helpers each with their own copy and port worked
+   with no dev server at all. A one-popup screenshot script (`popshot.js`, flags 48px controls inside
+   dialogs) replaced the full-site run until the end.
+3. Placeholders registered first (one commit) let helpers check their pop-ups straight away without
+   touching shared files.
+4. Pop-ups that need a page's big view object are best opened by swapping the page copy's import and
+   clicking the opener on load; small ones are best drawn on their own over the page.
+5. The kit `Button` is 48px tall on a phone, so every pop-up built on the kit dialog (old and new) has
+   48px footer buttons, against Josh's "no 48px controls" rule. Fix it once in the kit (visible kit size
+   plus an invisible tap area), not per pop-up.
