@@ -34,6 +34,8 @@ export function OtherSitesCounts({ model, focusUnitId }: { model: CapacityModel;
   if (groups.length === 0) return null;
   const all = groups.flatMap((group) => group.wards);
   const ready = all.reduce((sum, ward) => sum + ward.ready, 0);
+  // Owner ruling 2026-09-05: a ready figure says how many of those beds are still being made ready.
+  const makingReady = all.reduce((sum, ward) => sum + (ward.pendingPreparation ?? 0), 0);
   const beds = all.reduce((sum, ward) => sum + ward.unit.beds, 0);
   const toggle = (service: string) =>
     setOpen((current) => {
@@ -48,7 +50,9 @@ export function OtherSitesCounts({ model, focusUnitId }: { model: CapacityModel;
       <CardHead
         id="bm-other-sites-title"
         title="Other sites"
-        meta={`Bed counts only · ${ready} ready of ${beds} beds on ${all.length} wards`}
+        meta={`Bed counts only · ${ready} ready of ${beds} beds on ${all.length} wards${
+          makingReady ? ` · ${makingReady} being made ready` : ""
+        }`}
       />
       <ul className={styles.groups}>
         {groups.map((group) => {

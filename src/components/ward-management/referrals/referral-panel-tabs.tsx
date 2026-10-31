@@ -160,7 +160,7 @@ export function PatientTab({
           }
         >
           {checkRows.length > 0 ? (
-            <div className={s.ready}>
+            <div className={s.readiness}>
               <div className={s.readyBar} role="img" aria-label={`${done} of ${checkRows.length} checks done`}>
                 {checkRows.map((check) => (
                   <i key={check} data-state={checks?.[check]} />

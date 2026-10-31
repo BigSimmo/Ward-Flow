@@ -107,7 +107,7 @@ export function AddTimeDialog({
               onValueChange={(date) => setDraft((current) => ({ ...current, date }))}
             />
           </Field>
-          <Field label="Time" id={`legal-forms-add-time-time-${id}`} hint="24-hour">
+          <Field label="Time" id={`legal-forms-add-time-time-${id}`} hint="HH:MM">
             <TextInput
               placeholder="HH:MM"
               inputMode="numeric"

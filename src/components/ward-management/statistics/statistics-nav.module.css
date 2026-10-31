@@ -168,15 +168,15 @@
       -webkit-mask-image: linear-gradient(
         to right,
         transparent,
-        #000 var(--stats-chip-fade-start),
-        #000 calc(100% - var(--stats-chip-fade-end)),
+        black var(--stats-chip-fade-start),
+        black calc(100% - var(--stats-chip-fade-end)),
         transparent
       );
       mask-image: linear-gradient(
         to right,
         transparent,
-        #000 var(--stats-chip-fade-start),
-        #000 calc(100% - var(--stats-chip-fade-end)),
+        black var(--stats-chip-fade-start),
+        black calc(100% - var(--stats-chip-fade-end)),
         transparent
       );
     }

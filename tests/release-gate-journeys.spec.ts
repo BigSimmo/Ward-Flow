@@ -196,7 +196,7 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
   const unitName = unitById(unitId)!.name;
 
   await page.goto("/ward-flow/capacity", { waitUntil: "load" });
-  await waitForScreen(page, "ward-capacity-page");
+  await waitForScreen(page, "ward-capacity-screen");
   await plantSentinel(page);
   const readyBefore = await capacityReady(page, unitId, unitName);
   expect(readyBefore, "fixture assumption: this ward starts with at least one ready bed").toBeGreaterThan(0);
@@ -219,7 +219,7 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
   await expectNoReloadSince(page, "confirming the ward's numbers");
 
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/ward-flow/capacity", "ward-capacity-page");
+  await goViaNav(page, "/ward-flow/capacity", "ward-capacity-screen");
   await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(0);
   await expectAccessible(page, testInfo, "capacity board after the ward's figures");
   await expectNoReloadSince(page, "returning to the capacity board");
@@ -348,7 +348,7 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   expect(release, `fixture assumption: ${unitId} seeds an unblocked expected release`).toBeDefined();
 
   await page.goto("/ward-flow/capacity", { waitUntil: "load" });
-  await waitForScreen(page, "ward-capacity-page");
+  await waitForScreen(page, "ward-capacity-screen");
   await plantSentinel(page);
   const readyBefore = await capacityReady(page, unitId, unitName);
 
@@ -390,7 +390,7 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
 
   // The coordinator's board shows one more ready bed.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/ward-flow/capacity", "ward-capacity-page");
+  await goViaNav(page, "/ward-flow/capacity", "ward-capacity-screen");
   await expect.poll(() => capacityReady(page, unitId, unitName)).toBe(readyBefore + 1);
   await expectAccessible(page, testInfo, "capacity board after the departure");
   await expectNoReloadSince(page, "returning to the capacity board");

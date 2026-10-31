@@ -131,7 +131,7 @@ function tileNow(tile: HTMLElement): string {
   return tile.querySelector("h3")?.nextElementSibling?.textContent?.trim() ?? "";
 }
 
-/** One of the bed forecast's three figures ("Now", "Tomorrow", "In 48 hours"): value and sub-line. */
+/** One of the bed forecast's three figures ("Now", "Tomorrow", "In 2 days"): value and sub-line. */
 function forecastFigure(label: string): { value: string; sub: string } {
   const forecast = screen.getByRole("region", { name: "Bed forecast" });
   const term = within(forecast)
@@ -760,7 +760,7 @@ describe("tomorrow's beds forecast", () => {
       sub: `${gapWords(tomorrow!.low)} to ${gapWords(tomorrow!.high)}`,
     });
     // 48 hours rests on softer dates, so it leads with the range and gives the likely figure under it.
-    expect(forecastFigure("In 48 hours")).toEqual({
+    expect(forecastFigure("In 2 days")).toEqual({
       value: `${gapWords(twoDays!.low)} to ${gapWords(twoDays!.high)}`,
       sub: `Likely ${gapWords(twoDays!.likely)}`,
     });

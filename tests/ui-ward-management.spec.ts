@@ -178,7 +178,7 @@ test.describe("@mockup Ward Flow command view", () => {
        * present and correct, pointing at a testid that no longer exists, satisfies both.** Only
        * running the journey finds it, which is the argument for the ward lane running at all.
        */
-      capacity: "ward-capacity-page",
+      capacity: "ward-capacity-screen",
       movements: "ward-movements-page",
       governance: "ward-mode-governance",
     };

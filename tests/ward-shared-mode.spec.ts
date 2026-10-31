@@ -268,7 +268,7 @@ test("keyboard focus: after a shared save the activated control still has focus"
   // tab's session storage, so a full navigation keeps it.
   await page.goto("/ward-flow/capacity", { waitUntil: "domcontentloaded" });
   await expect(sharedStatus(page)).toContainText(READY, { timeout: 30_000 });
-  const capacity = page.getByTestId("ward-capacity-page");
+  const capacity = page.getByTestId("ward-capacity-screen");
   await capacity.getByRole("button", { name: WARD, exact: true }).first().click();
   const detail = page.getByRole("complementary", { name: "Network summary and ward detail" });
   const request = detail.getByRole("button", { name: "Request ward update" });

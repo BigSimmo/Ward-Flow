@@ -317,10 +317,7 @@ export function TransportBookingForm({
       {leftNames.length > 0 ? (
         <p className={styles.left} data-testid={tid("left")} role="status">
           <span>
-            <strong>
-              {leftNames.length} {leftNames.length === 1 ? "answer" : "answers"} left
-            </strong>
-            : {leftNames.join(", ")}
+            <strong>{answersLeftWords(leftNames)}</strong>: {leftNames.join(", ")}
           </span>
           <button type="button" className={styles.leftFix} onClick={goToFirstLeft}>
             Add {leftNames[0]}
@@ -568,4 +565,13 @@ export function TransportBookingForm({
       ) : null}
     </div>
   );
+}
+
+/**
+ * "3 answers left": a count of this form's own unanswered questions, never of records, so it is not
+ * a figure from the synthetic data and needs no provenance marker where it is announced (release
+ * gate, ward-announced-figures-carry-their-marker, 31 Oct 2026).
+ */
+function answersLeftWords(names: readonly string[]): string {
+  return `${names.length} ${names.length === 1 ? "answer" : "answers"} left`;
 }

@@ -24,13 +24,11 @@
  */
 import { useId, useState, type ReactNode } from "react";
 
-import { StatusGlyph, cx } from "@/components/wf";
+import { cx, SearchField, ShowMoreRow, StatusGlyph } from "@/components/wf";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import ph from "./referral-match-phone.module.css";
 
-import { SearchField } from "@/components/wf/search-field";
-import { ShowMoreRow } from "@/components/wf/show-more-row";
 import styles from "./find-a-ward.module.css";
 
 /** Needs review opens on this many rows, then Show more. */

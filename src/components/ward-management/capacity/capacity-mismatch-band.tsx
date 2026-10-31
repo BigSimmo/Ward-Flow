@@ -38,7 +38,7 @@ export function MismatchBand({ model, hideEmptyTypes = false }: { model: Capacit
   const shortRows = typeRows.filter((row) => row.gap < 0);
   const rows = show === "all" ? typeRows : show === "short" ? shortRows : typeRows.filter((row) => row.gap >= 0);
   return (
-    <Card aria-labelledby="capacity-mismatch-title">
+    <Card aria-labelledby="capacity-mismatch-title" data-testid="capacity-mismatch">
       {/* Polish (Josh, 31 Oct 2026): the title row carries a Short / Enough filter, and the bed
           types are one compact strip that scrolls sideways when the page is narrow, so the band
           never grows taller. */}

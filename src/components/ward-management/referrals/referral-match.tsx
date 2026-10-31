@@ -17,7 +17,7 @@ import {
   type OverrideReason,
   type WardRequestWithdrawalReason,
 } from "@/components/ward-management/ward-change-reasons";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { NOT_RECORDED_LABEL, SYNTHETIC_TRAVEL_TIMES_NOTICE } from "@/components/ward-management/ward-distance";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import {
@@ -59,7 +59,7 @@ import ph from "./referral-match-phone.module.css";
 import rs from "./referral-match.module.css";
 import tabs from "./referral-tabs.module.css";
 import { Check, X } from "lucide-react";
-import { Button, RadioGroup, Select, StatusGlyph } from "@/components/wf";
+import { Button, RadioGroup, Select, ShowMoreRow, StatusGlyph } from "@/components/wf";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
   GATE_LABELS,
@@ -77,7 +77,6 @@ import { MatchRow } from "./referral-match-rows";
 import { useReferralMatchState } from "./use-referral-match-state";
 import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-not-a-bed";
 import { Disclosure, FoldedHistory } from "./folded-history";
-import { ShowMoreRow } from "@/components/wf/show-more-row";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -605,7 +604,7 @@ export function ReferralMatchView({
                     "Accepted — unit not recorded."
                 : referralAddressingStateLabel(ward)}
             </b>
-            {ward.decidedAt !== undefined ? <span>Recorded {formatInstant(ward.decidedAt)}</span> : null}
+            {ward.decidedAt !== undefined ? <span>Recorded {formatInstantWithDay(ward.decidedAt, now)}</span> : null}
           </div>
         </div>
         {/* Every ward declining leaves a community referral open, so the coordinator can still ask more (D-76). */}

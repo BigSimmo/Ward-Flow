@@ -12,7 +12,6 @@ import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
 import { useMemo, useState } from "react";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { ShowMoreRow } from "@/components/wf/show-more-row";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -31,7 +30,7 @@ import {
   acceptedAddressing,
   SEX_NOT_HELD,
 } from "@/components/ward-management/ward-referrals";
-import { Button, CardHead, Count, EmptyState, StatusGlyph, TierTile, Timer, cx } from "@/components/wf";
+import { Button, CardHead, Count, cx, EmptyState, ShowMoreRow, StatusGlyph, TierTile, Timer } from "@/components/wf";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import {

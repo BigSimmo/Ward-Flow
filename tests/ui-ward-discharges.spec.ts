@@ -19,7 +19,7 @@ import { bedReleases } from "@/components/ward-management/ward-movements";
  * old `CapacityView` (`ward-management-modes.tsx`, `data-testid="ward-capacity-view"`), reached
  * by clicking the rail's "Capacity" link. MERGE 02 (owner-approved 2026-09-05) repointed that
  * same link at a real route, `/ward-flow/capacity` → `CapacityScreen`
- * (`capacity-screen.tsx`, `data-testid="ward-capacity-page"`) — confirmed nothing routes
+ * (`capacity-screen.tsx`, `data-testid="ward-capacity-screen"`) — confirmed nothing routes
  * `mode === "capacity"` into `ModeBody` any more (`ward-management-modes.tsx`; only `network` and
  * `governance` still reach `WardModeWorkspace`), so `CapacityView` and its old testid are
  * unreachable by any URL a user can open.
@@ -107,13 +107,13 @@ async function goToCapacityBoard(page: Page) {
    */
   await page.getByRole("link", { name: /^Capacity\b/u }).click();
   // MERGE 02 (`bf563af9f`, 2026-09-05) renamed the Capacity screen's root from `ward-capacity-view`
-  // to `ward-capacity-page`. The screen and this journey are both intact and reachable — only the
+  // to `ward-capacity-screen`. The screen and this journey are both intact and reachable — only the
   // handle moved — so this is a re-point, not a retirement.
   //
   // ⚠️ The old name still appears once in `src/`, inside a COMMENT in `capacity-derivations.ts`
   // naming the test file `ward-capacity-view.dom.test.tsx`. A grep for the old handle therefore
   // finds a live-looking hit that renders nothing; the render is at `capacity-screen.tsx:87`.
-  await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("ward-capacity-screen")).toBeVisible({ timeout: 15_000 });
   await page.waitForLoadState("networkidle");
   // Device audit option A (Capacity, 11 Oct 2026): the per-ward network table is the bed map's
   // Table layout, so open it through the map's own control, as a coordinator would. A press before

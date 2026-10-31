@@ -6,11 +6,10 @@
 import { ChevronRight, Clock, ListOrdered, TriangleAlert } from "lucide-react";
 import { useId, useRef, type ReactNode } from "react";
 
-import { Button, LiveChip, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
+import { Button, cx, phoneRows as rows, LiveChip, StatusGlyph, useWfBandBleed } from "@/components/wf";
 
 import styles from "./referral-board-phone.module.css";
 import { CommunityTeamLink, communityEyebrow, communityQueueTitle, useCommunityDesk } from "./referral-community-desk";
-import rows from "@/components/wf/phone-rows.module.css";
 import local from "./referral-page.module.css";
 import type { EdDeskHero } from "./referral-ed-desk";
 

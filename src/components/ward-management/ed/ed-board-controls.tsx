@@ -549,7 +549,6 @@ function EdActionList({
   const [foldOpen, setFoldOpen] = useState(false);
   const foldId = useId();
   const { groups, blocked, other } = sortEdMenuItems(children, menu);
-  const role = menu ? "menuitem" : undefined;
   return (
     <>
       {/* Redesign: the record items take a heading like every other group. Design audit DA-05: a
@@ -558,13 +557,13 @@ function EdActionList({
         <span aria-hidden="true" className={styles.menuGroupLabel}>
           Patient record
         </span>
-        <button type="button" role={role} onClick={onViewRecord}>
+        <button type="button" role={menu ? "menuitem" : undefined} onClick={onViewRecord}>
           View patient record
         </button>
-        <button type="button" role={role} onClick={onEditPresentation}>
+        <button type="button" role={menu ? "menuitem" : undefined} onClick={onEditPresentation}>
           Edit presentation
         </button>
-        <button type="button" role={role} onClick={onEditPlan}>
+        <button type="button" role={menu ? "menuitem" : undefined} onClick={onEditPlan}>
           Edit plan
         </button>
       </div>
@@ -584,7 +583,7 @@ function EdActionList({
         <div className={styles.fold} data-testid={`${testId}-not-available`}>
           <button
             type="button"
-            role={role}
+            role={menu ? "menuitem" : undefined}
             className={styles.foldToggle}
             aria-expanded={foldOpen}
             aria-controls={foldId}

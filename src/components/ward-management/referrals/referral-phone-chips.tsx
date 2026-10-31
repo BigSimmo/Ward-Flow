@@ -3,8 +3,7 @@
 
 import phone from "./referral-board-phone.module.css";
 import type { PhoneChip } from "./referral-board-phone";
-import rows from "@/components/wf/phone-rows.module.css";
-import { cx } from "@/components/wf";
+import { cx, phoneRows as rows } from "@/components/wf";
 
 /**
  * The highlight chips under the phone hero, the same chips as today. Josh, 31 Oct 2026: one row that

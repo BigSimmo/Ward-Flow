@@ -240,6 +240,7 @@ function WardCard({
       type="button"
       className={`${layout === "grid" ? styles.wardCard : styles.wardRow}${dimmed ? ` ${styles.dimmed}` : ""}`}
       aria-haspopup="dialog"
+      data-unit-id={ward.unit.id}
       data-selected={selected ? "" : undefined}
       onClick={onSelect}
     >

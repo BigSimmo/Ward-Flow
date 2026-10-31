@@ -169,13 +169,22 @@ export function CapacityHero({
                     : []),
                 ]}
                 trigger={(props) => (
-                  <button type="button" {...props} className={buttonClass({ variant: "onHero" })}>
+                  <button
+                    type="button"
+                    {...props}
+                    className={buttonClass({ variant: "onHero" })}
+                    data-testid="capacity-bed-meeting"
+                  >
                     <Printer size={15} aria-hidden="true" /> Bed meeting <ChevronDown size={13} aria-hidden="true" />
                   </button>
                 )}
               />
               {tvHref && canOpen(tvHref) ? (
-                <Link href={tvHref} className={buttonClass({ variant: "onHero" })}>
+                <Link
+                  href={tvHref}
+                  className={buttonClass({ variant: "onHero" })}
+                  data-testid="capacity-bed-meeting-tv"
+                >
                   <Monitor size={15} aria-hidden="true" /> Open on TV
                 </Link>
               ) : null}
