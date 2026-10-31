@@ -39,14 +39,51 @@ export function releaseGateProjectFor(value) {
   return project;
 }
 
-/** @param {boolean} required @param {string | null} [only] one device project, or null for both */
-export function releaseGateCases(required, only = null) {
+/**
+ * Each device leg of the release gate runs as two parallel CI jobs (Josh, 31 October 2026: the
+ * phone leg ran 10.4 minutes in one job, about 6 of journeys and 4.5 of checks). The parts
+ * partition the release-gate spec files: together they run every file once on each device.
+ * `journeys` keeps all six required journeys, so their required-case check is unchanged; `checks`
+ * runs the accessibility and layout-shift sweep, which has no named required cases.
+ */
+export const RELEASE_GATE_PARTS = Object.freeze({
+  journeys: Object.freeze([
+    "release-gate-journeys.spec.ts",
+    "release-gate-inpatient-transfer.spec.ts",
+    "release-gate-community-referral.spec.ts",
+  ]),
+  checks: Object.freeze(["release-gate-axe-sweep.spec.ts"]),
+});
+
+/**
+ * The release-gate part for one CI job (WARD_RELEASE_GATE_PART), or null for the whole gate.
+ * @param {string | null | undefined} value @returns {"journeys" | "checks" | null}
+ */
+export function releaseGatePartFor(value) {
+  const part = value?.trim();
+  if (!part) return null;
+  if (!Object.hasOwn(RELEASE_GATE_PARTS, part))
+    throw new Error(
+      `WARD_RELEASE_GATE_PART must be one of ${Object.keys(RELEASE_GATE_PARTS).join(", ")}; got "${part}".`,
+    );
+  return /** @type {"journeys" | "checks"} */ (part);
+}
+
+/**
+ * @param {boolean} required
+ * @param {string | null} [only] one device project, or null for both
+ * @param {string | null} [part] one release-gate part, or null for the whole gate
+ */
+export function releaseGateCases(required, only = null, part = null) {
   if (!required) return [];
   const projects = only === null ? RELEASE_GATE_PROJECTS : [releaseGateProjectFor(only)];
-  return projects.flatMap((project) => [
-    ...REQUIRED_RELEASE_JOURNEYS.map((title) => ({ project, file: "release-gate-journeys.spec.ts", title })),
-    ...REQUIRED_RELEASE_JOURNEY_FILES.map(({ file, title }) => ({ project, file, title })),
-  ]);
+  const files = part === null ? null : RELEASE_GATE_PARTS[releaseGatePartFor(part) ?? ""];
+  return projects
+    .flatMap((project) => [
+      ...REQUIRED_RELEASE_JOURNEYS.map((title) => ({ project, file: "release-gate-journeys.spec.ts", title })),
+      ...REQUIRED_RELEASE_JOURNEY_FILES.map(({ file, title }) => ({ project, file, title })),
+    ])
+    .filter((entry) => files === null || files.includes(entry.file));
 }
 
 /** The first CI group uses the existing app build for the separate, disjoint CSRF project. */

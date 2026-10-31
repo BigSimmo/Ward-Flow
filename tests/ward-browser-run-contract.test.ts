@@ -1,9 +1,11 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   includeGroupCsrf,
+  RELEASE_GATE_PARTS,
   RELEASE_GATE_PROJECTS,
   releaseGateCases,
+  releaseGatePartFor,
   releaseGateProjectFor,
   sharedModeCases,
 } from "../scripts/ward-flow/browser-run-contract.mjs";
@@ -43,6 +45,21 @@ describe("complete release gate and shared-build browser selection", () => {
     }
     expect(releaseGateCases(false, "release-gate-phone")).toEqual([]);
     expect(() => releaseGateCases(true, "chromium")).toThrow(/WARD_RELEASE_GATE_PROJECT/);
+  });
+
+  it("splits each device leg into two parts that run every release-gate file exactly once", () => {
+    const specs = readdirSync("tests").filter((name) => /^release-gate-.*\.spec\.ts$/u.test(name));
+    const parts = Object.values(RELEASE_GATE_PARTS).flat();
+    expect(new Set(parts).size).toBe(parts.length);
+    expect([...parts].sort()).toEqual([...specs].sort());
+    expect(releaseGatePartFor(undefined)).toBeNull();
+    expect(releaseGatePartFor(" checks ")).toBe("checks");
+    expect(() => releaseGatePartFor("smoke")).toThrow(/WARD_RELEASE_GATE_PART/);
+    for (const project of RELEASE_GATE_PROJECTS) {
+      expect(releaseGateCases(true, project, "journeys")).toEqual(releaseGateCases(true, project));
+      expect(releaseGateCases(true, project, "checks")).toEqual([]);
+    }
+    expect(() => releaseGateCases(true, "release-gate-phone", "smoke")).toThrow(/WARD_RELEASE_GATE_PART/);
   });
 
   it("requires all six production shared-mode journeys", () => {

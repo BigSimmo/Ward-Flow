@@ -31,8 +31,10 @@ import {
 } from "./ward-flow/browser-build-artifact.mjs";
 import {
   includeGroupCsrf,
+  RELEASE_GATE_PARTS,
   RELEASE_GATE_PROJECTS,
   releaseGateCases,
+  releaseGatePartFor,
   releaseGateProjectFor,
 } from "./ward-flow/browser-run-contract.mjs";
 import { keepJourneyFailures } from "./ward-flow/keep-journey-failures.mjs";
@@ -95,6 +97,16 @@ if (releaseGateProject) {
         !RELEASE_GATE_PROJECTS.some((project) => project !== releaseGateProject && argument === `--project=${project}`),
     ),
   );
+}
+// WARD_RELEASE_GATE_PART (public CI): run one part of that device leg, so each device's gate runs
+// as two parallel jobs. The parts partition the release-gate spec files (browser-run-contract.mjs),
+// and the journeys part still requires all six named journeys on its project.
+const releaseGatePart = releaseGatePartFor(process.env.WARD_RELEASE_GATE_PART);
+if (releaseGatePart) {
+  if (!releaseGateProject) throw new Error("WARD_RELEASE_GATE_PART needs WARD_RELEASE_GATE_PROJECT");
+  if (playwrightArgs.some((argument) => !argument.startsWith("-")))
+    throw new Error("WARD_RELEASE_GATE_PART narrows the full release-gate preset only; remove file filters");
+  playwrightArgs.push(...RELEASE_GATE_PARTS[releaseGatePart]);
 }
 // Known-failing journeys run in their own fast-failing project (playwright.config.ts); add it
 // whenever the mockups project is requested and the list has entries. playwright.config.ts only
@@ -804,7 +816,7 @@ try {
     grep === "@quarantine|@mockup" &&
     playwrightArgs.includes("--pass-with-no-tests");
   const requiredProjects = advisoryRun ? [] : projects;
-  const requiredCases = releaseGateCases(requiredReleaseGate, releaseGateProject);
+  const requiredCases = releaseGateCases(requiredReleaseGate, releaseGateProject, releaseGatePart);
 
   // WARD_JOURNEY_SHARDS=N (off unless set; Ward Flow fold gate only, once proven): split the specs
   // N ways with Playwright's --shard, each shard on its own `next start` from this same build and its
