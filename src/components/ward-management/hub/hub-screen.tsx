@@ -280,10 +280,13 @@ export function HubScreen() {
   const recent = useMemo(() => recentIds.flatMap((id) => byId.get(id) ?? []), [recentIds, byId]);
   const isPinned = (id: string) => pinnedIds.includes(id);
 
-  // No empty panels: on wider screens the preview opens on the first place listed.
+  // No empty panels: on wider screens the preview opens on the first place listed. While a search is
+  // typed, the choice and its fallback come from the matches only, so Enter never opens a place the
+  // list is not showing.
+  const listed = queryMatches !== undefined ? results.filter((entry) => queryMatches.has(entry.id)) : results;
   const selected =
-    results.find((entry) => entry.id === selectedId) ??
-    (isPhone ? undefined : (pinned[0] ?? ownEntries[0] ?? visibleEntries[0]));
+    listed.find((entry) => entry.id === selectedId) ??
+    (isPhone ? undefined : searching ? visibleEntries[0] : (pinned[0] ?? ownEntries[0] ?? visibleEntries[0]));
   // Phone "Check first": only a place the current filter shows, so its tap opens a preview.
   const checkFirst = attention.filter((item) => results.some((entry) => entry.id === item.entry.id));
   const selectedRequest =
@@ -410,7 +413,9 @@ export function HubScreen() {
             <span className={styles.subGroupCount}>{meta}</span>
           </button>
         </h3>
-        {open ? <GroupList id={`hub-fold-${key}`} entries={entries} renderRow={renderRow} /> : null}
+        {open ? (
+          <GroupList id={`hub-fold-${key}`} entries={entries} renderRow={renderRow} selectedId={selected?.id} />
+        ) : null}
       </div>
     );
   }
@@ -436,7 +441,9 @@ export function HubScreen() {
             </button>
           </h2>
         </div>
-        {open ? <GroupList id={`hub-fold-${key}`} entries={entries} renderRow={renderRow} /> : null}
+        {open ? (
+          <GroupList id={`hub-fold-${key}`} entries={entries} renderRow={renderRow} selectedId={selected?.id} />
+        ) : null}
       </section>
     );
   }
@@ -842,7 +849,12 @@ export function HubScreen() {
                       Your site · {deskSite.name} <Count n={ownEntries.length} />
                     </h2>
                   </div>
-                  <GroupList id="hub-list-own-site" entries={ownEntries} renderRow={renderRow} />
+                  <GroupList
+                    id="hub-list-own-site"
+                    entries={ownEntries}
+                    renderRow={renderRow}
+                    selectedId={selected?.id}
+                  />
                 </section>
               ) : null}
               {shownSections.map((section) =>
@@ -867,7 +879,12 @@ export function HubScreen() {
                         ),
                       )
                     ) : (
-                      <GroupList id={`hub-list-${section.key}`} entries={section.entries} renderRow={renderRow} />
+                      <GroupList
+                        id={`hub-list-${section.key}`}
+                        entries={section.entries}
+                        renderRow={renderRow}
+                        selectedId={selected?.id}
+                      />
                     )}
                   </section>
                 ),
@@ -1101,20 +1118,24 @@ function GroupList({
   id,
   entries,
   renderRow,
+  selectedId,
 }: {
   id: string;
   entries: HubEntry[];
   renderRow: (entry: HubEntry) => ReactNode;
+  /** The previewed place. If the arrow keys reach a row past "Show more", the list opens down to it. */
+  selectedId: string | undefined;
 }) {
   const [limit, setLimit] = useState(GROUP_ROWS);
-  const rest = entries.length - limit;
+  const shown = Math.max(limit, entries.findIndex((entry) => entry.id === selectedId) + 1);
+  const rest = entries.length - shown;
   return (
     <>
       <ul className={styles.groupList} id={id}>
-        {entries.slice(0, limit).map(renderRow)}
+        {entries.slice(0, shown).map(renderRow)}
       </ul>
       {rest > 0 ? (
-        <ShowMoreRow controls={id} onClick={() => setLimit((n) => n + GROUP_ROWS * 2)}>
+        <ShowMoreRow controls={id} onClick={() => setLimit(shown + GROUP_ROWS * 2)}>
           <span>
             Show more <span className={styles.showMoreCount}>{rest} more</span>
           </span>

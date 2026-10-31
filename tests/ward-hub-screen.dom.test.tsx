@@ -912,3 +912,47 @@ describe("Ward Flow Master Search Hub — one search on the page", () => {
     expect(screen.getAllByRole("searchbox")).toHaveLength(1);
   });
 });
+
+describe("Ward Flow Master Search Hub — the preview and Enter follow what the list shows", () => {
+  const search = () => screen.getByRole("searchbox", { name: /search/i });
+  const preview = () => screen.getByRole("region", { name: /^preview,/i });
+  const previewName = () => within(preview()).getAllByRole("heading")[0]?.textContent ?? "";
+
+  it("a pinned place does not take over a search: the preview and Enter use the top match", () => {
+    window.localStorage.setItem("ward-hub-pinned", JSON.stringify(["scgh-adult-open"]));
+    window.dispatchEvent(new Event("ward-hub-memory-change"));
+    router.push.mockClear();
+    renderHub();
+    // With nothing typed, the pinned place leads the preview.
+    expect(previewName()).toMatch(/Mental Health Unit/);
+
+    fireEvent.change(search(), { target: { value: "Dabakarn" } });
+    expect(previewName(), "the pinned place stayed in the preview while the list showed another").toMatch(/Dabakarn/);
+    const href = within(preview())
+      .getByRole("link", { name: /^open /i })
+      .getAttribute("href");
+    fireEvent.keyDown(search(), { key: "Enter" });
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith(href);
+
+    window.localStorage.clear();
+    window.dispatchEvent(new Event("ward-hub-memory-change"));
+  });
+
+  it("Enter opens nothing when the search matches nothing", () => {
+    router.push.mockClear();
+    renderHub();
+    fireEvent.change(search(), { target: { value: "zzqqxx no such place" } });
+    fireEvent.keyDown(search(), { key: "Enter" });
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
+  it("the arrow keys past the eighth team open the list down to the row they preview", () => {
+    renderHub();
+    fireEvent.click(categoryRadio("community"));
+    for (let press = 0; press < 10; press += 1) fireEvent.keyDown(search(), { key: "ArrowDown" });
+    const name = previewName();
+    expect(name).not.toBe("");
+    expect(listed(name), `the previewed team "${name}" is not on the list`).toBeInTheDocument();
+  });
+});
