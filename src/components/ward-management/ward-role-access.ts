@@ -3,8 +3,9 @@
  *
  * Default deny. A role opens a screen only when this table lists it. The sidebar, the phone dock,
  * the route guard and the scoped workspace all read this module, so nothing else restates a role
- * list. The plan is `reviews/role-access-plan-2026-10-15.md` (sections 4 to 7), and
- * `tests/ward-role-access.test.ts` pins this table to it.
+ * list. The plan was the 15 October 2026 role access review, revised as version 2 and approved as
+ * D-80 (`docs/ward-flow/decisions.md`); the review file itself is no longer in the repository.
+ * `tests/ward-role-access.test.ts` pins this table.
  *
  * Actions stay with the reducer's `EVENT_ROLE` (`ward-flow-events.ts`). This module adds the PLACE:
  * a role acts and sees only inside its own scope.
