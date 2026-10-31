@@ -174,7 +174,8 @@ export function CapacityWardSidebar({
                   </span>
                 ) : null}
               </div>
-              {/* Redesign (Josh, 30 Oct): one name for this request, "Ask the ward". */}
+              {/* Redesign (Josh, 30 Oct): one name for this request, "Ask the ward". Polish (31 Oct): a
+                  desk that may not ask sees no button, rather than a locked one with a reason. */}
               {recordActor.role === "coordinator" ? (
                 <Button
                   size="sm"
@@ -185,11 +186,7 @@ export function CapacityWardSidebar({
                 >
                   Ask the ward
                 </Button>
-              ) : (
-                <Button size="sm" variant="sec" disabledReason="Only the coordinator can ask the ward.">
-                  Ask the ward
-                </Button>
-              )}
+              ) : null}
             </section>
 
             {(row.reservationReleaseCapacityConflicts ?? 0) > 0 ||
