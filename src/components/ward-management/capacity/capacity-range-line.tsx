@@ -1,4 +1,4 @@
-import styles from "./parts.module.css";
+import styles from "./capacity-parts.module.css";
 
 /** "6 short" or "3 spare", from a gap where negative is short. */
 export function gapWords(gap: number): string {

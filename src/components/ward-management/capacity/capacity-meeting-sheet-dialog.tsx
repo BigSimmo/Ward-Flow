@@ -3,10 +3,11 @@
 import { Dialog, durMinutes } from "@/components/wf";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
-import type { BedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
+import type { BedMeetingSheet } from "./bed-meeting-derivations";
+import { BedMeetingSheetPrintCopy } from "./bed-meeting-sheet";
 
-import { Kicker } from "../parts/how-worked-out";
-import styles from "./capacity-redesign.module.css";
+import { Kicker } from "./capacity-how-worked-out";
+import styles from "./capacity-page.module.css";
 
 /**
  * The morning bed meeting sheet: four figures, then the three lists the meeting goes through.
@@ -43,8 +44,9 @@ export function BedMeetingSheetDialog({
       size="lg"
       secondary={[{ label: "Close", onAction: onClose }]}
       primary={{ label: "Print sheet", onAction: () => window.print() }}
-      data-testid="redesign-bed-meeting-sheet"
+      data-testid="bed-meeting-sheet-dialog"
     >
+      <BedMeetingSheetPrintCopy sheet={sheet} now={now} screenHidden={styles.screenHidden} />
       <dl className={styles.sheetFigures}>
         {figures.map((figure) => (
           <div key={figure.label}>

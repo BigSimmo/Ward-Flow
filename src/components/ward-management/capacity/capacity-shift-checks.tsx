@@ -5,9 +5,9 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
-import { HELD_UP_HREF, HELD_UP_LINK_LABEL } from "./held-up";
-import type { CapacityModel } from "./use-capacity-model";
-import styles from "./capacity-redesign.module.css";
+import { HELD_UP_HREF, HELD_UP_LINK_LABEL } from "./capacity-held-up";
+import type { CapacityModel } from "./capacity-model";
+import styles from "./capacity-page.module.css";
 
 /**
  * Polish (Josh, 31 Oct 2026): "Confirmed this shift" and "Held-up releases" are one card, "This

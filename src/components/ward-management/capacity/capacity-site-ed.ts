@@ -1,6 +1,6 @@
 "use client";
 
-// New for the site bed manager's Capacity (Josh, 30 Oct): the site's own ED as counts only, because
+// The site bed manager's Capacity (Josh, 30 Oct 2026): the site's own ED as counts only, because
 // Places does not list the ED for this desk. Read with the same derivation the All EDs page uses
 // (`edHomeSummaries`), so the figures agree with it; never a name.
 

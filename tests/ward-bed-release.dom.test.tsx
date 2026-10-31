@@ -21,8 +21,8 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { bedReleases } from "@/components/ward-management/ward-movements";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { ensureWardTable } from "./helpers/capacity-ward-table";
+import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { bedMapCards, wardCardName } from "./helpers/capacity-ward-table";
 
 function wardBedFigure(state: string, label: string): number {
   const beds = screen.getByTestId("ward-unit-beds");
@@ -35,29 +35,37 @@ function wardBedFigure(state: string, label: string): number {
   return Number(value!.textContent);
 }
 
-/** The Freeing cell of one ward's row on the live Capacity board. */
-function freeingCell(unitId: string): HTMLElement {
-  ensureWardTable();
-  const table = screen.getByTestId("ward-capacity-network-table");
-  const row = within(table).getByTestId(`ward-capacity-network-row-${unitId}`);
-  return within(row).getByTestId("ward-capacity-network-freeing");
+/** One ward's card on the live Capacity bed map (the October 2026 redesign), folded group or not. */
+function bedMapCard(unitId: string): HTMLButtonElement {
+  const name = allUnits().find((unit) => unit.id === unitId)!.name;
+  const card = bedMapCards().find((candidate) => wardCardName(candidate) === name);
+  expect(card, `the bed map draws no card for ${unitId}`).toBeDefined();
+  return card!;
 }
 
 /**
- * The Ready FIGURE alone, with the "N still being made ready" note beside it removed.
+ * One ward's "Freeing today" figure on the live Capacity board. Since the redesign it sits in the
+ * ward drawer the ward's bed map card opens, so this opens the drawer, reads the figure and closes it.
+ */
+function freeingCell(unitId: string): string | null {
+  fireEvent.click(bedMapCard(unitId));
+  const drawer = screen.getByTestId("ward-capacity-ward-drawer");
+  const term = within(drawer).getByText("Freeing today", { selector: "dt" });
+  const value = term.nextElementSibling?.textContent ?? null;
+  fireEvent.click(within(drawer).getByRole("button", { name: "Close" }));
+  expect(screen.queryByTestId("ward-capacity-ward-drawer")).toBeNull();
+  return value;
+}
+
+/**
+ * The Ready FIGURE alone, as the ward's bed map card draws it.
  *
  * ⚠️ Owner ruling 2026-09-05: the cleaning count sits BESIDE the figure and the figure itself does
- * not move. Reading the cell's whole `textContent` would conflate the two, so a test meaning "the
- * number did not move" would go red the moment that note legitimately appeared or disappeared.
+ * not move. The card prints the count on its own note line ("N being made ready"), so the figure is
+ * read from its own element rather than from the card's whole `textContent`.
  */
 function readyFigure(unitId: string): string {
-  ensureWardTable();
-  const table = screen.getByTestId("ward-capacity-network-table");
-  const row = within(table).getByTestId(`ward-capacity-network-row-${unitId}`);
-  const cell = within(row).getByTestId("ward-capacity-network-ready");
-  const pending = within(cell).queryByTestId("ward-capacity-network-pending");
-  const whole = cell.textContent ?? "";
-  return pending ? whole.replace(pending.textContent ?? "", "") : whole;
+  return (bedMapCard(unitId).querySelector('[class*="wardReadyN"]')?.textContent ?? "").trim();
 }
 
 /**
@@ -200,7 +208,7 @@ describe("ward bed release flag", () => {
     );
 
     // sjgm-adult-open carries no bed release in the fixture at all — asserted directly against the
-    // live capacity row rather than the static fixture constant, so a scoping bug in the reducer
+    // live capacity figure rather than the static fixture constant, so a scoping bug in the reducer
     // (writing the flagged release to every unit, or to the wrong one) would be caught here even
     // though it could never show up in the frozen `bedReleases` array itself.
     /*
@@ -210,8 +218,8 @@ describe("ward bed release flag", () => {
      */
     // The sibling's figure is read before the flag rather than assumed "none": the derived seed
     // decides what it starts at, and the claim is only that another ward's flag never moves it.
-    const siblingBefore = freeingCell("sjgm-adult-open").textContent;
-    const rphBefore = freeingCell("rph-adult-secure").textContent;
+    const siblingBefore = freeingCell("sjgm-adult-open");
+    const rphBefore = freeingCell("rph-adult-secure");
 
     // No blocker, for the reason the previous test's own comment gives: it keeps the moved figure
     // attributable to exactly one cause. A plain prediction moves a real, visible number.
@@ -219,15 +227,15 @@ describe("ward bed release flag", () => {
 
     /*
      * ⚠️ The acting ward's own figure MUST have moved, and that is asserted BEFORE the sibling is
-     * checked. Without it, a change that killed the whole Freeing column would leave the sibling
+     * checked. Without it, a change that killed every Freeing today figure would leave the sibling
      * reading 0 and this case green — proving scoping by proving nothing happened anywhere.
      */
-    const rphAfter = freeingCell("rph-adult-secure").textContent;
+    const rphAfter = freeingCell("rph-adult-secure");
     expect(rphAfter, "the flagging ward's own expected-to-free figure did not move at all").not.toBe(rphBefore);
 
     expect(
-      freeingCell("sjgm-adult-open").textContent,
-      "sjgm-adult-open flagged nothing; a release raised at another ward must not appear on its row",
+      freeingCell("sjgm-adult-open"),
+      "sjgm-adult-open flagged nothing; a release raised at another ward must not appear on its figure",
     ).toBe(siblingBefore);
   });
 });

@@ -226,13 +226,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     role: ROLE_DESKS["officer"],
   },
   {
-    slug: "as-bed-manager-home",
-    label: "Capacity",
-    group: "As site bed manager",
-    appPath: "/ward-flow/capacity",
-    role: ROLE_DESKS["bed-manager"],
-  },
-  {
     slug: "as-bed-manager-ward",
     label: "My ward",
     group: "As site bed manager",
@@ -254,13 +247,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     role: ROLE_DESKS["bed-manager"],
   },
   {
-    slug: "as-executive-capacity",
-    label: "Capacity",
-    group: "As executive",
-    appPath: "/ward-flow/capacity",
-    role: ROLE_DESKS["executive"],
-  },
-  {
     slug: "as-executive-settings",
     label: "Settings",
     group: "As executive",
@@ -278,11 +264,7 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
 
 /** Popups drawn over their page. Each page opens its own; the viewer asks it to on load. */
 export const MOCKUP_POPUPS: readonly MockupPopup[] = [
-  { slug: "pop-bed-meeting-sheet", label: "Bed meeting sheet", group: "Page popups", over: "capacity", pop: "sheet" },
-  { slug: "pop-scenario", label: "Try a scenario", group: "Page popups", over: "capacity", pop: "scenario" },
-  { slug: "pop-capacity-ward", label: "Capacity ward panel", group: "Page popups", over: "capacity", pop: "ward" },
   { slug: "pop-movement", label: "Movement drawer", group: "Page popups", over: "movements", pop: "movement" },
-  { slug: "pop-forecast-sheet", label: "Phone bed forecast", group: "Page popups", over: "capacity", pop: "forecast" },
   { slug: "pop-alerts", label: "Alerts drawer", group: "Shell popups", over: "home", pop: "alerts" },
   { slug: "pop-activity", label: "Activity", group: "Shell popups", over: "home", pop: "activity-panel" },
   { slug: "pop-tools", label: "Tools", group: "Shell popups", over: "home", pop: "tools" },

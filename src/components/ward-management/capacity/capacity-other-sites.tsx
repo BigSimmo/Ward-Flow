@@ -1,7 +1,7 @@
 "use client";
 
-// New for the site bed manager's Capacity (D-80): every other site as bed counts only. Mounted only
-// in the `bed_manager` branch of `capacity-redesign.tsx`; it reads place information, never a patient.
+// The site bed manager's Capacity (D-80): every other site as bed counts only. Mounted only for a
+// site desk by `capacity-screen.tsx`; it reads place information, never a patient.
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -10,8 +10,8 @@ import { Card, CardHead } from "@/components/wf";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 
-import type { CapacityModel } from "./use-capacity-model";
-import styles from "./other-sites-counts.module.css";
+import type { CapacityModel } from "./capacity-model";
+import styles from "./capacity-other-sites.module.css";
 
 const percent = (inUse: number, beds: number) => (beds > 0 ? `${((inUse / beds) * 100).toFixed(1)}%` : "No beds");
 
@@ -69,7 +69,9 @@ export function OtherSitesCounts({ model, focusUnitId }: { model: CapacityModel;
                 onClick={() => toggle(group.service)}
               >
                 {isOpen ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
-                <span className={styles.name}>{group.service}</span>
+                <span className={styles.name}>
+                  <SpelledCodes text={group.service} />
+                </span>
                 <span className={styles.muted}>{group.wards.length} wards</span>
                 <span className={styles.figures}>
                   <b>{groupReady} ready</b> · {groupClosed} closed · {percent(groupInUse, groupBeds)} in use

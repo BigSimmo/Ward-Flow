@@ -1,7 +1,6 @@
 "use client";
 
-// Fork of src/components/ward-management/capacity/capacity-road-time.tsx (Capacity polish, Josh 31
-// Oct 2026): "Nearest ready beds", with the From picker as a compact menu in the title row, each
+// Capacity's nearest ready beds (polish, Josh 31 Oct 2026; the phone keeps `capacity-road-time.tsx`): "Nearest ready beds", with the From picker as a compact menu in the title row, each
 // ward one row with its drive time on the right, and the two caveats together in one quiet foot.
 // The ranking, the five-row limit and both caveat sentences are unchanged.
 
@@ -10,15 +9,15 @@ import { useState } from "react";
 
 import { Card, CardHead, Menu, cx, durMinutes } from "@/components/wf";
 import { SpelledCodes, codeName } from "@/components/ward-management/ward-abbreviations";
-import type { NetworkWardRow } from "@/components/ward-management/capacity/capacity-derivations";
+import type { NetworkWardRow } from "./capacity-derivations";
 import {
   REFERENCE_DISTANCE_CAVEAT,
   referenceDistance,
 } from "@/components/ward-management/reference/ward-reference-distances";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 
-import { HowWorkedOut } from "../parts/how-worked-out";
-import styles from "./capacity-redesign.module.css";
+import { HowWorkedOut } from "./capacity-how-worked-out";
+import styles from "./capacity-page.module.css";
 
 export function RoadTimeCard({
   rows,

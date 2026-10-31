@@ -43,11 +43,9 @@ export const MOCKUP_PAGE_SLUGS = [
   "as-community-patient",
   "as-community-statistics",
   "as-officer-alerts",
-  "as-bed-manager-home",
   "as-bed-manager-ward",
   "as-bed-manager-discharges",
   "as-bed-manager-referrals",
-  "as-executive-capacity",
   "as-executive-settings",
   "as-admin-home",
 ] as const;

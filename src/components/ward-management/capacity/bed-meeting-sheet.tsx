@@ -19,7 +19,8 @@ import type { BedMeetingSheet } from "./bed-meeting-derivations";
 import styles from "./bed-meeting-sheet.module.css";
 
 /**
- * THE MORNING BED-MEETING SHEET — opened from Capacity, previewed in a dialog, printed on A4.
+ * THE MORNING BED-MEETING SHEET, printed on A4 from Capacity's Bed meeting sheet dialog
+ * (`capacity-meeting-sheet-dialog.tsx`, which shows the same figures on screen).
  *
  * Every figure arrives already computed by `bedMeetingSheet` (`bed-meeting-derivations.ts`); this
  * file only lays it out. While the dialog is open the page is marked so that printing — by the
@@ -267,7 +268,40 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
 }
 
 /**
- * The button on Capacity and the dialog it opens. `buildSheet` is called only while the dialog is
+ * The printed copy of the sheet. Capacity's Bed meeting sheet dialog mounts this while it is open:
+ * it marks the page so that printing, by the dialog's Print button or the browser's own shortcut,
+ * sends this A4 sheet alone, not the screen or the dialog. On screen it is hidden (`screenHidden`).
+ */
+export function BedMeetingSheetPrintCopy({
+  sheet,
+  now,
+  screenHidden,
+}: {
+  sheet: BedMeetingSheet;
+  now: Instant;
+  /** A class that hides the copy on screen, from the page that mounts it. */
+  screenHidden: string;
+}) {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add(BED_MEETING_PRINTING_CLASS);
+    return () => root.classList.remove(BED_MEETING_PRINTING_CLASS);
+  }, []);
+  // Mounted only while the dialog is open, which happens in the browser, never on the server.
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div className={`${styles.portal} ${screenHidden}`} data-testid="bed-meeting-sheet-print-copy" aria-hidden="true">
+      <div className={styles.dialog}>
+        <BedMeetingSheetView sheet={sheet} now={now} />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/**
+ * A button and the dialog it opens, for pages that print the sheet without Capacity's dialog (the
+ * bed meeting Agenda). `buildSheet` is called only while the dialog is
  * open, so the sheet always reads the same `now` as the screen at the moment it is shown.
  */
 export function BedMeetingSheetLauncher({

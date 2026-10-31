@@ -19,7 +19,8 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
- * The morning bed-meeting sheet (Capacity → "Bed-meeting sheet"). Two properties matter:
+ * The morning bed-meeting sheet (Capacity → "Bed meeting" → "Print the meeting sheet"). Two
+ * properties matter:
  *   1. Every figure on the paper is the figure its own screen shows — the sheet re-derives nothing.
  *   2. Printing while the sheet is open sends the sheet alone on A4.
  */
@@ -102,62 +103,74 @@ describe("bedMeetingSheet agrees with the screens it summarises", () => {
 });
 
 describe("the sheet on Capacity", () => {
-  function openSheet() {
-    render(
+  function renderCapacity(openOnLoad?: string) {
+    return render(
       <WardFlowProvider initialNow={NOW_ANCHOR} initialDayZero={Date.parse("2026-12-30T16:00:00Z")}>
-        <CapacityScreen />
+        <CapacityScreen openOnLoad={openOnLoad} />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByTestId("bed-meeting-sheet-open"));
-    return screen.getByRole("dialog", { name: /Morning bed meeting/u });
+  }
+  /** The hero's Bed meeting menu, then "Print the meeting sheet". */
+  function chooseSheet() {
+    fireEvent.click(screen.getByRole("button", { name: "Bed meeting" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Print the meeting sheet" }));
+    return screen.getByTestId("bed-meeting-sheet-dialog");
   }
 
   it("opens a dialog with all four sections, the as-at stamp and the synthetic disclosure", () => {
-    const dialog = openSheet();
+    renderCapacity();
+    const dialog = chooseSheet();
+    expect(dialog.textContent).toMatch(/Synthetic, not a record of any real day/u);
+    // The printed copy is the full sheet; the dialog is its on-screen summary.
+    const copy = screen.getByTestId("bed-meeting-sheet-print-copy");
     for (const id of ["bed-meeting-capacity", "bed-meeting-discharges", "bed-meeting-ed", "bed-meeting-delays"]) {
-      expect(within(dialog).getByTestId(id)).toBeTruthy();
+      expect(within(copy).getByTestId(id)).toBeTruthy();
     }
-    expect(within(dialog).getByTestId("bed-meeting-sheet-as-at").textContent).toMatch(
+    expect(within(copy).getByTestId("bed-meeting-sheet-as-at").textContent).toMatch(
       /^As at Thu,? 31 Dec 2026, \d\d:\d\d AWST$/u,
     );
-    expect(dialog.textContent).toMatch(/Synthetic prototype/u);
-    expect(dialog.textContent).toMatch(/your default, not a legal limit/u);
-    expect(within(dialog).getByTestId("ward-print-attribution").textContent).toBe(
+    expect(copy.textContent).toMatch(/Synthetic prototype/u);
+    expect(copy.textContent).toMatch(/your default, not a legal limit/u);
+    expect(within(copy).getByTestId("ward-print-attribution").textContent).toBe(
       "Printed by Bed coordinator, Statewide, at 10:42. Synthetic data.",
     );
   });
 
   it("marks the page for sheet-only printing while open, prints on request, and unmarks on close", () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => {});
-    const dialog = openSheet();
+    renderCapacity();
+    const dialog = chooseSheet();
     expect(document.documentElement.classList.contains(BED_MEETING_PRINTING_CLASS)).toBe(true);
-    fireEvent.click(within(dialog).getByTestId("bed-meeting-sheet-print"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Print sheet" }));
     expect(print).toHaveBeenCalledTimes(1);
     act(() => {
       fireEvent.keyDown(document, { key: "Escape" });
     });
-    expect(screen.queryByRole("dialog", { name: /Morning bed meeting/u })).toBeNull();
+    expect(screen.queryByTestId("bed-meeting-sheet-dialog")).toBeNull();
+    expect(screen.queryByTestId("bed-meeting-sheet-print-copy")).toBeNull();
     expect(document.documentElement.classList.contains(BED_MEETING_PRINTING_CLASS)).toBe(false);
     print.mockRestore();
   });
 
   it.each([false, true])("keeps the open sheet when print media changes the phone layout from %s", (initialPhone) => {
     phone.value = initialPhone;
+    // The phone hero has no Bed meeting menu, so the phone start opens the sheet on load.
+    const openOnLoad = initialPhone ? "sheet" : undefined;
     const content = () => (
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CapacityScreen />
+        <CapacityScreen openOnLoad={openOnLoad} />
       </WardFlowProvider>
     );
     const view = render(content());
-    fireEvent.click(screen.getByTestId("bed-meeting-sheet-open"));
-    const portal = screen.getByTestId("bed-meeting-sheet-portal");
+    if (!initialPhone) chooseSheet();
+    const copy = screen.getByTestId("bed-meeting-sheet-print-copy");
     phone.value = !initialPhone;
     view.rerender(content());
-    expect(screen.getByTestId("bed-meeting-sheet-portal")).toBe(portal);
+    expect(screen.getByTestId("bed-meeting-sheet-print-copy")).toBe(copy);
     expect(document.documentElement.classList.contains(BED_MEETING_PRINTING_CLASS)).toBe(true);
     phone.value = initialPhone;
     view.rerender(content());
-    expect(screen.getByTestId("bed-meeting-sheet-portal")).toBe(portal);
+    expect(screen.getByTestId("bed-meeting-sheet-print-copy")).toBe(copy);
   });
 
   it("the print rules hide everything but the sheet and fit it to an A4 page", () => {

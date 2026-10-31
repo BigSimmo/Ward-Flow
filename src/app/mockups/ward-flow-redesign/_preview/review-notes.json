@@ -1151,21 +1151,6 @@
     ],
     "keep": "Everything."
   },
-  "pop-bed-meeting-sheet": {
-    "role": "The printable morning bed meeting sheet.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**Two columns of plain text lists** with no headline figures."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**Four headline figures**, then two tables (ED waits, held-up releases) and Top delays."
-      }
-    ],
-    "keep": "Print sheet and the preparation time on the print copy."
-  },
   "pop-movement": {
     "role": "A movement's drawer, opened from the worklist.",
     "issues": [

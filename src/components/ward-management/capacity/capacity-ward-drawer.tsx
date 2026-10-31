@@ -1,16 +1,16 @@
-// Fork of src/components/ward-management/capacity/capacity-ward-sidebar.tsx (Capacity redesign).
 "use client";
 
-// The side panel for one ward on the capacity screen, with its tabs and discharge record facts.
-// Split out of `capacity-screen.tsx` (18 October 2026) to keep that file under the line cap.
+// The ward drawer on Capacity (October 2026 redesign): one ward's beds as a picture, whether its
+// count is fresh, its facts, closing the ward behind its own button, and its discharge records.
 
-import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
+import { capacityConfirmer } from "./capacity-confirmer";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeOpenHandle, DischargeRecord } from "@/components/ward-management/ward-discharge-records";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { patientListName } from "@/components/ward-management/ward-patients";
 import { useCanOpenHref, useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, buttonClass, Segmented, StatusGlyph } from "@/components/wf";
@@ -19,15 +19,11 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import {
-  countCellText,
-  freeingCellText,
-  type NetworkWardRow,
-} from "@/components/ward-management/capacity/capacity-derivations";
-import local from "./capacity-redesign.module.css";
-import { BedCells } from "./bed-map-cards";
-import { WardClosurePanel } from "@/components/ward-management/capacity/ward-closure-panel";
-import { bedKindsServed, isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
+import { countCellText, freeingCellText, type NetworkWardRow } from "./capacity-derivations";
+import local from "./capacity-page.module.css";
+import { BedCells } from "./capacity-bed-map-cards";
+import { WardClosurePanel } from "./ward-closure-panel";
+import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
 
 const DISCHARGES_HREF = "/ward-flow/discharges";
@@ -180,6 +176,8 @@ export function CapacityWardSidebar({
                 <Button
                   size="sm"
                   variant="sec"
+                  // One open request at a time, as before the redesign: the status above says it is sent.
+                  disabled={request !== undefined}
                   onClick={() =>
                     dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id })
                   }
@@ -389,9 +387,8 @@ function recordOrder(record: DischargeRecord, now: Instant): number {
 }
 
 function dischargeRecordName(record: DischargeRecord): string {
-  if (record.identity.kind === "linked")
-    // Polish (Josh, 31 Oct 2026): surname first, as every list in the redesign (D-83).
-    return `${record.identity.patient.familyName}, ${record.identity.patient.givenName}`;
+  // Surname first (D-83), with the list form every page uses.
+  if (record.identity.kind === "linked") return patientListName(record.identity.patient);
   return record.identity.kind === "legacy-anonymous" ? "Identity not linked" : "Patient link unavailable";
 }
 
