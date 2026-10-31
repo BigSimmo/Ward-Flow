@@ -275,6 +275,11 @@ const AsExecutiveCapacityPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsExecutiveCapacityPage,
   ),
 );
+const AsExecutiveSettingsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-executive-settings/as-executive-settings-page").then(
+    (module) => module.AsExecutiveSettingsPage,
+  ),
+);
 const AsAdminHomePage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-admin-home/as-admin-home-page").then((module) => module.AsAdminHomePage),
 );
@@ -362,6 +367,7 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-bed-manager-seclusion": AsBedManagerSeclusionPage,
   "as-executive-home": AsExecutiveHomePage,
   "as-executive-capacity": AsExecutiveCapacityPage,
+  "as-executive-settings": AsExecutiveSettingsPage,
   "as-admin-home": AsAdminHomePage,
   "as-admin-governance": AsAdminGovernancePage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

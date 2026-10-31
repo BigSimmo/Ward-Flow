@@ -19,19 +19,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import {
-  Bell,
-  Check,
-  ChevronRight,
-  Clock,
-  Database,
-  Gavel,
-  KeyRound,
-  Layers,
-  Palette,
-  Search,
-  UserRound,
-} from "lucide-react";
+import { Check, ChevronRight, Layers, Search, UserRound } from "lucide-react";
 
 import { useWardAccessibilityPreference } from "@/components/ward-management/shell/ward-accessibility";
 import {
@@ -57,17 +45,7 @@ import {
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { clearReferralDraftSession } from "@/components/ward-management/referrals/referral-draft-lifecycle";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import {
-  ED_ACCESS_TARGET_RANGE_MINUTES,
-  MORNING_ROLLUP_TIME_RANGE_MINUTES,
-  PARALLEL_REFERRAL_CAP_RANGE,
-  PULL_HOLD_RANGE_MINUTES,
-} from "@/components/ward-management/ward-model";
-import {
-  DUE_SOON_RANGE_MINUTES,
-  DUE_SOON_URGENT_RANGE_MINUTES,
-  UNDO_TOAST_MS,
-} from "@/components/ward-management/ward-operational-defaults";
+import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import {
   enableActNowNotifications,
   notificationSupport,
@@ -80,8 +58,6 @@ import {
   Avatar,
   Badge,
   Button,
-  Card,
-  CardHead,
   CountCircle,
   Hero,
   HeroTrack,
@@ -107,22 +83,18 @@ const WardHelpUsageCard = dynamic(() =>
 );
 import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { useConfigurationGate } from "@/components/ward-management/settings/settings-configuration-gate";
-import { AccessSettings, showsAccessTab } from "@/components/ward-management/settings/access-settings";
+// Round 3: every desk's Access tab draws the access admin's round 2 copy (shorter role rows, chips
+// only for exceptions); it serves the coordinator and ward desks unchanged otherwise.
+import { AccessSettings, showsAccessTab } from "@/components/ward-redesign/as-admin-home/access-settings";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
-import { ResetBaselineModal } from "@/components/ward-management/settings/reset-baseline-modal";
 import {
-  AlertsPane,
-  DataPane,
-  DisplayPane,
   THEME_CHOICES,
   type ReferenceTab,
   type ThemeChoice,
 } from "@/components/ward-management/settings/settings-panes";
 import { useRowDensity, type RowDensity } from "@/components/ward-management/settings/row-density";
-import { RuleRow, SettingRow } from "./settings-rows";
+import { SettingRow } from "./settings-rows";
 import {
-  SETTINGS_TABS,
-  findSettings,
   type SettingsSearchEntry,
   type SettingsTab,
 } from "@/components/ward-management/settings/settings-search-index";
@@ -136,17 +108,21 @@ import { SettingsProfileCard } from "./settings-profile-card";
 import { SettingsSaveBar } from "./settings-save-bar";
 import {
   PHONE_QUICK_SETTINGS,
-  clampDueSoonUrgent,
-  clock24,
   copySettingsDiagnostics,
-  fullRules,
   isSurgePreset,
   readTabFromHash,
   ruleDiffs,
-  shortDuration,
-  wardsText,
 } from "@/components/ward-management/settings/settings-screen-model";
-import { SettingsTargetsColumn } from "./settings-targets-column";
+import { SettingsAlertsPane } from "./settings-alerts-check";
+import { SettingsDisplayPane } from "./settings-display-pane";
+import { SettingsHelpData } from "./settings-help-data";
+import { SettingsReferenceCard } from "./settings-reference-card";
+import { SettingsRestoreDialog, type RestoreScope } from "./settings-restore-dialog";
+import { SettingsReviewDialog } from "./settings-review-dialog";
+import { surgeConfiguration } from "./settings-rule-catalogue";
+import { SettingsRulesPane } from "./settings-rules-pane";
+import { REDESIGN_TABS, TAB_ICONS, findRedesignSettings } from "./settings-tabs";
+import { SettingsWhoCan } from "./settings-who-can";
 import {
   copyExecutiveSettingsDiagnostics,
   SettingsSourceHost,
@@ -164,21 +140,24 @@ import {
  * when nothing is unsaved; rule steppers are compact on a desktop; and Profile and shift joins Display
  * as one "Display and profile" tab whose Profile card reads only what the app holds (desk, role,
  * scope, shift pattern, service in view, appearance). An old #profile address opens that tab.
+ *
+ * ROUND 3 (mock-up, 30 Oct 2026, Josh: "go ahead with all recommendations"): tabs by job (Help and
+ * data replaces Data and about); the Rules tab in its own file with live impact, honest Surge, the
+ * last change as one line and Show changed only; Save opens a review first, and a loaded rules file
+ * lands in the same review; Download writes the saved rules; Restore lists all twelve rules and asks
+ * whether this browser comes back too; an alerts check; two new browser settings (agreed 31 Oct); a Who can
+ * change what table under Access. The nurse in charge, access admin and executive views are this one
+ * component, their differences marked `ROLE BRANCH (...)`, as the real component will serve them.
  */
 
-/** The redesign's tab list: Profile and shift joins Display. */
-const REDESIGN_TABS: readonly { readonly id: SettingsTab; readonly label: string }[] = SETTINGS_TABS.filter(
-  (item) => item.id !== "profile",
-).map((item) => (item.id === "display" ? { ...item, label: "Display and profile" } : item));
-
-const TAB_ICONS = {
-  rules: Clock,
-  alerts: Bell,
-  display: Palette,
-  profile: UserRound,
-  data: Database,
-  access: KeyRound,
-} as const;
+/** Pages each desk could open first, for Open Ward Flow on (its rail's own pages). */
+const START_PAGES: Partial<Record<string, readonly string[]>> = {
+  coordinator: ["Home", "Referrals", "Waiting", "Capacity", "Movements"],
+  ward: ["My ward", "Referrals", "Alerts", "Statistics"],
+  ed: ["ED board", "Referrals", "Waiting"],
+  admin: ["Settings", "Governance"],
+  executive: ["Statistics", "Capacity"],
+};
 
 export function SettingsRedesign() {
   return <SettingsSourceHost>{(source) => <SettingsWorkspace source={source} />}</SettingsSourceHost>;
@@ -205,6 +184,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const [draft, setDraft] = useState<WardConfiguration>(configuration);
   const [draftBase, setDraftBase] = useState<WardConfiguration>(configuration);
   const [saving, setSaving] = useState(false);
+  // Round 3: Save opens a review first; "file" when a loaded rules file put the draft there.
+  const [review, setReview] = useState<"draft" | "file" | null>(null);
   const savingRef = useRef(false);
   const [configurationFailure, setConfigurationFailure] = useState<string | null>(null);
   const latestConfiguration = useRef(configuration);
@@ -226,17 +207,27 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const { desk } = useWardAccessSnapshot();
   const accessOn = useWardFeatureFlag("role-access") && showsAccessTab(desk);
   const helpAskOn = useWardFeatureFlag("help-ask");
-  const tabs = accessOn ? REDESIGN_TABS : REDESIGN_TABS.filter((item) => item.id !== "access");
+  // ROLE BRANCH (ward), from the nurse in charge copy: a ward desk changes no rule, so it opens on its
+  // own desk's display and profile, and the rules read as read only with no save bar.
+  const readsRulesOnly = desk.role === "ward";
+  // ROLE BRANCH (admin), from the access admin copy: no clinical content and no alerts on this desk,
+  // so Rules and Alerts go, and Access, the desk's work, comes first.
+  const adminDesk = accessOn && desk.role === "admin";
+  const tabs = adminDesk
+    ? [
+        REDESIGN_TABS[4],
+        ...REDESIGN_TABS.filter((item) => item.id !== "rules" && item.id !== "alerts" && item.id !== "access"),
+      ]
+    : accessOn
+      ? REDESIGN_TABS
+      : REDESIGN_TABS.filter((item) => item.id !== "access");
+  const firstTab: SettingsTab = adminDesk ? "access" : readsRulesOnly ? "display" : "rules";
   const tab: SettingsTab =
-    chosenTab === null
-      ? accessOn && desk.role === "admin"
-        ? "access"
-        : "rules"
-      : !accessOn && chosenTab === "access"
-        ? "rules"
-        : chosenTab === "profile"
-          ? "display"
-          : chosenTab;
+    chosenTab === null || !tabs.some((item) => item.id === (chosenTab === "profile" ? "display" : chosenTab))
+      ? firstTab
+      : chosenTab === "profile"
+        ? "display"
+        : chosenTab;
   // Phone only: the area whose tall sheet is open. The desktop never reads it.
   const isPhone = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<SettingsTab | null>(null);
@@ -333,20 +324,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     else document.documentElement.removeAttribute("data-high-contrast");
   }, [reducedMotion, highContrast]);
 
-  const saved = fullRules(configuration);
-  const rules = fullRules(draft);
   const diffs = useMemo(() => ruleDiffs(draftBase, draft), [draftBase, draft]);
   const unsavedCount = diffs.length;
   const hasUnsavedRules = unsavedCount > 0;
   useDirtyStateGuard({ isDirty: hasUnsavedRules });
   const isSurge = isSurgePreset(draft);
-
-  // The ED row's effect: who waits past the target now, at the draft value and at the saved one.
-  const savedEdOver = thresholds?.find((threshold) => threshold.id === "ed-access-target")?.reached ?? null;
-  const draftEdOver = operational
-    ? (publishedThresholds(operational.movements, now, draft).find((threshold) => threshold.id === "ed-access-target")
-        ?.reached ?? 0)
-    : null;
 
   // Recent rule saves, newest first, from the audit trail every save writes to.
   const ruleChanges = operational?.ruleChanges ?? null;
@@ -363,10 +345,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     }
     if ((choice === "surge") === isSurge) return;
     if (choice === "surge") {
+      const surge = surgeConfiguration(draft);
       setRule({
-        parallelReferralCap: PARALLEL_REFERRAL_CAP_RANGE.max,
-        edAccessTargetMinutes: ED_ACCESS_TARGET_RANGE_MINUTES.min,
-        pullHoldMinutes: 120,
+        parallelReferralCap: surge.parallelReferralCap,
+        edAccessTargetMinutes: surge.edAccessTargetMinutes,
+        pullHoldMinutes: surge.pullHoldMinutes,
       });
       showToast("Surge values are in the draft. Save to apply them.");
     } else {
@@ -432,6 +415,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     const requested = draft;
     saveConfiguration(requested, before, false, (applied, outcome) => {
       setPhoneSheet(null);
+      setReview(null);
       const changed = ruleDiffs(before, requested);
       toast?.push({
         tone: "success",
@@ -492,17 +476,17 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         product: "Ward Flow Statewide Bed Coordination",
         version: 6,
         exportedAt: new Date().toISOString(),
-        configuration: draft,
-        appearance,
-        railOpen,
+        // Round 3: the saved rules, never an unsaved draft, and no display settings (Load reads
+        // rules only, so a file that also carried the theme promised something Load never did).
+        configuration,
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const day = perthCalendarDay(new Date());
       const date = `${day.year}-${String(day.monthIndex + 1).padStart(2, "0")}-${String(day.day).padStart(2, "0")}`;
       downloadBlob(blob, `ward-flow-rules-${date}.json`);
-      showToast("Rules exported.");
+      showToast("Saved rules downloaded.");
     } catch {
-      showToast("Rules could not be exported.");
+      showToast("The rules file could not be downloaded.");
     }
   };
 
@@ -552,8 +536,10 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             : parsed;
         const imported = validateConfiguration(payload);
         if (imported) {
+          // Round 3: a file lands in the review, so it never changes a rule unseen.
           setDraft(imported);
-          showToast("Rules file loaded into the draft. Save to apply.");
+          setPhoneSheet(null);
+          setReview("file");
         } else {
           showToast("Invalid configuration file format.");
         }
@@ -587,7 +573,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     }
   };
 
-  const handleConfirmReset = () => {
+  const handleConfirmReset = (scope: RestoreScope) => {
     // Audit settings-18: everything a restore changes can come back from the toast, as a rule save
     // can. Undo puts the rules back with a second recorded save, so the audit keeps both.
     const before = {
@@ -599,18 +585,53 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       appearance,
       glare,
       railOpen,
+      rowDensity,
+      reducedMotion,
+      highContrast,
+      characterShortcuts,
     };
-    const defaults = defaultWardConfiguration();
-    saveConfiguration(defaults, before.configuration, true, (applied, outcome) => {
+    const withBrowser = scope === "rules-and-browser";
+    // Round 3: every browser setting the dialog lists comes back, not only theme, glare, sidebar and buzz.
+    const restoreBrowser = () => {
       setAudioBuzz(true);
       setAudioBuzzPreference(true);
       applyAppearance("auto");
       applyGlare(false);
       setRailOpenPreference(true);
+      setRowDensity("comfortable");
+      setReducedMotion(false);
+      setHighContrast(false);
+      setCharacterShortcuts(true);
+    };
+    const putBrowserBack = () => {
+      setAudioBuzz(before.buzz);
+      setAudioBuzzPreference(before.buzz);
+      applyAppearance(before.appearance);
+      applyGlare(before.glare);
+      setRailOpenPreference(before.railOpen);
+      setRowDensity(before.rowDensity);
+      setReducedMotion(before.reducedMotion);
+      setHighContrast(before.highContrast);
+      setCharacterShortcuts(before.characterShortcuts);
+    };
+    // A desk that cannot change the rules restores only its own browser.
+    if (!configurationGate.allowed || !operational) {
+      restoreBrowser();
       setIsResetModalOpen(false);
       toast?.push({
         tone: "success",
-        title: "Defaults restored and recorded.",
+        title: "This browser's settings restored.",
+        undo: { durationMs: UNDO_TOAST_MS, onUndo: () => void putBrowserBack() },
+      });
+      return;
+    }
+    const defaults = defaultWardConfiguration();
+    saveConfiguration(defaults, before.configuration, true, (applied, outcome) => {
+      if (withBrowser) restoreBrowser();
+      setIsResetModalOpen(false);
+      toast?.push({
+        tone: "success",
+        title: withBrowser ? "Rules and this browser restored. Recorded in the audit." : "Rules restored and recorded.",
         undo: {
           durationMs: UNDO_TOAST_MS,
           onUndo: () => {
@@ -630,11 +651,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             saveConfiguration(inverse.configuration, applied, false, () => {
               setDraft({ ...before.draft });
               setDraftBase(before.draftBase);
-              setAudioBuzz(before.buzz);
-              setAudioBuzzPreference(before.buzz);
-              applyAppearance(before.appearance);
-              applyGlare(before.glare);
-              setRailOpenPreference(before.railOpen);
+              if (withBrowser) putBrowserBack();
               showToast("Settings back as they were. Recorded in the audit.");
             });
 
@@ -652,7 +669,10 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const [highlight, setHighlight] = useState<string | null>(null);
   const [reference, setReference] = useState<ReferenceTab>("thresholds");
   const findRef = useRef<HTMLInputElement>(null);
-  const results = useMemo(() => findSettings(query), [query]);
+  const results = findRedesignSettings(
+    query,
+    tabs.map((item) => item.id),
+  );
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -695,8 +715,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       return;
     }
     chooseTab(entry.tab);
-    // Fixed defaults sits behind the reference card's second tab; show it before highlighting.
+    // Fixed defaults and Clinical values sit behind the reference card's tabs; show them first.
     if (entry.id === "fixed-defaults") setReference("defaults");
+    if (entry.id === "clinical-values") setReference("clinical");
     // Phone: the four quick settings sit on the screen itself; every other one opens its area.
     if (isPhone) setPhoneSheet(PHONE_QUICK_SETTINGS.has(entry.id) ? null : entry.tab);
     setHighlight(entry.id);
@@ -723,15 +744,6 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const showResults = findOpen && query.trim().length > 0;
   const tabLabel = (id: SettingsTab) =>
     REDESIGN_TABS.find((item) => item.id === (id === "profile" ? "display" : id))?.label ?? id;
-
-  /* Rule rows -------------------------------------------------------------------------------- */
-  const edRange = {
-    id: "setting-ed-threshold",
-    ...ED_ACCESS_TARGET_RANGE_MINUTES,
-    minLabel: `${ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h`,
-    maxLabel: `${ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h`,
-  };
-  const edDelta = draftEdOver !== null && savedEdOver !== null ? draftEdOver - savedEdOver : null;
 
   const findSetting = (
     <div className={styles.find}>
@@ -791,361 +803,154 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     </div>
   );
 
+  // Who cannot change the rules, in words: the executive, the nurse in charge (ROLE BRANCH (ward)),
+  // and a coordinator who is not the statewide one. They get one Read only line and no save bar.
+  const readOnlyWords =
+    source.kind === "executive"
+      ? "Public rules for executive reporting."
+      : readsRulesOnly
+        ? "The rules your ward's screens use, set by the coordinator."
+        : (configurationBlockReason ?? null);
+
   const rulesContent = (
-    <>
-      {source.kind === "executive" ? (
-        <p className={styles.scopeLine}>
-          <span className={styles.scopeTag}>Read only</span>
-          <span>Public rules for executive reporting.</span>
-        </p>
-      ) : (
-        <p className={cx(styles.scopeLine, rx.scopeWords)}>
-          <strong>Changes wait for Save.</strong>
-          <span>Rules change what every screen shows. Each save is recorded in the audit.</span>
-        </p>
-      )}
-      {configurationBlockReason ? <p role="status">{configurationBlockReason}</p> : null}
-      <div className={styles.columns}>
-        <div className={styles.column}>
-          <Card aria-labelledby="timings-title" data-setting="surge">
-            <CardHead
-              iconPlain
-              id="timings-title"
-              icon={Clock}
-              title="Busy-day timings"
-              action={
-                <Segmented
-                  className={styles.pillSeg}
-                  label="Timing set"
-                  unavailable={!configurationGate.allowed}
-                  items={[
-                    { id: "standard", label: "Standard" },
-                    { id: "surge", label: "Surge" },
-                  ]}
-                  value={isSurge ? "surge" : "standard"}
-                  onChange={handleSurge}
-                />
-              }
-            />
-            <RuleRow
-              unavailableReason={configurationBlockReason}
-              setting="ed-target"
-              title="ED wait target"
-              sub="Access measure only"
-              value={rules.ed}
-              saved={saved.ed}
-              savedDisplay={`${saved.ed / 60}h`}
-              display={`${rules.ed / 60}h`}
-              noun="ED access target"
-              range={edRange}
-              onChange={(minutes) => setRule({ edAccessTargetMinutes: minutes })}
-              onReset={() => setRule({ edAccessTargetMinutes: saved.ed })}
-              effect={
-                draftEdOver === null ? (
-                  "Individual record status unavailable for executive reporting."
-                ) : (
-                  <>
-                    <StatusGlyph tone={draftEdOver > 0 ? "warning" : "success"} size={9} />
-                    {/* Audit settings-25: the count is read from the draft; a changed target says so. */}
-                    {rules.ed !== saved.ed
-                      ? draftEdOver > 0
-                        ? `${draftEdOver} over if saved`
-                        : "None over if saved"
-                      : draftEdOver > 0
-                        ? `${draftEdOver} over now`
-                        : "None over now"}
-                    {edDelta !== null && edDelta !== 0 ? (
-                      <span className={styles.delta}>{`${edDelta > 0 ? "+" : ""}${edDelta}`}</span>
-                    ) : null}
-                  </>
-                )
-              }
-              usedBy="Home, ED, Movements"
-            />
-            <RuleRow
-              unavailableReason={configurationBlockReason}
-              setting="wards-asked"
-              title="Wards asked at once"
-              sub="Per referral"
-              value={rules.cap}
-              saved={saved.cap}
-              savedDisplay={wardsText(saved.cap)}
-              display={wardsText(rules.cap)}
-              noun="parallel referral enquiry limit"
-              range={{
-                id: "setting-parallel-cap",
-                ...PARALLEL_REFERRAL_CAP_RANGE,
-                minLabel: wardsText(PARALLEL_REFERRAL_CAP_RANGE.min),
-                maxLabel: wardsText(PARALLEL_REFERRAL_CAP_RANGE.max),
-              }}
-              onChange={(units) => setRule({ parallelReferralCap: units })}
-              onReset={() => setRule({ parallelReferralCap: saved.cap })}
-              usedBy="Home, Referrals, Placement"
-            />
-            <RuleRow
-              unavailableReason={configurationBlockReason}
-              setting="pull-hold"
-              title="Pull time limit"
-              sub="How long a pulled bed is kept"
-              value={rules.hold}
-              saved={saved.hold}
-              savedDisplay={shortDuration(saved.hold)}
-              display={shortDuration(rules.hold)}
-              noun="pull time limit"
-              range={{
-                id: "setting-hold-duration",
-                ...PULL_HOLD_RANGE_MINUTES,
-                minLabel: shortDuration(PULL_HOLD_RANGE_MINUTES.min),
-                maxLabel: shortDuration(PULL_HOLD_RANGE_MINUTES.max),
-              }}
-              onChange={(minutes) => setRule({ pullHoldMinutes: minutes })}
-              onReset={() => setRule({ pullHoldMinutes: saved.hold })}
-              usedBy="Home, ED, Referrals"
-            />
-            <RuleRow
-              unavailableReason={configurationBlockReason}
-              setting="morning-count"
-              testId="setting-morning-rollup-row"
-              title="Morning bed numbers due"
-              sub="Not a legal limit"
-              subTestId="setting-morning-rollup-desc"
-              value={rules.morning}
-              saved={saved.morning}
-              savedDisplay={clock24(saved.morning)}
-              display={clock24(rules.morning)}
-              displayTestId="morning-rollup-display"
-              noun="morning bed numbers due time"
-              range={{
-                id: "setting-morning-rollup-slider",
-                ...MORNING_ROLLUP_TIME_RANGE_MINUTES,
-                minLabel: clock24(MORNING_ROLLUP_TIME_RANGE_MINUTES.min),
-                maxLabel: clock24(MORNING_ROLLUP_TIME_RANGE_MINUTES.max),
-              }}
-              onChange={(minutes) => setRule({ morningRollupDeadlineMinutes: minutes })}
-              onReset={() => setRule({ morningRollupDeadlineMinutes: saved.morning })}
-              usedBy="Wards, Ward alerts"
-            />
-          </Card>
-
-          <Card aria-labelledby="warnings-title">
-            <CardHead
-              iconPlain
-              id="warnings-title"
-              icon={Gavel}
-              title="Form warnings"
-              meta="Your defaults, not legal limits"
-            />
-            <RuleRow
-              unavailableReason={configurationBlockReason}
-              setting="second-warning"
-              testId="setting-due-soon-row"
-              title="Early warning"
-              sub="Shown as due soon"
-              subTestId="setting-due-soon-desc"
-              value={rules.soon}
-              saved={saved.soon}
-              savedDisplay={shortDuration(saved.soon)}
-              display={shortDuration(rules.soon)}
-              displayTestId="due-soon-display"
-              noun="early warning before a legal due time"
-              range={{
-                id: "setting-due-soon",
-                ...DUE_SOON_RANGE_MINUTES,
-                minLabel: shortDuration(DUE_SOON_RANGE_MINUTES.min),
-                maxLabel: shortDuration(DUE_SOON_RANGE_MINUTES.max),
-              }}
-              onChange={(minutes) =>
-                setRule({
-                  dueSoonMinutes: minutes,
-                  dueSoonUrgentMinutes: clampDueSoonUrgent(rules.urgent, minutes),
-                })
-              }
-              onReset={() =>
-                setRule({
-                  dueSoonMinutes: saved.soon,
-                  dueSoonUrgentMinutes: clampDueSoonUrgent(rules.urgent, saved.soon),
-                })
-              }
-              usedBy="Home, every legal due time"
-            />
-            <RuleRow
-              unavailableReason={configurationBlockReason}
-              setting="first-warning"
-              testId="setting-due-soon-urgent-row"
-              title="Final warning"
-              sub="Before a legal due time"
-              subTestId="setting-due-soon-urgent-desc"
-              value={rules.urgent}
-              saved={saved.urgent}
-              savedDisplay={shortDuration(saved.urgent)}
-              display={shortDuration(rules.urgent)}
-              displayTestId="due-soon-urgent-display"
-              noun="final warning before a legal due time"
-              max={clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, rules.soon)}
-              range={{
-                id: "setting-due-soon-urgent",
-                ...DUE_SOON_URGENT_RANGE_MINUTES,
-                minLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.min),
-                maxLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.max),
-              }}
-              onChange={(minutes) => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(minutes, rules.soon) })}
-              onReset={() => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(saved.urgent, rules.soon) })}
-              usedBy="Home, every legal due time"
-            />
-            {/* The two warnings on one window, read from the draft: calm, early warning, final warning. */}
-            <div className={styles.cascade} aria-hidden="true">
-              <div className={styles.cascadeTrack}>
-                <span style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - rules.soon) }} />
-                <span className={styles.cascadeSoon} style={{ flexGrow: Math.max(0, rules.soon - rules.urgent) }} />
-                <span className={styles.cascadeUrgent} style={{ flexGrow: rules.urgent }} />
-              </div>
-              <div className={styles.cascadeEnds}>
-                <span className={styles.cascadeStart}>Due in {shortDuration(DUE_SOON_RANGE_MINUTES.max)}</span>
-                <span style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - rules.soon) }}>
-                  {shortDuration(rules.soon)}
-                </span>
-                <span style={{ flexGrow: Math.max(0, rules.soon - rules.urgent) }}>{shortDuration(rules.urgent)}</span>
-                <span style={{ flexGrow: rules.urgent }}>Due</span>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <SettingsTargetsColumn
-          rules={rules}
-          saved={saved}
-          setRule={setRule}
-          ruleChanges={ruleChanges}
-          now={now}
-          unavailableReason={configurationBlockReason}
-        />
-      </div>
-    </>
+    <SettingsRulesPane
+      draft={draft}
+      configuration={configuration}
+      movements={operational?.movements ?? null}
+      now={now}
+      ruleChanges={ruleChanges}
+      setRule={setRule}
+      isSurge={isSurge}
+      onSurge={handleSurge}
+      blockReason={configurationBlockReason}
+      readOnlyWords={readOnlyWords}
+    />
   );
 
+  const testBuzz = () => {
+    playSyntheticUrgentChime();
+    showToast("Test buzz played.");
+  };
+
   const alertsContent = (
-    <>
-      <AlertsPane
-        notifications={actNowNotifications}
-        notificationPermission={notificationPermission}
-        onNotificationsChange={(next) => {
-          if (!next) {
-            setActNowNotificationPreference(false);
-            showToast("Browser notifications off.");
-            return;
-          }
-          void enableActNowNotifications().then((answer) => {
-            setNotificationPermission(answer);
-            showToast(
-              answer === "granted"
-                ? "Browser notifications on for act-now alerts."
-                : answer === "unsupported"
-                  ? "This browser cannot show notifications."
-                  : "Notifications are blocked for this site in the browser.",
-            );
-          });
-        }}
-        phonePush={phonePush}
-        onPhonePushChange={(next) => {
-          void setPhonePush(next).then((answer) => {
-            showToast(
-              answer === "on"
-                ? "Phone alerts on for this device."
-                : answer === "off"
-                  ? "Phone alerts off for this device."
-                  : answer === "denied"
-                    ? "Notifications are blocked for this site in the browser."
-                    : answer === "server-off"
-                      ? "Phone alerts are not set up on the server yet."
-                      : answer === "role"
-                        ? "Phone alerts are not part of your role."
-                        : "Phone alerts could not be changed. Try again.",
-            );
-          });
-        }}
-        buzz={audioBuzz}
-        onBuzzChange={(next) => {
-          setAudioBuzz(next);
-          setAudioBuzzPreference(next);
-          showToast(next ? "Buzz sound on." : "Buzz sound off.");
-        }}
-        onTestBuzz={() => {
-          playSyntheticUrgentChime();
-          showToast("Test buzz played.");
-        }}
-      />
-    </>
+    <SettingsAlertsPane
+      notifications={actNowNotifications}
+      permission={notificationPermission}
+      onNotificationsChange={(next) => {
+        if (!next) {
+          setActNowNotificationPreference(false);
+          showToast("Browser notifications off.");
+          return;
+        }
+        void enableActNowNotifications().then((answer) => {
+          setNotificationPermission(answer);
+          showToast(
+            answer === "granted"
+              ? "Browser notifications on for act-now alerts."
+              : answer === "unsupported"
+                ? "This browser cannot show notifications."
+                : "Notifications are blocked for this site in the browser.",
+          );
+        });
+      }}
+      phonePush={phonePush}
+      onPhonePushChange={(next) => {
+        void setPhonePush(next).then((answer) => {
+          showToast(
+            answer === "on"
+              ? "Phone alerts on for this device."
+              : answer === "off"
+                ? "Phone alerts off for this device."
+                : answer === "denied"
+                  ? "Notifications are blocked for this site in the browser."
+                  : answer === "server-off"
+                    ? "Phone alerts are not set up on the server yet."
+                    : answer === "role"
+                      ? "Phone alerts are not part of your role."
+                      : "Phone alerts could not be changed. Try again.",
+          );
+        });
+      }}
+      buzz={audioBuzz}
+      onBuzzChange={(next) => {
+        setAudioBuzz(next);
+        setAudioBuzzPreference(next);
+        showToast(next ? "Buzz sound on." : "Buzz sound off.");
+      }}
+      onTestBuzz={testBuzz}
+      showToast={showToast}
+    />
   );
 
   const displayContent = (
-    <>
-      <SettingsProfileCard
-        now={now}
-        onGoToDesk={goToDesk}
-        themeLabel={THEME_CHOICES.find((choice) => choice.id === theme)?.label ?? "Auto"}
-        rowDensity={rowDensity}
-        railOpen={railOpen}
-      />
-      <DisplayPane
-        theme={theme}
-        onThemeChange={chooseTheme}
-        railOpen={railOpen}
-        onRailChange={(open) => {
-          setRailOpenPreference(open);
-          showToast(open ? "Sidebar set to Full." : "Sidebar set to Compact.");
-        }}
-        reducedMotion={reducedMotion}
-        onReducedMotionChange={(next) => {
-          setReducedMotion(next);
-          showToast(`Reduce motion ${next ? "on" : "off"}.`);
-        }}
-        highContrast={highContrast}
-        onHighContrastChange={(next) => {
-          setHighContrast(next);
-          showToast(`High contrast ${next ? "on" : "off"}.`);
-        }}
-        rowDensity={rowDensity}
-        onRowDensityChange={chooseRowDensity}
-        characterShortcuts={characterShortcuts}
-        onCharacterShortcutsChange={setCharacterShortcuts}
-      />
-    </>
+    <SettingsDisplayPane
+      profileCard={<SettingsProfileCard now={now} onGoToDesk={goToDesk} />}
+      theme={theme}
+      onThemeChange={chooseTheme}
+      railOpen={railOpen}
+      onRailChange={(open) => {
+        setRailOpenPreference(open);
+        showToast(open ? "Sidebar set to Full." : "Sidebar set to Compact.");
+      }}
+      reducedMotion={reducedMotion}
+      onReducedMotionChange={(next) => {
+        setReducedMotion(next);
+        showToast(`Reduce motion ${next ? "on" : "off"}.`);
+      }}
+      highContrast={highContrast}
+      onHighContrastChange={(next) => {
+        setHighContrast(next);
+        showToast(`High contrast ${next ? "on" : "off"}.`);
+      }}
+      rowDensity={rowDensity}
+      onRowDensityChange={chooseRowDensity}
+      characterShortcuts={characterShortcuts}
+      onCharacterShortcutsChange={setCharacterShortcuts}
+      startPages={START_PAGES[desk.role] ?? ["Home"]}
+    />
   );
 
   const dataContent = (
     <>
-      <DataPane
-        shared={sharedEnabled}
-        reference={reference}
-        onReferenceChange={setReference}
+      <SettingsHelpData
         movementCount={operational?.movements.length ?? null}
         eventCount={operational?.eventLog?.length ?? (operational ? 0 : null)}
-        thresholds={thresholds}
-        onExport={handleExport}
+        shared={sharedEnabled}
+        auditAvailable={ruleChanges !== null}
+        onDownload={handleExport}
         onCopyDiagnostics={handleCopyDiagnostics}
-        onImport={handleImport}
+        onLoad={handleImport}
+        loadUnavailable={configurationBlockReason}
         onClearSession={handleClearSession}
-        restoreUnavailable={configurationBlockReason}
-        importUnavailable={configurationBlockReason}
         onRestore={() => {
-          if (!configurationGate.allowed) return;
-          // On a phone the Data sheet closes first, so the restore dialog is the only layer.
+          // On a phone the sheet closes first, so the restore dialog is the only layer.
           setPhoneSheet(null);
           setIsResetModalOpen(true);
         }}
+        reference={
+          <SettingsReferenceCard reference={reference} onReferenceChange={setReference} thresholds={thresholds} />
+        }
       />
       {helpAskOn ? <WardHelpUsageCard /> : null}
     </>
   );
 
+  // Round 3: the Access tab adds the read-only Who can change what table under today's panels.
+  const accessContent = accessOn ? (
+    <div data-setting="access">
+      <AccessSettings />
+      <SettingsWhoCan />
+    </div>
+  ) : null;
+
   // Redesign: on the Rules tab the save bar always shows, so where Save lives never moves.
+  // A desk that cannot change the rules has no save bar (ROLE BRANCH (ward), executive, non-statewide).
   const saveBar =
-    hasUnsavedRules || tab === "rules" ? (
+    readOnlyWords === null && (hasUnsavedRules || tab === "rules") ? (
       <SettingsSaveBar
         diffs={diffs}
         onRulesTab={tab === "rules"}
         onReview={() => chooseTab("rules")}
-        auditAvailable={ruleChanges !== null}
         lastSave={
           ruleChanges === null
             ? "Rule-save history unavailable"
@@ -1156,17 +961,30 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         saving={saving}
         blockReason={configurationBlockReason}
         onDiscard={handleDiscard}
-        onSave={handleSave}
+        onSave={() => setReview("draft")}
       />
     ) : null;
 
   const overlays = (
     <>
-      <ResetBaselineModal
-        isOpen={isResetModalOpen}
+      <SettingsRestoreDialog
+        open={isResetModalOpen}
         onClose={() => setIsResetModalOpen(false)}
         onConfirm={handleConfirmReset}
         pending={saving}
+        rulesUnavailable={configurationBlockReason}
+      />
+      <SettingsReviewDialog
+        open={review !== null}
+        onClose={() => setReview(null)}
+        base={draftBase}
+        draft={draft}
+        movements={operational?.movements ?? null}
+        now={now}
+        fromFile={review === "file"}
+        saving={saving}
+        blockReason={configurationBlockReason}
+        onSave={handleSave}
       />
       {isOperatorModalOpen ? (
         <OperatorSwitcherModal isOpen={isOperatorModalOpen} onClose={() => setIsOperatorModalOpen(false)} />
@@ -1197,11 +1015,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
      its foot. */
   if (isPhone) {
     const areaSummary: Record<SettingsTab, string> = {
-      rules: "Timings, form warnings, decision targets",
+      rules: readOnlyWords === null ? "ED and placement, form warnings, reply targets" : "Read only",
       alerts: `Browser ${actNowNotifications ? "on" : "off"} · buzz ${audioBuzz ? "on" : "off"}`,
       display: `${deskProfile.role} · motion ${reducedMotion ? "reduced" : "on"} · contrast ${highContrast ? "high" : "standard"}`,
       profile: `${deskProfile.role} · ${deskProfile.location}`,
-      data: "Export, restore, about this prototype",
+      data: "Help, rules file, restore, about",
       access: desk.role === "admin" ? "Roles, approvals and requests" : "Cover for a second ward or ED",
     };
     const sheetTab = phoneSheet;
@@ -1211,8 +1029,13 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       display: displayContent,
       profile: displayContent,
       data: dataContent,
-      access: accessOn ? <AccessSettings /> : null,
+      access: accessContent,
     };
+    // ROLE BRANCH (admin), from the access admin copy: giving access is all this desk does, so on a
+    // phone its requests and roles are open on the page, above the other areas, with no Access row,
+    // and the buzz sound (for alerts it never gets) is left out.
+    const accessInline = adminDesk;
+    const roleIsName = deskProfile.name === deskProfile.role;
     return (
       <div
         className={cx(styles.screen, styles.phoneScreen)}
@@ -1237,7 +1060,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             }
             eyebrow={deskProfile.location}
             chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
-            sub={deskProfile.role}
+            sub={roleIsName ? undefined : deskProfile.role}
             // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
             // are what this hero is for. The save strip still appears when a rule is unsaved.
             // Phone (Josh, 31 Oct 2026): Go to a desk is Home's hero pill, not a full-width button.
@@ -1250,6 +1073,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
 
           <div className={styles.phoneFind}>{findSetting}</div>
           {refusedLine}
+          {accessInline ? (
+            <section className={styles.phoneSection} aria-label="Access">
+              {accessContent}
+            </section>
+          ) : null}
 
           <section className={styles.phoneSection} aria-labelledby="settings-phone-quick">
             <h2 id="settings-phone-quick" className={styles.phoneHead}>
@@ -1280,18 +1108,20 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                   onChange={chooseRowDensity}
                 />
               </SettingRow>
-              <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz">
-                <Switch
-                  checked={audioBuzz}
-                  onCheckedChange={(next) => {
-                    setAudioBuzz(next);
-                    setAudioBuzzPreference(next);
-                    showToast(next ? "Buzz sound on." : "Buzz sound off.");
-                  }}
-                  label={<SrOnly>Buzz sound</SrOnly>}
-                  className={styles.phoneSwitch}
-                />
-              </SettingRow>
+              {accessInline ? null : (
+                <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz">
+                  <Switch
+                    checked={audioBuzz}
+                    onCheckedChange={(next) => {
+                      setAudioBuzz(next);
+                      setAudioBuzzPreference(next);
+                      showToast(next ? "Buzz sound on." : "Buzz sound off.");
+                    }}
+                    label={<SrOnly>Buzz sound</SrOnly>}
+                    className={styles.phoneSwitch}
+                  />
+                </SettingRow>
+              )}
             </div>
           </section>
 
@@ -1300,8 +1130,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               All settings
             </h2>
             <ul className={styles.phoneList}>
-              {tabs.map((item) => {
+              {tabs.flatMap((item) => {
                 const Icon = TAB_ICONS[item.id];
+                if (accessInline && item.id === "access") return [];
                 return (
                   <PhoneListRow
                     key={item.id}
@@ -1331,7 +1162,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               aria-label="Unsaved rule changes"
               data-testid="unsaved-draft-inspector"
             >
-              <span className={styles.phoneSaveText} title={diffs.join(", ")}>
+              <span className={cx(styles.phoneSaveText, rx.wrapText)}>
                 <StatusGlyph tone="info" size={9} />
                 {diffs.join(", ")}
               </span>
@@ -1341,7 +1172,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               <Button
                 variant="pri"
                 icon={Check}
-                onClick={handleSave}
+                onClick={() => setReview("draft")}
                 disabledReason={configurationBlockReason ?? (saving ? "Saving the rule change." : undefined)}
                 data-testid="btn-save-draft"
               >
@@ -1357,18 +1188,21 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             data-testid="ward-settings-phone-sheet"
             title={sheetTab ? tabLabel(sheetTab) : "Settings"}
             description={
+              // Round 3: a desk that cannot save is never told "Save to apply".
               sheetTab === "rules"
-                ? source.kind === "executive"
-                  ? "Read only · Coordinator only"
-                  : "Save to apply. Each save is recorded in the audit"
-                : "Saves at once · this browser only"
+                ? readOnlyWords !== null
+                  ? `Read only · ${readOnlyWords}`
+                  : "Changes wait for Save. Each save is recorded in the audit"
+                : sheetTab === "access"
+                  ? "Each change asks for your password again"
+                  : "Saves at once · this browser only"
             }
             primary={
               sheetTab === "rules" && hasUnsavedRules
                 ? {
                     label: saving ? "Saving…" : unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`,
                     disabledReason: configurationBlockReason ?? (saving ? "Saving the rule change." : undefined),
-                    onAction: handleSave,
+                    onAction: () => setReview("draft"),
                   }
                 : { label: "Done", onAction: () => setPhoneSheet(null) }
             }
@@ -1386,14 +1220,19 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   }
 
   return (
-    <div className={cx(styles.screen, rx.scope)} data-testid="ward-settings-screen" data-ward-design="workspaces">
+    <div className={styles.screen} data-testid="ward-settings-screen" data-ward-design="workspaces">
       <main id="main-content" className={styles.main}>
         <h1 className={styles.srOnly}>Settings</h1>
 
         <Hero
           className={styles.band}
           testId="ward-settings-profile"
-          eyebrow={`${deskProfile.role} · ${deskProfile.location}`}
+          // ROLE BRANCH (admin), polish r2: a desk named by its role says the role once, in the title.
+          eyebrow={
+            deskProfile.name === deskProfile.role
+              ? deskProfile.location
+              : `${deskProfile.role} · ${deskProfile.location}`
+          }
           title={
             <span className={styles.who}>
               <Avatar
@@ -1417,9 +1256,12 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               <Button variant="onHero" size="sm" icon={Layers} onClick={goToDesk}>
                 Go to a desk
               </Button>
-              <Button variant="light" size="sm" icon={UserRound} onClick={() => chooseTab("display")}>
-                Profile
-              </Button>
+              {/* ROLE BRANCH (ward, admin): these desks open on Display or Access, so no Profile jump. */}
+              {readsRulesOnly || adminDesk ? null : (
+                <Button variant="light" size="sm" icon={UserRound} onClick={() => chooseTab("display")}>
+                  Profile
+                </Button>
+              )}
             </>
           }
           bar={
@@ -1466,7 +1308,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         {/* Mounted only while open, so its server reads wait until the tab is chosen (review on PR #363). */}
         {accessOn && tab === "access" ? (
           <div className={styles.pane} data-pane="access">
-            <AccessSettings />
+            {accessContent}
           </div>
         ) : null}
 
