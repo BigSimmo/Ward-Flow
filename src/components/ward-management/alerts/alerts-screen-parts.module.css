@@ -250,3 +250,16 @@
 .deskClear.deskClear li > :is(a, button):focus-visible {
   outline-color: var(--wf-focus-ring);
 }
+
+/* Alerts redesign (1 Nov 2026): the Urgency, Lanes and Owner switch sits at the end of the tab row. */
+.viewSwitch {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+}
+.tabsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}

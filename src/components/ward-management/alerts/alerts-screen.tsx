@@ -2,7 +2,7 @@
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
-import { AlarmClock, ChevronRight, Clock, Columns3, List, Users, X } from "lucide-react";
+import { AlarmClock, ChevronRight, Clock, X } from "lucide-react";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import {
@@ -80,6 +80,8 @@ import { LinkedAlertItem } from "./alert-linked-group";
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
 import { TodayChart } from "./alerts-visuals";
 import { TodayBand } from "./alerts-today-band";
+import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
+import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
 import { alertsHistory } from "./alerts-history";
 import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
@@ -100,7 +102,6 @@ import {
   Drawer,
   PhoneSheet,
   PillTabs,
-  Segmented,
   SrOnly,
   StatusGlyph,
   TabPanel,
@@ -129,8 +130,6 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 export { extractOverdue } from "./alerts-model";
 
 const COORDINATOR = WARD_FLOW_ROLE_LABELS.coordinator;
-
-type ArrangeBy = "urgency" | "lanes" | "owner";
 
 /** A request this screen sent, read back from the event log so a refused act never says it happened. */
 type ActionRequest = { type: string; logSequence: number; ok: string; refused: string };
@@ -466,7 +465,8 @@ function AlertsWorkspace() {
         .map((item) => entryFor(item, snoozed))
         .map((entry) => {
           const highlighted = isHighlighted(entry);
-          return { ...entry, highlighted, dimmed: highlightOn && !highlighted };
+          // Safety rule 2 (Alerts redesign, 1 Nov 2026): a highlight never dims an act-now row.
+          return { ...entry, highlighted, dimmed: highlightOn && !highlighted && entry.group !== "act" };
         })
         .sort((a, b) => byOldest({ at: a.raised }, { at: b.raised })),
     [entryFor, isHighlighted, highlightOn],
@@ -681,6 +681,7 @@ function AlertsWorkspace() {
   };
   const queueHandlers: QueueHandlers = {
     selectedId: selected?.item.id,
+    firstInLineId: nextQueue[0]?.item.id,
     onSelect: (entry) => select(entry),
     onRelease: (entry) => select(entry, { release: true }),
     onReturn: (entry) => detailHandlers.onReturn(entry.item),
@@ -926,7 +927,7 @@ function AlertsWorkspace() {
       </p>
     ) : null;
   const rows = (items: LinkedQueueItem<QueueEntry>[], sectionLabels: readonly string[]) => {
-    const listClassName = isPhone ? styles.phoneRows : styles.rows;
+    const listClassName = isPhone ? styles.phoneRows : homeStyles.hrows;
     return <ul className={listClassName}>{linkedItems(items, listClassName, sectionLabels, rowFor)}</ul>;
   };
   const groupSection = (
@@ -964,7 +965,10 @@ function AlertsWorkspace() {
     </section>
   );
   const urgencyLabels = ["Act now", "Waiting", "Targets running"] as const;
-  const urgencyLinked = groupLinkedAlerts([actEntries, waitEntries, runningEntries]);
+  // Safety rule 4: a snoozed act-now alert stays listed in Act now, with its return time.
+  const snoozedAct = snoozedEntries.filter((entry) => entry.group === "act");
+  const actListed = [...actEntries, ...snoozedAct];
+  const urgencyLinked = groupLinkedAlerts([actListed, waitEntries, runningEntries]);
   const urgencyLink = (section: number) => ({
     items: urgencyLinked.sections[section] ?? [],
     shownEarlier: urgencyLinked.shownEarlier[section] ?? 0,
@@ -977,8 +981,8 @@ function AlertsWorkspace() {
       {groupSection(
         "act",
         "Act now",
-        actEntries,
-        <GroupHead tone="danger" label="Act now" count={actCount} />,
+        actListed,
+        <GroupHead tone="danger" label="Act now" count={actCount} aside="needs a person now" />,
         "Nothing to act on now.",
         urgencyLink(0),
         pullRows,
@@ -995,7 +999,7 @@ function AlertsWorkspace() {
         "wait",
         "Waiting",
         waitEntries,
-        <GroupHead tone="warning" label="Waiting" count={waitEntries.length} />,
+        <GroupHead tone="warning" label="Waiting" count={waitEntries.length} aside="oldest first" />,
         "Nothing is waiting on a transport leg or a planned arrival.",
         urgencyLink(1),
       )}
@@ -1030,15 +1034,24 @@ function AlertsWorkspace() {
     </>
   );
   const laneLists: [string, string, WfTone, QueueEntry[]][] = [
-    ["act", "Act now", "danger", actEntries],
+    ["act", "Act now", "danger", actListed],
     ["wait", "Waiting", "warning", [...waitEntries, ...runningEntries]],
     ["snoozed", "Snoozed", "neutral", snoozedEntries],
   ];
   // Snoozed alerts are set aside on purpose, so only Act now and Waiting are grouped.
-  const laneLinked = groupLinkedAlerts([actEntries, [...waitEntries, ...runningEntries]]);
+  const laneLinked = groupLinkedAlerts([actListed, [...waitEntries, ...runningEntries]]);
   const cardFor = (entry: QueueEntry) => (
     <AlertCard key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
   );
+  // Lanes (Alerts redesign): the third lane holds Forecast, then Snoozed under it.
+  const forecastLane =
+    access.role === "coordinator" || access.role === "bed_manager" ? (
+      <ForecastAlertsGroup
+        now={now}
+        readOnly={access.role === "bed_manager"}
+        head={(count) => <GroupHead tone="warning" label="Forecast" count={count} aside="tomorrow" />}
+      />
+    ) : null;
   const lanesView = (
     <div className={styles.lanes}>
       {laneLists.map(([key, label, tone, list], lane) => (
@@ -1048,7 +1061,13 @@ function AlertsWorkspace() {
           aria-label={label}
           data-testid={key === "snoozed" && list.length > 0 ? "ward-alerts-snoozed" : undefined}
         >
-          <GroupHead tone={tone} label={label} count={key === "act" ? actCount : list.length} />
+          {key === "snoozed" ? forecastLane : null}
+          <GroupHead
+            tone={tone}
+            label={label}
+            count={key === "act" ? actCount : list.length}
+            aside={key === "act" ? "most urgent first" : key === "wait" ? "oldest first" : undefined}
+          />
           {key === "act" ? pullRows : null}
           {list.length > 0 ? (
             <>
@@ -1060,26 +1079,36 @@ function AlertsWorkspace() {
               {lane < 2 ? linkedNote(laneLinked.shownEarlier[lane] ?? 0) : null}
             </>
           ) : key === "act" && pullRows ? null : (
-            <p className={styles.groupEmpty}>None now</p>
+            <p className={styles.groupEmpty}>
+              {key === "snoozed"
+                ? "A snoozed alert waits here and returns at its time. A snoozed act-now alert also stays listed in Act now."
+                : "None now"}
+            </p>
           )}
         </section>
       ))}
     </div>
   );
   const ownerView = owners.map((owner) => {
-    const list = allEntries.filter((entry) => entry.owner === owner);
-    const actCount = list.filter((entry) => entry.group === "act").length;
+    // Safety rule 3: act now first inside each owner, then the rest in their recorded order.
+    const list = allEntries
+      .filter((entry) => entry.owner === owner)
+      .sort((a, b) => (a.group === "act" ? 0 : 1) - (b.group === "act" ? 0 : 1));
+    const yours = ownerShort(owner, coordDesk) === "You";
+    const actCount = list.filter((entry) => entry.group === "act").length + (yours ? toPull.length : 0);
     return groupSection(
       `owner-${owner}`,
       owner,
       list,
       <GroupHead
-        label={ownerShort(owner, coordDesk) === "You" ? `You, ${owner}` : owner}
-        count={list.length}
-        aside={`${actCount} act now`}
+        tone={actCount > 0 ? "danger" : undefined}
+        label={yours ? `You, ${owner}` : owner}
+        count={list.length + (yours ? toPull.length : 0)}
+        aside={actCount > 0 ? `${actCount} act now` : undefined}
       />,
       undefined,
       { items: groupLinkedAlerts([list]).sections[0] ?? [], shownEarlier: 0, sectionLabels: [owner] },
+      yours ? pullRows : undefined,
     );
   });
   const view: ArrangeBy = isPhone ? "urgency" : arrangeBy;
@@ -1253,7 +1282,7 @@ function AlertsWorkspace() {
         <div className={styles.grid}>
           <div className={styles.column}>
             <Card as="section" className={styles.queueCard} aria-label="Alerts">
-              <div className={styles.tabsBar}>
+              <div className={isPhone ? styles.tabsBar : `${styles.tabsBar} ${parts.tabsRow}`}>
                 {isPhone ? (
                   // Phone (v10): the four views as pill tabs that stay under the header; a count shows when it is not zero.
                   <PillTabs<AlertsTab>
@@ -1265,52 +1294,27 @@ function AlertsWorkspace() {
                     fill
                   />
                 ) : (
-                  <Tabs items={tabs} value={tab} onChange={setTab} label="Alerts views" idPrefix="alerts" />
+                  <>
+                    {/* Alerts redesign: counts show only above zero, and the view switch shares the tab row. */}
+                    <Tabs
+                      items={tabs.map((item) => (item.count ? item : { ...item, count: undefined }))}
+                      value={tab}
+                      onChange={setTab}
+                      label="Alerts views"
+                      idPrefix="alerts"
+                    />
+                    {tab === "now" && wardName === undefined ? (
+                      <ArrangeSwitch value={arrangeBy} onChange={setArrangeBy} withOwner={namedOwners.length > 0} />
+                    ) : null}
+                  </>
                 )}
               </div>
 
               {tab === "now" ? (
                 <TabPanel idPrefix="alerts" id="now">
                   {/* Nurse in charge: one ward needs no arrange-by or owner lens. */}
-                  {wardName !== undefined ? null : (
+                  {wardName !== undefined || !anyHighlight ? null : (
                     <div className={styles.toolbar}>
-                      <Segmented
-                        label="Arrange by"
-                        value={arrangeBy}
-                        onChange={setArrangeBy}
-                        items={[
-                          {
-                            id: "urgency",
-                            label: (
-                              <>
-                                <List size={14} aria-hidden="true" /> Urgency
-                              </>
-                            ),
-                          },
-                          {
-                            id: "lanes",
-                            label: (
-                              <>
-                                <Columns3 size={14} aria-hidden="true" /> Lanes
-                              </>
-                            ),
-                          },
-                          // A desk with no owner to pick (the transport officer) has no Owner arrangement.
-                          ...(namedOwners.length === 0
-                            ? []
-                            : [
-                                {
-                                  id: "owner" as const,
-                                  label: (
-                                    <>
-                                      <Users size={14} aria-hidden="true" /> Owner
-                                    </>
-                                  ),
-                                },
-                              ]),
-                        ]}
-                      />
-                      <span className={styles.toolbarRule} aria-hidden="true" />
                       {/* Josh, 31 Oct 2026 (answer 17): the desktop keeps Owner as an Arrange by view and
                           drops the owner menu that repeated it. Phones, with no Arrange by, keep the menu. */}
                       {anyHighlight ? (
