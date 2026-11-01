@@ -127,7 +127,8 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
     // Q183 (1 Nov 2026): one headline on every desk; the ward is named in the eyebrow above it.
     expect(screen.getByRole("heading", { level: 1, name: "Nothing needs you" })).toBeInTheDocument();
     expect(screen.getByTestId("ward-alerts-hero")).toHaveTextContent(`Alerts · Nurse in charge · ${ward.name}`);
-    expect(screen.getByText("Nothing in Act now or Waiting.")).toBeInTheDocument();
+    // Q184: one calm empty state in place of the two empty groups.
+    expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent(`Nothing is late or blocked for ${ward.name}.`);
     const checked = screen.getByRole("region", { name: `Checked for ${ward.name}` });
     expect(within(checked).getByRole("list", { name: "Conditions checked" })).toBeInTheDocument();
     // The checks show once: not also as the hero's chip.
@@ -151,7 +152,7 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
   it("leaves the coordinator's quiet page as it was", () => {
     renderAs({ role: "coordinator", scope: { kind: "statewide" } }, { quiet: true });
     expect(screen.getByRole("heading", { level: 1, name: "Nothing needs you" })).toBeInTheDocument();
-    expect(screen.getByText("Nothing to act on now.")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent("Nothing is late or blocked for Statewide.");
     expect(screen.getByText("Pick an alert to see it here")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Today" })).toBeInTheDocument();
   });
@@ -168,11 +169,11 @@ describe("Alerts redesign: transport officer (ROLE BRANCH officer)", () => {
     expect(within(detail).getAllByText("Only the coordinator can change alerts.")).toHaveLength(1);
   });
 
-  it("shows no empty tabs, no Owner arrangement and no owner menu", () => {
+  it("shows Now and Earlier today, no Owner arrangement and no owner menu", () => {
     renderAs({ role: "officer", scope: { kind: "jobs" } });
+    // Q181 (1 Nov 2026): every desk has the same two views.
     const tabs = within(screen.getByRole("tablist", { name: "Alerts views" })).getAllByRole("tab");
-    expect(tabs[0]).toHaveTextContent(/^Now/u);
-    for (const tab of tabs.slice(1)) expect(tab.textContent).toMatch(/[1-9]/u);
+    expect(tabs.map((tab) => (tab.textContent ?? "").replace(/\d+/gu, "").trim())).toEqual(["Now", "Earlier today"]);
     expect(
       within(screen.getByRole("radiogroup", { name: "Arrange by" })).queryByRole("radio", { name: /Owner/u }),
     ).toBeNull();

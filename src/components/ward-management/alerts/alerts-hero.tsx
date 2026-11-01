@@ -28,7 +28,7 @@ import { minutesText } from "./alerts-model";
 import type { QueueEntry } from "./alerts-queue";
 import styles from "./alerts.module.css";
 
-export type AlertsTab = "now" | "broadcast" | "notices" | "history";
+export type AlertsTab = "now" | "earlier";
 
 /** Q182: one sentence per desk on what its Alerts page is for. */
 const ALERTS_PURPOSE: Record<WardFlowRole, string> = {
@@ -61,7 +61,7 @@ export function AlertsHero({
   openComposer,
   broadcastDisabledReason,
   activeBroadcast,
-  setTab,
+  onOpenBroadcast,
   directiveTone,
   broadcastAcks,
   phoneToday,
@@ -88,7 +88,8 @@ export function AlertsHero({
   /** Why this desk cannot broadcast, or undefined when it may. */
   broadcastDisabledReason?: string;
   activeBroadcast: ReturnType<typeof getActiveBroadcastAlert>;
-  setTab: (tab: AlertsTab) => void;
+  /** Opens Now at the live broadcast (Q181). */
+  onOpenBroadcast: () => void;
   directiveTone: WfTone;
   broadcastAcks: { acknowledged: number; of: number } | undefined;
   phoneToday: boolean;
@@ -217,7 +218,7 @@ export function AlertsHero({
     <button
       type="button"
       className={styles.heroDirective}
-      onClick={() => setTab("broadcast")}
+      onClick={onOpenBroadcast}
       data-testid="ward-alerts-hero-broadcast"
     >
       <StatusGlyph tone={directiveTone} />
