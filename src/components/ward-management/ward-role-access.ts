@@ -572,7 +572,8 @@ export const ACCESS_ROLE_LABELS: Record<WardAccessRole, string> = {
   bed_manager: "Site bed manager",
   ward: "Nurse in charge",
   ed: "ED clinician",
-  community: "Community clinician",
+  // Q66 (Josh, 31 Oct 2026): "Community team", as new records save it.
+  community: "Community team",
   officer: "Transport officer",
   executive: "Executive",
   admin: "Access admin",

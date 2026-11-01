@@ -324,7 +324,7 @@ const COMMUNITY_ELSEWHERE_MARKERS: readonly (string | number)[] = [
   "emergency_department",
   "declined",
   "no_suitable_bed",
-  "Ward manager",
+  "Nurse in charge",
   WARD_DECIDED_AT,
   allEmergencyDepartments()[0].id,
   "bed",
@@ -575,7 +575,7 @@ const ED_ELSEWHERE_MARKERS: readonly (string | number)[] = [
   "Female",
   // The ward's own decline reason, its own decider, its own decision time.
   "no_suitable_bed",
-  "Ward manager",
+  "Nurse in charge",
   WARD_DECIDED_AT,
   // Which community team was asked, and the role that answered for it.
   "Inner City Clinic",
@@ -1930,7 +1930,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
         ).toEqual(ALLOWED_ED_DESTINATION_SUMMARY_FIELDS);
       }
       const inSummaries = new Set<string | number | boolean>(sweep(projection.destinations).primitives);
-      for (const value of ["no_suitable_bed", "Ward manager", "Female", "rph-adult-secure"]) {
+      for (const value of ["no_suitable_bed", "Nurse in charge", "Female", "rph-adult-secure"]) {
         expect(
           inSummaries.has(value),
           `a destination summary reaches ${JSON.stringify(value)}, which is another arm's own fact ` +

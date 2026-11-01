@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import { TAP_AREA_PX, tapAreaHeight } from "./helpers/css-tap-area";
+
 /**
  * F3.3/F3.4 (P1), 2026-09-17 fix round: two CSS-only defects in
  * `src/components/ward-management/alerts/alerts.module.css` that no DOM test can see, because
@@ -10,7 +12,9 @@ import { describe, expect, it } from "vitest";
  *    `.alertCard[data-tone="warning"]` used to carry a `border-left`; tone is carried by the icon
  *    and the badge text instead (both already present — no bar needed to say it twice).
  *  - `.btn`, `.btnSm` and `.filterBtn` used a fixed `height` below the 48px tap-target floor
- *    (`var(--ward-tap)`); they must resolve to at least that via `min-height`.
+ *    (`var(--ward-tap)`). Since 31 October 2026 (Josh: "no 48px controls") the rule is a 48px tap
+ *    AREA: either the old `min-height: var(--ward-tap)`, or the kit shape, drawn at 40px (32px
+ *    small) with an invisible `::after` cover (`tests/helpers/css-tap-area.ts`).
  */
 const CSS_PATH = "src/components/ward-management/alerts/alerts.module.css";
 
@@ -21,18 +25,6 @@ function css(): string {
 /** The exact rule shape the two tone selectors carried before this fix — kept as a literal
  *  pattern so a reintroduction under either selector is caught, whatever else changes nearby. */
 const EDGE_BAR = /\.alertCard\[data-tone="(?:danger|warning)"\]\s*\{[^}]*border-left/;
-
-/** The body of one EXACT top-level rule (`.btn {`, never `.btn[aria-disabled...] {` or
- *  `.btnPrimary {`) — found by locating the selector followed immediately by `{`. */
-function exactRuleBody(className: string, source: string): string {
-  const marker = `.${className} {`;
-  const start = source.indexOf(marker);
-  if (start === -1) {
-    throw new Error(`no exact "${marker}" rule found in ${CSS_PATH} — this test proves nothing`);
-  }
-  const close = source.indexOf("}", start);
-  return source.slice(start, close);
-}
 
 describe("alerts.module.css — no coloured edge bars (F3.3)", () => {
   it("carries a real number of rules to scan — the anti-vacuity floor", () => {
@@ -49,15 +41,13 @@ describe("alerts.module.css — no coloured edge bars (F3.3)", () => {
   });
 });
 
-describe("alerts.module.css — buttons and filter chips meet the tap-target floor (F3.4)", () => {
-  it.each(["btn", "btnSm", "filterBtn"])(
-    ".%s resolves its height via min-height: var(--ward-tap), not a fixed height",
-    (className) => {
-      const body = exactRuleBody(className, css());
-      expect(body).toMatch(/min-height:\s*var\(--ward-tap\)/);
-      // A leftover fixed `height:` (not `min-height:`) would re-cap the box below the floor even
-      // with min-height present, so both must be checked.
-      expect(body).not.toMatch(/(?<!min-)height:\s*[\d.]+(rem|px)/);
-    },
-  );
+describe("alerts.module.css — buttons and filter chips keep the 48px tap area (F3.4)", () => {
+  it.each(["btn", "btnSm", "filterBtn"])(".%s is drawn with a tap area of at least 48px", (className) => {
+    const area = tapAreaHeight(css(), className);
+    expect(area.drawn, `.${className} declares no height or min-height — this test proves nothing`).not.toBeNull();
+    expect(
+      area.total ?? 0,
+      `.${className} tap area (drawn ${area.drawn}px + cover ${area.cover}px)`,
+    ).toBeGreaterThanOrEqual(TAP_AREA_PX);
+  });
 });

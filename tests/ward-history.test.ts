@@ -151,7 +151,7 @@ describe("Ward Flow Read-Only Plain History", () => {
       const history = selectPatientHistory(mockEvents, "MOV-1", NOW);
       expect(history[1].who).toBe("ED clinician");
       expect(history[1].role).toBe("ed");
-      expect(history[2].who).toBe("Ward manager");
+      expect(history[2].who).toBe("Nurse in charge");
       expect(history[2].role).toBe("ward");
     });
 

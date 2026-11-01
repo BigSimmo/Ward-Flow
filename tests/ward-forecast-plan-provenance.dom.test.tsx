@@ -91,7 +91,7 @@ describe("current plan attribution after release date synchronization", () => {
     expect(changed.admissions[0]).toMatchObject({
       expectedDischargeAt: 14 * 60,
       dischargeDateSetAt: 10 * 60 + 30,
-      dischargeDateSetBy: "Ward manager",
+      dischargeDateSetBy: "Nurse in charge",
     });
   });
 });

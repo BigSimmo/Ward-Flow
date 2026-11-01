@@ -10,7 +10,7 @@ The Ward page Decisions tab is a compact queue for synthetic bed-flow decisions:
 
 Apple-like precision. Frosted, nested modules. Moderate curves, not pills on rows. Dense, not sparse. No full-width empty rows.
 
-Colour goes around a card or row only when that item is a warning. Due uses the danger border. Blocked uses the warn border. Done, Ready and Leave stay on the neutral line. Titles stay ink. No side stripe, no red wash, and no near-black toolbar.
+Borders stay on the neutral line for every item. Due and Blocked show their tone in the status glyph or a small tinted tag, never a coloured border or side stripe (Josh, 31 Oct 2026, replacing the danger and warn borders). Titles stay ink. No red wash and no near-black toolbar.
 
 ## Type and controls
 

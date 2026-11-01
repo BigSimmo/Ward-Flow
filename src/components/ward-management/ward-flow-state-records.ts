@@ -2,7 +2,7 @@ import type { Instant } from "./ward-clock";
 import type { BedReleaseBlocker } from "./ward-change-reasons";
 import type { WardFlowRole } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
-import type { Admission } from "./ward-admissions";
+import { DISCHARGE_ROLE_LABELS, type Admission } from "./ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "./ward-model";
 
 /** Find and replace helpers for the records in `WardFlowState`, moved from the reducer (H-0283). */
@@ -37,6 +37,9 @@ export function replaceBedRelease(state: WardFlowState, releaseId: string, next:
  * than naming the wrong person. The change moves the stay's discharge revision, so an edit made
  * against the record as it stood before is refused as stale.
  */
+// Q66 (Josh, 31 Oct 2026): a new confirmation saves the ward role's new name, "Nurse in charge".
+const WARD_DISCHARGE_ROLE_LABEL = DISCHARGE_ROLE_LABELS[0];
+
 export function withAdmissionDischargeDecision(
   state: WardFlowState,
   admissionId: string,
@@ -53,7 +56,7 @@ export function withAdmissionDischargeDecision(
   const withStay = replaceAdmission(state, admissionId, {
     ...admission,
     dischargeConfirmedAt: at,
-    dischargeConfirmedBy: at !== null && role === "ward" ? "Ward manager" : null,
+    dischargeConfirmedBy: at !== null && role === "ward" ? WARD_DISCHARGE_ROLE_LABEL : null,
   });
   return {
     ...withStay,

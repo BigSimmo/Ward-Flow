@@ -128,6 +128,18 @@ describe("1. the New referral slide-out opens only for a desk that may open refe
     expect(screen.queryByTestId("ward-bar-referral-sheet")).toBeNull();
   });
 
+  it("leaves Shift+R untaken for a desk without the intake, and takes it for one with it", () => {
+    const refused = new KeyboardEvent("keydown", { key: "R", shiftKey: true, cancelable: true });
+    expect(openDrawerForShortcut(refused, false)).toBe(false);
+    expect(refused.defaultPrevented, "the key press stays the page's own").toBe(false);
+    const allowed = new KeyboardEvent("keydown", { key: "R", shiftKey: true, cancelable: true });
+    expect(openDrawerForShortcut(allowed, true)).toBe(true);
+    expect(allowed.defaultPrevented).toBe(true);
+    // Shift+T and Shift+A are not referral drawers, so a desk without the intake keeps them.
+    const tasks = new KeyboardEvent("keydown", { key: "T", shiftKey: true, cancelable: true });
+    expect(openDrawerForShortcut(tasks, false)).toBe(true);
+  });
+
   it("still opens the slide-out from Shift+R for an ED desk, which may open the intake", async () => {
     useDesk(edDesk);
     renderBar();

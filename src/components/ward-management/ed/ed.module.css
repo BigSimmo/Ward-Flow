@@ -5611,3 +5611,86 @@
 .formTip[data-open="true"] {
   display: block;
 }
+
+/* Josh (31 Oct 2026): the person sheet's actions take the desktop menu's groups ("Patient record",
+ * "Review and disposition", ...) and its "Not available yet" fold. Each group is a run of list rows
+ * under its own small heading; the rows are the kit's 40px. Both placements (phone sheet and the
+ * right-hand sheet) share these rules. */
+.phoneSheetActions [role="group"] {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneSheetActions > [role="group"]:first-child {
+  border-top: 0;
+}
+
+.phoneSheetActions [role="group"] > span[aria-hidden="true"] {
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-1);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.phoneSheetSection .phoneSheetActions [role="group"] > button,
+.phoneSheetSection .phoneSheetActions [role="group"] > div > button:not([data-unavailable-fix]),
+.phoneSheetSection .phoneSheetActions [data-testid$="-not-available"] > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 var(--wf-s-3);
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0;
+  background: var(--wf-surface);
+  box-shadow: none;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  text-align: left;
+}
+
+.phoneSheetSection .phoneSheetActions [role="group"] > button[aria-expanded="true"] {
+  font-weight: 600;
+}
+
+.phoneSheetSection .phoneSheetActions [data-testid$="-not-available"] {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneSheetSection .phoneSheetActions [data-testid$="-not-available"] > button {
+  justify-content: space-between;
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+/* Each greyed action with its reason, why, who acts next and its one fix, shown at once. */
+.phoneSheetActions [role="group"][aria-label="Not available yet"] > div {
+  display: grid;
+  padding-block-end: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.phoneSheetSection .phoneSheetActions [role="group"][aria-label="Not available yet"] > div > button {
+  background: transparent;
+  color: var(--wf-ink-3);
+  font-weight: 600;
+}
+
+.phoneSheetActions [role="group"][aria-label="Not available yet"] [data-unavailable-note] {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  padding: 0 var(--wf-s-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.phoneSheetActions [role="group"][aria-label="Not available yet"] [data-unavailable-fix] {
+  margin-top: var(--wf-s-1);
+  min-height: 40px;
+}

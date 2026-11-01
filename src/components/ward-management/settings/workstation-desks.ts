@@ -14,7 +14,11 @@ import type { EdSummary } from "@/components/ward-management/ed/ed-home-derivati
 import type { HubEntry } from "@/components/ward-management/hub/hub-derivations";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { CHROME_ROLE_LABELS, type WardChromeRole, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import {
+  EARLIER_ROLE_LABELS,
+  WARD_FLOW_ROLE_LABELS,
+  type WardFlowRole,
+} from "@/components/ward-management/ward-flow-roles";
 import { HEALTH_SERVICES, type HealthService, type Movement } from "@/components/ward-management/ward-model";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { isOfficerJob } from "@/components/ward-management/officer/officer-jobs";
@@ -149,8 +153,11 @@ export function recentDeskIds(): readonly string[] {
 export function deskMatches(desk: Desk, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  // Both role names find a desk: the on-screen one and the event one ("Nurse in charge", "Ward manager").
+  // Every role name finds a desk: the on-screen one, the event one, and (Q66, 31 Oct 2026) the
+  // earlier words ("Ward manager", "Bed manager") that older records and habits still use.
+  const earlier = Object.keys(EARLIER_ROLE_LABELS).filter((label) => EARLIER_ROLE_LABELS[label] === desk.role);
   return [desk.name, desk.site ?? "", desk.service ?? "", deskRoleLabel(desk.role), WARD_FLOW_ROLE_LABELS[desk.role]]
+    .concat(earlier)
     .join(" ")
     .toLowerCase()
     .includes(q);

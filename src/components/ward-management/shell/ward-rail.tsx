@@ -37,7 +37,7 @@ import { useDeskRoleLabel, useEffectiveWardAccess } from "@/components/ward-mana
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
-import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
+import { WARD_CAPACITY_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import { shiftAtMinute } from "@/components/ward-management/ward-board-time-features";
@@ -347,6 +347,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const entries = accessNav(railEntries(flagOn));
   // DA-09: chrome links outside the menu use the same role filter, and the brand opens this desk's home.
   const canOpen = useCanOpenHref();
+  const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const deskHome = useDeskHomeHref();
   // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
   // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
@@ -432,7 +433,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         return;
       }
       if (isTypingTarget(event.target)) return;
-      if (openDrawerForShortcut(event)) return;
+      if (openDrawerForShortcut(event, canRefer)) return;
 
       if (event.key !== "[" || !areCharacterShortcutsEnabled()) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -446,7 +447,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen, openOverlay, isTabletLandscape]);
+  }, [open, setOpen, openOverlay, isTabletLandscape, canRefer]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
