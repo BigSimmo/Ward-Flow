@@ -1,75 +1,84 @@
 "use client";
 
-import { CircleHelp, Keyboard } from "lucide-react";
-import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { BookOpen, CircleHelp, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 
-import { useIsPhone } from "@/components/wf";
+import { TabPanel, Tabs, useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
 import barStyles from "@/components/ward-management/shell/ward-bar.module.css";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
+import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
 
-import { WardHelpAsk } from "./ward-help-ask";
-import { WardHelpSearch } from "./ward-help-search";
-import { ADMIN_SETTINGS_HELP, glossaryForSites, screenHelpFor } from "./ward-help-content";
 import { useWardNetwork } from "../ward-flow-provider";
-import type { HelpView } from "./ward-help-events";
-import { PointCard, WardHelpTasks } from "./ward-help-task-list";
-import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
-import { helpDeskLabel } from "./ward-help-roles";
-import { useTourRole } from "./ward-help-store";
-import { useTourFacts } from "./ward-tour-facts";
-import { WHATS_NEW } from "./ward-whats-new";
-import styles from "./ward-help-sheet.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 
-import { WardHelpGlossary } from "../help-content/ward-help-glossary-view";
-import { WardHelpReference } from "../help-content/ward-help-reference-view";
-
-type HelpTab = "tasks" | "glossary" | "new";
-
-/**
- * Three sections (Josh, 31 Oct 2026): How do I… (with this screen and the desk folded in), Words
- * (the glossary, colour code and reference) and What's new. Older ways in still arrive: "screen"
- * and "desk" open How do I…, "glossary" opens Words.
- */
-const VIEWS: readonly { id: HelpTab; label: string }[] = [
-  { id: "tasks", label: "How do I…" },
-  { id: "glossary", label: "Words" },
-  { id: "new", label: "What's new" },
-];
-
-function tabFor(view: HelpView): HelpTab {
-  return view === "glossary" || view === "new" ? view : "tasks";
-}
-
-/** "25 Oct" from "2026-10-25", without the time zone shifts a Date would bring. */
-function formatNewDate(date: string): string {
-  const [, month, day] = date.split("-").map(Number);
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${day} ${months[(month ?? 1) - 1] ?? ""}`.trim();
-}
+import { ADMIN_SETTINGS_HELP, glossaryForSites, screenHelpFor, type GlossaryTerm } from "./ward-help-content";
+import type { HelpView } from "./ward-help-events";
+import { findInHelp, foundRows, HelpFindResults, HelpTryAsking } from "./ward-help-find";
+import { HOW_TOS } from "./ward-help-howto";
+import { howToHref } from "./ward-help-href";
+import { canShowTask, HelpTasks } from "./ward-help-jobs";
+import s from "./ward-help-panel.module.css";
+import { HelpQuestions, HelpReference, QUESTIONS_ICON } from "./ward-help-reference-tabs";
+import type { HelpSearchResult } from "./ward-help-search-index";
+import { useTourRole, type WardTourRole } from "./ward-help-store";
+import { tasksForDesk } from "./ward-help-task-list";
+import { useTourFacts } from "./ward-tour-facts";
+import { HelpDesk, HelpKeys, HelpNews } from "./ward-help-views";
+import { markWhatsNewSeen, unseenWhatsNew, WHATS_NEW, WHATS_NEW_STORAGE_KEY } from "./ward-whats-new";
 
 /**
- * HELP: the desk's tasks, what this screen is for, the words the app uses and what changed, in one
- * sheet (fix plan item 12; desk guide 24 Oct 2026; Josh 31 Oct 2026: opens on How do I…, one search
- * box, three sections, only what this login can use). The tour runs over the screen itself
- * (`ward-tour.tsx`) and starts only when chosen. Nothing typed here is saved.
+ * Help's four tabs are How do I…, Common questions, Reference and What's new; Your desk and Shortcuts
+ * open from the foot as views of their own, with Back to Help (redesign, Josh 1 Nov 2026). Older ways
+ * in still arrive: "screen" opens How do I… and "glossary" opens Reference.
  */
+type TabView = "tasks" | "questions" | "reference" | "new";
+const TAB_VIEWS: readonly HelpView[] = ["tasks", "questions", "reference", "new"];
+
+function tabFor(view: HelpView): TabView {
+  if (view === "glossary") return "reference";
+  return (TAB_VIEWS as readonly string[]).includes(view) ? (view as TabView) : "tasks";
+}
+
+/** The real list (`whats-new.json`), oldest first. */
+const NEWS = WHATS_NEW;
+
+function deskLabel(role: WardTourRole): string {
+  return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
+}
+
+/** This device's unseen changes, as the corner card counts them (at most four). */
+function readUnread(): number {
+  let seen: string | null = null;
+  try {
+    seen = window.localStorage.getItem(WHATS_NEW_STORAGE_KEY);
+  } catch {
+    // Without storage nothing can be marked seen, so no dots are drawn (as the corner card).
+    return 0;
+  }
+  return unseenWhatsNew(seen, NEWS).length;
+}
+
 type WardHelpSheetProps = {
   view: HelpView;
-  /** A how-to to open in How do I… on arrival (Show me's Back to Help). */
-  task?: string;
-  ask?: string;
-  /** Show me plays (the help-ask flag); without it a task offers its answer and Go there only. */
-  showMeOn?: boolean;
   onView: (view: HelpView) => void;
   onClose: () => void;
-  /** Keyboard shortcuts at the foot of every view opens the shortcuts sheet in Help's place. */
-  onShortcuts?: () => void;
+  /** Start or resume the tour, from the tour row. */
+  onTour: () => void;
+  /** Show me on a task: Help gives way to the walkthrough, which opens the task's screen first. */
+  onShowMe: (id: string) => void;
+  /** A task to open on arrival in How do I… (Show me's Back to Help). */
+  task?: string;
+  /** A question the header search handed over, put in the search box on arrival. */
+  ask?: string;
+  /** Show me plays (the help-ask flag); without it a task offers its answer and Go to only. */
+  showMeOn?: boolean;
 };
+
 const BASE_GLOSSARY = glossaryForSites([]);
+
 export function WardHelpSheet(props: WardHelpSheetProps) {
   return useExecutiveStatisticsControl().executive ? (
     <ExecutiveHelpSheet {...props} />
@@ -77,43 +86,58 @@ export function WardHelpSheet(props: WardHelpSheetProps) {
     <OperationalHelpSheet {...props} />
   );
 }
+
 function ExecutiveHelpSheet(props: WardHelpSheetProps) {
   const report = useExecutiveStatistics();
-  const terms = useMemo(
-    () =>
-      [
-        ...BASE_GLOSSARY,
-        ...(report?.catalogue.sites.map((site) => ({ term: site.code, meaning: site.name })) ?? []),
-      ].toSorted((a, b) => a.term.localeCompare(b.term, "en-AU")),
-    [report],
-  );
-  return <WardHelpSheetView {...props} termsSource={terms} />;
+  const { terms, codes } = useMemo(() => {
+    const sites = report?.catalogue.sites ?? [];
+    return {
+      terms: [...BASE_GLOSSARY, ...sites.map((site) => ({ term: site.code, meaning: site.name }))].toSorted((a, b) =>
+        a.term.localeCompare(b.term, "en-AU"),
+      ),
+      codes: new Set(sites.map((site) => site.code)),
+    };
+  }, [report]);
+  return <WardHelpSheetView {...props} terms={terms} siteCodes={codes} />;
 }
+
 function OperationalHelpSheet(props: WardHelpSheetProps) {
   const { sites } = useWardNetwork();
-  // Kept stable so Help search reuses one index per site directory.
-  const terms = useMemo(() => glossaryForSites(sites), [sites]);
-  return <WardHelpSheetView {...props} termsSource={terms} />;
+  const codes = useMemo(() => new Set(sites.map((site) => site.code)), [sites]);
+  return <WardHelpSheetView {...props} terms={glossaryForSites(sites)} siteCodes={codes} />;
 }
+
+/**
+ * HELP (redesign round 2, approved by Josh 1 Nov 2026). One panel with:
+ * - a header that says who you are and where you are;
+ * - one smart search: typos mended, the kind of answer guessed from the question, the best answer
+ *   open in full with Show me, and the rest grouped; questions to try before anything is typed;
+ * - four tabs: How do I… (this screen, the tour, the desk's jobs), Questions (common questions by
+ *   screen), Reference (glossary, codes, colours, desks, display and keys) and What's new;
+ * - a foot with Your desk and Shortcuts, each a view inside Help.
+ * Typed words stay in this component's state and are never saved, put in a URL or logged.
+ */
 function WardHelpSheetView({
   view,
-  task,
-  ask,
-  showMeOn = false,
   onView,
   onClose,
-  onShortcuts,
-  termsSource,
-}: WardHelpSheetProps & { termsSource: ReturnType<typeof glossaryForSites> }) {
+  onTour,
+  onShowMe,
+  task: openTask,
+  ask,
+  showMeOn = false,
+  terms,
+  siteCodes,
+}: WardHelpSheetProps & { terms: readonly GlossaryTerm[]; siteCodes: ReadonlySet<string> }) {
+  const router = useRouter();
   const pathname = usePathname() ?? "";
   const role = useTourRole();
-  // A word picked in search: a new object each time, so picking the same word again still moves to it.
-  const [foundTerm, setFoundTerm] = useState<{ readonly term: string }>();
-  const guide = DESK_GUIDES[role];
   const { home, deskHome } = useTourFacts(role);
-  // Home's address prefixes every page, so it matches only itself: Settings must not show Home's help.
+  const deskHref = deskHome ?? home;
+  const phone = useIsPhone();
   const entries = useMemo(() => railEntries(), []);
-  const help = useMemo(() => {
+  // Home's address prefixes every page, so it matches only itself: Settings must not show Home's help.
+  const screen = useMemo(() => {
     const shown = screenHelpFor(
       pathname,
       entries.filter((entry) => entry.href !== WARD_HOME_HREF || pathname === WARD_HOME_HREF),
@@ -121,16 +145,135 @@ function WardHelpSheetView({
     );
     return role === "admin" && shown?.id === "settings" ? ADMIN_SETTINGS_HELP : shown;
   }, [entries, pathname, role]);
-  const phone = useIsPhone();
-  const tab = tabFor(view);
-  const asked = ask?.trim() ? ask : undefined;
+  const screenName = (href: string) => {
+    const path = href.split("#")[0];
+    if (path === deskHref) return "your home screen";
+    return entries.find((entry) => entry.href === path)?.label ?? "that screen";
+  };
 
-  const latest = WHATS_NEW.at(-1);
-  const deskHref = deskHome ?? home;
-  // Settings' "Open Help" asks for the desk: How do I… with About your desk open and in view.
-  useEffect(() => {
-    if (view === "desk") document.getElementById("ward-help-desk")?.scrollIntoView?.({ block: "start" });
-  }, [view]);
+  const [query, setQuery] = useState(ask ?? "");
+  const [literal, setLiteral] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [active, setActive] = useState(0);
+  const [task, setTask] = useState(openTask);
+  const [unread, setUnread] = useState(readUnread);
+  const field = useRef<HTMLInputElement>(null);
+  const found = useMemo(
+    () => (query.trim() ? findInHelp(query, role, terms, !literal) : undefined),
+    [query, role, terms, literal],
+  );
+  const rows = foundRows(found);
+  const canShow = (id: string) => {
+    const each = HOW_TOS.find((howTo) => howTo.id === id);
+    return Boolean(each && canShowTask(each, role, deskHref, phone, showMeOn));
+  };
+
+  // Questions to try: this desk's first two jobs, a word people mix up, and this screen's own question.
+  const examples = useMemo(() => {
+    const jobs = tasksForDesk(role)
+      .slice(0, 2)
+      .map((each) => `How do I ${each.title.charAt(0).toLowerCase()}${each.title.slice(1)}?`);
+    return [...jobs, "What does Held up mean?", screen?.questions?.[0]?.question ?? "Is my change saved?"];
+  }, [role, screen]);
+
+  const tab = tabFor(view);
+  const QuestionsIcon = QUESTIONS_ICON;
+  const tabs = [
+    {
+      id: "tasks" as const,
+      label: (
+        <>
+          <BookOpen aria-hidden="true" strokeWidth={1.75} />
+          How do I…
+        </>
+      ),
+    },
+    {
+      id: "questions" as const,
+      label: (
+        <>
+          <QuestionsIcon aria-hidden="true" strokeWidth={1.75} />
+          {phone ? "Questions" : "Common questions"}
+        </>
+      ),
+    },
+    {
+      id: "reference" as const,
+      label: (
+        <>
+          <Library aria-hidden="true" strokeWidth={1.75} />
+          Reference
+        </>
+      ),
+    },
+    {
+      id: "new" as const,
+      label: (
+        <>
+          <Sparkles aria-hidden="true" strokeWidth={1.75} />
+          What&rsquo;s new
+        </>
+      ),
+      count: unread || undefined,
+    },
+  ];
+
+  const typed = (words: string) => {
+    setQuery(words);
+    setActive(0);
+    field.current?.focus();
+  };
+
+  const choose = (result: HelpSearchResult) => {
+    const mine = !result.desks || result.desks.includes(role);
+    if (result.key.startsWith("howto:") && mine) {
+      setQuery("");
+      setTask(result.key.slice("howto:".length));
+      onView("tasks");
+      return;
+    }
+    if (result.group === "Shortcuts") {
+      setQuery("");
+      onView("keys");
+      return;
+    }
+    if (result.group === "Glossary") {
+      setQuery("");
+      onView("reference");
+      return;
+    }
+    if (/:q\d+$/u.test(result.key)) {
+      setQuery("");
+      onView("questions");
+      return;
+    }
+    const href = mine ? howToHref(result.go, role, deskHref) : undefined;
+    if (href) {
+      onClose();
+      router.push(href);
+    }
+  };
+
+  const onFieldKey = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape" && query) {
+      event.preventDefault();
+      event.stopPropagation();
+      setQuery("");
+    } else if (event.key === "ArrowDown" && rows.length) {
+      event.preventDefault();
+      setActive((active + 1) % rows.length);
+    } else if (event.key === "ArrowUp" && rows.length) {
+      event.preventDefault();
+      setActive((active - 1 + rows.length) % rows.length);
+    } else if (event.key === "Enter" && rows[active]) {
+      event.preventDefault();
+      choose(rows[active]);
+    }
+  };
+
+  const searching = query.trim().length > 0;
+  const suggesting = !searching && focused;
+  const inView = view === "desk" || view === "keys";
 
   return (
     <Sheet
@@ -140,156 +283,191 @@ function WardHelpSheetView({
       onClose={onClose}
       title="Help"
       headerLeading={
-        <span className={barStyles.drawerTile} aria-hidden="true">
+        <span className={`${barStyles.drawerTile} ${s.headTile}`} aria-hidden="true">
           <CircleHelp aria-hidden="true" className={barStyles.drawerHeadingIcon} strokeWidth={1.75} />
         </span>
       }
-      headerActions={
-        phone ? undefined : (
-          <kbd className={barStyles.escKbd} aria-hidden="true">
-            Esc
-          </kbd>
-        )
-      }
       descriptionContent={
-        <p className={styles.context} data-testid="ward-help-context">
-          {helpDeskLabel(role)}
-          {help ? ` · this screen: ${help.title}` : ""}
+        <p className={s.context}>
+          <span className={s.deskTag}>
+            <UserRound aria-hidden="true" strokeWidth={2} />
+            {deskLabel(role)}
+          </span>
+          {screen ? (
+            <span>
+              You are on <b>{screen.title}</b>
+            </span>
+          ) : null}
         </p>
       }
       placement="right"
       desktopBackdropClassName={barStyles.drawerBackdrop}
-      contentClassName={`${barStyles.drawerSheet} ${barStyles.drawerSheetWide}`}
+      contentClassName={`${barStyles.drawerSheet} ${barStyles.drawerSheetWide} ${s.sheet}`}
       headerClassName={barStyles.drawerHeader}
       titleClassName={barStyles.drawerTitle}
       closeButtonClassName={barStyles.drawerClose}
-      bodyClassName={`${barStyles.drawerBody} ${styles.body}`}
+      bodyClassName={barStyles.drawerBody}
       footer={
-        <div className={barStyles.drawerFoot}>
-          {/* The sheet's one synthetic line (Josh, 31 Oct 2026). */}
-          <span data-testid="ward-help-synthetic">Synthetic prototype, not for clinical use</span>
-          {/* Round 2 (#1118): the date opens What's new, so it does something rather than repeat that
-              tab. A phone has room for one line only, and What's new is a tab at the top. */}
-          {latest && tab !== "new" && !phone ? (
+        <div className={s.foot}>
+          <button
+            type="button"
+            className={s.footButton}
+            aria-current={view === "desk" ? "true" : undefined}
+            onClick={() => onView(view === "desk" ? "tasks" : "desk")}
+            data-testid="ward-help-desk-open"
+          >
+            <UserRound aria-hidden="true" strokeWidth={1.75} />
+            Your desk
+          </button>
+          {phone ? null : (
             <button
               type="button"
-              className={styles.footLink}
-              onClick={() => onView("new")}
-              data-testid="ward-help-foot-new"
+              className={s.footButton}
+              aria-current={view === "keys" ? "true" : undefined}
+              onClick={() => onView(view === "keys" ? "tasks" : "keys")}
+              data-testid="ward-help-shortcuts"
             >
-              What&rsquo;s new {formatNewDate(latest.date)}
+              <Keyboard aria-hidden="true" strokeWidth={1.75} />
+              Shortcuts
+              <kbd aria-hidden="true">?</kbd>
             </button>
-          ) : null}
+          )}
+          <span className={s.footNote} data-testid="ward-help-synthetic">
+            Synthetic prototype
+          </span>
         </div>
       }
       footerClassName={barStyles.drawerFooter}
     >
-      {/* One search box (Josh, 31 Oct 2026). A question handed over from the header search fills the
-          Ask box, which then stands in for the search field rather than adding a second box. */}
-      <div className={styles.searchDock}>
-        {asked ? (
-          <WardHelpAsk role={role} home={deskHref} initialQuery={asked} onClose={onClose} termsSource={termsSource} />
-        ) : (
-          <WardHelpSearch
-            role={role}
-            home={deskHref}
-            onNavigate={onClose}
-            onGlossaryTerm={(term) => {
-              setFoundTerm({ term });
-              onView("glossary");
+      <div className={s.dock}>
+        <div className={s.field}>
+          <Search aria-hidden="true" strokeWidth={1.75} />
+          <input
+            ref={field}
+            type="search"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setLiteral(false);
+              setActive(0);
             }}
-            glossary={termsSource}
+            onKeyDown={onFieldKey}
+            onFocus={() => setFocused(true)}
+            onBlur={() => window.setTimeout(() => setFocused(false), 150)}
+            placeholder="Ask a question or search Help"
+            aria-label="Search Help"
+            aria-controls="ward-help-found"
+            aria-activedescendant={searching && rows.length ? `ward-help-found-${active}` : undefined}
+            autoComplete="off"
+            spellCheck={false}
+            data-testid="ward-help-search"
+          />
+          <span className={s.fieldEnd}>
+            {query ? (
+              <button
+                type="button"
+                className={s.clear}
+                aria-label="Clear search"
+                onClick={() => {
+                  setQuery("");
+                  field.current?.focus();
+                }}
+              >
+                <X aria-hidden="true" strokeWidth={2} />
+              </button>
+            ) : phone ? null : (
+              <kbd className={s.slash} aria-hidden="true">
+                /
+              </kbd>
+            )}
+          </span>
+        </div>
+        {searching || suggesting || inView ? null : (
+          <Tabs
+            items={tabs}
+            value={tab}
+            onChange={onView}
+            label="Help sections"
+            idPrefix="ward-help"
+            className={s.tabs}
           />
         )}
       </div>
 
-      <div className={`${barStyles.segTrack} ${styles.views}`} role="group" aria-label="Help sections">
-        {VIEWS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={barStyles.segBtn}
-            aria-pressed={tab === item.id}
-            onClick={() => onView(item.id)}
-            data-testid={`ward-help-view-${item.id}`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "tasks" ? (
-        <>
-          <WardHelpTasks
-            key={task ?? ""}
+      {searching ? (
+        <div id="ward-help-found" className={s.panel} aria-live="polite">
+          <HelpFindResults
+            found={found}
+            query={query}
             role={role}
-            home={deskHref}
-            pathname={pathname}
-            onClose={onClose}
-            showMeOn={showMeOn}
-            openTask={task}
-            screen={help}
-            onTour={() => onView("tour")}
+            active={active}
+            onChoose={choose}
+            onShowMe={onShowMe}
+            canShow={canShow}
+            onUseTyped={(words) => {
+              setLiteral(true);
+              typed(words);
+            }}
           />
-          <details
-            id="ward-help-desk"
-            className={styles.referenceSection}
-            open={view === "desk" ? true : undefined}
-            data-testid="ward-help-desk"
-          >
-            <summary>About your desk: {helpDeskLabel(role)}</summary>
-            <div className={styles.stack}>
-              <p className={styles.text}>{guide.summary}</p>
-              <p className={styles.text}>{guide.startsAt}</p>
-              <h4 className={styles.groupHeading}>Good to know</h4>
-              <PointCard points={guide.limits} />
-              <h4 className={styles.groupHeading}>Is it saved?</h4>
-              <PointCard points={SAVED_OR_NOT} />
-              <h4 className={styles.groupHeading}>If Ward Flow is down</h4>
-              <PointCard points={WHEN_IT_IS_DOWN} testId="ward-help-downtime" />
-            </div>
-          </details>
-        </>
-      ) : null}
-
-      {tab === "new" ? (
-        <section className={styles.group} aria-labelledby="ward-help-new-title" data-testid="ward-help-new">
-          <h3 id="ward-help-new-title" className={styles.groupHeading}>
-            Recent changes
-          </h3>
-          <ul className={styles.card}>
-            {WHATS_NEW.toReversed().map((entry) => (
-              <li key={entry.id} className={styles.row}>
-                <span className={styles.date}>{formatNewDate(entry.date)}</span>
-                <span className={styles.text}>{entry.line}</span>
-              </li>
-            ))}
-          </ul>
-          <p className={styles.note}>Newest first. The live site updates once a day, early in the morning.</p>
-        </section>
-      ) : null}
-
-      {tab === "glossary" ? (
-        <>
-          <WardHelpGlossary termsSource={termsSource} found={foundTerm} />
-          <WardHelpReference role={role} onClose={onClose} />
-        </>
-      ) : null}
-
-      {/* The shortcuts sheet is the one list of keys, filtered by desk. A phone has no keyboard, so
-          it is not offered the shortcuts (HF-14). */}
-      {phone || !onShortcuts ? null : (
-        <div className={styles.endRow} data-testid="ward-help-end">
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={onShortcuts}
-            data-testid="ward-help-shortcuts"
-          >
-            <Keyboard aria-hidden="true" strokeWidth={1.75} />
-            Keyboard shortcuts
-          </button>
         </div>
+      ) : suggesting ? (
+        <div className={s.panel}>
+          <HelpTryAsking examples={examples} onPick={typed} />
+        </div>
+      ) : inView ? (
+        <div className={s.panel}>
+          {view === "keys" ? (
+            <HelpKeys role={role} onBack={() => onView("tasks")} />
+          ) : (
+            <HelpDesk
+              role={role}
+              deskName={deskLabel(role)}
+              home={deskHref}
+              onBack={() => onView("tasks")}
+              onClose={onClose}
+              screenName={screenName}
+            />
+          )}
+        </div>
+      ) : (
+        <TabPanel idPrefix="ward-help" id={tab} className={s.panel}>
+          {tab === "tasks" ? (
+            <HelpTasks
+              key={task}
+              role={role}
+              home={deskHref}
+              pathname={pathname}
+              screen={screen}
+              onClose={onClose}
+              onShowMe={onShowMe}
+              onTour={onTour}
+              onSearch={() => field.current?.focus()}
+              openTask={task}
+              screenName={screenName}
+              showMeOn={showMeOn}
+            />
+          ) : null}
+          {tab === "questions" ? <HelpQuestions screen={screen} /> : null}
+          {tab === "reference" ? (
+            <HelpReference
+              terms={terms}
+              siteCodes={siteCodes}
+              role={role}
+              deskName={deskLabel(role)}
+              onKeys={() => onView("keys")}
+            />
+          ) : null}
+          {tab === "new" ? (
+            <HelpNews
+              entries={NEWS}
+              unread={unread}
+              onSeen={() => {
+                markWhatsNewSeen();
+                setUnread(0);
+              }}
+            />
+          ) : null}
+        </TabPanel>
       )}
     </Sheet>
   );

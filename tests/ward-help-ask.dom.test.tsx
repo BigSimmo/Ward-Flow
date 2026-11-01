@@ -35,8 +35,22 @@ function renderAsk() {
   return render(<WardHelpAsk role="coordinator" home="/ward-flow" initialQuery="" onClose={vi.fn()} />);
 }
 
-function renderSheet(ask: string | undefined) {
-  return render(<WardHelpSheet view="screen" ask={ask} onView={vi.fn()} onClose={vi.fn()} />);
+function renderSheet(ask: string | undefined, onShowMe = vi.fn()) {
+  return render(
+    <WardHelpSheet
+      view="screen"
+      ask={ask}
+      showMeOn
+      onView={vi.fn()}
+      onClose={vi.fn()}
+      onTour={vi.fn()}
+      onShowMe={onShowMe}
+    />,
+  );
+}
+
+function helpField() {
+  return screen.getByRole("searchbox", { name: "Search Help" });
 }
 
 describe("Ask help in the Help sheet", () => {
@@ -60,32 +74,22 @@ describe("Ask help in the Help sheet", () => {
     "Is this patient safe to transfer?",
   ])("shows only the approved reply for a clinical question: %s", (query) => {
     renderSheet(query);
-    const reply = screen.getByTestId("ward-help-ask-clinical");
+    const reply = screen.getByRole("status");
     expect(reply.textContent).toBe(CLINICAL_REPLY);
     expect(reply.closest('[aria-live="polite"]')).toBeTruthy();
-    const ask = within(screen.getByTestId("ward-help-ask"));
-    expect(ask.queryAllByTestId(/^ward-help-ask-answer-/)).toHaveLength(0);
-    expect(ask.queryByTestId("ward-help-ask-setting")).toBeNull();
-    expect(ask.queryByText("Words")).toBeNull();
-    expect(ask.queryByTestId("ward-help-ask-closest")).toBeNull();
-    expect(ask.queryByTestId("ward-help-ask-stuck")).toBeNull();
+    expect(screen.queryByRole("region", { name: "Best answer" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Words" })).toBeNull();
+    expect(screen.queryByText(/These are the closest/)).toBeNull();
   });
 
-  it("offers at most three closest topics in the live region and opens their answers", () => {
+  it("offers the closest topics in the live region when nothing matches every word", () => {
     renderSheet("bed giraffe elephant");
-    expect(screen.getByTestId("ward-help-ask-closest").textContent).toContain(
-      "Check the spelling, or try one of these closest topics.",
-    );
-    const answers = screen.getAllByTestId(/^ward-help-ask-answer-/);
-    expect(answers.length).toBeGreaterThan(0);
-    expect(answers.length).toBeLessThanOrEqual(3);
-    expect(answers[0].closest('[aria-live="polite"]')).toBeTruthy();
-    const title = within(answers[0]).getByRole("button");
-    fireEvent.click(title);
-    expect(title.getAttribute("aria-expanded")).toBe("true");
-    fireEvent.change(screen.getByTestId("ward-help-ask-input"), { target: { value: "dark mode" } });
-    expect(screen.queryByTestId("ward-help-ask-closest")).toBeNull();
-    expect(screen.getByTestId("ward-help-ask-answer-theme")).toBeTruthy();
+    const note = screen.getByText("Nothing matches every word. These are the closest.");
+    expect(note.closest('[aria-live="polite"]')).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Best answer" })).toBeNull();
+    fireEvent.change(helpField(), { target: { value: "dark mode" } });
+    expect(screen.queryByText(/These are the closest/)).toBeNull();
+    expect(screen.getByRole("region", { name: "Best answer" }).textContent).toMatch(/Theme|dark/i);
   });
 
   it("keeps another desk's closest topics readable without offering its actions", () => {
@@ -108,23 +112,39 @@ describe("Ask help in the Help sheet", () => {
 
   it("returns to ordinary results after a clinical question is replaced", () => {
     renderSheet("what dose should I give");
-    fireEvent.change(screen.getByTestId("ward-help-ask-input"), { target: { value: "pull a bed" } });
-    expect(screen.queryByTestId("ward-help-ask-clinical")).toBeNull();
-    expect(screen.getByTestId("ward-help-ask-answer-pull-bed")).toBeTruthy();
+    fireEvent.change(helpField(), { target: { value: "pull a bed" } });
+    expect(screen.queryByText(CLINICAL_REPLY)).toBeNull();
+    expect(screen.getByRole("region", { name: "Best answer" }).textContent).toContain("Pull the bed for a patient");
   });
 
-  it("is absent while the preview flag is off", () => {
+  it("opens on the tabs with an empty box when nothing is handed over", () => {
     renderSheet(undefined);
-    expect(screen.queryByTestId("ward-help-ask")).toBeNull();
+    expect((helpField() as HTMLInputElement).value).toBe("");
+    expect(screen.getByRole("tablist", { name: "Help sections" })).toBeTruthy();
   });
 
-  it("answers a handed-over question with Show me and a link for the coordinator", () => {
-    renderSheet("how do I pull a bed");
-    const answer = screen.getByTestId("ward-help-ask-answer-pull-bed");
-    expect(within(answer).getByText(/press Pull the bed/)).toBeTruthy();
-    expect(within(answer).getByTestId("ward-help-ask-show-me")).toBeTruthy();
-    expect(within(answer).getByTestId("ward-help-ask-go").getAttribute("href")).toBe("/ward-flow/movements");
-    expect(screen.getByTestId("ward-help-ask-stuck")).toBeTruthy();
+  it("answers a handed-over question with its steps, Show me and a way into How do I…", () => {
+    const onShowMe = vi.fn();
+    renderSheet("how do I pull a bed", onShowMe);
+    const best = screen.getByRole("region", { name: "Best answer" });
+    expect(within(best).getAllByText(/press Pull the bed/).length).toBeGreaterThan(0);
+    expect(within(best).getByRole("list", { name: "Steps" })).toBeTruthy();
+    fireEvent.click(within(best).getByRole("button", { name: "Show me on screen" }));
+    expect(onShowMe).toHaveBeenCalledWith("pull-bed");
+    fireEvent.click(within(best).getByRole("button", { name: /Open in How do I/ }));
+    expect(screen.getByTestId("ward-help-task-answer-pull-bed")).toBeTruthy();
+  });
+
+  it("never writes words typed in Help's search to storage or URL history", () => {
+    const write = vi.spyOn(Storage.prototype, "setItem");
+    const push = vi.spyOn(window.history, "pushState");
+    const replace = vi.spyOn(window.history, "replaceState");
+    renderSheet(undefined);
+    fireEvent.change(helpField(), { target: { value: "bed qzxvwk qzxvwl" } });
+    fireEvent.keyDown(helpField(), { key: "Enter" });
+    expect(JSON.stringify([...write.mock.calls, ...push.mock.calls, ...replace.mock.calls])).not.toMatch(
+      /qzxvwk|qzxvwl/,
+    );
   });
 
   it("finds settings and says plainly when nothing matches", () => {

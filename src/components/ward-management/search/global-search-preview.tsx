@@ -21,6 +21,7 @@ import { unitReadyBedCount } from "./ward-smart-search";
 
 import type { Census, CensusRow } from "./patient-census";
 import { censusRowsByPatient, nextStepLine, whereNowLine } from "./search-answers";
+import type { HelpPreviewSource } from "@/components/ward-management/ward-global-search-groups";
 import styles from "./global-search-preview.module.css";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
@@ -49,6 +50,8 @@ export type GlobalSearchPreviewItem = {
 
 type PreviewProps = {
   item: GlobalSearchPreviewItem;
+  /** Help rows' answers, steps and Show me (Help redesign, 1 Nov 2026); without it a Help row just opens. */
+  help?: HelpPreviewSource;
   patients: readonly Patient[];
   /** D-39: a journey linked through a referral needs the referral to find its UMRN. */
   referrals?: PatientLookup["referrals"];
@@ -580,7 +583,63 @@ function EdPreview({
   );
 }
 
-function SimplePreview({ item, onOpen }: { item: GlobalSearchPreviewItem; onOpen: PreviewProps["onOpen"] }) {
+/**
+ * A Help answer in the preview pane (Help redesign, 1 Nov 2026), so it is readable without leaving
+ * the search: what to do, the steps Show me will light, one filled Show me, and Open in Help.
+ */
+function HelpAnswer({ id, answer, help }: { id: string; answer?: string; help: HelpPreviewSource }) {
+  const found = help.answerFor(id);
+  const steps = found?.steps ?? [];
+  return (
+    <div className={styles.helpAnswer} data-testid="ward-global-search-preview-help-answer">
+      {answer ? <p className={styles.helpText}>{answer}</p> : null}
+      {steps.length ? (
+        <ol className={styles.helpSteps} aria-label="Steps">
+          {steps.map((step) => (
+            <li key={step.title}>
+              <b>{step.title}</b>
+              <span>{step.body}</span>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      <div className={styles.actions}>
+        {found?.showMe ? (
+          <button
+            type="button"
+            className={styles.primary}
+            onClick={() => help.showMe(id)}
+            data-testid="ward-global-search-preview-show-me"
+          >
+            Show me
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className={found?.showMe ? styles.secondary : styles.primary}
+          onClick={() => help.openInHelp(id)}
+          data-testid="ward-global-search-preview-help"
+        >
+          Open in Help
+        </button>
+      </div>
+      {found?.showMe ? (
+        <p className={styles.helpSafety}>Show me lights each control in turn. It never presses anything.</p>
+      ) : null}
+    </div>
+  );
+}
+
+function SimplePreview({
+  item,
+  onOpen,
+  help,
+}: {
+  item: GlobalSearchPreviewItem;
+  onOpen: PreviewProps["onOpen"];
+  help?: HelpPreviewSource;
+}) {
+  const helpRow = item.kind === "help" && help ? help : undefined;
   const icon =
     item.kind === "community" ? (
       <Users size={16} strokeWidth={1.75} aria-hidden="true" />
@@ -604,14 +663,22 @@ function SimplePreview({ item, onOpen }: { item: GlobalSearchPreviewItem; onOpen
         </span>
         <div className={styles.headText}>
           <p className={styles.title}>{item.title}</p>
-          {item.meta ? <p className={styles.sub}>{item.meta}</p> : null}
+          {helpRow ? (
+            <p className={styles.sub}>Help · How do I…</p>
+          ) : item.meta ? (
+            <p className={styles.sub}>{item.meta}</p>
+          ) : null}
         </div>
       </div>
-      <div className={styles.actions}>
-        <Action href={item.href} primary onOpen={onOpen} testId="ward-global-search-preview-open">
-          {verb}
-        </Action>
-      </div>
+      {helpRow ? (
+        <HelpAnswer id={item.id} answer={item.meta} help={helpRow} />
+      ) : (
+        <div className={styles.actions}>
+          <Action href={item.href} primary onOpen={onOpen} testId="ward-global-search-preview-open">
+            {verb}
+          </Action>
+        </div>
+      )}
     </>
   );
 }
@@ -626,6 +693,7 @@ export function GlobalSearchPreview({
   dayZero,
   onOpen,
   census,
+  help,
   canOpenHref = allowPreviewNavigation,
 }: PreviewProps) {
   const flow = useOptionalWardFlow();
@@ -694,7 +762,7 @@ export function GlobalSearchPreview({
   return (
     <PreviewNavigation.Provider value={canOpenHref}>
       <section className={styles.preview} aria-label="Preview" data-testid="ward-global-search-preview">
-        {body ?? <SimplePreview item={item} onOpen={onOpen} />}
+        {body ?? <SimplePreview item={item} onOpen={onOpen} help={help} />}
       </section>
     </PreviewNavigation.Provider>
   );
