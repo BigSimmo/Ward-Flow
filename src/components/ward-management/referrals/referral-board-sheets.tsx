@@ -28,6 +28,7 @@ import {
 import styles from "./referral-board.module.css";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 
 function meetingText(rows: MeetingRow[], now: Instant): string {
   return rows
@@ -44,21 +45,30 @@ function meetingText(rows: MeetingRow[], now: Instant): string {
     .join("\n");
 }
 
-/** Copies to the clipboard, then says so in the button. Clipboard refusals fall back to no change. */
+/** Copies to the clipboard, then says so on the button and aloud; a refused copy says so too. */
 function CopyButton({ text, label }: { text: string; label: string }) {
-  const [copied, setCopied] = useState(false);
+  const [result, setResult] = useState<"copied" | "failed" | null>(null);
   return (
     <Button
       variant="pri"
       size="sm"
       icon={ClipboardCopy}
       onClick={() => {
-        void copyTextToClipboard(text)
-          .then(() => setCopied(true))
-          .catch(() => setCopied(false));
+        // The result is said aloud as well as shown (design audit, Josh 1 Nov 2026); a refused copy
+        // shows on the button rather than looking as if nothing happened.
+        void copyTextToClipboard(text).then(
+          () => {
+            setResult("copied");
+            announceToWardShell("Copied to the clipboard.");
+          },
+          () => {
+            setResult("failed");
+            announceToWardShell("Could not copy. Check clipboard access and try again.");
+          },
+        );
       }}
     >
-      {copied ? "Copied" : label}
+      {result === "copied" ? "Copied" : result === "failed" ? "Could not copy" : label}
     </Button>
   );
 }
