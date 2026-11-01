@@ -1,7 +1,10 @@
 // @ts-check
 // Audit P174 + P177: backend security headers, and /healthz database detail only for the uptime monitor.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { request as httpRequest } from "node:http";
 import { test } from "node:test";
 import { createHandler, listen, uptimeTokenMatches } from "./server.mjs";
@@ -54,11 +57,11 @@ test("P177: with no token set on the server the database answer is never shown",
   assert.equal(uptimeTokenMatches("abc", "abc"), true);
 });
 
-test("P177: the uptime workflow sends the token and counts a missing database as down", () => {
+test("P177: the uptime workflow sends the token without treating hidden database health as recovery", () => {
   const workflow = readFileSync(new URL("../../.github/workflows/backend-uptime.yml", import.meta.url), "utf8");
   assert.match(workflow, /UPTIME_TOKEN: \$\{\{ secrets\.WARD_FLOW_UPTIME_TOKEN \}\}/);
   assert.match(workflow, /--header "x-ward-flow-uptime-token: \$UPTIME_TOKEN"/);
-  assert.match(workflow, /\.database \/\/ "unavailable"/);
+  assert.match(workflow, /\.database \/\/ "hidden"/);
   assert.doesNotMatch(workflow, /\.database \/\/ "ok"/);
 });
 
@@ -83,3 +86,137 @@ test("P174: every backend reply carries HSTS and a deny-all content policy", asy
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+const workflow = readFileSync(new URL("../../.github/workflows/backend-uptime.yml", import.meta.url), "utf8");
+
+/** Read the exact shell block from the workflow rather than duplicating its decision logic. */
+function uptimeRunBlock(workflow, name) {
+  const lines = workflow.split("\n");
+  const start = lines.findIndex((line) => line === `      - name: ${name}`);
+  assert.notEqual(start, -1, `Workflow step missing: ${name}`);
+  const script = lines.findIndex((line, index) => index > start && line === "        run: |");
+  assert.notEqual(script, -1, `Workflow shell missing: ${name}`);
+  const body = [];
+  for (let index = script + 1; lines[index]?.startsWith("          "); index++) body.push(lines[index].slice(10));
+  assert.ok(body.length);
+  return body.join("\n");
+}
+
+/** These functions intercept every network/mutation command in the two reviewed blocks. */
+const uptimeShellStubs = `curl() { printf '%s' "$SYNTHETIC_HEALTH_BODY"; }
+sleep() { :; }
+gh() {
+  printf 'GH_CALL %s\\n' "$*" >&2
+  if [ "$1 $2" = 'issue list' ]; then printf '%s\\n' "$SYNTHETIC_OPEN_ISSUE"; fi
+}
+`;
+
+test(
+  "P177: workflow preserves outage alerts until database recovery is explicitly verified",
+  {
+    skip: process.platform === "win32" ? "The monitored workflow runs Ubuntu Bash and jq" : false,
+  },
+  async () => {
+    const check = uptimeRunBlock(workflow, "Ask the backend whether it is up and can reach its database");
+    const issues = uptimeRunBlock(workflow, "Raise or close the backend-down issue");
+    const temporary = mkdtempSync(join(tmpdir(), "ward-uptime-regression-"));
+    let databaseQueries = 0;
+    const handler = createHandler({
+      config: { origin: "http://localhost:3000", trustedProxyAddresses: [] },
+      sharedStore: {
+        ready: async () => {
+          databaseQueries++;
+          throw new Error("Synthetic database unavailable");
+        },
+      },
+      authenticate: async () => "synthetic-actor",
+      log: () => {},
+      uptimeToken: "synthetic-right-token",
+    });
+    const hidden = await (
+      await handler(
+        new Request("http://localhost/healthz", {
+          headers: { "x-ward-flow-uptime-token": "synthetic-wrong-token" },
+        }),
+      )
+    ).text();
+    assert.equal(databaseQueries, 0, "A wrong token must not probe the database");
+    const unavailable = await (
+      await handler(
+        new Request("http://localhost/healthz", {
+          headers: { "x-ward-flow-uptime-token": "synthetic-right-token" },
+        }),
+      )
+    ).text();
+    assert.equal(databaseQueries, 1);
+    const cases = [
+      { name: "hidden database", body: hidden, state: "unknown" },
+      { name: "null database", body: '{"service":"ward-flow-backend","database":null}', state: "unknown" },
+      { name: "malformed health JSON", body: '{"service":"ward-flow-backend",invalid}', state: "unknown" },
+      { name: "verified recovery", body: '{"service":"ward-flow-backend","database":"ok"}', state: "up" },
+      { name: "known database outage", body: unavailable, state: "database" },
+      {
+        name: "unconfigured database",
+        body: '{"service":"ward-flow-backend","database":"not_configured"}',
+        state: "database",
+      },
+      { name: "backend unavailable", body: "", state: "down" },
+    ];
+    try {
+      for (const scenario of cases) {
+        const output = join(temporary, `${scenario.name}.txt`);
+        const environment = {
+          PATH: "/usr/bin:/bin",
+          SYNTHETIC_HEALTH_BODY: scenario.body,
+          GITHUB_OUTPUT: output,
+          BACKEND_URL: "https://synthetic.invalid",
+          UPTIME_TOKEN: "synthetic-only",
+          GITHUB_SERVER_URL: "https://synthetic.invalid",
+          GITHUB_REPOSITORY: "synthetic/probe",
+          GITHUB_RUN_ID: "synthetic-run",
+          OWNER: "synthetic-owner",
+          LABEL: "backend-down",
+          SYNTHETIC_OPEN_ISSUE: "999",
+        };
+        const checked = spawnSync("/bin/bash", ["-e", "-c", uptimeShellStubs + check], {
+          env: environment,
+          encoding: "utf8",
+        });
+        assert.equal(checked.status, 0, `${scenario.name}: ${checked.stderr}`);
+        const state = readFileSync(output, "utf8").match(/^state=(.*)$/m)?.[1];
+        assert.equal(state, scenario.state, scenario.name);
+        assert.ok(state);
+        const script = issues.replaceAll("${{ steps.check.outputs.state }}", state);
+        const handled = spawnSync("/bin/bash", ["-e", "-c", uptimeShellStubs + script], {
+          env: environment,
+          encoding: "utf8",
+        });
+        assert.equal(handled.status, state === "up" ? 0 : 1, scenario.name);
+        if (state === "unknown") {
+          assert.equal(handled.stderr, "", `${scenario.name}: no GitHub command should run`);
+          assert.match(handled.stdout, /health is unknown/);
+          const noExistingIssue = spawnSync("/bin/bash", ["-e", "-c", uptimeShellStubs + script], {
+            env: { ...environment, SYNTHETIC_OPEN_ISSUE: "" },
+            encoding: "utf8",
+          });
+          assert.equal(noExistingIssue.status, 1);
+          assert.equal(noExistingIssue.stderr, "", "Unknown health must not create a false outage issue either");
+        } else if (state === "up") {
+          assert.match(handled.stderr, /GH_CALL issue close 999/);
+          assert.match(handled.stderr, /database are answering again/);
+        } else {
+          assert.doesNotMatch(handled.stderr, /GH_CALL issue (?:close|comment)/, scenario.name);
+          const noExistingIssue = spawnSync("/bin/bash", ["-e", "-c", uptimeShellStubs + script], {
+            env: { ...environment, SYNTHETIC_OPEN_ISSUE: "" },
+            encoding: "utf8",
+          });
+          assert.equal(noExistingIssue.status, 1);
+          assert.match(noExistingIssue.stderr, /GH_CALL issue create/);
+          assert.match(noExistingIssue.stderr, state === "database" ? /cannot reach its database/ : /not answering/);
+        }
+      }
+    } finally {
+      rmSync(temporary, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  },
+);
