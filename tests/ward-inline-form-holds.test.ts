@@ -28,6 +28,7 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "board/ward-board.tsx": { cover: "popup", why: "Departure and release confirms are modal." },
   "community/community-screen.tsx": { cover: "held" },
   "community/use-community-screen-overlays.ts": { cover: "popup", why: "Transport booking is a modal sheet." },
+  "coordinator/activity-panel.tsx": { cover: "popup", why: "Mark read is one tap inside the Activity drawer." },
   "coordinator/coordinator-screen.tsx": { cover: "popup", why: "Exceptions open in a sheet." },
   "coordinator/shortlist-panel.tsx": { cover: "held" },
   "delays/daily-check-line.tsx": {
@@ -61,6 +62,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "movements/sent-journey-changes.tsx": { cover: "held" },
   "movements/support-notification-checklist.tsx": { cover: "held" },
   "officer/officer-screen.tsx": { cover: "held", why: "The diversion form renders in officer-job-detail.tsx." },
+  "officer/officer-needs-transport.tsx": {
+    cover: "held",
+    why: "The booking panel holds the board while open (useHoldOpenForm).",
+  },
   "out-of-area/home-service-return-panel.tsx": { cover: "page form" },
   "patients/add-patient.tsx": { cover: "popup" },
   "patients/patient-now-screen.tsx": { cover: "popup", why: "Clearance and transport edit in modals." },

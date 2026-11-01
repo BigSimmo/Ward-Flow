@@ -43,8 +43,6 @@ describe("Record the time written takes a typed 24-hour time", () => {
           wardName={null}
           now={NOW_ANCHOR}
           dayZero={DAY_ZERO}
-          tab="now"
-          onTab={() => {}}
           onClose={() => {}}
           focusGap={null}
           refusal={undefined}

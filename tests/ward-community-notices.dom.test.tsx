@@ -76,9 +76,8 @@ describe("a community team sees its own notices and can mark them read", () => {
 
     // RB4's own wording: the referral is also on this team's real waiting list, not only in the
     // notice inbox — the two are separate facts and both must hold.
-    const waitingFigure = screen.getByText("Waiting for an answer").closest('[data-ward-primitive="figure"]');
-    expect(waitingFigure).not.toBeNull();
-    expect(waitingFigure).toHaveTextContent("1");
+    // Locked design (1 Nov 2026): the Referrals tab carries the waiting count.
+    expect(screen.getByRole("tab", { name: /^Referrals/ })).toHaveTextContent("1");
 
     fireEvent.click(screen.getByRole("button", { name: "Mark as read" }));
     expect(section).toHaveTextContent("0 unread");

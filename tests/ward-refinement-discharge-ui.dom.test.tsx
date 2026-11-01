@@ -142,13 +142,16 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     const open = bedReleases.filter((release) => release.state !== "discharged").length;
     expect(screen.getByRole("heading", { name: new RegExp(`^${toWork} to work now`, "u") })).toBeInTheDocument();
     expect(screen.getByTestId("ward-discharge-bed-days-past")).toHaveTextContent(new RegExp(`of ${open} open`, "u"));
-    // Josh, 30 Oct: "All statuses" carries no count, so no third total sits beside the hero's two.
-    const allStatuses = () =>
-      within(screen.getByRole("combobox", { name: "Status" })).getByRole("option", { name: /^All statuses/u });
-    expect(allStatuses()).toHaveTextContent(/^All statuses$/u);
+    // Josh, 30 Oct: there is no "all" total beside the hero's two; with no chip pressed every status shows.
+    const statusChips = () => within(screen.getByRole("group", { name: "Status" })).getAllByRole("button");
+    const noAllChip = () => {
+      expect(statusChips().some((chip) => /^All/u.test(chip.textContent ?? ""))).toBe(false);
+      expect(statusChips().every((chip) => chip.getAttribute("aria-pressed") === "false")).toBe(true);
+    };
+    noAllChip();
 
     fireEvent.click(records);
-    expect(allStatuses()).toHaveTextContent(/^All statuses$/u);
+    noAllChip();
     expect(screen.getByRole("heading", { name: /^\d+ admission records? open/u })).toBeInTheDocument();
   });
 

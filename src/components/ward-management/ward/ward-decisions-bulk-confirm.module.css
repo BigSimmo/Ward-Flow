@@ -32,3 +32,11 @@
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
+
+/* Sign-off result: names who was and was not signed off, so it wraps instead of the notice ellipsis. Doubled class outranks ".notice span". */
+.result.result {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}

@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { unitById, wardSites } from "@/components/ward-management/ward-sites";
+import { clearToasts } from "./helpers/clear-toasts";
 import { openEdLists } from "./helpers/ward-ed-lists";
 import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
@@ -424,6 +425,11 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expect(acceptButton).toBeVisible();
     await expect(acceptButton).not.toHaveAttribute("aria-disabled", "true");
     await acceptButton.click();
+    // Q93: Accept opens the named accept dialog; choose the standard pull time limit and confirm.
+    const acceptDialog = page.getByTestId("ward-accept-dialog");
+    await acceptDialog.getByRole("radio", { name: /standard/u }).click();
+    await acceptDialog.getByRole("button", { name: "Confirm acceptance" }).click();
+    await expect(acceptDialog).toHaveCount(0);
 
     // --- Step 5: the ward pulls the patient (the app's own bed-pull action — see this file's
     // header comment on "receives or raises": here too, the real mechanism is what this spec
@@ -508,14 +514,17 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     const jobPanel = officerScreen.getByTestId("ward-officer-detail");
     const acceptTransport = jobPanel.getByTestId(`ward-officer-accept-${movementId}`);
     await expect(acceptTransport).not.toHaveAttribute("aria-disabled", "true");
+    await clearToasts(page);
     await acceptTransport.click();
 
     const enRoute = jobPanel.getByTestId(`ward-officer-enroute-${movementId}`);
     await expect(enRoute).not.toHaveAttribute("aria-disabled", "true");
+    await clearToasts(page);
     await enRoute.click();
 
     const collected = jobPanel.getByTestId(`ward-officer-collect-${movementId}`);
     await expect(collected).not.toHaveAttribute("aria-disabled", "true");
+    await clearToasts(page);
     await collected.click();
     // Audit A4-11 / S-2 (13 Oct 2026): with Form 4A or fit to travel not recorded, Collected warns
     // and asks for a recorded reason instead of blocking. Answer it when it is asked.
@@ -532,6 +541,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
 
     const arrived = jobPanel.getByTestId(`ward-officer-arrive-${movementId}`);
     await expect(arrived).not.toHaveAttribute("aria-disabled", "true");
+    await clearToasts(page);
     await arrived.click();
     await expectNoReloadSince(page, "the officer's transport steps");
 

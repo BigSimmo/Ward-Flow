@@ -99,8 +99,9 @@ describe("Transport desk redesign", () => {
     fireEvent.click(screen.getByTestId(`ward-officer-select-${unrecorded.id}`));
     const panel = screen.getByTestId("ward-officer-detail");
     expect(within(panel).getAllByText(/Legal status not recorded/).length).toBeGreaterThan(0);
-    expect(within(panel).getByTestId(`ward-officer-not-recorded-${unrecorded.id}`)).toHaveTextContent(
-      /^Not recorded: the transport's legal status/,
+    // Transport redesign (Josh, 1 Nov 2026): a gap says "Not recorded" in place in the booking facts.
+    expect(within(panel).getByTestId(`ward-officer-transport-legal-status-${unrecorded.id}`)).toHaveTextContent(
+      /Transport logged as\s*Not recorded/,
     );
     // The forms count is said once, beside its heading.
     expect(within(panel).queryByText(/of 3 uploaded/)).toBeNull();

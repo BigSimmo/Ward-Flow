@@ -16,6 +16,7 @@ import {
   type PlaceLookup,
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
+import { edById } from "@/components/ward-management/ward-sites";
 
 /** Whether a broadcast is about one person: a Pull now, or any alert naming a journey. */
 function broadcastLinksPatient(alert: BroadcastAlert): boolean {
@@ -49,15 +50,16 @@ export function scopeBroadcastAlerts(
         acknowledged.length === alert.acknowledgedUnits.length ? alert : { ...alert, acknowledgedUnits: acknowledged },
       ];
     }
-    const own = alert.targetUnitIds.filter(unitIn);
+    // A directive sent to chosen desks can name ED desks as well as wards (Alerts redesign, 1 Nov 2026).
+    const own = alert.targetUnitIds.filter(deskIn);
     if (own.length === 0) return [];
     if (own.length === alert.targetUnitIds.length) return [alert];
-    const names = own.map((id) => units.find((unit) => unit.id === id)?.name ?? id);
+    const names = own.map((id) => units.find((unit) => unit.id === id)?.name ?? edById(id)?.name ?? id);
     return [
       {
         ...alert,
         targetUnitIds: own,
-        acknowledgedUnits: alert.acknowledgedUnits.filter(unitIn),
+        acknowledgedUnits: alert.acknowledgedUnits.filter(deskIn),
         ...(alert.replies ? { replies: alert.replies.filter((reply) => unitIn(reply.unitId)) } : {}),
         targetScopeLabel: names.length === 1 ? names[0] : `${names.length} wards`,
       },

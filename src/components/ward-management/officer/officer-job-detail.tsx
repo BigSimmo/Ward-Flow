@@ -8,7 +8,7 @@ import { CAD_TO_FOLLOW, cadNumberToFollow, providerNeedsCadNumber } from "@/comp
 import { TransportCadToFollow } from "@/components/ward-management/transport/transport-cad-to-follow";
 import { Check, Lock } from "lucide-react";
 
-import { Button, Icon, Select, StatusGlyph, Timeline, type TimelineItem } from "@/components/wf";
+import { Button, Icon, Select, StatusGlyph, TabPanel, Tabs, Timeline, type TimelineItem } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
@@ -31,7 +31,8 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 
-import { FormsPack, packRequired } from "./officer-forms-pack";
+import { FormsPack, PACK_SLOTS, packCount, packRequired } from "./officer-forms-pack";
+import { HowWorkedOut } from "@/components/ward-management/capacity/capacity-how-worked-out";
 import styles from "./officer.module.css";
 import {
   holdEndsBeforeEta,
@@ -57,10 +58,16 @@ import type { Dispatch, SetStateAction } from "react";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { RISK_FLAG_LABELS } from "@/components/ward-management/referrals/referral-risk-flags";
 
+export type OfficerDetailTab = "details" | "forms" | "activity";
+
 /** The `OfficerScreen` state and handlers the job panel's helpers read, passed in on every render. */
 export type OfficerJobDetailContext = {
   blockedNote: (movement: Movement) => string | undefined;
   destinationLabelFor: (movement: Movement) => string;
+  /** Transport mock-up: the job panel's open tab, kept by the screen and reset per job. */
+  detailTab: OfficerDetailTab;
+  setDetailTab: (tab: OfficerDetailTab) => void;
+  originShortFor: (movement: Movement) => string;
   diversionOpen: boolean;
   diversionPlace: TransportWhereabouts | undefined;
   diversionReason: DiversionReason | undefined;
@@ -155,21 +162,18 @@ export function renderPhoneNextStep(movement: Movement, ctx: OfficerJobDetailCon
 export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
   const {
     destinationLabelFor,
+    detailTab,
+    setDetailTab,
+    originShortFor,
     diversionOpen,
     diversionPlace,
     diversionReason,
     identityChecked,
     identityFor,
-    isPhone,
     now,
     officerPatientName,
     originLabelFor,
     raise,
-    resolvedPatientName,
-    runAccepted,
-    runCollected,
-    runDelivered,
-    runEnRoute,
     setDiversionOpen,
     setDiversionPlace,
     setDiversionReason,
@@ -180,23 +184,8 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
   const transport = movement.transport;
   if (!transport) return null;
   const destinationUnit = unitFor(movement);
-  const patientName = resolvedPatientName(movement);
-  const acceptedBlocked = acceptedBlockedReason(movement, patientName);
-  const enRouteBlocked = enRouteBlockedReason(movement, patientName);
-  const collectedBlocked = collectedBlockedReason(movement, patientName);
-  const arrivedBlocked = arrivedBlockedReason(movement, destinationUnit, patientName);
   const leg = officerLeg(transport);
   const legIndex = leg ? OFFICER_LEG_STEPS.indexOf(leg) : -1;
-  const nextBlocked =
-    leg === "Requested"
-      ? acceptedBlocked
-      : leg === "Accepted"
-        ? enRouteBlocked
-        : leg === "En route"
-          ? collectedBlocked
-          : leg === "Collected"
-            ? arrivedBlocked
-            : undefined;
   const arrival = expectedArrival(movement);
   const eta = arrival?.at;
   const canDivert =
@@ -248,161 +237,72 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     });
   }
 
-  const step = (index: number, label: string, testId: string, blocked: string | undefined, onRun: () => void) => {
-    // Action `index` moves the leg to OFFICER_LEG_STEPS[index + 1]; it is done once the leg is there.
-    const done = legIndex >= index + 1;
-    const isNext = index === legIndex;
-    return (
-      <Button
-        variant={isNext && !blocked ? "pri" : "sec"}
-        // Final round (31 Oct 2026): a done step (`actionDone`) has a solid quiet edge, plain surface
-        // and green check, so only a step not open yet keeps the dashed unavailable edge.
-        className={done ? `${styles.actionButton} ${styles.actionDone}` : styles.actionButton}
-        data-testid={`${testId}-${movement.id}`}
-        aria-disabled={blocked ? "true" : undefined}
-        aria-describedby={blocked ? `${testId}-unavailable-${movement.id}` : undefined}
-        title={blocked ?? undefined}
-        icon={done ? Check : undefined}
-        onClick={blocked ? ignoreUnavailableActivation : onRun}
-      >
-        {label}
-      </Button>
-    );
-  };
-
-  // v10 phone: the four facts as a 2x2 grid and the leg as a Steps list; the four stage buttons
-  // are pinned to the sheet's foot (see the panel foot).
+  // Transport mock-up (Josh, 1 Nov 2026): one panel at every width. Route and progress at the top,
+  // then Details, Forms and Activity as tabs, and the one next step pinned in the foot.
   const roadRoute = referenceDistance(
     edById(movement.originEdId)?.referenceEdId,
     destinationUnit ? siteByCode(destinationUnit.siteCode)?.referenceSiteId : undefined,
   );
-  const stepLabels = ["Accepted", "En route", "Collected", "Arrived at ward"] as const;
-  // Redesign: the booking facts the call did not record, named once on one line.
+  const stepLabels = ["Accepted", "En route", "Collected", "Arrived"] as const;
+  const stepTimes = [transport.acceptedAt, transport.enRouteAt, transport.collectedAt, transport.arrivedAt];
+  const packOpen = packRequired(movement) ? PACK_SLOTS.length - packCount(movement) : 0;
+  const tab = detailTab;
   const transportLoggedRecorded = transportLegalStatusLabel(transport) !== "Not recorded";
-  // Final check (30 Oct 2026): each fact is named in full ("the transport's legal status"), not by
-  // its field label, so the line reads as a sentence.
-  const notRecorded = [
-    transportLoggedRecorded ? null : "the transport's legal status",
-    transport.estimatedAt === undefined ? "estimated time" : null,
-  ].filter((fact): fact is string => fact !== null);
-  const phoneTop = (
-    <>
-      <dl className={styles.phGrid}>
-        <div>
-          {/* A booking estimate is the transport provider's, not a time the ward recorded. */}
-          <dt>{arrival?.booked ? "Transport ETA" : "Ward ETA"}</dt>
-          <dd className={styles.mono}>{eta !== undefined ? formatInstantWithDay(eta, now) : "Not recorded"}</dd>
-        </div>
-        <div>
-          <dt>By road</dt>
-          <dd className={styles.mono}>{roadRoute ? `${roadRoute.min} min` : "Not recorded"}</dd>
-        </div>
-        <div>
-          <dt>Provider</dt>
-          <dd>{transport.provider}</dd>
-        </div>
-        <div>
-          <dt>CAD</dt>
-          <dd className={styles.mono}>
-            {cadNumberToFollow(transport) ? (
-              <>
-                <StatusGlyph tone="warning" size={9} /> {CAD_TO_FOLLOW}
-              </>
-            ) : (
-              (transport.cadNumber ?? (providerNeedsCadNumber(transport.provider) ? "Not recorded" : "Not needed"))
-            )}
-          </dd>
-        </div>
-      </dl>
-      {roadRoute ? <p className={styles.muted}>{REFERENCE_DISTANCE_CAVEAT}</p> : null}
-      <section className={styles.phCard} aria-label="Steps">
-        <h3 className={styles.phCardHead}>
-          Steps <span className={styles.mono}>{Math.max(0, legIndex)} of 4</span>
-        </h3>
-        <ol className={styles.phSteps}>
-          {stepLabels.map((label, index) => {
-            const done = legIndex >= index + 1;
-            const current = index === legIndex;
-            return (
-              <li key={label} className={styles.phStep} data-state={done ? "done" : current ? "now" : undefined}>
-                <StatusGlyph tone={done ? "success" : current ? "info" : "neutral"} size={10} />
-                <span className={styles.phStepText}>
-                  <span className={styles.phStepTitle}>{label}</span>
-                </span>
-                {done ? <span className={styles.phStepDone}>Done</span> : null}
-              </li>
-            );
-          })}
-        </ol>
-      </section>
-    </>
-  );
 
   return (
     <>
-      {isPhone ? phoneTop : null}
-      {isPhone ? null : (
-        <div className={styles.route}>
-          <div className={styles.routeLeg}>
-            <StatusGlyph tone="neutral" size={9} />
-            <span className={styles.routePlace}>{originLabelFor(movement)}</span>
-            <span className={styles.routeTime}>
-              {transport.collectedAt !== undefined ? `Left ${formatInstantWithDay(transport.collectedAt, now)}` : null}
-            </span>
-          </div>
-          <div className={styles.routeLeg}>
-            <StatusGlyph tone="info" size={9} />
-            <span className={styles.routePlace}>{destinationLabelFor(movement)}</span>
-            <span className={styles.routeTime}>
-              {eta !== undefined ? (
-                <>
-                  {formatInstantWithDay(eta, now)} <span>{transportEtaRemainingLabel(eta, now)}</span>
-                </>
-              ) : (
-                "No ETA recorded"
-              )}
-            </span>
-          </div>
-        </div>
-      )}
+      <div className={styles.routeCard}>
+        <span className={styles.routePin} aria-hidden="true" />
+        <span className={styles.routeStop}>
+          <b>{originShortFor(movement)}</b>
+          <span>{originLabelFor(movement)}</span>
+        </span>
+        <span className={styles.routeStopTime}>
+          {transport.collectedAt !== undefined
+            ? `Left ${formatInstantWithDay(transport.collectedAt, now)}`
+            : "Not collected"}
+        </span>
+        <span className={styles.routePin} data-to="" aria-hidden="true" />
+        <span className={styles.routeStop}>
+          <b>{destinationLabelFor(movement)}</b>
+          <span>
+            {transport.provider}
+            {roadRoute ? ` · about ${roadRoute.min} min by road` : ""}
+          </span>
+        </span>
+        <span className={styles.routeStopTime}>
+          {eta !== undefined ? (
+            <>
+              <b>{formatInstantWithDay(eta, now)}</b> {transportEtaRemainingLabel(eta, now)}
+            </>
+          ) : (
+            "No ETA yet"
+          )}
+        </span>
+      </div>
+      {/* As Capacity's road-time card (Josh's rebuild): the caveat folds to one line. */}
+      {roadRoute ? (
+        <HowWorkedOut label="Road time is an estimate">
+          <p>{REFERENCE_DISTANCE_CAVEAT}</p>
+        </HowWorkedOut>
+      ) : null}
 
-      {isPhone ? null : (
-        // Redesign (31 Oct 2026): two by two, so "Arrived at ward" is never cut to "Arrived at w…".
-        <div className={styles.actionRow}>
-          {step(0, "Accepted", "ward-officer-accept", acceptedBlocked, () => runAccepted(movement))}
-          {step(1, "En route", "ward-officer-enroute", enRouteBlocked, () => runEnRoute(movement))}
-          {step(2, "Collected", "ward-officer-collect", collectedBlocked, () => runCollected(movement))}
-          {step(3, "Arrived at ward", "ward-officer-arrive", arrivedBlocked, () => runDelivered(movement))}
-        </div>
-      )}
-      {nextBlocked && !isPhone ? (
-        <p className={styles.nextNote}>
-          <Icon icon={Lock} size={14} />
-          {nextBlocked}
-        </p>
-      ) : null}
-      {/* Audit round 2, A4-14: on phone only the pinned next step is a button, and it prints its
-          own reason, so these reasons for done and future steps are desktop only. */}
-      {acceptedBlocked && !isPhone ? (
-        <span id={`ward-officer-accept-unavailable-${movement.id}`} className="sr-only">
-          {acceptedBlocked}
-        </span>
-      ) : null}
-      {enRouteBlocked && !isPhone ? (
-        <span id={`ward-officer-enroute-unavailable-${movement.id}`} className="sr-only">
-          {enRouteBlocked}
-        </span>
-      ) : null}
-      {collectedBlocked && !isPhone ? (
-        <span id={`ward-officer-collect-unavailable-${movement.id}`} className="sr-only">
-          {collectedBlocked}
-        </span>
-      ) : null}
-      {arrivedBlocked && !isPhone ? (
-        <span id={`ward-officer-arrive-unavailable-${movement.id}`} className="sr-only">
-          {arrivedBlocked}
-        </span>
-      ) : null}
+      <ol className={styles.progress} aria-label={`Progress, ${Math.max(0, legIndex)} of 4 done`}>
+        {stepLabels.map((label, index) => {
+          const done = legIndex >= index + 1;
+          const current = index === legIndex;
+          const at = stepTimes[index];
+          return (
+            <li key={label} className={styles.progressStep} data-state={done ? "done" : current ? "now" : undefined}>
+              <span className={styles.progressDot} aria-hidden="true">
+                {done ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : null}
+              </span>
+              {label}
+              <small>{done && at !== undefined ? formatInstantWithDay(at, now) : current ? "next" : " "}</small>
+            </li>
+          );
+        })}
+      </ol>
 
       {/* #236 (Josh, 27 Oct 2026): one tap before Collected, with the facts to check. Never a gate. */}
       {leg === "En route" && !movement.closure
@@ -447,135 +347,6 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
             {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST).
           </span>
         </div>
-      ) : null}
-
-      {packRequired(movement) ? (
-        <FormsPack movement={movement} now={now} who={officerPatientName(movement)} />
-      ) : (
-        <section className={styles.section} aria-label="Forms">
-          <h3 className={styles.sectionTitle}>Forms</h3>
-          <span className={styles.muted}>None needed for a voluntary transfer.</span>
-        </section>
-      )}
-
-      <section className={styles.section} aria-label="Booking">
-        <h3 className={styles.sectionTitle}>Booking</h3>
-        {/* Redesign: facts the booking did not record share one line instead of a box each. */}
-        {notRecorded.length > 0 ? (
-          <p className={styles.notRecorded} data-testid={`ward-officer-not-recorded-${movement.id}`}>
-            Not recorded: {notRecorded.join(" and ")}
-          </p>
-        ) : null}
-        <dl className={styles.facts}>
-          {isPhone ? null : (
-            <>
-              <div>
-                <dt>Provider</dt>
-                <dd>{transport.provider}</dd>
-              </div>
-              <div data-testid={`ward-officer-cad-number-${movement.id}`}>
-                <dt>CAD (dispatch) number</dt>
-                {/* Redesign: a gap between the glyph and its words. */}
-                <dd className={styles.glyphLine}>
-                  {cadNumberToFollow(transport) ? <StatusGlyph tone="warning" size={9} /> : null}
-                  {cadNumberLabel(transport)}
-                </dd>
-              </div>
-            </>
-          )}
-          {transportLoggedRecorded ? (
-            <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
-              <dt>Transport logged as</dt>
-              <dd>
-                {transportStatusClashes(movement, transport.transportLegalStatus) ? (
-                  <StatusGlyph tone="warning" size={9} />
-                ) : null}
-                {transportLegalStatusLabel(transport)}
-                {transportStatusClashes(movement, transport.transportLegalStatus)
-                  ? `, Legal now ${legalNowText(movement)}`
-                  : null}
-              </dd>
-            </div>
-          ) : null}
-          <div>
-            <dt>Escort required</dt>
-            <dd>{transport.escortRequired ? "Yes" : "No"}</dd>
-          </div>
-          {/* D-80 item 7: the referral's risk categories. Shown only when the referrer recorded some. */}
-          {movement.collectionRiskFlags?.length ? (
-            <div data-testid={`ward-officer-risk-flags-${movement.id}`}>
-              <dt>Risk flags</dt>
-              <dd>{movement.collectionRiskFlags.map((flag) => RISK_FLAG_LABELS[flag]).join(", ")}</dd>
-            </div>
-          ) : null}
-          <div>
-            <dt>Form named at booking</dt>
-            <dd>{formRequiredLabel(transport)}</dd>
-          </div>
-          {transport.estimatedAt !== undefined ? (
-            <div data-testid={`ward-officer-estimated-at-${movement.id}`}>
-              <dt>Estimated time</dt>
-              <dd>{estimatedTimeLabel(transport, now)}</dd>
-            </div>
-          ) : null}
-          {/* Audit A4-2: the officer sees when the bed hold ends, and whether the ETA is after it. */}
-          {movement.pullExpiresAt !== undefined && transport.collectedAt === undefined ? (
-            <div data-testid={`ward-officer-hold-ends-${movement.id}`}>
-              <dt>Bed pulled until</dt>
-              <dd>
-                {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? (
-                  <StatusGlyph tone="warning" size={9} />
-                ) : null}
-                {formatInstantWithDay(movement.pullExpiresAt, now)}
-                {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? ", before the ETA" : null}
-              </dd>
-            </div>
-          ) : null}
-          {(transport.exceptions ?? []).map((exception) => (
-            <div key={`${exception.step}-${exception.at}`} data-testid={`ward-officer-exception-${movement.id}`}>
-              <dt>
-                {exception.step === "collected" ? "Collected" : "Booked"} {formatInstantWithDay(exception.at, now)} with
-              </dt>
-              <dd>{transportExceptionText(exception)}</dd>
-            </div>
-          ))}
-          {transport.identityChecked ? (
-            <div data-testid={`ward-officer-identity-checked-${movement.id}`}>
-              <dt>Identity checked</dt>
-              <dd>With the sending team, {formatInstantWithDay(transport.identityChecked.at, now)}</dd>
-            </div>
-          ) : null}
-        </dl>
-        {/* CAD to follow (Josh, 27 Oct 2026): the officer often hears the number first. */}
-        {cadNumberToFollow(transport) && !movement.closure ? (
-          <TransportCadToFollow
-            movementId={movement.id}
-            role="officer"
-            testId={`ward-officer-cad-to-follow-${movement.id}`}
-          />
-        ) : null}
-      </section>
-
-      {movement.arrivalDetails ? (
-        <section className={styles.section} aria-label="Arrival plan">
-          <h3 className={styles.sectionTitle}>Arrival plan</h3>
-          <dl className={styles.planGrid} data-testid={`ward-officer-arrival-details-${movement.id}`}>
-            <div>
-              <dt>Ward ETA</dt>
-              <dd>{formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST</dd>
-            </div>
-            <div>
-              <dt>Mode</dt>
-              <dd>{movement.arrivalDetails.mode}</dd>
-            </div>
-            <div title={OPERATIONAL_DEFAULT_LABEL}>
-              <dt>Late after</dt>
-              <dd>
-                {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES, now)}
-              </dd>
-            </div>
-          </dl>
-        </section>
       ) : null}
 
       {transport.diversion ? (
@@ -669,12 +440,154 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         </section>
       ) : null}
 
-      {activity.length > 0 ? (
-        <section className={styles.section} aria-label="Activity">
-          <h3 className={styles.sectionTitle}>Activity</h3>
-          <Timeline items={activity} holdNew={false} label={`Activity for ${officerPatientName(movement)}`} />
+      <Tabs
+        label="Job details"
+        idPrefix={`ward-officer-detail-${movement.id}`}
+        className={styles.detailTabs}
+        value={tab}
+        onChange={setDetailTab}
+        items={[
+          { id: "details", label: "Details" },
+          { id: "forms", label: "Forms", count: packOpen > 0 ? packOpen : undefined },
+          { id: "activity", label: "Activity", count: activity.length > 0 ? activity.length : undefined },
+        ]}
+      />
+
+      <TabPanel idPrefix={`ward-officer-detail-${movement.id}`} id="details" hidden={tab !== "details"}>
+        <section className={styles.detailTab} aria-label="Booking">
+          {packOpen > 0 ? (
+            <button type="button" className={styles.formsLine} onClick={() => setDetailTab("forms")}>
+              <StatusGlyph tone="warning" size={8} />
+              <span>
+                <b>
+                  {packOpen} {packOpen === 1 ? "form" : "forms"} to upload
+                </b>{" "}
+                before collection
+              </span>
+              <span className={styles.formsLineGo}>View</span>
+            </button>
+          ) : null}
+          <dl className={styles.factList}>
+            <div>
+              <dt>Provider</dt>
+              <dd>{transport.provider}</dd>
+            </div>
+            <div data-testid={`ward-officer-cad-number-${movement.id}`}>
+              <dt>CAD number</dt>
+              <dd className={styles.glyphLine}>
+                {cadNumberToFollow(transport) ? (
+                  <span className={styles.detailTag} data-tone="warning">
+                    <StatusGlyph tone="warning" size={8} />
+                    {CAD_TO_FOLLOW}
+                  </span>
+                ) : (
+                  <span className={styles.mono}>
+                    {transport.cadNumber ??
+                      (providerNeedsCadNumber(transport.provider) ? cadNumberLabel(transport) : "Not needed")}
+                  </span>
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>Escort</dt>
+              <dd>{transport.escortRequired ? "Required" : "Not required"}</dd>
+            </div>
+            {/* D-80 item 7: the referral's risk categories. Shown only when the referrer recorded some. */}
+            {movement.collectionRiskFlags?.length ? (
+              <div data-testid={`ward-officer-risk-flags-${movement.id}`}>
+                <dt>Risk flags</dt>
+                <dd>{movement.collectionRiskFlags.map((flag) => RISK_FLAG_LABELS[flag]).join(", ")}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt>Form named at booking</dt>
+              <dd>{formRequiredLabel(transport)}</dd>
+            </div>
+            <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
+              <dt>Transport logged as</dt>
+              <dd className={transportLoggedRecorded ? undefined : styles.factMuted}>
+                {transportStatusClashes(movement, transport.transportLegalStatus) ? (
+                  <StatusGlyph tone="warning" size={9} />
+                ) : null}
+                {transportLegalStatusLabel(transport)}
+                {transportStatusClashes(movement, transport.transportLegalStatus)
+                  ? `, Legal now ${legalNowText(movement)}`
+                  : null}
+              </dd>
+            </div>
+            <div data-testid={`ward-officer-estimated-at-${movement.id}`}>
+              <dt>Estimated time</dt>
+              <dd className={transport.estimatedAt === undefined ? styles.factMuted : undefined}>
+                {transport.estimatedAt === undefined ? "Not recorded" : estimatedTimeLabel(transport, now)}
+              </dd>
+            </div>
+            {/* Audit A4-2: the officer sees when the bed hold ends, and whether the ETA is after it. */}
+            {movement.pullExpiresAt !== undefined && transport.collectedAt === undefined ? (
+              <div data-testid={`ward-officer-hold-ends-${movement.id}`}>
+                <dt>Bed pulled until</dt>
+                <dd>
+                  {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? (
+                    <StatusGlyph tone="warning" size={9} />
+                  ) : null}
+                  {formatInstantWithDay(movement.pullExpiresAt, now)}
+                  {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? ", before the ETA" : null}
+                </dd>
+              </div>
+            ) : null}
+            {movement.arrivalDetails ? (
+              <div data-testid={`ward-officer-arrival-details-${movement.id}`}>
+                <dt>Ward ETA</dt>
+                <dd title={OPERATIONAL_DEFAULT_LABEL}>
+                  {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST ·{" "}
+                  {movement.arrivalDetails.mode} · late after{" "}
+                  {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES, now)}
+                </dd>
+              </div>
+            ) : null}
+            {(transport.exceptions ?? []).map((exception) => (
+              <div key={`${exception.step}-${exception.at}`} data-testid={`ward-officer-exception-${movement.id}`}>
+                <dt>
+                  {exception.step === "collected" ? "Collected" : "Booked"} {formatInstantWithDay(exception.at, now)}{" "}
+                  with
+                </dt>
+                <dd>{transportExceptionText(exception)}</dd>
+              </div>
+            ))}
+            {transport.identityChecked ? (
+              <div data-testid={`ward-officer-identity-checked-${movement.id}`}>
+                <dt>Identity checked</dt>
+                <dd>With the sending team, {formatInstantWithDay(transport.identityChecked.at, now)}</dd>
+              </div>
+            ) : null}
+          </dl>
+          {/* CAD to follow (Josh, 27 Oct 2026): the officer often hears the number first. */}
+          {cadNumberToFollow(transport) && !movement.closure ? (
+            <TransportCadToFollow
+              movementId={movement.id}
+              role="officer"
+              testId={`ward-officer-cad-to-follow-${movement.id}`}
+            />
+          ) : null}
         </section>
-      ) : null}
+      </TabPanel>
+
+      <TabPanel idPrefix={`ward-officer-detail-${movement.id}`} id="forms" hidden={tab !== "forms"}>
+        {packRequired(movement) ? (
+          <FormsPack movement={movement} now={now} who={officerPatientName(movement)} />
+        ) : (
+          <section className={styles.section} aria-label="Forms">
+            <span className={styles.muted}>None needed for a voluntary transfer.</span>
+          </section>
+        )}
+      </TabPanel>
+
+      <TabPanel idPrefix={`ward-officer-detail-${movement.id}`} id="activity" hidden={tab !== "activity"}>
+        {activity.length > 0 ? (
+          <Timeline items={activity} holdNew={false} label={`Activity for ${officerPatientName(movement)}`} />
+        ) : (
+          <span className={styles.muted}>Nothing recorded yet.</span>
+        )}
+      </TabPanel>
     </>
   );
 }

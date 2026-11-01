@@ -132,30 +132,43 @@ export function WardArrivalsCorridor({
   const releaseDivertedMovement = accepted.find((movement) => movement.id === releaseDivertedId);
   // Q93: a pulled-bed release reads its own save answer; a failure stays on that person's card.
   const completeCommand = useWardCommandCompletion();
-  const [releaseFailure, setReleaseFailure] = React.useState<{ movementId: string; text: string } | null>(null);
+  // Kept per person, so one failed release never hides another person's. Each remembers the screen's
+  // last rejection when the release began, so only a rejection from this attempt replaces it.
+  const [releaseFailures, setReleaseFailures] = React.useState<
+    Readonly<Record<string, { text: string; priorRejectionId: string | undefined }>>
+  >({});
   const releasePulledBed = (movementId: string, record: () => ReturnType<WardCommandDispatch>) => {
     priorRejectionCountRef.current = rejections.length;
-    setReleaseFailure(null);
+    const priorRejectionId = lastActionRejection?.id;
+    setReleaseFailures((current) => {
+      const others = { ...current };
+      delete others[movementId];
+      return others;
+    });
     completeCommand(wardCommandKey("release-pulled-bed", movementId), record, (outcome) => {
       const failure = wardCommandFailure(outcome);
       if (!failure || !outcome) return;
-      setReleaseFailure({
-        movementId,
-        text:
-          outcome.status === "refused"
-            ? `Release pulled bed not recorded: ${wardSafeRejectionReason(outcome.message ?? "The action was refused.")}`
-            : failure,
-      });
+      const text =
+        outcome.status === "refused"
+          ? `Release pulled bed not recorded: ${wardSafeRejectionReason(outcome.message ?? "The action was refused.")}`
+          : failure;
+      setReleaseFailures((current) => ({ ...current, [movementId]: { text, priorRejectionId } }));
     });
     // A local refusal is read back by the screen as this ward's last rejection, shown on the card.
     setCheckToken((t) => t + 1);
   };
-  const releaseFailureNote = (movementId: string) =>
-    releaseFailure?.movementId === movementId && lastActionRejection?.movementId !== movementId ? (
+  const releaseFailureNote = (movementId: string) => {
+    const failure = releaseFailures[movementId];
+    if (!failure) return null;
+    // The card already shows a rejection this attempt raised; an earlier one never hides the new failure.
+    const shownByScreen =
+      lastActionRejection?.movementId === movementId && lastActionRejection.id !== failure.priorRejectionId;
+    return shownByScreen ? null : (
       <p className={styles.rejectionNote} role="alert" data-testid={`ward-release-failure-${movementId}`}>
-        {releaseFailure.text}
+        {failure.text}
       </p>
-    ) : null;
+    );
+  };
   // Audit 24-1 (B-09) / Audit 24-7 (CT-22): after Pull a bed the button goes and a "Bed pulled" status
   // line takes its place (focus stays on the arrival, DA-11), so a second tap within the guard is
   // ignored by Release.

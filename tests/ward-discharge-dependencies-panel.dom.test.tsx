@@ -99,13 +99,16 @@ describe("weekend and holiday preparation", () => {
         onOpen={onOpen}
       />,
     );
+    // One card per closed service: the heading names the service; the card's region carries when it closes and reopens.
     const headings = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
-    expect(headings).toEqual([
+    expect(headings).toEqual(["Pharmacy", "Patient transport", "Community mental health team"]);
+    const cardNames = [
       "Pharmacy closes Sat 12:00, reopens Mon 08:30 (Weekend)",
       "Patient transport closes Sat 14:00, reopens Mon 07:00 (Weekend)",
       "Community mental health team closes Fri 17:00, reopens Mon 08:30 (Weekend)",
-    ]);
-    const transport = screen.getByRole("region", { name: headings[1]! });
+    ];
+    for (const name of cardNames) expect(screen.getByRole("region", { name })).toBeInTheDocument();
+    const transport = screen.getByRole("region", { name: cardNames[1]! });
     const rows = within(transport).getAllByRole("button");
     // Recorded (seed) order: SCGA-03, then RGHS-07, then BTYS-05 in the release list.
     expect(rows).toHaveLength(3);

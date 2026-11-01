@@ -303,3 +303,44 @@ describe("Pull now is offered only where it is accepted (remaining-pages audit o
     expect(lapsed && pullNowOffered(lapsed)).toBe(false);
   });
 });
+
+describe("Broadcasts to chosen units (alerts redesign, 1 Nov 2026)", () => {
+  const send = (targetUnitIds: string[], kind?: "bed_call") =>
+    wardFlowReducer(seedWardFlowState(), {
+      type: "DISPATCH_BROADCAST_ALERT",
+      role: "coordinator",
+      now: NOW,
+      title: "Chosen units",
+      message: "Synthetic test message.",
+      severity: "warning",
+      category: "capacity_gridlock",
+      targetScope: "all",
+      targetScopeLabel: "Chosen units",
+      durationMinutes: 120,
+      dispatchedByName: "Desk",
+      targetUnitIds,
+      ...(kind ? { kind } : {}),
+    });
+
+  it("asks only the chosen desks for a directive", () => {
+    const state = send(["rph-adult-secure", "fsh-ed"]);
+    const alert = state.broadcastAlerts[0];
+    expect(alert.targetUnitIds).toEqual(["rph-adult-secure", "fsh-ed"]);
+    expect(directiveDesks(alert, state.units)).toEqual(["rph-adult-secure", "fsh-ed"]);
+    expect(directiveAcknowledgements(alert, state.units).of).toBe(2);
+  });
+
+  it("asks only the chosen wards for a bed call, leaving out chosen EDs", () => {
+    const state = send(["rph-adult-secure", "fsh-ed"], "bed_call");
+    expect(state.broadcastAlerts[0].targetUnitIds).toEqual(["rph-adult-secure"]);
+    expect(reply(state, { unitId: "fsh-older-adult", answer: "cannot" }).broadcastAlerts[0].replies).toHaveLength(0);
+    expect(send(["fsh-ed"], "bed_call").broadcastAlerts).toHaveLength(0);
+  });
+
+  it("refuses an empty choice or a desk that does not exist", () => {
+    expect(send([]).broadcastAlerts).toHaveLength(0);
+    const unknown = send(["not-a-desk"]);
+    expect(unknown.broadcastAlerts).toHaveLength(0);
+    expect(lastRefusal(unknown)).toMatch(/targetUnitIds/);
+  });
+});

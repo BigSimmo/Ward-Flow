@@ -57,11 +57,11 @@ describe("discharges board patient detail and navigation bridge", () => {
     const firstReleaseButton = screen.getAllByRole("button", { name: /Dabakarn|Moodjar|Mental Health Unit/ })[0];
     fireEvent.click(firstReleaseButton);
 
-    // Detail drawer opens with release info and the linked patient bridge
+    // Detail drawer opens with release info; its footer carries the Discharge record bridge
     const details = screen.getByRole("region", { name: "Selected discharge details" });
     expect(details).toBeInTheDocument();
 
-    const bridgeButton = within(details).getByRole("button", { name: /View patient discharge record →/ });
+    const bridgeButton = screen.getByRole("button", { name: /^Discharge record/ });
     expect(bridgeButton).toBeInTheDocument();
 
     // Click the bridge button to navigate to the full admission record

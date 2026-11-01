@@ -1,4 +1,6 @@
 // B3 P170 (27 Oct 2026): an activity row that names a patient links to that patient's record.
+// Q99 (Josh, 1 Nov 2026): the bar's Activity button opens Home's Activity panel, which keeps both
+// gates: a row, and an emergency department in the live tally, is a link only where the desk may go.
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -19,6 +21,19 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
     useDueSoonThresholds: () => dueSoonThresholdsOf(mockContext?.configuration),
     useWardNetwork: () => activeWardNetwork(),
     useWardFlowClock: () => mockContext.now,
+  };
+});
+
+// The panel's feed, pinned for the test that needs known rows; otherwise the real derivation.
+let pinnedChanges: WardActivityContent["changes"] | undefined;
+vi.mock("@/components/ward-management/shell/ward-command-activity", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/ward-management/shell/ward-command-activity")>();
+  return {
+    ...actual,
+    deriveCommandActivity: (...args: Parameters<typeof actual.deriveCommandActivity>) => {
+      const derived = actual.deriveCommandActivity(...args);
+      return pinnedChanges ? { ...derived, content: { ...derived.content, changes: pinnedChanges } } : derived;
+    },
   };
 });
 
@@ -66,33 +81,35 @@ describe("activity rows link to the record (P170)", () => {
   });
 
   it("renders a linked row as a link and an unlinked row as plain text", async () => {
-    const activity: WardActivityContent = {
-      pageTitle: "Ward 2K",
-      tiles: [],
-      changes: [
-        {
-          id: "a",
-          time: "09:00",
-          text: "UM100001 triaged.",
-          category: "referral",
-          href: patientChronologyHref("PT-1"),
-        },
-        { id: "b", time: "09:01", text: "Capacity refresh requested.", category: "other" },
-      ],
-    };
-    if (typeof window.requestAnimationFrame !== "function") {
-      window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
-        setTimeout(() => cb(Date.now()), 0) as unknown as number) as typeof window.requestAnimationFrame;
+    pinnedChanges = [
+      {
+        id: "a",
+        time: "09:00",
+        text: "A referral was triaged.",
+        category: "referral",
+        href: patientChronologyHref("PT-1"),
+      },
+      { id: "b", time: "09:01", text: "Capacity refresh requested.", category: "other" },
+    ];
+    try {
+      if (typeof window.requestAnimationFrame !== "function") {
+        window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
+          setTimeout(() => cb(Date.now()), 0) as unknown as number) as typeof window.requestAnimationFrame;
+      }
+      const user = userEvent.setup();
+      render(<WardBar />);
+      await user.click(screen.getByTestId("ward-bar-activity-trigger"));
+      const sheet = await screen.findByTestId("ward-bar-activity-sheet");
+      await user.click(within(sheet).getByRole("tab", { name: /Recent activity/u }));
+      expect(within(sheet).getByRole("link", { name: "A referral was triaged." })).toHaveAttribute(
+        "href",
+        patientChronologyHref("PT-1"),
+      );
+      expect(within(sheet).queryByRole("link", { name: "Capacity refresh requested." })).toBeNull();
+      expect(within(sheet).getByText("Capacity refresh requested.")).toBeInTheDocument();
+    } finally {
+      pinnedChanges = undefined;
     }
-    const user = userEvent.setup();
-    render(<WardBar activity={activity} />);
-    await user.click(screen.getByTestId("ward-bar-activity-trigger"));
-    expect(screen.getByRole("link", { name: "UM100001 triaged." })).toHaveAttribute(
-      "href",
-      patientChronologyHref("PT-1"),
-    );
-    expect(screen.queryByRole("link", { name: "Capacity refresh requested." })).toBeNull();
-    expect(screen.getByText("Capacity refresh requested.")).toBeInTheDocument();
   });
 });
 
@@ -114,8 +131,8 @@ describe("the live tally's emergency department rows link only where the desk ma
     const user = userEvent.setup();
     render(<WardBar />);
     await user.click(screen.getByTestId("ward-bar-activity-trigger"));
-    const sheet = screen.getByTestId("ward-bar-activity-sheet");
-    await user.click(within(sheet).getAllByRole("button", { name: /Live tally/u })[0]);
+    const sheet = await screen.findByTestId("ward-bar-activity-sheet");
+    await user.click(within(sheet).getByText("Live tally"));
     return within(sheet).getByRole("table", { name: /Emergency departments/u });
   }
 

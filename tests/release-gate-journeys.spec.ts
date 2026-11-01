@@ -18,6 +18,7 @@ import {
   wardDesk,
   wardFigure,
 } from "./helpers/ward-release-gate";
+import { clearToasts } from "./helpers/clear-toasts";
 import { escapeForRegExp } from "./helpers/ward-place-names";
 import { openEdLists } from "./helpers/ward-ed-lists";
 import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
@@ -181,6 +182,11 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   const accept = page.getByTestId(`ward-accept-${movementId}`);
   await expect(accept).not.toHaveAttribute("aria-disabled", "true");
   await accept.click();
+  // Q93: Accept opens the named accept dialog; choose the standard pull time limit and confirm.
+  const acceptDialog = page.getByTestId("ward-accept-dialog");
+  await acceptDialog.getByRole("radio", { name: /standard/u }).click();
+  await acceptDialog.getByRole("button", { name: "Confirm acceptance" }).click();
+  await expect(acceptDialog).toHaveCount(0);
   await openWardList(page, "Admissions");
   const pull = page.getByTestId(`ward-pull-${movementId}`);
   await expect(pull).not.toHaveAttribute("aria-disabled", "true");
@@ -296,6 +302,7 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   for (const stage of ["accept", "enroute", "collect", "arrive"] as const) {
     const button = detail.getByTestId(`ward-officer-${stage}-${movementId}`);
     await expect(button).not.toHaveAttribute("aria-disabled", "true");
+    await clearToasts(page);
     await button.click();
     // Collected warns and asks for a recorded reason when Form 4A or fit to travel is missing.
     if (stage === "collect") {

@@ -4,7 +4,9 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: var(--wf-s-3);
+  /* Polish (1 Nov 2026): 16px between the track, the cards and the prototype strip, so each reads
+     apart. */
+  gap: var(--wf-s-4);
   width: 100%;
   min-width: 0;
   color: var(--wf-ink-1);
@@ -30,7 +32,8 @@
   gap: 6px;
   padding: 6px;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-track);
+  /* Same corner as the cards below it; the 10px options nest inside (16 less the 6px inset). */
+  border-radius: var(--wf-r-lg);
   background: var(--wf-track);
 }
 
@@ -86,13 +89,40 @@
   font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Polish (1 Nov 2026): the window's hours and reason read at the 12px floor in the text face, with
+   tabular figures, so more of the reason shows before it is cut. */
 .stepText span {
   color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font-variant-numeric: tabular-nums;
 }
 
-.stepCount {
+/* The window's state in words: "2 to decide" in its tone, or a quiet "Clear". */
+.stepStatus {
   flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stepStatus[data-tone="danger"] {
+  background: var(--wf-act-tint);
+  color: var(--wf-danger-ink);
+}
+
+.stepStatus[data-tone="warning"] {
+  background: color-mix(in srgb, var(--wf-warning) 14%, var(--wf-surface));
+  color: var(--wf-warning-ink);
+}
+
+.stepStatus[data-tone="success"] {
+  padding-inline: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
 }
 
 .countAct {
@@ -105,7 +135,7 @@
 .split {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
-  gap: var(--wf-s-3);
+  gap: var(--wf-s-4);
   align-items: start;
 }
 
@@ -115,7 +145,7 @@
   flex-direction: column;
   min-width: 0;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-xl);
+  border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
 }
@@ -162,6 +192,35 @@
   font-size: var(--wf-fs-12);
 }
 
+/* The window's hours beside its name, in the text face with even figures. */
+.headHours {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* One plain line under the head for the window's standing fact (staffing: beds free to admit). */
+.headNote {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.sideClear {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
 /* Confirmation of the last action taken here. Empty until an action is sent. */
 .notice {
   display: flex;
@@ -197,7 +256,14 @@
   align-items: center;
   gap: var(--wf-s-2);
   min-height: 32px;
-  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-1);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+}
+
+/* The last list in a card keeps a little room above the card's bottom edge. */
+.card > .rows:last-child,
+.card > .group:last-child > .rows,
+.card > .staffingBody:last-child {
+  padding-bottom: var(--wf-s-2);
 }
 
 .secTitle,
@@ -211,7 +277,7 @@
 }
 
 .sideSec {
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-2);
 }
 
 .secToggle {
@@ -230,7 +296,9 @@
   align-items: center;
   gap: 10px;
   min-height: var(--wf-h-lg);
-  padding: var(--wf-s-1) var(--wf-s-3) var(--wf-s-1) var(--wf-s-4);
+  /* Both sides at 16px, so a row's action lines up with the card head's count above it; 8px above
+     and below gives two-line rows room. */
+  padding: var(--wf-s-2) var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
 }
 
@@ -267,9 +335,11 @@
   line-height: var(--wf-lh-12);
 }
 
+/* "Clear" and "3 to decide" are words, so they take the text face; figures stay tabular. */
 .when {
   color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
 }
@@ -318,7 +388,7 @@
   gap: var(--wf-s-2);
   padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
-  border-radius: 0 0 var(--wf-r-xl) var(--wf-r-xl);
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
   background: var(--wf-glass);
   backdrop-filter: blur(24px);
 }
@@ -342,19 +412,25 @@
 .progress {
   display: flex;
   flex-direction: column;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-4);
+  gap: 10px;
+  padding: var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
 }
 
 .prow {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--wf-s-2);
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.prow b {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 .bar {
@@ -395,7 +471,7 @@
 
 .proj span {
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   white-space: nowrap;
 }
 
@@ -408,7 +484,7 @@
 @media (max-width: 720px) {
   .steps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    border-radius: var(--wf-r-xl);
+    border-radius: var(--wf-r-lg);
   }
 
   .windowStep {
@@ -461,7 +537,7 @@
   .phoneList {
     overflow: hidden;
     border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-xl);
+    border-radius: var(--wf-r-lg);
     background: var(--wf-surface);
     box-shadow: var(--wf-e1);
   }

@@ -91,7 +91,7 @@ afterEach(() => {
 describe("the community desk sees its own team only", () => {
   it("keeps the coordinator's way across: Change team, the Caseload foot item and the other teams", () => {
     renderTeam();
-    expect(screen.getByRole("button", { name: "Change team" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Switch team" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Other community teams" })).toBeInTheDocument();
     expect(screen.getByText("The bed coordinator's view of this team's referrals and bed flow.")).toBeInTheDocument();
   });
@@ -99,7 +99,7 @@ describe("the community desk sees its own team only", () => {
   it("hides Change team, the Caseload foot item and the other teams, and says it is the team's own view", () => {
     asCommunityDesk();
     renderTeam();
-    expect(screen.queryByRole("button", { name: "Change team" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Switch team" })).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Other community teams" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-community-switch-team")).not.toBeInTheDocument();
     expect(screen.getByText("Your team's referrals and bed flow.")).toBeInTheDocument();
