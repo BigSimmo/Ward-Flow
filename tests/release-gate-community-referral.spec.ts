@@ -84,14 +84,14 @@ async function openReferralStep(sheet: Locator, name: string) {
 }
 
 /**
- * How many referrals wait for this team's own answer, as its desk shows it: the hero's "Waiting
- * answer" tab on desktop, the "Waiting" team list on a phone.
+ * How many referrals wait for this team's own answer, as its desk shows it: the Referrals tab's
+ * count on desktop (locked design, 1 Nov 2026), the "Waiting" team list on a phone.
  */
 async function teamWaitingCount(page: Page): Promise<number> {
   const screen = page.getByTestId("ward-community-screen");
   const control = isPhoneLayout(page)
     ? screen.getByRole("radio", { name: /^Waiting/u })
-    : screen.getByRole("tab", { name: /^Waiting/u });
+    : screen.getByRole("tab", { name: /^Referrals/u });
   await expect(control).toBeVisible();
   const text = (await control.innerText()).trim();
   const match = /(\d+)/u.exec(text);
