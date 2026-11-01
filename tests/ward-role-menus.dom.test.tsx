@@ -390,11 +390,11 @@ describe("the phone bar follows the desk (C2)", () => {
     expect(screen.queryByTestId("ward-phone-menu-activity")).toBeNull();
   });
 
-  it("keeps the coordinator's Alerts and Activity as two separate controls", () => {
+  it("keeps the coordinator's Tasks and Activity as two separate controls", () => {
     renderDock();
-    expect(screen.getByTestId("ward-phone-menu-alerts")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-phone-menu-tasks")).toBeInTheDocument();
     expect(screen.getByTestId("ward-phone-menu-activity")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-phone-menu-alerts")).not.toBe(screen.getByTestId("ward-phone-menu-activity"));
+    expect(screen.getByTestId("ward-phone-menu-tasks")).not.toBe(screen.getByTestId("ward-phone-menu-activity"));
   });
 });
 

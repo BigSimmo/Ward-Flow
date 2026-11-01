@@ -253,26 +253,28 @@ describe("the phone dock with one Alerts queue", () => {
     );
   }
 
-  it("has an Alerts tab that links to the Alerts screen, not a Tasks drawer button", () => {
+  // Q177 (Josh, 1 Nov 2026): the coordinator's dock says Tasks again and opens the same queue.
+  it("has a Tasks tab that links to the coordinator's queue on the Alerts screen", () => {
     renderDock();
-    const tab = screen.getByTestId("ward-phone-menu-alerts");
+    const tab = screen.getByTestId("ward-phone-menu-tasks");
     expect(tab).toHaveAttribute("href", WARD_ALERTS_HREF);
-    expect(tab).toHaveAccessibleName("Alerts, 12 outstanding");
+    expect(tab).toHaveAccessibleName("Tasks, 12 outstanding");
     expect(tab).not.toHaveAttribute("aria-current");
-    expect(screen.queryByTestId("ward-phone-menu-tasks")).toBeNull();
+    expect(screen.queryByTestId("ward-phone-menu-alerts")).toBeNull();
   });
 
-  it("marks the Alerts tab as the current page on the Alerts screen", () => {
+  it("marks the Tasks tab as the current page on the Alerts screen", () => {
     route.pathname = WARD_ALERTS_HREF;
     renderDock();
-    expect(screen.getByTestId("ward-phone-menu-alerts")).toHaveAttribute("aria-current", "page");
+    expect(screen.getByTestId("ward-phone-menu-tasks")).toHaveAttribute("aria-current", "page");
   });
 
-  it("lists Alerts once in the menu, as the dock tab, not again in its group", () => {
+  // Q177: the dock slot reads Tasks, so Alerts keeps one row of its own in the phone Menu.
+  it("lists Alerts once in the menu now that the dock tab reads Tasks", () => {
     renderDock();
     act(() => openWardMenu(null));
     const railHrefs = screen.getAllByTestId("ward-rail-link").map((link) => link.getAttribute("href"));
-    expect(railHrefs).not.toContain(WARD_ALERTS_HREF);
+    expect(railHrefs.filter((href) => href === WARD_ALERTS_HREF)).toHaveLength(1);
   });
 
   // The new frame's phone dock per desk (Josh, 31 Oct 2026): the executive's Alerts list is the bed

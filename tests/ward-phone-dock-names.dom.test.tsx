@@ -59,15 +59,15 @@ afterEach(() => {
 
 describe("phone dock names (F-19)", () => {
   // The bed coordinator's dock carries Alerts in place of Tasks (D-61).
-  it("starts Alerts and Activity with their word, then the badge", () => {
+  it("starts Tasks and Activity with their word, then the badge", () => {
     renderDock(12, 3);
-    expect(screen.getByTestId("ward-phone-menu-alerts")).toHaveAccessibleName("Alerts, 12 outstanding");
+    expect(screen.getByTestId("ward-phone-menu-tasks")).toHaveAccessibleName("Tasks, 12 outstanding");
     expect(screen.getByTestId("ward-phone-menu-activity")).toHaveAccessibleName("Activity, 3 unread");
   });
 
   it("keeps the plain word when there is no badge", () => {
     renderDock(0, 0);
-    expect(screen.getByTestId("ward-phone-menu-alerts")).toHaveAccessibleName("Alerts, 0 outstanding");
+    expect(screen.getByTestId("ward-phone-menu-tasks")).toHaveAccessibleName("Tasks, 0 outstanding");
     expect(screen.getByTestId("ward-phone-menu-activity")).toHaveAccessibleName("Activity");
   });
 
