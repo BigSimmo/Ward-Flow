@@ -81,14 +81,16 @@ export function TeamCaseload({
         <table className={`${wt.table} ${t.table}`}>
           <thead>
             <tr>
-              <th>Client</th>
-              <th>Case manager</th>
-              <th>Psychiatrist</th>
-              <th>Legal</th>
-              <th>Where now</th>
-              <th className={t.n}>Last seen</th>
-              <th>Next</th>
-              <th>
+              <th scope="col">Client</th>
+              <th scope="col">Case manager</th>
+              <th scope="col">Psychiatrist</th>
+              <th scope="col">Legal</th>
+              <th scope="col">Where now</th>
+              <th scope="col" className={t.n}>
+                Last seen
+              </th>
+              <th scope="col">Next</th>
+              <th scope="col">
                 <SrOnly>Action</SrOnly>
               </th>
             </tr>
@@ -171,14 +173,16 @@ export function TeamHospital() {
           <table className={`${wt.table} ${t.table}`}>
             <thead>
               <tr>
-                <th>Client</th>
-                <th>Ward</th>
-                <th>Case manager</th>
-                <th>Legal</th>
-                <th className={t.n}>In bed</th>
-                <th>Expected out</th>
-                <th>Team contact</th>
-                <th>Follow-up</th>
+                <th scope="col">Client</th>
+                <th scope="col">Ward</th>
+                <th scope="col">Case manager</th>
+                <th scope="col">Legal</th>
+                <th scope="col" className={t.n}>
+                  In bed
+                </th>
+                <th scope="col">Expected out</th>
+                <th scope="col">Team contact</th>
+                <th scope="col">Follow-up</th>
               </tr>
             </thead>
             <tbody>
@@ -252,12 +256,12 @@ export function TeamHospital() {
           <table className={`${wt.table} ${t.table}`}>
             <thead>
               <tr>
-                <th>Client</th>
-                <th>Left from</th>
-                <th>Left</th>
-                <th>Case manager</th>
-                <th>7-day contact</th>
-                <th>
+                <th scope="col">Client</th>
+                <th scope="col">Left from</th>
+                <th scope="col">Left</th>
+                <th scope="col">Case manager</th>
+                <th scope="col">7-day contact</th>
+                <th scope="col">
                   <SrOnly>Action</SrOnly>
                 </th>
               </tr>

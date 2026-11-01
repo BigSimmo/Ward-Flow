@@ -113,7 +113,7 @@ select.ctl {
   place-items: center;
   background: var(--wf-surface-2);
   border: 1px solid var(--wf-line);
-  font: 600 11px/1 var(--wf-font);
+  font: 600 12px/1 var(--wf-font);
   letter-spacing: 0.02em;
   color: var(--wf-ink-2);
 }

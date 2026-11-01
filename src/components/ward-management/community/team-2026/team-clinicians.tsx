@@ -147,12 +147,12 @@ export function TeamClinicians() {
           <table className={`${wt.table} ${t.table}`}>
             <thead>
               <tr>
-                <th>Clinician</th>
-                <th>Role</th>
-                <th>Today</th>
-                <th>Caseload</th>
-                <th>Ext</th>
-                <th>
+                <th scope="col">Clinician</th>
+                <th scope="col">Role</th>
+                <th scope="col">Today</th>
+                <th scope="col">Caseload</th>
+                <th scope="col">Ext</th>
+                <th scope="col">
                   <SrOnly>Action</SrOnly>
                 </th>
               </tr>

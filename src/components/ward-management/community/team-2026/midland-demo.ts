@@ -5,6 +5,13 @@
  * Real data needs separate clinical, privacy and legal review first.
  */
 
+import { STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
+
+/** A ward's name from the data layer (ward-sites.ts owns every ward name). */
+function wardName(id: string): string {
+  return STANDARD_WARD_SITES.flatMap((site) => site.units).find((unit) => unit.id === id)?.name ?? id;
+}
+
 export const STAFF = [
   {
     id: "hartwell",
@@ -185,7 +192,7 @@ export const CLIENTS = [
     dr: "ramsay",
     legal: "Involuntary",
     w: "h",
-    where: "RGH Adult Secure",
+    where: wardName("rgh-adult-secure"),
     seen: 2,
     next: "Ward visit",
     nextD: "Wed 4 Nov",
@@ -211,7 +218,7 @@ export const CLIENTS = [
     dr: "hartwell",
     legal: "Voluntary",
     w: "h",
-    where: "Mental Health Unit",
+    where: wardName("scgh-adult-open"),
     seen: 4,
     next: "Discharge meeting",
     nextD: "Thu 5 Nov",
@@ -225,7 +232,7 @@ export const CLIENTS = [
     dr: "ramsay",
     legal: "Involuntary",
     w: "h",
-    where: "Graylands Adult Secure",
+    where: wardName("gry-adult-secure"),
     seen: 5,
     next: "Ward visit",
     nextD: "Fri 6 Nov",
@@ -265,7 +272,7 @@ export const CLIENTS = [
     dr: "hartwell",
     legal: "Voluntary",
     w: "h",
-    where: "SJGM Adult Open",
+    where: wardName("sjgm-adult-open"),
     seen: null,
     next: "Discharge date passed",
     nextD: "",
@@ -292,7 +299,7 @@ export const CLIENTS = [
     dr: "petrov",
     legal: "Voluntary",
     w: "h",
-    where: "BTY Older Adult",
+    where: wardName("bty-older-adult"),
     seen: 6,
     next: "Ward visit",
     nextD: "Mon 9 Nov",
@@ -386,7 +393,7 @@ export const CLIENTS = [
     dr: "hartwell",
     legal: "Involuntary",
     w: "h",
-    where: "FSH Adult Secure",
+    where: wardName("fsh-adult-secure"),
     seen: 11,
     next: "Ward visit",
     nextD: "Thu 5 Nov",
@@ -498,7 +505,7 @@ export const DISCHARGED = [
   {
     n: "Thornbury, Cleo",
     u: "UM200288",
-    from: "RGH Adult Secure",
+    from: wardName("rgh-adult-secure"),
     left: "Mon 26 Oct",
     cm: "byrne",
     state: "due",
@@ -518,7 +525,7 @@ export const DISCHARGED = [
   {
     n: "Yarrowdale, Ben",
     u: "UM200270",
-    from: "SJGM Adult Open",
+    from: wardName("sjgm-adult-open"),
     left: "Thu 29 Oct",
     cm: "nair",
     state: "booked",
@@ -580,7 +587,7 @@ export const REFERRALS = [
     ],
     contacts: [
       ["Referrer", "Castell, Dr Mira", "GP · Midvale Family Practice", "08 5550 0144"],
-      ["Carer", "Sallowfield, Ellen", "Daughter · visits twice a week", "0400 000 512"],
+      ["Carer", "Sallowfield, Ellen", "Daughter · visits twice a week", "0491 570 158"],
     ],
     checks: [
       ["pass", "Lives in the Midland catchment", "Mundaring is in the S2015 catchment"],
@@ -644,7 +651,7 @@ export const REFERRALS = [
     ],
     contacts: [
       ["Referrer", "Ito, Dr Sam", "ED registrar · RPH", "08 5550 0230"],
-      ["Carer", "Quillon, Arash", "Husband · Dari speaker", "0400 000 318"],
+      ["Carer", "Quillon, Arash", "Husband · Dari speaker", "0491 570 157"],
     ],
     checks: [
       ["pass", "Lives in the Midland catchment", "Midvale is in the S2015 catchment"],
@@ -700,7 +707,7 @@ export const REFERRALS = [
     ],
     contacts: [
       ["Referrer", "Lindqvist, Dr Pia", "Consultant · Moodjar", "08 5550 0371"],
-      ["Carer", "Rendlesham, Hugo", "Brother · lives with him", "0400 000 774"],
+      ["Carer", "Rendlesham, Hugo", "Brother · lives with him", "0491 570 159"],
     ],
     checks: [
       ["pass", "Lives in the Midland catchment", "Swan View is in the S2015 catchment"],
@@ -787,7 +794,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
       ["Hartwell, Dr Imogen", "First slot Thu 12 Nov", "Saw her in 2020", 0],
     ],
     later: "Book later",
-    people: [["Client", "Sallowfield, June", "Mobile · prefers mornings", "0400 000 201"]],
+    people: [["Client", "Sallowfield, June", "Mobile · prefers mornings", "0491 570 006"]],
   },
   r2: {
     riskBy: "RPH ED · Sun 1 Nov",
@@ -812,7 +819,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
     ],
     later: "Allocate later",
     people: [
-      ["Client", "Quillon, Hattie", "Mobile · Dari speaker", "0400 000 317"],
+      ["Client", "Quillon, Hattie", "Mobile · Dari speaker", "0491 570 156"],
       ["GP", "Farouk, Dr Amina", "Midvale Medical Centre", "08 5550 0412"],
     ],
   },

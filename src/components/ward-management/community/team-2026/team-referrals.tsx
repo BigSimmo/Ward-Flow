@@ -680,11 +680,11 @@ export function TeamReferrals() {
               <table className={`${wt.table} ${t.table} ${t.refTable}`}>
                 <thead>
                   <tr>
-                    <th>Client</th>
-                    <th>Since referral</th>
-                    <th>From</th>
-                    <th>Asking for</th>
-                    <th>
+                    <th scope="col">Client</th>
+                    <th scope="col">Since referral</th>
+                    <th scope="col">From</th>
+                    <th scope="col">Asking for</th>
+                    <th scope="col">
                       <SrOnly>Action</SrOnly>
                     </th>
                   </tr>
@@ -750,11 +750,11 @@ export function TeamReferrals() {
             <table className={`${wt.table} ${t.table}`}>
               <thead>
                 <tr>
-                  <th>Client</th>
-                  <th>Sent to</th>
-                  <th>Answer</th>
-                  <th>Sent</th>
-                  <th>
+                  <th scope="col">Client</th>
+                  <th scope="col">Sent to</th>
+                  <th scope="col">Answer</th>
+                  <th scope="col">Sent</th>
+                  <th scope="col">
                     <SrOnly>Action</SrOnly>
                   </th>
                 </tr>
@@ -786,11 +786,11 @@ export function TeamReferrals() {
               <table className={`${wt.table} ${t.table}`}>
                 <thead>
                   <tr>
-                    <th>Client</th>
-                    <th>Asked for</th>
-                    <th>Answer</th>
-                    <th>Allocated to</th>
-                    <th>By</th>
+                    <th scope="col">Client</th>
+                    <th scope="col">Asked for</th>
+                    <th scope="col">Answer</th>
+                    <th scope="col">Allocated to</th>
+                    <th scope="col">By</th>
                   </tr>
                 </thead>
                 <tbody>
