@@ -165,3 +165,26 @@ describe("Reset demo in Tools, Demo (DA-10)", () => {
     expect(status()).not.toHaveTextContent("Nothing changed");
   });
 });
+
+// pop-demo (Josh, 31 Oct 2026): layout and wording only. Scenario and See it as are grids, Practise
+// a placement is a closed row, and Save to file, Load from file and Reset demo share one footer.
+describe("Demo menu layout (pop-demo)", () => {
+  it("heads the grids, folds practice away and keeps the file and reset buttons in the footer", () => {
+    renderPanel();
+    expect(within(panel()).getByRole("heading", { name: "Scenario" })).toBeTruthy();
+    expect(within(panel()).getByRole("region", { name: "See it as" })).toBeTruthy();
+    const current = within(screen.getByRole("group", { name: "Demo scenario" }))
+      .getAllByRole("button")
+      .find((button) => button.getAttribute("aria-current") === "true")!;
+    expect(current.textContent).toContain("Current");
+    const practice = within(panel()).getByText("Practise a placement", { selector: "summary" });
+    expect(practice.closest("details")?.open).toBe(false);
+    const footer = screen.getByTestId("ward-tools-demo-reset").closest("footer")!;
+    expect(within(footer).getByRole("button", { name: "Save to file" })).toBeTruthy();
+    expect(within(footer).getByRole("button", { name: "Load from file" })).toBeTruthy();
+    expect(footer.textContent).toContain(
+      "Scenario files hold synthetic demo data only. Never type real patient details.",
+    );
+    expect(panel().textContent).toContain("Demo tools. They change the synthetic data only, never a clinical record.");
+  });
+});
