@@ -557,13 +557,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
     "ward-shared.module.css",
     "ward-shell.module.css",
     "ward-tokens.module.css",
-    // ⚠️ ADDED 2026-09-05, second-edition visual pass on QueueView/ExceptionsView/GovernanceView.
-    // Same shape as `ward-panel.module.css` above: its first declared rule is `.panel`, a
-    // component class that legitimately paints `--ward-canvas` on top of the ground `WardGround`
-    // already paints at the layout — not a page root. The file has no `.screen`/`.modeShell`
-    // equivalent at all; every class in it is scoped to a panel, a table cell, a chip or a list
-    // inside one of the three views ward-management-modes.tsx still owns.
-    "ward-modes-second-edition.module.css",
     /*
      * ⚠️ **ADDED 2026-09-07 — THE GLOBAL CHROME, AND EACH ONE WAS CHECKED RATHER THAN ASSUMED.**
      *
@@ -586,14 +579,6 @@ describe("the ground is not merely painted — it has to be visible", () => {
      */
     "ward-standing-strip.module.css",
     "ward-tasks-drawer.module.css",
-    // ⚠️ ADDED — Task 2, fourth-edition statistics language port (wise-singing-thunder). Same
-    // shape again: this file's first declared rule is `.band` (the figure-band primitive), which
-    // legitimately paints `--ward-canvas` the same way `.panel` does two rows above it. The file
-    // is a PRIMITIVE LIBRARY, not a screen — it has no `.screen` root and is never rendered on its
-    // own; every class in it (`.band`, `.panel`, `.dtable`, `.reveal`, `.kv`, `.figs`, `.delta`,
-    // `.chart`, `.legend`) is a component a later task mounts inside an existing screen's own
-    // root, which is what paints the ground underneath it.
-    "statistics-v4.module.css",
     // ADDED 2026-09-25 (test fixer): its first rule is `.navBar`, a bordered, rounded section bar
     // mounted inside the statistics screens' own root — a component, not a page root.
     "statistics-nav.module.css",

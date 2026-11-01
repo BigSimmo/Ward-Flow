@@ -224,13 +224,13 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
               <p className={styles.absent} data-testid="ward-delays-nobody-waiting">
                 {desk.wardDesk
                   ? // Role view (nurse in charge): the list holds only people coming to this ward.
-                    "Nobody is waiting in an emergency department for your ward right now. That is a measured count over every open movement to your ward."
+                    "Nobody is waiting in an emergency department for your ward, counted over every open movement."
                   : desk.edDesk
                     ? // Role view (as ED clinician): an ED desk's copy holds only its own department.
-                      "Nobody is waiting in this emergency department right now. That is a measured count over its open movements."
+                      "Nobody is waiting in this emergency department, counted over its open movements."
                     : service === null
-                      ? "Nobody is waiting in any emergency department right now. That is a measured count over every open movement."
-                      : `Nobody is waiting in any emergency department in ${service} right now. That is a measured count over every open movement in ${service}.`}
+                      ? "Nobody is waiting in any emergency department, counted over every open movement."
+                      : `Nobody is waiting in any emergency department in ${service}, counted over every open movement.`}
               </p>
             ) : undefined
           }

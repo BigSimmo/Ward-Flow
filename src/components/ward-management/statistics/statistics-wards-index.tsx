@@ -688,7 +688,7 @@ function WardsIndexView({
             >
               <CardBody>
                 {blockedRows.length === 0 ? (
-                  <p className={index.cardNote}>No ward has a current admission with a block reason recorded.</p>
+                  <p className={index.cardNote}>No current admission has a block reason.</p>
                 ) : (
                   <BarList
                     label="Current admissions with a block reason, by ward"

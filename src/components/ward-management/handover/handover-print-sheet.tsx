@@ -658,10 +658,6 @@ export function HandoverPrintSheet({
           <Button variant="sec" size="sm" icon={ChevronLeft} onClick={onBack} className={styles.back}>
             Back to handover
           </Button>
-          <p className={styles.sub}>
-            The sheet follows the board. Opening the print dialog records the preparation time; printing is not
-            confirmed.
-          </p>
         </div>
         <div className={styles.controls}>{controls}</div>
         <section className={styles.opt} aria-labelledby={`${baseId}-wf-print-include`}>
@@ -691,7 +687,7 @@ export function HandoverPrintSheet({
             value={options.orientation}
             onChange={(id) => set("orientation", id)}
           />
-          <span className={styles.sub}>{pageWord(totalPages)}. Save as PDF from the print dialog.</span>
+          <span className={styles.sub}>{pageWord(totalPages)}</span>
         </section>
         <section className={styles.opt} aria-labelledby={`${baseId}-wf-print-highlight`}>
           <h3 id={`${baseId}-wf-print-highlight`} className={styles.lab}>
@@ -712,7 +708,7 @@ export function HandoverPrintSheet({
         <p className={styles.scopeline}>
           <StatusGlyph tone="info" size={9} />
           <span>
-            Live sheet, <b>{pageWord(totalPages)}</b> at {formatInstant(now)}. Click a patient to open their flow.
+            Live sheet, <b>{pageWord(totalPages)}</b> at {formatInstant(now)}.
           </span>
         </p>
         <div ref={stackRef} className={styles.stack} data-wf-print-stack="">

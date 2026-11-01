@@ -45,7 +45,13 @@ describe("already-recorded command completions", () => {
     render(<BatchedDecline />);
     fireEvent.click(screen.getByText("Choose batched reason"));
     fireEvent.click(screen.getByText("Decline alongside another refusal"));
-    expect(offer).toHaveBeenCalledWith(expect.objectContaining({ success: "Referral declined" }), { completion });
+    // The toast now names the person (audit 1 Nov 2026); this test is about the completion it carries.
+    expect(offer).toHaveBeenCalledWith(
+      expect.objectContaining({ success: expect.stringMatching(/^Referral declined/u) }),
+      {
+        completion,
+      },
+    );
   });
   it.each(["accepted", "refused", "failed"] as const)(
     "waits for this ED decline's %s outcome before offering feedback",

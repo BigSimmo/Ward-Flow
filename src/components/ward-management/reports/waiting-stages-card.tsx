@@ -123,9 +123,7 @@ export function WaitingStagesCard({
           </table>
         </div>
         <p className={styles.caption}>
-          Counted only from recorded times. A journey missing a time is counted as not recorded and given no time. A
-          typical time needs {MINIMUM_EFFECTIVENESS_SAMPLE} journeys with both times. Journeys still in a stage are not
-          in its typical time. Choose a count to see its journeys.
+          Recorded times only. A typical time needs {MINIMUM_EFFECTIVENESS_SAMPLE} journeys with both times.
         </p>
         <div id={listId}>
           {openRow && open ? (

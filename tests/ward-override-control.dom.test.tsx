@@ -92,6 +92,13 @@ function ReferWF009ToBrmAdultSecureWithReason() {
 // made-up forensic Broome for this file only.
 markBroomeForensicForThisFile();
 
+/** Q93: Accept in principle opens the named dialog; choose the standard pull time limit and confirm. */
+function confirmNamedAccept() {
+  const dialog = screen.getByTestId("ward-accept-dialog");
+  fireEvent.click(within(dialog).getAllByRole("radio")[0]!);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Confirm acceptance" }));
+}
+
 describe("ward screen's override reason control", () => {
   it("shows nothing before any action — no refusal, no control", () => {
     render(
@@ -115,6 +122,7 @@ describe("ward screen's override reason control", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "refer WF-319 to Great Southern Acute Psychiatric Unit" }));
     fireEvent.click(screen.getByTestId("ward-accept-WF-319"));
+    confirmNamedAccept();
 
     // The accept succeeds (specialling is not a SUITABILITY_GATE, so it never blocks
     // ACCEPT_IN_PRINCIPLE) — same as ward-screen-refusal-surface.dom.test.tsx establishes.
@@ -152,6 +160,7 @@ describe("ward screen's override reason control", () => {
     // judgement gate is re-evaluated and refused — the referral's earlier reason does not carry
     // forward to a different event.
     fireEvent.click(screen.getByTestId("ward-accept-WF-009"));
+    confirmNamedAccept();
 
     const incomingRow = screen.getByTestId("ward-incoming-WF-009");
     const alert = within(incomingRow).getByRole("alert");
@@ -178,6 +187,7 @@ describe("ward screen's override reason control", () => {
       screen.getByRole("button", { name: "refer WF-009 to Mabu Liyan / Broome Mental Health Unit, with a reason" }),
     );
     fireEvent.click(screen.getByTestId("ward-accept-WF-009"));
+    confirmNamedAccept();
 
     const form = screen.getByTestId("ward-override-form-WF-009");
     const submit = within(form).getByTestId("ward-override-submit-WF-009");
@@ -199,6 +209,7 @@ describe("ward screen's override reason control", () => {
       screen.getByRole("button", { name: "refer WF-009 to Mabu Liyan / Broome Mental Health Unit, with a reason" }),
     );
     fireEvent.click(screen.getByTestId("ward-accept-WF-009"));
+    confirmNamedAccept();
 
     const form = screen.getByTestId("ward-override-form-WF-009");
     fireEvent.click(within(form).getByRole("radio", { name: "Clinical urgency outweighs the mismatch" }));

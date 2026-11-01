@@ -235,8 +235,8 @@ export function SeclusionScreen() {
         }
       />
       <p className={styles.note} data-testid="seclusion-scope-note">
-        Operational view only. Times are shown as they were typed, and nothing here works out an order length, a review
-        or any legal limit. The legal register stays in the health service&apos;s own system.
+        Operational view only. Times as typed; no order length, review or legal limit is worked out. The legal register
+        stays in the health service&apos;s own system.
       </p>
 
       <div className={styles.layout} data-one-ward={own ? own.view : undefined}>

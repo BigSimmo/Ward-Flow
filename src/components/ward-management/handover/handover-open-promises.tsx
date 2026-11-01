@@ -48,7 +48,6 @@ export function HandoverOpenPromises({
       <h2 id={`${baseId}-heading`} className={styles.heading}>
         Open promises and callbacks to carry over ({items.length})
       </h2>
-      <p className={styles.note}>Overdue or still to come, each with its recorded time. Recorded order.</p>
       <ul className={styles.list}>
         {items.map((item) => {
           const who = patientOf(item.referral);

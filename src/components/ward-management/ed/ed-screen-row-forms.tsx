@@ -184,9 +184,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
 
       {communityReferralOpenFor === movement.id && !cmhtBlocked ? (
         <div className={styles.declineForm} data-testid={`ward-ed-cmht-panel-${movement.id}`}>
-          <p className={styles.cardMeta}>
-            Direct referral to Community Mental Health Team. No bed is requested by this referral.
-          </p>
+          <p className={styles.cardMeta}>Community Mental Health Team referral. No bed is requested.</p>
           <p className={styles.cardMeta} data-testid={`ward-ed-cmht-legal-status-${movement.id}`}>
             Legal status: {/* Never defaults to Voluntary (owner rule, 19 Oct 2026): nothing recorded says so. */}
             {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
@@ -197,7 +195,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             </p>
           ) : (
             <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>
-              No home suburb is recorded, so no team is listed first.
+              No home suburb recorded.
             </p>
           )}
           <label className={styles.referralField} htmlFor={`ward-ed-cmht-select-${movement.id}`}>

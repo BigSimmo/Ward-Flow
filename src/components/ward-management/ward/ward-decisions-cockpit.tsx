@@ -1,20 +1,29 @@
 "use client";
 
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { CalendarClock } from "lucide-react";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { CountBubble, Icon, SrOnly, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
+import { CountBubble, Dialog, Icon, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
+import bulkStyles from "./ward-decisions-bulk-confirm.module.css";
 import styles from "./ward-decisions-cockpit.module.css";
 import { openDecisionCount } from "./ward-decision-count";
 
 export { openDecisionCount };
 
+/**
+ * Called once the screen's command has its answer: true recorded, false not recorded. Called with
+ * nothing when there is no command answer (the local engine), so the cockpit reads the rows instead.
+ */
+export type DecisionReport = (recorded?: boolean) => void;
+
 export interface DepartureDecision {
   id: string;
   title: string;
   badge: "Ready" | "Blocked" | "Done";
-  onConfirm?: () => void;
-  onClear?: () => void;
+  /** UMRN and date of birth, shown under the name before a bulk sign-off (Q93). */
+  identity?: string;
+  onConfirm?: (report?: DecisionReport) => void;
+  onClear?: (report?: DecisionReport) => void;
 }
 
 export interface LeaveDecision {
@@ -25,7 +34,11 @@ export interface LeaveDecision {
 export interface IntakeDecision {
   id: string;
   title: string;
-  onAccept?: () => void;
+  /**
+   * Opens the screen's named accept dialog (Q93): the cockpit never accepts in one tap. The screen
+   * calls `report` once the person has confirmed and the command has its answer.
+   */
+  onAccept?: (report: DecisionReport) => void;
 }
 
 /**
@@ -133,6 +146,11 @@ function plural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
+/** Names are "SURNAME, Given", so a list of them is joined with semicolons. */
+function nameList(names: string[]): string {
+  return names.join("; ");
+}
+
 export function WardDecisionsCockpit({
   unit,
   demonstration = false,
@@ -210,9 +228,14 @@ function Queue({
   const baseId = useId();
   const isPhone = useIsPhone();
   const [sent, setSent] = useState<SentAction | null>(null);
+  // The command's own answer for each row of the latest action, when the screen has one.
+  const [answers, setAnswers] = useState<{ seq: number; id: string; recorded: boolean }[]>([]);
+  const seqRef = useRef(0);
   const [history, setHistory] = useState<{ id: string; kind: ActionKind; title: string }[]>([]);
   const [dismissedSeq, setDismissedSeq] = useState(0);
   const [showDone, setShowDone] = useState(false);
+  // Q93: Sign off N asks first, listing each person. Holds the ids shown when it opened.
+  const [bulkIds, setBulkIds] = useState<string[] | null>(null);
 
   // Whether an action was recorded is read back from the live rows, never assumed: a sign-off is
   // recorded once the row no longer offers Sign off, a hold once the row is no longer held up, and
@@ -223,31 +246,50 @@ function Queue({
     return !intakes.some((row) => row.id === id);
   }
 
-  function send(kind: ActionKind, rows: { id: string; title: string; run: () => void }[]) {
-    if (rows.length === 0) return;
-    for (const row of rows) row.run();
+  /** Starts a new action, replacing any message still showing, and returns its number. */
+  function begin(kind: ActionKind, rows: { id: string; title: string }[]): number {
+    seqRef.current += 1;
+    const seq = seqRef.current;
     const titles = new Map(rows.map((row) => [row.id, splitTitle(row.title).name]));
-    setSent((current) => ({ seq: (current?.seq ?? 0) + 1, kind, ids: rows.map((row) => row.id), titles }));
+    setSent({ seq, kind, ids: rows.map((row) => row.id), titles });
+    setAnswers([]);
     setHistory((current) => [
       ...current.filter((entry) => !rows.some((row) => row.id === entry.id && entry.kind === kind)),
       ...rows.map((row) => ({ id: row.id, kind, title: splitTitle(row.title).name })),
     ]);
+    return seq;
   }
 
-  useEffect(() => {
-    if (!sent) return;
-    const timer = window.setTimeout(() => {
-      setDismissedSeq(sent.seq);
-    }, 6000);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [sent]);
+  function answer(seq: number, id: string, recordedHere?: boolean) {
+    if (recordedHere === undefined) return;
+    setAnswers((current) => [
+      ...current.filter((entry) => !(entry.seq === seq && entry.id === id)),
+      { seq, id, recorded: recordedHere },
+    ]);
+  }
+
+  function send(kind: ActionKind, rows: { id: string; title: string; run: (report: DecisionReport) => void }[]) {
+    if (rows.length === 0) return;
+    const seq = begin(kind, rows);
+    for (const row of rows) {
+      row.run((recordedHere) => {
+        answer(seq, row.id, recordedHere);
+      });
+    }
+  }
+
+  // The command's own answer wins; with none (the local engine), the live rows say.
+  function settled(action: SentAction, id: string): boolean {
+    const own = answers.find((entry) => entry.seq === action.seq && entry.id === id);
+    return own ? own.recorded : recorded(action.kind, id);
+  }
 
   const readyRows = departures.filter((row) => row.badge === "Ready");
   const heldRows = departures.filter((row) => row.badge === "Blocked");
   const doneRows = departures.filter((row) => row.badge === "Done");
-  const signable = readyRows.filter((row): row is DepartureDecision & { onConfirm: () => void } => !!row.onConfirm);
+  const signable = readyRows.filter(
+    (row): row is DepartureDecision & { onConfirm: NonNullable<DepartureDecision["onConfirm"]> } => !!row.onConfirm,
+  );
 
   const doneHere = (kind: ActionKind) =>
     history.filter(
@@ -319,8 +361,13 @@ function Queue({
         <button
           type="button"
           className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
+          data-placement-action
+          aria-haspopup="dialog"
           onClick={() => {
-            send("accept", [{ id: row.id, title: row.title, run: onAccept }]);
+            // Q93: the screen's named accept dialog decides; the result is reported back here.
+            onAccept((recordedHere) => {
+              answer(begin("accept", [row]), row.id, recordedHere);
+            });
           }}
         >
           Accept
@@ -463,45 +510,138 @@ function Queue({
   const decidable = here.filter((item) => !item.info).length;
   const decided = decidable - open;
   const showBulk = chosen === "departures" && signable.length > 0;
+  // Polish (1 Nov 2026): the side card sums the whole shift and lists only the other windows that
+  // still need a decision; the track above already shows which windows are clear.
+  const shiftDecidable = WINDOWS.reduce((sum, entry) => sum + itemsOf(entry.id).filter((item) => !item.info).length, 0);
+  const shiftDecided = shiftDecidable - WINDOWS.reduce((sum, entry) => sum + openCount(entry.id), 0);
+  const elsewhere = WINDOWS.filter((entry) => entry.id !== chosen && openCount(entry.id) > 0);
 
   function choose(id: WindowId) {
     setChosen(id);
     setShowDone(false);
   }
 
-  let notice: { tone: WfTone; text: string } | null = null;
   // The notice belongs to the window the action was taken in, so another window never shows it.
   const sentWindow: WindowId | null = sent ? (sent.kind === "accept" ? "intake" : "departures") : null;
-  // Phone shows every window in one list, so the notice shows whichever window the action came from.
-  if (sent && sent.seq !== dismissedSeq && (isPhone || chosen === sentWindow)) {
-    const done = sent.ids.filter((id) => recorded(sent.kind, id));
+  let outcome: { tone: WfTone; text: string } | null = null;
+  if (sent && sent.seq !== dismissedSeq) {
     const n = sent.ids.length;
-    const first = sent.titles.get(sent.ids[0]) ?? "";
+    const nameOf = (id: string) => sent.titles.get(id) ?? "";
+    const done = sent.ids.filter((id) => settled(sent, id));
+    const notDone = sent.ids.filter((id) => !done.includes(id));
+    const first = nameOf(sent.ids[0]);
     if (sent.kind === "sign") {
-      notice =
+      // Q93: the message names who was signed off, and who was not.
+      outcome =
         done.length === n
           ? {
               tone: "success",
-              text: n === 1 ? `${first} signed off` : `${plural(n, "discharge", "discharges")} signed off`,
+              text:
+                n === 1
+                  ? `${first} signed off`
+                  : `${plural(n, "discharge", "discharges")} signed off: ${nameList(done.map(nameOf))}`,
             }
           : done.length === 0
-            ? { tone: "closed", text: "Sign off not recorded. Nothing was changed." }
+            ? {
+                tone: "closed",
+                text: `Sign off not recorded for ${nameList(notDone.map(nameOf))}. Nothing was changed.`,
+              }
             : {
                 tone: "closed",
-                text: `${done.length} of ${n} signed off. ${n - done.length} not recorded, nothing changed for them.`,
+                text: `${done.length} of ${n} signed off: ${nameList(done.map(nameOf))}. Not recorded, nothing changed for ${nameList(notDone.map(nameOf))}.`,
               };
     } else if (sent.kind === "clear") {
-      notice =
+      outcome =
         done.length === n
           ? { tone: "success", text: `Hold cleared for ${first}` }
-          : { tone: "closed", text: "Hold not cleared. Nothing was changed." };
+          : { tone: "closed", text: `Hold not cleared for ${first}. Nothing was changed.` };
     } else {
-      notice =
+      outcome =
         done.length === n
           ? { tone: "success", text: `${first} accepted` }
-          : { tone: "closed", text: "Accept not recorded. Nothing was changed." };
+          : { tone: "closed", text: `Accept not recorded for ${first}. Nothing was changed.` };
     }
   }
+  // CT-09: a refusal stays until it is closed or replaced; only a recorded step clears itself.
+  const clearingSeq = outcome?.tone === "success" ? sent?.seq : undefined;
+  useEffect(() => {
+    if (clearingSeq === undefined) return;
+    const timer = window.setTimeout(() => {
+      setDismissedSeq(clearingSeq);
+    }, 6000);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [clearingSeq]);
+  // Phone shows every window in one list, so the notice shows whichever window the action came from.
+  const notice = outcome && (isPhone || chosen === sentWindow) ? outcome : null;
+  const noticeBody = notice ? (
+    <>
+      <StatusGlyph tone={notice.tone} />
+      <span className={sent?.kind === "sign" ? bulkStyles.result : undefined} title={notice.text}>
+        {notice.text}
+      </span>
+      {notice.tone === "success" || !sent ? null : (
+        <button
+          type="button"
+          className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.pill)}
+          aria-label="Close message"
+          onClick={() => {
+            setDismissedSeq(sent.seq);
+          }}
+        >
+          Close
+        </button>
+      )}
+    </>
+  ) : null;
+
+  // Q93: the people the bulk confirm lists, still ready to sign off as it is answered.
+  const bulkRows = bulkIds ? signable.filter((row) => bulkIds.includes(row.id)) : [];
+  function openBulk() {
+    setBulkIds(signable.map((row) => row.id));
+  }
+  const bulkDialog = (
+    <Dialog
+      open={bulkIds !== null && bulkRows.length > 0}
+      onClose={() => {
+        setBulkIds(null);
+      }}
+      size="sm"
+      role="alertdialog"
+      title={`Sign off ${plural(bulkRows.length, "discharge", "discharges")}?`}
+      description="Check each person before signing off. Each discharge is recorded on its own."
+      secondary={[
+        {
+          label: "Cancel",
+          autoFocus: true,
+          onAction: () => {
+            setBulkIds(null);
+          },
+        },
+      ]}
+      primary={{
+        label: `Sign off ${bulkRows.length}`,
+        onAction: () => {
+          setBulkIds(null);
+          send(
+            "sign",
+            bulkRows.map((row) => ({ id: row.id, title: row.title, run: row.onConfirm })),
+          );
+        },
+      }}
+      data-testid="ward-decisions-bulk-sign-off-confirm"
+    >
+      <ul className={bulkStyles.list} aria-label="Discharges to sign off">
+        {bulkRows.map((row) => (
+          <li key={row.id} className={bulkStyles.person}>
+            <span className={bulkStyles.name}>{splitTitle(row.title).name}</span>
+            {row.identity ? <span className={bulkStyles.identity}>{row.identity}</span> : null}
+          </li>
+        ))}
+      </ul>
+    </Dialog>
+  );
 
   const groupLabel = new Map<Group, string>([
     // "Act now" is the Ward hero's and Home's own figure (L1, site review 12 Oct 2026), so a window
@@ -526,12 +666,7 @@ function Queue({
         <h2 className={styles.srOnly}>Decisions, {dueCount > 0 ? `${dueCount} due` : "Done"}</h2>
         <section className={styles.phoneList} aria-label="Decisions this shift">
           <p className={styles.notice} role="status" aria-live="polite">
-            {notice ? (
-              <>
-                <StatusGlyph tone={notice.tone} />
-                <span>{notice.text}</span>
-              </>
-            ) : null}
+            {noticeBody}
           </p>
           {sections.map((section) => {
             const list = [...itemsOf(section.id)].sort(
@@ -562,12 +697,8 @@ function Queue({
                     <button
                       type="button"
                       className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
-                      onClick={() => {
-                        send(
-                          "sign",
-                          signable.map((row) => ({ id: row.id, title: row.title, run: row.onConfirm })),
-                        );
-                      }}
+                      aria-haspopup="dialog"
+                      onClick={openBulk}
                     >
                       Sign off {signable.length}
                     </button>
@@ -585,6 +716,7 @@ function Queue({
             </ul>
           ) : null}
         </section>
+        {bulkDialog}
       </div>
     );
   }
@@ -614,13 +746,12 @@ function Queue({
               <StatusGlyph tone={tone} />
               <span className={styles.stepText}>
                 <b>{entry.title}</b>
-                <span>
-                  {entry.hours}
-                  {entry.id === "staffing" && staffingFact ? ` · ${staffingFact}` : ""}
-                </span>
+                <span>{entry.hours}</span>
               </span>
-              <CountBubble n={count} className={cx(styles.stepCount, tone === "danger" && styles.countAct)} />
-              <SrOnly id={describedBy}>{count > 0 ? `${count} to decide` : "Clear"}</SrOnly>
+              {/* The window's state in words, never a bare 0. */}
+              <span id={describedBy} className={styles.stepStatus} data-tone={count > 0 ? tone : "success"}>
+                {count > 0 ? `${count} to decide` : "Clear"}
+              </span>
             </button>
           );
         })}
@@ -631,17 +762,16 @@ function Queue({
           <header className={styles.head}>
             <Icon icon={CalendarClock} size={16} className={styles.headIcon} />
             <h3 className={styles.headTitle}>{spec.title}</h3>
-            <span className={cx(styles.mono, styles.hideNarrow)}>{spec.hours}</span>
+            <span className={cx(styles.headHours, styles.hideNarrow)}>{spec.hours}</span>
             <span className={styles.headMeta}>{open > 0 ? `${open} to decide` : "Nothing due"}</span>
           </header>
+          {/* The staffing fact shows once: here, unless a row below already carries it. */}
+          {chosen === "staffing" && staffingFact && !here.some((item) => item.sub?.includes(staffingFact)) ? (
+            <p className={styles.headNote}>{staffingFact}</p>
+          ) : null}
 
           <p className={styles.notice} role="status" aria-live="polite">
-            {notice ? (
-              <>
-                <StatusGlyph tone={notice.tone} />
-                <span>{notice.text}</span>
-              </>
-            ) : null}
+            {noticeBody}
           </p>
 
           {here.length === 0 && chosen !== "staffing" ? (
@@ -722,12 +852,8 @@ function Queue({
               <button
                 type="button"
                 className={cx(buttonClass({ variant: "pri", size: "lg" }), styles.pill)}
-                onClick={() => {
-                  send(
-                    "sign",
-                    signable.map((row) => ({ id: row.id, title: row.title, run: row.onConfirm })),
-                  );
-                }}
+                aria-haspopup="dialog"
+                onClick={openBulk}
               >
                 Sign off {signable.length}
               </button>
@@ -738,11 +864,14 @@ function Queue({
         <aside className={styles.card} aria-label="Window progress">
           <div className={styles.head}>
             <Icon icon={CalendarClock} size={16} className={styles.headIcon} />
-            <span className={styles.headTitle}>{spec.title}</span>
-            <span className={cx(styles.mono, styles.headEnd)}>{spec.hours}</span>
+            <span className={styles.headTitle}>Progress</span>
+            <span className={styles.headMeta}>
+              {shiftDecidable > 0 ? `${shiftDecided} of ${shiftDecidable} this shift` : "Nothing due this shift"}
+            </span>
           </div>
           <div className={styles.progress}>
             <div className={styles.prow}>
+              <b>{spec.title}</b>
               <span>{decidable > 0 ? `${decided} of ${decidable} decided` : "Nothing due"}</span>
             </div>
             {decidable > 0 ? (
@@ -770,20 +899,20 @@ function Queue({
               </div>
             ) : null}
           </div>
-          <h3 className={styles.sideSec}>Other windows</h3>
-          <ul className={styles.rows}>
-            {WINDOWS.filter((entry) => entry.id !== chosen).map((entry) => {
-              const count = openCount(entry.id);
-              return (
-                <li key={entry.id} className={styles.row}>
-                  <StatusGlyph tone={windowTone(entry.id)} />
-                  <div className={styles.rowText}>
-                    <h4 className={styles.rowTitle}>{entry.title}</h4>
-                    <span className={styles.rowSub}>{entry.hours}</span>
-                  </div>
-                  <span className={styles.when}>{count > 0 ? `${count} to decide` : "Clear"}</span>
-                  <span className={styles.rowActions}>
-                    {count > 0 ? (
+          {elsewhere.length > 0 ? (
+            <>
+              <h3 className={styles.sideSec}>Still to decide</h3>
+              <ul className={styles.rows}>
+                {elsewhere.map((entry) => (
+                  <li key={entry.id} className={styles.row}>
+                    <StatusGlyph tone={windowTone(entry.id)} />
+                    <div className={styles.rowText}>
+                      <h4 className={styles.rowTitle}>{entry.title}</h4>
+                      <span className={styles.rowSub}>
+                        {entry.hours} · {openCount(entry.id)} to decide
+                      </span>
+                    </div>
+                    <span className={styles.rowActions}>
                       <button
                         type="button"
                         className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
@@ -794,14 +923,20 @@ function Queue({
                       >
                         Open
                       </button>
-                    ) : null}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className={styles.sideClear}>
+              <StatusGlyph tone="success" />
+              <span>Every other window is clear</span>
+            </p>
+          )}
         </aside>
       </div>
+      {bulkDialog}
     </div>
   );
 }

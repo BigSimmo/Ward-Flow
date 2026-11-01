@@ -72,10 +72,7 @@ export const NOT_RECORDED_LABEL = "Travel time not recorded";
  */
 export const OUT_OF_AREA_BANDS: readonly TravelBand[] = ["three_hours_or_more", "air_transport_only"];
 
-export const SYNTHETIC_TRAVEL_TIMES_NOTICE =
-  "Travel times on this screen are invented, like every bed number in this prototype. Nobody has " +
-  "measured or checked how far any of these hospitals is from anywhere, and no distance shown here " +
-  "should be relied on.";
+export const SYNTHETIC_TRAVEL_TIMES_NOTICE = "Travel times are invented and unchecked. Do not rely on them.";
 
 export const INVENTED_OUT_OF_AREA_THRESHOLD_NOTICE =
   "Out of area here means three hours or more from home, or reachable only by air. This prototype " +

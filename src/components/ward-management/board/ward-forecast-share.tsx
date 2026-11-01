@@ -50,7 +50,7 @@ export function WardForecastShare({
       {notFlagged.length === 0 ? null : (
         <>
           <p className={styles.lead} id={`${headingId}-unflagged`}>
-            {`Planned date by this time tomorrow, discharge not flagged (${notFlagged.length}). The forecast only counts these as a best case until the discharge is flagged.`}
+            {`Planned by this time tomorrow, discharge not flagged (${notFlagged.length}). Best case only until flagged.`}
           </p>
           <ul className={styles.list} aria-labelledby={`${headingId}-unflagged`}>
             {notFlagged.map((admission) => (

@@ -1042,7 +1042,7 @@ function StatisticsSummaryView({
                       one bar and looked broken, so it says so instead. */}
                   {arrivals.shortestMinutes !== null && arrivals.shortestMinutes === arrivals.longestMinutes ? (
                     <p className={styles.muted} data-testid="ward-statistics-arrival-no-spread">
-                      Every measured arrival took the same time in this synthetic data, so there is no spread to chart.
+                      Every measured arrival took the same time.
                     </p>
                   ) : (
                     <ColumnChart

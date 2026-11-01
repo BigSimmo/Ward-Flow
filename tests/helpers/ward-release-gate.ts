@@ -231,6 +231,19 @@ export async function expectNoReloadSince(page: Page, step: string) {
 }
 
 /**
+ * Phone Menu redesign (approved 31 Oct 2026): the open phone Menu shows only the desk's own pages;
+ * every other group sits behind one "More pages" row that opens them in place. Taps that row, as a
+ * person would, when the Menu is open and the row is closed. Does nothing otherwise.
+ */
+export async function openPhoneMenuMorePages(page: Page) {
+  const morePages = page.getByTestId("ward-phone-menu").getByTestId("ward-phone-menu-more-pages");
+  if (!(await morePages.isVisible())) return;
+  if ((await morePages.getAttribute("aria-expanded")) === "true") return;
+  await morePages.click();
+  await expect(morePages).toHaveAttribute("aria-expanded", "true");
+}
+
+/**
  * Opens a page through the app's own navigation, matched by `href`: the desktop rail, the phone
  * dock, or the phone Menu sheet, whichever this layout shows.
  */
@@ -259,7 +272,9 @@ export async function goViaNav(page: Page, href: string, screenTestId: string) {
     await page.getByTestId("ward-bar-phone-menu").click();
     const menu = page.getByTestId("ward-phone-menu");
     await expect(menu).toBeVisible();
-    await menu.locator(`a[href="${href}"]`).first().click();
+    const link = menu.locator(`a[href="${href}"]`).first();
+    if (!(await link.isVisible())) await openPhoneMenuMorePages(page);
+    await link.click();
   }
   await page.waitForURL((url) => url.pathname === href, { timeout: 15_000 });
   await waitForScreen(page, screenTestId);

@@ -453,12 +453,10 @@ describe("Phone CSS", () => {
     expect(block(".tabLink")).toContain("min-height: 48px");
   });
 
-  it("keeps the row action a 36px face and uses the approved inset act-now marker", () => {
+  it("keeps the row action a 36px face and shows act now as the tint alone, with no side marker", () => {
     expect(block(".rowAction.rowAction")).toContain("min-height: 36px");
-    const edge = block(".rowActNow::before");
-    expect(edge).toContain("width: 3px");
-    expect(edge).toContain("border-radius: 999px");
-    expect(edge).toContain("pointer-events: none");
+    // Q94 (Josh, 1 Nov 2026): no coloured side edge; the tint and the row's glyph carry act now.
+    expect(css).not.toMatch(/\.rowActNow::before/u);
     expect(block(".rowActNow")).toContain("background: var(--wf-act-tint)");
     expect(block(".rowName")).toContain("var(--wf-fs-14)");
     expect(block(".rowMeta")).toContain("var(--wf-fs-12)");

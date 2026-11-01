@@ -4,6 +4,8 @@ import React from "react";
 import { Button, Dialog } from "@/components/wf";
 import styles from "./ward-arrivals-corridor.module.css";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
+import { useWardCommandCompletion, wardCommandFailure, wardCommandKey } from "./use-ward-command-completion";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type {
   Unit,
   Movement,
@@ -12,7 +14,6 @@ import type {
   TransportExceptionReason,
 } from "@/components/ward-management/ward-model";
 import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
-import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import {
   RELEASE_PULL_REASONS,
   changeReasonLabels,
@@ -30,6 +31,8 @@ const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull the bed",
   PATIENT_ARRIVED: "Confirm arrival",
+  RELEASE_HELD_BED: "Release pulled bed",
+  RELEASE_DIVERTED_BED: "Release pulled bed",
 };
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
@@ -88,7 +91,7 @@ interface WardArrivalsCorridorProps {
     | ((reason: ReleasePullReason | undefined) => void);
   submitRelease: (event: React.FormEvent<HTMLFormElement>, movementId: string) => void;
   lastActionRejection: Rejection | null | undefined;
-  dispatch: (action: WardFlowEvent) => void;
+  dispatch: WardCommandDispatch;
   setCheckToken: React.Dispatch<React.SetStateAction<number>>;
   priorRejectionCountRef: React.MutableRefObject<number>;
   rejections: Rejection[];
@@ -127,6 +130,45 @@ export function WardArrivalsCorridor({
   // Audit 24-7 (CT-07): releasing a diverted journey's bed ends the journey, so it asks first too.
   const [releaseDivertedId, setReleaseDivertedId] = React.useState<string | null>(null);
   const releaseDivertedMovement = accepted.find((movement) => movement.id === releaseDivertedId);
+  // Q93: a pulled-bed release reads its own save answer; a failure stays on that person's card.
+  const completeCommand = useWardCommandCompletion();
+  // Kept per person, so one failed release never hides another person's. Each remembers the screen's
+  // last rejection when the release began, so only a rejection from this attempt replaces it.
+  const [releaseFailures, setReleaseFailures] = React.useState<
+    Readonly<Record<string, { text: string; priorRejectionId: string | undefined }>>
+  >({});
+  const releasePulledBed = (movementId: string, record: () => ReturnType<WardCommandDispatch>) => {
+    priorRejectionCountRef.current = rejections.length;
+    const priorRejectionId = lastActionRejection?.id;
+    setReleaseFailures((current) => {
+      const others = { ...current };
+      delete others[movementId];
+      return others;
+    });
+    completeCommand(wardCommandKey("release-pulled-bed", movementId), record, (outcome) => {
+      const failure = wardCommandFailure(outcome);
+      if (!failure || !outcome) return;
+      const text =
+        outcome.status === "refused"
+          ? `Release pulled bed not recorded: ${wardSafeRejectionReason(outcome.message ?? "The action was refused.")}`
+          : failure;
+      setReleaseFailures((current) => ({ ...current, [movementId]: { text, priorRejectionId } }));
+    });
+    // A local refusal is read back by the screen as this ward's last rejection, shown on the card.
+    setCheckToken((t) => t + 1);
+  };
+  const releaseFailureNote = (movementId: string) => {
+    const failure = releaseFailures[movementId];
+    if (!failure) return null;
+    // The card already shows a rejection this attempt raised; an earlier one never hides the new failure.
+    const shownByScreen =
+      lastActionRejection?.movementId === movementId && lastActionRejection.id !== failure.priorRejectionId;
+    return shownByScreen ? null : (
+      <p className={styles.rejectionNote} role="alert" data-testid={`ward-release-failure-${movementId}`}>
+        {failure.text}
+      </p>
+    );
+  };
   // Audit 24-1 (B-09) / Audit 24-7 (CT-22): after Pull a bed the button goes and a "Bed pulled" status
   // line takes its place (focus stays on the arrival, DA-11), so a second tap within the guard is
   // ignored by Release.
@@ -511,6 +553,7 @@ export function WardArrivalsCorridor({
                       recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
                     </p>
                   ) : null}
+                  {releaseFailureNote(movement.id)}
 
                   {overrideReasonForm(movement.id)}
 
@@ -553,6 +596,13 @@ export function WardArrivalsCorridor({
                     Release pulled bed
                   </button>
                 </div>
+                {lastActionRejection?.movementId === movement.id ? (
+                  <p className={styles.rejectionNote} role="alert" data-testid={`ward-action-rejection-${movement.id}`}>
+                    {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ?? lastActionRejection.attempted} not
+                    recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
+                  </p>
+                ) : null}
+                {releaseFailureNote(movement.id)}
               </article>
             );
           })}
@@ -576,15 +626,16 @@ export function WardArrivalsCorridor({
           onAction: () => {
             setReleaseHeldId(null);
             if (!releaseHeldMovement) return;
-            priorRejectionCountRef.current = rejections.length;
-            dispatch({
-              type: "RELEASE_HELD_BED",
-              role: "ward",
-              now,
-              movementId: releaseHeldMovement.id,
-              actingUnitId: unit.id,
-            });
-            setCheckToken((t) => t + 1);
+            const movementId = releaseHeldMovement.id;
+            releasePulledBed(movementId, () =>
+              dispatch({
+                type: "RELEASE_HELD_BED",
+                role: "ward",
+                now,
+                movementId,
+                actingUnitId: unit.id,
+              }),
+            );
           },
         }}
         data-testid="ward-release-stopped-confirm"
@@ -607,13 +658,16 @@ export function WardArrivalsCorridor({
           onAction: () => {
             setReleaseDivertedId(null);
             if (!releaseDivertedMovement) return;
-            dispatch({
-              type: "RELEASE_DIVERTED_BED",
-              role: "ward",
-              now,
-              movementId: releaseDivertedMovement.id,
-              actingUnitId: unit.id,
-            });
+            const movementId = releaseDivertedMovement.id;
+            releasePulledBed(movementId, () =>
+              dispatch({
+                type: "RELEASE_DIVERTED_BED",
+                role: "ward",
+                now,
+                movementId,
+                actingUnitId: unit.id,
+              }),
+            );
           },
         }}
         data-testid="ward-release-diverted-confirm"

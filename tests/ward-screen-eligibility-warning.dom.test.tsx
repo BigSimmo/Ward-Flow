@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -75,6 +75,13 @@ function ReferWF009ToBrmAdultSecure() {
 // Broome is not forensic (owner ruling 2026-09-25); these screens test the forensic gate on a
 // made-up forensic Broome for this file only.
 markBroomeForensicForThisFile();
+
+/** Q93: Accept in principle opens the named dialog; choose the standard pull time limit and confirm. */
+function confirmNamedAccept() {
+  const dialog = screen.getByTestId("ward-accept-dialog");
+  fireEvent.click(within(dialog).getAllByRole("radio")[0]!);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Confirm acceptance" }));
+}
 
 describe("ward screen eligibility warning — fixture sanity", () => {
   it("WF-009 against brm-adult-secure fails the forensic gate and nothing else, and has never declined that unit", () => {
@@ -177,6 +184,7 @@ describe("ward screen eligibility warning — the engine, not the warning, is wh
     expect(acceptButton).not.toHaveAttribute("aria-disabled");
 
     fireEvent.click(acceptButton);
+    confirmNamedAccept();
 
     // The movement does not move. Before the gate existed it moved into "accepted" here, which is
     // the whole defect this change closed.

@@ -332,7 +332,7 @@ export function CommunityWorthAttention({
     <section className={css.section} aria-label="Worth attention" data-testid={testId}>
       <GroupHead title="Worth attention" count={items.length} className={css.plainHead} />
       {items.length === 0 ? (
-        <p className={css.empty}>Nothing on this page stands out beyond what the lists show.</p>
+        <p className={css.empty}>Nothing stands out.</p>
       ) : (
         <div className={css.card}>
           <ul className={css.attention}>

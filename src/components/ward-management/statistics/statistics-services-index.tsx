@@ -532,7 +532,7 @@ function ServicesIndexView({
                   </tbody>
                 </table>
               </div>
-              <CardFoot meta="Shaded: accepted within its own service. Not yet: no ward has accepted so far." />
+              <CardFoot meta="Shaded: accepted within its own service. Not yet: none accepted." />
             </StatCard>
 
             <StatCard

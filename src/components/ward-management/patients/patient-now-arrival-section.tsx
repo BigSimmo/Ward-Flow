@@ -102,7 +102,7 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                   {liveMovement?.arrivalDetails?.estimatedArrivalAt !== undefined
                     ? `${formatInstantWithDay(liveMovement.arrivalDetails.estimatedArrivalAt, now)} AWST`
                     : "not recorded"}
-                  ). Notification is not recorded here.
+                  ).
                 </div>
               </div>
             )}

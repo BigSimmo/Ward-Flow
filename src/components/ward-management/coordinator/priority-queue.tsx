@@ -335,7 +335,7 @@ export function PriorityQueue({
             const flagDetail = movement.flaggedUrgent
               ? movement.urgentFlag
                 ? `Flagged urgent by ${WARD_FLOW_ROLE_LABELS[movement.urgentFlag.by]} at ${formatInstantWithDay(movement.urgentFlag.at, now)}: ${changeReasonLabels[movement.urgentFlag.reason]}.`
-                : "Who flagged this, when and why was not recorded."
+                : "Flag details not recorded."
               : undefined;
 
             return (

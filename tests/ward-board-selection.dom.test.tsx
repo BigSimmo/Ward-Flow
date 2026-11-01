@@ -144,15 +144,15 @@ describe("ward board order explanation", () => {
     const order = screen.getByRole("combobox", { name: "Order the beds" });
     const count = screen.getByTestId("ward-board-people-count");
 
-    expect(count).toHaveTextContent("Longest stay first; beds without a recorded stay follow recorded order.");
+    expect(count).toHaveTextContent("Beds with no recorded stay follow.");
 
     fireEvent.change(order, { target: { value: "leaving" } });
-    expect(count).toHaveTextContent("Soonest expected out first; beds without an expected date follow recorded order.");
-    expect(count).not.toHaveTextContent("Longest stay first");
+    expect(count).toHaveTextContent("Beds with no expected date follow.");
+    expect(count).not.toHaveTextContent("no recorded stay");
 
     fireEvent.change(order, { target: { value: "recorded" } });
-    expect(count).toHaveTextContent("Recorded source order; this does not identify bed locations.");
-    expect(count).not.toHaveTextContent("Soonest expected out first");
+    expect(count).toHaveTextContent("Recorded order, not bed locations.");
+    expect(count).not.toHaveTextContent("no expected date");
   });
 });
 
@@ -247,7 +247,7 @@ describe("ward board selection — a bed with no occupant is a class, not a loca
     const detail = screen.getByTestId("ward-board-detail");
     expect(detail.getAttribute("data-detail-kind")).toBe("empty");
     expect(detail.textContent).toContain(`${emptyCount}`);
-    expect(detail.textContent).toContain("fill right now");
+    expect(detail.textContent).toContain("Free bed, one of");
     // Same sentence as the bed-class tile above — one paragraph, rendered for every non-occupied
     // tile kind. Widened together.
     expectSays(detail.textContent ?? "", "the empty-bed tile", BED_IS_NOT_RECORDED);

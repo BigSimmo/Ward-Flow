@@ -58,8 +58,7 @@ export function StepUpDialog({ mode, password, setPassword, busy, error, carryOn
         </>
       ) : (
         <p>
-          The shared workspace asks for your password again here. In this demonstration there is no password, so confirm
-          to carry on.
+          No password in this demonstration. Confirm to carry on.
           {error ? <span role="alert"> {error.message}</span> : null}
         </p>
       )}

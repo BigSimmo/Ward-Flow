@@ -88,7 +88,7 @@ const SERVICE_SCOPED_SCREEN_LIST =
     : SERVICE_SCOPED_SCREENS.join(", ");
 /** The painted sheet line (shell-1, 13 Oct 2026): it used to promise "What every page and count
  *  shows", which most pages do not honour. It now names only the screens that read the choice. */
-export const SERVICE_SCOPE_SHEET_LINE = `Narrows the ${SERVICE_SCOPED_SCREEN_LIST} lists`;
+export const SERVICE_SCOPE_SHEET_LINE = `Narrows ${SERVICE_SCOPED_SCREEN_LIST}`;
 export const SERVICE_SCOPE_NOTE = `One service, or all of them. ${SERVICE_SCOPED_SCREEN_LIST} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not. Each count is the people waiting in that service's emergency departments; a narrowed list also shows people referred to its wards.`;
 
 /** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (D-16) — named

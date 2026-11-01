@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { WardDecisionsCockpit, openDecisionCount } from "@/components/ward-management/ward/ward-decisions-cockpit";
 
@@ -70,14 +70,24 @@ describe("ward decisions cockpit", () => {
       </WardDecisionsCockpit>,
     );
     expect(screen.getByRole("button", { name: "Confirm unchanged" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent("1 allocatable");
+    // Polish (1 Nov 2026): the staffing fact reads under the Staffing card's head, not in the step.
+    expect(screen.getByRole("region", { name: "Staffing" })).toHaveTextContent("1 allocatable");
   });
 
-  it("accepts a live intake from its row", () => {
+  it("hands Accept to the screen's named dialog and says only what the screen reports (Q93)", () => {
     const onAccept = vi.fn();
     render(<WardDecisionsCockpit unit={mockUnit} intakes={[{ id: "m1", title: "Synthetic referral", onAccept }]} />);
-    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    const accept = screen.getByRole("button", { name: "Accept" });
+    expect(accept).toHaveAttribute("data-placement-action");
+    fireEvent.click(accept);
     expect(onAccept).toHaveBeenCalledOnce();
+    // Nothing is said until the person has confirmed in the dialog and the command has answered.
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    const report = onAccept.mock.calls[0]![0] as (recorded?: boolean) => void;
+    act(() => {
+      report(false);
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Accept not recorded for Synthetic referral.");
   });
 
   it("signs off a ready departure and clears a barrier", () => {
@@ -185,21 +195,105 @@ describe("ward decisions cockpit", () => {
     }
   });
 
-  it("signs off every ready departure from the bulk bar", () => {
+  it("asks before signing off every ready departure, naming each person (Q93)", () => {
     const first = vi.fn();
     const second = vi.fn();
-    render(
-      <WardDecisionsCockpit
-        unit={mockUnit}
-        departures={[
-          { id: "a", title: "Synthetic one", badge: "Ready", onConfirm: first },
-          { id: "b", title: "Synthetic two", badge: "Ready", onConfirm: second },
-        ]}
-      />,
-    );
+    const departures = [
+      {
+        id: "a",
+        title: "SYNTHETIC, One (bed not recorded)",
+        identity: "UM000001 · born 01/02/1990",
+        badge: "Ready" as const,
+        onConfirm: first,
+      },
+      {
+        id: "b",
+        title: "SYNTHETIC, Two (bed not recorded)",
+        identity: "UM000002 · born 03/04/1985",
+        badge: "Ready" as const,
+        onConfirm: second,
+      },
+    ];
+    const view = render(<WardDecisionsCockpit unit={mockUnit} departures={departures} />);
+
+    // Cancel records nothing.
     fireEvent.click(screen.getByRole("button", { name: "Sign off 2" }));
+    let dialog = screen.getByTestId("ward-decisions-bulk-sign-off-confirm");
+    expect(dialog).toHaveAttribute("role", "alertdialog");
+    const listed = within(dialog).getAllByRole("listitem");
+    expect(listed[0]).toHaveTextContent("SYNTHETIC, One");
+    expect(listed[0]).toHaveTextContent("UM000001 · born 01/02/1990");
+    expect(listed[1]).toHaveTextContent("SYNTHETIC, Two");
+    expect(listed[1]).toHaveTextContent("UM000002 · born 03/04/1985");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByTestId("ward-decisions-bulk-sign-off-confirm")).not.toBeInTheDocument();
+    expect(first).not.toHaveBeenCalled();
+    expect(second).not.toHaveBeenCalled();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+
+    // Confirm signs off each listed person, and the message names them.
+    fireEvent.click(screen.getByRole("button", { name: "Sign off 2" }));
+    dialog = screen.getByTestId("ward-decisions-bulk-sign-off-confirm");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Sign off 2" }));
     expect(first).toHaveBeenCalledOnce();
     expect(second).toHaveBeenCalledOnce();
+    view.rerender(
+      <WardDecisionsCockpit
+        unit={mockUnit}
+        departures={departures.map((row) => ({ ...row, badge: "Done" as const, onConfirm: undefined }))}
+      />,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("2 discharges signed off: SYNTHETIC, One; SYNTHETIC, Two");
+    // The names wrap rather than being cut off with an ellipsis on a phone.
+    expect(screen.getByText(/signed off:/u).className).toMatch(/result/u);
+  });
+
+  it("keeps a refusal past six seconds until it is closed, and lets a recorded step clear (CT-09)", () => {
+    vi.useFakeTimers();
+    try {
+      const row = { id: "a", title: "SYNTHETIC, One", badge: "Ready" as const, onConfirm: vi.fn() };
+      const view = render(<WardDecisionsCockpit unit={mockUnit} departures={[row]} />);
+      fireEvent.click(screen.getByRole("button", { name: "Sign off" }));
+      expect(screen.getByRole("status")).toHaveTextContent("Sign off not recorded for SYNTHETIC, One.");
+      act(() => {
+        vi.advanceTimersByTime(7000);
+      });
+      expect(screen.getByRole("status")).toHaveTextContent("Sign off not recorded for SYNTHETIC, One.");
+      fireEvent.click(screen.getByRole("button", { name: "Close message" }));
+      expect(screen.getByRole("status")).toBeEmptyDOMElement();
+
+      // A recorded step still clears itself.
+      fireEvent.click(screen.getByRole("button", { name: "Sign off" }));
+      view.rerender(<WardDecisionsCockpit unit={mockUnit} departures={[{ ...row, badge: "Done" }]} />);
+      expect(screen.getByRole("status")).toHaveTextContent("SYNTHETIC, One signed off");
+      act(() => {
+        vi.advanceTimersByTime(7000);
+      });
+      expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("judges a sign-off by the command's own answer when the screen reports one", () => {
+    const row = {
+      id: "a",
+      title: "SYNTHETIC, One",
+      badge: "Ready" as const,
+      onConfirm: vi.fn((report?: (recorded?: boolean) => void) => report?.(true)),
+    };
+    const refused = {
+      id: "b",
+      title: "SYNTHETIC, Two",
+      badge: "Blocked" as const,
+      onClear: vi.fn((report?: (recorded?: boolean) => void) => report?.(false)),
+    };
+    // The row has not left the list yet, but the save said it was recorded.
+    render(<WardDecisionsCockpit unit={mockUnit} departures={[row, refused]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Sign off" }));
+    expect(screen.getByRole("status")).toHaveTextContent("SYNTHETIC, One signed off");
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Hold not cleared for SYNTHETIC, Two. Nothing was changed.");
   });
 
   it("confirms a sign-off only once the row reads back as signed off", () => {
@@ -209,7 +303,9 @@ describe("ward decisions cockpit", () => {
     const view = render(<WardDecisionsCockpit unit={mockUnit} departures={[row, other]} />);
 
     fireEvent.click(screen.getAllByRole("button", { name: "Sign off" })[0]!);
-    expect(screen.getByRole("status")).toHaveTextContent("Sign off not recorded. Nothing was changed.");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Sign off not recorded for Synthetic one. Nothing was changed.",
+    );
 
     view.rerender(<WardDecisionsCockpit unit={mockUnit} departures={[other]} />);
     expect(screen.getByRole("status")).toHaveTextContent("Synthetic one signed off");

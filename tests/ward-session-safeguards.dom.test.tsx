@@ -117,6 +117,33 @@ it("asks 'Still there?' for the last minute before an idle sign-out, and says wh
   );
 });
 
+it("starts on I'm still here, with Sign out now the quiet answer (idle warning redesign, 31 Oct 2026)", () => {
+  render(
+    <SharedSessionContext.Provider value={{ signOut: vi.fn(), logRecordView: vi.fn() }}>
+      <WardIdleLock />
+    </SharedSessionContext.Provider>,
+  );
+  act(() => vi.advanceTimersByTime(IDLE_MS - 60_000));
+  const stillHere = screen.getByTestId("ward-idle-still-here");
+  expect(stillHere).toHaveFocus();
+  const buttons = screen.getAllByRole("button").map((button) => button.textContent);
+  expect(buttons).toEqual(["Sign out now", "I'm still here"]);
+});
+
+it("covers the desk with the lock, the product name and the synthetic-data mark (idle lock redesign)", () => {
+  render(<WardIdleLock />);
+  act(() => vi.advanceTimersByTime(IDLE_MS + 1_000));
+  const lock = screen.getByRole("dialog", {
+    name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes without use`,
+  });
+  expect(lock).toHaveTextContent("Ward Flow");
+  expect(lock).toHaveTextContent("Synthetic data");
+  expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual(["Carry on"]);
+  // Escape does not unlock: only the button does.
+  fireEvent.keyDown(document, { key: "Escape" });
+  expect(screen.getByRole("dialog")).toBeVisible();
+});
+
 it("lets the person at the desk sign out at once from the 'Still there?' prompt", () => {
   const signOut = vi.fn();
   render(

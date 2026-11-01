@@ -247,10 +247,7 @@ function ExecutiveBedFinder({ onNavigate }: { onNavigate: () => void }) {
           Choose a legal status to list wards.
         </p>
       )}
-      <p className={styles.note}>
-        Listed A to Z by ward name, not ranked. Quick filter only. The referral still checks every rule before a bed is
-        offered.
-      </p>
+      <p className={styles.note}>A to Z, not ranked. The referral still checks every rule before a bed is offered.</p>
     </div>
   );
 }
@@ -366,10 +363,7 @@ function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
           Choose Voluntary or Involuntary under Legal status to list wards. Involuntary lists only authorised wards.
         </p>
       )}
-      <p className={styles.note}>
-        Listed A to Z by ward name, not ranked. Quick filter only. The referral still checks every rule before a bed is
-        offered.
-      </p>
+      <p className={styles.note}>A to Z, not ranked. The referral still checks every rule before a bed is offered.</p>
     </div>
   );
 }

@@ -80,8 +80,7 @@ export function ReferralsCard({
                   <span className={styles.tileValue}>
                     <span aria-hidden="true">none</span>
                     <SrOnly>
-                      No bed on this ward has a usable pair of instants, a bed given away and a person arriving, with
-                      the arrival not earlier than the pull, so there is no empty stretch to average.
+                      No bed has a pull and an arrival not earlier than it, so there is nothing to average.
                     </SrOnly>
                   </span>
                 ) : (

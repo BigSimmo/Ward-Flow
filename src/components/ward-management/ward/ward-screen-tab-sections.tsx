@@ -17,6 +17,7 @@ import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-man
 import type { PatientResolutionSubject, ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardScreenBed } from "./ward-screen-derivations";
+import type { DepartureDecision, IntakeDecision } from "./ward-decisions-cockpit";
 
 /** The Decisions, Coming in, On the way out and Beds tab sections, drawn from the ward screen's state. */
 type WardScreenTabSectionsProps = {
@@ -28,14 +29,8 @@ type WardScreenTabSectionsProps = {
   rollupConfirmation: { confirmedAt: number; confirmedByRole: string; expectedDischarges: number };
   releasesCountedToday: BedRelease[];
   handleConfirmMorningRollup: () => void;
-  intakeDecisions: { id: `WF-${string}`; title: string; onAccept?: () => void }[];
-  departureDecisions: {
-    id: string;
-    title: string;
-    badge: "Ready" | "Blocked";
-    onConfirm: (() => void) | undefined;
-    onClear: (() => void) | undefined;
-  }[];
+  intakeDecisions: (IntakeDecision & { id: `WF-${string}` })[];
+  departureDecisions: (DepartureDecision & { badge: "Ready" | "Blocked" })[];
   leaveDecisions: { id: string; title: string }[];
   capacity: ReturnType<typeof unitCapacity>;
   readyByShiftEnd: number;

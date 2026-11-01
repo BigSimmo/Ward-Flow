@@ -258,7 +258,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
      */
     const wardBeds = unitById("rph-adult-secure")?.beds;
     expect(wardBeds, "rph-adult-secure is not in the fixture — this assertion would prove nothing").toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: new RegExp(`All beds \\(${wardBeds}\\)`, "i") })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: new RegExp(`^All beds ${wardBeds}$`, "i") })).toBeInTheDocument();
     // Scoped to the Bed Board panel: the v6 ward home also draws Bed 01 as an Every bed tile.
     const bed01Card = within(document.getElementById("tab-beds")!).getByRole("button", { name: /Bed 01/i });
     expect(bed01Card).toBeInTheDocument();
@@ -276,8 +276,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(drawerTitle).not.toHaveTextContent(/Bed 01/i);
     // Ward Flow holds no observations. The drawer used to type in the same SpO2, heart rate, blood
     // pressure, pacing mode and transmitter readings for every bed (25 September 2026 audit, A3);
-    // it now says vital signs are not recorded, and no reading appears anywhere in it.
-    expect(drawer).toHaveTextContent(/Vital signs\s*Not recorded in Ward Flow/i);
+    // no reading appears anywhere in it (the "not recorded" vital signs row was cut, Nov 2026).
     expect(drawer).not.toHaveTextContent(/SpO2|bpm|mmHg|Transmitter|Telemetry|1:4/i);
 
     // Close the drawer

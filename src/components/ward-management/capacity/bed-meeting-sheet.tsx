@@ -38,7 +38,7 @@ function More({ count, noun }: { count: number; noun: string }) {
   if (count === 0) return null;
   return (
     <p className={styles.more}>
-      and {count} more {noun} — see the screen for the full list
+      and {count} more {noun}
     </p>
   );
 }
@@ -138,9 +138,7 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
           )}
           <More count={discharges.moreRows} noun="discharges" />
           {discharges.beyondToday > 0 && (
-            <p className={styles.note}>
-              {discharges.beyondToday} more expected after tomorrow, left out of these figures.
-            </p>
+            <p className={styles.note}>{discharges.beyondToday} more after tomorrow, not counted.</p>
           )}
         </section>
 
@@ -251,17 +249,13 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
             )}
             <More count={stuckReferrals.morePlaces} noun="wards or services" />
             <p className={styles.note}>
-              No reply recorded within {splitDuration(stuckReferrals.limitMinutes)}, the limit set in Settings. A plain
-              timer: nothing is scored or re-ordered.
+              No reply within {splitDuration(stuckReferrals.limitMinutes)}, the limit set in Settings.
             </p>
           </section>
         )}
       </div>
 
-      <p className={styles.footer}>
-        Figures come from the Capacity, Discharges, ED, Waiting and Referrals screens at the moment above. Legal time
-        limits are not checked in this prototype.
-      </p>
+      <p className={styles.footer}>Legal time limits are not checked.</p>
       {flow !== null ? <WardPrintFooter /> : null}
     </article>
   );
