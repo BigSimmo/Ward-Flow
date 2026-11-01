@@ -567,8 +567,7 @@ export function WardBedsMatrix({
                   setShiftGroup(id);
                 }}
               >
-                <span>{label}</span>
-                <span className={styles.segmentCount}>{count}</span>
+                <span>{label}</span> <span className={styles.segmentCount}>{count}</span>
               </button>
             ))}
           </div>
@@ -694,8 +693,7 @@ export function WardBedsMatrix({
                 setSelectedPod("all");
               }}
             >
-              <span>All beds</span>
-              <span className={styles.segmentCount}>{unit.beds}</span>
+              <span>All beds</span> <span className={styles.segmentCount}>{unit.beds}</span>
             </button>
 
             <button
@@ -706,8 +704,7 @@ export function WardBedsMatrix({
                 setActiveFilter("needs-look");
               }}
             >
-              <span>Needs a look</span>
-              <span className={styles.segmentCount}>{needsLookBeds.length}</span>
+              <span>Needs a look</span> <span className={styles.segmentCount}>{needsLookBeds.length}</span>
             </button>
 
             <button
@@ -718,8 +715,7 @@ export function WardBedsMatrix({
                 setActiveFilter("ready");
               }}
             >
-              <span>Ready</span>
-              <span className={styles.segmentCount}>{readyCount}</span>
+              <span>Ready</span> <span className={styles.segmentCount}>{readyCount}</span>
             </button>
 
             <button
@@ -730,8 +726,7 @@ export function WardBedsMatrix({
                 setActiveFilter("nobody-due");
               }}
             >
-              <span>Nobody due out</span>
-              <span className={styles.segmentCount}>{nobodyDueOutBeds.length}</span>
+              <span>Nobody due out</span> <span className={styles.segmentCount}>{nobodyDueOutBeds.length}</span>
             </button>
 
             {isMixed ? (
@@ -744,8 +739,7 @@ export function WardBedsMatrix({
                     setSelectedPod("locked");
                   }}
                 >
-                  <span>Locked</span>
-                  <span className={styles.segmentCount}>{lockedCount}</span>
+                  <span>Locked</span> <span className={styles.segmentCount}>{lockedCount}</span>
                 </button>
                 <button
                   type="button"
@@ -755,8 +749,7 @@ export function WardBedsMatrix({
                     setSelectedPod("open");
                   }}
                 >
-                  <span>Open</span>
-                  <span className={styles.segmentCount}>{openCount}</span>
+                  <span>Open</span> <span className={styles.segmentCount}>{openCount}</span>
                 </button>
               </>
             ) : null}

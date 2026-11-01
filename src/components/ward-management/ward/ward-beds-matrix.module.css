@@ -308,7 +308,7 @@
 .figures dd {
   margin: 0;
   color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-18, 18px) / 1.2 var(--wf-mono);
+  font: 600 var(--wf-fs-20) / 1.2 var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 
