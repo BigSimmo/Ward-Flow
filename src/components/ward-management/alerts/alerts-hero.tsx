@@ -107,12 +107,18 @@ export function AlertsHero({
             level={1}
             data-testid="ward-alerts-phone-hero"
             title={heroTitle}
+            // Alerts redesign (1 Nov 2026): "oldest 1h 12m · broadcast live"; the figures carry the counts.
             sub={
-              openCount > 0
-                ? `${openCount} open${runningText}${
-                    oldestRaised !== undefined ? ` · oldest ${minutesText(Math.max(0, now - oldestRaised))}` : ""
-                  }`
-                : "Checking every condition below"
+              oldestRaised !== undefined || activeBroadcast
+                ? [
+                    oldestRaised !== undefined ? `oldest ${minutesText(Math.max(0, now - oldestRaised))}` : "",
+                    activeBroadcast ? "broadcast live" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                : openCount > 0
+                  ? `${openCount} open${runningText}`
+                  : "Checking every condition below"
             }
             eyebrow="Alerts"
             // F-08: the standard Demo pill, as on every phone hero; Pause below holds the list.
@@ -268,7 +274,6 @@ export function AlertsHero({
                   inline
                   value={waitEntries.length}
                   label="Waiting"
-                  tone="warning"
                   pressed={pill === "wait"}
                   onToggle={() => togglePill("wait")}
                 />
@@ -277,7 +282,6 @@ export function AlertsHero({
                     inline
                     value={yoursCount}
                     label="Yours"
-                    tone="neutral"
                     pressed={pill === "mine"}
                     onToggle={() => togglePill("mine")}
                   />
