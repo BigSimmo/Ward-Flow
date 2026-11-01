@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type Ref } from "react";
+import { useId, useRef, useState, type KeyboardEvent, type Ref } from "react";
 import { DECLINE_REASON_NOT_SHARED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronRight, UserRound } from "lucide-react";
@@ -47,6 +47,7 @@ import { ReleaseOwnershipButton } from "./alert-release-ownership";
 import { officerHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import styles from "./alerts.module.css";
+import rd from "./alert-detail-redesign.module.css";
 import parts from "./alerts-screen-parts.module.css";
 
 export type AlertDetailHandlers = {
@@ -57,6 +58,17 @@ export type AlertDetailHandlers = {
   onRelease: (item: InboxItem, reason: ReleasePullReason) => void;
   onEscalate?: (item: InboxItem) => void;
 };
+
+const PANEL_TABS = ["act", "activity"] as const;
+type PanelTab = (typeof PANEL_TABS)[number];
+
+/** "Cadwaller, Rhys" reads "RC": given name first, as people say it. Initials-only bookings keep theirs. */
+function initialsOf(displayName: string): string {
+  const initials = /^Initials\s+([A-Z]{1,3})$/u.exec(displayName)?.[1];
+  if (initials) return initials;
+  const [surname = "", given = ""] = displayName.split(",").map((part) => part.trim());
+  return `${given.charAt(0)}${surname.charAt(0)}`.toUpperCase() || "?";
+}
 
 /**
  * The selected alert: who, what, a picture of its recorded times, the facts behind it and every
@@ -98,6 +110,26 @@ export function AlertDetail({
 }) {
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
   const [activityOpen, setActivityOpen] = useState(false);
+  const [panelTab, setPanelTab] = useState<PanelTab>("act");
+  const panelIds = useId();
+  const tabRefs = useRef<Partial<Record<PanelTab, HTMLButtonElement | null>>>({});
+  const onPanelTabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const at = PANEL_TABS.indexOf(panelTab);
+    const next =
+      event.key === "ArrowRight" || event.key === "ArrowDown"
+        ? PANEL_TABS[(at + 1) % PANEL_TABS.length]
+        : event.key === "ArrowLeft" || event.key === "ArrowUp"
+          ? PANEL_TABS[(at - 1 + PANEL_TABS.length) % PANEL_TABS.length]
+          : event.key === "Home"
+            ? PANEL_TABS[0]
+            : event.key === "End"
+              ? PANEL_TABS[PANEL_TABS.length - 1]
+              : undefined;
+    if (next === undefined) return;
+    event.preventDefault();
+    setPanelTab(next);
+    tabRefs.current[next]?.focus();
+  };
   // Whether Escalate means anything for THIS alert comes first: a movement's escalation record belongs
   // to its bed search, so an unrelated alert on the same movement must not claim it was escalated.
   const escalationApplies = escalationAppliesTo(item, movement, units, now);
@@ -127,6 +159,43 @@ export function AlertDetail({
   const unitName = (id: string) => units.find((unit) => unit.id === id)?.name ?? id;
   // "for", not a comma: the family-first name has its own comma ("Smith, Alice").
   const subjectLine = `${item.title} for ${subject.displayName}`;
+  const declineCount = movement?.declines?.length ?? 0;
+  // A late booking estimate keeps alerting after departure, until arrival: say which it is.
+  const enRoute = movement?.transport?.enRouteAt !== undefined;
+  // Alerts redesign: one plain sentence on the state card, and one on what the Act tab's button does.
+  const stateNote =
+    kind === "hold"
+      ? `The bed is still held${subject.to ? ` at ${subject.to}` : ""}. Release it or pull again.`
+      : kind === "declines"
+        ? `${declineCount} ${declineCount === 1 ? "ward has" : "wards have"} declined. No ward has accepted.`
+        : kind === "nobed"
+          ? "No ward in the network is eligible now."
+          : kind === "planned" && item.plannedAdmission
+            ? `Expected at ${formatInstantWithDay(item.plannedAdmission.expectedArrivalAt, now)}. No arrival recorded.`
+            : kind === "transport"
+              ? enRoute
+                ? "On the way and past its booking estimate. No arrival recorded."
+                : "Accepted and booked. Not left yet."
+              : kind === "notify"
+                ? // Only the parties still outstanding, as the inbox detail names them.
+                  `${item.detail.split(" · ")[0]}.`
+                : undefined;
+  // The transport officer has none of these acts, so no note tells them to take one.
+  const actNote = officerDesk
+    ? undefined
+    : kind === "hold"
+      ? "Release needs a reason. Pull again keeps the bed for another pull limit."
+      : kind === "nobed"
+        ? "Escalate when the bed search is exhausted. It records that the state desk was rung."
+        : kind === "planned"
+          ? "Record the arrival, or open the booking to change the time or cancel it."
+          : kind === "transport"
+            ? enRoute
+              ? "Chase opens the booking with the provider's number."
+              : "Chase opens the booking with the provider's number. Record the departure once they leave."
+            : kind === "notify"
+              ? "Record who was told, or record that a notification is not needed."
+              : undefined;
 
   const booking = item.plannedAdmission;
   const facts: [string, string][] = [];
@@ -502,8 +571,11 @@ export function AlertDetail({
   }
 
   return (
-    <div className={styles.detail}>
-      <div className={styles.detailHead}>
+    <div className={`${styles.detail} ${rd.detail}`}>
+      <div className={`${styles.detailHead} ${rd.head}`}>
+        <span className={rd.avatar} aria-hidden="true">
+          {initialsOf(subject.displayName)}
+        </span>
         <div className={styles.detailWho}>
           <h2 id={titleId} className={styles.detailName}>
             {subject.displayName}
@@ -523,49 +595,52 @@ export function AlertDetail({
         ) : null}
       </div>
 
-      <div className={styles.detailState}>
-        <StatusGlyph tone={group === "act" ? "danger" : group === "wait" ? "warning" : "neutral"} />
-        <span className={styles.detailTitle}>{item.title}</span>
-        {/* Transport officer: the age shows once, on Recorded times just below, when they show. */}
-        {openedShown !== undefined &&
-        (!officerDesk || track.length === 0 || (kind === "declines" && declines.length > 0)) ? (
-          <span className={styles.quiet}>
-            open <span className={styles.mono}>{minutesText(Math.max(0, now - openedShown))}</span>
-          </span>
-        ) : legalEnded !== undefined ? (
-          <span className={styles.quiet}>{typedTimeLine(legalEnded, now)}</span>
+      <div className={rd.state} data-act={group === "act" ? "true" : undefined}>
+        <div className={`${styles.detailState} ${rd.stateTop}`}>
+          <StatusGlyph tone={group === "act" ? "danger" : group === "wait" ? "warning" : "neutral"} />
+          <span className={styles.detailTitle}>{item.title}</span>
+          {/* Transport officer: the age shows once, on Recorded times just below, when they show. */}
+          {openedShown !== undefined &&
+          (!officerDesk || track.length === 0 || (kind === "declines" && declines.length > 0)) ? (
+            <span className={styles.quiet}>
+              open <span className={styles.mono}>{minutesText(Math.max(0, now - openedShown))}</span>
+            </span>
+          ) : legalEnded !== undefined ? (
+            <span className={styles.quiet}>{typedTimeLine(legalEnded, now)}</span>
+          ) : null}
+        </div>
+        {stateNote ? <p className={rd.stateNote}>{stateNote}</p> : null}
+
+        {kind === "declines" && declines.length > 0 ? (
+          <section className={styles.detailSection} aria-label="Declines over time">
+            <div className={styles.sectionHead}>
+              <span className={styles.eyebrow}>Declines over time</span>
+              <span className={styles.quiet}>none accepted</span>
+            </div>
+            <DeclineLadder
+              now={now}
+              steps={declines.map((decline) => ({
+                id: `${decline.unitId}-${decline.at}`,
+                at: decline.at,
+                short: unitName(decline.unitId).split(" ")[0] ?? decline.unitId,
+                title: `${unitName(decline.unitId)}, ${decline.reason ? (declineReasonLabels[decline.reason] ?? decline.reason) : DECLINE_REASON_NOT_SHARED}, ${formatInstantWithDay(decline.at, now)}`,
+              }))}
+            />
+          </section>
+        ) : track.length > 0 ? (
+          <section className={styles.detailSection} aria-label="Recorded times">
+            <div className={styles.sectionHead}>
+              <span className={styles.eyebrow}>{kind === "hold" ? "Time in ED" : "Recorded times"}</span>
+              <span className={`${styles.quiet} ${styles.mono}`}>
+                {legalEnded !== undefined
+                  ? typedTimeLine(legalEnded, now)
+                  : minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
+              </span>
+            </div>
+            <WaitTrack points={track} now={now} />
+          </section>
         ) : null}
       </div>
-
-      {kind === "declines" && declines.length > 0 ? (
-        <section className={styles.detailSection} aria-label="Declines over time">
-          <div className={styles.sectionHead}>
-            <span className={styles.eyebrow}>Declines over time</span>
-            <span className={styles.quiet}>none accepted</span>
-          </div>
-          <DeclineLadder
-            now={now}
-            steps={declines.map((decline) => ({
-              id: `${decline.unitId}-${decline.at}`,
-              at: decline.at,
-              short: unitName(decline.unitId).split(" ")[0] ?? decline.unitId,
-              title: `${unitName(decline.unitId)}, ${decline.reason ? (declineReasonLabels[decline.reason] ?? decline.reason) : DECLINE_REASON_NOT_SHARED}, ${formatInstantWithDay(decline.at, now)}`,
-            }))}
-          />
-        </section>
-      ) : track.length > 0 ? (
-        <section className={styles.detailSection} aria-label="Recorded times">
-          <div className={styles.sectionHead}>
-            <span className={styles.eyebrow}>{kind === "hold" ? "Time in ED" : "Recorded times"}</span>
-            <span className={`${styles.quiet} ${styles.mono}`}>
-              {legalEnded !== undefined
-                ? typedTimeLine(legalEnded, now)
-                : minutesText(Math.max(0, now - Math.min(...track.map((point) => point.at))))}
-            </span>
-          </div>
-          <WaitTrack points={track} now={now} />
-        </section>
-      ) : null}
 
       {declines.length > 0 ? (
         <section className={styles.detailSection} aria-label="Declined">
@@ -590,7 +665,7 @@ export function AlertDetail({
           </ul>
         </section>
       ) : (
-        <dl className={styles.facts} data-testid={booking ? "alerts-drawer-booking" : undefined}>
+        <dl className={`${styles.facts} ${rd.facts}`} data-testid={booking ? "alerts-drawer-booking" : undefined}>
           {facts.map(([label, value]) => (
             <div key={label}>
               <dt>{label}</dt>
@@ -609,12 +684,65 @@ export function AlertDetail({
         className={styles.detailStatus}
       />
 
-      <div className={styles.detailActions}>
+      {/* Alerts redesign: Act and Activity tabs, then the action bar pinned to the bottom. */}
+      <div className={rd.tabs} role="tablist" aria-label="Alert">
+        {PANEL_TABS.map((tabId) => (
+          <button
+            key={tabId}
+            ref={(node) => {
+              tabRefs.current[tabId] = node;
+            }}
+            type="button"
+            role="tab"
+            id={`${panelIds}-tab-${tabId}`}
+            aria-controls={`${panelIds}-panel`}
+            aria-selected={panelTab === tabId}
+            // One tab stop; the arrow keys, Home and End move between Act and Activity.
+            tabIndex={panelTab === tabId ? 0 : -1}
+            className={rd.tab}
+            onClick={() => setPanelTab(tabId)}
+            onKeyDown={onPanelTabKey}
+          >
+            {tabId === "act" ? "Act" : "Activity"}
+            {tabId === "activity" && activity.length > 0 ? (
+              <>
+                {" "}
+                <span className={rd.tabCount}>{activity.length}</span>
+              </>
+            ) : null}
+          </button>
+        ))}
+      </div>
+      <div className={rd.body} role="tabpanel" id={`${panelIds}-panel`} aria-labelledby={`${panelIds}-tab-${panelTab}`}>
+        {panelTab === "activity" ? (
+          activity.length > 0 ? (
+            <ul className={rd.activity}>
+              {activity.map((entry, index) => (
+                <li key={`${entry.at}-${index}`}>
+                  <time>{formatInstantWithDay(entry.at, now)}</time>
+                  <StatusGlyph tone={entry.done ? "success" : group === "act" ? "danger" : "warning"} size={9} />
+                  <span>{entry.text}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Nothing recorded on this alert yet.</p>
+          )
+        ) : actNote ? (
+          <p>{actNote}</p>
+        ) : null}
+      </div>
+
+      <div className={`${styles.detailActions} ${rd.foot}`}>
         {snoozedUntil ? (
           <p className={styles.quiet}>{snoozedLine(snoozedUntil, now)}</p>
         ) : action.kind === "link" ? (
-          <Link className={buttonClass({ variant: "pri", className: styles.wide })} href={action.href}>
-            {action.label}
+          <Link
+            className={buttonClass({ variant: "pri", className: `${styles.wide} ${rd.primary}` })}
+            href={action.href}
+          >
+            {/* Safety rule 5: every main button names the person. */}
+            {officerDesk ? action.label : `${action.label} for ${subject.displayName}`}
           </Link>
         ) : (
           <div className={`${styles.releaseRow} ${parts.releaseRow}`}>
@@ -662,29 +790,12 @@ export function AlertDetail({
         {officerDesk ? (
           <p className={styles.quiet}>{actionDisabledReason}</p>
         ) : (
-          <div className={`${styles.actionRow} ${parts.actionsRow}`}>
+          <div className={`${styles.actionRow} ${parts.actionsRow} ${rd.secRow}`}>
             {takeButton}
             {moreActions}
           </div>
         )}
       </div>
-
-      {activity.length > 0 ? (
-        <section className={styles.detailSection} aria-label="Activity">
-          <div className={styles.sectionHead}>
-            <span className={styles.eyebrow}>Activity</span>
-          </div>
-          <ul className={styles.activity}>
-            {activity.map((entry, index) => (
-              <li key={`${entry.at}-${index}`}>
-                <span className={styles.mono}>{formatInstantWithDay(entry.at, now)}</span>
-                <StatusGlyph tone={entry.done ? "success" : group === "act" ? "danger" : "warning"} size={9} />
-                <span>{entry.text}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </div>
   );
 }

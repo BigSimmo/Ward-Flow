@@ -28,7 +28,9 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     expect(screen.getByRole("region", { name: "Waiting" })).toBeInTheDocument();
 
     fireEvent.click(within(arrange).getByRole("radio", { name: /Lanes/ }));
-    expect(screen.getByRole("region", { name: "Snoozed" })).toHaveTextContent("None now");
+    expect(screen.getByRole("region", { name: "Snoozed" })).toHaveTextContent(
+      "A snoozed act-now alert also stays listed in Act now.",
+    );
 
     fireEvent.click(within(arrange).getByRole("radio", { name: /Owner/ }));
     expect(screen.getByRole("region", { name: "Bed coordinator" })).toBeInTheDocument();

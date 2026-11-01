@@ -24,7 +24,6 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import type { getActiveBroadcastAlert } from "./ward-broadcast-model";
 import { minutesText } from "./alerts-model";
 import type { QueueEntry } from "./alerts-queue";
-import { TimeRing } from "./alerts-visuals";
 import styles from "./alerts.module.css";
 
 export type AlertsTab = "now" | "broadcast" | "notices" | "history";
@@ -59,6 +58,7 @@ export function AlertsHero({
   nextQueue,
   handleCopy,
   checkingFoot,
+  todayBand,
 }: {
   isPhone: boolean;
   heroTitle: string;
@@ -90,6 +90,8 @@ export function AlertsHero({
   nextQueue: QueueEntry[];
   handleCopy: () => void;
   checkingFoot: ReactNode;
+  /** Desktop: the Today track and at-a-glance line, drawn in the band's foot. */
+  todayBand?: ReactNode;
 }) {
   const deskRole = useEffectiveWardAccess().role;
   // Transport officer: only the coordinator takes an alert and only the coordinator or a bed manager
@@ -107,12 +109,18 @@ export function AlertsHero({
             level={1}
             data-testid="ward-alerts-phone-hero"
             title={heroTitle}
+            // Alerts redesign (1 Nov 2026): "oldest 1h 12m · broadcast live"; the figures carry the counts.
             sub={
-              openCount > 0
-                ? `${openCount} open${runningText}${
-                    oldestRaised !== undefined ? ` · oldest ${minutesText(Math.max(0, now - oldestRaised))}` : ""
-                  }`
-                : "Checking every condition below"
+              oldestRaised !== undefined || activeBroadcast
+                ? [
+                    oldestRaised !== undefined ? `oldest ${minutesText(Math.max(0, now - oldestRaised))}` : "",
+                    activeBroadcast ? "broadcast live" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                : openCount > 0
+                  ? `${openCount} open${runningText}`
+                  : "Checking every condition below"
             }
             eyebrow="Alerts"
             // F-08: the standard Demo pill, as on every phone hero; Pause below holds the list.
@@ -250,16 +258,20 @@ export function AlertsHero({
           eyebrow="Alerts"
           title={heroTitle}
           titleMeta={
-            openCount > 0 ? (
+            // Alerts redesign (1 Nov 2026): "oldest 1h 12m · 2 yours".
+            oldestRaised !== undefined || (!officerDesk && yoursCount > 0) ? (
               <span className={styles.heroMeta}>
-                <span className={styles.mono}>{openCount}</span> open
-                {runningText}
                 {oldestRaised !== undefined ? (
                   <>
-                    {" "}
-                    · oldest <span className={styles.mono}>{minutesText(Math.max(0, now - oldestRaised))}</span>
+                    oldest <span className={styles.mono}>{minutesText(Math.max(0, now - oldestRaised))}</span>
                   </>
                 ) : null}
+                {oldestRaised !== undefined && !officerDesk ? " · " : null}
+                {officerDesk ? null : (
+                  <>
+                    <span className={styles.mono}>{yoursCount}</span> yours
+                  </>
+                )}
               </span>
             ) : undefined
           }
@@ -278,18 +290,6 @@ export function AlertsHero({
                 >
                   Notify me
                 </Button>
-                {canBroadcast ? (
-                  <Button
-                    ref={broadcastTriggerRef}
-                    variant="light"
-                    size="sm"
-                    icon={Radio}
-                    disabledReason={broadcastDisabledReason}
-                    onClick={(event) => openComposer(event.currentTarget)}
-                  >
-                    Broadcast alert
-                  </Button>
-                ) : null}
               </div>
             )
           }
@@ -308,7 +308,6 @@ export function AlertsHero({
                   inline
                   value={waitEntries.length}
                   label="Waiting"
-                  tone="warning"
                   pressed={pill === "wait"}
                   onToggle={() => togglePill("wait")}
                 />
@@ -317,64 +316,52 @@ export function AlertsHero({
                     inline
                     value={yoursCount}
                     label="Yours"
-                    tone="neutral"
                     pressed={pill === "mine"}
                     onToggle={() => togglePill("mine")}
                   />
                 )}
               </div>
-              {activeBroadcast ? (
-                <button
-                  type="button"
-                  className={styles.heroBroadcast}
-                  title="Open the broadcast desk"
-                  onClick={() => setTab("broadcast")}
-                >
-                  <TimeRing
-                    from={activeBroadcast.dispatchedAt}
-                    until={activeBroadcast.expiresAt}
-                    now={now}
-                    size={30}
-                    onHero
-                  />
-                  <StatusGlyph tone={directiveTone} />
-                  <span className={styles.heroBroadcastTitle}>{activeBroadcast.title}</span>
-                  <span className={styles.heroBroadcastMeta}>
-                    ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
-                    {broadcastAcks ? (
-                      <span className={styles.deskOnly}>
-                        {" "}
-                        · <span className={styles.mono}>{broadcastAcks.acknowledged}</span> acknowledged
-                      </span>
-                    ) : null}
-                  </span>
-                </button>
-              ) : null}
             </div>
           }
           barAside={
             <div className={styles.heroTools}>
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={ChevronRight}
-                aria-label={`Next alert, ${nextQueue.length} in turn`}
-                disabled={nextQueue.length === 0}
-                onClick={handleNext}
-              >
-                {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
-                Next of <span className={styles.mono}>{nextQueue.length}</span>
-              </Button>
               {/* Transport officer: the handover copy is on My jobs (Copy handover). */}
               {officerDesk ? null : (
                 <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
                   Copy for handover
                 </Button>
               )}
+              {/* A quiet ward desk has nothing next, so no Next alert, as on the phone. */}
+              {showNext ? (
+                <Button
+                  variant="onHero"
+                  size="sm"
+                  icon={ChevronRight}
+                  aria-label={`Next alert, ${nextQueue.length} in turn`}
+                  count={nextQueue.length}
+                  disabled={nextQueue.length === 0}
+                  onClick={handleNext}
+                >
+                  {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
+                  Next alert
+                </Button>
+              ) : null}
+              {canBroadcast ? (
+                <Button
+                  ref={broadcastTriggerRef}
+                  variant="light"
+                  size="sm"
+                  icon={Radio}
+                  disabledReason={broadcastDisabledReason}
+                  onClick={(event) => openComposer(event.currentTarget)}
+                >
+                  Broadcast alert
+                </Button>
+              ) : null}
             </div>
           }
           // A quiet ward's checks sit in the side panel instead, so the screen may pass no foot.
-          foot={checkingFoot ? <div className={styles.checkingFootWide}>{checkingFoot}</div> : undefined}
+          foot={todayBand ?? (checkingFoot ? <div className={styles.checkingFootWide}>{checkingFoot}</div> : undefined)}
         />
       )}
     </>

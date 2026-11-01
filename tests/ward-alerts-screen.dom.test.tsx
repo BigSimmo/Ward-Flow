@@ -325,7 +325,7 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
 });
 
 describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () => {
-  it("the hero's open count is the Now tab's count and the Tasks list, running targets included", () => {
+  it("the Now tab's open count is and the Tasks list, running targets included", () => {
     const lapsed = taskItems(seedWardFlowState(), NOW).find((item) => alertKindOf(item.id) === "hold");
     expect(lapsed?.movementId, "the seed has a lapsed bed pull").toBeTruthy();
     let world: ReturnType<typeof useWardFlow> | undefined;
@@ -351,10 +351,8 @@ describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () =>
     });
     const active = activeTaskItems(world!, NOW);
     expect(active.some((item) => alertKindOf(item.id) === "running")).toBe(true);
-    const meta = [...document.querySelectorAll("span")].find((span) => /^\d+ open/u.test(span.textContent ?? ""));
-    const open = Number(/^(\d+) open/u.exec(meta?.textContent ?? "")?.[1]);
-    expect(open).toBe(active.length);
-    expect(screen.getByRole("tab", { name: /^Now/u }).textContent).toContain(String(open));
+    // Alerts redesign (1 Nov 2026): the band's meta reads "oldest … · n yours", so the Now tab carries the open count.
+    expect(screen.getByRole("tab", { name: /^Now/u }).textContent?.replace(/\s+/gu, "")).toBe(`Now${active.length}`);
   });
 });
 

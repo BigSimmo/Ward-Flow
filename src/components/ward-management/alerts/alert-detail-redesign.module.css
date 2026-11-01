@@ -1,0 +1,218 @@
+/* Alerts redesign, 1 Nov 2026 (spec #1225, mock-up mock.css .mk-p*): the side panel's person head,
+   state card, facts box, Act/Activity tabs and the tinted action bar pinned to the bottom. Kit tokens only. */
+
+.detail {
+  --rd-foot-bg: color-mix(in srgb, var(--wf-accent) 7%, var(--wf-surface));
+  --rd-foot-line: color-mix(in srgb, var(--wf-accent) 22%, var(--wf-line));
+  min-height: 100%;
+}
+
+.head {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  border-bottom: 0;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  font: 700 var(--wf-fs-13) / 1 var(--wf-font);
+  letter-spacing: 0.02em;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0 var(--wf-s-4);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+}
+
+.state[data-act="true"] {
+  border-color: transparent;
+  background: var(--wf-act-tint);
+}
+
+.state > * {
+  padding-inline: 0;
+  border-bottom: 0;
+}
+
+.stateTop {
+  padding-block: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.stateNote {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.facts {
+  gap: 0;
+  margin: var(--wf-s-3) var(--wf-s-4) 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+}
+
+.facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.facts > div:nth-child(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+
+.facts > div:nth-child(n + 3) {
+  border-top: 1px solid var(--wf-line);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--wf-s-1);
+  margin: var(--wf-s-3) var(--wf-s-4) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.tab[aria-selected="true"] {
+  border-bottom-color: var(--wf-accent);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.tabCount {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 18px var(--wf-mono);
+  text-align: center;
+}
+
+.body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+
+.body p {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.activity {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity li {
+  display: grid;
+  grid-template-columns: minmax(3rem, max-content) 14px minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  padding: 8px 0;
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.activity li:first-child {
+  border-top: 0;
+}
+
+.activity time {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+/* The action bar: a light accent tint and a matching top line, pinned to the bottom of the window. */
+.foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  gap: 10px;
+  margin-top: auto;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  border-top: 1px solid var(--rd-foot-line);
+  border-bottom: 0;
+  background: var(--rd-foot-bg);
+}
+
+.primary {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+}
+
+/* A disabled main button is a plain surface with grey text and a solid border, not a faded primary. */
+.foot button[aria-disabled="true"],
+.foot button:disabled {
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-3);
+  opacity: 1;
+}
+
+.secRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.secRow > * {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.secRow button {
+  white-space: nowrap;
+}

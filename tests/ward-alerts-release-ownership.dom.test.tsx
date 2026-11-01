@@ -61,6 +61,8 @@ describe("alerts: release an alert you took (P019)", () => {
 
     expect(within(panel).getByRole("button", { name: /^Take / })).toBeInTheDocument();
     expect(screen.getByText(`Released ${title}`)).toBeInTheDocument();
+    // Alerts redesign (1 Nov 2026): the record sits on the panel's Activity tab.
+    fireEvent.click(within(panel).getByRole("tab", { name: /^Activity/u }));
     expect(within(panel).getAllByText(/^Released by Bed coordinator$/).length).toBeGreaterThan(0);
   });
 
