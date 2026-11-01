@@ -32,7 +32,7 @@ export function CommunityNoJourneys({ teamName }: { teamName: string }) {
           <section aria-label="The team's journeys">
             <EmptyState
               icon={ArrowRightLeft}
-              title="None yet"
+              title="Shows once a ward accepts a team referral"
               className={local.empty}
               action={
                 <div className={local.actions}>

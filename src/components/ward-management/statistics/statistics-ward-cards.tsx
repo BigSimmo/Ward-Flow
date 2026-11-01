@@ -79,7 +79,9 @@ export function ReferralsCard({
                 {statistics.averageEmptyBedMinutes === null ? (
                   <span className={styles.tileValue}>
                     <span aria-hidden="true">none</span>
-                    <SrOnly>No bed has a pull and a later arrival to average.</SrOnly>
+                    <SrOnly>
+                      No bed has a pull and an arrival not earlier than it, so there is nothing to average.
+                    </SrOnly>
                   </span>
                 ) : (
                   <span className={styles.tileValue}>{splitDuration(statistics.averageEmptyBedMinutes)}</span>

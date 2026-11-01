@@ -253,14 +253,18 @@ export function trackStepSentence(movement: Movement, state: StepState, at: Inst
   if (state === "ahead") return "Not reached.";
   if (state === "stopped") {
     const stopped = movement.closure
-      ? `Stopped here: ${movement.closure.reason}.`
-      : "Stopped here. No reason recorded.";
-    return at === undefined ? `${stopped} No time recorded.` : `${stopped} Reached ${formatInstantWithDay(at, now)}.`;
+      ? `This is where it stopped: ${movement.closure.reason}.`
+      : "This is where it stopped. Nothing on the record says why.";
+    return at === undefined
+      ? `${stopped} No time was recorded for reaching this step.`
+      : `${stopped} Reached ${formatInstantWithDay(at, now)}.`;
   }
   if (state === "current") {
-    return at === undefined ? "Current. No time recorded." : `Current since ${formatInstantWithDay(at, now)}.`;
+    return at === undefined
+      ? "This is where the movement is now. No time was recorded for reaching this step."
+      : `This is where the movement is now, since ${formatInstantWithDay(at, now)}.`;
   }
-  return at === undefined ? "Passed. No time recorded." : `Passed ${formatInstantWithDay(at, now)}.`;
+  return at === undefined ? "Passed. No time was recorded for this step." : `Passed ${formatInstantWithDay(at, now)}.`;
 }
 
 export type Attention = { key: string; who: string; chip: string; level: WardChipLevel; say: string };
@@ -298,8 +302,10 @@ function orphanedTransportAttention(movement: Movement): Attention | undefined {
     level: orphan.kind === "pull_released" ? "urgent" : "stalled",
     say:
       orphan.kind === "pull_released"
-        ? `The bed was given back to the ward but the job was not cancelled. ${orphan.provider} is ` +
-          `still recorded as collecting this patient. Cancel it below.`
+        ? `The bed this job was booked against has been given back to the ward, and the job was not ` +
+          `cancelled with it. ${orphan.provider} is still recorded as collecting this patient, and ` +
+          `until the job is cancelled a replacement cannot be booked — the reducer refuses a second ` +
+          `job. Cancel it, in What you can do here below.`
         : `The recorded stage has been moved back behind the booking, so this page can no longer say ` +
           `a bed is pulled. Correcting a stage does not release a bed, so the ward may still have a ` +
           `bed pulled — check with them before cancelling ${orphan.provider}.`,
@@ -339,7 +345,7 @@ export function attentionItems({
         who: "Nothing to chase",
         chip: movement.closure?.outcome === "arrived" ? "Arrived" : "Closed",
         level: movement.closure?.outcome === "arrived" ? "accepted" : "cancelled",
-        say: "Closed, so no checks are raised.",
+        say: "No deadline, bed pull, escort, referral or transport check is raised on this movement, because none of them can be acted on now. What happened, and why it stopped, is stated above.",
       },
     ];
   }
@@ -370,7 +376,7 @@ export function attentionItems({
         who: legalFormNameLabelFirst(movement.legalForm),
         chip: "Overdue",
         level: "urgent",
-        say: `The form ${typedTimePhrase(deadline, now)}. Not recorded as dealt with.`,
+        say: `The form ${typedTimePhrase(deadline, now)}. Nothing on this record says it has been dealt with.`,
       });
     } else if (state === "critical" || state === "due") {
       items.push({
@@ -389,7 +395,7 @@ export function attentionItems({
       who: destination ? `Bed pulled at ${destination.name}` : "Bed pulled for this patient",
       chip: "Pull expired",
       level: "urgent",
-      say: `The pull ran out at ${formatInstantWithDay(movement.pullExpiresAt, now)} — ${formatRemaining(minutesUntil(movement.pullExpiresAt, now))}. The bed may no longer be held.`,
+      say: `The pull on that bed ran out at ${formatInstantWithDay(movement.pullExpiresAt, now)} — ${formatRemaining(minutesUntil(movement.pullExpiresAt, now))}. Unless the ward has kept it anyway, nothing is being kept for this patient.`,
     });
   }
 
@@ -421,7 +427,7 @@ export function attentionItems({
       who: `Transport — ${movement.transport.provider}`,
       chip: "Escort required",
       level: "stalled",
-      say: "Must not travel unescorted. An escort is not recorded as arranged.",
+      say: "This patient must not travel unescorted. The record says an escort is required; it does not say one has been arranged, and there is no field on this movement that could say so.",
     });
   }
 
@@ -435,7 +441,7 @@ export function attentionItems({
       who: `${movement.declines.length} ward${movement.declines.length === 1 ? "" : "s"} declined`,
       chip: "Stalled",
       level: "stalled",
-      say: `${movement.declines.length} ward${movement.declines.length === 1 ? "" : "s"} declined, none accepted.`,
+      say: `${movement.declines.length} ward${movement.declines.length === 1 ? " has" : "s have"} declined this movement and none has accepted. Nothing moves until one does, or until somebody escalates.`,
     });
   }
 
@@ -445,7 +451,7 @@ export function attentionItems({
       who: movement.escalation.contact,
       chip: "Escalated",
       level: "stalled",
-      say: `Escalated to ${movement.escalation.contact} at ${formatInstantWithDay(movement.escalation.at, now)}. No answer recorded.`,
+      say: `This movement was escalated to ${movement.escalation.contact} at ${formatInstantWithDay(movement.escalation.at, now)}. The record does not hold an answer, so somebody has to ask.`,
     });
   }
 
@@ -478,7 +484,7 @@ export function attentionItems({
       who: "Transport",
       chip: "Unanswered",
       level: "routine",
-      say: "Not recorded whether this patient needs transport.",
+      say: "Nobody has recorded whether this patient needs transport. That is not the same as deciding they do not — a bed is pulled and no journey is planned.",
     });
   }
 
@@ -523,8 +529,8 @@ export function attentionItems({
       chip: "Not booked",
       level: "urgent",
       say: answered
-        ? `${destination ? `${destination.name} has` : "The ward has"} a bed pulled for this patient and transport is recorded as needed, but no job has been raised. The sending team books it. ${CONFIRM_WITH_THE_WARD}`
-        : `${destination ? `${destination.name} has` : "The ward has"} a bed pulled for this patient and no transport job exists. Whether transport is needed is not recorded; that answer is owed first. ${CONFIRM_WITH_THE_WARD}`,
+        ? `${destination ? `${destination.name} has` : "The ward has"} a bed pulled for this patient and transport is recorded as needed, but no job has been raised. The sending team books it — nobody else can — and the bed stays pulled while nothing moves. ${CONFIRM_WITH_THE_WARD}`
+        : `${destination ? `${destination.name} has` : "The ward has"} a bed pulled for this patient and no transport job exists. Nobody has recorded whether transport is needed either, so that answer is owed first — and if it is, the sending team books it. The bed stays pulled while nothing moves. ${CONFIRM_WITH_THE_WARD}`,
     });
   }
 
@@ -534,7 +540,7 @@ export function attentionItems({
       who: "Recorded by hand",
       chip: "Blocked",
       level: "stalled",
-      say: `“${movement.blocker}”`,
+      say: `Somebody wrote: “${movement.blocker}”. That is free prose about what is holding this up, not a ward's answer.`,
     });
   }
 
