@@ -17,8 +17,8 @@ export default function ErrorBoundary({ error, retry }: { error: Error & { diges
         title={online ? "Part of this page did not load" : "You are offline"}
         description={
           online
-            ? "The connection dropped. Reload the page to finish loading it. Nothing was changed."
-            : "The connection dropped. This page will reload by itself when the connection returns. Nothing was changed."
+            ? "The connection dropped. Check recent saves and unfinished work before reloading the page to finish loading it."
+            : "The connection dropped. This page will reload by itself when the connection returns, unless a save or unfinished work still needs attention. Check recent saves before repeating an action."
         }
         logLabel="Page file failed to load (connection lost):"
         showReload
