@@ -1,4 +1,5 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { EdPresentation } from "@/components/ward-management/ed/ed-presentation";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type {
   ReferralContactOutcome,
@@ -828,6 +829,8 @@ export type Movement = MovementBase & {
   communityPurpose?: CommunityReferralPurpose;
   /** When the patient physically departed the emergency department. */
   leftDepartmentAt?: Instant;
+  /** Q103 (Josh, 1 Nov 2026): what the person presented with, from the fixed ED list; never typed text. */
+  edPresentations?: EdPresentation[];
   /** When the referral for examination was made. May precede `openedAt` for a community-formed
    *  patient — the legal clock and the department clock are different clocks. */
   formedAt?: Instant;

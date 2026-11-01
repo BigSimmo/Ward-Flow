@@ -33,6 +33,7 @@ import { EdAccessRiskCard } from "@/components/ward-management/forecast/forecast
 import type { EdScreenContext } from "./ed-screen-context";
 import { deriveEdScreen } from "./ed-screen-derivations";
 import { EdListsSection } from "./ed-screen-lists";
+import { EdListsCard } from "./ed-lists-desktop";
 import { edStepSaid, instantFromDateAndTimeInputs, waitLine, type EdStepEvent } from "./ed-screen-model";
 import { EdPatientDialog } from "./ed-screen-patient-dialog";
 import { EdPhonePanes } from "./ed-screen-phone";
@@ -157,7 +158,7 @@ export function EdScreen({ edId }: EdScreenProps) {
       success: edStepSaid(event),
       // Audit 1 CS-07: a Form 1A receipt is taken back by the legal form undo, as on Legal forms.
       undo: (at) =>
-        event.type === "RECORD_LEGAL_FORM_RECEIVED"
+        event.type === "RECORD_LEGAL_FORM_RECEIVED" || event.type === "RECORD_LEGAL_FORM_CODE"
           ? { type: "UNDO_LEGAL_FORM_RECORD", role: "ed", now: at, movementId: event.movementId }
           : { type: "UNDO_ED_STEP", role: "ed", now: at, ...subject },
       undone: "Undone. Back as it was.",
@@ -494,29 +495,12 @@ export function EdScreen({ edId }: EdScreenProps) {
         {/* Device audit 11 Oct 2026: the Statewide capacity table and the 24 hour timeline left the
             page; each is one link to the page that owns it. */}
         {fullscreenBoard || elsewhereLinks.length === 0 ? null : <EdElsewhereLinks links={elsewhereLinks} />}
-        {/* ED board redesign (31 Oct 2026): the Lists repeat the board's people, so on the larger screen
-            they fold behind one closed row that counts each list; nothing in them is lost. The phone
-            keeps its Lists pane. */}
+        {/* The phone keeps its Lists pane; wider screens show the one Lists card. */}
         {fullscreenBoard ? null : isPhone ? (
           <EdListsSection ctx={ctx} />
         ) : (
-          <details className={styles.listsFold} data-testid="ward-ed-lists-fold">
-            <summary>
-              Lists by step{" "}
-              <span>
-                {[
-                  ["Awaiting review", ctx.awaitingReviewPatients.length],
-                  ["Medical clearance", ctx.clearedPatients.length],
-                  ["Expects", ctx.expects.length],
-                  ["Forms", ctx.underFormPatients.length],
-                  ["Referred", ctx.outbox.length + ctx.answeredAll.length],
-                ]
-                  .map(([label, count]) => `${label} ${count}`)
-                  .join(" · ")}
-              </span>
-            </summary>
-            <EdListsSection ctx={ctx} />
-          </details>
+          // Handover build (Josh, 1 Nov 2026): one Lists card, open, with three lists.
+          <EdListsCard ctx={ctx} />
         )}
 
         {selectedPatient ? <EdPatientDialog ctx={ctx} selectedPatient={selectedPatient} /> : null}

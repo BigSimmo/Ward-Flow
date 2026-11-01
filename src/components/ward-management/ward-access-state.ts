@@ -768,7 +768,9 @@ export function commandScopeRefusal(
   // own beds (WT-03).
   if (
     access.role === "ward" &&
-    (command.type === "RECORD_LEGAL_FORM_WRITTEN" || command.type === "RECORD_LEGAL_FORM_EXPIRY")
+    (command.type === "RECORD_LEGAL_FORM_WRITTEN" ||
+      command.type === "RECORD_LEGAL_FORM_CODE" ||
+      command.type === "RECORD_LEGAL_FORM_EXPIRY")
   ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     const stay = movement ? admittedStayForArrival(movement, state.admissions) : undefined;

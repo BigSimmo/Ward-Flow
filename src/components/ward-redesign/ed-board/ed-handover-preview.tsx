@@ -12,7 +12,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import redesign from "./ed-board-redesign.module.css";
 
 /** Q103: a fixed list, more than one can be chosen, and "Other" takes no typed text. */
-export const PRESENTATION_CHOICES = [
+const PRESENTATION_CHOICES = [
   "Suicidal thoughts",
   "Self-harm",
   "Low mood",
@@ -76,7 +76,7 @@ function useHandoverPreview(): HandoverPreview {
 }
 
 /** The form the table shows: the one chosen here, else the record's. */
-export function useShownFormCode(movementId: string, recordCode: string | undefined): string | undefined {
+function useShownFormCode(movementId: string, recordCode: string | undefined): string | undefined {
   const { forms } = useHandoverPreview();
   if (movementId in forms) return forms[movementId] ?? undefined;
   return recordCode;
