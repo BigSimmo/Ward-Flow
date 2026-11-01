@@ -42,6 +42,7 @@ describe("one pinned note at a time, by priority", () => {
 
   it("hides every note after the first one present", () => {
     const css = strip(readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8"));
-    expect(css).toMatch(/\.bannerHolder > \* \+ \* \{\s*display: none;\s*\}/u);
+    // `!important`: a note's own, more specific display rule must not show it beside the first.
+    expect(css).toMatch(/\.bannerHolder > \* \+ \* \{\s*display: none !important;\s*\}/u);
   });
 });
