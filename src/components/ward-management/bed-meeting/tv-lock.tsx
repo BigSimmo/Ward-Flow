@@ -118,7 +118,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         secondary={[{ label: "Cancel", onAction: close }]}
       >
         {offline ? (
-          <p>The password needs a connection to check.</p>
+          <p>The password cannot be checked without a connection.</p>
         ) : needsPassword ? (
           <Field label="Password" error={error ?? undefined}>
             <TextInput
