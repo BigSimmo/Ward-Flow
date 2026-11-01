@@ -90,6 +90,8 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { sendStepsInOrder } from "@/components/ward-management/coordinator/send-steps-in-order";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -550,6 +552,24 @@ export function ShortlistPanel({
     time: "",
     day: 0,
   });
+  // Clinical-safety audit (1 Nov 2026): a change that was refused or not confirmed keeps its form
+  // open with the reason inside it, until the form is closed (CT-09). `recordChangePending` stops a second press
+  // sending the same change while the first is still being saved.
+  const [urgencyFailure, setUrgencyFailure] = useState<string | undefined>(undefined);
+  const [legalStatusFailure, setLegalStatusFailure] = useState<string | undefined>(undefined);
+  const [recordChangePending, setRecordChangePending] = useState(false);
+  // Review on #1216: each opening of either form, and each patient, is its own session. A save that
+  // finishes after its form was closed, reopened or moved to another patient leaves the form now
+  // showing as it is, rather than closing or clearing it.
+  const recordFormSession = useRef(0);
+  useEffect(() => {
+    recordFormSession.current += 1;
+  }, [urgencyChangeOpen, legalStatusChangeOpen, movement?.id]);
+  // A legal status already recorded by a save whose form step then failed, in this session. A retry
+  // of the same status and reason sends only the form, so the status change is not recorded twice.
+  const legalStatusRecorded = useRef<
+    { session: number; legalStatus: LegalStatus; reason: LegalStatusChangeReason } | undefined
+  >(undefined);
   // Audit 4 A4-01: while either form is open, a save from it is checked against the board it
   // opened on, as a popup's is, so another desk's change meanwhile is reported, not overwritten.
   const recordFormOpen = urgencyChangeOpen || legalStatusChangeOpen;
@@ -937,11 +957,12 @@ export function ShortlistPanel({
    */
   function submitUrgencyChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (urgencyBlocked) return;
+    if (urgencyBlocked || recordChangePending) return;
     const chosen = urgencyDraft.urgency;
+    const steps: WardFlowEvent[] = [];
     if (chosen === "urgent") {
       if (urgencyDraft.urgentReason === undefined) return;
-      dispatch({
+      steps.push({
         type: "FLAG_MOVEMENT_URGENT",
         role: "coordinator",
         now,
@@ -950,11 +971,11 @@ export function ShortlistPanel({
       });
     } else {
       const flagged = movement?.flaggedUrgent === true;
-      if (flagged) dispatch({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId });
+      if (flagged) steps.push({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId });
       // Finding 15 (Josh, 27 Oct 2026): the reason is sent when chosen and never required.
       const reason = urgencyDraft.reason;
       if (!flagged || chosen !== movement?.urgency) {
-        dispatch({
+        steps.push({
           type: "CHANGE_URGENCY",
           role: "coordinator",
           now,
@@ -964,7 +985,16 @@ export function ShortlistPanel({
         });
       }
     }
-    setUrgencyChangeOpen(false);
+    setUrgencyFailure(undefined);
+    setRecordChangePending(true);
+    const session = recordFormSession.current;
+    sendStepsInOrder(dispatch, steps, (failed) => {
+      setRecordChangePending(false);
+      // The form was closed, reopened or moved to another patient while this was saving.
+      if (recordFormSession.current !== session) return;
+      if (failed) setUrgencyFailure(failed.failure);
+      else setUrgencyChangeOpen(false);
+    });
   }
 
   // Finding 156: Urgent needs its own reason (the engine asks for one); a tier never does.
@@ -1014,16 +1044,21 @@ export function ShortlistPanel({
     // A real <form>: Enter inside a field submits it whatever the button advertises, and the
     // reducer requires a reason, so an unguarded Enter would dispatch `undefined`.
     if (legalStatusDraft.legalStatus === undefined || legalStatusDraft.reason === undefined) return;
-    dispatch({
-      type: "CHANGE_LEGAL_STATUS",
-      role: "coordinator",
-      now,
-      movementId,
-      legalStatus: legalStatusDraft.legalStatus,
-      reason: legalStatusDraft.reason,
-    });
+    if (recordChangePending) return;
+    const session = recordFormSession.current;
+    const chosen = { legalStatus: legalStatusDraft.legalStatus, reason: legalStatusDraft.reason };
+    const recorded = legalStatusRecorded.current;
+    const statusAlreadyRecorded =
+      recorded !== undefined &&
+      recorded.session === session &&
+      recorded.legalStatus === chosen.legalStatus &&
+      recorded.reason === chosen.reason;
+    const steps: WardFlowEvent[] = statusAlreadyRecorded
+      ? []
+      : [{ type: "CHANGE_LEGAL_STATUS", role: "coordinator", now, movementId, ...chosen }];
+    // The form is recorded only once the status change itself is recorded (`sendStepsInOrder`).
     if (legalFormAsked && isOwnedLegalFormCode(legalFormDraft.code) && legalFormWrittenAt !== undefined) {
-      dispatch({
+      steps.push({
         type: "RECORD_LEGAL_FORM_WRITTEN",
         role: "coordinator",
         now,
@@ -1032,8 +1067,24 @@ export function ShortlistPanel({
         writtenAt: legalFormWrittenAt,
       });
     }
-    setLegalStatusChangeOpen(false);
-    setLegalFormDraft({ code: "", time: "", day: 0 });
+    setLegalStatusFailure(undefined);
+    setRecordChangePending(true);
+    sendStepsInOrder(dispatch, steps, (failed) => {
+      setRecordChangePending(false);
+      const failedStep = failed === undefined ? undefined : steps[failed.index];
+      const statusRecorded = statusAlreadyRecorded || failedStep?.type !== "CHANGE_LEGAL_STATUS";
+      if (statusRecorded) legalStatusRecorded.current = { session, ...chosen };
+      // The form was closed, reopened or moved to another patient while this was saving.
+      if (recordFormSession.current !== session) return;
+      if (failed) {
+        setLegalStatusFailure(
+          statusRecorded ? `Legal status recorded, but not the form. ${failed.failure}` : failed.failure,
+        );
+        return;
+      }
+      setLegalStatusChangeOpen(false);
+      setLegalFormDraft({ code: "", time: "", day: 0 });
+    });
   }
 
   /**
@@ -1049,7 +1100,7 @@ export function ShortlistPanel({
     if (releasePullReason === undefined) return;
     runStep(
       { type: "RELEASE_PULL", role: "coordinator", now, movementId, reason: releasePullReason },
-      { success: "Pulled bed released." },
+      { success: `Pulled bed released for ${patientIdentity.formalName}.` },
     );
     setReleasePullOpen(false);
   }
@@ -1066,7 +1117,7 @@ export function ShortlistPanel({
     if (cancelTransportReason === undefined) return;
     runStep(
       { type: "CANCEL_TRANSPORT", role: "coordinator", now, movementId, reason: cancelTransportReason },
-      { success: "Transport cancelled." },
+      { success: `Transport cancelled for ${patientIdentity.formalName}.` },
     );
     setCancelTransportOpen(false);
   }
@@ -1463,14 +1514,14 @@ export function ShortlistPanel({
                       runStep(
                         { type: "ACCEPT_IN_PRINCIPLE", role: "coordinator", now, movementId, unitId: id },
                         {
-                          success: `Accepted in principle for ${unit.name}.`,
+                          success: `Accepted ${patientIdentity.formalName} in principle for ${unit.name}.`,
                           undo: (at) => ({
                             type: "UNDO_ACCEPT_IN_PRINCIPLE",
                             role: "coordinator",
                             now: at,
                             movementId,
                           }),
-                          undone: "Acceptance undone. The referral is back with the ward.",
+                          undone: `Acceptance undone for ${patientIdentity.formalName}. The referral is back with the ward.`,
                         },
                       )
                     }
@@ -2263,6 +2314,7 @@ export function ShortlistPanel({
               className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
               onClick={() => {
                 setUrgencyChangeOpen((open) => !open);
+                setUrgencyFailure(undefined);
                 // H-0127: start from the tier on the board now, which another desk may have changed.
                 setUrgencyDraft({
                   urgency: movement?.flaggedUrgent ? "urgent" : (movement?.urgency ?? 1),
@@ -2280,6 +2332,7 @@ export function ShortlistPanel({
               className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
               onClick={() => {
                 setLegalStatusChangeOpen((open) => !open);
+                setLegalStatusFailure(undefined);
                 // Blank on every open or close, so an earlier choice never stands in for a new one.
                 setLegalStatusDraft({ legalStatus: undefined, reason: undefined });
                 setLegalFormDraft({ code: "", time: "", day: 0 });
@@ -2376,6 +2429,11 @@ export function ShortlistPanel({
               </button>
               {urgencyBlocked ? (
                 <DisabledReason id="ward-change-urgency-blocked">{urgencyBlocked}</DisabledReason>
+              ) : null}
+              {urgencyFailure ? (
+                <p className={styles.shortlistOverrideLabel} role="alert" data-testid="ward-change-urgency-failure">
+                  {urgencyFailure}
+                </p>
               ) : null}
             </form>
           ) : null}
@@ -2501,6 +2559,15 @@ export function ShortlistPanel({
               </button>
               {legalStatusBlocked ? (
                 <DisabledReason id="ward-change-legal-status-reason-blocked">{legalStatusBlocked}</DisabledReason>
+              ) : null}
+              {legalStatusFailure ? (
+                <p
+                  className={styles.shortlistOverrideLabel}
+                  role="alert"
+                  data-testid="ward-change-legal-status-failure"
+                >
+                  {legalStatusFailure}
+                </p>
               ) : null}
             </form>
           ) : null}

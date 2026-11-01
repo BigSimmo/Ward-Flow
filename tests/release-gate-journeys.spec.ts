@@ -182,6 +182,11 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   const accept = page.getByTestId(`ward-accept-${movementId}`);
   await expect(accept).not.toHaveAttribute("aria-disabled", "true");
   await accept.click();
+  // Q93: Accept opens the named accept dialog; choose the standard pull time limit and confirm.
+  const acceptDialog = page.getByTestId("ward-accept-dialog");
+  await acceptDialog.getByRole("radio", { name: /standard/u }).click();
+  await acceptDialog.getByRole("button", { name: "Confirm acceptance" }).click();
+  await expect(acceptDialog).toHaveCount(0);
   await openWardList(page, "Admissions");
   const pull = page.getByTestId(`ward-pull-${movementId}`);
   await expect(pull).not.toHaveAttribute("aria-disabled", "true");

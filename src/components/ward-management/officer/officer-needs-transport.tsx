@@ -28,6 +28,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
+import { useOfficerPanelHeight } from "./officer-job-panel";
 import styles from "./officer.module.css";
 
 /** The desks that log a booking here (Transport mock-up, Josh, 1 Nov 2026). */
@@ -240,6 +241,7 @@ export function OfficerBookingPanel({
   const save = useWardFormSave(movement.id);
   // Held from opening, so a change by another desk is reported before this booking is accepted.
   useHoldOpenForm(true, movement.id);
+  useOfficerPanelHeight("ward-officer-booking", isPhone, movement.id);
   return (
     <div ref={sideRef} className={styles.side} data-panel="booking">
       <div className={styles.scrim} aria-hidden="true" onClick={onClose} />

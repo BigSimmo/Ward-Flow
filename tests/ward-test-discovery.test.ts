@@ -6,9 +6,10 @@ import { describe, expect, it } from "vitest";
 /**
  * The problem this closes: every "full ward suite" figure has been derived from the FILENAME
  * PREFIX `tests/ward-*`, which is a naming convention nobody enforces, not a discovery rule.
- * `tests/tracker-derivations.test.ts` statically imports from `src/components/ward-management/`
- * and is named after the module under test -- the more natural convention -- which makes it
- * invisible to any count or floor built on the `ward-*` prefix.
+ * `tests/figma-tokens.test.ts` statically imports from `src/components/ward-management/` and is
+ * named after the tooling under test, which makes it invisible to any count or floor built on the
+ * `ward-*` prefix. (`tests/tracker-derivations.test.ts` was the first example; it was deleted with
+ * its module on 1 Nov 2026.)
  *
  * Scope: this walks `tests/**\/*.test.ts` and `tests/**\/*.dom.test.tsx`, i.e. exactly the two
  * populations vitest.config.mts collects for the node and jsdom projects. `tests/ui-*.spec.ts`
@@ -49,8 +50,6 @@ const WARD_STAR_RE = /^ward-/;
 const EXCEPTIONS: Record<string, string> = {
   "figma-tokens.test.ts":
     "named for the Figma token tooling; Ward registry imports verify concrete mapped fixtures, not just route directories",
-  "tracker-derivations.test.ts":
-    "named for tracker-derivations.ts, the module under test, not the ward-management area",
 };
 
 function walkTestFiles(dir: string): string[] {
@@ -153,7 +152,7 @@ describe("ward test discovery vs. the tests/ward-* naming convention", () => {
   it("detects the known component and tooling importers outside the ward-management naming prefix", () => {
     // A known-good control, not only known-bad ones: without this, a matcher that detects
     // nothing would report the tree as clean.
-    expect(importerRelPaths).toEqual(expect.arrayContaining(["figma-tokens.test.ts", "tracker-derivations.test.ts"]));
+    expect(importerRelPaths).toEqual(expect.arrayContaining(["figma-tokens.test.ts"]));
   });
 
   it("does not flag files that only mention ward-management as a string, not an import", () => {

@@ -5020,3 +5020,13 @@
     min-height: 44px;
   }
 }
+
+/* Placement decisions (Accept, Decline) on the not-a-bed question keep a full 48px button on phones
+   and touch screens, as the kit's own `.b[data-placement-action]` does. Before this, a narrow window
+   with a mouse (641-768px) took the compact 36px face (design audit, Josh 1 Nov 2026). */
+@media (max-width: 48rem), (pointer: coarse) {
+  .matchPanel [data-placement-action],
+  .screen[data-ward-design="v6"] .matchPanel [data-placement-action] {
+    min-height: max(3rem, var(--ward-tap, var(--spacing-tap, 3rem)));
+  }
+}

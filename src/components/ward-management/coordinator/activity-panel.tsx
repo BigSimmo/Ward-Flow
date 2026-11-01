@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { Button, ChipGroup, Drawer, FilterChip, PillTabs, StatusGlyph, TabPanel, useIsPhone } from "@/components/wf";
 import {
@@ -11,8 +11,18 @@ import {
   type ActivityCategoryFilter,
 } from "@/components/ward-management/shell/ward-bar-model";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
+import { useActivityFromAudit } from "@/components/ward-management/shell/ward-desk-audit";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { edHref } from "@/components/ward-management/shell/ward-facade";
+import type { ActivityPanelTab } from "@/components/ward-management/shell/ward-activity-panel-store";
+import type { WardReconciliationCheck } from "@/components/ward-management/shell/ward-shell-types";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  splitDuration,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -27,13 +37,17 @@ import { CHANGE_GROUPS, type ChangeLine, changesHandoverText, useExplicitReview 
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import styles from "./home-activity.module.css";
 
-export type ActivityTab = "changes" | "recent" | "notices";
+export type ActivityTab = ActivityPanelTab;
 
 type Review = ReturnType<typeof useExplicitReview>;
 type Activity = ReturnType<typeof deriveCommandActivity>;
+/** B3 P170: a row links to its page only where this desk may open it; following one closes the panel. */
+type Links = { canOpen: (href: string | undefined) => href is string; onNavigate?: () => void };
 
 /** One notice as the panel draws it. */
 type NoticeView = { id: string; raisedAt: Instant; source: string; text: string; read: boolean };
+
+const GOVERNANCE_HREF = "/ward-flow/governance";
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
@@ -48,24 +62,44 @@ function noticeKindWords(kind: string): string {
  * Recent activity from the bar's feed (`deriveCommandActivity`) and this desk's Notices, in the kit's
  * `Drawer` (right on desktop, a bottom sheet on a phone). One title row, compact tabs, and a sticky
  * foot that holds only the review button. The live tally folds into a disclosure at the end of each
- * tab. Self-contained: it reads the store itself, so Home's changes chip and the app bar's Activity
- * button open the same panel.
+ * tab. Self-contained: it reads the store itself, so it works on every page.
+ *
+ * One panel everywhere (Josh, Q99, 1 Nov 2026): the app bar draws the one instance
+ * (`ward-bar.tsx`, loaded on demand), and Home's changes button asks the bar to open it
+ * (`ward-activity-panel-store.ts`). The bar passes its published figure checks (O-9), which show
+ * once under the tabs.
  */
 export function ActivityPanel({
   open,
   onClose,
   id = "home-activity-panel",
+  testId = "home-activity-panel",
   initialTab,
   now: givenNow,
+  figureChecks = [],
+  returnFocusRef,
+  bodyTabIndex,
+  bodyLabel,
+  onNavigate,
 }: {
   open: boolean;
   onClose: () => void;
   /** The drawer's id, for the opener's `aria-controls`. */
   id?: string;
+  testId?: string;
   /** The tab it opens on; by default Changes when any wait for review, otherwise Recent activity. */
   initialTab?: ActivityTab;
   /** Home's paused clock; elsewhere the live demo clock. */
   now?: Instant;
+  /** The page's published figure checks (O-9); none published draws nothing. */
+  figureChecks?: readonly WardReconciliationCheck[];
+  /** Where focus returns on close: the button that opened it. */
+  returnFocusRef?: RefObject<HTMLElement | null>;
+  /** Phone: the list body takes focus, as the bar's other phone sheets do. */
+  bodyTabIndex?: number;
+  bodyLabel?: string;
+  /** Called when a link in the panel is followed: the panel outlives the page, so it closes. */
+  onNavigate?: () => void;
 }) {
   const liveNow = useWardFlowClock();
   const now = givenNow ?? liveNow;
@@ -111,7 +145,7 @@ export function ActivityPanel({
   );
   // The same role and place the bar's Activity drawer reads, so the notices are this desk's.
   const { role, placeId } = useWardNavCounts();
-  const activity = useMemo(
+  const derivedActivity = useMemo(
     () =>
       deriveCommandActivity({
         movements,
@@ -142,6 +176,8 @@ export function ActivityPanel({
       thresholds,
     ],
   );
+  // P056: the bar's feed, with its events from the server audit once read (`ward-desk-audit.ts`).
+  const activity = useActivityFromAudit(derivedActivity, now);
   const deskNotices = useMemo(
     () =>
       notices
@@ -166,6 +202,12 @@ export function ActivityPanel({
     // The bar's own notice action: only a person's click marks a notice read.
     wardRaise(dispatch, role, now)("MARK_NOTICE_READ", { noticeId, actingPlaceId: placeId });
   };
+  // B3 P170 and audit 0c5yr2: a row is a link only where this desk may open the page it names.
+  const canOpenHref = useCanOpenHref();
+  const links: Links = {
+    canOpen: (href): href is string => href !== undefined && canOpenHref(href),
+    onNavigate,
+  };
   const events = activity.content.changes;
   const showFoot = tab === "changes" && (review.shown.length > 0 || review.lastReviewed !== undefined);
 
@@ -174,7 +216,6 @@ export function ActivityPanel({
     { id: "recent" as const, label: isPhone ? "Recent" : "Recent activity", count: events.length },
     { id: "notices" as const, label: "Notices", count: unreadCount },
   ];
-  const tally = <LiveTally activity={activity} now={now} />;
 
   return (
     <Drawer
@@ -182,7 +223,10 @@ export function ActivityPanel({
       open={open}
       onClose={onClose}
       title="Activity · Statewide"
-      testId="home-activity-panel"
+      testId={testId}
+      returnFocusRef={returnFocusRef}
+      bodyTabIndex={bodyTabIndex}
+      bodyLabel={bodyLabel}
       headerClassName={styles.panelHeader}
       titleClassName={styles.panelTitle}
       closeButtonClassName={styles.panelClose}
@@ -197,28 +241,38 @@ export function ActivityPanel({
       footer={showFoot ? <ReviewFoot review={review} now={now} /> : undefined}
     >
       <TabPanel idPrefix="home-activity" id="changes" hidden={tab !== "changes"}>
-        <ChangesBody review={review} now={now} />
-        {tally}
+        <ChangesBody review={review} now={now} links={links} />
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="recent" hidden={tab !== "recent"}>
-        <RecentBody events={events} tones={activity.tones} />
-        {tally}
+        <RecentBody events={events} tones={activity.tones} links={links} />
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="notices" hidden={tab !== "notices"}>
         <NoticesBody notices={noticeViews} now={now} onMarkRead={markRead} />
-        {tally}
       </TabPanel>
+      {/* The live tally closes every tab; drawn once, under whichever tab shows. */}
+      <LiveTally activity={activity} now={now} links={links} />
+      <FigureChecks checks={figureChecks} />
     </Drawer>
   );
 }
 
-function LiveTally({ activity, now }: { activity: Activity; now: Instant }) {
+function LiveTally({ activity, now, links }: { activity: Activity; now: Instant; links: Links }) {
+  // Drawn only while open, so its links are never focus stops while it is shut.
+  const [open, setOpen] = useState(false);
   return (
-    <details className={styles.tally}>
+    <details className={styles.tally} onToggle={(event) => setOpen(event.currentTarget.open)}>
       <summary>
         <span>Live tally</span>
-        <span className={styles.muted}>as at {formatInstant(now)}</span>
+        <span className={styles.muted}>Synthetic state · demo time {formatInstant(now)}</span>
       </summary>
+      {open ? <TallyBody activity={activity} links={links} /> : null}
+    </details>
+  );
+}
+
+function TallyBody({ activity, links }: { activity: Activity; links: Links }) {
+  return (
+    <>
       <div className={styles.tallyGrid}>
         {activity.content.tiles.map((tile) => (
           <div key={tile.label} className={styles.tallyTile}>
@@ -227,11 +281,73 @@ function LiveTally({ activity, now }: { activity: Activity; now: Instant }) {
           </div>
         ))}
       </div>
+      {activity.departments.length > 0 ? (
+        <table className={styles.tallyDepartments}>
+          <caption>Emergency departments</caption>
+          <thead>
+            <tr>
+              <th scope="col">Department</th>
+              <th scope="col">Waiting</th>
+              <th scope="col">Longest</th>
+              <th scope="col">Due times passed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {activity.departments.map((row) => {
+              const href = edHref(row.ed.id);
+              return (
+                <tr key={row.ed.id}>
+                  <th scope="row">
+                    {/* Audit 0c5yr2: a link only where this desk may open the ED page. */}
+                    {links.canOpen(href) ? (
+                      <Link href={href} onClick={links.onNavigate} title={row.ed.name}>
+                        {row.ed.siteCode}
+                      </Link>
+                    ) : (
+                      <span title={row.ed.name}>{row.ed.siteCode}</span>
+                    )}
+                  </th>
+                  <td>{row.waiting}</td>
+                  <td>{row.waiting ? splitDuration(row.longestWaitMinutes) : "—"}</td>
+                  <td>
+                    {row.breaching > 0 ? <StatusGlyph tone="danger" size={8} /> : null}
+                    {row.breaching}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      ) : null}
+    </>
+  );
+}
+
+/** O-9: what the page on screen reconciled, once under the tabs. Nothing published, nothing drawn. */
+function FigureChecks({ checks }: { checks: readonly WardReconciliationCheck[] }) {
+  if (checks.length === 0) return null;
+  const reconciled = checks.filter((check) => check.ok).length;
+  return (
+    <details className={styles.tally} data-testid="ward-bar-figure-checks">
+      <summary>
+        <span>
+          <StatusGlyph tone={reconciled === checks.length ? "success" : "danger"} size={9} /> Figure checks ·{" "}
+          {reconciled} of {checks.length} reconcile
+        </span>
+      </summary>
+      <ul className={`${styles.plainList} ${styles.checkList}`}>
+        {checks.map((check) => (
+          <li key={check.label}>
+            <StatusGlyph tone={check.ok ? "success" : "danger"} size={8} />
+            {check.label} · {check.ok ? "Reconciles" : "Does not reconcile"}
+          </li>
+        ))}
+      </ul>
     </details>
   );
 }
 
-function ChangesBody({ review, now }: { review: Review; now: Instant }) {
+function ChangesBody({ review, now, links }: { review: Review; now: Instant; links: Links }) {
   const since = review.reviewedAt ?? review.shiftStart;
   return (
     <>
@@ -264,7 +380,7 @@ function ChangesBody({ review, now }: { review: Review; now: Instant }) {
               </h3>
               <ul className={styles.plainList}>
                 {lines.map((line) => (
-                  <ChangeRow key={line.id} line={line} now={now} />
+                  <ChangeRow key={line.id} line={line} now={now} links={links} />
                 ))}
               </ul>
             </section>
@@ -276,13 +392,13 @@ function ChangesBody({ review, now }: { review: Review; now: Instant }) {
 }
 
 /** Two lines: who and when, then what changed (with the Alerts tag when it applies). */
-function ChangeRow({ line, now }: { line: ChangeLine; now: Instant }) {
+function ChangeRow({ line, now, links }: { line: ChangeLine; now: Instant; links: Links }) {
   return (
     <li className={styles.twoLine}>
       <StatusGlyph tone={line.tone} size={9} className={styles.rowGlyph} />
       <span className={styles.rowWho}>
-        {line.href ? (
-          <Link href={line.href} className={styles.personLink}>
+        {links.canOpen(line.href) ? (
+          <Link href={line.href} className={styles.personLink} onClick={links.onNavigate}>
             {line.who}
           </Link>
         ) : (
@@ -357,7 +473,15 @@ function usePersonText(): (text: string) => string {
   return (text) => text.replace(/\bUM\d{6}\b/gu, (umrn) => byUmrn.get(umrn) ?? umrn);
 }
 
-function RecentBody({ events, tones }: { events: Activity["content"]["changes"]; tones: Activity["tones"] }) {
+function RecentBody({
+  events,
+  tones,
+  links,
+}: {
+  events: Activity["content"]["changes"];
+  tones: Activity["tones"];
+  links: Links;
+}) {
   const [filter, setFilter] = useState<ActivityCategoryFilter>("all");
   const personText = usePersonText();
   const counts = useMemo(() => {
@@ -380,9 +504,13 @@ function RecentBody({ events, tones }: { events: Activity["content"]["changes"];
     <>
       <p className={styles.metaLine}>
         Latest {events.length} events · Full audit trail in{" "}
-        <Link href="/ward-flow/governance" className={styles.metaLink}>
-          Governance
-        </Link>
+        {links.canOpen(GOVERNANCE_HREF) ? (
+          <Link href={GOVERNANCE_HREF} className={styles.metaLink} onClick={links.onNavigate}>
+            Governance
+          </Link>
+        ) : (
+          "Governance"
+        )}
       </p>
       <ChipGroup label="Filter events by category" className={styles.chips}>
         {ACTIVITY_CATEGORY_CHIPS.filter((chip) => chip.id === "all" || counts[chip.id] > 0).map((chip) => (
@@ -406,8 +534,8 @@ function RecentBody({ events, tones }: { events: Activity["content"]["changes"];
               size={9}
               className={styles.eventGlyph}
             />
-            {event.href ? (
-              <Link href={event.href} className={styles.eventText}>
+            {links.canOpen(event.href) ? (
+              <Link href={event.href} className={styles.eventText} onClick={links.onNavigate}>
                 {personText(event.text)}
               </Link>
             ) : (

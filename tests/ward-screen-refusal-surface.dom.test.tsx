@@ -80,7 +80,8 @@ function ReferWF301ToRphAdultSecure() {
  * it depends on what a second, concurrent accept just did.
  *
  * The trigger dispatches an ordinary, winning `ACCEPT_IN_PRINCIPLE` for the same movement and unit
- * `WardScreen`'s own button is about to try, then clicks that real button SYNCHRONOUSLY, inside the
+ * `WardScreen`'s own button is about to try, then clicks that real button (since Q93, the named
+ * accept dialog's Confirm) SYNCHRONOUSLY, inside the
  * same event handler — never via a second `fireEvent` call, which would let React flush and remove
  * the button from the DOM (accepted, it moves out of "incoming") before the second click could ever
  * land. Because both dispatches happen inside one native click handler, React's automatic batching
@@ -98,12 +99,22 @@ function TriggerDoubleAccept({ movementId, unitId }: { movementId: string; unitI
       data-testid="trigger-double-accept"
       onClick={() => {
         dispatch({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId });
-        (document.querySelector(`[data-testid="ward-accept-${movementId}"]`) as HTMLButtonElement | null)?.click();
+        // Q93: the ward's own accept is the named dialog's Confirm, opened before this trigger.
+        Array.from(document.querySelectorAll<HTMLButtonElement>('[data-testid="ward-accept-dialog"] button'))
+          .find((button) => button.textContent === "Confirm acceptance")
+          ?.click();
       }}
     >
       trigger double accept
     </button>
   );
+}
+
+/** Q93: Accept in principle opens the named dialog; choose the standard pull time limit and confirm. */
+function confirmNamedAccept() {
+  const dialog = screen.getByTestId("ward-accept-dialog");
+  fireEvent.click(within(dialog).getAllByRole("radio")[0]!);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Confirm acceptance" }));
 }
 
 describe("ward screen surfaces a refused action to the ward user", () => {
@@ -121,6 +132,7 @@ describe("ward screen surfaces a refused action to the ward user", () => {
     expect(refusalAlerts()).toHaveLength(0);
 
     fireEvent.click(screen.getByTestId("ward-accept-WF-319"));
+    confirmNamedAccept();
     // The accept itself succeeds — the referral carried an override reason, so the same judgement
     // gate that held the referral back does not refuse the acceptance either. Still nothing.
     expect(screen.getByTestId("ward-accepted-WF-319")).toBeInTheDocument();
@@ -137,6 +149,7 @@ describe("ward screen surfaces a refused action to the ward user", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "refer WF-319 to Great Southern Acute Psychiatric Unit" }));
     fireEvent.click(screen.getByTestId("ward-accept-WF-319"));
+    confirmNamedAccept();
 
     const acceptedRow = screen.getByTestId("ward-accepted-WF-319");
     // ⚠️ THE PAIR CHANGED WHEN THE ENGINE GATE LANDED, AND WHY IT CHANGED IS THE POINT.
@@ -176,6 +189,9 @@ describe("ward screen surfaces a refused action to the ward user", () => {
     expect(screen.getByTestId("ward-incoming-WF-301")).toBeInTheDocument();
     expect(refusalAlerts()).toHaveLength(0);
 
+    // Q93: open the named accept dialog and choose a pull time limit, so the trigger's Confirm lands.
+    fireEvent.click(screen.getByTestId("ward-accept-WF-301"));
+    fireEvent.click(within(screen.getByTestId("ward-accept-dialog")).getAllByRole("radio")[0]!);
     fireEvent.click(screen.getByTestId("trigger-double-accept"));
 
     // The winning accept moved WF-301 out of "incoming" and into "accepted" — the SAME place the

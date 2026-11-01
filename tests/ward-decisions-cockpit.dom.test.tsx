@@ -70,7 +70,8 @@ describe("ward decisions cockpit", () => {
       </WardDecisionsCockpit>,
     );
     expect(screen.getByRole("button", { name: "Confirm unchanged" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent("1 allocatable");
+    // Polish (1 Nov 2026): the staffing fact reads under the Staffing card's head, not in the step.
+    expect(screen.getByRole("region", { name: "Staffing" })).toHaveTextContent("1 allocatable");
   });
 
   it("hands Accept to the screen's named dialog and says only what the screen reports (Q93)", () => {
@@ -243,6 +244,8 @@ describe("ward decisions cockpit", () => {
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent("2 discharges signed off: SYNTHETIC, One; SYNTHETIC, Two");
+    // The names wrap rather than being cut off with an ellipsis on a phone.
+    expect(screen.getByText(/signed off:/u).className).toMatch(/result/u);
   });
 
   it("keeps a refusal past six seconds until it is closed, and lets a recorded step clear (CT-09)", () => {

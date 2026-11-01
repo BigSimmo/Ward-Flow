@@ -45,23 +45,34 @@
 }
 
 /* Header: badge, name and line, previous, next, close. */
+/* Polish (1 Nov 2026): the bed badge, the person and their line sit on one top edge, with the
+   previous, next and close buttons grouped on the right. */
 .drawerHead {
   display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4) var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
   flex-shrink: 0;
+}
+
+.drawerHead > :global(button) {
+  flex: none;
+}
+
+.drawerHead > :global(button:last-child) {
+  margin-left: -4px;
 }
 
 .drawerBedBadge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 12px;
+  height: 32px;
+  margin-top: 2px;
+  padding: 0 10px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-tag);
+  border-radius: var(--wf-r-sm);
   border: 1px solid var(--wf-line-2);
   background: var(--wf-surface);
   box-shadow: inset 0 1px 0 var(--wf-hl);
@@ -80,13 +91,15 @@
 .drawerHeading {
   display: flex;
   flex-direction: column;
+  gap: 2px;
   min-width: 0;
   flex: 1 1 auto;
 }
 
 .drawerTitle {
   margin: 0;
-  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  font: 600 var(--wf-fs-16) / 22px var(--wf-font);
+  letter-spacing: -0.005em;
   color: var(--wf-ink-1);
   white-space: nowrap;
   overflow: hidden;
@@ -109,12 +122,17 @@
 }
 
 /* Fact tiles */
+/* Redesign: four equal facts whose values wrap rather than cut off ("Day 1…", "Past d…").
+   Polish (1 Nov 2026): one card split by hairlines, as Home's stat row, rather than four boxes. */
 .facts {
-  /* Redesign: four equal tiles whose values wrap rather than cut off ("Day 1…", "Past d…"). */
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  margin: var(--wf-s-3) var(--wf-s-4) 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
   flex-shrink: 0;
 }
 
@@ -122,17 +140,18 @@
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
-  padding: 8px 10px;
-  border-radius: var(--wf-r-md);
-  border: 1px solid var(--wf-line-2);
-  background: var(--wf-surface);
+  padding: 10px 14px 12px;
+}
+
+.fact + .fact {
+  border-left: 1px solid var(--wf-line);
 }
 
 .factLabel {
   font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-11);
+  line-height: var(--wf-lh-12);
   color: var(--wf-ink-3);
   white-space: nowrap;
 }
@@ -142,7 +161,8 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-  font-size: var(--wf-fs-13);
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
   font-weight: 600;
 }
 
@@ -167,13 +187,14 @@
 /* Redesign: Patient page moves up beside the name, so the footer holds the steps in one row. */
 .headPatient {
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
   gap: 2px;
   min-height: 24px;
   margin-top: 2px;
   font-size: var(--wf-fs-13);
   font-weight: 600;
-  color: var(--wf-accent);
+  color: var(--wf-accent-ink);
   text-decoration: none;
 }
 
@@ -200,13 +221,13 @@
 .tab {
   flex: 1 1 0;
   min-width: 0;
-  height: 30px;
+  height: 32px;
   padding: 0 10px;
   border: 0;
   border-radius: var(--wf-r-seg-item);
   background: transparent;
   color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -239,7 +260,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--wf-s-3);
   padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
   scrollbar-width: thin;
 }
@@ -247,7 +268,7 @@
 .panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--wf-s-3);
 }
 
 .panel[hidden] {
@@ -271,36 +292,48 @@
   color: var(--wf-ink-1);
 }
 
+/* Polish (1 Nov 2026): each card is headed in sentence case like the app's cards, over a hairline. */
 .cardTitle {
   margin: 0;
-  padding: 10px 14px 0;
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
+  padding: var(--wf-s-3) var(--wf-s-4) 10px;
+  border-bottom: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
 }
 
 .cardInner {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 8px 14px 12px;
+  padding: var(--wf-s-3) var(--wf-s-4);
 }
 
+/* Label and value rows: one 8.5rem label column in every card, so values line up card to card, and a
+   hairline between rows so a long value stays with its label. */
 .kv {
   display: grid;
-  /* Redesign: one label width for every section, so the values line up from card to card. */
-  grid-template-columns: minmax(7.5rem, auto) minmax(0, 1fr);
-  gap: 6px 12px;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
   margin: 0;
-  padding: 8px 14px 12px;
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
+  padding: 2px var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.kvDt,
+.kvDd {
+  padding-block: 9px;
+  border-top: 1px solid var(--wf-line);
+}
+
+.kvDt:first-of-type,
+.kvDt:first-of-type + .kvDd {
+  border-top: 0;
 }
 
 .kvDt {
+  padding-right: var(--wf-s-3);
   color: var(--wf-ink-3);
-  white-space: nowrap;
+  font-size: var(--wf-fs-12);
 }
 
 .kvDd {
@@ -308,6 +341,7 @@
   min-width: 0;
   font-weight: 500;
   color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
 }
 
 .mono {
@@ -355,7 +389,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 14px 12px;
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
 }
 
 .editor .select {
@@ -392,7 +426,7 @@
   align-items: center;
   gap: 8px;
   margin: 0;
-  padding: 0 14px 12px;
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
   font-size: var(--wf-fs-12);
   color: var(--wf-success-ink);
 }
@@ -403,7 +437,7 @@
 
 .empty {
   margin: 0;
-  padding: 8px 14px 12px;
+  padding: var(--wf-s-3) var(--wf-s-4);
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
@@ -413,10 +447,10 @@
 .timeline {
   list-style: none;
   margin: 0;
-  padding: 4px 14px 8px;
+  padding: 2px var(--wf-s-4) 6px;
   display: grid;
   grid-template-columns: 10px max-content minmax(0, 1fr);
-  column-gap: 8px;
+  column-gap: 10px;
 }
 
 .timeline li {
@@ -424,8 +458,8 @@
   display: grid;
   grid-template-columns: subgrid;
   align-items: center;
-  min-height: 32px;
-  font-size: var(--wf-fs-12);
+  min-height: 36px;
+  font-size: var(--wf-fs-13);
   border-bottom: 1px solid var(--wf-line);
 }
 
@@ -440,6 +474,7 @@
 }
 
 .timelineAt {
+  font-size: var(--wf-fs-12);
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);
@@ -453,8 +488,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  gap: 10px var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-4) + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--wf-line-2);
   background: var(--wf-glass-thick);
   flex-shrink: 0;
@@ -499,6 +534,14 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .fact:nth-child(3) {
+    border-left: 0;
+  }
+
+  .fact:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+
   .drawerFoot > :global(*) {
     flex: 1 1 auto;
   }
@@ -522,7 +565,7 @@
   gap: var(--wf-s-2);
   min-width: 0;
   margin: 0;
-  font-size: var(--wf-fs-12);
+  font-size: var(--wf-fs-13);
   color: var(--wf-ink-3);
   white-space: nowrap;
 }
@@ -534,16 +577,22 @@
   text-overflow: ellipsis;
 }
 
+/* Change reads as a quiet link beside the destination, not a third button competing with the steps. */
 .footChange {
   flex: none;
-  height: 24px;
+  height: 28px;
+  margin-left: auto;
   padding: 0 var(--wf-s-2);
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-tag);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  border: 0;
+  border-radius: var(--wf-r-xs);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
   cursor: pointer;
+}
+
+.footChange:hover {
+  background: var(--wf-hover);
 }
 
 .footChange:focus-visible {
@@ -818,14 +867,14 @@
   display: flex;
   align-items: flex-start;
   gap: var(--wf-s-2);
-  margin: var(--wf-s-3) var(--wf-s-4) 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
+  margin: 10px var(--wf-s-4) 0;
+  padding: 10px 14px;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md, 8px);
+  border-radius: var(--wf-r-md);
   background: var(--wf-surface);
-  color: var(--wf-ink-1);
+  color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
-  line-height: 1.4;
+  line-height: 1.45;
   flex-shrink: 0;
 }
 
@@ -837,6 +886,7 @@
 
 .notLeft b {
   font-weight: 600;
+  color: var(--wf-ink-1);
 }
 
 /* No side edge (owner ruling, 31 Oct 2026): the glyph before the words carries the tone. */

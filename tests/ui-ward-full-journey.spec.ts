@@ -425,6 +425,11 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expect(acceptButton).toBeVisible();
     await expect(acceptButton).not.toHaveAttribute("aria-disabled", "true");
     await acceptButton.click();
+    // Q93: Accept opens the named accept dialog; choose the standard pull time limit and confirm.
+    const acceptDialog = page.getByTestId("ward-accept-dialog");
+    await acceptDialog.getByRole("radio", { name: /standard/u }).click();
+    await acceptDialog.getByRole("button", { name: "Confirm acceptance" }).click();
+    await expect(acceptDialog).toHaveCount(0);
 
     // --- Step 5: the ward pulls the patient (the app's own bed-pull action — see this file's
     // header comment on "receives or raises": here too, the real mechanism is what this spec

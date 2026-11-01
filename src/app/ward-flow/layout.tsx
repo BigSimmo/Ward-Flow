@@ -17,7 +17,7 @@ import { WardFirstDocumentOnly } from "@/components/ward-management/shell/ward-f
 import { WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-rail-early";
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
-import { WardOfflineBanner } from "@/components/ward-management/shell/ward-offline-banner";
+import { WardOfflineBanner, WardPracticeLine } from "@/components/ward-management/shell/ward-offline-banner";
 import { WardDowntimePackLine } from "@/components/ward-management/shell/ward-downtime-pack-line";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardDemoNotSavedNote } from "@/components/ward-management/shell/ward-demo-saving";
@@ -223,16 +223,21 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   <p className={styles.loadingNote} role="status" data-testid="ward-loading-note" data-print-hide>
                     Loading, not live yet. Taps work once this goes.
                   </p>
-                  <WardRecoveryNotice />
                   {/* `data-wf-bar-notes`: the band counts these notes as part of the header (wf/band.ts), so a
-                page still opens on its hero band while a note is showing. */}
+                page still opens on its hero band while a note is showing.
+                Minimal warnings (design audit, Josh 1 Nov 2026): at most one note shows at a time. They sit
+                in priority order and the holder shows only the first one present
+                (ward-flow-layout.module.css), so a lower note never hides a higher one. A pull-now broadcast
+                comes first, so a recovery note waiting to be closed never hides it. Keep this order. */}
                   <div className={styles.bannerHolder} data-wf-bar-notes="">
                     <WardBroadcastBanner />
-                    <WardOfflineBanner />
+                    <WardRecoveryNotice />
+                    <WardOfflineBanner practice={false} />
                     {/* Fix plan item 9: retakes the downtime pack hourly and at shift change, and offers it to print or save. */}
                     <WardDowntimePackLine />
-                    <WardDemoNotSavedNote />
                     <WardAccessBanner />
+                    <WardPracticeLine />
+                    <WardDemoNotSavedNote />
                   </div>
                   <WardPhoneDesktopOnly />
                   {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx).
