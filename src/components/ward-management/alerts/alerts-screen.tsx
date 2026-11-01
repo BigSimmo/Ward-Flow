@@ -859,8 +859,6 @@ function AlertsWorkspace() {
 
   const directiveTone: WfTone =
     activeBroadcast?.severity === "critical" ? "danger" : activeBroadcast?.severity === "warning" ? "warning" : "info";
-  const severityLabel = (severity: BroadcastSeverity) =>
-    severity === "critical" ? "Critical" : severity === "warning" ? "Warning" : "Advisory";
   const pastBroadcasts = (broadcastAlerts ?? []).filter(
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
@@ -1323,8 +1321,6 @@ function AlertsWorkspace() {
                   livePullNows={livePullNows}
                   handleStandDown={handleStandDown}
                   activeBroadcast={activeBroadcast}
-                  directiveTone={directiveTone}
-                  severityLabel={severityLabel}
                   broadcastAcks={broadcastAcks}
                   units={units}
                   now={now}
@@ -1332,6 +1328,15 @@ function AlertsWorkspace() {
                   raise={raise}
                   pastBroadcasts={pastBroadcasts}
                   movements={movements}
+                  deskRole={deskRole}
+                  onCompose={openComposer}
+                  composeDisabledReason={broadcastDisabledReason}
+                  onCopyAnswers={(text) =>
+                    copyTextToClipboard(text).then(
+                      () => setBroadcastSuccessNotice("Copied the answers."),
+                      () => setBroadcastSuccessNotice("Copy was blocked by the browser."),
+                    )
+                  }
                 />
               ) : null}
 

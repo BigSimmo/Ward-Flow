@@ -119,7 +119,9 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     // Ops-11 (13 Oct 2026): nobody has acknowledged yet, counted against the desks the directive
     // asked: every ward and every ED desk for the all-units target, never the coordinator desk.
     expect(
-      screen.getByText(`0 of ${allUnits().length + allEmergencyDepartments().length} units acknowledged`),
+      within(screen.getByLabelText("Current broadcast")).getByText(
+        `0 of ${allUnits().length + allEmergencyDepartments().length} acknowledged`,
+      ),
     ).toBeInTheDocument();
 
     // Global broadcast banner rendered
@@ -139,7 +141,9 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
 
     // Before ack: nobody has acknowledged yet.
-    expect(screen.getByText(/^0 of \d+ units acknowledged$/i)).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("Current broadcast")).getByText(/^0 of \d+ acknowledged$/i),
+    ).toBeInTheDocument();
 
     // Ops-13 (13 Oct 2026): the coordinator sent it, so their banner shows the count and no
     // Acknowledge button.
@@ -152,7 +156,9 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     // The ward is asked, and its acknowledgement is recorded: the count rises by one.
     fireEvent.click(within(wardBanner).getByRole("button", { name: /^Acknowledge$/i }));
     expect(within(wardBanner).getByText("Acknowledged")).toBeInTheDocument();
-    expect(screen.getByText(/^1 of \d+ units acknowledged$/i)).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("Current broadcast")).getByText(/^1 of \d+ acknowledged$/i),
+    ).toBeInTheDocument();
 
     // Stand down directive from alerts screen
     const standDownBtn = screen.getByRole("button", { name: /Stand down this alert/i });

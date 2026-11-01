@@ -64,7 +64,7 @@ describe("broadcast actions retain the actual permitted desk identity", () => {
         dispatchedByName:
           role === "coordinator" ? "State Mental Health Bed Desk Coordinator" : WARD_FLOW_ROLE_LABELS[role],
       });
-      fireEvent.click(screen.getByRole("button", { name: "Extend" }));
+      fireEvent.click(screen.getByRole("button", { name: /^Extend / }));
       expect(sent.findLast((event) => event.type === "EXTEND_BROADCAST_ALERT")).toMatchObject({ role });
       fireEvent.click(screen.getByRole("button", { name: "Stand down this alert" }));
       expect(sent.findLast((event) => event.type === "STAND_DOWN_BROADCAST_ALERT")).toMatchObject({
