@@ -202,7 +202,8 @@ describe("community hub — who the page shows is who the referral named", () =>
     // The September UX composition makes the selected team the page heading. Keep the exact
     // team identity and referred-person assertions; only its heading level has changed.
     expect(
-      screen.getByRole("heading", { level: 1, name: TEAM_A.name }),
+      // Locked design (1 Nov 2026): the heading reads "N on the caseload, <team>".
+      screen.getByRole("heading", { level: 1, name: new RegExp(`on the caseload, ${TEAM_A.name}$`) }),
       `the page does not name ${TEAM_A.name} — it is showing another team, or none`,
     ).toBeInTheDocument();
     expect(admittedIds()).toHaveLength(1);
@@ -1537,10 +1538,8 @@ describe("the KPI figures state absence in words, never a bare zero rendered as 
   it("says 'None waiting' rather than a bare number when nobody is waiting on this team", () => {
     renderTeam(ACCEPTED_TEAM.id, [], []);
 
-    const longestWaitLabel = screen.getByText("Longest wait");
-    const figure = longestWaitLabel.closest('[data-ward-primitive="figure"]');
-    expect(figure, "the Longest wait figure tile was not found").toBeTruthy();
-    expect(figure?.textContent).toContain("None waiting");
+    // Locked design (1 Nov 2026): the at-a-glance strip's Oldest referral replaces the Longest wait tile.
+    expect(screen.getByTestId("ward-community-glance")).toHaveTextContent("Oldest referralNone waiting");
   });
 });
 

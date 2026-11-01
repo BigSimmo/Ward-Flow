@@ -5,6 +5,10 @@
  */
 
 .standing {
+  /* The hero's curve paints the canvas behind it (locked design, 1 Nov 2026): the shell's ground
+     is white, so without this a white lip showed under the curve on this grey page. `--ground` is
+     what `community.module.css` paints the page with. */
+  --wf-page-canvas: var(--ground, var(--wf-canvas));
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
@@ -25,9 +29,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  padding: 0;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
   border-radius: var(--wf-r-sm);
   background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
@@ -544,4 +549,107 @@ div.workspace > .side {
   .switchItem {
     min-height: var(--wf-touch);
   }
+}
+
+/* ---- Locked design, 1 Nov 2026 (design/community-team-2026-11) ---- */
+
+.heroSub {
+  font: 400 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+  color: var(--wf-hero-ink-2);
+}
+
+.heroChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.heroLink {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--wf-r-ctl);
+  border: 1px solid var(--wf-on-hero-line);
+  background: transparent;
+  color: var(--wf-hero-ink-2);
+  font: 400 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.heroLink b {
+  color: var(--wf-hero-ink);
+  font-weight: 600;
+}
+
+.glance {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.glanceItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-left: 1px solid var(--wf-on-hero-line);
+  background: transparent;
+  color: var(--wf-hero-ink-2);
+  font: 400 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.glanceItem:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.glanceItem b {
+  color: var(--wf-hero-ink);
+  font-weight: 600;
+}
+
+.glanceItem:hover b:last-of-type {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.glanceItem:focus-visible,
+.heroLink:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+.glanceMono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The ward page's tab row, under the hero. */
+.tabRow {
+  margin-top: var(--wf-s-2);
+}
+
+div.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  max-width: none;
+  padding: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.sectionHidden {
+  display: none;
+}
+
+.sectionSwitch {
+  align-self: flex-start;
 }
