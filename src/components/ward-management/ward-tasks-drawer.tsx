@@ -606,6 +606,10 @@ export function WardTasksDrawer({
       ? { value: undefined, word: undefined, state: "Done", tone: "success" as WfTone, stateTone: undefined }
       : rowTiming(item, movement, now, words.wait);
     const name = patient?.formalName ?? "Patient not linked";
+    // A grouped alert keeps its own acknowledgement line, worded as a single row's, so staff can
+    // still tell seen from unseen after "Acknowledge visible".
+    const ackHistory = acknowledgements[item.id] ?? [];
+    const latestAck = ackHistory.at(-1);
     return (
       <li key={item.id} className={styles.groupMember} data-testid={`ward-task-member-${item.id}`}>
         <span className={styles.memberText}>
@@ -629,6 +633,13 @@ export function WardTasksDrawer({
               </span>
             ) : null}
           </span>
+          {latestAck ? (
+            <span className={`${styles.ackStatus} ${styles.memberAck}`} data-testid={`ward-task-ack-${item.id}`}>
+              <StatusGlyph tone="info" size={8} />
+              Acknowledged by {latestAck.by} at {formatInstantWithDay(latestAck.at, now)}
+              {ackHistory.length > 1 ? ` · ${ackHistory.length} times` : ""}, still open
+            </span>
+          ) : null}
         </span>
         <span className={styles.memberActions}>
           {renderOneAction(item, movement)}

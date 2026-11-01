@@ -1051,6 +1051,12 @@
   font-size: var(--wf-fs-12);
 }
 
+/* A grouped member's acknowledgement line sits under its name, so it drops the single row's indent
+   (two classes, so the phone indent further down cannot win). */
+.ackStatus.memberAck {
+  padding-left: 0;
+}
+
 .memberActions {
   display: flex;
   align-items: center;

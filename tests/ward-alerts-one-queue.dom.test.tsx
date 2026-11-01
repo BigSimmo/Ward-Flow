@@ -4,7 +4,7 @@
 // Alerts screen the button does not open a second copy of the list.
 import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { createRef, type ReactNode } from "react";
+import { createRef, type ComponentProps, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -138,11 +138,14 @@ describe("the drawer with one Alerts queue", () => {
 describe("the Alerts drawer redesign (pop-alerts, approved 31 Oct 2026)", () => {
   const records = { movements: seed.movements, patients: seed.patients, referrals: seed.referrals, units: seed.units };
 
-  function renderDrawer(list = items) {
+  function renderDrawer(
+    list = items,
+    acknowledgements: ComponentProps<typeof WardTasksDrawer>["acknowledgements"] = {},
+  ) {
     render(
       <WardTasksDrawer
         items={list}
-        acknowledgements={{}}
+        acknowledgements={acknowledgements}
         completions={{}}
         role="coordinator"
         now={NOW_ANCHOR}
@@ -179,6 +182,24 @@ describe("the Alerts drawer redesign (pop-alerts, approved 31 Oct 2026)", () => 
     // Names read "Surname, Given" (D-83), never given name first.
     const member = within(list).getAllByRole("listitem")[0]!;
     expect(member.querySelector("strong")?.textContent).toMatch(/^[^,]+, [^,]+$/u);
+  });
+
+  it("keeps each grouped alert's acknowledgement status, so seen and unseen still differ", () => {
+    const counts = new Map<string, number>();
+    for (const item of items) counts.set(item.title, (counts.get(item.title) ?? 0) + 1);
+    const [title, count] = [...counts].find(([, n]) => n > 1) ?? [];
+    if (!title || !count) throw new Error("fixture drifted: the seeded inbox has no two alerts of one kind");
+    const [seen, unseen] = items.filter((item) => item.title === title);
+    const drawer = renderDrawer(items, {
+      [seen!.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }],
+    });
+    const list = within(drawer).getByRole("list", { name: `${title}, ${count} people` });
+    const seenMember = within(list).getByTestId(`ward-task-member-${seen!.id}`);
+    expect(within(seenMember).getByTestId(`ward-task-ack-${seen!.id}`)).toHaveTextContent(
+      /^Acknowledged by Bed coordinator at .+, still open$/u,
+    );
+    const unseenMember = within(list).getByTestId(`ward-task-member-${unseen!.id}`);
+    expect(within(unseenMember).queryByTestId(`ward-task-ack-${unseen!.id}`)).toBeNull();
   });
 
   it("shows a long group's first 6, then Show more", () => {
