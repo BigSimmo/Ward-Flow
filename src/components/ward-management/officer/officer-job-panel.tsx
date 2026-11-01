@@ -4,7 +4,7 @@
 // (Josh, 1 Nov 2026): a scrolling body and one pinned foot at every width, so the next step never
 // scrolls away.
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { X } from "lucide-react";
 
 import { Button, Card, CardBody, CardFoot, CardHead, StatusGlyph, cx } from "@/components/wf";
@@ -15,6 +15,27 @@ import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from 
 import { PACK_SLOTS } from "./officer-forms-pack";
 import { LEG_TONE, officerLeg, transportLegalStatusLabel } from "./officer-screen-helpers";
 import styles from "./officer.module.css";
+
+/**
+ * On a larger screen the open panel fills the screen below where it starts, so its pinned foot is in
+ * view as in the Transport mock-up. Measured when the panel opens and on resize only, never on scroll:
+ * a scroll-driven resize kept the pinned step moving under a click.
+ */
+export function useOfficerPanelHeight(testId: string, isPhone: boolean, key: string) {
+  useEffect(() => {
+    if (isPhone) return;
+    const fit = () => {
+      const side = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`)?.parentElement;
+      if (!side) return;
+      const bar = parseFloat(getComputedStyle(side).top) || 68;
+      const top = Math.max(bar, side.getBoundingClientRect().top);
+      side.style.setProperty("--officer-panel-h", `${Math.max(320, window.innerHeight - top - 16)}px`);
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [testId, isPhone, key]);
+}
 
 /** "2 forms missing", in a job row's Stage cell while the Forms column is folded away; nothing when complete. */
 export function formsMissingNote(forms: number) {
@@ -53,6 +74,7 @@ export function OfficerJobPanel({
 }: OfficerJobPanelProps) {
   const transport = job.transport;
   const legal = transportLegalStatusLabel(transport);
+  useOfficerPanelHeight("ward-officer-detail", isPhone, job.id);
   return (
     <Card
       className={styles.detail}

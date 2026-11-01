@@ -24,6 +24,7 @@ import { useWardFormSave } from "@/components/ward-management/use-ward-form-save
 import { useWardRaise, type WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
+import { useOfficerPanelHeight } from "./officer-job-panel";
 import styles from "./officer.module.css";
 
 /**
@@ -189,6 +190,7 @@ export function OfficerBookingPanel({
   const save = useWardFormSave(movement.id);
   // Held from opening, so a change by another desk is reported before this booking is accepted.
   useHoldOpenForm(true, movement.id);
+  useOfficerPanelHeight("ward-officer-booking", isPhone, movement.id);
   return (
     <div ref={sideRef} className={styles.side} data-panel="booking">
       <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
