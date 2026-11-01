@@ -11,6 +11,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { PullAcceptedReferral } from "@/components/ward-management/referrals/pull-accepted-referral";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
@@ -164,6 +165,34 @@ describe("Home: Act now and Referrals to decide (WS-02, WS-04)", () => {
     // Audit 1 Nov 2026: Pull the bed is a placement decision, so it keeps the 48px phone and touch
     // size the kit gives `data-placement-action`.
     expect(within(sheet).getByTestId("ward-pull-accepted-confirm")).toHaveAttribute("data-placement-action");
+  });
+
+  // Q111 (Josh, 1 Nov 2026): Alerts lists the same rows in Act now, so Alerts and Home agree.
+  it("lists the same accepted referrals in Alerts' Act now, with the same Pull the bed", async () => {
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <Capture />
+          <AlertsScreen />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    const toPull = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
+    expect(toPull.length).toBeGreaterThan(0);
+    const actNow = screen.getAllByRole("region", { name: "Act now" })[0]!;
+    const rows = within(actNow).getByTestId("ward-alerts-accepted-to-pull");
+    for (const entry of toPull) {
+      expect(rows.querySelector(`[data-referral-id="${entry.referral.id}"]`)).toHaveTextContent(
+        "Accepted, bed not pulled",
+      );
+    }
+    const first = rows.querySelector(`[data-referral-id="${toPull[0]!.referral.id}"]`) as HTMLElement;
+    fireEvent.click(
+      within(first)
+        .getAllByRole("button", { name: /^Pull the bed for / })
+        .at(-1)!,
+    );
+    expect(await screen.findByTestId(`ward-pull-accepted-${toPull[0]!.referral.id}`)).toBeInTheDocument();
   });
 
   it("makes Decide a link to the referral on the Referrals board, where Accept and Decline are", () => {
