@@ -72,6 +72,20 @@ function fitName(name: string, width: number): string {
   return name.length <= most ? name : `${name.slice(0, most - 1).trimEnd()}…`;
 }
 
+/**
+ * Names wrap rather than cut short (phone audit, 1 Nov 2026): up to two lines at word breaks, and
+ * only a name too long for two lines is shortened on its second line.
+ */
+function wrapName(name: string, width: number): string[] {
+  const most = Math.max(4, Math.floor((width - 8) / 7));
+  if (name.length <= most) return [name];
+  const words = name.split(" ");
+  let first = "";
+  while (words.length > 0 && `${first} ${words[0]}`.trim().length <= most) first = `${first} ${words.shift()}`.trim();
+  if (!first) return [fitName(name, width)];
+  return [first, fitName(words.join(" "), width)];
+}
+
 function hoursLabel(minutes: number): string {
   // Rounded first, so a median of 179.5 minutes reads 3h, never 2h 60m.
   const whole = Math.round(minutes);
@@ -166,7 +180,11 @@ export function StatisticsEdSwarm({
             <g key={row.id}>
               {index > 0 ? <line x1={0} x2={width} y1={top} y2={top} className={styles.rowLine} /> : null}
               <text x={0} y={mid + 4} className={styles.name}>
-                {fitName(row.name, nameW)}
+                {wrapName(row.name, nameW).map((line, lineIndex, lines) => (
+                  <tspan key={line} x={0} dy={lineIndex === 0 ? (lines.length - 1) * -8 : 16}>
+                    {line}
+                  </tspan>
+                ))}
                 <title>{row.name}</title>
               </text>
               {middle !== undefined ? (
