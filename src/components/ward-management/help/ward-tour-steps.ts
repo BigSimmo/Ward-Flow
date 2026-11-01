@@ -427,14 +427,14 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "hero",
           HERO,
           "Your caseload",
-          "The people on your team's caseload. The tabs split them into Waiting answer, In a bed and Expected back. Checking lists what is not recorded yet.",
+          "The people on your team's caseload. The chips open Referrals and In hospital, and the tabs below split the page into Team home, Caseload, In hospital, Referrals and Clinicians.",
         ),
         step(
           "Your daily work",
           "actions",
-          { sel: `${HERO_SEL} button`, text: "Record contact", up: 1 },
+          { sel: '[role="toolbar"][aria-label="Team actions"] button', text: "Record contact", up: 1 },
           "Team actions",
-          "Record contact, the CTO register, the catchment MDT and Refer from team all sit in the header.",
+          "Record contact sits beside the tabs. More holds the CTO register, Catchment counts and the samples. Refer from team is in the header.",
         ),
         step(
           "Your daily work",
