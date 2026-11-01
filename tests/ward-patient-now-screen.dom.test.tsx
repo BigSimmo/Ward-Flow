@@ -326,6 +326,9 @@ describe("the patient-now screen", () => {
     // here rather than leaving a stale expectation green.
     const expectedFormName = legalFormName(movement.legalForm!);
     const expectedDue = clock(movement.legalForm!.dueAt!);
+    // The record tabs mount when first opened and stay mounted: open History and Documents.
+    fireEvent.click(within(root).getByRole("tab", { name: /^History/u }));
+    fireEvent.click(within(root).getByRole("tab", { name: /^Documents/u }));
 
     expect(within(root).getAllByText(new RegExp(expectedFormName.replace(/[()]/g, "\\$&"))).length).toBeGreaterThan(0);
     expect(within(root).getAllByText(new RegExp(expectedDue)).length).toBeGreaterThan(0);
@@ -393,11 +396,13 @@ describe("the ward person route", () => {
 describe("the written history on a sample scenario is labelled as an example", () => {
   it("shows an Example history label beside the presentations it lists (Josh, 25 Sept 2026)", () => {
     renderScreen();
+    fireEvent.click(screen.getByRole("tab", { name: /^History/u }));
     expect(screen.getByTestId("pn-history-example-label").textContent).toBe("Example history");
   });
 
   it("opens the patient's chronology from History in one tap (remaining-pages audit ops-17)", () => {
     renderScreen({ movementId: "WF-009" });
+    fireEvent.click(screen.getByRole("tab", { name: /^History/u }));
     const link = screen.getByTestId("pn-history-chronology");
     expect(link).toHaveTextContent("Chronology");
     expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/reports\/chronology\?patient=[A-Za-z0-9-]+$/u);

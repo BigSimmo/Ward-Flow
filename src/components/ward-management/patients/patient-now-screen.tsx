@@ -17,10 +17,6 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 
-import { PatientHistoryTab } from "./patient-history-tab";
-import { PatientCommunityTab } from "./patient-community-tab";
-import { PatientDetailsTab } from "./patient-details-tab";
-import { PatientDocumentsTab } from "./patient-documents-tab";
 import { hasCommunityEngagement, recordExtrasFor } from "./patient-record-extras";
 import { PatientRecordTabsRow } from "./patient-flight-header";
 import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
@@ -78,7 +74,24 @@ const UploadFormsModal = dynamic<UploadFormsModalProps>(
     ),
   { loading: () => <UploadFormsPending /> },
 );
-preloadWhenIdle(loadTransitOperations, loadUploadForms);
+// The History, Community, Details and Documents tabs draw nothing until opened, so their code
+// stays off the phone's first load and is fetched once the page is idle, like Transit operations.
+const loadHistoryTab = () => import("./patient-history-tab");
+const loadCommunityTab = () => import("./patient-community-tab");
+const loadDetailsTab = () => import("./patient-details-tab");
+const loadDocumentsTab = () => import("./patient-documents-tab");
+const PatientHistoryTab = dynamic(() => loadHistoryTab().then((m) => m.PatientHistoryTab));
+const PatientCommunityTab = dynamic(() => loadCommunityTab().then((m) => m.PatientCommunityTab));
+const PatientDetailsTab = dynamic(() => loadDetailsTab().then((m) => m.PatientDetailsTab));
+const PatientDocumentsTab = dynamic(() => loadDocumentsTab().then((m) => m.PatientDocumentsTab));
+preloadWhenIdle(
+  loadTransitOperations,
+  loadUploadForms,
+  loadHistoryTab,
+  loadCommunityTab,
+  loadDetailsTab,
+  loadDocumentsTab,
+);
 import { useUndoableStep } from "../use-undoable-step";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
@@ -244,6 +257,8 @@ export function PatientNowScreen({
 
   const isPhone = useIsPhone();
   const [activeTab, setActiveTab] = useState<TabKey>(initialTaskAction === "contact" ? "community" : "now");
+  // The record tabs opened so far (see openedTabs below the tab list).
+  const [openedTabs, setOpenedTabs] = useState<ReadonlySet<TabKey>>(() => new Set([activeTab]));
   // The ward's change form on Now (leave, discharge date) and where its last attempt started, so a
   // refusal from the engine shows beside the form that caused it.
   // The open change form belongs to one stay, so moving to another patient never carries it over.
@@ -429,6 +444,9 @@ export function PatientNowScreen({
   const extras = recordExtrasFor(livePatient?.id);
   // A "contact" task opens on Community; with no engagement noted, Now (Who to call) takes it.
   if (activeTab === "community" && !showCommunity) setActiveTab("now");
+  // A record tab mounts the first time it is opened and stays mounted, so its code is not on the
+  // first load and its own state (search, filters, open rows) survives switching tabs.
+  if (!openedTabs.has(activeTab)) setOpenedTabs(new Set([...openedTabs, activeTab]));
   const TAB_KEYS: TabKey[] = [
     "now",
     "history",
@@ -1123,21 +1141,23 @@ export function PatientNowScreen({
               aria-labelledby="pntab-history"
               hidden={activeTab !== "history"}
             >
-              <PatientHistoryTab
-                record={record}
-                movement={liveMovement}
-                dayZero={dayZero}
-                unitName={(id) => units.find((u) => u.id === id)?.name}
-                stays={resolved.stays}
-                absence={stayLeaveBed?.absentWithoutLeave}
-                absenceVoluntary={voluntaryNow}
-                chronologyHref={openable(livePatient ? patientChronologyHref(livePatient.id) : undefined)}
-                open={!modeMeta.quiet}
-                onBackToNow={() => {
-                  setActiveTab("now");
-                  requestAnimationFrame(() => document.getElementById("pntab-now")?.focus());
-                }}
-              />
+              {openedTabs.has("history") ? (
+                <PatientHistoryTab
+                  record={record}
+                  movement={liveMovement}
+                  dayZero={dayZero}
+                  unitName={(id) => units.find((u) => u.id === id)?.name}
+                  stays={resolved.stays}
+                  absence={stayLeaveBed?.absentWithoutLeave}
+                  absenceVoluntary={voluntaryNow}
+                  chronologyHref={openable(livePatient ? patientChronologyHref(livePatient.id) : undefined)}
+                  open={!modeMeta.quiet}
+                  onBackToNow={() => {
+                    setActiveTab("now");
+                    requestAnimationFrame(() => document.getElementById("pntab-now")?.focus());
+                  }}
+                />
+              ) : null}
             </div>
 
             {/* Tab 3: COMMUNITY */}
@@ -1148,17 +1168,19 @@ export function PatientNowScreen({
               aria-labelledby="pntab-community"
               hidden={activeTab !== "community"}
             >
-              <PatientCommunityTab
-                record={record}
-                patient={livePatient}
-                movement={liveMovement}
-                receivingWardName={acceptingUnit?.name}
-                stayOpen={!modeMeta.quiet}
-                onRecordCto={statusContext.onRecordCto}
-                onEndCto={statusContext.onEndCto}
-                recordCtoUnavailable={gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason}
-                endCtoUnavailable={gate("END_COMMUNITY_TREATMENT_ORDER").reason}
-              />
+              {openedTabs.has("community") ? (
+                <PatientCommunityTab
+                  record={record}
+                  patient={livePatient}
+                  movement={liveMovement}
+                  receivingWardName={acceptingUnit?.name}
+                  stayOpen={!modeMeta.quiet}
+                  onRecordCto={statusContext.onRecordCto}
+                  onEndCto={statusContext.onEndCto}
+                  recordCtoUnavailable={gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason}
+                  endCtoUnavailable={gate("END_COMMUNITY_TREATMENT_ORDER").reason}
+                />
+              ) : null}
               {!gate("RECORD_COMMUNITY_TREATMENT_ORDER").allowed ? (
                 <div className="lockline">
                   <button
@@ -1196,12 +1218,14 @@ export function PatientNowScreen({
               aria-labelledby="pntab-details"
               hidden={activeTab !== "details"}
             >
-              <PatientDetailsTab
-                patient={livePatient}
-                movement={liveMovement}
-                displayName={displayName}
-                preferredName={preferredName}
-              />
+              {openedTabs.has("details") ? (
+                <PatientDetailsTab
+                  patient={livePatient}
+                  movement={liveMovement}
+                  displayName={displayName}
+                  preferredName={preferredName}
+                />
+              ) : null}
             </div>
 
             {/* Tab 5: DOCUMENTS */}
@@ -1212,23 +1236,25 @@ export function PatientNowScreen({
               aria-labelledby="pntab-documents"
               hidden={activeTab !== "documents"}
             >
-              <PatientDocumentsTab
-                record={{
-                  ...record,
-                  documents: record.documents.map((d) => ({
-                    ...d,
-                    code: fillTemplate(d.code, templateContext),
-                    name: fillTemplate(d.name, templateContext),
-                    status: fillTemplate(d.status, templateContext),
-                  })),
-                }}
-                movement={liveMovement}
-                movementInForce={movementInForce}
-                patient={livePatient}
-                referralCharts={referralCharts}
-                now={now}
-                onRecordDocument={() => setShowUploadFormsModal(true)}
-              />
+              {openedTabs.has("documents") ? (
+                <PatientDocumentsTab
+                  record={{
+                    ...record,
+                    documents: record.documents.map((d) => ({
+                      ...d,
+                      code: fillTemplate(d.code, templateContext),
+                      name: fillTemplate(d.name, templateContext),
+                      status: fillTemplate(d.status, templateContext),
+                    })),
+                  }}
+                  movement={liveMovement}
+                  movementInForce={movementInForce}
+                  patient={livePatient}
+                  referralCharts={referralCharts}
+                  now={now}
+                  onRecordDocument={() => setShowUploadFormsModal(true)}
+                />
+              ) : null}
             </div>
 
             {/* Discreet provenance legal notice */}

@@ -23,6 +23,7 @@ import {
   Icon,
   SearchField,
   Segmented,
+  SrOnly,
   StatusGlyph,
   cx,
   useIsPhone,
@@ -655,7 +656,8 @@ export function PatientDocumentsTab({
             )}
             {filtering && shown.length > 0 ? (
               <p className={styles.countLine} aria-live="polite">
-                {shown.length} of {rows.length} shown
+                {shown.length} of {rows.length}
+                <SrOnly> synthetic records</SrOnly> shown
               </p>
             ) : null}
           </>
