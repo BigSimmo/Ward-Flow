@@ -50,4 +50,11 @@ describe("site review shell fixes", () => {
     expect(css).not.toMatch(/\.actNow::before/u);
     expect(css).not.toMatch(/inset 0 0 0 1px var\(--wf-danger\)/u);
   });
+
+  it("draws the phone Menu act-now row as the faint tint, with no side marker", () => {
+    const css = read("src/components/ward-management/shell/ward-phone-menu-act-now.module.css");
+    expect(css).toMatch(/\.actNow\.actNow\s*\{[^}]*background:\s*var\(--wf-act-tint\)/u);
+    // Josh, 31 Oct 2026: no coloured side edges, so the 3px coral bar is gone.
+    expect(css).not.toMatch(/::before/u);
+  });
 });
