@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 const DRAFT_KEY = "wf-draft:alerts-broadcast-directive";
 
@@ -17,7 +18,7 @@ function mount() {
 }
 
 function openComposer() {
-  fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+  openAlertsBroadcast();
 }
 
 function selectCustomTemplate() {

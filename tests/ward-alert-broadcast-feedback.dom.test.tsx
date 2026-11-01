@@ -21,6 +21,7 @@ vi.mock("@/components/ward-management/ward-flow-reducer", async (importOriginal)
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { alertsMoreButton, openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 afterEach(() => {
   harness.refuse = false;
@@ -38,7 +39,7 @@ function prepareBroadcast() {
       <ResetControl />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+  openAlertsBroadcast();
   fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
   fireEvent.click(screen.getByRole("radio", { name: "By group" }));
   fireEvent.click(screen.getByRole("button", { name: /Regional \(WACHS\)/ }));
@@ -55,10 +56,10 @@ it("announces accepted dispatch for the selected scope and restores keyboard foc
   expect(screen.getByRole("status", { name: "Broadcast feedback" })).not.toHaveTextContent(
     "shown in this prototype only",
   );
-  expect(screen.getByRole("button", { name: "Broadcast alert" })).toHaveFocus();
+  expect(alertsMoreButton()).toHaveFocus();
   fireEvent.click(screen.getByRole("button", { name: "Dismiss notice" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+  openAlertsBroadcast();
   expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toHaveAttribute("aria-disabled", "true");
 });
 
@@ -69,7 +70,7 @@ it("does not reopen an accepted directive or retain its confirmation after a sce
   fireEvent.click(screen.getByRole("button", { name: "Reset synthetic scenario" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.queryByRole("status", { name: "Broadcast feedback" })).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+  openAlertsBroadcast();
   expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toHaveAttribute("aria-disabled", "true");
   expect(screen.getByLabelText(/I'm authorised to send this to/i)).not.toBeChecked();
 });

@@ -37,18 +37,26 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     expect(screen.getByRole("region", { name: "ED mental health team" })).toBeInTheDocument();
   });
 
-  it("highlights rows from a hero figure without hiding any, with no owner menu on desktop", () => {
+  it("highlights rows from a check without hiding any, with no owner menu on desktop", () => {
     const { container } = renderScreen();
     const total = container.querySelectorAll("li[data-alert-id]").length;
     expect(total).toBeGreaterThan(0);
 
-    const summary = screen.getByRole("group", { name: "Alert summary" });
-    const actNow = within(summary).getByRole("button", { name: /Act now/ });
-    fireEvent.click(actNow);
-    expect(actNow).toHaveAttribute("aria-pressed", "true");
+    // Q183 (1 Nov 2026): the hero figures are gone; a flagged check in the Checking list highlights.
+    fireEvent.click(screen.getByRole("button", { name: /^Checking \d+ flagged · \d+ clear$/u }));
+    const checks = within(screen.getByRole("list", { name: "Conditions checked" })).getAllByRole("button");
+    // The first check whose kind has a row in the list.
+    const flagged = checks.find((button) => {
+      if (!button.hasAttribute("aria-pressed")) return false;
+      fireEvent.click(button);
+      if (container.querySelector("li[data-highlighted]")) return true;
+      fireEvent.click(button);
+      return false;
+    });
+    expect(flagged, "the seed flags at least one listed condition").toBeDefined();
+    expect(flagged).toHaveAttribute("aria-pressed", "true");
     const highlighted = container.querySelectorAll("li[data-highlighted]");
     expect(highlighted.length).toBeGreaterThan(0);
-    for (const row of highlighted) expect(row).toHaveAttribute("data-tone", "danger");
     expect(container.querySelectorAll("li[data-alert-id]")).toHaveLength(total);
     const clear = screen.getByRole("button", { name: `Clear highlights, ${highlighted.length} highlighted` });
 

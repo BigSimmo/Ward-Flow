@@ -10,6 +10,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { WardDailySheetDialog } from "@/components/ward-management/board/ward-daily-sheet";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { alertsMoreButton, openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 /*
  * One modal focus contract (`useModalFocus`) for Dialog, PhoneSheet and the hand-built Ward modals:
@@ -267,9 +268,9 @@ describe("hand-built Ward modals on the shared contract", () => {
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    const trigger = screen.getByRole("button", { name: /^Broadcast alert$/i });
+    const trigger = alertsMoreButton();
     trigger.focus();
-    fireEvent.click(trigger);
+    openAlertsBroadcast();
 
     const dialog = screen.getByRole("dialog", { name: /New broadcast/i });
     const close = within(dialog).getByRole("button", { name: "Close" });

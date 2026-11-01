@@ -8,6 +8,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { audienceGroups } from "@/components/ward-management/alerts/broadcast-audience";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 afterEach(() => {
   cleanup();
@@ -38,7 +39,7 @@ describe("Broadcast tab", () => {
   it("shows a sent bed call as a live card with its answers, then lists it as earlier once stood down", () => {
     mount();
     const metro = audienceGroups(allUnits())[0].desks.length;
-    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+    openAlertsBroadcast();
     fireEvent.click(screen.getByLabelText(`I'm authorised to send this to ${metro} units.`));
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
 
