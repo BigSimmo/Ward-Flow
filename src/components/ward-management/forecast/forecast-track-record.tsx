@@ -6,11 +6,9 @@
 // readings, each from records: how the forecast did against what happened (daily snapshots, with
 // an honest empty state until two days exist), discharge dates that held by ward
 // (`wardStatistics`), and ED referrals by hour of the day (`movements.openedAt`).
-import { useMemo } from "react";
-import { LineChart } from "lucide-react";
-
-import { CardBody } from "@/components/wf";
-import { StatCard } from "@/components/ward-management/statistics/statistics-hero";
+import { useId, useMemo, useState } from "react";
+import { Button } from "@/components/wf";
+import { Now, Tile } from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { isEdOriginJourney } from "@/components/ward-management/ward-ed-presence";
@@ -42,7 +40,13 @@ export function dischargeDatesHeldByWard(units: readonly Unit[], admissions: Adm
     .map((row) => ({ name: row.unit.name, ...row.outcome, share: row.outcome.met / row.outcome.consideredCount }));
 }
 
-export function ForecastTrackRecordCard({
+/**
+ * The two tiles of Statistics' Also recorded strip (redesign approved 1 Nov 2026, Q135): Forecast
+ * track record and ED referrals by hour. Each tile leads with its figure; the record behind it
+ * (each day against its forecast, with the reason a person recorded, and each ward's dates that
+ * held) folds away under the tile.
+ */
+export function ForecastTrackRecordTiles({
   now,
   units,
   admissions,
@@ -71,86 +75,125 @@ export function ForecastTrackRecordCard({
   const peak = hours.indexOf(Math.max(...hours));
   const referralsOnRecord = hours.reduce((a, b) => a + b, 0);
 
+  const [showRecord, setShowRecord] = useState(false);
+  const recordId = useId();
+  const heldCount = held.reduce((sum, row) => sum + row.met, 0);
+  const consideredCount = held.reduce((sum, row) => sum + row.consideredCount, 0);
   return (
-    <StatCard
-      id="forecast-track-record"
-      icon={LineChart}
-      title="Forecast track record"
-      data-testid="ward-statistics-forecast"
-    >
-      <CardBody>
-        <h3 className={styles.groupHead}>Forecast against what happened</h3>
-        {record.days.length === 0 ? (
-          <p className={styles.caption} data-testid="ward-statistics-forecast-empty">
-            Needs two days of forecasts.
-          </p>
-        ) : (
-          <>
-            <p className={styles.caption}>
-              {record.inRange} of {record.days.length} {record.days.length === 1 ? "day" : "days"} landed inside the
-              forecast range. Average miss {record.averageMiss} {record.averageMiss === 1 ? "bed" : "beds"}.
+    <>
+      <Tile
+        testId="ward-statistics-forecast"
+        title="Forecast track record"
+        now={
+          consideredCount === 0 ? undefined : (
+            <Now tone={heldCount === consideredCount ? "success" : undefined}>
+              {heldCount} of {consideredCount} held
+            </Now>
+          )
+        }
+        sub={
+          record.days.length === 0
+            ? "Discharge dates that held, by ward · needs two days of forecasts"
+            : `Discharge dates that held, by ward · ${record.inRange} of ${record.days.length} ${record.days.length === 1 ? "day" : "days"} inside the forecast range`
+        }
+      >
+        {/* Statistics pages fold nothing away in a disclosure (the presentation rule), so the record
+            opens with a plain toggle under the tile. */}
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-expanded={showRecord}
+          aria-controls={recordId}
+          onClick={() => setShowRecord((shown) => !shown)}
+        >
+          {showRecord ? "Hide the record" : "Show the record"}
+        </Button>
+        <div id={recordId} hidden={!showRecord}>
+          <h3 className={styles.groupHead}>Forecast against what happened</h3>
+          {record.days.length === 0 ? (
+            <p className={styles.caption} data-testid="ward-statistics-forecast-empty">
+              Needs two days of forecasts.
             </p>
-            <p className={styles.caption} data-testid="ward-statistics-forecast-reasons">
-              {missSummary.missed === 0
-                ? "No day differed from its forecast."
-                : `${missSummary.missed} ${missSummary.missed === 1 ? "day" : "days"} differed. Known causes: ${
-                    missSummary.known.length === 0
-                      ? "none recorded"
-                      : missSummary.known
-                          .map((row) => `${FORECAST_MISS_REASON_LABELS[row.reason]} ${row.count}`)
-                          .join(", ")
-                  }. Unexplained: ${missSummary.unexplained}.`}
-            </p>
-            <ul className={styles.bars}>
-              {record.days.slice(-7).map((day) => (
-                <li key={day.day}>
-                  <div className={styles.kv}>
-                    <span>Day {day.day}</span>
-                    <span>
-                      forecast {kindRangeWord(day.forecast.likely)}, was {kindRangeWord(day.actual)}
-                      {day.inRange ? "" : ", outside the range"}
-                    </span>
-                  </div>
-                  {/* Closing-the-loop features (Josh, 24 Oct 2026): a person records why a day differed. */}
-                  {day.miss === 0 ? null : (
-                    <ForecastMissReasonControl
-                      now={now}
-                      day={day.day}
-                      entry={latestReasons.get(day.day)}
-                      candidates={missCandidates(day, movements, admissions, describeAdmission)}
-                      onRecord={(reason) => recordReason({ day: day.day, reason, by: role, at: now })}
+          ) : (
+            <>
+              <p className={styles.caption}>
+                {record.inRange} of {record.days.length} {record.days.length === 1 ? "day" : "days"} landed inside the
+                forecast range. Average miss {record.averageMiss} {record.averageMiss === 1 ? "bed" : "beds"}.
+              </p>
+              <p className={styles.caption} data-testid="ward-statistics-forecast-reasons">
+                {missSummary.missed === 0
+                  ? "No day differed from its forecast."
+                  : `${missSummary.missed} ${missSummary.missed === 1 ? "day" : "days"} differed. Known causes: ${
+                      missSummary.known.length === 0
+                        ? "none recorded"
+                        : missSummary.known
+                            .map((row) => `${FORECAST_MISS_REASON_LABELS[row.reason]} ${row.count}`)
+                            .join(", ")
+                    }. Unexplained: ${missSummary.unexplained}.`}
+              </p>
+              <ul className={styles.bars}>
+                {record.days.slice(-7).map((day) => (
+                  <li key={day.day}>
+                    <div className={styles.kv}>
+                      <span>Day {day.day}</span>
+                      <span>
+                        forecast {kindRangeWord(day.forecast.likely)}, was {kindRangeWord(day.actual)}
+                        {day.inRange ? "" : ", outside the range"}
+                      </span>
+                    </div>
+                    {/* Closing-the-loop features (Josh, 24 Oct 2026): a person records why a day differed. */}
+                    {day.miss === 0 ? null : (
+                      <ForecastMissReasonControl
+                        now={now}
+                        day={day.day}
+                        entry={latestReasons.get(day.day)}
+                        candidates={missCandidates(day, movements, admissions, describeAdmission)}
+                        onRecord={(reason) => recordReason({ day: day.day, reason, by: role, at: now })}
+                      />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          <h3 className={styles.groupHead}>Discharge dates that held, by ward</h3>
+          {held.length === 0 ? (
+            <p className={styles.caption}>No ward has a discharge with a recorded planned date yet.</p>
+          ) : (
+            <ul className={styles.bars} data-testid="ward-statistics-forecast-held">
+              {held.map((row) => (
+                <li key={row.name} className={styles.barRow}>
+                  <span>{row.name}</span>
+                  <span className={styles.barTrack} aria-hidden="true">
+                    <span
+                      className={styles.barFill}
+                      style={{ display: "block", width: `${Math.round(row.share * 100)}%` }}
                     />
-                  )}
+                  </span>
+                  <span className={styles.mono}>
+                    {row.met} of {row.consideredCount}
+                  </span>
                 </li>
               ))}
             </ul>
-          </>
-        )}
-
-        <h3 className={styles.groupHead}>Discharge dates that held, by ward</h3>
-        {held.length === 0 ? (
-          <p className={styles.caption}>No ward has a discharge with a recorded planned date yet.</p>
-        ) : (
-          <ul className={styles.bars} data-testid="ward-statistics-forecast-held">
-            {held.map((row) => (
-              <li key={row.name} className={styles.barRow}>
-                <span>{row.name}</span>
-                <span className={styles.barTrack} aria-hidden="true">
-                  <span
-                    className={styles.barFill}
-                    style={{ display: "block", width: `${Math.round(row.share * 100)}%` }}
-                  />
-                </span>
-                <span className={styles.mono}>
-                  {row.met} of {row.consideredCount}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className={styles.caption}>A date that moved before the day still counts if it held.</p>
-
-        <h3 className={styles.groupHead}>ED referrals by hour</h3>
+          )}
+          <p className={styles.caption}>A date that moved before the day still counts if it held.</p>
+        </div>
+      </Tile>
+      <Tile
+        title="ED referrals by hour"
+        now={<Now>{referralsOnRecord} on record</Now>}
+        fig={referralsOnRecord === 0 ? undefined : `${String(peak).padStart(2, "0")}:00`}
+        unit={referralsOnRecord === 0 ? undefined : "busiest"}
+        sub={
+          <span data-testid="ward-statistics-forecast-hours">
+            {referralsOnRecord === 0
+              ? "No ED referrals on record yet."
+              : "To help staff a bed meeting, not to predict arrivals"}
+          </span>
+        }
+      >
         <div className={styles.hours} aria-hidden="true">
           {hours.map((count, hour) => (
             <span key={hour} className={styles.hourBar} style={{ height: `${Math.round((count / busiest) * 100)}%` }} />
@@ -163,12 +206,7 @@ export function ForecastTrackRecordCard({
           <span>18</span>
           <span>23</span>
         </p>
-        <p className={styles.caption} data-testid="ward-statistics-forecast-hours">
-          {referralsOnRecord === 0
-            ? "No ED referrals on record yet."
-            : `${referralsOnRecord} ED referrals on record. Busiest hour starts at ${String(peak).padStart(2, "0")}:00.`}
-        </p>
-      </CardBody>
-    </StatCard>
+      </Tile>
+    </>
   );
 }

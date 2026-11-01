@@ -239,8 +239,9 @@ it("counts today's bed referrals once across parallel bed criteria, with recorde
       <StatisticsScreen referrals={referrals} />
     </WardFlowProvider>,
   );
-  const counts = [...container.querySelectorAll("#refBand dd")].map((node) => node.firstChild?.textContent);
-  expect(counts).toEqual(["4", "1", "1", "1"]);
+  // The redesign's two by two (Q135) reads Accepted, Still open, Declined, Raised.
+  const counts = [...container.querySelectorAll("#refBand li > p > b")].map((node) => node.textContent);
+  expect(counts).toEqual(["1", "1", "1", "4"]);
 });
 
 it("exports a formula-like ward name neutralised", async () => {

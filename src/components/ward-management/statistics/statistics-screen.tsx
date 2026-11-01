@@ -4,7 +4,6 @@ import { readDeclinesByReason } from "./statistics-decline-reporting";
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Lock, Truck, X } from "lucide-react";
 
 import { BarList, Card, CardBody, ColumnChart, HeroChip, HeroChips, Spinner, useIsPhone } from "@/components/wf";
 import {
@@ -41,7 +40,16 @@ import {
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
-import { FlushRow, Follow } from "./statistics-layout";
+import {
+  Foot,
+  Grid,
+  MoreLink,
+  Now,
+  StatCardR,
+  Strip,
+  Tile,
+  redesignStyles as redesign,
+} from "./redesign/statistics-redesign-parts";
 import { useStatisticsView } from "./statistics-view-bar";
 import { FindUnitTool, PhoneUnitFinder, StatisticsViewSwitch, useUnitFinder } from "./statistics-view-switch";
 import { StatisticsEdJourneysCard } from "./statistics-ed-journeys-card";
@@ -74,7 +82,7 @@ const StatisticsMapView = dynamic(() => import("./statistics-map-view").then((m)
 import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
-import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
+import { StatisticsHero, useStatisticsLive } from "./statistics-hero";
 import { StatisticsSessionTrendsCard } from "./statistics-session-trends-card";
 import trendStyles from "./statistics-session-trends.module.css";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
@@ -91,7 +99,7 @@ import { DECLINE_REASON_LABELS, isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
 import { occupiedBeds } from "./statistics-occupancy";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
-import { ForecastTrackRecordCard } from "@/components/ward-management/forecast/forecast-track-record";
+import { ForecastTrackRecordTiles } from "@/components/ward-management/forecast/forecast-track-record";
 import { FixedQuestionsCard, WaitingStagesCard } from "@/components/ward-management/reports/closing-loop-cards-lazy";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
@@ -240,10 +248,13 @@ function ExecutiveStatisticsScreen() {
             scopeLabel={scopeLabel}
           />
         ),
-        overview: <ExecutiveNetworkOverviewCards data={data} />,
+        occupancy: <ExecutiveNetworkOverviewCards part="occupancy" data={data} />,
+        flow: <ExecutiveNetworkOverviewCards part="flow" data={data} />,
         journey: (onShowBoard) => <StatisticsJourneyView onShowBoard={onShowBoard} />,
         map: <StatisticsMapView />,
-        operationalExtra: null,
+        waitingStages: null,
+        questions: null,
+        forecastTiles: null,
       }}
     />
   );
@@ -457,8 +468,18 @@ function OperationalStatisticsScreen({
             leaveBeds={leaveBeds}
           />
         ),
-        overview: (
+        occupancy: (
           <OverviewCards
+            part="occupancy"
+            units={units}
+            admissions={sourceAdmissions}
+            bedReleases={sourceBedReleases}
+            leaveBeds={leaveBeds}
+          />
+        ),
+        flow: (
+          <OverviewCards
+            part="flow"
             units={units}
             admissions={sourceAdmissions}
             bedReleases={sourceBedReleases}
@@ -467,34 +488,22 @@ function OperationalStatisticsScreen({
         ),
         journey: (onShowBoard) => <StatisticsJourneyView onShowBoard={onShowBoard} live={{ state: live.state, now }} />,
         map: <StatisticsMapView live={{ state: live.state, now }} />,
-        operationalExtra: (
-          <>
-            {" "}
-            {/* Forecasting build (Josh, 23 Oct 2026, screen 8). Not on the count-only executive view. */}
-            {countsOnly ? null : (
-              <ForecastTrackRecordCard
-                now={now}
-                units={units}
-                admissions={sourceAdmissions}
-                movements={sourceMovements}
-              />
-            )}
-            {/* Closing-the-loop features (Josh, 24 Oct 2026). Not on the count-only executive view. */}
-            {countsOnly ? null : (
-              // Layout sweep STATS-01: the two wide closing-the-loop cards take full rows of their
-              // own instead of two narrow cells of the three-up grid.
-              <div className={styles.gridRow}>
-                <WaitingStagesCard movements={sourceMovements} admissions={sourceAdmissions} now={now} />
-                <FixedQuestionsCard
-                  movements={sourceMovements}
-                  bedReleases={sourceBedReleases}
-                  admissions={sourceAdmissions}
-                  units={units}
-                  now={now}
-                />
-              </div>
-            )}
-          </>
+        // Closing-the-loop features (Josh, 24 Oct 2026) and the forecasting build (23 Oct 2026, screen
+        // 8). Not on the count-only executive view.
+        waitingStages: countsOnly ? null : (
+          <WaitingStagesCard movements={sourceMovements} admissions={sourceAdmissions} now={now} />
+        ),
+        questions: countsOnly ? null : (
+          <FixedQuestionsCard
+            movements={sourceMovements}
+            bedReleases={sourceBedReleases}
+            admissions={sourceAdmissions}
+            units={units}
+            now={now}
+          />
+        ),
+        forecastTiles: countsOnly ? null : (
+          <ForecastTrackRecordTiles now={now} units={units} admissions={sourceAdmissions} movements={sourceMovements} />
         ),
       }}
     />
@@ -639,7 +648,7 @@ function StatisticsSummaryView({
   );
   // The wards and ED tables, drawn first for a bed manager and after the bed cards otherwise.
   const siteDetail = (
-    <div className={styles.grid2}>
+    <Grid>
       <StatisticsWardsCard wards={allPressureWards} table={wardTable} siteName={siteName} small={small} />
 
       <StatisticsEdJourneysCard
@@ -656,7 +665,190 @@ function StatisticsSummaryView({
         totalEdOver8={totalEdOver8}
         totalEdOver24={totalEdOver24}
       />
-    </div>
+    </Grid>
+  );
+
+  const arrivalSame = arrivals.shortestMinutes !== null && arrivals.shortestMinutes === arrivals.longestMinutes;
+  const pullToArrivalTile = (
+    <Tile
+      testId="ward-statistics-pull-to-arrival"
+      title="Pull to arrival"
+      now={
+        <Now>
+          <span data-testid="ward-statistics-arrival-awaiting-count">{small(arrivals.awaitingArrivalCount)}</span>{" "}
+          awaiting
+        </Now>
+      }
+      fig={
+        <span data-testid="ward-statistics-arrival-average">
+          {arrivals.averageMinutes === null ? "Not recorded" : splitDuration(arrivals.averageMinutes)}
+        </span>
+      }
+      unit={arrivals.averageMinutes === null ? undefined : "average"}
+      sub={
+        <>
+          <span data-testid="ward-statistics-arrival-measured-count">{small(arrivals.measuredCount)}</span> measured ·{" "}
+          <span data-testid="ward-statistics-arrival-ended-count">{small(arrivals.endedCount)}</span> ended · shortest{" "}
+          <span data-testid="ward-statistics-arrival-shortest">
+            {arrivals.shortestMinutes === null ? "Not recorded" : splitDuration(arrivals.shortestMinutes)}
+          </span>
+          , longest{" "}
+          <span data-testid="ward-statistics-arrival-longest">
+            {arrivals.longestMinutes === null ? "Not recorded" : splitDuration(arrivals.longestMinutes)}
+          </span>
+          {" · "}
+          <span data-testid="ward-statistics-arrival-incoherent">{small(arrivals.incoherentCount)}</span> excluded ·{" "}
+          <span data-testid="ward-statistics-preparing-count">{preparingCount}</span> pending
+        </>
+      }
+    >
+      {arrivalSame ? null : (
+        <ColumnChart
+          label="Pull to arrival, admissions by band"
+          height={64}
+          columns={arrivalBands.map((band) => ({ ...band, ...barValue(band.value) }))}
+        />
+      )}
+    </Tile>
+  );
+  const heldUpCard = (
+    <StatCardR
+      id="held-up"
+      title="Discharges held up"
+      foot={executive ? undefined : <Foot link={<MoreLink href="/ward-flow/discharges">Open Discharges</MoreLink>} />}
+      data-testid="ward-statistics-blocked-discharges-by-reason"
+      meta={
+        notShown(blocked.totalCount) || notShown(blocked.admissionCount) ? undefined : (
+          <span className={styles.muted} data-testid="ward-statistics-blocked-discharges-by-reason-population">
+            <span data-testid="ward-statistics-blocked-discharges-by-reason-total">{small(blocked.totalCount)}</span> of{" "}
+            <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
+              {small(blocked.admissionCount)}
+            </span>{" "}
+            not departed
+          </span>
+        )
+      }
+    >
+      <div className={redesign.bars} data-testid="ward-statistics-blocked-discharges-by-reason-list">
+        {/* Role view (executive): every reason held back is an empty chart on a 0 to 1 axis, so
+                      the reasons are listed as words instead. */}
+        {executive && noCountReleased(blocked.tallies.map((tally) => tally.count)) ? (
+          <ReasonCounts
+            label="Discharges held up, by reason"
+            rows={blocked.tallies.map((tally) => ({
+              id: tally.reason,
+              label: tally.reason,
+              count: tally.count,
+              testId: `ward-statistics-blocked-discharge-${tally.reason}-count`,
+            }))}
+            small={small}
+          />
+        ) : (
+          <BarList
+            label="Discharges held up, by reason"
+            track
+            max={axisMax(blocked.tallies.map((tally) => barValue(tally.count).value))}
+            rows={blocked.tallies.map((tally) => ({
+              id: tally.reason,
+              label: <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}>{tally.reason}</span>,
+              labelText: tally.reason,
+              ...barValue(tally.count),
+              display: (
+                <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}>
+                  {exactStatisticsCount(tally.count) === 0 ? "none" : small(tally.count)}
+                </span>
+              ),
+            }))}
+          />
+        )}
+        <span className={styles.srOnly} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
+          All{" "}
+          <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
+            {blocked.vocabularySize}
+          </span>{" "}
+          blocker categories.
+        </span>
+      </div>
+    </StatCardR>
+  );
+  const declinesCard = (
+    <StatCardR
+      id="declines"
+      title="Declines by reason"
+      data-testid="ward-statistics-declines-by-reason"
+      meta={
+        declinesReadout.ok &&
+        !notShown(declinesReadout.value.totalCount) &&
+        !notShown(declinesReadout.value.movementsWithDeclinesCount) ? (
+          <span className={styles.muted} data-testid="ward-statistics-declines-by-reason-population">
+            <span data-testid="ward-statistics-declines-by-reason-total">
+              {small(declinesReadout.value.totalCount)}
+            </span>{" "}
+            {declinesReadout.value.totalCount === 1 ? "decline" : "declines"},{" "}
+            <span data-testid="ward-statistics-declines-by-reason-movements-with">
+              {small(declinesReadout.value.movementsWithDeclinesCount)}
+            </span>
+            <span className={styles.srOnly}>
+              {" "}
+              of{" "}
+              <span data-testid="ward-statistics-declines-by-reason-movements">
+                {small(declinesReadout.value.movementCount)}
+              </span>
+            </span>{" "}
+            {declinesReadout.value.movementsWithDeclinesCount === 1 ? "movement" : "movements"}
+          </span>
+        ) : undefined
+      }
+    >
+      <div className={redesign.bars}>
+        {!declinesReadout.ok ? (
+          <p className={styles.notice} data-testid="ward-statistics-declines-by-reason-unavailable">
+            {declinesReadout.statement}
+          </p>
+        ) : executive && noCountReleased(declinesReadout.value.tallies.map((tally) => tally.count)) ? (
+          // Role view (executive): as Discharges held up, words instead of an empty chart.
+          <ReasonCounts
+            label="Declines by reason"
+            rows={declinesReadout.value.tallies.map((tally) => ({
+              id: tally.reason,
+              label: DECLINE_REASON_LABELS[tally.reason],
+              count: tally.count,
+              testId: `ward-statistics-decline-${tally.reason}-count`,
+            }))}
+            small={small}
+          />
+        ) : (
+          <div data-testid="ward-statistics-declines-by-reason-list">
+            <BarList
+              label="Declines by reason"
+              track
+              max={axisMax(declinesReadout.value.tallies.map((tally) => barValue(tally.count).value))}
+              rows={declinesReadout.value.tallies.map((tally) => ({
+                id: tally.reason,
+                label: (
+                  <span data-testid={`ward-statistics-decline-${tally.reason}`}>
+                    {DECLINE_REASON_LABELS[tally.reason]}
+                  </span>
+                ),
+                labelText: DECLINE_REASON_LABELS[tally.reason],
+                ...barValue(tally.count),
+                display: (
+                  <span data-testid={`ward-statistics-decline-${tally.reason}-count`}>
+                    {exactStatisticsCount(tally.count) === 0 ? "none" : small(tally.count)}
+                  </span>
+                ),
+              }))}
+            />
+            <span className={styles.srOnly}>
+              <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
+                {declinesReadout.value.vocabularySize}
+              </span>{" "}
+              reason categories
+            </span>
+          </div>
+        )}
+      </div>
+    </StatCardR>
   );
 
   if (isPhone) {
@@ -835,255 +1027,49 @@ function StatisticsSummaryView({
         {view === "journey" ? slots.journey(() => chooseView("board")) : <div id="journey" hidden />}
         {view === "map" ? slots.map : <div id="map" hidden />}
         {view !== "board" ? null : (
+          // The Network board as the redesign draws it (approved 1 Nov 2026, Q135): occupancy across
+          // the top, then where the pressure is, today's referrals and flow, where the time goes, and
+          // what else is recorded. Every figure is the one the board has always shown.
           <div id="board" className={styles.stack}>
-            {/* Summary first: occupancy by service across the top (D-77's figures, once). */}
             {/* Bed manager: its own site's wards and ED lead the board (D-80); the cards below keep
                 every site as bed counts. */}
             {siteName ? siteDetail : null}
-            {slots.overview}
-            {siteName ? (
-              // Bed manager: no Where beds are available (hospital-by-hospital beds are for placing).
-              <div id="beds">{referralsToday}</div>
-            ) : (
-              <FlushRow layout="lead2" id="beds">
-                <div className={styles.stack} data-testid="ward-statistics-patients">
-                  {slots.capacity}
-                </div>
-
-                <Follow stack>{referralsToday}</Follow>
-              </FlushRow>
-            )}
-
-            {/* Coordinator: the wards and EDs after the bed cards. */}
+            {slots.occupancy}
+            {/* Coordinator: the wards and EDs after the occupancy strip. */}
             {siteName ? null : siteDetail}
 
-            <div className={styles.grid3}>
-              <StatCard
-                icon={Lock}
-                title="Discharges held up"
-                data-testid="ward-statistics-blocked-discharges-by-reason"
-                aside={
-                  notShown(blocked.totalCount) || notShown(blocked.admissionCount) ? undefined : (
-                    <span
-                      className={styles.muted}
-                      data-testid="ward-statistics-blocked-discharges-by-reason-population"
-                    >
-                      <span data-testid="ward-statistics-blocked-discharges-by-reason-total">
-                        {small(blocked.totalCount)}
-                      </span>{" "}
-                      of{" "}
-                      <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
-                        {small(blocked.admissionCount)}
-                      </span>{" "}
-                      not departed
-                    </span>
-                  )
-                }
-              >
-                <CardBody data-testid="ward-statistics-blocked-discharges-by-reason-list">
-                  {/* Role view (executive): every reason held back is an empty chart on a 0 to 1 axis, so
-                      the reasons are listed as words instead. */}
-                  {executive && noCountReleased(blocked.tallies.map((tally) => tally.count)) ? (
-                    <ReasonCounts
-                      label="Discharges held up, by reason"
-                      rows={blocked.tallies.map((tally) => ({
-                        id: tally.reason,
-                        label: tally.reason,
-                        count: tally.count,
-                        testId: `ward-statistics-blocked-discharge-${tally.reason}-count`,
-                      }))}
-                      small={small}
-                    />
-                  ) : (
-                    <BarList
-                      label="Discharges held up, by reason"
-                      labelWidth="10.5rem"
-                      axis
-                      max={axisMax(blocked.tallies.map((tally) => barValue(tally.count).value))}
-                      rows={blocked.tallies.map((tally) => ({
-                        id: tally.reason,
-                        label: (
-                          <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}>{tally.reason}</span>
-                        ),
-                        labelText: tally.reason,
-                        ...barValue(tally.count),
-                        display: (
-                          <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}>
-                            {exactStatisticsCount(tally.count) === 0 ? "none" : small(tally.count)}
-                          </span>
-                        ),
-                      }))}
-                    />
-                  )}
-                  <span className={styles.srOnly} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
-                    All{" "}
-                    <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
-                      {blocked.vocabularySize}
-                    </span>{" "}
-                    blocker categories.
-                  </span>
-                </CardBody>
-              </StatCard>
+            <Grid layout="thirds">
+              {referralsToday}
+              {slots.flow}
+            </Grid>
 
-              <StatCard
-                icon={X}
-                title="Declines by reason"
-                data-testid="ward-statistics-declines-by-reason"
-                aside={
-                  declinesReadout.ok &&
-                  !notShown(declinesReadout.value.totalCount) &&
-                  !notShown(declinesReadout.value.movementsWithDeclinesCount) ? (
-                    <span className={styles.muted} data-testid="ward-statistics-declines-by-reason-population">
-                      <span data-testid="ward-statistics-declines-by-reason-total">
-                        {small(declinesReadout.value.totalCount)}
-                      </span>{" "}
-                      {declinesReadout.value.totalCount === 1 ? "decline" : "declines"},{" "}
-                      <span data-testid="ward-statistics-declines-by-reason-movements-with">
-                        {small(declinesReadout.value.movementsWithDeclinesCount)}
-                      </span>
-                      <span className={styles.srOnly}>
-                        {" "}
-                        of{" "}
-                        <span data-testid="ward-statistics-declines-by-reason-movements">
-                          {small(declinesReadout.value.movementCount)}
-                        </span>
-                      </span>{" "}
-                      {declinesReadout.value.movementsWithDeclinesCount === 1 ? "movement" : "movements"}
-                    </span>
-                  ) : undefined
-                }
-              >
-                <CardBody>
-                  {!declinesReadout.ok ? (
-                    <p className={styles.notice} data-testid="ward-statistics-declines-by-reason-unavailable">
-                      {declinesReadout.statement}
-                    </p>
-                  ) : executive && noCountReleased(declinesReadout.value.tallies.map((tally) => tally.count)) ? (
-                    // Role view (executive): as Discharges held up, words instead of an empty chart.
-                    <ReasonCounts
-                      label="Declines by reason"
-                      rows={declinesReadout.value.tallies.map((tally) => ({
-                        id: tally.reason,
-                        label: DECLINE_REASON_LABELS[tally.reason],
-                        count: tally.count,
-                        testId: `ward-statistics-decline-${tally.reason}-count`,
-                      }))}
-                      small={small}
-                    />
-                  ) : (
-                    <div data-testid="ward-statistics-declines-by-reason-list">
-                      <BarList
-                        label="Declines by reason"
-                        labelWidth="10.5rem"
-                        axis
-                        max={axisMax(declinesReadout.value.tallies.map((tally) => barValue(tally.count).value))}
-                        rows={declinesReadout.value.tallies.map((tally) => ({
-                          id: tally.reason,
-                          label: (
-                            <span data-testid={`ward-statistics-decline-${tally.reason}`}>
-                              {DECLINE_REASON_LABELS[tally.reason]}
-                            </span>
-                          ),
-                          labelText: DECLINE_REASON_LABELS[tally.reason],
-                          ...barValue(tally.count),
-                          display: (
-                            <span data-testid={`ward-statistics-decline-${tally.reason}-count`}>
-                              {exactStatisticsCount(tally.count) === 0 ? "none" : small(tally.count)}
-                            </span>
-                          ),
-                        }))}
-                      />
-                      <span className={styles.srOnly}>
-                        <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
-                          {declinesReadout.value.vocabularySize}
-                        </span>{" "}
-                        reason categories
-                      </span>
-                    </div>
-                  )}
-                </CardBody>
-              </StatCard>
+            {slots.waitingStages ? (
+              <Grid layout="wide">
+                {slots.waitingStages}
+                {declinesCard}
+              </Grid>
+            ) : null}
 
-              <StatCard
-                icon={Truck}
-                title="Pull to arrival"
-                data-testid="ward-statistics-pull-to-arrival"
-                aside={
-                  notShown(arrivals.measuredCount) ? undefined : (
-                    <span className={styles.muted}>
-                      <span data-testid="ward-statistics-arrival-measured-count">{small(arrivals.measuredCount)}</span>{" "}
-                      admissions
-                    </span>
-                  )
-                }
-              >
-                <CardBody className={styles.bodyStack}>
-                  <dl className={styles.figures} aria-label="Admission timing">
-                    <div className={styles.figure}>
-                      <dd className={styles.figureValue} data-testid="ward-statistics-arrival-average">
-                        {arrivals.averageMinutes === null ? "Not recorded" : splitDuration(arrivals.averageMinutes)}
-                      </dd>
-                      <dt className={styles.figureLabel}>Average</dt>
-                    </div>
-                    <div className={styles.figure}>
-                      <dd className={styles.figureValue} data-testid="ward-statistics-arrival-shortest">
-                        {arrivals.shortestMinutes === null ? "Not recorded" : splitDuration(arrivals.shortestMinutes)}
-                      </dd>
-                      <dt className={styles.figureLabel}>Shortest</dt>
-                    </div>
-                    <div className={styles.figure}>
-                      <dd className={styles.figureValue} data-testid="ward-statistics-arrival-longest">
-                        {arrivals.longestMinutes === null ? "Not recorded" : splitDuration(arrivals.longestMinutes)}
-                      </dd>
-                      <dt className={styles.figureLabel}>Longest</dt>
-                    </div>
-                  </dl>
-                  {/* Device audit 11 Oct 2026: when every measured arrival took the same time the chart is
-                      one bar and looked broken, so it says so instead. */}
-                  {arrivals.shortestMinutes !== null && arrivals.shortestMinutes === arrivals.longestMinutes ? (
-                    <p className={styles.muted} data-testid="ward-statistics-arrival-no-spread">
-                      Every measured arrival took the same time.
-                    </p>
-                  ) : (
-                    <ColumnChart
-                      label="Pull to arrival, admissions by band"
-                      height={110}
-                      columns={arrivalBands.map((band) => ({ ...band, ...barValue(band.value) }))}
-                    />
-                  )}
-                  <dl className={styles.tiles}>
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Awaiting</dt>
-                      <dd className={styles.tileValue} data-testid="ward-statistics-arrival-awaiting-count">
-                        {small(arrivals.awaitingArrivalCount)}
-                      </dd>
-                    </div>
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Ended</dt>
-                      <dd className={styles.tileValue} data-testid="ward-statistics-arrival-ended-count">
-                        {small(arrivals.endedCount)}
-                      </dd>
-                    </div>
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Excluded</dt>
-                      <dd className={styles.tileValue} data-testid="ward-statistics-arrival-incoherent">
-                        {small(arrivals.incoherentCount)}
-                      </dd>
-                    </div>
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Pending</dt>
-                      <dd className={styles.tileValue} data-testid="ward-statistics-preparing-count">
-                        {preparingCount}
-                      </dd>
-                    </div>
-                  </dl>
-                </CardBody>
-              </StatCard>
+            <Grid>
+              {slots.waitingStages ? null : declinesCard}
+              {heldUpCard}
+              {slots.questions}
+            </Grid>
 
-              <StatisticsSessionTrendsCard now={now} />
+            <StatCardR id="also-recorded" title="Also recorded">
+              <Strip label="Also recorded" cols={slots.forecastTiles ? 4 : 2}>
+                {pullToArrivalTile}
+                {slots.forecastTiles}
+                <StatisticsSessionTrendsCard now={now} hours={4} showTotal={false} tile />
+              </Strip>
+            </StatCardR>
 
-              {slots.operationalExtra}
-            </div>
+            {/* Bed manager: no Where beds are available (hospital-by-hospital beds are for placing). */}
+            {siteName ? null : (
+              <div id="beds" data-testid="ward-statistics-patients">
+                {slots.capacity}
+              </div>
+            )}
           </div>
         )}
 

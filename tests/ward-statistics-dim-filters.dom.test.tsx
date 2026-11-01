@@ -45,7 +45,8 @@ describe("Statistics Summary v10 hero and pressure chip", () => {
     const body = rows.slice(1);
     expect(body.length).toBeGreaterThan(0);
     for (const row of body) {
-      const percent = Number(/(\d+)%/u.exec(within(row).getAllByRole("cell")[2].textContent ?? "")?.[1]);
+      // The redesign's columns (Q135): Occupancy comes first after the ward.
+      const percent = Number(/(\d+)%/u.exec(within(row).getAllByRole("cell")[0].textContent ?? "")?.[1]);
       if (percent >= 85) expect(row).not.toHaveAttribute("data-dim");
       else expect(row).toHaveAttribute("data-dim", "true");
     }

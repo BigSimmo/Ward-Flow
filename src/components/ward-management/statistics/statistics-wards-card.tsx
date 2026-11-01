@@ -4,17 +4,22 @@
 // wards. Its sort, highlight and Show all state come from `useWardTable`, held by the summary view.
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { TrendingUp } from "lucide-react";
 
-import { Badge, Button, CardFoot, FilterChip, StatusGlyph, rowDim, tableClasses } from "@/components/wf";
+import { Badge, Button, FilterChip, Segmented, cx, rowDim, tableClasses } from "@/components/wf";
+import {
+  Foot,
+  MoreLink,
+  Occ,
+  StatCardR,
+  Z,
+  redesignStyles as redesign,
+} from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import { useCanOpenHref } from "../shell/ward-access";
 import { BED_ALERT_THRESHOLD_PERCENT } from "../shell/ward-service-bed-alerts";
-import { StatCard } from "./statistics-hero";
 import { STATISTICS_COMPARE_HREF } from "./statistics-sections";
 import type { SummaryWard } from "./statistics-network-cards";
 import { exactStatisticsCount, type StatisticsCount } from "./statistics-small-numbers";
-import { PRESSURE_ROWS, SiteCodeKey, SortTh, type WardSortKey } from "./statistics-screen-parts";
+import { PRESSURE_ROWS, SortTh, type WardSortKey } from "./statistics-screen-parts";
 import styles from "./statistics-v6.module.css";
 
 /**
@@ -100,13 +105,86 @@ export function StatisticsWardsCard({
   // Compare is linked only for a desk that may open it (access audit, 31 Oct 2026).
   const canCompare = useCanOpenHref()(STATISTICS_COMPARE_HREF);
 
+  // The redesign's Wards and Hospitals switch (Q135): the same rows, grouped under each hospital.
+  const [groupBy, setGroupBy] = useState<"wards" | "hospitals">("wards");
+  const hospitals = groupBy === "hospitals" ? [...new Set(visibleWards.map((w) => w.hospital))].sort() : [];
+  const wardRow = (w: SummaryWard) => {
+    const percent = Math.round(w.occupancyRate * 100);
+    const over = percent >= BED_ALERT_THRESHOLD_PERCENT;
+    return (
+      <tr key={w.id} {...rowDim(wardOverLine && !over)}>
+        <th scope="row">
+          <span className={redesign.name}>
+            <span>
+              {w.name}
+              {w.ready === 0 && w.occupancyRate === 1 ? (
+                <>
+                  {" "}
+                  <Badge variant="plain" tone="neutral" size="sm">
+                    Full
+                  </Badge>
+                </>
+              ) : null}
+            </span>
+            <small title={w.hospital}>
+              {w.site}
+              <span className="sr-only">, {w.hospital}</span>
+            </small>
+          </span>
+        </th>
+        <td className={cx(redesign.r, tableClasses.num)}>
+          <Occ pct={percent} threshold={BED_ALERT_THRESHOLD_PERCENT} label={`${w.name} occupancy`} />
+        </td>
+        <td className={cx(redesign.r, tableClasses.num)}>
+          <Z v={w.ready} />
+          {w.pendingPreparation > 0 ? (
+            <span className={styles.cellNote}>{w.pendingPreparation} being made ready</span>
+          ) : null}
+        </td>
+        <td className={cx(redesign.r, tableClasses.num)}>
+          <Z v={exactStatisticsCount(w.referred) === 0 ? 0 : small(w.referred)} />
+        </td>
+        <td className={cx(redesign.r, tableClasses.num)}>{w.beds}</td>
+      </tr>
+    );
+  };
+
   return (
-    <StatCard
-      icon={TrendingUp}
+    <StatCardR
+      id="pressure"
       title={siteName ? `${siteName} wards` : "Where the pressure is"}
       // Bed manager: the column heads say what the table shows, so the title stands alone.
-      meta={siteName ? undefined : "Occupancy, awaiting answer"}
+      meta={
+        siteName
+          ? undefined
+          : `${overLineCount} ${overLineCount === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
+      }
+      aside={
+        siteName ? undefined : (
+          <Segmented
+            size="sm"
+            label="Group by"
+            value={groupBy}
+            onChange={setGroupBy}
+            items={[
+              { id: "wards", label: "Wards" },
+              { id: "hospitals", label: "Hospitals" },
+            ]}
+          />
+        )
+      }
       data-testid="ward-statistics-pressure"
+      foot={
+        <Foot link={canCompare ? <MoreLink href={STATISTICS_COMPARE_HREF}>Compare wards</MoreLink> : undefined}>
+          {filteredAndSortedWards.length > PRESSURE_ROWS ? (
+            <Button size="sm" variant="ghost" onClick={() => setWardShowAll((value) => !value)}>
+              {wardShowAll ? `Show top ${PRESSURE_ROWS}` : `Show all ${filteredAndSortedWards.length}`}
+            </Button>
+          ) : (
+            "Highest occupancy first"
+          )}
+        </Foot>
+      }
     >
       {/* Bed manager: with three wards or fewer the highlight chip and count cannot change what
         is read, so the toolbar goes. */}
@@ -130,85 +208,39 @@ export function StatisticsWardsCard({
           </span>
         </div>
       )}
-      <div className={styles.tableWrap}>
-        <table className={`${tableClasses.table} ${styles.table}`} id="wardPressureTable">
-          <caption className={styles.srOnly}>Inpatient mental health ward capacity and demand</caption>
+      <div
+        className={redesign.tableWrap}
+        tabIndex={0}
+        role="region"
+        aria-label="Inpatient mental health ward capacity and demand, scrollable table"
+      >
+        <table className={cx(tableClasses.table, redesign.table)} id="wardPressureTable">
+          <caption className="sr-only">Inpatient mental health ward capacity and demand</caption>
           <thead>
             <tr>
               <SortTh id="name" label="Ward" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} />
-              <SortTh id="beds" label="Beds" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} numeric />
-              <SortTh id="ready" label="Ready" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} numeric />
               <SortTh id="occ" label="Occupancy" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} numeric />
+              <SortTh id="ready" label="Ready" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} numeric />
               <SortTh id="ref" label="Awaiting" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} numeric />
+              <SortTh id="beds" label="Beds" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} numeric />
             </tr>
           </thead>
-          <tbody>
-            {visibleWards.map((w) => {
-              const percent = Math.round(w.occupancyRate * 100);
-              const over = percent >= BED_ALERT_THRESHOLD_PERCENT;
-              return (
-                <tr key={w.id} {...rowDim(wardOverLine && !over)}>
-                  <th scope="row">
-                    {w.name}
-                    <span className={styles.code} title={w.hospital}>
-                      {w.site}
-                      <span className={styles.srOnly}>, {w.hospital}</span>
-                    </span>
-                    {w.ready === 0 && w.occupancyRate === 1 ? (
-                      <Badge variant="plain" tone="neutral" size="sm">
-                        Full
-                      </Badge>
-                    ) : null}
+          {groupBy === "hospitals" ? (
+            hospitals.map((hospital) => (
+              <tbody key={hospital}>
+                <tr className={redesign.group}>
+                  <th scope="rowgroup" colSpan={5}>
+                    {hospital}
                   </th>
-                  <td className={styles.num}>{w.beds}</td>
-                  <td className={`${styles.num} ${w.ready === 0 ? styles.zero : ""}`}>
-                    {w.ready}
-                    {w.pendingPreparation > 0 ? (
-                      <span className={styles.cellNote}>{w.pendingPreparation} being made ready</span>
-                    ) : null}
-                  </td>
-                  <td className={styles.num}>
-                    <span className={styles.occBar}>
-                      <span className={styles.occTrack} aria-hidden="true">
-                        <span className={styles.occFill} style={{ width: `${Math.min(100, percent)}%` }} />
-                        <span className={styles.occTick} style={{ left: `${BED_ALERT_THRESHOLD_PERCENT}%` }} />
-                      </span>
-                      <span className={styles.occValue}>
-                        {over ? <StatusGlyph tone="warning" size={9} /> : null}
-                        {percent}%
-                      </span>
-                    </span>
-                  </td>
-                  <td className={`${styles.num} ${exactStatisticsCount(w.referred) === 0 ? styles.zero : ""}`}>
-                    {small(w.referred)}
-                  </td>
                 </tr>
-              );
-            })}
-          </tbody>
+                {visibleWards.filter((w) => w.hospital === hospital).map(wardRow)}
+              </tbody>
+            ))
+          ) : (
+            <tbody>{visibleWards.map(wardRow)}</tbody>
+          )}
         </table>
       </div>
-      {/* Bed manager: one site needs no key; the card title already names it. */}
-      {siteName ? null : <SiteCodeKey sites={visibleWards.map((w) => ({ code: w.site, name: w.hospital }))} />}
-      {/* A desk that may not open Compare (the site bed manager) gets no link, and a foot with nothing
-        in it is not drawn. */}
-      {!canCompare && filteredAndSortedWards.length <= PRESSURE_ROWS ? null : (
-        <CardFoot
-          meta={
-            filteredAndSortedWards.length > PRESSURE_ROWS ? (
-              <Button size="sm" variant="ghost" onClick={() => setWardShowAll((value) => !value)}>
-                {wardShowAll ? `Show top ${PRESSURE_ROWS}` : `Show all ${filteredAndSortedWards.length}`}
-              </Button>
-            ) : undefined
-          }
-        >
-          {canCompare ? (
-            <Link href={STATISTICS_COMPARE_HREF} className={styles.footLink}>
-              Compare wards
-            </Link>
-          ) : null}
-        </CardFoot>
-      )}
-    </StatCard>
+    </StatCardR>
   );
 }

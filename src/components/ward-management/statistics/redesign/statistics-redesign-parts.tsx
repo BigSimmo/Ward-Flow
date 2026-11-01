@@ -6,7 +6,7 @@
  * StatusGlyph, the table class) and the Capacity page's tile strip and card foot. Nothing here
  * calculates: every figure is handed in by the page that owns it.
  */
-import { type CSSProperties, type ReactNode } from "react";
+import { type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
@@ -71,7 +71,8 @@ export function StatCardR({
   foot,
   className,
   children,
-}: {
+  ...rest
+}: Omit<ComponentPropsWithoutRef<"section">, "title" | "id"> & {
   id: string;
   title: string;
   meta?: ReactNode;
@@ -81,7 +82,7 @@ export function StatCardR({
   children: ReactNode;
 }) {
   return (
-    <Card className={cx(s.card, className)} aria-labelledby={id} data-ward-primitive="panel">
+    <Card className={cx(s.card, className)} aria-labelledby={id} data-ward-primitive="panel" {...rest}>
       <CardHead id={id} title={title} meta={meta} action={aside} />
       {children}
       {foot}
@@ -89,9 +90,23 @@ export function StatCardR({
   );
 }
 
-export function Strip({ cols, label, children }: { cols?: number; label: string; children: ReactNode }) {
+export function Strip({
+  cols,
+  label,
+  id,
+  testId,
+  children,
+}: {
+  cols?: number;
+  label: string;
+  id?: string;
+  testId?: string;
+  children: ReactNode;
+}) {
   return (
     <ul
+      id={id}
+      data-testid={testId}
       className={cx(cap.mmStrip, s.strip)}
       aria-label={label}
       style={cols ? ({ "--cols": cols } as CSSProperties) : undefined}
@@ -188,7 +203,7 @@ export function BedStack({
   return <StackBar segments={segments} label={label} className={s.stackGap} />;
 }
 
-type BarRow = { name: string; value: number; display?: string; sub?: string; flag?: WfTone };
+type BarRow = { name: string; label?: ReactNode; value: number; display?: ReactNode; sub?: string; flag?: WfTone };
 
 /** One series, value at the tip, recessive track (the kit's BarList). */
 export function Bars({
@@ -208,7 +223,8 @@ export function Bars({
 }) {
   const list: BarListRow[] = rows.map((row) => ({
     id: row.name,
-    label: row.name,
+    label: row.label ?? row.name,
+    labelText: row.name,
     sub: row.sub,
     value: row.value,
     display: row.display ?? String(row.value),
@@ -218,6 +234,15 @@ export function Bars({
     <div className={s.bars}>
       <BarList rows={list} label={label} max={max} mean={mean} meanLabel={meanLabel} axis={axis} track />
     </div>
+  );
+}
+
+/** A nought, a dash or "none" reads quieter than a figure. */
+export function Z({ v }: { v: ReactNode }) {
+  return v === 0 || v === "0" || v === "none" || v === "–" || v === "—" ? (
+    <span className={s.zero}>{v}</span>
+  ) : (
+    <>{v}</>
   );
 }
 
