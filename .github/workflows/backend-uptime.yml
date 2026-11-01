@@ -65,7 +65,9 @@ jobs:
               # A missing `database` means the token was missing or wrong: the public health check
               # still passed, but database health is unknown. Preserve existing outage issues
               # instead of reporting either a false outage or an unverified recovery.
-              database=$(printf '%s' "$body" | jq -r '.database // "hidden"' 2>/dev/null || echo hidden)
+              if ! database=$(printf '%s' "$body" | jq -r '.database // "hidden"' 2>/dev/null); then
+                database=hidden
+              fi
               if [ "$database" = "ok" ]; then state=up; break; fi
               if [ "$database" = "hidden" ]; then
                 echo "::warning::Database not checked: WARD_FLOW_UPTIME_TOKEN is missing or does not match the backend's value."

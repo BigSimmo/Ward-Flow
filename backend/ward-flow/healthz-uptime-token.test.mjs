@@ -153,6 +153,11 @@ test(
       { name: "hidden database", body: hidden, state: "unknown" },
       { name: "null database", body: '{"service":"ward-flow-backend","database":null}', state: "unknown" },
       { name: "malformed health JSON", body: '{"service":"ward-flow-backend",invalid}', state: "unknown" },
+      {
+        name: "valid health object followed by malformed text",
+        body: '{"service":"ward-flow-backend","database":"ok"} invalid',
+        state: "unknown",
+      },
       { name: "verified recovery", body: '{"service":"ward-flow-backend","database":"ok"}', state: "up" },
       { name: "known database outage", body: unavailable, state: "database" },
       {
