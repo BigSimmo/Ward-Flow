@@ -334,6 +334,9 @@ export function alertAsksDesk(alert: BroadcastAlert, desk: { role: string; id: s
   }
   // The coordinator desk acknowledges as COORDINATOR_DESK_ACKNOWLEDGER_ID (owner ruling 2026-09-25).
   // Ops-13 (13 Oct 2026): the coordinator desk is never asked to acknowledge a directive it sent.
+  // Alerts redesign (1 Nov 2026): a directive sent to chosen desks asks only those ward and ED desks.
+  if ((desk.role === "ward" || desk.role === "ed") && alert.targetUnitIds !== undefined)
+    return alert.targetUnitIds.includes(desk.id);
   return (
     desk.role === "ward" ||
     desk.role === "ed" ||

@@ -46,7 +46,12 @@ export function wardsInBroadcastScope(units: readonly Unit[], scope: BroadcastTa
  * plus every ED desk when the target is every unit or ED liaison. The coordinator desk sends
  * directives and is never counted.
  */
-export function directiveDesks(alert: BroadcastAlert, units: readonly Unit[]): string[] {
+export function directiveDesks(
+  alert: Pick<BroadcastAlert, "targetScope" | "targetUnitIds">,
+  units: readonly Unit[],
+): string[] {
+  // Alerts redesign (1 Nov 2026): a directive sent to chosen desks asks only those.
+  if (alert.targetUnitIds !== undefined) return [...alert.targetUnitIds];
   const { wards, eds } = desksInBroadcastScope(units, alert.targetScope);
   return [...wards, ...eds];
 }

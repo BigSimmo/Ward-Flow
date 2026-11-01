@@ -95,8 +95,22 @@ export function reduceBroadcastAlertEvent(
       if (kind === null) {
         return reject(state, event, "DISPATCH_BROADCAST_ALERT kind must be a directive or a bed call");
       }
-      // A bed call asks only the wards its target covers, fixed when it is sent.
-      const bedCallWards = kind === "bed_call" ? wardsInScope(state, targetScope) : [];
+      // Alerts redesign (1 Nov 2026): chosen desks, when sent, must each be a real ward or ED desk.
+      const chosen = event.targetUnitIds === undefined ? undefined : [...new Set(event.targetUnitIds)];
+      if (chosen !== undefined && (chosen.length === 0 || !chosen.every((id) => isRealDesk(state, id)))) {
+        return reject(
+          state,
+          event,
+          "DISPATCH_BROADCAST_ALERT targetUnitIds must name at least one real ward or ED desk",
+        );
+      }
+      // A bed call asks only the wards its target covers (or the wards chosen), fixed when it is sent.
+      const bedCallWards =
+        kind !== "bed_call"
+          ? []
+          : chosen !== undefined
+            ? chosen.filter((id) => findUnit(state, id) !== undefined)
+            : wardsInScope(state, targetScope);
       if (kind === "bed_call" && bedCallWards.length === 0) {
         return reject(state, event, "DISPATCH_BROADCAST_ALERT a bed call needs a target that covers at least one ward");
       }
@@ -105,7 +119,11 @@ export function reduceBroadcastAlertEvent(
       const duration = event.durationMinutes;
       const newAlert: BroadcastAlert = {
         id: alertId,
-        ...(kind === "bed_call" ? { kind, replies: [], targetUnitIds: bedCallWards } : {}),
+        ...(kind === "bed_call"
+          ? { kind, replies: [], targetUnitIds: bedCallWards }
+          : chosen !== undefined
+            ? { targetUnitIds: chosen }
+            : {}),
         title: event.title.trim(),
         message: event.message.trim(),
         severity,

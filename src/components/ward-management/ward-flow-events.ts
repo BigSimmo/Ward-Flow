@@ -2281,6 +2281,11 @@ export type WardFlowEvent =
       dispatchedByName: string;
       /** Absent means a directive. `bed_call` asks wards a set question (10 Oct 2026). */
       kind?: "directive" | "bed_call";
+      /**
+       * Alerts redesign (Josh, 1 Nov 2026): the desks chosen by group or one by one, ward unit ids and
+       * ED ids. Absent means every desk `targetScope` covers. A bed call keeps only the wards.
+       */
+      targetUnitIds?: string[];
     }
   | {
       /** Acknowledge receipt of an active statewide broadcast alert for a specific ward/unit. */
