@@ -13,7 +13,7 @@ import type { DischargeRecord } from "@/components/ward-management/ward-discharg
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { Badge, Button, EmptyState, StatusGlyph, TextInput, buttonClass, durMinutes } from "@/components/wf";
+import { Badge, Button, EmptyState, PillTabs, StatusGlyph, TextInput, buttonClass, durMinutes } from "@/components/wf";
 import { DischargeFollowUp } from "./discharge-follow-up";
 import { ReadyToLeave } from "./discharge-ready-to-leave";
 import { SupportNotificationChecklist } from "../movements/support-notification-checklist";
@@ -68,41 +68,22 @@ function DischargeDetailTabs({
   drawerTab: DischargeWorkspaceState["drawerTab"];
   setDrawerTab: DischargeWorkspaceState["setDrawerTab"];
 }) {
+  // Mock-up (1 Nov 2026): the kit's pill tabs, a rounded track with the chosen tab raised, as Home's
+  // Activity panel. Barriers carries a danger glyph while a blocker is recorded.
   return (
-    <div className={pageStyles.drawerTabs} role="tablist" aria-label="Discharge inspection sections">
-      {DETAIL_TABS.map(([id, label], index) => (
-        <button
-          key={id}
-          type="button"
-          role="tab"
-          id={`${idPrefix}-tab-${id}`}
-          aria-controls={`${idPrefix}-panel-${id}`}
-          aria-selected={drawerTab === id}
-          tabIndex={drawerTab === id ? 0 : -1}
-          className={`${pageStyles.drawerTab} ${drawerTab === id ? pageStyles.drawerTabActive : ""}`}
-          onClick={() => setDrawerTab(id)}
-          onKeyDown={(event) => {
-            const next =
-              event.key === "Home"
-                ? 0
-                : event.key === "End"
-                  ? DETAIL_TABS.length - 1
-                  : event.key === "ArrowRight"
-                    ? (index + 1) % DETAIL_TABS.length
-                    : event.key === "ArrowLeft"
-                      ? (index - 1 + DETAIL_TABS.length) % DETAIL_TABS.length
-                      : null;
-            if (next === null) return;
-            event.preventDefault();
-            setDrawerTab(DETAIL_TABS[next][0]);
-            event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
-          }}
-        >
-          {label}
-          {id === "barriers" && hasBlocker ? <span className={pageStyles.tabBadgeAlert}>!</span> : null}
-        </button>
-      ))}
-    </div>
+    <PillTabs
+      items={DETAIL_TABS.map(([id, label]) => ({
+        id,
+        label,
+        tone: id === "barriers" && hasBlocker ? ("danger" as const) : undefined,
+      }))}
+      value={drawerTab}
+      onChange={setDrawerTab}
+      label="Discharge inspection sections"
+      idPrefix={idPrefix}
+      fill
+      className={pageStyles.detailTabs}
+    />
   );
 }
 
@@ -186,7 +167,7 @@ export function DischargeRecordDetail({
         className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}
       >
         <RecordedDischargeMilestones
-          title={isPhone ? "Milestones" : undefined}
+          title="Milestones"
           milestones={[
             {
               label: "Expected discharge date",
@@ -444,7 +425,6 @@ export function DischargeReleaseDetail({
   const {
     dayZero,
     now,
-    setPopulation,
     isPhone,
     phoneReleaseMore,
     setPhoneReleaseMore,
@@ -457,7 +437,6 @@ export function DischargeReleaseDetail({
     linkedReleaseRecord,
     releaseOnCto,
     selectedUnit,
-    openRecord,
     detailTone,
     detailBadgeLabel,
     releasePaneClass,
@@ -561,35 +540,26 @@ export function DischargeReleaseDetail({
         <>
           <div className={pageStyles.identity}>
             <div className={pageStyles.identityText}>
-              <h3 className={pageStyles.patientFullName}>{personName ?? wardName}</h3>
+              <div className={pageStyles.identityTitle}>
+                <h3 className={pageStyles.patientFullName}>{personName ?? wardName}</h3>
+                {detailTone ? (
+                  <Badge tone={detailTone} size="sm">
+                    {badgeLabel}
+                  </Badge>
+                ) : null}
+              </div>
               <p className={pageStyles.identityMeta}>
                 {linkedReleaseRecord?.identity.kind === "linked" && (
-                  <span className={pageStyles.mono}>UMRN {linkedReleaseRecord.identity.patient.umrn}</span>
+                  <span className={pageStyles.mono}>{linkedReleaseRecord.identity.patient.umrn}</span>
                 )}
                 <span>{wardName}</span>
                 <span>{healthServiceLabel(selectedUnit)}</span>
               </p>
             </div>
-            {detailTone ? (
-              <Badge tone={detailTone} size="sm">
-                {badgeLabel}
-              </Badge>
-            ) : null}
           </div>
-          <dl className={pageStyles.detailStats}>
-            {overdue ? (
-              <div>
-                <dt>Overdue</dt>
-                <dd>{pastWords(now - detailRelease.expectedAt).replace(/ past$/, "")}</dd>
-              </div>
-            ) : detailRelease.state !== "discharged" ? (
-              <div>
-                <dt>Due in</dt>
-                <dd>{durMinutes(detailRelease.expectedAt - now)}</dd>
-              </div>
-            ) : null}
+          <dl className={pageStyles.factTiles}>
             <div>
-              <dt>{detailRelease.state === "discharged" ? "Released" : "Expected"}</dt>
+              <dt>{detailRelease.state === "discharged" ? "Released" : "Expected out"}</dt>
               <dd>
                 {recordedMoment(
                   detailRelease.state === "discharged" ? detailRelease.confirmedAt : detailRelease.expectedAt,
@@ -597,6 +567,25 @@ export function DischargeReleaseDetail({
                 )}
               </dd>
             </div>
+            {overdue ? (
+              <div data-tone="danger">
+                <dt>Overdue by</dt>
+                <dd>
+                  <StatusGlyph tone="danger" size={9} />
+                  {pastWords(now - detailRelease.expectedAt).replace(/ past$/, "")}
+                </dd>
+              </div>
+            ) : detailRelease.state !== "discharged" ? (
+              <div>
+                <dt>Due in</dt>
+                <dd>{durMinutes(detailRelease.expectedAt - now)}</dd>
+              </div>
+            ) : (
+              <div>
+                <dt>Stage</dt>
+                <dd>Departed</dd>
+              </div>
+            )}
           </dl>
         </>
       )}
@@ -610,25 +599,13 @@ export function DischargeReleaseDetail({
         >
           Patient page →
         </Link>
-      ) : linkedReleaseRecord ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          className={pageStyles.bridgeButton}
-          onClick={(e) => {
-            setPopulation("records");
-            openRecord(linkedReleaseRecord, e.currentTarget);
-          }}
-        >
-          View patient discharge record →
-        </Button>
       ) : null}
 
       {isPhone ? null : tabList(Boolean(detailRelease.blocker))}
 
       <div {...releasePanelProps("milestones")} className={releasePaneClass("milestones")}>
         <RecordedDischargeMilestones
-          title={isPhone ? "Milestones" : undefined}
+          title="Milestones"
           milestones={[
             {
               label: "Expected discharge date",
@@ -665,8 +642,7 @@ export function DischargeReleaseDetail({
         />
         {detailRelease.preparing ? (
           <p className={pageStyles.note}>
-            Preparation recorded: {detailRelease.preparationNote ?? "Reason not recorded"}. This is informational and
-            does not establish completion.
+            Preparation recorded: {detailRelease.preparationNote ?? "Reason not recorded"}.
           </p>
         ) : null}
         <ReadyToLeave
@@ -704,7 +680,6 @@ export function DischargeReleaseDetail({
                 <StatusGlyph tone="success" size={9} />
                 No discharge blocker recorded
               </span>
-              <p className={pageStyles.note}>Clinical, pharmacy and transit clearance are not recorded here.</p>
             </div>
           )}
         </div>
