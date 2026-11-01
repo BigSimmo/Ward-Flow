@@ -663,6 +663,7 @@ export function ReferralBoard({
             variant="pri"
             onClick={() => setPulling(selectedToPull)}
             data-testid="ward-referral-pull-bed"
+            data-placement-action
           >
             Pull the bed
           </Button>
@@ -672,6 +673,7 @@ export function ReferralBoard({
             className={buttonClass({ variant: "pri", size: "sm" })}
             title={`Open ${targetWard?.name ?? "ward"} bed board`}
             data-testid="ward-referral-hold-bed"
+            data-placement-action
           >
             Pull the bed
           </Link>

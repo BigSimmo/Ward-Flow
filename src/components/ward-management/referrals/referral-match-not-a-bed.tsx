@@ -140,6 +140,7 @@ export function renderNotABedPhoneReview({
               className={ph.pri}
               data-tone="danger"
               data-testid="ward-referral-match-decline-emergency_department"
+              data-placement-action="decline"
               aria-disabled={edDeclineReason === undefined ? "true" : undefined}
               aria-describedby="ward-referral-match-decline-blocked-emergency_department"
               title={edDeclineReason === undefined ? DECLINE_REASON_UNCHOSEN_ED : undefined}
@@ -169,6 +170,7 @@ export function renderNotABedPhoneReview({
               type="button"
               className={ph.pri}
               data-testid="ward-referral-match-confirm-accept-emergency_department"
+              data-placement-action
               onClick={handleEdAccept}
             >
               <span className={ph.ell}>Confirm acceptance</span>
@@ -182,6 +184,7 @@ export function renderNotABedPhoneReview({
               type="button"
               className={ph.sec}
               data-testid="ward-referral-match-decline-open"
+              data-placement-action="decline"
               onClick={() => setPhoneDeclining(true)}
             >
               Decline
@@ -190,6 +193,7 @@ export function renderNotABedPhoneReview({
               type="button"
               className={ph.pri}
               data-testid="ward-referral-match-accept-emergency_department"
+              data-placement-action
               onClick={() => setEdAcceptConfirmOpen(true)}
             >
               <span className={ph.ell}>Accept presentation</span>
@@ -302,6 +306,7 @@ export function renderNotABedPanel({
                 type="button"
                 className={styles.declineButton}
                 data-testid="ward-referral-match-decline-emergency_department"
+                data-placement-action="decline"
                 aria-disabled={edDeclineReason === undefined ? "true" : undefined}
                 aria-describedby={
                   edDeclineReason === undefined ? "ward-referral-match-decline-blocked-emergency_department" : undefined
@@ -335,6 +340,7 @@ export function renderNotABedPanel({
                 type="button"
                 className={styles.acceptPresentationBtn}
                 data-testid="ward-referral-match-accept-emergency_department"
+                data-placement-action
                 onClick={() => setEdAcceptConfirmOpen(true)}
               >
                 <svg
@@ -362,6 +368,7 @@ export function renderNotABedPanel({
                   type="button"
                   className={styles.acceptPresentationBtn}
                   data-testid="ward-referral-match-confirm-accept-emergency_department"
+                  data-placement-action
                   onClick={handleEdAccept}
                 >
                   Confirm acceptance
@@ -411,6 +418,7 @@ export function renderNotABedPanel({
                 type="button"
                 className={styles.declineButton}
                 data-testid="ward-referral-match-decline-community_team"
+                data-placement-action="decline"
                 aria-disabled={communityDeclineReason === undefined ? "true" : undefined}
                 aria-describedby={
                   communityDeclineReason === undefined
@@ -443,6 +451,7 @@ export function renderNotABedPanel({
               type="button"
               className={styles.acceptPresentationBtn}
               data-testid="ward-referral-match-accept-community_team"
+              data-placement-action
               onClick={handleCommunityAccept}
             >
               <svg

@@ -8,6 +8,7 @@ import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { ReferralDeclineReason, Rejection } from "@/components/ward-management/ward-model";
 import type { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 
 export function useEdInboxDecline({
   rejections,
@@ -78,7 +79,11 @@ export function useEdInboxDecline({
   );
   const priorRejectionCountRef = useRef(rejections.length);
   const [declineCheckToken, setDeclineCheckToken] = useState(0);
-  const pendingDeclineRef = useRef<{ id: string; completion: ReturnType<WardRaise> } | undefined>(undefined);
+  const pendingDeclineRef = useRef<{ id: string; who: string; completion: ReturnType<WardRaise> } | undefined>(
+    undefined,
+  );
+  // The toast names the person (surname first), so stacked toasts never Undo the wrong one.
+  const patientOf = usePatientOf();
 
   useEffect(() => {
     // Nothing has been dispatched from this screen yet, so a rejection already in state belongs to
@@ -98,9 +103,9 @@ export function useEdInboxDecline({
     if (declined && (declined.completion !== undefined || rejections.length <= priorRejectionCountRef.current)) {
       offerStep(
         {
-          success: "Referral declined",
+          success: `Referral declined for ${declined.who}`,
           undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role: "ed", now: at, referralId: declined.id }),
-          undone: "Decline undone",
+          undone: `Decline undone for ${declined.who}`,
         },
         { completion: declined.completion },
       );
@@ -135,7 +140,7 @@ export function useEdInboxDecline({
       destinationKind: "emergency_department",
       reason: declineDraft,
     });
-    pendingDeclineRef.current = { id: referralId, completion };
+    pendingDeclineRef.current = { id: referralId, who: patientOf({ referralId }).formalName, completion };
     setDeclineCheckToken((token) => token + 1);
     // ⚠️ **THE PANEL IS DELIBERATELY NOT CLOSED AND THE DRAFT NOT CLEARED HERE.** `dispatch` does
     // not say whether the reducer accepted, so closing on dispatch would discard a clinician's

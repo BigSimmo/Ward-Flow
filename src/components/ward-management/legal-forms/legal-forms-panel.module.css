@@ -1,0 +1,341 @@
+/*
+ * Forms side panel (Josh, 1 Nov 2026: "components are broken, not extended edge to edge").
+ *
+ * The panel fills its drawer or phone sheet: one 16px gutter for every block, sections divided by
+ * full-width hairlines, and the action bar anchored to the bottom (sticky, so it stays in reach
+ * when the panel scrolls). Tone is shown by the status glyph and a soft tint, never a coloured
+ * side edge. Controls are 40px; no text is under 12px.
+ */
+
+.panel.panel {
+  flex: 1 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--wf-surface);
+  box-shadow: none;
+  overflow: visible;
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+/* The form at a glance: typed end time, then where the move runs from and to. */
+.summary {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.clock {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 48px;
+  padding: 8px var(--wf-s-3);
+}
+
+.clock[data-tone="danger"] {
+  background: var(--wf-act-tint);
+}
+
+.clockLine {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 0;
+}
+
+.clockLine > :first-child {
+  align-self: center;
+}
+
+.clockBig {
+  font: 700 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.clockWord {
+  min-width: 0;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.formChip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.formChip:hover {
+  background: var(--wf-surface-2);
+}
+
+.formChip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.route {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.route > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px var(--wf-s-3);
+}
+
+.route > div:nth-child(even) {
+  border-left: 1px solid var(--wf-line);
+}
+
+.route > div:nth-child(n + 3) {
+  border-top: 1px solid var(--wf-line);
+}
+
+.route dt {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.route dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.caveat {
+  margin: 0;
+  padding: 6px var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px var(--wf-s-4);
+}
+
+.section:first-child {
+  padding-top: 10px;
+}
+
+.section + .section {
+  border-top: 1px solid var(--wf-line);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* Next step: one plain card, the accent tint only when there is something to do. */
+.next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-accent-tint);
+}
+
+.next[data-action="none"] {
+  background: var(--wf-surface-2);
+}
+
+.next[data-action="extend"] {
+  background: var(--wf-act-tint);
+}
+
+.nextText {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nextTitle {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.nextDetail {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.nextButton.nextButton {
+  height: 40px;
+  min-height: 40px;
+}
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 44px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.check:last-child {
+  border-bottom: 0;
+}
+
+.check > :first-child {
+  justify-self: center;
+}
+
+.checkText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.checkLabel {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.checkSub {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.check[data-muted="true"] .checkLabel {
+  color: var(--wf-ink-3);
+}
+
+/* The action bar sits on the bottom edge of the drawer and stays there while the body scrolls. */
+.foot.foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: auto;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.foot > a,
+.foot > button {
+  height: 40px;
+  min-height: 40px;
+}
+
+/* Phone sheet: the sheet's own pinned foot carries Copy and the next step, so the panel's bar keeps
+ * only Open move, flat. The panel cancels the sheet body's 16px padding to run edge to edge. */
+@media (max-width: 48rem) {
+  .panel.panel {
+    margin: calc(-1 * var(--wf-s-4));
+    min-height: 0;
+  }
+
+  .foot.foot {
+    position: static;
+    justify-content: center;
+    padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-4);
+    border-top: 0;
+  }
+}
+
+/* The next step leads with a tinted icon chip, as on the rebuilt Home and Waiting stat rows. */
+.nextIcon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-accent-ink);
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+}
+
+.next[data-action="none"] .nextIcon {
+  color: var(--wf-success);
+}
+
+.next[data-action="extend"] .nextIcon {
+  color: var(--wf-danger);
+}
+
+/* Next step sits in the top block, straight under the summary, with the time form when one is due. */
+.nextBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+/* The written-time form's two choice groups carry visible labels, not only accessible ones. */
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.choiceLabel {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}

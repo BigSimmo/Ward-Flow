@@ -377,28 +377,10 @@
   list-style: none;
 }
 
-/* Approved attention is inset so adjacent phone rows never form a red box. */
+/* Act now is the faint tint and the row's own status glyph: no coloured side edge (Josh, Q94, 1 Nov
+   2026), and never a red box. */
 .rowActNow {
   background: var(--wf-act-tint);
-}
-
-.rowActNow::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: 999px;
-  z-index: 3;
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .rowActNow::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
 }
 
 /* The row target fills the row. Its ::after stretches over the whole row (behind the action), so a
@@ -839,8 +821,8 @@
   .tabBar {
     border-color: CanvasText;
   }
-  .rowActNow::before {
-    box-shadow: none;
+  /* Forced colours drop the tint, so an act-now row keeps a plain outline there. */
+  .rowActNow {
     outline: 1px solid CanvasText;
     outline-offset: -1px;
   }

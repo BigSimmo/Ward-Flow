@@ -3032,27 +3032,7 @@
   }
 }
 
-/* Rounded attention markers apply at every responsive breakpoint. */
-.pulledOverdueAlert {
-  position: relative;
-}
-
-.pulledOverdueAlert::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
 @media (forced-colors: active) {
-  .pulledOverdueAlert::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
   /* Device sweep R7-07/R7-09 (24 Oct 2026): the selected record tab and the recorded and current
    * stage marks kept only a background and a shadow, which forced colours drop. */
   .v6Tab[aria-selected="true"] {

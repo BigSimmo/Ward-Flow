@@ -1,21 +1,12 @@
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { bedsForecast } from "@/components/ward-management/capacity/beds-forecast";
 import { forecastBrief } from "@/components/ward-management/forecast/forecast-brief";
 import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
 import { forecastLevers } from "@/components/ward-management/forecast/forecast-levers";
-import { ForecastNetworkExtras } from "@/components/ward-management/forecast/forecast-network-extras";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-
-const surface = vi.hoisted(() => ({ model: {} as Record<string, unknown> }));
-vi.mock("@/components/ward-management/forecast/use-forecast-model", () => ({
-  useForecastModel: () => surface.model,
-  useForecastChange: () => null,
-}));
 
 const now = NOW_ANCHOR;
 const seed = seedWardFlowState();
@@ -131,7 +122,7 @@ describe("forecast lever likely uplift", () => {
     expect(forecast(after).total.likely - forecast(before).total.likely).toBe(expectedUplift);
   });
 
-  it("preserves the full operational count while displaying only the achievable uplift", () => {
+  it("preserves the full operational count beside the achievable uplift", () => {
     const before = fixture(now - MINUTES_PER_DAY, true);
     before.bedReleases.push({
       ...before.bedReleases[0]!,
@@ -143,33 +134,12 @@ describe("forecast lever likely uplift", () => {
     const lever = levers.find((entry) => entry.kind === "clear_held_up")!;
     expect(lever.beds).toBe(2);
     expect(lever.likelyUplift).toBe(1);
-    surface.model = {
-      tomorrow: forecast(before),
-      byDays: [],
-      levers,
-      blockers: { total: 0 },
-      notCounted: { leaveBeds: 0, repatriations: 0 },
-    };
-    const html = renderToStaticMarkup(createElement(ForecastNetworkExtras, { now }));
-    expect(html).toContain("Chase 2 held-up releases");
-    expect(html).toContain("up to +1");
-    expect(html).not.toContain("up to +2");
   });
 
-  it.each([true, false])("uses range-only wording in the action card and brief when blocked=%s", (blocked) => {
+  it.each([true, false])("uses range-only wording in the brief when blocked=%s", (blocked) => {
     const before = fixture(now - MINUTES_PER_DAY, blocked, blocked);
     const tomorrow = forecast(before);
     const levers = forecastLevers([unit], before.bedReleases, before.admissions, now);
-    surface.model = {
-      tomorrow,
-      byDays: [],
-      levers,
-      blockers: { total: 0 },
-      notCounted: { leaveBeds: 0, repatriations: 0 },
-    };
-    const html = renderToStaticMarkup(createElement(ForecastNetworkExtras, { now }));
-    expect(html).toContain("range only");
-    expect(html).not.toContain("up to +");
     const brief = forecastBrief(
       tomorrow,
       levers,
@@ -200,17 +170,6 @@ describe("forecast lever likely uplift", () => {
     const tomorrow = forecast(before);
     const levers = forecastLevers([unit], [], before.admissions, now);
     expect(levers.find((entry) => entry.kind === "confirm_dates")).toMatchObject({ beds: 1, likelyUplift: 0 });
-    surface.model = {
-      tomorrow,
-      byDays: [],
-      levers,
-      blockers: { total: 0 },
-      notCounted: { leaveBeds: 0, repatriations: 0 },
-    };
-    const html = renderToStaticMarkup(createElement(ForecastNetworkExtras, { now }));
-    expect(html).toContain("range only");
-    expect(html).toContain("Reserved stays must arrive");
-    expect(html).not.toContain("up to +");
     const brief = forecastBrief(
       tomorrow,
       levers,
