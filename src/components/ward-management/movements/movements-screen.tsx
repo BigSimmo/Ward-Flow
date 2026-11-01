@@ -14,7 +14,6 @@ import {
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
 import { WardGroupHeading, WardRecordList } from "@/components/ward-management/ward-record-row";
-import { isTierOneOpen } from "@/components/ward-management/ward-shared-figures";
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { edById } from "@/components/ward-management/ward-sites";
@@ -29,6 +28,7 @@ import {
   refusedCorridorCounts,
   transportCounts,
   transportLegs,
+  type MovementLegState,
 } from "./movements-derivations";
 import { useWardChecksPublisher } from "@/components/ward-management/shell/ward-checks";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
@@ -39,15 +39,13 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { ArrowRightLeft, ChartColumn, Search, ShieldCheck, Truck, X } from "lucide-react";
+import { ArrowRight, ArrowRightLeft, ChartColumn, Hourglass, Scale, Search, ShieldCheck, Truck, X } from "lucide-react";
 import {
   Card,
   CardHead,
   Hero,
-  Legend,
   LiveChip,
   RadioGroup,
-  StackBar,
   StatusGlyph,
   TextInput,
   buttonClass,
@@ -64,6 +62,8 @@ import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";
 import flow from "./movement-flow.module.css";
+import board from "@/components/ward-management/delays/delays-board.module.css";
+import strip from "@/components/ward-management/delays/waiting-polish.module.css";
 import styles from "./movements.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -71,7 +71,6 @@ import { MovementsPhoneNav } from "./movements-phone-nav";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import { ShapeOfTheDay } from "./movements-shape-of-day";
 import { HighlightStat, PhoneGroupHeading, StageRow } from "./movements-stage-row";
-import { MovementsTierOneNow } from "./movements-tier-one-now";
 import { CommunityNoJourneys, StagePipeline } from "./movements-lazy-parts";
 import {
   CAUSES,
@@ -80,7 +79,6 @@ import {
   LEG_STATE_TONE,
   LIST_CAP,
   STAGE_SHORT,
-  TRANSPORT_STATES,
   bedReadyNote,
   causeOf,
   heroHighlights,
@@ -383,25 +381,6 @@ export function MovementsScreen() {
     () => new Set(corridors.map((corridor) => JSON.stringify([corridor.originEdId, corridor.acceptedUnitId]))).size,
     [corridors],
   );
-  const tierOneOpen = openMovements.filter(isTierOneOpen);
-  const attentionCore = byLongestWait(tierOneOpen, now, thresholds).slice(0, 3);
-  /**
-   * R2 item 3 (P2): flagged-urgent (or otherwise urgent per the widened service-safety definition)
-   * patients OUTSIDE the chosen service were counted by the scope bar's own
-   * `urgentOutsideServiceCount` but never named here — this panel only ever read `tierOneOpen`.
-   * WF-018 (tier 3, flagged) is exactly this shape: outside the chosen service, flagged urgent, but
-   * not tier 1, so it never appeared even though the scope bar's own count included it. Appended
-   * rather than merged into `attentionCore`'s own top-3-by-wait cut, so the tier-1 figure below
-   * keeps meaning exactly what it says.
-   */
-  const attentionOutsideExtra =
-    service === null
-      ? []
-      : urgentMovementsOutsideService(openMovements, service, units, now, configuration).filter(
-          (movement) => !attentionCore.some((core) => core.id === movement.id),
-        );
-  const attentionMovements = [...attentionCore, ...attentionOutsideExtra];
-
   const horizonLanes = useMemo(
     () =>
       deriveMovementHorizonLanes(movements, units, now, {
@@ -483,7 +462,11 @@ export function MovementsScreen() {
     [isInServiceScope, isPhone, worklistMovements, stages, now, thresholds],
   );
   const worklistClosedToday = useMemo(
-    () => (isInServiceScope ? closedToday.filter(isInServiceScope) : closedToday),
+    // Movements redesign (1 Nov 2026): the most recently closed first, so the list reads as a log.
+    () =>
+      (isInServiceScope ? closedToday.filter(isInServiceScope) : closedToday)
+        .slice()
+        .sort((a, b) => (b.closure?.at ?? 0) - (a.closure?.at ?? 0)),
     [closedToday, isInServiceScope],
   );
   const worklistCauseGroups = useMemo(() => {
@@ -610,7 +593,7 @@ export function MovementsScreen() {
   const worklistFootText = matchesSearch
     ? `${markedTotal ?? 0} of ${worklistListTotal} match, highlighted`
     : boardTab === "resolved"
-      ? "Resolved today"
+      ? "Resolved today, most recent first"
       : order === "stands"
         ? "Grouped by stage, tier then wait"
         : order === "transport"
@@ -689,46 +672,88 @@ export function MovementsScreen() {
   const phoneInboundWards = new Set(phoneInbound.map((movement) => movement.acceptedUnitId)).size;
   const phoneCorridors = rankCorridorPairs(corridors);
   // The live transport legs: the side card's feed on the larger screen, a sheet on phone.
+  // Movements redesign (1 Nov 2026): the legs grouped by where they stand, on the road first, so
+  // each row needs no status chip of its own. The route is short ("SCGH ED → BTY Adult Secure");
+  // the provider is in the row's title and the record.
+  const LEG_GROUP_ORDER: readonly MovementLegState[] = ["Collected", "En route", "Accepted", "Arrived", "Cancelled"];
+  const LEG_GROUP_WORD: Record<MovementLegState, string> = {
+    Collected: "on the road",
+    "En route": "on the road",
+    Accepted: "booked, not collected",
+    Arrived: "delivered",
+    Cancelled: "will not run",
+  };
+  const LEG_STEP: Record<MovementLegState, number> = {
+    Accepted: 1,
+    "En route": 2,
+    Collected: 2,
+    Arrived: 3,
+    Cancelled: 0,
+  };
   const transportFeed = (onPicked?: () => void) => (
     <div className={styles.transportRunsFeed} role="region" aria-label="Active transport legs" tabIndex={0}>
-      {legs.map((leg) => {
-        const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
-        const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
-        const originEd = edById(leg.movement.originEdId);
-        const shortOrigin = originEd ? `${originEd.siteCode} ED` : originLabel;
-        const stateLabel = LEG_STATE_LABEL[leg.state] ?? leg.state;
+      {LEG_GROUP_ORDER.map((state) => {
+        const group = legs.filter((leg) => leg.state === state);
+        if (group.length === 0) return null;
         return (
-          <button
-            key={leg.movement.id}
-            type="button"
-            className={flow.trRow}
-            data-selected={detailId === leg.movement.id ? "true" : undefined}
-            onClick={() => {
-              onPicked?.();
-              openDetail(leg.movement.id);
-              revealMovement(leg.movement.id);
-            }}
-            aria-label={`Inspect ${patientInfo.formalName}, ${stateLabel} via ${leg.provider}`}
-          >
-            <span className={flow.trName}>
-              <span className={flow.trNameText}>{patientInfo.formalName}</span>
-              {leg.movement.transport?.escortRequired ? (
-                <ShieldCheck size={14} className={flow.lock} aria-label="Escort required" />
-              ) : null}
-            </span>
-            <span className={flow.trState}>
-              <StatusGlyph tone={LEG_STATE_TONE[leg.state]} size={9} />
-              {stateLabel}
-            </span>
-            <span className={flow.trWhen}>
-              <span className="sr-only">Accepted </span>
-              {durMinutes(leg.minutesSinceBooked)}
-              <span className="sr-only"> ago</span>
-            </span>
-            <span className={flow.trRoute} title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}>
-              {shortOrigin} to {destinationLabel} · {leg.provider}
-            </span>
-          </button>
+          <section key={state} className={flow.trGroup} aria-label={`${LEG_STATE_LABEL[state]}, ${group.length}`}>
+            <h4 className={flow.trGroupHead}>
+              <StatusGlyph tone={LEG_STATE_TONE[state]} size={9} />
+              {LEG_STATE_LABEL[state]}
+              <span className={flow.trGroupCount}>{group.length}</span>
+              <span className={flow.trGroupWord}>{LEG_GROUP_WORD[state]}</span>
+            </h4>
+            {group.map((leg) => {
+              const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
+              const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
+              const originEd = edById(leg.movement.originEdId);
+              const shortOrigin = originEd ? `${originEd.siteCode} ED` : originLabel;
+              const stateLabel = LEG_STATE_LABEL[leg.state] ?? leg.state;
+              const step = LEG_STEP[leg.state];
+              return (
+                <button
+                  key={leg.movement.id}
+                  type="button"
+                  className={flow.trRow}
+                  data-selected={detailId === leg.movement.id ? "true" : undefined}
+                  onClick={() => {
+                    onPicked?.();
+                    openDetail(leg.movement.id);
+                    revealMovement(leg.movement.id);
+                  }}
+                  aria-label={`Inspect ${patientInfo.formalName}, ${stateLabel} via ${leg.provider}`}
+                  title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}
+                >
+                  <span className={flow.trName}>
+                    <span className={flow.trNameText}>{patientInfo.formalName}</span>
+                    {leg.movement.transport?.escortRequired ? (
+                      <ShieldCheck size={14} className={flow.lock} aria-label="Escort required" />
+                    ) : null}
+                  </span>
+                  <span className={flow.trWhen}>
+                    <span className="sr-only">{stateLabel} </span>
+                    {durMinutes(leg.minutesSinceBooked)}
+                    <span className="sr-only"> ago</span>
+                  </span>
+                  <span className={flow.trRoute}>
+                    {shortOrigin}
+                    <span className={flow.routeTo}>
+                      <ArrowRight size={11} className={flow.routeArrow} aria-hidden="true" />
+                      <span className="sr-only"> to </span>
+                      <span>{destinationLabel}</span>
+                    </span>
+                  </span>
+                  {/* A three-step track, Accepted, Collected and Arrived, filled to where the leg is.
+                      The group heading and the row's label already say it in words. */}
+                  <span className={flow.trTrack} aria-hidden="true" data-cancelled={leg.state === "Cancelled" ? "true" : undefined}>
+                    {[1, 2, 3].map((n) => (
+                      <i key={n} data-on={step >= n ? "true" : undefined} />
+                    ))}
+                  </span>
+                </button>
+              );
+            })}
+          </section>
         );
       })}
     </div>
@@ -753,22 +778,6 @@ export function MovementsScreen() {
           </button>
         ))}
     </div>
-  );
-  const tierOneNow = (
-    <MovementsTierOneNow
-      side={!isPhone}
-      coreCount={attentionCore.length}
-      openCount={tierOneOpen.length}
-      attentionMovements={attentionMovements}
-      service={service}
-      isInServiceScope={isInServiceScope}
-      patients={patients}
-      referrals={referrals}
-      now={now}
-      thresholds={thresholds}
-      accessTarget={accessTarget}
-      onFind={jumpToMovement}
-    />
   );
   function openFromHero(id: string) {
     const target = movements.find((candidate) => candidate.id === id);
@@ -850,48 +859,99 @@ export function MovementsScreen() {
                 </span>
               )
             }
-            aside={
-              <div className={flow.heroAside}>
-                {longestWaiting && !isPhone ? (
-                  <button
-                    type="button"
-                    className={buttonClass({ variant: "onHero", size: "sm", className: flow.jump })}
-                    onClick={() => openFromHero(longestWaiting.id)}
-                    title={`Open ${resolveSubjectPatient(longestWaiting, { patients, referrals }).formalName}`}
-                  >
-                    <span className={flow.jumpLabel}>Longest wait</span>
-                    <span className={flow.jumpName}>{surname(longestWaiting)}</span>
-                    <span className={flow.jumpValue}>{splitDuration(Math.max(now - longestWaiting.openedAt, 0))}</span>
-                  </button>
-                ) : null}
-                {nextExpiry && !isPhone ? (
-                  <button
-                    type="button"
-                    className={buttonClass({ variant: "onHero", size: "sm", className: flow.jump })}
-                    onClick={() => openFromHero(nextExpiry.id)}
-                    title="The soonest legal expiry still ahead, as typed on the form. Not legally checked."
-                  >
-                    <span className={flow.jumpLabel}>Next expiry</span>
-                    <span className={flow.jumpName}>{surname(nextExpiry)}</span>
-                    <span className={flow.jumpValue}>{formatInstantWithDay(currentLegalDueAt(nextExpiry)!, now)}</span>
-                  </button>
-                ) : null}
-                <LiveChip state="live" onHero />
-              </div>
+            aside={<LiveChip state="live" onHero />}
+            // Movements redesign (1 Nov 2026): Waiting's header figures, each a big number over its
+            // label, beside the title. A figure highlights its rows in the worklist; nothing is hidden.
+            stats={
+              isPhone ? undefined : (
+                <div className={board.stats} role="group" aria-label="Highlight movements">
+                  {highlightOptions.map((option) => {
+                    const value = openMovements.filter(option.test).length;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={board.stat}
+                        aria-pressed={highlight === option.id}
+                        onClick={() => toggleHighlight(option.id)}
+                        data-testid="movements-day-metric"
+                      >
+                        <span className={board.statV}>{value}</span>
+                        <span className={board.statL}>
+                          {option.tone && value > 0 ? <StatusGlyph tone={option.tone} size={9} /> : null}
+                          {option.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                  <div className={cx(board.stat, board.statStatic)}>
+                    <span className={board.statV}>{legs.length}</span>
+                    <span className={board.statL}>On the road or booked</span>
+                  </div>
+                </div>
+              )
             }
             bar={
-              <div className={flow.highlights} role="group" aria-label="Highlight movements">
-                {highlightOptions.map((option) => (
-                  <HighlightStat
-                    key={option.id}
-                    label={option.label}
-                    tone={option.tone}
-                    value={openMovements.filter(option.test).length}
-                    pressed={highlight === option.id}
-                    onToggle={() => toggleHighlight(option.id)}
-                  />
-                ))}
-              </div>
+              isPhone ? (
+                <div className={flow.highlights} role="group" aria-label="Highlight movements">
+                  {highlightOptions.map((option) => (
+                    <HighlightStat
+                      key={option.id}
+                      label={option.label}
+                      tone={option.tone}
+                      value={openMovements.filter(option.test).length}
+                      pressed={highlight === option.id}
+                      onToggle={() => toggleHighlight(option.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className={strip.heroBar} role="group" aria-label="At a glance">
+                  {longestWaiting ? (
+                    <button
+                      type="button"
+                      className={strip.strip}
+                      onClick={() => openFromHero(longestWaiting.id)}
+                      title={`Open ${resolveSubjectPatient(longestWaiting, { patients, referrals }).formalName}`}
+                    >
+                      <Hourglass size={14} aria-hidden="true" className={strip.stripIcon} data-tone="danger" />
+                      <span className={strip.stripLabel}>Longest wait</span>
+                      <span className={strip.stripValue}>
+                        <b className={strip.heroNum}>{splitDuration(Math.max(now - longestWaiting.openedAt, 0))}</b>{" "}
+                        <span className={strip.heroName}>
+                          {resolveSubjectPatient(longestWaiting, { patients, referrals }).formalName}
+                        </span>
+                      </span>
+                    </button>
+                  ) : null}
+                  {nextExpiry ? (
+                    <button
+                      type="button"
+                      className={strip.strip}
+                      onClick={() => openFromHero(nextExpiry.id)}
+                      title="The soonest legal expiry still ahead, as typed on the form. Not legally checked."
+                    >
+                      <Scale size={14} aria-hidden="true" className={strip.stripIcon} data-tone="warning" />
+                      <span className={strip.stripLabel}>Next expiry</span>
+                      <span className={strip.stripValue}>
+                        <b className={strip.heroNum}>{formatInstantWithDay(currentLegalDueAt(nextExpiry)!, now)}</b>{" "}
+                        <span className={strip.heroName}>
+                          {resolveSubjectPatient(nextExpiry, { patients, referrals }).formalName}
+                        </span>
+                      </span>
+                      <span className={strip.stripLabel}>as typed</span>
+                    </button>
+                  ) : null}
+                  <span className={strip.strip}>
+                    <ArrowRightLeft size={14} aria-hidden="true" className={strip.stripIcon} />
+                    <span className={strip.stripLabel}>Resolved today</span>
+                    <span className={strip.stripValue}>
+                      <b className={strip.heroNum}>{arrivedMovements.length}</b> arrived ·{" "}
+                      <b className={strip.heroNum}>{didNotProceedMovements.length}</b> did not proceed
+                    </span>
+                  </span>
+                </div>
+              )
             }
             barAside={
               <div className={cx(flow.heroTools, isPhone && phoneRows.heroPills)}>
@@ -947,8 +1007,6 @@ export function MovementsScreen() {
             />
           )}
 
-          {/* Phone: Tier 1 now in the band; a tablet or laptop has it atop the side column. */}
-          {isPhone ? tierOneNow : null}
         </section>
 
         {isPhone ? (
@@ -1117,9 +1175,10 @@ export function MovementsScreen() {
                 <span>Tier</span>
                 <span>Patient</span>
                 <span>Route</span>
-                <span>Barrier and legal</span>
-                <span className={flow.columnEnd}>Waited</span>
-                <span className={flow.columnEnd}>Next step</span>
+                <span>{boardTab === "resolved" ? "Outcome" : "Barrier"}</span>
+                <span>Legal</span>
+                <span className={flow.columnEnd}>{boardTab === "resolved" ? "Took" : "Waited"}</span>
+                <span className={flow.columnEnd}>{boardTab === "resolved" ? "Closed" : "Next step"}</span>
                 <span />
               </div>
 
@@ -1274,9 +1333,9 @@ export function MovementsScreen() {
             </Card>
           </div>
 
-          <aside className={cx(styles.secondary, styles.secondaryWithTier)} aria-label="Movement details">
-            {/* Redesign (31 Oct 2026): Tier 1 now heads the side column, above Transport now. */}
-            {isPhone ? null : tierOneNow}
+          <aside className={styles.secondary} aria-label="Movement details">
+            {/* Movements redesign (1 Nov 2026, Q102): no separate Tier 1 card. The hero's Tier 1
+                count highlights those rows in the worklist, so the side column has one job. */}
             {/* Transport and Shape of the day share one panel. The corner toggle swaps the view;
                 the region name follows whichever view is showing. The transport count stays off
                 the header: the bar caption already says how many legs are booked or moving. */}
@@ -1320,50 +1379,33 @@ export function MovementsScreen() {
                 }
               />
               {sideView === "transport" ? (
-                <div className={flow.sideFigures}>
-                  {/* Legs and the open movements without one, side by side, so the excluded
-                      count is stated rather than implied. Each figure reads label then value. */}
-                  <div className={flow.sideFigure} data-testid="movements-day-metric">
-                    <span>Transport legs</span>
-                    <strong>{legs.length}</strong>
-                  </div>
-                  <div className={flow.sideFigure} data-testid="movements-day-metric">
-                    <span>No transport leg</span>
-                    <strong>{withoutTransport}</strong>
-                  </div>
-                </div>
-              ) : null}
-              {sideView === "transport" ? (
-                legs.length === 0 ? (
-                  <p className={styles.absent}>No transport leg is booked or moving right now.</p>
-                ) : (
-                  <div className={styles.transportWidget}>
-                    <div className={styles.transportBarWrap}>
-                      <StackBar
-                        label={`${legs.length} transport ${legs.length === 1 ? "leg" : "legs"} booked or moving`}
-                        segments={TRANSPORT_STATES.map((st) => ({
-                          id: st.id,
-                          label: LEG_STATE_LABEL[st.id],
-                          value: counts[st.id],
-                          fill: st.fill,
-                          hatch: st.hatch,
-                        }))}
-                      />
-                      <Legend
-                        className={styles.transportLegend}
-                        items={TRANSPORT_STATES.filter((st) => counts[st.id] > 0 || st.id === "Arrived").map((st) => ({
-                          id: st.id,
-                          label: LEG_STATE_LABEL[st.id],
-                          fill: st.fill,
-                          hatch: st.hatch,
-                          value: counts[st.id] === 0 ? "none" : counts[st.id],
-                        }))}
-                      />
+                <>
+                  {/* Movements redesign (1 Nov 2026): four plain tiles in place of the stretched bar,
+                      each a count over its words, so the card reads at a glance. */}
+                  <dl className={flow.trStats}>
+                    {[
+                      { id: "road", label: "On the road", value: counts.Collected + counts["En route"], tone: "info" as const },
+                      { id: "booked", label: "Booked, not collected", value: counts.Accepted, tone: "neutral" as const },
+                      { id: "arrived", label: "Arrived", value: counts.Arrived, tone: "success" as const },
+                      { id: "none", label: "No transport leg", value: withoutTransport, tone: undefined },
+                    ].map((tile) => (
+                      <div key={tile.id} className={flow.trStat} data-testid="movements-day-metric" data-zero={tile.value === 0 ? "true" : undefined}>
+                        <dt>
+                          {tile.tone ? <StatusGlyph tone={tile.tone} size={9} /> : null}
+                          {tile.label}
+                        </dt>
+                        <dd>{tile.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {legs.length === 0 ? (
+                    <p className={styles.absent}>No transport leg is booked or moving right now.</p>
+                  ) : (
+                    <div className={styles.transportWidget}>
+                      {transportFeed()}
                     </div>
-
-                    {transportFeed()}
-                  </div>
-                )
+                  )}
+                </>
               ) : (
                 <ShapeOfTheDay
                   arrivedMovements={arrivedMovements}

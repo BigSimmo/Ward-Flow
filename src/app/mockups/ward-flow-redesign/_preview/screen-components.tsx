@@ -77,6 +77,16 @@ const AddPatientForm = dynamic<MockupPageProps>(() =>
   ),
 );
 
+// Movements mock-up (1 Nov 2026): the real screen with the redesign drawn in place.
+const MovementsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/movements/movements-screen").then(
+    (module) =>
+      function MovementsPreview() {
+        return <module.MovementsScreen />;
+      },
+  ),
+);
+
 import type { BuiltPageSlug } from "./built-pages";
 
 export type MockupPageProps = { openOnLoad?: string };
@@ -92,4 +102,5 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "legal-forms": LegalFormsScreen,
   patient: PatientNowBackdrop,
   "add-patient": AddPatientForm,
+  movements: MovementsPage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

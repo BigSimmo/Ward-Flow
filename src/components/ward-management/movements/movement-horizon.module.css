@@ -1073,3 +1073,482 @@
     outline-offset: 2px;
   }
 }
+
+/* ---------- Movements redesign (1 Nov 2026) ---------- */
+
+/* Back, Now and Forward sit in the header with the range: the separate slider row is gone. */
+.stepGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Only "Now" carries an offset word; the other ticks read as clock times. */
+.tickOffset:empty {
+  display: none;
+}
+
+.ganttTick:not(.nowTick) .tickTime {
+  color: var(--wf-ink-2);
+}
+
+/* The corridor picked in the side list: its bars stay, the rest step back. */
+.corridorMiss {
+  opacity: 0.22;
+}
+
+.corridorHit {
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 4px var(--wf-accent);
+}
+
+.focusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 2rem;
+  padding: 0 var(--wf-s-2) 0 var(--wf-s-3);
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.focusChip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.corridorRanks li:has(> .corridorPick) {
+  display: block;
+  padding: 0;
+}
+
+.corridorPick {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "from count"
+    "route count"
+    "detail count";
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  row-gap: 1px;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.corridorPick:hover {
+  background: var(--wf-hover);
+}
+
+.corridorPick[aria-pressed="true"] {
+  background: var(--wf-accent-tint);
+}
+
+.corridorPick:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.corridorFrom {
+  grid-area: from;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.corridorPick .corridorRoute {
+  grid-area: route;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  overflow-wrap: break-word;
+}
+
+.corridorArrow {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.corridorPick small {
+  grid-area: detail;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.corridorPick strong {
+  grid-area: count;
+  display: grid;
+  place-items: center;
+  min-width: 1.75rem;
+  height: 1.5rem;
+  padding: 0 6px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2, var(--wf-track));
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Movements redesign (1 Nov 2026): bars, hover card and corridors ---------- */
+
+/* Each bar carries its kind as an icon, so colour is never the only cue. */
+.barIcon {
+  flex: none;
+  opacity: 0.9;
+}
+
+.barDelay.barDelay::before {
+  content: none;
+}
+
+.barDelay.barDelay {
+  background: var(--wf-data-1);
+  box-shadow: inset 0 0 0 2px var(--wf-warning);
+}
+
+.barDelay .barIcon {
+  color: var(--wf-warning);
+  opacity: 1;
+}
+
+.ganttBar:hover {
+  transform: translateY(-1px);
+}
+
+.ganttSwatch.ganttSwatch {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 14px;
+  border-radius: var(--wf-r-pill);
+  color: light-dark(var(--wf-on-accent), var(--wf-surface));
+}
+
+.swatchTransit.swatchTransit {
+  color: light-dark(var(--wf-ink-1), var(--wf-on-accent));
+}
+
+.swatchDelay.swatchDelay {
+  background: var(--wf-data-1);
+  box-shadow: inset 0 0 0 1.5px var(--wf-warning);
+  color: var(--wf-warning);
+}
+
+.hoverCard {
+  position: absolute;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  width: 290px;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  pointer-events: none;
+}
+
+.hcHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.hcHead strong {
+  font-size: var(--wf-fs-14, 14px);
+  line-height: 1.3;
+}
+
+.hcHead span {
+  color: var(--wf-ink-3);
+}
+
+.hcStatus {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-data-1) 14%, transparent);
+  font-weight: 600;
+}
+
+.hcStatus[data-type="transit"] {
+  background: color-mix(in srgb, var(--wf-data-2) 22%, transparent);
+}
+
+.hcStatus[data-type="delay"] {
+  background: color-mix(in srgb, var(--wf-warning) 18%, transparent);
+}
+
+.hcStatus[data-type="delay"] svg {
+  color: var(--wf-warning);
+}
+
+.hcGrid {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 4px var(--wf-s-2);
+  margin: 0;
+}
+
+.hcGrid dt {
+  color: var(--wf-ink-3);
+}
+
+.hcGrid dd {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.hcGrid dd svg {
+  vertical-align: -1px;
+  color: var(--wf-ink-3);
+}
+
+.hcHint {
+  margin: 0;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+}
+
+/* Corridors: grouped by the ED they leave from. */
+.railSummary {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.railSummary b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.edGroups {
+  flex: 1 1 0%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.edGroup {
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.edHead,
+.routePick {
+  display: grid;
+  align-items: center;
+  width: 100%;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.edHead {
+  grid-template-columns: 4.5rem minmax(0, 1fr) 2rem;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: var(--wf-s-1) var(--wf-s-3);
+}
+
+.edName {
+  font: 650 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+}
+
+.edHead strong {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  text-align: right;
+}
+
+.phaseBar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  min-width: 0;
+}
+
+.phaseBar i {
+  display: block;
+  flex-basis: 0;
+  min-width: 6px;
+  border-radius: 2px;
+}
+
+[data-phase="waiting"] {
+  background: var(--wf-surface);
+  box-shadow: inset 0 0 0 1.5px var(--wf-line-3);
+}
+
+[data-phase="arriving"] {
+  background: var(--wf-data-1);
+}
+
+[data-phase="road"] {
+  background: var(--wf-data-2);
+}
+
+.edRoutes {
+  margin: 0 0 var(--wf-s-1);
+  padding: 0;
+  list-style: none;
+}
+
+.routePick {
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px var(--wf-s-3) 4px calc(var(--wf-s-3) + 2px);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.routeName {
+  overflow-wrap: break-word;
+}
+
+.edHead:hover,
+.routePick:hover,
+.routePick[data-hot="true"] {
+  background: var(--wf-hover);
+}
+
+.routePick[data-hot="true"] {
+  color: var(--wf-ink-1);
+}
+
+.edHead[aria-pressed="true"],
+.routePick[aria-pressed="true"] {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.edHead:focus-visible,
+.routePick:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.phaseDots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.phaseDots i {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.phaseDots small {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.phaseKey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--wf-s-3);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  list-style: none;
+  flex-shrink: 0;
+}
+
+.phaseKey li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.phaseKey i {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Declines, grouped by the ward that said no. */
+.declineRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.declineWard {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.declineRow strong {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+}
+
+.declineFrom {
+  grid-column: 1 / -1;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.declineReasons {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.declineReasons span {
+  padding: 2px 8px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.hcGrid dd svg {
+  display: inline;
+}

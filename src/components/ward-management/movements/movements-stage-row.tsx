@@ -12,7 +12,7 @@ import {
   transportLeg,
   transportNeedState,
 } from "@/components/ward-management/ward-derivations";
-import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -27,7 +27,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { type MovementLegState } from "./movements-derivations";
-import { ChevronRight, Lock } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Lock, Scale, X } from "lucide-react";
 import { SrOnly, StatusGlyph, TierTile, Timer, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
 import { movementNextStep, nextStepTarget, type MovementNextStep } from "./movement-next-step";
 import { useSenderPresentation } from "../ward-sender-presentation";
@@ -211,25 +211,24 @@ export function StageRow({
   const standing = typedTimeStanding(movement, now, thresholds);
   let legalTagTone: "danger" | "warn" | undefined = undefined;
   let legalText = "";
+  // Movements redesign (1 Nov 2026): legal status has its own column. The short status leads
+  // ("Form 3B", "Voluntary"); the typed time sits under it as typed, never a countdown (D-93).
+  // The full form name is the cell's title.
+  const legalShort = legalStatusShort(movement);
+  const legalFull = legalStatusFull(movement);
   if (movement.legalForm) {
-    // Code first, so a cut-off cell still tells Form 3B from Form 3C (their titles start alike).
-    const formTitle = legalFormName(movement.legalForm);
     if (dueAt === undefined && movement.legalForm.dueAt !== undefined) {
       // Ended at the examination or on arrival: its typed expiry is history, not a deadline (S-6).
-      legalText = `${formTitle} · ended`;
+      legalText = "Ended";
     } else if (dueAt === undefined) {
-      legalText = `${formTitle} · no recorded expiry on this record`;
+      legalText = "No expiry recorded";
     } else {
-      // "Form 4C (Transfer order) · ends 15:42 as typed · within 1h", or "· ended 15:42 as typed ·
-      // passed": the typed time in words, never a count.
       if (standing.word) legalTagTone = standing.urgent ? "danger" : "warn";
-      legalText = `${formTitle} · ${typedTimePhrase(dueAt, now)}${standingSuffix(standing)}`;
+      legalText = `${typedTimePhrase(dueAt, now)}${standingSuffix(standing)}`;
     }
-  } else if (movement.legalStatus === "Voluntary") {
-    legalText = "Voluntary";
-  } else {
+  } else if (movement.legalStatus !== "Voluntary") {
     legalTagTone = "warn";
-    legalText = "No legal form recorded";
+    legalText = "No form recorded";
   }
 
   // Route second line: the transport leg when there is one, otherwise where the bed stands.
@@ -358,13 +357,13 @@ export function StageRow({
         </span>
         <span className={flow.sub}>
           <span className="sr-only">UMRN </span>
-          <span className={flow.mono}>{patientInfo.umrn}</span> · {movement.cohort} · {movement.sex}
+          <span className={flow.mono}>{patientInfo.umrn}</span> · {movement.cohort}
           {!movement.owner.trim() ? " · No owner" : ""}
         </span>
       </span>
       <span className={flow.cell}>
-        <span className={flow.main}>
-          <span title={originLabel}>
+        <span className={cx(flow.main, flow.route)}>
+          <span className={flow.routeFrom} title={originLabel}>
             {originEd ? (
               <>
                 <span aria-hidden="true">{`${originEd.siteCode} ED`}</span>
@@ -373,10 +372,11 @@ export function StageRow({
             ) : (
               originLabel
             )}
-          </span>{" "}
+          </span>
           {movement.acceptedUnitId ? (
-            <>
-              to{" "}
+            <span className={flow.routeTo}>
+              <ArrowRight size={12} className={flow.routeArrow} aria-hidden="true" />
+              <SrOnly> to </SrOnly>
               <Link
                 href={`/ward-flow/board/${movement.acceptedUnitId}`}
                 className={flow.wardLink}
@@ -384,9 +384,9 @@ export function StageRow({
               >
                 {destinationLabel}
               </Link>
-            </>
+            </span>
           ) : (
-            <span className={flow.noDestination}>· no destination yet</span>
+            <SrOnly>, no destination yet</SrOnly>
           )}
         </span>
         <span className={flow.sub} title={routeSub}>
@@ -394,35 +394,42 @@ export function StageRow({
         </span>
       </span>
       <span className={flow.cell}>
-        <span className={flow.line}>
-          <StatusGlyph tone={barrierTone} size={9} />
-          {closureState ? (
-            <span className={flow.chip} data-ward-primitive="chip">
-              {closureState.text}
-            </span>
-          ) : null}
-          <span className={flow.main} title={barrierText}>
-            <span className="sr-only">{closure ? "Closure note: " : blocker ? "Delay barrier: " : "Stage: "}</span>
-            {closureState ? " · " : ""}
-            {barrierText}
+        {closureState ? (
+          <span className={flow.outcome} data-outcome={closure?.outcome} data-ward-primitive="chip">
+            {closure?.outcome === "arrived" ? <Check size={12} aria-hidden="true" /> : <X size={12} aria-hidden="true" />}
+            {closureState.text}
           </span>
+        ) : null}
+        <span className={closureState ? flow.sub : flow.barrier} title={barrierText}>
+          {closureState ? null : <StatusGlyph tone={barrierTone} size={9} className={flow.barrierGlyph} />}
+          <span className="sr-only">{closure ? "Closure note: " : blocker ? "Delay barrier: " : "Stage: "}</span>
+          {barrierText}
         </span>
-        <span className={cx(flow.sub, legalRow.legalLine)} data-tone={legalTagTone} title={legalText}>
-          {dueAt !== undefined && legalTagTone ? (
-            <StatusGlyph
-              tone={legalTagTone === "danger" ? "danger" : "warning"}
-              size={9}
-              className={legalRow.legalGlyph}
-            />
-          ) : null}
-          {legalText}
-          {dueAt !== undefined ? (
-            <span className={legalRow.legalTag}>
-              {" "}
-              <LegalLimitsNotChecked variant="tag" />
-            </span>
-          ) : null}
+      </span>
+      <span className={flow.cell} title={legalFull}>
+        <span className={flow.legal}>
+          <Scale size={13} className={flow.legalIcon} aria-hidden="true" />
+          <span className="sr-only">Legal status: </span>
+          {legalShort}
         </span>
+        {legalText ? (
+          <span className={cx(flow.sub, legalRow.legalLine)} data-tone={legalTagTone}>
+            {dueAt !== undefined && legalTagTone ? (
+              <StatusGlyph
+                tone={legalTagTone === "danger" ? "danger" : "warning"}
+                size={9}
+                className={legalRow.legalGlyph}
+              />
+            ) : null}
+            {legalText}
+            {dueAt !== undefined ? (
+              <span className={legalRow.legalTag}>
+                {" "}
+                <LegalLimitsNotChecked variant="tag" />
+              </span>
+            ) : null}
+          </span>
+        ) : null}
       </span>
       <span className={flow.wait}>
         <Timer
@@ -447,15 +454,13 @@ export function StageRow({
         >
           <i style={{ width: `${Math.min(100, (waitedMinutes / accessTargetMinutes) * 100).toFixed(0)}%` }} />
         </span>
-        <span className={flow.waitWord} data-tone={waitTone}>
-          {waitWord}
-        </span>
+        <span className="sr-only">{waitWord}</span>
       </span>
       <span className={flow.next}>
         {presentation.kind === "unavailable" ? (
           <span className={flow.nextOwner}>{progressText}</span>
         ) : step === null ? (
-          <span className={flow.nextOwner}>{closure ? `Closed ${formatInstantWithDay(closure.at, now)}` : ""}</span>
+          <span className={flow.nextOwner}>{closure ? formatInstantWithDay(closure.at, now) : ""}</span>
         ) : step.kind !== "wait" ? (
           <Link
             className={buttonClass({ variant: "sec", size: "sm" })}

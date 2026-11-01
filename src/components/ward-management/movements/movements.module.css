@@ -2343,3 +2343,40 @@
   -webkit-line-clamp: unset;
   line-clamp: unset;
 }
+
+/* Movements redesign (1 Nov 2026): the worklist and Transport now stack at full width, so the
+   workspace no longer locks both to the screen height. The worklist scrolls inside its own card. */
+@media screen and (width > 85rem) {
+  .columns.columns {
+    height: auto;
+    min-height: 0;
+  }
+
+  .primary.primary,
+  .secondary.secondary {
+    height: auto;
+    max-height: none;
+    position: static;
+    overflow: visible;
+  }
+
+  .primary.primary > [data-ward-primitive="panel"],
+  .secondary.secondary > [data-ward-primitive="panel"]:last-child {
+    height: auto;
+  }
+
+  .primary.primary [role="tabpanel"] {
+    flex: none;
+  }
+
+  .primary [role="tabpanel"] .movementListBody {
+    flex: none;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .secondary .transportRunsFeed {
+    flex: none;
+    overflow: visible;
+  }
+}

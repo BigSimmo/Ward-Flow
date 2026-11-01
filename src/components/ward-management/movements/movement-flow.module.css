@@ -299,9 +299,12 @@
 
 .grid {
   display: grid;
+  /* Movements redesign (1 Nov 2026): Barrier and Legal are separate columns with fixed widths at
+     the ends, so no cell is ever squeezed to a letter wide; text that does not fit
+     wraps onto a second line instead. */
   grid-template-columns:
-    2.25rem minmax(8.5rem, 1.15fr) minmax(5rem, 1fr) minmax(6rem, 1.3fr)
-    5.25rem 7.5rem 1.75rem;
+    2rem minmax(6rem, 1.1fr) minmax(6rem, 1fr) minmax(6.5rem, 1.3fr)
+    8.5rem 5rem 9rem 1.5rem;
   align-items: center;
   column-gap: var(--wf-s-3);
 }
@@ -437,6 +440,78 @@
   font-weight: 600;
 }
 
+.route.route {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  overflow: visible;
+  white-space: normal;
+}
+
+.routeFrom {
+  flex: none;
+  color: var(--wf-ink-2);
+}
+
+.route > a,
+.route > .noDestination {
+  min-width: 0;
+}
+
+.routeArrow {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+/* The barrier reads in full and wraps (names and reasons wrap, never "…"). */
+.barrier {
+  display: block;
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overflow-wrap: break-word;
+}
+
+.barrierGlyph {
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+
+/* A resolved movement's outcome: a small tinted tag, tone in the tag, never a side edge. */
+.outcome {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.outcome[data-outcome="arrived"] {
+  background: var(--wf-success-tint, var(--wf-surface-2));
+  color: var(--wf-success-ink, var(--wf-ink-1));
+}
+
+.legal {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.legalIcon {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
 .wait {
   display: flex;
   flex-direction: column;
@@ -530,12 +605,44 @@
 
 /* ---------- Transport now ---------- */
 
+.trGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.trGroup + .trGroup {
+  border-top: 1px solid var(--wf-line);
+}
+
+.trGroupHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.trGroupCount {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+
+.trWhenWord {
+  grid-area: word;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-align: right;
+}
+
 .trRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
-    "name state when"
-    "route route route";
+    "name when"
+    "route word";
   align-items: center;
   column-gap: var(--wf-s-3);
   row-gap: 2px;
@@ -602,11 +709,15 @@
    names, places and roles wrap in full; a phone has no hover). */
 .trRoute {
   grid-area: route;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 4px;
   min-width: 0;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* ---------- phone: a card per row (never alters the desktop grid above) ---------- */
@@ -680,7 +791,8 @@
       "tier who wait"
       ". route route"
       ". barrier barrier"
-      ". next review";
+      ". legal next"
+      ". legal review";
     row-gap: 6px;
     padding: var(--wf-s-3) var(--wf-s-4);
   }
@@ -702,20 +814,26 @@
   }
 
   .row > :nth-child(5) {
-    grid-area: wait;
+    grid-area: legal;
+    align-self: center;
   }
 
   .row > :nth-child(6) {
-    grid-area: next;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: var(--wf-s-2);
-    text-align: left;
+    grid-area: wait;
   }
 
   .row > :nth-child(7) {
+    grid-area: next;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--wf-s-2);
+    text-align: right;
+  }
+
+  .row > :nth-child(8) {
     grid-area: review;
+    display: none;
   }
 
   .needsCell {
@@ -741,10 +859,40 @@
   text-underline-offset: 2px;
 }
 
-/* The worklist needs the width: Transport now takes a fixed 20rem beside it, and the two stack
-   below 1300px so no column is ever cut off at the right edge. */
+/* Movements redesign (1 Nov 2026): the worklist takes the full width, so every column has room,
+   and Transport now sits under it as its own full-width card with its groups side by side. */
 .layout.layout {
-  grid-template-columns: minmax(0, 1fr) 20rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.layout.layout > aside {
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+
+@media (min-width: 48.0625rem) {
+  .layout.layout > aside [aria-label="Active transport legs"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    max-height: none;
+    overflow: visible;
+  }
+
+  .layout.layout > aside .trGroup + .trGroup {
+    border-top: 0;
+    border-left: 1px solid var(--wf-line);
+  }
+
+  .layout.layout > aside .trGroup {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    align-content: start;
+  }
+
+  .layout.layout > aside .trGroupHead {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 85rem) {
@@ -1036,8 +1184,9 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
       "tier who wait"
-      "tier route wait"
-      "tier barrier wait";
+      "tier route route"
+      "tier barrier barrier"
+      "tier legal legal";
     align-items: start;
     row-gap: 2px;
     column-gap: var(--wf-s-3);
@@ -1050,11 +1199,16 @@
   }
 
   .row > :nth-child(5) {
+    grid-area: legal;
+  }
+
+  .row > :nth-child(6) {
+    grid-area: wait;
     align-self: start;
   }
 
-  .row > :nth-child(6),
   .row > :nth-child(7),
+  .row > :nth-child(8),
   .row .sub,
   .row .meter {
     display: none;
@@ -1213,18 +1367,14 @@
 /* Device audit, 11 Oct 2026: on the wider worklist the Barrier column already says why there is no
    destination, so the Route cell drops "no destination yet" and both columns fit. Phone keeps it. */
 @media (min-width: 48.0625rem) {
-  .noDestination {
-    display: none;
-  }
-
   /* Layout sweep PT-09: beside Transport now the worklist is narrow, so the name, route, barrier,
      legal form and next owner take up to two lines rather than an ellipsis after a few words. */
   .row .name {
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
-  .row .main,
+  .row .main:not(.route),
   .row .sub,
   .row .nextOwner {
     display: -webkit-box;
@@ -1240,4 +1390,126 @@
 .needsGlyph {
   margin-inline-end: var(--wf-s-1);
   vertical-align: 1px;
+}
+
+/* A resolved row's clock is frozen: the time it took, without a meter against the live target. */
+.row[data-closed="true"] .meter {
+  display: none;
+}
+
+/* Movements redesign (1 Nov 2026): Transport now. Four tiles across the top, the groups side by
+   side as single lists, and a small three-step track on each row. */
+.trStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  margin: 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.trStat {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.trStat + .trStat {
+  border-left: 1px solid var(--wf-line);
+}
+
+.trStat dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.trStat dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.trStat[data-zero="true"] dd {
+  color: var(--wf-ink-3);
+}
+
+.trGroupWord {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+
+.trGroupWord::before {
+  content: "· ";
+}
+
+.trTrack {
+  grid-area: word;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.trTrack i {
+  display: block;
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wf-line-strong, var(--wf-line));
+}
+
+.trTrack i[data-on="true"] {
+  background: var(--wf-accent);
+}
+
+.trTrack[data-cancelled="true"] i {
+  background: var(--wf-line);
+}
+
+@media (min-width: 48.0625rem) {
+  .layout.layout > aside .trGroup.trGroup {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .layout.layout > aside [aria-label="Active transport legs"] {
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  }
+}
+
+/* The arrow stays with the ward it points to; a long ward name wraps after it, never before. */
+.routeTo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.routeTo .routeArrow {
+  flex: none;
+  align-self: center;
+}
+
+/* Every route reads the same way, as the Corridors panel does: where from, then "→ ward" under it. */
+.route.route.route {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.routeTo .routeArrow.routeArrow {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+/* Tier 1 stands out by weight, not colour: a filled neutral pill. */
+.tier.tier[data-tier="1"] {
+  border-color: var(--wf-ink-1);
+  background: var(--wf-ink-1);
+  color: var(--wf-surface);
 }

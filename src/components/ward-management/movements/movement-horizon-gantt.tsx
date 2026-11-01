@@ -1,7 +1,7 @@
 "use client";
 
-import { useId, useRef, useState, type CSSProperties, type MouseEvent } from "react";
-import { ChartNoAxesGantt, ChevronLeft, ChevronRight } from "lucide-react";
+import { useId, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import { AlarmClock, ArrowRight, BedSingle, ChartNoAxesGantt, ChevronLeft, ChevronRight, Truck, X } from "lucide-react";
 import { IconTile, buttonClass } from "@/components/wf";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
@@ -9,7 +9,8 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { edById } from "@/components/ward-management/ward-sites";
-import { HEALTH_SERVICES, type HealthService, type Unit } from "@/components/ward-management/ward-model";
+import { HEALTH_SERVICES, type HealthService, type MovementStage, type Unit } from "@/components/ward-management/ward-model";
+import { declineReasonLabels } from "./movement-workspace-derivations";
 import { isPlaceholderName, NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 
 import type {
@@ -100,11 +101,29 @@ function stackedLaneEvents(events: MovementHorizonLane["events"]): MovementHoriz
 }
 
 interface TooltipState {
-  title: string;
-  details: string;
+  ev: MovementHorizonEvent;
+  laneId: string;
   x: number;
   y: number;
 }
+
+/**
+ * Movements redesign (1 Nov 2026): a corridor's patients in the same three phases the timeline's
+ * bars draw, so a dot in the side list and a bar on the chart mean the same thing.
+ */
+type CorridorPhase = "waiting" | "arriving" | "road";
+const PHASE_OF: Partial<Record<MovementStage, CorridorPhase>> = {
+  accepted_awaiting_bed: "waiting",
+  pulled: "arriving",
+  handover_ready: "arriving",
+  moving: "road",
+};
+const PHASES: { id: CorridorPhase; label: string }[] = [
+  { id: "waiting", label: "Accepted, awaiting bed" },
+  { id: "arriving", label: "Bed pulled, arriving" },
+  { id: "road", label: "On the road" },
+];
+const EVENT_ICON = { admit: BedSingle, transit: Truck, delay: AlarmClock } as const;
 
 /** "02:42 tomorrow" as its clock face and day words, so the two can clip differently. */
 function splitClockAndDay(label: string): { clock: string; day: string } {
@@ -129,8 +148,9 @@ export function MovementHorizonGantt({
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [serviceFilter, setServiceFilter] = useState<HealthService | "ALL">("ALL");
   const [density, setDensity] = useState<HorizonDensity>("compact");
+  // Movements redesign (1 Nov 2026): a corridor picked in the side list lights up its bars.
+  const [focusCorridor, setFocusCorridor] = useState<{ originEdId: string; unitId: string | null } | null>(null);
 
-  const scrubberId = useId();
   const serviceFilterId = useId();
   const diagramAreaId = useId();
   const baseId = useId();
@@ -171,7 +191,7 @@ export function MovementHorizonGantt({
     ticks.push({
       h,
       isNow,
-      offset: isNow ? "Now" : `+${Math.round(h)}h`,
+      offset: isNow ? "Now" : "",
       time: formatInstantWithDay(tickInstant, now),
       // Site review 12 Oct 2026: the clock time never truncates; only its day word may.
       ...splitClockAndDay(formatInstantWithDay(tickInstant, now)),
@@ -183,19 +203,72 @@ export function MovementHorizonGantt({
   const cursorFraction = scrub / zoom;
   const scrubInstant = now + Math.round(scrub * 60);
   const scrubBadgeText =
-    scrub === 0 ? `Now, ${formatInstantWithDay(now, now)}` : `+${scrub}h, ${formatInstantWithDay(scrubInstant, now)}`;
+    scrub === 0 ? "Showing from now" : `Showing from ${formatInstantWithDay(scrubInstant, now)}`;
+  const focusEd = focusCorridor ? edById(focusCorridor.originEdId) : undefined;
+  /** An event's origin is the department's full name; this matches it to an ED id. */
+  const fromEd = (edId: string, origin: string) => {
+    const ed = edById(edId);
+    return ed ? origin === ed.name || origin.startsWith(`${ed.siteCode} `) : origin === edId;
+  };
+  const inFocus = (laneId: string, ev: MovementHorizonEvent) =>
+    focusCorridor !== null &&
+    (focusCorridor.unitId === null || laneId === focusCorridor.unitId) &&
+    fromEd(focusCorridor.originEdId, ev.origin);
 
   // Corridor calculations for the rail
   const acceptedPairs = new Set(corridors.map((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}`));
   const rankedPairs = rankCorridorPairs(corridors);
+  // Movements redesign (1 Nov 2026): corridors grouped under the ED they leave from, busiest ED
+  // first, each with its patients split by phase; declines grouped under the ward that said no.
+  const edGroups = useMemo(() => {
+    const groups = new Map<string, { originEdId: string; total: number; phases: Record<CorridorPhase, number>; routes: typeof rankedPairs }>();
+    for (const pair of rankedPairs) {
+      const group = groups.get(pair.originEdId) ?? {
+        originEdId: pair.originEdId,
+        total: 0,
+        phases: { waiting: 0, arriving: 0, road: 0 },
+        routes: [],
+      };
+      group.total += pair.count;
+      for (const row of pair.stages) {
+        const phase = PHASE_OF[row.stage];
+        if (phase) group.phases[phase] += row.count;
+      }
+      group.routes.push(pair);
+      groups.set(pair.originEdId, group);
+    }
+    return [...groups.values()].sort((a, b) => b.total - a.total || a.originEdId.localeCompare(b.originEdId));
+  }, [rankedPairs]);
+  const corridorPatients = edGroups.reduce((total, group) => total + group.total, 0);
+  const declinesByWard = useMemo(() => {
+    const groups = new Map<string, { unitId: string; total: number; from: { originEdId: string; count: number }[]; reasons: Set<string> }>();
+    for (const row of refusedCorridors) {
+      const group = groups.get(row.unitId) ?? { unitId: row.unitId, total: 0, from: [], reasons: new Set<string>() };
+      group.total += row.count;
+      group.from.push({ originEdId: row.originEdId, count: row.count });
+      for (const reason of row.reasons) group.reasons.add(declineReasonLabels[reason] ?? reason.replaceAll("_", " "));
+      groups.set(row.unitId, group);
+    }
+    return [...groups.values()].sort((a, b) => b.total - a.total);
+  }, [refusedCorridors]);
+  const hot = tooltip
+    ? { laneId: tooltip.laneId, origin: tooltip.ev.origin }
+    : null;
+  const shortPlace = (origin: string) => {
+    for (const pair of rankedPairs) {
+      const ed = edById(pair.originEdId);
+      if (ed && origin === ed.name) return `${ed.siteCode} ED`;
+    }
+    return origin;
+  };
 
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>, ev: MovementHorizonEvent) => {
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>, ev: MovementHorizonEvent, laneId: string) => {
     const rect = e.currentTarget.closest(`.${styles.diagWrap}`)?.getBoundingClientRect();
     if (!rect) return;
     setTooltip({
-      title: `${barPatientName(ev)}${ev.ageBand ? ` (${ev.ageBand})` : ""} · ${ev.title}`,
-      details: `${ev.origin} ➔ ${ev.dest}${ev.bed ? ` · ${ev.bed}` : ""}${ev.carrier ? ` · ${ev.carrier}` : ""}${ev.durH > 0 ? ` · ${ev.durH.toFixed(1)}h window` : ""}`,
-      x: Math.max(6, Math.min(e.clientX - rect.left + 14, rect.width - 280)),
+      ev,
+      laneId,
+      x: Math.max(6, Math.min(e.clientX - rect.left + 14, rect.width - 300)),
       y: e.clientY - rect.top + 16,
     });
   };
@@ -281,6 +354,36 @@ export function MovementHorizonGantt({
             </button>
           </div>
 
+          <div className={styles.stepGroup} role="group" aria-label="Move the timeline">
+            <button
+              type="button"
+              className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
+              aria-label={`Back ${scrubStep} hours`}
+              disabled={scrub === 0}
+              onClick={() => handleScrubberChange(Math.max(0, scrub - scrubStep))}
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={buttonClass({ variant: "sec", size: "sm" })}
+              aria-pressed={scrub === 0}
+              onClick={handleResetScrubber}
+              title={scrubBadgeText}
+            >
+              Now
+            </button>
+            <button
+              type="button"
+              className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
+              aria-label={`Forward ${scrubStep} hours`}
+              disabled={scrub >= zoom}
+              onClick={() => handleScrubberChange(Math.min(zoom, scrub + scrubStep))}
+            >
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+          </div>
+
           <div className={styles.zoomGroup} role="group" aria-label="Timeline zoom range">
             {([12, 24, 48] as const).map((z) => (
               <button
@@ -323,67 +426,38 @@ export function MovementHorizonGantt({
         <div id={diagramAreaId} className={styles.diagramArea}>
           {/* Scrub row: step back, the slider, step forward, the time it points at, then Reset. */}
           <div className={styles.ganttControlsBar}>
-            <div className={styles.ganttScrubberWrap}>
-              <label htmlFor={scrubberId} className={styles.ganttScrubLabel}>
-                Slide
-              </label>
-              <button
-                type="button"
-                className={buttonClass({ variant: "sec", size: "sm", iconOnly: true, className: styles.scrubStep })}
-                aria-label={`Back ${scrubStep} hours`}
-                title={scrub === 0 ? "Already at now" : undefined}
-                disabled={scrub === 0}
-                onClick={() => handleScrubberChange(Math.max(0, scrub - scrubStep))}
-              >
-                <ChevronLeft size={16} aria-hidden="true" />
+            {focusCorridor ? (
+              <button type="button" className={styles.focusChip} onClick={() => setFocusCorridor(null)}>
+                {focusEd ? `${focusEd.siteCode} ED` : focusCorridor.originEdId}
+                <ArrowRight size={12} aria-hidden="true" />
+                {focusCorridor.unitId === null
+                  ? "all wards"
+                  : wardLabel(focusCorridor.unitId, units.find((u) => u.id === focusCorridor.unitId)?.name)}
+                <span className="sr-only">, clear the corridor highlight</span>
+                <X size={14} aria-hidden="true" />
               </button>
-              <input
-                type="range"
-                id={scrubberId}
-                className={styles.ganttSlider}
-                min={0}
-                max={zoom}
-                step={1}
-                value={scrub}
-                aria-label="Timeline time scrubber"
-                aria-valuemin={0}
-                aria-valuemax={zoom}
-                aria-valuenow={scrub}
-                aria-valuetext={scrubBadgeText}
-                onChange={(e) => handleScrubberChange(parseInt(e.target.value, 10))}
-              />
-              <button
-                type="button"
-                className={buttonClass({ variant: "sec", size: "sm", iconOnly: true, className: styles.scrubStep })}
-                aria-label={`Forward ${scrubStep} hours`}
-                disabled={scrub >= zoom}
-                onClick={() => handleScrubberChange(Math.min(zoom, scrub + scrubStep))}
-              >
-                <ChevronRight size={16} aria-hidden="true" />
-              </button>
-              <span className={styles.ganttScrubBadge} id="ganttScrubBadgeText">
-                {scrubBadgeText}
-              </span>
-              <button
-                type="button"
-                className={buttonClass({ variant: "ghost", size: "sm", className: styles.ganttResetBtn })}
-                onClick={handleResetScrubber}
-              >
-                Reset
-              </button>
-            </div>
+            ) : null}
+            <span className="sr-only" aria-live="polite">
+              {scrubBadgeText}
+            </span>
             <ul className={styles.ganttLegend} aria-label="Movement horizon legend">
               <li className={styles.ganttLegendItem}>
-                <span className={`${styles.ganttSwatch} ${styles.swatchAdmit}`} aria-hidden="true" />
-                Incoming admission
+                <span className={`${styles.ganttSwatch} ${styles.swatchAdmit}`} aria-hidden="true">
+                  <BedSingle size={10} />
+                </span>
+                Bed pulled, arriving
               </li>
               <li className={styles.ganttLegendItem}>
-                <span className={`${styles.ganttSwatch} ${styles.swatchTransit}`} aria-hidden="true" />
-                In transit
+                <span className={`${styles.ganttSwatch} ${styles.swatchTransit}`} aria-hidden="true">
+                  <Truck size={10} />
+                </span>
+                On the road
               </li>
               <li className={styles.ganttLegendItem}>
-                <span className={`${styles.ganttSwatch} ${styles.swatchDelay}`} aria-hidden="true" />
-                Pull time limit passed
+                <span className={`${styles.ganttSwatch} ${styles.swatchDelay}`} aria-hidden="true">
+                  <AlarmClock size={10} />
+                </span>
+                Pull time passed
               </li>
             </ul>
           </div>
@@ -401,15 +475,42 @@ export function MovementHorizonGantt({
                 role="region"
                 aria-label="Movements timeline"
               >
-                {/* Floating Tooltip */}
+                {/* Hover card (1 Nov 2026): who, what stage, the route, bed, transport and the
+                    planned time as recorded. Pointer only; the bar's own name says the same. */}
                 {tooltip && (
                   <div
-                    className={styles.tooltip}
+                    className={styles.hoverCard}
                     style={{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }}
                     aria-hidden="true"
                   >
-                    <div className={styles.tooltipTitle}>{tooltip.title}</div>
-                    <div className={styles.tooltipDetails}>{tooltip.details}</div>
+                    <div className={styles.hcHead}>
+                      <strong>{formalName(barPatientName(tooltip.ev))}</strong>
+                      {tooltip.ev.ageBand ? <span>{tooltip.ev.ageBand}</span> : null}
+                    </div>
+                    <div className={styles.hcStatus} data-type={tooltip.ev.type}>
+                      {(() => {
+                        const Icon = EVENT_ICON[tooltip.ev.type as keyof typeof EVENT_ICON];
+                        return Icon ? <Icon size={13} aria-hidden="true" /> : null;
+                      })()}
+                      {tooltip.ev.title}
+                    </div>
+                    <dl className={styles.hcGrid}>
+                      <dt>Route</dt>
+                      <dd>
+                        {shortPlace(tooltip.ev.origin)} <ArrowRight size={11} aria-hidden="true" /> {tooltip.ev.dest}
+                      </dd>
+                      <dt>Bed</dt>
+                      <dd>{tooltip.ev.bed ?? "Not allocated"}</dd>
+                      <dt>Transport</dt>
+                      <dd>{tooltip.ev.carrier || "Not booked"}</dd>
+                      <dt>Planned</dt>
+                      <dd>
+                        {tooltip.ev.plannedAt === undefined
+                          ? "No time recorded"
+                          : `${formatInstantWithDay(tooltip.ev.plannedAt, now)}, as recorded`}
+                      </dd>
+                    </dl>
+                    <p className={styles.hcHint}>Click to open the movement</p>
                   </div>
                 )}
 
@@ -514,7 +615,7 @@ export function MovementHorizonGantt({
                               return (
                                 <div
                                   key={ev.id}
-                                  className={`${styles.ganttBar} ${swatchClass}${isSelected ? ` ${styles.activeSelect}` : ""}${isScrubMatch ? ` ${styles.scrubActive}` : ""}`}
+                                  className={`${styles.ganttBar} ${swatchClass}${isSelected ? ` ${styles.activeSelect}` : ""}${isScrubMatch ? ` ${styles.scrubActive}` : ""}${focusCorridor ? (inFocus(lane.id, ev) ? ` ${styles.corridorHit}` : ` ${styles.corridorMiss}`) : ""}`}
                                   style={
                                     {
                                       // A bar is never narrower than a short "Surname, Given" label
@@ -538,9 +639,13 @@ export function MovementHorizonGantt({
                                       selectMovement(ev.id);
                                     }
                                   }}
-                                  onMouseMove={(e) => handleMouseMove(e, ev)}
+                                  onMouseMove={(e) => handleMouseMove(e, ev, lane.id)}
                                   onMouseLeave={handleMouseLeave}
                                 >
+                                  {(() => {
+                                    const Icon = EVENT_ICON[ev.type as keyof typeof EVENT_ICON];
+                                    return Icon ? <Icon size={12} aria-hidden="true" className={styles.barIcon} /> : null;
+                                  })()}
                                   <span className={styles.ganttBarText}>{barText}</span>
                                 </div>
                               );
@@ -595,62 +700,140 @@ export function MovementHorizonGantt({
               </div>
               {activeCorridorTab === "accepted" ? (
                 corridors.length === 0 ? (
-                  <p className={styles.railEmpty}>No open movement currently has an accepting ward.</p>
+                  <p className={styles.railEmpty}>No open movement has an accepting ward.</p>
                 ) : (
-                  // Scrolls when the list is long, so it takes a tab stop (axe scrollable-region-focusable).
-                  // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it
-                  <ol className={styles.corridorRanks} tabIndex={0} aria-label="Accepted corridors, busiest first">
-                    {rankedPairs.map((corridor) => {
-                      const ed = edById(corridor.originEdId);
-                      const unit = units.find((candidate) => candidate.id === corridor.acceptedUnitId);
-                      const route = `${ed ? `${ed.siteCode} ED` : corridor.originEdId} to ${wardLabel(corridor.acceptedUnitId, unit?.name)}`;
-                      const detail = corridor.stages
-                        .map((row) => `${stageCopy[row.stage].label} ${row.count}`)
-                        .join(" · ");
+                  <>
+                    <p className={styles.railSummary}>
+                      <b>{corridorPatients}</b> patients · <b>{rankedPairs.length}</b> routes · <b>{edGroups.length}</b>{" "}
+                      EDs. Choose one to light it up.
+                    </p>
+                    {/* Scrolls when the list is long, so it takes a tab stop (axe scrollable-region-focusable). */}
+                    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable area: tabIndex lets keyboard users scroll it */}
+                    <ol className={styles.edGroups} tabIndex={0} aria-label="Accepted corridors by ED, busiest first">
+                      {edGroups.map((group) => {
+                        const ed = edById(group.originEdId);
+                        const edPicked = focusCorridor?.originEdId === group.originEdId && focusCorridor.unitId === null;
+                        const phaseWords = PHASES.filter((ph) => group.phases[ph.id] > 0)
+                          .map((ph) => `${group.phases[ph.id]} ${ph.label.toLowerCase()}`)
+                          .join(", ");
+                        return (
+                          <li key={group.originEdId} className={styles.edGroup}>
+                            <button
+                              type="button"
+                              className={styles.edHead}
+                              aria-pressed={edPicked}
+                              title={ed?.name}
+                              onClick={() =>
+                                setFocusCorridor(edPicked ? null : { originEdId: group.originEdId, unitId: null })
+                              }
+                            >
+                              <span className={styles.edName}>{ed ? `${ed.siteCode} ED` : group.originEdId}</span>
+                              <span className={styles.phaseBar} aria-hidden="true">
+                                {PHASES.map((ph) =>
+                                  group.phases[ph.id] > 0 ? (
+                                    <i key={ph.id} data-phase={ph.id} style={{ flexGrow: group.phases[ph.id] }} />
+                                  ) : null,
+                                )}
+                              </span>
+                              <strong>{group.total}</strong>
+                              <span className="sr-only">
+                                {` patients from ${ed?.name ?? group.originEdId}: ${phaseWords}`}
+                              </span>
+                            </button>
+                            <ul className={styles.edRoutes}>
+                              {group.routes.map((route) => {
+                                const unit = units.find((candidate) => candidate.id === route.acceptedUnitId);
+                                const to = wardLabel(route.acceptedUnitId, unit?.name);
+                                const picked =
+                                  focusCorridor?.originEdId === route.originEdId &&
+                                  focusCorridor?.unitId === route.acceptedUnitId;
+                                const isHot =
+                                  hot !== null && hot.laneId === route.acceptedUnitId && fromEd(route.originEdId, hot.origin);
+                                const dots: CorridorPhase[] = [];
+                                for (const ph of PHASES) {
+                                  const n = route.stages
+                                    .filter((row) => PHASE_OF[row.stage] === ph.id)
+                                    .reduce((total, row) => total + row.count, 0);
+                                  for (let i = 0; i < n; i += 1) dots.push(ph.id);
+                                }
+                                return (
+                                  <li key={route.acceptedUnitId}>
+                                    <button
+                                      type="button"
+                                      className={styles.routePick}
+                                      aria-pressed={picked}
+                                      data-hot={isHot ? "true" : undefined}
+                                      onClick={() =>
+                                        setFocusCorridor(
+                                          picked ? null : { originEdId: route.originEdId, unitId: route.acceptedUnitId },
+                                        )
+                                      }
+                                    >
+                                      <ArrowRight size={12} className={styles.corridorArrow} aria-hidden="true" />
+                                      <span className="sr-only">to </span>
+                                      <span className={styles.routeName}>{to}</span>
+                                      <span className={styles.phaseDots} aria-hidden="true">
+                                        {dots.slice(0, 5).map((ph, i) => (
+                                          <i key={i} data-phase={ph} />
+                                        ))}
+                                        {dots.length > 5 ? <small>+{dots.length - 5}</small> : null}
+                                      </span>
+                                      <span className="sr-only">
+                                        {`, ${route.stages.map((row) => `${stageCopy[row.stage].label} ${row.count}`).join(", ")}`}
+                                      </span>
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                    <ul className={styles.phaseKey} aria-label="Corridor key">
+                      {PHASES.map((ph) => (
+                        <li key={ph.id}>
+                          <i data-phase={ph.id} aria-hidden="true" />
+                          {ph.label}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )
+              ) : declinesByWard.length === 0 ? (
+                <p className={styles.railEmpty}>No ward has declined today.</p>
+              ) : (
+                <>
+                  <p className={styles.railSummary}>
+                    <b>{refusedCorridors.reduce((total, row) => total + row.count, 0)}</b> declines today across{" "}
+                    <b>{declinesByWard.length}</b> wards.
+                  </p>
+                  <ol className={styles.edGroups} aria-label="Declines today by ward, most first">
+                    {declinesByWard.map((group) => {
+                      const unit = units.find((candidate) => candidate.id === group.unitId);
                       return (
-                        <li
-                          key={`${corridor.originEdId} ${corridor.acceptedUnitId} ${corridor.stage} rank`}
-                          title={`${ed?.name ? `${ed.name} to ` : ""}${wardLabel(corridor.acceptedUnitId, unit?.name)}`}
-                        >
-                          <span>
-                            <span className={styles.corridorRoute}>{route}</span>
-                            {/* The department's full name stays for screen readers; sighted readers
-                                have it in the row's title. */}
-                            {ed?.name ? <span className="sr-only">From {ed.name}.</span> : null}
-                            <small>{detail}</small>
+                        <li key={group.unitId} className={styles.declineRow}>
+                          <span className={styles.declineWard}>{wardLabel(group.unitId, unit?.name)}</span>
+                          <strong>{group.total}</strong>
+                          <span className={styles.declineFrom}>
+                            from{" "}
+                            {group.from
+                              .map((row) => {
+                                const ed = edById(row.originEdId);
+                                return `${ed ? `${ed.siteCode} ED` : row.originEdId}${row.count > 1 ? ` ×${row.count}` : ""}`;
+                              })
+                              .join(", ")}
                           </span>
-                          <strong>{corridor.count}</strong>
+                          <span className={styles.declineReasons}>
+                            {[...group.reasons].map((reason) => (
+                              <span key={reason}>{reason}</span>
+                            ))}
+                          </span>
                         </li>
                       );
                     })}
                   </ol>
-                )
-              ) : refusedCorridors.length === 0 ? (
-                <p className={styles.railEmpty}>No ward refusal is recorded today.</p>
-              ) : (
-                <ol className={styles.corridorRanks}>
-                  {refusedCorridors.map((corridor) => {
-                    const ed = edById(corridor.originEdId);
-                    const unit = units.find((candidate) => candidate.id === corridor.unitId);
-                    return (
-                      <li
-                        key={`${corridor.originEdId} ${corridor.unitId} refused rank`}
-                        title={`${ed?.name ? `${ed.name} to ` : ""}${wardLabel(corridor.unitId, unit?.name)}`}
-                      >
-                        <span>
-                          <span className={styles.corridorRoute}>
-                            {ed ? `${ed.siteCode} ED` : corridor.originEdId} to {wardLabel(corridor.unitId, unit?.name)}
-                          </span>
-                          <small>{corridor.reasons.map((r) => r.replaceAll("_", " ")).join(", ")}</small>
-                        </span>
-                        <strong>{corridor.count}</strong>
-                      </li>
-                    );
-                  })}
-                </ol>
-              )}
-              {activeCorridorTab === "refused" && (
-                <p className={styles.stripNote}>Declines have no journey stage of their own.</p>
+                </>
               )}
             </aside>
           </div>

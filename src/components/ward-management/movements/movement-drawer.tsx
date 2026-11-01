@@ -188,6 +188,8 @@ export function MovementDrawer({
   // Item 37 (2026-09-17): the flag needs a reason chosen from URGENT_MARK_REASONS. Declared before
   // the early return so hook order never depends on whether `movement` resolves.
   const [urgentFlagReason, setUrgentFlagReason] = useState<UrgentMarkReason | undefined>(undefined);
+  // Movements redesign (1 Nov 2026): the urgent flag's reason picker opens from the footer's button.
+  const [flagOpen, setFlagOpen] = useState(false);
   const baseId = useId();
   // Phone only: the tier uses the shared TierTile; desktop keeps its own pill (owner, 2026-10-11).
   const isPhone = useIsPhone();
@@ -321,6 +323,123 @@ export function MovementDrawer({
     }
   }
 
+  // Movements redesign (1 Nov 2026): the useful buttons sit in one band pinned to the foot of the
+  // pop-up, the next step first, so they never scroll away. The urgent flag's picker opens above them.
+  const footer = (
+    <div className={d.footBand}>
+      {flagOpen && open ? (
+        <div className={d.flagPanel}>
+          <p className={d.urgentLine}>
+            <Flag size={14} aria-hidden="true" />
+            <span>
+              {movement.flaggedUrgent
+                ? "Flagged urgent: leads the queue ahead of every tier."
+                : "Not flagged: ordered by urgency tier, then wait."}
+            </span>
+          </p>
+      {movement.flaggedUrgent ? (
+        <button
+          type="button"
+          className={buttonClass({ variant: "sec", size: "sm" })}
+          data-testid="ward-movement-drawer-urgent-toggle"
+          onClick={() =>
+            dispatch({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId: movement.id })
+          }
+        >
+          Remove the urgent flag
+        </button>
+      ) : open ? (
+        <div className={d.urgentPick}>
+          <label className="sr-only" htmlFor="ward-movement-drawer-urgent-reason">
+            Why is this urgent?
+          </label>
+          <select
+            id="ward-movement-drawer-urgent-reason"
+            className={d.select}
+            data-testid="ward-movement-drawer-urgent-reason"
+            value={urgentFlagReason ?? ""}
+            onChange={(chosen) => {
+              const value = chosen.target.value;
+              setUrgentFlagReason(
+                URGENT_MARK_REASONS.includes(value as UrgentMarkReason) ? (value as UrgentMarkReason) : undefined,
+              );
+            }}
+          >
+            <option value="">Choose why this is urgent</option>
+            {URGENT_MARK_REASONS.map((reason) => (
+              <option key={reason} value={reason}>
+                {changeReasonLabels[reason]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className={buttonClass({ variant: "sec", size: "sm" })}
+            data-testid="ward-movement-drawer-urgent-toggle"
+            aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
+            aria-describedby={
+              urgentFlagReason === undefined ? `${baseId}-ward-movement-drawer-urgent-blocked` : undefined
+            }
+            title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
+            onClick={
+              urgentFlagReason === undefined
+                ? ignoreUnavailableActivation
+                : () => {
+                    dispatch({
+                      type: "FLAG_MOVEMENT_URGENT",
+                      role: "coordinator",
+                      now,
+                      movementId: movement.id,
+                      reason: urgentFlagReason,
+                    });
+                    setUrgentFlagReason(undefined);
+                  }
+            }
+          >
+            Flag this patient as urgent
+          </button>
+          {urgentFlagReason === undefined ? (
+            <span id={`${baseId}-ward-movement-drawer-urgent-blocked`} className="sr-only">
+              {URGENT_FLAG_UNCHOSEN}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+        </div>
+      ) : null}
+      {nextAction}
+      <div className={d.footRow}>
+        <Link className={buttonClass({ variant: "sec", size: "sm" })} href={recordHref}>
+          <FileText size={14} aria-hidden="true" />
+          Patient record
+        </Link>
+        {accepted ? (
+          <Link
+            href={`/ward-flow/board/${accepted.id}`}
+            className={buttonClass({ variant: "sec", size: "sm" })}
+            title={`Open ${accepted.name} Bed Board`}
+          >
+            <BedSingle size={14} aria-hidden="true" />
+            Ward board
+          </Link>
+        ) : null}
+        {open ? <PullNowButton movement={movement} /> : null}
+        {open ? (
+          <button
+            type="button"
+            className={buttonClass({ variant: "sec", size: "sm" })}
+            aria-expanded={flagOpen}
+            data-flagged={movement.flaggedUrgent ? "true" : undefined}
+            onClick={() => setFlagOpen((was) => !was)}
+          >
+            <Flag size={14} aria-hidden="true" />
+            {movement.flaggedUrgent ? "Flagged urgent" : "Flag urgent"}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+
   if (isPhone) {
     return (
       <MovementPhoneSheet
@@ -353,6 +472,8 @@ export function MovementDrawer({
       placement="responsive-right"
       contentClassName={d.panel}
       bodyClassName={d.body}
+      footer={footer}
+      footerClassName={d.footer}
     >
       <div className={d.head} data-closed={closure ? "true" : undefined}>
         <div className={d.who}>
@@ -385,10 +506,6 @@ export function MovementDrawer({
             {movement.urgency}
           </span>
         )}
-        <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={recordHref} title="Open the Patient page">
-          <span className={d.linkText}>Patient</span>
-          <ChevronRight size={14} aria-hidden="true" />
-        </Link>
         <button
           type="button"
           className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
@@ -537,108 +654,6 @@ export function MovementDrawer({
         ) : null}
       </div>
 
-      <section className={d.actions} aria-labelledby={`${titleId}-actions`}>
-        <h3 id={`${titleId}-actions`} className={d.sectionTitle}>
-          What you can do
-        </h3>
-        {nextAction}
-        <div className={d.row}>
-          {accepted ? (
-            <Link
-              href={`/ward-flow/board/${accepted.id}`}
-              className={buttonClass({ variant: "sec", size: "sm" })}
-              title={`Open ${accepted.name} Bed Board`}
-            >
-              <BedSingle size={14} aria-hidden="true" />
-              Ward board
-            </Link>
-          ) : null}
-          {open ? <PullNowButton movement={movement} /> : null}
-        </div>
-        <div className={d.urgent}>
-          <p className={d.urgentLine}>
-            <Flag size={14} aria-hidden="true" />
-            <span>
-              {movement.flaggedUrgent
-                ? open
-                  ? "Flagged urgent. This patient leads the queue ahead of every urgency tier, including tier 1."
-                  : "Flagged urgent. This movement is no longer in the queue, so the flag orders nothing now. Removing it changes only the record."
-                : open
-                  ? "Not flagged. This patient is ordered by urgency tier and waiting time, like everybody else."
-                  : "Not flagged, and this movement is no longer running, so it is not in the queue at all. Flagging it would change nothing."}
-            </span>
-          </p>
-          {movement.flaggedUrgent ? (
-            <button
-              type="button"
-              className={buttonClass({ variant: "sec", size: "sm" })}
-              data-testid="ward-movement-drawer-urgent-toggle"
-              onClick={() =>
-                dispatch({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId: movement.id })
-              }
-            >
-              Remove the urgent flag
-            </button>
-          ) : open ? (
-            <div className={d.urgentPick}>
-              <label className="sr-only" htmlFor="ward-movement-drawer-urgent-reason">
-                Why is this urgent?
-              </label>
-              <select
-                id="ward-movement-drawer-urgent-reason"
-                className={d.select}
-                data-testid="ward-movement-drawer-urgent-reason"
-                value={urgentFlagReason ?? ""}
-                onChange={(chosen) => {
-                  const value = chosen.target.value;
-                  setUrgentFlagReason(
-                    URGENT_MARK_REASONS.includes(value as UrgentMarkReason) ? (value as UrgentMarkReason) : undefined,
-                  );
-                }}
-              >
-                <option value="">Choose why this is urgent</option>
-                {URGENT_MARK_REASONS.map((reason) => (
-                  <option key={reason} value={reason}>
-                    {changeReasonLabels[reason]}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                data-testid="ward-movement-drawer-urgent-toggle"
-                aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
-                aria-describedby={
-                  urgentFlagReason === undefined ? `${baseId}-ward-movement-drawer-urgent-blocked` : undefined
-                }
-                title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
-                onClick={
-                  urgentFlagReason === undefined
-                    ? ignoreUnavailableActivation
-                    : () => {
-                        dispatch({
-                          type: "FLAG_MOVEMENT_URGENT",
-                          role: "coordinator",
-                          now,
-                          movementId: movement.id,
-                          reason: urgentFlagReason,
-                        });
-                        setUrgentFlagReason(undefined);
-                      }
-                }
-              >
-                Flag this patient as urgent
-              </button>
-              {urgentFlagReason === undefined ? (
-                <span id={`${baseId}-ward-movement-drawer-urgent-blocked`} className="sr-only">
-                  {URGENT_FLAG_UNCHOSEN}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </section>
-
       <div className={d.record}>
         <Section title="Person">
           <p className={d.text}>{personLine(movement, referrals, patients)}</p>
@@ -651,7 +666,7 @@ export function MovementDrawer({
         <Section title="Journey">
           {movement.stageChanges.length === 0 ? (
             <p className={d.muted}>
-              No stage change has been recorded, so this movement has not moved since it opened.
+              No stage change yet.
             </p>
           ) : (
             <ul className={d.list}>
@@ -673,9 +688,9 @@ export function MovementDrawer({
           )}
         </Section>
 
-        <Section title="Which wards were asked">
+        <Section title="Wards asked">
           {askedIds.size === 0 ? (
-            <p className={d.muted}>No ward has been asked yet.</p>
+            <p className={d.muted}>None asked yet.</p>
           ) : (
             <ul className={d.list}>
               {[...askedIds].map((unitId) => {
@@ -707,7 +722,7 @@ export function MovementDrawer({
 
         <Section title="Escalation">
           {movement.escalation === undefined ? (
-            <p className={d.muted}>Nothing has been escalated on this movement. That is a record, not a gap.</p>
+            <p className={d.muted}>Not escalated.</p>
           ) : (
             <p className={d.text}>
               Escalated to {movement.escalation.contact} on {formatInstantWithDay(movement.escalation.at, now)}, after{" "}
@@ -719,7 +734,7 @@ export function MovementDrawer({
 
         <Section title="Transport leg">
           {leg === undefined ? (
-            <p className={d.muted}>No transport leg has been booked, so there is nothing to say about a vehicle.</p>
+            <p className={d.muted}>Not booked.</p>
           ) : (
             <p className={d.text}>
               {leg.provider}
@@ -733,11 +748,6 @@ export function MovementDrawer({
           )}
         </Section>
 
-        <p className={d.foot}>
-          <strong>Watch and flag is not built.</strong> Nothing in this system records that somebody is watching a
-          movement, so there is no state for it to show. Every person in this prototype is invented. Nobody named here
-          is a real patient.
-        </p>
       </div>
     </Sheet>
   );
