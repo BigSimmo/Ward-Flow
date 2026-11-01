@@ -12,7 +12,7 @@ import {
   Tile,
 } from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import type { SummaryModel } from "./statistics-network-cards";
-import { exactStatisticsCount, type StatisticsCount } from "./statistics-small-numbers";
+import type { StatisticsCount } from "./statistics-small-numbers";
 
 export function StatisticsReferralsTodayCard({
   model,
@@ -32,7 +32,6 @@ export function StatisticsReferralsTodayCard({
     [refRaised, refAccepted, refDeclined, refOpen].every(
       (count) => typeof count !== "number" && count.kind === "withheld",
     );
-  const capTone = exactStatisticsCount(refOpen) !== null && exactStatisticsCount(refOpen)! >= parallelReferralCap;
   return (
     <StatCardR
       id="referrals-today"
@@ -56,7 +55,7 @@ export function StatisticsReferralsTodayCard({
         <Tile
           title="Still open"
           now={
-            <Now tone={capTone ? "warning" : undefined}>
+            <Now>
               parallel cap <span data-testid="ward-statistics-refused-so-far-cap">{parallelReferralCap}</span>
             </Now>
           }
