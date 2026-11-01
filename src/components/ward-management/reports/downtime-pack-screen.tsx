@@ -250,7 +250,7 @@ export function DowntimePackScreen() {
         <main id="main-content" className={styles.main} aria-busy={unavailable ? undefined : true}>
           <Hero
             level={1}
-            eyebrow="Downtime pack · synthetic data"
+            eyebrow="Downtime pack"
             title="Downtime pack"
             titleMeta={unavailable ? "Snapshot unavailable" : "Taking snapshot"}
           />
@@ -665,7 +665,7 @@ export function DowntimePackScreen() {
               className={styles.downtimePhoneHero}
               // F-08 (phone review, Oct 2026): the synthetic marker, as the desktop eyebrow carries it. A
               // frozen pack takes no Demo pill, whose pulse would read as live.
-              eyebrow="Downtime pack · synthetic data"
+              eyebrow="Downtime pack"
               title={pack.offline ? `Frozen, ${frozenAt}` : `Frozen at ${frozenAt}`}
               sub={`${reportDay(pack.generatedAt, dayZero)} · next pack ${pack.offline ? "when online" : nextPackAt}`}
               // Ops-20 (13 Oct 2026): the counts sit once, in the section control below; the hero
@@ -852,7 +852,7 @@ export function DowntimePackScreen() {
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow="Downtime pack · synthetic data"
+          eyebrow="Downtime pack"
           title="Downtime pack"
           titleMeta={
             <span className={styles.frozen} data-testid="ward-downtime-frozen">

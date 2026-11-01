@@ -947,15 +947,9 @@ export function DelaysBoard({
         eyebrow={isPhone ? `Waiting · ${service ?? "Statewide"}` : "Waiting"}
         title={heroTitle}
         titleMeta={
-          isPhone ? (
-            <>
-              Prototype data, invented records · <b>{breached}</b> past recorded time
-            </>
-          ) : (
-            <>
-              <b>{breached}</b> past recorded time
-            </>
-          )
+          <>
+            <b>{breached}</b> past recorded time
+          </>
         }
         testId="delays-hero"
         className={styles.delaysHero}

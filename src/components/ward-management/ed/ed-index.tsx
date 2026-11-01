@@ -376,8 +376,8 @@ export function EdIndex() {
             // v10 phone: one quiet line under the title in place of the checking foot.
             isPhone
               ? waiting > 0 && longestRow
-                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
-                : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
+                ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)}`
+                : `No one waiting · target ${waitLine(accessTarget)}`
               : undefined
           }
           aside={
