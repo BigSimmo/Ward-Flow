@@ -12,6 +12,7 @@ import { WeeklyBody } from "@/components/ward-redesign/statistics/statistics-red
 import { dateOf } from "../statistics/statistics-dates";
 import { StatisticsHero, useStatisticsLive } from "../statistics/statistics-hero";
 
+import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 import type { ExecutiveReportingWeek } from "../statistics/executive-statistics-contract";
@@ -19,6 +20,7 @@ import {
   ExecutiveStatisticsUnavailable,
   statisticsCountText as reportCount,
 } from "../statistics/statistics-small-numbers";
+
 import { useOperationalPilot, usePilotFigures, type WeeklyPilot } from "./pilot-measures-section";
 import { reportWeek, weeklyOperationsReport, type WeeklyReport, type ReportWeek } from "./weekly-report";
 import { useOwnUnits } from "./use-own-units";
@@ -27,8 +29,8 @@ import weekly from "./weekly-report.module.css";
 
 const WAITING_HREF = "/ward-flow/waiting";
 
-/** The out of area bands (`OUT_OF_AREA_BANDS`: three hours or more, or air only), in the mock-up's words. */
-const OUT_OF_AREA_META = "3h or more from home, or by air only";
+/** The out of area bands, in the words the rest of the app uses for them. */
+const OUT_OF_AREA_META = OUT_OF_AREA_BANDS.map((band) => TRAVEL_BAND_LABELS[band]).join(" or ");
 
 /** Offsets offered in the week picker: this week so far, the last full week, then seven before it. */
 const WEEK_OFFSETS = [-1, 0, 1, 2, 3, 4, 5, 6, 7] as const;
