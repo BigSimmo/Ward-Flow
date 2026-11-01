@@ -21,20 +21,32 @@ export function FrontDoorPage({
   mode,
   tv,
   accountLabel,
+  demoFirst,
 }: {
   next: string;
   mode: "account" | "demo-code";
   tv: boolean;
   accountLabel?: AccountLabel;
+  demoFirst?: boolean;
 }) {
   return mode === "demo-code" ? (
     <DemoCodeDoor next={next} />
   ) : (
-    <AccountDoor next={next} tv={tv} accountLabel={accountLabel} />
+    <AccountDoor next={next} tv={tv} accountLabel={accountLabel} demoFirst={demoFirst} />
   );
 }
 
-function AccountDoor({ next, tv, accountLabel }: { next: string; tv: boolean; accountLabel?: AccountLabel }) {
+function AccountDoor({
+  next,
+  tv,
+  accountLabel,
+  demoFirst,
+}: {
+  next: string;
+  tv: boolean;
+  accountLabel?: AccountLabel;
+  demoFirst?: boolean;
+}) {
   const { phase, form } = useFrontDoorAuth(next);
   if (phase !== "ready")
     return (
@@ -43,7 +55,15 @@ function AccountDoor({ next, tv, accountLabel }: { next: string; tv: boolean; ac
         status={phase === "checking" ? "Checking your sign-in." : "Signed in. Opening your home page."}
       />
     );
-  return <FrontDoor form={form} tv={tv} demoUrl={tv ? null : publicDemoUrl()} accountLabel={accountLabel} />;
+  return (
+    <FrontDoor
+      form={form}
+      tv={tv}
+      demoUrl={tv ? null : publicDemoUrl()}
+      accountLabel={accountLabel}
+      demoFirst={demoFirst}
+    />
+  );
 }
 
 function DemoCodeDoor({ next }: { next: string }) {
