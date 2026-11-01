@@ -184,20 +184,20 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     const forward = within(steps).getByRole("button", { name: /^Forward \d+ hours$/u });
 
     expect(nowBtn).toHaveAttribute("aria-pressed", "true");
-    expect(nowBtn).toHaveAttribute("title", "Showing from now");
+    expect(nowBtn).toHaveAttribute("title", "Timeline marker at now");
     expect(back, "the timeline cannot start before now").toBeDisabled();
 
     // Step forward
     fireEvent.click(forward);
     expect(nowBtn).toHaveAttribute("aria-pressed", "false");
-    expect(nowBtn.getAttribute("title")).toMatch(/^Showing from /u);
-    expect(nowBtn).not.toHaveAttribute("title", "Showing from now");
+    expect(nowBtn.getAttribute("title")).toMatch(/^Timeline marker at /u);
+    expect(nowBtn).not.toHaveAttribute("title", "Timeline marker at now");
     expect(back).toBeEnabled();
 
     // Back to now
     fireEvent.click(nowBtn);
     expect(nowBtn).toHaveAttribute("aria-pressed", "true");
-    expect(nowBtn).toHaveAttribute("title", "Showing from now");
+    expect(nowBtn).toHaveAttribute("title", "Timeline marker at now");
   });
 
   it("opens a modal timeline, retains corridors and restores focus on Escape", () => {

@@ -207,7 +207,9 @@ export function MovementHorizonGantt({
   // Scrubber cursor calculation (strictly 0% to 100% of track)
   const cursorFraction = scrub / zoom;
   const scrubInstant = now + Math.round(scrub * 60);
-  const scrubBadgeText = scrub === 0 ? "Showing from now" : `Showing from ${formatInstantWithDay(scrubInstant, now)}`;
+  // Review fix (1 Nov 2026): Back and Forward move the marker, not the visible window, so say that.
+  const scrubBadgeText =
+    scrub === 0 ? "Timeline marker at now" : `Timeline marker at ${formatInstantWithDay(scrubInstant, now)}`;
   const focusEd = focusCorridor ? edById(focusCorridor.originEdId) : undefined;
   /** An event's origin is the department's full name; this matches it to an ED id. */
   const fromEd = (edId: string, origin: string) => {
@@ -221,7 +223,7 @@ export function MovementHorizonGantt({
 
   // Corridor calculations for the rail
   const acceptedPairs = new Set(corridors.map((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}`));
-  const rankedPairs = rankCorridorPairs(corridors);
+  const rankedPairs = useMemo(() => rankCorridorPairs(corridors), [corridors]);
   // Movements redesign (1 Nov 2026): corridors grouped under the ED they leave from, busiest ED
   // first, each with its patients split by phase; declines grouped under the ward that said no.
   const edGroups = useMemo(() => {
@@ -453,7 +455,7 @@ export function MovementHorizonGantt({
                 <span className={`${styles.ganttSwatch} ${styles.swatchAdmit}`} aria-hidden="true">
                   <BedSingle size={10} aria-hidden="true" />
                 </span>
-                Bed pulled, arriving
+                Accepted or bed pulled, arriving
               </li>
               <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchTransit}`} aria-hidden="true">

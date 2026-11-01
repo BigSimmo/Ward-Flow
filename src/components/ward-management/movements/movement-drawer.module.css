@@ -787,6 +787,13 @@
   min-height: 40px;
 }
 
+/* Review fix (1 Nov 2026): the shared focus ring is lost on the navy band, so it uses the hero ink. */
+.footBand :is(a, button, select):focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
 .footBand .waiting {
   border-color: var(--wf-hero-edge);
   background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);

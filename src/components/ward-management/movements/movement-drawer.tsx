@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import Link from "next/link";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import { useRouter } from "next/navigation";
@@ -190,6 +190,15 @@ export function MovementDrawer({
   const [urgentFlagReason, setUrgentFlagReason] = useState<UrgentMarkReason | undefined>(undefined);
   // Movements redesign (1 Nov 2026): the urgent flag's reason picker opens from the footer's button.
   const [flagOpen, setFlagOpen] = useState(false);
+  // Set when "Flag urgent" opens the picker, so the reason select takes focus once it mounts.
+  const flagOpenedRef = useRef(false);
+  // Review fix (1 Nov 2026): the picker opens above its toggle, so focus moves to its first control.
+  const focusOnOpen = (node: HTMLElement | null) => {
+    if (node && flagOpenedRef.current) {
+      flagOpenedRef.current = false;
+      node.focus();
+    }
+  };
   const baseId = useId();
   // Phone only: the tier uses the shared TierTile; desktop keeps its own pill (owner, 2026-10-11).
   const isPhone = useIsPhone();
@@ -342,6 +351,7 @@ export function MovementDrawer({
               type="button"
               className={buttonClass({ variant: "sec", size: "sm" })}
               data-testid="ward-movement-drawer-urgent-toggle"
+              ref={focusOnOpen}
               onClick={() =>
                 dispatch({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId: movement.id })
               }
@@ -354,6 +364,7 @@ export function MovementDrawer({
                 Why is this urgent?
               </label>
               <select
+                ref={focusOnOpen}
                 id="ward-movement-drawer-urgent-reason"
                 className={d.select}
                 data-testid="ward-movement-drawer-urgent-reason"
@@ -430,7 +441,10 @@ export function MovementDrawer({
             className={buttonClass({ variant: "sec", size: "sm" })}
             aria-expanded={flagOpen}
             data-flagged={movement.flaggedUrgent ? "true" : undefined}
-            onClick={() => setFlagOpen((was) => !was)}
+            onClick={() => {
+              flagOpenedRef.current = !flagOpen;
+              setFlagOpen((was) => !was);
+            }}
           >
             <Flag size={14} aria-hidden="true" />
             {movement.flaggedUrgent ? "Flagged urgent" : "Flag urgent"}

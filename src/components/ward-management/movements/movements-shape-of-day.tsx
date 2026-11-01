@@ -7,7 +7,15 @@ import { ChartColumn, CircleCheck, Grid3x3 } from "lucide-react";
 import { StatusGlyph } from "@/components/wf";
 import { WAIT_BANDS, waitBand } from "@/components/ward-management/delays/delays-board-model";
 import sh from "./movements-shape-of-day.module.css";
-import { startTransition, type CSSProperties, type Dispatch, type SetStateAction } from "react";
+import {
+  startTransition,
+  useId,
+  useRef,
+  type CSSProperties,
+  type Dispatch,
+  type KeyboardEvent,
+  type SetStateAction,
+} from "react";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -57,6 +65,12 @@ export function ShapeOfTheDay({
   waitingMovements: Movement[];
 }) {
   const tab = shapeTab === "transport" ? "stage" : shapeTab;
+  // WAI-ARIA tabs pattern: each tab controls its panel, one tab stop, arrows/Home/End move it.
+  // Panels keep their own aria-label: aria-labelledby would override it with the tab text and count.
+  const idPrefix = useId();
+  const tabId = (id: string) => `${idPrefix}-tab-${id}`;
+  const panelId = (id: string) => `${idPrefix}-panel-${id}`;
+  const tabRefs = useRef(new Map<string, HTMLButtonElement>());
   const pick = (list: Movement[]) => (isInServiceScope !== null ? list.find(isInServiceScope) : undefined) ?? list[0];
 
   // Where they wait: each stage's open movements counted into the four wait bands.
@@ -96,17 +110,44 @@ export function ShapeOfTheDay({
     { id: "resolved" as const, label: "Outcomes", Icon: CircleCheck, value: closedToday.length },
   ];
 
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const index = tabs.findIndex((entry) => entry.id === tab);
+    const next =
+      event.key === "ArrowRight"
+        ? (index + 1) % tabs.length
+        : event.key === "ArrowLeft"
+          ? (index - 1 + tabs.length) % tabs.length
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? tabs.length - 1
+              : undefined;
+    if (next === undefined) return;
+    event.preventDefault();
+    const nextId = tabs[next].id;
+    startTransition(() => setShapeTab(nextId));
+    tabRefs.current.get(nextId)?.focus();
+  };
+
   return (
     <div className={sh.shape}>
       <div className={sh.tabs} role="tablist" aria-label="Shape of the day">
         {tabs.map(({ id, label, Icon, value }) => (
           <button
             key={id}
+            ref={(node) => {
+              if (node) tabRefs.current.set(id, node);
+              else tabRefs.current.delete(id);
+            }}
+            id={tabId(id)}
             type="button"
             role="tab"
             aria-selected={tab === id}
+            aria-controls={panelId(id)}
+            tabIndex={tab === id ? 0 : -1}
             className={sh.tab}
             onClick={() => startTransition(() => setShapeTab(id))}
+            onKeyDown={onTabKeyDown}
           >
             <Icon size={14} aria-hidden="true" />
             {label}
@@ -116,7 +157,7 @@ export function ShapeOfTheDay({
       </div>
 
       {tab === "stage" ? (
-        <div className={sh.panel} role="tabpanel" aria-label="Where they wait">
+        <div className={sh.panel} role="tabpanel" id={panelId("stage")} aria-label="Where they wait">
           <table className={sh.heat}>
             <caption className="sr-only">Open movements by stage and how long they have waited</caption>
             <thead>
@@ -194,7 +235,7 @@ export function ShapeOfTheDay({
       ) : null}
 
       {tab === "waiting" ? (
-        <div className={sh.panel} role="tabpanel" aria-label="Flow today">
+        <div className={sh.panel} role="tabpanel" id={panelId("waiting")} aria-label="Flow today">
           <dl className={sh.figures}>
             <div>
               <dt>Raised today</dt>
@@ -249,7 +290,7 @@ export function ShapeOfTheDay({
       ) : null}
 
       {tab === "resolved" ? (
-        <div className={sh.panel} role="tabpanel" aria-label="Outcomes today">
+        <div className={sh.panel} role="tabpanel" id={panelId("resolved")} aria-label="Outcomes today">
           <dl className={sh.figures}>
             <div>
               <dt>

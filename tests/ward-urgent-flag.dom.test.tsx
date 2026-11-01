@@ -167,6 +167,7 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
   it("offers every URGENT_MARK_REASONS member as an option", () => {
     renderDrawer(anOpenUnflagged(), vi.fn());
     const select = screen.getByTestId("ward-movement-drawer-urgent-reason") as HTMLSelectElement;
+    expect(select, "opening the picker moves focus into it").toHaveFocus();
     const optionValues = Array.from(select.options)
       .map((option) => option.value)
       .filter((value) => value.length > 0);
