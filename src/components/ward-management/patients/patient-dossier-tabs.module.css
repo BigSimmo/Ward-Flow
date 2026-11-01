@@ -139,7 +139,7 @@
   gap: 0;
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--wf-r-md);
   background: var(--surface);
   overflow: hidden;
   align-items: start;
@@ -265,7 +265,7 @@
 .episode,
 .document {
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: var(--wf-r-md);
   background: var(--surface);
   overflow: hidden;
 }
@@ -279,7 +279,7 @@
 }
 .documentList {
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: var(--wf-r-md);
   overflow: hidden;
 }
 .document:last-child {

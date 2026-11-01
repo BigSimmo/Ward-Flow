@@ -24,7 +24,7 @@
 }
 .recordBadge {
   padding: 8px 10px;
-  border-radius: 30px;
+  border-radius: var(--wf-r-xl);
   background: var(--surface-2);
   white-space: nowrap;
 }
@@ -37,7 +37,7 @@
 .care {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--wf-r-lg);
   padding: 18px;
   min-width: 0;
 }
@@ -190,7 +190,7 @@
 .grid {
   gap: 0;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--wf-r-md);
   background: var(--surface);
   overflow: hidden;
 }

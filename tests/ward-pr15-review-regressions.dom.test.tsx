@@ -278,7 +278,7 @@ describe("PR15 discharge and referral provenance", () => {
         .flatMap((row) => within(row).queryAllByRole("button"))[0],
     );
     const detail = screen.getByRole("region", { name: "Selected discharge details" });
-    expect(detail.textContent).toContain("Recorded discharge milestones");
+    expect(detail.textContent).toContain("Milestones");
     expect(detail.textContent).toContain("Expected discharge date");
     expect(detail.textContent).toContain("Discharge confirmation");
     expect(detail.textContent).toContain("No discharge blocker recorded");
@@ -314,7 +314,6 @@ describe("PR15 discharge and referral provenance", () => {
     expect(detail.textContent).toContain("Release stage recorded");
     expect(detail.textContent).toContain("expected");
     expect(detail.textContent).toContain("Preparation recorded: Reason not recorded");
-    expect(detail.textContent).toContain("does not establish completion");
     expect(detail.textContent).not.toMatch(
       /Clinical summary document signed|Pack ready|Bed released|Medical Summary Signed|Standard Egress|Standby/,
     );

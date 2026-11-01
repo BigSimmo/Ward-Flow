@@ -10,6 +10,7 @@ export const MOCKUP_PAGE_SLUGS = [
   "patient",
   "add-patient",
   "handover",
+  "discharges",
 ] as const;
 
 export type BuiltPageSlug = (typeof MOCKUP_PAGE_SLUGS)[number];

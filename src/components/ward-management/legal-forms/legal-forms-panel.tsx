@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { BookOpen, Check, Clock, Copy, ExternalLink, X } from "lucide-react";
+import {
+  BookOpen,
+  CalendarClock,
+  Check,
+  CheckCircle2,
+  Clock,
+  Copy,
+  ExternalLink,
+  FilePlus2,
+  Inbox,
+  Stethoscope,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
 import {
   Button,
@@ -22,15 +35,12 @@ import { edHref, movementHref } from "@/components/ward-management/shell/ward-fa
 
 import { formProgression } from "./legal-form-progression";
 import { typedClock } from "./legal-time-as-typed";
-import { currentLegalDueAt, isLegalDeadlineBreached, legalDeadlineText } from "./legal-forms-derivations";
+import { currentLegalDueAt, legalDeadlineText } from "./legal-forms-derivations";
 import {
   STANDING_TONE,
   clockStanding,
   formEvents,
-  formTitle,
   isOwnedLegalFormCode,
-  needsExamination,
-  receiptEventAccepts,
   recordedFacts,
   standingSuffix,
   standingWord,
@@ -38,6 +48,8 @@ import {
   type RecordGap,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
+import { nextStep, type NextStepAction } from "./legal-forms-next-step";
+import p from "./legal-forms-panel.module.css";
 import {
   writtenDraftFor,
   writtenSaveOf,
@@ -51,7 +63,14 @@ function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): Timelin
   return items.map(({ id, sortAt, tone, text }) => ({ id, at: formatInstantWithDay(sortAt, now), tone, text }));
 }
 
-export type FocusTab = "now" | "form" | "history";
+const NEXT_ICON: Record<NextStepAction, LucideIcon> = {
+  "next-form": FilePlus2,
+  extend: CalendarClock,
+  written: Clock,
+  received: Inbox,
+  examination: Stethoscope,
+  none: CheckCircle2,
+};
 
 /**
  * FOCUS. The side panel for one patient: their form's clock, what is recorded and what is still to
@@ -66,8 +85,6 @@ export function FocusPanel({
   wardName,
   now,
   dayZero,
-  tab,
-  onTab,
   onClose,
   focusGap,
   refusal,
@@ -89,8 +106,6 @@ export function FocusPanel({
   wardName: string | null;
   now: Instant;
   dayZero: Date;
-  tab: FocusTab;
-  onTab: (tab: FocusTab) => void;
   onClose: () => void;
   /** Set by "Add time" or "Mark received" in the strip, so the panel focuses that control. */
   focusGap: { gap: RecordGap; nonce: number } | null;
@@ -113,7 +128,6 @@ export function FocusPanel({
   const thresholds = useDueSoonThresholds();
   const legalForm = movement.legalForm;
   const standing = clockStanding(movement, now, thresholds);
-  const breached = isLegalDeadlineBreached(movement, now);
   const facts = recordedFacts(movement);
   // Start from the recorded region, so changing the time never resets a country form to metro.
   const recordedDraft = (): WrittenDraft => writtenDraftFor(legalForm);
@@ -153,8 +167,13 @@ export function FocusPanel({
   const dueAt = currentLegalDueAt(movement);
   const typedStanding = typedTimeStanding(movement, now, thresholds);
 
+  const step = nextStep(movement, now);
+  const NextIcon = NEXT_ICON[step.action];
+  const fromLine = edName;
+  const toLine = wardName ?? "No receiving ward yet";
+
   return (
-    <section className={styles.panel} aria-label={`Form for ${name}`} data-testid="ward-legal-selected">
+    <section className={cx(styles.panel, p.panel)} aria-label={`Form for ${name}`} data-testid="ward-legal-selected">
       <div className={styles.focusHead}>
         <div className={styles.cellStack}>
           <h2 className={styles.panelTitle}>{name}</h2>
@@ -167,105 +186,70 @@ export function FocusPanel({
         <Button variant="ghost" size="sm" iconOnly icon={X} aria-label="Close and show the summary" onClick={onClose} />
       </div>
 
-      <div className={styles.focusClock} data-tone={STANDING_TONE[standing]}>
-        <div className={styles.focusClockLine}>
-          <StatusGlyph tone={STANDING_TONE[standing]} size={10} />
-          {dueAt !== undefined ? (
-            <>
-              <span className={cx(styles.mono, styles.clockBig)}>{typedClock(dueAt, now)}</span>
-              <span className={styles.clockWord}>
-                {isClockBreached(dueAt, now) ? "Ended" : "Ends"}, as typed from the form
-                {standingSuffix(typedStanding)}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className={styles.clockBig}>
-                {formProgression(movement) ? "Ended" : standingWord(standing, thresholds)}
-              </span>
-              <span className={styles.clockWord}>{legalDeadlineText(movement, now)}</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      <Segmented<FocusTab>
-        className={styles.focusTabs}
-        label="Form detail"
-        value={tab}
-        onChange={onTab}
-        items={[
-          { id: "now", label: "Now" },
-          { id: "form", label: "Form" },
-          { id: "history", label: "History", count: formEvents(movement, edName).length },
-        ]}
-      />
-
-      {tab === "now" ? (
-        <div className={styles.panelBlock}>
-          <div className={styles.panelEyebrowLine}>
-            <h3 className={styles.eyebrow}>Requirements</h3>
+      <div className={p.top}>
+        <div className={p.summary}>
+          <div className={p.clock} data-tone={STANDING_TONE[standing]}>
+            <span className={p.clockLine}>
+              <StatusGlyph tone={STANDING_TONE[standing]} size={10} />
+              {dueAt !== undefined ? (
+                <>
+                  <span className={p.clockBig}>{typedClock(dueAt, now)}</span>
+                  <span className={p.clockWord}>
+                    {isClockBreached(dueAt, now) ? "Ended" : "Ends"}, as typed from the form
+                    {standingSuffix(typedStanding)}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className={p.clockBig}>
+                    {formProgression(movement) ? "Ended" : standingWord(standing, thresholds)}
+                  </span>
+                  <span className={p.clockWord}>{legalDeadlineText(movement, now)}</span>
+                </>
+              )}
+            </span>
             {legalForm ? (
-              <button type="button" className={styles.textLink} onClick={() => onRequirements(legalForm.code)}>
+              <button type="button" className={p.formChip} onClick={() => onRequirements(legalForm.code)}>
                 <BookOpen size={14} aria-hidden="true" /> Form {legalForm.code}
               </button>
             ) : null}
           </div>
-          <ul className={styles.reqChecks}>
-            {facts.map((fact) => (
-              <li key={fact.gap} className={styles.reqCheck}>
-                {fact.at !== undefined ? (
-                  <Check size={14} className={styles.doneTick} aria-hidden="true" />
-                ) : (
-                  <StatusGlyph tone="neutral" size={9} />
-                )}
-                <span className={styles.cellStack}>
-                  <span className={styles.name}>{fact.label}</span>
-                  <span className={styles.sub}>
-                    {fact.at !== undefined
-                      ? fact.gap === "written"
-                        ? `Written ${formatInstantWithDay(fact.at, now)} on the form`
-                        : formatInstantWithDay(fact.at, now)
-                      : "Not recorded"}
-                  </span>
-                </span>
-                {fact.gap === "written" && fact.at !== undefined && isOwnedLegalFormCode(legalForm?.code) ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setDraft(recordedDraft());
-                      setChanging((value) => !value);
-                    }}
-                  >
-                    {changing ? "Keep" : "Change"}
-                  </Button>
-                ) : null}
-                {fact.gap === "received" && fact.at === undefined ? (
-                  <Button
-                    ref={receivedRef}
-                    variant="sec"
-                    size="sm"
-                    data-testid={`ward-legal-forms-mark-received-${movement.id}`}
-                    onClick={onMarkReceived}
-                    disabledReason={markReceivedUnavailable}
-                  >
-                    Mark Form {legalForm?.code} received
-                  </Button>
-                ) : null}
-                {fact.gap === "examination" && fact.at === undefined && movement.originEdId !== undefined ? (
-                  <Link
-                    ref={examRef}
-                    href={edHref(movement.originEdId)}
-                    className={buttonClass({ variant: "sec", size: "sm" })}
-                  >
-                    Record on ED <ExternalLink size={14} aria-hidden="true" />
-                  </Link>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          <dl className={p.route}>
+            <div>
+              <dt>From</dt>
+              <dd>{fromLine}</dd>
+            </div>
+            <div>
+              <dt>To</dt>
+              <dd>{toLine}</dd>
+            </div>
+            <div>
+              <dt>Legal status</dt>
+              <dd>{movement.legalStatus}</dd>
+            </div>
+            <div>
+              <dt>Owner</dt>
+              <dd>{movement.owner}</dd>
+            </div>
+          </dl>
+          <p className={p.caveat}>Times are as typed. Not legally checked.</p>
+        </div>
 
+        <div className={p.nextBlock}>
+          <div className={p.next} data-action={step.action} data-testid="ward-legal-next-step">
+            <span className={p.nextIcon} aria-hidden="true">
+              <NextIcon size={16} aria-hidden="true" />
+            </span>
+            <span className={p.nextText}>
+              <span className={p.nextTitle}>{step.title}</span>
+              <span className={p.nextDetail}>{step.detail}</span>
+            </span>
+            {step.action === "extend" ? (
+              <Button variant="sec" className={p.nextButton} onClick={onExtend} disabledReason={extendUnavailable}>
+                Extend recorded form
+              </Button>
+            ) : null}
+          </div>
           {showWrittenForm ? (
             <form
               className={styles.writtenForm}
@@ -295,28 +279,38 @@ export function FocusPanel({
                 </Field>
               </div>
               <div className={styles.choiceRow}>
-                <Segmented
-                  label="Region"
-                  size="sm"
-                  value={draft.region}
-                  onChange={(region) => setDraft((current) => ({ ...current, region }))}
-                  items={[
-                    { id: "not_recorded", label: "Not recorded" },
-                    { id: "metro", label: "Metro" },
-                    { id: "country", label: "Country" },
-                  ]}
-                />
-                <Segmented
-                  label="Age band"
-                  size="sm"
-                  value={draft.ageBand}
-                  onChange={(ageBand) => setDraft((current) => ({ ...current, ageBand }))}
-                  items={[
-                    { id: "not_recorded", label: "Not recorded" },
-                    { id: "adult", label: "Adult" },
-                    { id: "under_18", label: "Under 18" },
-                  ]}
-                />
+                <div className={p.choice}>
+                  <span className={p.choiceLabel} aria-hidden="true">
+                    Region
+                  </span>
+                  <Segmented
+                    label="Region"
+                    size="sm"
+                    value={draft.region}
+                    onChange={(region) => setDraft((current) => ({ ...current, region }))}
+                    items={[
+                      { id: "not_recorded", label: "Not recorded" },
+                      { id: "metro", label: "Metro" },
+                      { id: "country", label: "Country" },
+                    ]}
+                  />
+                </div>
+                <div className={p.choice}>
+                  <span className={p.choiceLabel} aria-hidden="true">
+                    Age band
+                  </span>
+                  <Segmented
+                    label="Age band"
+                    size="sm"
+                    value={draft.ageBand}
+                    onChange={(ageBand) => setDraft((current) => ({ ...current, ageBand }))}
+                    items={[
+                      { id: "not_recorded", label: "Not recorded" },
+                      { id: "adult", label: "Adult" },
+                      { id: "under_18", label: "Under 18" },
+                    ]}
+                  />
+                </div>
               </div>
               <div className={styles.writtenFoot}>
                 <p
@@ -347,78 +341,87 @@ export function FocusPanel({
               ) : null}
             </form>
           ) : null}
-
-          {needsExamination(movement) && movement.examination === undefined ? (
-            <p className={styles.note}>The examination is recorded on the emergency department screen.</p>
-          ) : null}
-          {!receiptEventAccepts(legalForm?.code) ? (
-            <p className={styles.note}>Receipt is not offered for this form here.</p>
-          ) : null}
-
-          {breached ? (
-            <Button
-              variant="danger"
-              size="sm"
-              className={styles.extend}
-              onClick={onExtend}
-              disabledReason={extendUnavailable}
-            >
-              Extend recorded form
-            </Button>
-          ) : null}
         </div>
-      ) : null}
+      </div>
 
-      {tab === "form" ? (
-        <div className={styles.panelBlock}>
-          <dl className={styles.kv}>
-            <div>
-              <dt>Form</dt>
-              <dd>{legalForm ? `${legalForm.code}, ${formTitle(legalForm.code)}` : "Voluntary"}</dd>
+      <div className={p.body}>
+        <>
+          {facts.length > 0 ? (
+            <div className={p.section}>
+              <div className={p.sectionHead}>
+                <h3 className={p.eyebrow}>On the form</h3>
+              </div>
+              <ul className={p.checks}>
+                {facts.map((fact) => (
+                  <li key={fact.gap} className={p.check}>
+                    {fact.at !== undefined ? (
+                      <Check size={14} className={styles.doneTick} aria-hidden="true" />
+                    ) : (
+                      <StatusGlyph tone="neutral" size={9} />
+                    )}
+                    <span className={p.checkText}>
+                      <span className={p.checkLabel}>{fact.label}</span>
+                      <span className={p.checkSub}>
+                        {fact.at !== undefined
+                          ? fact.gap === "written"
+                            ? `Written ${formatInstantWithDay(fact.at, now)} on the form`
+                            : formatInstantWithDay(fact.at, now)
+                          : fact.gap === "examination"
+                            ? "Not recorded. Recorded on the ED screen"
+                            : "Not recorded"}
+                      </span>
+                    </span>
+                    {fact.gap === "written" && fact.at !== undefined && isOwnedLegalFormCode(legalForm?.code) ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setDraft(recordedDraft());
+                          setChanging((value) => !value);
+                        }}
+                      >
+                        {changing ? "Keep" : "Change"}
+                      </Button>
+                    ) : null}
+                    {fact.gap === "received" && fact.at === undefined ? (
+                      <Button
+                        ref={receivedRef}
+                        variant={step.action === "received" ? "pri" : "sec"}
+                        size="sm"
+                        data-testid={`ward-legal-forms-mark-received-${movement.id}`}
+                        onClick={onMarkReceived}
+                        disabledReason={markReceivedUnavailable}
+                      >
+                        Mark Form {legalForm?.code} received
+                      </Button>
+                    ) : null}
+                    {fact.gap === "examination" && fact.at === undefined && movement.originEdId !== undefined ? (
+                      <Link
+                        ref={examRef}
+                        href={edHref(movement.originEdId)}
+                        className={buttonClass({ variant: "sec", size: "sm" })}
+                      >
+                        Record on ED <ExternalLink size={14} aria-hidden="true" />
+                      </Link>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div>
-              <dt>Legal status</dt>
-              <dd>{movement.legalStatus}</dd>
-            </div>
-            <div>
-              <dt>Origin</dt>
-              <dd>{edName}</dd>
-            </div>
-            <div>
-              <dt>Receiving ward</dt>
-              <dd>{wardName ?? "None yet"}</dd>
-            </div>
-            <div>
-              <dt>Owner</dt>
-              <dd>{movement.owner}</dd>
-            </div>
-            <div>
-              <dt>Lodged</dt>
-              <dd className={styles.mono}>{formatInstantWithDay(movement.openedAt, now)}</dd>
-            </div>
-            <div>
-              <dt>Recorded deadline</dt>
-              <dd className={styles.mono}>
-                {legalForm?.dueAt !== undefined
-                  ? formatInstantWithDay(legalForm.dueAt, now)
-                  : "No deadline recorded on form"}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      ) : null}
+          ) : null}
+        </>
 
-      {tab === "history" ? (
-        <div className={styles.panelBlock}>
+        <div className={p.section}>
+          <h3 className={p.eyebrow}>History</h3>
           <Timeline
             items={asTimeline(formEvents(movement, edName), now)}
             label={`Form history for ${name}`}
             holdNew={false}
           />
         </div>
-      ) : null}
+      </div>
 
-      <div className={styles.focusFoot}>
+      <div className={cx(styles.focusFoot, p.foot)}>
         <Button variant="ghost" size="sm" icon={Copy} onClick={onCopy}>
           {copied ? "Copied" : "Copy summary"}
         </Button>
@@ -427,7 +430,7 @@ export function FocusPanel({
         </Link>
         <span className={styles.footSpacer} />
         <Button variant="pri" size="sm" onClick={onRecordNext} disabledReason={recordUnavailable}>
-          Record next form
+          {step.action === "next-form" ? step.title : "Record next form"}
         </Button>
       </div>
     </section>

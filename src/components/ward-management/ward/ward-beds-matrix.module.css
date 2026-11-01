@@ -1,39 +1,60 @@
-/* Ward Beds Matrix Styles */
-.matrixWrap,
-.matrixContainer,
-.bedSection {
+/* Full bed list (polish 1 Nov 2026): two plain v9 cards. Before handover is a list of the people the
+   shift must close off, each with its bed, what is due and its actions on one line. Every bed is a
+   table of the whole ward: a strip of figures, the filters, then one row a bed with the person,
+   legal status, stay, expected leaving, observation level and what is happening now. Tone is a glyph
+   and a word, never a coloured edge. */
+
+.matrixWrap {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  min-height: 480px;
+  gap: var(--wf-s-3);
+  min-width: 0;
 }
 
-.matrixHead {
+.card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.cardHead {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-height: 3.5rem;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
 }
 
-.headingGroup {
+.headText {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
   margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
+}
+
+.title svg {
+  color: var(--wf-ink-3);
 }
 
 .subtitle {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
 }
 
 .positionCaption {
@@ -48,303 +69,25 @@
   border: 0;
 }
 
-/* ─────────────────────────────────────────────────────────────
-   COMPACT "NEEDS YOU THIS SHIFT" (IMAGE 4 COMPACTED)
-   ───────────────────────────────────────────────────────────── */
-.shiftBanner {
-  background: color-mix(in oklab, var(--surface) 72%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
-  border-radius: 28px;
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
-    0 18px 40px -28px rgb(var(--ward-shadow-rgb) / 0.55);
-  backdrop-filter: blur(18px);
-  overflow: hidden;
-  margin-bottom: 6px;
-}
-
-.shiftBannerHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  background: color-mix(in oklab, var(--surface-2) 48%, transparent);
-  border-bottom: 1px solid color-mix(in oklab, var(--ink) 6%, transparent);
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.shiftTitleGroup {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-width: 0;
-}
-
-.shiftTitle {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.shiftSubtitle {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.shiftDenseGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 8px;
-  padding: 8px;
-}
-
-.shiftTileCompact {
-  background: color-mix(in oklab, var(--surface) 80%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ink) 7%, transparent);
-  border-radius: 18px;
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  box-shadow: 0 10px 24px -18px rgb(var(--ward-shadow-rgb) / 0.5);
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease;
-}
-
-.shiftTileCompact:hover {
-  background: var(--surface);
-  border-color: var(--line-strong, var(--line));
-}
-
-.shiftTileCompact[data-tone="warn"] {
-  border-color: color-mix(in oklab, var(--warn) 34%, transparent);
-  background: color-mix(in oklab, var(--warn) 10%, var(--surface));
-}
-
-.shiftTileCompact[data-tone="danger"] {
-  border-color: color-mix(in oklab, var(--danger) 36%, transparent);
-  background: color-mix(in oklab, var(--danger) 9%, var(--surface));
-}
-
-.shiftTileCompact[data-tone="info"] {
-  border-color: color-mix(in oklab, var(--accent) 32%, transparent);
-  background: color-mix(in oklab, var(--accent) 8%, var(--surface));
-}
-
-.shiftTileCompact[data-tone="purple"] {
-  border-color: color-mix(in oklab, var(--ward-domain-coordinator) 34%, transparent);
-  background: color-mix(in oklab, var(--ward-domain-coordinator) 9%, var(--surface));
-}
-
-.shiftTileTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-.shiftTagGroup {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.shiftKindPill {
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.shiftStatusBadge {
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: var(--wf-r-tag);
-  font-family: var(--mono);
-}
-
-.badgeWarn {
-  background: var(--warn-soft);
-  color: var(--warn);
-  border: 1px solid var(--warn-border);
-}
-
-.badgeDanger {
-  background: var(--danger-soft);
-  color: var(--danger);
-  border: 1px solid var(--danger-border);
-}
-
-.badgeInfo {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid var(--line);
-}
-
-.badgePurple {
-  background: var(--ward-domain-coordinator-soft);
-  color: var(--ward-domain-coordinator);
-  border: 1px solid var(--ward-domain-coordinator);
-}
-
-.shiftTimeAgo {
-  font-size: var(--wf-fs-12);
-  color: var(--muted);
-  font-family: var(--mono);
-}
-
-.shiftTextLine {
-  font-size: 12px;
-  color: var(--ink-soft);
-  line-height: 1.3;
-  flex: 1;
-  min-width: 8rem;
-}
-
-.shiftTileBody {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.shiftTextLine strong {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.shiftTileActions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.btnShiftAction {
-  position: relative;
-  padding: 3px 8px;
-  font-size: var(--wf-fs-12);
-  font-weight: 500;
-  border-radius: var(--wf-r-ctl);
-  border: 1px solid var(--line-strong, var(--line));
-  background: var(--surface);
-  color: var(--ink);
-  cursor: pointer;
-  transition:
-    opacity 150ms ease,
-    transform 150ms ease,
-    background-color 150ms ease;
-}
-
-.btnShiftAction::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 44px;
-  min-height: 44px;
-  width: 100%;
-  height: 100%;
-}
-
-@media (max-width: 48rem) {
-  .resetButton,
-  .resetButton::after {
-    min-width: 48px;
-    min-height: 48px;
-  }
-}
-
-.btnShiftAction:hover {
-  background: var(--surface-2);
-  border-color: var(--ink);
-}
-
-.shiftEmptyNotice {
-  padding: 10px 14px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* ─────────────────────────────────────────────────────────────
-   CONTROLS BAR & FILTER PILLS
-   ───────────────────────────────────────────────────────────── */
-.bedsControlsBar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.orderSelectLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.orderSelect {
-  padding: 4px 8px;
-  border-radius: var(--r2, 6px);
-  border: 1px solid var(--line-strong, var(--line));
-  background: var(--surface);
-  color: var(--ink);
-  font-family: var(--body);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   BAY GROUPINGS & 20-BED GRID (IMAGE 1 ENHANCED)
-   ───────────────────────────────────────────────────────────── */
-.bedsSection {
-  position: relative;
-  background: color-mix(in oklab, var(--surface) 74%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
-  border-radius: 28px;
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
-    0 18px 40px -28px rgb(var(--ward-shadow-rgb) / 0.55);
-  backdrop-filter: blur(18px);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
+/* The app's segmented control: a recessed track, the chosen item raised on the surface. */
 .segment {
   display: inline-flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  align-items: center;
+  gap: 2px;
   max-width: 100%;
-  padding: 4px;
-  background: color-mix(in oklab, var(--surface-2) 70%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
+  padding: var(--wf-s-1);
+  border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-track);
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 65%, transparent);
+  background: var(--wf-track);
 }
 
 .segmentLabel {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 10px;
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  padding: 0 var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--muted);
 }
 
 .segmentBtn {
@@ -352,480 +95,551 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  border: none;
+  min-height: 32px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid transparent;
   border-radius: var(--wf-r-seg-item);
   background: transparent;
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-weight: 600;
-  font-family: var(--body);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
   cursor: pointer;
+  transition: background var(--wf-m-fast) var(--wf-ease);
 }
 
 .segmentBtn:hover {
-  background: var(--surface-2);
-  color: var(--ink);
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
 }
 
 .segmentBtn[aria-pressed="true"] {
-  background: var(--ink);
-  color: var(--surface);
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow: var(--wf-e1);
 }
 
-.segmentBtn[aria-pressed="true"]:hover {
-  background: var(--ink);
-  color: var(--surface);
+.segmentBtn:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
 }
 
 .segmentCount {
-  font-family: var(--mono);
-  font-size: var(--wf-fs-12);
-  font-variant-numeric: tabular-nums;
-  padding: 0 6px;
+  min-width: 18px;
+  padding: 1px 6px;
   border-radius: var(--wf-r-tag);
-  background: color-mix(in oklab, var(--ink) 8%, transparent);
-  color: var(--ink);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-11) / 16px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .segmentBtn[aria-pressed="true"] .segmentCount {
-  background: var(--surface);
-  color: var(--ink);
+  background: var(--wf-track);
+  color: var(--wf-ink-1);
 }
 
-.segmentBtn::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 44px;
-  min-height: 44px;
-  width: 100%;
-  height: 100%;
-}
-
-.bayContainer {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--line);
-  padding: 8px 0 14px;
-  margin-bottom: 10px;
-}
-
-.bayContainer:last-of-type {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 4px;
-}
-
-/* Both classes, so the compact bay outranks `.bayContainer:last-of-type` and its 4px padding. */
-.bayContainer.compactBay {
-  border-bottom: none;
-  padding: 0;
-  margin-bottom: 10px;
-}
-
-.bayContainer.compactBay:last-of-type {
-  margin-bottom: 0;
-}
-
-.bayHeader {
-  font-size: var(--t-0, 12px);
-  font-weight: 700;
-  color: var(--ink);
+.emptyNotice {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: var(--wf-s-4);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
 }
 
-.bayBedsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
-  gap: 8px;
-}
-
-@media (max-width: 640px) {
-  .bayBedsGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ─── ENHANCED BED CARD ─── */
-.bedCard {
-  background: color-mix(in oklab, var(--surface) 82%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
-  border-radius: 22px;
-  padding: 12px 12px 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 4px;
-  min-height: 0;
+.btnShiftAction {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  box-shadow: inset 0 1px 0 var(--wf-hl);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
   cursor: pointer;
-  text-align: left;
-  position: relative;
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 75%, transparent),
-    0 14px 28px -20px rgb(var(--ward-shadow-rgb) / 0.55);
-  backdrop-filter: blur(14px);
-  transition:
-    transform 0.16s ease,
-    box-shadow 0.16s ease;
 }
 
-.bedCard:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 75%, transparent),
-    0 18px 36px -18px rgb(var(--ward-shadow-rgb) / 0.6);
+.btnShiftAction:hover {
+  background: var(--wf-hover);
 }
 
-.bedCard:focus-visible {
-  outline: 2px solid var(--accent);
+.btnShiftAction:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
 
-/* Stay Bands Backgrounds */
-.band1 {
-  background: color-mix(in oklab, var(--accent) 5%, var(--surface));
-}
-.band2 {
-  background: color-mix(in oklab, var(--accent) 10%, var(--surface));
-}
-.band3 {
-  background: color-mix(in oklab, var(--accent) 16%, var(--surface));
-}
-.band4 {
-  background: color-mix(in oklab, var(--accent) 22%, var(--surface));
+/* Before handover: one row a person. */
+.handoverList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-:global([data-theme="dark"]) .band1 {
-  background: color-mix(in oklab, var(--accent) 8%, var(--surface-2));
-}
-:global([data-theme="dark"]) .band2 {
-  background: color-mix(in oklab, var(--accent) 14%, var(--surface-2));
-}
-:global([data-theme="dark"]) .band3 {
-  background: color-mix(in oklab, var(--accent) 20%, var(--surface-2));
-}
-:global([data-theme="dark"]) .band4 {
-  background: color-mix(in oklab, var(--accent) 26%, var(--surface-2));
+.handoverRow {
+  display: grid;
+  grid-template-columns: 9px 2rem minmax(0, 1fr) auto 6.5rem auto;
+  column-gap: var(--wf-s-3);
+  align-items: center;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
 }
 
-/* Past Date Marker: heavy red border */
-.bedCard.pastDate {
-  border-color: color-mix(in oklab, var(--danger) 42%, transparent);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--danger) 28%, transparent),
-    0 14px 28px -20px rgb(var(--ward-shadow-rgb) / 0.55);
+.handoverRow:first-child {
+  border-top: 0;
 }
 
-.bedCard.selected {
-  box-shadow:
-    inset 0 0 0 1.5px var(--accent),
-    0 14px 28px -20px rgb(var(--ward-shadow-rgb) / 0.55);
-}
-
-.bedCard.pulled {
-  background: color-mix(in oklab, var(--surface) 88%, transparent);
-}
-
-.bedCard.closed {
-  background: color-mix(in oklab, var(--warn) 8%, var(--surface));
-  border-color: color-mix(in oklab, var(--warn) 40%, transparent);
-}
-
-.bedCard.ready {
-  background: color-mix(in oklab, var(--good) 10%, var(--surface));
-  border-color: color-mix(in oklab, var(--good) 38%, transparent);
-}
-
-.bedTopRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 2px;
-}
-
-.bedTopRow .bedPatientName {
-  flex: 1;
-  min-width: 0;
-}
-
-.bedStatePill {
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--ink);
-  padding: 2px 8px;
-  border-radius: var(--wf-r-tag);
-  background: color-mix(in oklab, var(--ink) 6%, transparent);
-}
-
-.bedCard.ready .bedStatePill {
-  color: var(--good);
-  background: var(--good-soft);
-}
-
-.bedCard.closed .bedStatePill {
-  color: var(--warn);
-  background: var(--warn-soft);
-}
-
-.bedCard.pulled .bedStatePill {
-  color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.bedDaysVal {
-  font-size: 13.5px;
-  font-weight: 700;
-  font-family: var(--mono);
-  color: var(--ink);
+.hBed {
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 
-.bedCardBody {
+.hMain {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
-.bedExpected {
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  color: var(--ink);
-  line-height: 1.3;
-}
-
-.bedStayBandLabel {
-  font-size: var(--wf-fs-12);
-  color: var(--muted);
-  line-height: 1.25;
-}
-
-.bedNoteDesc {
-  font-size: var(--wf-fs-12);
-  color: var(--muted);
-  line-height: 1.35;
-}
-
-.bedBottomTags {
+.hTitle {
   display: flex;
-  align-items: center;
-  gap: 5px;
   flex-wrap: wrap;
-  margin-top: 6px;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
+  min-width: 0;
 }
 
-.badgePastDate {
+.hTitle b {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.hKind {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.hDesc {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hBadge {
+  justify-self: end;
+  padding: 2px 8px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hBadge[data-tone="danger"] {
+  background: var(--wf-act-tint);
+  color: var(--wf-danger-ink);
+}
+
+.hBadge[data-tone="warn"] {
+  background: color-mix(in srgb, var(--wf-warning) 14%, var(--wf-surface));
+  color: var(--wf-warning-ink);
+}
+
+.hBadge[data-tone="info"],
+.hBadge[data-tone="purple"] {
+  background: var(--wf-accent-tint);
+  color: var(--wf-info-ink);
+}
+
+.hTag {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.hActions {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}
+
+/* Every bed: the figures strip. */
+.figures {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.figures > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-left: 1px solid var(--wf-line);
+}
+
+.figures > div:first-child {
+  border-left: 0;
+}
+
+.figures dt {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.figures dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-20) / 1.2 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.bedsControlsBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+/* The table: column heads, then one row a bed. Columns shed from the right as the card narrows. */
+.table {
+  container-type: inline-size;
+  border-top: 1px solid var(--wf-line);
+}
+
+.tableHead,
+.bedRow {
+  display: grid;
+  grid-template-columns:
+    3.25rem minmax(11rem, 1.7fr) minmax(6.5rem, 0.9fr) 7.5rem minmax(7rem, 0.9fr) minmax(7.5rem, 1fr)
+    minmax(7rem, 1fr) 14px;
+  column-gap: var(--wf-s-3);
+  align-items: center;
+  padding: 0 var(--wf-s-4);
+}
+
+.tableHead {
+  min-height: 2.25rem;
+  background: var(--wf-surface-2);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.bayHeader {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  background: var(--wf-surface-2);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.bedRow {
+  width: 100%;
+  min-height: 60px;
+  padding-block: var(--wf-s-2);
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--wf-m-fast) var(--wf-ease);
+}
+
+.bay:last-child > .bedRow:last-child {
+  border-bottom: 0;
+}
+
+.bedRow:hover {
+  background: var(--wf-hover);
+}
+
+.bedRow:focus-visible {
+  position: relative;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.bedRow[data-tone="danger"] {
+  background: var(--wf-act-tint);
+}
+
+.bedRow[data-tone="danger"]:hover {
+  background: var(--wf-hover);
+}
+
+.bedRow.selected {
+  background: var(--wf-selected);
+}
+
+.cBed {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  background: var(--danger-soft);
-  color: var(--danger);
-  border: 1px solid var(--danger-border);
-  border-radius: var(--wf-r-tag);
-  padding: 1px 6px;
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  gap: var(--wf-s-2);
 }
 
-.badgeAtEd {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid var(--line-strong, var(--line));
-  border-radius: var(--wf-r-tag);
-  padding: 1px 6px;
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
+.cBed b {
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-/* ─────────────────────────────────────────────────────────────
-   FOOTER NOTES & LEGEND
-   ───────────────────────────────────────────────────────────── */
-.bedsFooterNotes {
+.cWho,
+.cOut {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+  min-width: 0;
 }
 
-.bedKeyLegend {
-  display: flex;
-  align-items: center;
-  gap: 6px 10px;
-  flex-wrap: wrap;
-  padding: 8px 10px;
-  background: color-mix(in oklab, var(--surface) 70%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ink) 7%, transparent);
-  border-radius: 18px;
-  font-size: var(--wf-fs-12);
-  color: var(--ink-soft);
+.rowName {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  overflow-wrap: anywhere;
 }
 
-.legendSwatch {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--pill, 999px);
-  background: var(--line-strong);
-}
-
-.legendSwatch[data-kind="unoffered"] {
-  background: transparent;
-  border: 1px solid var(--warn);
-}
-
-.legendItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.legendDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1px solid var(--line-strong, var(--line));
-}
-
-.dotBand1 {
-  background: color-mix(in oklab, var(--accent) 5%, var(--surface));
-}
-.dotBand2 {
-  background: color-mix(in oklab, var(--accent) 10%, var(--surface));
-}
-.dotBand3 {
-  background: color-mix(in oklab, var(--accent) 16%, var(--surface));
-}
-.dotBand4 {
-  background: color-mix(in oklab, var(--accent) 22%, var(--surface));
-}
-
-/* Legacy compatibility classes for existing DOM structures */
-.bedCardHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.bedCardNumber {
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: var(--t-1, 13px);
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-
-.bedCardChip {
-  font-size: var(--wf-fs-12);
-  font-family: var(--mono);
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: var(--wf-r-tag);
-  background: color-mix(in oklab, var(--ink) 7%, transparent);
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
-}
-
-.bedPatientName {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-  white-space: nowrap;
+.rowSub {
   overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ready .rowName {
+  color: var(--wf-success-ink);
+}
+
+.closed .rowName,
+.pulled .rowName {
+  color: var(--wf-ink-2);
+}
+
+.cLegal,
+.cObs {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
   text-overflow: ellipsis;
 }
 
-.bedPatientSub {
-  font-size: var(--t-0, 12px);
-  color: var(--muted);
+.muted {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+  font-weight: 400;
+}
+
+.cStay {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.stayNum {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
-.bedCardFoot {
+/* A neutral bar: four months fills it, so a long stay reads long at a glance. */
+.stayBar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.stayBar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--wf-ink-3);
+}
+
+.outMain {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  line-height: var(--wf-lh-13);
+}
+
+.outMain[data-tone="danger"] {
+  color: var(--wf-danger-ink);
+  font-weight: 600;
+}
+
+.outMain[data-tone="warning"] {
+  color: var(--wf-warning-ink);
+  font-weight: 600;
+}
+
+.outMain[data-tone="info"] {
+  color: var(--wf-info-ink);
+}
+
+.cNow {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--t-0, 12px);
-  color: var(--ink-soft);
-  margin-top: 6px;
-  padding-top: 4px;
-  border-top: 1px dashed var(--line);
+  flex-wrap: wrap;
+  gap: var(--wf-s-1);
+  min-width: 0;
 }
 
-@keyframes slideLeft {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+.chip {
+  padding: 2px 8px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
 }
 
-.drawerHead {
-  padding: 16px 20px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.drawerTitle {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.drawerBody {
-  padding: 20px;
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.drawerFoot {
-  padding: 14px 20px;
-  background: var(--surface-2);
-  border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-@media (max-width: 600px) {
-  .bedCard {
-    min-height: 110px;
-  }
-}
-
-@media print {
-  .badgePurple {
-    color: CanvasText !important;
-    background-color: Canvas !important;
-  }
-}
-
-/* Criteria led discharge on the tile (D-64): ready reads as good, lapsed or paused as a warning. */
-.chipGood {
-  background: var(--good-soft);
-  color: var(--good);
+.chipAct {
+  background: var(--wf-surface);
+  color: var(--wf-danger-ink);
 }
 
 .chipWarn {
-  background: var(--warn-soft);
-  color: var(--warn);
+  color: var(--wf-warning-ink);
+}
+
+.chipGood {
+  color: var(--wf-success-ink);
+}
+
+.chev {
+  color: var(--wf-ink-3);
+}
+
+.bedRow:hover .chev {
+  color: var(--wf-ink-1);
+}
+
+/* A narrower card drops Legal and Observation (both are in the bed's own pop-out). */
+@container (max-width: 60rem) {
+  .tableHead,
+  .bedRow {
+    grid-template-columns: 3rem minmax(10rem, 1.6fr) 7rem minmax(6.5rem, 1fr) minmax(6.5rem, 1fr) 14px;
+  }
+
+  .tableHead > :nth-child(3),
+  .tableHead > :nth-child(6),
+  .cLegal,
+  .cObs {
+    display: none;
+  }
+}
+
+/* Phone width: each bed reads as two lines, the person over the stay and leaving. */
+@container (max-width: 36rem) {
+  .tableHead {
+    display: none;
+  }
+
+  .bedRow {
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto 14px;
+    row-gap: var(--wf-s-1);
+  }
+
+  .cWho {
+    grid-column: 2;
+  }
+
+  .cStay {
+    grid-column: 3;
+    grid-row: 1;
+    grid-template-columns: auto;
+  }
+
+  .stayBar {
+    display: none;
+  }
+
+  .cOut,
+  .cNow {
+    grid-column: 2 / 4;
+  }
+
+  .cOut {
+    flex-direction: row;
+    gap: var(--wf-s-2);
+  }
+
+  .chev {
+    grid-column: 4;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 64rem) {
+  .figures {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .figures > div:nth-child(5) {
+    border-left: 0;
+  }
+
+  .figures > div:nth-child(n + 5) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .handoverRow {
+    grid-template-columns: 9px 2rem minmax(0, 1fr) auto;
+    row-gap: var(--wf-s-2);
+  }
+
+  .hTag {
+    display: none;
+  }
+
+  .hActions {
+    grid-column: 3 / -1;
+    justify-content: flex-start;
+  }
+}
+
+/* Touch screens keep a 48px target on every control. */
+@media (pointer: coarse) {
+  .segmentBtn,
+  .btnShiftAction {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmentBtn,
+  .bedRow {
+    transition: none;
+  }
 }

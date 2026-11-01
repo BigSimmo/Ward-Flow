@@ -171,6 +171,41 @@ describe("release a diverted journey's pulled bed asks first (CT-07)", () => {
     );
   });
 
+  it("on the ward arrivals corridor: an earlier rejection never hides a new release failure", async () => {
+    const { movementId, unitId, steps } = journeySteps("diverted");
+    const state = reduce(steps);
+    const movement = state.movements.find((m) => m.id === movementId)!;
+    const unit = state.units.find((u) => u.id === unitId)!;
+    const dispatch = vi.fn(() =>
+      Promise.resolve({ commandId: "c-2", status: "refused" as const, message: "This record changed." }),
+    );
+    const earlier = { id: "earlier", at: NOW, movementId, attempted: "PULL_BED", reason: "Bed not ready." };
+    render(
+      <WardArrivalsCorridor
+        unit={unit}
+        accepted={[movement]}
+        now={NOW}
+        resolvePatientIdentity={identity}
+        releaseOpenFor={undefined}
+        toggleRelease={vi.fn()}
+        releaseReason={undefined}
+        setReleaseReason={vi.fn()}
+        submitRelease={vi.fn()}
+        lastActionRejection={earlier}
+        dispatch={dispatch}
+        setCheckToken={vi.fn()}
+        priorRejectionCountRef={{ current: 0 }}
+        rejections={[earlier]}
+        overrideReasonForm={() => null}
+      />,
+    );
+    fireEvent.click(screen.getByTestId(`ward-release-diverted-bed-${movementId}`));
+    fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
+    expect(await screen.findByTestId(`ward-release-failure-${movementId}`)).toHaveTextContent(
+      "Release pulled bed not recorded: This record changed.",
+    );
+  });
+
   it("on the ED Referred list: asks first and raises only after confirming", () => {
     const { movementId, unitId, steps } = journeySteps("diverted");
     const state = reduce(steps);

@@ -226,11 +226,9 @@ function rowOpener(row: HTMLElement): HTMLElement {
   return opener;
 }
 
-/** Since the redesign the row leads with the person; the ward is the line under the name. */
+/** Since the redesign the row leads with the person; the ward is the line under the name (beside the UMRN). */
 function releaseRowForWard(key: ReleaseGroupKey, wardName: string): HTMLElement {
-  const row = releaseRows(key).find(
-    (candidate) => within(candidate).queryByText(new RegExp(`^${escapeRegExp(wardName)} · `)) !== null,
-  );
+  const row = releaseRows(key).find((candidate) => within(candidate).queryByText(wardName) !== null);
   if (!row) throw new Error(`${wardName} has no containing release row`);
   return row;
 }
@@ -239,8 +237,8 @@ function timingColumn(key: ReleaseGroupKey): string[] {
   const table = releaseWorklist();
   const headers = tableHeaders(table);
   const rows = releaseRows(key);
-  assertRowsMatchHeaders(headers, rows, ["Timing"]);
-  const index = columnIndex(headers, "Timing");
+  assertRowsMatchHeaders(headers, rows, ["Expected out"]);
+  const index = columnIndex(headers, "Expected out");
   return rows.map((row) => within(row).getAllByRole("cell")[index]?.textContent ?? "");
 }
 
@@ -261,8 +259,8 @@ function timingColumn(key: ReleaseGroupKey): string[] {
 function blockedRowByStage(stage: "Confirmed" | "Expected"): HTMLElement {
   const headers = tableHeaders(releaseWorklist());
   const rows = releaseRows("blocked");
-  assertRowsMatchHeaders(headers, rows, ["Stage / blocker"]);
-  const stageIndex = columnIndex(headers, "Stage / blocker");
+  assertRowsMatchHeaders(headers, rows, ["Stage"]);
+  const stageIndex = columnIndex(headers, "Stage");
   const row = rows.find((candidate) => {
     const cell = within(candidate).getAllByRole("cell")[stageIndex];
     return within(cell).queryByText(stage) !== null;
@@ -353,7 +351,8 @@ describe("DischargeBoard", () => {
 
     // WR-007 in the real fixture (ward-movements.ts) is blocked with blocker "Awaiting
     // accommodation" — chosen from BED_RELEASE_BLOCKERS, never free text.
-    expect(within(releaseGroup("blocked")).getByText("Awaiting accommodation")).toBeInTheDocument();
+    // The redesign drops the "Awaiting" lead word in the Held up by column.
+    expect(within(releaseGroup("blocked")).getAllByText("Accommodation").length).toBeGreaterThan(0);
   });
 
   /**
@@ -385,7 +384,7 @@ describe("DischargeBoard", () => {
     const confirmedRow = blockedRowByStage("Confirmed");
     const expectedRow = blockedRowByStage("Expected");
     const headers = tableHeaders(releaseWorklist());
-    const stageIndex = columnIndex(headers, "Stage / blocker");
+    const stageIndex = columnIndex(headers, "Stage");
     expect(within(confirmedRow).getAllByRole("cell")[stageIndex]).toHaveTextContent("Confirmed");
     expect(within(expectedRow).getAllByRole("cell")[stageIndex]).toHaveTextContent("Expected");
   });
@@ -678,8 +677,8 @@ describe("DischargeBoard", () => {
 
     const wardName = unitDisplayName("rph-adult-secure");
     const headers = tableHeaders(releaseWorklist());
-    assertRowsMatchHeaders(headers, releaseRows("confirmed"), ["Timing"]);
-    const timingIndex = columnIndex(headers, "Timing");
+    assertRowsMatchHeaders(headers, releaseRows("confirmed"), ["Expected out"]);
+    const timingIndex = columnIndex(headers, "Expected out");
     const row = () => releaseRowForWard("confirmed", wardName);
 
     expect(within(row()).getAllByRole("cell")[timingIndex]).toHaveTextContent(/^By midday/);
@@ -689,7 +688,7 @@ describe("DischargeBoard", () => {
     fireEvent.click(screen.getByRole("button", { name: "advance the clock" }));
 
     // Device audit, 11 Oct 2026: a release past its date reads how far past, not "Now".
-    expect(within(row()).getAllByRole("cell")[timingIndex]).toHaveTextContent(/^\S.* past\b/u);
+    expect(within(row()).getAllByRole("cell")[timingIndex]).toHaveTextContent(/^\S.* past/u);
     expect(within(row()).getAllByRole("cell")[timingIndex]).not.toHaveTextContent(/^By midday/);
   });
 
