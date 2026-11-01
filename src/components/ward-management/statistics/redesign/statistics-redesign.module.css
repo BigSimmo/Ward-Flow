@@ -543,8 +543,15 @@
 .qs li + li {
   border-top: 1px solid var(--wf-line);
 }
-.qs a {
+.qs a,
+.qs button {
   display: grid;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: 10px;
@@ -553,8 +560,14 @@
   color: var(--wf-ink-1);
   text-decoration: none;
 }
-.qs a:hover {
+.qs a:hover,
+.qs button:hover,
+.qs button[aria-expanded="true"] {
   background: var(--wf-hover);
+}
+.qs button:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
 }
 .qs b {
   font-variant-numeric: tabular-nums;

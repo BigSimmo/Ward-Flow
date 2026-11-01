@@ -621,7 +621,7 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
   {
     id: "statistics-screen/pull-to-arrival/the-bed-was-given-away-instant",
     renderedIn: STATISTICS_SCREEN,
-    rendered: 'data-testid="ward-statistics-pull-to-arrival"',
+    rendered: 'testId="ward-statistics-pull-to-arrival"',
     claim: "The admission record keeps the instant a ward gave the bed away, and it is nullable.",
     sourceFile: WARD_ADMISSIONS,
     evidence: "pulledAt: Instant | null;",

@@ -61,19 +61,6 @@ export function SortTh<K extends string>({
   );
 }
 
-/** H-0187: every site code in the ward table, spelt out once under it. */
-export function SiteCodeKey({ sites }: { sites: readonly { code: string; name: string }[] }) {
-  const named = [...new Map(sites.map((site) => [site.code, site.name])).entries()].toSorted(([a], [b]) =>
-    a.localeCompare(b),
-  );
-  if (named.length === 0) return null;
-  return (
-    <p className={`${styles.sub} ${styles.muted} ${styles.siteKey}`} data-testid="ward-statistics-site-key">
-      Site codes: {named.map(([code, name]) => `${code} ${name}`).join(" · ")}
-    </p>
-  );
-}
-
 /**
  * One ward in the unit finder. A ward whose site code resolves to nothing is still listed, and says
  * so: the finder is the way into a ward's statistics page, so a ward dropped from it would be

@@ -6,6 +6,7 @@ import { CardBody, tableClasses } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { StatCard } from "./statistics-hero";
+import { Now, Tile } from "./redesign/statistics-redesign-parts";
 import { sessionTrends } from "./statistics-session-trends";
 import styles from "./statistics-v6.module.css";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
@@ -17,7 +18,13 @@ import {
   type StatisticsCount,
 } from "./statistics-small-numbers";
 
-type TrendsProps = { now: Instant; hours?: number; showTotal?: boolean };
+type TrendsProps = {
+  now: Instant;
+  hours?: number;
+  showTotal?: boolean;
+  /** As a tile of the Network page's Also recorded strip (redesign approved 1 Nov 2026, Q135). */
+  tile?: boolean;
+};
 type PublicTrends = {
   hours: Instant[];
   rows: { id: string; label: string; counts: StatisticsCount[]; total: StatisticsCount }[];
@@ -42,6 +49,7 @@ export function StatisticsSessionTrendsCard(props: TrendsProps) {
         now={data?.network.asAt.now ?? props.now}
         hours={props.hours}
         showTotal={props.showTotal}
+        tile={props.tile}
         trends={trends}
       />
     );
@@ -49,13 +57,32 @@ export function StatisticsSessionTrendsCard(props: TrendsProps) {
   return <OperationalSessionTrends {...props} />;
 }
 
-function OperationalSessionTrends({ now, hours, showTotal }: TrendsProps) {
+function OperationalSessionTrends({ now, hours, showTotal, tile }: TrendsProps) {
   const { eventLog = [] } = useWardFlowSelect("eventLog");
   const trends = sessionTrends(eventLog, now, hours);
-  return <SessionTrendsView now={now} hours={hours} showTotal={showTotal} trends={trends} />;
+  return <SessionTrendsView now={now} hours={hours} showTotal={showTotal} tile={tile} trends={trends} />;
 }
 
-function SessionTrendsView({ now, hours, showTotal = true, trends }: TrendsProps & { trends: PublicTrends | null }) {
+function SessionTrendsView({
+  now,
+  hours,
+  showTotal = true,
+  tile = false,
+  trends,
+}: TrendsProps & { trends: PublicTrends | null }) {
+  if (tile) {
+    const empty = trends !== null && exactStatisticsCount(trends.counted) === 0;
+    return (
+      <Tile
+        testId="ward-statistics-session-trends"
+        title="This session"
+        now={<Now>last {trends?.hours.length ?? hours ?? 4} hours</Now>}
+        sub={empty ? <span data-testid="ward-statistics-session-trends-empty">Nothing recorded yet</span> : undefined}
+      >
+        {trends === null ? <ExecutiveStatisticsUnavailable /> : empty ? null : trendsTable(trends, now, showTotal)}
+      </Tile>
+    );
+  }
   return (
     <StatCard
       icon={History}
@@ -75,38 +102,44 @@ function SessionTrendsView({ now, hours, showTotal = true, trends }: TrendsProps
         ) : (
           <>
             <p className={styles.muted}>Recorded in this browser since the demo started. Undone actions still count.</p>
-            <div className={styles.tableWrap}>
-              <table className={`${tableClasses.table} ${styles.table}`}>
-                <caption className={styles.srOnly}>Actions recorded this session, by hour</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Recorded</th>
-                    {trends.hours.map((hour) => (
-                      <th scope="col" key={hour}>
-                        {formatInstantWithDay(hour, now)}
-                      </th>
-                    ))}
-                    {showTotal ? <th scope="col">Total</th> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {trends.rows.map((row) => (
-                    <tr key={row.id} data-testid={`ward-statistics-session-trend-${row.id}`}>
-                      <th scope="row">{row.label}</th>
-                      {row.counts.map((count, index) => (
-                        <td key={trends.hours[index]} className={styles.num}>
-                          {statisticsCountText(count)}
-                        </td>
-                      ))}
-                      {showTotal ? <td className={styles.num}>{statisticsCountText(row.total)}</td> : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {trendsTable(trends, now, showTotal)}
           </>
         )}
       </CardBody>
     </StatCard>
+  );
+}
+
+function trendsTable(trends: PublicTrends, now: Instant, showTotal: boolean) {
+  return (
+    <div className={styles.tableWrap}>
+      <table className={`${tableClasses.table} ${styles.table}`}>
+        <caption className={styles.srOnly}>Actions recorded this session, by hour</caption>
+        <thead>
+          <tr>
+            <th scope="col">Recorded</th>
+            {trends.hours.map((hour) => (
+              <th scope="col" key={hour}>
+                {formatInstantWithDay(hour, now)}
+              </th>
+            ))}
+            {showTotal ? <th scope="col">Total</th> : null}
+          </tr>
+        </thead>
+        <tbody>
+          {trends.rows.map((row) => (
+            <tr key={row.id} data-testid={`ward-statistics-session-trend-${row.id}`}>
+              <th scope="row">{row.label}</th>
+              {row.counts.map((count, index) => (
+                <td key={trends.hours[index]} className={styles.num}>
+                  {statisticsCountText(count)}
+                </td>
+              ))}
+              {showTotal ? <td className={styles.num}>{statisticsCountText(row.total)}</td> : null}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

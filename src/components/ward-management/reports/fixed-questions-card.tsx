@@ -7,10 +7,13 @@
 // row links to the record it came from; the panel itself changes nothing.
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
-import { MessageCircleQuestion } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
-import { CardBody } from "@/components/wf";
-import { StatCard } from "@/components/ward-management/statistics/statistics-hero";
+import {
+  Foot,
+  StatCardR,
+  redesignStyles as redesign,
+} from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import { dischargeHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -45,56 +48,52 @@ export function FixedQuestionsCard({
   const answer = answers.find((each) => each.id === chosen);
 
   return (
-    <StatCard
+    <StatCardR
       id="fixed-questions"
-      icon={MessageCircleQuestion}
       title="Ask a question"
-      meta="Fixed questions, answered from the record"
+      meta="Answered from the record"
       data-testid="ward-statistics-fixed-questions"
+      foot={<Foot>Answers keep the order they were recorded in</Foot>}
     >
-      <CardBody>
-        <ul className={styles.questions}>
-          {answers.map((each) => (
-            <li key={each.id}>
-              <button
-                type="button"
-                className={styles.question}
-                aria-expanded={chosen === each.id}
-                aria-controls={answerId}
-                onClick={() => setChosen(chosen === each.id ? null : each.id)}
-                data-testid={`ward-fixed-question-${each.id}`}
-              >
-                <span>{each.question}</span>
-                <span className={styles.count}>{each.rows.length}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div id={answerId} aria-live="polite">
-          {answer ? (
-            <>
-              <h3 className={styles.listHead}>{answer.question}</h3>
-              <p className={styles.caption}>{answer.basis}</p>
-              {answer.rows.length === 0 ? (
-                <p className={styles.caption} data-testid="ward-fixed-answer-empty">
-                  None on record now.
-                </p>
-              ) : (
-                <ul className={styles.list} data-testid="ward-fixed-answer">
-                  {answer.rows.map((row) => (
-                    <li key={row.key}>
-                      <Link href={sourceHref(row.source)}>{row.label}</Link>
-                      <span className={styles.sub}>{row.detail}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          ) : (
-            <p className={styles.caption}>Choose a question. Answers keep the order they were recorded in.</p>
-          )}
-        </div>
-      </CardBody>
-    </StatCard>
+      <ul className={redesign.qs}>
+        {answers.map((each) => (
+          <li key={each.id}>
+            <button
+              type="button"
+              aria-expanded={chosen === each.id}
+              aria-controls={answerId}
+              onClick={() => setChosen(chosen === each.id ? null : each.id)}
+              data-testid={`ward-fixed-question-${each.id}`}
+            >
+              <span>{each.question}</span>
+              <b>{each.rows.length}</b>
+              <ChevronRight size={14} aria-hidden="true" />
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div id={answerId} aria-live="polite" className={styles.answer}>
+        {answer ? (
+          <>
+            <h3 className={styles.listHead}>{answer.question}</h3>
+            <p className={styles.caption}>{answer.basis}</p>
+            {answer.rows.length === 0 ? (
+              <p className={styles.caption} data-testid="ward-fixed-answer-empty">
+                None on record now.
+              </p>
+            ) : (
+              <ul className={styles.list} data-testid="ward-fixed-answer">
+                {answer.rows.map((row) => (
+                  <li key={row.key}>
+                    <Link href={sourceHref(row.source)}>{row.label}</Link>
+                    <span className={styles.sub}>{row.detail}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : null}
+      </div>
+    </StatCardR>
   );
 }

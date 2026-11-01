@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { Activity, Filter, Network } from "lucide-react";
+import { Network } from "lucide-react";
 
-import { BarList, CardBody, Donut, Segmented, SrOnly, cx, tableClasses } from "@/components/wf";
-import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { BarList, Donut, Segmented, SrOnly, cx, tableClasses } from "@/components/wf";
+import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import {
   admissionStagePosition,
   type AdmissionStagePosition,
@@ -14,11 +14,10 @@ import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import type { BedRelease, LeaveBed, Unit, DeclineReason } from "@/components/ward-management/ward-model";
+import type { BedRelease, DeclineReason, HealthService, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 
 import { StatCard } from "./statistics-hero";
-import { FlushStack } from "./statistics-layout";
 import { axisMax } from "./statistics-axis";
 import {
   withheldBar,
@@ -29,7 +28,18 @@ import {
 import type { Instant } from "../ward-clock";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
 import styles from "./statistics-v6.module.css";
-import cards from "./statistics-network-cards.module.css";
+import {
+  BedStack,
+  Facts,
+  Foot,
+  MoreLink,
+  StatCardR,
+  Strip,
+  Tile,
+  redesignStyles as redesign,
+} from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
+import { STATISTICS_SERVICES_HREF } from "./statistics-sections";
+import { ServiceDot } from "./statistics-services-index";
 
 /*
  * The three whole-network cards that only the Overview page used to carry (D-77, change 9, 21 Oct
@@ -169,12 +179,16 @@ export function ServiceOccupancyCard({
   services,
   serviceFilter = null,
   onServiceFilter,
+  preparingCount,
 }: {
   className?: string;
   services: NetworkServiceRow[];
   serviceFilter?: string | null;
   onServiceFilter?: (service: string | null) => void;
+  /** Beds being made ready, said in the foot of the Network page's strip. */
+  preparingCount?: number;
 }) {
+  const canOpen = useCanOpenHref();
   const body = (entry: NetworkServiceRow) => (
     <>
       <span className={styles.serviceTop}>
@@ -212,6 +226,87 @@ export function ServiceOccupancyCard({
       <span className={styles.serviceSites}>{entry.hospitals}</span>
     </>
   );
+  if (!onServiceFilter) {
+    // The redesign's strip (approved 1 Nov 2026, Q135): one tile per service, its share, the beds in
+    // use, pulled, closed and ready as one stacked bar, and the figures under it.
+    const ready = services.reduce((sum, entry) => sum + entry.ready, 0);
+    const closed = services.reduce((sum, entry) => sum + entry.closed, 0);
+    const beds = services.reduce((sum, entry) => sum + entry.beds, 0);
+    return (
+      <StatCardR
+        id="services"
+        className={className}
+        title="Occupancy by health service"
+        meta={`${beds} beds`}
+        aside={
+          <span className={redesign.facts} aria-hidden="true">
+            In use, pulled, closed and ready
+          </span>
+        }
+        foot={
+          <Foot
+            link={
+              canOpen(STATISTICS_SERVICES_HREF) ? (
+                <MoreLink href={STATISTICS_SERVICES_HREF}>Open Services</MoreLink>
+              ) : undefined
+            }
+          >
+            <b>{ready}</b> ready · <b>{closed}</b> closed
+            {preparingCount === undefined ? null : (
+              <>
+                {" "}
+                · <b>{preparingCount}</b> being made ready
+              </>
+            )}
+          </Foot>
+        }
+      >
+        <Strip label="Occupancy by health service" cols={services.length}>
+          {services.map((entry) => {
+            const percent = Math.round(entry.share * 100);
+            const hot = percent >= BED_ALERT_THRESHOLD_PERCENT;
+            return (
+              <Tile
+                key={entry.id}
+                testId={`ward-statistics-service-tile-${entry.id}`}
+                title={
+                  <>
+                    <ServiceDot service={entry.service as HealthService} />
+                    {entry.name}
+                  </>
+                }
+                fig={`${percent}%`}
+                unit={`${entry.occupied + entry.pulled} of ${entry.beds} beds`}
+              >
+                <BedStack
+                  label={`${entry.name} beds`}
+                  used={entry.occupied + entry.pulled}
+                  pulled={entry.pulled}
+                  closed={entry.closed}
+                  ready={entry.ready}
+                  beds={entry.beds}
+                />
+                <Facts
+                  items={[
+                    {
+                      value: entry.over,
+                      label: `${wardsWord(entry.over)} at ${BED_ALERT_THRESHOLD_PERCENT}%+`,
+                      tone: hot ? "warning" : undefined,
+                      warn: hot,
+                    },
+                    { value: entry.ready, label: BED_STATE_LABELS.ready.toLowerCase() },
+                    { value: entry.pulled, label: BED_STATE_LABELS.pulled.toLowerCase() },
+                    { value: entry.closed, label: BED_STATE_LABELS.closed.toLowerCase() },
+                    { value: entry.headroom, label: "headroom" },
+                  ]}
+                />
+              </Tile>
+            );
+          })}
+        </Strip>
+      </StatCardR>
+    );
+  }
   return (
     <StatCard
       id="services"
@@ -219,17 +314,10 @@ export function ServiceOccupancyCard({
       icon={Network}
       title="Occupancy by health service"
       // "85% line" named nothing; each tile already says how many wards are at or over it.
-      aside={onServiceFilter ? <span className={styles.muted}>Select one to highlight its wards</span> : undefined}
+      aside={<span className={styles.muted}>Select one to highlight its wards</span>}
     >
       <div className={styles.serviceGrid} data-testid="ward-statistics-overview-gauges">
         {services.map((entry) => {
-          if (!onServiceFilter) {
-            return (
-              <div key={entry.id} className={cx(styles.serviceTile, cards.staticTile)}>
-                {body(entry)}
-              </div>
-            );
-          }
           const pressed = serviceFilter === entry.service;
           return (
             <button
@@ -261,17 +349,22 @@ export function EmptyToReadyCard({
   preparingCount: number;
 }) {
   return (
-    <StatCard
+    <StatCardR
       id="empty-to-ready"
-      icon={Filter}
       title="Empty to ready"
       data-testid="ward-statistics-overview-capacity-disclosure"
+      foot={
+        // The bars are one colour, so the split is one plain line, in the hero's own words.
+        <Foot>
+          <b data-testid="ward-statistics-overview-capacity-ready">{capacity.ready}</b> ready · <b>{closedTotal}</b>{" "}
+          closed · <b>{preparingCount}</b> being made ready
+        </Foot>
+      }
     >
-      <CardBody className={styles.bodyStack} data-testid="ward-statistics-overview-capacity">
+      <div className={redesign.bars} data-testid="ward-statistics-overview-capacity">
         <BarList
           label="Empty to ready, across the network"
           track
-          labelWidth="9.5rem"
           max={Math.max(1, capacity.empty, capacity.allocatable, openNow)}
           rows={[
             {
@@ -290,14 +383,8 @@ export function EmptyToReadyCard({
             { id: "open", label: "Open for placement", value: openNow },
           ]}
         />
-        {/* The bars are one colour, so a coloured key would describe marks that are not there. The
-            split is one plain line, in the hero's own words. */}
-        <p className={styles.muted}>
-          <span data-testid="ward-statistics-overview-capacity-ready">{capacity.ready}</span> ready · {closedTotal}{" "}
-          closed · {preparingCount} being made ready
-        </p>
-      </CardBody>
-    </StatCard>
+      </div>
+    </StatCardR>
   );
 }
 
@@ -325,11 +412,10 @@ function AdmissionStagesCardView({
   // Data switch goes; the stages stay in the spoken label.
   const allHeld = stageTallies.every((stage) => exactStatisticsCount(stage.count) === null);
   return (
-    <StatCard
+    <StatCardR
       id="admission-stages"
-      icon={Activity}
       title="Admission stages"
-      action={
+      aside={
         allHeld ? undefined : (
           <Segmented
             size="sm"
@@ -343,41 +429,44 @@ function AdmissionStagesCardView({
           />
         )
       }
+      foot={<Foot>{`${statisticsCountText(total, small)} admissions on record`}</Foot>}
       data-testid="statistics-overview-stages-chart"
     >
       {allHeld ? (
-        <CardBody>
-          <p className={styles.muted} data-testid="ward-statistics-overview-stages-held">
-            {`${stageTallies.length} ${stageTallies.length === 1 ? "stage" : "stages"} not shown under the small number rule`}
-            <SrOnly>{`: ${stageTallies.map((stage) => stage.label).join(", ")}`}</SrOnly>
-          </p>
-        </CardBody>
+        <p className={styles.muted} data-testid="ward-statistics-overview-stages-held">
+          {`${stageTallies.length} ${stageTallies.length === 1 ? "stage" : "stages"} not shown under the small number rule`}
+          <SrOnly>{`: ${stageTallies.map((stage) => stage.label).join(", ")}`}</SrOnly>
+        </p>
       ) : stagesView === "chart" ? (
-        <CardBody>
+        <div className={redesign.bars}>
           <BarList
             label="Admissions by stage"
-            axis
+            track
             max={axisMax(
               stageTallies.map(
                 (stage, index) => withheldBar(exactStatisticsCount(stage.count) ?? 0, stagesShown[index]!).value,
               ),
             )}
-            labelWidth="10.5rem"
             rows={stageTallies.map((stage, index) => ({
               id: stage.position,
               label: stage.label,
               ...withheldBar(exactStatisticsCount(stage.count) ?? 0, stagesShown[index]!),
             }))}
           />
-        </CardBody>
+        </div>
       ) : (
-        <div className={styles.tableWrap}>
-          <table className={`${tableClasses.table} ${styles.table}`} data-testid="ward-statistics-overview-stage-table">
-            <caption className={styles.srOnly}>Admissions by stage, synthetic</caption>
+        <div
+          className={redesign.tableWrap}
+          tabIndex={0}
+          role="region"
+          aria-label="Admissions by stage, scrollable table"
+        >
+          <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-overview-stage-table">
+            <caption className="sr-only">Admissions by stage, synthetic</caption>
             <thead>
               <tr>
                 <th scope="col">Stage</th>
-                <th scope="col" className={styles.num}>
+                <th scope="col" className={redesign.r}>
                   Admissions
                 </th>
               </tr>
@@ -386,35 +475,47 @@ function AdmissionStagesCardView({
               {stageTallies.map((tally, index) => (
                 <tr key={tally.position}>
                   <th scope="row">{tally.label}</th>
-                  <td className={styles.num} data-testid={`ward-statistics-overview-stage-${tally.position}`}>
+                  <td
+                    className={cx(redesign.r, tableClasses.num)}
+                    data-testid={`ward-statistics-overview-stage-${tally.position}`}
+                  >
                     {stagesShown[index]}
                   </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr>
+              <tr className={redesign.total}>
                 <th scope="row">All stages</th>
-                <td className={styles.num}>{statisticsCountText(total, small)}</td>
+                <td className={cx(redesign.r, tableClasses.num)}>{statisticsCountText(total, small)}</td>
               </tr>
             </tfoot>
           </table>
         </div>
       )}
-    </StatCard>
+    </StatCardR>
   );
 }
 
 /**
- * The Network page's share of the old Overview: the three cards, stacked, each figure computed from
- * the same live state the rest of the Statistics home reads.
+ * Which of the Network page's overview cards to draw: the occupancy strip across the top, or the
+ * flow cards (Empty to ready and Admission stages) that sit beside Referrals today (redesign
+ * approved 1 Nov 2026, Q135).
+ */
+export type NetworkOverviewPart = "occupancy" | "flow";
+
+/**
+ * The Network page's share of the old Overview, each figure computed from the same live state the
+ * rest of the Statistics home reads.
  */
 export function NetworkOverviewCards({
+  part,
   units,
   admissions,
   bedReleases,
   leaveBeds,
 }: {
+  part: NetworkOverviewPart;
   units: Unit[];
   admissions: Admission[];
   bedReleases: BedRelease[];
@@ -435,9 +536,15 @@ export function NetworkOverviewCards({
     [units, bedReleases],
   );
   const closedTotal = unitRows.reduce((sum, row) => sum + row.states.closed, 0);
+  if (part === "occupancy") {
+    return (
+      <div data-testid="ward-statistics-network-cards">
+        <ServiceOccupancyCard services={services} preparingCount={preparingCount} />
+      </div>
+    );
+  }
   return (
-    <FlushStack data-testid="ward-statistics-network-cards">
-      <ServiceOccupancyCard services={services} />
+    <>
       <EmptyToReadyCard
         capacity={capacity}
         openNow={openNow}
@@ -445,21 +552,23 @@ export function NetworkOverviewCards({
         preparingCount={preparingCount}
       />
       <AdmissionStagesCard admissions={admissions} />
-    </FlushStack>
+    </>
   );
 }
 
 /**
- * Role view (site bed manager, D-80): the Network cards for a site desk. Admission stages (its own
- * site's stays) comes first, beside its wards; Occupancy by health service keeps every site as bed
- * counts. Empty to ready is left out: it is the network's placement funnel, the coordinator's job.
+ * Role view (site bed manager, D-80): the Network cards for a site desk. Occupancy by health service
+ * keeps every site as bed counts; Admission stages reads its own site's stays. Empty to ready is left
+ * out: it is the network's placement funnel, the coordinator's job.
  */
 export function SiteOverviewCards({
+  part,
   units,
   admissions,
   bedReleases,
   leaveBeds,
 }: {
+  part: NetworkOverviewPart;
   units: Unit[];
   admissions: Admission[];
   bedReleases: BedRelease[];
@@ -469,16 +578,23 @@ export function SiteOverviewCards({
     () => networkServiceRows(networkUnitRows(units, admissions, bedReleases, leaveBeds)),
     [units, admissions, bedReleases, leaveBeds],
   );
-  return (
-    <FlushStack data-testid="ward-statistics-network-cards">
-      <AdmissionStagesCard admissions={admissions} />
+  return part === "occupancy" ? (
+    <div data-testid="ward-statistics-network-cards">
       <ServiceOccupancyCard services={services} />
-    </FlushStack>
+    </div>
+  ) : (
+    <AdmissionStagesCard admissions={admissions} />
   );
 }
 
-/** Public bed aggregates and already-released admission counts use the same three cards. */
-export function ExecutiveNetworkOverviewCards({ data }: { data: ExecutiveReportingFoundation }) {
+/** Public bed aggregates and already-released admission counts use the same cards. */
+export function ExecutiveNetworkOverviewCards({
+  part,
+  data,
+}: {
+  part: NetworkOverviewPart;
+  data: ExecutiveReportingFoundation;
+}) {
   const services: NetworkServiceRow[] = NETWORK_SERVICES.flatMap((entry) => {
     const service = data.services.find((candidate) => candidate.service === entry.service);
     if (!service) return [];
@@ -506,9 +622,15 @@ export function ExecutiveNetworkOverviewCards({ data }: { data: ExecutiveReporti
     label: ADMISSION_STAGE_LABELS[position],
     count: data.network.admissionStages[position],
   }));
+  if (part === "occupancy") {
+    return (
+      <div data-testid="ward-statistics-network-cards">
+        <ServiceOccupancyCard services={services} preparingCount={data.capacity.pendingPreparation} />
+      </div>
+    );
+  }
   return (
-    <FlushStack data-testid="ward-statistics-network-cards">
-      <ServiceOccupancyCard services={services} />
+    <>
       <EmptyToReadyCard
         capacity={{
           ready: data.capacity.ready,
@@ -520,7 +642,7 @@ export function ExecutiveNetworkOverviewCards({ data }: { data: ExecutiveReporti
         preparingCount={data.capacity.pendingPreparation}
       />
       <AdmissionStagesCardView stageTallies={stageTallies} total={data.network.people.admissionsRecorded} />
-    </FlushStack>
+    </>
   );
 }
 
@@ -606,8 +728,15 @@ export type SummaryModel = {
 };
 export type SummarySlots = {
   capacity: ReactNode;
-  overview: ReactNode;
+  /** Occupancy by health service, across the top of the board. */
+  occupancy: ReactNode;
+  /** Empty to ready and Admission stages, beside Referrals today. */
+  flow: ReactNode;
   journey: (onShowBoard: () => void) => ReactNode;
   map: ReactNode;
-  operationalExtra: ReactNode;
+  /** Cards a counts-only desk leaves out: null there. */
+  waitingStages: ReactNode;
+  questions: ReactNode;
+  /** The Forecast track record and ED referrals by hour tiles of Also recorded. */
+  forecastTiles: ReactNode;
 };

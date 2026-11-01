@@ -8,10 +8,14 @@
 // linking to its record. A report view: stages stay in journey order and the ED queue is untouched.
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
-import { Hourglass } from "lucide-react";
-
-import { CardBody, tableClasses } from "@/components/wf";
-import { StatCard } from "@/components/ward-management/statistics/statistics-hero";
+import { cx, tableClasses } from "@/components/wf";
+import {
+  Foot,
+  Name,
+  StatCardR,
+  Z,
+  redesignStyles as redesign,
+} from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
@@ -72,84 +76,93 @@ export function WaitingStagesCard({
   };
 
   return (
-    <StatCard
+    <StatCardR
       id="waiting-stages"
-      icon={Hourglass}
       title="Where waiting time builds up"
       meta="All journeys on record"
       data-testid="ward-statistics-waiting-stages"
+      foot={
+        <Foot>Recorded times only. A typical time needs {MINIMUM_EFFECTIVENESS_SAMPLE} journeys with both times.</Foot>
+      }
     >
-      <CardBody>
-        <div className={styles.tableWrap}>
-          <table className={`${tableClasses.table} ${styles.table}`}>
-            <caption className={styles.srOnly}>Time spent in each placement stage, synthetic</caption>
-            <thead>
-              <tr>
-                <th scope="col">Stage</th>
-                <th scope="col" className={styles.num}>
-                  Typical
+      <div
+        className={redesign.tableWrap}
+        tabIndex={0}
+        role="region"
+        aria-label="Time spent in each placement stage, scrollable table"
+      >
+        <table className={cx(tableClasses.table, redesign.table)}>
+          <caption className="sr-only">Time spent in each placement stage, synthetic</caption>
+          <thead>
+            <tr>
+              <th scope="col">Stage</th>
+              <th scope="col" className={redesign.r}>
+                Typical
+              </th>
+              <th scope="col" className={redesign.r}>
+                Slowest 1 in 10
+              </th>
+              <th scope="col" className={redesign.r}>
+                Timed
+              </th>
+              <th scope="col" className={redesign.r}>
+                Not timed
+              </th>
+              <th scope="col" className={redesign.r}>
+                In stage now
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <th scope="row">
+                  <Name name={row.label} sub={row.span} />
                 </th>
-                <th scope="col" className={styles.num}>
-                  Slowest 1 in 10
-                </th>
-                <th scope="col" className={styles.num}>
-                  Recorded
-                </th>
-                <th scope="col" className={styles.num}>
-                  Not recorded
-                </th>
-                <th scope="col" className={styles.num}>
-                  In stage now
-                </th>
+                <td className={cx(redesign.r, tableClasses.num)}>
+                  <Z v={row.summary.median === undefined ? "–" : splitDuration(row.summary.median)} />
+                </td>
+                <td className={cx(redesign.r, tableClasses.num)}>
+                  <Z v={row.summary.p90 === undefined ? "–" : splitDuration(row.summary.p90)} />
+                </td>
+                <td className={cx(redesign.r, tableClasses.num)}>
+                  {countButton(row.id, "recorded", row.recorded.length)}
+                </td>
+                <td className={cx(redesign.r, tableClasses.num)}>
+                  {countButton(row.id, "notRecorded", row.notRecorded.length)}
+                </td>
+                <td className={cx(redesign.r, tableClasses.num)}>
+                  <b>{countButton(row.id, "inStageNow", row.inStageNow.length)}</b>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
-                  <th scope="row">
-                    {row.label}
-                    <span className={styles.sub}>{row.span}</span>
-                  </th>
-                  <td className={styles.num}>
-                    {row.summary.median === undefined ? "—" : splitDuration(row.summary.median)}
-                  </td>
-                  <td className={styles.num}>{row.summary.p90 === undefined ? "—" : splitDuration(row.summary.p90)}</td>
-                  <td className={styles.num}>{countButton(row.id, "recorded", row.recorded.length)}</td>
-                  <td className={styles.num}>{countButton(row.id, "notRecorded", row.notRecorded.length)}</td>
-                  <td className={styles.num}>{countButton(row.id, "inStageNow", row.inStageNow.length)}</td>
-                </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div id={listId} className={styles.answer}>
+        {openRow && open ? (
+          <>
+            <h3 className={styles.listHead}>
+              {openRow.label}: {openJourneys.length} {openJourneys.length === 1 ? "journey" : "journeys"}{" "}
+              {GROUP_WORDS[open.group]}
+            </h3>
+            <ul className={styles.list} data-testid="ward-waiting-stage-journeys">
+              {openJourneys.map(({ movement, minutes }) => (
+                <li key={movement.id}>
+                  <Link href={movementHref(movement.id)}>{journeyName(movement, admissions, now)}</Link>
+                  <span className={styles.sub}>
+                    {minutes !== undefined
+                      ? splitDuration(minutes)
+                      : open.group === "notRecorded"
+                        ? "Not recorded"
+                        : "Still in this stage"}
+                  </span>
+                </li>
               ))}
-            </tbody>
-          </table>
-        </div>
-        <p className={styles.caption}>
-          Recorded times only. A typical time needs {MINIMUM_EFFECTIVENESS_SAMPLE} journeys with both times.
-        </p>
-        <div id={listId}>
-          {openRow && open ? (
-            <>
-              <h3 className={styles.listHead}>
-                {openRow.label}: {openJourneys.length} {openJourneys.length === 1 ? "journey" : "journeys"}{" "}
-                {GROUP_WORDS[open.group]}
-              </h3>
-              <ul className={styles.list} data-testid="ward-waiting-stage-journeys">
-                {openJourneys.map(({ movement, minutes }) => (
-                  <li key={movement.id}>
-                    <Link href={movementHref(movement.id)}>{journeyName(movement, admissions, now)}</Link>
-                    <span className={styles.sub}>
-                      {minutes !== undefined
-                        ? splitDuration(minutes)
-                        : open.group === "notRecorded"
-                          ? "Not recorded"
-                          : "Still in this stage"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-        </div>
-      </CardBody>
-    </StatCard>
+            </ul>
+          </>
+        ) : null}
+      </div>
+    </StatCardR>
   );
 }
