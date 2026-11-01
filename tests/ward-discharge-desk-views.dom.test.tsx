@@ -62,7 +62,7 @@ describe("Discharges as each desk reads it", () => {
     expect(screen.getByText("Bed release · all services")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Service" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Ward" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Patient / ward" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Person" })).toBeInTheDocument();
     expect(worklistButtons()).toContain("Confirm date");
   });
 
@@ -73,7 +73,7 @@ describe("Discharges as each desk reads it", () => {
     expect(screen.queryByText("Bed release · all services")).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Service" })).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Ward" })).not.toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Patient" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Person" })).toBeInTheDocument();
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
     expect(within(worklist).queryByText(new RegExp(`^${WARD.name} · `))).not.toBeInTheDocument();
   });
