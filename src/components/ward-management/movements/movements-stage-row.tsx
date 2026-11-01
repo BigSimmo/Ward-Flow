@@ -396,7 +396,11 @@ export function StageRow({
       <span className={flow.cell}>
         {closureState ? (
           <span className={flow.outcome} data-outcome={closure?.outcome} data-ward-primitive="chip">
-            {closure?.outcome === "arrived" ? <Check size={12} aria-hidden="true" /> : <X size={12} aria-hidden="true" />}
+            {closure?.outcome === "arrived" ? (
+              <Check size={12} aria-hidden="true" />
+            ) : (
+              <X size={12} aria-hidden="true" />
+            )}
             {closureState.text}
           </span>
         ) : null}

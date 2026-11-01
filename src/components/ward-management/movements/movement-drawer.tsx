@@ -337,74 +337,74 @@ export function MovementDrawer({
                 : "Not flagged: ordered by urgency tier, then wait."}
             </span>
           </p>
-      {movement.flaggedUrgent ? (
-        <button
-          type="button"
-          className={buttonClass({ variant: "sec", size: "sm" })}
-          data-testid="ward-movement-drawer-urgent-toggle"
-          onClick={() =>
-            dispatch({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId: movement.id })
-          }
-        >
-          Remove the urgent flag
-        </button>
-      ) : open ? (
-        <div className={d.urgentPick}>
-          <label className="sr-only" htmlFor="ward-movement-drawer-urgent-reason">
-            Why is this urgent?
-          </label>
-          <select
-            id="ward-movement-drawer-urgent-reason"
-            className={d.select}
-            data-testid="ward-movement-drawer-urgent-reason"
-            value={urgentFlagReason ?? ""}
-            onChange={(chosen) => {
-              const value = chosen.target.value;
-              setUrgentFlagReason(
-                URGENT_MARK_REASONS.includes(value as UrgentMarkReason) ? (value as UrgentMarkReason) : undefined,
-              );
-            }}
-          >
-            <option value="">Choose why this is urgent</option>
-            {URGENT_MARK_REASONS.map((reason) => (
-              <option key={reason} value={reason}>
-                {changeReasonLabels[reason]}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className={buttonClass({ variant: "sec", size: "sm" })}
-            data-testid="ward-movement-drawer-urgent-toggle"
-            aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
-            aria-describedby={
-              urgentFlagReason === undefined ? `${baseId}-ward-movement-drawer-urgent-blocked` : undefined
-            }
-            title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
-            onClick={
-              urgentFlagReason === undefined
-                ? ignoreUnavailableActivation
-                : () => {
-                    dispatch({
-                      type: "FLAG_MOVEMENT_URGENT",
-                      role: "coordinator",
-                      now,
-                      movementId: movement.id,
-                      reason: urgentFlagReason,
-                    });
-                    setUrgentFlagReason(undefined);
-                  }
-            }
-          >
-            Flag this patient as urgent
-          </button>
-          {urgentFlagReason === undefined ? (
-            <span id={`${baseId}-ward-movement-drawer-urgent-blocked`} className="sr-only">
-              {URGENT_FLAG_UNCHOSEN}
-            </span>
+          {movement.flaggedUrgent ? (
+            <button
+              type="button"
+              className={buttonClass({ variant: "sec", size: "sm" })}
+              data-testid="ward-movement-drawer-urgent-toggle"
+              onClick={() =>
+                dispatch({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId: movement.id })
+              }
+            >
+              Remove the urgent flag
+            </button>
+          ) : open ? (
+            <div className={d.urgentPick}>
+              <label className="sr-only" htmlFor="ward-movement-drawer-urgent-reason">
+                Why is this urgent?
+              </label>
+              <select
+                id="ward-movement-drawer-urgent-reason"
+                className={d.select}
+                data-testid="ward-movement-drawer-urgent-reason"
+                value={urgentFlagReason ?? ""}
+                onChange={(chosen) => {
+                  const value = chosen.target.value;
+                  setUrgentFlagReason(
+                    URGENT_MARK_REASONS.includes(value as UrgentMarkReason) ? (value as UrgentMarkReason) : undefined,
+                  );
+                }}
+              >
+                <option value="">Choose why this is urgent</option>
+                {URGENT_MARK_REASONS.map((reason) => (
+                  <option key={reason} value={reason}>
+                    {changeReasonLabels[reason]}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className={buttonClass({ variant: "sec", size: "sm" })}
+                data-testid="ward-movement-drawer-urgent-toggle"
+                aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
+                aria-describedby={
+                  urgentFlagReason === undefined ? `${baseId}-ward-movement-drawer-urgent-blocked` : undefined
+                }
+                title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
+                onClick={
+                  urgentFlagReason === undefined
+                    ? ignoreUnavailableActivation
+                    : () => {
+                        dispatch({
+                          type: "FLAG_MOVEMENT_URGENT",
+                          role: "coordinator",
+                          now,
+                          movementId: movement.id,
+                          reason: urgentFlagReason,
+                        });
+                        setUrgentFlagReason(undefined);
+                      }
+                }
+              >
+                Flag this patient as urgent
+              </button>
+              {urgentFlagReason === undefined ? (
+                <span id={`${baseId}-ward-movement-drawer-urgent-blocked`} className="sr-only">
+                  {URGENT_FLAG_UNCHOSEN}
+                </span>
+              ) : null}
+            </div>
           ) : null}
-        </div>
-      ) : null}
         </div>
       ) : null}
       {nextAction}

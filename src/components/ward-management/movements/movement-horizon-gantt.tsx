@@ -9,7 +9,12 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { edById } from "@/components/ward-management/ward-sites";
-import { HEALTH_SERVICES, type HealthService, type MovementStage, type Unit } from "@/components/ward-management/ward-model";
+import {
+  HEALTH_SERVICES,
+  type HealthService,
+  type MovementStage,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import { declineReasonLabels } from "./movement-workspace-derivations";
 import { isPlaceholderName, NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 
@@ -202,8 +207,7 @@ export function MovementHorizonGantt({
   // Scrubber cursor calculation (strictly 0% to 100% of track)
   const cursorFraction = scrub / zoom;
   const scrubInstant = now + Math.round(scrub * 60);
-  const scrubBadgeText =
-    scrub === 0 ? "Showing from now" : `Showing from ${formatInstantWithDay(scrubInstant, now)}`;
+  const scrubBadgeText = scrub === 0 ? "Showing from now" : `Showing from ${formatInstantWithDay(scrubInstant, now)}`;
   const focusEd = focusCorridor ? edById(focusCorridor.originEdId) : undefined;
   /** An event's origin is the department's full name; this matches it to an ED id. */
   const fromEd = (edId: string, origin: string) => {
@@ -221,7 +225,10 @@ export function MovementHorizonGantt({
   // Movements redesign (1 Nov 2026): corridors grouped under the ED they leave from, busiest ED
   // first, each with its patients split by phase; declines grouped under the ward that said no.
   const edGroups = useMemo(() => {
-    const groups = new Map<string, { originEdId: string; total: number; phases: Record<CorridorPhase, number>; routes: typeof rankedPairs }>();
+    const groups = new Map<
+      string,
+      { originEdId: string; total: number; phases: Record<CorridorPhase, number>; routes: typeof rankedPairs }
+    >();
     for (const pair of rankedPairs) {
       const group = groups.get(pair.originEdId) ?? {
         originEdId: pair.originEdId,
@@ -241,7 +248,10 @@ export function MovementHorizonGantt({
   }, [rankedPairs]);
   const corridorPatients = edGroups.reduce((total, group) => total + group.total, 0);
   const declinesByWard = useMemo(() => {
-    const groups = new Map<string, { unitId: string; total: number; from: { originEdId: string; count: number }[]; reasons: Set<string> }>();
+    const groups = new Map<
+      string,
+      { unitId: string; total: number; from: { originEdId: string; count: number }[]; reasons: Set<string> }
+    >();
     for (const row of refusedCorridors) {
       const group = groups.get(row.unitId) ?? { unitId: row.unitId, total: 0, from: [], reasons: new Set<string>() };
       group.total += row.count;
@@ -251,9 +261,7 @@ export function MovementHorizonGantt({
     }
     return [...groups.values()].sort((a, b) => b.total - a.total);
   }, [refusedCorridors]);
-  const hot = tooltip
-    ? { laneId: tooltip.laneId, origin: tooltip.ev.origin }
-    : null;
+  const hot = tooltip ? { laneId: tooltip.laneId, origin: tooltip.ev.origin } : null;
   const shortPlace = (origin: string) => {
     for (const pair of rankedPairs) {
       const ed = edById(pair.originEdId);
@@ -443,19 +451,19 @@ export function MovementHorizonGantt({
             <ul className={styles.ganttLegend} aria-label="Movement horizon legend">
               <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchAdmit}`} aria-hidden="true">
-                  <BedSingle size={10} />
+                  <BedSingle size={10} aria-hidden="true" />
                 </span>
                 Bed pulled, arriving
               </li>
               <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchTransit}`} aria-hidden="true">
-                  <Truck size={10} />
+                  <Truck size={10} aria-hidden="true" />
                 </span>
                 On the road
               </li>
               <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchDelay}`} aria-hidden="true">
-                  <AlarmClock size={10} />
+                  <AlarmClock size={10} aria-hidden="true" />
                 </span>
                 Pull time passed
               </li>
@@ -644,7 +652,9 @@ export function MovementHorizonGantt({
                                 >
                                   {(() => {
                                     const Icon = EVENT_ICON[ev.type as keyof typeof EVENT_ICON];
-                                    return Icon ? <Icon size={12} aria-hidden="true" className={styles.barIcon} /> : null;
+                                    return Icon ? (
+                                      <Icon size={12} aria-hidden="true" className={styles.barIcon} />
+                                    ) : null;
                                   })()}
                                   <span className={styles.ganttBarText}>{barText}</span>
                                 </div>
@@ -712,7 +722,8 @@ export function MovementHorizonGantt({
                     <ol className={styles.edGroups} tabIndex={0} aria-label="Accepted corridors by ED, busiest first">
                       {edGroups.map((group) => {
                         const ed = edById(group.originEdId);
-                        const edPicked = focusCorridor?.originEdId === group.originEdId && focusCorridor.unitId === null;
+                        const edPicked =
+                          focusCorridor?.originEdId === group.originEdId && focusCorridor.unitId === null;
                         const phaseWords = PHASES.filter((ph) => group.phases[ph.id] > 0)
                           .map((ph) => `${group.phases[ph.id]} ${ph.label.toLowerCase()}`)
                           .join(", ");
@@ -748,7 +759,9 @@ export function MovementHorizonGantt({
                                   focusCorridor?.originEdId === route.originEdId &&
                                   focusCorridor?.unitId === route.acceptedUnitId;
                                 const isHot =
-                                  hot !== null && hot.laneId === route.acceptedUnitId && fromEd(route.originEdId, hot.origin);
+                                  hot !== null &&
+                                  hot.laneId === route.acceptedUnitId &&
+                                  fromEd(route.originEdId, hot.origin);
                                 const dots: CorridorPhase[] = [];
                                 for (const ph of PHASES) {
                                   const n = route.stages
@@ -765,7 +778,9 @@ export function MovementHorizonGantt({
                                       data-hot={isHot ? "true" : undefined}
                                       onClick={() =>
                                         setFocusCorridor(
-                                          picked ? null : { originEdId: route.originEdId, unitId: route.acceptedUnitId },
+                                          picked
+                                            ? null
+                                            : { originEdId: route.originEdId, unitId: route.acceptedUnitId },
                                         )
                                       }
                                     >

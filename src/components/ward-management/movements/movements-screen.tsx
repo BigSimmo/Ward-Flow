@@ -665,8 +665,6 @@ export function MovementsScreen() {
     now,
     thresholds,
   ); // Wait order only (Audit 1, Josh 20 Oct 2026, D-71): flags and tier never move a row.
-  const surname = (movement: Movement) =>
-    resolveSubjectPatient(movement, { patients, referrals }).formalName.split(",")[0];
   // Phone nav cards: who is inbound to a ward, and the ranked ED to ward corridors.
   const phoneInbound = openMovements.filter((movement) => movement.acceptedUnitId);
   const phoneInboundWards = new Set(phoneInbound.map((movement) => movement.acceptedUnitId)).size;
@@ -745,7 +743,11 @@ export function MovementsScreen() {
                   </span>
                   {/* A three-step track, Accepted, Collected and Arrived, filled to where the leg is.
                       The group heading and the row's label already say it in words. */}
-                  <span className={flow.trTrack} aria-hidden="true" data-cancelled={leg.state === "Cancelled" ? "true" : undefined}>
+                  <span
+                    className={flow.trTrack}
+                    aria-hidden="true"
+                    data-cancelled={leg.state === "Cancelled" ? "true" : undefined}
+                  >
                     {[1, 2, 3].map((n) => (
                       <i key={n} data-on={step >= n ? "true" : undefined} />
                     ))}
@@ -1006,7 +1008,6 @@ export function MovementsScreen() {
               onToggle={(stageId) => toggleHighlight(`stage:${stageId}`)}
             />
           )}
-
         </section>
 
         {isPhone ? (
@@ -1384,12 +1385,27 @@ export function MovementsScreen() {
                       each a count over its words, so the card reads at a glance. */}
                   <dl className={flow.trStats}>
                     {[
-                      { id: "road", label: "On the road", value: counts.Collected + counts["En route"], tone: "info" as const },
-                      { id: "booked", label: "Booked, not collected", value: counts.Accepted, tone: "neutral" as const },
+                      {
+                        id: "road",
+                        label: "On the road",
+                        value: counts.Collected + counts["En route"],
+                        tone: "info" as const,
+                      },
+                      {
+                        id: "booked",
+                        label: "Booked, not collected",
+                        value: counts.Accepted,
+                        tone: "neutral" as const,
+                      },
                       { id: "arrived", label: "Arrived", value: counts.Arrived, tone: "success" as const },
                       { id: "none", label: "No transport leg", value: withoutTransport, tone: undefined },
                     ].map((tile) => (
-                      <div key={tile.id} className={flow.trStat} data-testid="movements-day-metric" data-zero={tile.value === 0 ? "true" : undefined}>
+                      <div
+                        key={tile.id}
+                        className={flow.trStat}
+                        data-testid="movements-day-metric"
+                        data-zero={tile.value === 0 ? "true" : undefined}
+                      >
                         <dt>
                           {tile.tone ? <StatusGlyph tone={tile.tone} size={9} /> : null}
                           {tile.label}
@@ -1401,9 +1417,7 @@ export function MovementsScreen() {
                   {legs.length === 0 ? (
                     <p className={styles.absent}>No transport leg is booked or moving right now.</p>
                   ) : (
-                    <div className={styles.transportWidget}>
-                      {transportFeed()}
-                    </div>
+                    <div className={styles.transportWidget}>{transportFeed()}</div>
                   )}
                 </>
               ) : (

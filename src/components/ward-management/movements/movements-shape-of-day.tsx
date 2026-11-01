@@ -57,15 +57,16 @@ export function ShapeOfTheDay({
   waitingMovements: Movement[];
 }) {
   const tab = shapeTab === "transport" ? "stage" : shapeTab;
-  const pick = (list: Movement[]) =>
-    (isInServiceScope !== null ? list.find(isInServiceScope) : undefined) ?? list[0];
+  const pick = (list: Movement[]) => (isInServiceScope !== null ? list.find(isInServiceScope) : undefined) ?? list[0];
 
   // Where they wait: each stage's open movements counted into the four wait bands.
-  const grid = openStages.filter((stage) => stage.id !== "arrived").map((stage) => {
-    const cells: Movement[][] = [[], [], [], []];
-    for (const movement of stage.movements) cells[waitBand(Math.max(now - movement.openedAt, 0))].push(movement);
-    return { stage, cells };
-  });
+  const grid = openStages
+    .filter((stage) => stage.id !== "arrived")
+    .map((stage) => {
+      const cells: Movement[][] = [[], [], [], []];
+      for (const movement of stage.movements) cells[waitBand(Math.max(now - movement.openedAt, 0))].push(movement);
+      return { stage, cells };
+    });
   const cellMax = Math.max(1, ...grid.flatMap((row) => row.cells.map((cell) => cell.length)));
   const bandTotals = [0, 1, 2, 3].map((band) => grid.reduce((total, row) => total + row.cells[band].length, 0));
 
@@ -87,8 +88,7 @@ export function ShapeOfTheDay({
     .sort((a, b) => a - b);
   const medianTook = took.length ? took[Math.floor((took.length - 1) / 2)] : undefined;
   const name = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals }).formalName;
-  const wardOf = (movement: Movement) =>
-    units.find((unit) => unit.id === movement.acceptedUnitId)?.name ?? "No ward";
+  const wardOf = (movement: Movement) => units.find((unit) => unit.id === movement.acceptedUnitId)?.name ?? "No ward";
 
   const tabs = [
     { id: "stage" as const, label: "Where they wait", Icon: Grid3x3, value: openMovements.length },
@@ -213,7 +213,11 @@ export function ShapeOfTheDay({
               <dd>{openMovements.length}</dd>
             </div>
           </dl>
-          <div className={sh.chart} role="img" aria-label={`By hour since midnight: ${raised.length} raised and ${closedToday.length} resolved today.`}>
+          <div
+            className={sh.chart}
+            role="img"
+            aria-label={`By hour since midnight: ${raised.length} raised and ${closedToday.length} resolved today.`}
+          >
             {hours.map((row) => (
               <div
                 key={row.hour}
@@ -225,7 +229,9 @@ export function ShapeOfTheDay({
                   <i data-series="opened" style={{ height: `${(row.opened / hourMax) * 100}%` }} />
                   <i data-series="resolved" style={{ height: `${(row.resolved / hourMax) * 100}%` }} />
                 </span>
-                <span className={sh.hourLabel}>{row.hour % 3 === 0 || row.hour === hourNow ? String(row.hour).padStart(2, "0") : ""}</span>
+                <span className={sh.hourLabel}>
+                  {row.hour % 3 === 0 || row.hour === hourNow ? String(row.hour).padStart(2, "0") : ""}
+                </span>
               </div>
             ))}
           </div>

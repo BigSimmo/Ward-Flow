@@ -359,4 +359,6 @@
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
 }
-.heat thead th:first-child { text-align: left; }
+.heat thead th:first-child {
+  text-align: left;
+}
