@@ -9,7 +9,7 @@ import { BedDouble, Check, ChevronDown, Info, Megaphone, Radio, Send, Sparkles, 
 
 import { Button, Checkbox, Field, Segmented, StatusGlyph, TextInput, Textarea, cx, useIsPhone } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 
 import { WA_BROADCAST_TEMPLATES, type BroadcastKind, type BroadcastSeverity } from "./ward-broadcast-model";
 import {
@@ -112,7 +112,7 @@ export function BroadcastComposer({
   const list = audienceRecipients(audience, groups, wardsWithBedNow);
   const n = list.length;
   const sev = SEVERITIES.find((item) => item.id === severity) ?? SEVERITIES[0];
-  const endsAt = formatInstant(now + durationMinutes);
+  const endsAt = formatInstantWithDay((now + durationMinutes) as Instant, now);
   const block = !n
     ? "Choose who gets it"
     : !title.trim() || !message.trim()

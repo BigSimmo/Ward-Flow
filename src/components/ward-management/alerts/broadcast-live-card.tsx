@@ -6,7 +6,7 @@
 import { Clock, Copy, Radio, Users } from "lucide-react";
 
 import { Button, durMinutes } from "@/components/wf";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 
 import { minutesText } from "./alerts-model";
 import { replyBoard } from "./global-alert-view";
@@ -33,11 +33,11 @@ const SEVERITY: Record<BroadcastAlert["severity"], { label: string; tone?: "warn
 
 const answerOf = (reply: BroadcastReply | undefined): Answer =>
   !reply ? "none" : reply.answer === "can_take" ? "take" : reply.answer === "after_discharge" ? "after" : "cant";
-const detailOf = (reply: BroadcastReply | undefined) =>
+const detailOf = (reply: BroadcastReply | undefined, now: Instant) =>
   reply?.beds !== undefined
     ? `${reply.beds} ${reply.beds === 1 ? "bed" : "beds"}`
     : reply?.readyAt !== undefined
-      ? `Ready at ${formatInstant(reply.readyAt)}`
+      ? `Ready at ${formatInstantWithDay(reply.readyAt, now)}`
       : "";
 
 /** A stacked bar and its key: what each answer counts, or who has acknowledged. */
@@ -109,7 +109,9 @@ export function BroadcastLiveCard({
   const copyText = board
     ? [
         alert.title,
-        ...board.rows.map((row) => `${row.name}: ${ANSWERS[answerOf(row.reply)].label} ${detailOf(row.reply)}`.trim()),
+        ...board.rows.map((row) =>
+          `${row.name}: ${ANSWERS[answerOf(row.reply)].label} ${detailOf(row.reply, now)}`.trim(),
+        ),
       ].join("\n")
     : "";
   return (
@@ -132,11 +134,12 @@ export function BroadcastLiveCard({
         <span className={css.tag}>{bedCall ? "Bed call" : "Message"}</span>
         <span>
           {alert.targetScopeLabel}
-          {asked > 0 ? ` (${asked})` : ""} · sent {formatInstant(alert.dispatchedAt)} by{" "}
+          {asked > 0 ? ` (${asked})` : ""} · sent {formatInstantWithDay(alert.dispatchedAt, now)} by{" "}
           {sentByYou ? "you" : alert.dispatchedByName}
         </span>
         <span className={css.left}>
-          <b>{minutesText(Math.max(0, alert.expiresAt - now))}</b> left, ends {formatInstant(alert.expiresAt)}
+          <b>{minutesText(Math.max(0, alert.expiresAt - now))}</b> left, ends{" "}
+          {formatInstantWithDay(alert.expiresAt, now)}
         </span>
       </div>
       <div className={css.body}>
@@ -178,8 +181,8 @@ export function BroadcastLiveCard({
                           </span>
                         )}
                       </td>
-                      <td>{detailOf(row.reply)}</td>
-                      <td className={css.mono}>{row.reply ? formatInstant(row.reply.at) : ""}</td>
+                      <td>{detailOf(row.reply, now)}</td>
+                      <td className={css.mono}>{row.reply ? formatInstantWithDay(row.reply.at, now) : ""}</td>
                     </tr>
                   );
                 })}
@@ -231,9 +234,11 @@ export function BroadcastLiveCard({
 export function EarlierBroadcasts({
   alerts,
   units,
+  now,
   status,
 }: {
   alerts: readonly BroadcastAlert[];
+  now: Instant;
   units: readonly { id: string; name: string }[];
   status: (alert: BroadcastAlert) => string;
 }) {
@@ -253,7 +258,7 @@ export function EarlierBroadcasts({
               : "";
           return (
             <li key={alert.id}>
-              <time>{formatInstant(alert.dispatchedAt)}</time>
+              <time>{formatInstantWithDay(alert.dispatchedAt, now)}</time>
               <span className={css.iconTile} aria-hidden="true">
                 <Radio size={14} aria-hidden="true" />
               </span>

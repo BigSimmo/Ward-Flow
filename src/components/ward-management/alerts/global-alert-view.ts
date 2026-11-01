@@ -66,19 +66,6 @@ function desksInBroadcastScope(
 }
 
 /**
- * How many desks a target covers, from the live unit list (ops-12, 13 Oct 2026), so a scope label
- * never names a count the app does not have: "22 wards and 10 ED desks".
- */
-export function broadcastScopeCount(units: readonly Unit[], scope: BroadcastTargetScope): string {
-  const { wards, eds } = desksInBroadcastScope(units, scope);
-  const parts = [
-    wards.length > 0 ? `${wards.length} ward${wards.length === 1 ? "" : "s"}` : "",
-    eds.length > 0 ? `${eds.length} ED desk${eds.length === 1 ? "" : "s"}` : "",
-  ].filter(Boolean);
-  return parts.length > 0 ? parts.join(" and ") : "no desks";
-}
-
-/**
  * A directive's acknowledgements against the desks it asked, so nine wards read "of 9". A scoped desk
  * passes `inScope` and counts against its own desks only.
  */

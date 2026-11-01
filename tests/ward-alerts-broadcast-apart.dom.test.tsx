@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
@@ -9,12 +10,13 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 /**
  * P017 (UI audit, 27 Oct 2026): on a phone, Broadcast sat right beside Next alert, so a thumb aiming
- * for the next alert could start a statewide broadcast. Pause now sits between them.
+ * for the next alert could start a statewide broadcast. Q153 (Josh, 1 Nov 2026): the phone hero shows
+ * one action, Next alert, and Broadcast sits under "…", never a single tap from it.
  */
 afterEach(() => installMatchMediaStub(false));
 
-describe("phone Alerts hero: Broadcast kept apart from Next alert", () => {
-  it("does not place Broadcast next to Next alert", () => {
+describe("phone Alerts hero: one action, Broadcast under the menu", () => {
+  it("shows Next alert as the only hero action and keeps Broadcast in the menu", () => {
     installMatchMediaStub(true);
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -22,12 +24,13 @@ describe("phone Alerts hero: Broadcast kept apart from Next alert", () => {
       </WardFlowProvider>,
     );
     const next = screen.getByTestId("ward-alerts-phone-next");
-    const names = Array.from(next.parentElement!.querySelectorAll("button")).map((button) =>
-      (button.textContent ?? "").trim(),
-    );
-    const at = names.indexOf("Next alert");
-    expect(at).toBeGreaterThanOrEqual(0);
-    expect(names).toContain("Broadcast");
-    expect(Math.abs(names.indexOf("Broadcast") - at)).toBeGreaterThan(1);
+    const buttons = Array.from(next.parentElement!.querySelectorAll("button"));
+    expect(buttons.map((button) => button.getAttribute("aria-label") ?? (button.textContent ?? "").trim())).toEqual([
+      "Next alert",
+      "More alert actions",
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: "More alert actions" }));
+    expect(screen.getByRole("menuitem", { name: /Broadcast alert/ })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /Hold the list still/ })).toBeInTheDocument();
   });
 });

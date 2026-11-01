@@ -11,11 +11,11 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
 import { wardsInBroadcastScope } from "./global-alert-view";
 import type { BroadcastTargetScope } from "./ward-broadcast-model";
 
-export const AUDIENCE_MODES = ["all", "groups", "pick"] as const;
+const AUDIENCE_MODES = ["all", "groups", "pick"] as const;
 export type AudienceMode = (typeof AUDIENCE_MODES)[number];
 
-export const AUDIENCE_GROUP_IDS = ["metro", "older", "youth", "secure", "regional", "ed", "other"] as const;
-export type AudienceGroupId = (typeof AUDIENCE_GROUP_IDS)[number];
+const AUDIENCE_GROUP_IDS = ["metro", "older", "youth", "secure", "regional", "ed", "other"] as const;
+type AudienceGroupId = (typeof AUDIENCE_GROUP_IDS)[number];
 
 export interface BroadcastAudience {
   mode: AudienceMode;

@@ -25,7 +25,7 @@
   width: min(960px, 100vw);
   height: 100%;
   border-left: 1px solid var(--wf-line-2);
-  box-shadow: var(--wf-e1, 0 12px 32px rgba(0, 0, 0, 0.18));
+  box-shadow: var(--wf-e1);
   animation: sheetIn 0.2s var(--wf-ease-out, ease-out);
 }
 .psheet {
@@ -404,7 +404,7 @@
   gap: 6px;
   background: var(--wf-surface);
   border: 1px solid var(--wf-line-2);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--wf-e1);
 }
 .banner[data-tone="warning"] {
   background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
@@ -459,7 +459,7 @@
 .fakeBtn[data-on] {
   background: linear-gradient(180deg, var(--wf-pri-1, var(--wf-accent)), var(--wf-pri-2, var(--wf-accent)));
   border-color: transparent;
-  color: var(--wf-on-accent, #fff);
+  color: var(--wf-on-accent);
 }
 .bnEnds {
   margin-left: auto;

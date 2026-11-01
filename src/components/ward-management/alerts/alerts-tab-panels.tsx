@@ -5,7 +5,7 @@
 import { Clock } from "lucide-react";
 
 import { EmptyState, StatusGlyph, TabPanel, cx } from "@/components/wf";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -89,9 +89,10 @@ export function AlertsBroadcastPanel({
       <EarlierBroadcasts
         alerts={pastBroadcasts}
         units={units}
+        now={now}
         status={(alert) =>
           alert.status === "stood_down"
-            ? `stood down${alert.stoodDownAt !== undefined ? ` ${formatInstant(alert.stoodDownAt)}` : ""}`
+            ? `stood down${alert.stoodDownAt !== undefined ? ` ${formatInstantWithDay(alert.stoodDownAt, now)}` : ""}`
             : isAlertLive(alert, movements, now)
               ? "still live"
               : "ended"
