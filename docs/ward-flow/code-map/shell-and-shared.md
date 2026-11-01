@@ -1,5 +1,22 @@
 # Routes, shell, navigation and shared UI
 
+## Help journeys and search — 1 November 2026
+
+The local Help follow-up builds on `ec70ef199` and `7121a2dab`. `ward-help-howto.ts` defines
+explicit handoffs and device-specific steps; `showMeSteps` supplies the player and both answer
+lists. The player pauses its modal and spotlight work while the person opens a record, form or
+disclosure, then resumes without choosing a patient or submitting an action. Alt+Right continues
+a paused guide; modified, repeated and composing key events otherwise retain their normal use.
+Closing a paused guide returns focus to the page or open form. Task, role and device guards
+prevent invisible modal locks, and each resume starts with fresh spotlight geometry.
+
+The shared spotlight follows hidden/replaced controls and viewport changes, with no state update
+for unchanged measurements. Help search scrolls its active keyboard result into view while
+keeping focus in the field, and advertises Show me only when the current role, device and feature
+switch allow it. Queries and guide continuation remain in memory. No dependencies were added;
+the existing lazy Help host and demo/live defaults remain unchanged. Source and focused tests own
+these behaviours; the older inventory below remains historical context.
+
 ## Phone page preparation — 24 October 2026
 
 The phone dock and the phone menu's page and outstanding-work links request full Next.js

@@ -32,6 +32,9 @@ vi.mock("@/components/ward-management/help/ward-help-store", async (importOrigin
 
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import type { HelpView } from "@/components/ward-management/help/ward-help-events";
+import { HelpFindResults } from "@/components/ward-management/help/ward-help-find";
+import { canShowTask } from "@/components/ward-management/help/ward-help-jobs";
+import { HOW_TOS } from "@/components/ward-management/help/ward-help-howto";
 
 function sheet(props: Partial<Parameters<typeof WardHelpSheet>[0]> = {}) {
   return render(
@@ -46,6 +49,22 @@ function type(words: string) {
 }
 
 describe("Help sheet search field", () => {
+  it("scrolls the active result into view without moving focus out of the search box", () => {
+    sheet();
+    const field = type("handover");
+    field.focus();
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
+    scroll.mockClear();
+    fireEvent.keyDown(field, { key: "ArrowDown" });
+    const active = document.getElementById(field.getAttribute("aria-activedescendant") ?? "");
+    expect(active).not.toBeNull();
+    expect(scroll).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
+    expect(scroll.mock.contexts).toContain(active);
+    expect(document.activeElement).toBe(field);
+    scroll.mockClear();
+    fireEvent.keyDown(field, { key: "Escape" });
+    expect(scroll).not.toHaveBeenCalled();
+  });
   it("Escape clears only the words, keeping the Help sheet open", () => {
     const onClose = vi.fn();
     sheet({ onClose });
@@ -112,5 +131,47 @@ describe("Help sheet search field", () => {
     fireEvent.keyDown(field, { key: "Enter" });
     expect(onView).toHaveBeenCalledWith("reference");
     expect((field as HTMLInputElement).value).toBe("");
+  });
+});
+
+describe("Help result walkthrough availability", () => {
+  it.each([
+    { phone: false, enabled: false, advertised: false },
+    { phone: true, enabled: true, advertised: false },
+    { phone: false, enabled: true, advertised: true },
+  ])("advertises printing only when the device and feature permit it: %j", ({ phone, enabled, advertised }) => {
+    const task = HOW_TOS.find((task) => task.id === "print-handover")!;
+    const onShowMe = vi.fn();
+    render(
+      <HelpFindResults
+        found={{
+          kind: "results",
+          closest: false,
+          groups: [
+            {
+              name: "Jobs",
+              rows: [
+                {
+                  key: "howto:print-handover",
+                  group: "Guides",
+                  title: task.title,
+                  detail: task.answer,
+                  howToId: task.id,
+                },
+              ],
+            },
+          ],
+        }}
+        query="print"
+        role="bed_manager"
+        active={0}
+        onChoose={vi.fn()}
+        onShowMe={onShowMe}
+        canShow={(id) => id === task.id && canShowTask(task, "bed_manager", "/ward-flow", phone, enabled)}
+        onUseTyped={vi.fn()}
+      />,
+    );
+    expect(Boolean(screen.queryByLabelText("Has Show me"))).toBe(advertised);
+    expect(onShowMe).not.toHaveBeenCalled();
   });
 });

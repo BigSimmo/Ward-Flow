@@ -307,7 +307,7 @@ export function HelpFindResults({
         </span>
         {!mine ? (
           <span className={s.otherDesk}>Another desk&rsquo;s job</span>
-        ) : result.howToId ? (
+        ) : result.howToId && canShow(result.howToId) ? (
           <span className={s.play} aria-label="Has Show me">
             <Play aria-hidden="true" strokeWidth={0} />
           </span>

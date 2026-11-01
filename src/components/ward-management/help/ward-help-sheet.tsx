@@ -2,7 +2,7 @@
 
 import { BookOpen, CircleHelp, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { TabPanel, Tabs, useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
@@ -163,6 +163,11 @@ function WardHelpSheetView({
     [query, role, terms, literal],
   );
   const rows = foundRows(found);
+  const activeKey = rows[active]?.key;
+  useEffect(() => {
+    if (!query.trim() || !activeKey) return;
+    document.getElementById(`ward-help-found-${active}`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [active, activeKey, query]);
   const canShow = (id: string) => {
     const each = HOW_TOS.find((howTo) => howTo.id === id);
     return Boolean(each && canShowTask(each, role, deskHref, phone, showMeOn));
