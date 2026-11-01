@@ -77,7 +77,6 @@ describe("searchGroupOrder", () => {
   it("keeps the fixed order for a general query", () => {
     expect(searchGroupOrder("general", "??")).toEqual([
       "people",
-      "similar",
       "movements",
       "referrals",
       "beds",
@@ -99,7 +98,7 @@ describe("searchGroupOrder", () => {
   });
 
   it("leads with the intent group, and with the three place groups for a place query", () => {
-    expect(searchGroupOrder("person", "Jamie Lee").slice(0, 2)).toEqual(["people", "similar"]);
+    expect(searchGroupOrder("person", "Jamie Lee")[0]).toBe("people");
     expect(searchGroupOrder("form", "4C")[0]).toBe("forms");
     expect(searchGroupOrder("view", "capacity")[0]).toBe("views");
     expect(searchGroupOrder("task", "tasks")[0]).toBe("tasks");

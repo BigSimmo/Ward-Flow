@@ -158,22 +158,6 @@ export function smartSearchGroups(
     });
   }
 
-  if (smartResults.similarPeople.length > 0) {
-    g.push({
-      key: "similar",
-      heading: "Did you mean?",
-      items: smartResults.similarPeople.map((p) => ({
-        kind: "person",
-        kindLabel: "Similar name",
-        id: p.id,
-        title: patientListName(p),
-        meta: `${p.umrn} · born ${formatDateOfBirth(p.dateOfBirth)}`,
-        umrn: p.umrn,
-        dateOfBirth: p.dateOfBirth,
-        href: patientHref(p.id),
-      })),
-    });
-  }
   if (smartResults.referrals.length > 0) {
     g.push({
       key: "referrals",

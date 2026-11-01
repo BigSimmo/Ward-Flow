@@ -114,15 +114,21 @@ describe("polished patient dossier tabs", () => {
     expect(save).toHaveAccessibleDescription("Choose the outcome to save");
     fireEvent.click(save);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    fireEvent.change(dialog.getByLabelText("Treating-team clearance outcome"), { target: { value: "cleared" } });
+    // Two choices, neither chosen (approved pop-up, 31 Oct 2026).
+    const outcome = within(dialog.getByRole("group", { name: "Treating-team clearance outcome" }));
+    expect(outcome.getAllByRole("radio")).toHaveLength(2);
+    for (const radio of outcome.getAllByRole("radio")) expect(radio).not.toBeChecked();
+    fireEvent.click(outcome.getByRole("radio", { name: "Medical clearance provided" }));
     expect(save).not.toBeDisabled();
     expect(save).toHaveAttribute("aria-disabled", "true");
     expect(save).toHaveAccessibleDescription("Tick the statement to save");
     fireEvent.click(save);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     fireEvent.click(dialog.getByRole("checkbox"));
-    expect(save).not.toHaveAttribute("aria-disabled");
-    fireEvent.click(save);
+    // The kit button drops its reason wrapper once Save is available, so read it again.
+    const ready = dialog.getByRole("button", { name: "Save clearance outcome" });
+    expect(ready).not.toHaveAttribute("aria-disabled");
+    fireEvent.click(ready);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(clinical.getByText(/^Cleared \d{2}:\d{2}$/)).toBeVisible();
     expect(trigger).toHaveFocus();

@@ -254,7 +254,7 @@ const KIND_FILTERS: readonly { key: KindFilter; label: string; groups: readonly 
   { key: "all", label: "All", groups: [] },
   // A common question ("over 24 hours") answered from the Patients page's census (search-answers.ts).
   { key: "answers", label: "Answers", groups: ["answers"] },
-  { key: "people", label: "People", groups: ["people", "similar"] },
+  { key: "people", label: "People", groups: ["people"] },
   { key: "movements", label: "Movements", groups: ["movements"] },
   { key: "referrals", label: "Referrals", groups: ["referrals"] },
   { key: "places", label: "Places", groups: ["beds", "wards", "eds", "teams", "suburbs"] },

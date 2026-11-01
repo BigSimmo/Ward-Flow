@@ -12,7 +12,7 @@
  * - Core Views/Tools (`CORE_SEARCH_VIEWS`) - navigation routes and tool pages
  * - Action Inbox Tasks (`buildActionInbox(movements.filter(isOpen), now ?? 0, units)`) - task summary, title, keyword "task"
  * - Queued referrals still awaiting an answer - the patient's name and UMRN, referral id, origin and region
- * - Near spellings of a name that found nobody (`nearPatients`), each shown with UMRN and date of birth
+ * - Never a near spelling of a person's name or UMRN (Josh, 31 Oct 2026): a typo match risks the wrong patient
  * - Beds ("Graylands bed 4") and wards with a ready bed ("free beds"), from `search-places.ts`
  *
  * STANDARD §8.6 ENFORCEMENT:
@@ -40,7 +40,6 @@ import { createPatientResolver, resolveSubjectPatient } from "@/components/ward-
 import {
   findPatients,
   foldPatientSearchText,
-  nearPatients,
   patientDisplayName,
   type Patient,
 } from "@/components/ward-management/ward-patients";
@@ -507,7 +506,6 @@ export type SearchIntentLabel = "People" | "Movements" | "Places" | "Forms" | "V
 
 const SEARCH_GROUP_ORDER = [
   "people",
-  "similar",
   "movements",
   "referrals",
   "beds",
@@ -610,7 +608,7 @@ function leadingGroups(intent: SearchIntent, query: string): readonly SearchGrou
   if (/^\s*(how|where|why|what)\b\s*\S/i.test(query)) return ["help"];
   switch (intent) {
     case "person":
-      return ["people", "similar"];
+      return ["people"];
     case "identifier":
       return /^\s*wf-/i.test(query) ? ["movements", "people"] : ["people", "movements"];
     case "place":
@@ -687,27 +685,6 @@ function searchReferrals(
   });
 }
 
-/**
- * "Did you mean…?" for a name that found nobody. Every word of the query must be a prefix of, or
- * one keystroke from, one of the person's names, so "Jon Smth" offers Jon Smith and not every Jon.
- * A near spelling is never chosen for anyone: the caller lists each with UMRN and date of birth so
- * the right person is confirmed by a human, because a near miss is the classic wrong-patient error.
- */
-function similarPeople(patients: readonly Patient[], query: string): Patient[] {
-  const words = query
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word.length >= 2);
-  if (words.length === 0) return [];
-  let candidates: Set<Patient> | undefined;
-  for (const word of words) {
-    const matches = new Set<Patient>([...nearPatients(patients, [word]), ...findPatients(patients, word)]);
-    candidates = candidates ? new Set([...candidates].filter((patient) => matches.has(patient))) : matches;
-    if (candidates.size === 0) return [];
-  }
-  return [...(candidates ?? [])];
-}
-
 /** 0 = prefix or word-start, 1 = buried in a word, 2 = no text hit (kept in the original order). */
 function matchTier(fields: readonly (string | undefined)[], needle: string): number {
   const q = foldPatientSearchText(needle);
@@ -750,8 +727,6 @@ export type SmartSearchInput = {
 
 export type SmartSearchResults = {
   people: Patient[];
-  /** Near spellings, only when the name found nobody. Never merged into `people`. */
-  similarPeople: Patient[];
   movements: Movement[];
   referrals: ReferralSearchResult[];
   beds: BedSearchResult[];
@@ -847,7 +822,6 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
   if (trimmed.length === 0) {
     return {
       people: [],
-      similarPeople: [],
       movements: [],
       referrals: [],
       beds: [],
@@ -984,22 +958,8 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
       ])
     : [];
 
-  // Near spellings only for a name-shaped query that found nobody and nothing else of the person's.
-  const similar =
-    intent === "person" &&
-    !readyBedsOnly &&
-    people.length === 0 &&
-    movements.length === 0 &&
-    referrals.length === 0 &&
-    trimmed.length >= 3
-      ? rankGroup("similar", similarPeople(input.patients, trimmed), trimmed, (patient) => [
-          patient.familyName,
-          patient.givenName,
-        ])
-      : [];
   const totalCount =
     people.length +
-    similar.length +
     movements.length +
     referrals.length +
     beds.length +
@@ -1014,7 +974,6 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
 
   return {
     people,
-    similarPeople: similar,
     movements,
     referrals,
     beds,

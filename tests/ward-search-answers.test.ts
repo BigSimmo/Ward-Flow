@@ -252,14 +252,11 @@ describe("near spellings", () => {
   if (!patient) throw new Error("fixture drifted: no family name of six letters or more");
   const misspelt = patient.familyName.slice(0, 1) + patient.familyName.slice(2);
 
-  it("offers the person when a family name is missing a letter, and keeps them out of People", () => {
+  // Josh, 31 Oct 2026: no "Did you mean?" names. A typo match on a person risks the wrong patient.
+  it("never offers a person for a family name that is missing a letter", () => {
     const results = search(misspelt);
     expect(results.people).toEqual([]);
-    expect(results.similarPeople.map((candidate) => candidate.id)).toContain(patient.id);
-  });
-
-  it("offers nothing similar when the name was found", () => {
-    expect(search(patient.familyName).similarPeople).toEqual([]);
+    expect(results).not.toHaveProperty("similarPeople");
   });
 });
 
