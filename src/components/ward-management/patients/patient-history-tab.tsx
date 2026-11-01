@@ -37,7 +37,7 @@ import {
 import { formTitleForCode } from "@/lib/form-register";
 import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
 import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
-import { calendarDateOf, perthDateLabel } from "../ward-clock";
+import { calendarDateOf, perthDateLabel, perthDayLabel } from "../ward-clock";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { STAGES, type PatientNowRecord } from "./patient-now-records";
@@ -68,19 +68,20 @@ function ordinal({ y, m, d }: DayParts): number {
   return y * 10_000 + m * 100 + (d ?? 1);
 }
 
-/** "Thu 2 Jul", or "Thu 2 Jul 2025" when the year differs; a month-only date reads "Mar 2025". */
+/** "Thu 2 Jul", or "2 Jul 2025" when the year differs; a month-only date reads "Mar 2025". */
 function typedLabel(parts: DayParts, withYear: boolean): string {
   if (parts.d === undefined) return `${MONTHS[parts.m]} ${parts.y}`;
+  if (withYear) return `${parts.d} ${MONTHS[parts.m]} ${parts.y}`;
   const weekday = new Date(Date.UTC(parts.y, parts.m, parts.d)).toLocaleDateString("en-AU", {
     weekday: "short",
     timeZone: "UTC",
   });
-  return `${weekday} ${parts.d} ${MONTHS[parts.m]}${withYear ? ` ${parts.y}` : ""}`;
+  return `${weekday} ${parts.d} ${MONTHS[parts.m]}`;
 }
 
-/** "06/08/2026". */
+/** "6 Aug 2026", the shared written date with its year. */
 function numericLabel({ y, m, d }: DayParts): string {
-  return d === undefined ? `${MONTHS[m]} ${y}` : `${String(d).padStart(2, "0")}/${String(m + 1).padStart(2, "0")}/${y}`;
+  return d === undefined ? `${MONTHS[m]} ${y}` : `${d} ${MONTHS[m]} ${y}`;
 }
 
 /** Today in Perth, from the clock's day zero. */
@@ -91,9 +92,9 @@ function todayParts(dayZero: Date): DayParts {
   return { y, m: m - 1, d };
 }
 
-/** "Sun 1 Nov", Perth time. */
+/** "Sun 1 Nov", Perth time, through the shared formatter. */
 function dayLabel(instant: number, dayZero: Date): string {
-  return perthDateLabel(instant, dayZero, { weekday: "short", day: "numeric", month: "short" }).replace(",", "");
+  return perthDayLabel(instant, dayZero);
 }
 
 /** "10:37", 24-hour Perth time. */

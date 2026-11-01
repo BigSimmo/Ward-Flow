@@ -41,7 +41,7 @@ import {
   formatInstant,
   dayOf,
   isClockBreached,
-  perthDateLabel,
+  perthDayLabel,
   type Instant,
 } from "../ward-clock";
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "../ward-flow-provider";
@@ -103,8 +103,7 @@ function roleName(by: string | undefined): string | undefined {
 /** "10:37" today, or "Sun 1 Nov 10:37" on any other day. Never "yesterday", "in 2 days" or "ago". */
 function moment(at: Instant, now: Instant, dayZero: Date): string {
   if (dayOf(at) === dayOf(now)) return formatInstant(at);
-  const day = perthDateLabel(at, dayZero, { weekday: "short", day: "numeric", month: "short" });
-  return `${day.replace(",", "")} ${formatInstant(at)}`;
+  return `${perthDayLabel(at, dayZero)} ${formatInstant(at)}`;
 }
 
 /** A record status word from the older store, in the register's words. */

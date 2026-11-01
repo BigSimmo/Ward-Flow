@@ -28,7 +28,7 @@ import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { legalStatusTextIsInvoluntary } from "@/components/ward-management/ward-support-notifications";
-import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, perthDayLabel } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
 import type { PatientMode } from "./patient-mode";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
@@ -265,12 +265,7 @@ function transportCell(
 
 /** A demo instant as a calendar day, "Tue 14 Oct". */
 export function dayLabel(instant: number, dayZero: Date): string {
-  return calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "Australia/Perth",
-  });
+  return perthDayLabel(instant, dayZero);
 }
 
 function legalValue(record: Movement | undefined, patient: Patient | undefined): string {

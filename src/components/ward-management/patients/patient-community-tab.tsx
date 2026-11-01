@@ -24,7 +24,7 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 import { formTitleForCode } from "@/lib/form-register";
 import { communityTeamById, communityTeamSlug } from "../community/community-derivations";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
-import { formatInstant, perthDateLabel, type Instant } from "../ward-clock";
+import { formatInstant, perthDayLabel, type Instant } from "../ward-clock";
 import type { Admission } from "../ward-admissions";
 import { isOwnStay } from "./patient-now-adapter";
 import type { Movement } from "../ward-model";
@@ -70,11 +70,10 @@ function splitContact(value: string): { when: string; how?: string } {
   return { when: value.slice(0, at).trim(), how: how ? how[0].toUpperCase() + how.slice(1) : undefined };
 }
 
-/** DD/MM/YYYY 24h, from a demo-clock instant. */
+/** "Thu 29 Oct 10:37" (with the year when it differs), from a demo-clock instant. */
 function dateTime(instant: Instant, dayZero: Date | undefined): string {
   if (!dayZero) return formatInstant(instant);
-  const day = perthDateLabel(instant, dayZero, { day: "2-digit", month: "2-digit", year: "numeric" });
-  return `${day} ${formatInstant(instant)}`;
+  return `${perthDayLabel(instant, dayZero)} ${formatInstant(instant)}`;
 }
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];

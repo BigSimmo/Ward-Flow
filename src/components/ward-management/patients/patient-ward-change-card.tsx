@@ -5,7 +5,7 @@ import { CalendarDays, DoorOpen, Stethoscope } from "lucide-react";
 import { Button, Card, CardHead, Sheet, StatusGlyph, useIsPhone } from "@/components/wf";
 import {
   MINUTES_PER_DAY,
-  calendarDateOf,
+  perthDayLabel,
   formatInstantWithDay,
   splitDuration,
   type Instant,
@@ -24,13 +24,8 @@ export const DISCHARGE_DAYS = Array.from({ length: 43 }, (_, day) => day);
 export function dayOptionLabel(day: number, now: Instant, dayZero: Date): string {
   if (day === 0) return "Today";
   if (day === 1) return "Tomorrow";
-  const date = calendarDateOf(Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + day * MINUTES_PER_DAY, dayZero);
-  return `In ${day} days, ${date.toLocaleDateString("en-AU", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "Australia/Perth",
-  })}`;
+  const instant = Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + day * MINUTES_PER_DAY;
+  return `In ${day} days, ${perthDayLabel(instant, dayZero)}`;
 }
 
 /** v10 phone: the leave sheet offers four return times as chips (a past one is not offered). */

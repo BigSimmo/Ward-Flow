@@ -917,7 +917,12 @@ export function PatientNowScreen({
   ];
   const phoneMovement = isPhone && isLiveBedflow && liveMovement !== undefined;
   // The phone shows the same tabs as the desktop, without counts, so the record reads the same everywhere.
-  const phoneTabs = tabs.map((tab) => ({ ...tab, count: undefined }));
+  // Phone audit (1 Nov 2026): "Documents" was cut to "Documen" at 390 px; "Docs" lets all five fit.
+  const phoneTabs = tabs.map((tab) => ({
+    ...tab,
+    label: tab.key === "documents" ? "Docs" : tab.label,
+    count: undefined,
+  }));
   const canWithdraw =
     liveMovement !== undefined &&
     !liveMovement.closure &&

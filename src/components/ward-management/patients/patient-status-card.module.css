@@ -475,10 +475,9 @@
   line-height: 22px;
 }
 
+/* Owner rule: words wrap rather than cut off (phone audit, 1 Nov 2026). */
 .cell[data-ph-quiet] .sub {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .cell[data-ph-quiet] .action {
