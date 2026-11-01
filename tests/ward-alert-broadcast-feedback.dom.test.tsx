@@ -39,8 +39,10 @@ function prepareBroadcast() {
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-  fireEvent.change(screen.getByLabelText(/^Target scope$/i), { target: { value: "forensic" } });
-  fireEvent.click(screen.getByLabelText(/I confirm this directive is clinically authorised/i));
+  fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+  fireEvent.click(screen.getByRole("radio", { name: "By group" }));
+  fireEvent.click(screen.getByRole("button", { name: /Regional \(WACHS\)/ }));
+  fireEvent.click(screen.getByLabelText(/I'm authorised to send this to/i));
 }
 
 it("announces accepted dispatch for the selected scope and restores keyboard focus", () => {
@@ -48,7 +50,7 @@ it("announces accepted dispatch for the selected scope and restores keyboard foc
   fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.getByRole("status", { name: "Broadcast feedback" })).toHaveTextContent(
-    "shown in this prototype for Frankland Centre Forensic Mental Health only; no external notifications are sent.",
+    "shown in this prototype for Regional (WACHS) only; no external notifications are sent.",
   );
   expect(screen.getByRole("status", { name: "Broadcast feedback" })).not.toHaveTextContent(
     "shown in this prototype only",
@@ -69,13 +71,13 @@ it("does not reopen an accepted directive or retain its confirmation after a sce
   expect(screen.queryByRole("status", { name: "Broadcast feedback" })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
   expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toHaveAttribute("aria-disabled", "true");
-  expect(screen.getByLabelText(/I confirm this directive is clinically authorised/i)).not.toBeChecked();
+  expect(screen.getByLabelText(/I'm authorised to send this to/i)).not.toBeChecked();
 });
 
 it("keeps the draft and modal open after the engine refuses a dispatch, then allows retry", () => {
   prepareBroadcast();
   const title = screen.getByLabelText(/^Title$/i) as HTMLInputElement;
-  const message = screen.getByLabelText(/^Directive$/i) as HTMLTextAreaElement;
+  const message = screen.getByLabelText(/^Message$/i) as HTMLTextAreaElement;
   const before = { title: title.value, message: message.value };
   harness.refuse = true;
   fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
@@ -85,12 +87,12 @@ it("keeps the draft and modal open after the engine refuses a dispatch, then all
   );
   expect(title.value).toBe(before.title);
   expect(message.value).toBe(before.message);
-  expect((screen.getByLabelText(/^Target scope$/i) as HTMLSelectElement).value).toBe("forensic");
+  expect(screen.getByRole("button", { name: /Regional \(WACHS\)/ })).toHaveAttribute("aria-pressed", "true");
   expect(screen.queryByText(/no external notifications are sent/i)).not.toBeInTheDocument();
   harness.refuse = false;
   fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.getByRole("status", { name: "Broadcast feedback" })).toHaveTextContent(
-    "shown in this prototype for Frankland Centre Forensic Mental Health only; no external notifications are sent.",
+    "shown in this prototype for Regional (WACHS) only; no external notifications are sent.",
   );
 });

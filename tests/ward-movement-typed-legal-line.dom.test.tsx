@@ -52,9 +52,12 @@ function renderRow(movement: Movement) {
     </WardFlowProvider>,
   );
   const title = legalFormName(movement.legalForm!);
-  const line = [...view.container.querySelectorAll<HTMLElement>("[title]")].find((el) =>
-    el.getAttribute("title")!.startsWith(`${title} · `),
+  // Movements redesign (1 Nov 2026): legal status has its own column, titled with the full form
+  // name; the typed time is the line under the short status.
+  const cell = [...view.container.querySelectorAll<HTMLElement>("[title]")].find(
+    (el) => el.getAttribute("title") === title,
   );
+  const line = cell?.children[1] as HTMLElement | undefined;
   if (!line) throw new Error("legal line not found");
   return line;
 }
@@ -62,7 +65,7 @@ function renderRow(movement: Movement) {
 describe("Movements row legal line, as typed", () => {
   it("shows a near typed time with its standing word, a danger glyph first and the tag after", () => {
     const line = renderRow(withForm({ code: "3B", kind: "detention", dueAt: NOW_ANCHOR + urgentMinutes / 2 }));
-    expect(line.textContent).toMatch(/ · ends \S+ as typed · within \S+/u);
+    expect(line.textContent).toMatch(/^ends \S+ as typed · within \S+/u);
     expect(line.firstElementChild).toHaveAttribute("data-wf-glyph", "danger");
     expect(line.querySelector('[data-testid="legal-limits-not-checked"]')).toBeInTheDocument();
     expect(line.textContent).not.toMatch(/ - |left|ago|overdue/u);
@@ -78,18 +81,18 @@ describe("Movements row legal line, as typed", () => {
 
   it("says ended, as typed, once the typed time has gone by", () => {
     const line = renderRow(withForm({ code: "3B", kind: "detention", dueAt: NOW_ANCHOR - 30 }));
-    expect(line.textContent).toMatch(/ · ended \S+ as typed · passed/u);
+    expect(line.textContent).toMatch(/^ended \S+ as typed · passed/u);
     expect(line.firstElementChild).toHaveAttribute("data-wf-glyph", "danger");
     expect(line.textContent).not.toContain("30m");
   });
 
-  it("shows no glyph or tag for a far typed time, and a dot not a dash with no expiry", () => {
+  it("shows no glyph for a far typed time, and says when no expiry is recorded", () => {
     const far = renderRow(withForm({ code: "3B", kind: "detention", dueAt: NOW_ANCHOR + soonMinutes * 4 }));
     expect(far.querySelector("[data-wf-glyph]")).toBeNull();
     expect(far.querySelector('[data-testid="legal-limits-not-checked"]')).toBeInTheDocument();
     cleanup();
     const none = renderRow(withForm({ code: "3B", kind: "detention" }));
-    expect(none.textContent).toMatch(/ · no recorded expiry on this record$/u);
+    expect(none.textContent).toBe("No expiry recorded");
     expect(none.querySelector('[data-testid="legal-limits-not-checked"]')).toBeNull();
   });
 });

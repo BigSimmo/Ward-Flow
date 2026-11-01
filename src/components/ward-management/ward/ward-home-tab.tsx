@@ -9,13 +9,13 @@ import {
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import React, { useEffect, useMemo, useState, useTransition } from "react";
+import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
 import { pendingDepartureLogRows, type WardShiftLogRow } from "./ward-departure-log";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
-import { MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
+import { EXTRA_TRAVEL_HOLD_MINUTES, MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
@@ -33,6 +33,7 @@ import {
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { referralFit, wardStateLine } from "./ward-referral-fit";
 import { AwaitingFitLines, AwaitingIdentity, WardReferralDetailDrawer } from "./ward-awaiting-referral";
+import { WardAcceptDialog } from "./ward-answer-accept-dialog";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
@@ -116,7 +117,7 @@ interface WardHomeTabProps {
   resolvePatientIdentity: (movementOrAdmission: Parameters<typeof resolveSubjectPatient>[0]) => ResolvedPatientInfo;
   lastActionRejection: Rejection | null | undefined;
   overrideReasonForm: (movementId: string) => React.ReactNode;
-  onAcceptInPrinciple?: (movementId: string, unitId: string) => void;
+  onAcceptInPrinciple?: (movementId: string, unitId: string, extendedHold?: boolean) => void;
   /** Why this desk may not answer the ward's referrals at all, such as the site bed manager (D-80). */
   answerBlockedReason?: string;
   liveFormAlerts: Array<{
@@ -256,7 +257,12 @@ export function WardHomeTab({
 }: WardHomeTabProps) {
   const [, startTransition] = useTransition();
   const phoneSheets = phonePanel !== undefined;
-  const { bedReleases, leaveBeds = [], admissions = [] } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions");
+  const {
+    bedReleases,
+    leaveBeds = [],
+    admissions = [],
+    configuration,
+  } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions", "configuration");
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
     drugs: null,
@@ -281,9 +287,20 @@ export function WardHomeTab({
 
   const [referralDetailFor, setReferralDetailFor] = useState<string | null>(null);
 
+  // Q93 (Josh, 1 Nov 2026): no referral is accepted in one tap. Accept opens the named accept
+  // dialog, with its pull time limit, and nothing is recorded until it is confirmed.
+  const [acceptFor, setAcceptFor] = useState<string | null>(null);
+  const [acceptExtended, setAcceptExtended] = useState(false);
+  const acceptDialogRef = useRef<HTMLDivElement | null>(null);
+
   function acceptIncoming(movementId: string) {
+    setAcceptExtended(false);
+    setAcceptFor(movementId);
+  }
+
+  function recordAccept(movementId: string, extendedHold: boolean) {
     if (onAcceptInPrinciple) {
-      onAcceptInPrinciple(movementId, unit.id);
+      onAcceptInPrinciple(movementId, unit.id, extendedHold);
     } else {
       priorRejectionCountRef.current = rejections.length;
       setCheckToken((token) => token + 1);
@@ -748,8 +765,8 @@ export function WardHomeTab({
     actNow.push({
       key: "referrals",
       title: "Referrals waiting",
+      // Polish (1 Nov 2026): no count under these rows; the detail already names each bed or count.
       detail: `${incoming.length} waiting for this ward's answer`,
-      meta: String(incoming.length),
       tone: "danger",
       action: { label: "Answer", run: focusAwaiting },
     });
@@ -761,7 +778,6 @@ export function WardHomeTab({
       detail: heldUp
         .map((release) => `${bedByAdmission(release.admissionId)?.bedLabel ?? "A bed"} ${release.blocker}`)
         .join(", "),
-      meta: String(heldUp.length),
       tone: "danger",
       action: { label: "Review", run: () => onOpenDischarges?.() },
     });
@@ -778,7 +794,6 @@ export function WardHomeTab({
             `${bed.bedLabel}${bed.patientAlias ? ` ${bed.patientAlias}` : ""}, ${bed.bedHold!.short.toLowerCase()}`,
         )
         .join("; "),
-      meta: String(lapsedHolds.length),
       tone: "danger",
       action: { label: "Move or release", run: () => onSelectBed?.(Number(lapsedHolds[0]!.bedNumber)) },
     });
@@ -791,7 +806,6 @@ export function WardHomeTab({
       detail: heldAfterStop
         .map((movement) => `${resolvePatientIdentity(movement).formalName}, transport stopped after collection`)
         .join("; "),
-      meta: String(heldAfterStop.length),
       tone: "warning",
       action: onOpenArrivals ? { label: "Release pulled bed", run: onOpenArrivals } : undefined,
     });
@@ -960,6 +974,16 @@ export function WardHomeTab({
     for (const rows of [actNow, laterToday])
       rows.sort((a, b) => Number(b.key === "rollup") - Number(a.key === "rollup"));
   }
+  // Polish (1 Nov 2026): several rows offer the same "Review today's expected discharges" link; it
+  // shows once, on the first row that carries it, so the columns do not repeat it.
+  {
+    let reviewShown = false;
+    for (const row of [...actNow, ...laterToday, ...doneRows]) {
+      if (row.secondaryAction?.label !== "Review today's expected discharges →") continue;
+      if (reviewShown) row.secondaryAction = undefined;
+      reviewShown = true;
+    }
+  }
   const todoOpen = actNow.length + laterToday.filter((row) => !row.tick).length;
 
   // Length of stay: people in beds now, grouped by recorded stay in days.
@@ -1035,11 +1059,13 @@ export function WardHomeTab({
     );
   }
 
+  // Polish (1 Nov 2026): three columns, each a quiet head with its count, then one row a task with
+  // its action on the right and any time or count under the detail.
   function renderTodoColumn(id: string, title: string, tone: WfTone, rows: TodoRow[]) {
     const items = rows.filter((row) => !row.tick);
     const reminders = rows.filter((row) => row.tick);
     return (
-      <section className={styles.todoCol} aria-labelledby={`ward-todo-${id}`}>
+      <section className={styles.todoCol} data-tone={tone} aria-labelledby={`ward-todo-${id}`}>
         <div className={styles.groupHead}>
           <StatusGlyph tone={tone} size={9} />
           <h3 id={`ward-todo-${id}`} className={styles.groupTitle}>
@@ -1087,11 +1113,7 @@ export function WardHomeTab({
                   </span>
                 </span>
               )}
-              {row.meta ? (
-                <span className={row.meta.length > 6 ? `${styles.todoMeta} ${styles.todoMetaBelow}` : styles.todoMeta}>
-                  {row.meta}
-                </span>
-              ) : null}
+              {row.meta ? <span className={styles.todoMeta}>{row.meta}</span> : null}
               {row.action ? (
                 <button type="button" className={buttonClass({ variant: "sec", size: "sm" })} onClick={row.action.run}>
                   {row.action.label}
@@ -1875,7 +1897,13 @@ export function WardHomeTab({
                     </span>
                     <span className={styles.bedTileState} aria-hidden="true">
                       <span className={styles.bedTileNote}>
-                        {row.free ? row.stateWord : row.note === row.name ? "" : row.tileNote}
+                        {row.free
+                          ? row.stateWord === row.name
+                            ? ""
+                            : row.stateWord
+                          : row.note === row.name
+                            ? ""
+                            : row.tileNote}
                       </span>
                       {row.days ? <span className={styles.bedTileDays}>{row.days}</span> : null}
                     </span>
@@ -2010,6 +2038,37 @@ export function WardHomeTab({
             onAccept={() => {
               setReferralDetailFor(null);
               acceptIncoming(detailMovement.id);
+            }}
+          />
+        );
+      })()}
+
+      {(() => {
+        // The referral the accept dialog was opened for, while it is still waiting here (CS-08).
+        const acceptMovement = visibleIncoming.find((movement) => movement.id === acceptFor);
+        if (!acceptMovement) return null;
+        return (
+          <WardAcceptDialog
+            movement={acceptMovement}
+            patientName={resolvePatientIdentity(acceptMovement).formalName}
+            unitName={unit.name}
+            now={now}
+            extended={acceptExtended}
+            holdChoices={[
+              { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+              {
+                extended: true,
+                label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+              },
+            ]}
+            dialogRef={acceptDialogRef}
+            onChooseHold={setAcceptExtended}
+            onCancel={() => {
+              setAcceptFor(null);
+            }}
+            onConfirm={() => {
+              setAcceptFor(null);
+              recordAccept(acceptMovement.id, acceptExtended);
             }}
           />
         );

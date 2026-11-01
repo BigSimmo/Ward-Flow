@@ -348,7 +348,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: var(--wf-s-2) 0;
+  /* Phone audit (Josh, 1 Nov 2026): the kit card's inner padding, so names and Find a bed clear the edge. */
+  padding: var(--wf-s-2) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
   font-size: var(--wf-fs-13);
 }

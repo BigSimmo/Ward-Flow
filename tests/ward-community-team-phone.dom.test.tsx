@@ -54,7 +54,7 @@ function ReceiveForTeam() {
           role: "community",
           now,
           ageBand: "Adult",
-          destinations: [{ kind: "community_team", teamName: communityTeamById("midland")!.name }],
+          destinations: [{ kind: "community_team", teamName: communityTeamById("albany")!.name }],
           homeRegion: "Perth Metropolitan",
           suburb: { kind: "unknown", reason: "not_known" },
           source: "community",
@@ -68,12 +68,13 @@ function ReceiveForTeam() {
   );
 }
 
+// Midland shows the approved Midland phone design instead (Q155); this generic tree is tested on Albany.
 function renderTeam() {
   return render(
     <ToastProvider>
       <WardFlowProvider>
         <ReceiveForTeam />
-        <CommunityScreen teamId="midland" />
+        <CommunityScreen teamId="albany" />
       </WardFlowProvider>
     </ToastProvider>,
   );

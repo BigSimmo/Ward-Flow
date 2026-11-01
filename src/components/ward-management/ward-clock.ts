@@ -146,6 +146,32 @@ export function calendarDateOf(instant: Instant, dayZero: Date): Date {
   return new Date(dayZero.getTime() + instant * 60_000);
 }
 
+/** An instant's Perth calendar day as text, e.g. `{ weekday: "short", day: "numeric", month: "short" }`. */
+export function perthDateLabel(instant: Instant, dayZero: Date, options: Intl.DateTimeFormatOptions): string {
+  return calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", { ...options, timeZone: "Australia/Perth" });
+}
+
+/**
+ * The one way a calendar day is written: "Thu 29 Oct" in the demo's own year, "17 Aug 2026" in any
+ * other year. No commas (phone audit, 1 Nov 2026). Perth calendar, from the clock's day zero.
+ */
+export function perthDayLabel(instant: Instant, dayZero: Date): string {
+  const parts = (at: Date, options: Intl.DateTimeFormatOptions) =>
+    Object.fromEntries(
+      new Intl.DateTimeFormat("en-AU", { ...options, timeZone: "Australia/Perth" })
+        .formatToParts(at)
+        .map((part) => [part.type, part.value]),
+    );
+  const date = calendarDateOf(instant, dayZero);
+  const { weekday, day, month, year } = parts(date, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  return year === parts(dayZero, { year: "numeric" }).year ? `${weekday} ${day} ${month}` : `${day} ${month} ${year}`;
+}
+
 /**
  * An instant, with its day said out loud whenever it is not today.
  *

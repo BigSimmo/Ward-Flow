@@ -2274,3 +2274,489 @@
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-13);
 }
+
+/* ---- Transport mock-up (Josh, 1 Nov 2026) ---- */
+
+/* Needs transport: the pulled beds with no transport logged, at the top of the page. */
+.needCard {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.needCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.375rem;
+  height: 1.375rem;
+  margin-right: var(--wf-s-2);
+  padding: 0 6px;
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-warning) 13%, transparent);
+  color: var(--wf-warning-ink);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.needNote {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.needBody.needBody {
+  padding: 0;
+}
+
+.needList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.needRow {
+  display: grid;
+  grid-template-columns: minmax(10rem, 13.5rem) minmax(0, 1fr) 4.5rem auto;
+  gap: var(--wf-s-3);
+  align-items: center;
+  min-height: 3.5rem;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.needRow[aria-current="true"] {
+  background: var(--wf-accent-tint);
+}
+
+.needWho,
+.needRoute {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.needWho b {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.needRoute b {
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.needTier[data-tier="1"] {
+  color: var(--wf-danger-ink);
+  font-weight: 600;
+}
+
+.needWait {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.needWait small {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.needFoot {
+  display: flex;
+  justify-content: center;
+  padding: var(--wf-s-1);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* The job and booking panel: the screen's height, its body scrolls, its foot stays. */
+@media (min-width: 62.5625rem) {
+  .layout[data-open="true"] > .side {
+    /* Set from the panel's top when it opens (useOfficerPanelHeight); this is its starting value. */
+    --officer-panel-h: calc(100dvh - var(--wgs-bar-h, 3.5rem) - 2rem);
+    position: sticky;
+    top: calc(var(--wgs-bar-h, 3.5rem) + var(--wf-s-3));
+    align-self: start;
+  }
+
+  .layout[data-open="true"] > .side > .detail {
+    display: flex;
+    flex-direction: column;
+    height: var(--officer-panel-h);
+  }
+
+  .detailScroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .detailScroll > * {
+    flex-shrink: 0;
+  }
+
+  /* Notices and help hints stack bottom right, where the open panel's pinned step sits: move them
+     beside the panel so they never cover the button a person (or a journey test) needs next. */
+  :global(body):has(.layout[data-open="true"]) :global([data-testid="ward-help-hint"]),
+  :global(body):has(.layout[data-open="true"]) :global([data-testid="toast-region"]),
+  .screen:has(.layout[data-open="true"]) .toast {
+    right: calc(27.5rem + 2 * var(--wf-s-4));
+  }
+}
+
+.detailTitle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.detailTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 1.5rem;
+  padding: 0 var(--wf-s-2);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.detailTag[data-tone="warning"] {
+  background: color-mix(in srgb, var(--wf-warning) 11%, transparent);
+  color: var(--wf-warning-ink);
+}
+
+.bookingBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+}
+
+.bookingCallout {
+  display: flex;
+  gap: var(--wf-s-2);
+  align-items: center;
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+/* Route: two stops joined by a line. */
+.routeCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr) auto;
+  gap: var(--wf-s-3) 10px;
+}
+
+.routeCard::before {
+  content: "";
+  position: absolute;
+  top: 0.875rem;
+  bottom: 0.875rem;
+  left: 7px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--wf-line-2);
+}
+
+.routePin {
+  position: relative;
+  z-index: 1;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 2px;
+  border: 2px solid var(--wf-ink-3);
+  border-radius: 50%;
+  background: var(--wf-raised);
+}
+
+.routePin[data-to] {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent);
+  box-shadow: inset 0 0 0 3px var(--wf-raised);
+}
+
+.routeStop {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.routeStop b {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.routeStopTime {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-14) var(--wf-font);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.routeStopTime b {
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-14) var(--wf-mono);
+}
+
+/* Progress: read-only; the one next step is the pinned primary. */
+.progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progressStep {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-align: center;
+}
+
+.progressStep::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 50%;
+  left: -50%;
+  height: 2px;
+  background: var(--wf-line-2);
+}
+
+.progressStep:first-child::before {
+  display: none;
+}
+
+.progressStep[data-state="done"]::before,
+.progressStep[data-state="now"]::before {
+  background: var(--wf-accent);
+}
+
+.progressStep small {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+.progressStep[data-state="done"] {
+  color: var(--wf-ink-2);
+}
+
+.progressStep[data-state="now"] {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.progressDot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--wf-line-3);
+  border-radius: 50%;
+  background: var(--wf-raised);
+  color: var(--wf-raised);
+}
+
+.progressStep[data-state="done"] .progressDot {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent);
+}
+
+.progressStep[data-state="now"] .progressDot {
+  border-color: var(--wf-accent);
+  box-shadow: 0 0 0 4px var(--wf-accent-tint);
+}
+
+.progressStep[data-state="now"] .progressDot::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-accent);
+}
+
+.detailTabs {
+  align-self: flex-start;
+}
+
+.detailTab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.formsLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 2.5rem;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: color-mix(in srgb, var(--wf-warning) 7%, transparent);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.formsLine b {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.formsLineGo {
+  margin-left: auto;
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
+
+.formsLine:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.factList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.factList > div {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.factList > div:last-child {
+  border-bottom: 0;
+}
+
+.factList dt {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.factList dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.factList dd.factMuted {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+.detailFoot.detailFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.footTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.detailFoot .phStageRow {
+  flex: 0 1 auto;
+  min-width: 9.25rem;
+}
+
+.stageForms {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-warning-ink);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+@media (max-width: 48rem) {
+  .needRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 2px;
+    padding: 10px var(--wf-s-3);
+  }
+
+  .needRoute {
+    grid-column: 1;
+  }
+
+  .needRow > button {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+  }
+
+  .factList > div {
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+  }
+
+  .detailFoot .phStageRow {
+    flex: 1 1 auto;
+  }
+
+  .footTools:empty {
+    display: none;
+  }
+}
+
+.stageForms {
+  white-space: nowrap;
+}
+
+.detailFoot.detailFoot {
+  align-items: center;
+}
+
+@media (max-width: 48rem) {
+  .bookingCard.bookingCard {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+  }
+
+  .bookingCard .bookingBody {
+    padding-bottom: 0;
+  }
+}
+
+/* Transport mock-up: on a larger screen the pinned next step matches Inspect form beside it (40px);
+   the 48px step stays on phone. */
+@media (min-width: 48.01rem) {
+  .detailFoot .phNextStep.phNextStep {
+    height: var(--wf-h-md);
+  }
+}

@@ -56,10 +56,6 @@ import { siteDirectory } from "@/components/ward-management/ward-sites";
 
 const classes = { button: "b", glyph: "g", text: "t", line: "l", label: "x" };
 
-function Harness({ initial }: { initial: HelpView }) {
-  return <WardHelpSheet view={initial} onView={vi.fn()} onClose={vi.fn()} />;
-}
-
 beforeEach(() => {
   route.pathname = "/ward-flow/movements";
   resetTourSeenForTests();
@@ -120,54 +116,77 @@ describe("tour seen store", () => {
   });
 });
 
+function sheet(view: HelpView, extra: { onView?: (view: HelpView) => void; onTour?: () => void } = {}) {
+  return render(
+    <WardHelpSheet
+      view={view}
+      onView={extra.onView ?? vi.fn()}
+      onClose={vi.fn()}
+      onTour={extra.onTour ?? vi.fn()}
+      onShowMe={vi.fn()}
+    />,
+  );
+}
+
 describe("help sheet", () => {
-  it("shows the current screen's purpose and actions", () => {
-    render(<Harness initial="screen" />);
-    expect(screen.getByTestId("ward-help-screen").textContent).toContain(SCREEN_HELP.movements.purpose);
+  it("shows the current screen's purpose, with its main actions folded under How this screen works", () => {
+    sheet("screen");
+    const here = screen.getByTestId("ward-help-tasks-here");
+    expect(here.textContent).toContain(SCREEN_HELP.movements.purpose);
+    const works = within(here).getByRole("button", { name: "How this screen works" });
+    expect(works.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(works);
+    for (const action of SCREEN_HELP.movements.actions) expect(here.textContent).toContain(action);
   });
 
   it("answers the screen's own questions one at a time and offers the keyboard shortcuts at the foot", () => {
     route.pathname = "/ward-flow/handover";
-    const onShortcuts = vi.fn();
-    render(<WardHelpSheet view="screen" onView={vi.fn()} onClose={vi.fn()} onShortcuts={onShortcuts} />);
-    const questions = screen.getByTestId("ward-help-questions");
-    const question = within(questions).getByRole("button", { name: "How do I hand over to the next shift?" });
-    // Redesign (#1118): each answer is folded until asked for.
+    const onView = vi.fn();
+    sheet("questions", { onView });
+    const questions = screen.getByRole("region", { name: "On Handover" });
+    const question = within(questions).getByRole("button", { name: /How do I hand over to the next shift\?/ });
+    // Each answer is folded until asked for.
     expect(question.getAttribute("aria-expanded")).toBe("false");
     fireEvent.click(question);
     expect(question.getAttribute("aria-expanded")).toBe("true");
     fireEvent.click(screen.getByTestId("ward-help-shortcuts"));
-    expect(onShortcuts).toHaveBeenCalledTimes(1);
+    expect(onView).toHaveBeenCalledWith("keys");
   });
 
-  it("keeps the desk guide in How do I… on a screen with no help page, instead of Home's help", () => {
+  it("draws no screen card on a screen with no help page, instead of Home's help", () => {
     route.pathname = "/ward-flow/constellation";
-    render(<WardHelpSheet view="screen" onView={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.queryByTestId("ward-help-screen")).toBeNull();
-    expect(screen.getByTestId("ward-help-desk").textContent).toContain(DESK_GUIDES.coordinator.summary);
+    sheet("screen");
+    expect(screen.queryByTestId("ward-help-tasks-here")).toBeNull();
+    expect(screen.getByTestId("ward-help-tasks")).toBeTruthy();
   });
 
-  it("lists every glossary word with no filter box of its own: Help has one search box (Josh, 31 Oct 2026)", () => {
-    render(<Harness initial="glossary" />);
+  it("lists the glossary in Reference, with Help's one search box only (Josh, 31 Oct 2026)", () => {
+    sheet("glossary");
     expect(screen.queryByTestId("ward-help-glossary-filter")).toBeNull();
-    expect(screen.queryAllByRole("searchbox")).toHaveLength(0);
+    expect(screen.getAllByRole("searchbox")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /Glossary/ }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByText("CAD number")).toBeTruthy();
-    expect(screen.getByText("ECT")).toBeTruthy();
+    // Short forms are under Codes.
+    fireEvent.click(screen.getByRole("button", { name: /Codes/ }));
+    const short = screen.getByRole("region", { name: "Services and short forms" });
+    const more = within(short).queryByRole("button", { name: /^Show \d+ more/ });
+    if (more) fireEvent.click(more);
+    expect(within(short).getByText("ECT")).toBeTruthy();
   });
 
-  it("folds the signed-in desk's guide into How do I…: where it starts and how to tell it saved", () => {
-    render(<Harness initial="desk" />);
-    const desk = screen.getByTestId("ward-help-desk");
-    expect(desk).toHaveAttribute("open");
+  it("shows the signed-in desk's guide as Your desk: where it starts and how to tell it saved", () => {
+    sheet("desk");
+    const desk = screen.getByRole("region", { name: "Where you start" }).parentElement as HTMLElement;
     expect(desk.textContent).toContain(DESK_GUIDES.coordinator.summary);
     expect(desk.textContent).toContain(DESK_GUIDES.coordinator.startsAt);
-    expect(desk.textContent).toContain(SAVED_OR_NOT[0]);
+    expect(screen.getByRole("region", { name: "Is it saved?" }).textContent).toContain(SAVED_OR_NOT[0]);
+    expect(screen.getByRole("button", { name: "Back to Help" })).toBeTruthy();
   });
 
   it("carries one synthetic line, in the footer only", () => {
-    render(<Harness initial="tasks" />);
+    sheet("tasks");
     expect(screen.getAllByText(/synthetic/i)).toHaveLength(1);
-    expect(screen.getByTestId("ward-help-synthetic").textContent).toMatch(/not for clinical use/);
+    expect(screen.getByTestId("ward-help-synthetic").textContent).toMatch(/Synthetic prototype/);
   });
 
   it("gives every desk a plain guide that never ranks, scores or calls an incoming bed held", () => {
@@ -180,15 +199,15 @@ describe("help sheet", () => {
   });
 
   it("says what to do when Ward Flow is down, on every desk's guide (PR-20)", () => {
-    render(<Harness initial="desk" />);
-    expect(screen.getByTestId("ward-help-downtime").textContent).toContain(WHEN_IT_IS_DOWN[0]);
+    sheet("desk");
+    expect(screen.getByRole("region", { name: "If Ward Flow is down" }).textContent).toContain(WHEN_IT_IS_DOWN[0]);
   });
 
-  it("shows the colour code in the Words tab, one glyph and meaning per tone", () => {
-    render(<Harness initial="glossary" />);
-    const legend = screen.getByTestId("ward-help-legend");
-    expect(legend.querySelectorAll("dt")).toHaveLength(COLOUR_LEGEND.length);
-    expect(legend.querySelectorAll("svg[aria-hidden='true']")).toHaveLength(COLOUR_LEGEND.length);
+  it("shows the colour code in Reference, one glyph and meaning per tone", () => {
+    sheet("reference");
+    fireEvent.click(screen.getByRole("button", { name: /Colours/ }));
+    const legend = screen.getByRole("region", { name: "Colours and marks" });
+    expect(legend.querySelectorAll("svg")).toHaveLength(COLOUR_LEGEND.length);
     for (const entry of COLOUR_LEGEND) expect(legend.textContent).toContain(entry.meaning);
   });
 
@@ -206,28 +225,32 @@ describe("help sheet", () => {
     })) as typeof window.matchMedia;
     try {
       route.pathname = "/ward-flow/referrals";
-      render(<WardHelpSheet view="screen" onView={vi.fn()} onClose={vi.fn()} />);
-      expect(screen.getByTestId("ward-help-screen").textContent).toContain("Tap a referral to open it");
-      expect(screen.getByTestId("ward-help-screen").textContent).not.toMatch(/keyboard|J and K/);
+      sheet("screen");
+      const here = screen.getByTestId("ward-help-tasks-here");
+      expect(here.textContent).toContain("Tap a referral to open it");
+      expect(here.textContent).not.toMatch(/keyboard|J and K/);
       expect(screen.queryByTestId("ward-help-shortcuts")).toBeNull();
     } finally {
       window.matchMedia = original;
     }
   });
 
-  it("starts the tour only from its own row, the first in How do I…", () => {
-    const onView = vi.fn();
-    render(<WardHelpSheet view="screen" onView={onView} onClose={vi.fn()} />);
-    expect(onView).not.toHaveBeenCalled();
+  it("starts the tour only from its own row in How do I…", () => {
+    const onTour = vi.fn();
+    sheet("screen", { onTour });
+    expect(onTour).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId("ward-help-view-tour"));
-    expect(onView).toHaveBeenCalledWith("tour");
+    expect(onTour).toHaveBeenCalledTimes(1);
   });
 
   it("lists recent changes, newest first, under What's new", () => {
-    render(<WardHelpSheet view="new" onView={vi.fn()} onClose={vi.fn()} />);
-    const items = within(screen.getByTestId("ward-help-new")).getAllByRole("listitem");
-    expect(items).toHaveLength(WHATS_NEW.length);
-    expect(items[0]?.textContent).toContain((WHATS_NEW.at(-1) as { line: string }).line);
+    sheet("new");
+    const list = screen.getByTestId("ward-help-new");
+    const shown = Math.min(WHATS_NEW.length, 10);
+    expect(list.querySelectorAll("p")).toHaveLength(shown);
+    expect(list.querySelector("p")?.textContent).toContain(
+      ((WHATS_NEW.at(-1) as { line: string }).line.split(": ").at(-1) ?? "").slice(1),
+    );
   });
 });
 

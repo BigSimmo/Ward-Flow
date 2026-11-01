@@ -105,7 +105,7 @@ tr:has(+ .moreRow) > td {
 }
 
 /* Tablet: the bar keeps to one line; Open checklist names the open checks. */
-@media (max-width: 64rem) {
+@media (max-width: 90rem) {
   ul.signOpen {
     display: none;
   }

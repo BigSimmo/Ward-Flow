@@ -56,7 +56,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
   {
     id: "pt",
     header: "Patient",
-    width: 156,
+    width: 176,
     locked: true,
     cell: (row) => (
       <span className={styles.two}>

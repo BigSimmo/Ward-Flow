@@ -261,3 +261,65 @@
     border: 1px solid ButtonText;
   }
 }
+
+/* Help redesign (1 Nov 2026): a Help answer in the preview pane, ported from the approved mock-up. */
+.helpAnswer {
+  display: grid;
+  gap: 12px;
+}
+
+.helpSteps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.helpSteps li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  column-gap: 10px;
+  row-gap: 2px;
+}
+
+.helpSteps li::before {
+  content: counter(step);
+  counter-increment: step;
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 50%;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.helpSteps b {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.helpSteps span {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: 1.5;
+}
+
+.helpSafety {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.helpText {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: 1.55;
+}

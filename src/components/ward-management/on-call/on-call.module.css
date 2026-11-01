@@ -1553,7 +1553,7 @@
   gap: 8px;
   min-height: 40px;
   padding: 0 4px 0 12px;
-  border-radius: 14px;
+  border-radius: var(--wf-r-md);
   background: color-mix(in srgb, var(--wf-accent) 9%, var(--wf-surface));
   font-size: var(--wf-fs-13);
   color: var(--wf-accent-ink);
@@ -1792,7 +1792,7 @@
   margin: 0;
   padding: 16px;
   border: 1px solid var(--wf-line);
-  border-radius: 20px;
+  border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
   color: var(--wf-ink-3);
 }

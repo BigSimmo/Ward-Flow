@@ -77,6 +77,49 @@ const AddPatientForm = dynamic<MockupPageProps>(() =>
   ),
 );
 
+// Movements mock-up (1 Nov 2026): the real screen with the redesign drawn in place.
+const MovementsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/movements/movements-screen").then(
+    (module) =>
+      function MovementsPreview() {
+        return <module.MovementsScreen />;
+      },
+  ),
+);
+
+// Handover mock-up (1 Nov 2026): the real screen with the proposed changes, fed by the preview world.
+const HandoverScreen = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/handover/handover-page").then(
+    (module) =>
+      function HandoverBackdrop() {
+        return <module.HandoverPage />;
+      },
+  ),
+);
+
+// Discharges mock-up (1 Nov 2026): the real board with the redesign drawn in place. Its pop-up opens
+// a held-up release (Glasswell, Delia) on load, as a click on that row does.
+const DischargesScreen = dynamic<MockupPageProps>(() =>
+  Promise.all([import("@/components/ward-management/discharges/discharge-board"), import("react")]).then(
+    ([board, react]) =>
+      function DischargesPreview({ openOnLoad }: MockupPageProps) {
+        react.useEffect(() => {
+          if (openOnLoad !== "discharge-detail") return;
+          let tries = 0;
+          const timer = window.setInterval(() => {
+            const row = document.querySelector<HTMLElement>('tr[data-release-id="derived-expected-AD-SCGA-03"]');
+            if (row || tries++ > 40) {
+              window.clearInterval(timer);
+              row?.click();
+            }
+          }, 150);
+          return () => window.clearInterval(timer);
+        }, [openOnLoad]);
+        return <board.DischargeBoard />;
+      },
+  ),
+);
+
 import type { BuiltPageSlug } from "./built-pages";
 
 export type MockupPageProps = { openOnLoad?: string };
@@ -92,4 +135,7 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "legal-forms": LegalFormsScreen,
   patient: PatientNowBackdrop,
   "add-patient": AddPatientForm,
+  movements: MovementsPage,
+  handover: HandoverScreen,
+  discharges: DischargesScreen,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

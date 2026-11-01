@@ -7,13 +7,12 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
 import { useTransportCommandFeedback } from "./use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Clock, Copy, ListChecks, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
+import { Check, Clock, Copy, ListChecks, Lock, MapPin, Plus, Search, ShieldCheck, X } from "lucide-react";
 
 import {
   Button,
   Card,
   CardBody,
-  CardFoot,
   CardHead,
   EmptyState,
   FilterChip,
@@ -88,11 +87,17 @@ import {
   revokedHoldingBedReason,
   stageSince,
   stageStartedAt,
-  transportLegalStatusLabel,
 } from "./officer-screen-helpers";
 import { renderArrivalsCard } from "./officer-arrivals-card";
 import { OfficerOrderNote } from "./officer-order-note";
-import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
+import { type OfficerDetailTab, type OfficerJobDetailContext } from "./officer-job-detail";
+import { OfficerJobPanel, formsMissingNote } from "./officer-job-panel";
+import {
+  NeedsTransportCard,
+  OfficerBookingPanel,
+  scrollToNeedsTransport,
+  useNeedsTransport,
+} from "./officer-needs-transport";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 export {
@@ -124,8 +129,9 @@ const OFFICER_JOB_ROWS = 8;
  * forms pack yet.
  */
 export function OfficerScreen() {
-  const { movements, units, rejections, patients, referrals, dayZero, notices } = useWardFlowSelect(
+  const { movements, units, rejections, patients, referrals, admissions, dayZero, notices } = useWardFlowSelect(
     "movements",
+    "admissions",
     "units",
     "rejections",
     "patients",
@@ -286,7 +292,10 @@ export function OfficerScreen() {
   // ROLE BRANCH (officer): the transport officer's own desk (as-officer-home, Josh 31 Oct 2026). A
   // long list opens on its first rows, then "Show all"; a highlight, a search or a chosen job past
   // the cut shows every row, so nothing lit is ever hidden.
-  const officerDesk = useEffectiveWardAccess().role === "officer";
+  const access = useEffectiveWardAccess();
+  const officerDesk = access.role === "officer";
+  const booking = useNeedsTransport(movements, access, { admissions, referrals });
+  const needing = booking.needing;
   const [showAllJobs, setShowAllJobs] = useState(false);
   const activeProviders = TRANSPORT_PROVIDERS.filter((provider) =>
     jobs.some((movement) => movement.transport?.provider === provider),
@@ -325,18 +334,35 @@ export function OfficerScreen() {
     setDiversionReason(undefined);
     setDiversionPlace(undefined);
   };
+  // The job panel's tab (Details for each new job) and the pulled bed whose booking is being logged.
+  const [detailTab, setDetailTab] = useState<OfficerDetailTab>("details");
+  const [bookingId, setBookingId] = useState<string | undefined>(undefined);
   const selectJob = (id: string) => {
     resetDiversion();
+    setDetailTab("details");
+    setBookingId(undefined);
     setSelectedId((current) => (current === id ? undefined : id));
   };
   const openJob = (id: string) => {
-    if (id !== selectedId) resetDiversion();
+    if (id !== selectedId) {
+      resetDiversion();
+      setDetailTab("details");
+    }
+    setBookingId(undefined);
     setSelectedId(id);
   };
   const closeJob = () => {
     resetDiversion();
     setSelectedId(undefined);
+    setBookingId(undefined);
   };
+  const openBooking = (id: string) => {
+    resetDiversion();
+    setSelectedId(undefined);
+    setBookingId((current) => (current === id ? undefined : id));
+  };
+  const bookingMovement = bookingId === undefined ? undefined : needing.find((movement) => movement.id === bookingId);
+
   // Between the phone sheet and the two-column layout the panel stacks above the lists, so a
   // newly chosen job is scrolled into view rather than opening off-screen.
   const sideRef = useRef<HTMLDivElement>(null);
@@ -651,6 +677,9 @@ export function OfficerScreen() {
   const detailContext: OfficerJobDetailContext = {
     blockedNote,
     destinationLabelFor,
+    detailTab,
+    setDetailTab,
+    originShortFor,
     diversionOpen,
     diversionPlace,
     diversionReason,
@@ -702,8 +731,32 @@ export function OfficerScreen() {
       />
     );
 
+  const needCard = (
+    <NeedsTransportCard
+      needing={needing}
+      now={now}
+      isPhone={isPhone}
+      bookingId={bookingId}
+      nameFor={officerListPatientName}
+      umrnFor={umrnFor}
+      originShortFor={originShortFor}
+      destinationLabelFor={destinationLabelFor}
+      onLog={openBooking}
+    />
+  );
   const heroPillStats = (
     <>
+      {/* Transport mock-up: the pulled beds still to book lead the counts, and jump to their list. */}
+      {needing.length > 0 && !isPhone ? (
+        <HeroChip
+          key="need"
+          value={needing.length}
+          label="Need transport"
+          tone="warning"
+          pressed={false}
+          onPress={scrollToNeedsTransport}
+        />
+      ) : null}
       {pillStat("requested", awaitingDeparture, "To accept", "To accept", "neutral")}
       {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
       {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
@@ -728,6 +781,18 @@ export function OfficerScreen() {
   // (the kit's `phoneRows.heroPills` / `phoneRows.heroPill`).
   const heroTools = (
     <div className={isPhone ? phoneRows.heroPills : styles.heroTools}>
+      {needing.length > 0 ? (
+        <Button
+          variant="pri"
+          size="sm"
+          icon={Plus}
+          className={isPhone ? phoneRows.heroPill : undefined}
+          onClick={() => openBooking(needing[0]!.id)}
+          data-testid="ward-officer-hero-log-booking"
+        >
+          Log booking
+        </Button>
+      ) : null}
       {nextArrival ? (
         <span className={styles.nextArrival} title="Next expected arrival">
           <Icon icon={Clock} size={14} />
@@ -769,7 +834,7 @@ export function OfficerScreen() {
     </div>
   );
 
-  const panelOpen = selectedJob !== undefined && selectedJob.transport !== undefined;
+  const panelOpen = (selectedJob !== undefined && selectedJob.transport !== undefined) || bookingMovement !== undefined;
   const anyJobEta = jobs.some((movement) => expectedArrival(movement) !== undefined);
   // Site review 12 Oct 2026: a column that says the same thing on every row ("0 of 3" thirteen
   // times) says nothing; the hero's "Jobs need forms" and the job sheet still carry the count.
@@ -855,7 +920,11 @@ export function OfficerScreen() {
           </Card>
         ) : null}
 
-        {topJob && topJob.transport ? (
+        {isPhone ? needCard : null}
+
+        {/* Transport mock-up: phone only. On a larger screen the first row of the job list is the
+            next action, and this card drew without its phone styles. */}
+        {isPhone && topJob && topJob.transport ? (
           <Card className={styles.nextCard} aria-label="Next action">
             <div className={styles.nextCardHead}>
               <span className={styles.eyebrow}>Next action</span>
@@ -937,6 +1006,7 @@ export function OfficerScreen() {
 
         <div className={styles.layout} data-open={panelOpen ? "true" : undefined}>
           <div className={styles.leftColumn}>
+            {isPhone ? null : needCard}
             <Card className={styles.jobsPanel} aria-label="Jobs">
               <div className={styles.tabsRow}>
                 <Tabs
@@ -955,11 +1025,7 @@ export function OfficerScreen() {
                 />
                 <span className={styles.headNote}>
                   {/* ROLE BRANCH (officer): no "Choose a patient" hint over a list that says it already. */}
-                  {panelOpen
-                    ? "Highlights never hide a job"
-                    : officerDesk
-                      ? null
-                      : "Choose a patient to open their job"}
+                  {panelOpen ? null : officerDesk ? null : "Choose a patient to open their job"}
                 </span>
               </div>
 
@@ -1020,8 +1086,7 @@ export function OfficerScreen() {
                   </span>
                 </div>
 
-                {/* ROLE BRANCH (officer): on a phone the list is the content; the order note stays on the
-                    larger screen, where the Sort control it explains is shown. */}
+                {/* Audit 24-1 decision 5: the next-action order is said on screen (not on the officer's phone). */}
                 <OfficerOrderNote shown={jobs.length > 0 && sortKey === "next" && !(officerDesk && isPhone)} />
                 {jobs.length === 0 ? (
                   <p className={styles.placeholder} data-testid="ward-officer-empty">
@@ -1038,7 +1103,7 @@ export function OfficerScreen() {
                           <th scope="col">Patient</th>
                           <th scope="col">Route</th>
                           <th scope="col">Stage</th>
-                          <th scope="col" className={formsVary ? undefined : styles.etaOff}>
+                          <th scope="col" className={formsVary && !panelOpen ? undefined : styles.etaOff}>
                             Forms
                           </th>
                           {/* Device audit, 11 Oct 2026: the ETA column shows only when a job has one;
@@ -1152,12 +1217,14 @@ export function OfficerScreen() {
                                     {since !== undefined ? (
                                       <span className={styles.stageFor}>{durMinutes(Math.max(0, now - since))}</span>
                                     ) : null}
+                                    {/* With the job panel open, the Forms column folds in here. */}
+                                    {panelOpen && !isPhone && packRequired(movement) ? formsMissingNote(forms) : null}
                                   </span>
                                 ) : (
                                   transportLeg(transport)
                                 )}
                               </td>
-                              <td className={formsVary ? undefined : styles.etaOff}>
+                              <td className={formsVary && !panelOpen ? undefined : styles.etaOff}>
                                 {!packRequired(movement) ? (
                                   <span className={styles.muted}>Not needed</span>
                                 ) : (
@@ -1335,75 +1402,37 @@ export function OfficerScreen() {
             })}
           </div>
 
-          {panelOpen && selectedJob && selectedJob.transport ? (
-            <>
-              <div ref={sideRef} className={styles.side}>
-                <div className={styles.scrim} aria-hidden="true" onClick={closeJob} />
-                <Card
-                  className={styles.detail}
-                  role={isPhone ? "dialog" : undefined}
-                  aria-modal={isPhone ? true : undefined}
-                  aria-labelledby="ward-officer-detail-heading"
-                  data-testid="ward-officer-detail"
-                >
-                  <span className={styles.grab} aria-hidden="true" />
-                  <CardHead
-                    id="ward-officer-detail-heading"
-                    className={styles.detailHead}
-                    title={officerPatientName(selectedJob)}
-                    meta={
-                      <>
-                        {/* The UMRN is withheld on some desks; no stray " · " is left in its place. */}
-                        {umrnFor(selectedJob) ? <span className={styles.mono}>{umrnFor(selectedJob)}</span> : null}
-                        {isPhone ? (
-                          <>
-                            {umrnFor(selectedJob) ? "\u00a0· " : null}
-                            {originShortFor(selectedJob)} to {destinationLabelFor(selectedJob)}
-                            {selectedJob.transport.escortRequired ? "\u00a0· Escort" : ""}
-                          </>
-                        ) : (
-                          <>
-                            {umrnFor(selectedJob) ? " · " : null}
-                            {/* Redesign: a bare "Not recorded" names no noun. */}
-                            {transportLegalStatusLabel(selectedJob.transport) === "Not recorded"
-                              ? "Legal status not recorded"
-                              : transportLegalStatusLabel(selectedJob.transport)}
-                            {selectedJob.transport.escortRequired ? " · Escort" : ""}
-                          </>
-                        )}
-                      </>
-                    }
-                    aside={
-                      <>
-                        {/* Redesign: no stage chip here; the leg steps in the panel show the stage. */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          iconOnly
-                          icon={X}
-                          onClick={closeJob}
-                          aria-label="Close job panel"
-                          data-testid="ward-officer-detail-close"
-                        />
-                      </>
-                    }
-                  />
-                  <CardBody className={styles.detailBody}>
-                    {renderDetail(selectedJob, detailContext)}
-                    {isPhone ? <div className={styles.phMoreActions}>{detailExtraActions(selectedJob)}</div> : null}
-                  </CardBody>
-                  {isPhone ? (
-                    renderPhoneNextStep(selectedJob, detailContext) ? (
-                      <CardFoot className={styles.detailFooter}>
-                        {renderPhoneNextStep(selectedJob, detailContext)}
-                      </CardFoot>
-                    ) : null
-                  ) : (
-                    <CardFoot className={styles.inactiveRow}>{detailExtraActions(selectedJob)}</CardFoot>
-                  )}
-                </Card>
-              </div>
-            </>
+          {bookingMovement ? (
+            <OfficerBookingPanel
+              key={bookingMovement.id}
+              sideRef={sideRef}
+              movement={bookingMovement}
+              name={officerListPatientName(bookingMovement)}
+              umrn={umrnFor(bookingMovement)}
+              route={`${originShortFor(bookingMovement)} → ${destinationLabelFor(bookingMovement)}`}
+              now={now}
+              isPhone={isPhone}
+              raise={booking.raise}
+              acting={booking.acting.get(bookingMovement.id) ?? {}}
+              onClose={closeJob}
+              onSaved={(name) => (closeJob(), showToast(`Transport booking logged for ${name}.`))}
+            />
+          ) : null}
+          {!bookingMovement && panelOpen && selectedJob && selectedJob.transport ? (
+            <div ref={sideRef} className={styles.side}>
+              <div className={styles.scrim} aria-hidden="true" onClick={closeJob} />
+              <OfficerJobPanel
+                job={{ ...selectedJob, transport: selectedJob.transport }}
+                isPhone={isPhone}
+                name={officerPatientName(selectedJob)}
+                umrn={umrnFor(selectedJob)}
+                origin={originShortFor(selectedJob)}
+                destination={destinationLabelFor(selectedJob)}
+                context={detailContext}
+                tools={<>{detailExtraActions(selectedJob)}</>}
+                onClose={closeJob}
+              />
+            </div>
           ) : null}
         </div>
 

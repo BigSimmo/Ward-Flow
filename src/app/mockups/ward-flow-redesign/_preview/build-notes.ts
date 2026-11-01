@@ -159,6 +159,9 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** the phone hero buttons and the Lists row are back to today's sizes (your ruling, 30 October). The Lists row reads 'Lists by step' with each list's count, and the risk table header reads 'Earliest release on record', so it stays on one line.",
     "**Proposals for you:** move 'May pass the access target' under the board, and drop the repeated Find a bed buttons (an ED desk does not find beds itself), making the name the link.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
+    "**Round 3 (Josh, 1 November):** the desktop board is the ED handover table (Presentation between Bay and Form, a Form dropdown that confirms with the patient's name then offers Undo, one Checks column, Enlarge), and the Lists are one card with Awaiting review, Expected and Forms. Presentation and form choices are kept on this screen only.",
+    "**Round 4 (Josh, 1 November):** the header is the department name with Waiting-style figures and slim line, the T column is replaced by priority bars before the name, the access-target card loses its side edge and its explanatory text, and the Presentation and Form pickers no longer overlap when a row is hovered.",
+    "**To build:** a saved presentation field (today there is only an unsaved typed note), and the Form dropdown must record the real legal-form event.",
   ],
   "legal-forms": [
     "**Built into the app** (lane L, 31 Oct 2026): the Legal forms screen, with the ward's and the ED's views as branches of the one real screen. This entry is the real screen, kept as the backdrop for Record exam.",

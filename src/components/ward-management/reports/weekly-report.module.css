@@ -116,3 +116,36 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Statistics redesign (1 Nov 2026): the week picker is a band button with the native list over it,
+   so the choice stays a real select for the keyboard, screen readers and print hiding. */
+.weekPick {
+  position: relative;
+  cursor: pointer;
+}
+
+.weekPick select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.weekPick:focus-within {
+  outline: 2px solid var(--wf-focus-ring, currentColor);
+  outline-offset: 2px;
+}
+
+/* The exact period and stamp print on every copy; on screen the band names the week. */
+.printLines {
+  display: none;
+}
+
+@media print {
+  .printLines {
+    display: block;
+  }
+}

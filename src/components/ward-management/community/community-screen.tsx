@@ -6,7 +6,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { currentCareContactCompleted } from "../ward-care-journey";
 import type { DischargeOpenHandle } from "../ward-discharge-records";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useIsPhone, useOptionalToast } from "@/components/wf";
+import { Segmented, useIsPhone, useOptionalToast } from "@/components/wf";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 import {
@@ -77,12 +77,22 @@ import {
   communityCoveragePanel,
 } from "./community-screen-panels";
 import { CommunityScreenPhone } from "./community-screen-phone";
-import { CommunityScreenDesktopHero, CommunityScreenSwitchDrawer } from "./community-screen-hero";
+import { MidlandPhone } from "./team-2026/midland-phone";
 import { CommunityScreenSentTab } from "./community-screen-sent-tab";
+import {
+  CommunityOtherTeams,
+  CommunityScreenDesktopHero,
+  CommunityScreenSwitchDrawer,
+  CommunityScreenTabRow,
+  SECTION_FIRST_LIST,
+  type CommunityTeamSection,
+} from "./community-screen-hero";
 import { CommunityScreenWaitingTab } from "./community-screen-waiting-tab";
 import { CommunityScreenInBedTab } from "./community-screen-in-bed-tab";
 import { CommunityScreenBackTab } from "./community-screen-back-tab";
 import { CommunityScreenCaseloadTab } from "./community-screen-caseload-tab";
+import { MIDLAND_DEMO_TEAM } from "./team-2026/midland-demo";
+import { MidlandTeamSections } from "./team-2026/midland-sections";
 import {
   CommunityScreenTransportBookDialog,
   CommunityScreenTransportCancelDialog,
@@ -334,6 +344,16 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     readerPickedTab.current = true;
     setChosenTab(tab);
   }, []);
+  // The locked design (1 Nov 2026) groups the lists into five sections; the page opens on Team home.
+  const [teamSection, setTeamSection] = useState<CommunityTeamSection>("home");
+  const openTeamSection = useCallback(
+    (section: CommunityTeamSection) => {
+      setTeamSection(section);
+      const list = SECTION_FIRST_LIST[section];
+      if (list) setActiveTab(list);
+    },
+    [setActiveTab],
+  );
   const [activeDrawer, setActiveDrawer] = useState<DrawerType>(null);
   const [activeModalType, setActiveModalType] = useState<ModalType>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
@@ -420,6 +440,9 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
 
   const hasExplicitProps = Boolean(admissions || referrals);
   const isDemoMode = demonstration && !hasExplicitProps;
+  // The live Midland page carries the locked mock-up's demo team (Q126, Q132: Midland only). Supplied
+  // records, and the older demonstration cohort, keep their own lists.
+  const midlandDemo = !hasExplicitProps && !demonstration && MIDLAND_DEMO_TEAM.test(teamId);
 
   const { demoTeamReferrals, demoVisibleReferrals, demoVisibleInpatients, demoVisibleEgress, demoVisibleCaseload } =
     useCommunityScreenDemoLists({ teamId, triageFilter, inpatientFilter, egressFilter, caseloadFilter });
@@ -926,6 +949,9 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     team,
     referFromTeamHref,
     openNewReferral,
+    teamSection,
+    openTeamSection,
+    midlandDemo,
     followUpFilter,
     setFollowUpFilter,
     declineOpenFor,
@@ -1121,7 +1147,14 @@ export function CommunityScreen(props: CommunityScreenProps) {
       </div>
     );
   }
-  const { isPhone, activeDrawer, acceptanceMessage, acceptanceError, acceptanceRefusal } = view;
+  const { isPhone, activeDrawer, acceptanceMessage, acceptanceError, acceptanceRefusal, teamSection, activeTab } = view;
+  // One section shows at a time; the others stay mounted (as the lists always have) but undrawn.
+  const sectionPanel = (section: CommunityTeamSection) => ({
+    id: `community-panel-${section}`,
+    role: "tabpanel" as const,
+    "aria-labelledby": `community-section-${section}`,
+    className: teamSection === section ? v6.section : v6.sectionHidden,
+  });
 
   return (
     <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
@@ -1130,46 +1163,88 @@ export function CommunityScreen(props: CommunityScreenProps) {
           <>
             <CommunityScreenDesktopHero view={view} />
 
-            {communitySinceElement(view)}
+            <CommunityScreenTabRow view={view} />
+
+            {view.midlandDemo ? null : communitySinceElement(view)}
           </>
         )}
-        {isPhone ? <CommunityScreenPhone view={view} /> : null}
+        {isPhone && view.midlandDemo ? (
+          <MidlandPhone
+            section={teamSection}
+            open={view.openTeamSection}
+            onRecordContact={() => view.setActiveModalType("contact")}
+            onReferFromTeam={view.openNewReferral}
+          />
+        ) : null}
+        {isPhone && !view.midlandDemo ? <CommunityScreenPhone view={view} /> : null}
 
         <CommunityScreenSwitchDrawer view={view} />
 
         {isPhone ? null : (
-          <div className={`${styles.contentWorkspace} ${v6.workspace}`}>
-            {/* ── Sent: the referrals this team made, each with its answer (D-77 group A) ── */}
-            <CommunityScreenSentTab view={view} />
+          <div className={`${styles.contentWorkspace} ${v6.sections}`} data-community-section={teamSection}>
+            {view.midlandDemo ? (
+              <MidlandTeamSections panel={sectionPanel} open={view.openTeamSection} now={view.now} />
+            ) : (
+              <>
+                {/* ── Referrals: To answer (the waiting list) and Sent by team (D-77 group A) ── */}
+                <div {...sectionPanel("referrals")}>
+                  <Segmented
+                    label="Referrals"
+                    size="sm"
+                    className={v6.sectionSwitch}
+                    items={[
+                      { id: "tab-triage", label: "To answer", count: view.waitingCount },
+                      { id: "tab-sent", label: "Sent by team", count: view.sentReferrals.sent.length },
+                    ]}
+                    value={activeTab === "tab-sent" ? "tab-sent" : "tab-triage"}
+                    onChange={view.setActiveTab}
+                  />
+                  <CommunityScreenWaitingTab view={view} />
+                  <CommunityScreenSentTab view={view} />
+                </div>
 
-            {/* ── Tab 1: Priority Referral Triage Queue ── */}
-            <CommunityScreenWaitingTab view={view} />
+                {/* ── In hospital: in a bed now, and back home (7-day follow-up) ── */}
+                <div {...sectionPanel("hospital")}>
+                  <Segmented
+                    label="In hospital"
+                    size="sm"
+                    className={v6.sectionSwitch}
+                    items={[
+                      { id: "tab-inpatients", label: "In hospital now", count: view.lists.currentlyAdmitted.length },
+                      { id: "tab-egress", label: "Back home", count: view.lists.expectedBack.length },
+                    ]}
+                    value={activeTab === "tab-inpatients" ? "tab-inpatients" : "tab-egress"}
+                    onChange={view.setActiveTab}
+                  />
+                  <CommunityScreenInBedTab view={view} />
+                  <CommunityScreenBackTab view={view} />
+                </div>
 
-            {/* ── Tab 2: Catchment Acute Inpatients ── */}
-            <CommunityScreenInBedTab view={view} />
+                {/* ── Caseload, with the CTO register ── */}
+                <div {...sectionPanel("caseload")}>
+                  <CommunityScreenCaseloadTab view={view} />
+                </div>
 
-            {/* ── Tab 3: 7-Day Post-Discharge Follow-Up & Egress ── */}
-            <CommunityScreenBackTab view={view} />
+                {/* ── Team home: what needs the team, and how to reach it ── */}
+                <div {...sectionPanel("home")}>
+                  <div className={`${styles.tabPanelActive} ${v6.side}`} id="tab-team" data-wf-rail="1201">
+                    <CommunityWorthAttention items={communityPhoneAttentionItems(view)} />
+                    {communityHowToReachPanel(view)}
+                  </div>
+                </div>
 
-            {/* ── Tab 4: Active Caseload & CTO Statutory Register ── */}
-            <CommunityScreenCaseloadTab view={view} />
-
-            {/* ── The team itself: how to reach it, and the sample deployment. Shown under every list (v6). ── */}
-            <div className={`${styles.tabPanelActive} ${v6.side}`} id="tab-team" data-wf-rail="1201">
-              <CommunityWorthAttention items={communityPhoneAttentionItems(view)} />
-
-              {/* ── How to reach this team ── */}
-              {communityHowToReachPanel(view)}
-
-              {/* ── Team Deployment, Clinic Rooms and Response Fleet ── */}
-              {communityOnDutyPanel(view)}
-            </div>
+                {/* ── Clinicians: the sample roster, rooms and cars ── */}
+                <div {...sectionPanel("clinicians")}>{communityOnDutyPanel(view)}</div>
+              </>
+            )}
 
             {/* ── About this data: notices, limits, facts, links and provenance, closed (option A) ── */}
             <CommunityAboutThisData>
               {communityNoticesSection(view)}
               {communityCoveragePanel(view)}
             </CommunityAboutThisData>
+
+            <CommunityOtherTeams view={view} />
           </div>
         )}
 

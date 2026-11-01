@@ -1,8 +1,11 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-/** Help search (variant A) in the Help sheet: the field opens the centred search box. */
+/**
+ * Help's one search box (redesign round 2, 1 Nov 2026): the answers replace the panel's body while
+ * words are typed; the arrow keys move, Enter opens and Escape clears.
+ */
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -28,71 +31,86 @@ vi.mock("@/components/ward-management/help/ward-help-store", async (importOrigin
 }));
 
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
+import type { HelpView } from "@/components/ward-management/help/ward-help-events";
+
+function sheet(props: Partial<Parameters<typeof WardHelpSheet>[0]> = {}) {
+  return render(
+    <WardHelpSheet view="screen" onView={vi.fn()} onClose={vi.fn()} onTour={vi.fn()} onShowMe={vi.fn()} {...props} />,
+  );
+}
+
+function type(words: string) {
+  const field = screen.getByRole("searchbox", { name: "Search Help" });
+  fireEvent.change(field, { target: { value: words } });
+  return field;
+}
 
 describe("Help sheet search field", () => {
-  it("Escape closes only search and returns focus to the Help sheet", async () => {
+  it("Escape clears only the words, keeping the Help sheet open", () => {
     const onClose = vi.fn();
-    render(<WardHelpSheet view="screen" ask={undefined} onView={vi.fn()} onClose={onClose} />);
-    const field = screen.getByTestId("ward-help-search-field");
-    fireEvent.click(field);
+    sheet({ onClose });
+    const field = type("pull a bed");
+    expect(screen.queryByRole("tablist")).toBeNull();
     const outsideKey = vi.fn();
     window.addEventListener("keydown", outsideKey);
     try {
-      fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
+      fireEvent.keyDown(field, { key: "Escape" });
       expect(outsideKey).not.toHaveBeenCalled();
     } finally {
       window.removeEventListener("keydown", outsideKey);
     }
-    await waitFor(() => expect(document.activeElement).toBe(field));
+    expect((field as HTMLInputElement).value).toBe("");
+    expect(screen.getByRole("tablist", { name: "Help sections" })).toBeTruthy();
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("is in the sheet and opens the search box with the desk's suggestions", () => {
-    render(<WardHelpSheet view="screen" ask={undefined} onView={vi.fn()} onClose={vi.fn()} />);
-    fireEvent.click(screen.getByTestId("ward-help-search-field"));
-    expect(screen.getByRole("dialog", { name: "Search Help" })).toBeTruthy();
-    expect(screen.getByText("Suggested for Site bed manager")).toBeTruthy();
+  it("mends a small typo and says what it searched for, with a way back to the typed words", () => {
+    sheet();
+    type("book trasnport");
+    expect(screen.getByText(/Showing results for/).parentElement?.textContent).toMatch(/book transport/i);
+    fireEvent.click(screen.getByRole("button", { name: /Search only/ }));
+    expect(screen.queryByText(/Showing results for/)).toBeNull();
   });
-  it.each(["pointer", "Enter"])("closes the parent Help sheet when Open is used with %s", (method) => {
+
+  it.each(["pointer", "Enter"])("closes the Help sheet when a Settings answer is opened with %s", (method) => {
     function Host() {
       const [open, setOpen] = useState(true);
       return open ? (
-        <WardHelpSheet view="screen" ask={undefined} onView={vi.fn()} onClose={() => setOpen(false)} />
+        <WardHelpSheet
+          view="screen"
+          onView={vi.fn()}
+          onClose={() => setOpen(false)}
+          onTour={vi.fn()}
+          onShowMe={vi.fn()}
+        />
       ) : null;
     }
     render(<Host />);
-    fireEvent.click(screen.getByTestId("ward-help-search-field"));
-    const input = screen.getByRole("combobox");
-    fireEvent.change(input, { target: { value: "high contrast" } });
-    const option = screen.getByTestId("ward-help-search-result-setting:high-contrast");
-    if (method === "pointer") fireEvent.click(option);
+    const field = type("high contrast");
+    // The best answer is the guide, read in place; the Settings row below it opens Settings.
+    const best = screen.getByRole("region", { name: "Best answer" });
+    expect(best.textContent).toMatch(/Stronger edges/);
+    expect(within(best).queryByRole("button")).toBeNull();
+    const row = within(screen.getByRole("region", { name: "Screens" })).getByRole("button", { name: /^High contrast/ });
+    if (method === "pointer") fireEvent.click(row);
     else {
-      const index = screen.getAllByRole("option").indexOf(option);
-      for (let at = 0; at < index; at += 1) fireEvent.keyDown(input, { key: "ArrowDown" });
-      fireEvent.keyDown(input, { key: "Enter" });
+      const active = () => document.getElementById(field.getAttribute("aria-activedescendant") ?? "");
+      for (let step = 0; step < 20 && active()?.textContent !== row.textContent; step += 1) {
+        fireEvent.keyDown(field, { key: "ArrowDown" });
+      }
+      expect(active()?.textContent).toBe(row.textContent);
+      fireEvent.keyDown(field, { key: "Enter" });
     }
     expect(screen.queryByTestId("ward-help-sheet")).toBeNull();
-    expect(screen.queryByRole("dialog", { name: "Search Help" })).toBeNull();
   });
 
-  it("opens Words at a glossary word the search found", async () => {
-    function Host() {
-      const [view, setView] = useState<"screen" | "glossary">("screen");
-      return (
-        <WardHelpSheet
-          view={view}
-          ask={undefined}
-          onView={(next) => setView(next === "glossary" ? "glossary" : "screen")}
-          onClose={vi.fn()}
-        />
-      );
-    }
-    render(<Host />);
-    fireEvent.click(screen.getByTestId("ward-help-search-field"));
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "pull expired" } });
-    fireEvent.click(screen.getByTestId("ward-help-search-result-term:Pull expired"));
-    expect(screen.queryByRole("dialog", { name: "Search Help" })).toBeNull();
-    expect(screen.getByTestId("ward-help-glossary")).toBeTruthy();
-    await waitFor(() => expect(document.activeElement?.id).toBe("ward-help-term-pull-expired"));
+  it("opens Reference at a glossary word the search found", () => {
+    const onView = vi.fn<(view: HelpView) => void>();
+    sheet({ onView });
+    const field = type("what does pull expired mean");
+    expect(screen.getByRole("region", { name: "Best answer" }).textContent).toContain("Pull expired");
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(onView).toHaveBeenCalledWith("reference");
+    expect((field as HTMLInputElement).value).toBe("");
   });
 });

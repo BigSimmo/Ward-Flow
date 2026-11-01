@@ -14,7 +14,6 @@ const WardHelpSheet = dynamic(() => import("./ward-help-sheet").then((m) => m.Wa
 const WardTour = dynamic(() => import("./ward-tour").then((m) => m.WardTour));
 const WardShowMe = dynamic(() => import("./ward-show-me").then((m) => m.WardShowMe));
 const WardTourAutoStart = dynamic(() => import("./ward-tour-auto-start").then((m) => m.WardTourAutoStart));
-const WardShortcutsSheet = dynamic(() => import("./ward-shortcuts-sheet").then((m) => m.WardShortcutsSheet));
 const WardHelpHints = dynamic(() => import("../help-content/ward-help-hints").then((m) => m.WardHelpHints));
 const WardWhatsNew = dynamic(() => import("./ward-whats-new").then((m) => m.WardWhatsNew));
 
@@ -38,17 +37,13 @@ export function WardHelpHost() {
       }),
     [],
   );
-  // "?" anywhere opens the keyboard shortcuts sheet (P120), unless Help or the tour is open.
-  const [shortcuts, setShortcuts] = useState(false);
-  useEffect(() => subscribeShortcutsKey(() => setShortcuts(true)), []);
-  const closeShortcuts = useCallback(() => setShortcuts(false), []);
+  // "?" anywhere opens the keyboard shortcuts (P120), now a view inside Help with Back to Help
+  // (redesign, 1 Nov 2026), unless Help or the tour is already open.
+  useEffect(() => subscribeShortcutsKey(() => setOpen((now) => now ?? { view: "keys" })), []);
   const startTour = useCallback(() => setOpen({ view: "tour" }), []);
   const setView = useCallback((view: HelpView) => setOpen({ view }), []);
   const close = useCallback(() => setOpen(null), []);
-  const shortcutsFromHelp = useCallback(() => {
-    setOpen(null);
-    setShortcuts(true);
-  }, []);
+  const showMe = useCallback((id: string) => setOpen({ showMe: id }), []);
   if (open && "showMe" in open) {
     const id = open.showMe;
     return askOn ? <WardShowMe id={id} onClose={close} onBack={() => setOpen({ view: "tasks", task: id })} /> : null;
@@ -63,10 +58,10 @@ export function WardHelpHost() {
         showMeOn={askOn}
         onView={setView}
         onClose={close}
-        onShortcuts={shortcutsFromHelp}
+        onTour={startTour}
+        onShowMe={showMe}
       />
     );
-  if (shortcuts) return <WardShortcutsSheet onClose={closeShortcuts} />;
   return signedIn ? (
     <>
       <WardTourAutoStart onStart={startTour} />

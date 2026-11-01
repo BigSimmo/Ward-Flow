@@ -4,15 +4,14 @@ import { openEdJourneys } from "@/components/ward-management/ward-shared-figures
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeftRight, Clock, Hospital, Users } from "lucide-react";
+import { ArrowLeftRight, Users } from "lucide-react";
 
 import {
-  CardBody,
-  CardFoot,
+  BarList,
   ColumnChart,
   HeroStat,
   PhoneListRow,
-  StatusGlyph,
+  Segmented,
   cx,
   durMinutes,
   tableClasses,
@@ -30,15 +29,19 @@ import {
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
 import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
-import { FlushRow, Follow } from "./statistics-layout";
 import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
-import { ServiceDot } from "./statistics-services-index";
 import { SortTh } from "./statistics-wards-index";
 import { PhoneBody, PhoneGroup, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import {
+  Foot,
+  Glyph,
+  Grid,
+  redesignStyles as redesign,
+} from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import {
   ExecutiveStatisticsUnavailable,
   PeopleNotListed,
@@ -70,6 +73,16 @@ const LONG_HOURS = LONG_WAIT_MINUTES / 60;
 const VERY_LONG_HOURS = VERY_LONG_WAIT_MINUTES / 60;
 
 type EdSortKey = "name" | "waiting" | "unplaced" | "over24" | "over48" | "longest" | "median";
+/** Which open journeys the field of marks shows (the redesign's switch, Q135). */
+type SwarmShow = "all" | "unplaced" | "over24";
+
+/** "Under 4h", "4 to 8h" and "24h and over", from the band floors rather than typed here. */
+function bandName(position: number): string {
+  const from = ED_WAIT_BANDS[position]!.fromMinutes / 60;
+  const next = ED_WAIT_BANDS[position + 1]?.fromMinutes;
+  if (next === undefined) return `${from}h and over`;
+  return position === 0 ? `Under ${next / 60}h` : `${from} to ${next / 60}h`;
+}
 
 /**
  * ALL EMERGENCY DEPARTMENTS — the EDs index page (Statistics A, 9 Oct 2026).
@@ -244,8 +257,24 @@ function OperationalEdsIndex() {
       networkMedian={networkMedian}
       bands={bands}
       swarmRows={swarmRows.map(({ id }) => ({ id }))}
-      renderSwarm={(width) => (
-        <StatisticsEdSwarm rows={swarmRows} labelWidth={width} testId="ward-statistics-eds-swarm" />
+      renderSwarm={(width, show = "all") => (
+        <StatisticsEdSwarm
+          rows={
+            show === "all"
+              ? swarmRows
+              : swarmRows.map((row) => ({
+                  ...row,
+                  // The same tests `edWaitFigures` counts with: no ward accepted, or waiting past the long-wait line.
+                  entries: row.entries.filter((entry) =>
+                    show === "unplaced"
+                      ? entry.movement.acceptedUnitId === undefined
+                      : entry.waitMinutes >= LONG_WAIT_MINUTES,
+                  ),
+                }))
+          }
+          labelWidth={width}
+          testId="ward-statistics-eds-swarm"
+        />
       )}
     />
   );
@@ -272,7 +301,7 @@ function EdsIndexView({
   networkMedian: number | null;
   bands: { id: string; label: string; value: StatisticsCount }[];
   swarmRows: { id: string }[];
-  renderSwarm: (width: number) => ReactNode;
+  renderSwarm: (width: number, show?: SwarmShow) => ReactNode;
   executive?: boolean;
 }) {
   const section = statisticsSectionById("units");
@@ -292,6 +321,7 @@ function EdsIndexView({
   type Row = EdIndexRow;
   const [sort, setSort] = useState<EdSortKey>("waiting");
   const [asc, setAsc] = useState(false);
+  const [show, setShow] = useState<SwarmShow>("all");
   const isPhone = useIsPhone();
 
   const sorted = useMemo(() => {
@@ -381,12 +411,12 @@ function EdsIndexView({
         </>
       }
     >
-      <p className={styles.muted} data-testid="ward-statistics-eds-population">
-        {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Times run from journey
-        opening.
-      </p>
       {isPhone ? (
         <PhoneBody testId="ward-statistics-eds-phone">
+          <p className={styles.muted} data-testid="ward-statistics-eds-population">
+            {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Times run from journey
+            opening.
+          </p>
           <PhoneList label="Emergency departments, busiest first">
             {swarmRows.map((swarm) => {
               const row = departments.find((each) => each.id === swarm.id)!;
@@ -443,43 +473,59 @@ function EdsIndexView({
       ) : (
         <>
           <StatCard
-            icon={Users}
             id="everyone-waiting"
             className={index.anchorTarget}
             title="Open ED journeys, by ED"
-            aside={
-              <span
-                className={cx(styles.muted, index.phoneHide)}
-              >{`${shown(waiting)} open journeys across ${departments.length} EDs`}</span>
+            meta={`${shown(waiting)} open across ${departments.length} EDs`}
+            action={
+              executive ? undefined : (
+                <Segmented<SwarmShow>
+                  label="Show"
+                  value={show}
+                  onChange={setShow}
+                  items={[
+                    { id: "all", label: "All" },
+                    { id: "unplaced", label: "No ward yet", count: shown(unplaced) },
+                    { id: "over24", label: `Past ${LONG_HOURS}h`, count: shown(over24) },
+                  ]}
+                />
+              )
             }
             data-testid="ward-statistics-eds-swarm-card"
           >
-            <div className={index.swarmBody}>{renderSwarm(176)}</div>
-            <CardFoot
-              meta={
+            <div className={index.swarmBody}>{renderSwarm(176, show)}</div>
+            <Foot
+              how={
                 executive
                   ? undefined
-                  : `Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`
+                  : [
+                      "Each mark is one open ED journey. Times run from when the journey opened.",
+                      `The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`,
+                      "An open journey stays the ED’s until arrival.",
+                    ]
               }
-            />
+            >
+              <span data-testid="ward-statistics-eds-population">
+                {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure
+              </span>
+            </Foot>
           </StatCard>
 
-          <FlushRow layout="lead3">
+          <Grid layout="wide">
             <StatCard
-              icon={Hospital}
               id="every-ed"
               className={index.anchorTarget}
               title="Every emergency department"
-              aside={<span className={cx(styles.muted, index.phoneHide)}>Sort by any column</span>}
+              meta="Sort by any column"
               data-testid="ward-statistics-eds-table-card"
             >
               <div
-                className={index.tableScroll}
+                className={redesign.tableWrap}
                 tabIndex={0}
                 role="region"
                 aria-label="Every emergency department, scrollable"
               >
-                <table className={cx(tableClasses.table, styles.table)} data-testid="ward-statistics-eds-table">
+                <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-eds-table">
                   <caption className={styles.srOnly}>
                     Every emergency department: open ED journeys, including transit, those with no ward yet, long waits,
                     the longest and the median wait
@@ -487,7 +533,7 @@ function EdsIndexView({
                   <thead>
                     <tr>
                       <SortTh id="name" label="ED" sort={sort} asc={asc} onSort={onSort} />
-                      <SortTh id="waiting" label="Open journeys" sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="waiting" label="Open" sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh id="unplaced" label="No ward yet" sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh id="over24" label={`Past ${LONG_HOURS}h`} sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh
@@ -503,88 +549,83 @@ function EdsIndexView({
                     </tr>
                   </thead>
                   <tbody>
-                    {sorted.map((row) => (
-                      <tr key={row.id}>
-                        <th scope="row">
-                          <span className={index.rowName}>
-                            {row.openable ? (
-                              <Link href={edStatisticsHref(row.id)} className={index.rowLink}>
-                                {row.name}
-                              </Link>
-                            ) : (
-                              row.name
-                            )}
-                            <span className={index.rowSub}>
-                              <ServiceDot service={row.service} />
-                              {row.code}
-                              {row.service ? ` · ${row.service}` : ""}
+                    {sorted.map((row) => {
+                      const num = (zero: boolean) => cx(redesign.r, tableClasses.num, zero && redesign.zero);
+                      return (
+                        <tr key={row.id}>
+                          <th scope="row">
+                            <span className={redesign.name}>
+                              {row.openable ? (
+                                <Link href={edStatisticsHref(row.id)} className={redesign.nameLink}>
+                                  {row.name}
+                                </Link>
+                              ) : (
+                                row.name
+                              )}
+                              <small>
+                                {row.code}
+                                {row.service ? ` · ${row.service}` : ""}
+                              </small>
                             </span>
-                          </span>
-                        </th>
-                        <td className={cx(styles.num, exactStatisticsCount(row.waiting) === 0 && styles.zero)}>
-                          {shown(row.waiting)}
-                        </td>
-                        <td className={cx(styles.num, exactStatisticsCount(row.unplaced) === 0 && styles.zero)}>
-                          {shown(row.unplaced)}
-                        </td>
-                        <td className={cx(styles.num, exactStatisticsCount(row.over24) === 0 && styles.zero)}>
-                          <span className={styles.flagged}>
-                            {positive(row.over24) ? <StatusGlyph tone="warning" size={9} /> : null}
-                            {shown(row.over24)}
-                          </span>
-                        </td>
-                        <td className={cx(styles.num, exactStatisticsCount(row.over48) === 0 && styles.zero)}>
-                          <span className={styles.flagged}>
-                            {positive(row.over48) ? <StatusGlyph tone="danger" size={9} /> : null}
-                            {shown(row.over48)}
-                          </span>
-                        </td>
-                        <td className={cx(styles.num, row.longest === null && styles.zero)}>{waitText(row.longest)}</td>
-                        <td className={cx(styles.num, row.median === null && styles.zero)}>{waitText(row.median)}</td>
-                      </tr>
-                    ))}
+                          </th>
+                          <td className={num(exactStatisticsCount(row.waiting) === 0)}>{shown(row.waiting)}</td>
+                          <td className={num(exactStatisticsCount(row.unplaced) === 0)}>{shown(row.unplaced)}</td>
+                          <td className={num(exactStatisticsCount(row.over24) === 0)}>
+                            <span className={redesign.gv}>
+                              {positive(row.over24) ? <Glyph tone="warning" /> : null}
+                              {shown(row.over24)}
+                            </span>
+                          </td>
+                          <td className={num(exactStatisticsCount(row.over48) === 0)}>
+                            <span className={redesign.gv}>
+                              {positive(row.over48) ? <Glyph tone="danger" /> : null}
+                              {shown(row.over48)}
+                            </span>
+                          </td>
+                          <td className={num(row.longest === null)}>{waitText(row.longest)}</td>
+                          <td className={num(row.median === null)}>{waitText(row.median)}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                   <tfoot>
-                    <tr>
+                    <tr className={redesign.total}>
                       <th scope="row">All {departments.length} EDs</th>
-                      <td className={styles.num}>{shown(waiting)}</td>
-                      <td className={styles.num}>{shown(unplaced)}</td>
-                      <td className={styles.num}>{shown(over24)}</td>
-                      <td className={styles.num}>{shown(over48)}</td>
-                      <td className={styles.num}>{waitText(longestRow?.longest ?? null)}</td>
-                      <td className={styles.num}>{waitText(networkMedian)}</td>
+                      <td className={cx(redesign.r, tableClasses.num)}>{shown(waiting)}</td>
+                      <td className={cx(redesign.r, tableClasses.num)}>{shown(unplaced)}</td>
+                      <td className={cx(redesign.r, tableClasses.num)}>{shown(over24)}</td>
+                      <td className={cx(redesign.r, tableClasses.num)}>{shown(over48)}</td>
+                      <td className={cx(redesign.r, tableClasses.num)}>{waitText(longestRow?.longest ?? null)}</td>
+                      <td className={cx(redesign.r, tableClasses.num)}>{waitText(networkMedian)}</td>
                     </tr>
                   </tfoot>
                 </table>
               </div>
-              <CardFoot
-                meta={`Past ${VERY_LONG_HOURS}h is part of past ${LONG_HOURS}h, so the two are never added together.`}
-              />
+              <Foot>{`Past ${VERY_LONG_HOURS}h is part of past ${LONG_HOURS}h, so the two are never added`}</Foot>
             </StatCard>
 
-            <Follow>
-              <StatCard
-                icon={Clock}
-                id="wait-bands"
-                className={index.anchorTarget}
-                title="Time since opening"
-                aside={<span className={cx(styles.muted, index.phoneHide)}>Open ED journeys</span>}
-                data-testid="ward-statistics-eds-bands"
-              >
-                <CardBody>
-                  <ColumnChart
-                    label="Open ED journeys, by time since opening"
-                    columns={bands.map((band) => ({
-                      ...band,
-                      ...withheldBar(exactStatisticsCount(band.value) ?? 0, shown(band.value)),
-                    }))}
-                    height={220}
-                  />
-                </CardBody>
-                <CardFoot meta="The bands add up to all open ED journeys." />
-              </StatCard>
-            </Follow>
-          </FlushRow>
+            <StatCard
+              id="wait-bands"
+              className={index.anchorTarget}
+              title="Time since opening"
+              meta={`${shown(waiting)} open`}
+              data-testid="ward-statistics-eds-bands"
+            >
+              <div className={redesign.bars}>
+                <BarList
+                  label="Open ED journeys, by time since opening"
+                  track
+                  rows={bands.map((band, position) => ({
+                    id: band.id,
+                    label: bandName(position),
+                    ...withheldBar(exactStatisticsCount(band.value) ?? 0, shown(band.value)),
+                    flag: position === bands.length - 1 && positive(band.value) ? "warning" : undefined,
+                  }))}
+                />
+              </div>
+              <Foot>The bands add up to every open journey</Foot>
+            </StatCard>
+          </Grid>
         </>
       )}
     </StatisticsPage>

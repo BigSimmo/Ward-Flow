@@ -148,6 +148,13 @@ function ReferWF009ToBrmAdultSecureWithReason() {
 // made-up forensic Broome for this file only.
 markBroomeForensicForThisFile();
 
+/** Q93: Accept in principle opens the named dialog; choose the standard pull time limit and confirm. */
+function confirmNamedAccept() {
+  const dialog = screen.getByTestId("ward-accept-dialog");
+  fireEvent.click(within(dialog).getAllByRole("radio")[0]!);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Confirm acceptance" }));
+}
+
 describe("the ward screen's high-acuity override: the tick", () => {
   it("shows the reason select AND the tick after the acuity refusal, gates submit on both, places the patient, and the register records it", () => {
     render(
@@ -170,6 +177,7 @@ describe("the ward screen's high-acuity override: the tick", () => {
     fireEvent.click(screen.getByTestId(`refer-${FIRST_ID}`));
     expect(screen.getByTestId(`ward-incoming-${FIRST_ID}`)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId(`ward-accept-${FIRST_ID}`));
+    confirmNamedAccept();
     const firstAcceptedRow = screen.getByTestId(`ward-accepted-${FIRST_ID}`);
     const firstPullButton = within(firstAcceptedRow).getByTestId(`ward-pull-${FIRST_ID}`);
     expect(firstPullButton).not.toHaveAttribute("aria-disabled");
@@ -184,6 +192,7 @@ describe("the ward screen's high-acuity override: the tick", () => {
     fireEvent.click(screen.getByTestId(`refer-${SECOND_ID}`));
     expect(screen.getByTestId(`ward-incoming-${SECOND_ID}`)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId(`ward-accept-${SECOND_ID}`));
+    confirmNamedAccept();
     const secondAcceptedRow = screen.getByTestId(`ward-accepted-${SECOND_ID}`);
     const secondPullButton = within(secondAcceptedRow).getByTestId(`ward-pull-${SECOND_ID}`);
     expect(secondPullButton).not.toHaveAttribute("aria-disabled");
@@ -240,6 +249,7 @@ describe("the ward screen's high-acuity override: the tick", () => {
     // forensic judgement gate is re-evaluated and refused — the same sequence
     // tests/ward-override-control.dom.test.tsx already proves reaches this refusal reliably.
     fireEvent.click(screen.getByTestId("ward-accept-WF-009"));
+    confirmNamedAccept();
 
     const incomingRow = screen.getByTestId("ward-incoming-WF-009");
     const alert = within(incomingRow).getByRole("alert");

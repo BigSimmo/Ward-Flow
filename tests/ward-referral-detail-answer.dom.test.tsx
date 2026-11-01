@@ -66,6 +66,13 @@ afterEach(() => {
   });
 });
 
+/** Q93: Accept in principle opens the named dialog; choose the standard pull time limit and confirm. */
+function confirmNamedAccept() {
+  const dialog = screen.getByTestId("ward-accept-dialog");
+  fireEvent.click(within(dialog).getAllByRole("radio")[0]!);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Confirm acceptance" }));
+}
+
 describe("answering from the full referral (D-79)", () => {
   it("starts from a seeded referral awaiting this ward and another", () => {
     expect(target?.stage).toBe("destination_review");
@@ -80,6 +87,7 @@ describe("answering from the full referral (D-79)", () => {
     const detail = await openReferral(TARGET);
 
     fireEvent.click(within(detail).getByTestId(`ward-referral-detail-accept-${TARGET}`));
+    confirmNamedAccept();
 
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({

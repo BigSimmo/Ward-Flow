@@ -258,7 +258,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
      */
     const wardBeds = unitById("rph-adult-secure")?.beds;
     expect(wardBeds, "rph-adult-secure is not in the fixture — this assertion would prove nothing").toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: new RegExp(`All beds \\(${wardBeds}\\)`, "i") })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: new RegExp(`^All beds ${wardBeds}$`, "i") })).toBeInTheDocument();
     // Scoped to the Bed Board panel: the v6 ward home also draws Bed 01 as an Every bed tile.
     const bed01Card = within(document.getElementById("tab-beds")!).getByRole("button", { name: /Bed 01/i });
     expect(bed01Card).toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render as rtlRender, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -48,6 +48,15 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
+import { atPhoneWidthForEachTest, showPhoneLists } from "./helpers/ed-phone-lists";
+
+// Handover build (Josh, 1 Nov 2026): these lists stay on the phone's Lists pane (see the helper).
+atPhoneWidthForEachTest();
+const render = ((...args: Parameters<typeof rtlRender>) => {
+  const view = rtlRender(...args);
+  showPhoneLists();
+  return view;
+}) as typeof rtlRender;
 const ED_ID = "rph-ed";
 
 /** More than the cap, and deliberately not a round number above it — a fixture of exactly eleven

@@ -16,7 +16,6 @@ import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   examinationRevokedWhileBedHeld,
 } from "@/components/ward-management/ward-derivations";
-import { legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { noFormWords as formNotHeldWords } from "@/components/ward-management/ward-legal-status";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edWaitStep } from "@/components/ward-management/ward-ed-wait-steps";
@@ -29,6 +28,7 @@ import { edWaitTone } from "@/components/ward-management/ed/ed-screen-model";
 import type { EdRowFacts } from "@/components/ward-management/ed/ed-screen-row-facts";
 import styles from "@/components/ward-management/ed/ed.module.css";
 import redesign from "./ed-board-redesign.module.css";
+import { FormCell, PresentationCell, TierBars } from "./ed-handover-preview";
 
 /** One board row as a row of the board table. */
 export function renderEdBoardTableRow(
@@ -46,7 +46,6 @@ export function renderEdBoardTableRow(
     movement,
     minutesInDepartment,
     medicalClearance,
-    formExpiryText,
     formExpiryWarningText,
     patientInfo,
     acceptedUnit,
@@ -93,49 +92,32 @@ export function renderEdBoardTableRow(
         : ("danger" as const);
   const reviewWords = movement.examination ? "Reviewed" : "Not reviewed";
   const destinationName = acceptedUnit && !movement.closure ? acceptedUnit.name.split(" — ")[0] : undefined;
-  // U4 (site review 12 Oct 2026): the form reads "Form 4A" on one line, the same chip
-  // wording as New referral; its register name, typed expiry and any warning sit in the
-  // title and for screen readers, so the cell never wraps to three lines. A passed expiry
-  // also says so on a second line (CS-11).
-  const formTitle = movement.legalForm
-    ? [`${legalStatusFull(movement)}.`, formExpiryText, formExpiryWarningText].filter(Boolean).join(" ")
-    : undefined;
-  // Redesign: the register title is in the cell's tooltip (legalStatusFull) and the record, not a second line.
-  const formCell = (
-    <>
-      <span className={styles.a2Value} title={formTitle}>
-        {formExpiryWarningText !== undefined ? (
-          <StatusGlyph tone={formExpiryPassed ? "danger" : "warning"} size={8} />
-        ) : null}
-        <span className={movement.legalForm ? styles.a2NoWrap : styles.a2Quiet}>
-          {movement.legalForm ? legalStatusShort(movement) : noFormWords}
-        </span>
-      </span>
-      {movement.legalForm?.dueAt !== undefined ? (
-        <span
-          className={redesign.formTyped}
-          aria-hidden="true"
-          data-testid={formExpiryPassed ? `ward-ed-form-passed-${movement.id}` : undefined}
-        >
-          {`${formExpiryPassed ? "ended" : "ends"} ${formatInstantWithDay(movement.legalForm.dueAt, now)} as typed`}{" "}
-          <LegalLimitsNotChecked variant="tag" />
-        </span>
-      ) : null}
-    </>
-  );
   const formFacts = <span className="sr-only">{formExpiryFacts}</span>;
-  const clearedCell = (
-    <span className={styles.a2Value}>
-      <StatusGlyph tone={clearedTone} size={8} />
-      <span className={medicalClearance === undefined ? styles.a2Quiet : undefined}>{clearedWords}</span>
-      {clearanceFact}
-    </span>
-  );
-  const reviewCell = (
-    <span className={styles.a2Value}>
-      <StatusGlyph tone={movement.examination ? "success" : "neutral"} size={8} />
-      <span className={movement.examination ? undefined : styles.a2Quiet}>{reviewWords}</span>
-      {examinationRevokedWhileBedHeld(movement) ? <StatusGlyph tone="warning" size={8} /> : null}
+  // Handover mock-up (Josh, 1 Nov 2026): clearance and review share one Checks column, two lines.
+  const checksCell = (
+    <span className={redesign.checks}>
+      <span className={styles.a2Value}>
+        <StatusGlyph tone={clearedTone} size={8} />
+        <span className={medicalClearance?.cleared ? undefined : styles.a2Quiet}>
+          {medicalClearance === undefined
+            ? "Clearance pending"
+            : medicalClearance.cleared
+              ? "Med cleared"
+              : "Not cleared"}
+        </span>
+        {clearanceFact}
+      </span>
+      {examinationRevokedWhileBedHeld(movement) ? (
+        <span className={styles.a2Value} data-level="warning">
+          <StatusGlyph tone="warning" size={8} />
+          {EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE}
+        </span>
+      ) : (
+        <span className={styles.a2Value}>
+          <StatusGlyph tone={movement.examination ? "success" : "neutral"} size={8} />
+          <span className={movement.examination ? undefined : styles.a2Quiet}>{reviewWords}</span>
+        </span>
+      )}
     </span>
   );
   // Change 2 (D-77): the Referral column says where the referral stands, the ward on line one and
@@ -215,22 +197,33 @@ export function renderEdBoardTableRow(
       data-dim={isBoardRowDim(movement) ? "true" : undefined}
       data-selected={sheetOpen ? "true" : undefined}
     >
-      <td className={styles.a2Tier}>
-        <span className={styles.phoneTier} data-urgency={movement.urgency} data-testid={`ward-ed-tier-${movement.id}`}>
-          <span aria-hidden="true">T{movement.urgency}</span>
-          <span className="sr-only">{urgencyTierLabel(movement.urgency)}</span>
-        </span>
-      </td>
+      {/* Mock-up round 3 (Josh, 1 Nov 2026): no T column on the handover table. The tier is the
+          bars before the name; tablet portrait keeps its column. */}
+      {isTabletPortrait ? (
+        <td className={styles.a2Tier}>
+          <span
+            className={styles.phoneTier}
+            data-urgency={movement.urgency}
+            data-testid={`ward-ed-tier-${movement.id}`}
+          >
+            <span aria-hidden="true">T{movement.urgency}</span>
+            <span className="sr-only">{urgencyTierLabel(movement.urgency)}</span>
+          </span>
+        </td>
+      ) : null}
       <td className={styles.a2Patient}>
-        <button
-          type="button"
-          className={styles.a2Name}
-          onClick={openSheet}
-          title={`View patient details for ${patientInfo.displayName}`}
-          data-testid={`ward-ed-row-name-${movement.id}`}
-        >
-          {patientInfo.formalName}
-        </button>
+        <span className={redesign.nameLine}>
+          {isTabletPortrait ? null : <TierBars urgency={movement.urgency} testId={`ward-ed-tier-${movement.id}`} />}
+          <button
+            type="button"
+            className={styles.a2Name}
+            onClick={openSheet}
+            title={`View patient details for ${patientInfo.displayName}`}
+            data-testid={`ward-ed-row-name-${movement.id}`}
+          >
+            {patientInfo.formalName}
+          </button>
+        </span>
         {/* CS-16 (Audit 1, Josh 20 Oct 2026): the UMRN leads this line at every width, so a row
             never rests on the name alone. */}
         <span className={styles.a2Sub}>
@@ -245,30 +238,6 @@ export function renderEdBoardTableRow(
               ].join(" · ")
             : `${patientInfo.umrn} · ${movement.cohort} · ${movement.security}`}
         </span>
-        {isTabletPortrait ? null : (
-          /* Overall review (20 Oct 2026): at 1365 px and below the Cleared and Review columns step
-             aside (DA-06), so this compact line keeps medical clearance and review readable at a
-             glance. Hidden above that width, where the columns themselves show it. */
-          <span className={styles.a2Checks} data-testid={`ward-ed-row-checks-${movement.id}`}>
-            <span className={styles.a2Value}>
-              <StatusGlyph tone={clearedTone} size={8} />
-              {medicalClearance === undefined ? "Clearance pending" : clearedWords}
-            </span>
-            {/* PR #489 review: a revoked examination with a bed still held is a warning, never a
-                plain "Reviewed", here as in the Review column (whose notice is hidden with it). */}
-            {examinationRevokedWhileBedHeld(movement) ? (
-              <span className={styles.a2Value} data-level="warning">
-                <StatusGlyph tone="warning" size={8} />
-                {EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE}
-              </span>
-            ) : (
-              <span className={styles.a2Value}>
-                <StatusGlyph tone={movement.examination ? "success" : "neutral"} size={8} />
-                {reviewWords}
-              </span>
-            )}
-          </span>
-        )}
         <span className={styles.a2Facts}>
           {readmissionFact}
           {patientFactsTail}
@@ -287,18 +256,22 @@ export function renderEdBoardTableRow(
           <b className={styles.a2Mono}>{splitDuration(minutesInDepartment)}</b>
         </span>
         {edWaitStep(minutesInDepartment) ? (
-          <span className={styles.a2Sub} data-testid={`ward-ed-wait-step-${movement.id}`}>
-            {edWaitStep(minutesInDepartment)?.label}
+          <span
+            className={styles.a2Sub}
+            data-testid={`ward-ed-wait-step-${movement.id}`}
+            title={edWaitStep(minutesInDepartment)?.label}
+          >
+            Step {edWaitStep(minutesInDepartment)?.step}
           </span>
         ) : null}
         <span
-          className={overTarget ? styles.a2Sub : "sr-only"}
+          className={overTarget ? redesign.overTarget : "sr-only"}
           data-testid={`ward-ed-access-target-${movement.id}`}
           data-state={overTarget ? "over" : "under"}
           title={`Access target ${splitDuration(accessTarget)}`}
         >
           {overTarget ? (
-            <span aria-hidden="true">{minutesInDepartment > accessTarget ? "over target" : "at target"}</span>
+            <span aria-hidden="true">{minutesInDepartment > accessTarget ? "Over target" : "At target"}</span>
           ) : null}
           <span className="sr-only">
             Access target {splitDuration(accessTarget)}.
@@ -313,13 +286,36 @@ export function renderEdBoardTableRow(
       {isTabletPortrait ? null : (
         <>
           <td className={styles.a2Mono}>{phoneBay.replace(/^Bay /, "")}</td>
-          <td>
-            {formCell}
+          <td className={redesign.pickCell}>
+            <PresentationCell movementId={movement.id} patientName={patientInfo.formalName} />
+          </td>
+          <td className={redesign.pickCell}>
+            <FormCell
+              movementId={movement.id}
+              patientName={patientInfo.formalName}
+              umrn={patientInfo.umrn}
+              bay={phoneBay.replace(/^Bay /, "")}
+              recordCode={movement.legalForm?.code}
+              emptyWords={noFormWords}
+            >
+              {movement.legalForm?.dueAt !== undefined ? (
+                <span
+                  className={redesign.formTyped}
+                  aria-hidden="true"
+                  data-testid={formExpiryPassed ? `ward-ed-form-passed-${movement.id}` : undefined}
+                >
+                  {formExpiryWarningText !== undefined ? (
+                    <StatusGlyph tone={formExpiryPassed ? "danger" : "warning"} size={8} />
+                  ) : null}{" "}
+                  {`${formExpiryPassed ? "ended" : "ends"} ${formatInstantWithDay(movement.legalForm.dueAt, now)} as typed`}{" "}
+                  <LegalLimitsNotChecked variant="tag" />
+                </span>
+              ) : null}
+            </FormCell>
             {formFacts}
           </td>
-          <td>{clearedCell}</td>
           <td>
-            {reviewCell}
+            {checksCell}
             <span className={styles.a2Facts}>{reviewFacts}</span>
           </td>
         </>

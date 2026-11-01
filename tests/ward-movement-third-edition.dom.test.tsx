@@ -161,7 +161,8 @@ describe("the Movements screen's panels, in the order a coordinator meets them",
     expect(shape).toHaveTextContent(
       `${wardMovements.filter((movement) => movement.closure === undefined).length} open`,
     );
-    fireEvent.click(within(shape).getByRole("button", { name: /Resolved/u }));
+    // Movements redesign (1 Nov 2026): the resolved view is the "Outcomes" tab.
+    fireEvent.click(within(shape).getByRole("tab", { name: /Outcomes/u }));
     expect(shape).toHaveTextContent(`${closed.length} resolved today`);
   });
 

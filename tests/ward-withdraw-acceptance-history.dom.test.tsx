@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { PatientHistoryTab } from "@/components/ward-management/patients/patient-dossier-tabs";
+import { PatientHistoryTab } from "@/components/ward-management/patients/patient-history-tab";
 import type { PatientNowRecord } from "@/components/ward-management/patients/patient-now-records";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";

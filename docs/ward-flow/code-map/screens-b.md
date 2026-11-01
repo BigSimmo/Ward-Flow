@@ -534,6 +534,8 @@ tabs, a peek sheet and a full-screen plan sheet.
 
 ## `patients/`
 
+**1 November 2026 redesign (current):** the four record tabs are now separate files, ported from the approved Patient Screen Redesign mock-up: `patient-history-tab.tsx`, `patient-community-tab.tsx`, `patient-details-tab.tsx` and `patient-documents-tab.tsx`, each with its CSS module. `patient-now-screen.tsx` loads them lazily (`next/dynamic`, preloaded when idle) and mounts a pane only after it is first opened. Their tags use the kit `Badge`; dates come from `perthDateLabel` in `ward-clock.ts`; `isOwnStay` in `patient-now-adapter.ts` keeps the D-14 stay check in one place. `patient-dossier-tabs.tsx` and its CSS module were deleted with Josh's approval (Q141); their tests now target the new tab files. The dated entries below are history and name files that no longer exist.
+
 **10 October 2026 ward changes:** `patient-mode.ts` adds At ED (an occupied stay with `awayAtEmergencyDepartmentSince`, after leave and absence). `patient-ward-change-card.tsx` (and CSS module) is the On ward card for Start leave (typed return time and day, off-ward or medical trip), Gone to ED and the expected discharge date; the status card's discharge cell opens it, and every time must be later than now. The At ED status card records the return. History lists the person's ward stays, which `patient-now-adapter.ts` returns as `stays` (D-14). The reducer now refuses leave or an absence while a stay is at ED, and ED while it is on leave or absent (`tests/ward-away-from-ward-exclusive.test.ts`). The coordinator route borrows the ward role for these through `CROSS_ROLE_ALLOWED`.
 
 **9 October 2026 gate board, second pass (D-38):** `patient-mode.ts` adds On leave (the stay has a

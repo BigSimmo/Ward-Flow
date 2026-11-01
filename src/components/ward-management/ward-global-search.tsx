@@ -59,6 +59,8 @@ import {
   needsYouMeta,
   censusRowItem,
   smartSearchGroups,
+  closingFirst,
+  type HelpPreviewSource,
   type HelpSearchRows,
   type SearchResultGroup,
   type SearchResultItem,
@@ -192,6 +194,8 @@ export type WardGlobalSearchProps = {
   findHelp?: (query: string) => HelpSearchRows;
   /** Runs a chosen Help row; false means follow its link as usual. */
   onHelpResult?: (id: string) => boolean;
+  /** A Help row's answer, steps and Show me for the preview pane, from the same caller. */
+  helpPreview?: HelpPreviewSource;
 };
 
 const NO_HELP: HelpSearchRows = { items: [] };
@@ -413,6 +417,7 @@ export function WardGlobalSearch({
   canRunAction = allowSearchChoice,
   findHelp,
   onHelpResult,
+  helpPreview,
 }: WardGlobalSearchProps) {
   const id = useId();
   const tasksWord = useMemo(
@@ -1297,6 +1302,7 @@ export function WardGlobalSearch({
                 dayZero={wardFlow?.dayZero}
                 census={census}
                 onOpen={onPreviewOpen}
+                help={helpPreview && closingFirst(helpPreview, clearAfterOpen)}
               />
             </div>
           ) : null}

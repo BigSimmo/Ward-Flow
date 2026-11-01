@@ -11,6 +11,7 @@ import type { Gender, PatientId } from "@/components/ward-management/ward-patien
 import type { ArchivePatientEvent } from "./ward-patient-archive";
 import type { InboxWardFlowEvent } from "./ward-inbox-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { EdPresentation } from "./ed/ed-presentation";
 import type { LegalFormExpiryCorrectionReason, UploadedFileType } from "./ward-model-vocabulary";
 import type { UndoBedMeetingActionEvent } from "./ward-bed-meeting-undo-event-type";
 import type { PatientCollectedEvent, RecordTransportCadEvent } from "./ward-transport-collection-events";
@@ -2116,6 +2117,26 @@ export type WardFlowEvent =
       sizeBytes?: number;
     }
   | {
+      /**
+       * Q124 (Josh, 1 Nov 2026): the ED Form dropdown records which form the person is on without its
+       * written time. The time stays blank ("Written time not entered") until someone types the time
+       * written on the form on the Forms page (`RECORD_LEGAL_FORM_WRITTEN`); it is never defaulted.
+       */
+      type: "RECORD_LEGAL_FORM_CODE";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      formCode: string;
+    }
+  | {
+      /** Q103 (Josh, 1 Nov 2026): the presentations chosen from the fixed ED list; empty clears them. */
+      type: "RECORD_ED_PRESENTATION";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      presentations: EdPresentation[];
+    }
+  | {
       /** Person enters when the form was written and, optionally, the expiry printed on it. */
       type: "RECORD_LEGAL_FORM_WRITTEN";
       role: WardFlowRole;
@@ -2281,6 +2302,11 @@ export type WardFlowEvent =
       dispatchedByName: string;
       /** Absent means a directive. `bed_call` asks wards a set question (10 Oct 2026). */
       kind?: "directive" | "bed_call";
+      /**
+       * Alerts redesign (Josh, 1 Nov 2026): the desks chosen by group or one by one, ward unit ids and
+       * ED ids. Absent means every desk `targetScope` covers. A bed call keeps only the wards.
+       */
+      targetUnitIds?: string[];
     }
   | {
       /** Acknowledge receipt of an active statewide broadcast alert for a specific ward/unit. */

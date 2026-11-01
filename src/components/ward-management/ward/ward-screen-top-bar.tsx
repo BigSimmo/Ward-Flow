@@ -143,8 +143,9 @@ export function WardScreenTopBar({
   "use no memo";
   // Handing over is the nurse in charge's own job, so on the ward desk Handover stays beside More.
   const isWardDesk = useEffectiveWardAccess().role === "ward";
-  // Approved 31 Oct 2026: the heading states the ward's position; the ward and its facts sit in the
-  // eyebrow, and the ward name is kept in the heading for screen readers.
+  // Josh, 1 Nov 2026: the ward's name is the heading; its hospital and facts sit in the eyebrow. The
+  // ward's position (ready and occupied) stays in the ribbon of figures under it, and is kept in the
+  // heading for screen readers.
   const position = `${plural(states.ready, "bed", "beds")} ready, ${states.occupied} occupied`;
   const service = unitHealthService(unit);
   const closePhoneNotices = () => {
@@ -169,14 +170,8 @@ export function WardScreenTopBar({
         className={styles.wardHero}
         eyebrow={
           isPhone
-            ? `${unit.name} · ${site ? site.name.replace(/\s+(Public Hospital|Hospital|Health Campus|Health Service)$/u, "") : unit.siteCode}`
-            : [
-                unit.name,
-                site ? site.name : unit.siteCode,
-                service,
-                unit.cohort,
-                designationSummary(unit).toLowerCase(),
-              ]
+            ? `${site ? site.name.replace(/\s+(Public Hospital|Hospital|Health Campus|Health Service)$/u, "") : unit.siteCode}`
+            : [site ? site.name : unit.siteCode, service, unit.cohort, designationSummary(unit).toLowerCase()]
                 .filter(Boolean)
                 .join(" · ")
         }
@@ -185,15 +180,15 @@ export function WardScreenTopBar({
             // On a phone the Switch ward chip sits beside the heading.
             <span className={styles.phoneHeroTitle}>
               <span className={styles.phoneHeroName}>
-                {position}
-                <span className="sr-only">{`, ${unit.name}`}</span>
+                {unit.name}
+                <span className="sr-only">{`, ${position}`}</span>
               </span>
               {wardSwitchMenu}
             </span>
           ) : (
             <>
-              {position}
-              <span className="sr-only">{`, ${unit.name}`}</span>
+              {unit.name}
+              <span className="sr-only">{`, ${position}`}</span>
             </>
           )
         }

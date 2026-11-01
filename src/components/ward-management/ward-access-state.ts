@@ -670,11 +670,15 @@ export function commandScopeRefusal(
   if (command.type === "DISPATCH_BROADCAST_ALERT") {
     const targetScope = command.targetScope as BroadcastTargetScope;
     if (!BROADCAST_TARGET_SCOPES.includes(targetScope)) return outside;
-    const recipients =
-      command.kind === "bed_call"
-        ? wardsInBroadcastScope(state.units, targetScope)
-        : directiveDesks({ targetScope } as Parameters<typeof directiveDesks>[0], state.units);
-    if (recipients.some((id) => !placeIn(id))) return outside;
+    // Alerts redesign (1 Nov 2026): a broadcast to chosen desks reaches only those desks.
+    const chosen = Array.isArray(command.targetUnitIds) ? (command.targetUnitIds as unknown[]) : undefined;
+    const recipients: readonly unknown[] =
+      chosen !== undefined
+        ? chosen
+        : command.kind === "bed_call"
+          ? wardsInBroadcastScope(state.units, targetScope)
+          : directiveDesks({ targetScope }, state.units);
+    if (recipients.some((id) => typeof id !== "string" || !placeIn(id))) return outside;
   }
   if (command.type === "STAND_DOWN_BROADCAST_ALERT" || command.type === "EXTEND_BROADCAST_ALERT") {
     const alert = state.broadcastAlerts.find((candidate) => candidate.id === command.alertId);
@@ -768,7 +772,9 @@ export function commandScopeRefusal(
   // own beds (WT-03).
   if (
     access.role === "ward" &&
-    (command.type === "RECORD_LEGAL_FORM_WRITTEN" || command.type === "RECORD_LEGAL_FORM_EXPIRY")
+    (command.type === "RECORD_LEGAL_FORM_WRITTEN" ||
+      command.type === "RECORD_LEGAL_FORM_CODE" ||
+      command.type === "RECORD_LEGAL_FORM_EXPIRY")
   ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     const stay = movement ? admittedStayForArrival(movement, state.admissions) : undefined;

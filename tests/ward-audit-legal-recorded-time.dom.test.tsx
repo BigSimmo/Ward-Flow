@@ -48,11 +48,12 @@ describe("Legal Forms current paper facts", () => {
   it("does not present a conflicting legacy legal clock as a second current expiry", () => {
     render(<LegalFormsScreen />);
     fireEvent.click(screen.getByRole("button", { name: inspectButtonName }));
-    fireEvent.click(screen.getByRole("radio", { name: "Form" }));
-    expect(screen.getByText("Recorded deadline")).toBeVisible();
+    // Forms panel (1 Nov 2026): one scroll, no tabs. The summary shows the form's typed end time once;
+    // the legacy legal clock never appears as a second current expiry.
+    const panel = within(screen.getByTestId("ward-legal-selected"));
+    expect(panel.getAllByText(/^End(s|ed), as typed from the form/)).toHaveLength(1);
     expect(screen.queryByTestId("ward-legal-forms-clock-WF-AUDIT-LEGAL")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: "Now" }));
-    expect(within(screen.getByTestId("ward-legal-selected")).getByText("Time written")).toBeVisible();
+    expect(panel.getByText("Time written")).toBeVisible();
   });
 
   it("records an entered written time without calculating or gating on a statutory expiry", () => {

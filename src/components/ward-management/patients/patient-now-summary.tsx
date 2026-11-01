@@ -19,7 +19,7 @@ function bedTypeChipText(security: Security | undefined): string {
   return security === undefined ? "Bed type not recorded" : `${security} bed`;
 }
 import Link from "next/link";
-import { BedDouble, Check, Clock, Copy, FileText, Scale } from "lucide-react";
+import { BedDouble, Check, Clock, Copy, Eye, FileText, Scale } from "lucide-react";
 import { PatientFlightHeader } from "./patient-flight-header";
 import { absenceStepsFor } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
@@ -345,30 +345,35 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               )}
             </span>
           ) : isLiveBedflow && liveMovement ? (
+            // Redesign (1 Nov 2026): count-led chips, the Home and Capacity hero pattern. The figure
+            // leads (the wait, the tier), then its glyph and words.
             <span className={styles.v6HeroFacts}>
               <span className={styles.v6HeroFact}>
-                <StatusGlyph tone={tierTone} size={9} />
-                {tierChipText(urgencyTier)}
+                <strong className={styles.v6HeroWait}>{waitedStr}</strong>
+                {isTierOverdue(urgencyTier, now - liveMovement.openedAt) ? (
+                  <>
+                    <StatusGlyph tone="danger" size={9} />
+                    {/* "Target", not "limit", so it never reads as an Act limit. */}
+                    since opened, over T{urgencyTier} target ({tierOverdueAfterMinutes(urgencyTier) / 60}h)
+                  </>
+                ) : (
+                  "since opened"
+                )}
               </span>
-              <span className={styles.v6HeroFact}>{bedTypeChipText(liveMovement.security)}</span>
-              {isTierOverdue(urgencyTier, now - liveMovement.openedAt) ? (
-                <span className={styles.v6HeroFact}>
-                  <StatusGlyph tone="danger" size={9} />
-                  {/* The wait itself is the "since opened" chip beside it, so this names the tier's
-                      wait target. "Target", not "limit", so it never reads as an Act limit. */}
-                  Over T{urgencyTier} target ({tierOverdueAfterMinutes(urgencyTier) / 60}h)
-                </span>
-              ) : null}
+              <span className={styles.v6HeroFact}>
+                <strong className={styles.v6HeroWait}>{urgencyTier === undefined ? "T?" : `T${urgencyTier}`}</strong>
+                <StatusGlyph tone={tierTone} size={9} />
+                {tierChipText(urgencyTier).replace(/^T\d /, "")}
+              </span>
               {isConstantObservation(liveMovement.observation) ? (
                 <span className={styles.v6HeroFact}>
-                  <StatusGlyph tone="warning" size={9} />
+                  <Eye size={14} aria-hidden="true" />
                   {observationSummary(liveMovement.observation)}
                 </span>
               ) : null}
               <span className={styles.v6HeroFact}>
-                <Clock size={14} aria-hidden="true" />
-                <strong className={styles.v6HeroWait}>{waitedStr}</strong>
-                since opened
+                <BedDouble size={14} aria-hidden="true" />
+                {bedTypeChipText(liveMovement.security)}
               </span>
               {movementTimeLeft ? (
                 <span className={styles.v6HeroFact} data-testid="ward-patient-hero-form-left">
@@ -413,7 +418,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                     </>
                   ) : (
                     <>
-                      <strong>None</strong>
+                      <strong>No</strong>
                       discharge date yet
                     </>
                   )}

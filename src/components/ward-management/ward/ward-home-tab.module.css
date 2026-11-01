@@ -160,10 +160,14 @@
   height: auto;
   flex: 1 1 auto;
   min-height: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
+  /* Polish (1 Nov 2026): the compact tile, with 2px more inset on every side so a name never meets
+     the edge, and the 12px control corner, one step under the card's 16. */
+  padding: 10px 14px;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
+  border-radius: var(--wf-r-md);
   background: var(--wf-surface);
+  /* A hairline of light along the top edge, as the app's raised controls carry. */
+  box-shadow: inset 0 1px 0 var(--wf-hl);
   color: var(--wf-ink-1);
   font: inherit;
   text-align: left;
@@ -171,12 +175,29 @@
   transition:
     background var(--wf-m-fast) var(--wf-ease),
     border-color var(--wf-m-fast) var(--wf-ease),
+    box-shadow var(--wf-m-fast) var(--wf-ease),
+    transform var(--wf-m-fast) var(--wf-ease),
     color var(--wf-m-fast) var(--wf-ease);
 }
 
+/* Hover lifts the tile a pixel onto the card's own shadow, so the square reads as something to open. */
 .bedTile:hover {
   border-color: var(--wf-line-ctl);
-  background: var(--wf-hover);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  transform: translateY(-1px);
+}
+
+/* A closed bed and a bed on its way in sit back: a dashed edge on the quiet surface. */
+.bedTile:is([data-status="closed"], [data-status="incoming"]) {
+  border-style: dashed;
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface-2);
+  box-shadow: none;
+}
+
+.bedTile[data-status="closed"] .bedTileName {
+  color: var(--wf-ink-3);
 }
 
 .bedTile:focus-visible {
@@ -197,7 +218,8 @@
   position: relative;
 }
 
-.bedTile[data-act="true"]:hover {
+.bedTile[data-act="true"]:hover,
+.bedTile[data-status="ready"]:hover {
   background: var(--wf-hover);
 }
 
@@ -263,20 +285,29 @@
   margin-left: auto;
 }
 
+/* The bed number is the tile's label, a step quieter than the person it holds. */
 .bedTileTop b {
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-14);
+  font-size: var(--wf-fs-13);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--wf-ink-2);
 }
 
-/* Redesign: the whole name shows, wrapping to a second line, with the stay length on its own row. */
+/* Redesign: the whole name shows, wrapping to a second line, with the stay length on its own row.
+   Polish (1 Nov 2026): a balanced wrap keeps "Surname," and the given name in even lines. */
 .bedTileName {
   display: block;
-  font-size: var(--wf-fs-13);
-  font-weight: 500;
+  min-width: 0;
+  margin-top: 4px;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+  letter-spacing: -0.005em;
   white-space: normal;
   overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .bedTileState {
@@ -286,6 +317,7 @@
   gap: var(--wf-s-2);
   min-width: 0;
   margin-top: auto;
+  padding-top: var(--wf-s-1);
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
   white-space: nowrap;
@@ -299,12 +331,14 @@
 }
 
 .bedTile[data-look="true"] .bedTileNote {
-  color: var(--wf-ink-2);
+  color: var(--wf-ink-1);
+  font-weight: 500;
 }
 
 .bedTileDays {
   flex: none;
   font-family: var(--wf-mono);
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-2);
 }
@@ -824,6 +858,9 @@
   display: none;
 }
 
+/* Polish (1 Nov 2026): three columns, Act now, Later today and Done. Each opens with a quiet head
+   and its count; every task is its title and detail with the action on the right, and any time or
+   count sits under the detail, so no column carries a third narrow figure column. */
 .todoGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -837,6 +874,21 @@
 
 .todoCol:first-child {
   border-left: 0;
+}
+
+.todoCol > .groupHead {
+  min-height: 2rem;
+}
+
+/* The reminders sub-head sits under a hairline, apart from the tasks above it. */
+.todoCol > h4.groupHead {
+  margin-top: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.todoCol > .groupEmpty {
+  padding-top: var(--wf-s-2);
 }
 
 .legalTag {
@@ -856,8 +908,9 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 2px;
   min-width: 0;
-  padding: var(--wf-s-2) 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--wf-line);
 }
 
@@ -865,20 +918,31 @@
   border-bottom: 0;
 }
 
+/* Glyph, the task, then its action; the glyph sits on the title's first line. */
 .todoRow {
   display: grid;
-  grid-template-columns: 9px minmax(0, 1fr) auto auto;
-  column-gap: var(--wf-s-2);
-  align-items: center;
+  grid-template-columns: 9px minmax(0, 1fr) auto;
+  column-gap: 10px;
+  align-items: start;
   align-self: stretch;
   min-width: 0;
+}
+
+.todoRow > :first-child {
+  margin-top: 5px;
+}
+
+.todoRow > button {
+  grid-row: 1 / span 2;
+  grid-column: 3;
+  align-self: center;
 }
 
 /* The second action sits on its own line under the row, lined up with the title, so it never
  * overlaps the first. */
 .todoSecondary {
-  max-width: calc(100% - 9px - var(--wf-s-2));
-  margin-left: calc(9px + var(--wf-s-2));
+  max-width: calc(100% - 9px - 10px);
+  margin-left: calc(9px + 10px - var(--wf-s-2));
   white-space: normal;
   text-align: left;
 }
@@ -887,6 +951,7 @@
   display: flex;
   flex: 1 1 9rem;
   flex-direction: column;
+  gap: 2px;
   min-width: 0;
   cursor: default;
 }
@@ -919,8 +984,13 @@ label.todoMain:has(.todoTick:focus-visible) {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
   font-weight: 600;
   color: var(--wf-ink-1);
+}
+
+.todoCol[data-tone="success"] .todoTitle {
+  color: var(--wf-ink-2);
 }
 
 .todoDetail {
@@ -929,30 +999,18 @@ label.todoMain:has(.todoTick:focus-visible) {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   font-size: var(--wf-fs-12);
+  line-height: 1.45;
   color: var(--wf-ink-3);
 }
 
+/* A time, count or referral stage reads as a quiet third line under the detail, in the text face so
+   a wordy stage fits on one line; figures stay tabular. */
 .todoMeta {
-  flex: none;
-  max-width: 7rem;
-  text-align: right;
-  font-family: var(--wf-mono);
+  grid-row: 2;
+  grid-column: 2;
   font-size: var(--wf-fs-12);
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-2);
-  overflow-wrap: anywhere;
-}
-
-/* A wordy note (a referral stage) goes under the detail so the title keeps the row's width. */
-.todoMetaBelow {
-  grid-row: 2;
-  grid-column: 2;
-  max-width: none;
-  text-align: left;
-  /* Redesign: a wordy note reads in the text face (figures stay tabular), so it fits on one line
-     instead of breaking in the narrow monospace column. */
-  font-family: var(--wf-font);
-  overflow-wrap: normal;
 }
 
 .paneHead {
@@ -1152,7 +1210,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 
   .bedTile {
     min-height: var(--spacing-tap, 3rem);
-    padding: var(--wf-s-2);
+    padding: 10px;
   }
 
   .bedTileNote {
@@ -1800,6 +1858,14 @@ label.todoMain:has(.todoTick:focus-visible) {
 
   .todoGrid > .todoCol:nth-child(2) {
     border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bedTile,
+  .bedTile:hover {
+    transform: none;
+    transition: none;
   }
 }
 

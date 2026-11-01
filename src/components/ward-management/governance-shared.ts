@@ -126,6 +126,8 @@ export const UNDONE_STEP_LABELS: Partial<Record<string, string>> = {
   REFER_TO_UNITS: "Refer to wards",
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   RECORD_LEGAL_FORM_WRITTEN: "Record form written",
+  RECORD_LEGAL_FORM_CODE: "Record form, time not entered",
+  RECORD_ED_PRESENTATION: "Record ED presentation",
   RECORD_LEGAL_FORM_RECEIVED: "Mark form received",
   RECORD_SUPPORT_NOTIFICATION: "Carer, PSP or MHAS record",
   RECORD_ABSENT_WITHOUT_LEAVE: "Mark absent",

@@ -72,7 +72,8 @@ it("keeps a historical selected week and its honest occupied-time label when the
   expect(screen.getByTestId("ward-weekly-period")).toHaveTextContent("Mon, 5 Oct 2026, 00:00 AWST (inclusive)");
   expect(screen.getByTestId("ward-weekly-occupancy")).toHaveTextContent(historicalPercent!);
   expect(screen.queryByText("Average in use, this week so far")).not.toBeInTheDocument();
-  expect(screen.getAllByText("Recorded occupied bed time")).toHaveLength(2);
+  // the phone band says "Occupied bed time"; the tile keeps the full, honest name.
+  expect(screen.getAllByText("Recorded occupied bed time")).toHaveLength(1);
   expect(
     within(screen.getByTestId("ward-weekly-occupancy-definition")).getByText(/Closed beds stay in the denominator/),
   ).toBeInTheDocument();
@@ -87,7 +88,7 @@ it.each([false, true])(
     expect(definition).toHaveTextContent("current total bed count and counted time");
     expect(definition).toHaveTextContent("time pulled for arrival is excluded");
     expect(definition).toHaveTextContent("Historical bed capacity and pull times are not reconstructed");
-    expect(screen.getByText("In use now", { exact: true })).toBeInTheDocument();
+    expect(screen.getByText(/^In use now/)).toBeInTheDocument();
     expect(screen.queryByText("Average occupancy", { exact: true })).not.toBeInTheDocument();
   },
 );

@@ -29,6 +29,7 @@ import { STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import styles from "./statistics-phone.module.css";
 import { SmallNumberNote } from "./statistics-count-list";
 import note from "./statistics-count-list.module.css";
+import { ShortLabel } from "./redesign/statistics-redesign-parts";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import {
   ExecutiveStatisticsUnavailable,
@@ -295,11 +296,23 @@ function StatisticsSummaryPhoneView({
               : []),
             ...(held(waitingInEd)
               ? []
-              : [{ id: "ed", value: statisticsCountText(waitingInEd), label: "Open ED journeys" }]),
+              : [
+                  {
+                    id: "ed",
+                    value: statisticsCountText(waitingInEd),
+                    label: <ShortLabel short="Open journeys" full="Open ED journeys" />,
+                  },
+                ]),
             // The figure names its noun, as the desktop's "Admissions ended today" does.
             ...(held(endedToday)
               ? []
-              : [{ id: "ended", value: statisticsCountText(endedToday), label: "Stays ended today" }]),
+              : [
+                  {
+                    id: "ended",
+                    value: statisticsCountText(endedToday),
+                    label: <ShortLabel short="Ended today" full="Stays ended today" />,
+                  },
+                ]),
           ]}
           eyebrow={eyebrow}
           chip={

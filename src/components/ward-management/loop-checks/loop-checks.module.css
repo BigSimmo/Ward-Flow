@@ -10,8 +10,9 @@
   border-radius: var(--wf-r-tag);
 }
 
+/* No coloured side edge (Josh, 31 Oct 2026): the heading's amber glyph carries the tone. */
 .conditional {
-  border-inline-start: 3px solid var(--wf-warning);
+  border-inline-start: 1px solid var(--wf-line);
 }
 
 .heading {
