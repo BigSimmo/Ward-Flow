@@ -213,7 +213,7 @@ export function StepDownBoard({ now, titleSlot }: { now: Instant; titleSlot?: Re
                         <p className={styles.meta} data-testid="step-down-swap-waiting">
                           {row.fromUnitHasFreeBed
                             ? `No incoming referral fits ${row.fromUnit.name} now.`
-                            : `No bed free on ${row.fromUnit.name} yet.`}
+                            : `Waiting for a bed on ${row.fromUnit.name} to come free.`}
                         </p>
                       )}
                       {row.placementReview.length > 0 ? (
