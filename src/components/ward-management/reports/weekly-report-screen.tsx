@@ -40,20 +40,16 @@ const OCCUPIED_TIME_LABEL = "Recorded occupied bed time";
 const OCCUPIED_TIME_DEFINITION =
   "Recorded occupied stay time divided by the current total bed count and counted time. Closed beds stay in the denominator; time pulled for arrival is excluded. Historical bed capacity and pull times are not reconstructed.";
 
-/** "19 to 25 Oct", or "28 Sep to 4 Oct" across a month: the band button's short week. */
+/**
+ * "19 – 25 Oct", or "26 Oct – 1 Nov" across a month: the week button's label. The list it opens
+ * still names each week in full ("Last full week · …"), so the button fits beside Print (Q199).
+ */
 function shortRange(week: ReportWeek, dayZero: Date): string {
   const [, startDay, startMonth] = dateOf(week.start, dayZero).split(" ");
   const [, endDay, endMonth] = dateOf(week.end - 1, dayZero).split(" ");
   return startMonth === endMonth
-    ? `${startDay} to ${endDay} ${endMonth}`
-    : `${startDay} ${startMonth} to ${endDay} ${endMonth}`;
-}
-
-function shortWeekLabel(week: ReportWeek, dayZero: Date): string {
-  const range = shortRange(week, dayZero);
-  if (week.offset === -1) return `This week so far · ${range}`;
-  if (week.offset === 0) return `Last full week · ${range}`;
-  return range;
+    ? `${startDay} – ${endDay} ${endMonth}`
+    : `${startDay} ${startMonth} – ${endDay} ${endMonth}`;
 }
 
 function weekLabel(week: ReportWeek, dayZero: Date): string {
@@ -298,7 +294,7 @@ function WeeklyReportView({
   const picker = (
     <label className={cx(buttonClass({ variant: "onHero", size: "sm" }), weekly.weekPick)} data-print-hide>
       <CalendarDays size={14} aria-hidden="true" />
-      <span aria-hidden="true">{shortWeekLabel(week, dayZero)}</span>
+      <span aria-hidden="true">{shortRange(week, dayZero)}</span>
       <span className="sr-only" id={pickerId}>
         Week
       </span>
@@ -349,7 +345,16 @@ function WeeklyReportView({
             )
           }
           title={title}
-          titleAction={null}
+          titleAction={
+            // Q198 (Josh, 1 Nov 2026): the report keeps opening on the last full week; when that week
+            // has no arrivals to state, one step takes the reader to this week so far. The phone
+            // already has its own Last full week / This week so far switch under the hero.
+            !isPhone && offset === 0 && arrivalTitle === null ? (
+              <Button variant="onHero" size="sm" onClick={() => setOffset(-1)} data-testid="ward-weekly-so-far">
+                See this week so far
+              </Button>
+            ) : null
+          }
           tools={
             isPhone ? undefined : (
               <>
