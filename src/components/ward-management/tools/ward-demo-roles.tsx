@@ -32,7 +32,11 @@ function useOptionalRouter(): ReturnType<typeof useRouter> | null {
   }
 }
 
-/** One role section in the existing desktop/phone Demo selector. Never an account switcher. */
+/**
+ * One role section in the existing desktop/phone Demo selector. Never an account switcher.
+ * Demo menu layout (pop-demo, Josh 31 Oct 2026): headed "See it as", the help cut to one line, and
+ * the role in use reads "Current", the same word Scenario uses.
+ */
 export function WardDemoRoles({ enabled }: { enabled: boolean }) {
   const { shared } = useWardFlowSelect("shared");
   const account = useContext(SharedSessionContext);
@@ -40,8 +44,8 @@ export function WardDemoRoles({ enabled }: { enabled: boolean }) {
   // Check all existing host signals before mounting anything that reads an unscoped world.
   if (process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true" || shared?.enabled || account || accessApi) {
     return (
-      <section className={styles.section} aria-label="Roles">
-        <h3>Roles</h3>
+      <section className={styles.section} aria-label="See it as">
+        <h3>See it as</h3>
         <p>Role demos are available in the local synthetic demo. Use Switch role for your account.</p>
       </section>
     );
@@ -153,9 +157,10 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
     }
   }
   return (
-    <section className={styles.section} aria-label="Roles">
-      <h3>Roles</h3>
-      <p id={noteId}>Choose a role to open its demo desk. Your scenario stays loaded. Synthetic data only.</p>
+    <section className={styles.section} aria-label="See it as">
+      <h3>
+        See it as <span id={noteId}>Opens that role&rsquo;s demo desk · the scenario stays loaded</span>
+      </h3>
       <div className={styles.grid} role="group" aria-label="Demo role">
         {WARD_ACCESS_ROLES.map((role) => (
           <button
@@ -168,25 +173,26 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
             onClick={() => choose(role)}
           >
             <strong>{ACCESS_ROLE_LABELS[role]}</strong>
-            {current === role ? <em>Selected</em> : null}
+            {current === role ? <em>Current</em> : null}
             {!choices[role] ? <span>No demo desk in this scenario</span> : null}
           </button>
         ))}
       </div>
-      <p className={styles.current} aria-live="polite">
-        Current role: {ACCESS_ROLE_LABELS[current]}.{currentPlace ? ` ${currentPlace}.` : null}
-        {current === "admin" ? " Access settings only; no patient data." : null}
-        {current === "executive" ? " Aggregate reports and read-only controls." : null}
-      </p>
-      {session || current !== "coordinator" ? (
-        <button type="button" className={styles.exit} disabled={!enabled} onClick={exit}>
-          {session ? "Exit role demo" : "Back to Bed coordinator"}
-        </button>
-      ) : null}
-      <p>
-        Reset demo below restarts the selected scenario. Exit role demo returns to your starting desk and keeps the
-        scenario.
-      </p>
+      <div className={styles.roleLine}>
+        {/* The grid's "Current" shows the role; this line names it for screen readers and adds the
+            desk's place and limits on screen. */}
+        <p aria-live="polite">
+          <span className={styles.srOnly}>Current role: {ACCESS_ROLE_LABELS[current]}.</span>
+          {currentPlace ? ` ${currentPlace}.` : null}
+          {current === "admin" ? " Access settings only; no patient data." : null}
+          {current === "executive" ? " Aggregate reports and read-only controls." : null}
+        </p>
+        {session || current !== "coordinator" ? (
+          <button type="button" className={styles.exit} disabled={!enabled} onClick={exit}>
+            {session ? "Exit role demo" : "Back to Bed coordinator"}
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }

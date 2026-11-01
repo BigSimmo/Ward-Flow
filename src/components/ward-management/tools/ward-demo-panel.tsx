@@ -2,6 +2,7 @@
 
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
+import { ChevronDown } from "lucide-react";
 import { type ChangeEvent, useId, useRef, useState } from "react";
 
 import { Dialog } from "@/components/wf";
@@ -16,6 +17,7 @@ import { DEMO_RESET_SCENARIOS, WARD_SCENARIOS, scenarioLabels, type WardScenario
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { WardDemoRoles } from "./ward-demo-roles";
 import styles from "./ward-tools-sheet.module.css";
+import demo from "./ward-demo-panel.module.css";
 import { useWardShellAuthority } from "../shell/ward-shell-public-context";
 import { useExecutiveStatistics } from "../statistics/executive-statistics-context";
 
@@ -28,6 +30,11 @@ import { useExecutiveStatistics } from "../statistics/executive-statistics-conte
  * `oneList` (change 8, D-77, 21 Oct 2026): the desktop Demo menu under the Synthetic pill shows all
  * seven scenarios as one list, so the separate Demo reset block and its three choices go there.
  * Phone Tools keeps both until a phone mock-up is approved.
+ *
+ * Demo menu layout (pop-demo, approved by Josh 31 Oct 2026; layout and wording only): Scenario and
+ * See it as are compact two-column grids, the choice in use reads "Current", the clock is one row,
+ * Practise a placement folds into a closed row with a chevron, and Save to file, Load from file and
+ * Reset demo sit in a footer pinned to the foot of the scroll. The safety lines stay word for word.
  */
 export function WardDemoPanel({ oneList = false }: { oneList?: boolean } = {}) {
   return useWardShellAuthority()?.role === "executive" ? (
@@ -39,39 +46,46 @@ export function WardDemoPanel({ oneList = false }: { oneList?: boolean } = {}) {
 function ExecutiveDemoPanel() {
   const report = useExecutiveStatistics();
   return (
-    <div className={styles.toolBody} data-testid="ward-tools-demo-panel">
-      <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
-      <p className={styles.note} data-testid="ward-tools-demo-off">
-        {DEMO_CONTROLS_OFF}
-      </p>
-      <div className={styles.scenarioGrid} role="group" aria-label="Demo scenario">
-        {WARD_SCENARIOS.map((scenario) => (
-          <button
-            key={scenario}
-            type="button"
-            disabled
-            aria-current={report?.sampleScenario === scenario ? "true" : undefined}
-            className={styles.scenarioCard}
-          >
-            <strong>{scenarioLabels[scenario]}</strong>
-            {report?.sampleScenario === scenario && <em>Loaded</em>}
+    <div className={demo.body} data-testid="ward-tools-demo-panel">
+      <div className={demo.scroll}>
+        <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
+        <p className={styles.note} data-testid="ward-tools-demo-off">
+          {DEMO_CONTROLS_OFF}
+        </p>
+        <section className={demo.group} aria-label="Scenario">
+          <h3 className={demo.groupHead}>Scenario</h3>
+          <div className={demo.grid} role="group" aria-label="Demo scenario">
+            {WARD_SCENARIOS.map((scenario) => (
+              <button
+                key={scenario}
+                type="button"
+                disabled
+                aria-current={report?.sampleScenario === scenario ? "true" : undefined}
+                className={demo.choice}
+              >
+                <strong>{scenarioLabels[scenario]}</strong>
+                {report?.sampleScenario === scenario && <em>Current</em>}
+              </button>
+            ))}
+          </div>
+        </section>
+        <div className={demo.clockRow}>
+          <span className={demo.clock}>
+            Demo clock {report && <b>{formatInstantWithDay(report.network.asAt.now, report.network.asAt.now)}</b>}
+          </span>
+          <button type="button" disabled className={demo.small}>
+            +15 min
           </button>
-        ))}
+          <button type="button" disabled className={demo.small}>
+            +1 hour
+          </button>
+        </div>
       </div>
-      <div className={styles.demoRow}>
-        <span className={styles.demoClock}>
-          Demo clock {report && <b>{formatInstantWithDay(report.network.asAt.now, report.network.asAt.now)}</b>}
-        </span>
-        <button type="button" disabled className={styles.secondaryButton}>
-          +15 min
+      <footer className={demo.foot}>
+        <button type="button" disabled className={demo.reset} data-testid="ward-tools-demo-reset">
+          Reset demo
         </button>
-        <button type="button" disabled className={styles.secondaryButton}>
-          +1 hour
-        </button>
-      </div>
-      <button type="button" disabled className={styles.resetButton} data-testid="ward-tools-demo-reset">
-        Reset demo
-      </button>
+      </footer>
     </div>
   );
 }
@@ -179,87 +193,103 @@ function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
   }
 
   return (
-    <div className={styles.toolBody} data-testid="ward-tools-demo-panel">
-      <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
-      {demoOn ? null : (
-        <p id={offId} className={styles.note} data-testid="ward-tools-demo-off">
-          {DEMO_CONTROLS_OFF}
-        </p>
-      )}
-      <div className={styles.scenarioGrid} role="group" aria-label="Demo scenario">
-        {pickable.map((candidate) => (
+    <div className={demo.body} data-testid="ward-tools-demo-panel">
+      <div className={demo.scroll}>
+        <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
+        {demoOn ? null : (
+          <p id={offId} className={styles.note} data-testid="ward-tools-demo-off">
+            {DEMO_CONTROLS_OFF}
+          </p>
+        )}
+        <section className={demo.group} aria-label="Scenario">
+          <h3 className={demo.groupHead}>Scenario</h3>
+          <div className={demo.grid} role="group" aria-label="Demo scenario">
+            {pickable.map((candidate) => (
+              <button
+                key={candidate}
+                type="button"
+                aria-current={scenario === candidate ? "true" : undefined}
+                className={demo.choice}
+                {...lock}
+                onClick={() => setConfirming({ kind: "load", scenario: candidate })}
+              >
+                <strong>{scenarioLabels[candidate]}</strong>
+                {scenario === candidate ? <em>Current</em> : null}
+              </button>
+            ))}
+          </div>
+        </section>
+        <WardDemoRoles enabled={demoOn} />
+        <div className={demo.clockRow}>
+          <span className={demo.clock}>
+            Demo clock <b>{formatInstant(now)}</b>
+          </span>
           <button
-            key={candidate}
             type="button"
-            aria-current={scenario === candidate ? "true" : undefined}
-            className={styles.scenarioCard}
+            className={demo.small}
             {...lock}
-            onClick={() => setConfirming({ kind: "load", scenario: candidate })}
+            onClick={() => raise("ADVANCE_CLOCK", { minutes: 15 })}
           >
-            <strong>{scenarioLabels[candidate]}</strong>
-            {scenario === candidate ? <em>Loaded</em> : null}
-          </button>
-        ))}
-      </div>
-      <WardDemoRoles enabled={demoOn} />
-      <div className={styles.demoRow}>
-        <span className={styles.demoClock}>
-          Demo clock <b>{formatInstant(now)}</b>
-        </span>
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          {...lock}
-          onClick={() => raise("ADVANCE_CLOCK", { minutes: 15 })}
-        >
-          +15 min
-        </button>
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          {...lock}
-          onClick={() => raise("ADVANCE_CLOCK", { minutes: 60 })}
-        >
-          +1 hour
-        </button>
-      </div>
-      {saveScenarioFile && loadScenarioFile ? (
-        <div className={styles.demoRow} role="group" aria-label="Demo scenario file">
-          <button type="button" className={styles.secondaryButton} onClick={saveToFile}>
-            Save to file
+            +15 min
           </button>
           <button
             type="button"
-            className={styles.secondaryButton}
+            className={demo.small}
             {...lock}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => raise("ADVANCE_CLOCK", { minutes: 60 })}
           >
-            Load from file
+            +1 hour
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            hidden
-            onChange={(event) => void loadFromFile(event)}
-          />
-          {savingOnDevice === false ? (
-            <span className={styles.note} data-testid="ward-tools-device-save-paused">
-              Not saved on this device, because this world holds typed text. Reloading loses it, so use Save to file to
-              keep it.
-            </span>
-          ) : null}
         </div>
-      ) : null}
-      <button
-        type="button"
-        className={styles.resetButton}
-        {...lock}
-        data-testid="ward-tools-demo-reset"
-        onClick={() => setConfirming({ kind: "reset" })}
-      >
-        Reset demo
-      </button>
+        {oneList ? null : (
+          <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} offNoteId={offId} />
+        )}
+        <details className={demo.practice}>
+          <summary>
+            Practise a placement
+            <ChevronDown aria-hidden="true" className={demo.practiceCaret} strokeWidth={1.75} />
+          </summary>
+          <WardPracticeMode className={demo.practiceBody} headingClassName={demo.practiceHeading} />
+        </details>
+        {savingOnDevice === false ? (
+          <p className={styles.note} data-testid="ward-tools-device-save-paused">
+            Not saved on this device, because this world holds typed text. Reloading loses it, so use Save to file to
+            keep it.
+          </p>
+        ) : null}
+        <p className={styles.liveNote} role="status">
+          {message}
+        </p>
+      </div>
+      <footer className={demo.foot}>
+        {saveScenarioFile && loadScenarioFile ? (
+          <div className={demo.footFiles} role="group" aria-label="Demo scenario file">
+            <button type="button" className={demo.small} onClick={saveToFile}>
+              Save to file
+            </button>
+            <button type="button" className={demo.small} {...lock} onClick={() => fileInputRef.current?.click()}>
+              Load from file
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(event) => void loadFromFile(event)}
+            />
+          </div>
+        ) : null}
+        <button
+          type="button"
+          className={demo.reset}
+          {...lock}
+          data-testid="ward-tools-demo-reset"
+          onClick={() => setConfirming({ kind: "reset" })}
+        >
+          Reset demo
+        </button>
+        <p className={demo.footNote}>Scenario files hold synthetic demo data only. Never type real patient details.</p>
+      </footer>
       <Dialog
         open={confirming !== null && demoOn}
         onClose={() => setConfirming(null)}
@@ -278,14 +308,6 @@ function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
         }}
         secondary={[{ label: "Cancel", onAction: () => setConfirming(null) }]}
       />
-      {oneList ? null : (
-        <WardDemoReset className={styles.resetBlock} headingClassName={styles.resetHeading} offNoteId={offId} />
-      )}
-      <WardPracticeMode className={styles.resetBlock} headingClassName={styles.resetHeading} />
-      <p className={styles.note}>Scenario files hold synthetic demo data only. Never type real patient details.</p>
-      <p className={styles.liveNote} role="status">
-        {message}
-      </p>
     </div>
   );
 }

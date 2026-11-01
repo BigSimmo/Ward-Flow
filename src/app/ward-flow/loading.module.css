@@ -1,38 +1,29 @@
-/* shell-10: the in-shell page placeholder while a route loads. Tokens only, no new colour. */
+/* shell-10: the in-shell page placeholder while a route loads. Tokens only, no new colour. The
+   blocks themselves are drawn by shell/ward-loading-shape.module.css. */
 .main {
   display: grid;
+  grid-template-rows: auto auto 1fr;
   gap: var(--wf-s-3);
   padding: var(--wf-s-4);
+  min-width: 0;
+}
+
+/* The status and blocks sit at the top; the prototype footer keeps to the foot. */
+.main > :last-child {
+  align-self: end;
 }
 
 .status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
   margin: 0;
   color: var(--wf-ink-2);
-  font-size: 0.8125rem;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-.block {
-  min-height: 6rem;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface-2);
-}
-
-.blockTall {
-  min-height: 14rem;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .block {
-    animation: wf-loading-pulse 1.2s ease-in-out infinite alternate;
-  }
-}
-
-@keyframes wf-loading-pulse {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0.55;
+@media (max-width: 48rem) {
+  .main {
+    padding: var(--wf-s-3);
   }
 }

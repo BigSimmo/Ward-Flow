@@ -1,30 +1,41 @@
+/* See it as (pop-demo, Josh 31 Oct 2026): headed and laid out like Scenario in the Demo panel
+   (ward-demo-panel.module.css). Controls are 40px tall; role cards match the scenario cards. */
 .section {
   display: grid;
   gap: var(--wf-s-2);
-  padding-top: var(--wf-s-2);
-  border-top: 1px solid var(--wf-line);
 }
 .section h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2);
   margin: 0;
-  font-size: var(--wf-fs-13);
+  font-size: var(--wf-fs-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+/* The one-line note sits on its own quiet line under the heading, at every width. */
+.section h3 span {
+  flex-basis: 100%;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--wf-ink-3);
 }
 .section p {
   margin: 0;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
 }
-.section .current {
-  font-weight: 600;
-}
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-2);
+  gap: 6px;
 }
 .choice,
 .exit {
-  min-height: var(--wf-touch, 44px);
-  padding: var(--wf-s-2) var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
@@ -33,20 +44,69 @@
   cursor: pointer;
 }
 .choice {
-  display: grid;
-  align-content: center;
-  gap: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px var(--wf-s-2);
+  min-height: 44px;
+  padding: 6px var(--wf-s-3);
   text-align: left;
   overflow-wrap: anywhere;
 }
+.choice strong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.exit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
 .choice[aria-pressed="true"] {
   border-color: var(--wf-accent);
+  background: color-mix(in srgb, var(--wf-accent) 6%, var(--wf-surface));
   box-shadow: inset 0 0 0 1px var(--wf-accent);
 }
 .choice em {
+  flex: none;
   font-size: var(--wf-fs-12);
   font-style: normal;
+  font-weight: 600;
   color: var(--wf-accent-ink, var(--wf-accent));
+}
+.choice > span {
+  flex-basis: 100%;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+/* The held desk's place, and Exit role demo beside it. */
+.roleLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+.roleLine p {
+  flex: 1;
+}
+.roleLine p:empty {
+  display: none;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 .choice:focus-visible,
 .exit:focus-visible {
