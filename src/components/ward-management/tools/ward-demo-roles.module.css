@@ -122,6 +122,25 @@
 .exit:hover:enabled {
   background: var(--wf-hover);
 }
+/* Phones: Exit role demo (40px) and the role cards (44px or taller) keep their face and reach a 48px
+   tap area through a transparent cover, as the Demo panel's buttons do. The cards sit 6px apart, so
+   their 2px covers never meet. */
+@media (max-width: 48rem) {
+  .choice,
+  .exit {
+    position: relative;
+  }
+  .exit::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+  .choice::after {
+    content: "";
+    position: absolute;
+    inset: -2px 0;
+  }
+}
 @media (forced-colors: active) {
   .choice[aria-pressed="true"] {
     background: Highlight;

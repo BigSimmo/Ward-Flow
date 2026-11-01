@@ -2,17 +2,27 @@
 
 import { usePathname } from "next/navigation";
 
+import { WARD_VIEWS, type WardMode } from "@/components/ward-management/ward-nav";
+
 import styles from "./ward-loading-shape.module.css";
 
 type Shape = "home" | "capacity" | "waiting" | "plain";
 
-/** Which page the placeholder stands in for, read from the address the navigation is going to. */
+/** The three destinations with a page-shaped placeholder, keyed by their `WARD_VIEWS` id. */
+const SHAPE_OF_VIEW: Partial<Record<WardMode, Shape>> = {
+  command: "home",
+  capacity: "capacity",
+  delays: "waiting",
+};
+
+/**
+ * Which page the placeholder stands in for, read from the address the navigation is going to. The
+ * addresses come from `WARD_VIEWS`, so shell/ never types a route of its own.
+ */
 function shapeOf(pathname: string): Shape {
   const path = pathname.replace(/\/+$/u, "");
-  if (path === "/ward-flow") return "home";
-  if (path === "/ward-flow/capacity") return "capacity";
-  if (path === "/ward-flow/waiting") return "waiting";
-  return "plain";
+  const view = WARD_VIEWS.find((item) => item.href === path);
+  return (view && SHAPE_OF_VIEW[view.id]) ?? "plain";
 }
 
 const SIX = ["a", "b", "c", "d", "e", "f"] as const;

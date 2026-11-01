@@ -1,10 +1,17 @@
 /* The Demo panel's layout (pop-demo, approved by Josh 31 Oct 2026): Scenario and See it as grids,
    the clock on one row, Practise a placement folded, and the file and reset buttons in a footer
-   pinned to the foot of the scroll. Tokens only, no new colour. Controls are 40px tall. */
+   pinned to the foot of the scroll. Tokens only, no new colour. Controls are 40px tall, with a 48px
+   tap area on phones.
+
+   The footer stays in view because the panel is its own bounded scroller: `.scroll` scrolls and the
+   footer sits after it, outside it. A sticky footer could not do this: the Tools sheet's card clips
+   with `overflow: hidden`, which makes the card the sticky footer's scroll container, and the card
+   is as tall as the panel, so the footer never pinned. */
 .body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-height: max(18rem, calc(100dvh - 12rem));
 }
 
 .body svg {
@@ -13,11 +20,17 @@
   flex: none;
 }
 
+/* The 4px inset gives the focus rings (2px, 2px offset) and the phone tap covers room inside the
+   scroller's clip; the matching negative margin keeps the panel's edges where they were. */
 .scroll {
   display: grid;
+  flex: 1 1 auto;
   gap: var(--wf-s-3);
   min-width: 0;
-  padding-bottom: var(--wf-s-3);
+  min-height: 0;
+  margin: -4px -4px 0;
+  padding: 4px 4px var(--wf-s-3);
+  overflow-y: auto;
 }
 
 .group {
@@ -207,12 +220,10 @@
   border: 0;
 }
 
-/* Save to file, Load from file and Reset demo, pinned to the foot while the panel scrolls. */
+/* Save to file, Load from file and Reset demo, held at the foot while the panel scrolls above them. */
 .foot {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
   display: flex;
+  flex: none;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
@@ -233,6 +244,35 @@
   margin: 0;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
+}
+
+/* Phones: the 40px buttons (44px scenario cards) keep their face and reach a 48px tap area through a
+   transparent cover, the house pattern (home-list's list tabs). Neighbours sit 6px or more apart, so
+   no cover reaches another control. The Practise row's cover reaches up into the gap above it only,
+   so it never sits over the opened section's first line. */
+@media (max-width: 48rem) {
+  .choice,
+  .small,
+  .reset,
+  .practice summary {
+    position: relative;
+  }
+  .small::after,
+  .reset::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+  .choice::after {
+    content: "";
+    position: absolute;
+    inset: -2px 0;
+  }
+  .practice summary::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0 0;
+  }
 }
 
 @media (forced-colors: active) {

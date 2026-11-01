@@ -1,4 +1,4 @@
-import { Spinner } from "@/components/wf/primitives";
+import { Spinner } from "@/components/wf";
 import { WardLoadingShape } from "@/components/ward-management/shell/ward-loading-shape";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
