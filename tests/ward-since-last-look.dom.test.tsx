@@ -1,8 +1,15 @@
 import { fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { useState } from "react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/ward-flow",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
+import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import {
   LAST_LOOK_STORAGE_KEY,
   parseLastLookSnapshot,
@@ -26,9 +33,11 @@ function scopedStorageKey(scopeKey: string, userId: string, scenario: string, ge
   return `${LAST_LOOK_STORAGE_KEY}:${scopeKey}:${encodeURIComponent(userId)}:${encodeURIComponent(scenario)}:${generation}`;
 }
 
+/** Q99 (1 Nov 2026): Home's changes button opens the app bar's Activity panel, so the bar is drawn too. */
 function renderCommand() {
   return render(
     <WardFlowProvider initialNow={NOW}>
+      <WardBar />
       <CoordinatorScreen />
     </WardFlowProvider>,
   );
@@ -50,9 +59,14 @@ function seededSnapshot() {
   );
 }
 
-/** The desktop hero's changes chip, which opens Home's Activity panel (jsdom reports a desktop width). */
+/** The desktop hero's changes chip, which opens the bar's Activity panel (jsdom reports a desktop width). */
 const changesChip = () => screen.getByRole("button", { name: /· (Review|Activity)$/u });
-const activityPanel = () => screen.getByTestId("home-activity-panel");
+const activityPanel = () => screen.getByTestId("ward-bar-activity-sheet");
+/** The panel's code loads on demand, so an open waits for it. */
+async function openFromChip() {
+  fireEvent.click(changesChip());
+  return screen.findByTestId("ward-bar-activity-sheet");
+}
 
 describe("the Command screen's changes since the last review (Activity panel)", () => {
   beforeEach(() => window.sessionStorage.clear());
@@ -61,7 +75,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
   it("counts from the shift start on a first look, and saves no picture when the coordinator leaves", async () => {
     const { unmount } = renderCommand();
     expect(changesChip()).toHaveTextContent(/^\d+\s*changes? since 07:00 · Review$/u);
-    fireEvent.click(changesChip());
+    await openFromChip();
     expect(activityPanel()).toHaveTextContent("Since 07:00, the start of your shift");
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
     fireEvent(window, new Event("pagehide"));
@@ -74,7 +88,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     const { endWardFlowBrowserSession } = await import("@/components/ward-management/ward-browser-data");
     const { unmount } = renderCommand();
     // A review made in the session is swept when the session ends, and nothing writes it back.
-    fireEvent.click(changesChip());
+    await openFromChip();
     fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))).toBeDefined();
     endWardFlowBrowserSession();
@@ -91,12 +105,13 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     const Command = ({ value }: { value: typeof account | null }) => (
       <WardFlowProvider initialNow={NOW}>
         <SharedAccessContext.Provider value={value}>
+          <WardBar />
           <CoordinatorScreen />
         </SharedAccessContext.Provider>
       </WardFlowProvider>
     );
     const view = render(<Command value={account} />);
-    fireEvent.click(changesChip());
+    await openFromChip();
     fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))?.userId).toBe(
       "synthetic-account-one",
@@ -116,14 +131,14 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
     render(<Command value={{ ...account }} />);
-    fireEvent.click(changesChip());
+    await openFromChip();
     fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))?.userId).toBe(
       "synthetic-account-one",
     );
   });
 
-  it("lists what is new since the remembered picture, and clears when marked reviewed", () => {
+  it("lists what is new since the remembered picture, and clears when marked reviewed", async () => {
     const snapshot = seededSnapshot();
     const droppedReferral = snapshot.referralIds[snapshot.referralIds.length - 1]!;
     const unitId = Object.keys(snapshot.readyByUnit).find((id) => snapshot.readyByUnit[id]! > 0)!;
@@ -140,7 +155,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     renderCommand();
     // Josh, 31 Oct 2026: the hero's changes chip counts the lines and opens Activity on Changes.
     expect(changesChip()).toHaveTextContent(/^2\s*changes since your review at 09:42 · Review$/u);
-    fireEvent.click(changesChip());
+    await openFromChip();
     const panel = within(activityPanel());
     expect(panel.getByRole("tab", { name: /Changes/u, selected: true })).toBeInTheDocument();
     expect(panel.getByRole("region", { name: /Referrals/u })).toHaveTextContent(/new referral from /u);
