@@ -2,27 +2,24 @@
 
 import { usePathname } from "next/navigation";
 
-import { WARD_VIEWS, type WardMode } from "@/components/ward-management/ward-nav";
-
 import styles from "./ward-loading-shape.module.css";
 
 type Shape = "home" | "capacity" | "waiting" | "plain";
 
-/** The three destinations with a page-shaped placeholder, keyed by their `WARD_VIEWS` id. */
-const SHAPE_OF_VIEW: Partial<Record<WardMode, Shape>> = {
-  command: "home",
-  capacity: "capacity",
-  delays: "waiting",
-};
-
 /**
- * Which page the placeholder stands in for, read from the address the navigation is going to. The
- * addresses come from `WARD_VIEWS`, so shell/ never types a route of its own.
+ * The addresses of the three pages with a page-shaped placeholder. The route-level `loading.tsx`
+ * passes them in, so shell/ types no route of its own and this boundary, which loads on every
+ * navigation, imports nothing heavier than its own styles.
  */
-function shapeOf(pathname: string): Shape {
+export type WardLoadingShapePaths = Readonly<Record<Exclude<Shape, "plain">, string>>;
+
+/** Which page the placeholder stands in for, read from the address the navigation is going to. */
+function shapeOf(pathname: string, paths: WardLoadingShapePaths): Shape {
   const path = pathname.replace(/\/+$/u, "");
-  const view = WARD_VIEWS.find((item) => item.href === path);
-  return (view && SHAPE_OF_VIEW[view.id]) ?? "plain";
+  if (path === paths.home) return "home";
+  if (path === paths.capacity) return "capacity";
+  if (path === paths.waiting) return "waiting";
+  return "plain";
 }
 
 const SIX = ["a", "b", "c", "d", "e", "f"] as const;
@@ -96,8 +93,8 @@ function WaitingShape() {
  * the blocks were instead of jumping. Every other page keeps today's plain two blocks. Decoration
  * only: the placeholder's "Loading page" status says what is happening.
  */
-export function WardLoadingShape() {
-  const shape = shapeOf(usePathname() ?? "");
+export function WardLoadingShape({ paths }: { paths: WardLoadingShapePaths }) {
+  const shape = shapeOf(usePathname() ?? "", paths);
   return (
     <div className={styles.blocks} aria-hidden="true" data-shape={shape}>
       {shape === "home" ? (
