@@ -98,5 +98,10 @@
     "id": "2026-11-01-ed-handover-table",
     "date": "2026-11-01",
     "line": "The ED page is now a handover table with Presentation and Form choices, and one Lists card."
+  },
+  {
+    "id": "2026-11-01-alerts-redesign",
+    "date": "2026-11-01",
+    "line": "Alerts is redesigned, with a Today band, a side panel with one action bar, and Add units on a live broadcast."
   }
 ]
