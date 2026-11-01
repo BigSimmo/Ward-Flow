@@ -24,8 +24,9 @@ import { useTourFacts } from "./ward-tour-facts";
 import type { ScreenHelp } from "./ward-help-content";
 
 import { howToHref } from "./ward-help-href";
-import { HOW_TO_TOPICS, type HowTo } from "./ward-help-howto";
+import { HOW_TO_IDS, HOW_TO_TOPICS, type HowTo } from "./ward-help-howto";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
+import { recordHowToUsed } from "./ward-help-usage";
 import s from "./ward-help-panel.module.css";
 
 type Topic = (typeof HOW_TO_TOPICS)[number];
@@ -149,7 +150,10 @@ function TaskRow({
                 <Link
                   href={goThere}
                   className={buttonClass({ variant: showMe ? "ghost" : "sec" })}
-                  onClick={onClose}
+                  onClick={() => {
+                    recordHowToUsed(task.id, HOW_TO_IDS);
+                    onClose();
+                  }}
                   data-testid="ward-help-task-go"
                 >
                   Go to {screenName(goThere)}
@@ -282,6 +286,19 @@ export function HelpTasks({
     return { name, tasks: tasks.filter((task) => kept.has(task)), n: tasks.length };
   }).filter((group) => group.tasks.length > 0);
 
+  // Usage counts are ids only, the same as the old list: an answer opened, Show me or Go to.
+  const showMe = (id: string) => {
+    recordHowToUsed(id, HOW_TO_IDS);
+    onShowMe(id);
+  };
+  // Opening a task always reveals it, even when it sits past the first few or outside the topic.
+  const reveal = (id: string) => {
+    recordHowToUsed(id, HOW_TO_IDS);
+    setOpen(id);
+    setAll(true);
+    setTopic("all");
+  };
+
   const row = (task: HowTo) => (
     <TaskRow
       key={task.id}
@@ -290,9 +307,9 @@ export function HelpTasks({
       home={home}
       pathname={pathname}
       expanded={open === task.id}
-      onToggle={() => setOpen(open === task.id ? undefined : task.id)}
+      onToggle={() => (open === task.id ? setOpen(undefined) : reveal(task.id))}
       onClose={onClose}
-      onShowMe={onShowMe}
+      onShowMe={showMe}
       screenName={screenName}
       showMeOn={showMeOn}
     />
@@ -322,7 +339,7 @@ export function HelpTasks({
                     key={task.id}
                     type="button"
                     className={s.tile}
-                    onClick={() => (can ? onShowMe(task.id) : setOpen(task.id))}
+                    onClick={() => (can ? showMe(task.id) : reveal(task.id))}
                   >
                     <span className={s.tileTitle}>{task.title}</span>
                     <span className={s.tileAction}>

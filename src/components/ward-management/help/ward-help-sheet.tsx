@@ -225,6 +225,8 @@ function WardHelpSheetView({
   };
 
   const choose = (result: HelpSearchResult) => {
+    // Accepting a result ends suggestion mode so the chosen answer shows straight away.
+    setFocused(false);
     const mine = !result.desks || result.desks.includes(role);
     if (result.key.startsWith("howto:") && mine) {
       setQuery("");
@@ -250,7 +252,11 @@ function WardHelpSheetView({
     const href = mine ? howToHref(result.go, role, deskHref) : undefined;
     if (href) {
       onClose();
-      router.push(href);
+      const [path, tab] = href.split("#");
+      // A tab on this screen goes by native fragment navigation, which Settings listens for.
+      if (tab && path === pathname) {
+        if (window.location.hash !== `#${tab}`) window.location.hash = tab;
+      } else router.push(href);
     }
   };
 

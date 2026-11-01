@@ -18,9 +18,10 @@ vi.mock("next/link", () => ({
 }));
 
 const route = { pathname: "/ward-flow/handover" };
+const push = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -39,10 +40,14 @@ import { HelpTasks } from "@/components/ward-management/help/ward-help-jobs";
 import { SCREEN_HELP } from "@/components/ward-management/help/ward-help-content";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import { tasksForDesk } from "@/components/ward-management/help/ward-help-task-list";
+import { HELP_USED_STORAGE_KEY } from "@/components/ward-management/help/ward-help-usage";
 
 afterEach(() => {
   route.pathname = "/ward-flow/handover";
   phone.on = false;
+  push.mockClear();
+  window.localStorage.clear();
+  window.location.hash = "";
 });
 
 const HANDOVER = { ...SCREEN_HELP.handover, id: "handover" };
@@ -174,6 +179,26 @@ describe("How do I… task list", () => {
     expect(row.textContent).not.toContain("Handover");
   });
 
+  it("counts an answer opened, Show me and Go to, by id only", () => {
+    renderTasks();
+    const row = screen.getByTestId("ward-help-task-answer-pull-bed");
+    open(row, /Pull the bed for a patient/);
+    fireEvent.click(within(row).getByTestId("ward-help-task-show-me"));
+    fireEvent.click(within(row).getByTestId("ward-help-task-go"));
+    expect(window.localStorage.getItem(HELP_USED_STORAGE_KEY)).toBe("pull-bed:3");
+  });
+
+  it("reveals a Read how tile's task even when a topic chip hides it", () => {
+    renderTasks({ showMeOn: false });
+    const chips = within(screen.getByRole("group", { name: "Show jobs about" }));
+    fireEvent.click(chips.getByRole("button", { name: /Transport/ }));
+    const tile = within(screen.getByTestId("ward-help-tasks-here")).getAllByRole("button")[0];
+    const id = HOW_TOS.find((howTo) => tile.textContent?.startsWith(howTo.title))?.id;
+    fireEvent.click(tile);
+    const row = screen.getByTestId(`ward-help-task-answer-${id}`);
+    expect(row.querySelector("[aria-expanded]")?.getAttribute("aria-expanded")).toBe("true");
+  });
+
   it("reads as answers only, with no Show me, when Show me is off", () => {
     renderTasks({ showMeOn: false, openTask: "pull-bed" });
     expect(screen.queryByTestId("ward-help-task-show-me")).toBeNull();
@@ -243,5 +268,27 @@ describe("How do I… in the Help sheet", () => {
     expect(onView).toHaveBeenCalledWith("desk");
     fireEvent.click(screen.getByTestId("ward-help-shortcuts"));
     expect(onView).toHaveBeenCalledWith("keys");
+  });
+});
+
+describe("Search Help in the sheet", () => {
+  it("shows the chosen answer straight away when a result is picked with Enter", () => {
+    sheet();
+    const field = screen.getByRole("searchbox", { name: "Search Help" });
+    fireEvent.focus(field);
+    fireEvent.change(field, { target: { value: "pull the bed" } });
+    fireEvent.keyDown(field, { key: "Enter" });
+    const row = screen.getByTestId("ward-help-task-answer-pull-bed");
+    expect(row.querySelector("[aria-expanded]")?.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("opens another Settings tab by fragment while Help is open on Settings", () => {
+    route.pathname = "/ward-flow/settings";
+    sheet();
+    const field = screen.getByRole("searchbox", { name: "Search Help" });
+    fireEvent.change(field, { target: { value: "ED wait target" } });
+    fireEvent.click(screen.getAllByRole("button", { name: /ED wait target/ })[0]);
+    expect(window.location.hash).toBe("#rules");
+    expect(push).not.toHaveBeenCalled();
   });
 });
