@@ -748,8 +748,8 @@ export function WardHomeTab({
     actNow.push({
       key: "referrals",
       title: "Referrals waiting",
+      // Polish (1 Nov 2026): no count under these rows; the detail already names each bed or count.
       detail: `${incoming.length} waiting for this ward's answer`,
-      meta: String(incoming.length),
       tone: "danger",
       action: { label: "Answer", run: focusAwaiting },
     });
@@ -761,7 +761,6 @@ export function WardHomeTab({
       detail: heldUp
         .map((release) => `${bedByAdmission(release.admissionId)?.bedLabel ?? "A bed"} ${release.blocker}`)
         .join(", "),
-      meta: String(heldUp.length),
       tone: "danger",
       action: { label: "Review", run: () => onOpenDischarges?.() },
     });
@@ -778,7 +777,6 @@ export function WardHomeTab({
             `${bed.bedLabel}${bed.patientAlias ? ` ${bed.patientAlias}` : ""}, ${bed.bedHold!.short.toLowerCase()}`,
         )
         .join("; "),
-      meta: String(lapsedHolds.length),
       tone: "danger",
       action: { label: "Move or release", run: () => onSelectBed?.(Number(lapsedHolds[0]!.bedNumber)) },
     });
@@ -791,7 +789,6 @@ export function WardHomeTab({
       detail: heldAfterStop
         .map((movement) => `${resolvePatientIdentity(movement).formalName}, transport stopped after collection`)
         .join("; "),
-      meta: String(heldAfterStop.length),
       tone: "warning",
       action: onOpenArrivals ? { label: "Release pulled bed", run: onOpenArrivals } : undefined,
     });
@@ -960,6 +957,16 @@ export function WardHomeTab({
     for (const rows of [actNow, laterToday])
       rows.sort((a, b) => Number(b.key === "rollup") - Number(a.key === "rollup"));
   }
+  // Polish (1 Nov 2026): several rows offer the same "Review today's expected discharges" link; it
+  // shows once, on the first row that carries it, so the columns do not repeat it.
+  {
+    let reviewShown = false;
+    for (const row of [...actNow, ...laterToday, ...doneRows]) {
+      if (row.secondaryAction?.label !== "Review today's expected discharges →") continue;
+      if (reviewShown) row.secondaryAction = undefined;
+      reviewShown = true;
+    }
+  }
   const todoOpen = actNow.length + laterToday.filter((row) => !row.tick).length;
 
   // Length of stay: people in beds now, grouped by recorded stay in days.
@@ -1035,11 +1042,13 @@ export function WardHomeTab({
     );
   }
 
+  // Polish (1 Nov 2026): three columns, each a quiet head with its count, then one row a task with
+  // its action on the right and any time or count under the detail.
   function renderTodoColumn(id: string, title: string, tone: WfTone, rows: TodoRow[]) {
     const items = rows.filter((row) => !row.tick);
     const reminders = rows.filter((row) => row.tick);
     return (
-      <section className={styles.todoCol} aria-labelledby={`ward-todo-${id}`}>
+      <section className={styles.todoCol} data-tone={tone} aria-labelledby={`ward-todo-${id}`}>
         <div className={styles.groupHead}>
           <StatusGlyph tone={tone} size={9} />
           <h3 id={`ward-todo-${id}`} className={styles.groupTitle}>
@@ -1087,11 +1096,7 @@ export function WardHomeTab({
                   </span>
                 </span>
               )}
-              {row.meta ? (
-                <span className={row.meta.length > 6 ? `${styles.todoMeta} ${styles.todoMetaBelow}` : styles.todoMeta}>
-                  {row.meta}
-                </span>
-              ) : null}
+              {row.meta ? <span className={styles.todoMeta}>{row.meta}</span> : null}
               {row.action ? (
                 <button type="button" className={buttonClass({ variant: "sec", size: "sm" })} onClick={row.action.run}>
                   {row.action.label}
@@ -1875,7 +1880,13 @@ export function WardHomeTab({
                     </span>
                     <span className={styles.bedTileState} aria-hidden="true">
                       <span className={styles.bedTileNote}>
-                        {row.free ? row.stateWord : row.note === row.name ? "" : row.tileNote}
+                        {row.free
+                          ? row.stateWord === row.name
+                            ? ""
+                            : row.stateWord
+                          : row.note === row.name
+                            ? ""
+                            : row.tileNote}
                       </span>
                       {row.days ? <span className={styles.bedTileDays}>{row.days}</span> : null}
                     </span>

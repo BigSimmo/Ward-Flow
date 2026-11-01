@@ -184,9 +184,11 @@ describe("the ward screen's third-edition panel names", () => {
       const found = screen.getByRole("heading", { name: heading });
       expect(found, `the drawing names this panel "${heading}" and the screen does not`).toBeVisible();
     }
+    // Polish (1 Nov 2026): every window is named once, on its step in the window track; the side
+    // card lists only the other windows still to decide, so a clear window has no heading there.
     for (const heading of ["Staffing", "Intake", "Leave", "Departures"]) {
       expect(
-        screen.getByRole("heading", { name: new RegExp(`^${heading}$`) }),
+        screen.getByRole("button", { name: new RegExp(`^${heading}, `) }),
         `the decisions queue is missing "${heading}"`,
       ).toBeVisible();
     }

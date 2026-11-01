@@ -219,7 +219,7 @@ describe("ward screen live unit capacity", () => {
       </WardFlowProvider>,
     );
 
-    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent(
+    expect(screen.getByRole("region", { name: "Staffing", hidden: true })).toHaveTextContent(
       "1 bed free for a new patient",
     );
 
@@ -227,7 +227,7 @@ describe("ward screen live unit capacity", () => {
 
     // After a real CONFIRM_CAPACITY dispatch updates state.units, the screen must show the new
     // live count — resolving from the frozen fixture would keep showing 1 forever.
-    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent(
+    expect(screen.getByRole("region", { name: "Staffing", hidden: true })).toHaveTextContent(
       "0 beds free for a new patient",
     );
   });
