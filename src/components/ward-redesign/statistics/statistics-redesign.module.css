@@ -743,3 +743,17 @@ button.link {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* A row name that opens the row's own page, in the table's ink */
+.nameLink {
+  color: inherit;
+  text-decoration: none;
+}
+.nameLink:hover {
+  text-decoration: underline;
+}
+.nameSub {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

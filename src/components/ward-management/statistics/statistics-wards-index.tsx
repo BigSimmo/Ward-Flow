@@ -6,13 +6,10 @@ import type { Unit } from "../ward-model";
 
 import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeftRight, BedDouble, CalendarClock, ChevronDown, ChevronUp, Lock } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 
 import {
   BarList,
-  Button,
-  CardBody,
-  CardFoot,
   FilterChip,
   HeroStat,
   GroupHead,
@@ -41,15 +38,20 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { admissionStagePosition } from "./statistics-derivations";
 import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
-import { FlushRow } from "./statistics-layout";
 import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
 import { ServiceDot } from "./statistics-services-index";
 import { PhoneBody, PhoneDotKey, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
-import list from "./statistics-wards-list.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import { useCanOpenHref } from "../shell/ward-access";
+import {
+  Bars,
+  Foot,
+  Grid,
+  Occ,
+  redesignStyles as redesign,
+} from "@/components/ward-redesign/statistics/statistics-redesign-parts";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import {
   ExecutiveStatisticsUnavailable,
@@ -91,8 +93,6 @@ export function SortTh<K extends string>({
   );
 }
 
-type WardSortKey =
-  "name" | "beds" | "occupied" | "rate" | "ready" | "pending" | "pulled" | "closed" | "blocked" | "longest";
 type WardChip = "over" | "none-ready" | "pending" | "pulled" | "blocked";
 
 /** Whole days in a bed so far, or null for someone not yet arrived (or a clock wound back). */
@@ -241,12 +241,11 @@ function WardsIndexView({
     const exact = exactStatisticsCount(count);
     return exact === null || exact > 0;
   };
-  const [sort, setSort] = useState<WardSortKey>("rate");
-  const [asc, setAsc] = useState(false);
   const [group, setGroup] = useState<"service" | "none">("service");
   const [chips, setChips] = useState<ReadonlySet<WardChip>>(new Set());
   const [showMore, setShowMore] = useState(false);
   const [blockedAll, setBlockedAll] = useState(false);
+  const [stayAll, setStayAll] = useState(false);
   const isPhone = useIsPhone();
 
   type Row = WardIndexRow;
@@ -265,25 +264,8 @@ function WardsIndexView({
               : positive(row.blocked),
     );
 
-  const sorted = useMemo(() => {
-    const value = (row: Row): number | string | null =>
-      sort === "name"
-        ? row.name
-        : sort === "longest"
-          ? (row.longest ?? -1)
-          : sort === "blocked"
-            ? exactStatisticsCount(row.blocked)
-            : row[sort];
-    return [...rows].sort((a, b) => {
-      const left = value(a);
-      const right = value(b);
-      if (left === null || right === null)
-        return left === right ? a.name.localeCompare(b.name) : left === null ? 1 : -1;
-      if (left < right) return asc ? -1 : 1;
-      if (left > right) return asc ? 1 : -1;
-      return a.name.localeCompare(b.name);
-    });
-  }, [rows, sort, asc]);
+  // The redesign's one order (approved 1 Nov 2026, Q135): fullest first, then by name.
+  const sorted = useMemo(() => [...rows].sort((a, b) => b.rate - a.rate || a.name.localeCompare(b.name)), [rows]);
 
   const groups =
     group === "service"
@@ -312,20 +294,15 @@ function WardsIndexView({
     : group === "service"
       ? `Show ${hiddenServices} more ${plural(hiddenServices, "service", "services")}, ${rows.length - visibleCount} ${plural(rows.length - visibleCount, "ward", "wards")}`
       : `Show all ${rows.length} wards`;
-  const moreButton =
-    chips.size > 0 || (group === "service" ? groups.length <= FIRST_SERVICES : rows.length <= FIRST_ROWS) ? null : (
-      <ShowMoreRow expanded={showMore} onClick={() => setShowMore((more) => !more)}>
-        {moreLabel}
-      </ShowMoreRow>
-    );
+  const canShowMore = !(
+    chips.size > 0 || (group === "service" ? groups.length <= FIRST_SERVICES : rows.length <= FIRST_ROWS)
+  );
+  const moreButton = canShowMore ? (
+    <ShowMoreRow expanded={showMore} onClick={() => setShowMore((more) => !more)}>
+      {moreLabel}
+    </ShowMoreRow>
+  ) : null;
 
-  const onSort = (key: WardSortKey) => {
-    if (key === sort) setAsc((value) => !value);
-    else {
-      setSort(key);
-      setAsc(key === "name");
-    }
-  };
   const toggleChip = (chip: WardChip, pressed: boolean) =>
     setChips((current) => {
       const next = new Set(current);
@@ -354,10 +331,10 @@ function WardsIndexView({
   const chipItems: Array<{ id: WardChip; label: string; count: number; tone?: "warning" }> = [
     { id: "over", label: `At or over ${BED_ALERT_THRESHOLD_PERCENT}%`, count: overLine, tone: "warning" },
     { id: "none-ready", label: "None ready", count: noneReady },
-    // These count wards, so they say so: the hero's "Pulled, not arrived" counts beds (UX audit 21 Oct 2026).
-    { id: "pending", label: "With a bed being made ready", count: count((row) => row.pending > 0) },
-    { id: "pulled", label: "With a pulled bed", count: count((row) => row.pulled > 0) },
-    { id: "blocked", label: "With a discharge held up", count: count((row) => positive(row.blocked)) },
+    // The redesign's words (Q135); each chip's count is of wards, as the card's meta says.
+    { id: "pending", label: "Bed being made ready", count: count((row) => row.pending > 0) },
+    { id: "pulled", label: "Pulled bed", count: count((row) => row.pulled > 0) },
+    { id: "blocked", label: "Discharge held up", count: count((row) => positive(row.blocked)) },
   ];
 
   return (
@@ -452,13 +429,7 @@ function WardsIndexView({
             size="md"
             label="Group wards"
             value={group}
-            onChange={(next) => {
-              setGroup(next);
-              if (next === "none") {
-                setSort("rate");
-                setAsc(false);
-              }
-            }}
+            onChange={setGroup}
             items={[
               { id: "service", label: "By service" },
               // the desktop switch's own words, so one control has one name.
@@ -520,119 +491,112 @@ function WardsIndexView({
       ) : (
         <>
           <StatCard
-            icon={BedDouble}
             id="every-ward"
             className={index.anchorTarget}
             title="Every ward"
-            aside={
-              <span className={list.headTools}>
-                <span className={index.matchCount} data-testid="ward-statistics-wards-match-count">
-                  {chips.size > 0 ? `${matched} of ${rows.length} highlighted` : `${rows.length} wards`}
-                </span>
-                <Segmented
-                  label="Group wards"
-                  value={group}
-                  onChange={setGroup}
-                  items={[
-                    { id: "service", label: "By service" },
-                    { id: "none", label: "One list" },
-                  ]}
-                />
+            meta={
+              <span data-testid="ward-statistics-wards-match-count">
+                {chips.size > 0
+                  ? `${matched} of ${rows.length} highlighted`
+                  : `${rows.length} ${plural(rows.length, "ward", "wards")}`}
               </span>
+            }
+            action={
+              <Segmented
+                label="Group wards"
+                value={group}
+                onChange={setGroup}
+                items={[
+                  { id: "service", label: "By service" },
+                  { id: "none", label: "One list" },
+                ]}
+              />
             }
             data-testid="ward-statistics-wards-table-card"
           >
-            <div className={cx(styles.toolbar, list.chipRow)}>
-              <div className={list.chips} role="group" aria-label="Highlight wards">
-                {chipItems.map((chip) => (
-                  <FilterChip
-                    key={chip.id}
-                    pressed={chips.has(chip.id)}
-                    onPressedChange={(pressed) => toggleChip(chip.id, pressed)}
-                    count={chip.count}
-                    tone={chip.tone}
-                  >
-                    {chip.label}
-                  </FilterChip>
-                ))}
-              </div>
+            <div className={redesign.chips} role="group" aria-label="Highlight wards">
+              {chipItems.map((chip) => (
+                <FilterChip
+                  key={chip.id}
+                  pressed={chips.has(chip.id)}
+                  onPressedChange={(pressed) => toggleChip(chip.id, pressed)}
+                  count={chip.count}
+                  tone={chip.tone}
+                >
+                  {chip.label}
+                </FilterChip>
+              ))}
             </div>
-            <div className={index.tableScroll} tabIndex={0} role="region" aria-label="Every ward, scrollable">
-              <table className={cx(tableClasses.table, styles.table)} data-testid="ward-statistics-wards-table">
+            <div className={redesign.tableWrap} tabIndex={0} role="region" aria-label="Every ward, scrollable">
+              <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-wards-table">
                 <caption className={styles.srOnly}>
-                  Every inpatient ward: beds, occupancy, ready, being made ready, pulled, closed, blocked discharges and
-                  the longest current stay
+                  Every inpatient ward: occupancy, occupied of beds, ready, being made ready, pulled, closed, blocked
+                  discharges and the longest current stay
                 </caption>
                 <thead>
                   <tr>
-                    <SortTh id="name" label="Ward" sort={sort} asc={asc} onSort={onSort} />
-                    <SortTh id="beds" label="Beds" sort={sort} asc={asc} onSort={onSort} numeric />
-                    <SortTh id="occupied" label="Occupied" sort={sort} asc={asc} onSort={onSort} numeric />
-                    <SortTh id="rate" label="Occupancy" sort={sort} asc={asc} onSort={onSort} numeric />
-                    <SortTh id="ready" label={BED_STATE_LABELS.ready} sort={sort} asc={asc} onSort={onSort} numeric />
-                    <SortTh id="pending" label="Making ready" sort={sort} asc={asc} onSort={onSort} numeric />
-                    <SortTh id="pulled" label={BED_STATE_LABELS.pulled} sort={sort} asc={asc} onSort={onSort} numeric />
-                    <SortTh id="closed" label={BED_STATE_LABELS.closed} sort={sort} asc={asc} onSort={onSort} numeric />
-                    <SortTh id="blocked" label="Blocked" sort={sort} asc={asc} onSort={onSort} numeric />
-                    <SortTh id="longest" label="Longest stay" sort={sort} asc={asc} onSort={onSort} numeric />
+                    <th scope="col">Ward</th>
+                    <th scope="col">Occupancy</th>
+                    {[
+                      "Occupied",
+                      BED_STATE_LABELS.ready,
+                      "Making ready",
+                      BED_STATE_LABELS.pulled,
+                      BED_STATE_LABELS.closed,
+                      "Blocked",
+                      "Longest stay",
+                    ].map((label) => (
+                      <th key={label} scope="col" className={redesign.r}>
+                        {label}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {visibleGroups.map((entry) => (
                     <Fragment key={entry.service ?? "all"}>
                       {group === "service" ? (
-                        <tr className={index.groupRow}>
-                          <th scope="colgroup" colSpan={10}>
-                            <span className={index.groupLabel}>
+                        <tr className={redesign.group}>
+                          <th scope="colgroup" colSpan={9}>
+                            <span>
+                              <ServiceDot service={entry.service} />
                               {entry.service ?? "Service not recorded"}
-                              <span className={styles.muted}>{entry.rows.length}</span>
+                              <small>{`${entry.rows.length} ${plural(entry.rows.length, "ward", "wards")}`}</small>
                             </span>
                           </th>
                         </tr>
                       ) : null}
                       {entry.rows.map((row) => {
                         const hit = matches(row);
+                        const num = (zero: boolean) => cx(redesign.r, tableClasses.num, zero && redesign.zero);
                         return (
                           <tr key={row.id} data-match={hit || undefined} {...rowDim(chips.size > 0 && !hit)}>
                             <th scope="row">
-                              <span className={index.rowName}>
-                                <Link href={wardStatisticsHref(row.id)} className={index.rowLink}>
+                              <span className={redesign.name}>
+                                <Link href={wardStatisticsHref(row.id)} className={redesign.nameLink}>
                                   {row.name}
                                 </Link>
-                                <span className={index.rowSub}>
+                                <small className={redesign.nameSub}>
                                   {group === "none" ? <ServiceDot service={row.service} /> : null}
                                   {row.hospital}
-                                </span>
+                                </small>
                                 {hit ? <SrOnly>Highlighted by the chosen filters.</SrOnly> : null}
                               </span>
                             </th>
-                            <td className={styles.num}>{row.beds}</td>
-                            <td className={styles.num}>{row.occupied}</td>
-                            <td className={styles.num}>
-                              <span className={styles.occBar}>
-                                <span className={styles.occTrack} aria-hidden="true">
-                                  <span className={styles.occFill} style={{ width: `${Math.min(100, row.rate)}%` }} />
-                                  <span
-                                    className={styles.occTick}
-                                    style={{ left: `${BED_ALERT_THRESHOLD_PERCENT}%` }}
-                                  />
-                                </span>
-                                <span className={styles.occValue}>
-                                  {row.rate >= BED_ALERT_THRESHOLD_PERCENT ? (
-                                    <StatusGlyph tone="warning" size={9} />
-                                  ) : null}
-                                  {row.rate}%
-                                </span>
-                              </span>
+                            <td>
+                              <Occ
+                                pct={row.rate}
+                                threshold={BED_ALERT_THRESHOLD_PERCENT}
+                                label={`${row.name} occupancy`}
+                              />
                             </td>
-                            <td className={cx(styles.num, row.ready === 0 && styles.zero)}>{row.ready}</td>
-                            <td className={cx(styles.num, row.pending === 0 && styles.zero)}>{row.pending}</td>
-                            <td className={cx(styles.num, row.pulled === 0 && styles.zero)}>{row.pulled}</td>
-                            <td className={cx(styles.num, row.closed === 0 && styles.zero)}>{row.closed}</td>
-                            <td className={cx(styles.num, exactStatisticsCount(row.blocked) === 0 && styles.zero)}>
-                              {shown(row.blocked)}
-                            </td>
-                            <td className={cx(styles.num, row.longest === null && styles.zero)}>
+                            <td className={num(false)}>{`${row.occupied} of ${row.beds}`}</td>
+                            <td className={num(row.ready === 0)}>{row.ready}</td>
+                            <td className={num(row.pending === 0)}>{row.pending}</td>
+                            <td className={num(row.pulled === 0)}>{row.pulled}</td>
+                            <td className={num(row.closed === 0)}>{row.closed}</td>
+                            <td className={num(exactStatisticsCount(row.blocked) === 0)}>{shown(row.blocked)}</td>
+                            <td className={num(row.longest === null)}>
                               {row.longest === null ? "none" : `${row.longest}d`}
                             </td>
                           </tr>
@@ -643,85 +607,105 @@ function WardsIndexView({
                 </tbody>
               </table>
             </div>
-            {moreButton}
-            <CardFoot
-              meta={`Ready includes beds being made ready. Highlighting never hides a ward. Stays count whole days since arrival.`}
-            />
+            <Foot
+              link={
+                canShowMore ? (
+                  <button
+                    type="button"
+                    className={redesign.link}
+                    aria-expanded={showMore}
+                    onClick={() => setShowMore((more) => !more)}
+                  >
+                    {moreLabel}
+                    <ChevronRight size={14} aria-hidden="true" />
+                  </button>
+                ) : null
+              }
+            >
+              Ready includes beds being made ready · stays count whole days since arrival
+            </Foot>
           </StatCard>
 
-          <FlushRow layout="halves">
+          <Grid>
             <StatCard
-              icon={CalendarClock}
               id="mean-stay"
               className={index.anchorTarget}
               title="Stay so far, people in a bed now"
-              aside={<span className={cx(styles.muted, index.phoneHide)}>Top 10, days</span>}
+              meta={`Average days, top ${stayAll ? byMean.length : Math.min(FIRST_ROWS, byMean.length)}`}
               data-testid="ward-statistics-wards-mean-stay"
             >
-              <CardBody>
-                {byMean.length === 0 ? (
-                  <p className={index.cardNote}>Nobody with a recorded arrival is in a bed.</p>
-                ) : (
-                  <BarList
-                    label="Mean stay so far of the people in a bed now, by ward, top ten"
-                    track
-                    labelWidth="9.5rem"
-                    rows={byMean.map((row) => ({
-                      id: row.id,
-                      label: row.name,
-                      value: row.mean,
-                      display: row.mean.toFixed(1),
-                    }))}
-                  />
-                )}
-              </CardBody>
-              <CardFoot meta="People in a bed now, from their recorded arrival." />
+              {byMean.length === 0 ? (
+                <p className={redesign.empty}>Nobody with a recorded arrival is in a bed.</p>
+              ) : (
+                <Bars
+                  label="Mean stay so far of the people in a bed now, by ward, top ten"
+                  rows={(stayAll ? byMean : byMean.slice(0, FIRST_ROWS)).map((row) => ({
+                    name: row.name,
+                    value: row.mean,
+                    display: row.mean.toFixed(1),
+                  }))}
+                />
+              )}
+              <Foot
+                link={
+                  byMean.length > FIRST_ROWS ? (
+                    <button
+                      type="button"
+                      className={redesign.link}
+                      aria-expanded={stayAll}
+                      onClick={() => setStayAll((all) => !all)}
+                    >
+                      {stayAll ? "Show fewer" : `Show top ${byMean.length}`}
+                      <ChevronRight size={14} aria-hidden="true" />
+                    </button>
+                  ) : null
+                }
+              >
+                From each person’s recorded arrival
+              </Foot>
             </StatCard>
 
             <StatCard
-              icon={Lock}
               id="blocked"
               className={index.anchorTarget}
               title="Discharges held up"
-              aside={<span className={cx(styles.muted, index.phoneHide)}>{shown(blockedTotal)} in all</span>}
+              meta={`${shown(blockedTotal)} across ${blockedRows.length} ${plural(blockedRows.length, "ward", "wards")}`}
               data-testid="ward-statistics-wards-blocked"
             >
-              <CardBody>
-                {blockedRows.length === 0 ? (
-                  <p className={index.cardNote}>No current admission has a block reason.</p>
-                ) : (
+              {blockedRows.length === 0 ? (
+                <p className={redesign.empty}>No current admission has a block reason.</p>
+              ) : (
+                <div className={redesign.bars}>
                   <BarList
                     label="Current admissions with a block reason, by ward"
                     track
-                    labelWidth="9.5rem"
                     rows={(blockedAll ? blockedRows : blockedRows.slice(0, FIRST_ROWS)).map((row) => ({
                       id: row.id,
                       label: row.name,
                       ...withheldBar(exactStatisticsCount(row.blocked) ?? 0, shown(row.blocked)),
                     }))}
                   />
-                )}
-              </CardBody>
+                </div>
+              )}
               {blockedRows.length > FIRST_ROWS ? (
-                <CardFoot
-                  meta={
-                    <>
-                      Showing <b>{blockedAll ? blockedRows.length : FIRST_ROWS}</b> of {blockedRows.length} wards
-                    </>
+                <Foot
+                  link={
+                    <button
+                      type="button"
+                      className={redesign.link}
+                      aria-expanded={blockedAll}
+                      onClick={() => setBlockedAll((all) => !all)}
+                    >
+                      {blockedAll ? "Show fewer" : `Show all ${blockedRows.length}`}
+                      <ChevronRight size={14} aria-hidden="true" />
+                    </button>
                   }
                 >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-expanded={blockedAll}
-                    onClick={() => setBlockedAll((all) => !all)}
-                  >
-                    {blockedAll ? "Show fewer" : `Show all ${blockedRows.length}`}
-                  </Button>
-                </CardFoot>
+                  {`Showing ${blockedAll ? blockedRows.length : FIRST_ROWS} of ${blockedRows.length} wards`}
+                </Foot>
               ) : null}
             </StatCard>
-          </FlushRow>
+          </Grid>
         </>
       )}
     </StatisticsPage>

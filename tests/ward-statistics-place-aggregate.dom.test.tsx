@@ -77,18 +77,19 @@ describe("public place aggregate views", () => {
     expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
     expect(guard.operational).not.toHaveBeenCalled();
   });
-  it("keeps the ward index's grouping, sorting and protected blocked figures", () => {
+  it("keeps the ward index's grouping and protected blocked figures", () => {
     const data = structuredClone(base);
     data.wards[0].blocked = { kind: "small" };
     data.networkDetails.blockedTotal = { kind: "withheld" };
     place(<StatisticsWardsIndexScreen />, data);
     expect(screen.getByTestId("ward-statistics-wards-table")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /^Blocked$/ }));
     fireEvent.click(
       within(screen.getByRole("radiogroup", { name: "Group wards" })).getByRole("radio", { name: "One list" }),
     );
     expect(screen.getAllByText("fewer than 5").length).toBeGreaterThan(0);
-    expect(screen.getByTestId("ward-statistics-wards-blocked")).toHaveTextContent("not shown in all");
+    expect(screen.getByTestId("ward-statistics-wards-blocked")).toHaveTextContent(
+      /^Discharges held upnot shown across \d+ wards?/u,
+    );
     expect(document.body.textContent).not.toContain("[object Object]");
     expect(guard.operational).not.toHaveBeenCalled();
   });

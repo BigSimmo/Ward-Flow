@@ -10,7 +10,17 @@ import { type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-import { BarList, Card, CardHead, StatusGlyph, cx, tableClasses, type BarListRow, type WfTone } from "@/components/wf";
+import {
+  BarList,
+  Card,
+  CardHead,
+  Meter,
+  StatusGlyph,
+  cx,
+  tableClasses,
+  type BarListRow,
+  type WfTone,
+} from "@/components/wf";
 import { HowWorkedOut } from "@/components/ward-management/capacity/capacity-how-worked-out";
 import cap from "@/components/ward-management/capacity/capacity-page.module.css";
 
@@ -172,6 +182,27 @@ export function Name({ name, sub }: { name: string; sub?: string }) {
     <span className={s.name}>
       {name}
       {sub ? <small>{sub}</small> : null}
+    </span>
+  );
+}
+
+/** Occupancy with the kit's Meter and its alert line; at or over the line takes the warning glyph. */
+export function Occ({ pct, threshold, label }: { pct: number; threshold: number; label: string }) {
+  const hot = pct >= threshold;
+  return (
+    <span className={s.occ}>
+      <Meter
+        value={pct}
+        max={100}
+        threshold={threshold}
+        fill={hot ? "warning" : "data-1"}
+        label={label}
+        valueText={null}
+      />
+      <b className={s.gv}>
+        {hot ? <Glyph tone="warning" /> : null}
+        {pct}%
+      </b>
     </span>
   );
 }
