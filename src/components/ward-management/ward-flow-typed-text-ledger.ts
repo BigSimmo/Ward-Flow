@@ -71,7 +71,7 @@ const NOT_TYPED_KEYS: { readonly [T in TypedTextEventType]: readonly string[] } 
   RECORD_TRANSPORT_CAD: ["movementId", "actingUnitId"],
   SET_ARRIVAL_DETAILS: ["actingUnitId", "movementId", "arrivalMode"],
   UPLOAD_PATIENT_FORM: ["movementId", "fileType"],
-  DISPATCH_BROADCAST_ALERT: ["severity", "category", "targetScope", "kind"],
+  DISPATCH_BROADCAST_ALERT: ["severity", "category", "targetScope", "kind", "targetUnitIds"],
   BOOK_PLANNED_ADMISSION: ["patientId", "sex", "gender", "reason", "unitId", "legalStatus", "ageBand"],
   RECORD_SUPPORT_NOTIFICATION: ["occasion", "movementId", "admissionId", "party", "outcome"],
 };

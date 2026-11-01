@@ -57,13 +57,16 @@ describe("Handover page", () => {
     renderHandover();
     expect(screen.getByTestId("ward-handover-page")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: /to hand over/ })).toBeInTheDocument();
-    expect(screen.getByText(/^Handover · 15:00/)).toBeInTheDocument();
+    // 1 Nov 2026 redesign: the handover is chosen from one menu that names it.
+    expect(screen.getByTestId("ward-handover-shift")).toHaveTextContent(/^15:00/);
     expect(screen.getByTestId("ward-handover-kpi-strip")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Patients/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: /Beds/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /History/ })).toBeInTheDocument();
-    // Device audit 11 Oct 2026: Present and Print sit behind the hero's More menu.
-    expect(screen.getByTestId("ward-handover-more")).toBeInTheDocument();
+    // 1 Nov 2026 redesign: Print handover is the sheet bar's primary; Present sits in More.
+    expect(screen.getByTestId("ward-handover-print")).toHaveTextContent("Print handover");
+    expect(screen.getByRole("button", { name: "More handover actions" })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-handover-sign-bar")).toBeInTheDocument();
   });
 
   it("groups every open patient in meeting order", () => {
@@ -107,7 +110,8 @@ describe("Handover page", () => {
   it("shows the sign-off sheet until a patient is picked, then that patient's flow", async () => {
     const user = userEvent.setup();
     renderHandover();
-    expect(screen.getByTestId("ward-handover-sign-off")).toBeInTheDocument();
+    // 1 Nov 2026 redesign: sign-off is the bar at the foot of the sheet; its checklist is a drawer.
+    expect(screen.getByTestId("ward-handover-sign-bar")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
 
     await user.click(firstPatientRow());
@@ -118,6 +122,10 @@ describe("Handover page", () => {
     expect(screen.queryByTestId("ward-handover-sign-off")).not.toBeInTheDocument();
 
     await user.click(within(panel).getByRole("button", { name: "Close patient" }));
+    expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
+    await user.click(
+      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
+    );
     expect(screen.getByTestId("ward-handover-sign-off")).toBeInTheDocument();
   });
 
@@ -201,9 +209,9 @@ describe("Handover page", () => {
 
   it("opens the patient drawer in presentation mode without revealing the background table row", () => {
     renderHandover();
-    // Device audit 11 Oct 2026: Present sits behind the hero's More menu.
-    fireEvent.click(screen.getByTestId("ward-handover-more"));
-    fireEvent.click(screen.getByRole("menuitem", { name: /^Present$/ }));
+    // 1 Nov 2026 redesign: Present sits in the toolbar's More handover actions.
+    fireEvent.click(screen.getByRole("button", { name: "More handover actions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Present on a screen" }));
     const scroll = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
     scroll.mockClear();
     firstPatientRow().focus();
@@ -218,6 +226,9 @@ describe("Handover page", () => {
   it("records the sign-off with role and time and lists it in History", async () => {
     const user = userEvent.setup();
     renderHandover();
+    await user.click(
+      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
+    );
     await user.click(screen.getByTestId("ward-handover-sign-off-button"));
     expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent(
       "Signed off at 10:42 as bed coordinator",
@@ -233,6 +244,9 @@ describe("Handover page", () => {
 
   it("offers no Handing to choice, because the engine records role and time only (D-72)", () => {
     renderHandover();
+    fireEvent.click(
+      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
+    );
     const signOff = screen.getByTestId("ward-handover-sign-off");
     expect(signOff).toHaveTextContent("Handed over by");
     expect(signOff).not.toHaveTextContent("Handing to");
@@ -252,26 +266,26 @@ describe("Handover page", () => {
       .getAllByRole("row")
       .filter((row) => row.hasAttribute("data-row-id")).length;
     expect(after).toBe(before);
-    expect(screen.getByTestId("ward-handover-scope-line")).toHaveTextContent("highlighted, all rows stay");
+    expect(screen.getByTestId("ward-handover-scope-line")).toHaveTextContent(/\d+ highlighted/);
   });
 
   it("says a past handover has passed and offers the next one", async () => {
     const user = userEvent.setup();
     renderHandover();
-    await user.click(screen.getByRole("radio", { name: /07:00/ }));
+    await user.click(screen.getByTestId("ward-handover-shift"));
+    await user.click(screen.getByRole("menuitemradio", { name: /07:00/ }));
     expect(screen.getByRole("heading", { level: 1, name: /to hand over/ })).toBeInTheDocument();
-    expect(screen.getByText(/^Handover · 07:00/)).toBeInTheDocument();
+    expect(screen.getByTestId("ward-handover-shift")).toHaveTextContent(/^07:00/);
     expect(screen.getByText(/The 07:00 handover has passed/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Go to 15:00 handover" }));
     expect(screen.getByRole("heading", { level: 1, name: /to hand over/ })).toBeInTheDocument();
-    expect(screen.getByText(/^Handover · 15:00/)).toBeInTheDocument();
+    expect(screen.getByTestId("ward-handover-shift")).toHaveTextContent(/^15:00/);
   });
 
   it("opens the print sheet builder from Print handover and comes back", async () => {
     const user = userEvent.setup();
     renderHandover();
-    await user.click(screen.getByTestId("ward-handover-more"));
-    await user.click(screen.getByRole("menuitem", { name: /Print handover/ }));
+    await user.click(screen.getByTestId("ward-handover-print"));
     const sheet = screen.getByTestId("ward-handover-print-sheet");
     expect(sheet).toBeInTheDocument();
     expect(sheet.textContent ?? "").not.toMatch(/Government of Western Australia|NSQHS/);

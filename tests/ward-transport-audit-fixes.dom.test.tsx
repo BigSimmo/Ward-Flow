@@ -251,10 +251,10 @@ describe("Handover (A4-28, A4-26, S-31)", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    const checks = screen.getByTestId("ward-handover-sign-off-checks");
+    const checks = screen.getByTestId("ward-handover-sign-bar");
     expect(checks).not.toHaveTextContent("Every ward feed is current");
     expect(checks).toHaveTextContent(/counts are stale|wards with stale counts/);
-    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
+    fireEvent.click(within(checks).getByRole("button", { name: "Sign off" }));
     expect(screen.getAllByText("Handover signed off.")).toHaveLength(1);
   });
 });

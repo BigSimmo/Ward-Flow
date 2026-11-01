@@ -19,6 +19,7 @@ import {
   wardDesk,
   wardFigure,
 } from "./helpers/ward-release-gate";
+import { clearToasts } from "./helpers/clear-toasts";
 import { escapeForRegExp } from "./helpers/ward-place-names";
 
 /**
@@ -261,6 +262,7 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
   for (const stage of ["accept", "enroute", "collect", "arrive"] as const) {
     const button = detail.getByTestId(`ward-officer-${stage}-${movementId}`);
     await expect(button).not.toHaveAttribute("aria-disabled", "true");
+    await clearToasts(page);
     await button.click();
     // Collected warns and asks for a recorded reason when Form 4A or fit to travel is missing.
     if (stage === "collect") {

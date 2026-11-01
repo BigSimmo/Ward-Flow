@@ -102,7 +102,7 @@ describe("count labels say what they count", () => {
     const strip = screen.getByTestId("ward-handover-kpi-strip");
     // Audit 24-4 decision 5 (Josh): the pill names people and alerts separately.
     const act = within(strip).getByRole("button", { name: /Act now \(\d+ (?:person|people), \d+ alerts?\)$/u });
-    expect(act.textContent).toMatch(new RegExp(`^${activeActNowItems(state, NOW_ANCHOR).length}Act now \\(`, "u"));
+    expect(act.textContent).toMatch(new RegExp(`^${activeActNowItems(state, NOW_ANCHOR).length}Act now$`, "u"));
     expect(within(strip).getByRole("button", { name: /Flagged urgent$/u })).toBeInTheDocument();
   });
 

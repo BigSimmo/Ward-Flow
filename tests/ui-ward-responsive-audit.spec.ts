@@ -412,15 +412,17 @@ test.describe("@mockup Ward scroll geometry", () => {
     await page.setViewportSize({ width: 1440, height: 844 });
     await page.goto("/ward-flow/handover", { waitUntil: "networkidle" });
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
-    // Device audit 11 Oct 2026: Present sits behind the hero's More menu. The item reads "Exit
-    // present" once presentation mode is on, which is the page's own record of the mode.
-    const more = page.getByTestId("ward-handover-more");
+    // 1 Nov 2026 redesign: Present sits in the toolbar's More handover actions. The item reads
+    // "Exit present" once presentation mode is on, which is the page's own record of the mode.
+    const more = page.getByRole("button", { name: "More handover actions" });
     await more.click();
-    await page.getByRole("menuitem", { name: "Present", exact: true }).click();
+    await page.getByRole("button", { name: "Present on a screen", exact: true }).click();
+    const exit = page.getByRole("button", { name: "Exit present", exact: true });
+    if (!(await exit.isVisible())) await more.click();
+    await expect(exit).toBeVisible();
+    // Close the menu with its trigger: Escape would also leave presentation mode.
     await more.click();
-    await expect(page.getByRole("menuitem", { name: "Exit present", exact: true })).toBeVisible();
-    await more.click();
-    await expect(page.getByRole("menuitem")).toHaveCount(0);
+    await expect(exit).toHaveCount(0);
     const position = () =>
       page.evaluate(() => ({
         page: document.querySelector<HTMLElement>("[data-wf-scroller]")!.scrollTop,

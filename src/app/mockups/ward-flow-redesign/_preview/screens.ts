@@ -39,6 +39,7 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "capacity", label: "Capacity", group: "Coordinator", appPath: "/ward-flow/capacity" },
   { slug: "waiting", label: "Waiting", group: "Coordinator", appPath: "/ward-flow/waiting" },
   { slug: "movements", label: "Movements", group: "Coordinator", appPath: "/ward-flow/movements" },
+  { slug: "handover", label: "Handover", group: "Coordinator", appPath: "/ward-flow/handover" },
   {
     slug: "new-referral",
     label: "New referral",

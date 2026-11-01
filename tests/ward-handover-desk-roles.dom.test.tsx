@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
@@ -39,11 +39,13 @@ describe("Handover role branches", () => {
     expect(screen.getByRole("heading", { level: 1, name: /\d+ (person|people) to hand over/ })).toBeInTheDocument();
     const counts = within(screen.getByTestId("ward-handover-kpi-strip"));
     expect(counts.queryByText("Finding a ward")).toBeNull();
-    const sheet = within(screen.getByTestId("ward-handover-sheet"));
+    // 1 Nov 2026 redesign: the highlight chips sit in the sheet's one Highlight menu.
+    fireEvent.click(within(screen.getByTestId("ward-handover-sheet")).getByRole("button", { name: /^Highlight/ }));
+    const menu = within(screen.getByRole("menu", { name: "Highlight rows" }));
     // FD-23: Declined and Escalated belong to the coordinator's bed search.
-    expect(sheet.queryByRole("button", { name: /^Declined/ })).toBeNull();
-    expect(sheet.queryByRole("button", { name: /^Escalated/ })).toBeNull();
-    expect(sheet.getByRole("button", { name: /^Constant obs/ })).toBeInTheDocument();
+    expect(menu.queryByRole("menuitemcheckbox", { name: /^Declined/ })).toBeNull();
+    expect(menu.queryByRole("menuitemcheckbox", { name: /^Escalated/ })).toBeNull();
+    expect(menu.getByRole("menuitemcheckbox", { name: /^Constant obs/ })).toBeInTheDocument();
   });
 
   it("the ED clinician's desk names its own department, has no Beds tab and never signs off", () => {
@@ -61,6 +63,10 @@ describe("Handover role branches", () => {
     renderAtDesk({ role: "coordinator", scope: { kind: "statewide" } });
     expect(screen.getByRole("combobox", { name: "Filter the sheet" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Beds/ })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-handover-sign-bar")).toBeInTheDocument();
+    fireEvent.click(
+      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
+    );
     expect(screen.getByTestId("ward-handover-sign-off")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-handover-sign-off-note")).toBeNull();
   });

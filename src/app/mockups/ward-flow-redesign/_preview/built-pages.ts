@@ -10,6 +10,7 @@ export const MOCKUP_PAGE_SLUGS = [
   "patient",
   "add-patient",
   "movements",
+  "handover",
   "discharges",
 ] as const;
 

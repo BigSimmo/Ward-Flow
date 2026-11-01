@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { edById, unitById } from "@/components/ward-management/ward-sites";
+import { clearToasts } from "./helpers/clear-toasts";
 import { openEdLists } from "./helpers/ward-ed-lists";
 import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
@@ -375,11 +376,13 @@ test.describe("@mockup Transport officer screen", () => {
     await page.getByTestId("ward-officer-select-WF-005").click();
     const sheet = page.getByTestId("ward-officer-detail");
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByRole("region", { name: "Steps" }).getByRole("listitem")).toHaveText([
+    await expect(sheet.getByRole("list", { name: /^Progress/ }).getByRole("listitem")).toHaveText([
       /Accepted/,
       /En route/,
       /Collected/,
-      /Arrived at ward/,
+      // Transport mock-up (Josh, 1 Nov 2026): the progress line reads "Arrived"; the step button still
+      // reads "Mark arrived at ward".
+      /Arrived/,
     ]);
     const stageButtons = sheet.locator(
       '[data-testid$="-WF-005"]:is([data-testid^="ward-officer-accept-"], [data-testid^="ward-officer-enroute-"], [data-testid^="ward-officer-collect-"], [data-testid^="ward-officer-arrive-"])',
@@ -406,12 +409,19 @@ test.describe("@mockup Transport officer screen", () => {
     );
     expect(overflow).toBeLessThanOrEqual(2);
 
-    // Desktop keeps the four individually gated stage buttons in the job panel.
+    // Transport mock-up (Josh, 1 Nov 2026): the foot pins the one next step at every width, so
+    // desktop shows the same single En route step, in view without scrolling.
     await page.getByTestId("ward-officer-detail-close").click();
     await page.setViewportSize({ width: 1440, height: 1024 });
     await page.getByTestId("ward-officer-select-WF-005").click();
-    const actions = page.getByTestId("ward-officer-detail").locator('[class*="actionButton"]');
-    await expect(actions).toHaveText(["Accepted", "En route", "Collected", "Arrived at ward"]);
+    const desktopSteps = page
+      .getByTestId("ward-officer-detail")
+      .locator(
+        '[data-testid$="-WF-005"]:is([data-testid^="ward-officer-accept-"], [data-testid^="ward-officer-enroute-"], [data-testid^="ward-officer-collect-"], [data-testid^="ward-officer-arrive-"])',
+      );
+    await expect(desktopSteps).toHaveCount(1);
+    await expect(desktopSteps).toHaveText("Mark en route");
+    await expect(desktopSteps).toBeInViewport();
   });
 
   /**
@@ -1430,16 +1440,18 @@ test.describe("@mockup Role switcher — the loop", () => {
       if ((await selectJob.getAttribute("aria-expanded")) !== "true") await selectJob.click();
       await expect(selectJob).toHaveAttribute("aria-expanded", "true", { timeout: 2_000 });
     }).toPass({ timeout: 15_000 });
-    // v6 (7 Oct 2026): the four stage actions sit in the selected job's panel.
+    // Transport mock-up (Josh, 1 Nov 2026): the panel pins one next step at a time, so each stage is
+    // clicked in turn as it becomes the pinned step. Josh, 26 Oct 2026 (H-0808, H-0809): the fourth
+    // still dispatches PATIENT_ARRIVED.
     const panel = page.getByTestId("ward-officer-detail");
-    await expect(panel.locator('[class*="actionButton"]')).toHaveCount(4);
-    // Josh, 26 Oct 2026 (H-0808, H-0809): the officer's own fourth action reads "Arrived at ward",
-    // replacing "Delivered" — the event dispatched is still PATIENT_ARRIVED.
-    for (const label of ["Accepted", "En route", "Collected", "Arrived at ward"]) {
-      await panel.getByRole("button", { name: label }).click();
+    for (const stage of ["accept", "enroute", "collect", "arrive"] as const) {
+      const step = panel.getByTestId(`ward-officer-${stage}-WF-315`);
+      await expect(step).not.toHaveAttribute("aria-disabled", "true");
+      await clearToasts(page);
+      await step.click();
       // Audit fix (13 Oct 2026): WF-315 has no Form 4A or fit to travel recorded, so Collected asks
       // for a coded reason before it records. The officer is warned, never blocked.
-      if (label === "Collected") {
+      if (stage === "collect") {
         const collectCheck = page.getByTestId("ward-officer-collect-check");
         await expect(collectCheck).toBeVisible();
         await page.getByTestId("ward-officer-collect-check-reason").selectOption("paper_sighted");

@@ -54,6 +54,8 @@ describe("transport forms pack", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
+    // Transport redesign (Josh, 1 Nov 2026): the forms pack sits in the job panel's Forms tab.
+    fireEvent.click(within(screen.getByTestId("ward-officer-detail")).getByRole("tab", { name: /^Forms/ }));
     const pack = screen.getByTestId("ward-officer-forms-pack-WF-005");
     // Transport redesign (31 Oct 2026): the count is said once, beside the heading ("N to upload").
     const before = Number(/(\d+) to upload/.exec(within(pack).getByText(/to upload/).textContent ?? "")?.[1]);
@@ -82,6 +84,8 @@ describe("transport forms pack", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
+    // Transport redesign (Josh, 1 Nov 2026): the forms pack sits in the job panel's Forms tab.
+    fireEvent.click(within(screen.getByTestId("ward-officer-detail")).getByRole("tab", { name: /^Forms/ }));
     const pack = screen.getByTestId("ward-officer-forms-pack-WF-005");
     const legal = within(pack).getByRole("button", { name: /^Upload referral or order/ });
     fireEvent.click(legal);
@@ -112,6 +116,8 @@ describe("transport forms pack", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
+    // Transport redesign (Josh, 1 Nov 2026): the forms pack sits in the job panel's Forms tab.
+    fireEvent.click(within(screen.getByTestId("ward-officer-detail")).getByRole("tab", { name: /^Forms/ }));
     const pack = screen.getByTestId("ward-officer-forms-pack-WF-005");
     fireEvent.click(within(pack).getByRole("button", { name: /^Upload transport order/ }));
     const dialog = screen.getByRole("dialog", { name: /Upload Form 4A/ });
