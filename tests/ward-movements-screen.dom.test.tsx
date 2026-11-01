@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { dayOf, DEFAULT_DUE_SOON_THRESHOLDS, splitDuration } from "@/components/ward-management/ward-clock";
+import { dayOf, DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { durMinutes } from "@/components/wf/format";
 import { isOpen, shortlistCandidates } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
