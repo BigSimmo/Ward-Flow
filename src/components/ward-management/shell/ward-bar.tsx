@@ -424,7 +424,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   useEffect(() => noteWardRoute(pathname), [pathname]);
 
   // Tasks: the one task list, gated to the signed-in desk (`ward-bar-state.ts`).
-  const { tasksItems, tasksActiveItems, tasksActiveCount } = useWardBarTasks({
+  const { tasksItems, tasksActiveItems, tasksActiveCount, acceptedToPull } = useWardBarTasks({
     shellRole,
     now,
     movements,
@@ -1244,6 +1244,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
           <div ref={setTasksBodyRef} className={styles.tasksBody}>
             <WardTasksDrawer
               items={tasksItems}
+              acceptedToPull={acceptedToPull}
               acknowledgements={inboxAcknowledgements}
               completions={inboxCompletions}
               ownership={inboxOwnership}

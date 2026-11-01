@@ -4,6 +4,7 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import {
   noticeIsForWardChrome,
   wardTasksAreActionableForRole,
@@ -132,8 +133,12 @@ export function useWardBarTasks({
     () => partitionSnoozed(tasksItems, inboxSnoozes, now).active,
     [tasksItems, inboxSnoozes, now],
   );
-  const tasksActiveCount = tasksActiveItems.length;
-  return { tasksItems, tasksActiveItems, tasksActiveCount };
+  const acceptedToPull = useMemo(
+    () => (shellRole === "coordinator" ? acceptedReferralsAwaitingPull(referrals, units, movements) : []),
+    [shellRole, referrals, units, movements],
+  );
+  const tasksActiveCount = tasksActiveItems.length + acceptedToPull.length;
+  return { tasksItems, tasksActiveItems, tasksActiveCount, acceptedToPull };
 }
 
 /**

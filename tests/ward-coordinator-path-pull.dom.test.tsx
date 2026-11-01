@@ -15,6 +15,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { PullAcceptedReferral } from "@/components/ward-management/referrals/pull-accepted-referral";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
+import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -179,6 +180,17 @@ describe("Home: Act now and Referrals to decide (WS-02, WS-04)", () => {
     );
     const toPull = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
     expect(toPull.length).toBeGreaterThan(0);
+    const expectNowCount = () => {
+      const active = activeTaskItems(
+        { ...current!, stuckHandoverMinutes: current!.configuration.transportBookedTargetMinutes },
+        NOW_ANCHOR,
+      );
+      const awaitingPull = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
+      expect(screen.getByRole("tab", { name: /^Now/u }).textContent?.replace(/\s+/gu, "")).toBe(
+        `Now${active.length + awaitingPull.length}`,
+      );
+    };
+    expectNowCount();
     const actNow = screen.getAllByRole("region", { name: "Act now" })[0]!;
     const rows = within(actNow).getByTestId("ward-alerts-accepted-to-pull");
     for (const entry of toPull) {
@@ -193,6 +205,20 @@ describe("Home: Act now and Referrals to decide (WS-02, WS-04)", () => {
         .at(-1)!,
     );
     expect(await screen.findByTestId(`ward-pull-accepted-${toPull[0]!.referral.id}`)).toBeInTheDocument();
+    const status = screen.getByTestId("ward-pull-accepted-legal-status") as HTMLSelectElement;
+    const legalForm = screen.getByTestId("ward-pull-accepted-legal-form") as HTMLSelectElement;
+    const observation = screen.getByTestId("ward-pull-accepted-observation") as HTMLSelectElement;
+    if (status.value === "") fireEvent.change(status, { target: { value: "Voluntary" } });
+    if (legalForm.value === "") fireEvent.change(legalForm, { target: { value: "none" } });
+    if (observation.value === "") fireEvent.change(observation, { target: { value: "general" } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("ward-pull-accepted-confirm"));
+    });
+    expect(current!.rejections).toHaveLength(0);
+    expect(acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements)).toHaveLength(
+      toPull.length - 1,
+    );
+    expectNowCount();
   });
 
   it("makes Decide a link to the referral on the Referrals board, where Accept and Decline are", () => {

@@ -99,10 +99,10 @@ describe("F8 — the Tasks drawer's empty state names why the list is empty", ()
 
   it("keeps the coordinator's genuine empty state when a coordinator's own inbox is clear", async () => {
     route.pathname = "/ward-flow";
-    // No movements, no stays and no planned admissions: the carer, PSP and MHAS rows (9 Oct 2026)
+    // No movements, stays, planned admissions or referrals: the carer, PSP and MHAS rows (9 Oct 2026)
     // come from discharged stays as well as movements, and an overdue booking is a row too, so all
-    // three are cleared for buildActionInbox to be [].
-    mockContext = freshContext({ movements: [], admissions: [], plannedAdmissions: [] });
+    // sources and accepted referrals awaiting a pull must all be clear for an empty Alerts list.
+    mockContext = freshContext({ movements: [], admissions: [], plannedAdmissions: [], referrals: [] });
     const sheet = await openTasksDrawer();
     expect(within(sheet).getByText("No outstanding work")).toBeInTheDocument();
     expect(within(sheet).queryByText("Tasks is the bed coordinator's list.")).toBeNull();

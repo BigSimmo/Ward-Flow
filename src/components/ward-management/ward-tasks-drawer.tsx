@@ -25,6 +25,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
+import { AcceptedPullRows, useAcceptedPull } from "./coordinator/accepted-pull-rows";
+import type { AcceptedAwaitingPull } from "./referrals/accepted-ward-referral";
+import { useRouteRole } from "./ward-role-gate";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
@@ -77,6 +80,7 @@ import { originName, originSiteCode } from "@/components/ward-management/ward-mo
 
 type WardTasksDrawerProps = {
   items: InboxItem[];
+  acceptedToPull?: readonly AcceptedAwaitingPull[];
   acknowledgements: Record<string, InboxAcknowledgement[]>;
   completions: Record<string, InboxCompletionEntry[]>;
   /** Stream A, 9 Oct 2026: who owns each row and each row's snooze history. Optional so a fixture
@@ -112,11 +116,7 @@ type WardTasksDrawerProps = {
 
 type AckFilter = "all" | "open" | "unacknowledged" | "acknowledged" | "completed";
 
-/**
- * The drawer's words. For the bed coordinator's desk, Tasks and Alerts are one queue (Josh, D-61,
- * 16 Oct 2026), so the drawer uses the Alerts screen's name and groups. Red rows are act now and
- * every other row is waiting, the same split `inboxItemIsActNow` makes for the Alerts screen.
- */
+/** D-61 (Josh, 16 Oct 2026): coordinator Tasks and Alerts share the screen's names and groups. */
 type DrawerWords = { name: string; plural: string; act: string; wait: string; running?: string };
 // The drawer is called Alerts on every desk, as its button is (Josh, 31 Oct 2026). Desks without the
 // one Alerts queue keep their own filters and row behaviour, which follow these words by identity.
@@ -215,10 +215,8 @@ function rowIcon(item: InboxItem) {
 }
 
 /**
- * The value and state shown at the right of a row, read from the movement's own recorded times.
- * Nothing here is a computed deadline: a bed pull past its limit counts up from the time the
- * record holds, a passed legal form shows only its typed time, and a waiting transport counts up
- * from when it was accepted.
+ * Row timing reads recorded times: bed pulls count past their limit, legal forms show the typed
+ * time, and transport counts from acceptance. No deadline is computed.
  */
 function rowTiming(
   item: InboxItem,
@@ -302,6 +300,7 @@ function rowDetail(
 
 export function WardTasksDrawer({
   items: allItems,
+  acceptedToPull = [],
   acknowledgements,
   completions,
   ownership,
@@ -323,6 +322,9 @@ export function WardTasksDrawer({
   const words = alertsScreenOpen && alertsQueueForDesk ? ALERTS_WORDS : TASKS_WORDS;
   // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
   const isPhone = useIsPhone();
+  const routeRole = useRouteRole();
+  const pull = useAcceptedPull();
+  const toPull = role === "coordinator" && words === ALERTS_WORDS ? acceptedToPull : [];
   // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
   const nameFor = usePatientNameDisplay();
   const sectionId = useId();
@@ -531,9 +533,9 @@ export function WardTasksDrawer({
   const isComplete = (item: InboxItem) =>
     item.kind === "commitment" && inboxItemCompletionState(completions[item.id]) === "complete";
   const facts = items.filter((item) => item.kind === "fact");
-  const criticalFactsCount = facts.filter((item) => item.tone === "danger").length;
+  const criticalFactsCount = facts.filter((item) => item.tone === "danger").length + toPull.length;
   const overdueCount = facts.filter(isOverdue).length;
-  const openCount = items.filter((item) => !isComplete(item)).length;
+  const openCount = items.filter((item) => !isComplete(item)).length + toPull.length;
 
   const acknowledgedFactsCount = facts.filter((item) => acknowledgements[item.id]?.length).length;
   const unacknowledged = facts.filter((item) => !acknowledgements[item.id]?.length);
@@ -555,6 +557,14 @@ export function WardTasksDrawer({
   });
   const filteredFacts = filteredItems.filter((item) => item.kind === "fact");
   const filteredCommitments = filteredItems.filter((item) => item.kind === "commitment");
+  // A bed pull is open work, with no acknowledgement or completion action of its own.
+  const visibleToPull =
+    (taskFilter === "all" || taskFilter === "critical") &&
+    (ackFilter === "all" || ackFilter === "open" || ackFilter === "unacknowledged")
+      ? toPull
+      : [];
+  const listedCount = items.length + toPull.length;
+  const filteredCount = filteredItems.length + visibleToPull.length;
   // Ops-9 (remaining-pages audit, 13 Oct 2026): act-now rows are never acknowledged in bulk; each
   // one is opened and acknowledged on its own.
   const visibleUnacknowledged = filteredFacts.filter(
@@ -1112,6 +1122,7 @@ export function WardTasksDrawer({
 
   return (
     <>
+      {pull.sheet}
       {withBackdrop ? (
         <div
           className={styles.drawerBackdrop}
@@ -1190,8 +1201,12 @@ export function WardTasksDrawer({
               {(
                 (alertsQueue
                   ? [
-                      ["all", "All", items.length],
-                      ["critical", words.act, items.filter((item) => alertGroupOf(item) === "act").length],
+                      ["all", "All", listedCount],
+                      [
+                        "critical",
+                        words.act,
+                        items.filter((item) => alertGroupOf(item) === "act").length + toPull.length,
+                      ],
                       ["review", words.wait, items.filter((item) => alertGroupOf(item) === "wait").length],
                       [
                         "running",
@@ -1225,8 +1240,8 @@ export function WardTasksDrawer({
 
           <div className={styles.filterMeta}>
             {/* pop-alerts: "12 of 12" repeats the All count, so it shows only while a filter narrows the list. */}
-            <span role="status" className={filteredItems.length === items.length ? "sr-only" : styles.filterStatus}>
-              <strong className={styles.mono}>{filteredItems.length}</strong> of {items.length}{" "}
+            <span role="status" className={filteredCount === listedCount ? "sr-only" : styles.filterStatus}>
+              <strong className={styles.mono}>{filteredCount}</strong> of {listedCount}{" "}
               <span className="sr-only">invented </span>alerts
             </span>
             {oneAction ? null : (
@@ -1269,7 +1284,7 @@ export function WardTasksDrawer({
         </div>
 
         <div className={styles.drawerBody}>
-          {items.length === 0 ? (
+          {listedCount === 0 ? (
             <div className={styles.empty}>
               <span className={styles.emptyIcon} aria-hidden="true">
                 <ListChecks aria-hidden="true" />
@@ -1287,7 +1302,7 @@ export function WardTasksDrawer({
                   : `${words.name} here is worked by the bed coordinator.`}
               </p>
             </div>
-          ) : filteredItems.length === 0 ? (
+          ) : filteredCount === 0 ? (
             <div className={styles.empty}>
               <span className={styles.emptyIcon} aria-hidden="true">
                 <Search aria-hidden="true" />
@@ -1315,17 +1330,35 @@ export function WardTasksDrawer({
             </div>
           ) : (
             <>
-              {filteredFacts.length > 0 ? (
+              {filteredFacts.length > 0 || visibleToPull.length > 0 ? (
                 <section className={styles.section} aria-labelledby={`${sectionId}-facts`}>
                   <div className={styles.sectionHead} data-phone-quiet={isPhone || undefined}>
                     <ShieldCheck aria-hidden="true" />
                     <h3 id={`${sectionId}-facts`} className={styles.sectionTitle}>
                       Needs attention
                     </h3>
-                    <span className={styles.count}>{filteredFacts.length}</span>
+                    <span className={styles.count}>{filteredFacts.length + visibleToPull.length}</span>
                     <span className={styles.sectionNote}>Leaves when no longer true</span>
                   </div>
-                  <ul className={styles.list}>{renderRows(filteredFacts)}</ul>
+                  {visibleToPull.length > 0 ? (
+                    <>
+                      {routeRole !== "coordinator" ? (
+                        <p className={styles.sectionNote}>Pull the bed opens Alerts from this page.</p>
+                      ) : null}
+                      <AcceptedPullRows
+                        toPull={visibleToPull}
+                        now={now}
+                        phone={isPhone}
+                        testId="ward-tasks-accepted-to-pull"
+                        pulling={pull.pulling}
+                        setPulling={(entry) => {
+                          if (routeRole === "coordinator") pull.setPulling(entry);
+                          else onSelectMovement("", undefined, WARD_ALERTS_HREF);
+                        }}
+                      />
+                    </>
+                  ) : null}
+                  {filteredFacts.length > 0 ? <ul className={styles.list}>{renderRows(filteredFacts)}</ul> : null}
                 </section>
               ) : null}
 

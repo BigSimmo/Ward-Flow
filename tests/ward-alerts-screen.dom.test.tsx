@@ -13,6 +13,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { INBOX_CATEGORIES, seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { activeTaskItems, taskItems } from "@/components/ward-management/ward-act-now-items";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { wardPlannedAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -325,7 +326,7 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
 });
 
 describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () => {
-  it("the Now tab's open count is and the Tasks list, running targets included", () => {
+  it("counts active tasks and accepted referrals awaiting a pull in Now, including running targets", () => {
     const lapsed = taskItems(seedWardFlowState(), NOW).find((item) => alertKindOf(item.id) === "hold");
     expect(lapsed?.movementId, "the seed has a lapsed bed pull").toBeTruthy();
     let world: ReturnType<typeof useWardFlow> | undefined;
@@ -351,8 +352,11 @@ describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () =>
     });
     const active = activeTaskItems(world!, NOW);
     expect(active.some((item) => alertKindOf(item.id) === "running")).toBe(true);
-    // Alerts redesign (1 Nov 2026): the band's meta reads "oldest … · n yours", so the Now tab carries the open count.
-    expect(screen.getByRole("tab", { name: /^Now/u }).textContent?.replace(/\s+/gu, "")).toBe(`Now${active.length}`);
+    const toPull = acceptedReferralsAwaitingPull(world!.referrals, world!.units, world!.movements);
+    expect(toPull.length).toBeGreaterThan(0);
+    expect(screen.getByRole("tab", { name: /^Now/u }).textContent?.replace(/\s+/gu, "")).toBe(
+      `Now${active.length + toPull.length}`,
+    );
   });
 });
 

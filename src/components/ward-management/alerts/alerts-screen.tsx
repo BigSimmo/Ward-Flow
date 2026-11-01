@@ -204,7 +204,7 @@ function AlertsWorkspace() {
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const plannedAdmissions = state.plannedAdmissions;
   // Every row this screen covers; snoozed ones come back when their time passes (stream A). L1: the
-  // one task list the Tasks badge reads (`taskItems`), so "Now" and the badge agree.
+  // one task list the Tasks badge reads (`taskItems`). Now also includes accepted referrals awaiting a pull.
   const admissions = state.admissions;
   const supportNotifications = state.supportNotifications;
   const leaveBeds = state.leaveBeds;
@@ -553,9 +553,9 @@ function AlertsWorkspace() {
     );
     return ranked.length > 0 ? ranked : countedActive;
   }, [countedActive]);
-  // Ops-3: "open" is the one active list the Now tab and Tasks badge count, running targets included,
-  // so Act now plus Waiting plus running adds up to open.
-  const openCount = activeEntries.length;
+  // Now counts every active row shown here, including accepted referrals awaiting a bed pull.
+  // Act now plus Waiting plus running adds up to open, matching the coordinator's Alerts badge.
+  const openCount = activeEntries.length + toPull.length;
   const runningText = runningEntries.length > 0 ? ` · ${runningEntries.length} running` : "";
 
   const chosen = allEntries.find((entry) => entry.item.id === chosenId);
@@ -1120,7 +1120,7 @@ function AlertsWorkspace() {
   const view: ArrangeBy = isPhone ? "urgency" : arrangeBy;
 
   const tabs = [
-    { id: "now" as const, label: "Now", count: activeEntries.length },
+    { id: "now" as const, label: "Now", count: openCount },
     { id: "broadcast" as const, label: "Broadcast", count: (activeBroadcast ? 1 : 0) + livePullNows.length },
     { id: "notices" as const, label: "Notices", count: feedNotices.length },
     { id: "history" as const, label: "History", count: history.length },

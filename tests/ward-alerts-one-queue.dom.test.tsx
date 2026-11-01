@@ -4,7 +4,7 @@
 // Alerts screen the button does not open a second copy of the list.
 import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { createRef, type ComponentProps, type ReactNode } from "react";
+import { createRef, useEffect, type ComponentProps, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -32,7 +32,9 @@ import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-m
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { buttonClass } from "@/components/wf";
@@ -290,14 +292,142 @@ describe("the phone dock with one Alerts queue", () => {
 });
 
 describe("the bar's Alerts button", () => {
+  let current: ReturnType<typeof useWardFlow>;
+  function Capture() {
+    const flow = useWardFlow();
+    useEffect(() => {
+      current = flow;
+    });
+    return null;
+  }
+
   function renderBar() {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Capture />
         <WardBar />
       </WardFlowProvider>,
     );
     return screen.getByTestId("ward-bar-tasks-trigger");
   }
+
+  function expectQueueCounts() {
+    const ordinary = activeTaskItems(
+      { ...current, stuckHandoverMinutes: current.configuration.transportBookedTargetMinutes },
+      NOW_ANCHOR,
+    );
+    const toPull = acceptedReferralsAwaitingPull(current.referrals, current.units, current.movements);
+    const total = ordinary.length + toPull.length;
+    expect(screen.getByTestId("ward-bar-tasks-trigger")).toHaveTextContent(new RegExp(`^Alerts\\s*${total}$`, "u"));
+    expect(screen.getByTestId("ward-tasks-drawer-count")).toHaveTextContent(`${total} open`);
+    return toPull;
+  }
+
+  it("includes accepted referrals in the Alerts badge, quick look and Act now filter", async () => {
+    fireEvent.click(renderBar());
+    const drawer = await screen.findByRole("complementary", { name: "Alerts" });
+    const toPull = expectQueueCounts();
+    expect(toPull.length).toBeGreaterThan(0);
+    const rows = within(drawer).getByTestId("ward-tasks-accepted-to-pull");
+    expect(rows.querySelectorAll("[data-referral-id]")).toHaveLength(toPull.length);
+    const filters = within(drawer).getByRole("group", { name: "Filter alerts by status" });
+    fireEvent.click(within(filters).getByRole("button", { name: /^Act now /u }));
+    expect(within(drawer).getByTestId("ward-tasks-accepted-to-pull")).toBeVisible();
+    fireEvent.click(within(filters).getByRole("button", { name: /^Waiting /u }));
+    expect(within(drawer).queryByTestId("ward-tasks-accepted-to-pull")).toBeNull();
+    fireEvent.click(within(filters).getByRole("button", { name: /^All /u }));
+  });
+
+  it("updates the Alerts badge and quick look after pulling an accepted referral's bed", async () => {
+    fireEvent.click(renderBar());
+    const drawer = await screen.findByRole("complementary", { name: "Alerts" });
+    const toPull = expectQueueCounts();
+    expect(toPull.length).toBeGreaterThan(0);
+    const row = within(drawer).getByTestId("ward-tasks-accepted-to-pull");
+    fireEvent.click(
+      within(row)
+        .getAllByRole("button", { name: /^Pull the bed for /u })
+        .at(-1)!,
+    );
+    const first = toPull.at(-1)!;
+    const form = await screen.findByTestId(`ward-pull-accepted-${first.referral.id}`);
+    for (const [testId, value] of [
+      ["ward-pull-accepted-legal-status", "Voluntary"],
+      ["ward-pull-accepted-legal-form", "none"],
+      ["ward-pull-accepted-observation", "general"],
+    ] as const) {
+      const input = within(form).getByTestId(testId) as HTMLSelectElement;
+      if (input.value === "") fireEvent.change(input, { target: { value } });
+    }
+    await act(async () => {
+      fireEvent.click(within(form).getByTestId("ward-pull-accepted-confirm"));
+    });
+    expect(current.rejections).toHaveLength(0);
+    expect(expectQueueCounts()).toHaveLength(toPull.length - 1);
+    expect(drawer.querySelector(`[data-referral-id="${first.referral.id}"]`)).toBeNull();
+  });
+
+  it("keeps accepted referrals out of another desk's Alerts count and drawer", async () => {
+    asExecutive();
+    const trigger = renderBar();
+    expect(trigger).toHaveTextContent(/^Alerts\s*0$/u);
+    fireEvent.click(trigger);
+    const drawer = await screen.findByRole("complementary", { name: "Alerts" });
+    expect(within(drawer).getByTestId("ward-tasks-drawer-count")).toHaveTextContent("0 open");
+    expect(within(drawer).queryByTestId("ward-tasks-accepted-to-pull")).toBeNull();
+  });
+
+  it.each([`/ward-flow/ward/${seed.units[0]!.id}`, "/ward-flow/ed/rph-ed"])(
+    "takes a coordinator from %s to Alerts before pulling an accepted referral's bed",
+    async (pathname) => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "coordinator", scope: { kind: "statewide" } });
+      route.pathname = pathname;
+      fireEvent.click(renderBar());
+      const drawer = await screen.findByRole("complementary", { name: "Alerts" });
+      const rows = within(drawer).getByTestId("ward-tasks-accepted-to-pull");
+      expect(within(drawer).getByText("Pull the bed opens Alerts from this page.")).toBeVisible();
+      const before = current.movements;
+      fireEvent.click(
+        within(rows)
+          .getAllByRole("button", { name: /^Pull the bed for /u })
+          .at(-1)!,
+      );
+      expect(mockRouterPush).toHaveBeenCalledWith(WARD_ALERTS_HREF);
+      expect(screen.queryByTestId("home-pull-accepted-sheet")).toBeNull();
+      expect(current.movements).toBe(before);
+      expect(current.rejections).toHaveLength(0);
+    },
+  );
+
+  it("keeps accepted referrals out of acknowledged and completed drawer filters", () => {
+    installMatchMediaStub(true);
+    const toPull = acceptedReferralsAwaitingPull(seed.referrals, seed.units, seed.movements);
+    expect(toPull.length).toBeGreaterThan(0);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardTasksDrawer
+          items={[]}
+          acceptedToPull={toPull}
+          acknowledgements={{}}
+          completions={{}}
+          role="coordinator"
+          now={NOW_ANCHOR}
+          dispatch={vi.fn()}
+          onClose={vi.fn()}
+          onSelectMovement={vi.fn()}
+        />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByTestId("ward-tasks-accepted-to-pull")).toBeVisible();
+    const filter = screen.getByLabelText("Filter alert state");
+    for (const value of ["acknowledged", "completed"]) {
+      fireEvent.change(filter, { target: { value } });
+      expect(screen.queryByTestId("ward-tasks-accepted-to-pull")).toBeNull();
+    }
+    fireEvent.change(filter, { target: { value: "open" } });
+    expect(screen.getByTestId("ward-tasks-accepted-to-pull")).toBeVisible();
+  });
 
   it("says Alerts and opens the quick look named Alerts on another page", async () => {
     const trigger = renderBar();

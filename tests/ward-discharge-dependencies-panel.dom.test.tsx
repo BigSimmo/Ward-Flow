@@ -103,9 +103,9 @@ describe("weekend and holiday preparation", () => {
     const headings = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
     expect(headings).toEqual(["Pharmacy", "Patient transport", "Community mental health team"]);
     const cardNames = [
-      "Pharmacy closes Sat 12:00, reopens Mon 08:30 (Weekend)",
-      "Patient transport closes Sat 14:00, reopens Mon 07:00 (Weekend)",
-      "Community mental health team closes Fri 17:00, reopens Mon 08:30 (Weekend)",
+      "Pharmacy closes Sat 24 Oct 12:00, reopens Mon 26 Oct 08:30 (Weekend)",
+      "Patient transport closes Sat 24 Oct 14:00, reopens Mon 26 Oct 07:00 (Weekend)",
+      "Community mental health team closes Fri 23 Oct 17:00, reopens Mon 26 Oct 08:30 (Weekend)",
     ];
     for (const name of cardNames) expect(screen.getByRole("region", { name })).toBeInTheDocument();
     const transport = screen.getByRole("region", { name: cardNames[1]! });
@@ -114,5 +114,22 @@ describe("weekend and holiday preparation", () => {
     expect(rows).toHaveLength(3);
     fireEvent.click(rows[0]!);
     expect(onOpen).toHaveBeenCalledWith("derived-expected-AD-SCGA-03", rows[0]);
+  });
+
+  it("names the reopening year when a holiday closure crosses New Year", () => {
+    render(
+      <DischargeWeekendPrep
+        releases={seed.bedReleases}
+        units={seed.units}
+        nameFor={() => null}
+        now={9 * 60}
+        dayZero={perthMidnight(2026, 11, 31)}
+        onOpen={() => {}}
+      />,
+    );
+    const service = screen.getByRole("region", {
+      name: "Community mental health team closes Thu 31 Dec 17:00, reopens 4 Jan 2027 08:30 (New Year's Day, Weekend)",
+    });
+    expect(within(service).getByText("Closes Thu 31 Dec 17:00 · reopens 4 Jan 2027 08:30")).toBeVisible();
   });
 });
