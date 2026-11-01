@@ -71,7 +71,7 @@ import {
 } from "./use-ward-command-completion";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
-import { type DeclineReason, type Rejection } from "@/components/ward-management/ward-model";
+import { type DeclineReason, EXTRA_TRAVEL_HOLD_MINUTES, type Rejection } from "@/components/ward-management/ward-model";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { LEAVE_BED_OPEN_WARNING_MINUTES, UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
@@ -129,6 +129,9 @@ import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
 import { WardConfirmBedsDialog } from "./ward-confirm-beds-dialog";
+import { WardAcceptDialog } from "./ward-answer-accept-dialog";
+import type { DecisionReport } from "./ward-decisions-cockpit";
+import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import { WardScreenBedDrawer } from "./ward-screen-overlays";
 import { WardSwitchMenu } from "./ward-switch-menu";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
@@ -274,6 +277,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // at a time.
   const [releaseOpenFor, setReleaseOpenFor] = useState<string | undefined>(undefined);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | undefined>(undefined);
+  // Q93: the Decisions cockpit's Accept opens the same named accept dialog as the answer view, with
+  // its pull time limit. The report tells the cockpit the command's own answer.
+  const [cockpitAccept, setCockpitAccept] = useState<{ movementId: string; report: DecisionReport } | null>(null);
+  const [cockpitHold, setCockpitHold] = useState<{ movementId: string; extended: boolean } | null>(null);
+  const cockpitAcceptRef = useRef<HTMLDivElement | null>(null);
   // Audit CS3-01: the decline and release forms are checked against the board they opened on.
   useHoldOpenForm(declineOpenFor !== undefined, declineOpenFor && `movement:${declineOpenFor}`);
   useHoldOpenForm(releaseOpenFor !== undefined, releaseOpenFor && `movement:${releaseOpenFor}`);
@@ -808,11 +816,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     attempted: string,
     record: () => ReturnType<WardCommandDispatch>,
     undo?: { movementId: string; unitId: string },
+    report?: DecisionReport,
   ) {
     const prior = rejections.length;
     completeCommand(`movement:${movementId}`, record, (outcome) => {
       movementCheckRef.current = { prior, movementId, attempted, outcome, undo };
       setCheckToken((token) => token + 1);
+      report?.(outcome ? outcome.status === "accepted" : undefined);
     });
   }
   useEffect(() => {
@@ -853,13 +863,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }
     if (!refused && check.undo && toast) {
       const undo = check.undo;
+      // Each toast names its person (surname first), so stacked toasts never undo the wrong one.
+      const who = resolvePatientIdentity(movements.find((movement) => movement.id === undo.movementId)).formalName;
       const recordSeq = wardCommandUndoSeq(check.outcome, "UNDO_ACCEPT_IN_PRINCIPLE", undo.movementId);
       const undoLimit =
         roleLimitReason(routeRole, "UNDO_ACCEPT_IN_PRINCIPLE") ??
         (check.outcome && recordSeq === undefined ? "No Undo record is available for this step." : undefined);
       toast.push({
         tone: "success",
-        title: "Accepted in principle.",
+        title: `Accepted ${who} in principle.`,
         ...(undoLimit
           ? { body: `Undo: ${undoLimit}` }
           : {
@@ -881,7 +893,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       prior: rejectionCountRef.current,
                       bed: 0,
                       key: wardCommandKey("undo-accept", undo.movementId),
-                      success: "Acceptance undone. The referral is back with this ward.",
+                      success: `Acceptance undone for ${who}. The referral is back with this ward.`,
                     },
                   );
                 },
@@ -1377,7 +1389,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    * event in its own state would let the two drift apart, and a mismatch there would override a
    * different action than the one on screen.
    */
-  function handleAcceptInPrinciple(movementId: string, unitId: string) {
+  function handleAcceptInPrinciple(movementId: string, unitId: string, extendedHold = false, report?: DecisionReport) {
     if (!units.some((u) => u.id === unitId)) return;
     runMovementCommand(
       movementId,
@@ -1387,8 +1399,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           movementId,
           unitId,
           actingUnitId: unitId,
+          ...(extendedHold ? { extendedHold: true as const } : {}),
         }),
       { movementId, unitId },
+      report,
     );
   }
 
@@ -1616,7 +1630,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // CONFIRM_BED_RELEASE accepts; this is only ever rendered on a expected row (see the
   // legal-transition gating in the render below), so the reducer is never asked for a transition
   // the row does not itself offer.
-  function confirmBedRelease(releaseId: string) {
+  function confirmBedRelease(releaseId: string, report?: DecisionReport) {
     // Audit 24-3 SV-5: a shared refusal is said on this screen, not only in the status line.
     completeCommand(
       `release:${releaseId}`,
@@ -1624,6 +1638,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (outcome) => {
         const failure = wardCommandFailure(outcome);
         if (failure) warnToast(failure);
+        report?.(outcome ? outcome.status === "accepted" : undefined);
       },
     );
     setNoticesForRelease(releaseId);
@@ -1631,17 +1646,33 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   // Bed-model rework (2026-08-28): lifting the blocked flag. The stage is untouched — a confirmed
   // discharge that becomes unstuck is still confirmed.
-  function clearBedReleaseBlock(releaseId: string) {
-    raise("CLEAR_BED_RELEASE_BLOCK", {
-      releaseId,
-      actingUnitId: unitId,
-    });
+  function clearBedReleaseBlock(releaseId: string, report?: DecisionReport) {
+    // Q93: read the command's own answer, as Sign off does, so a refusal is said and not assumed.
+    completeCommand(
+      `release:${releaseId}`,
+      () =>
+        raise("CLEAR_BED_RELEASE_BLOCK", {
+          releaseId,
+          actingUnitId: unitId,
+        }),
+      (outcome) => {
+        const failure = wardCommandFailure(outcome);
+        if (failure) warnToast(failure);
+        report?.(outcome ? outcome.status === "accepted" : undefined);
+      },
+    );
   }
 
   // Name departures through the scoped resolver. Released beds retain no patient label.
   function bedRecordLabel(admissionId: string): string {
     const who = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId)).formalName;
     return `${who} (bed not recorded)`;
+  }
+
+  // Q93: the UMRN and date of birth a bulk sign-off lists under each name.
+  function bedRecordIdentity(admissionId: string): string {
+    const resolved = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId));
+    return `${resolved.umrn} · born ${formatDateOfBirth(resolved.patient?.dateOfBirth)}`;
   }
 
   function handleDrawerRecordLeft(admissionId: string, who: string) {
@@ -1697,16 +1728,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     .map((release) => ({
       id: release.id,
       title: bedRecordLabel(release.admissionId),
+      identity: bedRecordIdentity(release.admissionId),
       badge: (release.blocker ? "Blocked" : "Ready") as "Blocked" | "Ready",
       onConfirm:
         release.state === "expected"
-          ? () => {
-              confirmBedRelease(release.id);
+          ? (report?: DecisionReport) => {
+              confirmBedRelease(release.id, report);
             }
           : undefined,
       onClear: release.blocker
-        ? () => {
-            clearBedReleaseBlock(release.id);
+        ? (report?: DecisionReport) => {
+            clearBedReleaseBlock(release.id, report);
           }
         : undefined,
     }));
@@ -1723,11 +1755,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     title: resolvePatientIdentity(movement).formalName,
     onAccept:
       answerBlockedReason === undefined
-        ? () => {
-            handleAcceptInPrinciple(movement.id, unit.id);
+        ? (report: DecisionReport) => {
+            setCockpitHold(null);
+            setCockpitAccept({ movementId: movement.id, report });
           }
         : undefined,
   }));
+  // The referral the cockpit's accept dialog was opened for, while it is still waiting here (CS-08).
+  const cockpitAcceptMovement = cockpitAccept
+    ? visibleIncoming.find((movement) => movement.id === cockpitAccept.movementId)
+    : undefined;
   // The same count the Decisions cockpit heading and windows show.
   const decisionsDue = openDecisionCount({
     intakes: intakeDecisions,
@@ -2354,6 +2391,43 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           onConfirmBeds={confirmBedsFromDialog}
           onConfirmBedsAndRollup={handleConfirmBedsAndMorningRollup}
         />
+
+        {/* Q93: the Decisions cockpit's Accept names the person first, as the answer view does. */}
+        {cockpitAcceptMovement ? (
+          <WardAcceptDialog
+            movement={cockpitAcceptMovement}
+            patientName={resolvePatientIdentity(cockpitAcceptMovement).formalName}
+            unitName={unit.name}
+            now={now}
+            extended={cockpitHold?.movementId === cockpitAcceptMovement.id && cockpitHold.extended}
+            holdChoices={[
+              { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+              {
+                extended: true,
+                label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+              },
+            ]}
+            dialogRef={cockpitAcceptRef}
+            onChooseHold={(extended) => {
+              setCockpitHold({ movementId: cockpitAcceptMovement.id, extended });
+            }}
+            onCancel={() => {
+              setCockpitAccept(null);
+              setCockpitHold(null);
+            }}
+            onConfirm={() => {
+              const chosen = cockpitAccept;
+              setCockpitAccept(null);
+              if (!chosen) return;
+              handleAcceptInPrinciple(
+                cockpitAcceptMovement.id,
+                unit.id,
+                cockpitHold?.movementId === cockpitAcceptMovement.id && cockpitHold.extended,
+                chosen.report,
+              );
+            }}
+          />
+        ) : null}
 
         {/* ─── Ward Daily Sheet Modal Overlay ───────────────────────────── */}
         {dailySheetOpen ? (
