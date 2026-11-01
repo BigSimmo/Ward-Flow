@@ -101,6 +101,7 @@ describe("the Ward home tab's Accept in principle (Q93)", () => {
       movementId: TARGET,
       unitId: WARD.id,
       actingUnitId: WARD.id,
+      extendedHold: true,
     });
   });
 
