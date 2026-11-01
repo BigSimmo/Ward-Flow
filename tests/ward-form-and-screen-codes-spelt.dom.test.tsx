@@ -1,6 +1,6 @@
 // H-0842 and H-0187 (27 Oct 2026): a form code reads with its register title, and the codes on
 // Home and Capacity carry their full names (DA-17 `SpelledCodes`).
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -67,22 +67,19 @@ describe("H-0842: form codes carry their register titles", () => {
   });
   // Josh (31 Oct 2026): no line under the chip; the chip names the register title on tap, on
   // keyboard focus and to screen readers, never on hover only.
-  it("the ED board's form chip names its register title to screen readers and on a tap", () => {
+  it("the ED handover table's Form choice names its register title to screen readers and on hover", () => {
+    // ED handover table (1 Nov 2026): the Form column's choice replaced the old form chip and its tip.
     const view = renderInProvider(<EdScreen edId="arm-ed" />);
-    const chips = [...view.container.querySelectorAll<HTMLButtonElement>('[data-testid^="ward-ed-form-chip-"]')];
-    expect(chips.length).toBeGreaterThan(0);
-    for (const chip of chips) {
-      const tip = view.container.querySelector(`#${CSS.escape(chip.getAttribute("aria-describedby") ?? "")}`);
-      expect(tip?.textContent?.trim().length).toBeGreaterThan(0);
-      expect(chip).toHaveAccessibleDescription(tip?.textContent ?? "");
+    const picks = [...view.container.querySelectorAll<HTMLButtonElement>('[data-testid^="ward-ed-form-pick-"]')];
+    const withForm = picks.filter((pick) => /Form \w+,/u.test(pick.getAttribute("aria-label") ?? ""));
+    expect(withForm.length).toBeGreaterThan(0);
+    for (const pick of withForm) {
+      const code = /Form (\w+),/u.exec(pick.getAttribute("aria-label") ?? "")![1]!;
+      const title = formTitleForCode(code);
+      expect(title).toBeTruthy();
+      expect(pick).toHaveAccessibleName(expect.stringContaining(title!));
+      expect(pick).toHaveAttribute("title", title!);
     }
-    const [first] = chips;
-    const tip = view.container.querySelector(`#${CSS.escape(first.getAttribute("aria-describedby") ?? "")}`);
-    expect(tip).not.toHaveAttribute("data-open");
-    fireEvent.click(first);
-    expect(tip).toHaveAttribute("data-open", "true");
-    fireEvent.keyDown(first, { key: "Escape" });
-    expect(tip).not.toHaveAttribute("data-open");
   });
 });
 

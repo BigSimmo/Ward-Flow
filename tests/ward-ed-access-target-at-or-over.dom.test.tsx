@@ -74,7 +74,7 @@ describe("the ED board marks a wait that reaches the access target, not only one
     advance(1);
     expect(Number(row.element.getAttribute("data-minutes-in-department"))).toBe(ED_ACCESS_TARGET_MINUTES);
     expect(marker()).toHaveAttribute("data-state", "over");
-    expect(marker()).toHaveTextContent(/at target/);
+    expect(marker()).toHaveTextContent(/at target/iu);
     expect(marker()).toHaveTextContent(/At the access target\./);
   });
 });

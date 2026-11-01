@@ -33,8 +33,10 @@ function oldReady(state: WardFlowState, now: number) {
  */
 function eventsToSplit(): WardFlowEvent[] {
   // 40 until 25 Oct 2026; removing RELEASE_BED from the generator shifted the runs (PR #730).
+  // 24460 until 1 Nov 2026; the ED handover events in the generator moved the first split from
+  // run 2 to run 127, which took the search past the test's time limit (PR #1231).
   for (let seed = 0; seed < 400; seed += 1) {
-    const random = seededRandom(24460 + seed);
+    const random = seededRandom(24587 + seed);
     let state = seedWardFlowState("standard");
     const events: WardFlowEvent[] = [];
     for (let step = 0; step < 200; step += 1) {

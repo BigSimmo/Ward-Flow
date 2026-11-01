@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
 
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -79,23 +79,49 @@ describe("recording an ED outcome from the board", () => {
  */
 describe("recording an ED outcome clears the outbox row and the gender control", () => {
   it("drops WF-004 out of 'Still to be moved' and hides its gender control once an outcome is recorded", () => {
+    // Handover build (Josh, 1 Nov 2026): the desktop Lists card has no Referred list; the phone's
+    // Lists pane keeps it, so this is read there.
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(max-width: 48rem)",
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      onchange: null,
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    onTestFinished(() => {
+      window.matchMedia = original;
+    });
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <EdScreen edId="sjgm-ed" />
       </WardFlowProvider>,
     );
 
+    const listsPane = screen.queryByRole("radio", { name: /^Lists/u });
+    if (listsPane) fireEvent.click(listsPane);
     fireEvent.click(screen.getByRole("tab", { name: /Still to be moved/ }));
     expect(screen.getByTestId("ward-ed-outbox-row-WF-004")).toBeInTheDocument();
     // Open while the movement is still live — RECORD_MOVEMENT_GENDER would otherwise be offered
     // on a row the reducer always refuses it for once closed.
     expect(screen.getByTestId("ward-ed-record-gender-WF-004")).toBeInTheDocument();
 
+    // On the phone the outcome control sits in the person's sheet, opened from the Board pane.
+    const boardPane = screen.queryByRole("radio", { name: /^Board/u });
+    if (boardPane) fireEvent.click(boardPane);
+    fireEvent.click(within(screen.getByTestId("ward-ed-patient-WF-004")).getAllByRole("button")[0]!);
     fireEvent.click(screen.getByTestId("ward-ed-outcome-toggle-WF-004"));
     // Owner answer 1 (second round, 2026-09-17): WF-004 is on a legal form with no examination
     // recorded, so "For discharge" is now correctly disabled here — "For community follow-up"
     // carries no such gate and proves the identical P1-4 unwind this test exists for.
     confirmStep("ward-ed-outcome-community-WF-004");
+    // The informational label stays — only the editable control is withdrawn.
+    expect(screen.getByTestId("ward-ed-gender-WF-004")).toBeInTheDocument();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    if (listsPane) fireEvent.click(screen.getByRole("radio", { name: /^Lists/u }));
 
     expect(
       screen.queryByTestId("ward-ed-outbox-row-WF-004"),
@@ -105,8 +131,6 @@ describe("recording an ED outcome clears the outbox row and the gender control",
       screen.queryByTestId("ward-ed-record-gender-WF-004"),
       "P3-3: the gender control must not be offered on a closed row",
     ).not.toBeInTheDocument();
-    // The informational label stays — only the editable control is withdrawn.
-    expect(screen.getByTestId("ward-ed-gender-WF-004")).toBeInTheDocument();
   });
 });
 

@@ -16,7 +16,7 @@ import {
   type MouseEvent,
   type RefObject,
 } from "react";
-import { ChevronDown, Pencil, X, MoreHorizontal } from "lucide-react";
+import { ChevronDown, X, MoreHorizontal } from "lucide-react";
 import { Sheet, useIsPhone } from "@/components/wf";
 import styles from "./ed-board-controls.module.css";
 import { EdConfirmedStep, EdUnavailableNote } from "./ed-screen-row-menu";
@@ -360,114 +360,6 @@ export function EdPlanPicker({
         </div>
         <p className={styles.planGuidance}>Enter adds a label · Changes on this screen only</p>
       </EdPopover>
-    </>
-  );
-}
-
-export function EdPresentation({
-  patientName,
-  value,
-  onChange,
-  testId,
-  kind,
-}: {
-  patientName: string;
-  testId?: string;
-  kind?: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const [draft, setDraft] = useState(value);
-  const id = useId();
-  function close() {
-    dialog.current?.close();
-    trigger.current?.focus();
-  }
-  return (
-    <>
-      <button
-        ref={trigger}
-        id={testId}
-        type="button"
-        className={styles.presentation}
-        data-testid={testId}
-        data-kind={kind}
-        aria-haspopup="dialog"
-        aria-label={`Edit presentation for ${patientName}`}
-        onClick={() => {
-          setDraft(value);
-          dialog.current?.showModal();
-          dialog.current?.querySelector("textarea")?.focus();
-        }}
-      >
-        {value || "Add presentation…"}
-        <Pencil className={styles.editIcon} aria-hidden="true" />
-      </button>
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- light dismiss outside the native dialog, and Escape closes it from the keyboard */}
-      <dialog
-        ref={dialog}
-        className={styles.dialog}
-        aria-labelledby={`${id}-title`}
-        onCancel={(event) => {
-          // Typed text is never thrown away by Escape: only Cancel or Close discards it.
-          if (draft !== value) {
-            event.preventDefault();
-            return;
-          }
-          trigger.current?.focus();
-        }}
-        onClick={(event) => {
-          // A click outside closes only an unchanged draft, so typed text is not lost by a stray tap.
-          if (event.target === event.currentTarget && draft === value) {
-            const rect = event.currentTarget.getBoundingClientRect();
-            if (
-              event.clientX < rect.left ||
-              event.clientX > rect.right ||
-              event.clientY < rect.top ||
-              event.clientY > rect.bottom
-            )
-              close();
-          }
-        }}
-      >
-        <header>
-          <div>
-            <h2 id={`${id}-title`}>Presentation</h2>
-            <p>{patientName}</p>
-          </div>
-          <button type="button" aria-label="Close presentation" onClick={close}>
-            <X aria-hidden="true" />
-          </button>
-        </header>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            onChange(draft.trim());
-            close();
-          }}
-        >
-          <label htmlFor={`${id}-text`}>Brief presentation</label>
-          <textarea
-            id={`${id}-text`}
-            maxLength={1200}
-            spellCheck={false}
-            data-gramm="false"
-            data-gramm_editor="false"
-            data-enable-grammarly="false"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-          />
-          <footer>
-            <span>Changes on this screen only</span>
-            <button type="button" onClick={close}>
-              Cancel
-            </button>
-            <button type="submit">Apply</button>
-          </footer>
-        </form>
-      </dialog>
     </>
   );
 }

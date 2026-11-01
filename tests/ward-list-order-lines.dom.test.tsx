@@ -112,15 +112,15 @@ describe("list order lines", () => {
 
   it("the ED board table is named for the Sort it is in", () => {
     inProvider(<EdScreen edId="rph-ed" />);
-    expect(screen.getByRole("table", { name: "Emergency department board, longest in ED first" })).toBeInTheDocument();
-    // The sort is the kit's Segmented now (ED board redesign, 31 Oct 2026), not a select.
-    const sort = screen.getByRole("radiogroup", { name: "Sort patients" });
-    fireEvent.click(within(sort).getByRole("radio", { name: "Patient name" }));
+    // ED handover table (1 Nov 2026): the table is the handover, sorted by the mock-up's Segmented.
     expect(
-      screen.getByRole("table", { name: "Emergency department board, A to Z by patient name" }),
+      screen.getByRole("table", { name: "Emergency department handover, longest in ED first" }),
     ).toBeInTheDocument();
+    const sort = screen.getByRole("radiogroup", { name: "Sort patients" });
+    fireEvent.click(within(sort).getByRole("radio", { name: "Name" }));
+    expect(screen.getByRole("table", { name: "Emergency department handover, A to Z by surname" })).toBeInTheDocument();
     fireEvent.click(within(sort).getByRole("radio", { name: "Current order" }));
-    expect(screen.getByRole("table", { name: "Emergency department board, in current order" })).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: "Emergency department handover, in current order" })).toBeInTheDocument();
   });
 
   it("Alerts says the desktop Now order for each arrangement", () => {

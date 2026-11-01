@@ -726,7 +726,8 @@ test.describe("@mockup Emergency department screen", () => {
     // The department clock and the form clock are shown as different things — Task T1
     // (docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md item 1, owner answer 1): the
     // form column reads only a clinician's own typed expiry, never the department's arrival time.
-    await expect(page.getByTestId("ward-ed-screen")).toContainText(/in department/i);
+    // ED handover table (1 Nov 2026): the department clock is the table's own In ED column.
+    await expect(page.getByRole("columnheader", { name: "In ED" }).first()).toBeVisible();
     await expect(page.getByTestId("ward-ed-screen")).toContainText(
       /expiry written on the form|no expiry recorded from the form/i,
     );
@@ -1179,7 +1180,9 @@ test.describe("@mockup Emergency department screen", () => {
     await confirm.click();
 
     await expect(page.getByTestId("ward-ed-inbox-row-RF-009")).toHaveCount(0);
-    await expect(page.getByTestId("ward-ed-inbox-empty")).toBeVisible();
+    // ED handover table (1 Nov 2026): on a desktop the Lists card drops its New referral group once
+    // the inbox is empty, as the mock-up does; the phone list keeps its empty line.
+    await expect(page.getByTestId("ward-ed-inbox-group")).toHaveCount(0);
   });
 
   /*

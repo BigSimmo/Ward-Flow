@@ -685,6 +685,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: false,
     UPLOAD_PATIENT_FORM: false,
     RECORD_LEGAL_FORM_WRITTEN: false,
+    RECORD_LEGAL_FORM_CODE: false,
+    RECORD_ED_PRESENTATION: false,
     RECORD_COUNTRY_EXTENSION: false,
     RECORD_LEGAL_FORM_CONTINUATION: false,
     EVALUATE_ARRIVAL_LATENESS: false,

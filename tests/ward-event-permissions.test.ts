@@ -476,6 +476,8 @@ describe("who may raise which event", () => {
     // A1-5 (13 Oct 2026): ED and coordinator. WT-03 (Josh, 26 Oct 2026): also the ward, only for a
     // person admitted to its own bed (engine and scope checks).
     RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward"],
+    RECORD_LEGAL_FORM_CODE: ["ed", "coordinator", "ward"],
+    RECORD_ED_PRESENTATION: ["ed", "coordinator"],
     RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
     RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
     EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],
