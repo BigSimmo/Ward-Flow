@@ -120,10 +120,20 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("tab", { name: /Notices/ }));
-    const feed = screen.getByRole("region", { name: /Operational notices and shift communication feed/ });
-    expect(feed.textContent).not.toMatch(/Luke Davies/);
-    expect(feed.textContent).not.toMatch(/WF-0\d\d/);
+    // Q181 (1 Nov 2026): notices sit in Now (unread) and Earlier today (read).
+    const feeds = () => [
+      screen.queryByRole("region", { name: "Notices" }),
+      screen.queryByRole("region", { name: "Notices read" }),
+    ];
+    const text = () =>
+      feeds()
+        .map((feed) => feed?.textContent ?? "")
+        .join(" ");
+    expect(text()).not.toMatch(/Luke Davies/);
+    expect(text()).not.toMatch(/WF-0\d\d/);
+    fireEvent.click(screen.getByRole("tab", { name: /^Earlier today/ }));
+    expect(text()).not.toMatch(/Luke Davies/);
+    expect(text()).not.toMatch(/WF-0\d\d/);
   });
 
   it("no ward file keeps a typed-in table of movement personas", () => {

@@ -277,31 +277,3 @@ export function EarlierBroadcasts({
     </section>
   );
 }
-
-/** Nothing live: say so, and offer the composer when this desk may broadcast. */
-export function NoBroadcastLive({
-  onCompose,
-  composeDisabledReason,
-}: {
-  onCompose: (trigger: HTMLButtonElement) => void;
-  composeDisabledReason: string | undefined;
-}) {
-  return (
-    <div className={css.empty}>
-      <span className={css.iconTile} data-size="lg" aria-hidden="true">
-        <Radio size={20} aria-hidden="true" />
-      </span>
-      <strong>No broadcast live</strong>
-      <span>A broadcast reaches every ward and ED desk you choose, and shows who has answered.</span>
-      <Button
-        variant="pri"
-        icon={Radio}
-        disabledReason={composeDisabledReason}
-        reasonDisplay="tooltip"
-        onClick={(event) => onCompose(event.currentTarget)}
-      >
-        Broadcast alert
-      </Button>
-    </div>
-  );
-}

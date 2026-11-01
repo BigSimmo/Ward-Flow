@@ -1,7 +1,8 @@
 "use client";
 
-// The Alerts screen's Broadcast, Notices and History tab panels. Moved out of `alerts-screen.tsx`
-// to keep it under the line cap; the screen keeps the state and the acts they call.
+// The Alerts screen's parts beside the queue (Q181, Josh 1 Nov 2026): the live broadcast and the
+// notices sit in Now, and what this session recorded sits in Earlier today. Moved out of
+// `alerts-screen.tsx` to keep it under the line cap; the screen keeps the state and the acts they call.
 import { Clock } from "lucide-react";
 import { useState } from "react";
 
@@ -18,11 +19,12 @@ import { PullNowCard } from "./global-alert-panels";
 import { GroupHead } from "./alerts-queue";
 import type { HistoryEntry } from "./alerts-history";
 import { AddUnitsDialog, addableGroups } from "./broadcast-add-units";
-import { BroadcastLiveCard, EarlierBroadcasts, NoBroadcastLive } from "./broadcast-live-card";
+import { BroadcastLiveCard, EarlierBroadcasts } from "./broadcast-live-card";
 import styles from "./alerts.module.css";
 import tab from "./broadcast-tab.module.css";
 
-export function AlertsBroadcastPanel({
+/** Now, at the top: Pull now and the live broadcast with its action bar; nothing when none is live. */
+export function AlertsLiveBroadcasts({
   livePullNows,
   handleStandDown,
   activeBroadcast,
@@ -31,11 +33,7 @@ export function AlertsBroadcastPanel({
   now,
   track,
   raise,
-  pastBroadcasts,
-  movements,
   deskRole,
-  onCompose,
-  composeDisabledReason,
   onCopyAnswers,
 }: {
   livePullNows: BroadcastAlert[];
@@ -46,19 +44,16 @@ export function AlertsBroadcastPanel({
   now: Instant;
   track: (request: { type: string; ok: string; refused: string }) => void;
   raise: ReturnType<typeof useWardRaise>;
-  pastBroadcasts: BroadcastAlert[];
-  movements: WardFlowState["movements"];
   deskRole: string;
-  onCompose: (trigger: HTMLButtonElement) => void;
-  composeDisabledReason: string | undefined;
   onCopyAnswers: (text: string) => void;
 }) {
-  // Alerts redesign (1 Nov 2026): each live broadcast is a card with an action bar; then the
-  // earlier ones, or an empty state that offers Broadcast alert.
+  // Alerts redesign (1 Nov 2026): each live broadcast is a card with an action bar. Broadcast alert
+  // itself is under the hero's More (Q184), so no empty state offers it here.
   // The broadcast Add units opened on: if another broadcast replaces it, the dialog closes rather than retarget.
   const [addingUnits, setAddingUnits] = useState<string | null>(null);
+  if (livePullNows.length === 0 && !activeBroadcast) return null;
   return (
-    <TabPanel idPrefix="alerts" id="broadcast" className={cx(styles.tabBody, tab.tabBody)}>
+    <div id="alerts-live-broadcast" className={cx(styles.tabBody, tab.tabBody)} data-testid="ward-alerts-live">
       {livePullNows.length > 0 ? (
         <section className={styles.group} aria-label="Pull now">
           <GroupHead label="Pull now" count={livePullNows.length} />
@@ -91,9 +86,7 @@ export function AlertsBroadcastPanel({
           onCopyAnswers={onCopyAnswers}
           onStandDown={() => handleStandDown(activeBroadcast.id)}
         />
-      ) : (
-        <NoBroadcastLive onCompose={onCompose} composeDisabledReason={composeDisabledReason} />
-      )}
+      ) : null}
       {activeBroadcast && addingUnits === activeBroadcast.id ? (
         <AddUnitsDialog
           alert={activeBroadcast}
@@ -110,6 +103,108 @@ export function AlertsBroadcastPanel({
           }}
         />
       ) : null}
+    </div>
+  );
+}
+
+/** One notice line, as the old Notices tab drew it. */
+function NoticeRows({
+  notices,
+  now,
+  umrnLookup,
+}: {
+  notices: WardFlowState["notices"];
+  now: Instant;
+  umrnLookup: Parameters<typeof withUmrnInPlaceOfMovementIds>[1];
+}) {
+  return (
+    <ul className={styles.historyList}>
+      {notices.map((notice) => {
+        const isRead = notice.readAt !== undefined;
+        return (
+          <li key={notice.id}>
+            <span className={styles.mono}>{formatInstantWithDay(notice.raisedAt, now)}</span>
+            <StatusGlyph tone={isRead ? "neutral" : "info"} size={9} />
+            <span className={styles.historyText}>
+              <span className={styles.historyTitle}>{withUmrnInPlaceOfMovementIds(notice.sentence, umrnLookup)}</span>
+              <span className={styles.quiet}>To {WARD_FLOW_ROLE_LABELS[notice.to.role]}</span>
+            </span>
+            <span className={styles.quiet}>{isRead ? "Read" : "Unread"}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Now, after Act now and Waiting: the unread notices (Q181). Nothing when there are none. */
+export function AlertsNoticesGroup({
+  notices,
+  now,
+  umrnLookup,
+}: {
+  notices: WardFlowState["notices"];
+  now: Instant;
+  umrnLookup: Parameters<typeof withUmrnInPlaceOfMovementIds>[1];
+}) {
+  if (notices.length === 0) return null;
+  return (
+    <section className={styles.group} aria-label="Notices" data-testid="ward-alerts-notices">
+      <GroupHead tone="info" label="Notices" count={notices.length} aside="for information" />
+      <NoticeRows notices={notices} now={now} umrnLookup={umrnLookup} />
+    </section>
+  );
+}
+
+/**
+ * Earlier today (Q181): what this session recorded, the notices already read and the broadcasts
+ * that have ended.
+ */
+export function AlertsEarlierPanel({
+  history,
+  readNotices,
+  pastBroadcasts,
+  units,
+  movements,
+  now,
+  umrnLookup,
+}: {
+  history: HistoryEntry[];
+  readNotices: WardFlowState["notices"];
+  pastBroadcasts: BroadcastAlert[];
+  units: WardFlowState["units"];
+  movements: WardFlowState["movements"];
+  now: Instant;
+  umrnLookup: Parameters<typeof withUmrnInPlaceOfMovementIds>[1];
+}) {
+  const nothing = history.length === 0 && readNotices.length === 0 && pastBroadcasts.length === 0;
+  return (
+    <TabPanel idPrefix="alerts" id="earlier" className={styles.tabBody}>
+      {nothing ? <EmptyState icon={Clock} title="Nothing recorded this session" /> : null}
+      {history.length > 0 ? (
+        <section className={styles.group} aria-label="Recorded this session">
+          <GroupHead label="Recorded this session" count={history.length} />
+          <ul className={styles.historyList} aria-label="Recorded this session">
+            {history.map((entry) => (
+              <li key={entry.id}>
+                <span className={styles.mono}>{formatInstantWithDay(entry.at, now)}</span>
+                <StatusGlyph tone={entry.tone} size={9} />
+                <span className={styles.historyText}>
+                  <span className={styles.historyTitle}>{entry.title}</span>
+                  <span className={styles.quiet}>{entry.sub}</span>
+                </span>
+                <span className={styles.quiet}>{entry.by}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {readNotices.length > 0 ? (
+        <section className={styles.group} aria-label="Notices read">
+          <GroupHead label="Notices read" count={readNotices.length} />
+          <NoticeRows notices={readNotices} now={now} umrnLookup={umrnLookup} />
+        </section>
+      ) : null}
       <EarlierBroadcasts
         alerts={pastBroadcasts}
         units={units}
@@ -122,72 +217,6 @@ export function AlertsBroadcastPanel({
               : "ended"
         }
       />
-    </TabPanel>
-  );
-}
-
-export function AlertsNoticesPanel({
-  feedNotices,
-  now,
-  umrnLookup,
-}: {
-  feedNotices: WardFlowState["notices"];
-  now: Instant;
-  umrnLookup: Parameters<typeof withUmrnInPlaceOfMovementIds>[1];
-}) {
-  return (
-    <TabPanel idPrefix="alerts" id="notices">
-      <section className={styles.tabBody} aria-label="Operational notices and shift communication feed">
-        <GroupHead label="Role notices" count={feedNotices.length} />
-        {feedNotices.length === 0 ? (
-          <div className={styles.feedEmpty}>
-            <p className={styles.none}>No notices have been raised this session.</p>
-          </div>
-        ) : (
-          <ul className={styles.historyList}>
-            {feedNotices.map((notice) => {
-              const isRead = notice.readAt !== undefined;
-              return (
-                <li key={notice.id}>
-                  <span className={styles.mono}>{formatInstantWithDay(notice.raisedAt, now)}</span>
-                  <StatusGlyph tone={isRead ? "neutral" : "info"} size={9} />
-                  <span className={styles.historyText}>
-                    <span className={styles.historyTitle}>
-                      {withUmrnInPlaceOfMovementIds(notice.sentence, umrnLookup)}
-                    </span>
-                    <span className={styles.quiet}>To {WARD_FLOW_ROLE_LABELS[notice.to.role]}</span>
-                  </span>
-                  <span className={styles.quiet}>{isRead ? "Read" : "Unread"}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-    </TabPanel>
-  );
-}
-
-export function AlertsHistoryPanel({ history, now }: { history: HistoryEntry[]; now: Instant }) {
-  return (
-    <TabPanel idPrefix="alerts" id="history" className={styles.tabBody}>
-      {history.length === 0 ? (
-        <EmptyState icon={Clock} title="Nothing recorded this session" />
-      ) : (
-        <ul className={styles.historyList} aria-label="Recorded this session">
-          {history.map((entry) => (
-            <li key={entry.id}>
-              <span className={styles.mono}>{formatInstantWithDay(entry.at, now)}</span>
-              <StatusGlyph tone={entry.tone} size={9} />
-              <span className={styles.historyText}>
-                <span className={styles.historyTitle}>{entry.title}</span>
-                <span className={styles.quiet}>{entry.sub}</span>
-              </span>
-              <span className={styles.quiet}>{entry.by}</span>
-            </li>
-          ))}
-        </ul>
-      )}
     </TabPanel>
   );
 }

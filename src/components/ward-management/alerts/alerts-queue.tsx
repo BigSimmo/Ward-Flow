@@ -340,8 +340,8 @@ export function GroupHead({
 }
 
 /**
- * Phone row (v10): a list row in one inset card. Glyph, the alert, the patient and the route, with
- * how long and the owner on the right. The row opens the alert's sheet, where its actions are.
+ * Phone row (v10): a list row in one inset card. Glyph, the alert, the patient, the route and its one
+ * action (Q180), with how long and the owner on the right. The title opens the alert's sheet.
  */
 export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
   const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
@@ -358,6 +358,10 @@ export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now
           <Who entry={entry} />
         </span>
         <span className={styles.phoneRowLine}>{route}</span>
+        {/* Q180 (Josh, 1 Nov 2026): one action on every row, on a phone too. */}
+        <span className={styles.phoneRowAct}>
+          <RowAction entry={entry} handlers={handlers} />
+        </span>
       </span>
       <span className={styles.phoneRowEnd}>
         <span className={styles.phoneRowAge}>
