@@ -573,6 +573,16 @@
   min-height: 60px;
 }
 
+/* Pop-ups build (Create, 1 Nov 2026): the small "Or record" heading over the secondary rows. */
+.createHeading {
+  margin: var(--wf-s-3) 0 var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rise,
   .dockItem:active .dockIcon {

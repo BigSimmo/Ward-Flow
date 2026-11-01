@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   useContext,
   useEffect,
+  useId,
   useState,
   type ComponentProps,
   type ComponentType,
@@ -59,7 +60,8 @@ const CREATE_LINKS: readonly {
   icon: LucideIcon;
   href?: string;
 }[] = [
-  { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
+  // Pop-ups build (Create, round 2, 1 Nov 2026): short noun phrases, the same words as the Tools rows.
+  { id: "delays", label: "Log a delay", meta: "Patient and reason", icon: Clock3 },
   { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
   {
     id: "add-patient",
@@ -357,6 +359,7 @@ function CreateSheet({
   onNewReferral: () => void;
 }) {
   const { canRefer, ids } = usePhoneCreateOptions(byId);
+  const headingId = useId();
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   const rows = CREATE_LINKS.flatMap((item) => {
@@ -388,7 +391,6 @@ function CreateSheet({
       open={open}
       onClose={onClose}
       title="Create"
-      description="Start something new"
       mobileBreakpoint="phone"
       returnFocusRef={returnFocusRef}
       contentClassName={styles.sheet}
@@ -411,7 +413,14 @@ function CreateSheet({
         </button>
       ) : null}
       {rows.length > 0 ? (
-        <ul className={`${styles.list} ${styles.rich}`}>{rows}</ul>
+        // Pop-ups build (Create, 1 Nov 2026): a small "Or record" heading sets the three rows apart
+        // from New referral, the one filled button. With no New referral it is only spoken.
+        <section aria-labelledby={headingId}>
+          <p id={headingId} className={canRefer ? styles.createHeading : "sr-only"}>
+            {canRefer ? "Or record" : "Record"}
+          </p>
+          <ul className={`${styles.list} ${styles.rich}`}>{rows}</ul>
+        </section>
       ) : canRefer ? null : (
         // An officer or executive desk has nothing to start, so the sheet says so rather than open empty.
         <p className={styles.empty}>Nothing to start from this desk.</p>
