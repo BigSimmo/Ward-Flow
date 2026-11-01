@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Clipboard } from "lucide-react";
-import { Button, Card, StatusGlyph, cx, type WfTone } from "@/components/wf";
+import { Badge, Button, Card, StatusGlyph, cx, type WfTone } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import {
   activeCommunityTreatmentOrder,
@@ -80,12 +80,12 @@ function Section({ title, action, children }: { title: string; action?: ReactNod
   );
 }
 
+/** A status tag: the kit Badge at its small size, shared by every record tab. */
 function Tag({ tone, children }: { tone?: WfTone; children: ReactNode }) {
   return (
-    <span className={styles.tag}>
-      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+    <Badge tone={tone} size="sm">
       {children}
-    </span>
+    </Badge>
   );
 }
 

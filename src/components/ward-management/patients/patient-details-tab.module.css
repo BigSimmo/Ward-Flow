@@ -150,23 +150,6 @@
 }
 
 /* Small neutral tag: tone lives in the glyph, never the fill or an edge. */
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 20px;
-  padding: 1px 7px;
-  border-radius: var(--wf-r-tag);
-  background: var(--wf-track);
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  vertical-align: 1px;
-  white-space: normal;
-}
-
-.tag > svg {
-  flex: 0 0 auto;
-}
 
 .tags {
   display: flex;

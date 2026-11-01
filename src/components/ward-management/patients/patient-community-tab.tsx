@@ -18,7 +18,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { Button, Card, CardFoot, CardHead, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
+import { Badge, Button, Card, CardFoot, CardHead, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
 import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-management/ward-patients";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { formTitleForCode } from "@/lib/form-register";
@@ -130,12 +130,12 @@ const CTO_CODE = /^5[A-F]$/i;
 
 // ── Small parts ─────────────────────────────────────────────────────────────────────────────
 
+/** A status tag: the kit Badge at its small size, shared by every record tab. */
 function Tag({ tone, children }: { tone?: WfTone; children: ReactNode }) {
   return (
-    <span className={styles.tag}>
-      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+    <Badge tone={tone} size="sm">
       {children}
-    </span>
+    </Badge>
   );
 }
 
