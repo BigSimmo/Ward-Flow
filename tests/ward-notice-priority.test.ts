@@ -9,9 +9,9 @@ import { describe, expect, it } from "vitest";
  * when it has nothing to say, so the first one present is always the highest.
  */
 const PRIORITY = [
+  "WardBroadcastBanner",
   "WardRecoveryNotice",
   "WardOfflineBanner",
-  "WardBroadcastBanner",
   "WardDowntimePackLine",
   "WardAccessBanner",
   "WardPracticeLine",

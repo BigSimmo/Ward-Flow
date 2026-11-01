@@ -227,11 +227,12 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 page still opens on its hero band while a note is showing.
                 Minimal warnings (design audit, Josh 1 Nov 2026): at most one note shows at a time. They sit
                 in priority order and the holder shows only the first one present
-                (ward-flow-layout.module.css), so a lower note never hides a higher one. Keep this order. */}
+                (ward-flow-layout.module.css), so a lower note never hides a higher one. A pull-now broadcast
+                comes first, so a recovery note waiting to be closed never hides it. Keep this order. */}
                   <div className={styles.bannerHolder} data-wf-bar-notes="">
+                    <WardBroadcastBanner />
                     <WardRecoveryNotice />
                     <WardOfflineBanner practice={false} />
-                    <WardBroadcastBanner />
                     {/* Fix plan item 9: retakes the downtime pack hourly and at shift change, and offers it to print or save. */}
                     <WardDowntimePackLine />
                     <WardAccessBanner />
