@@ -31,11 +31,12 @@ describe("Alerts — confirm controls (F3.1)", () => {
   it("Dispatch Broadcast requires clinical confirmation safeguard and dispatches directive", () => {
     renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
     const confirm = screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(confirm).toHaveAttribute("aria-disabled", "true");
 
     // Check safeguard checkbox
-    fireEvent.click(screen.getByLabelText(/I confirm this directive is clinically authorised/i));
+    fireEvent.click(screen.getByLabelText(/I'm authorised to send this to/i));
     // Re-read: Dispatch's tooltip wrapper goes once nothing is left to do.
     const ready = screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(ready).not.toHaveAttribute("aria-disabled", "true");

@@ -44,51 +44,52 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     expect(trigger).toBeInTheDocument();
 
     fireEvent.click(trigger);
-    expect(screen.getByRole("dialog", { name: /Broadcast network alert/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/^Start from$/i)).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: /New broadcast/i })).toBeInTheDocument();
+    // Alerts redesign (1 Nov 2026): it opens on Ask wards for beds, Adult beds today.
+    expect(screen.getByRole("radio", { name: /Ask wards for beds/ })).toHaveAttribute("aria-checked", "true");
+    const starts = screen.getByRole("group", { name: "Start from" });
+    expect(within(starts).getByRole("button", { name: "Adult beds today" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("labels each target with counts from the unit list and names severity in one word set (ops-12)", () => {
+  it("counts every ward and ED desk for Everyone and names severity in one word set (ops-12)", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-    const scope = screen.getByLabelText(/^Target scope$/i);
-    // Redesign (31 Oct 2026): the scope list holds names only; the count is said once, on "Goes to".
-    expect(within(scope).getByRole("option", { name: /^All inpatient wards and ED desks$/ })).toBeInTheDocument();
-    expect(screen.getByText("Goes to").closest("p")).toHaveTextContent(
-      `${allUnits().length} wards and ${allEmergencyDepartments().length} ED desks`,
-    );
-    const severity = screen.getByLabelText(/^Severity$/i);
+    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    const everyone = allUnits().length + allEmergencyDepartments().length;
     expect(
-      within(severity)
-        .getAllByRole("option")
+      within(screen.getByRole("radiogroup", { name: "Audience" })).getByRole("radio", { name: "Everyone" }),
+    ).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("heading", { name: `Shows on ${everyone} screens` })).toBeInTheDocument();
+    expect(screen.getByLabelText(`I'm authorised to send this to ${everyone} units.`)).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("radiogroup", { name: "Severity" }))
+        .getAllByRole("radio")
         .map((option) => option.textContent),
     ).toEqual(["Advisory", "Warning", "Critical"]);
   });
 
-  it("populates form fields when changing the WA Mental Health template", () => {
+  it("populates form fields when choosing a quick start", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-
-    const templateSelect = screen.getByLabelText(/^Start from$/i);
-    // Switch to Graylands Forensic Surge template
-    fireEvent.change(templateSelect, { target: { value: "wa-forensic-full-advisory" } });
+    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Unit closed" }));
 
     const titleInput = screen.getByLabelText(/^Title$/i) as HTMLInputElement;
-    expect(titleInput.value).toContain("Demo: forensic beds full");
+    expect(titleInput.value).toContain("Demo: admissions paused");
 
-    const messageInput = screen.getByLabelText(/^Directive$/i) as HTMLTextAreaElement;
-    expect(messageInput.value).toContain("Graylands Frankland Centre secure beds fully committed");
+    const messageInput = screen.getByLabelText(/^Message$/i) as HTMLTextAreaElement;
+    expect(messageInput.value).toContain("closed to new admissions");
   });
 
-  it("requires clinical confirmation safeguard before enabling dispatch", () => {
+  it("requires the authorisation tick before enabling Send", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
 
-    // Dispatch is re-read each time: its tooltip wrapper comes and goes with the reason it waits for.
     const confirmBtn = () => screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(confirmBtn()).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Tick the box to send")).toBeInTheDocument();
 
-    const safeguard = screen.getByLabelText(/I confirm this directive is clinically authorised/i);
+    const safeguard = screen.getByLabelText(/I'm authorised to send this to/i);
     fireEvent.click(safeguard);
     expect(confirmBtn()).not.toHaveAttribute("aria-disabled", "true");
 
@@ -99,8 +100,9 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
   it("dispatches statewide alert, mounts global banner, and renders active directive card", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
 
-    const safeguard = screen.getByLabelText(/I confirm this directive is clinically authorised/i);
+    const safeguard = screen.getByLabelText(/I'm authorised to send this to/i);
     fireEvent.click(safeguard);
 
     const confirmBtn = screen.getByTestId("ward-alerts-broadcast-confirm");
@@ -117,7 +119,9 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     // Ops-11 (13 Oct 2026): nobody has acknowledged yet, counted against the desks the directive
     // asked: every ward and every ED desk for the all-units target, never the coordinator desk.
     expect(
-      screen.getByText(`0 of ${allUnits().length + allEmergencyDepartments().length} units acknowledged`),
+      within(screen.getByLabelText("Current broadcast")).getByText(
+        `0 of ${allUnits().length + allEmergencyDepartments().length} acknowledged`,
+      ),
     ).toBeInTheDocument();
 
     // Global broadcast banner rendered
@@ -132,11 +136,14 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
     // Dispatch alert first
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-    fireEvent.click(screen.getByLabelText(/I confirm this directive is clinically authorised/i));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByLabelText(/I'm authorised to send this to/i));
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
 
     // Before ack: nobody has acknowledged yet.
-    expect(screen.getByText(/^0 of \d+ units acknowledged$/i)).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("Current broadcast")).getByText(/^0 of \d+ acknowledged$/i),
+    ).toBeInTheDocument();
 
     // Ops-13 (13 Oct 2026): the coordinator sent it, so their banner shows the count and no
     // Acknowledge button.
@@ -149,7 +156,9 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     // The ward is asked, and its acknowledgement is recorded: the count rises by one.
     fireEvent.click(within(wardBanner).getByRole("button", { name: /^Acknowledge$/i }));
     expect(within(wardBanner).getByText("Acknowledged")).toBeInTheDocument();
-    expect(screen.getByText(/^1 of \d+ units acknowledged$/i)).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("Current broadcast")).getByText(/^1 of \d+ acknowledged$/i),
+    ).toBeInTheDocument();
 
     // Stand down directive from alerts screen
     const standDownBtn = screen.getByRole("button", { name: /Stand down this alert/i });
