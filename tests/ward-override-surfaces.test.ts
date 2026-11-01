@@ -461,6 +461,12 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
   // M2 (24 Oct 2026): the correction controller forwards only the three literal-typed events
   // built by its own handlers below: CHANGE_URGENCY, CHANGE_LEGAL_STATUS and
   // CORRECT_LEGAL_FORM_RECEIPT. Those construction sites remain visible to the scan above.
+  // Clinical-safety audit (1 Nov 2026): Home's urgency and legal status changes send their steps
+  // in order through sendStepsInOrder(), whose one dispatch(step) forwards FLAG_MOVEMENT_URGENT,
+  // CLEAR_MOVEMENT_URGENT_FLAG, CHANGE_URGENCY, CHANGE_LEGAL_STATUS or RECORD_LEGAL_FORM_WRITTEN,
+  // each built as a literal in the panel's two submit handlers and scanned above.
+  "src/components/ward-management/coordinator/shortlist-panel.tsx :: step":
+    "sendStepsInOrder(): forwards the urgency and legal status steps built as literals in the panel's two submit handlers",
   "src/components/ward-management/ed/use-ed-record-save.ts :: event":
     "useEdRecordSave(): forwards only CHANGE_URGENCY, CHANGE_LEGAL_STATUS or CORRECT_LEGAL_FORM_RECEIPT literals built in this file's three submit handlers",
   "src/components/ward-management/use-undoable-step.ts :: event":
@@ -697,7 +703,8 @@ describe("ward override-surface guard", () => {
     // 2 -> 3, #631 (24 Oct 2026): the ED examination save forwards the literal-typed event it built and retains.
     // 3 -> 4, M2 (24 Oct 2026): the correction controller forwards its three literal-typed events.
     // 4 -> 5, P053 (27 Oct 2026): the referral inbox's answer() forwards its three literal-typed events.
-    expect(nonLiteralDispatchCalls.length).toBe(5);
+    // 5 -> 6, clinical-safety audit (1 Nov 2026): Home's sendStepsInOrder() forwards its literal-typed steps.
+    expect(nonLiteralDispatchCalls.length).toBe(6);
   });
 
   /**

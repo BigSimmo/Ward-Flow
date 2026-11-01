@@ -79,7 +79,9 @@ export function EdRaiseIntoMovementSection({ ctx }: { ctx: EdScreenContext }) {
           Close
         </button>
       </div>
-      {referralOpen && <EdRaiseIntoMovementForm ctx={ctx} />}
+      {/* Keyed to the referral it was opened for: "Ask for a bed" on another referral while the
+          form is open starts a fresh form for that person, never the last one's (audit, 1 Nov 2026). */}
+      {referralOpen && <EdRaiseIntoMovementForm key={ctx.raisingFromReferralId ?? "no-referral"} ctx={ctx} />}
     </section>
   );
 }

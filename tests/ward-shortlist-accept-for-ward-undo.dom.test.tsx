@@ -20,6 +20,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { ToastProvider } from "@/components/wf";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 
 /**
  * Audit S-8: Placement's "Accept for this ward" offers Undo on the toast, like the ward's own
@@ -38,9 +39,11 @@ function Harness() {
   );
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>(undefined);
   const movement = movements.find((candidate) => candidate.id === movementId);
+  const patientOf = usePatientOf();
   return (
     <>
       <output data-testid="accepted">{movement?.acceptedUnitId ?? "none"}</output>
+      <output data-testid="who">{movementId ? patientOf({ movementId }).formalName : ""}</output>
       <ShortlistPanel
         movement={movement}
         now={now}
@@ -71,10 +74,13 @@ describe("Accept for this ward (coordinator Placement)", () => {
     const unitId = accept!.dataset.testid!.replace("ward-shortlist-accept-for-ward-", "");
     fireEvent.click(accept!);
     expect(screen.getByTestId("accepted")).toHaveTextContent(unitId);
-    expect(screen.getByText(/^Accepted in principle for /u)).toBeInTheDocument();
+    // The toast names the person, surname first, so stacked toasts never Undo the wrong one.
+    const who = screen.getByTestId("who").textContent!;
+    expect(who).toMatch(/^\S.*, \S/u);
+    expect(screen.getByText(`Accepted ${who} in principle for`, { exact: false })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByTestId("accepted")).toHaveTextContent("none");
-    expect(screen.getByText(/^Acceptance undone\./u)).toBeInTheDocument();
+    expect(screen.getByText(`Acceptance undone for ${who}.`, { exact: false })).toBeInTheDocument();
   });
 });
