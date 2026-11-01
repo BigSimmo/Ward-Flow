@@ -134,6 +134,16 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                       >
                         {open ? "Hide referral" : "View referral"}
                       </button>
+                      {linked ? null : (
+                        <button
+                          type="button"
+                          className={buttonClass({ variant: "pri", size: "md" })}
+                          data-testid={`ward-ed-inbox-raise-${referral.id}`}
+                          onClick={() => askForBedFromReferral(ctx, referral)}
+                        >
+                          Ask for a bed
+                        </button>
+                      )}
                     </td>
                   </tr>,
                   open ? (
@@ -179,16 +189,6 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                           >
                             Record not medically cleared
                           </button>
-                          {linked ? null : (
-                            <button
-                              type="button"
-                              className={buttonClass({ variant: "pri", size: "md" })}
-                              data-testid={`ward-ed-inbox-raise-${referral.id}`}
-                              onClick={() => askForBedFromReferral(ctx, referral)}
-                            >
-                              Ask for a bed
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>

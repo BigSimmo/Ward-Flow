@@ -158,7 +158,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
             onValueChange={setPatientQuery}
           />
           <Segmented<string>
-            label="Order"
+            label="Sort patients"
             size="sm"
             value={patientSort}
             onChange={setPatientSort}
