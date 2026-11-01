@@ -116,7 +116,6 @@ export function DischargeRecordDetail({
     setShowUpdateDate,
     newTimeDraft,
     setNewTimeDraft,
-    isPhone,
     drawerTab,
     setDrawerTab,
     selectedUnit,
