@@ -315,11 +315,13 @@ describe("shared provider boundary", () => {
     );
     const { rerender } = render(tree());
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-    fireEvent.change(screen.getByLabelText(/^Target scope$/i), { target: { value: "forensic" } });
+    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByRole("radio", { name: "By group" }));
+    fireEvent.click(screen.getByRole("button", { name: /Regional \(WACHS\)/ }));
     const title = screen.getByLabelText(/^Title$/i) as HTMLInputElement;
-    const message = screen.getByLabelText(/^Directive$/i) as HTMLTextAreaElement;
+    const message = screen.getByLabelText(/^Message$/i) as HTMLTextAreaElement;
     const draft = { title: title.value, message: message.value };
-    fireEvent.click(screen.getByLabelText(/I confirm this directive is clinically authorised/i));
+    fireEvent.click(screen.getByLabelText(/I'm authorised to send this to/i));
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
     expect(fake.connection!.dispatch).toHaveBeenCalledOnce();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -335,7 +337,7 @@ describe("shared provider boundary", () => {
     if (accepted) {
       expect(screen.queryByRole("dialog")).toBeNull();
       expect(screen.getByRole("status", { name: "Broadcast feedback" })).toHaveTextContent(
-        "shown in this prototype for Frankland Centre Forensic Mental Health only; no external notifications are sent.",
+        "shown in this prototype for Regional (WACHS) only; no external notifications are sent.",
       );
     } else {
       expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -344,7 +346,7 @@ describe("shared provider boundary", () => {
       );
       expect(title.value).toBe(draft.title);
       expect(message.value).toBe(draft.message);
-      expect(screen.getByLabelText(/^Target scope$/i)).toHaveValue("forensic");
+      expect(screen.getByRole("button", { name: /Regional \(WACHS\)/ })).toHaveAttribute("aria-pressed", "true");
       expect(screen.getByTestId("ward-alerts-broadcast-confirm")).not.toHaveAttribute("aria-disabled", "true");
     }
   });

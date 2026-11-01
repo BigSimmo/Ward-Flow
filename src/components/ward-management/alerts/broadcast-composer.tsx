@@ -1,298 +1,472 @@
 "use client";
 
-// The Alerts screen's broadcast composer. Redesign (31 Oct 2026, Josh's "Yes to all"): a wider dialog
-// with the form on the left and, on the right, what each desk in the scope will see, beside the
-// confirmation and Dispatch. Dispatch stays greyed, with its reason, until every step is done.
+// The Alerts screen's broadcast composer. Alerts redesign (1 Nov 2026, BUILD-SPEC "Broadcast
+// composer"): a 960px side sheet with the form on the left, what each desk sees on the right and the
+// action bar along the bottom; one column in a bottom sheet on phone. Built from the approved mock-up
+// (`mockups/alerts/alerts-redesign/mock.js`, `composer()`).
 import type { RefObject } from "react";
-import { Lock, Radio, X } from "lucide-react";
+import { BedDouble, Check, ChevronDown, Info, Megaphone, Radio, Send, Sparkles, X } from "lucide-react";
 
-import { Button, Checkbox, Field, IconTile, Kbd, Select, StatusGlyph, TextInput, Textarea, cx } from "@/components/wf";
-import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { Button, Checkbox, Field, Segmented, StatusGlyph, TextInput, Textarea, cx, useIsPhone } from "@/components/wf";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 
+import { WA_BROADCAST_TEMPLATES, type BroadcastKind, type BroadcastSeverity } from "./ward-broadcast-model";
 import {
-  WA_BROADCAST_TEMPLATES,
-  type BroadcastKind,
-  type BroadcastSeverity,
-  type BroadcastTargetScope,
-} from "./ward-broadcast-model";
-import { broadcastScopeCount } from "./global-alert-view";
-import { minutesText } from "./alerts-model";
-import styles from "./alerts.module.css";
-import pop from "./broadcast.module.css";
-/** The scope names the Target scope list uses, without their counts. */
-const SCOPE_NAMES: Record<BroadcastTargetScope, string> = {
-  all: "All inpatient wards and ED desks",
-  metro_adult: "Metropolitan adult units",
-  ed_liaison: "ED mental health liaison desks",
-  forensic: "Frankland Centre forensic",
-  adolescent: "CAMHS adolescent acute units",
-  older_adult: "Older adult units",
-  regional_wachs: "WACHS regional network",
-};
+  QUICK_STARTS,
+  audienceRecipients,
+  type AudienceGroup,
+  type AudienceMode,
+  type BroadcastAudience,
+} from "./broadcast-audience";
+import css from "./broadcast.module.css";
+
+const SEVERITIES: { id: BroadcastSeverity; label: string; tone: "neutral" | "warning" | "danger"; hint: string }[] = [
+  { id: "advisory", label: "Advisory", tone: "neutral", hint: "For information. No action needed." },
+  { id: "warning", label: "Warning", tone: "warning", hint: "Needs attention today." },
+  { id: "critical", label: "Critical", tone: "danger", hint: "Needs action now. Use only for safety or gridlock." },
+];
+const DURATIONS = [
+  [30, "30m"],
+  [60, "1h"],
+  [120, "2h"],
+  [240, "4h"],
+  [480, "8h"],
+  [720, "12h"],
+] as const;
+const AUDIENCE_ITEMS: { id: AudienceMode; label: string }[] = [
+  { id: "all", label: "Everyone" },
+  { id: "groups", label: "By group" },
+  { id: "pick", label: "Choose units" },
+];
+const units = (n: number) => `${n} ${n === 1 ? "unit" : "units"}`;
+const quickStartName = (id: string) =>
+  id === "custom" ? "Blank" : (WA_BROADCAST_TEMPLATES.find((tmpl) => tmpl.id === id)?.name ?? id);
+
+export type LiveBedCall = { id: string; label: string; minutesLeft: string };
 
 export function BroadcastComposer({
   modalRef,
-  handleCloseBroadcastModal,
   modalCloseRef,
-  broadcastRefused,
-  broadcastFeedback,
-  selectedTemplateId,
-  handleSelectTemplate,
-  broadcastType,
-  setBroadcastType,
-  broadcastSeverity,
-  setBroadcastSeverity,
-  broadcastDurationMinutes,
-  setBroadcastDurationMinutes,
-  broadcastScope,
-  setBroadcastScope,
-  units,
-  broadcastTitle,
-  setBroadcastTitle,
-  broadcastMessage,
-  setBroadcastMessage,
-  severityLabel,
-  broadcastConfirmed,
-  setBroadcastConfirmed,
-  broadcastRequest,
-  broadcastResult,
-  handleDispatchBroadcast,
+  onClose,
+  refusedFeedback,
+  kind,
+  onSelectKind,
+  templateId,
+  onSelectTemplate,
+  audience,
+  setAudience,
+  groups,
+  wardsWithBedNow,
+  severity,
+  setSeverity,
+  durationMinutes,
+  setDurationMinutes,
+  title,
+  setTitle,
+  message,
+  setMessage,
+  confirmed,
+  setConfirmed,
+  sending,
+  liveBedCall,
+  onExtendLive,
+  senderName,
+  now,
+  onSend,
 }: {
   modalRef: RefObject<HTMLDivElement | null>;
-  handleCloseBroadcastModal: () => void;
   modalCloseRef: RefObject<HTMLButtonElement | null>;
-  broadcastRefused: boolean;
-  broadcastFeedback: string | null;
-  selectedTemplateId: string;
-  handleSelectTemplate: (tmplId: string) => void;
-  broadcastType: BroadcastKind;
-  setBroadcastType: (kind: BroadcastKind) => void;
-  broadcastSeverity: BroadcastSeverity;
-  setBroadcastSeverity: (severity: BroadcastSeverity) => void;
-  broadcastDurationMinutes: number;
-  setBroadcastDurationMinutes: (minutes: number) => void;
-  broadcastScope: BroadcastTargetScope;
-  setBroadcastScope: (scope: BroadcastTargetScope) => void;
-  units: WardFlowState["units"];
-  broadcastTitle: string;
-  setBroadcastTitle: (title: string) => void;
-  broadcastMessage: string;
-  setBroadcastMessage: (message: string) => void;
-  severityLabel: (severity: BroadcastSeverity) => string;
-  broadcastConfirmed: boolean;
-  setBroadcastConfirmed: (confirmed: boolean) => void;
-  /** Read only for whether a dispatch is still waiting on its verdict. */
-  broadcastRequest: unknown;
-  broadcastResult: unknown;
-  handleDispatchBroadcast: () => void;
+  onClose: () => void;
+  /** The refusal to show at the top of the form, or null. */
+  refusedFeedback: string | null;
+  kind: BroadcastKind;
+  onSelectKind: (kind: "bed_call" | "directive") => void;
+  templateId: string;
+  onSelectTemplate: (templateId: string) => void;
+  audience: BroadcastAudience;
+  setAudience: (audience: BroadcastAudience) => void;
+  groups: readonly AudienceGroup[];
+  wardsWithBedNow: readonly string[];
+  severity: BroadcastSeverity;
+  setSeverity: (severity: BroadcastSeverity) => void;
+  durationMinutes: number;
+  setDurationMinutes: (minutes: number) => void;
+  title: string;
+  setTitle: (title: string) => void;
+  message: string;
+  setMessage: (message: string) => void;
+  confirmed: boolean;
+  setConfirmed: (confirmed: boolean) => void;
+  /** A send is still waiting on its verdict. */
+  sending: boolean;
+  /** A bed call already live to some of the same wards, offered to extend instead. */
+  liveBedCall: LiveBedCall | undefined;
+  onExtendLive: (alertId: string) => void;
+  senderName: string;
+  now: Instant;
+  onSend: () => void;
 }) {
-  const severityTone =
-    broadcastSeverity === "critical" ? "danger" : broadcastSeverity === "warning" ? "warning" : "info";
-  // The banner's own kind wording (`shell/ward-broadcast-banner-body.tsx`).
-  const kindLabel =
-    broadcastType === "bed_call"
-      ? "Bed call"
-      : broadcastSeverity === "critical"
-        ? "Critical directive"
-        : broadcastSeverity === "warning"
-          ? "Operational advisory"
-          : "Network notice";
-  const scopeName = SCOPE_NAMES[broadcastScope];
-  // Dispatch stays greyed until every step is done, and says which one is left.
-  const dispatchWaitsFor = !broadcastTitle.trim()
-    ? "Type a title first."
-    : !broadcastMessage.trim()
-      ? "Type the directive first."
-      : !broadcastConfirmed
-        ? "Tick the confirmation first."
-        : broadcastRequest && !broadcastResult
-          ? "Still sending."
-          : undefined;
+  const isPhone = useIsPhone();
+  const ask = kind === "bed_call";
+  const list = audienceRecipients(audience, groups, wardsWithBedNow, ask);
+  const n = list.length;
+  const sev = SEVERITIES.find((item) => item.id === severity) ?? SEVERITIES[0];
+  const endsAt = formatInstantWithDay((now + durationMinutes) as Instant, now);
+  const block = !n
+    ? "Choose who gets it"
+    : !title.trim() || !message.trim()
+      ? "Add a title and message"
+      : !confirmed
+        ? "Tick the box to send"
+        : sending
+          ? "Still sending"
+          : "";
+  const setMode = (mode: AudienceMode) =>
+    setAudience({
+      ...audience,
+      mode,
+      // Choose units starts from whoever the audience reached until now.
+      picked: mode === "pick" && audience.mode !== "pick" ? list.map((desk) => desk.id) : audience.picked,
+    });
+  const toggle = <T extends string>(ids: T[], id: T) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
+  const kindCard = (id: "bed_call" | "directive", KindIcon: typeof BedDouble, name: string, sub: string) => (
+    <button type="button" role="radio" aria-checked={kind === id} className={css.kind} onClick={() => onSelectKind(id)}>
+      <span className={css.iconTile} data-tone={kind === id ? "accent" : undefined} aria-hidden="true">
+        <KindIcon size={18} aria-hidden="true" />
+      </span>
+      <span>
+        <strong>{name}</strong>
+        <small>{sub}</small>
+      </span>
+    </button>
+  );
+
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
     <div
-      ref={modalRef}
-      className={cx(styles.modalOverlay, pop.overlay)}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="broadcast-title"
-      aria-describedby="broadcast-desc"
-      tabIndex={-1}
+      className={isPhone ? css.pscrim : css.scrim}
       onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          handleCloseBroadcastModal();
-        }
+        if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
-      <div className={cx(styles.composer, pop.composer)} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.drawerHead}>
-          <IconTile icon={Radio} />
-          <div className={styles.drawerHeadTitles}>
-            <h2 id="broadcast-title" className={styles.drawerTitle}>
-              Broadcast network alert
-            </h2>
-            <p id="broadcast-desc" className={styles.drawerSubtitle}>
-              Records a synthetic directive. No external alert is sent.
-            </p>
-          </div>
-          {/* The key named as Tools and Help name it. */}
-          <Kbd>Esc</Kbd>
+      <div
+        ref={modalRef}
+        className={isPhone ? css.psheet : css.sheet}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="broadcast-title"
+        aria-describedby="broadcast-desc"
+        tabIndex={-1}
+      >
+        {isPhone ? <div className={css.grab} aria-hidden="true" /> : null}
+        <div className={css.head}>
+          <span className={css.iconTile} data-tone="accent" aria-hidden="true">
+            <Radio size={16} aria-hidden="true" />
+          </span>
+          <h2 id="broadcast-title">New broadcast</h2>
+          <span id="broadcast-desc" className="sr-only">
+            Records a synthetic broadcast in this prototype. No external alert is sent.
+          </span>
           <Button
             ref={modalCloseRef}
             iconOnly
             icon={X}
             variant="ghost"
-            size="sm"
-            onClick={handleCloseBroadcastModal}
-            aria-label="Close broadcast modal"
-            title="Close broadcast modal (Esc)"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close (Esc)"
           />
         </div>
-        <div className={cx(styles.composerBody, pop.body)}>
-          <div className={pop.form}>
-            {broadcastRefused && (
-              <div className={styles.feedbackLine} role="alert" aria-label="Broadcast feedback">
+        <div className={css.body}>
+          <div className={css.form}>
+            {refusedFeedback ? (
+              <div className={css.note} role="alert" aria-label="Broadcast feedback">
                 <StatusGlyph tone="danger" />
-                <span className={styles.feedbackText}>{broadcastFeedback}</span>
+                <span>{refusedFeedback}</span>
               </div>
-            )}
+            ) : null}
+            <section className={css.step}>
+              <h3>
+                <span className={css.stepN}>1</span>What do you need?
+              </h3>
+              <div className={css.kinds} role="radiogroup" aria-label="Broadcast type">
+                {kindCard(
+                  "bed_call",
+                  BedDouble,
+                  "Ask wards for beds",
+                  "Wards answer: can take, after a discharge, or can't",
+                )}
+                {kindCard("directive", Megaphone, "Tell areas something", "Desks acknowledge they have seen it")}
+              </div>
+              <div className={css.field}>
+                <span className={css.fieldLabel} id="broadcast-start">
+                  Start from
+                </span>
+                <div className={css.chips} role="group" aria-labelledby="broadcast-start">
+                  {QUICK_STARTS[ask ? "bed_call" : "directive"].map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={css.chip}
+                      aria-pressed={templateId === id}
+                      onClick={() => onSelectTemplate(id)}
+                    >
+                      {quickStartName(id)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
 
-            <Field label="Start from" id="alerts-broadcast-template">
-              <Select value={selectedTemplateId} onChange={(e) => handleSelectTemplate(e.target.value)}>
-                {WA_BROADCAST_TEMPLATES.map((tmpl) => (
-                  <option key={tmpl.id} value={tmpl.id}>
-                    {tmpl.name}
-                  </option>
-                ))}
-                <option value="custom">Custom directive</option>
-              </Select>
-            </Field>
-
-            <Field label="Type" id="alerts-broadcast-type">
-              <Select value={broadcastType} onChange={(e) => setBroadcastType(e.target.value as BroadcastKind)}>
-                <option value="directive">Directive, wards and ED acknowledge</option>
-                <option value="bed_call">Bed call, wards answer how many beds</option>
-              </Select>
-            </Field>
-
-            <div className={styles.composerPair}>
-              <Field label="Severity" id="alerts-broadcast-severity">
-                <Select
-                  value={broadcastSeverity}
-                  onChange={(e) => setBroadcastSeverity(e.target.value as BroadcastSeverity)}
-                >
-                  <option value="advisory">Advisory</option>
-                  <option value="warning">Warning</option>
-                  <option value="critical">Critical</option>
-                </Select>
-              </Field>
-              <Field label="Expires" id="alerts-broadcast-duration">
-                <Select
-                  value={broadcastDurationMinutes}
-                  onChange={(e) => setBroadcastDurationMinutes(Number(e.target.value))}
-                >
-                  <option value={60}>1h</option>
-                  <option value={120}>2h</option>
-                  <option value={240}>4h</option>
-                  <option value={480}>8h</option>
-                  <option value={720}>12h</option>
-                  <option value={1440}>24h</option>
-                </Select>
-              </Field>
-            </div>
-
-            <Field label="Target scope" id="alerts-broadcast-target">
-              <Select
-                value={broadcastScope}
-                onChange={(e) => setBroadcastScope(e.target.value as BroadcastTargetScope)}
-              >
-                {/* Names only. The count (read from the unit list, Ops-12) is said once, on the
-                    preview's "Goes to" line. */}
-                {(Object.keys(SCOPE_NAMES) as BroadcastTargetScope[]).map((scope) => (
-                  <option key={scope} value={scope}>
-                    {SCOPE_NAMES[scope]}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-
-            <Field label="Title" id="alerts-broadcast-title">
-              <TextInput
-                value={broadcastTitle}
-                onChange={(e) => setBroadcastTitle(e.target.value)}
-                placeholder="Short operational title"
+            <section className={css.step}>
+              <h3>
+                <span className={css.stepN}>2</span>Who gets it<span className={css.stepAside}>{units(n)}</span>
+              </h3>
+              <Segmented
+                items={AUDIENCE_ITEMS}
+                value={audience.mode}
+                onChange={setMode}
+                label="Audience"
+                size="md"
+                className={css.fullSeg}
               />
-            </Field>
+              {audience.mode === "all" ? (
+                <p className={css.hint}>Every inpatient ward and ED desk in the state network.</p>
+              ) : audience.mode === "groups" ? (
+                <div className={css.groupGrid}>
+                  {ask ? (
+                    <button
+                      type="button"
+                      className={css.gchip}
+                      data-suggest=""
+                      aria-pressed={audience.bedNow}
+                      onClick={() => setAudience({ ...audience, bedNow: !audience.bedNow })}
+                    >
+                      <Sparkles size={14} aria-hidden="true" />
+                      <span>Wards with a bed now</span>
+                      <b>{wardsWithBedNow.length}</b>
+                    </button>
+                  ) : null}
+                  {groups.map((group) => {
+                    const on = audience.groups.includes(group.id);
+                    return (
+                      <button
+                        key={group.id}
+                        type="button"
+                        className={css.gchip}
+                        aria-pressed={on}
+                        onClick={() => setAudience({ ...audience, groups: toggle(audience.groups, group.id) })}
+                      >
+                        {on ? <Check size={14} aria-hidden="true" /> : null}
+                        <span>{group.label}</span>
+                        <b>{group.desks.length}</b>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className={css.unitPick}>
+                  {groups.map((group) => {
+                    const on = group.desks.filter((desk) => audience.picked.includes(desk.id)).length;
+                    const all = on === group.desks.length;
+                    return (
+                      <fieldset key={group.id}>
+                        <legend>
+                          <span>{group.label}</span>
+                          <button
+                            type="button"
+                            className={css.linkBtn}
+                            aria-label={`${all ? "Clear" : "All"} ${group.label}`}
+                            onClick={() => {
+                              const ids = group.desks.map((desk) => desk.id);
+                              setAudience({
+                                ...audience,
+                                picked: all
+                                  ? audience.picked.filter((id) => !ids.includes(id))
+                                  : [...new Set([...audience.picked, ...ids])],
+                              });
+                            }}
+                          >
+                            {all ? "Clear" : "All"}
+                          </button>
+                          <small>
+                            {on} of {group.desks.length}
+                          </small>
+                        </legend>
+                        {group.desks.map((desk) => (
+                          <div key={desk.id} className={css.unit}>
+                            <Checkbox
+                              label={desk.name}
+                              checked={audience.picked.includes(desk.id)}
+                              onChange={() => setAudience({ ...audience, picked: toggle(audience.picked, desk.id) })}
+                            />
+                            {ask && wardsWithBedNow.includes(desk.id) ? (
+                              <span className={css.tag} data-tone="success">
+                                Bed now
+                              </span>
+                            ) : null}
+                          </div>
+                        ))}
+                      </fieldset>
+                    );
+                  })}
+                </div>
+              )}
+              {ask && liveBedCall ? (
+                <div className={css.note}>
+                  <Info size={14} aria-hidden="true" />
+                  <span>
+                    A bed call to {liveBedCall.label} is already live, with {liveBedCall.minutesLeft} left. Extend it
+                    instead of sending a second one?
+                  </span>
+                  <Button size="sm" onClick={() => onExtendLive(liveBedCall.id)}>
+                    Extend that one
+                  </Button>
+                </div>
+              ) : null}
+            </section>
 
-            <Field label="Directive" id="alerts-broadcast-message">
-              <Textarea
-                rows={3}
-                maxLength={280}
-                placeholder="Enter the flow directive"
-                value={broadcastMessage}
-                onChange={(e) => setBroadcastMessage(e.target.value)}
-                data-gramm="false"
-                data-enable-grammarly="false"
-                spellCheck={false}
-                autoComplete="off"
-              />
-            </Field>
+            <section className={css.step}>
+              <h3>
+                <span className={css.stepN}>3</span>Message
+              </h3>
+              <div className={css.field}>
+                <span className={css.fieldLabel}>How urgent</span>
+                <Segmented
+                  items={SEVERITIES.map(({ id, label, tone }) => ({ id, label, tone }))}
+                  value={severity}
+                  onChange={setSeverity}
+                  label="Severity"
+                  size="md"
+                  className={css.fullSeg}
+                />
+                <p className={css.hint}>{sev.hint}</p>
+              </div>
+              <Field label="Title" id="alerts-broadcast-title">
+                <TextInput
+                  value={title}
+                  maxLength={60}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Short and specific"
+                />
+              </Field>
+              <Field label="Message" id="alerts-broadcast-message">
+                <Textarea
+                  rows={3}
+                  maxLength={240}
+                  placeholder="What should they do?"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  data-gramm="false"
+                  data-enable-grammarly="false"
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </Field>
+              <div className={css.field}>
+                <span className={css.fieldLabel}>Ends after</span>
+                <Segmented
+                  items={DURATIONS.map(([minutes, label]) => ({ id: String(minutes), label }))}
+                  value={String(durationMinutes)}
+                  onChange={(id) => setDurationMinutes(Number(id))}
+                  label="Ends after"
+                  size="md"
+                  className={css.fullSeg}
+                />
+                <p className={css.hint}>Ends at {endsAt}, or when you stand it down.</p>
+              </div>
+            </section>
           </div>
 
-          <aside className={pop.side} aria-label="Preview and confirmation">
-            {/* True for any scope, not only every desk. */}
-            <span className={styles.drawerSectionTitle}>What each desk sees</span>
-            {/* What each desk in the scope sees in its broadcast banner, from the draft as typed. */}
-            <div className={pop.preview} data-tone={severityTone}>
-              <div className={pop.previewHead}>
-                <StatusGlyph tone={severityTone} />
-                <span className={pop.previewKind}>{kindLabel}</span>
-                <span className={pop.previewExpires}>Expires in {minutesText(broadcastDurationMinutes)}</span>
+          <aside className={css.side} aria-label="Preview">
+            <h3 className={css.secHead}>What each desk sees</h3>
+            <div className={css.banner} data-tone={sev.tone === "neutral" ? undefined : sev.tone}>
+              <div className={css.bnTop}>
+                <StatusGlyph tone={sev.tone} size={10} />
+                <span>
+                  {ask ? "Bed call" : "Message"} · {sev.label}
+                </span>
+                <span className={css.bnFrom}>
+                  {senderName} · {formatInstant(now)}
+                </span>
               </div>
-              <strong className={pop.previewTitle}>{broadcastTitle.trim() || "Untitled directive"}</strong>
-              <p className={pop.previewMessage}>{broadcastMessage.trim() || "No directive typed yet."}</p>
-              {/* The sender moves here from the footer, as desks see it. The Type list already
-                  says who answers; a bed call names its severity, which its kind line does not. */}
-              <p className={pop.previewFoot}>
-                {broadcastType === "bed_call" ? `${severityLabel(broadcastSeverity)} · ` : null}
-                Dispatched by the state bed desk coordinator
-              </p>
+              <strong>{title.trim() || <span className={css.dim}>Title</span>}</strong>
+              <p>{message.trim() || <span className={css.dim}>Message</span>}</p>
+              <div className={css.bnActs} aria-hidden="true">
+                {ask ? (
+                  <>
+                    <span className={css.fakeBtn} data-on="">
+                      Can take <ChevronDown size={14} aria-hidden="true" />
+                    </span>
+                    <span className={css.fakeBtn}>After a discharge</span>
+                    <span className={css.fakeBtn}>Can&apos;t</span>
+                  </>
+                ) : (
+                  <span className={css.fakeBtn} data-on="">
+                    Acknowledge
+                  </span>
+                )}
+                <span className={css.bnEnds}>until {endsAt}</span>
+              </div>
             </div>
-            <p className={pop.reach}>
-              <span>Goes to</span> <b>{scopeName}</b> · {broadcastScopeCount(units, broadcastScope)}
+            <h3 className={css.secHead}>
+              Shows on {n} {n === 1 ? "screen" : "screens"}
+            </h3>
+            <div className={css.tagWrap}>
+              {n ? (
+                <>
+                  {list.slice(0, 6).map((desk) => (
+                    <span key={desk.id} className={css.tag}>
+                      {desk.name}
+                    </span>
+                  ))}
+                  {n > 6 ? (
+                    <span className={css.tag} data-more="">
+                      +{n - 6} more
+                    </span>
+                  ) : null}
+                </>
+              ) : (
+                <span className={css.dim}>No one chosen yet</span>
+              )}
+            </div>
+            <p className={css.hint}>
+              {ask
+                ? "You'll see each answer as it comes in, on the Broadcast tab."
+                : "You'll see who has acknowledged on the Broadcast tab."}
             </p>
-
-            <Checkbox
-              id="alerts-broadcast-safeguard"
-              checked={broadcastConfirmed}
-              onChange={(e) => setBroadcastConfirmed(e.target.checked)}
-              label="I confirm this directive is clinically authorised for immediate statewide network broadcast."
-            />
-            {/* What Dispatch waits for sits here, beside the step that clears it. */}
-            {dispatchWaitsFor ? (
-              <p className={pop.waits} id="alerts-broadcast-waits">
-                <Lock size={14} aria-hidden="true" />
-                {dispatchWaitsFor}
-              </p>
-            ) : null}
           </aside>
         </div>
-        <div className={cx(styles.drawerFoot, pop.foot)}>
-          <Button className={styles.btn} onClick={handleCloseBroadcastModal}>
-            Cancel
-          </Button>
-          <Button
-            variant="pri"
-            icon={Radio}
-            className={styles.btn}
-            data-testid="ward-alerts-broadcast-confirm"
-            disabledReason={dispatchWaitsFor}
-            reasonDisplay="tooltip"
-            onClick={handleDispatchBroadcast}
-          >
-            Dispatch
-          </Button>
+        <div className={css.foot}>
+          <Checkbox
+            id="alerts-broadcast-safeguard"
+            className={css.check}
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+            label={`I'm authorised to send this to ${units(n)}.`}
+          />
+          <div className={css.acts}>
+            {block ? (
+              <span className={css.why} id="alerts-broadcast-waits">
+                <Info size={14} aria-hidden="true" /> {block}
+              </span>
+            ) : null}
+            <Button onClick={onClose}>Cancel</Button>
+            <Button
+              variant="pri"
+              icon={Send}
+              className={cx(css.send)}
+              data-testid="ward-alerts-broadcast-confirm"
+              aria-disabled={block ? true : undefined}
+              aria-describedby={block ? "alerts-broadcast-waits" : undefined}
+              onClick={() => {
+                if (!block) onSend();
+              }}
+            >
+              {ask ? `Send bed call to ${units(n)}` : `Send to ${units(n)}`}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
