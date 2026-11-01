@@ -9,9 +9,9 @@
 // earliest release elsewhere read as a best-match ward suggestion. Any other desk sees the time
 // and whether a suitable release is recorded.
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import { buttonClass, StatusGlyph, useIsPhone } from "@/components/wf";
+import { Button, buttonClass, StatusGlyph, useIsPhone } from "@/components/wf";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
@@ -38,6 +38,9 @@ export function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boole
   return `Next ${kind} release ${when}${where}${held}. Others are ahead in the line.`;
 }
 
+/** How many people the card lists before "Show all" (Q192). */
+const RISK_FIRST = 3;
+
 export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant }) {
   const { risk } = useForecastModel(now);
   const access = useEffectiveWardAccess();
@@ -45,6 +48,7 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
   const patientOf = usePatientOf();
   const isPhone = useIsPhone();
   const rows = useMemo(() => risk.atRisk.filter((row) => edId === undefined || row.edId === edId), [risk, edId]);
+  const [showAll, setShowAll] = useState(false);
   const over = edId === undefined ? risk.alreadyOver : (risk.byEd.find((ed) => ed.edId === edId)?.alreadyOver ?? 0);
   if (rows.length === 0 && over === 0) return null;
   // "24 hours" as a noun here; the shared helper gives the adjective ("24 hour target").
@@ -52,6 +56,17 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
   // Round 3 (Josh, 1 Nov 2026): a plain card in the Lists style, with no coloured side edge, no
   // summary sentence and no caption, and no tier (the board shows it). Surname first with the UMRN.
   const person = (row: EdAccessRiskRow) => patientOf({ movementId: row.movementId });
+  // Q192 (Josh, 1 Nov 2026): the soonest few show first, so a long list does not push the ED
+  // handover below the fold. The count in the title stays the whole list.
+  const shown = showAll ? rows : rows.slice(0, RISK_FIRST);
+  const more =
+    rows.length > RISK_FIRST ? (
+      <div className={styles.riskMore}>
+        <Button variant="ghost" size="sm" aria-expanded={showAll} onClick={() => setShowAll((open) => !open)}>
+          {showAll ? "Show fewer" : `Show all ${rows.length}`}
+        </Button>
+      </div>
+    ) : null;
 
   return (
     <section className={handover.listsCard} aria-labelledby="forecast-ed-risk-title" data-testid="forecast-ed-risk">
@@ -65,7 +80,7 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
       </header>
       {rows.length === 0 ? null : isPhone ? (
         <ul className={styles.riskList}>
-          {rows.map((row) => (
+          {shown.map((row) => (
             <li key={row.movementId} className={styles.riskItem}>
               <span className={styles.riskTop}>
                 <b>{person(row).formalName}</b>
@@ -103,7 +118,7 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {shown.map((row) => (
               <tr key={row.movementId}>
                 <td>
                   <span className={handover.listWho}>
@@ -129,6 +144,7 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
           </tbody>
         </table>
       )}
+      {more}
     </section>
   );
 }
