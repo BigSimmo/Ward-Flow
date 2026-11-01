@@ -12,6 +12,7 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EdSummary } from "@/components/ward-management/ed/ed-home-derivations";
 import type { HubEntry } from "@/components/ward-management/hub/hub-derivations";
+import { RATIFIED_SERVICE_ALIASES } from "@/components/ward-management/community/community-ratified-aliases";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { CHROME_ROLE_LABELS, type WardChromeRole, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import {
@@ -51,6 +52,8 @@ export type Desk = {
   waiting?: number;
   longestWaitMinutes?: number;
   pastTarget?: number;
+  /** Community only: the other spellings of this ratified service, hidden as desks but searchable (Q202). */
+  alsoKnownAs?: readonly string[];
   /** Officer figure: jobs still on the road. */
   activeJobs?: number;
 };
@@ -65,8 +68,10 @@ export function workstationDesks(input: {
   hub: readonly HubEntry[];
   eds: readonly EdSummary[];
   movements: readonly Movement[];
+  /** The signed-in desk's own team, if it is one, so its own spelling is the one kept (Q202). */
+  ownTeam?: string;
 }): { statewide: Desk[]; sites: DeskSite[]; teams: Desk[] } {
-  const { hub, eds, movements } = input;
+  const { hub, eds, movements, ownTeam } = input;
   const waiting = eds.reduce((sum, ed) => sum + ed.waiting, 0);
   const pastTarget = eds.reduce((sum, ed) => sum + ed.pastAccessTarget, 0);
   const statewide: Desk[] = [
@@ -115,9 +120,33 @@ export function workstationDesks(input: {
       confirmedAt: entry.confirmedAt,
       stale: entry.stale,
     }));
-  const teams: Desk[] = hub
-    .filter((entry) => entry.kind === "community")
-    .map((entry) => ({ id: entry.id, role: "community", name: entry.name, href: entry.href }));
+  // Q202 (Josh, 1 Nov 2026): a service the owner has ruled is one (several spellings of one clinic)
+  // is one desk, so Armadale's Mead Centre shows once. A desk signed in as one spelling keeps its own;
+  // otherwise the first spelling on offer stays. The others stay searchable on the kept desk.
+  const communityEntries = hub.filter((entry) => entry.kind === "community");
+  const offeredTeams = new Set(communityEntries.map((entry) => entry.name));
+  const keptAliases = new Map<string, string[]>();
+  const sameServiceSpellings = new Set<string>();
+  for (const alias of RATIFIED_SERVICE_ALIASES) {
+    const offered = alias.members.filter((name) => offeredTeams.has(name));
+    const shown = ownTeam && offered.includes(ownTeam) ? ownTeam : offered[0];
+    if (!shown) continue;
+    const others = alias.members.filter((name) => name !== shown);
+    keptAliases.set(shown, [...(keptAliases.get(shown) ?? []), ...others]);
+    for (const name of others) sameServiceSpellings.add(name);
+  }
+  const teams: Desk[] = communityEntries
+    .filter((entry) => !sameServiceSpellings.has(entry.name))
+    .map((entry) => {
+      const alsoKnownAs = keptAliases.get(entry.name);
+      return {
+        id: entry.id,
+        role: "community",
+        name: entry.name,
+        href: entry.href,
+        ...(alsoKnownAs ? { alsoKnownAs } : {}),
+      };
+    });
 
   // Hospitals in health service order, then by name; on each, the ED first and then its wards.
   const bySite = new Map<string, DeskSite>();
@@ -157,7 +186,7 @@ export function deskMatches(desk: Desk, query: string): boolean {
   // earlier words ("Ward manager", "Bed manager") that older records and habits still use.
   const earlier = Object.keys(EARLIER_ROLE_LABELS).filter((label) => EARLIER_ROLE_LABELS[label] === desk.role);
   return [desk.name, desk.site ?? "", desk.service ?? "", deskRoleLabel(desk.role), WARD_FLOW_ROLE_LABELS[desk.role]]
-    .concat(earlier)
+    .concat(earlier, desk.alsoKnownAs ?? [])
     .join(" ")
     .toLowerCase()
     .includes(q);
