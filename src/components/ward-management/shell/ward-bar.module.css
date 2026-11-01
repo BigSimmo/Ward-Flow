@@ -3781,8 +3781,45 @@
     color: var(--wf-ink-2);
   }
 
+  /* Review fix (1 Nov 2026): `--wf-tablet-tap` is 0 on a phone, so each row is a 48px hit area
+     whose 40px face is painted by `::before`, 4px in from the top and bottom. Neighbouring rows
+     meet without overlapping, and the face reads as the same 40px row as the desktop popover. */
   .servicePanel .serviceOption {
+    position: relative;
+    isolation: isolate;
+    min-height: 48px;
     font-size: var(--wf-fs-14);
+  }
+
+  .servicePanel .serviceOption::before {
+    position: absolute;
+    inset: 4px 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: transparent;
+    content: "";
+  }
+
+  .servicePanel .serviceOption:hover,
+  .servicePanel .serviceOption[aria-pressed="true"] {
+    background: transparent;
+  }
+
+  .servicePanel .serviceOption:hover::before {
+    background: var(--wf-hover);
+  }
+
+  .servicePanel .serviceOption[aria-pressed="true"]::before {
+    background: color-mix(in srgb, var(--wf-accent) 8%, var(--wf-surface));
+  }
+
+  .servicePanel .serviceOption:focus-visible {
+    outline: none;
+  }
+
+  .servicePanel .serviceOption:focus-visible::before {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
   }
 
   .servicePanel .serviceDot {
