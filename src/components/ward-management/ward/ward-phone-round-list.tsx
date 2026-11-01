@@ -31,6 +31,11 @@ export type PhoneRoundRow = {
   accessibleName: string;
 };
 
+/** A ready bed whose name line already reads "Ready": no second note line and no "Ready" days column. */
+function readyOnce(row: PhoneRoundRow): boolean {
+  return row.free && row.name === "Ready" && row.note === row.name && !row.criteriaTag;
+}
+
 export function WardPhoneRoundList<Row extends PhoneRoundRow>({
   rows,
   unitName,
@@ -77,24 +82,27 @@ export function WardPhoneRoundList<Row extends PhoneRoundRow>({
                 <span className={styles.phoneRowText} aria-hidden="true">
                   <span className={styles.phoneRowName}>{row.name}</span>
                   <WalkRoundRowMarks mark={marks} />
-                  <span className={styles.phoneRowNote}>
-                    {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : null}
-                    <span>
-                      {row.bed.stayDays === 0 && row.note === row.stateWord
-                        ? "Arrived today"
-                        : row.note === row.name
-                          ? row.free
-                            ? "Ready"
-                            : row.bed.status === "closed"
-                              ? "Not offered"
-                              : row.stateWord
-                          : row.note}
+                  {/* Phone audit (Josh, 1 Nov 2026): a ready bed says "Ready" once, in its name line. */}
+                  {readyOnce(row) ? null : (
+                    <span className={styles.phoneRowNote}>
+                      {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : null}
+                      <span>
+                        {row.bed.stayDays === 0 && row.note === row.stateWord
+                          ? "Arrived today"
+                          : row.note === row.name
+                            ? row.free
+                              ? "Ready"
+                              : row.bed.status === "closed"
+                                ? "Not offered"
+                                : row.stateWord
+                            : row.note}
+                      </span>
+                      {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} /> : null}
                     </span>
-                    {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} /> : null}
-                  </span>
+                  )}
                 </span>
                 <span className={styles.phoneRowDays} aria-hidden="true">
-                  {row.days || (row.free ? "Ready" : "")}
+                  {row.days || (row.free && !readyOnce(row) ? "Ready" : "")}
                   {row.days && !row.free ? <span className={styles.phoneRowDaysSub}>stay</span> : null}
                 </span>
                 <WalkRoundTick mark={marks} />
