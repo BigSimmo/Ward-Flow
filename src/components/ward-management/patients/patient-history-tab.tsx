@@ -303,6 +303,7 @@ function stayTime(stay: Admission): number {
 
 export function PatientHistoryTab({
   record,
+  patientId,
   movement,
   dayZero,
   unitName,
@@ -320,6 +321,11 @@ export function PatientHistoryTab({
   /** A3-13: a voluntary patient's absence reads "Not back from leave". */
   absenceVoluntary?: boolean;
   dayZero: Date;
+  /**
+   * The linked patient (PT-*). On a movement route `record.id` is the movement (WF-*), so the earlier
+   * episodes are looked up by this, as the other tabs do.
+   */
+  patientId?: string;
   unitName: (id: string) => string | undefined;
   /** Ward stays linked to this person, from the adapter (D-14). Newest shown first. */
   stays?: readonly Admission[];
@@ -328,7 +334,7 @@ export function PatientHistoryTab({
   onBackToNow: () => void;
 }) {
   const leaveBeds = useOptionalWardFlowSelect("leaveBeds")?.leaveBeds ?? [];
-  const extras = recordExtrasFor(record.id);
+  const extras = recordExtrasFor(patientId ?? record.id);
   const current = record.presentations.find((p) => p.current);
   const rows: EpisodeRow[] = [
     ...(extras?.episodes ?? []).map(episodeRow),

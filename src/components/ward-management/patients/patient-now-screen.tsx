@@ -1149,6 +1149,7 @@ export function PatientNowScreen({
               {openedTabs.has("history") ? (
                 <PatientHistoryTab
                   record={record}
+                  patientId={livePatient?.id}
                   movement={liveMovement}
                   dayZero={dayZero}
                   unitName={(id) => units.find((u) => u.id === id)?.name}
