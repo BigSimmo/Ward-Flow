@@ -713,6 +713,7 @@ export function MovementsScreen() {
                   key={leg.movement.id}
                   type="button"
                   className={flow.trRow}
+                  data-transport-key={leg.movement.id}
                   data-selected={detailId === leg.movement.id ? "true" : undefined}
                   onClick={() => {
                     onPicked?.();

@@ -159,41 +159,45 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     expect(btn24).toHaveAttribute("aria-pressed", "false");
     expect(btn12).toHaveAttribute("aria-pressed", "false");
 
-    const scrubber = within(trafficPanel).getByRole("slider", { name: "Timeline time scrubber" });
-    expect(scrubber).toHaveAttribute("aria-valuemax", "48");
+    // Movements redesign (1 Nov 2026): the slider became Back / Now / Forward in the header, and
+    // the title names the range.
+    expect(within(trafficPanel).getByRole("heading", { name: "48 hour timeline" })).toBeInTheDocument();
 
     // Switch to 24h
     fireEvent.click(btn24);
     expect(btn24).toHaveAttribute("aria-pressed", "true");
     expect(btn48).toHaveAttribute("aria-pressed", "false");
-    expect(scrubber).toHaveAttribute("aria-valuemax", "24");
+    expect(within(trafficPanel).getByRole("heading", { name: "24 hour timeline" })).toBeInTheDocument();
 
     // Switch to 12h
     fireEvent.click(btn12);
     expect(btn12).toHaveAttribute("aria-pressed", "true");
-    expect(scrubber).toHaveAttribute("aria-valuemax", "12");
+    expect(within(trafficPanel).getByRole("heading", { name: "12 hour timeline" })).toBeInTheDocument();
   });
 
   it("interactively scrubs the forecast timeline and resets to now", () => {
     renderMovementsScreen();
     const trafficPanel = screen.getByRole("region", { name: "Today’s traffic" });
-    const scrubber = within(trafficPanel).getByRole("slider", { name: "Timeline time scrubber" });
-    const badge = trafficPanel.querySelector("#ganttScrubBadgeText");
+    const steps = within(trafficPanel).getByRole("group", { name: "Move the timeline" });
+    const nowBtn = within(steps).getByRole("button", { name: "Now" });
+    const back = within(steps).getByRole("button", { name: /^Back \d+ hours$/u });
+    const forward = within(steps).getByRole("button", { name: /^Forward \d+ hours$/u });
 
-    expect(scrubber).toHaveValue("0");
-    // v6 (7 Oct 2026): the badge reads "Now, HH:MM" rather than "NOW (+0h)".
-    expect(badge).toHaveTextContent(/^Now, \d{2}:\d{2}$/u);
+    expect(nowBtn).toHaveAttribute("aria-pressed", "true");
+    expect(nowBtn).toHaveAttribute("title", "Showing from now");
+    expect(back, "the timeline cannot start before now").toBeDisabled();
 
-    // Scrub forward 12 hours
-    fireEvent.change(scrubber, { target: { value: "12" } });
-    expect(scrubber).toHaveValue("12");
-    expect(badge).toHaveTextContent(/\+12h/u);
+    // Step forward
+    fireEvent.click(forward);
+    expect(nowBtn).toHaveAttribute("aria-pressed", "false");
+    expect(nowBtn.getAttribute("title")).toMatch(/^Showing from /u);
+    expect(nowBtn).not.toHaveAttribute("title", "Showing from now");
+    expect(back).toBeEnabled();
 
-    // Reset button
-    const resetBtn = within(trafficPanel).getByRole("button", { name: "Reset" });
-    fireEvent.click(resetBtn);
-    expect(scrubber).toHaveValue("0");
-    expect(badge).toHaveTextContent(/^Now, \d{2}:\d{2}$/u);
+    // Back to now
+    fireEvent.click(nowBtn);
+    expect(nowBtn).toHaveAttribute("aria-pressed", "true");
+    expect(nowBtn).toHaveAttribute("title", "Showing from now");
   });
 
   it("opens a modal timeline, retains corridors and restores focus on Escape", () => {

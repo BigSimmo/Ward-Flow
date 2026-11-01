@@ -96,12 +96,17 @@ describe("Movements redesign: the coordinator's board", () => {
     expect(screen.queryByRole("group", { name: "Highlight a stage" })).not.toBeInTheDocument();
   });
 
-  it("puts Tier 1 now at the top of the side column, and the title no longer counts who is moving", () => {
+  // Movements redesign (1 Nov 2026, Q102): no separate Tier 1 card. The hero's Tier 1 figure
+  // highlights those rows, and the side column opens on Transport now.
+  it("puts Tier 1 in the hero figures, not a side card, and the title no longer counts who is moving", () => {
     renderScreen();
     const side = screen.getByRole("complementary", { name: "Movement details" });
-    const tierOne = within(side).getByTestId("movements-needs-you");
-    expect(within(tierOne).getByRole("heading", { name: "Tier 1 now" })).toBeInTheDocument();
-    expect(side.firstElementChild).toBe(tierOne);
+    expect(screen.queryByTestId("movements-needs-you")).not.toBeInTheDocument();
+    expect(within(side).getByRole("region", { name: "Transport right now" })).toBeInTheDocument();
+    const figures = screen.getByRole("group", { name: "Highlight movements" });
+    const tierOne = within(figures).getByRole("button", { name: /Tier 1$/u });
+    fireEvent.click(tierOne);
+    expect(tierOne).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText(/resolved today · \d+ active corridors/).textContent).not.toMatch(/moving/);
   });
 
@@ -143,6 +148,6 @@ describe("Movements redesign: the community clinician desk (D-76)", () => {
     desk.noMovements = true;
     renderScreen();
     expect(screen.queryByText("No journeys for the team")).not.toBeInTheDocument();
-    expect(screen.getByTestId("movements-needs-you")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Movement worklist" })).toBeInTheDocument();
   });
 });

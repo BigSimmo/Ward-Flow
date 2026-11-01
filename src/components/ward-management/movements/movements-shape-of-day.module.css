@@ -250,11 +250,13 @@
   border-radius: 3px 3px 0 0;
 }
 
-[data-series="opened"] {
+.bars [data-series="opened"],
+.legend [data-series="opened"] {
   background: var(--wf-data-1);
 }
 
-[data-series="resolved"] {
+.bars [data-series="resolved"],
+.legend [data-series="resolved"] {
   background: var(--wf-data-2);
 }
 

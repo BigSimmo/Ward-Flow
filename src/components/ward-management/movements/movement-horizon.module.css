@@ -1411,16 +1411,22 @@
   border-radius: 2px;
 }
 
-[data-phase="waiting"] {
+.phaseBar [data-phase="waiting"],
+.phaseDots [data-phase="waiting"],
+.phaseKey [data-phase="waiting"] {
   background: var(--wf-surface);
   box-shadow: inset 0 0 0 1.5px var(--wf-line-3);
 }
 
-[data-phase="arriving"] {
+.phaseBar [data-phase="arriving"],
+.phaseDots [data-phase="arriving"],
+.phaseKey [data-phase="arriving"] {
   background: var(--wf-data-1);
 }
 
-[data-phase="road"] {
+.phaseBar [data-phase="road"],
+.phaseDots [data-phase="road"],
+.phaseKey [data-phase="road"] {
   background: var(--wf-data-2);
 }
 

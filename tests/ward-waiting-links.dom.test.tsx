@@ -14,7 +14,6 @@ vi.mock("next/link", () => ({
 import { PriorityQueue } from "@/components/ward-management/coordinator/priority-queue";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
-import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { ShiftSummary } from "@/components/ward-management/search/patient-census-view";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -67,14 +66,7 @@ describe("the Delays board's saved views", () => {
 });
 
 describe("screens link into a view", () => {
-  it("Movements' Needs you opens Needs me now", () => {
-    withProvider(<MovementsScreen />);
-    const head = screen.getByTestId("movements-needs-you");
-    expect(within(head).getByRole("link", { name: "All in Waiting" })).toHaveAttribute(
-      "href",
-      "/ward-flow/waiting?view=needs-me",
-    );
-  });
+  // Movements' "All in Waiting" link went with its Tier 1 card (Movements redesign, 1 Nov 2026, Q102).
 
   it("Handover opens For handover", () => {
     withProvider(<HandoverPage />);
