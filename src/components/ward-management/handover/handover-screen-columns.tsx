@@ -1,5 +1,6 @@
 "use client";
 
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, durMinutes } from "@/components/wf";
 
@@ -28,8 +29,8 @@ export function screenColumnsFor(columns: HandoverColumn[], columnIds: readonly 
               <StatusGlyph tone={rowTone(row, cellCtx)} size={9} />
               <span className={styles.trunc}>{step.text}</span>
             </span>
-            <span className={`${styles.sub} ${styles.trunc}`}>
-              {STAGE_LABEL[row.stage]} · {row.ownerShort}
+            <span className={`${styles.sub} ${styles.trunc}`} title={`${STAGE_LABEL[row.stage]} · ${row.ownerShort}`}>
+              {STAGE_LABEL[row.stage]} · <SpelledCodes text={row.ownerShort} />
             </span>
           </span>
         );
