@@ -58,7 +58,9 @@ describe("Alerts side panel", () => {
     for (const row of Array.from(container.querySelectorAll<HTMLElement>("li[data-alert-id]"))) {
       fireEvent.click(within(row).getByTestId("ward-alerts-open"));
       const panel = screen.getByRole("complementary", { name: "Selected alert" });
-      expect(panel.textContent).not.toContain("Carer, personal support person and advocacy notifications are not recorded");
+      expect(panel.textContent).not.toContain(
+        "Carer, personal support person and advocacy notifications are not recorded",
+      );
     }
   });
 });

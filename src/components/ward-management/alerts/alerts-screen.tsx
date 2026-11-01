@@ -202,10 +202,8 @@ function AlertsWorkspace() {
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const plannedAdmissions = state.plannedAdmissions;
-  // Every computed row this screen covers, then the snoozed ones set aside: they leave the active
-  // list and come back by themselves when their return time passes (stream A, 9 Oct 2026).
-  // L1 (site review, 12 Oct 2026): the one task list the header's Tasks badge reads (`taskItems`),
-  // so "Now" and the badge agree; the arrival and discharge notification rows are no longer dropped.
+  // Every row this screen covers; snoozed ones come back when their time passes (stream A). L1: the
+  // one task list the Tasks badge reads (`taskItems`), so "Now" and the badge agree.
   const admissions = state.admissions;
   const supportNotifications = state.supportNotifications;
   const leaveBeds = state.leaveBeds;
@@ -310,10 +308,8 @@ function AlertsWorkspace() {
     ? state.eventLog?.find((entry) => entry.sequence > actionRequest.logSequence && entry.type === actionRequest.type)
     : undefined;
 
-  // ONE draft of the WHOLE broadcast form (template, title, severity, category, target scope, duration
-  // and message), cached and restored together; dirtiness is derived from the complete form, so a
-  // title-only or scope-only edit is protected too. A restored draft reopens the composer it came
-  // from, because a draft is only cached while the composer is open.
+  // ONE draft of the WHOLE broadcast form, cached and restored together, so any edit is protected.
+  // A restored draft reopens the composer, because a draft is only cached while it is open.
   const broadcastDraft = useMemo<BroadcastDraft>(
     () => ({
       templateId: selectedTemplateId,
@@ -539,9 +535,8 @@ function AlertsWorkspace() {
     const names = [...new Set(allEntries.map((entry) => entry.owner))];
     return names.sort((a, b) => (a === COORDINATOR ? -1 : b === COORDINATOR ? 1 : a.localeCompare(b)));
   }, [allEntries]);
-  // The owners a highlight can pick: an alert nobody owns adds no blank one, and a desk with none gets
-  // no owner menu and no Owner arrangement. Transport officer: the owner parts are the coordinator's
-  // (only the coordinator takes an alert), so the officer has none.
+  // The owners a highlight can pick, never a blank one. The transport officer has none (only the
+  // coordinator takes an alert).
   const namedOwners = access.role === "officer" ? [] : owners.filter(Boolean);
   // Nurse in charge: a quiet ward gets one line, not two empty groups and a sort rule over nothing.
   const quietWard = wardName !== undefined && allEntries.length === 0;
@@ -557,9 +552,8 @@ function AlertsWorkspace() {
     );
     return ranked.length > 0 ? ranked : countedActive;
   }, [countedActive]);
-  // Ops-3 (remaining-pages audit, 13 Oct 2026): "open" is the one active list the Now tab and the
-  // header's Tasks badge count, running targets included, so the three figures always agree. The
-  // running targets are named beside it, so Act now plus Waiting plus running adds up to open.
+  // Ops-3: "open" is the one active list the Now tab and Tasks badge count, running targets included,
+  // so Act now plus Waiting plus running adds up to open.
   const openCount = activeEntries.length;
   const runningText = runningEntries.length > 0 ? ` · ${runningEntries.length} running` : "";
 
@@ -576,9 +570,8 @@ function AlertsWorkspace() {
     [slideOver],
   );
 
-  // Change 7 (D-77): the Alerts drawer's Release bed opens here as `?alert=<id>&release=1`, so the
-  // alert is chosen and its release reason takes focus. Read from the router, so a client-side
-  // visit never sees the previous page's query, and each new address is used once, during render.
+  // Change 7 (D-77): `?alert=<id>&release=1` chooses the alert and focuses its release reason. Read
+  // from the router, so each new address is used once, during render.
   const address = useOptionalSearchParams()?.toString() ?? "";
   const [addressUsed, setAddressUsed] = useState("");
   if (address && address !== addressUsed) {
