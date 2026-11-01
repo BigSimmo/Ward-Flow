@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 import type { TourDevice, TourTarget } from "./ward-tour-steps";
 
@@ -75,6 +75,20 @@ function spotBox(element: HTMLElement): SpotBox {
   const bottom = Math.min(window.innerHeight - EDGE / 2, rect.bottom + pad, top + tallest);
   const right = Math.min(window.innerWidth - EDGE / 2, rect.right + pad);
   return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+}
+
+function sameBox(left: SpotBox | null, right: SpotBox | null): boolean {
+  return (
+    left === right ||
+    Boolean(
+      left &&
+      right &&
+      left.top === right.top &&
+      left.left === right.left &&
+      left.width === right.width &&
+      left.height === right.height,
+    )
+  );
 }
 
 /**
@@ -155,22 +169,48 @@ export function useSpotlight(
   targets: readonly TourTarget[] | undefined,
   key: string,
 ): { box: SpotBox | null; missing: boolean } {
-  const [spot, setSpot] = useState<{ key: string; box: SpotBox | null; missing: boolean } | null>(null);
+  const [spot, setSpot] = useState<{
+    key: string;
+    box: SpotBox | null;
+    missing: boolean;
+    viewportWidth: number;
+    viewportHeight: number;
+  } | null>(null);
+  const lastMeasurement = useRef<typeof spot>(null);
   useEffect(() => {
+    lastMeasurement.current = null;
     if (!targets?.length) return;
     let element: HTMLElement | null = null;
     let frame = 0;
     let follow = 0;
-    let gaveUp = false;
+    let settled = false;
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        if (!element || !element.isConnected) {
+        if (!element || !element.isConnected || !shown(element)) {
           const found = findFirst(targets);
           if (found && found !== element) bringIntoView(found);
           element = found;
         }
-        setSpot({ key, box: element ? spotBox(element) : null, missing: !element && gaveUp });
+        const box = element ? spotBox(element) : null;
+        const missing = !element && settled;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        // Keep checking for late or replaced controls, without rendering an unchanged player on
+        // every follow tick. A resized window still re-places the card even if its target stayed put.
+        const previous = lastMeasurement.current;
+        if (
+          previous &&
+          previous.key === key &&
+          previous.missing === missing &&
+          previous.viewportWidth === viewportWidth &&
+          previous.viewportHeight === viewportHeight &&
+          sameBox(previous.box, box)
+        )
+          return;
+        const measured = { key, box, missing, viewportWidth, viewportHeight };
+        lastMeasurement.current = measured;
+        setSpot(measured);
       });
     };
     const started = Date.now();
@@ -178,7 +218,7 @@ export function useSpotlight(
       element = findFirst(targets);
       if (!element && Date.now() - started < FIND_TIMEOUT_MS) return;
       window.clearInterval(poll);
-      gaveUp = !element;
+      settled = true;
       if (element) bringIntoView(element);
       measure();
       follow = window.setInterval(measure, REMEASURE_MS);
@@ -193,7 +233,9 @@ export function useSpotlight(
       window.removeEventListener("resize", measure);
     };
   }, [targets, key]);
-  return spot && spot.key === key ? { box: spot.box, missing: spot.missing } : { box: null, missing: false };
+  return targets?.length && spot && spot.key === key
+    ? { box: spot.box, missing: spot.missing }
+    : { box: null, missing: false };
 }
 
 /**

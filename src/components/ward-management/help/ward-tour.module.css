@@ -5,6 +5,38 @@
   z-index: var(--z-modal, 100);
 }
 
+/* A paused guide is a small, nonmodal control. The page and any record/form opened by the
+   person keep their own focus and scroll rules; the guide adds no backdrop or focus trap. */
+.paused {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  display: grid;
+  gap: 0.5rem;
+  width: min(22.5rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: 0.75rem;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  pointer-events: auto;
+  z-index: calc(var(--z-modal, 100) + 1);
+}
+
+/* A form opened during a pause remains beneath the resumed guide in the same modal host. */
+.layer[data-guide] {
+  z-index: calc(var(--z-modal, 100) + 1);
+}
+
+.paused[data-device="phone"] {
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  max-height: calc(100dvh - 80px - env(safe-area-inset-bottom, 0px) - 1rem);
+}
+
 .dim {
   position: fixed;
   inset: 0;
@@ -341,11 +373,13 @@
 }
 
 /* Round 2 (Josh, 30 Oct): the same 32px close on a phone, with a larger invisible touch area. */
-.layer[data-device="phone"] .close {
+.layer[data-device="phone"] .close,
+.paused[data-device="phone"] .close {
   position: relative;
 }
 
-.layer[data-device="phone"] .close::after {
+.layer[data-device="phone"] .close::after,
+.paused[data-device="phone"] .close::after {
   position: absolute;
   inset: -8px;
   content: "";

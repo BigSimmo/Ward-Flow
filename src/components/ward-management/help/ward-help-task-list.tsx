@@ -9,14 +9,14 @@ import { useIsPhone } from "@/components/wf";
 import { howToFor } from "./ward-help-access";
 import { howToHref } from "./ward-help-href";
 import { showWardHowTo } from "./ward-help-events";
-import { canShowMe, HOW_TO_IDS, HOW_TOS, type HowTo } from "./ward-help-howto";
+import { canShowMe, HOW_TO_IDS, HOW_TOS, showMeSteps, type HowTo } from "./ward-help-howto";
 import type { WardTourRole } from "./ward-help-store";
 import { recordHowToUsed } from "./ward-help-usage";
 import styles from "./ward-help-sheet.module.css";
 
 /** "3 steps", or nothing for an answer with no Show me. */
-function stepsLabel(howTo: HowTo): string | undefined {
-  const count = howTo.showMe?.length ?? 0;
+function stepsLabel(howTo: HowTo, phone: boolean): string | undefined {
+  const count = showMeSteps(howTo, phone).length;
   return count ? `${count} ${count === 1 ? "step" : "steps"}` : undefined;
 }
 
@@ -58,7 +58,7 @@ export function HowToRow({
   const showMe = actions && showMeOn && showMeAvailable(howTo, role, home, phone);
   // A phone screen without the button says where the job is done instead of offering Show me.
   const computerOnly = actions && showMeOn && phone && Boolean(howTo.computerOnly);
-  const steps = showMeOn && showMe ? stepsLabel(howTo) : computerOnly ? "On a computer" : undefined;
+  const steps = showMeOn && showMe ? stepsLabel(howTo, phone) : computerOnly ? "On a computer" : undefined;
   return (
     <li data-testid={`${testPrefix}-answer-${howTo.id}`}>
       <button

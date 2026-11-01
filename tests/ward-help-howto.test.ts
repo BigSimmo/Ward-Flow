@@ -4,7 +4,14 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { looksLikeHelpQuestion } from "@/components/ward-management/help/ward-help-events";
-import { HOW_TOS, askHelp, closestHowTos, questionWords } from "@/components/ward-management/help/ward-help-howto";
+import {
+  HOW_TOS,
+  askHelp,
+  canShowMe,
+  closestHowTos,
+  questionWords,
+  showMeSteps,
+} from "@/components/ward-management/help/ward-help-howto";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 
 /**
@@ -50,6 +57,125 @@ describe("how-to list", () => {
           expect(SOURCE.includes(written) || templated, `${howTo.id}: ${value}`).toBe(true);
         }
       }
+    }
+  });
+
+  it("keeps Statistics navigation on a phone without offering its desktop-only export step", () => {
+    const statistics = HOW_TOS.find((howTo) => howTo.id === "statistics");
+    expect(statistics).toBeDefined();
+    expect(showMeSteps(statistics, true).map((step) => step.title)).toEqual(["Choose a view"]);
+    expect(showMeSteps(statistics, false).map((step) => step.title)).toEqual(["Choose a view", "Export the figures"]);
+  });
+
+  it("offers no journey for an unknown task, an answer-only task or a task with no steps on this device", () => {
+    expect(showMeSteps(undefined, false)).toEqual([]);
+    const answer = HOW_TOS.find((howTo) => howTo.id === "undo");
+    expect(showMeSteps(answer, true)).toEqual([]);
+    for (const howTo of HOW_TOS.filter((task) => task.computerOnly)) {
+      expect(showMeSteps(howTo, true), howTo.id).toEqual([]);
+      expect(canShowMe(howTo, true), howTo.id).toBe(false);
+      expect(canShowMe(howTo, false), howTo.id).toBe(true);
+    }
+    const phoneOnly = {
+      ...HOW_TOS[0]!,
+      showMe: [{ title: "Phone control", body: "Use this control on a phone.", device: "phone" as const }],
+    };
+    expect(canShowMe(phoneOnly, false)).toBe(false);
+    expect(canShowMe(phoneOnly, true)).toBe(true);
+  });
+
+  it("hands record and form selection back to the person before highlighting controls inside them", () => {
+    for (const id of [
+      "pull-bed",
+      "release-pulled-bed",
+      "decide-referral",
+      "ask-more-wards",
+      "book-transport",
+      "cancel-transport",
+      "log-call",
+      "new-referral",
+      "transport-job",
+      "pin-ward",
+    ]) {
+      const steps = showMeSteps(
+        HOW_TOS.find((howTo) => howTo.id === id),
+        false,
+      );
+      expect(steps.length, id).toBeGreaterThan(1);
+      expect(steps[0]?.continueLabel, id).toMatch(/^(Open|Start) /);
+    }
+    const handover = showMeSteps(
+      HOW_TOS.find((howTo) => howTo.id === "sign-off-handover"),
+      true,
+    );
+    expect(handover.find((step) => step.title === "Before you sign")?.continueLabel).toBe("Open Before you sign");
+  });
+
+  it("opens Destination and its workflow disclosure before pointing at nested cancellation or release controls", () => {
+    for (const [id, control] of [
+      ["cancel-transport", "ward-cancel-transport-toggle"],
+      ["release-pulled-bed", "ward-release-pull-toggle"],
+    ] as const) {
+      const steps = showMeSteps(
+        HOW_TOS.find((howTo) => howTo.id === id),
+        false,
+      );
+      const destination = steps.findIndex((step) =>
+        JSON.stringify(step.target).includes("ward-patient-destination-row"),
+      );
+      const additional = steps.findIndex((step) =>
+        JSON.stringify(step.target).includes("Additional workflow controls"),
+      );
+      const final = steps.findIndex((step) => JSON.stringify(step.target).includes(control));
+      expect(destination, id).toBeGreaterThan(0);
+      expect(additional, id).toBeGreaterThan(destination);
+      expect(final, id).toBeGreaterThan(additional);
+      expect(steps[destination]?.continueLabel, id).toBeTruthy();
+      expect(steps[additional]?.continueLabel, id).toBeTruthy();
+    }
+  });
+
+  it("opens the actual booking form and both call-form disclosures before highlighting their forms", () => {
+    const booking = showMeSteps(
+      HOW_TOS.find((howTo) => howTo.id === "book-transport"),
+      false,
+    );
+    const bookingEntry = booking.findIndex((step) =>
+      JSON.stringify(step.target).includes("ward-patient-gate-transport"),
+    );
+    const bookingForm = booking.findIndex((step) =>
+      JSON.stringify(step.target).includes("ward-patient-transport-form"),
+    );
+    expect(bookingEntry).toBeGreaterThan(0);
+    expect(bookingForm).toBeGreaterThan(bookingEntry);
+    expect(booking[bookingEntry]?.continueLabel).toBeTruthy();
+
+    for (const phone of [false, true]) {
+      const calls = showMeSteps(
+        HOW_TOS.find((howTo) => howTo.id === "log-call"),
+        phone,
+      );
+      const patient = calls.findIndex((step) => JSON.stringify(step.target).includes("Show patient details"));
+      const owner = calls.findIndex((step) => JSON.stringify(step.target).includes("Owner and calls"));
+      const callForm = calls.findIndex((step) => JSON.stringify(step.target).includes("ward-referral-call-log-"));
+      expect(patient).toBeGreaterThan(0);
+      expect(owner).toBeGreaterThan(patient);
+      expect(callForm).toBeGreaterThan(owner);
+      expect(calls[patient]?.continueLabel).toBeTruthy();
+      expect(calls[owner]?.continueLabel).toBeTruthy();
+    }
+  });
+
+  it("includes the rebuilt referral match controls as well as the ward desk's own acceptance control", () => {
+    const decision = HOW_TOS.find((howTo) => howTo.id === "decide-referral");
+    const targets = JSON.stringify(showMeSteps(decision, false).map((step) => step.target));
+    for (const control of [
+      "ward-accept-",
+      "ward-referral-match-phone-accept",
+      "ward-referral-match-accept-community_team",
+      "ward-referral-match-accept-emergency_department",
+    ]) {
+      expect(targets).toContain(control);
     }
   });
 

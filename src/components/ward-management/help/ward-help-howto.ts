@@ -19,7 +19,7 @@ import { deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-hel
 import type { WardTourRole } from "./ward-help-store";
 import { HELP_SYNONYMS } from "./ward-help-synonyms";
 import { nearestWord } from "./ward-help-typo";
-import type { TourTarget } from "./ward-tour-steps";
+import type { TourDevice, TourTarget } from "./ward-tour-steps";
 
 /**
  * One spotlight in a Show me. Its targets are tried in order and the first on screen is lit, so a
@@ -30,6 +30,10 @@ type ShowMeStep = {
   readonly target?: TourTarget | readonly TourTarget[];
   readonly title: string;
   readonly body: string;
+  /** A control drawn only on this device is omitted from the other device's journey. */
+  readonly device?: TourDevice;
+  /** Pause the guide so the person can open the screen or form the following step needs. */
+  readonly continueLabel?: string;
 };
 
 /**
@@ -88,9 +92,37 @@ const setting = (id: string, tab: string): TourTarget => ({
   sel: `[data-setting="${id}"], [data-testid="ward-settings-phone-area-${tab}"]`,
 });
 
+/** Both devices open the patient record's placement work in the same Destination sheet. */
+const OPEN_DESTINATION: ShowMeStep = {
+  target: [
+    { sel: '[data-testid="ward-patient-destination-row"]' },
+    { sel: '[data-testid="ward-patient-gate-bed"] button', text: "Move or release" },
+  ],
+  title: "Open Destination",
+  body: "Open Destination on the movement to review its bed pull and placement controls.",
+  continueLabel: "Open Destination",
+};
+
+const OPEN_ADDITIONAL_CONTROLS: ShowMeStep = {
+  target: { sel: "summary", text: "Additional workflow controls" },
+  title: "Additional workflow controls",
+  body: "Open this section in Destination to find the controls for cancelling transport and releasing a pulled bed.",
+  continueLabel: "Open Additional workflow controls",
+};
+
+const NO_STEPS: readonly ShowMeStep[] = [];
+
+/** The steps this device can show, shared by the player, task answers and step counts. */
+export function showMeSteps(howTo: HowTo | undefined, phone: boolean): readonly ShowMeStep[] {
+  if (!howTo || (phone && howTo.computerOnly)) return NO_STEPS;
+  const steps = howTo.showMe ?? NO_STEPS;
+  const device: TourDevice = phone ? "phone" : "desk";
+  return steps.some((step) => step.device) ? steps.filter((step) => !step.device || step.device === device) : steps;
+}
+
 /** Whether Show me can walk this how-to on this device (`computerOnly` ones cannot on a phone). */
 export function canShowMe(howTo: HowTo, phone: boolean): boolean {
-  return Boolean(howTo.showMe?.length) && !(phone && howTo.computerOnly);
+  return showMeSteps(howTo, phone).length > 0;
 }
 
 export const HOW_TOS: readonly HowTo[] = [
@@ -113,11 +145,24 @@ export const HOW_TOS: readonly HowTo[] = [
         ],
         title: "Find a movement ready for a pull",
         body: "Rows where a ward has accepted show Pull the bed. Open one to see the bed, transport and legal form together.",
+        continueLabel: "Open the movement",
       },
       {
-        target: { sel: '[data-testid="ward-shortlist-hold-bed"]' },
-        title: "Press Pull the bed",
-        body: "On the movement, check the bed and press Pull the bed. It is kept within the pull time limit, which is set in Settings, Rules.",
+        target: [
+          {
+            sel: '[data-testid="ward-patient-gate-bed"] button, [data-testid="ward-patient-phone-action-bar"] button',
+            text: "Pull the bed",
+          },
+          { sel: '[data-testid="ward-shortlist-hold-bed"]' },
+        ],
+        title: "Open the bed details",
+        body: "On the movement, Pull the bed opens the destination and bed details. Check them before confirming.",
+        continueLabel: "Open the bed details",
+      },
+      {
+        target: { sel: "button[data-placement-action]", text: "Pull the bed" },
+        title: "Confirm the bed pull",
+        body: "Check the destination and bed, then confirm Pull the bed when ready. The time limit is set in Settings, Rules.",
       },
     ],
   },
@@ -139,8 +184,11 @@ export const HOW_TOS: readonly HowTo[] = [
           { sel: "#main-content button", text: "Act now" },
         ],
         title: "Pulls past their limit are in Act now",
-        body: "Release pulled bed opens the movement at the release step. You decide whether to release it or keep it.",
+        body: "Open the movement to review its destination, transport and bed pull. You decide whether to release it or keep it.",
+        continueLabel: "Open the movement",
       },
+      OPEN_DESTINATION,
+      OPEN_ADDITIONAL_CONTROLS,
       {
         target: [
           { sel: '[data-testid="ward-cancel-transport-toggle"]' },
@@ -173,11 +221,18 @@ export const HOW_TOS: readonly HowTo[] = [
         ],
         title: "Referrals to decide",
         body: "They stay in wait order, oldest first. Press Decide to open one.",
+        continueLabel: "Open the referral",
       },
       {
-        target: [{ sel: '[data-testid^="ward-accept-"]' }, { sel: "#main-content button", text: "Accept referral" }],
+        target: [
+          { sel: '[data-testid^="ward-accept-"]' },
+          { sel: '[data-testid="ward-referral-match-phone-accept"]' },
+          { sel: '[data-testid="ward-referral-match-accept-community_team"]' },
+          { sel: '[data-testid="ward-referral-match-accept-emergency_department"]' },
+          { sel: "#main-content button", text: "Accept referral" },
+        ],
         title: "Accept or decline",
-        body: "Read the referral, then Accept referral or Decline referral. A decline needs a reason from the list.",
+        body: "Read the referral, then use its Accept or Decline control. For a ward placement, choose the ward first. A decline needs a reason from the list.",
       },
     ],
   },
@@ -199,6 +254,7 @@ export const HOW_TOS: readonly HowTo[] = [
         ],
         title: "Open the referral",
         body: "Select the patient's referral. Its panel has Ask more wards.",
+        continueLabel: "Open the referral",
       },
       {
         target: { sel: '[data-testid="ward-referral-ask-open"]' },
@@ -213,7 +269,7 @@ export const HOW_TOS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "On the movement, press Book transport, or record that none is needed. The app records the booking for the transport officer; it does not order the vehicle itself.",
+      "On the movement, use Log booking, or record that none is needed. The app records the booking for the transport officer; it does not order the vehicle itself.",
     desks: ["coordinator"],
     acts: ["BOOK_TRANSPORT"],
     go: "movements",
@@ -226,10 +282,24 @@ export const HOW_TOS: readonly HowTo[] = [
         ],
         title: "Find a movement waiting for transport",
         body: "Once the bed is pulled, the movement needs transport. Open it from the Pulled stage.",
+        continueLabel: "Open the movement",
       },
       {
-        target: { sel: '[data-testid="ward-shortlist-book-transport"]' },
-        title: "Book transport",
+        target: [
+          {
+            sel: '[data-testid="ward-patient-gate-transport"] button, [data-testid="ward-patient-phone-action-bar"] button',
+            text: "Log booking",
+          },
+          { sel: '[data-testid="ward-patient-transport-row"]' },
+          { sel: '[data-testid="ward-patient-book-transport-btn"]' },
+        ],
+        title: "Open the booking form",
+        body: "Choose Log booking on the movement. If you opened Transport instead, choose Mark as Booked to open the form.",
+        continueLabel: "Open the transport booking form",
+      },
+      {
+        target: { sel: '[data-testid="ward-patient-transport-form"]' },
+        title: "Record the booking",
         body: "Record the booking, or that none is needed. The officer sees it on their jobs list.",
       },
     ],
@@ -253,7 +323,10 @@ export const HOW_TOS: readonly HowTo[] = [
         ],
         title: "Open the movement",
         body: "Open the patient's movement from the list.",
+        continueLabel: "Open the movement",
       },
+      OPEN_DESTINATION,
+      OPEN_ADDITIONAL_CONTROLS,
       {
         target: { sel: '[data-testid="ward-cancel-transport-toggle"]' },
         title: "Cancel transport",
@@ -278,7 +351,23 @@ export const HOW_TOS: readonly HowTo[] = [
           { sel: '[data-testid^="ward-referral-board-card-select-"]' },
         ],
         title: "Open the referral",
-        body: "Log a call is in the referral's panel, with the owner desk.",
+        body: "Select the referral, then open its patient details to find the owner desk and call form.",
+        continueLabel: "Open the referral",
+      },
+      {
+        target: [
+          { sel: '[role="tab"]', text: "Patient" },
+          { sel: "button", text: "Show patient details" },
+        ],
+        title: "Open patient details",
+        body: "Choose Patient in the referral panel. On a phone, choose Show patient details.",
+        continueLabel: "Open patient details",
+      },
+      {
+        target: { sel: '[data-testid="ward-referral-patient-tab"] button', text: "Owner and calls" },
+        title: "Owner and calls",
+        body: "Open Owner and calls for this referral. It shows the owner desk and the call form.",
+        continueLabel: "Open Owner and calls",
       },
       {
         target: { sel: '[data-testid^="ward-referral-call-log-"]' },
@@ -300,7 +389,8 @@ export const HOW_TOS: readonly HowTo[] = [
       {
         target: PRIMARY_ACTION,
         title: "New referral",
-        body: "Starts a referral from any screen. Shift+R does the same on a keyboard.",
+        body: "Starts a referral from any screen. On a phone, open Create, then choose New referral. Shift+R does the same on a keyboard.",
+        continueLabel: "Start a referral",
       },
       {
         target: [
@@ -339,6 +429,7 @@ export const HOW_TOS: readonly HowTo[] = [
         ],
         title: "Before you sign",
         body: "Each line in Before you sign should be checked before you sign. On a phone, Sign off opens them.",
+        continueLabel: "Open Before you sign",
       },
       {
         target: [
@@ -495,6 +586,7 @@ export const HOW_TOS: readonly HowTo[] = [
         target: [{ sel: '[data-testid="ward-officer-joblist"]' }, { sel: '#main-content section[aria-label="Jobs"]' }],
         title: "My jobs",
         body: "Every job booked for you, with the pickup, destination and booking. Select one to see it in full.",
+        continueLabel: "Open the transport job",
       },
       {
         target: [
@@ -585,6 +677,7 @@ export const HOW_TOS: readonly HowTo[] = [
         target: { sel: '#main-content a[href^="/ward-flow/ward/"]' },
         title: "Open the ward",
         body: "Open the ward you want from the list.",
+        continueLabel: "Open the ward",
       },
       {
         target: [{ sel: '[data-testid="ward-my-wards-pin"]' }, { sel: '[data-testid="ward-bar-phone-menu"]' }],
@@ -740,13 +833,14 @@ export const HOW_TOS: readonly HowTo[] = [
     topic: "Finding your way",
     title: "Take the tour again",
     keywords: "tour tutorial guide walkthrough learn start",
-    answer: "Open Help and press Take the tour, or use Replay the tour in Settings, Display.",
+    answer:
+      "Open Help and choose Start or Resume under Tour of your desk, or use Replay the tour in Settings, Display.",
     desks: EVERY_DESK,
     showMe: [
       {
         target: [{ sel: '[data-testid="ward-rail-help"]' }, { sel: '[data-testid="ward-bar-phone-menu"]' }],
         title: "Help",
-        body: "Help is in the side menu (in Menu on a phone). Take the tour is the first row of How to.",
+        body: "Help is in the side menu (in Menu on a phone). In How to, find Tour of your desk and choose Start or Resume.",
       },
     ],
   },
@@ -768,6 +862,7 @@ export const HOW_TOS: readonly HowTo[] = [
         target: { sel: '[data-testid="ward-statistics-export"]' },
         title: "Export the figures",
         body: "Downloads the figures at the top of the page as a spreadsheet file, on a computer.",
+        device: "desk",
       },
     ],
   },

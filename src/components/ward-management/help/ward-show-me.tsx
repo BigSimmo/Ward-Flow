@@ -5,11 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
+import { SHEET_INERT_SKIP_ATTRIBUTE } from "@/components/wf/sheet-focus";
 
 import { howToHref } from "./ward-help-href";
-import { HOW_TOS } from "./ward-help-howto";
-import { useTourRole } from "./ward-help-store";
-import { SPOT_NOT_HERE, usePlacedCard, useSpotlight } from "./ward-spotlight";
+import { howToFor } from "./ward-help-access";
+import { HOW_TOS, showMeSteps, type HowTo } from "./ward-help-howto";
+import { useTourRole, type WardTourRole } from "./ward-help-store";
+import { findTourTarget, SPOT_NOT_HERE, usePlacedCard, useSpotlight } from "./ward-spotlight";
 import { useTourFacts } from "./ward-tour-facts";
 import type { TourDevice, TourTarget } from "./ward-tour-steps";
 import styles from "./ward-tour.module.css";
@@ -23,12 +25,36 @@ import styles from "./ward-tour.module.css";
 export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () => void; onBack: () => void }) {
   const role = useTourRole();
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
-  const { home, deskHome } = useTourFacts(role);
   const howTo = HOW_TOS.find((candidate) => candidate.id === id);
-  const steps = useMemo(() => howTo?.showMe ?? [], [howTo]);
-  const [index, setIndex] = useState(0);
+  const steps = useMemo(() => showMeSteps(howTo, device === "phone"), [howTo, device]);
+  // Invalid, answer-only and computer-only phone requests never register an invisible modal.
+  if (!howTo || !howToFor(howTo, role) || !steps.length) return null;
+  return <ShowMeJourney key={`${id}|${role}`} {...{ howTo, role, device, steps, onClose, onBack }} />;
+}
+
+function ShowMeJourney({
+  howTo,
+  role,
+  device,
+  steps,
+  onClose,
+  onBack,
+}: {
+  howTo: HowTo;
+  role: WardTourRole;
+  device: TourDevice;
+  steps: ReturnType<typeof showMeSteps>;
+  onClose: () => void;
+  onBack: () => void;
+}) {
+  const { home, deskHome } = useTourFacts(role);
+  const [at, setIndex] = useState(0);
+  const index = Math.min(at, steps.length - 1);
+  const [paused, setPaused] = useState<{ advance: boolean } | null>(null);
+  const [visit, setVisit] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
+  const continueRef = useRef<HTMLButtonElement>(null);
   const spotRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -37,7 +63,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
 
   // Open the screen the job is done on, once, when Show me starts somewhere else. Already on that
   // screen, a different Settings tab is opened through the hash, which Settings listens for.
-  const href = howToHref(howTo?.go, role, deskHome ?? home);
+  const href = howToHref(howTo.go, role, deskHome ?? home);
   const went = useRef(false);
   useEffect(() => {
     if (went.current || !href) return;
@@ -53,32 +79,107 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     () => (target ? (Array.isArray(target) ? target : [target as TourTarget]) : undefined),
     [target],
   );
-  const { box, missing } = useSpotlight(targets, `${index}|${pathname}`);
+  const { box, missing } = useSpotlight(paused ? undefined : targets, `${index}|${pathname}|${device}|${visit}`);
   usePlacedCard(cardRef, spotRef, box, device, step, missing);
 
   const { rootRef } = useModalFocus({
-    open: true,
+    open: !paused,
     onClose,
     panelRef: cardRef,
     initialFocusRef: nextRef,
     keyPhase: "capture",
   });
 
+  // Pausing hands the page back, including native keyboard access. Focus a usable entry control
+  // when one exists; never click it, choose a record, or perform a domain action on the user's behalf.
+  useEffect(() => {
+    if (!paused) return;
+    const control = targets
+      ?.map(findTourTarget)
+      .find((element) =>
+        element?.matches(
+          'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), summary, [tabindex="0"]',
+        ),
+      );
+    (control ?? continueRef.current)?.focus({ preventScroll: true });
+  }, [paused, targets]);
+
+  function resume() {
+    if (paused?.advance && !last) setIndex(index + 1);
+    setVisit((value) => value + 1);
+    setPaused(null);
+  }
+
+  // A form opened while paused owns Tab and Escape. This explicit shortcut can resume the guide
+  // above it without closing the form or weakening its focus trap.
+  useEffect(() => {
+    if (!paused) return;
+    const continueGuide = (event: globalThis.KeyboardEvent) => {
+      if (event.altKey && !event.ctrlKey && !event.metaKey && event.key === "ArrowRight") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (paused.advance && index < steps.length - 1) setIndex(index + 1);
+        setVisit((value) => value + 1);
+        setPaused(null);
+      }
+    };
+    window.addEventListener("keydown", continueGuide, true);
+    return () => window.removeEventListener("keydown", continueGuide, true);
+  }, [paused, index, steps.length]);
+
+  function next() {
+    if (last) onClose();
+    else if (step.continueLabel) setPaused({ advance: true });
+    else setIndex(index + 1);
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "ArrowRight" && !last) {
       event.preventDefault();
-      setIndex(index + 1);
+      next();
     } else if (event.key === "ArrowLeft" && index > 0) {
       event.preventDefault();
       setIndex(index - 1);
     }
   }
 
-  if (!howTo || !step) return null;
+  if (paused)
+    return (
+      <OverlayPortal layer="modal" name="ward-show-me-paused">
+        <section
+          className={styles.paused}
+          data-device={device}
+          data-testid="ward-show-me-paused"
+          aria-label="Paused Show me guide"
+          {...{ [SHEET_INERT_SKIP_ATTRIBUTE]: "" }}
+        >
+          <div className={styles.head}>
+            <p className={styles.who}>Guide paused · {howTo.title}</p>
+            <button type="button" className={styles.close} onClick={onClose} aria-label="Close Show me">
+              <X aria-hidden="true" strokeWidth={1.75} />
+            </button>
+          </div>
+          <p className={styles.meta} role="status">
+            {paused.advance ? step.continueLabel : "Use this screen, then return to the guide."}
+          </p>
+          <button
+            ref={continueRef}
+            type="button"
+            className={styles.primary}
+            data-testid="ward-show-me-continue"
+            aria-keyshortcuts="Alt+ArrowRight"
+            onClick={resume}
+          >
+            Continue guide
+          </button>
+          <p className={styles.meta}>Keyboard: Alt+Right continues the guide.</p>
+        </section>
+      </OverlayPortal>
+    );
 
   return (
     <OverlayPortal layer="modal" name="ward-show-me">
-      <div ref={rootRef} className={styles.layer} data-testid="ward-show-me" data-device={device}>
+      <div ref={rootRef} className={styles.layer} data-guide="" data-testid="ward-show-me" data-device={device}>
         {box ? (
           <div
             ref={spotRef}
@@ -144,14 +245,24 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
             >
               {index === 0 ? "Back to Help" : "Back"}
             </button>
+            {!step.continueLabel || last ? (
+              <button
+                type="button"
+                className={styles.secondary}
+                onClick={() => setPaused({ advance: false })}
+                data-testid="ward-show-me-use-screen"
+              >
+                Use this screen
+              </button>
+            ) : null}
             <button
               ref={nextRef}
               type="button"
               className={styles.primary}
-              onClick={last ? onClose : () => setIndex(index + 1)}
-              data-testid={last ? "ward-show-me-done" : "ward-show-me-next"}
+              onClick={next}
+              data-testid={last ? "ward-show-me-done" : step.continueLabel ? "ward-show-me-try" : "ward-show-me-next"}
             >
-              {last ? "Done" : "Next"}
+              {last ? "Done" : step.continueLabel ? "Try this step" : "Next"}
             </button>
           </div>
         </div>

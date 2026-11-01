@@ -24,7 +24,7 @@ import { useTourFacts } from "./ward-tour-facts";
 import type { ScreenHelp } from "./ward-help-content";
 
 import { howToHref } from "./ward-help-href";
-import { HOW_TO_IDS, HOW_TO_TOPICS, type HowTo } from "./ward-help-howto";
+import { HOW_TO_IDS, HOW_TO_TOPICS, showMeSteps, type HowTo } from "./ward-help-howto";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 import { recordHowToUsed } from "./ward-help-usage";
 import s from "./ward-help-panel.module.css";
@@ -100,6 +100,7 @@ function TaskRow({
   const goThere = href && (href.includes("#") || href !== pathname) ? href : undefined;
   const showMe = canShowTask(task, role, home, phone, showMeOn);
   const computerOnly = phone && task.computerOnly;
+  const steps = showMeSteps(task, phone);
   return (
     <li className={s.task} data-testid={`ward-help-task-answer-${task.id}`}>
       <button
@@ -117,9 +118,9 @@ function TaskRow({
       {expanded ? (
         <div id={`${id}-answer`} className={s.answer}>
           <p className={s.answerText}>{task.answer}</p>
-          {task.showMe?.length && !computerOnly ? (
+          {steps.length ? (
             <ol className={s.steps} aria-label="Steps">
-              {task.showMe.map((step) => (
+              {steps.map((step) => (
                 <li key={step.title}>
                   <div>
                     <b>{step.title}</b>

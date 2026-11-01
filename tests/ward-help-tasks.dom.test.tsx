@@ -39,7 +39,7 @@ import { HOW_TO_TOPICS, HOW_TOS } from "@/components/ward-management/help/ward-h
 import { HelpTasks } from "@/components/ward-management/help/ward-help-jobs";
 import { SCREEN_HELP } from "@/components/ward-management/help/ward-help-content";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
-import { tasksForDesk } from "@/components/ward-management/help/ward-help-task-list";
+import { HowToRow, tasksForDesk } from "@/components/ward-management/help/ward-help-task-list";
 import { HELP_USED_STORAGE_KEY } from "@/components/ward-management/help/ward-help-usage";
 
 afterEach(() => {
@@ -132,7 +132,8 @@ describe("How do I… task list", () => {
         .getByRole("button", { name: /Pull the bed for a patient/ })
         .getAttribute("aria-expanded"),
     ).toBe("true");
-    expect(within(row).getAllByRole("listitem")).toHaveLength(2);
+    expect(within(row).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(row).getByText("Confirm the bed pull")).toBeTruthy();
     expect(within(row).getByTestId("ward-help-task-go").getAttribute("href")).toBe("/ward-flow/movements");
     expect(within(row).getByTestId("ward-help-task-go").textContent).toContain("Go to Movements");
     fireEvent.click(within(row).getByTestId("ward-help-task-show-me"));
@@ -168,6 +169,50 @@ describe("How do I… task list", () => {
     const signOff = screen.getByTestId("ward-help-task-answer-sign-off-handover");
     open(signOff, /Hand over to the next shift/);
     expect(within(signOff).getByTestId("ward-help-task-show-me")).toBeTruthy();
+  });
+
+  it("shows only the Statistics steps available on this device and keeps the phone's Show me action", () => {
+    phone.on = true;
+    const onShowMe = vi.fn();
+    const { unmount } = renderTasks({ openTask: "statistics", onShowMe });
+    const row = screen.getByTestId("ward-help-task-answer-statistics");
+    expect(within(row).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(row).getByText("Choose a view")).toBeTruthy();
+    expect(within(row).queryByText("Export the figures")).toBeNull();
+    fireEvent.click(within(row).getByTestId("ward-help-task-show-me"));
+    expect(onShowMe).toHaveBeenCalledWith("statistics");
+    unmount();
+
+    phone.on = false;
+    renderTasks({ openTask: "statistics" });
+    const desktop = screen.getByTestId("ward-help-task-answer-statistics");
+    expect(within(desktop).getAllByRole("listitem")).toHaveLength(2);
+    expect(within(desktop).getByText("Export the figures")).toBeTruthy();
+  });
+
+  it("uses the same device-specific step count in the shared how-to row", () => {
+    const statistics = HOW_TOS.find((howTo) => howTo.id === "statistics")!;
+    phone.on = true;
+    const row = () => (
+      <ul>
+        <HowToRow
+          howTo={statistics}
+          role="coordinator"
+          home="/ward-flow"
+          pathname="/ward-flow/statistics"
+          expanded
+          onToggle={vi.fn()}
+          onClose={vi.fn()}
+          showMeOn
+          testPrefix="ward-help-task"
+        />
+      </ul>
+    );
+    const { rerender } = render(row());
+    expect(screen.getByText("1 step")).toBeTruthy();
+    phone.on = false;
+    rerender(row());
+    expect(screen.getByText("2 steps")).toBeTruthy();
   });
 
   it("does not list a task on a screen this desk cannot open, and answers it another way", () => {
