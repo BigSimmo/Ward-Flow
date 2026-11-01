@@ -98,10 +98,5 @@
     "id": "2026-10-31-role-names-hidden-names",
     "date": "2026-10-31",
     "line": "Roles read Nurse in charge, Community team and Site bed manager; hidden names say \"Name not shown on this desk\"."
-  },
-  {
-    "id": "2026-11-01-transport-needs-booking",
-    "date": "2026-11-01",
-    "line": "Transport lists beds that still need transport at the top, with Log booking, and a simpler job panel."
   }
 ]

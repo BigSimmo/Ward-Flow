@@ -4,7 +4,7 @@
 // (Josh, 1 Nov 2026): a scrolling body and one pinned foot at every width, so the next step never
 // scrolls away.
 
-import { useEffect, type ReactNode, type RefObject } from "react";
+import type { ReactNode } from "react";
 import { X } from "lucide-react";
 
 import { Button, Card, CardBody, CardFoot, CardHead, StatusGlyph, cx } from "@/components/wf";
@@ -15,32 +15,6 @@ import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from 
 import { PACK_SLOTS } from "./officer-forms-pack";
 import { LEG_TONE, officerLeg, transportLegalStatusLabel } from "./officer-screen-helpers";
 import styles from "./officer.module.css";
-
-/** On a larger screen the open panel fills the screen below where it starts, so its foot stays in view. */
-export function useOfficerPanelHeight(
-  sideRef: RefObject<HTMLDivElement | null>,
-  open: boolean,
-  isPhone: boolean,
-  key: string | undefined,
-) {
-  useEffect(() => {
-    if (!open || isPhone) return;
-    const fit = () => {
-      const side = sideRef.current;
-      if (!side) return;
-      const bar = parseFloat(getComputedStyle(side).top) || 68;
-      const top = Math.max(bar, side.getBoundingClientRect().top);
-      side.style.setProperty("--officer-panel-h", `${Math.max(320, window.innerHeight - top - 16)}px`);
-    };
-    fit();
-    window.addEventListener("scroll", fit, { capture: true, passive: true });
-    window.addEventListener("resize", fit);
-    return () => {
-      window.removeEventListener("scroll", fit, { capture: true });
-      window.removeEventListener("resize", fit);
-    };
-  }, [sideRef, open, isPhone, key]);
-}
 
 /** "2 forms missing", in a job row's Stage cell while the Forms column is folded away; nothing when complete. */
 export function formsMissingNote(forms: number) {

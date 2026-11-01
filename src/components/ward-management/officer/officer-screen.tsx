@@ -91,7 +91,7 @@ import {
 import { renderArrivalsCard } from "./officer-arrivals-card";
 import { OfficerOrderNote } from "./officer-order-note";
 import { type OfficerDetailTab, type OfficerJobDetailContext } from "./officer-job-detail";
-import { OfficerJobPanel, formsMissingNote, useOfficerPanelHeight } from "./officer-job-panel";
+import { OfficerJobPanel, formsMissingNote } from "./officer-job-panel";
 import {
   NeedsTransportCard,
   OfficerBookingPanel,
@@ -839,7 +839,6 @@ export function OfficerScreen() {
   const formsVary =
     jobs.length < 2 || new Set(jobs.map((movement) => (packRequired(movement) ? packCount(movement) : -1))).size > 1;
   useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
-  useOfficerPanelHeight(sideRef, panelOpen, isPhone, bookingId ?? selectedId);
   // Redesign: the count only. The stage chips below already split it, and "waiting" means an ED wait elsewhere.
   const jobsLine = `${jobs.length} ${jobs.length === 1 ? "job" : "jobs"} open`;
 

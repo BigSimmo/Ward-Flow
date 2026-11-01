@@ -2381,7 +2381,7 @@
   .layout[data-open="true"] > .side > .detail {
     display: flex;
     flex-direction: column;
-    height: var(--officer-panel-h, calc(100dvh - var(--wgs-bar-h, 3.5rem) - 2rem));
+    height: calc(100dvh - var(--wgs-bar-h, 3.5rem) - 2rem);
   }
 
   .detailScroll {

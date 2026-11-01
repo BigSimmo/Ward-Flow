@@ -19,14 +19,18 @@ import {
 } from "@/components/ward-management/transport/transport-booking-form";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
+import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { useWardRaise, type WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
 import styles from "./officer.module.css";
 
-/** The desks that may log a transport booking (`EVENT_ROLE.BOOK_TRANSPORT`). The transport officer may not. */
-const BOOKING_ROLES = ["coordinator", "ed", "ward", "community"] as const;
+/**
+ * The desks that log a booking here. Only the statewide coordinator: a ward, community or ED desk must
+ * book as its own place (`actingUnitId` / `actingPlaceId`), so it books from the patient record instead.
+ */
+const BOOKING_ROLES = ["coordinator"] as const;
 
 /** The pulled beds this desk may log a booking for, and the raise that logs it. */
 export function useNeedsTransport(movements: readonly Movement[], role: string | undefined) {
@@ -44,7 +48,7 @@ export function scrollToNeedsTransport() {
 }
 
 /** Pulled beds with no transport logged, most urgent tier first, then longest wait. */
-export function movementsNeedingTransport(movements: readonly Movement[]): Movement[] {
+function movementsNeedingTransport(movements: readonly Movement[]): Movement[] {
   return movements
     .filter((movement) => !movement.closure && bookTransportBlockedReason(movement) === undefined)
     .sort((a, b) => a.urgency - b.urgency || a.openedAt - b.openedAt);
@@ -183,6 +187,8 @@ export function OfficerBookingPanel({
   const [answers, setAnswers] = useState<TransportBookingAnswers>(BLANK_TRANSPORT_BOOKING);
   const [legalReason, setLegalReason] = useState<TransportExceptionReason | "">("");
   const save = useWardFormSave(movement.id);
+  // Held from opening, so a change by another desk is reported before this booking is accepted.
+  useHoldOpenForm(true, movement.id);
   return (
     <div ref={sideRef} className={styles.side} data-panel="booking">
       <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
