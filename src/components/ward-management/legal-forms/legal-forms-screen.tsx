@@ -331,9 +331,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     runStep(
       { type: "RECORD_LEGAL_FORM_RECEIVED", role: routeRole, now, movementId: movement.id },
       {
-        success: "Form marked received",
+        success: `Form marked received for ${nameOf(movement)}`,
         undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
-        undone: "Received mark undone.",
+        undone: `Received mark undone for ${nameOf(movement)}.`,
       },
     );
   };
@@ -508,9 +508,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
         return completion;
       },
       {
-        success: "Form time recorded",
+        success: `Form time recorded for ${nameOf(target)}`,
         undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
-        undone: "Form time undone.",
+        undone: `Form time undone for ${nameOf(target)}.`,
       },
     );
   };
@@ -1190,9 +1190,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             const accepted = (outcome: Awaited<typeof completion>) => {
               offerStep(
                 {
-                  success: `Form ${formCode} recorded`,
+                  success: `Form ${formCode} recorded for ${nameOf(movement)}`,
                   undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
-                  undone: "Form record undone.",
+                  undone: `Form ${formCode} record undone for ${nameOf(movement)}.`,
                 },
                 { completion: outcome },
               );
@@ -1237,9 +1237,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             const accepted = (outcome: Awaited<typeof completion>) => {
               offerStep(
                 {
-                  success: `Form ${movement.legalForm?.code ?? ""} extended`,
+                  success: `Form ${movement.legalForm?.code ?? ""} extended for ${nameOf(movement)}`,
                   undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
-                  undone: "Form extension undone.",
+                  undone: `Form extension undone for ${nameOf(movement)}.`,
                 },
                 { completion: outcome },
               );

@@ -13,6 +13,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { announce } from "@/components/wf/live-announcer";
 import {
   WaitCell,
   askingForShort,
@@ -51,19 +52,28 @@ function meetingText(rows: ScopedMeetingRow[], now: Instant, heading: string): s
 }
 
 function CopyButton({ text, label }: { text: string; label: string }) {
-  const [copied, setCopied] = useState(false);
+  const [result, setResult] = useState<"copied" | "failed" | null>(null);
   return (
     <Button
       variant="pri"
       size="sm"
       icon={ClipboardCopy}
       onClick={() => {
-        void copyTextToClipboard(text)
-          .then(() => setCopied(true))
-          .catch(() => setCopied(false));
+        // The result is said aloud as well as shown (design audit, Josh 1 Nov 2026); a refused copy
+        // shows on the button rather than looking as if nothing happened.
+        void copyTextToClipboard(text).then(
+          () => {
+            setResult("copied");
+            announce("Copied to the clipboard.");
+          },
+          () => {
+            setResult("failed");
+            announce("Could not copy. Check clipboard access and try again.");
+          },
+        );
       }}
     >
-      {copied ? "Copied" : label}
+      {result === "copied" ? "Copied" : result === "failed" ? "Could not copy" : label}
     </Button>
   );
 }
