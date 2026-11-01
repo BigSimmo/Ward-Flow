@@ -56,6 +56,16 @@ export function directiveDesks(
   return [...wards, ...eds];
 }
 
+/**
+ * The desks a live directive or bed call has asked so far (Q149, 1 Nov 2026): a bed call's wards,
+ * or a directive's desks. Add units offers every other desk.
+ */
+export function askedDesks(alert: BroadcastAlert, units: readonly Unit[]): string[] {
+  if (broadcastKind(alert) === "bed_call")
+    return alert.targetUnitIds ?? wardsInBroadcastScope(units, alert.targetScope);
+  return directiveDesks(alert, units);
+}
+
 /** The ward and ED desks a target covers: every ED desk for every unit or ED liaison. */
 function desksInBroadcastScope(
   units: readonly Unit[],

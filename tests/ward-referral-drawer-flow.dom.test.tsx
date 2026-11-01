@@ -12,6 +12,7 @@ import {
 } from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
+import { typeDate } from "./helpers/type-date-time";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -122,7 +123,7 @@ describe("approved four-tab referral drawer journey", () => {
     });
     next("Next, clearance");
     answer("Has the patient been medically cleared?", "No");
-    fireEvent.change(screen.getByLabelText("Expected clearance"), { target: { value: "2026-10-07T18:00" } });
+    typeDate(screen.getByLabelText("Expected clearance"), "2026-10-07T18:00");
     fireEvent.change(screen.getByLabelText("Contact name"), { target: { value: "Demo Doctor" } });
     fireEvent.change(screen.getByLabelText("Contact phone"), { target: { value: "0412345678" } });
     answer("Triage and RAMP completed", "Yes");

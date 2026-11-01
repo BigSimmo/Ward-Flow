@@ -438,6 +438,32 @@
   }
 }
 
+/* Phone audit (Josh, 1 Nov 2026, Q153): a repeated eyebrow is read but not drawn on a phone, and
+ * the Live chip sits at the title's right instead of on a line of its own. A page that passes
+ * phoneEyebrow="show" keeps the eyebrow line as before. */
+@media (max-width: 48rem) {
+  .hero[data-phone-eyebrow="hide"] .eyebrow {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .hero[data-phone-eyebrow="hide"]:has([data-wf-live]) .titleBlock {
+    padding-top: 0;
+  }
+  .hero[data-phone-eyebrow="hide"]:has([data-wf-live]) .title {
+    padding-right: 120px;
+  }
+  .hero[data-phone-eyebrow="hide"]:has([data-wf-live] > button) .title {
+    padding-right: 140px;
+  }
+}
+
 @media (forced-colors: active) {
   .hero {
     border: 1px solid CanvasText;

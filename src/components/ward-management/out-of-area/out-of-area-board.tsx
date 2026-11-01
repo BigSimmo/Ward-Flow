@@ -800,6 +800,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
+          // The bed days and the longest stay are figures the header does not carry (Q153).
+          phoneEyebrow="show"
           eyebrow={`Out of area · Statewide · ${plural(bedDays, "bed day", "bed days")} · longest ${plural(longest, "day", "days")}`}
           // H-0887: the page heading names the page, not only the count.
           title={

@@ -485,7 +485,15 @@ export function DischargeReleaseDetail({
         <>
           {/* Redesign (Josh, 30 Oct): the person leads, surname first; the ward second. */}
           <div className={pageStyles.phIdentity}>
-            <h3 className={pageStyles.patientFullName}>{personName ?? wardName}</h3>
+            {/* Phone audit (Josh, 1 Nov 2026): the status tag sits beside the name, then one context line. */}
+            <div className={pageStyles.phTitle}>
+              <h3 className={pageStyles.patientFullName}>{personName ?? wardName}</h3>
+              {detailTone ? (
+                <Badge tone={detailTone} size="sm">
+                  {badgeLabel}
+                </Badge>
+              ) : null}
+            </div>
             <p className={pageStyles.phIdentityMeta}>
               {[
                 personName ? wardName : null,
@@ -495,11 +503,6 @@ export function DischargeReleaseDetail({
                 .filter(Boolean)
                 .join(" · ")}
             </p>
-            {detailTone ? (
-              <Badge tone={detailTone} size="sm">
-                {badgeLabel}
-              </Badge>
-            ) : null}
           </div>
           <dl className={pageStyles.phFacts}>
             <div>

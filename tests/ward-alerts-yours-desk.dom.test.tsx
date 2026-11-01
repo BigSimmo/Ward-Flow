@@ -75,8 +75,10 @@ describe("the Yours lane belongs to the coordinator desk", () => {
     expect(within(row).queryByText("Yours")).toBeNull();
   });
 
-  it("still shows the coordinator its own row as You", () => {
+  // Alerts redesign (1 Nov 2026): as on Home, the coordinator's own row names no owner at all.
+  it("shows the coordinator its own row with no owner named", () => {
     const row = renderAs("coordinator");
-    expect(within(row).getAllByText("You").length).toBeGreaterThan(0);
+    expect(within(row).queryByText("Bed coordinator")).toBeNull();
+    expect(row.textContent).not.toMatch(/With /u);
   });
 });

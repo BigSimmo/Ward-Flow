@@ -22,7 +22,7 @@ import { describe, expect, it } from "vitest";
  *   tone background (a dot, as tall as it is wide, is not a bar).
  * A 1px neutral divider (`border-right: 0.0625rem solid var(--line)`) is none of these.
  */
-const BASELINE = 63;
+const BASELINE = 38;
 
 const SIDE = String.raw`border-(?:left|right|inline-start|inline-end)`;
 // A width of 2px or more as rem: 0.125rem and up (0.0625rem is a 1px hairline).

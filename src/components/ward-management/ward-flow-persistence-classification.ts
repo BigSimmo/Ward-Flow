@@ -334,6 +334,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "STAND_DOWN_BROADCAST_ALERT",
   // Top 25 item 25: an alert id only; the added time is a fixed default, never typed.
   "EXTEND_BROADCAST_ALERT",
+  // Alerts redesign (Q149, 1 Nov 2026): an alert id and desk ids only.
+  "ADD_BROADCAST_ALERT_UNITS",
   // Global alerts, 10 Oct 2026: ids, enums, a whole number of beds and instants only.
   "RAISE_PULL_NOW",
   "REPLY_BROADCAST_ALERT",

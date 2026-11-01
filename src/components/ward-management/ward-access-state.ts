@@ -680,7 +680,18 @@ export function commandScopeRefusal(
           : directiveDesks({ targetScope }, state.units);
     if (recipients.some((id) => typeof id !== "string" || !placeIn(id))) return outside;
   }
-  if (command.type === "STAND_DOWN_BROADCAST_ALERT" || command.type === "EXTEND_BROADCAST_ALERT") {
+  if (
+    command.type === "STAND_DOWN_BROADCAST_ALERT" ||
+    command.type === "EXTEND_BROADCAST_ALERT" ||
+    command.type === "ADD_BROADCAST_ALERT_UNITS"
+  ) {
+    // Adding desks needs authority over every desk added as well as the whole alert (Q149).
+    if (
+      command.type === "ADD_BROADCAST_ALERT_UNITS" &&
+      (!Array.isArray(command.unitIds) ||
+        (command.unitIds as unknown[]).some((id) => typeof id !== "string" || !placeIn(id)))
+    )
+      return outside;
     const alert = state.broadcastAlerts.find((candidate) => candidate.id === command.alertId);
     if (alert) {
       const recipients =

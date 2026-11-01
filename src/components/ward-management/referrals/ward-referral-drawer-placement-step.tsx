@@ -20,7 +20,7 @@ import { communityReferralPurposeLabel } from "@/components/ward-management/ward
 import { communityTeamsMatching } from "./community-short-form";
 import { DocumentationPanel, documentationProblems } from "./referral-flow-panels";
 import { chartsCountText } from "./referral-document-links";
-import { ErrorSummary, StatusGlyph } from "@/components/wf";
+import { DateTimeField, ErrorSummary, StatusGlyph } from "@/components/wf";
 import {
   CLEARANCE_CHECKS,
   CLEARANCE_CHECK_LABELS,
@@ -579,12 +579,11 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                 </SelectBox>
               </Field>
               <Field label="Arrival, AWST" htmlFor={`${sectionId}-eta`}>
-                <input
+                <DateTimeField
                   id={`${sectionId}-eta`}
-                  type="datetime-local"
-                  className={styles.fieldInput}
+                  label="Arrival"
                   value={arrivalEta}
-                  onChange={(e) => setArrivalEta(e.target.value)}
+                  onValueChange={setArrivalEta}
                 />
               </Field>
               <Field label="Dispatch ref" htmlFor={`${sectionId}-refTransitInput`}>

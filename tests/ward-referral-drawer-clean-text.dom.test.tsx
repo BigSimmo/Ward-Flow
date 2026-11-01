@@ -9,6 +9,7 @@ import {
 } from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
+import { typeDate } from "./helpers/type-date-time";
 
 // P148 (27 Oct 2026): the drawer quietly strips invisible characters and outer spaces from the
 // referral text it sends. This drives the real drawer and reads the stored referral, so it proves the
@@ -82,7 +83,7 @@ describe("P148 the drawer cleans referral text before it sends", () => {
     });
     next("Next, clearance");
     answer("Has the patient been medically cleared?", "No");
-    fireEvent.change(screen.getByLabelText("Expected clearance"), { target: { value: "2026-10-07T18:00" } });
+    typeDate(screen.getByLabelText("Expected clearance"), "2026-10-07T18:00");
     fireEvent.change(screen.getByLabelText("Contact name"), {
       target: { value: ` ${BIDI_OPEN}Demo Doctor${BIDI_CLOSE} ` },
     });

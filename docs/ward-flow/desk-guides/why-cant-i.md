@@ -1,6 +1,6 @@
 # Desk guide: Why can't I open this?
 
-<!-- last-checked: 2026-10-28 -->
+<!-- last-checked: 2026-11-01 -->
 
 Each desk opens only the screens its role allows. If you cannot open a screen, check the table for the roles that can, and ask the access admin if you need it.
 
@@ -20,7 +20,7 @@ Each desk opens only the screens its role allows. If you cannot open a screen, c
 | `bed-meeting-agenda` | Bed coordinator, Bed manager (own place)                                                                                                                                                                    |
 | `ed`                 | Bed coordinator, ED clinician (own place)                                                                                                                                                                   |
 | `community`          | Bed coordinator, Community team (own place)                                                                                                                                                                 |
-| `officer`            | Bed coordinator, Transport officer (own place)                                                                                                                                                              |
+| `officer`            | Bed coordinator, Nurse in charge (own place), ED clinician (own place), Community team (own place), Transport officer (own place)                                                                           |
 | `referrals`          | Bed coordinator, Bed manager (own place), Nurse in charge (own place), ED clinician (own place), Community team (own place)                                                                                 |
 | `referral-new`       | Bed coordinator, Nurse in charge, ED clinician, Community team                                                                                                                                              |
 | `patient-new`        | Bed coordinator, Nurse in charge, ED clinician, Community team                                                                                                                                              |

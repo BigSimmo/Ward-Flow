@@ -5,7 +5,7 @@
 // of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { Button, Dialog, DisabledReason, Radio } from "@/components/wf";
+import { Button, DateField, Dialog, DisabledReason, Radio } from "@/components/wf";
 import { edShortName } from "@/components/ward-management/ward-sites";
 import {
   changeReasonLabels,
@@ -592,14 +592,13 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             {legalFormExpiryIsExtension ? <p className={styles.cardMeta}>New expiry written on the form</p> : null}
             <label className={styles.referralField}>
               Date
-              <input
-                type="date"
+              <DateField
                 data-testid={`ward-ed-legal-form-expiry-date-${movement.id}`}
                 value={legalFormExpiryDraft.date}
-                onChange={({ target: { value } }) =>
+                onValueChange={(date) =>
                   setLegalFormExpiryDraft((current) => ({
                     ...current,
-                    date: value,
+                    date,
                   }))
                 }
               />

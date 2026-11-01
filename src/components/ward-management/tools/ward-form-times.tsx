@@ -1,5 +1,6 @@
 "use client";
 
+import { DateField } from "@/components/wf";
 import { useId, useMemo, useState } from "react";
 
 import { formTitleForCode } from "@/lib/form-register";
@@ -82,13 +83,7 @@ function FormTimesView({ now }: { now: Date }) {
       <div className={styles.fieldRow}>
         <label htmlFor={dateId}>
           <span className={styles.choiceLabel}>Date written on form</span>
-          <input
-            id={dateId}
-            type="date"
-            className={styles.input}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
+          <DateField id={dateId} value={date} onValueChange={setDate} />
         </label>
         <label htmlFor={timeId}>
           <span className={styles.choiceLabel}>Time written on form</span>

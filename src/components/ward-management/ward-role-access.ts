@@ -200,6 +200,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "patient-new": "all",
     patient: "own",
     movements: "own",
+    // Q154 (Josh, 1 Nov 2026): Transport, to follow its own journeys; the crew's steps stay the officer's.
+    officer: "own",
     delays: "own",
     "legal-forms": "own",
     handover: "own",
@@ -220,6 +222,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "patient-new": "all",
     patient: "own",
     movements: "own",
+    // Q154 (Josh, 1 Nov 2026): Transport, to follow its own journeys; the crew's steps stay the officer's.
+    officer: "own",
     delays: "own",
     "legal-forms": "own",
     handover: "own",
@@ -239,6 +243,8 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     patient: "own",
     // D-80: the team books transport for its own journeys (D-76), so it follows them here.
     movements: "own",
+    // Q154 (Josh, 1 Nov 2026): Transport, to follow its own journeys; the crew's steps stay the officer's.
+    officer: "own",
     delays: "own",
     "legal-forms": "own",
     search: "own",

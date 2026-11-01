@@ -21,13 +21,16 @@ const mount = () =>
     </WardFlowProvider>,
   );
 const broadcastTab = () => fireEvent.click(screen.getByRole("tab", { name: /^Broadcast/ }));
+// The selected alert's side panel has tab panels of its own, so name this one.
+const broadcastPanel = () => screen.getByRole("tabpanel", { name: /^Broadcast/ });
 
 describe("Broadcast tab", () => {
   it("offers Broadcast alert when nothing is live", () => {
     mount();
     broadcastTab();
-    expect(screen.getByText("No broadcast live")).toBeInTheDocument();
-    const panel = screen.getByRole("tabpanel");
+    // The header band says it too (Alerts redesign), so read the tab panel.
+    expect(within(broadcastPanel()).getByText("No broadcast live")).toBeInTheDocument();
+    const panel = broadcastPanel();
     fireEvent.click(within(panel).getByRole("button", { name: "Broadcast alert" }));
     expect(screen.getByRole("dialog", { name: /New broadcast/ })).toBeInTheDocument();
   });
@@ -48,11 +51,13 @@ describe("Broadcast tab", () => {
     ).toBeInTheDocument();
     expect(within(card).getByText(`0 of ${metro} answered`)).toBeInTheDocument();
     expect(within(card).getAllByRole("row")).toHaveLength(metro + 1);
-    expect(within(card).getByRole("button", { name: /Add units/ })).toHaveAttribute("aria-disabled", "true");
+    // Q149 (1 Nov 2026): Add units is built, and other wards are still free to ask.
+    expect(within(card).getByRole("button", { name: /Add units/ })).not.toHaveAttribute("aria-disabled", "true");
     expect(within(card).getByRole("button", { name: /Copy answers/ })).toBeInTheDocument();
 
     fireEvent.click(within(card).getByRole("button", { name: "Stand down this alert" }));
-    expect(screen.getByText("No broadcast live")).toBeInTheDocument();
+    // The header band says it too (Alerts redesign), so read the tab panel.
+    expect(within(broadcastPanel()).getByText("No broadcast live")).toBeInTheDocument();
     const earlier = screen.getByRole("region", { name: "Earlier broadcasts" });
     expect(within(earlier).getByText(/Warning · Metro adult wards · stood down/)).toBeInTheDocument();
   });

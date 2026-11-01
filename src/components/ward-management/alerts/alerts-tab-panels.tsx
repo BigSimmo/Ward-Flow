@@ -3,6 +3,7 @@
 // The Alerts screen's Broadcast, Notices and History tab panels. Moved out of `alerts-screen.tsx`
 // to keep it under the line cap; the screen keeps the state and the acts they call.
 import { Clock } from "lucide-react";
+import { useState } from "react";
 
 import { EmptyState, StatusGlyph, TabPanel, cx } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -16,6 +17,7 @@ import { isAlertLive } from "./global-alert-view";
 import { PullNowCard } from "./global-alert-panels";
 import { GroupHead } from "./alerts-queue";
 import type { HistoryEntry } from "./alerts-history";
+import { AddUnitsDialog, addableGroups } from "./broadcast-add-units";
 import { BroadcastLiveCard, EarlierBroadcasts, NoBroadcastLive } from "./broadcast-live-card";
 import styles from "./alerts.module.css";
 import tab from "./broadcast-tab.module.css";
@@ -53,6 +55,8 @@ export function AlertsBroadcastPanel({
 }) {
   // Alerts redesign (1 Nov 2026): each live broadcast is a card with an action bar; then the
   // earlier ones, or an empty state that offers Broadcast alert.
+  // The broadcast Add units opened on: if another broadcast replaces it, the dialog closes rather than retarget.
+  const [addingUnits, setAddingUnits] = useState<string | null>(null);
   return (
     <TabPanel idPrefix="alerts" id="broadcast" className={cx(styles.tabBody, tab.tabBody)}>
       {livePullNows.length > 0 ? (
@@ -80,12 +84,32 @@ export function AlertsBroadcastPanel({
             });
             raise("EXTEND_BROADCAST_ALERT", { alertId: activeBroadcast.id });
           }}
+          onAddUnits={() => setAddingUnits(activeBroadcast.id)}
+          addUnitsDisabledReason={
+            addableGroups(activeBroadcast, units).length === 0 ? "Every unit is already asked." : undefined
+          }
           onCopyAnswers={onCopyAnswers}
           onStandDown={() => handleStandDown(activeBroadcast.id)}
         />
       ) : (
         <NoBroadcastLive onCompose={onCompose} composeDisabledReason={composeDisabledReason} />
       )}
+      {activeBroadcast && addingUnits === activeBroadcast.id ? (
+        <AddUnitsDialog
+          alert={activeBroadcast}
+          units={units}
+          onClose={() => setAddingUnits(null)}
+          onAdd={(unitIds) => {
+            setAddingUnits(null);
+            track({
+              type: "ADD_BROADCAST_ALERT_UNITS",
+              ok: `Added ${unitIds.length === 1 ? "1 unit" : `${unitIds.length} units`} to "${activeBroadcast.title}".`,
+              refused: "Adding units was not accepted.",
+            });
+            raise("ADD_BROADCAST_ALERT_UNITS", { alertId: activeBroadcast.id, unitIds });
+          }}
+        />
+      ) : null}
       <EarlierBroadcasts
         alerts={pastBroadcasts}
         units={units}

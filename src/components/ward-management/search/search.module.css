@@ -1344,7 +1344,8 @@
 
 /* ─── Card View Styling (Sovereign Third Edition) ─────────────────── */
 .patientCard {
-  padding: 11px 16px;
+  /* The left 19px keeps the inset of the old 3px side edge (no side edges, Josh 31 Oct 2026). */
+  padding: 11px 16px 11px 19px;
   border-bottom: 1px solid var(--line);
   cursor: pointer;
   display: flex;
@@ -1357,7 +1358,6 @@
   text-decoration: none;
   width: 100%;
   box-sizing: border-box;
-  border-left: 3px solid transparent;
 }
 
 .patientCard:hover {
@@ -1365,8 +1365,8 @@
 }
 
 .patientCard.selected {
-  background: var(--accent-soft);
-  border-left-color: var(--accent);
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-line);
 }
 
 .patientCardRow1 {
@@ -2439,7 +2439,7 @@
 
 .v6Row.selected {
   background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-line);
 }
 
 .v6Mono {

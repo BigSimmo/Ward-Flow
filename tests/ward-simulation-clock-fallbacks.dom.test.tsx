@@ -9,6 +9,7 @@ import { perthMidnight } from "@/components/ward-management/ward-clock";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { typeDate } from "./helpers/type-date-time";
 
 describe("M-TIME-01: simulation clock resolution instead of browser wall-clock new Date()", () => {
   const seed = seedWardFlowState();
@@ -144,7 +145,7 @@ describe("M-TIME-01: simulation clock resolution instead of browser wall-clock n
     const day = 15 + Math.floor(minutes / 1440);
     const clock = `${String(Math.floor((minutes % 1440) / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
     fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
-    fireEvent.change(screen.getByLabelText("Date written on form"), { target: { value: `2026-08-${day}` } });
+    typeDate(screen.getByLabelText("Date written on form"), `2026-08-${day}`);
     fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: clock } });
     expect(screen.getByRole("status")).toHaveTextContent("0h 00m");
   });

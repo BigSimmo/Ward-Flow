@@ -232,7 +232,7 @@ describe("referral slide-out, option B", () => {
     expect(within(form).getByRole("alert")).toHaveTextContent("Enter the family and given names.");
     fireEvent.change(within(form).getByLabelText("Family name"), { target: { value: "Synthetica" } });
     fireEvent.change(within(form).getByLabelText("Given name"), { target: { value: "Demo" } });
-    fireEvent.change(within(form).getByLabelText("Date of birth"), { target: { value: "1990-01-02" } });
+    fireEvent.change(within(form).getByLabelText("Date of birth"), { target: { value: "02/01/1990" } });
     fireEvent.change(within(form).getByLabelText("UMRN"), { target: { value: "UM999901" } });
     await act(async () => {
       fireEvent.click(within(form).getByRole("button", { name: "Add patient" }));
@@ -250,7 +250,7 @@ describe("referral slide-out, option B", () => {
     fireEvent.change(within(form).getByLabelText("Family name"), { target: { value: "Synthetica" } });
     fireEvent.change(within(form).getByLabelText("Given name"), { target: { value: "Young" } });
     fireEvent.change(within(form).getByLabelText("Date of birth"), {
-      target: { value: `${new Date().getFullYear() - 21}-01-02` },
+      target: { value: `02/01/${new Date().getFullYear() - 21}` },
     });
     fireEvent.change(within(form).getByLabelText("UMRN"), { target: { value: "UM999902" } });
     await act(async () => {

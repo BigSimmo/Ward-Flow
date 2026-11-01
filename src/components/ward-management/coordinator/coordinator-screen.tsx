@@ -816,6 +816,8 @@ export function CoordinatorScreen() {
             className={styles.homeHero}
             // Phone direction A (Josh, 10 Oct 2026): queue first. The same answer as the desktop
             // title, three figures you can tap, then New since and Pause.
+            // The shift is not in the header, so the phone keeps the eyebrow (Q153).
+            phoneEyebrow="show"
             eyebrow={
               isPhone ? `Modelled network · ${shiftWord}` : `Modelled network · mental health beds · ${shiftWord}`
             }

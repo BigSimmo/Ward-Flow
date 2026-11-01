@@ -7,6 +7,7 @@ import { WardFormTimes } from "@/components/ward-management/tools/ward-form-time
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { typeDate } from "./helpers/type-date-time";
 
 describe("Phase 6: Accessibility & Ergonomics Polish", () => {
   it("renders WardTable scroll container with keyboard-operable region attributes", () => {
@@ -69,8 +70,14 @@ describe("Phase 6: Accessibility & Ergonomics Polish", () => {
     expect(form).toHaveValue("");
     fireEvent.change(form, { target: { value: "3A" } });
     expect(form).toHaveValue("3A");
-    fireEvent.change(screen.getByLabelText("Date written on form"), { target: { value: "2026-09-26" } });
-    expect(screen.getByLabelText("Date written on form")).toHaveAttribute("type", "date");
+    const dateBox = screen.getByLabelText("Date written on form");
+    typeDate(dateBox, "2026-09-26");
+    // The kit's typed date box: a DD/MM/YYYY text box whose id is tied to its visible label.
+    expect(dateBox).toHaveAttribute("type", "text");
+    expect(dateBox).toHaveValue("26/09/2026");
+    expect(dateBox.id).not.toBe("");
+    const dateLabel = Array.from(document.querySelectorAll("label")).find((label) => label.htmlFor === dateBox.id);
+    expect(dateLabel).toHaveTextContent("Date written on form");
     expect(screen.getByLabelText("Time written on form")).toHaveAttribute("type", "time");
     // The result shows only a typed time (rule D5), so type one before reading it back.
     fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });

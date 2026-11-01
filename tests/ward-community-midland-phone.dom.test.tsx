@@ -5,6 +5,7 @@ import { CommunityScreen } from "@/components/ward-management/community/communit
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
+import { useWardBarPlaceSwitch } from "@/components/ward-management/shell/ward-bar-place-switch";
 
 /*
  * The approved Community team phone design (Q155) on the Midland page: the band hero with three
@@ -22,6 +23,16 @@ beforeEach(() => {
   );
 });
 afterEach(() => vi.unstubAllGlobals());
+
+/** Stands in for the phone bar: the place line a page registers (the bar reads the same store). */
+function PlaceLine() {
+  const entry = useWardBarPlaceSwitch();
+  return entry ? (
+    <button type="button" aria-label={`${entry.actionLabel}: ${entry.label}`} onClick={entry.onPress}>
+      {entry.label}
+    </button>
+  ) : null;
+}
 
 function renderTeam(teamId = "midland") {
   return render(
@@ -76,6 +87,20 @@ describe("Midland community team on a phone (approved design)", () => {
     fireEvent.click(screen.getByRole("radio", { name: /^Clinicians/u }));
     fireEvent.click(screen.getAllByRole("button", { name: /^Call/u })[0]!);
     expect(screen.getByText("Not wired in this prototype.")).toBeInTheDocument();
+  });
+
+  it("opens Switch team from the bar's place line, not the hero", () => {
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <PlaceLine />
+          <CommunityScreen teamId="midland" />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    expect(screen.queryByTestId("ward-community-switch-team")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Switch team: East Metro · Adult" }));
+    expect(screen.getByTestId("ward-community-switch-drawer")).toBeInTheDocument();
   });
 
   it("leaves other teams on the generic phone tree", () => {

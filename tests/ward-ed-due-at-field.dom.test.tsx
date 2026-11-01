@@ -17,6 +17,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { EdInboxReferralFixture, openRaiseIntoMovementForm } from "./helpers/ed-raise-into-movement";
+import { typeDate } from "./helpers/type-date-time";
 
 /**
  * 🔴 **REWRITTEN, T3 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner
@@ -84,7 +85,8 @@ describe("the expiry field is asked for whichever form is selected", () => {
       chooseForm(form.code);
       const dateField = screen.getByTestId(DATE_FIELD) as HTMLInputElement;
       const timeField = screen.getByTestId(TIME_FIELD) as HTMLInputElement;
-      expect(dateField.type, "a date field, so the browser does the parsing").toBe("date");
+      expect(dateField.type, "the kit's typed DD/MM/YYYY box, not the browser's date picker").toBe("text");
+      expect(dateField.placeholder, "the box says which order the day is typed in").toBe("DD/MM/YYYY");
       expect(timeField.type, "a time field, so the browser does the parsing").toBe("time");
       expect(
         dateField.value,
@@ -101,9 +103,9 @@ describe("the expiry field is asked for whichever form is selected", () => {
     // tests/ward-ed-form-expiry-controls.dom.test.tsx.
     openReferralForm();
     chooseForm("4A");
-    fireEvent.change(screen.getByTestId(DATE_FIELD), { target: { value: "2026-09-20" } });
+    typeDate(screen.getByTestId(DATE_FIELD), "2026-09-20");
     fireEvent.change(screen.getByTestId(TIME_FIELD), { target: { value: "14:30" } });
-    expect((screen.getByTestId(DATE_FIELD) as HTMLInputElement).value).toBe("2026-09-20");
+    expect((screen.getByTestId(DATE_FIELD) as HTMLInputElement).value).toBe("20/09/2026");
     expect((screen.getByTestId(TIME_FIELD) as HTMLInputElement).value).toBe("14:30");
 
     chooseForm("1A");

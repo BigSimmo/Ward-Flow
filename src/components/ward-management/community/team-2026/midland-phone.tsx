@@ -6,7 +6,7 @@
  * band hero with three figures, the section track, phone rows and the bottom sheet. Nothing is saved.
  */
 
-import { useRef, useState, type ReactNode } from "react";
+import { useCallback, useLayoutEffect, useState, type ReactNode } from "react";
 import { Check, ChevronDown, ChevronRight, FileText, Phone, Plus, Search } from "lucide-react";
 import {
   Button,
@@ -19,7 +19,7 @@ import {
   SrOnly,
   StatusGlyph,
   buttonClass,
-  useWfBandBleed,
+  registerWfBandHero,
 } from "@/components/wf";
 import phone from "../community-team-phone.module.css";
 import type { CommunityTeamSection } from "../community-screen-hero";
@@ -37,6 +37,7 @@ import {
   shortName,
 } from "./midland-demo";
 import { ReferralPage, useAnswer } from "./team-referrals";
+import { useRegisterWardBarPlaceSwitch } from "@/components/ward-management/shell/ward-bar-place-switch";
 import p from "./midland-phone.module.css";
 
 const f = DEMO_FIGURES;
@@ -756,17 +757,26 @@ export function MidlandPhone({
   open,
   onRecordContact,
   onReferFromTeam,
+  onSwitchTeam,
 }: {
   section: CommunityTeamSection;
   open: (section: CommunityTeamSection) => void;
   onRecordContact: () => void;
   onReferFromTeam: () => void;
+  /** Opens Switch team from the bar's place line (Q158). Absent for a desk that sees its own team only. */
+  onSwitchTeam?: (open: boolean) => void;
 }) {
   const [sheet, setSheet] = useState<number | null>(null);
   const [full, setFull] = useState<number | null>(null);
   const { say: note } = useAnswer("");
-  const bandRef = useRef<HTMLDivElement>(null);
-  useWfBandBleed(bandRef, full === null);
+  // The band is drawn at the phone's fixed 12px insets from the first paint, not measured after
+  // hydration: the measured band jumped on load (layout shift 0.11 on the release gate, 1 Nov 2026).
+  // Registering it keeps the header in hero ink at rest, as the measured band does.
+  useLayoutEffect(() => (full === null ? registerWfBandHero() : undefined), [full]);
+  const switchTeam = useCallback(() => onSwitchTeam?.(true), [onSwitchTeam]);
+  useRegisterWardBarPlaceSwitch(
+    onSwitchTeam ? { label: "East Metro · Adult", actionLabel: "Switch team", onPress: switchTeam } : null,
+  );
   const figures = FIGURES[section];
   if (full !== null) {
     return (
@@ -777,7 +787,7 @@ export function MidlandPhone({
   }
   return (
     <div className={phone.phone} data-testid="ward-community-phone">
-      <div ref={bandRef} className={phone.band} data-wf-hero="band">
+      <div className={`${phone.band} ${p.band}`} data-wf-hero="band" data-band="on">
         <PhoneHero
           level={1}
           className={phone.teamHero}

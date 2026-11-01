@@ -2273,6 +2273,7 @@ export function reduceClinicalEvent(
     case "ACKNOWLEDGE_BROADCAST_ALERT":
     case "STAND_DOWN_BROADCAST_ALERT":
     case "EXTEND_BROADCAST_ALERT":
+    case "ADD_BROADCAST_ALERT_UNITS":
     case "RAISE_PULL_NOW":
     case "REPLY_BROADCAST_ALERT": {
       const next = reducerSlices().reduceBroadcastAlertEvent(state, event, decision, reject);
