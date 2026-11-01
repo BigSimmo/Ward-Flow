@@ -145,7 +145,7 @@ test("Community referral: a community team refers from its own desk, the ward it
   const newPatient = sheet.getByTestId("ward-referral-new-patient");
   await newPatient.getByLabel("Family name", { exact: true }).fill(PERSON.familyName);
   await newPatient.getByLabel("Given name", { exact: true }).fill(PERSON.givenName);
-  await newPatient.getByLabel("Date of birth", { exact: true }).fill("1990-01-02");
+  await newPatient.getByLabel("Date of birth", { exact: true }).fill("02/01/1990");
   await newPatient.getByLabel("UMRN", { exact: true }).fill(PERSON.umrn);
   await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
   await newPatient.getByRole("button", { name: "Add patient" }).click();

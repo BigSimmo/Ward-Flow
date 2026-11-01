@@ -182,6 +182,9 @@ function StatisticsHeroView({
         <Hero
           level={1}
           className={cx(styles.phoneStatsHero, phone?.lead ? styles.phoneLeadBeside : undefined)}
+          // The phone eyebrow already keeps the page name for screen readers only; what it draws is
+          // the scope, site or "Counts only", which the header does not say (Q153).
+          phoneEyebrow="show"
           eyebrow={eyebrow}
           title={phone?.title ?? title}
           titleMeta={phone?.sub}

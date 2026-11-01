@@ -563,7 +563,7 @@ export function PreviewPhoneMenu({
 }: WardPhoneMenuProps) {
   const pathname = usePathname() ?? "";
   // ROLE BRANCH (bed_manager): the dock's and menu's counts are the desk's own place's (`preview-nav-counts.ts`).
-  const { counts, shellRole, role: routeRole } = usePreviewNavCounts();
+  const { counts, shellRole } = usePreviewNavCounts();
   const deskRoleLabel = useDeskRoleLabel(shellRole);
   const accessAdmin = useEffectiveWardAccess().role === "admin";
   const [open, setOpen] = useState(false);
@@ -594,9 +594,9 @@ export function PreviewPhoneMenu({
   );
 
   // One order for the signed-in person (device audit, 11 Oct 2026), as the desktop rail.
-  // The officer's phone is the officer's own (audit round 2, A4-15): on the officer route the dock
-  // holds Transport and Movements, not the coordinator's Home and Referrals.
-  const dockRole = routeRole === "officer" ? routeRole : shellRole;
+  // Q162 (Josh, 1 Nov 2026): each person keeps their own dock on every page, Transport included.
+  // A signed-in transport officer still gets the officer's dock (A4-15), from their own role.
+  const dockRole = shellRole;
   const flagOn = useWardFeatureFlagCheck();
   const accessNav = useAccessNavFilter();
   const {

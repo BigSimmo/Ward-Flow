@@ -115,6 +115,9 @@ export function PatientFlightHeader({
       <Hero
         level={1}
         className={quiet ? `${styles.v6Hero} ${styles.v6HeroQuiet}` : styles.v6Hero}
+        // The phone eyebrow carries the mode or the movement's tier, bed type and observation chip,
+        // none of which the header says, so it stays drawn (Q153).
+        phoneEyebrow="show"
         eyebrow={isPhone && phoneEyebrow ? phoneEyebrow : location ? `Patient · ${location}` : "Patient"}
         title={displayName}
         titleMeta={

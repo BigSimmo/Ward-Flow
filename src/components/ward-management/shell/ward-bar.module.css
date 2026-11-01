@@ -3949,6 +3949,26 @@
   }
 }
 
+/* Q161 (Josh, 1 Nov 2026): on a page no dock tab owns, the Menu icon takes the accent the dock gives
+ * the page you are on, so the phone always shows where you are. */
+@media (max-width: 48rem) {
+  .phoneOnly[data-here] {
+    color: var(--wf-accent);
+  }
+
+  /* On the hero band the icon stays white, so the light is a soft face behind it instead. */
+  .bar:is(
+      [data-band="ink"],
+      :where(
+        :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"])))
+          :not([data-band]):not([data-scrolled])
+      )
+    )
+    .phoneOnly[data-here]::before {
+    background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+}
+
 /* Back on a phone (Josh, 20 Oct 2026): on a drill-down screen it takes the Menu button's place.
  * Above the phone the bar's own `.deskBack` leads instead, and a tablet keeps its Menu. */
 @media (max-width: 48rem) {

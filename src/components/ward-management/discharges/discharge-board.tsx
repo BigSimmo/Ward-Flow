@@ -957,7 +957,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                         green tick beside its blocker (UX audit, 21 Oct 2026). */}
                                         {release.state !== "discharged" && release.blocker !== null ? (
                                           <span className={pageStyles.badge} data-status="blocked">
-                                            <StatusGlyph tone="danger" size={9} />
+                                            {/* Phone audit (Josh, 1 Nov 2026): one warning mark per row; a
+                                            row already marked past its date keeps that mark alone. */}
+                                            {overdue ? null : <StatusGlyph tone="danger" size={9} />}
                                             <span className="sr-only">Held up: </span>
                                             <span>{WORK_STATUS_LABELS[release.state]}</span>
                                           </span>

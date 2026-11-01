@@ -18,6 +18,13 @@ export type HeroProps = {
   lead?: ReactNode;
   /** Uppercase eyebrow ("STATE BEDFLOW", "STATISTICS · AS AT 10:42"). */
   eyebrow?: ReactNode;
+  /**
+   * Phone audit (Josh, 1 Nov 2026, Q153): on a phone the eyebrow usually repeats the header's page
+   * and service names, so it is read to screen readers but not drawn, and the Live chip moves up
+   * beside the title. `"show"` keeps it drawn where it says something the header does not (a
+   * hospital, a shift). Desktop and tablet are unchanged.
+   */
+  phoneEyebrow?: "show" | "hide";
   /** Five words at most. */
   title: ReactNode;
   /** Small text after the title ("20 beds, all locked"). */
@@ -75,6 +82,7 @@ export type HeroProps = {
 export function Hero({
   lead,
   eyebrow,
+  phoneEyebrow = "hide",
   title,
   titleMeta,
   stats,
@@ -104,6 +112,7 @@ export function Hero({
       data-testid={testId}
       // A band hero is server-rendered as the band (band.ts, site review B6); `card` opts out.
       data-wf-hero={quiet ? "quiet" : band ? "band" : "card"}
+      data-phone-eyebrow={eyebrow ? phoneEyebrow : undefined}
     >
       <div className={cx(styles.row, styles.firstRow)}>
         {lead ? (

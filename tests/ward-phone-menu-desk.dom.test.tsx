@@ -104,6 +104,17 @@ describe("Create sheet items match the + button's name (shell-5)", () => {
   });
 });
 
+describe("each person keeps their own dock (Q162, Josh 1 Nov 2026)", () => {
+  it("keeps the coordinator's Home and Referrals on Transport", () => {
+    route.pathname = "/ward-flow/transport/officer";
+    openMenu();
+    const dock = within(screen.getByTestId("ward-phone-dock"));
+    expect(dock.getByText("Home")).toBeInTheDocument();
+    expect(dock.getByText("Referrals")).toBeInTheDocument();
+    expect(dock.queryByText("My jobs")).toBeNull();
+  });
+});
+
 describe("Create sheet asks the access check for Add patient (role access plan v2, D-80)", () => {
   it("offers no Add patient on a desk whose role cannot add one", () => {
     route.pathname = "/ward-flow/transport/officer";

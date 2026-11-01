@@ -618,20 +618,22 @@
   color: var(--wf-ink-1);
 }
 
+/* Phone audit (Josh, 1 Nov 2026): places wrap in full, never cut, so the place takes its own
+   line and the status tag follows on the next. */
 .compactWhere.compactWhere {
   order: 1;
-  flex: 1 1 0;
-  min-width: 3rem;
+  flex: 1 0 100%;
+  min-width: 0;
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .compactTag.compactTag {
   order: 2;
   flex: 0 1 auto;
-  max-width: 72%;
+  max-width: 100%;
   margin: 0;
   padding: 0 6px;
   border: 1px solid var(--wf-line-2);
@@ -642,9 +644,8 @@
 
 .compactTag.compactTag > span {
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .compactLine.compactLine {

@@ -189,8 +189,7 @@
   min-height: 44px;
   min-height: var(--spacing-tap, 44px);
   align-content: center;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border-left: 3px solid transparent;
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) calc(var(--wf-s-3) + 3px);
   border-radius: var(--wf-r-sm);
   cursor: pointer;
   min-width: 0;
@@ -211,8 +210,8 @@
  * rendering them identically meant Enter could commit a row the pointer merely happened to be
  * sitting on — `onKeyDown` only ever picks `activeIndex`, never whatever is under the cursor. So
  * the two states have to read as different things: hover gets a neutral tint and nothing else;
- * `.optionActive` — the row Enter will actually pick — gets the accent tint, the accent left rule,
- * AND an inset ring, three channels together rather than one. `.option.optionActive` is written
+ * `.optionActive` — the row Enter will actually pick — gets the accent tint AND an inset ring,
+ * two channels together rather than one (no side edge, Josh 31 Oct 2026). `.option.optionActive` is written
  * after `.option:hover` and matches its specificity exactly, so the active treatment still wins on
  * the row the pointer happens to be resting on.
  */
@@ -228,7 +227,6 @@
 
 .option.optionActive {
   background: var(--wf-accent-tint);
-  border-left-color: var(--wf-accent);
   box-shadow: inset 0 0 0 1px var(--wf-line-2);
 }
 
