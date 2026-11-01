@@ -168,6 +168,8 @@ export function WardScreenTopBar({
       <h2 className={styles.srOnlyHeading}>This ward</h2>
       <Hero
         className={styles.wardHero}
+        // The hospital name is not in the header, so the phone keeps the eyebrow (Q153).
+        phoneEyebrow="show"
         eyebrow={
           isPhone
             ? `${site ? site.name.replace(/\s+(Public Hospital|Hospital|Health Campus|Health Service)$/u, "") : unit.siteCode}`
