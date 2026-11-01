@@ -1467,49 +1467,18 @@ select.ctl {
   border-color: var(--wf-accent);
   background: var(--wf-accent);
 }
-/* Document viewer */
-.docView {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  background: color-mix(in oklab, #0b1626 55%, transparent);
-}
-.docView[hidden] {
-  display: none;
-}
-.dvBox {
-  width: min(760px, 92vw);
-  max-height: 88vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--wf-surface);
-  border-radius: var(--wf-r-lg);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-}
-.dvHead {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--wf-line);
-}
-.dvHead .person {
-  flex: 1;
-}
+/* Document viewer (sample pages only; the kit Dialog holds them) */
 .dvBody {
   padding: 24px;
   overflow: auto;
   background: var(--wf-surface-2);
 }
 .paper {
-  background: #fff;
-  color: #1b2430;
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  border: 1px solid var(--wf-line);
   border-radius: 6px;
   padding: 40px 48px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   min-height: 560px;
   position: relative;
 }
@@ -1520,13 +1489,13 @@ select.ctl {
 .paper p {
   margin: 0 0 18px;
   font: 400 13px/18px var(--wf-font);
-  color: #5a6575;
+  color: var(--wf-ink-3);
 }
 .paper i {
   display: block;
   height: 9px;
   border-radius: 4px;
-  background: #e6e9ee;
+  background: var(--wf-line);
   margin: 0 0 11px;
 }
 .paper .wm {
@@ -1534,7 +1503,7 @@ select.ctl {
   inset: auto 0 40% 0;
   text-align: center;
   font: 600 28px/1 var(--wf-font);
-  color: rgba(30, 60, 100, 0.09);
+  color: color-mix(in oklab, var(--wf-ink-1) 9%, transparent);
   transform: rotate(-18deg);
   letter-spacing: 0.06em;
   pointer-events: none;
