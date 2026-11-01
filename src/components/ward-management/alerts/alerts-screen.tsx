@@ -82,6 +82,8 @@ import { TodayChart } from "./alerts-visuals";
 import { alertChecks } from "./alerts-checks";
 import { alertsHistory } from "./alerts-history";
 import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
+import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
 import { AlertsSidePanelEmpty, CheckingList, ChecksCard, ChecksChip, ownWardName } from "./alerts-checking";
 import { AlertsBroadcastPanel, AlertsHistoryPanel, AlertsNoticesPanel } from "./alerts-tab-panels";
@@ -500,7 +502,25 @@ function AlertsWorkspace() {
   const allEntries = useMemo(() => [...activeEntries, ...snoozedEntries], [activeEntries, snoozedEntries]);
   const countedActive = useMemo(() => activeEntries.filter((entry) => entry.group !== "running"), [activeEntries]);
   const yoursCount = countedActive.filter((entry) => entry.mine).length;
-  const needYouCount = actEntries.filter((entry) => entry.mine && !entry.seen).length;
+  // Q111 (Josh, 1 Nov 2026): a ward's acceptance with no bed pulled is act now here too, as on Home.
+  // Only the coordinator pulls a bed, so only the coordinator's desk lists it.
+  const toPull = useMemo(
+    () => (coordDesk ? acceptedReferralsAwaitingPull(referrals, units, movements) : []),
+    [coordDesk, referrals, units, movements],
+  );
+  const actCount = actEntries.length + toPull.length;
+  const pull = useAcceptedPull();
+  const pullRows =
+    toPull.length > 0 ? (
+      <AcceptedPullRows
+        toPull={toPull}
+        now={now}
+        phone={isPhone}
+        testId="ward-alerts-accepted-to-pull"
+        pulling={pull.pulling}
+        setPulling={pull.setPulling}
+      />
+    ) : null;
   const highlightedCount = allEntries.filter((entry) => entry.highlighted).length;
   const anyHighlight = highlightOn;
   const maxAge = Math.max(
@@ -863,12 +883,11 @@ function AlertsWorkspace() {
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
 
-  // Overall review, 20 Oct 2026 (rule A2): the title leads with the Act now figure, the number the
-  // menu's "Act-now alerts" row shows. The part of it assigned to you and not yet seen (F-09) follows
-  // as its own clause, so it never stands in for the total.
+  // Alerts redesign (Q112, Josh 1 Nov 2026): the title is the Act now and Waiting figures, Home's
+  // count included. "New to you" is gone: nothing on the page explained it.
   const heroTitle =
-    actEntries.length > 0
-      ? `${actEntries.length} act now${needYouCount > 0 ? `, ${needYouCount} new to you` : ""}`
+    actCount > 0 || waitEntries.length > 0
+      ? `${actCount} act now, ${waitEntries.length} waiting`
       : wardName
         ? `No alert for ${wardName}`
         : "No alert needs you";
@@ -921,6 +940,7 @@ function AlertsWorkspace() {
     head: ReactNode,
     empty?: string,
     linked?: { items: LinkedQueueItem<QueueEntry>[]; shownEarlier: number; sectionLabels: readonly string[] },
+    lead?: ReactNode,
   ) => (
     <section
       key={key}
@@ -929,8 +949,11 @@ function AlertsWorkspace() {
       data-testid={key === "snoozed" ? "ward-alerts-snoozed" : undefined}
     >
       {head}
+      {lead}
       {list.length === 0 ? (
-        <p className={styles.groupEmpty}>{empty}</p>
+        lead ? null : (
+          <p className={styles.groupEmpty}>{empty}</p>
+        )
       ) : linked ? (
         <>
           {linked.items.length > 0 ? rows(linked.items, linked.sectionLabels) : null}
@@ -959,9 +982,10 @@ function AlertsWorkspace() {
         "act",
         "Act now",
         actEntries,
-        <GroupHead tone="danger" label="Act now" count={actEntries.length} />,
+        <GroupHead tone="danger" label="Act now" count={actCount} />,
         "Nothing to act on now.",
         urgencyLink(0),
+        pullRows,
       )}
       {access.role === "coordinator" || access.role === "bed_manager" ? (
         <ForecastAlertsGroup
@@ -1028,7 +1052,8 @@ function AlertsWorkspace() {
           aria-label={label}
           data-testid={key === "snoozed" && list.length > 0 ? "ward-alerts-snoozed" : undefined}
         >
-          <GroupHead tone={tone} label={label} count={list.length} />
+          <GroupHead tone={tone} label={label} count={key === "act" ? actCount : list.length} />
+          {key === "act" ? pullRows : null}
           {list.length > 0 ? (
             <>
               <ul className={styles.cards}>
@@ -1038,7 +1063,7 @@ function AlertsWorkspace() {
               </ul>
               {lane < 2 ? linkedNote(laneLinked.shownEarlier[lane] ?? 0) : null}
             </>
-          ) : (
+          ) : key === "act" && pullRows ? null : (
             <p className={styles.groupEmpty}>None now</p>
           )}
         </section>
@@ -1145,6 +1170,7 @@ function AlertsWorkspace() {
 
   return (
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v8">
+      {pull.sheet}
       <main id="main-content" className={styles.main}>
         <AlertsHero
           isPhone={isPhone}
@@ -1154,7 +1180,7 @@ function AlertsWorkspace() {
           oldestRaised={oldestRaised}
           now={now}
           live={live}
-          actEntries={actEntries}
+          actCount={actCount}
           waitEntries={waitEntries}
           pill={pill}
           togglePill={togglePill}

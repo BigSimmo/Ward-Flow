@@ -67,8 +67,13 @@ function renderAt(search: string) {
   );
 }
 
+// 1 Nov 2026 redesign: a scoped sheet states "n of N open in <scope>" above the table; the whole
+// network needs no such line, so the scope control's chosen option names it instead.
 function scopeSummary(): string {
-  return screen.getByTestId("ward-handover-scope-summary").textContent ?? "";
+  const line = screen.queryByTestId("ward-handover-scope-summary");
+  if (line) return line.textContent ?? "";
+  const select = screen.getByTestId("ward-handover-scope-select") as HTMLSelectElement;
+  return select.selectedOptions[0]?.textContent ?? "";
 }
 
 describe("the handover sheet takes its scope from the URL", () => {
@@ -141,9 +146,11 @@ describe("handover output evidence boundaries", () => {
     renderAt(`?scope=${encodeURIComponent(scope)}`);
 
     expect(scopeSummary()).toContain(label);
-    const changes = within(screen.getByTestId("ward-handover-since"));
-    expect(changes.getByText("admitted across accessible wards")).toBeInTheDocument();
-    expect(changes.getByText("discharged across accessible wards")).toBeInTheDocument();
+    // 1 Nov 2026 redesign: what changed is one line in the header's at-a-glance row, which lists
+    // only the counts above zero. Any ward-wide count it shows still names its wider population.
+    const changes = screen.getByTestId("ward-handover-since-line").textContent ?? "";
+    expect(changes).toContain("discharged across accessible wards");
+    expect(changes).not.toMatch(/\d+ (admitted|discharged)(?! across accessible wards)/);
     // The copy action belongs to the phone digest sheet; desktop only displays the digest.
     cleanup();
     vi.stubGlobal(
@@ -173,11 +180,13 @@ describe("handover output evidence boundaries", () => {
   it("records preparation, never successful printing, when the native dialog returns without confirmation", () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => {});
     renderAt("");
-    fireEvent.click(screen.getByTestId("ward-handover-more"));
-    fireEvent.click(screen.getByRole("menuitem", { name: /Print handover/ }));
+    fireEvent.click(screen.getByTestId("ward-handover-print"));
     fireEvent.click(screen.getByRole("button", { name: "Print or save PDF" }));
     expect(print).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole("button", { name: "Back to handover" }));
+    fireEvent.click(
+      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
+    );
 
     expect(screen.getByTestId("ward-handover-sign-off-checks")).toHaveTextContent("Copy prepared for printing");
     expect(screen.getByTestId("ward-handover-sign-off-checks")).not.toHaveTextContent("Printed copy taken");

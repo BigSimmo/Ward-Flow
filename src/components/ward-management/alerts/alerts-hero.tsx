@@ -38,7 +38,7 @@ export function AlertsHero({
   oldestRaised,
   now,
   live,
-  actEntries,
+  actCount,
   waitEntries,
   pill,
   togglePill,
@@ -67,7 +67,8 @@ export function AlertsHero({
   oldestRaised: Instant | undefined;
   now: Instant;
   live: ReturnType<typeof usePageLive>;
-  actEntries: QueueEntry[];
+  /** Act now: the act-now alerts plus accepted referrals with no bed pulled (Q111). */
+  actCount: number;
   waitEntries: QueueEntry[];
   pill: HeroPill | null;
   togglePill: (next: HeroPill) => void;
@@ -119,7 +120,7 @@ export function AlertsHero({
             figures={[
               {
                 id: "act",
-                value: actEntries.length,
+                value: actCount,
                 label: "Act now",
                 tone: "danger",
                 pressed: pill === "act",
@@ -297,7 +298,7 @@ export function AlertsHero({
               <div className={styles.heroStats} role="group" aria-label="Alert summary">
                 <HeroStat
                   inline
-                  value={actEntries.length}
+                  value={actCount}
                   label="Act now"
                   tone="danger"
                   pressed={pill === "act"}

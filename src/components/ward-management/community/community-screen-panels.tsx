@@ -65,6 +65,11 @@ const ROSTER_TONE: Record<(typeof SAMPLE_ROSTER)[number]["status"], WfTone> = {
   "At base": "neutral",
 };
 
+/** The sample roster's head count, for the hero's "N of M working today" link. Every sample member is working. */
+export function communityRosterCounts(): { working: number; total: number } {
+  return { working: SAMPLE_ROSTER.length, total: SAMPLE_ROSTER.length };
+}
+
 /** Desktop "Worth attention" lines, each derived from the lists the page already shows. */
 export function communityAttentionItems(view: CommunityScreenView) {
   const {
