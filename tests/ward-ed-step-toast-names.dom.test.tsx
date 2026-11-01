@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render as rtlRender, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
@@ -7,6 +7,15 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { edStepSaid, edStepUndone } from "@/components/ward-management/ed/ed-screen-model";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { atPhoneWidthForEachTest, showPhoneLists } from "./helpers/ed-phone-lists";
+
+// Handover build (Josh, 1 Nov 2026): the referral inbox's full rows stay on the phone's Lists pane.
+atPhoneWidthForEachTest();
+const render = ((...args: Parameters<typeof rtlRender>) => {
+  const view = rtlRender(...args);
+  showPhoneLists();
+  return view;
+}) as typeof rtlRender;
 
 afterEach(cleanup);
 

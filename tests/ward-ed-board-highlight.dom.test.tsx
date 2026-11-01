@@ -41,7 +41,8 @@ describe("ED page — hero chips and board filters highlight, never hide", () =>
     );
     expect(rows()).toHaveLength(total);
     const solid = rows().filter((row) => row.getAttribute("data-dim") !== "true").length;
-    expect(screen.getByText(/of \d+ match/u)).toHaveTextContent(`${solid} of ${total} match`);
+    // Handover build (Josh, 1 Nov 2026): the count beside the title reads "N of M" while filtered.
+    expect(screen.getByText(new RegExp(`^${solid} of ${total}$`, "u"))).toBeInTheDocument();
   });
 
   it("keeps every row when a search matches nothing", () => {
@@ -86,21 +87,12 @@ describe("ED page — v10 pass 3: names and the person sheet", () => {
 });
 
 describe("ED page — clearance and review stay readable on a laptop (overall review, 20 Oct 2026)", () => {
-  it("repeats each row's clearance and review under the patient, in the same words as the columns", () => {
+  it("shows each row's clearance and review together in the Checks column (handover build, 1 Nov 2026)", () => {
     renderEd();
     for (const row of rows()) {
       const checks = within(row).getByTestId(/^ward-ed-row-checks-/u);
-      const cells = within(row).getAllByRole("cell");
-      // Columns: T, Patient, In ED, Bay, Form, Cleared, Review, Destination, Next.
-      const cleared = cells[5].textContent ?? "";
-      const review = cells[6].textContent ?? "";
-      const clearedWord = cleared.startsWith("Not cleared")
-        ? "Not cleared"
-        : cleared.startsWith("Cleared")
-          ? "Cleared"
-          : "Clearance pending";
-      expect(checks.textContent).toContain(clearedWord);
-      expect(checks.textContent).toContain(review.startsWith("Reviewed") ? "Reviewed" : "Not reviewed");
+      expect(checks.textContent).toMatch(/Clearance pending|Med cleared|Not cleared/u);
+      expect(checks.textContent).toMatch(/Reviewed|Not reviewed|revoked/iu);
     }
   });
 

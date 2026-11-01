@@ -216,7 +216,7 @@ export function TierBars({ urgency, testId }: { urgency: number; testId?: string
 /** The key for the tier bars, in the place of the T1 / T2 / T3 key. */
 export function TierBarsKey() {
   return (
-    <span className={handover.tierKey}>
+    <span className={handover.tierKey} data-testid="ward-tier-bars-key">
       {[1, 2, 3].map((urgency) => (
         <span key={urgency}>
           <TierBars urgency={urgency} />

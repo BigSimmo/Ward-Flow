@@ -39,12 +39,6 @@ export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
     inbox,
     referralDetailsOpenFor,
     setReferralDetailsOpenFor,
-    declineOpenFor,
-    declineDraft,
-    setDeclineDraft,
-    declineRejection,
-    toggleDecline,
-    submitDecline,
   } = ctx;
   return (
     <section aria-label="Referrals" className={styles.inboxSection} data-testid="ward-ed-inbox">
@@ -61,8 +55,6 @@ export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
           {inbox.map(({ referral, destination, addressing }) => {
             const clocks = referralClocks(referral, now);
             const lines = edReferralClockLines(clocks);
-            const declineOpen = declineOpenFor === referral.id;
-            const declineBlocked = declineReasonBlockedReason(declineDraft);
             const hasLinkedMovement = movements.some((movement) => movement.referralId === referral.id);
             const referralPatient = resolveSubjectPatient(referral, {
               patients: registryPatients,
@@ -166,76 +158,8 @@ export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
                       Ask for a bed
                     </button>
                   )}
-                  {addressing.state !== "queued" ? null : (
-                    <>
-                      <button
-                        type="button"
-                        className={styles.inboxBtn}
-                        data-testid={`ward-ed-inbox-decline-${referral.id}`}
-                        aria-expanded={declineOpen}
-                        onClick={() => toggleDecline(referral.id)}
-                      >
-                        Decline
-                      </button>
-                      {declineOpen ? (
-                        <div className={styles.declineForm} data-testid={`ward-ed-inbox-decline-panel-${referral.id}`}>
-                          <label
-                            className={styles.referralField}
-                            htmlFor={`ward-ed-inbox-decline-reason-${referral.id}`}
-                          >
-                            Why is this referral being declined?
-                            <select
-                              id={`ward-ed-inbox-decline-reason-${referral.id}`}
-                              data-testid={`ward-ed-inbox-decline-reason-${referral.id}`}
-                              value={declineDraft ?? NO_DECLINE_REASON_VALUE}
-                              onChange={(event) =>
-                                setDeclineDraft(
-                                  event.target.value === NO_DECLINE_REASON_VALUE
-                                    ? undefined
-                                    : (event.target.value as ReferralDeclineReason),
-                                )
-                              }
-                            >
-                              <option value={NO_DECLINE_REASON_VALUE}>Choose a reason</option>
-                              {ED_DECLINE_REASONS.map((reason) => (
-                                <option key={reason} value={reason}>
-                                  {DECLINE_REASON_LABELS[reason] ?? reason}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                          <button
-                            type="button"
-                            data-testid={`ward-ed-inbox-decline-confirm-${referral.id}`}
-                            className={styles.declineSubmit}
-                            aria-disabled={declineBlocked ? "true" : undefined}
-                            aria-describedby={
-                              declineBlocked ? `ward-ed-inbox-decline-blocked-${referral.id}` : undefined
-                            }
-                            title={declineBlocked ?? undefined}
-                            onClick={declineBlocked ? ignoreUnavailableActivation : () => submitDecline(referral.id)}
-                          >
-                            Record decline
-                          </button>
-                          {declineBlocked ? (
-                            <span id={`ward-ed-inbox-decline-blocked-${referral.id}`} className="sr-only">
-                              {declineBlocked}
-                            </span>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </>
-                  )}
+                  <EdInboxDecline ctx={ctx} referralId={referral.id} queued={addressing.state === "queued"} />
                 </div>
-                {declineRejection?.referralId === referral.id ? (
-                  <p
-                    className={styles.rejection}
-                    role="alert"
-                    data-testid={`ward-ed-inbox-decline-rejection-${referral.id}`}
-                  >
-                    Decline not recorded: {declineRejection.rejection.reason}
-                  </p>
-                ) : null}
               </li>
             );
           })}
@@ -270,4 +194,84 @@ export function askForBedFromReferral(ctx: EdScreenContext, referral: EdScreenCo
     sex: SEX_OPTIONS.find((option) => option === record?.sex),
   });
   setReferralOpen(true);
+}
+
+/** The ED's own decline of a referral addressed to it, with its reason and any refusal (Q128: also shown inside the opened referral on the desktop Lists card). */
+export function EdInboxDecline({
+  ctx,
+  referralId,
+  queued,
+}: {
+  ctx: EdScreenContext;
+  referralId: string;
+  queued: boolean;
+}) {
+  const { declineOpenFor, declineDraft, setDeclineDraft, declineRejection, toggleDecline, submitDecline } = ctx;
+  const referral = { id: referralId };
+  const declineOpen = declineOpenFor === referralId;
+  const declineBlocked = declineReasonBlockedReason(declineDraft);
+  return (
+    <>
+      {queued ? (
+        <>
+          <button
+            type="button"
+            className={styles.inboxBtn}
+            data-testid={`ward-ed-inbox-decline-${referral.id}`}
+            aria-expanded={declineOpen}
+            onClick={() => toggleDecline(referral.id)}
+          >
+            Decline
+          </button>
+          {declineOpen ? (
+            <div className={styles.declineForm} data-testid={`ward-ed-inbox-decline-panel-${referral.id}`}>
+              <label className={styles.referralField} htmlFor={`ward-ed-inbox-decline-reason-${referral.id}`}>
+                Why is this referral being declined?
+                <select
+                  id={`ward-ed-inbox-decline-reason-${referral.id}`}
+                  data-testid={`ward-ed-inbox-decline-reason-${referral.id}`}
+                  value={declineDraft ?? NO_DECLINE_REASON_VALUE}
+                  onChange={(event) =>
+                    setDeclineDraft(
+                      event.target.value === NO_DECLINE_REASON_VALUE
+                        ? undefined
+                        : (event.target.value as ReferralDeclineReason),
+                    )
+                  }
+                >
+                  <option value={NO_DECLINE_REASON_VALUE}>Choose a reason</option>
+                  {ED_DECLINE_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {DECLINE_REASON_LABELS[reason] ?? reason}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                data-testid={`ward-ed-inbox-decline-confirm-${referral.id}`}
+                className={styles.declineSubmit}
+                aria-disabled={declineBlocked ? "true" : undefined}
+                aria-describedby={declineBlocked ? `ward-ed-inbox-decline-blocked-${referral.id}` : undefined}
+                title={declineBlocked ?? undefined}
+                onClick={declineBlocked ? ignoreUnavailableActivation : () => submitDecline(referral.id)}
+              >
+                Record decline
+              </button>
+              {declineBlocked ? (
+                <span id={`ward-ed-inbox-decline-blocked-${referral.id}`} className="sr-only">
+                  {declineBlocked}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </>
+      ) : null}
+      {declineRejection?.referralId === referral.id ? (
+        <p className={styles.rejection} role="alert" data-testid={`ward-ed-inbox-decline-rejection-${referral.id}`}>
+          Decline not recorded: {declineRejection.rejection.reason}
+        </p>
+      ) : null}
+    </>
+  );
 }

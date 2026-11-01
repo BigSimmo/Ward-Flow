@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -13,6 +13,15 @@ vi.mock("next/link", () => ({
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { atPhoneWidthForEachTest, showPhoneLists } from "./helpers/ed-phone-lists";
+
+// Handover build (Josh, 1 Nov 2026): this list's full form stays on the phone's Lists pane (see the helper).
+atPhoneWidthForEachTest();
+const render = ((...args: Parameters<typeof rtlRender>) => {
+  const view = rtlRender(...args);
+  showPhoneLists();
+  return view;
+}) as typeof rtlRender;
 
 /**
  * 🔴 **THE EXPECTS LIST MAKES AN ORDERING CLAIM IN PROSE, AND NOTHING PINNED THE ORDER TO IT.**

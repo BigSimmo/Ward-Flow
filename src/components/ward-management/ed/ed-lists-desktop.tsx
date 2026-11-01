@@ -11,7 +11,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { referralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import type { EdScreenContext } from "./ed-screen-context";
 import { outstandingItem } from "./ed-screen-model";
-import { askForBedFromReferral } from "./ed-screen-inbox";
+import { askForBedFromReferral, EdInboxDecline } from "./ed-screen-inbox";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import { formTitleForCode } from "@/lib/form-register";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -99,7 +99,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                   <span className={handover.bandNote}>for psychiatric review</span>
                 </td>
               </tr>
-              {inbox.map(({ referral, destination }) => {
+              {inbox.map(({ referral, destination, addressing }) => {
                 const person = who(referral);
                 const open = referralDetailsOpenFor === referral.id;
                 const linked = movements.find((m) => m.referralId === referral.id);
@@ -189,6 +189,8 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                           >
                             Record not medically cleared
                           </button>
+                          {/* Q128 (Josh, 1 Nov 2026): Decline sits inside the opened referral. */}
+                          <EdInboxDecline ctx={ctx} referralId={referral.id} queued={addressing.state === "queued"} />
                         </div>
                       </td>
                     </tr>

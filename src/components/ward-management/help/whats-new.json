@@ -98,5 +98,10 @@
     "id": "2026-10-31-role-names-hidden-names",
     "date": "2026-10-31",
     "line": "Roles read Nurse in charge, Community team and Site bed manager; hidden names say \"Name not shown on this desk\"."
+  },
+  {
+    "id": "2026-11-01-ed-handover-table",
+    "date": "2026-11-01",
+    "line": "The ED page is now a handover table with Presentation and Form choices, and one Lists card."
   }
 ]

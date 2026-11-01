@@ -20,7 +20,6 @@ import { HomeEdPressure } from "@/components/ward-management/coordinator/home-ed
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { EdIndex } from "@/components/ward-management/ed/ed-index";
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
-import { EdPresentation } from "@/components/ward-management/ed/ed-board-controls";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -128,19 +127,13 @@ describe("WCAG 2.5.3 labels, sequential heading hierarchy, and clinical input hy
     unmountEdScreen();
   });
 
-  it("applies role=alert on Field error text and defaults data-gramm=false and spellCheck=false on TextInput, Textarea, and EdPresentation", () => {
+  it("applies role=alert on Field error text and defaults data-gramm=false and spellCheck=false on TextInput and Textarea", () => {
     render(
       <div>
         <Field label="UMRN" error="Invalid UMRN">
           <TextInput data-testid="wf-text-input" />
         </Field>
         <Textarea aria-label="Clinical notes" data-testid="wf-textarea" />
-        <EdPresentation
-          patientName="Bao Davenport"
-          value="Initial presentation note"
-          onChange={() => {}}
-          testId="ed-pres-trigger"
-        />
       </div>,
     );
 
@@ -158,11 +151,6 @@ describe("WCAG 2.5.3 labels, sequential heading hierarchy, and clinical input hy
     expect(textarea).toHaveAttribute("data-gramm_editor", "false");
     expect(textarea).toHaveAttribute("data-enable-grammarly", "false");
     expect(textarea).toHaveAttribute("spellcheck", "false");
-
-    const edTextarea = document.querySelector("dialog textarea");
-    expect(edTextarea).not.toBeNull();
-    expect(edTextarea).toHaveAttribute("spellcheck", "false");
-    expect(edTextarea).toHaveAttribute("data-gramm", "false");
-    expect(edTextarea).toHaveAttribute("data-gramm_editor", "false");
+    // Q103 (Josh, 1 Nov 2026): the ED presentation is a fixed list now, so it has no text box.
   });
 });

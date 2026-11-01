@@ -39,17 +39,28 @@ afterEach(() => {
 });
 
 describe("ED board tier key", () => {
-  it.each([
-    ["phone list", true],
-    ["wider-screen table", false],
-  ])("spells out the tier codes on the %s", (_label, phone) => {
-    emulate(phone);
+  it("spells out the tier codes on the phone list", () => {
+    emulate(true);
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <EdScreen edId="rph-ed" />
       </WardFlowProvider>,
     );
     expect(screen.getByTestId("ward-tier-key")).toHaveTextContent("T1 most urgent");
-    expect(screen.queryByRole("table", { name: /Emergency department board/ }) === null).toBe(phone);
+    expect(screen.queryByRole("table", { name: /Emergency department/u })).toBeNull();
+  });
+
+  it("keys the priority bars on the wider-screen table, which has no T column (handover build, 1 Nov 2026)", () => {
+    emulate(false);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <EdScreen edId="rph-ed" />
+      </WardFlowProvider>,
+    );
+    const key = screen.getByTestId("ward-tier-bars-key");
+    expect(key).toHaveTextContent("Most urgent");
+    expect(key).toHaveTextContent("Urgent");
+    expect(key).toHaveTextContent("Least urgent");
+    expect(screen.getByRole("table", { name: /Emergency department handover/u })).toBeInTheDocument();
   });
 });

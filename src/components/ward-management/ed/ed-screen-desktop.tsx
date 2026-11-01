@@ -91,7 +91,7 @@ export function renderEdBoardTableRow(
   const formFacts = <span className="sr-only">{formExpiryFacts}</span>;
   // Handover mock-up (Josh, 1 Nov 2026): clearance and review share one Checks column, two lines.
   const checksCell = (
-    <span className={handover.checks}>
+    <span className={handover.checks} data-testid={`ward-ed-row-checks-${movement.id}`}>
       <span className={styles.a2Value}>
         <StatusGlyph tone={clearedTone} size={8} />
         <span className={medicalClearance?.cleared ? undefined : styles.a2Quiet}>
