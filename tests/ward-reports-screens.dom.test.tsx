@@ -380,6 +380,19 @@ describe("read-only report screens", () => {
     expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: This week so far/u);
   });
 
+  it("offers this week so far when the last full week has no arrival to state (Q198)", () => {
+    inProvider(<WeeklyReportScreen />);
+    const soFar = screen.queryByTestId("ward-weekly-so-far");
+    if (screen.getByRole("heading", { level: 1 }).textContent === "Weekly operations") {
+      expect(soFar).not.toBeNull();
+      fireEvent.click(soFar!);
+      expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: This week so far/u);
+      expect(screen.queryByTestId("ward-weekly-so-far")).toBeNull();
+    } else {
+      expect(soFar).toBeNull();
+    }
+  });
+
   it("takes a stamped downtime snapshot and keeps it in tab memory", () => {
     inProvider(<DowntimePackScreen />);
     expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(/^Taken .* · next pack 11:00$/u);
