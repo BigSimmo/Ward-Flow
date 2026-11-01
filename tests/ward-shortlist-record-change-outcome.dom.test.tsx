@@ -121,7 +121,9 @@ describe("Home's legal status change waits for its answer", () => {
 
   it("retries only the form once the status is recorded, so the change is not recorded twice", () => {
     let refuseForm = true;
-    const sent = renderPanel((event) => (event.type === "RECORD_LEGAL_FORM_WRITTEN" && refuseForm ? REFUSED : undefined));
+    const sent = renderPanel((event) =>
+      event.type === "RECORD_LEGAL_FORM_WRITTEN" && refuseForm ? REFUSED : undefined,
+    );
     fillLegalStatusWithForm();
     fireEvent.click(screen.getByRole("button", { name: "Record legal status change" }));
     expect(sent).toEqual(["CHANGE_LEGAL_STATUS", "RECORD_LEGAL_FORM_WRITTEN"]);
