@@ -49,4 +49,16 @@ describe("Alerts side panel", () => {
     expect(act).toHaveAttribute("aria-selected", "true");
     expect(act).toHaveFocus();
   });
+  it("states only what is still outstanding, never a fixed sentence", () => {
+    const { container } = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AlertsScreen />
+      </WardFlowProvider>,
+    );
+    for (const row of Array.from(container.querySelectorAll<HTMLElement>("li[data-alert-id]"))) {
+      fireEvent.click(within(row).getByTestId("ward-alerts-open"));
+      const panel = screen.getByRole("complementary", { name: "Selected alert" });
+      expect(panel.textContent).not.toContain("Carer, personal support person and advocacy notifications are not recorded");
+    }
+  });
 });

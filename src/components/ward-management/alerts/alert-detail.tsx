@@ -160,6 +160,8 @@ export function AlertDetail({
   // "for", not a comma: the family-first name has its own comma ("Smith, Alice").
   const subjectLine = `${item.title} for ${subject.displayName}`;
   const declineCount = movement?.declines?.length ?? 0;
+  // A late booking estimate keeps alerting after departure, until arrival: say which it is.
+  const enRoute = movement?.transport?.enRouteAt !== undefined;
   // Alerts redesign: one plain sentence on the state card, and one on what the Act tab's button does.
   const stateNote =
     kind === "hold"
@@ -171,9 +173,12 @@ export function AlertDetail({
           : kind === "planned" && item.plannedAdmission
             ? `Expected at ${formatInstantWithDay(item.plannedAdmission.expectedArrivalAt, now)}. No arrival recorded.`
             : kind === "transport"
-              ? "Accepted and booked. Not left yet."
+              ? enRoute
+                ? "On the way and past its booking estimate. No arrival recorded."
+                : "Accepted and booked. Not left yet."
               : kind === "notify"
-                ? "Carer, personal support person and advocacy notifications are not recorded."
+                ? // Only the parties still outstanding, as the inbox detail names them.
+                  `${item.detail.split(" · ")[0]}.`
                 : undefined;
   const actNote =
     kind === "hold"
@@ -183,7 +188,9 @@ export function AlertDetail({
         : kind === "planned"
           ? "Record the arrival, or open the booking to change the time or cancel it."
           : kind === "transport"
-            ? "Chase opens the booking with the provider's number. Record the departure once they leave."
+            ? enRoute
+              ? "Chase opens the booking with the provider's number."
+              : "Chase opens the booking with the provider's number. Record the departure once they leave."
             : kind === "notify"
               ? "Record who was told, or record that a notification is not needed."
               : undefined;
