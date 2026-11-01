@@ -291,11 +291,11 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           </label>
           <label>
             Form written date and time
-            <DateTimeField value={written} onValueChange={setWritten} />
+            <DateTimeField label="Form written" value={written} onValueChange={setWritten} />
           </label>
           <label>
             Expiry written on paper
-            <DateTimeField value={expiry} onValueChange={setExpiry} />
+            <DateTimeField label="Expiry" value={expiry} onValueChange={setExpiry} />
           </label>
           <button
             type="button"

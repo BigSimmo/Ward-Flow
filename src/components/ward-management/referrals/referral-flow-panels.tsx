@@ -379,6 +379,7 @@ export function DocumentationPanel({
                   </div>
                   <DateTimeField
                     id={`${id}-expected`}
+                    label="Expected clearance"
                     value={draft.expectedAt}
                     onValueChange={(expectedAt) => onChange({ ...draft, expectedAt })}
                   />

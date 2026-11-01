@@ -514,8 +514,7 @@ test.describe("@mockup complete care dossier", () => {
       .getByLabel("Appointment date and time")
       .fill(`${pad(when.getDate())}/${pad(when.getMonth() + 1)}/${when.getFullYear()}`);
     await care
-      .getByRole("textbox", { name: "Time, HH:MM 24-hour" })
-      .first()
+      .getByRole("textbox", { name: "Appointment time, HH:MM 24-hour" })
       .fill(`${pad(when.getHours())}:${pad(when.getMinutes())}`);
     await care.getByRole("button", { name: "Record appointment", exact: true }).click();
     await expect(care).toContainText("Dr Alex Taylor");

@@ -298,7 +298,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                 </label>
                 <label className={styles.filterField}>
                   Appointment date and time
-                  <DateTimeField name="at" required />
+                  <DateTimeField name="at" label="Appointment" required />
                 </label>
                 <Choice label="Appointment mode" values={APPOINTMENT_MODES} />
                 <p>
@@ -322,7 +322,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                 <Choice label="Contact outcome" values={CONTACT_OUTCOMES} />
                 <label className={styles.filterField}>
                   Contact date and time
-                  <DateTimeField name="contactAt" required />
+                  <DateTimeField name="contactAt" label="Contact" required />
                 </label>
               </>,
               (d) =>
@@ -468,7 +468,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                   <Choice label="Paper authority" values={["revocation", "5A", "5B"]} />
                   <label className={styles.filterField}>
                     Authority written date and time
-                    <DateTimeField name="written" required />
+                    <DateTimeField name="written" label="Authority written" required />
                   </label>
                   <label>
                     <input name="checked" type="checkbox" required />

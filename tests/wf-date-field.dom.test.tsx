@@ -92,11 +92,11 @@ describe("kit typed date and time (DD/MM/YYYY plus HH:MM)", () => {
     const { container } = render(
       <form>
         <label htmlFor="when">When</label>
-        <DateTimeField id="when" name="when" onValueChange={(v) => seen.push(v)} />
+        <DateTimeField id="when" name="when" label="When" onValueChange={(v) => seen.push(v)} />
       </form>,
     );
     const date = screen.getByLabelText("When");
-    const time = screen.getByRole("textbox", { name: "Time, HH:MM 24-hour" });
+    const time = screen.getByRole("textbox", { name: "When time, HH:MM 24-hour" });
     const hidden = container.querySelector<HTMLInputElement>('input[type="hidden"][name="when"]');
     expect(date).toHaveAttribute("placeholder", "DD/MM/YYYY");
     expect(time).toHaveAttribute("placeholder", "HH:MM");
@@ -116,7 +116,8 @@ describe("kit typed date and time (DD/MM/YYYY plus HH:MM)", () => {
       const [value, setValue] = useState("");
       return (
         <>
-          <DateTimeField label="Written" value={value} onValueChange={setValue} />
+          <label htmlFor="written">Written</label>
+          <DateTimeField id="written" label="Written" value={value} onValueChange={setValue} />
           <button type="button" onClick={() => setValue("2026-03-12T08:30")}>
             Load
           </button>
@@ -124,7 +125,7 @@ describe("kit typed date and time (DD/MM/YYYY plus HH:MM)", () => {
       );
     }
     render(<Host />);
-    const date = screen.getByRole("textbox", { name: "Written date, DD/MM/YYYY" });
+    const date = screen.getByLabelText("Written");
     const time = screen.getByRole("textbox", { name: "Written time, HH:MM 24-hour" });
     expect(date).toHaveValue("");
     expect(time).toHaveValue("");

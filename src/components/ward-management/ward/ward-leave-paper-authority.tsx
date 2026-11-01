@@ -173,7 +173,7 @@ export function WardLeavePaperAuthority({
       <label>
         Date and time written on it
         {/* Typed as DD/MM/YYYY and HH:MM, never the browser's picker. A time later than now is refused on save. */}
-        <DateTimeField name="written" required value={written} onValueChange={setWritten} />
+        <DateTimeField name="written" label="Written" required value={written} onValueChange={setWritten} />
       </label>
       {writtenOld ? (
         <p className={styles.hint} data-testid="ward-drawer-leave-paper-old">

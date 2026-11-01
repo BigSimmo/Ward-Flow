@@ -125,8 +125,11 @@ export type DateTimeFieldProps = {
   required?: boolean;
   invalid?: boolean;
   disabled?: boolean;
-  /** Spoken before each box: "<label> date" and "<label> time". */
-  label?: string;
+  /**
+   * What the time box is for, spoken as "<label> time, HH:MM 24-hour" so two pairs on one form can be
+   * told apart. The date box takes its name from the caller's own `<label>`.
+   */
+  label: string;
   "data-testid"?: string;
 };
 
@@ -180,7 +183,6 @@ export function DateTimeField({
         required={required}
         disabled={disabled}
         invalid={invalid}
-        aria-label={label ? `${label} date, DD/MM/YYYY` : undefined}
         data-testid={testId ? `${testId}-date` : undefined}
         onValueChange={(nextDate) => {
           setDate(nextDate);
@@ -197,7 +199,7 @@ export function DateTimeField({
         required={required}
         disabled={disabled}
         invalid={invalid || timeWrong}
-        aria-label={label ? `${label} time, HH:MM 24-hour` : "Time, HH:MM 24-hour"}
+        aria-label={`${label} time, HH:MM 24-hour`}
         data-testid={testId ? `${testId}-time` : undefined}
         onChange={(event) => {
           setTimeText(event.target.value);

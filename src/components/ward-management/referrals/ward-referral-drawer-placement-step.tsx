@@ -579,7 +579,12 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                 </SelectBox>
               </Field>
               <Field label="Arrival, AWST" htmlFor={`${sectionId}-eta`}>
-                <DateTimeField id={`${sectionId}-eta`} value={arrivalEta} onValueChange={setArrivalEta} />
+                <DateTimeField
+                  id={`${sectionId}-eta`}
+                  label="Arrival"
+                  value={arrivalEta}
+                  onValueChange={setArrivalEta}
+                />
               </Field>
               <Field label="Dispatch ref" htmlFor={`${sectionId}-refTransitInput`}>
                 <input
