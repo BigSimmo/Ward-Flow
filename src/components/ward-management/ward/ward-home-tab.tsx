@@ -9,13 +9,13 @@ import {
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import React, { useEffect, useMemo, useState, useTransition } from "react";
+import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
 import { pendingDepartureLogRows, type WardShiftLogRow } from "./ward-departure-log";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
-import { MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
+import { EXTRA_TRAVEL_HOLD_MINUTES, MOVEMENT_DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
@@ -33,6 +33,7 @@ import {
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { referralFit, wardStateLine } from "./ward-referral-fit";
 import { AwaitingFitLines, AwaitingIdentity, WardReferralDetailDrawer } from "./ward-awaiting-referral";
+import { WardAcceptDialog } from "./ward-answer-accept-dialog";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
@@ -116,7 +117,7 @@ interface WardHomeTabProps {
   resolvePatientIdentity: (movementOrAdmission: Parameters<typeof resolveSubjectPatient>[0]) => ResolvedPatientInfo;
   lastActionRejection: Rejection | null | undefined;
   overrideReasonForm: (movementId: string) => React.ReactNode;
-  onAcceptInPrinciple?: (movementId: string, unitId: string) => void;
+  onAcceptInPrinciple?: (movementId: string, unitId: string, extendedHold?: boolean) => void;
   /** Why this desk may not answer the ward's referrals at all, such as the site bed manager (D-80). */
   answerBlockedReason?: string;
   liveFormAlerts: Array<{
@@ -256,7 +257,12 @@ export function WardHomeTab({
 }: WardHomeTabProps) {
   const [, startTransition] = useTransition();
   const phoneSheets = phonePanel !== undefined;
-  const { bedReleases, leaveBeds = [], admissions = [] } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions");
+  const {
+    bedReleases,
+    leaveBeds = [],
+    admissions = [],
+    configuration,
+  } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions", "configuration");
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
     drugs: null,
@@ -281,9 +287,20 @@ export function WardHomeTab({
 
   const [referralDetailFor, setReferralDetailFor] = useState<string | null>(null);
 
+  // Q93 (Josh, 1 Nov 2026): no referral is accepted in one tap. Accept opens the named accept
+  // dialog, with its pull time limit, and nothing is recorded until it is confirmed.
+  const [acceptFor, setAcceptFor] = useState<string | null>(null);
+  const [acceptExtended, setAcceptExtended] = useState(false);
+  const acceptDialogRef = useRef<HTMLDivElement | null>(null);
+
   function acceptIncoming(movementId: string) {
+    setAcceptExtended(false);
+    setAcceptFor(movementId);
+  }
+
+  function recordAccept(movementId: string, extendedHold: boolean) {
     if (onAcceptInPrinciple) {
-      onAcceptInPrinciple(movementId, unit.id);
+      onAcceptInPrinciple(movementId, unit.id, extendedHold);
     } else {
       priorRejectionCountRef.current = rejections.length;
       setCheckToken((token) => token + 1);
@@ -2021,6 +2038,37 @@ export function WardHomeTab({
             onAccept={() => {
               setReferralDetailFor(null);
               acceptIncoming(detailMovement.id);
+            }}
+          />
+        );
+      })()}
+
+      {(() => {
+        // The referral the accept dialog was opened for, while it is still waiting here (CS-08).
+        const acceptMovement = visibleIncoming.find((movement) => movement.id === acceptFor);
+        if (!acceptMovement) return null;
+        return (
+          <WardAcceptDialog
+            movement={acceptMovement}
+            patientName={resolvePatientIdentity(acceptMovement).formalName}
+            unitName={unit.name}
+            now={now}
+            extended={acceptExtended}
+            holdChoices={[
+              { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+              {
+                extended: true,
+                label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+              },
+            ]}
+            dialogRef={acceptDialogRef}
+            onChooseHold={setAcceptExtended}
+            onCancel={() => {
+              setAcceptFor(null);
+            }}
+            onConfirm={() => {
+              setAcceptFor(null);
+              recordAccept(acceptMovement.id, acceptExtended);
             }}
           />
         );
