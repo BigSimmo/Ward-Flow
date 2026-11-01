@@ -198,7 +198,7 @@
 
 .split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) 336px;
   gap: 12px;
   align-items: start;
 }
@@ -986,7 +986,7 @@
 
 /* Beside the side rail, the table needs about 900px for its six columns, so the sign-off card
  * moves under it below 1440px instead of squeezing every column to an ellipsis. */
-@media (max-width: 90rem) {
+@media (max-width: 75rem) {
   .split {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1047,17 +1047,22 @@
 
 /* ---------------------------------------------------------------- v10 */
 
-/* Highlights never tint the rows they match; the rest dim by colour (data-dim). */
+/* Highlights tint the rows they match; every row stays. */
+.row[data-highlighted="true"] td {
+  background: color-mix(in srgb, var(--wf-accent) 8%, var(--wf-surface));
+}
+
+.row[data-highlighted="true"]:hover td {
+  background: color-mix(in srgb, var(--wf-accent) 12%, var(--wf-surface));
+}
+
 .row[data-dim="true"] {
   --wf-ink-1: var(--wf-dim);
   --wf-ink-2: var(--wf-dim);
   --wf-ink-3: var(--wf-dim);
 }
 
-/* Act now: an inset coral marker and subtle tint. */
-.row[data-act="true"] {
-  background: var(--wf-act-tint);
-}
+/* Act now shows by its glyph only: no row tint and no side edge (D-94). */
 
 /* Since you looked sits under the hero as one flush card. */
 .since {
@@ -1145,3 +1150,433 @@
 }
 
 /* No side edges (Josh, 31 Oct 2026): act-now rows sit under the Act now group's danger glyph, with no left stripe. */
+
+/* ---------------------------------------------------------------- 1 Nov 2026 mock-up pass */
+
+/* One toolbar line: 40px controls (D-94 desktop rule for this page's tools). */
+.toolbar :is(button, a)[class*="button"],
+.bar :is(button[class*="button"], select) {
+  height: 40px;
+  font-size: var(--wf-fs-13);
+}
+
+.bar {
+  min-height: 64px;
+  padding: 12px;
+}
+
+.barOn {
+  background: var(--wf-accent-tint);
+  border-color: color-mix(in srgb, var(--wf-accent) 45%, transparent);
+  color: var(--wf-accent-ink);
+}
+
+.moreList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 200px;
+  padding: 4px;
+}
+
+.moreList a {
+  justify-content: flex-start;
+  height: 40px;
+}
+
+.viewPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 280px;
+  padding: 8px;
+}
+
+.viewPanel select {
+  height: 40px;
+}
+
+.viewHead {
+  margin-top: 4px;
+  font: 600 var(--wf-fs-12) / 16px var(--wf-font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.viewCols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 8px;
+}
+
+.hlChips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hlChip {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 8px 0 12px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.hlChip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.hlCount {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.stepLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.sinceRail {
+  padding: 12px 16px 14px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.sinceRailTitle {
+  margin: 0 0 8px;
+  font: 600 var(--wf-fs-12) / 16px var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.sinceRailList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sinceRailList li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.sinceRailList b {
+  font-size: var(--wf-fs-15);
+  color: var(--wf-ink-1);
+}
+
+.sinceRailDetail {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.checksDone {
+  margin-left: auto;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--wf-ink-3);
+}
+
+.checkMeter {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+}
+
+.checkMeter i {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wf-line-2);
+}
+
+.checkMeter i[data-done="true"] {
+  background: var(--wf-success);
+}
+
+/* Toolbar pieces keep their own width; only the spacer grows. */
+.bar > :not(.spacer) {
+  flex: 0 0 auto;
+}
+
+.bar select {
+  min-width: 200px;
+}
+
+.bar button {
+  white-space: nowrap;
+}
+
+/* Second lines never wrap the row taller: they end in an ellipsis with the full text on hover. */
+.sheetTable .sub,
+.sheetTable .next {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 100%;
+}
+
+.sheetTable td {
+  height: 56px;
+}
+
+.sheetTable .two > b {
+  white-space: nowrap;
+}
+
+.stepLine > span:last-child {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar > :first-child {
+  max-width: 240px;
+}
+
+.sheetTable .two > .sub:not(.trunc) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 85rem) {
+  .split {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+}
+
+@media (max-width: 75rem) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 1 Nov 2026, round 3: filter, print, sign off. */
+.contextRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+@media (max-width: 62.5rem) {
+  .contextRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.contextRow > * {
+  margin: 0;
+}
+
+.contextRow > .sinceRail {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stepLabel {
+  font: 600 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.bar {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.step select {
+  width: 200px;
+  min-width: 0;
+}
+
+.bar > .step:first-child {
+  max-width: none;
+}
+
+.contextRow {
+  align-items: start;
+}
+
+.contextRow > .sinceRail {
+  display: block;
+}
+
+/* An empty rail gives its width back to the table at every width. */
+.split.splitFull {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* iPad portrait: the bottom bar opens sign-off, so the rail's own trigger stays hidden. */
+.portraitRailHost {
+  display: contents;
+}
+
+.portraitRailHost > [data-testid="wf-portrait-rail-trigger"] {
+  display: none;
+}
+
+/* ---------- 1 Nov 2026, round 5: header counts and the at-a-glance line (Waiting's pattern) ---------- */
+.hStats {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.hStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: -4px 0;
+  padding: 4px 16px;
+  border: 0;
+  border-left: 1px solid var(--wf-hero-edge);
+  border-radius: 0;
+  background: none;
+  color: var(--wf-hero-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.hStat:first-child {
+  border-left: 0;
+}
+.hStat[aria-pressed="true"] {
+  border-left-color: transparent;
+  border-radius: var(--wf-r-lg);
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+}
+.hStat[aria-pressed="true"] + .hStat {
+  border-left-color: transparent;
+}
+.hStat:hover .hStatV {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+.hStatV {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  font-weight: 600;
+}
+.hStatL {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.glance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+  width: 100%;
+}
+.gl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 2px 14px 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--wf-hero-ink);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: left;
+  white-space: nowrap;
+}
+.gl + .gl {
+  padding-left: 14px;
+  border-left: 1px solid var(--wf-on-hero-div);
+}
+button.gl {
+  cursor: pointer;
+}
+button.gl:hover .glValue {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.glIcon {
+  flex: none;
+  color: var(--wf-hero-info);
+}
+.glIcon[data-tone="warning"] {
+  color: var(--wf-hero-warning);
+}
+.glIcon[data-tone="danger"] {
+  color: var(--wf-hero-danger);
+}
+.glIcon[data-tone="success"] {
+  color: var(--wf-hero-success);
+}
+.glLabel {
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-12);
+}
+.glValue {
+  color: var(--wf-hero-ink);
+  font-weight: 600;
+}
+.glNum {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.glChevron {
+  flex: none;
+  color: var(--wf-hero-ink-3);
+}
+.glance .gapBar {
+  width: 72px;
+  min-width: 72px;
+}
+.dueSub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+@media (max-width: 85rem) {
+  .glance .gapBar {
+    display: none;
+  }
+}

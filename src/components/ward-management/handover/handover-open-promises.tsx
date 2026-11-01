@@ -5,11 +5,12 @@ import Link from "next/link";
 
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { commitmentsDueBy, promiseOverdue } from "@/components/ward-management/referrals/referral-commitments-model";
-import { referralCommitmentStepLabel } from "@/components/ward-management/referrals/referral-commitments";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
+import { ChevronRight, PhoneCall } from "lucide-react";
+import { Icon, StatusGlyph } from "@/components/wf";
 
 import styles from "./handover-open-promises.module.css";
 
@@ -30,7 +31,7 @@ export function HandoverOpenPromises({
   referrals: readonly Referral[];
   units: readonly Unit[];
   now: Instant;
-  layout?: "page" | "phone";
+  layout?: "page" | "rail" | "phone";
 }) {
   const baseId = useId();
   const patientOf = usePatientOf();
@@ -38,6 +39,32 @@ export function HandoverOpenPromises({
   const items = commitmentsDueBy(referrals, Number.POSITIVE_INFINITY);
   if (items.length === 0) return null;
   const wardName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
+  const at = (instant: Instant) => formatInstantWithDay(instant, now);
+  /*
+   * Round 6 (Josh, 1 Nov 2026): what this card is for. A ward's answer the coordinator is still
+   * waiting on, carried to the next shift so nobody drops it. Each row says, in one line, when to
+   * chase, who it is about and what the ward said. Listed by that time, earliest first: a clock
+   * order, not a clinical ranking.
+   */
+  const rows = items
+    .map((item) => {
+      const status = item.status;
+      const overdue = promiseOverdue(status, now);
+      const callback = status.nextCallbackAt?.at;
+      const promised = status.step?.step === "promised" ? status.promisedFor : undefined;
+      const when = overdue ? promised! : (callback ?? promised ?? now);
+      const ward = wardName(item.unitId);
+      const what =
+        promised !== undefined
+          ? `${ward} promised an answer by ${at(promised)}`
+          : status.step?.step === "acknowledged"
+            ? `${ward} acknowledged, no time promised`
+            : `Waiting for ${ward} to respond`;
+      const then = callback !== undefined && (overdue || promised !== undefined) ? `ring again ${at(callback)}` : null;
+      return { item, overdue, when, ward, what, then, isCallback: !overdue && callback !== undefined };
+    })
+    .sort((left, right) => left.when - right.when);
+  const overdueCount = rows.filter((row) => row.overdue).length;
   return (
     <section
       className={styles.panel}
@@ -46,28 +73,51 @@ export function HandoverOpenPromises({
       data-testid="ward-handover-open-promises"
     >
       <h2 id={`${baseId}-heading`} className={styles.heading}>
-        Open promises and callbacks to carry over ({items.length})
+        <Icon icon={PhoneCall} size={16} className={styles.headIcon} />
+        Ward promises to chase
+        <span className={styles.count}>{rows.length}</span>
+        {overdueCount > 0 ? (
+          <span className={styles.overdueCount}>
+            <StatusGlyph tone="danger" size={8} />
+            {overdueCount} overdue
+          </span>
+        ) : null}
+        <span className={styles.note}>Earliest first</span>
       </h2>
-      <p className={styles.note}>Overdue or still to come, each with its recorded time. Recorded order.</p>
       <ul className={styles.list}>
-        {items.map((item) => {
+        {rows.map(({ item, overdue, when, what, then, isCallback }) => {
           const who = patientOf(item.referral);
-          const overdue = promiseOverdue(item.status, now);
-          const callback = item.status.nextCallbackAt;
           return (
             <li key={`${item.referral.id}-${item.unitId}`} data-testid={`ward-handover-promise-${item.referral.id}`}>
-              <Link href={referralBoardHref(item.referral.id)} className={styles.row}>
-                <span className={styles.who}>
-                  <span className={styles.name}>{nameFor(who.formalName, who.umrn)}</span>{" "}
-                  <span className={styles.ward}>{wardName(item.unitId)}</span>
+              <Link
+                href={referralBoardHref(item.referral.id)}
+                className={styles.row}
+                data-overdue={overdue || undefined}
+              >
+                <span className={styles.time}>
+                  {overdue ? (
+                    <span className={styles.overdue}>
+                      <StatusGlyph tone="danger" size={8} />
+                      Overdue
+                    </span>
+                  ) : (
+                    <span className={styles.clock}>{at(when)}</span>
+                  )}
+                  <span className={styles.timeNote}>
+                    {overdue ? `since ${at(when)}` : isCallback ? "ring back" : "answer due"}
+                  </span>
                 </span>
-                <span className={styles.meta}>
-                  {item.status.step ? referralCommitmentStepLabel(item.status.step.step) : "No step recorded"}
-                  {item.status.promisedFor !== undefined
-                    ? ` · promised by ${formatInstantWithDay(item.status.promisedFor, now)}`
-                    : ""}
-                  {callback ? ` · next callback ${formatInstantWithDay(callback.at, now)}` : ""}
-                  {overdue ? <span className={styles.overdue}> · Promise overdue</span> : null}
+                <span className={styles.who}>
+                  <span className={styles.name}>{nameFor(who.formalName, who.umrn)}</span>
+                  {who.umrn ? <span className={styles.umrn}>{who.umrn}</span> : null}
+                </span>
+                <span className={styles.what}>
+                  {what}
+                  {then ? <span className={styles.then}> · {then}</span> : null}
+                </span>
+                <span className={styles.open}>
+                  Open
+                  <Icon icon={ChevronRight} size={14} />
                 </span>
               </Link>
             </li>

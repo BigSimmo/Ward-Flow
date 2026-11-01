@@ -77,6 +77,16 @@ const AddPatientForm = dynamic<MockupPageProps>(() =>
   ),
 );
 
+// Handover mock-up (1 Nov 2026): the real screen with the proposed changes, fed by the preview world.
+const HandoverScreen = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/handover/handover-page").then(
+    (module) =>
+      function HandoverBackdrop() {
+        return <module.HandoverPage />;
+      },
+  ),
+);
+
 import type { BuiltPageSlug } from "./built-pages";
 
 export type MockupPageProps = { openOnLoad?: string };
@@ -92,4 +102,5 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "legal-forms": LegalFormsScreen,
   patient: PatientNowBackdrop,
   "add-patient": AddPatientForm,
+  handover: HandoverScreen,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

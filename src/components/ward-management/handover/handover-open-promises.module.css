@@ -1,95 +1,199 @@
-/* Open promises carried over at handover (closing-the-loop package A). */
+/* Ward promises to chase (closing-the-loop package A; redesigned 1 Nov 2026, round 6). One line per
+   promise: when to chase, who, what the ward said, Open. Tokens only, so dark mode follows. */
 
 .panel {
-  display: grid;
-  gap: var(--wf-s-2);
-  margin-block: var(--wf-s-2);
-  padding: var(--wf-s-3);
+  margin: 0;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-tag);
-  background: var(--wf-surface, transparent);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
 }
 
-/* Phone: a rounded card like Since previous handover, inside the page gutter. */
 .panel[data-layout="phone"] {
-  gap: 4px;
-  margin: 0;
-  padding: 10px 12px;
   border-radius: 16px;
-  box-shadow: var(--wf-e1);
 }
 
 .heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
   margin: 0;
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-14) / 20px var(--wf-font);
   color: var(--wf-ink-1);
 }
 
-.note {
-  margin: 0;
+.headIcon {
+  flex: none;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
+}
+
+.count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-12) / 18px var(--wf-mono);
+  text-align: center;
+  color: var(--wf-ink-2);
+}
+
+.overdueCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-danger-ink, var(--wf-danger));
+}
+
+.note {
+  margin-left: auto;
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-ink-3);
 }
 
 .list {
-  display: grid;
-  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.list > li + li {
+.list li + li {
   border-top: 1px solid var(--wf-line);
 }
 
-/* One compact tap target per row: name and ward, then the step and times. */
 .row {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  min-height: 24px;
-  padding-block: 4px;
+  display: grid;
+  grid-template-columns: 112px minmax(160px, 220px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 48px;
+  padding: 6px 16px;
   color: inherit;
   text-decoration: none;
-  overflow-wrap: anywhere;
 }
 
-/* A finger needs a 44px target; the row grows to hold it. */
-@media (pointer: coarse) {
-  .row {
-    min-height: 44px;
-  }
+.row:hover {
+  background: var(--wf-surface-2);
 }
 
 .row:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
-.who {
-  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+/* The one most urgent surface may take a soft danger tint (design rule, 31 Oct). */
+.row[data-overdue] {
+  background: color-mix(in srgb, var(--wf-danger) 6%, transparent);
+}
+
+.time {
+  display: grid;
+  gap: 1px;
+}
+
+.overdue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-danger-ink, var(--wf-danger));
+}
+
+.clock {
+  font: 600 var(--wf-fs-14) / 18px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
 }
 
-.name {
-  color: var(--wf-accent-ink);
-  font-weight: 600;
-}
-
-.row:hover .name {
-  text-decoration: underline;
-}
-
-.meta {
+.timeNote {
   font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.who {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.umrn {
+  font: 400 var(--wf-fs-12) / 16px var(--wf-mono);
   color: var(--wf-ink-3);
 }
 
-/* Spelled out in words beside the colour, never colour alone. */
-.overdue {
-  color: var(--wf-warning-ink);
-  font-weight: 600;
+.what {
+  min-width: 0;
+  overflow: hidden;
+  font: 400 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.then {
+  color: var(--wf-ink-3);
+}
+
+.open {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  color: var(--wf-accent);
+}
+
+/* Narrow: time and name on the first line, what the ward said underneath. */
+@media (max-width: 62.5rem) {
+  .note {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: 96px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "time who open"
+      "time what open";
+    gap: 2px 12px;
+    padding: 10px 16px;
+  }
+
+  .time {
+    grid-area: time;
+  }
+
+  .who {
+    grid-area: who;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .what {
+    grid-area: what;
+    white-space: normal;
+  }
+
+  .open {
+    grid-area: open;
+  }
+}
+
+.panel[data-layout="phone"] .open {
+  font-size: 0;
 }
