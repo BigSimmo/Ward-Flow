@@ -140,7 +140,11 @@ export function WardArrivalsCorridor({
   const releasePulledBed = (movementId: string, record: () => ReturnType<WardCommandDispatch>) => {
     priorRejectionCountRef.current = rejections.length;
     const priorRejectionId = lastActionRejection?.id;
-    setReleaseFailures(({ [movementId]: _cleared, ...others }) => others);
+    setReleaseFailures((current) => {
+      const others = { ...current };
+      delete others[movementId];
+      return others;
+    });
     completeCommand(wardCommandKey("release-pulled-bed", movementId), record, (outcome) => {
       const failure = wardCommandFailure(outcome);
       if (!failure || !outcome) return;
