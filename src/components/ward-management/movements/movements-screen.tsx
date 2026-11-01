@@ -45,6 +45,7 @@ import {
   CardHead,
   Hero,
   LiveChip,
+  PhoneFilterFold,
   RadioGroup,
   StatusGlyph,
   TextInput,
@@ -688,6 +689,33 @@ export function MovementsScreen() {
     Arrived: 3,
     Cancelled: 0,
   };
+  // The Arrange choice: a row in the toolbar on a wider screen, inside the Filter sheet on a phone.
+  const arrangeGroup = (
+    <RadioGroup className={styles.orderBar} aria-label="Order">
+      <span className={styles.orderLegend} aria-hidden="true">
+        Arrange
+      </span>
+      {(
+        [
+          { id: "stands", label: "Stage", description: "By where it stands" },
+          { id: "transport", label: "Transport", description: "By transport leg, and what has none" },
+          { id: "wait", label: "Longest wait", description: "By how long it has waited" },
+        ] as const
+      ).map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          role="radio"
+          aria-checked={order === option.id}
+          title={option.description}
+          className={styles.orderBtn}
+          onClick={() => startTransition(() => setOrder(option.id))}
+        >
+          <span>{option.label}</span>
+        </button>
+      ))}
+    </RadioGroup>
+  );
   const transportFeed = (onPicked?: () => void) => (
     <div
       className={cx(styles.transportRunsFeed, flow.trFeed)}
@@ -1017,30 +1045,6 @@ export function MovementsScreen() {
           )}
         </section>
 
-        {isPhone ? (
-          <MovementsPhoneNav
-            activeCorridorCount={activeCorridorCount}
-            corridors={corridors}
-            detailId={detailId}
-            horizonLanes={horizonLanes}
-            legs={legs}
-            now={now}
-            openDetail={openDetail}
-            phoneArrivalsTimeline={phoneArrivalsTimeline}
-            phoneCorridors={phoneCorridors}
-            phoneInbound={phoneInbound}
-            phoneInboundWards={phoneInboundWards}
-            phoneSheet={phoneSheet}
-            refusedCorridors={refusedCorridors}
-            revealMovement={revealMovement}
-            setPhoneArrivalsTimeline={setPhoneArrivalsTimeline}
-            setPhoneSheet={setPhoneSheet}
-            transportFeed={transportFeed}
-            units={units}
-            withoutTransport={withoutTransport}
-          />
-        ) : null}
-
         {isPhone ? null : (
           <section
             className={cx(styles.trafficPanel, styles.trafficFullNames)}
@@ -1122,31 +1126,18 @@ export function MovementsScreen() {
                 }
               />
               <div className={flow.toolbar}>
-                {boardTab === "every" ? (
-                  <RadioGroup className={styles.orderBar} aria-label="Order">
-                    <span className={styles.orderLegend} aria-hidden="true">
-                      Arrange
-                    </span>
-                    {(
-                      [
-                        { id: "stands", label: "Stage", description: "By where it stands" },
-                        { id: "transport", label: "Transport", description: "By transport leg, and what has none" },
-                        { id: "wait", label: "Longest wait", description: "By how long it has waited" },
-                      ] as const
-                    ).map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={order === option.id}
-                        title={option.description}
-                        className={styles.orderBtn}
-                        onClick={() => startTransition(() => setOrder(option.id))}
-                      >
-                        <span>{option.label}</span>
-                      </button>
-                    ))}
-                  </RadioGroup>
+                {boardTab === "every" && !isPhone ? arrangeGroup : null}
+                {/* Phone audit (1 Nov 2026): Arrange folds into one Filter button, as on ED, so the first
+                    movement sits higher. Arranging only reorders; no row is hidden. */}
+                {boardTab === "every" && isPhone ? (
+                  <PhoneFilterFold
+                    count={order === "stands" ? 0 : 1}
+                    title="Arrange the list"
+                    description="Every movement stays on the list."
+                    data-testid="ward-movements-arrange-fold"
+                  >
+                    {arrangeGroup}
+                  </PhoneFilterFold>
                 ) : null}
                 <span className={flow.toolbarSpacer} />
                 {highlightLabel !== null && matchesSearch === null ? (
@@ -1452,6 +1443,32 @@ export function MovementsScreen() {
             </Card>
           </aside>
         </div>
+
+        {/* Phone audit (1 Nov 2026): the three link cards sit after the list, so the first movement
+            is near the top. */}
+        {isPhone ? (
+          <MovementsPhoneNav
+            activeCorridorCount={activeCorridorCount}
+            corridors={corridors}
+            detailId={detailId}
+            horizonLanes={horizonLanes}
+            legs={legs}
+            now={now}
+            openDetail={openDetail}
+            phoneArrivalsTimeline={phoneArrivalsTimeline}
+            phoneCorridors={phoneCorridors}
+            phoneInbound={phoneInbound}
+            phoneInboundWards={phoneInboundWards}
+            phoneSheet={phoneSheet}
+            refusedCorridors={refusedCorridors}
+            revealMovement={revealMovement}
+            setPhoneArrivalsTimeline={setPhoneArrivalsTimeline}
+            setPhoneSheet={setPhoneSheet}
+            transportFeed={transportFeed}
+            units={units}
+            withoutTransport={withoutTransport}
+          />
+        ) : null}
 
         <WardPrototypeFooter
           testId="ward-movements-governance"
