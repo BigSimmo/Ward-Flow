@@ -352,7 +352,7 @@ describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () =>
     const active = activeTaskItems(world!, NOW);
     expect(active.some((item) => alertKindOf(item.id) === "running")).toBe(true);
     // Alerts redesign (1 Nov 2026): the band's meta reads "oldest … · n yours", so the Now tab carries the open count.
-    expect(screen.getByRole("tab", { name: /^Now/u }).textContent).toContain(String(active.length));
+    expect(screen.getByRole("tab", { name: /^Now/u }).textContent?.replace(/\s+/gu, "")).toBe(`Now${active.length}`);
   });
 });
 

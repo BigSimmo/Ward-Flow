@@ -184,9 +184,10 @@ function Who({ entry }: { entry: QueueEntry }) {
 
 /** "10m overdue" under "10m" says the time twice; the note keeps only what it adds. */
 function ageNoteFor(entry: QueueEntry, age: string | undefined, now: Instant): string {
+  // A snoozed alert says when it comes back, even a legal one with a typed end.
+  if (entry.snooze) return snoozedLine(entry.snooze, now);
   const ended = legalTypedEnd(entry.item);
   if (ended !== undefined) return typedTimeLine(ended, now);
-  if (entry.snooze) return snoozedLine(entry.snooze, now);
   if (entry.raised === undefined) return "Time not recorded";
   const overdue = extractOverdue(entry.item.detail);
   if (!overdue) return `since ${formatInstantWithDay(entry.raised, now)}`;

@@ -29,4 +29,27 @@ describe("Today band rows", () => {
     const track = screen.getByRole("group", { name: "Alerts raised and acted on today" });
     expect(track.style.height).toBe(`${84 + 2 * 26}px`);
   });
+
+  it("stacks marks drawn at the left edge, even when their real times are far apart (review on #1238)", () => {
+    // Now 600 puts the window at 360 to 720, so marks at 100, 200 and 300 are all drawn at 360.
+    const raised = [100, 200, 300].map((at, index) => ({
+      id: `E${index}`,
+      at: at as Instant,
+      shape: "act" as const,
+      title: `Synthetic early alert ${index}`,
+    }));
+    render(
+      <TodayBand
+        raised={raised}
+        acted={[]}
+        broadcasts={[]}
+        now={600 as Instant}
+        onPick={() => {}}
+        noTimeCount={0}
+        onOpenBroadcast={() => {}}
+      />,
+    );
+    const bottoms = raised.map((point) => screen.getByRole("button", { name: point.title }).style.bottom);
+    expect(new Set(bottoms).size).toBe(raised.length);
+  });
 });

@@ -1058,37 +1058,39 @@ function AlertsWorkspace() {
   const lanesView = (
     <div className={styles.lanes}>
       {laneLists.map(([key, label, tone, list], lane) => (
-        <section
-          key={key}
-          className={styles.lane}
-          aria-label={label}
-          data-testid={key === "snoozed" && list.length > 0 ? "ward-alerts-snoozed" : undefined}
-        >
+        // Forecast sits above Snoozed in the third lane as its own region, never inside Snoozed.
+        <div key={key} className={styles.lane}>
           {key === "snoozed" ? forecastLane : null}
-          <GroupHead
-            tone={tone}
-            label={label}
-            count={key === "act" ? actCount : list.length}
-            aside={key === "act" ? "most urgent first" : key === "wait" ? "oldest first" : undefined}
-          />
-          {key === "act" ? pullRows : null}
-          {list.length > 0 ? (
-            <>
-              <ul className={styles.cards}>
-                {lane < 2
-                  ? linkedItems(laneLinked.sections[lane] ?? [], styles.cards, ["Act now", "Waiting"], cardFor)
-                  : list.map(cardFor)}
-              </ul>
-              {lane < 2 ? linkedNote(laneLinked.shownEarlier[lane] ?? 0) : null}
-            </>
-          ) : key === "act" && pullRows ? null : (
-            <p className={styles.groupEmpty}>
-              {key === "snoozed"
-                ? "A snoozed alert waits here and returns at its time. A snoozed act-now alert also stays listed in Act now."
-                : "None now"}
-            </p>
-          )}
-        </section>
+          <section
+            className={parts.laneSection}
+            aria-label={label}
+            data-testid={key === "snoozed" && list.length > 0 ? "ward-alerts-snoozed" : undefined}
+          >
+            <GroupHead
+              tone={tone}
+              label={label}
+              count={key === "act" ? actCount : list.length}
+              aside={key === "act" ? "most urgent first" : key === "wait" ? "oldest first" : undefined}
+            />
+            {key === "act" ? pullRows : null}
+            {list.length > 0 ? (
+              <>
+                <ul className={styles.cards}>
+                  {lane < 2
+                    ? linkedItems(laneLinked.sections[lane] ?? [], styles.cards, ["Act now", "Waiting"], cardFor)
+                    : list.map(cardFor)}
+                </ul>
+                {lane < 2 ? linkedNote(laneLinked.shownEarlier[lane] ?? 0) : null}
+              </>
+            ) : key === "act" && pullRows ? null : (
+              <p className={styles.groupEmpty}>
+                {key === "snoozed"
+                  ? "A snoozed alert waits here and returns at its time. A snoozed act-now alert also stays listed in Act now."
+                  : "None now"}
+              </p>
+            )}
+          </section>
+        </div>
       ))}
     </div>
   );
@@ -1098,16 +1100,17 @@ function AlertsWorkspace() {
       .filter((entry) => entry.owner === owner)
       .sort((a, b) => (a.group === "act" ? 0 : 1) - (b.group === "act" ? 0 : 1));
     const yours = ownerShort(owner, coordDesk) === "You";
-    const actCount = list.filter((entry) => entry.group === "act").length + (yours ? toPull.length : 0);
+    // A snoozed act-now alert stays listed but is not counted as act now (review on #1238).
+    const ownerAct = list.filter((e) => e.group === "act" && !e.snooze).length + (yours ? toPull.length : 0);
     return groupSection(
       `owner-${owner}`,
       owner,
       list,
       <GroupHead
-        tone={actCount > 0 ? "danger" : undefined}
+        tone={ownerAct > 0 ? "danger" : undefined}
         label={yours ? `You, ${owner}` : owner}
         count={list.length + (yours ? toPull.length : 0)}
-        aside={actCount > 0 ? `${actCount} act now` : undefined}
+        aside={ownerAct > 0 ? `${ownerAct} act now` : undefined}
       />,
       undefined,
       { items: groupLinkedAlerts([list]).sections[0] ?? [], shownEarlier: 0, sectionLabels: [owner] },

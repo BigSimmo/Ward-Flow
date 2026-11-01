@@ -331,18 +331,21 @@ export function AlertsHero({
                   Copy for handover
                 </Button>
               )}
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={ChevronRight}
-                aria-label={`Next alert, ${nextQueue.length} in turn`}
-                count={nextQueue.length}
-                disabled={nextQueue.length === 0}
-                onClick={handleNext}
-              >
-                {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
-                Next alert
-              </Button>
+              {/* A quiet ward desk has nothing next, so no Next alert, as on the phone. */}
+              {showNext ? (
+                <Button
+                  variant="onHero"
+                  size="sm"
+                  icon={ChevronRight}
+                  aria-label={`Next alert, ${nextQueue.length} in turn`}
+                  count={nextQueue.length}
+                  disabled={nextQueue.length === 0}
+                  onClick={handleNext}
+                >
+                  {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
+                  Next alert
+                </Button>
+              ) : null}
               {canBroadcast ? (
                 <Button
                   ref={broadcastTriggerRef}

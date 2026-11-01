@@ -263,3 +263,8 @@
   align-items: center;
   gap: var(--wf-s-2);
 }
+
+/* A lane's own region: its children sit in the lane's column as before (review on #1238). */
+.laneSection {
+  display: contents;
+}
