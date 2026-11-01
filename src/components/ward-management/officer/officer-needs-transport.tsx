@@ -86,7 +86,26 @@ export function useNeedsTransport(movements: readonly Movement[], access: WardAc
     }
   }
   const needing = movementsNeedingTransport(movements).filter((movement) => acting.has(movement.id));
-  return { needing, acting, raise };
+  const crewLimit = crewLimitFor(access);
+  // A desk raises the crew's steps as itself, so the reducer refuses them even if a control slips.
+  const crewRaise = useWardRaise(crewLimit && bookingRole ? bookingRole : "officer");
+  return { needing, acting, raise, crewLimit, crewRaise };
+}
+
+/**
+ * Q154 (Josh, 1 Nov 2026): the ED, ward and community desks open Transport to follow their own
+ * journeys (`ROLE_SCREENS`). The crew's steps stay the transport officer's, so a desk sees each one
+ * disabled with this reason. The officer and the coordinator act as before.
+ */
+export function crewLimitFor(access: WardAccess): string | undefined {
+  return access.role === "ed" || access.role === "ward" || access.role === "community"
+    ? "Transport officer only"
+    : undefined;
+}
+
+/** The crew's next step with the desk's limit laid over any reason of its own. */
+export function withCrewLimit<T extends { blocked?: string }>(step: T | undefined, limit: string | undefined) {
+  return step && limit ? { ...step, blocked: limit } : step;
 }
 
 /** The hero's Need transport count jumps to the list and its first Log booking button. */

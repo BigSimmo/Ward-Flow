@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { actingFor } from "@/components/ward-management/officer/officer-needs-transport";
+import { actingFor, crewLimitFor, withCrewLimit } from "@/components/ward-management/officer/officer-needs-transport";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 
 /* Synthetic records: only the fields `actingFor` reads. */
@@ -50,5 +50,24 @@ describe("Needs transport, each desk's own journeys", () => {
   it("gives other desks nothing", () => {
     const officer: WardAccess = { role: "officer", scope: { kind: "jobs" } };
     expect(actingFor(officer, move({}), records)).toBeUndefined();
+  });
+});
+
+describe("Transport for the ED, ward and community desks (Q154)", () => {
+  const officer: WardAccess = { role: "officer", scope: { kind: "jobs" } };
+
+  it("keeps the crew's steps for the officer and the coordinator", () => {
+    expect(crewLimitFor(officer)).toBeUndefined();
+    expect(crewLimitFor(coordinator)).toBeUndefined();
+    for (const desk of [ed("ed-1"), ward("unit-a"), team("Albany")]) {
+      expect(crewLimitFor(desk)).toBe("Transport officer only");
+    }
+  });
+
+  it("lays the desk's limit over a step's own reason, and leaves the officer's step as it is", () => {
+    const step = { verb: "Accept", blocked: undefined as string | undefined };
+    expect(withCrewLimit(step, "Transport officer only")?.blocked).toBe("Transport officer only");
+    expect(withCrewLimit(step, undefined)).toBe(step);
+    expect(withCrewLimit(undefined, "Transport officer only")).toBeUndefined();
   });
 });

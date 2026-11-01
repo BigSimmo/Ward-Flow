@@ -133,7 +133,8 @@ export function renderPhoneNextStep(movement: Movement, ctx: OfficerJobDetailCon
   // Steps list above stays the record of what is done.
   const step = steps[index];
   if (!step) return null;
-  const blocked = step.blocked();
+  // Q154: `blockedNote` also carries a desk's "Transport officer only" (`withCrewLimit`).
+  const blocked = step.blocked() ?? blockedNote(movement);
   return (
     <div className={styles.phStageRow}>
       <Button
