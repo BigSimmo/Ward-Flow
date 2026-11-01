@@ -6,7 +6,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow/transport/officer", replace: vi.fn() }));
+const nav = vi.hoisted(() => ({ pathname: "/ward-flow/capacity", replace: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
@@ -57,7 +57,7 @@ function signInAs(access: WardAccess, landedOn: string) {
 
 afterEach(() => {
   cleanup();
-  nav.pathname = "/ward-flow/transport/officer";
+  nav.pathname = "/ward-flow/capacity";
   nav.replace.mockReset();
   act(() => {
     setWardFeatureFlagOnDevice("role-access", null);
@@ -67,7 +67,7 @@ afterEach(() => {
 
 describe("a sign-in that lands on a page closed to the new desk", () => {
   it("opens the desk's own home, not the refusal (#804)", () => {
-    signInAs(WARD2, "/ward-flow/transport/officer");
+    signInAs(WARD2, "/ward-flow/capacity");
     renderGate();
     expect(nav.replace).toHaveBeenCalledWith("/ward-flow/ward/fsh-adult-secure");
     expect(screen.getByText("Opening your home")).toHaveAttribute("role", "status");
