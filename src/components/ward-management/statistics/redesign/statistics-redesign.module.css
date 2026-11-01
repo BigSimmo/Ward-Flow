@@ -470,7 +470,7 @@
   stroke: var(--wf-line-2);
 }
 .refPill text {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   fill: var(--wf-ink-2);
 }

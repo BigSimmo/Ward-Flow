@@ -31,8 +31,9 @@ import {
   Now,
   Strip,
   Tile,
+  ShortLabel,
   redesignStyles as redesign,
-} from "@/components/ward-redesign/statistics/statistics-redesign-parts";
+} from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import {
   ExecutiveStatisticsUnavailable,
   statisticsCountText,
@@ -283,7 +284,7 @@ function ServicesIndexView({
           <>
             <HeroStat value={services.length} label="Services" />
             <HeroStat value={totalBeds} label="Beds" />
-            <HeroStat value={shown(totalWaiting)} label="Open ED journeys" />
+            <HeroStat value={shown(totalWaiting)} label={<ShortLabel short="In ED now" full="Open ED journeys" />} />
           </>
         ),
       }}

@@ -5,10 +5,11 @@ import { CalendarDays, Printer } from "lucide-react";
 
 import { Button, HeroStat, SrOnly, buttonClass, cx, useIsPhone } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { formatInstant, formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { WeeklyBody } from "@/components/ward-redesign/statistics/statistics-redesign-weekly";
+import { ShortLabel } from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
+import { WeeklyBody } from "@/components/ward-management/statistics/redesign/statistics-redesign-weekly";
 import { dateOf } from "../statistics/statistics-dates";
 import { StatisticsHero, useStatisticsLive } from "../statistics/statistics-hero";
 
@@ -362,11 +363,14 @@ function WeeklyReportView({
               <>
                 <HeroStat
                   value={report.edWaits.count}
-                  label={`New ED waits ${hoursText}+`}
+                  label={<ShortLabel short={`${hoursText}+ waits`} full={`New ED waits ${hoursText}+`} />}
                   tone={report.edWaits.count === 0 ? undefined : "danger"}
                 />
                 {/* Phone review F-26 and F-33: each figure names its unit and what it averages. */}
-                <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
+                <HeroStat
+                  value={report.outOfArea.bedDays}
+                  label={<ShortLabel short="Out-of-area days" full="Out of area bed days" />}
+                />
                 <HeroStat value={occupancyText} label="Occupied bed time" />
               </>
             ),
@@ -403,7 +407,7 @@ function WeeklyReportView({
               id: row.movement.id,
               admission: admissionLabel?.(row.movement.id),
               ed: originName(row.movement) ?? row.movement.originEdId ?? "Emergency department",
-              opened: `${dateOf(row.movement.openedAt as Instant, dayZero)}, ${formatInstant(row.movement.openedAt as Instant)}`,
+              opened: formatSheetMoment(row.movement.openedAt as Instant, dayZero),
               waited: splitDuration(row.waitedMinutes),
               veryLong: row.waitedMinutes >= VERY_LONG_WAIT_MINUTES,
               stillWaiting: row.stillWaiting,

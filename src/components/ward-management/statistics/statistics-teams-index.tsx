@@ -42,7 +42,7 @@ import {
   Strip,
   Tile,
   redesignStyles as redesign,
-} from "@/components/ward-redesign/statistics/statistics-redesign-parts";
+} from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 
 /** The community index's service codes, as the health services whose colour each one wears. */
 const CODE_SERVICE: Record<string, HealthService> = {

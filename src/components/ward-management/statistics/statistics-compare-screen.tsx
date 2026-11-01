@@ -50,7 +50,7 @@ import {
   Foot,
   Glyph,
   redesignStyles as redesign,
-} from "@/components/ward-redesign/statistics/statistics-redesign-parts";
+} from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import styles from "./statistics-v6.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";

@@ -3,7 +3,7 @@
 import { ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/wf";
-import redesign from "@/components/ward-redesign/statistics/statistics-redesign.module.css";
+import redesign from "@/components/ward-management/statistics/redesign/statistics-redesign.module.css";
 
 import compare from "./statistics-compare.module.css";
 

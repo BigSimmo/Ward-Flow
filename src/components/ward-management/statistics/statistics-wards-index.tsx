@@ -51,7 +51,7 @@ import {
   Grid,
   Occ,
   redesignStyles as redesign,
-} from "@/components/ward-redesign/statistics/statistics-redesign-parts";
+} from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import {
   ExecutiveStatisticsUnavailable,

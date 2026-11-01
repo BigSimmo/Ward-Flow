@@ -15,6 +15,7 @@ import {
   Card,
   CardHead,
   Meter,
+  SrOnly,
   StackBar,
   StatusGlyph,
   cx,
@@ -319,4 +320,17 @@ export function Grid({
   children: ReactNode;
 }) {
   return <div className={cx(s.grid, s[layout], top && s.top)}>{children}</div>;
+}
+
+/**
+ * A phone strip label kept to about 14 characters so the strip never wraps (phone audit, approved
+ * by Josh 1 Nov 2026); a screen reader still hears the full words.
+ */
+export function ShortLabel({ short, full }: { short: string; full: string }) {
+  return (
+    <>
+      <span aria-hidden="true">{short}</span>
+      <SrOnly>{full}</SrOnly>
+    </>
+  );
 }

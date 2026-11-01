@@ -75,7 +75,8 @@ describe("Statistics hero: Export the figures", () => {
     const hero = screen.getByRole("heading", { level: 1 }).closest("section")!;
     const label = within(hero).getByText("Open ED journeys", { exact: true });
     const figure = phone ? label.closest("li") : label.parentElement;
-    expect(figure?.textContent).toMatch(/^3Open ED journeys$/);
+    // The phone strip shows a short label and keeps the full words for a screen reader.
+    expect(figure?.textContent).toMatch(phone ? /^3In ED nowOpen ED journeys$/ : /^3Open ED journeys$/);
     if (!phone) {
       const { csv } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
       expect(csv).toContain('"Open ED journeys","3"');
