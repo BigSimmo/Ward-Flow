@@ -347,8 +347,8 @@ test.describe("native history and handover print @mockup", () => {
     );
     await page.goto(`${HOME}/handover?flags=role-access:on`);
     await settled(page);
-    await page.getByTestId("ward-handover-more").click();
-    await page.getByRole("menuitem", { name: "Print handover" }).click();
+    // 1 Nov 2026 redesign: Print handover is the sheet bar's one primary button.
+    await page.getByTestId("ward-handover-print").click();
     await page.getByRole("radio", { name: "A4 portrait" }).click();
     await page.emulateMedia({ media: "print" });
     for (const paper of await page.locator("[data-wf-print-stack] article").all()) {
@@ -369,8 +369,8 @@ test.describe("native history and handover print @mockup", () => {
   test("every isolated handover page prints its desk and place attribution", async ({ page }) => {
     await page.goto(`${HOME}/handover?flags=role-access:on`);
     await settled(page);
-    await page.getByTestId("ward-handover-more").click();
-    await page.getByRole("menuitem", { name: "Print handover" }).click();
+    // 1 Nov 2026 redesign: Print handover is the sheet bar's one primary button.
+    await page.getByTestId("ward-handover-print").click();
     await page.emulateMedia({ media: "print" });
     const pages = page.locator("[data-wf-print-stack] article");
     expect(await pages.count()).toBeGreaterThan(1);

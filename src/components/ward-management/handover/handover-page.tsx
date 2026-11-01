@@ -9,13 +9,12 @@ import {
   ChevronDown,
   ClipboardCopy,
   Clock,
-  Columns3,
+  Highlighter,
+  SlidersHorizontal,
   Keyboard,
-  Lock,
   MonitorPlay,
   MoreHorizontal,
   Printer,
-  Sparkles,
   Timer as TimerIcon,
 } from "lucide-react";
 
@@ -39,7 +38,6 @@ import {
   Checkbox,
   Drawer,
   FilterChip,
-  HeroTrack,
   Hero,
   type SinceItem,
   Icon,
@@ -61,6 +59,7 @@ import {
   useIsTabletPortrait,
   useMediaQuery,
   SrOnly,
+  AppliedFilter,
 } from "@/components/wf";
 
 import {
@@ -75,7 +74,6 @@ import {
 } from "./handover-columns";
 import {
   HANDOVER_CHIPS,
-  HANDOVER_SHIFTS,
   defaultHandoverShift,
   groupOf,
   groupRows,
@@ -111,7 +109,6 @@ import {
   HandoverMeetingTimer,
   ShowMoreRow,
   SignOffBar,
-  SinceLine,
   signOffWaitReason,
 } from "./handover-sheet-parts";
 import * as desk from "./handover-desk";
@@ -119,6 +116,8 @@ import { HandoverBeds } from "./handover-beds";
 import { LongStaySummary } from "./long-stay-summary";
 // Closing-the-loop package A (24 Oct 2026): open promises and callbacks carried over.
 import { HandoverOpenPromises } from "./handover-open-promises";
+import { HandoverGlance, HandoverHeroCounts, HandoverShiftMenu } from "./handover-glance";
+import { screenColumnsFor } from "./handover-screen-columns";
 import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "./handover-print-sheet";
 import { HandoverPhone } from "./handover-phone";
 import styles from "./handover-refined.module.css";
@@ -388,7 +387,6 @@ export function HandoverPage() {
   const readyTotal = wards.reduce((sum, ward) => sum + ward.ready, 0);
 
   // Changes since the preceding handover boundary, not a recorded personal visit.
-  const [sinceOpen, setSinceOpen] = useState(true);
   const sinceItems = useMemo((): SinceItem[] => {
     const inScopeUnit = (unitId: string) => wards.some((ward) => ward.id === unitId);
     const within = (at: Instant | null | undefined) => at !== null && at !== undefined && at >= newSince && at <= now;
@@ -442,7 +440,6 @@ export function HandoverPage() {
   }, [admissions, wards, units, rows, scope.kind, newSince, now, edDesk]);
   // L1 (site review, 12 Oct 2026): the chip counts each change once. "New act now" rows are already
   // among "new on the sheet", so adding them again made the chip read 35 beside a strip of 0, 1, 32.
-  const sinceTotal = sinceItems.reduce((sum, item) => (item.id === "act" ? sum : sum + item.value), 0);
   const copySince = useCallback(() => {
     const text = [
       "Synthetic demonstration · Not approved for clinical use",
@@ -488,7 +485,8 @@ export function HandoverPage() {
   // The rail's own Sign off shows only when the rail is on screen beside the Patients table and is
   // not holding a picked patient's flow; everywhere else the hero button is the way in.
   // ROLE BRANCH (ed): an ED desk never signs off, so there is no sign-off rail.
-  const signOffInRail = !edDesk && railBeside && !wide && tab === "pts" && !selected;
+  // 1 Nov 2026 mock-up: sign-off is one clear bar at the foot of the sheet, its checklist a drawer.
+  const signOffInRail = false && !edDesk && railBeside && !wide && tab === "pts" && !selected;
   const pick = (id: string) => {
     setSelectedId(id);
     if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
@@ -568,7 +566,7 @@ export function HandoverPage() {
     setSheetOpen(false);
     setTab("pts");
     setSelectedId(null);
-    if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
+    setDrawerOpen(true);
     window.requestAnimationFrame(() => signOffRef.current?.querySelector<HTMLElement>("button")?.focus());
   };
 
@@ -798,42 +796,6 @@ export function HandoverPage() {
       items={(Object.keys(DENSITY_LABEL) as HandoverDensity[]).map((id) => ({ id, label: DENSITY_LABEL[id] }))}
     />
   );
-  const columnsControl = (
-    <Popover
-      label="Choose columns"
-      align="end"
-      trigger={(props) => (
-        <Button {...props} variant="sec" size="sm" icon={Columns3} count={columns.length}>
-          Columns
-        </Button>
-      )}
-    >
-      {() => (
-        <div className={styles.keys}>
-          {densityControl}
-          {HANDOVER_COLUMNS.map((column) => (
-            <Checkbox
-              key={column.id}
-              label={column.locked ? `${column.header}, always shown` : column.header}
-              checked={columnIds.includes(column.id)}
-              disabled={column.locked}
-              onChange={() => {
-                const next = columnIds.includes(column.id)
-                  ? columnIds.filter((id) => id !== column.id)
-                  : [...columnIds, column.id];
-                setCustomColumns(HANDOVER_COLUMNS.map((c) => c.id).filter((id) => next.includes(id)));
-              }}
-            />
-          ))}
-          {customColumns !== null ? (
-            <Button variant="ghost" size="sm" onClick={() => setCustomColumns(null)}>
-              Back to {DENSITY_LABEL[density]}
-            </Button>
-          ) : null}
-        </div>
-      )}
-    </Popover>
-  );
   const chipControls = deskChips.map((chip) => (
     <FilterChip
       key={chip.id}
@@ -844,6 +806,76 @@ export function HandoverPage() {
       {chip.label}
     </FilterChip>
   ));
+
+  const activeHighlights = deskChips.filter((chip) => chips.has(chip.id)).length + (pill !== null ? 1 : 0);
+  const highlightControl = (
+    <Menu
+      label="Highlight rows"
+      items={[
+        { kind: "heading", id: "hl-head", label: "Highlight rows" },
+        ...deskChips.map((chip) => ({
+          id: chip.id,
+          label: chip.label,
+          checked: chips.has(chip.id),
+          meta: <span className={styles.mono}>{rows.filter((row) => chip.test(row, now)).length}</span>,
+          onSelect: () => toggleChip(chip.id),
+        })),
+      ]}
+      trigger={(props) => (
+        <Button
+          {...props}
+          variant="sec"
+          size="sm"
+          icon={Highlighter}
+          count={activeHighlights > 0 ? activeHighlights : undefined}
+          className={activeHighlights > 0 ? styles.barOn : undefined}
+        >
+          Highlight
+        </Button>
+      )}
+    />
+  );
+  const viewControl = (
+    <Popover
+      label="Arrange the sheet"
+      align="end"
+      trigger={(props) => (
+        <Button {...props} variant="ghost" size="sm" icon={SlidersHorizontal}>
+          {GROUPING_LABEL[grouping].replace("Group: ", "").replace(/^./, (first) => first.toUpperCase())}
+        </Button>
+      )}
+    >
+      {() => (
+        <div className={styles.viewPanel}>
+          <span className={styles.viewHead}>Group</span>
+          {groupingControl}
+          <span className={styles.viewHead}>Sort</span>
+          {sortControl}
+          <span className={styles.viewHead}>Columns</span>
+          <div className={styles.viewCols}>
+            {HANDOVER_COLUMNS.filter((column) => !column.locked).map((column) => (
+              <Checkbox
+                key={column.id}
+                label={column.header}
+                checked={columnIds.includes(column.id)}
+                onChange={() => {
+                  const next = columnIds.includes(column.id)
+                    ? columnIds.filter((id) => id !== column.id)
+                    : [...columnIds, column.id];
+                  setCustomColumns(HANDOVER_COLUMNS.map((c) => c.id).filter((id) => next.includes(id)));
+                }}
+              />
+            ))}
+          </div>
+          {customColumns !== null ? (
+            <Button variant="ghost" size="sm" onClick={() => setCustomColumns(null)}>
+              Back to {DENSITY_LABEL[density]}
+            </Button>
+          ) : null}
+        </div>
+      )}
+    </Popover>
+  );
 
   const siteSignOff = <HandoverSiteSignOffSlot phone={isPhoneWidth} onScope={setScopeValue} />;
   if (isPhoneWidth) {
@@ -936,11 +968,24 @@ export function HandoverPage() {
    * eyebrow names the shift; five chips highlight rows; the foot holds the shift switch, the
    * countdown and the bed meter. Sign off is the one light primary.
    */
+  /*
+   * 1 Nov 2026, round 5 (Josh): the header answers what a bed manager asks first. One row of
+   * counts that highlight rows (Waiting's pattern), the handover chosen from one menu, and one slim
+   * at-a-glance line: when it starts, beds against demand, the longest wait and what changed.
+   */
+  const longest = rows.reduce<HandoverRow | null>(
+    (best, row) => (best === null || row.openedAt < best.openedAt ? row : best),
+    null,
+  );
+  const sinceLine = sinceItems
+    .filter((item) => item.value > 0)
+    .map((item) => `${item.value} ${item.word.replace(" on the sheet", "")}`)
+    .join(" · ");
   const hero = (
     <Hero
       level={1}
       testId="ward-handover-hero"
-      eyebrow={`Handover · ${shiftClock} ${shiftInfo.label}`}
+      eyebrow="Handover"
       // H-0887: the page heading names the page, not only the count.
       title={
         <>
@@ -951,9 +996,21 @@ export function HandoverPage() {
         </>
       }
       titleMeta={scopeLabel}
+      bar={
+        <HandoverHeroCounts
+          pills={ownWard ? desk.WARD_DESK_PILLS : desk.COORDINATOR_PILLS}
+          counts={counts}
+          pressed={pill}
+          actNowAlerts={actNowAlertCount}
+          dueLabel={`Due by ${formatInstantWithDay(cutoff, now)}`}
+          tones={PILL_TONE}
+          onPress={togglePill}
+        />
+      }
       aside={
         <>
           <LiveChip state="live" onHero />
+          <HandoverShiftMenu shift={shift} now={now} label={`${shiftClock} ${shiftInfo.label}`} onChange={setShift} />
           <Button
             variant="onHero"
             size="sm"
@@ -963,138 +1020,32 @@ export function HandoverPage() {
           >
             {meetingStartedAt !== null ? <HandoverMeetingTimer startedAt={meetingStartedAt} /> : "Start meeting"}
           </Button>
-          {/* Present and Print sit behind More, so the band carries one primary (device audit 11 Oct 2026). */}
-          <Menu
-            label="More handover actions"
-            align="end"
-            items={[
-              {
-                id: "present",
-                label: present ? "Exit present" : "Present",
-                icon: MonitorPlay,
-                onSelect: () => setPresent((on) => !on),
-              },
-              {
-                id: "print",
-                label: "Print handover",
-                icon: Printer,
-                onSelect: () => setSheetOpen((open) => !open),
-              },
-            ]}
-            trigger={(props) => (
-              <Button {...props} variant="onHero" size="sm" icon={MoreHorizontal} data-testid="ward-handover-more">
-                More
-              </Button>
-            )}
-          />
-          {/* With the rail beside the table its Sign off is the one; below 1201px the rail is a
-              drawer and this opens it. */}
-          {signOffInRail || tab === "pts" || edDesk ? null : signOffButton}
+          {tab === "pts" || edDesk ? null : signOffButton}
         </>
       }
-      bar={
-        <div
-          className={styles.heroTools}
-          data-testid="ward-handover-kpi-strip"
-          role="group"
-          aria-label="Handover counts"
-        >
-          {(ownWard ? desk.WARD_DESK_PILLS : desk.COORDINATOR_PILLS).map((id) => (
-            <button
-              key={id}
-              type="button"
-              className={styles.heroPill}
-              aria-pressed={pill === id}
-              aria-label={ownWard && id === "act" ? desk.actNowChipLabel(counts.act, actNowAlertCount) : undefined}
-              onClick={() => togglePill(id)}
-            >
-              <span className={styles.heroPillCount}>{counts[id]}</span>
-              <StatusGlyph tone={PILL_TONE[id]} size={9} />
-              {id === "act" && ownWard
-                ? "Act now"
-                : id === "act"
-                  ? `Act now (${counts.act} ${counts.act === 1 ? "person" : "people"}, ${actNowAlertCount} ${actNowAlertCount === 1 ? "alert" : "alerts"})`
-                  : id === "urg"
-                    ? "Flagged urgent"
-                    : id === "due"
-                      ? `Due by ${formatInstantWithDay(cutoff, now)}`
-                      : id === "bed"
-                        ? "Finding a ward"
-                        : "Moving"}
-            </button>
-          ))}
-        </div>
-      }
-      barAside={
-        <button
-          type="button"
-          className={styles.heroChip}
-          aria-expanded={sinceOpen}
-          aria-controls="ward-handover-since"
-          onClick={() => setSinceOpen((open) => !open)}
-          data-testid="ward-handover-since-chip"
-        >
-          <Icon icon={Sparkles} size={14} />
-          Changed since previous handover
-          <span className={styles.heroCount}>{sinceTotal}</span>
-        </button>
-      }
       foot={
-        <div className={styles.heroTools}>
-          <HeroTrack
-            label="Which handover"
-            className={styles.shiftTrack}
-            value={shift}
-            onChange={setShift}
-            items={HANDOVER_SHIFTS.map((option) => ({
-              id: option.id,
-              label: (
-                <>
-                  <b className={styles.shiftTime}>{formatInstantWithDay(handoverAt(option.id, now), now)}</b>
-                  {option.label}
-                </>
-              ),
-            }))}
-          />
-          <span className={styles.countdown}>
-            <Icon icon={Clock} size={14} />
-            {passed ? (
-              <>
-                Passed <b>{durMinutes(now - shiftAt)}</b> ago
-              </>
-            ) : (
-              <>
-                Starts in <b>{durMinutes(shiftAt - now)}</b>
-              </>
-            )}
-          </span>
-          {/* ROLE BRANCH (ed): the one quiet line on sign-off, beside the countdown it belongs to. */}
-          {edDesk ? (
-            <span className={styles.countdown} data-testid="ward-handover-sign-off-note">
-              <Icon icon={Lock} size={14} />
-              {signedAt !== null
+        <HandoverGlance
+          now={now}
+          passed={passed}
+          shiftAt={shiftAt}
+          beds={ownWard || edDesk ? null : { ready: readyTotal, needed: counts.bed }}
+          longest={longest}
+          onOpen={(id) => {
+            // The patient opens on the Patients tab, so leave Beds, History or the print builder first.
+            setSheetOpen(false);
+            setTab("pts");
+            pick(id);
+          }}
+          sinceAt={newSince}
+          sinceLine={sinceLine}
+          signOffNote={
+            edDesk
+              ? signedAt !== null
                 ? `Signed off ${formatInstantWithDay(signedAt, now)}`
-                : "Coordinator or ward signs off"}
-            </span>
-          ) : null}
-        </div>
-      }
-      // ROLE BRANCH (ward, ed): the statewide finding-a-ward meter is the coordinator's; a ward's ready
-      // beds are its Beds tab's own count, and an ED holds no ward.
-      footAside={
-        ownWard || edDesk ? undefined : (
-          <span className={styles.gap}>
-            <span>
-              <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> finding a ward
-            </span>
-            <span className={styles.gapBar} aria-hidden="true">
-              {readyTotal > 0 ? <i className={styles.gapReady} style={{ flex: readyTotal }} /> : null}
-              {counts.bed > readyTotal ? (
-                <i className={styles.gapWaiting} style={{ flex: counts.bed - readyTotal }} />
-              ) : null}
-            </span>
-          </span>
-        )
+                : "Coordinator or ward signs off"
+              : null
+          }
+        />
       }
     />
   );
@@ -1102,19 +1053,41 @@ export function HandoverPage() {
   const toolbar = (
     <div className={styles.toolbar}>
       {tabs}
-      <span className={styles.toolbarNote}>
-        {tab === "beds" ? "Ward feeds as recorded" : ownWard ? "" : "Scope narrows, chips only highlight"}
-      </span>
-      <Button variant="ghost" size="sm" icon={ClipboardCopy} onClick={copySummary}>
-        {copied ? "Copied" : "Copy summary"}
-      </Button>
-      <Link href="/ward-flow/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
-        Downtime pack
-      </Link>
-      {/* B4: act now and due before the next handover, as Delays' For handover view. */}
-      <Link href={waitingHref("handover")} className={buttonClass({ variant: "ghost", size: "sm" })}>
-        Open in Waiting
-      </Link>
+      <span className={styles.spacer} />
+      <Popover
+        label="More handover actions"
+        align="end"
+        trigger={(props) => (
+          <Button
+            {...props}
+            variant="sec"
+            size="sm"
+            iconOnly
+            icon={MoreHorizontal}
+            aria-label="More handover actions"
+          />
+        )}
+      >
+        {() => (
+          <div className={styles.moreList}>
+            <Button variant="ghost" size="sm" icon={MonitorPlay} onClick={() => setPresent((on) => !on)}>
+              {present ? "Exit present" : "Present on a screen"}
+            </Button>
+            <Button variant="ghost" size="sm" icon={ClipboardCopy} onClick={copySummary}>
+              {copied ? "Copied" : "Copy summary"}
+            </Button>
+            <Link href="/ward-flow/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
+              <Icon icon={Printer} size={14} />
+              Downtime pack
+            </Link>
+            {/* B4: act now and due before the next handover, as Delays' For handover view. */}
+            <Link href={waitingHref("handover")} className={buttonClass({ variant: "ghost", size: "sm" })}>
+              <Icon icon={Clock} size={14} />
+              Open in Waiting
+            </Link>
+          </div>
+        )}
+      </Popover>
       <Popover
         label="Keyboard shortcuts"
         align="end"
@@ -1160,6 +1133,10 @@ export function HandoverPage() {
     </div>
   ) : null;
 
+  /* On screen, Next step leads and carries the status under it, so the eye reads the action first;
+     the printed sheet keeps its own Status and Next step columns. */
+  const screenColumns = screenColumnsFor(columns, columnIds);
+
   const table = (
     <Card
       as="section"
@@ -1167,41 +1144,55 @@ export function HandoverPage() {
       aria-label="Handover sheet"
       data-testid="ward-handover-sheet"
     >
-      <div className={styles.bar}>
-        {scopeControl}
-        {groupingControl}
-        {sortControl}
+      <div className={styles.bar} data-testid="ward-handover-prepare">
+        {scopeControl ? (
+          <label className={styles.step}>
+            <span className={styles.stepLabel}>Show</span>
+            {scopeControl}
+          </label>
+        ) : null}
+        <div className={styles.step}>
+          <span className={styles.stepLabel}>Detail</span>
+          {densityControl}
+        </div>
+        {highlightControl}
+        {viewControl}
         <span className={styles.spacer} />
-        {columnsControl}
+        <Button variant="pri" icon={Printer} onClick={() => setSheetOpen(true)} data-testid="ward-handover-print">
+          Print handover
+        </Button>
       </div>
-      <div className={styles.bar}>
-        <span className={styles.label}>Highlight</span>
-        <div className={styles.chips}>{chipControls}</div>
-      </div>
-      {wardAllShown && !anyHighlight ? null : (
+      {(scope.kind === "network" || wardAllShown) && !anyHighlight ? null : (
         <div className={styles.scopeLine} data-testid="ward-handover-scope-line">
-          <StatusGlyph tone="neutral" size={8} />
-          <span data-testid="ward-handover-scope-summary">
-            Showing <b>{scopeLabel}</b>, <b>{rows.length}</b> of {allRows.length} open
-          </span>
           {scope.kind !== "network" ? (
-            <span data-testid="ward-handover-scope-excluded">
-              {outside.length} outside this scope
+            <span data-testid="ward-handover-scope-summary">
+              <b>{rows.length}</b> of {allRows.length} open in <b>{scopeLabel}</b>
               {outsideAct.length ? (
                 <>
-                  , <b className={styles.urgentOut}>{outsideAct.length} act now or flagged urgent</b> listed under the
-                  sheet
+                  {" · "}
+                  <b className={styles.urgentOut}>{outsideAct.length} act now or urgent outside</b>
                 </>
-              ) : (
-                ", none act now or flagged urgent"
-              )}
+              ) : null}
             </span>
           ) : null}
           {anyHighlight ? (
             <>
+              <span className={styles.hlChips}>
+                {deskChips
+                  .filter((chip) => chips.has(chip.id))
+                  .map((chip) => (
+                    <AppliedFilter
+                      key={chip.id}
+                      onRemove={() => toggleChip(chip.id)}
+                      removeLabel={`Stop highlighting ${chip.label}`}
+                    >
+                      {chip.label}
+                    </AppliedFilter>
+                  ))}
+              </span>
               <span className={styles.spacer} />
-              <span>
-                <b>{rows.filter(isHighlighted).length}</b> highlighted, all rows stay
+              <span className={styles.hlCount}>
+                <b>{rows.filter(isHighlighted).length}</b> highlighted
               </span>
               <Button variant="ghost" size="sm" onClick={clearHighlight}>
                 Clear
@@ -1215,12 +1206,12 @@ export function HandoverPage() {
           className={cx(tableClasses.table, styles.sheetTable, compact && styles.compact, fitted && styles.fitted)}
         >
           <colgroup>
-            {columns.map((column) => (
+            {screenColumns.map((column) => (
               <col
                 key={column.id}
                 style={{
                   width: fitted
-                    ? `${((column.width / columns.reduce((sum, entry) => sum + entry.width, 0)) * 100).toFixed(2)}%`
+                    ? `${((column.width / screenColumns.reduce((sum, entry) => sum + entry.width, 0)) * 100).toFixed(2)}%`
                     : column.width,
                 }}
               />
@@ -1228,7 +1219,7 @@ export function HandoverPage() {
           </colgroup>
           <thead>
             <tr>
-              {columns.map((column) => (
+              {screenColumns.map((column) => (
                 <th key={column.id} scope="col">
                   {column.header}
                 </th>
@@ -1241,11 +1232,12 @@ export function HandoverPage() {
             return (
               <tbody key={group.id} data-testid={`ward-handover-group-${group.id}`}>
                 <tr className={styles.groupRow}>
-                  <td colSpan={columns.length}>
+                  <td colSpan={screenColumns.length}>
                     <button
                       type="button"
                       className={styles.groupButton}
                       aria-expanded={!isCollapsed}
+                      title={group.why}
                       onClick={() =>
                         setCollapsed((current) => {
                           const next = new Set(current);
@@ -1259,7 +1251,7 @@ export function HandoverPage() {
                       {group.tone ? <StatusGlyph tone={GROUP_TONE[group.tone]} size={9} /> : null}
                       <span>{group.title}</span>
                       <span className={styles.groupCount}>{group.rows.length}</span>
-                      <span className={styles.why}>{group.rows.length === 0 ? "None" : group.why}</span>
+                      {group.rows.length === 0 ? <span className={styles.why}>None</span> : null}
                     </button>
                   </td>
                 </tr>
@@ -1275,8 +1267,6 @@ export function HandoverPage() {
                           aria-selected={isSelected}
                           className={`${styles.row} ${isSelected ? styles.rowSelected : ""}`}
                           data-highlighted={isHighlighted(row) ? "true" : undefined}
-                          data-dim={anyHighlight && !isHighlighted(row) ? "true" : undefined}
-                          data-act={isActOrUrgent(row, now) ? "true" : undefined}
                           onClick={() => pick(row.id)}
                           onKeyDown={(event: ReactKeyboardEvent<HTMLTableRowElement>) => {
                             if (event.key === "Enter" || event.key === " ") {
@@ -1285,7 +1275,7 @@ export function HandoverPage() {
                             }
                           }}
                         >
-                          {columns.map((column) => (
+                          {screenColumns.map((column) => (
                             <td key={column.id}>{column.cell(row, ctx)}</td>
                           ))}
                         </tr>
@@ -1294,7 +1284,7 @@ export function HandoverPage() {
                 {group.id === "due" && !isCollapsed ? (
                   <ShowMoreRow
                     hidden={group.rows.length - DUE_FIRST}
-                    span={columns.length}
+                    span={screenColumns.length}
                     open={dueAll}
                     what={`due by ${shiftClock}`}
                     onToggle={() => setDueAll((all) => !all)}
@@ -1326,6 +1316,7 @@ export function HandoverPage() {
     </Card>
   );
 
+  // Beside the table the rail carries the handover's context: what changed, what carries over, then sign-off.
   let body;
   if (sheetOpen) {
     body = (
@@ -1399,10 +1390,19 @@ export function HandoverPage() {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
         <div className={styles.portraitTools}>
+          {scopeControl ? (
+            <label className={styles.step}>
+              <span className={styles.stepLabel}>Show</span>
+              {scopeControl}
+            </label>
+          ) : null}
           <span className={styles.portraitNote}>
-            <b>{rows.length}</b> of {allRows.length} open · {scopeLabel}
+            <b>{rows.length}</b> of {allRows.length} open
           </span>
-          {portraitRail(signedLine, checksDone)}
+          <Button variant="pri" icon={Printer} onClick={() => setSheetOpen(true)} data-testid="ward-handover-print">
+            Print handover
+          </Button>
+          <span className={styles.portraitRailHost}>{portraitRail(signedLine, checksDone)}</span>
         </div>
         <PortraitList
           label="Handover patients"
@@ -1435,11 +1435,11 @@ export function HandoverPage() {
   } else {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
-        <div className={`${styles.split} ${wide || !(flowPanel ?? signOffPanel) ? styles.splitFull : ""}`}>
+        <div className={`${styles.split} ${wide || !flowPanel ? styles.splitFull : ""}`}>
           {table}
-          {wide || !(flowPanel ?? signOffPanel) ? null : (
+          {wide || !flowPanel ? null : (
             <aside className={styles.side} aria-label={selected ? "Patient flow" : "Sign off"} data-wf-rail="1201">
-              {flowPanel ?? signOffPanel}
+              {flowPanel}
             </aside>
           )}
         </div>
@@ -1447,11 +1447,6 @@ export function HandoverPage() {
     );
   }
 
-  const sinceStrip = sinceOpen ? (
-    <div id="ward-handover-since">
-      <SinceLine since={formatInstantWithDay(newSince, now)} items={sinceItems} />
-    </div>
-  ) : null;
   // One Sign off on screen: the bar shows only when the rail's own panel is not beside the table.
   const signBar =
     tab === "pts" && !sheetOpen && !signOffInRail && !edDesk ? (
@@ -1476,14 +1471,13 @@ export function HandoverPage() {
       {hero}
       {pastBanner}
       {sheetOpen || tab !== "pts" ? null : siteSignOff}
-      {sheetOpen ? null : sinceStrip}
-      {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} />}
+      {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} layout="page" />}
       {sheetOpen ? null : toolbar}
       {body}
       {signBar}
-      {wide && !portrait ? (
+      {!portrait ? (
         <Drawer
-          open={drawerOpen && (flowPanel ?? signOffPanel) !== null}
+          open={drawerOpen && (wide ? (flowPanel ?? signOffPanel) : signOffPanel) !== null}
           onClose={() => setDrawerOpen(false)}
           title={selected ? selected.name : "Sign off"}
         >

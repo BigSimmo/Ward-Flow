@@ -55,8 +55,12 @@ describe("Handover scope control", () => {
 
   it("names the scope and states the real open count at mount", () => {
     renderHandover();
-    const summary = screen.getByTestId("ward-handover-scope-summary");
-    expect(summary).toHaveTextContent(`Showing Whole network, ${realOpen.length} of ${realOpen.length} open`);
+    // 1 Nov 2026 redesign: the whole network needs no scope line; the control and the Patients tab
+    // name the scope and its real open count.
+    expect(screen.queryByTestId("ward-handover-scope-summary")).toBeNull();
+    const select = screen.getByTestId("ward-handover-scope-select") as HTMLSelectElement;
+    expect(select.selectedOptions[0]?.textContent).toBe("Whole network");
+    expect(screen.getByRole("tab", { name: /Patients/ })).toHaveTextContent(String(realOpen.length));
   });
 
   it("renames itself to the chosen ED and states how many are outside the scope", async () => {
@@ -64,10 +68,7 @@ describe("Handover scope control", () => {
     renderHandover();
     await selectScope(user, "Sir Charles Gairdner Hospital Emergency Department");
     expect(screen.getByTestId("ward-handover-scope-summary")).toHaveTextContent(
-      `Showing Sir Charles Gairdner Hospital Emergency Department, ${scghEdCount} of ${realOpen.length} open`,
-    );
-    expect(screen.getByTestId("ward-handover-scope-excluded")).toHaveTextContent(
-      `${realOpen.length - scghEdCount} outside this scope`,
+      `${scghEdCount} of ${realOpen.length} open in Sir Charles Gairdner Hospital Emergency Department`,
     );
   });
 });
