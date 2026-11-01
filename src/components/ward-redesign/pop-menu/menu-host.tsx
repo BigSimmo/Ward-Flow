@@ -258,7 +258,6 @@ export function PhoneMenuMock({ initial }: { initial: "menu" | "create" }) {
   const {
     entries,
     byId,
-    dockRight,
     needs: overdueNeeds,
     groups,
   } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav, deskRoleLabel);
@@ -333,13 +332,8 @@ export function PhoneMenuMock({ initial }: { initial: "menu" | "create" }) {
     wardTasksAreActionableForRole(shellRole) &&
     accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
-  // Nothing twice: with one Alerts queue the dock always carries Alerts, so it leaves its group.
-  const menuGroups =
-    oneAlertsQueue && dockRight.some((slot) => slot.kind === "queue")
-      ? groups
-          .map((group) => ({ ...group, entries: group.entries.filter((entry) => entry.id !== "alerts") }))
-          .filter((group) => group.entries.length > 0)
-      : groups;
+  // Q177 (Josh, 1 Nov 2026): the dock's queue slot reads Tasks, so Alerts keeps its Menu row.
+  const menuGroups = groups;
 
   const close = () => setOpen(false);
   const closeCreate = () => setCreateOpen(false);

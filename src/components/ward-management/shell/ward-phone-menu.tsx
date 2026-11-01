@@ -13,7 +13,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedDouble, House, Bell, Clock3, Plus } from "lucide-react";
+import { Activity, BedDouble, House, Bell, Clock3, ListChecks, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { SrOnly } from "@/components/wf";
@@ -338,7 +338,7 @@ function PhoneDock({
   counts: CountMap;
   pathname: string;
   tasksCount: number;
-  /** One Alerts queue: the Tasks tab is the Alerts tab and opens the Alerts screen. */
+  /** One Alerts queue: the Tasks tab opens the coordinator's queue on the Alerts screen. */
   oneAlertsQueue: boolean;
   activityUnread: number;
   onGo: (entry: RailEntry) => void;
@@ -391,8 +391,25 @@ function PhoneDock({
         );
       }
       case "queue":
+        // Q177 (Josh, 1 Nov 2026): the coordinator's dock says Tasks again, with a checklist icon and
+        // the act-now count. It opens the same list as before; Alerts stays on its screen and in the Menu.
         return oneAlertsQueue ? (
-          alertsLink(tasksCount)
+          <Link
+            key="tasks"
+            href={WARD_ALERTS_HREF}
+            prefetch={true}
+            className={styles.dockItem}
+            aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
+            data-testid="ward-phone-menu-tasks"
+            onClick={() => announceToWardShell("Tasks.")}
+          >
+            <DockFace
+              icon={ListChecks}
+              label="Tasks"
+              count={tasksCount}
+              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+            />
+          </Link>
         ) : (
           <button
             key="tasks"
@@ -402,12 +419,11 @@ function PhoneDock({
             data-testid="ward-phone-menu-tasks"
             onClick={() => onDrawer("tasks")}
           >
-            {/* Josh, 31 Oct 2026: one name and one icon on every desk, the bell and "Alerts". */}
             <DockFace
-              icon={Bell}
-              label="Alerts"
+              icon={ListChecks}
+              label="Tasks"
               count={tasksCount}
-              tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
+              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
             />
           </button>
         );
@@ -699,13 +715,8 @@ export function WardPhoneMenu({
     wardTasksAreActionableForRole(shellRole) &&
     accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
-  // Nothing twice: with one Alerts queue the dock always carries Alerts, so it leaves its group.
-  const menuGroups =
-    oneAlertsQueue && dockRight.some((slot) => slot.kind === "queue")
-      ? groups
-          .map((group) => ({ ...group, entries: group.entries.filter((entry) => entry.id !== "alerts") }))
-          .filter((group) => group.entries.length > 0)
-      : groups;
+  // Q177 (Josh, 1 Nov 2026): the dock's queue slot reads Tasks, so Alerts keeps its Menu row.
+  const menuGroups = groups;
 
   const sheetReturnRef = useMemo<RefObject<HTMLButtonElement | null>>(
     () => ({

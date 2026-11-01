@@ -15,7 +15,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedDouble, House, Bell, Plus } from "lucide-react";
+import { Activity, BedDouble, House, Bell, ListChecks, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { SrOnly } from "@/components/wf";
@@ -400,8 +400,24 @@ function PhoneDock({
         );
       }
       case "queue":
+        // Q177 (Josh, 1 Nov 2026): the coordinator's dock says Tasks again and opens the same queue.
         return oneAlertsQueue ? (
-          alertsLink(tasksCount)
+          <Link
+            key="tasks"
+            href={WARD_ALERTS_HREF}
+            prefetch={true}
+            className={DOCK_ITEM}
+            aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
+            data-testid="ward-phone-menu-tasks"
+            onClick={() => announceToWardShell("Tasks.")}
+          >
+            <DockFace
+              icon={ListChecks}
+              label="Tasks"
+              count={tasksCount}
+              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+            />
+          </Link>
         ) : (
           <button
             key="tasks"
@@ -412,10 +428,10 @@ function PhoneDock({
             onClick={() => onDrawer("tasks")}
           >
             <DockFace
-              icon={Bell}
-              label="Alerts"
+              icon={ListChecks}
+              label="Tasks"
               count={tasksCount}
-              tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
+              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
             />
           </button>
         );
