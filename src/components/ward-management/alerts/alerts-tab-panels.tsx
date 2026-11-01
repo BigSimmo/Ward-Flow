@@ -55,7 +55,8 @@ export function AlertsBroadcastPanel({
 }) {
   // Alerts redesign (1 Nov 2026): each live broadcast is a card with an action bar; then the
   // earlier ones, or an empty state that offers Broadcast alert.
-  const [addingUnits, setAddingUnits] = useState(false);
+  // The broadcast Add units opened on: if another broadcast replaces it, the dialog closes rather than retarget.
+  const [addingUnits, setAddingUnits] = useState<string | null>(null);
   return (
     <TabPanel idPrefix="alerts" id="broadcast" className={cx(styles.tabBody, tab.tabBody)}>
       {livePullNows.length > 0 ? (
@@ -83,7 +84,7 @@ export function AlertsBroadcastPanel({
             });
             raise("EXTEND_BROADCAST_ALERT", { alertId: activeBroadcast.id });
           }}
-          onAddUnits={() => setAddingUnits(true)}
+          onAddUnits={() => setAddingUnits(activeBroadcast.id)}
           addUnitsDisabledReason={
             addableGroups(activeBroadcast, units).length === 0 ? "Every unit is already asked." : undefined
           }
@@ -93,13 +94,13 @@ export function AlertsBroadcastPanel({
       ) : (
         <NoBroadcastLive onCompose={onCompose} composeDisabledReason={composeDisabledReason} />
       )}
-      {activeBroadcast && addingUnits ? (
+      {activeBroadcast && addingUnits === activeBroadcast.id ? (
         <AddUnitsDialog
           alert={activeBroadcast}
           units={units}
-          onClose={() => setAddingUnits(false)}
+          onClose={() => setAddingUnits(null)}
           onAdd={(unitIds) => {
-            setAddingUnits(false);
+            setAddingUnits(null);
             track({
               type: "ADD_BROADCAST_ALERT_UNITS",
               ok: `Added ${unitIds.length === 1 ? "1 unit" : `${unitIds.length} units`} to "${activeBroadcast.title}".`,
