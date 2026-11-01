@@ -293,8 +293,9 @@ describe("task workspace state filters and actions", () => {
     const { drawer, onSelectMovement, dispatch } = renderDrawer({ records: seed });
     const item = items.find((item) => item.title === "Multiple destinations declined")!;
     const card = within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!;
-    // v6 (TasksDrawer.webp): the meta line reads "Critical · Tobias Wren · UM100023", record number bare.
-    expect(card).toHaveTextContent(/Tobias Wren·UM\d+/u);
+    // v6 (TasksDrawer.webp): the meta line reads "Critical · Wren, Tobias · UM100023", record number bare,
+    // surname first (D-83, pop-alerts 31 Oct 2026).
+    expect(card).toHaveTextContent(/Wren, Tobias·UM\d+/u);
     expect(card).not.toHaveTextContent(item.movementId);
     expect(card).not.toHaveTextContent("Bed coordinator");
     fireEvent.click(within(card).getByRole("button", { name: "Refer" }));
