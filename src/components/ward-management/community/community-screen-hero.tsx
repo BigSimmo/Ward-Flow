@@ -8,7 +8,7 @@
  */
 
 import Link from "next/link";
-import { ChevronDown, Clock, House, MoreHorizontal, Phone, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock, House, MoreHorizontal, Phone, Plus, Search } from "lucide-react";
 import { Button, Hero, HeroStat, Icon, Menu, Drawer, SrOnly, TextInput } from "@/components/wf";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { communityTeamSuburbCounts } from "@/components/ward-management/community/community-vocabulary";
@@ -18,6 +18,7 @@ import { moveBetweenWardTabs } from "@/components/ward-management/ward/ward-scre
 import ward from "@/components/ward-management/ward/ward.module.css";
 import { contactForTeam } from "@/components/ward-management/community/community-team-contact-mapping";
 import { communityRosterCounts } from "./community-screen-panels";
+import { DEMO_FIGURES } from "./team-2026/midland-demo";
 import type { ActiveTabType } from "./community-screen-helpers";
 import styles from "./community.module.css";
 import v6 from "./community-team-v6.module.css";
@@ -71,19 +72,27 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
   const oldest = waitingReferrals[0];
   const hours = contactForTeam(team.name)?.publishedHours ?? null;
   const roster = communityRosterCounts();
+  // Midland carries the locked mock-up's demo team (Q126, Q132); its figures are stated, not derived.
+  const midland = view.midlandDemo;
+  const f = DEMO_FIGURES;
+  const caseloadShown = midland ? f.caseload : caseloadCount;
   return (
     <div className={v6.standing}>
       <Hero
         level={1}
-        eyebrow={`${team.name} · Community mental health`}
+        eyebrow={midland ? MIDLAND_EYEBROW : `${team.name} · Community mental health`}
         title={
           <span data-testid="ward-community-hero-answer">
-            {caseloadCount} on the caseload<SrOnly>, {team.name}</SrOnly>
+            {caseloadShown} on the caseload<SrOnly>, {team.name}</SrOnly>
           </span>
         }
         titleMeta={
           <>
-            <span className={v6.heroSub}>{inHospital} in hospital</span>
+            <span className={v6.heroSub}>
+              {midland
+                ? `${f.inHospital} in hospital · ${f.unallocated} waiting for a case manager`
+                : `${inHospital} in hospital`}
+            </span>
             {/* A community team desk opens its own team only, so it has no way across. */}
             {ownTeamOnly ? null : (
               <button
@@ -102,7 +111,7 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
           </>
         }
         aside={
-          <Button variant="onHero" size="sm" icon={Plus} id="btnMainIntake" onClick={openNewReferral}>
+          <Button variant="light" size="sm" icon={Plus} id="btnMainIntake" onClick={openNewReferral}>
             Refer from team
           </Button>
         }
@@ -111,29 +120,46 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
             <HeroStat
               inline
               command
-              value={urgentAnswerCount}
+              value={midland ? f.actNow : urgentAnswerCount}
               label="Act now"
-              tone={urgentAnswerCount > 0 ? "danger" : undefined}
-              onToggle={() => openTeamSection("referrals")}
+              tone={(midland ? f.actNow : urgentAnswerCount) > 0 ? "danger" : undefined}
+              onToggle={() => openTeamSection(midland ? "home" : "referrals")}
             />
             <HeroStat
               inline
               command
-              value={waitingCount}
+              value={midland ? f.referrals : waitingCount}
               label="Referrals to answer"
+              tone={midland ? "neutral" : undefined}
               onToggle={() => openTeamSection("referrals")}
             />
             <HeroStat
               inline
               command
-              value={leavingSoon.length}
+              value={midland ? f.homeIn7Days : leavingSoon.length}
               label="Leaving hospital in 7 days"
               onToggle={() => openTeamSection("hospital")}
             />
+            {midland ? (
+              <HeroStat
+                inline
+                command
+                value={f.ctoReviewsDue}
+                label="CTO reviews due"
+                onToggle={() => openTeamSection("caseload")}
+              />
+            ) : null}
           </div>
         }
         barAside={
-          isDemoMode ? (
+          midland ? (
+            <button type="button" className={v6.heroLink} onClick={() => openTeamSection("clinicians")}>
+              <b>
+                {f.working} of {f.clinicians}
+              </b>{" "}
+              working today · Clinicians
+            </button>
+          ) : isDemoMode ? (
             <button type="button" className={v6.heroLink} onClick={() => openTeamSection("clinicians")}>
               <b>
                 {roster.working} of {roster.total}
@@ -143,43 +169,80 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
           ) : null
         }
         foot={
-          <div className={v6.glance} data-testid="ward-community-glance">
-            <button type="button" className={v6.glanceItem} onClick={() => openTeamSection("referrals")}>
-              <Icon icon={Clock} size={14} />
-              <span>Oldest referral</span>
-              {oldest ? (
-                <>
-                  <b className={v6.glanceMono}>{referralWaitLine(oldest, now)}</b>
-                  <b>{identityOf(oldest)}</b>
-                </>
-              ) : (
-                <b>None waiting</b>
-              )}
-            </button>
-            <button type="button" className={v6.glanceItem} onClick={() => openTeamSection("hospital")}>
-              <Icon icon={House} size={14} />
-              <span>Next home</span>
-              {nextHome && nextHome.expectedDischargeAt !== null ? (
-                <b className={v6.glanceMono}>
-                  {(() => {
-                    // Elapsed wording, never a clock face (the page's rule).
-                    const days = Math.round((nextHome.expectedDischargeAt - now) / (24 * 60));
-                    return days <= 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
-                  })()}
-                </b>
-              ) : (
-                <b>None planned</b>
-              )}
-            </button>
-          </div>
+          midland ? (
+            <MidlandGlance go={openTeamSection} />
+          ) : (
+            <div className={v6.glance} data-testid="ward-community-glance">
+              <button type="button" className={v6.glanceItem} onClick={() => openTeamSection("referrals")}>
+                <Icon icon={Clock} size={14} />
+                <span>Oldest referral</span>
+                {oldest ? (
+                  <>
+                    <b className={v6.glanceMono}>{referralWaitLine(oldest, now)}</b>
+                    <b>{identityOf(oldest)}</b>
+                  </>
+                ) : (
+                  <b>None waiting</b>
+                )}
+              </button>
+              <button type="button" className={v6.glanceItem} onClick={() => openTeamSection("hospital")}>
+                <Icon icon={House} size={14} />
+                <span>Next home</span>
+                {nextHome && nextHome.expectedDischargeAt !== null ? (
+                  <b className={v6.glanceMono}>
+                    {(() => {
+                      // Elapsed wording, never a clock face (the page's rule).
+                      const days = Math.round((nextHome.expectedDischargeAt - now) / (24 * 60));
+                      return days <= 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
+                    })()}
+                  </b>
+                ) : (
+                  <b>None planned</b>
+                )}
+              </button>
+            </div>
+          )
         }
-        footAside={hours ? <span>{hours}</span> : undefined}
+        footAside={!midland && hours ? <span>{hours}</span> : undefined}
       />
       <SrOnly>
         {ownTeamOnly
           ? "Your team's referrals and bed flow."
           : "The bed coordinator's view of this team's referrals and bed flow."}
       </SrOnly>
+    </div>
+  );
+}
+
+const MIDLAND_EYEBROW = "Midland · Community mental health · East Metro · Adult";
+
+/** Midland's at-a-glance strip, as the locked mock-up states it (demo data). */
+function MidlandGlance({ go }: { go: (section: CommunityTeamSection) => void }) {
+  return (
+    <div className={v6.glance} data-testid="ward-community-glance">
+      <button type="button" className={v6.glanceItem} onClick={() => go("clinicians")}>
+        <Icon icon={Phone} size={14} />
+        <span>Duty officer</span>
+        <b>Byrne, T.</b>
+        <span className={v6.glanceMono}>ext 4105</span>
+        <Icon icon={ChevronRight} size={14} />
+      </button>
+      <button type="button" className={v6.glanceItem} onClick={() => go("referrals")}>
+        <Icon icon={Clock} size={14} />
+        <span>Oldest referral</span>
+        <b className={v6.glanceMono}>{DEMO_FIGURES.oldestReferral}</b>
+        <b>Sallowfield, June</b>
+        <span>from GP</span>
+        <Icon icon={ChevronRight} size={14} />
+      </button>
+      <button type="button" className={v6.glanceItem} onClick={() => go("hospital")}>
+        <Icon icon={House} size={14} />
+        <span>Next home</span>
+        <b className={v6.glanceMono}>Wed 4 Nov</b>
+        <b>Greymantle, Ottoline</b>
+        <span>Moodjar</span>
+        <Icon icon={ChevronRight} size={14} />
+      </button>
     </div>
   );
 }
@@ -205,12 +268,15 @@ export function CommunityScreenTabRow({ view }: { view: CommunityScreenView }) {
     setActiveModalType,
     setActiveDrawer,
   } = view;
-  const counts: Partial<Record<CommunityTeamSection, number>> = {
-    caseload: isDemoMode ? teamConfig.caseload : caseloadRows.length,
-    hospital: isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length,
-    referrals: waitingCount,
-    clinicians: isDemoMode ? communityRosterCounts().total : undefined,
-  };
+  const f = DEMO_FIGURES;
+  const counts: Partial<Record<CommunityTeamSection, number>> = view.midlandDemo
+    ? { caseload: f.caseload, hospital: f.inHospital, referrals: f.referrals, clinicians: f.clinicians }
+    : {
+        caseload: isDemoMode ? teamConfig.caseload : caseloadRows.length,
+        hospital: isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length,
+        referrals: waitingCount,
+        clinicians: isDemoMode ? communityRosterCounts().total : undefined,
+      };
   return (
     <nav className={`${ward.tabBarWrap} ${v6.tabRow}`} aria-label="Team sections">
       <ul className={ward.tabList} role="tablist" aria-label="Team sections" onKeyDown={moveBetweenWardTabs}>
