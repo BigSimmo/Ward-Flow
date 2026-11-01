@@ -80,7 +80,14 @@ export function WardPhoneRoundList<Row extends PhoneRoundRow>({
                   {row.number}
                 </span>
                 <span className={styles.phoneRowText} aria-hidden="true">
-                  <span className={styles.phoneRowName}>{row.name}</span>
+                  <span className={styles.phoneRowName}>
+                    {readyOnce(row) && row.glyph ? (
+                      <>
+                        <StatusGlyph tone={row.glyph} size={9} />{" "}
+                      </>
+                    ) : null}
+                    {row.name}
+                  </span>
                   <WalkRoundRowMarks mark={marks} />
                   {/* Phone audit (Josh, 1 Nov 2026): a ready bed says "Ready" once, in its name line. */}
                   {readyOnce(row) ? null : (

@@ -63,6 +63,8 @@ export function CapacityHero({
   return (
     <Hero
       level={1}
+      // The eyebrow says the figures cover the network, not only the chosen service.
+      phoneEyebrow="show"
       eyebrow={`Capacity · ${scope}${isPhone ? "" : ` · ${totals.wards} wards · as at ${formatInstant(now)}`}`}
       title={
         <>

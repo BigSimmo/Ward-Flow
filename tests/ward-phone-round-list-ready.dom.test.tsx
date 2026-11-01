@@ -36,7 +36,10 @@ function renderRows(rows: PhoneRoundRow[]) {
 describe("ward phone round list, ready bed", () => {
   it("draws Ready once for a ready bed", () => {
     const list = renderRows([row("07", {})]);
-    expect(list.getByRole("button", { name: "Bed 07" }).textContent?.match(/Ready/g)).toHaveLength(1);
+    const bed = list.getByRole("button", { name: "Bed 07" });
+    expect(bed.textContent?.match(/Ready/g)).toHaveLength(1);
+    // The ready mark stays, beside the name.
+    expect(bed.querySelector('[data-wf-glyph="success"]')).not.toBeNull();
   });
 
   it("keeps an occupied bed's note and stay days", () => {
