@@ -93,7 +93,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
           </thead>
           {inbox.length > 0 ? (
             <tbody>
-              <tr className={handover.listGroup}>
+              <tr className={handover.listGroup} data-testid="ward-ed-inbox-group">
                 <td colSpan={5}>
                   New referral <span className={handover.bandCount}>{inbox.length}</span>
                   <span className={handover.bandNote}>for psychiatric review</span>
@@ -119,7 +119,11 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                     <td className={handover.listMono}>{linked ? patientBay(linked.id).replace(/^Bay /, "") : "–"}</td>
                     <td>{[linked?.cohort, linked?.sex].filter(Boolean).join(" · ") || "–"}</td>
                     <td>
-                      <span className={handover.listTag} data-tone="accent">
+                      <span
+                        className={handover.listTag}
+                        data-tone="accent"
+                        data-testid={`ward-ed-inbox-purpose-${referral.id}`}
+                      >
                         {referralPurposeLabel(destination.purpose)}
                       </span>
                     </td>

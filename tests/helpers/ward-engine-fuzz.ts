@@ -2019,7 +2019,10 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       )(state, random)!;
       // P019: a row someone holds is released instead.
       const latest = state.inboxOwnership[String(event.inboxItemId)]?.at(-1);
-      return latest && latest.kind !== "released" ? { ...event, type: "RELEASE_INBOX_ITEM_OWNERSHIP" } : event;
+      if (latest && latest.kind !== "released") return { ...event, type: "RELEASE_INBOX_ITEM_OWNERSHIP" };
+      // With no row held, sometimes still send the release, which must be refused and change nothing,
+      // so a run that never holds a row at a sweep step still sends both events.
+      return chance(random, 0.5) ? { ...event, type: "RELEASE_INBOX_ITEM_OWNERSHIP" } : event;
     },
   ],
   [
@@ -2189,6 +2192,18 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  [
+    1,
+    movementEvent("RECORD_LEGAL_FORM_CODE", undefined, (_state, random, movement) => ({
+      formCode: formCodeFor(random, movement),
+    })),
+  ],
+  [
+    1,
+    movementEvent("RECORD_ED_PRESENTATION", undefined, (_state, random) => ({
+      presentations: chance(random, 0.2) ? [] : [pick(random, ["Suicidal thoughts", "Psychosis", "Other"] as const)],
+    })),
+  ],
 ];
 
 const ALL_BUILDERS = [...BUILDERS, ...MORE_BUILDERS];
@@ -2241,6 +2256,24 @@ export function nextEvent(
     seed !== undefined && step % SWEEP_EVERY === SWEEP_EVERY - 1
       ? ALL_BUILDERS[(seed * Math.floor(steps / SWEEP_EVERY) + Math.floor(step / SWEEP_EVERY)) % ALL_BUILDERS.length][1]
       : undefined;
+  // A support notification's Undo lasts five minutes, one step here, so a weighted draw rarely
+  // lands on it in time. Sometimes press it at once, as the toast offers, so the coverage run sees it.
+  const justTold = (state.undoRecords ?? []).at(-1);
+  if (
+    justTold?.kind === "step" &&
+    justTold.undoType === "UNDO_SUPPORT_NOTIFICATION" &&
+    currentNow - justTold.at <= 5 &&
+    chance(random, 0.5)
+  ) {
+    FUZZED_EVENT_TYPES.add("UNDO_SUPPORT_NOTIFICATION");
+    return {
+      type: "UNDO_SUPPORT_NOTIFICATION",
+      role: justTold.role,
+      now: currentNow,
+      ...undoSubjectField(state, justTold.subjectId),
+      ...(justTold.unitId ? { actingUnitId: justTold.unitId } : {}),
+    } as unknown as WardFlowEvent;
+  }
   for (let attempt = 0; ; attempt += 1) {
     const draft = (attempt === 0 && sweep ? sweep : chooseBuilder(random))(state, random);
     if (!draft) continue;

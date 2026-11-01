@@ -124,6 +124,11 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
   }
 
   const filtered = boardMatchCount !== patients.length;
+  const ORDER_NAME: Record<string, string> = {
+    longest: "longest in ED first",
+    name: "A to Z by surname",
+    current: "in current order",
+  };
   const orderWords =
     patientSort === "longest"
       ? "Longest in ED first"
@@ -208,7 +213,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
             <table
               className={`${styles.a2Table} ${handover.handoverTable}`}
               data-columns="handover"
-              aria-label={`Emergency department handover, ${orderWords.toLowerCase()}`}
+              aria-label={`Emergency department handover, ${ORDER_NAME[patientSort]}`}
             >
               <colgroup>
                 {COLUMNS.map((column) => (
