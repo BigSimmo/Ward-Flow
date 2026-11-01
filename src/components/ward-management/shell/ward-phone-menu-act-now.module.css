@@ -1,26 +1,10 @@
 /*
- * Phone Menu "Act-now tasks" row (site review, 12 Oct 2026): the approved act-now marker (#249),
- * a faint coral tint and a rounded coral marker at the start, never a full red box around the row.
- * Kept in its own module so the Menu's shared row rules are untouched.
+ * Phone Menu "Act-now alerts" row: a faint act tint, with the row's danger dot as its marker. The
+ * rounded coral bar at the start (site review, 12 Oct 2026) is gone under Josh's no-side-edges rule
+ * (31 Oct 2026): tone shows as the glyph, never a coloured edge. Kept in its own module so the
+ * Menu's shared row rules are untouched.
  */
 .actNow.actNow {
   position: relative;
   background: var(--wf-act-tint);
-}
-
-.actNow.actNow::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 4px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-act-edge, var(--wf-danger));
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .actNow.actNow::before {
-    background: CanvasText;
-  }
 }
