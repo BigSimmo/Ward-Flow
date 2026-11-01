@@ -17,7 +17,7 @@ import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-managemen
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -79,6 +79,7 @@ import { groupLinkedAlerts, type LinkedQueueItem } from "./alert-linked-groups";
 import { LinkedAlertItem } from "./alert-linked-group";
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
 import { TodayChart } from "./alerts-visuals";
+import { TodayBand } from "./alerts-today-band";
 import { alertChecks } from "./alerts-checks";
 import { alertsHistory } from "./alerts-history";
 import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
@@ -1119,6 +1120,29 @@ function AlertsWorkspace() {
     </>
   ) : null;
 
+  const todayRaised = allEntries
+    .filter((entry) => entry.raised !== undefined)
+    .map((entry) => ({
+      id: entry.item.id,
+      at: entry.raised!,
+      shape: entry.group === "act" ? ("act" as const) : ("wait" as const),
+      title: `${entry.item.title} for ${entry.subject.displayName}. Raised ${formatInstantWithDay(entry.raised!, now)}`,
+    }));
+  // Acted on today counts only today's timeline day, so a session past midnight starts again at 0.
+  const todayActed = history
+    .filter((entry) => entry.action && dayOf(entry.at) === dayOf(now))
+    .map((entry) => ({
+      id: entry.id,
+      at: entry.at,
+      shape: "done" as const,
+      title: `${entry.title}, ${formatInstantWithDay(entry.at, now)}`,
+    }));
+  const todayBroadcasts = (broadcastAlerts ?? []).map((alert) => ({
+    id: alert.id,
+    from: alert.dispatchedAt,
+    until: alert.stoodDownAt ?? alert.expiresAt,
+    title: `${alert.title}, sent ${formatInstantWithDay(alert.dispatchedAt, now)}`,
+  }));
   const todayChart = (
     <TodayChart
       now={now}
@@ -1127,28 +1151,9 @@ function AlertsWorkspace() {
         const entry = allEntries.find((candidate) => candidate.item.id === id);
         if (entry) select(entry);
       }}
-      raised={allEntries
-        .filter((entry) => entry.raised !== undefined)
-        .map((entry) => ({
-          id: entry.item.id,
-          at: entry.raised!,
-          shape: entry.group === "act" ? ("act" as const) : ("wait" as const),
-          title: `${entry.item.title} for ${entry.subject.displayName}. Raised ${formatInstantWithDay(entry.raised!, now)}`,
-        }))}
-      acted={history
-        .filter((entry) => entry.action)
-        .map((entry) => ({
-          id: entry.id,
-          at: entry.at,
-          shape: "done" as const,
-          title: `${entry.title}, ${formatInstantWithDay(entry.at, now)}`,
-        }))}
-      broadcasts={(broadcastAlerts ?? []).map((alert) => ({
-        id: alert.id,
-        from: alert.dispatchedAt,
-        until: alert.stoodDownAt ?? alert.expiresAt,
-        title: `${alert.title}, sent ${formatInstantWithDay(alert.dispatchedAt, now)}`,
-      }))}
+      raised={todayRaised}
+      acted={todayActed}
+      broadcasts={todayBroadcasts}
     />
   );
 
@@ -1162,6 +1167,27 @@ function AlertsWorkspace() {
   );
   // Nurse in charge: a quiet ward's side panel lists the checks, so the hero leaves them out.
   const checkingFoot = quietWard ? undefined : <ChecksChip checks={checks}>{checkingList}</ChecksChip>;
+  // Alerts redesign (1 Nov 2026): on a desktop the Today track and the at-a-glance line sit in the
+  // band, in place of the Today card, the band's broadcast button and the Checking row.
+  const liveUntil = activeBroadcast ? activeBroadcast.expiresAt : undefined;
+  const todayBand =
+    isPhone || quietWard ? undefined : (
+      <TodayBand
+        now={now}
+        selectedId={selected?.item.id}
+        onPick={(id) => {
+          const entry = allEntries.find((candidate) => candidate.item.id === id);
+          if (entry) select(entry);
+        }}
+        raised={todayRaised}
+        acted={todayActed}
+        broadcasts={todayBroadcasts}
+        noTimeCount={countedActive.filter((entry) => entry.raised === undefined).length}
+        checking={<div className={styles.checkingFootWide}>{checkingFoot}</div>}
+        liveBroadcast={liveUntil !== undefined ? { until: liveUntil } : undefined}
+        onOpenBroadcast={() => setTab("broadcast")}
+      />
+    );
 
   return (
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v8">
@@ -1196,6 +1222,7 @@ function AlertsWorkspace() {
           nextQueue={nextQueue}
           handleCopy={handleCopy}
           checkingFoot={checkingFoot}
+          todayBand={todayBand}
         />
 
         {/* Feedback after a broadcast or an act on a row */}
@@ -1361,29 +1388,6 @@ function AlertsWorkspace() {
               {tab === "history" ? <AlertsHistoryPanel history={history} now={now} /> : null}
             </Card>
 
-            {/* Nurse in charge: a quiet ward has no Today to chart. */}
-            {quietWard ? null : (
-              <Card as="section" className={styles.todayCard} aria-label="Today">
-                <div className={styles.todayHead}>
-                  <h2 className={styles.todayTitle}>
-                    <Clock size={16} aria-hidden="true" />
-                    Today
-                  </h2>
-                  <span className={styles.legend}>
-                    <span>
-                      <StatusGlyph tone="danger" size={9} /> Act now
-                    </span>
-                    <span>
-                      <StatusGlyph tone="warning" size={9} /> Waiting
-                    </span>
-                    <span>
-                      <StatusGlyph tone="success" size={9} /> Acted on
-                    </span>
-                  </span>
-                </div>
-                {todayChart}
-              </Card>
-            )}
             {isPhone ? (
               <>
                 {quietWard ? null : (
