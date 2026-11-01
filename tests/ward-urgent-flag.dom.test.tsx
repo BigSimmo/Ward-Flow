@@ -160,11 +160,14 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
         onClose={() => {}}
       />,
     );
+    // Movements redesign (1 Nov 2026): the reason picker opens from "Flag urgent" in the foot band.
+    fireEvent.click(screen.getByRole("button", { name: "Flag urgent" }));
   }
 
   it("offers every URGENT_MARK_REASONS member as an option", () => {
     renderDrawer(anOpenUnflagged(), vi.fn());
     const select = screen.getByTestId("ward-movement-drawer-urgent-reason") as HTMLSelectElement;
+    expect(select, "opening the picker moves focus into it").toHaveFocus();
     const optionValues = Array.from(select.options)
       .map((option) => option.value)
       .filter((value) => value.length > 0);

@@ -51,14 +51,11 @@ export function useEdBoardDrafts() {
   // not-yet-raised referral. One draft value per movement, the same shape `urgencyDraft` below
   // holds for its own per-movement correction.
   const [genderRecordDraft, setGenderRecordDraft] = useState<Record<string, ReferralGender | "">>({});
-  const [presentationDrafts, setPresentationDrafts] = useState<Record<string, string>>({});
   const [planDrafts, setPlanDrafts] = useState<Record<string, string[]>>({});
-  const hasBoardDrafts = Object.keys(presentationDrafts).length + Object.keys(planDrafts).length > 0;
+  const hasBoardDrafts = Object.keys(planDrafts).length > 0;
   return {
     genderRecordDraft,
     setGenderRecordDraft,
-    presentationDrafts,
-    setPresentationDrafts,
     planDrafts,
     setPlanDrafts,
     hasBoardDrafts,

@@ -12,6 +12,7 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-events
 import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
 import { admittedStayForArrival } from "@/components/ward-management/ward-admissions";
 import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
+import { ED_PRESENTATION_CHOICES, isEdPresentation } from "./ed/ed-presentation";
 
 type RecordedLegalEvent = Extract<
   RecordedFactEvent,
@@ -20,6 +21,8 @@ type RecordedLegalEvent = Extract<
       | "RECORD_LEGAL_FORM_EXPIRY"
       | "RECORD_COMMUNITY_TREATMENT_ORDER"
       | "RECORD_LEGAL_FORM_WRITTEN"
+      | "RECORD_LEGAL_FORM_CODE"
+      | "RECORD_ED_PRESENTATION"
       | "RECORD_COUNTRY_EXTENSION"
       | "RECORD_LEGAL_FORM_CONTINUATION";
   }
@@ -185,7 +188,31 @@ export function reduceRecordedLegalEvent(
       };
     }
 
+    case "RECORD_ED_PRESENTATION": {
+      // Q103 (Josh, 1 Nov 2026): a fixed list chosen in the ED handover table; no typed text.
+      if (event.role !== "ed" && event.role !== "coordinator") {
+        return reject(state, event, `${event.role} cannot record an ED presentation; only ed and coordinator may`);
+      }
+      const movement = findMovement(state, event.movementId);
+      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      if (movement.closure) return reject(state, event, "cannot record a presentation for a closed movement");
+      if (!Array.isArray(event.presentations) || !event.presentations.every(isEdPresentation)) {
+        return reject(state, event, "Choose the presentation from the list.");
+      }
+      const chosen = ED_PRESENTATION_CHOICES.filter((choice) => event.presentations.includes(choice));
+      const next: Movement = { ...movement, edPresentations: chosen };
+      if (chosen.length === 0) delete next.edPresentations;
+      return replaceMovement(state, movement.id, next);
+    }
+
+    case "RECORD_LEGAL_FORM_CODE":
     case "RECORD_LEGAL_FORM_WRITTEN": {
+      // Q124 (Josh, 1 Nov 2026): the form-only record carries no written time. The time stays blank
+      // until typed on the Forms page; it is never defaulted to now (Q120).
+      const writtenAt = event.type === "RECORD_LEGAL_FORM_WRITTEN" ? event.writtenAt : undefined;
+      const region = event.type === "RECORD_LEGAL_FORM_WRITTEN" ? event.region : undefined;
+      const ageBand = event.type === "RECORD_LEGAL_FORM_WRITTEN" ? event.ageBand : undefined;
+      const paperExpiresAt = event.type === "RECORD_LEGAL_FORM_WRITTEN" ? event.paperExpiresAt : undefined;
       if (event.role !== "ed" && event.role !== "coordinator" && event.role !== "ward") {
         return reject(
           state,
@@ -206,10 +233,10 @@ export function reduceRecordedLegalEvent(
         return reject(state, event, `cannot record a written form for a closed movement (${movement.closure.reason})`);
       }
       if (
-        (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
-        (event.ageBand != null && !["adult", "under_18"].includes(event.ageBand)) ||
-        !Number.isFinite(event.writtenAt) ||
-        (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
+        (region !== undefined && !["metro", "country"].includes(region)) ||
+        (ageBand != null && !["adult", "under_18"].includes(ageBand)) ||
+        (event.type === "RECORD_LEGAL_FORM_WRITTEN" && !Number.isFinite(writtenAt)) ||
+        (paperExpiresAt !== undefined && !Number.isFinite(paperExpiresAt))
       ) {
         return reject(state, event, "Enter the time and expiry written on the form.");
       }
@@ -227,7 +254,13 @@ export function reduceRecordedLegalEvent(
             : undefined;
       // Editing the current form's written time preserves its recorded paper facts. A different
       // form starts new facts; a legacy calculated expiry is never promoted to paper authority.
-      const sameFormTimeEdit = movement.legalForm?.code === event.formCode && event.paperExpiresAt === undefined;
+      const sameFormTimeEdit = movement.legalForm?.code === event.formCode && paperExpiresAt === undefined;
+      if (event.type === "RECORD_LEGAL_FORM_CODE" && movement.legalForm?.code === event.formCode) {
+        return reject(state, event, `Form ${event.formCode} is already recorded for this person.`);
+      }
+      // A different form starts without a written time; the old form's time stays in its history.
+      const movementWithoutWrittenTime: Movement = { ...movement };
+      delete movementWithoutWrittenTime.formedAt;
       const currentPaperExpiry =
         movement.legalClock !== undefined && movement.legalForm?.dueAt === movement.legalClock.expiresAt
           ? undefined
@@ -236,26 +269,26 @@ export function reduceRecordedLegalEvent(
       if (
         movement.legalForm?.code === event.formCode &&
         currentPaperExpiry !== undefined &&
-        event.paperExpiresAt !== undefined &&
-        event.paperExpiresAt < currentPaperExpiry
+        paperExpiresAt !== undefined &&
+        paperExpiresAt < currentPaperExpiry
       ) {
         return reject(state, event, "A written form expiry cannot shorten an existing recorded expiry.");
       }
-      const dueAt = event.paperExpiresAt ?? (sameFormTimeEdit ? currentPaperExpiry : undefined);
+      const dueAt = paperExpiresAt ?? (sameFormTimeEdit ? currentPaperExpiry : undefined);
       const updated: Movement = {
-        ...movement,
-        formedAt: event.writtenAt,
+        ...movementWithoutWrittenTime,
+        ...(writtenAt === undefined ? {} : { formedAt: writtenAt }),
         legalForm: {
           code: event.formCode,
           kind,
-          ...(event.region
-            ? { region: event.region }
+          ...(region
+            ? { region: region }
             : sameFormTimeEdit && movement.legalForm?.region
               ? { region: movement.legalForm.region }
               : {}),
-          ...(event.ageBand
-            ? { ageBand: event.ageBand }
-            : event.ageBand === undefined && sameFormTimeEdit && movement.legalForm?.ageBand
+          ...(ageBand
+            ? { ageBand: ageBand }
+            : ageBand === undefined && sameFormTimeEdit && movement.legalForm?.ageBand
               ? { ageBand: movement.legalForm.ageBand }
               : {}),
           ...(dueAt === undefined ? {} : { dueAt }),
@@ -264,11 +297,11 @@ export function reduceRecordedLegalEvent(
         legalClock: undefined,
         legalFormReceivedAt: sameFormTimeEdit ? movement.legalFormReceivedAt : undefined,
         legalFormExpiryHistory:
-          event.paperExpiresAt === undefined
+          paperExpiresAt === undefined
             ? movement.legalFormExpiryHistory
             : [
                 ...(movement.legalFormExpiryHistory ?? []),
-                { at: event.now, by: event.role, dueAt: event.paperExpiresAt, basis: "written_on_form" },
+                { at: event.now, by: event.role, dueAt: paperExpiresAt, basis: "written_on_form" },
               ],
       };
       return replaceMovement(state, movement.id, updated);

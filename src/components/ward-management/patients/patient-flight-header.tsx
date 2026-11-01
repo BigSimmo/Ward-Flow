@@ -63,6 +63,14 @@ export function PatientFlightHeader({
   tabs: ReactNode;
   actions?: ReactNode;
 }) {
+  // Q117 (Josh, 1 Nov 2026): when an interpreter is required, it shows on the record's first line,
+  // because it changes how every call and handover is made. Otherwise it stays in Details only.
+  const interpreter = interpreterRequired(patient);
+  const interpreterTag = interpreter ? (
+    <span className={styles.v6Confidential} data-testid="ward-patient-interpreter">
+      {interpreter} interpreter
+    </span>
+  ) : null;
   const idLine = (
     <span className={styles.v6IdLine}>
       {patient ? (
@@ -77,6 +85,7 @@ export function PatientFlightHeader({
         <span>Demographics not recorded</span>
       )}
       {/* Redesign: the place is the eyebrow over the name, so the line under it does not repeat it. */}
+      {interpreterTag}
       {patient?.confidential ? (
         <span className={styles.v6Confidential} data-testid="ward-patient-confidential-pill">
           Confidential
@@ -98,6 +107,7 @@ export function PatientFlightHeader({
       )}
       {preferredName ? ` · known as ${preferredName}` : null}
       {location ? ` · ${location}` : null}
+      {interpreter ? ` · ${interpreter} interpreter` : null}
     </span>
   );
   return (
@@ -157,4 +167,11 @@ export function PatientFlightHeader({
  */
 export function PatientRecordTabsRow({ tabs, className }: { tabs: ReactNode; className?: string }) {
   return <div className={className ? `${styles.v6HeroTabsRow} ${className}` : styles.v6HeroTabsRow}>{tabs}</div>;
+}
+
+/** The language when the record says an interpreter is required ("Italian — interpreter required"). */
+function interpreterRequired(patient: Patient | undefined): string | undefined {
+  const value = patient?.interpreterLanguage?.trim();
+  if (!value || /no interpreter/i.test(value) || !/interpreter required/i.test(value)) return undefined;
+  return value.split(/\s+[—-]\s+/)[0]?.trim() || undefined;
 }

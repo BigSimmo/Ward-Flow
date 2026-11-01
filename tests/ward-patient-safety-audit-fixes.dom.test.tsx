@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { RecordFormSheet, type RecordDraft } from "@/components/ward-management/legal-forms/legal-forms-sheets";
-import { PatientDetailsTab } from "@/components/ward-management/patients/patient-dossier-tabs";
+import { PatientDetailsTab } from "@/components/ward-management/patients/patient-details-tab";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";

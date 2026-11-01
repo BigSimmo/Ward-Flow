@@ -57,6 +57,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "hub/hub-screen.tsx": { cover: "popup" },
   "legal-forms/legal-forms-screen.tsx": { cover: "popup", why: "Record a form opens in a sheet." },
   "loop-checks/ward-closure-loop-checks.tsx": { cover: "held" },
+  "movements/movement-drawer.tsx": {
+    cover: "popup",
+    why: "The movement drawer opens in a Sheet (phone: PhoneSheet), which the board already holds.",
+  },
   "movements/movement-workflow-actions.tsx": { cover: "page form" },
   "movements/movement-workspace-cockpit.tsx": { cover: "held" },
   "movements/sent-journey-changes.tsx": { cover: "held" },

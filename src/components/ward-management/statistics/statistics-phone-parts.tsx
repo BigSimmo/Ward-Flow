@@ -101,30 +101,6 @@ export function PhoneFacts({ facts, label, flush = false }: { facts: PhoneFact[]
   );
 }
 
-/** A card with a small icon head (Weekly report cards). */
-export function PhoneCard({
-  icon,
-  title,
-  aside,
-  children,
-}: {
-  icon?: LucideIcon;
-  title: ReactNode;
-  aside?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <section className={styles.card} aria-label={typeof title === "string" ? title : undefined}>
-      <div className={styles.cardHead}>
-        {icon ? <Icon icon={icon} size={16} /> : null}
-        <b className={styles.cardTitle}>{title}</b>
-        {aside ? <span className={styles.cardAside}>{aside}</span> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
 /** A row that opens a sheet or another page: icon tile, title, one line, chevron. */
 function PhoneNavRow({
   icon,

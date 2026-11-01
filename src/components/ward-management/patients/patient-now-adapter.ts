@@ -140,6 +140,14 @@ function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = f
   ];
 }
 
+/**
+ * Whether a ward stay is the subject patient's own. The record tabs (Community, Details, Documents)
+ * ask this of the one person in focus only, so the patient link stays read here, under D-14.
+ */
+export function isOwnStay(stay: { readonly patientId?: string | null }, subjectId: string): boolean {
+  return stay.patientId === subjectId;
+}
+
 export function resolvePatientNowRecord(
   id: string,
   patients: readonly Patient[],

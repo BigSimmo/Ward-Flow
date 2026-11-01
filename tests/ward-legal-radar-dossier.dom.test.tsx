@@ -2,7 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
-import { PatientDocumentsTab } from "@/components/ward-management/patients/patient-dossier-tabs";
+import { PatientDocumentsTab } from "@/components/ward-management/patients/patient-documents-tab";
 import type { PatientNowRecord } from "@/components/ward-management/patients/patient-now-records";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";

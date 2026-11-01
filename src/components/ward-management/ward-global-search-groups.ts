@@ -98,6 +98,37 @@ export function censusRowItem(row: CensusRow): SearchResultItem {
 /** Help's rows for a query, or its fixed reply (`note`) to a clinical question. */
 export type HelpSearchRows = { readonly items: readonly SearchResultItem[]; readonly note?: string };
 
+/** One Help step, as the header search's preview pane shows it. */
+type HelpPreviewStep = { readonly title: string; readonly body: string };
+
+/**
+ * The answer behind a Help row, for the header search's preview pane (Help redesign, 1 Nov 2026):
+ * the steps Show me lights, and whether this desk may run Show me for it.
+ */
+export type HelpPreviewAnswer = { readonly steps: readonly HelpPreviewStep[]; readonly showMe: boolean };
+
+/** The header search's Help preview, from the caller that knows the desk (`ward-global-search-help.tsx`). */
+export type HelpPreviewSource = {
+  readonly answerFor: (id: string) => HelpPreviewAnswer | undefined;
+  readonly showMe: (id: string) => void;
+  readonly openInHelp: (id: string) => void;
+};
+
+/** The same preview, closing the search first so the lit control, or Help itself, is in view. */
+export function closingFirst(help: HelpPreviewSource, close: () => void): HelpPreviewSource {
+  return {
+    answerFor: help.answerFor,
+    showMe: (id) => {
+      close();
+      help.showMe(id);
+    },
+    openInHelp: (id) => {
+      close();
+      help.openInHelp(id);
+    },
+  };
+}
+
 export type SearchResultGroup = {
   key: string;
   heading: string;

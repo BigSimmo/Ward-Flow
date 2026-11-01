@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render as rtlRender, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
@@ -39,6 +39,15 @@ import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-managemen
 import { splitDuration } from "@/components/ward-management/ward-clock";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { atDesktopWidth, atPhoneWidthForEachTest, showPhoneLists } from "./helpers/ed-phone-lists";
+
+// Handover build (Josh, 1 Nov 2026): these lists stay on the phone's Lists pane (see the helper).
+atPhoneWidthForEachTest();
+const render = ((...args: Parameters<typeof rtlRender>) => {
+  const view = rtlRender(...args);
+  showPhoneLists();
+  return view;
+}) as typeof rtlRender;
 /**
  * THE ED PSYCHIATRY HUB — the inbox, the outbox, and the producer that makes an ED destination
  * possible at all.
@@ -1754,6 +1763,8 @@ describe("the ED referral board never invents a time since referral", () => {
   const REFERRED_ED = "fsh-ed";
 
   it("says the referral time is not recorded, rather than showing the department clock twice", () => {
+    // The referred line sits in the desktop board's Referral cell, so this case reads the desktop.
+    atDesktopWidth();
     renderHub(REFERRED_ED);
     const rows = screen.queryAllByTestId(/^ward-ed-referred-/);
     expect(rows.length, "no referred row is rendered on this board, so this test asserts over nothing").toBeGreaterThan(

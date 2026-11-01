@@ -143,6 +143,22 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/help/ward-help-ask.tsx",
+    why: "the Help redesign round 2 (1 Nov 2026, #1242) replaced it with the one smart search and the Reference tab (ward-help-find.tsx, ward-help-reference-tabs.tsx). Kept with its tests until Josh decides whether to delete it",
+  },
+  {
+    module: "src/components/ward-management/help/ward-help-search.tsx",
+    why: "the Help redesign round 2 (1 Nov 2026, #1242) replaced it with the one smart search and the Reference tab (ward-help-find.tsx, ward-help-reference-tabs.tsx). Kept with its tests until Josh decides whether to delete it",
+  },
+  {
+    module: "src/components/ward-management/help-content/ward-help-glossary-view.tsx",
+    why: "the Help redesign round 2 (1 Nov 2026, #1242) replaced it with the one smart search and the Reference tab (ward-help-find.tsx, ward-help-reference-tabs.tsx). Kept with its tests until Josh decides whether to delete it",
+  },
+  {
+    module: "src/components/ward-management/help-content/ward-help-reference-view.tsx",
+    why: "the Help redesign round 2 (1 Nov 2026, #1242) replaced it with the one smart search and the Reference tab (ward-help-find.tsx, ward-help-reference-tabs.tsx). Kept with its tests until Josh decides whether to delete it",
+  },
+  {
     module: "src/components/ward-management/search/patient-typeahead.tsx",
     why: "the Patients redesign (31 Oct 2026, 091fed75e) replaced it in patient-search.tsx with the page's own search, and the New referral drawer (#1175) keeps its keys in its own list (audit A-4). Kept with its tests until Josh decides whether to delete it",
   },

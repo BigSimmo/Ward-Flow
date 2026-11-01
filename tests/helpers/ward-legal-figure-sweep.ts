@@ -684,6 +684,20 @@ export function candidateEvents(
         writtenAt: now,
         ...(supplyDueAt ? { paperExpiresAt: suppliedDueAt(now + 710_000) } : {}),
       }));
+    // Q124: the Form column records the code alone, with no written time. Two codes per movement,
+    // so one always differs from what is already recorded and the reducer accepts it.
+    case "RECORD_LEGAL_FORM_CODE":
+      return state.movements.flatMap((m) =>
+        (["1A", "3A"] as const).map((formCode) => ({ type, role, now, movementId: m.id, formCode })),
+      );
+    case "RECORD_ED_PRESENTATION":
+      return state.movements.map((m) => ({
+        type,
+        role,
+        now,
+        movementId: m.id,
+        presentations: ["Suicidal thoughts" as const],
+      }));
     case "RECORD_LEGAL_FORM_CONTINUATION":
       return state.movements.map((m) => ({
         type,
@@ -2084,7 +2098,9 @@ export function undoOf(
     event.type === "ACCEPT_IN_PRINCIPLE" && event.role === "ward" ? event.unitId : fields.actingUnitId;
   const undo = {
     type: undoType,
-    role: event.role,
+    // Q75 (Josh, 31 Oct 2026): only the site bed manager takes a site sign-off back, including a
+    // coordinator's cover sign-off, so that undo is not sent as the role that acted.
+    role: undoType === "UNDO_SITE_HANDOVER_SIGN_OFF" ? "bed_manager" : event.role,
     now,
     ...(fields.movementId !== undefined ? { movementId: fields.movementId } : {}),
     ...(fields.referralId !== undefined ? { referralId: fields.referralId } : {}),

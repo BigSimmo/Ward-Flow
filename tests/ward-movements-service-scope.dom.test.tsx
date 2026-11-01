@@ -18,6 +18,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { WAIT_BANDS, waitBand } from "@/components/ward-management/delays/delays-board-model";
 /**
  * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task D2 (item 44 — the
  * service chooser, Movements lane). §2 "Per screen": *"the list is scoped. Figures and the 48-hour
@@ -210,72 +211,15 @@ describe("D-f — the scope bar sits at the top of the page, and the sentence si
   });
 });
 
-describe("D-b — Worth your attention stays whole-network and marks rows outside the chosen service", () => {
-  it("every attention pill's Outside marker agrees with movementBelongsToService, for members and non-members alike", () => {
-    setServiceScope(CHOSEN_SERVICE);
-    renderScreen();
-
-    const pills = screen.getAllByRole("button", { name: /^Find /u });
-    expect(pills.length, "no attention pill rendered — this scenario proves nothing").toBeGreaterThan(0);
-    for (const pill of pills) {
-      // Owner, 26 Sept 2026: the pill names the patient; its movement is read from the hidden key.
-      const movementId = pill.getAttribute("data-record-key");
-      expect(movementId, "every attention pill carries its movement's key").not.toBeNull();
-      const movement = ALL_MOVEMENTS.find((candidate) => candidate.id === movementId);
-      expect(movement, `${movementId} from an attention pill is not a real seeded movement`).toBeDefined();
-      const isMember = movementBelongsToService(movement!, CHOSEN_SERVICE, units);
-      const marker = within(pill).queryByTestId(`movements-attention-outside-${movementId}`);
-      expect(marker === null, `${movementId}: Outside marker presence disagrees with membership`).toBe(isMember);
-    }
-  });
-
-  it("the attention band's own CORE (tier 1) movement ids and order are unaffected by scoping — R2 item 3 only ever APPENDS", () => {
-    // ⚠️ R2 item 3 changed what this proves. Before it, the scoped and unscoped attention bands
-    // were byte-identical lists (only the "Outside {S}" marker differed) because the band read
-    // ONLY `tierOneOpen`, which never depends on `service`. R2 item 3 deliberately appends
-    // `urgentMovementsOutsideService` movements the tier-1 cut missed (WF-018: tier 3, flagged) —
-    // so the scoped list can legitimately be LONGER now. What must still hold is that the tier-1
-    // CORE — however many pills render unscoped — is a stable, unreordered PREFIX of the scoped
-    // list; the widening must only ever add rows after it, never reorder or drop one.
-    const withoutService = renderScreen();
-    const idsWithoutService = screen
-      .getAllByRole("button", { name: /^Find /u })
-      .map((pill) => pill.getAttribute("data-record-key") ?? undefined);
-    withoutService.unmount();
-
-    setServiceScope(CHOSEN_SERVICE);
-    renderScreen();
-    const idsWithService = screen
-      .getAllByRole("button", { name: /^Find /u })
-      .map((pill) => pill.getAttribute("data-record-key") ?? undefined);
-
-    expect(idsWithService.slice(0, idsWithoutService.length)).toEqual(idsWithoutService);
-  });
-
-  it("R2 item 3 catcher: WF-018 (North Metro, flagged, tier 3) is named here too, scoped to East Metro, marked Outside", () => {
-    const wf018 = wardMovements.find((movement) => movement.id === "WF-018");
-    expect(wf018, "WF-018 missing from the seed").toBeDefined();
-    expect(wf018!.flaggedUrgent, "WF-018 must be flagged or this catcher proves nothing").toBe(true);
-    expect(wf018!.urgency, "WF-018 must be tier 3 (not tier 1) or this catcher proves nothing new").toBe(3);
-    expect(
-      movementBelongsToService(wf018!, CHOSEN_SERVICE, units),
-      "WF-018 must be outside East Metro or this catcher proves nothing",
-    ).toBe(false);
-
-    setServiceScope(CHOSEN_SERVICE);
-    renderScreen();
-
-    const pill = document.querySelector("button[data-record-key='WF-018']") as HTMLElement;
-    expect(pill).not.toBeNull();
-    expect(pill.getAttribute("aria-label")).not.toMatch(/WF-/u);
-    expect(within(pill).getByTestId("movements-attention-outside-WF-018")).toHaveTextContent(
-      `Outside ${CHOSEN_SERVICE}`,
-    );
-  });
-});
+// Movements redesign (1 Nov 2026, Q102): the separate Tier 1 / "Worth your attention" card was
+// removed; the hero's Tier 1 figure highlights those rows in the worklist instead. Its D-b pill
+// tests went with it. The scope bar's urgent-outside-service line above still names who is outside.
 
 describe("D-d — a jump link to a movement outside the worklist opens its drawer and announces why (TEST 5)", () => {
-  it("clicking an outside attention pill opens that movement's own drawer and announces the exact D-d sentence", () => {
+  // Movements redesign (1 Nov 2026): the jump links are now the "Where they wait" heat-map rows in
+  // Shape of the day. A square with nobody inside the chosen service jumps to its first movement,
+  // which is outside the worklist, so the drawer opens and the screen says why.
+  it("clicking a Where they wait square with nobody in the service opens that movement's own drawer and announces the exact D-d sentence", () => {
     setServiceScope(CHOSEN_SERVICE);
     render(
       <WardFlowProvider initialNow={NOW}>
@@ -284,23 +228,25 @@ describe("D-d — a jump link to a movement outside the worklist opens its drawe
       </WardFlowProvider>,
     );
 
-    const outsideMarkers = screen.queryAllByTestId(/^movements-attention-outside-/u);
-    expect(
-      outsideMarkers.length,
-      "no attention movement is outside East Metro — this scenario proves nothing",
-    ).toBeGreaterThan(0);
-    const marker = outsideMarkers[0];
-    const movementId = (marker.getAttribute("data-testid") ?? "").replace("movements-attention-outside-", "");
-    expect(
-      movementBelongsToService(
-        ALL_MOVEMENTS.find((m) => m.id === movementId)!,
-        CHOSEN_SERVICE,
-        units,
-      ),
-      `${movementId} must actually be outside ${CHOSEN_SERVICE} or this scenario proves nothing`,
-    ).toBe(false);
+    // The first heat-map square (stage by wait band) whose patients are all outside the service.
+    let target: { label: string; band: number; movementId: string } | undefined;
+    for (const stage of journeyStages(openMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS)) {
+      if (stage.id === "arrived" || target) continue;
+      for (let band = 0; band < WAIT_BANDS.length && !target; band++) {
+        const cell = stage.movements.filter((m) => waitBand(Math.max(NOW - m.openedAt, 0)) === band);
+        if (cell.length > 0 && cell.every((m) => !movementBelongsToService(m, CHOSEN_SERVICE, units))) {
+          target = { label: stage.label, band, movementId: cell[0].id };
+        }
+      }
+    }
+    expect(target, "no heat-map square is wholly outside East Metro — this scenario proves nothing").toBeDefined();
+    const movementId = target!.movementId;
 
-    fireEvent.click(marker);
+    fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
+    const heat = screen.getByRole("tabpanel", { name: "Where they wait" });
+    fireEvent.click(
+      within(heat).getByTitle(new RegExp(`^${target!.label}, ${WAIT_BANDS[target!.band].toLowerCase()}: \\d+$`, "u")),
+    );
 
     // The drawer opened on THAT movement — `Sheet`'s own `role="dialog"`, named from its title
     // `"{id} — what is recorded"`.
@@ -409,7 +355,8 @@ describe("the stage-summary jump prefers an in-scope member over the stage's raw
     // Shape of the day shares the side panel and starts hidden behind Transport right now.
     // Its Stage sub-tab is still the default once that view is open.
     fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
-    const stageLink = screen.getByRole("button", { name: /^Destination review:/u });
+    const heat = screen.getByRole("tabpanel", { name: "Where they wait" });
+    const stageLink = within(heat).getByRole("button", { name: "Destination review" });
     fireEvent.click(stageLink);
 
     // The jump must have landed on WF-017 (in scope) via the ordinary reveal path, never on

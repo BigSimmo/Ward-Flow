@@ -129,8 +129,9 @@ const OFFICER_JOB_ROWS = 8;
  * forms pack yet.
  */
 export function OfficerScreen() {
-  const { movements, units, rejections, patients, referrals, dayZero, notices } = useWardFlowSelect(
+  const { movements, units, rejections, patients, referrals, admissions, dayZero, notices } = useWardFlowSelect(
     "movements",
+    "admissions",
     "units",
     "rejections",
     "patients",
@@ -291,9 +292,10 @@ export function OfficerScreen() {
   // ROLE BRANCH (officer): the transport officer's own desk (as-officer-home, Josh 31 Oct 2026). A
   // long list opens on its first rows, then "Show all"; a highlight, a search or a chosen job past
   // the cut shows every row, so nothing lit is ever hidden.
-  const accessRole = useEffectiveWardAccess().role;
-  const officerDesk = accessRole === "officer";
-  const { needing, raise: bookingRaise } = useNeedsTransport(movements, accessRole);
+  const access = useEffectiveWardAccess();
+  const officerDesk = access.role === "officer";
+  const booking = useNeedsTransport(movements, access, { admissions, referrals });
+  const needing = booking.needing;
   const [showAllJobs, setShowAllJobs] = useState(false);
   const activeProviders = TRANSPORT_PROVIDERS.filter((provider) =>
     jobs.some((movement) => movement.transport?.provider === provider),
@@ -1410,7 +1412,8 @@ export function OfficerScreen() {
               route={`${originShortFor(bookingMovement)} → ${destinationLabelFor(bookingMovement)}`}
               now={now}
               isPhone={isPhone}
-              raise={bookingRaise}
+              raise={booking.raise}
+              acting={booking.acting.get(bookingMovement.id) ?? {}}
               onClose={closeJob}
               onSaved={(name) => (closeJob(), showToast(`Transport booking logged for ${name}.`))}
             />

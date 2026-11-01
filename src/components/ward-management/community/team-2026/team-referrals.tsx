@@ -76,7 +76,7 @@ function TimeCard({ r }: { r: DemoReferral }) {
 }
 
 /** Accept turns the actions into one success line with Undo (the mock-up's behaviour). */
-function useAnswer(name: string) {
+export function useAnswer(name: string) {
   const toast = useOptionalToast();
   const [accepted, setAccepted] = useState<string | null>(null);
   const accept = (line: string) => {
@@ -244,7 +244,7 @@ function Section({
   );
 }
 
-function ReferralPage({ index, go, back }: { index: number; go: (index: number) => void; back: () => void }) {
+export function ReferralPage({ index, go, back }: { index: number; go: (index: number) => void; back: () => void }) {
   const r = REFERRALS[index]!;
   const x = EXTRA[r.id]!;
   const n = REFERRALS.length;

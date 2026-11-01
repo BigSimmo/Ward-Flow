@@ -171,7 +171,7 @@ describe("the ED board shows where each referral stands", () => {
   it("heads the board column Referral and puts the pulled bed in it", () => {
     phone = false;
     renderPeel();
-    const table = screen.getByRole("table", { name: /Emergency department board/ });
+    const table = screen.getByRole("table", { name: /Emergency department (board|handover)/u });
     expect(within(table).getByRole("columnheader", { name: "Referral" })).toBeTruthy();
     expect(within(table).queryByRole("columnheader", { name: "Destination" })).toBeNull();
     expect(screen.getByTestId("ward-ed-referral-WF-016")).toHaveTextContent(/SJGM Adult Open.*Accepted, bed pulled/);

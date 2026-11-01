@@ -78,6 +78,7 @@ const RULED_ON_HOUR_PERIODS: ReadonlyArray<{ file: string; ruling: string }> = [
   { file: "community/team-2026/midland-demo.ts", ruling: MIDLAND_DEMO_RULING },
   { file: "community/team-2026/team-home.tsx", ruling: MIDLAND_DEMO_RULING },
   { file: "community/team-2026/team-referrals.tsx", ruling: MIDLAND_DEMO_RULING },
+  { file: "community/team-2026/midland-phone.tsx", ruling: MIDLAND_DEMO_RULING },
 ];
 
 type Exclusion = { id: string; why: string; whole?: RegExp; strip?: RegExp };

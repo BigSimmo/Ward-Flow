@@ -729,3 +729,109 @@
   margin-right: 6px;
   vertical-align: 1px;
 }
+
+/* ---------- Movements redesign (1 Nov 2026) ----------
+   The record reads as label and value rows, and the buttons live in one band pinned to the foot,
+   coloured end to end like the page's own header so the pop-up's actions are always in reach. */
+.record.record {
+  gap: 0;
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-3);
+  background: none;
+}
+
+.section.section {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: var(--wf-s-1) var(--wf-s-3);
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.section.section:last-child {
+  border-bottom: 0;
+}
+
+.section.section > :not(.sectionTitle) {
+  grid-column: 2;
+}
+
+.section .sectionTitle {
+  grid-row: 1 / span 4;
+  padding-top: 1px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.section .muted {
+  font-size: var(--wf-fs-13);
+}
+
+.footer.footer {
+  padding: 0;
+  border-top: 0;
+}
+
+.footBand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  color: var(--wf-hero-ink);
+}
+
+.footBand .wide {
+  min-height: 40px;
+}
+
+/* Review fix (1 Nov 2026): the shared focus ring is lost on the navy band, so it uses the hero ink. */
+.footBand :is(a, button, select):focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.footBand .waiting {
+  border-color: var(--wf-hero-edge);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  color: var(--wf-hero-ink);
+}
+
+.footRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.footRow > * {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+/* Secondary buttons drawn for the dark band: hero ink on a faint fill, the band's own edge. */
+.footBand .footRow :is(a, button) {
+  border-color: var(--wf-hero-edge);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  color: var(--wf-hero-ink);
+}
+
+.footBand .footRow :is(a, button):hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+}
+
+.footBand .footRow [data-flagged="true"] {
+  background: color-mix(in srgb, var(--wf-hero-danger) 28%, transparent);
+}
+
+.flagPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}

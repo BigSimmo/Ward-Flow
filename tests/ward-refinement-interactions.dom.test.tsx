@@ -5,6 +5,10 @@ import { CoordinatorScreen } from "@/components/ward-management/coordinator/coor
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { isOpen } from "@/components/ward-management/ward-derivations";
+import { journeyStages } from "@/components/ward-management/movements/movements-derivations";
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 function renderMovements() {
@@ -29,13 +33,19 @@ function renderCoordinator() {
   );
 }
 
+// Movements redesign (1 Nov 2026, Q102): the Tier 1 attention pills went; the jump links are now
+// the "Where they wait" rows in Shape of the day, each revealing its stage's first movement.
 function firstAttentionTarget(): { button: HTMLElement; movementId: string } {
-  // Owner, 26 Sept 2026: the pill names the patient; its movement is read from the hidden key.
-  const button = screen.getAllByRole("button", { name: /^Find .+ in worklist:/u })[0];
-  expect(button, "the real fixture must expose at least one attention journey").toBeDefined();
-  const movementId = button!.getAttribute("data-record-key");
-  expect(movementId, "the attention action must carry the movement it reveals").not.toBeNull();
-  return { button: button!, movementId: movementId! };
+  const open = seedWardFlowState().movements.filter(isOpen);
+  const stage = journeyStages(open, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).find(
+    (candidate) => candidate.id !== "arrived" && candidate.movements.length > 0,
+  );
+  expect(stage, "the real fixture must have an open stage with a journey").toBeDefined();
+  fireEvent.click(
+    within(screen.getByRole("group", { name: "Movement side view" })).getByRole("button", { name: "Shape of the day" }),
+  );
+  const heat = screen.getByRole("tabpanel", { name: "Where they wait" });
+  return { button: within(heat).getByRole("button", { name: stage!.label }), movementId: stage!.movements[0].id };
 }
 
 /** The worklist record for a movement, found by its hidden key (rows show the patient's name). */

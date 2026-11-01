@@ -118,6 +118,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   CORRECT_LEGAL_FORM_RECEIPT: { category: "patient", plainWording: "Statutory form receipt record corrected" },
   RECORD_LEGAL_FORM_EXPIRY: { category: "patient", plainWording: "Statutory form expiry date recorded" },
   RECORD_LEGAL_FORM_WRITTEN: { category: "patient", plainWording: "Statutory form completion recorded" },
+  RECORD_LEGAL_FORM_CODE: { category: "patient", plainWording: "Statutory form recorded, written time not entered" },
+  RECORD_ED_PRESENTATION: { category: "patient", plainWording: "ED presentation recorded" },
   RECORD_COUNTRY_EXTENSION: { category: "patient", plainWording: "Country extension recorded" },
   RECORD_LEGAL_FORM_CONTINUATION: { category: "patient", plainWording: "Statutory form continuation recorded" },
   CLEAR_EXPECT_FLAG: { category: "patient", plainWording: "Expected patient flag cleared" },

@@ -11,15 +11,21 @@
  * words stay in memory, as everywhere in search. A clinical question gets Help's fixed reply and no
  * answers, the same guard Help uses.
  */
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
+import { HOW_TOS } from "./help/ward-help-howto";
 import { howToHref } from "./help/ward-help-href";
 import { askWardHelp, openWardHelp, showWardHowTo } from "./help/ward-help-events";
 import { CLINICAL_REPLY, searchHelp, type HelpSearchResult } from "./help/ward-help-search-index";
 import { useTourRole, type WardTourRole } from "./help/ward-help-store";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
 import { WardGlobalSearch as RoleBlindSearch, type WardGlobalSearchProps } from "./ward-global-search";
-import type { HelpSearchRows, SearchResultItem } from "./ward-global-search-groups";
+import type {
+  HelpPreviewAnswer,
+  HelpPreviewSource,
+  HelpSearchRows,
+  SearchResultItem,
+} from "./ward-global-search-groups";
 
 /** How many Help answers the header search shows; the rest are one tap away in Help. */
 const HEADER_HELP_LIMIT = 3;
@@ -75,16 +81,45 @@ export function openHelpResult(id: string, role: WardTourRole, showMeOn: boolean
   return true;
 }
 
+/**
+ * The answer behind a listed Help row, for the preview pane: the steps Show me lights, and whether
+ * this desk may run Show me for it here (Help redesign, 1 Nov 2026). Exported for tests.
+ */
+export function helpPreviewAnswer(id: string, role: WardTourRole, showMeOn: boolean): HelpPreviewAnswer | undefined {
+  const result = listed.get(id);
+  if (!result) return undefined;
+  const howTo = result.howToId ? HOW_TOS.find((candidate) => candidate.id === result.howToId) : undefined;
+  const steps = howTo?.showMe ?? [];
+  return { steps, showMe: Boolean(showMeOn && steps.length && isDeskJob(result, role)) };
+}
+
+/** Opens a listed Help answer in Help itself ("Open in Help"). */
+function openListedInHelp(id: string): void {
+  const result = listed.get(id);
+  if (result) askWardHelp(result.title);
+}
+
 /** The desk's Help lookups, for the header search and the phone menu's search. */
 export function useHeaderHelp() {
   const role = useTourRole();
   const showMeOn = useWardFeatureFlag("help-ask");
   const findHelp = useCallback((query: string) => headerHelpRows(query, role), [role]);
   const onHelpResult = useCallback((id: string) => openHelpResult(id, role, showMeOn), [role, showMeOn]);
-  return { findHelp, onHelpResult };
+  const helpPreview = useMemo<HelpPreviewSource>(
+    () => ({
+      answerFor: (id) => helpPreviewAnswer(id, role, showMeOn),
+      showMe: (id) => {
+        const howToId = listed.get(id)?.howToId;
+        if (howToId) showWardHowTo(howToId);
+      },
+      openInHelp: openListedInHelp,
+    }),
+    [role, showMeOn],
+  );
+  return { findHelp, onHelpResult, helpPreview };
 }
 
 export function WardGlobalSearch(props: WardGlobalSearchProps) {
-  const { findHelp, onHelpResult } = useHeaderHelp();
-  return <RoleBlindSearch {...props} findHelp={findHelp} onHelpResult={onHelpResult} />;
+  const { findHelp, onHelpResult, helpPreview } = useHeaderHelp();
+  return <RoleBlindSearch {...props} findHelp={findHelp} onHelpResult={onHelpResult} helpPreview={helpPreview} />;
 }

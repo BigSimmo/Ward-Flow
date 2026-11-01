@@ -78,6 +78,6 @@ describe("an accepted ward referral", () => {
     expect(status.verdict).toBe("Accepted, no bed pulled");
     expect(status.meta).toBe("Accepted at Dabakarn. Next: pull the bed");
     expect(status.cells[0]).toMatchObject({ key: "bed", href: "/ward-flow/board/dab-adult" });
-    expect(buildPatientStatus("idle", ctx()).verdict).toBe("Not active");
+    expect(buildPatientStatus("idle", ctx()).verdict).toBe("Not currently active");
   });
 });

@@ -2,11 +2,9 @@
 // stage words, hero highlights, worklist caps, search text and transport state labels. Split out
 // of movements-screen.tsx to keep that file under the line cap; movements-screen.tsx re-exports
 // causeOf and inServiceSuffix.
-import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
-import { clockState, type DueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
+import { type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, transportLeg, transportNeedState } from "@/components/ward-management/ward-derivations";
 import { type DelayCause } from "@/components/ward-management/delays/delays-derivations";
-import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { edById } from "@/components/ward-management/ward-sites";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
@@ -17,7 +15,7 @@ import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/wa
 import { inEdOver } from "@/components/ward-management/ward-shared-figures";
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import { type MovementLegState } from "./movements-derivations";
-import { type WfFill, type WfTone } from "@/components/wf";
+import { type WfTone } from "@/components/wf";
 import type { MovementPresentation } from "../ward-partial-view-presenters";
 
 export { movementProgressText, type MovementPresentation } from "../ward-partial-view-presenters";
@@ -29,21 +27,6 @@ export function meaningfulBlocker(movement: Movement): string | null {
   return blocker && !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === blocker)
     ? movement.blocker
     : null;
-}
-
-/**
- * Design check 13 Oct 2026: the act-now reason a "Needs you" row leads with — a recorded legal form
- * whose due time has passed, or is approaching (`clockState` critical, the same threshold Delays
- * reads). Worded as the `legal_breached`/`legal_expiring` causes below; never a computed limit (D5).
- */
-export function legalActNowReason(movement: Movement, now: Instant, thresholds: DueSoonThresholds): string | null {
-  const form = movement.legalForm;
-  const dueAt = currentLegalDueAt(movement);
-  if (!form || dueAt === undefined) return null;
-  const state = clockState(dueAt, now, thresholds);
-  if (state === "breached") return `Form ${form.code} · legal due time passed`;
-  if (state === "critical") return `Form ${form.code} · expiry approaching`;
-  return null;
 }
 
 interface CauseDefinition {
@@ -302,15 +285,6 @@ export function movementSearchText(movement: Movement, patients: readonly Patien
     .toLowerCase();
 }
 
-/** Transport states in bar order, with the data fill each takes in the bar and legend. */
-export const TRANSPORT_STATES: { id: MovementLegState; fill: WfFill; hatch?: boolean }[] = [
-  { id: "Accepted", fill: "data-3" },
-  { id: "En route", fill: "data-2" },
-  { id: "Collected", fill: "data-1" },
-  { id: "Arrived", fill: "ready" },
-  { id: "Cancelled", fill: "closed" },
-];
-
 /** A leg's state as a glyph: hollow while booked, filled while moving, a tick once delivered. */
 export const LEG_STATE_TONE: Record<MovementLegState, WfTone> = {
   Accepted: "neutral",
@@ -326,14 +300,6 @@ export const LEG_STATE_LABEL: Record<MovementLegState, string> = {
   Collected: "Collected",
   Arrived: "Arrived",
   Cancelled: "Cancelled",
-};
-
-export const LEG_STATE_LEVEL: Record<MovementLegState, WardChipLevel> = {
-  Accepted: "accepted",
-  "En route": "enroute",
-  Collected: "enroute",
-  Arrived: "routine",
-  Cancelled: "cancelled",
 };
 
 export function transportRouteLabels(movement: Movement, units: Unit[]) {

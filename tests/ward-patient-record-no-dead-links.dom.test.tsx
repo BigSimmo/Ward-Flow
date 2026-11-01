@@ -2,7 +2,7 @@
 // leads to "Not part of your role". Chronology is the coordinator's; Legal forms is closed to the site
 // bed manager. Synthetic data only.
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PatientLegalNowCard } from "@/components/ward-management/patients/patient-now-cards";
@@ -65,11 +65,15 @@ describe("Chronology on the patient record's History", () => {
   it("is left off for a community desk, which cannot open the chronology", () => {
     as({ role: "community", scope: { kind: "team", teamName: "Midland Community Team" } });
     renderInShell(<PatientNowScreen patientId="PT-093" />);
+    // History mounts when first opened, so open it before checking what it offers.
+    fireEvent.click(screen.getByRole("tab", { name: /^History/u }));
+    expect(screen.getByRole("heading", { name: "Episodes of care" })).toBeInTheDocument();
     expect(screen.queryByTestId("pn-history-chronology")).toBeNull();
   });
 
   it("is offered to the coordinator", () => {
     renderInShell(<PatientNowScreen patientId="PT-093" />);
+    fireEvent.click(screen.getByRole("tab", { name: /^History/u }));
     expect(screen.getByTestId("pn-history-chronology")).toBeInTheDocument();
   });
 });

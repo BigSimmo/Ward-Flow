@@ -89,6 +89,8 @@ export type RecordedFactEvent = Extract<
       | "RECORD_ED_MEDICAL_DETERIORATION"
       | "RECORD_MOVEMENT_MEDICAL_CLEARANCE"
       | "RECORD_LEGAL_FORM_WRITTEN"
+      | "RECORD_LEGAL_FORM_CODE"
+      | "RECORD_ED_PRESENTATION"
       | "RECORD_COUNTRY_EXTENSION"
       | "RECORD_LEGAL_FORM_CONTINUATION"
       | "RECORD_HANDOVER_SIGN_OFF"
@@ -1397,6 +1399,8 @@ export function reduceRecordedFactEvent(
     case "RECORD_LEGAL_FORM_EXPIRY":
     case "RECORD_COMMUNITY_TREATMENT_ORDER":
     case "RECORD_LEGAL_FORM_WRITTEN":
+    case "RECORD_LEGAL_FORM_CODE":
+    case "RECORD_ED_PRESENTATION":
     case "RECORD_COUNTRY_EXTENSION":
     case "RECORD_LEGAL_FORM_CONTINUATION":
       return reduceRecordedLegalEvent(state, event, decision, helpers);

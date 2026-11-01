@@ -7,7 +7,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, ChevronRight, ClipboardCopy, Clock, Eye, Timer } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ClipboardCopy, Clock, Eye, MoreHorizontal } from "lucide-react";
 import {
   Button,
   Drawer,
@@ -15,6 +15,7 @@ import {
   FilterChip,
   Icon,
   LiveChip,
+  Menu,
   PhoneHero,
   PhoneSheet,
   PillTabs,
@@ -554,17 +555,33 @@ export function HandoverPhone({
             >
               Change handover
             </Button>
-            {/* Labelled, not a bare round icon (device audit 11 Oct 2026). */}
-            <Button
-              variant="onHero"
-              className={phoneRows.heroPill}
-              icon={Timer}
-              aria-pressed={meetingOn}
-              aria-label={meetingOn ? "Stop the meeting timer" : "Start the meeting timer"}
-              onClick={onToggleMeeting}
-            >
-              {meetingOn ? "Stop meeting" : "Start meeting"}
-            </Button>
+            {/* Phone audit (Josh, 1 Nov 2026): one hero action on a phone; the rest sit under "…". */}
+            <Menu
+              label="More handover actions"
+              align="end"
+              items={[
+                {
+                  id: "meeting",
+                  label: meetingOn ? "Stop the meeting timer" : "Start the meeting timer",
+                  onSelect: onToggleMeeting,
+                },
+              ]}
+              // While the meeting timer runs, the trigger says so in words, and its name keeps them.
+              trigger={(props) => (
+                <Button
+                  {...props}
+                  variant="onHero"
+                  className={phoneRows.heroPill}
+                  iconOnly={!meetingOn}
+                  icon={MoreHorizontal}
+                  aria-label={meetingOn ? "More handover actions, timer on" : "More handover actions"}
+                  data-testid="ward-handover-phone-more"
+                  data-meeting-on={meetingOn || undefined}
+                >
+                  {meetingOn ? "Timer on" : undefined}
+                </Button>
+              )}
+            />
           </div>
         }
       />

@@ -249,3 +249,13 @@ table.pinTable {
   text-overflow: clip;
   overflow-wrap: anywhere;
 }
+
+/* The ward chart ends with its bars; it does not stretch to the ED and pinned column (redesign, 1 Nov 2026). */
+.startColumn {
+  align-self: start;
+}
+
+.startColumn > * {
+  flex: 0 0 auto;
+  height: auto;
+}

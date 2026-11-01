@@ -4,7 +4,11 @@ import { useId } from "react";
 import Link from "next/link";
 
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
-import { commitmentsDueBy, promiseOverdue } from "@/components/ward-management/referrals/referral-commitments-model";
+import {
+  commitmentsDueBy,
+  promiseOverdue,
+  type ReferralCommitmentStatus,
+} from "@/components/ward-management/referrals/referral-commitments-model";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -13,6 +17,38 @@ import { ChevronRight, PhoneCall } from "lucide-react";
 import { Icon, StatusGlyph } from "@/components/wf";
 
 import styles from "./handover-open-promises.module.css";
+
+/**
+ * When to chase one open promise. `sortAt` is the earlier of the next callback and the promised
+ * time, overdue or not, so the card lists by when to ring next. `shownAt` is the time the row
+ * prints: an overdue row keeps its promised time ("since 09:00"), any other row prints `sortAt`.
+ */
+export function promiseChaseTimes(
+  status: ReferralCommitmentStatus,
+  now: Instant,
+): {
+  overdue: boolean;
+  callback?: Instant;
+  promised?: Instant;
+  sortAt: Instant;
+  shownAt: Instant;
+  isCallback: boolean;
+} {
+  const overdue = promiseOverdue(status, now);
+  const callback = status.nextCallbackAt?.at;
+  const promised = status.step?.step === "promised" ? status.promisedFor : undefined;
+  const sortAt =
+    callback !== undefined && promised !== undefined ? Math.min(callback, promised) : (callback ?? promised ?? now);
+  const shownAt = overdue ? promised! : sortAt;
+  return {
+    overdue,
+    callback,
+    promised,
+    sortAt,
+    shownAt,
+    isCallback: !overdue && callback !== undefined && callback === sortAt,
+  };
+}
 
 /**
  * OPEN PROMISES CARRIED OVER AT HANDOVER (closing-the-loop package A, 24 Oct 2026). Response
@@ -49,10 +85,7 @@ export function HandoverOpenPromises({
   const rows = items
     .map((item) => {
       const status = item.status;
-      const overdue = promiseOverdue(status, now);
-      const callback = status.nextCallbackAt?.at;
-      const promised = status.step?.step === "promised" ? status.promisedFor : undefined;
-      const when = overdue ? promised! : (callback ?? promised ?? now);
+      const { overdue, callback, promised, sortAt, shownAt: when, isCallback } = promiseChaseTimes(status, now);
       const ward = wardName(item.unitId);
       const what =
         promised !== undefined
@@ -61,9 +94,9 @@ export function HandoverOpenPromises({
             ? `${ward} acknowledged, no time promised`
             : `Waiting for ${ward} to respond`;
       const then = callback !== undefined && (overdue || promised !== undefined) ? `ring again ${at(callback)}` : null;
-      return { item, overdue, when, ward, what, then, isCallback: !overdue && callback !== undefined };
+      return { item, overdue, when, sortAt, ward, what, then, isCallback };
     })
-    .sort((left, right) => left.when - right.when);
+    .sort((left, right) => left.sortAt - right.sortAt);
   const overdueCount = rows.filter((row) => row.overdue).length;
   return (
     <section

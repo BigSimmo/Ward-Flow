@@ -746,7 +746,7 @@ export const HOW_TOS: readonly HowTo[] = [
       {
         target: [{ sel: '[data-testid="ward-rail-help"]' }, { sel: '[data-testid="ward-bar-phone-menu"]' }],
         title: "Help",
-        body: "Help is in the side menu (in Menu on a phone). Take the tour is the first row of How do I….",
+        body: "Help is in the side menu (in Menu on a phone). Take the tour is the first row of How to.",
       },
     ],
   },

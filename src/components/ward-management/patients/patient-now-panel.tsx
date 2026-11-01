@@ -150,7 +150,9 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     ) : null;
   // Community clinician: Why admitted moves into the left column, where Record a change would be, so
   // the page has no empty column beside the rail.
-  const whyMovesLeft = ownTeamDesk && mode === "ward" && !wardChangeOpen && !isPhone;
+  // Redesign (1 Nov 2026): on the ward or at ED, Why admitted sits under Record a change on desktop,
+  // so the two columns balance and the rail keeps the safety cards (Legal now, Who to call).
+  const whyMovesLeft = !isPhone && (mode === "ward" || mode === "ed");
   const copyLabel = copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary";
   const referralMain = isPhone && (mode === "idle" || mode === "cto") && canOpenHref(newReferralHref);
   // Community clinician: with no ward change to record, the phone bar held only the copy icon in an
@@ -293,10 +295,14 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
               title="Destination"
               sub={
                 acceptingUnit
-                  ? `${acceptingUnit.name} accepted · pull the bed and placement`
+                  ? liveMovement.stage === "accepted_awaiting_bed"
+                    ? `${acceptingUnit.name} accepted · pull the bed next`
+                    : `${acceptingUnit.name} accepted · bed pulled`
                   : liveMovement.referredUnitIds.length > 0
                     ? `${plural(liveMovement.referredUnitIds.length, "ward", "wards")} asked`
-                    : "Ask wards that fit · none asked"
+                    : liveMovement.declines.length > 0
+                      ? `${plural(liveMovement.declines.length, "ward", "wards")} declined · none asked now`
+                      : "Ask wards that fit · none asked"
               }
               onOpen={() => setNowSheet("destination")}
               testId="ward-patient-destination-row"

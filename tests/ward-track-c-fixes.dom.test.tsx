@@ -266,7 +266,7 @@ describe("Track C ED screen fixes", () => {
     const row = screen.getAllByTestId(/^ward-ed-patient-WF-/u)[0];
     const name = row.querySelector<HTMLButtonElement>('button[title^="View patient details"]');
     expect(name).not.toBeNull();
-    const bay = row.children[3]?.textContent; // T, Patient, In ED, Bay (v6 compact row)
+    const bay = row.children[2]?.textContent; // Patient, In ED, Bay (ED handover table, 1 Nov 2026)
     expect(within(row).getByText("UMRN")).toBeInTheDocument();
     fireEvent.click(name!);
 
@@ -299,7 +299,7 @@ describe("Track C ED screen fixes", () => {
       );
       const bays = screen
         .queryAllByTestId(/^ward-ed-patient-WF-[^-]+$/u)
-        .map((row) => row.children[3]?.textContent ?? "");
+        .map((row) => row.children[2]?.textContent ?? ""); // Patient, In ED, Bay
       expect(new Set(bays).size, `${department.id} has a shared bay: ${bays.join(", ")}`).toBe(bays.length);
       checked += bays.length;
       unmount();
