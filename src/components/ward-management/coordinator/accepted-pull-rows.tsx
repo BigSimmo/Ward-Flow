@@ -35,77 +35,88 @@ function acceptedDecisionAt({ referral, unitId }: AcceptedAwaitingPull): Instant
   )?.decidedAt;
 }
 
-/** The "Accepted, bed not pulled" rows and their Pull the bed sheet. */
+/**
+ * The Pull the bed sheet's state. The page holds it, not the rows, so the sheet stays open after
+ * "Start the journey without the bed": that removes the last row, and the sheet must still show its
+ * message and Open the journey link (Alerts #1230 bug).
+ */
+export function useAcceptedPull() {
+  const [pulling, setPulling] = useState<AcceptedAwaitingPull | undefined>();
+  const sheet = pulling ? (
+    <Sheet
+      open
+      onClose={() => setPulling(undefined)}
+      title="Pull the bed"
+      description="Anything already recorded is filled in. Check the details, then pull the bed."
+      testId="home-pull-accepted-sheet"
+    >
+      <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
+    </Sheet>
+  ) : null;
+  return { pulling, setPulling, sheet };
+}
+
+/** The "Accepted, bed not pulled" rows. The page renders the sheet from useAcceptedPull. */
 export function AcceptedPullRows({
   toPull,
   now,
   phone,
   testId,
+  pulling,
+  setPulling,
 }: {
   toPull: readonly AcceptedAwaitingPull[];
   now: Instant;
   phone: boolean;
   testId: string;
+  pulling: AcceptedAwaitingPull | undefined;
+  setPulling: (entry: AcceptedAwaitingPull) => void;
 }) {
-  const [pulling, setPulling] = useState<AcceptedAwaitingPull | undefined>();
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
   return (
-    <>
-      <ul className={phone ? alertStyles.phoneRows : styles.hrows} data-testid={testId}>
-        {toPull.map((entry) => {
-          const { referral } = entry;
-          const who = patientOf(referral);
-          const name = nameFor(who.formalName, who.umrn);
-          const decidedAt = acceptedDecisionAt(entry);
-          const age = decidedAt === undefined ? undefined : minutesText(Math.max(0, now - decidedAt));
-          const shared = {
-            data: { "data-referral-id": referral.id, "data-pull-unit-id": entry.unitId },
-            tone: "danger" as const,
-            act: true,
-            selected: pulling?.referral.id === referral.id,
-            title: "Accepted, bed not pulled",
-            openLabel: `Pull the bed for ${name} at ${entry.unitName}`,
-            onOpen: () => setPulling(entry),
-            name,
-            umrn: who.umrn,
-          };
-          const from = withSendingTeam(`from ${referral.originSiteCode}`, referral);
-          return phone ? (
-            <PhoneRow
-              key={referral.id}
-              {...shared}
-              line={`${entry.unitName} accepted · ${from}`}
-              age={age}
-              owner={undefined}
-            />
-          ) : (
-            <HomeRow
-              key={referral.id}
-              {...shared}
-              where={`${entry.unitName} accepted, ${from}`}
-              age={age}
-              ageNote={decidedAt === undefined ? "Time not recorded" : "since accepted"}
-              action={
-                <Button size="sm" data-placement-action aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
-                  Pull the bed
-                </Button>
-              }
-            />
-          );
-        })}
-      </ul>
-      {pulling ? (
-        <Sheet
-          open
-          onClose={() => setPulling(undefined)}
-          title="Pull the bed"
-          description="Anything already recorded is filled in. Check the details, then pull the bed."
-          testId="home-pull-accepted-sheet"
-        >
-          <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
-        </Sheet>
-      ) : null}
-    </>
+    <ul className={phone ? alertStyles.phoneRows : styles.hrows} data-testid={testId}>
+      {toPull.map((entry) => {
+        const { referral } = entry;
+        const who = patientOf(referral);
+        const name = nameFor(who.formalName, who.umrn);
+        const decidedAt = acceptedDecisionAt(entry);
+        const age = decidedAt === undefined ? undefined : minutesText(Math.max(0, now - decidedAt));
+        const shared = {
+          data: { "data-referral-id": referral.id, "data-pull-unit-id": entry.unitId },
+          tone: "danger" as const,
+          act: true,
+          selected: pulling?.referral.id === referral.id,
+          title: "Accepted, bed not pulled",
+          openLabel: `Pull the bed for ${name} at ${entry.unitName}`,
+          onOpen: () => setPulling(entry),
+          name,
+          umrn: who.umrn,
+        };
+        const from = withSendingTeam(`from ${referral.originSiteCode}`, referral);
+        return phone ? (
+          <PhoneRow
+            key={referral.id}
+            {...shared}
+            line={`${entry.unitName} accepted · ${from}`}
+            age={age}
+            owner={undefined}
+          />
+        ) : (
+          <HomeRow
+            key={referral.id}
+            {...shared}
+            where={`${entry.unitName} accepted, ${from}`}
+            age={age}
+            ageNote={decidedAt === undefined ? "Time not recorded" : "since accepted"}
+            action={
+              <Button size="sm" data-placement-action aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
+                Pull the bed
+              </Button>
+            }
+          />
+        );
+      })}
+    </ul>
   );
 }

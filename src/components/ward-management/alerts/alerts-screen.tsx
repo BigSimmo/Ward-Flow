@@ -82,7 +82,7 @@ import { TodayChart } from "./alerts-visuals";
 import { alertChecks } from "./alerts-checks";
 import { alertsHistory } from "./alerts-history";
 import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
-import { AcceptedPullRows } from "@/components/ward-management/coordinator/accepted-pull-rows";
+import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
 import { AlertsSidePanelEmpty, CheckingList, ChecksCard, ChecksChip, ownWardName } from "./alerts-checking";
@@ -493,9 +493,17 @@ function AlertsWorkspace() {
     [coordDesk, referrals, units, movements],
   );
   const actCount = actEntries.length + toPull.length;
+  const pull = useAcceptedPull();
   const pullRows =
     toPull.length > 0 ? (
-      <AcceptedPullRows toPull={toPull} now={now} phone={isPhone} testId="ward-alerts-accepted-to-pull" />
+      <AcceptedPullRows
+        toPull={toPull}
+        now={now}
+        phone={isPhone}
+        testId="ward-alerts-accepted-to-pull"
+        pulling={pull.pulling}
+        setPulling={pull.setPulling}
+      />
     ) : null;
   const highlightedCount = allEntries.filter((entry) => entry.highlighted).length;
   const anyHighlight = highlightOn;
@@ -1157,6 +1165,7 @@ function AlertsWorkspace() {
 
   return (
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v8">
+      {pull.sheet}
       <main id="main-content" className={styles.main}>
         <AlertsHero
           isPhone={isPhone}

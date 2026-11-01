@@ -38,7 +38,7 @@ import {
   promiseOverdue,
 } from "@/components/ward-management/referrals/referral-commitments-model";
 
-import { AcceptedPullRows } from "./accepted-pull-rows";
+import { AcceptedPullRows, useAcceptedPull } from "./accepted-pull-rows";
 import { HomeRow, PhoneRow } from "./home-rows";
 import styles from "./home-list.module.css";
 
@@ -224,6 +224,7 @@ export function MyListCard({
 }) {
   const [allWaiting, setAllWaiting] = useState(false);
   const [callSheetOpen, setCallSheetOpen] = useState(false);
+  const pull = useAcceptedPull();
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
   const shownWait = allWaiting ? wait : wait.slice(0, WAIT_ROWS_SHOWN);
@@ -303,7 +304,14 @@ export function MyListCard({
     <section className={alertStyles.group} aria-label="Act now" id={ACT_NOW_TARGET_ID} tabIndex={-1}>
       <GroupHead tone="danger" label="Act now" count={actCount} aside="needs a person now" />
       {toPull.length > 0 ? (
-        <AcceptedPullRows toPull={toPull} now={now} phone={phone} testId="home-accepted-to-pull" />
+        <AcceptedPullRows
+          toPull={toPull}
+          now={now}
+          phone={phone}
+          testId="home-accepted-to-pull"
+          pulling={pull.pulling}
+          setPulling={pull.setPulling}
+        />
       ) : null}
       {act.length > 0 ? (
         alertRows(act)
@@ -362,6 +370,7 @@ export function MyListCard({
   return (
     <Card className={styles.needsCard} data-testid="home-my-list" aria-label={`My list, ${total} items`}>
       {body}
+      {pull.sheet}
       <div className={styles.needsFoot}>
         <StatusGlyph tone="neutral" size={9} />
         <span>Oldest first within each group. Snoozed items return by themselves.</span>
