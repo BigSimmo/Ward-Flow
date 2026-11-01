@@ -10,17 +10,24 @@ import { createServer } from "node:net";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
+import { parse } from "parse5";
 
 const PHONE_UA =
   "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36";
 
 export function scriptSources(html) {
   const sources = [];
-  for (const match of html.matchAll(/<script\b[^>]*?\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>/gi)) {
+  const pending = [parse(html)];
+  while (pending.length) {
+    const node = pending.pop();
+    const children = node.childNodes ?? [];
+    for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]);
+    if (node.tagName !== "script") continue;
+    const attributes = new Map(node.attrs.map(({ name, value }) => [name, value]));
     // A `nomodule` script runs only in browsers without ES modules (Next's polyfills). Modern phones
     // never download it, so counting it overstated every route by about 39 KB until 24 October 2026.
-    if (/\snomodule(?:[\s=>]|$)/i.test(match[0])) continue;
-    const src = (match[1] ?? match[2] ?? match[3]).replace(/&amp;|&#38;|&#x26;/gi, "&");
+    if (attributes.has("nomodule")) continue;
+    const src = attributes.get("src") ?? "";
     if (!src.startsWith("/_next/static/")) continue;
     const url = new URL(src, "http://local.invalid");
     // Fragments do not change the fetched resource; count and deduplicate its actual request URL.

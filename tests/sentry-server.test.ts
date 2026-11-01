@@ -113,3 +113,66 @@ describe("server Sentry rate limit (PS-13, H-0961)", () => {
     expect(allowServerReport("kind-500", 1_000 + SERVER_REPORT_INTERVAL_MS)).toBe(true);
   });
 });
+
+describe("server Sentry transport deadline", () => {
+  it("bounds monitoring requests so a stalled collector cannot retain transport slots", async () => {
+    const controller = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(controller.signal);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 200 }));
+    const sentry = await import("@/lib/sentry-server");
+    sentry.startServerSentry({ NODE_ENV: "production", SENTRY_DSN: DSN, SENTRY_ENABLE_LOGS: "false" });
+    const { getClient } = await import("@sentry/core");
+    try {
+      sentry.captureServerFailure(new RangeError("synthetic timeout fixture"), { routeType: "render" });
+      await getClient()?.flush(2000);
+      expect(fetchMock).toHaveBeenCalledOnce();
+      expect(fetchMock.mock.calls[0][1]?.signal).toBe(controller.signal);
+      expect(timeout).toHaveBeenCalledWith(5000);
+    } finally {
+      await getClient()?.close(0);
+    }
+  });
+});
+
+describe("server Sentry collector recovery", () => {
+  it("drains an aborted collector request and accepts a later report", async () => {
+    const controller = new AbortController();
+    const recovered = new AbortController();
+    vi.spyOn(AbortSignal, "timeout").mockReturnValueOnce(controller.signal).mockReturnValue(recovered.signal);
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementationOnce(
+        (_url, init) =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => reject(controller.signal.reason), { once: true });
+          }),
+      )
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    const sentry = await import("@/lib/sentry-server");
+    sentry.startServerSentry({ NODE_ENV: "production", SENTRY_DSN: DSN, SENTRY_ENABLE_LOGS: "false" });
+    const { getClient } = await import("@sentry/core");
+    try {
+      sentry.captureServerFailure(new RangeError("synthetic stalled collector"), { routeType: "route" });
+      let drained = false;
+      const flushing = getClient()!
+        .flush(2000)
+        .then((value) => {
+          drained = true;
+          return value;
+        });
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+      expect(drained).toBe(false);
+      expect(fetchMock.mock.calls[0][1]?.signal).toBe(controller.signal);
+      controller.abort();
+      expect(await flushing).toBe(true);
+      sentry.captureServerFailure(new TypeError("synthetic recovered collector"), { routeType: "route" });
+      expect(await getClient()!.flush(2000)).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[1][1]?.signal).toBe(recovered.signal);
+      expect(recovered.signal.aborted).toBe(false);
+    } finally {
+      controller.abort();
+      await getClient()?.close(0);
+    }
+  });
+});

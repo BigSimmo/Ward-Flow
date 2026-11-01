@@ -151,25 +151,26 @@ export function perthDateLabel(instant: Instant, dayZero: Date, options: Intl.Da
   return calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", { ...options, timeZone: "Australia/Perth" });
 }
 
+// Patient history and document rows share these fixed Perth formats. Constructing them for every
+// label repeated Intl setup twice per row on the rendering thread.
+const perthDayParts = new Intl.DateTimeFormat("en-AU", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "Australia/Perth",
+});
+const perthYear = new Intl.DateTimeFormat("en-AU", { year: "numeric", timeZone: "Australia/Perth" });
+
 /**
  * The one way a calendar day is written: "Thu 29 Oct" in the demo's own year, "17 Aug 2026" in any
  * other year. No commas (phone audit, 1 Nov 2026). Perth calendar, from the clock's day zero.
  */
 export function perthDayLabel(instant: Instant, dayZero: Date): string {
-  const parts = (at: Date, options: Intl.DateTimeFormatOptions) =>
-    Object.fromEntries(
-      new Intl.DateTimeFormat("en-AU", { ...options, timeZone: "Australia/Perth" })
-        .formatToParts(at)
-        .map((part) => [part.type, part.value]),
-    );
-  const date = calendarDateOf(instant, dayZero);
-  const { weekday, day, month, year } = parts(date, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  return year === parts(dayZero, { year: "numeric" }).year ? `${weekday} ${day} ${month}` : `${day} ${month} ${year}`;
+  const { weekday, day, month, year } = Object.fromEntries(
+    perthDayParts.formatToParts(calendarDateOf(instant, dayZero)).map((part) => [part.type, part.value]),
+  );
+  return year === perthYear.format(dayZero) ? `${weekday} ${day} ${month}` : `${day} ${month} ${year}`;
 }
 
 /**

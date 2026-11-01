@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   MINUTES_PER_DAY,
@@ -16,6 +16,7 @@ import {
   formatSheetMoment,
   perthCalendarDay,
   perthDateTimeLocal,
+  perthDayLabel,
   perthMidnight,
   minuteOfDay,
   minutesUntil,
@@ -215,6 +216,28 @@ describe("the clock knows what day it is, not only what time it is", () => {
     expect(formatSheetMoment(MINUTES_PER_DAY, zero, { includeYearAndZone: true })).toBe("Fri, 1 Jan 2027, 00:00 AWST");
     expect(formatSheetMoment(-1, zero, { includeYearAndZone: true })).toBe("Wed, 30 Dec 2026, 23:59 AWST");
     expect(formatSheetMoment(0, zero)).toBe("Thu, 31 Dec, 00:00");
+  });
+
+  it("keeps patient day labels in the session's Perth year across midnight", () => {
+    const zero = perthMidnight(2026, 11, 31);
+    expect(perthDayLabel(0, zero)).toBe("Thu 31 Dec");
+    expect(perthDayLabel(MINUTES_PER_DAY - 1, zero)).toBe("Thu 31 Dec");
+    expect(perthDayLabel(MINUTES_PER_DAY, zero)).toBe("1 Jan 2027");
+    expect(perthDayLabel(-MINUTES_PER_DAY * 365, zero)).toBe("31 Dec 2025");
+    expect(perthDayLabel(0, perthMidnight(2027, 0, 1))).toBe("Fri 1 Jan");
+  });
+
+  it("reuses calendar formatters across rows instead of constructing them for every label", () => {
+    const formatter = vi.spyOn(Intl, "DateTimeFormat");
+    try {
+      const zero = perthMidnight(2026, 11, 31);
+      const labels = Array.from({ length: 20 }, (_, day) => perthDayLabel(day * MINUTES_PER_DAY, zero));
+      expect(labels[0]).toBe("Thu 31 Dec");
+      expect(labels[1]).toBe("1 Jan 2027");
+      expect(formatter.mock.calls.length).toBeLessThanOrEqual(2);
+    } finally {
+      formatter.mockRestore();
+    }
   });
 
   it("reads a typed date and time as Perth wall time, and refuses one that is not real", () => {

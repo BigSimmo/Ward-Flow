@@ -63,6 +63,17 @@ describe("phone script budget", () => {
     expect(scriptSources(html)).toEqual(["/_next/static/chunks/main.js"]);
   });
 
+  it("counts parsed script elements rather than HTML examples or attribute text", () => {
+    expect(
+      scriptSources(
+        '<!-- <script src="/_next/static/comment.js"></script> -->' +
+          "<script>const example = '<script src=\"/_next/static/example.js\">';</script>" +
+          '<script data-note=" nomodule " src="/_next/static/real.js"></script>' +
+          '<script data-note=">" src="/_next/static/quoted.js"></script>',
+      ),
+    ).toEqual(["/_next/static/real.js", "/_next/static/quoted.js"]);
+  });
+
   it("reports only the routes over their budget", () => {
     expect(overBudget({ "/a": 500, "/b": 611 }, { "/a": 585, "/b": 610 })).toEqual([
       { route: "/b", kb: 611, limit: 610 },
