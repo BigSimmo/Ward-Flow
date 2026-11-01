@@ -6,7 +6,7 @@
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell, Plus, Check, ChevronDown, Menu as MenuIcon, RotateCcwClock, Wrench } from "lucide-react";
-import type { RefObject } from "react";
+import { useState, type RefObject } from "react";
 
 import { ContextualBackLink, navigateContextuallyBack } from "@/components/contextual-back-link";
 import { waitingText, type waitingInEds } from "@/components/ward-management/ward-shared-figures";
@@ -125,6 +125,8 @@ export function NextPhoneMenuEntry({
   onOpenDrawer: (id: "tasks" | "activity" | "tools") => void;
   onOpenReferral: (request: ReferralSheetRequest, returnFocus: HTMLElement | null) => void;
 }) {
+  // Q161 (Josh, 1 Nov 2026): on a page no dock tab owns, Menu lights as the way to where you are.
+  const [dockOwnsPage, setDockOwnsPage] = useState(true);
   return (
     <>
       {backHref ? <WardBarBack parentHref={backHref} phone liveOverSheet={liveOverSheet} buttonRef={backRef} /> : null}
@@ -137,6 +139,7 @@ export function NextPhoneMenuEntry({
         aria-controls="ward-phone-menu"
         data-testid="ward-bar-phone-menu"
         data-back-replaced={backHref ? "" : undefined}
+        data-here={dockOwnsPage ? undefined : ""}
         data-sheet-inert-skip={liveOverSheet ? "" : undefined}
         onClick={(event) => openWardMenu(event.currentTarget)}
       >
@@ -148,6 +151,7 @@ export function NextPhoneMenuEntry({
         activityUnread={activityUnread}
         onOpenDrawer={onOpenDrawer}
         onNewReferral={() => onOpenReferral({ category: roleCategory }, returnFocusRef.current)}
+        onDockOwnsPageChange={setDockOwnsPage}
       />
     </>
   );

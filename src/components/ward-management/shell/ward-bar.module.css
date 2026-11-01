@@ -3949,6 +3949,14 @@
   }
 }
 
+/* Q161 (Josh, 1 Nov 2026): on a page no dock tab owns, the Menu icon takes the accent the dock gives
+ * the page you are on, so the phone always shows where you are. */
+@media (max-width: 48rem) {
+  .phoneOnly[data-here] {
+    color: var(--wf-accent);
+  }
+}
+
 /* Back on a phone (Josh, 20 Oct 2026): on a drill-down screen it takes the Menu button's place.
  * Above the phone the bar's own `.deskBack` leads instead, and a tablet keeps its Menu. */
 @media (max-width: 48rem) {

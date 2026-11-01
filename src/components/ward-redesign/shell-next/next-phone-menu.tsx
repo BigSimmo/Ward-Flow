@@ -83,7 +83,7 @@ type DockSlot =
 
 const page = (id: string, label: string): DockPage => ({ kind: "page", id, label });
 
-type ResolvedDockSlot =
+export type ResolvedDockSlot =
   Exclude<DockSlot, DockPage> | { readonly kind: "page"; readonly entry: RailEntry; readonly label: string };
 
 /**
@@ -153,6 +153,8 @@ export type WardPhoneMenuProps = {
   /** `opener` is the dock button that opened the drawer, where its close returns focus (DR-08). */
   onOpenDrawer: (id: "tasks" | "activity" | "tools", opener?: HTMLElement) => void;
   onNewReferral: () => void;
+  /** Phone audit (Josh, 1 Nov 2026, Q161): told whether a dock tab owns this page, so Menu can light when none does. */
+  onDockOwnsPageChange?: (owns: boolean) => void;
 };
 
 export type CountMap = ReturnType<typeof useNextNavCounts>["counts"];
@@ -585,12 +587,23 @@ function PhoneMenuSheetsRetry(props: PhoneMenuSheetsProps) {
 }
 
 /** Drop-in for the real `WardPhoneMenu` (same props). */
+/** Whether a dock tab lights for this page: a page tab whose rail entry is active, or Alerts on the Alerts screen. */
+export function dockOwnsPath(slots: readonly ResolvedDockSlot[], pathname: string): boolean {
+  const onAlerts = pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF;
+  return slots.some((slot) =>
+    slot.kind === "page"
+      ? isActiveRailEntry(pathname, slot.entry)
+      : (slot.kind === "alerts" || slot.kind === "queue") && onAlerts,
+  );
+}
+
 export function NextPhoneMenu({
   returnFocusRef,
   tasksCount,
   activityUnread,
   onOpenDrawer,
   onNewReferral,
+  onDockOwnsPageChange,
 }: WardPhoneMenuProps) {
   const pathname = usePathname() ?? "";
   // ROLE BRANCH (bed_manager): the dock's and menu's counts are the desk's own place's (`preview-nav-counts.ts`).
@@ -638,6 +651,11 @@ export function NextPhoneMenu({
     needs: overdueNeeds,
     groups,
   } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav, deskRoleLabel, accessAdmin);
+  // Q161 (Josh, 1 Nov 2026): a page no dock tab owns lights the bar's Menu button instead.
+  const dockOwnsPage = dockOwnsPath([...dock, ...dockRight], pathname);
+  useEffect(() => {
+    onDockOwnsPageChange?.(dockOwnsPage);
+  }, [dockOwnsPage, onDockOwnsPageChange]);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
   const {
     movements,
