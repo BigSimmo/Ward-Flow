@@ -2393,6 +2393,14 @@
   .detailScroll > * {
     flex-shrink: 0;
   }
+
+  /* Notices and help hints stack bottom right, where the open panel's pinned step sits: move them
+     beside the panel so they never cover the button a person (or a journey test) needs next. */
+  :global(body):has(.layout[data-open="true"]) :global([data-testid="ward-help-hint"]),
+  :global(body):has(.layout[data-open="true"]) :global([data-testid="toast-region"]),
+  .screen:has(.layout[data-open="true"]) .toast {
+    right: calc(27.5rem + 2 * var(--wf-s-4));
+  }
 }
 
 .detailTitle {
