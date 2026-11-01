@@ -122,4 +122,28 @@ describe("what's new list", () => {
   it("stays short enough to load with every page", () => {
     expect(WHATS_NEW.length).toBeLessThanOrEqual(20);
   });
+
+  it("preserves retired notes separately from the recent entries", () => {
+    const archived = JSON.parse(readFileSync("docs/ward-flow/archive/whats-new.json", "utf8")) as WhatsNewEntry[];
+    expect(archived).toEqual(
+      expect.arrayContaining([
+        {
+          id: "2026-10-31-legal-times-as-typed",
+          date: "2026-10-31",
+          line: 'Legal form times now show only as typed, such as "Ends 15:42 as typed", never as a countdown.',
+        },
+        {
+          id: "2026-10-31-settings-restore-export",
+          date: "2026-10-31",
+          line: "Settings: Restore now names all twelve rules, and Export saves only the saved rules.",
+        },
+      ]),
+    );
+    const combined = [...archived, ...WHATS_NEW];
+    expect(new Set(combined.map((entry) => entry.id)).size).toBe(combined.length);
+    expect(WHATS_NEW.find((entry) => entry.id === "2026-10-27-stay-tile-day-number")?.line).toBe(
+      'Bed drawer: the Stay tile now shows the day of the stay, for example "Day 37".',
+    );
+    expect(WHATS_NEW.some((entry) => entry.id === "2026-11-01-design-audit-tidy")).toBe(true);
+  });
 });

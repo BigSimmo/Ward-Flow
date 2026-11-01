@@ -67,6 +67,57 @@ describe("how-to list", () => {
     expect(showMeSteps(statistics, false).map((step) => step.title)).toEqual(["Choose a view", "Export the figures"]);
   });
 
+  it("can find a patient from the Patients page where the header search is absent", () => {
+    const search = HOW_TOS.find((howTo) => howTo.id === "search-patient");
+    const target = showMeSteps(search, false)[0]?.target;
+    const targets = target === undefined ? [] : Array.isArray(target) ? target : [target];
+    expect(targets.map((entry) => entry.sel)).toEqual([
+      '[data-testid="ward-global-search-input"]',
+      '[data-testid="ward-patient-typeahead-input"]',
+    ]);
+    expect(search?.answer).toContain("search on Patients");
+  });
+
+  it("keeps the next transport action inside the selected job, including when it has no next action", () => {
+    const steps = showMeSteps(
+      HOW_TOS.find((howTo) => howTo.id === "transport-job"),
+      true,
+    );
+    const target = steps[1]?.target;
+    const targets = target === undefined ? [] : Array.isArray(target) ? target : [target];
+    expect(targets).toHaveLength(2);
+    for (const entry of targets) {
+      expect(entry.sel).toMatch(/^\[data-testid="ward-officer-detail"\]/);
+      expect(entry.sel).not.toContain("ward-officer-next-");
+      expect(entry.sel).not.toContain('aria-label="Next action"');
+    }
+    for (const stage of ["accept", "enroute", "collect", "arrive"]) {
+      expect(targets[0]?.sel).toContain(`ward-officer-${stage}-`);
+    }
+    // A terminal selected job stays the fallback; it must never spotlight a different job's action.
+    expect(targets[1]?.sel).toBe('[data-testid="ward-officer-detail"]');
+  });
+
+  it("lets a phone reopen the current Settings section before locating its controls", () => {
+    for (const id of ["theme", "density", "notifications", "buzz", "rules"]) {
+      const task = HOW_TOS.find((howTo) => howTo.id === id);
+      const phoneSteps = showMeSteps(task, true);
+      const deskSteps = showMeSteps(task, false);
+      const section = id === "rules" ? "rules" : "device";
+      expect(task?.go, id).toBe(`settings#${section}`);
+      expect(phoneSteps[0]?.device, id).toBe("phone");
+      expect(phoneSteps[0]?.continueLabel, id).toMatch(/^Open /);
+      const openingTargets = JSON.stringify(phoneSteps[0]?.target);
+      expect(openingTargets, id).toContain("ward-settings-phone-sheet");
+      expect(openingTargets, id).toContain(`ward-settings-phone-area-${section}`);
+      expect(openingTargets, id).toContain("button");
+      expect(phoneSteps.slice(1), id).toEqual(deskSteps);
+      expect(JSON.stringify(deskSteps), id).not.toContain("ward-settings-phone-area-");
+      expect(JSON.stringify(task), id).not.toMatch(/Settings, (Display|Alerts)|phone-area-(display|alerts)/);
+    }
+    expect(HOW_TOS.find((howTo) => howTo.id === "tour")?.answer).toContain("Settings, Help");
+  });
+
   it("offers no journey for an unknown task, an answer-only task or a task with no steps on this device", () => {
     expect(showMeSteps(undefined, false)).toEqual([]);
     const answer = HOW_TOS.find((howTo) => howTo.id === "undo");

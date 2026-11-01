@@ -154,7 +154,7 @@ function WardHelpSheetView({
   const [query, setQuery] = useState(ask ?? "");
   const [literal, setLiteral] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [active, setActive] = useState(0);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [task, setTask] = useState(openTask);
   const [unread, setUnread] = useState(readUnread);
   const field = useRef<HTMLInputElement>(null);
@@ -163,6 +163,12 @@ function WardHelpSheetView({
     [query, role, terms, literal],
   );
   const rows = foundRows(found);
+  // Live directory and desk updates may reorder or remove answers without changing the query.
+  // Keep the same answer selected when it survives, otherwise use the first available answer.
+  const active = Math.max(
+    0,
+    rows.findIndex((row) => row.key === selectedKey),
+  );
   const activeKey = rows[active]?.key;
   useEffect(() => {
     if (!query.trim() || !activeKey) return;
@@ -225,7 +231,7 @@ function WardHelpSheetView({
 
   const typed = (words: string) => {
     setQuery(words);
-    setActive(0);
+    setSelectedKey(null);
     field.current?.focus();
   };
 
@@ -278,10 +284,10 @@ function WardHelpSheetView({
       setQuery("");
     } else if (event.key === "ArrowDown" && rows.length) {
       event.preventDefault();
-      setActive((active + 1) % rows.length);
+      setSelectedKey(rows[(active + 1) % rows.length].key);
     } else if (event.key === "ArrowUp" && rows.length) {
       event.preventDefault();
-      setActive((active - 1 + rows.length) % rows.length);
+      setSelectedKey(rows[(active - 1 + rows.length) % rows.length].key);
     } else if (event.key === "Enter" && rows[active]) {
       event.preventDefault();
       choose(rows[active]);
@@ -366,7 +372,7 @@ function WardHelpSheetView({
             onChange={(event) => {
               setQuery(event.target.value);
               setLiteral(false);
-              setActive(0);
+              setSelectedKey(null);
             }}
             onKeyDown={onFieldKey}
             onFocus={() => setFocused(true)}

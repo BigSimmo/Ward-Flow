@@ -5,16 +5,6 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-31-legal-times-as-typed",
-    "date": "2026-10-31",
-    "line": "Legal form times now show only as typed, such as \"Ends 15:42 as typed\", never as a countdown."
-  },
-  {
-    "id": "2026-10-31-settings-restore-export",
-    "date": "2026-10-31",
-    "line": "Settings: Restore now names all twelve rules, and Export saves only the saved rules."
-  },
-  {
     "id": "2026-10-31-names-surname-first",
     "date": "2026-10-31",
     "line": "Names now read surname first in the downtime pack, chronology file, community record and referral slide-out."
@@ -98,5 +88,15 @@
     "id": "2026-11-01-alerts-redesign",
     "date": "2026-11-01",
     "line": "Alerts is redesigned, with a Today band, a side panel with one action bar, and Add units on a live broadcast."
+  },
+  {
+    "id": "2026-11-01-design-audit-tidy",
+    "date": "2026-11-01",
+    "line": "Community teams can find a client or clinician; ED, Movements and Go to a desk read more cleanly on phone."
+  },
+  {
+    "id": "2026-11-01-help-search-guides",
+    "date": "2026-11-01",
+    "line": "Help search keeps selected answers in view and shows guides only when available on your device."
   }
 ]

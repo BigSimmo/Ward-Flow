@@ -87,9 +87,21 @@ const PRIMARY_ACTION: TourTarget = {
 const DESK_SWITCH: TourTarget = {
   sel: '[data-testid="ward-rail-persona-trigger"], [data-testid="ward-bar-phone-menu"]',
 };
-/** A Settings row; on a phone, whose rows sit in a sheet per tab, the tab's row in the list. */
-const setting = (id: string, tab: string): TourTarget => ({
-  sel: `[data-setting="${id}"], [data-testid="ward-settings-phone-area-${tab}"]`,
+/** The actual setting, after a phone's section-opening handoff. */
+const setting = (id: string): TourTarget => ({
+  sel: `[data-setting="${id}"]`,
+});
+
+/** A closed phone section can retain its hash, so let the person reopen it before finding a row. */
+const openPhoneSettingsSection = (section: "device" | "rules", label: string): ShowMeStep => ({
+  target: [
+    { sel: '[data-testid="ward-settings-phone-sheet"]' },
+    { sel: `[data-testid="ward-settings-phone-area-${section}"] button` },
+  ],
+  title: `Open ${label}`,
+  body: `Open ${label} in Settings. If its sheet is already open, continue to the setting.`,
+  continueLabel: `Open ${label}, then continue`,
+  device: "phone",
 });
 
 /** Both devices open the patient record's placement work in the same Destination sheet. */
@@ -590,11 +602,13 @@ export const HOW_TOS: readonly HowTo[] = [
       },
       {
         target: [
-          { sel: '[data-testid^="ward-officer-next-"]' },
-          { sel: '#main-content section[aria-label="Next action"]' },
+          {
+            sel: '[data-testid="ward-officer-detail"] :is([data-testid^="ward-officer-accept-"], [data-testid^="ward-officer-enroute-"], [data-testid^="ward-officer-collect-"], [data-testid^="ward-officer-arrive-"])',
+          },
+          { sel: '[data-testid="ward-officer-detail"]' },
         ],
         title: "Record the next step",
-        body: "The job's next step is one press, such as collected or arrived. It is recorded with the time.",
+        body: "The open job's next step is one press, such as collected or arrived. It is recorded with the time. If there is no next step, review its recorded progress.",
       },
     ],
   },
@@ -653,14 +667,17 @@ export const HOW_TOS: readonly HowTo[] = [
     title: "Find a patient",
     keywords: "search patient name umrn look up lookup",
     answer:
-      "Type a name or UMRN in the header search. / or Ctrl+K jumps there on a keyboard. Questions such as no bed yet also work.",
+      "Type a name or UMRN in the header search, or the search on Patients. / or Ctrl+K jumps to search on a keyboard. The header search also understands questions such as no bed yet.",
     desks: CLINICAL_DESKS,
     needs: "search",
     showMe: [
       {
-        target: { sel: '[data-testid="ward-global-search-input"]' },
+        target: [
+          { sel: '[data-testid="ward-global-search-input"]' },
+          { sel: '[data-testid="ward-patient-typeahead-input"]' },
+        ],
         title: "Search",
-        body: "Names, UMRNs, places and a few common questions.",
+        body: "Use the header search, or the search on Patients, for names, UMRNs and places. The header search also understands a few common questions.",
       },
     ],
   },
@@ -692,14 +709,15 @@ export const HOW_TOS: readonly HowTo[] = [
     title: "Use dark mode or the bright light theme",
     keywords: "dark light night glare bright theme colour appearance",
     answer:
-      "Settings, Display, Theme: Auto, Light, Dark or Bright light (for a bright room). It changes this device only.",
+      "Settings, This device, Theme: Auto, Light, Dark or Bright light (for a bright room). It changes this device only.",
     desks: EVERY_DESK,
-    go: "settings#display",
+    go: "settings#device",
     showMe: [
+      openPhoneSettingsSection("device", "This device"),
       {
-        target: setting("theme", "display"),
+        target: setting("theme"),
         title: "Theme",
-        body: "In Settings, Display. It saves at once, on this device only.",
+        body: "In Settings, This device. It saves at once, on this device only.",
       },
     ],
   },
@@ -708,14 +726,15 @@ export const HOW_TOS: readonly HowTo[] = [
     topic: "Settings and display",
     title: "Fit more rows on screen",
     keywords: "compact density smaller rows more on screen",
-    answer: "Settings, Display, Row density: Compact fits more rows on each screen.",
+    answer: "Settings, This device, Row density: Compact fits more rows on each screen.",
     desks: EVERY_DESK,
-    go: "settings#display",
+    go: "settings#device",
     showMe: [
+      openPhoneSettingsSection("device", "This device"),
       {
-        target: setting("density", "display"),
+        target: setting("density"),
         title: "Row density",
-        body: "In Settings, Display: Comfortable or Compact.",
+        body: "In Settings, This device: Comfortable or Compact.",
       },
     ],
   },
@@ -725,20 +744,21 @@ export const HOW_TOS: readonly HowTo[] = [
     title: "Get alerts when I am on another screen",
     keywords: "notifications browser phone push alert notify lock screen",
     answer:
-      "Settings, Alerts: turn on Browser notifications for this computer, or Phone alerts for your phone. Both are for act-now and red alerts only.",
+      "Settings, This device: turn on Browser notifications for this computer, or Phone alerts for your phone. Both are for act-now and red alerts only.",
     desks: EVERY_DESK,
     needs: "alerts",
-    go: "settings#alerts",
+    go: "settings#device",
     showMe: [
+      openPhoneSettingsSection("device", "This device"),
       {
-        target: setting("browser-notifications", "alerts"),
+        target: setting("browser-notifications"),
         title: "Browser notifications",
-        body: "In Settings, Alerts. For this computer.",
+        body: "In Settings, This device. For this computer.",
       },
       {
-        target: setting("phone-alerts", "alerts"),
+        target: setting("phone-alerts"),
         title: "Phone alerts",
-        body: "In Settings, Alerts. For your phone, including the lock screen.",
+        body: "In Settings, This device. For your phone, including the lock screen.",
       },
     ],
   },
@@ -747,15 +767,16 @@ export const HOW_TOS: readonly HowTo[] = [
     topic: "Settings and display",
     title: "Turn the buzz sound on or off",
     keywords: "sound chime audio noise mute buzz",
-    answer: "Settings, Alerts, Buzz sound. Use its test to hear it.",
+    answer: "Settings, This device, Buzz sound. Use its test to hear it.",
     desks: EVERY_DESK,
     needs: "alerts",
-    go: "settings#alerts",
+    go: "settings#device",
     showMe: [
+      openPhoneSettingsSection("device", "This device"),
       {
-        target: setting("buzz", "alerts"),
+        target: setting("buzz"),
         title: "Buzz sound",
-        body: "In Settings, Alerts. A chime on an urgent buzz.",
+        body: "In Settings, This device. A chime on an urgent buzz.",
       },
     ],
   },
@@ -770,13 +791,14 @@ export const HOW_TOS: readonly HowTo[] = [
     acts: ["SET_CONFIGURATION"],
     go: "settings#rules",
     showMe: [
+      openPhoneSettingsSection("rules", "Rules"),
       {
-        target: setting("pull-hold", "rules"),
+        target: setting("pull-hold"),
         title: "Pull time limit",
         body: "In Settings, Rules. How long a pulled bed is kept for the patient.",
       },
       {
-        target: setting("ed-target", "rules"),
+        target: setting("ed-target"),
         title: "ED wait target",
         body: "In Settings, Rules. An access measure only.",
       },
@@ -833,8 +855,7 @@ export const HOW_TOS: readonly HowTo[] = [
     topic: "Finding your way",
     title: "Take the tour again",
     keywords: "tour tutorial guide walkthrough learn start",
-    answer:
-      "Open Help and choose Start or Resume under Tour of your desk, or use Replay the tour in Settings, Display.",
+    answer: "Open Help and choose Start or Resume under Tour of your desk, or use Replay the tour in Settings, Help.",
     desks: EVERY_DESK,
     showMe: [
       {

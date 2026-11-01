@@ -238,7 +238,7 @@ describe("Show me player", () => {
     desk.role = "coordinator";
     view.rerender(<WardShowMe id="theme" onClose={vi.fn()} onBack={vi.fn()} />);
     expect(screen.getByText("Step 1 of 1")).toBeTruthy();
-    expect(push).toHaveBeenLastCalledWith("/ward-flow/settings#display");
+    expect(push).toHaveBeenLastCalledWith("/ward-flow/settings#device");
   });
 
   it("starts a same-step resume dark rather than showing the previous target's stale position", async () => {
@@ -252,20 +252,42 @@ describe("Show me player", () => {
     expect(screen.getByText("Step 1 of 2")).toBeTruthy();
   });
 
-  it("returns focus to the last page control when the paused guide closes", () => {
-    const pageControl = control("audit-page-control");
+  it.each([0, -1])(
+    "returns focus to the last page control with tabindex %s when the paused guide closes",
+    (tabIndex) => {
+      const pageControl = control("audit-page-control");
+      pageControl.tabIndex = tabIndex;
+      function Host() {
+        const [open, setOpen] = useState(true);
+        return open ? <WardShowMe id="new-referral" onClose={() => setOpen(false)} onBack={vi.fn()} /> : null;
+      }
+      render(<Host />);
+      fireEvent.click(screen.getByTestId("ward-show-me-try"));
+      pageControl.focus();
+      const close = screen.getByRole("button", { name: "Close Show me" });
+      close.focus();
+      fireEvent.click(close);
+      expect(screen.queryByTestId("ward-show-me-paused")).toBeNull();
+      expect(document.activeElement).toBe(pageControl);
+    },
+  );
+
+  it.each(["disabled", "hidden"])("skips a previously focused control that becomes %s", (state) => {
+    const fallback = control("audit-fallback");
+    const previous = control("audit-previous") as HTMLButtonElement;
     function Host() {
       const [open, setOpen] = useState(true);
       return open ? <WardShowMe id="new-referral" onClose={() => setOpen(false)} onBack={vi.fn()} /> : null;
     }
     render(<Host />);
     fireEvent.click(screen.getByTestId("ward-show-me-try"));
-    pageControl.focus();
+    previous.focus();
+    if (state === "disabled") previous.disabled = true;
+    else previous.style.visibility = "hidden";
     const close = screen.getByRole("button", { name: "Close Show me" });
     close.focus();
     fireEvent.click(close);
-    expect(screen.queryByTestId("ward-show-me-paused")).toBeNull();
-    expect(document.activeElement).toBe(pageControl);
+    expect(document.activeElement).toBe(fallback);
   });
 
   it("returns focus inside an open form when closing the paused guide", async () => {

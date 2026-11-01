@@ -1,6 +1,14 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { Site } from "@/components/ward-management/ward-model";
+import type { WardTourRole } from "@/components/ward-management/help/ward-help-store";
+
+const live = vi.hoisted(() => ({
+  role: "bed_manager" as WardTourRole,
+  sites: undefined as readonly Site[] | undefined,
+}));
 
 /**
  * Help's one search box (redesign round 2, 1 Nov 2026): the answers replace the panel's body while
@@ -27,14 +35,28 @@ vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
 
 vi.mock("@/components/ward-management/help/ward-help-store", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/ward-management/help/ward-help-store")>()),
-  useTourRole: () => "bed_manager",
+  useTourRole: () => live.role,
 }));
+
+vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>();
+  return {
+    ...actual,
+    useWardNetwork: () => ({ ...actual.useWardNetwork(), ...(live.sites ? { sites: live.sites } : {}) }),
+  };
+});
 
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import type { HelpView } from "@/components/ward-management/help/ward-help-events";
-import { HelpFindResults } from "@/components/ward-management/help/ward-help-find";
+import { findInHelp, foundRows, HelpFindResults } from "@/components/ward-management/help/ward-help-find";
+import { glossaryForSites } from "@/components/ward-management/help/ward-help-content";
 import { canShowTask } from "@/components/ward-management/help/ward-help-jobs";
 import { HOW_TOS } from "@/components/ward-management/help/ward-help-howto";
+
+beforeEach(() => {
+  live.role = "bed_manager";
+  live.sites = undefined;
+});
 
 function sheet(props: Partial<Parameters<typeof WardHelpSheet>[0]> = {}) {
   return render(
@@ -49,6 +71,71 @@ function type(words: string) {
 }
 
 describe("Help sheet search field", () => {
+  it.each([
+    { change: "reordered", codes: ["AX0", "AXA", "AXB", "AXC"] },
+    { change: "removed", codes: ["AXA"] },
+  ])("keeps a valid keyboard selection when a live directory answer is $change", ({ change, codes }) => {
+    const sites = (codes: string[]): Site[] =>
+      codes.map((code) => ({ code, name: "Synthetic testcampus", service: "South Metro", units: [] }));
+    const query = "testcampus";
+    live.sites = sites(["AXA", "AXB", "AXC"]);
+    const before = foundRows(findInHelp(query, live.role, glossaryForSites(live.sites)));
+    const beforeIndex = before.findIndex((row) => row.key === "term:AXC");
+    expect(beforeIndex).toBeGreaterThan(0);
+    const props = { view: "screen" as const, onView: vi.fn(), onClose: vi.fn(), onTour: vi.fn(), onShowMe: vi.fn() };
+    const view = sheet(props);
+    const field = type(query);
+    field.focus();
+    for (let step = 0; step < beforeIndex; step += 1) fireEvent.keyDown(field, { key: "ArrowDown" });
+    expect(document.getElementById(field.getAttribute("aria-activedescendant") ?? "")?.textContent).toContain("AXC");
+
+    live.sites = sites(codes);
+    const after = foundRows(findInHelp(query, live.role, glossaryForSites(live.sites)));
+    const index = change === "removed" ? 0 : after.findIndex((row) => row.key === "term:AXC");
+    if (change === "reordered") {
+      expect(index).toBeGreaterThanOrEqual(0);
+      expect(index).not.toBe(beforeIndex);
+    } else {
+      expect(after.some((row) => row.key === "term:AXC")).toBe(false);
+      expect(after.length).toBeLessThan(before.length);
+      expect(after[0].key).toBe("term:AXA");
+    }
+    view.rerender(<WardHelpSheet {...props} />);
+
+    expect(field.getAttribute("aria-activedescendant")).toBe(`ward-help-found-${index}`);
+    const active = document.getElementById(field.getAttribute("aria-activedescendant") ?? "");
+    expect(active?.textContent).toContain(after[index].title);
+    expect(active?.getAttribute("data-active")).toBe("");
+    expect(document.activeElement).toBe(field);
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(props.onView).toHaveBeenCalledWith("reference");
+    expect((field as HTMLInputElement).value).toBe("");
+  });
+
+  it("opens the same selected task after a desk change reorders answers", () => {
+    const props = { view: "screen" as const, onView: vi.fn(), onClose: vi.fn(), onTour: vi.fn(), onShowMe: vi.fn() };
+    const view = sheet(props);
+    const field = type("handover");
+    const selected = () => document.getElementById(field.getAttribute("aria-activedescendant") ?? "");
+    // Make an explicit keyboard selection even when the intended task is initially the best answer.
+    fireEvent.keyDown(field, { key: "ArrowDown" });
+    fireEvent.keyDown(field, { key: "ArrowUp" });
+    for (let step = 0; step < 20 && !selected()?.textContent?.includes("Print the handover sheet"); step += 1) {
+      fireEvent.keyDown(field, { key: "ArrowDown" });
+    }
+    expect(selected()?.textContent).toContain("Print the handover sheet");
+    const before = field.getAttribute("aria-activedescendant");
+
+    live.role = "ward";
+    view.rerender(<WardHelpSheet {...props} />);
+
+    expect(field.getAttribute("aria-activedescendant")).not.toBe(before);
+    expect(selected()?.textContent).toContain("Print the handover sheet");
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(props.onView).toHaveBeenCalledWith("tasks");
+    expect(screen.getByRole("button", { name: /Print the handover sheet/ }).getAttribute("aria-expanded")).toBe("true");
+  });
+
   it.each(["Enter", "ArrowDown", "ArrowUp", "Escape"])(
     "leaves %s to text composition without navigating or closing Help",
     (key) => {

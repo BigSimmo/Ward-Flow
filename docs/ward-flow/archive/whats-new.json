@@ -1,0 +1,12 @@
+[
+  {
+    "id": "2026-10-31-legal-times-as-typed",
+    "date": "2026-10-31",
+    "line": "Legal form times now show only as typed, such as \"Ends 15:42 as typed\", never as a countdown."
+  },
+  {
+    "id": "2026-10-31-settings-restore-export",
+    "date": "2026-10-31",
+    "line": "Settings: Restore now names all twelve rules, and Export saves only the saved rules."
+  }
+]

@@ -117,12 +117,24 @@ function ShowMeJourney({
 
   function closePaused() {
     const previous = pageFocusRef.current;
-    const usable =
+    const candidates = modalFocusTargets(topSheetRoot() ?? document.body, false, false).filter(
+      (element) => !pausedRef.current?.contains(element),
+    );
+    const preferred =
       previous?.isConnected &&
+      canRestoreFocusTo(previous) &&
+      !previous.matches(":disabled") &&
       !previous.closest('[inert], [hidden], [aria-hidden="true"]') &&
-      canRestoreFocusTo(previous);
-    const target = usable ? previous : modalFocusTargets(topSheetRoot(), false, false)[0];
-    target?.focus({ preventScroll: true });
+      !pausedRef.current?.contains(previous) &&
+      getComputedStyle(previous).visibility !== "hidden"
+        ? previous
+        : undefined;
+    // A control can disappear or become disabled while a form saves. Try a usable neighbour if
+    // the browser refuses focus, including controls hidden by a parent's CSS.
+    for (const target of new Set([...(preferred ? [preferred] : []), ...candidates])) {
+      target.focus({ preventScroll: true });
+      if (document.activeElement === target) break;
+    }
     onClose();
   }
 
