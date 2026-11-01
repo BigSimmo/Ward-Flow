@@ -15,10 +15,12 @@ import {
   Card,
   CardHead,
   Meter,
+  StackBar,
   StatusGlyph,
   cx,
   tableClasses,
   type BarListRow,
+  type StackSegment,
   type WfTone,
 } from "@/components/wf";
 import { HowWorkedOut } from "@/components/ward-management/capacity/capacity-how-worked-out";
@@ -116,6 +118,7 @@ export function Tile({
   unit,
   sub,
   muted = false,
+  testId,
   children,
 }: {
   title: ReactNode;
@@ -124,10 +127,11 @@ export function Tile({
   unit?: ReactNode;
   sub?: ReactNode;
   muted?: boolean;
+  testId?: string;
   children?: ReactNode;
 }) {
   return (
-    <li className={cx(cap.mmTile, s.tile, muted && s.muted)}>
+    <li className={cx(cap.mmTile, s.tile, muted && s.muted)} data-testid={testId}>
       <div className={cap.mmTileHead}>
         <h3 className={cx(cap.mmTileTitle, s.tileTitle)}>{title}</h3>
         {now}
@@ -142,6 +146,45 @@ export function Tile({
       {sub ? <p className={cap.mmSub}>{sub}</p> : null}
     </li>
   );
+}
+
+export function Facts({ items }: { items: { value: ReactNode; label: string; tone?: WfTone; warn?: boolean }[] }) {
+  return (
+    <span className={s.facts}>
+      {items.map((item) => (
+        <span key={item.label} className={item.warn ? s.warnInk : undefined}>
+          {item.tone ? <Glyph tone={item.tone} /> : null}
+          <b>{item.value}</b> {item.label}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Beds in use, pulled, closed and ready, as one stacked bar (the kit's StackBar). */
+export function BedStack({
+  label,
+  used,
+  pulled,
+  closed = 0,
+  ready,
+  beds,
+}: {
+  label: string;
+  used: number;
+  pulled: number;
+  closed?: number;
+  ready: number;
+  beds: number;
+}) {
+  const segments: StackSegment[] = [
+    { id: "used", value: used - pulled, fill: "data-1", label: "Occupied" },
+    { id: "pulled", value: pulled, fill: "data-2", label: "Pulled" },
+    { id: "closed", value: closed, fill: "closed", label: "Closed" },
+    { id: "ready", value: ready, fill: "ready", label: "Ready" },
+    { id: "rest", value: Math.max(0, beds - used - closed - ready), fill: "track", label: "Other" },
+  ];
+  return <StackBar segments={segments} label={label} className={s.stackGap} />;
 }
 
 type BarRow = { name: string; value: number; display?: string; sub?: string; flag?: WfTone };
