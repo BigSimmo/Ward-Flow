@@ -4,16 +4,18 @@ test("@mockup global alert title remains readable on small and large phones", as
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ward-flow/alerts", { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Broadcast", exact: true }).click();
-  await page
-    .getByRole("checkbox", {
-      name: "I confirm this directive is clinically authorised for immediate statewide network broadcast.",
-    })
-    .check();
-  await page.getByRole("button", { name: "Dispatch", exact: true }).click();
+  // Alerts redesign (Q153, 1 Nov 2026): on a phone, Broadcast alert sits under "…", and the new
+  // composer sends a directive from Tell areas something.
+  await page.getByRole("button", { name: "More alert actions" }).click();
+  await page.getByRole("menuitem", { name: /^Broadcast alert/u }).click();
+  const composer = page.getByRole("dialog", { name: "New broadcast" });
+  await composer.getByRole("radio", { name: /Tell areas something/u }).click();
+  await composer.getByRole("button", { name: "HDU full", exact: true }).click();
+  await composer.getByRole("checkbox", { name: /^I'm authorised to send this to/u }).check();
+  await composer.getByTestId("ward-alerts-broadcast-confirm").click();
   const strip = page.getByTestId("ward-broadcast-banner");
   await expect(strip).toBeVisible();
-  await expect(page.getByRole("dialog", { name: "Broadcast network alert" })).not.toBeVisible();
+  await expect(composer).not.toBeVisible();
   for (const width of [320, 390, 430]) {
     await page.setViewportSize({ width, height: 844 });
     const title = strip.locator("strong");
