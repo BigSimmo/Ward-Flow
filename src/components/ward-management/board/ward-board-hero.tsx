@@ -52,15 +52,15 @@ export function WardBoardHero(props: {
   if (pendingPreparation > 0)
     sentences.push({
       testId: "ward-board-pending-preparation",
-      text: `${pendingPreparation} of them ${pendingPreparation === 1 ? "is" : "are"} still being made ready. It stays counted but is not offered until the ward taps Ready.`,
+      text: `${pendingPreparation} of them ${pendingPreparation === 1 ? "is" : "are"} still being made ready, not yet offered.`,
     });
   if (service !== null)
     sentences.push({
       testId: "ward-board-service-sentence",
       text:
         service === site.service
-          ? `The Service selector is set to ${service}, which is this ward's own service.`
-          : `The Service selector is set to ${service}. This ward is in ${site.service}. The board always shows this one ward.`,
+          ? `${service} is this ward's own service.`
+          : `This ward is in ${site.service}, not ${service}.`,
     });
   if (constraint !== null) sentences.push({ testId: "ward-board-constraint", text: constraint });
   return (

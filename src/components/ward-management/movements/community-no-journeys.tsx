@@ -32,8 +32,7 @@ export function CommunityNoJourneys({ teamName }: { teamName: string }) {
           <section aria-label="The team's journeys">
             <EmptyState
               icon={ArrowRightLeft}
-              title="Shows once a ward accepts a team referral"
-              meta="The team books its transport from the journey"
+              title="None yet"
               className={local.empty}
               action={
                 <div className={local.actions}>

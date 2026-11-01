@@ -429,7 +429,7 @@ export function WardBoard({
       <div className={styles.screen} data-testid="ward-board-unknown-unit" data-ward-design="third-edition">
         <main id="main-content" className={styles.main}>
           <WardNotFoundBody title="Ward not found" list={{ href: "/ward-flow/wards", label: "All wards" }}>
-            No ward matches this link. It never falls back to a different ward.
+            No ward matches this link.
           </WardNotFoundBody>
         </main>
       </div>
@@ -784,7 +784,7 @@ export function WardBoard({
       when: "Unavailable",
       chip: "Out of service",
       // Bed board decision 5A (Josh, 26 Sept 2026): nothing records why a bed is out of service.
-      text: "Out of service. Reason not recorded. No return date recorded.",
+      text: "Reason and return date not recorded.",
       // "Set a return date" was removed 25 Sept 2026 (Josh, leave-bed Q4 "A"): it recorded a LEAVE
       // bed for an out-of-service bed, which is the wrong record. How an out-of-service bed records
       // its return is decided separately.
@@ -818,7 +818,7 @@ export function WardBoard({
       tone: null,
       when: person.bedGoneHours !== null ? `${person.bedGoneHours}h ago` : "Today",
       chip: person.bedGoneHours !== null ? `${person.bedGoneHours}h travelling` : "Pulled",
-      text: `Pulled for ${nameFor(person.key)}, taken and not yet arrived.`,
+      text: `Pulled for ${nameFor(person.key)}, not yet arrived.`,
       // "Release the bed" removed 2026-09-25 (owner decision, Q5, bed-release-link plan): it
       // dispatched RELEASE_BED against "the first live release on the unit", the same guess-by-ward
       // defect a bed release now refuses everywhere else that a release must name its own admission

@@ -44,7 +44,7 @@ export function HomeReleaseSheet({ entry, onClose }: { entry: QueueEntry | undef
         : undefined;
   return (
     <Sheet open onClose={close} title="Release pulled bed" mobilePlacement="bottom" testId="home-release-sheet">
-      <p>{item.title}. Choose a reason to release this pulled bed.</p>
+      <p>{item.title}.</p>
       <p data-testid="home-release-who">
         For {subject.displayName} {subject.umrn}
       </p>

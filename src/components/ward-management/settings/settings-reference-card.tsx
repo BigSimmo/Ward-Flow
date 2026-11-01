@@ -130,8 +130,7 @@ export function SettingsReferenceCard({
       <TabPanel idPrefix="settings-reference" id="thresholds" hidden={isPhone || reference !== "thresholds"}>
         {thresholds === null ? (
           <p className={styles.cardNote} data-testid="ward-settings-thresholds-unavailable">
-            Record-based threshold status unavailable. Executive reporting does not expose the individual records used
-            to calculate “right now” threshold rows. All twelve public rule values remain available in Rules.
+            Threshold status is unavailable on this desk. The rule values are in Rules.
           </p>
         ) : (
           <div data-testid="ward-settings-thresholds">

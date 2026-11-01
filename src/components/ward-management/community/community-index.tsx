@@ -850,8 +850,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               <CardBody className={styles.familyBody}>
                 {familyGroups.length === 0 ? (
                   <p className={styles.muted} data-testid="community-gateway-family-empty">
-                    No name in this list currently reads like another. That would itself be a change worth noticing,
-                    since the source document is known to hold near-duplicate spellings.
+                    No name in this list reads like another.
                   </p>
                 ) : (
                   <>
@@ -879,7 +878,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 )}
                 <p className={styles.note}>
                   <Icon icon={Info} size={14} />
-                  <span>Not merged. Spellings are compared, so an abbreviation or a renaming carries no marker.</span>
+                  <span>Not merged. Abbreviations and renamings carry no marker.</span>
                 </p>
               </CardBody>
             </Card>
@@ -981,10 +980,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   <dd>Not recorded</dd>
                 </div>
               </dl>
-              <p className={styles.muted}>
-                Every team listed here is derived from the referral vocabulary extracted from Western Australian mental
-                health catchment documents. This directory has not been verified with the services.
-              </p>
+              <p className={styles.muted}>Derived from WA catchment documents. Not verified with the services.</p>
             </section>
             <section className={guideStyles.guideSection} aria-labelledby="community-guide-similar">
               <h3 id="community-guide-similar" className={guideStyles.guideHead}>
@@ -1390,10 +1386,7 @@ function SearchEmptyNotice({ query, alikeOnly }: { query: string; alikeOnly: boo
         <p>
           <strong>No team name contains &ldquo;{query}&rdquo;.</strong>
         </p>
-        <p>
-          The list holds names as they reach this page, so a team may be recorded under a spelling you would not expect.
-          Try a shorter fragment.
-        </p>
+        <p>Try a shorter fragment.</p>
       </div>
     );
   }
@@ -1404,7 +1397,7 @@ function SearchEmptyNotice({ query, alikeOnly }: { query: string; alikeOnly: boo
           {alikeOnly ? "No team in this service reads like another." : "No teams found matching active filters."}
         </strong>
       </p>
-      <p>Every name stays in the list below, dimmed. Reset the filters to clear the highlight.</p>
+      <p>Reset the filters to clear the highlight.</p>
     </div>
   );
 }

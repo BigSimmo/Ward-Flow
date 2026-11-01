@@ -50,8 +50,8 @@ export function PeopleSection({
         <div className={styles.peopleEmptyNote} data-testid="ward-patient-search-people-empty">
           <p>
             {otherMatches > 0
-              ? "No matching person. Waiting referrals or open movements were found below."
-              : "No matching person, waiting referral or open movement. Check the spelling or UMRN before adding a patient."}
+              ? "No matching person."
+              : "No matches. Check the spelling or UMRN before adding a patient."}
           </p>
           <Link
             className={styles.addPersonLink}
@@ -225,11 +225,11 @@ export function ResultsSection({
 
       {results.length === 0 ? (
         <p className={styles.emptyNote} data-testid="ward-patient-search-empty">
-          No matches — no open movement or waiting referral fits the current search.
+          No matches.
         </p>
       ) : movementResults.length === 0 ? (
         <p className={styles.emptyNote} data-testid="ward-patient-search-no-movements">
-          No open movement fits the current search. The waiting referrals above have not been accepted anywhere yet.
+          No open movement matches.
         </p>
       ) : (
         <>

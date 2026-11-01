@@ -53,7 +53,6 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
     now,
     identityOf,
     demoUmrnOf,
-    team,
     setToastMessage,
     activeDrawer,
     setActiveDrawer,
@@ -295,9 +294,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                 </dl>
               </Card>
 
-              <p className={d.footnote}>
-                Catchment record view for clinical coordination. Not connected to any health record.
-              </p>
+              <p className={d.footnote}>Not connected to any health record.</p>
             </>
           ) : (
             <>
@@ -465,9 +462,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
         {isActivity && (
           <>
-            <p className={d.footnote}>
-              Illustrative interface content only. This is not a live activity stream for {team.name}.
-            </p>
+            <p className={d.footnote}>Illustrative examples only, not a live activity stream.</p>
             {/* No named patient here: an example event attached to a sample patient's name reads
                 as that person's record, and contradicted it (25 Sept 2026). */}
             <Card title="Example entries">
@@ -488,9 +483,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
         {isTasks && (
           <>
-            <p className={d.footnote}>
-              Illustrative interface content only. These are not recorded tasks for this catchment shift.
-            </p>
+            <p className={d.footnote}>Illustrative examples only, not recorded tasks.</p>
             <ul className={d.tasks}>
               {[
                 {

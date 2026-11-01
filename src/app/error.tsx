@@ -17,8 +17,8 @@ export default function ErrorBoundary({ error, retry }: { error: Error & { diges
         title={online ? "Part of this page did not load" : "You are offline"}
         description={
           online
-            ? "The connection dropped while the page was loading. Reload the page to finish loading it. Nothing was changed."
-            : "The connection dropped while the page was loading. This page will reload by itself when the connection returns. Nothing was changed."
+            ? "The connection dropped. Reload the page to finish loading it. Nothing was changed."
+            : "The connection dropped. This page reloads by itself when it returns. Nothing was changed."
         }
         logLabel="Page file failed to load (connection lost):"
         showReload
@@ -32,7 +32,7 @@ export default function ErrorBoundary({ error, retry }: { error: Error & { diges
       error={error}
       retry={retry}
       title="Something went wrong"
-      description="An unexpected error occurred in the application shell. You can try to reset the current view or refresh the browser."
+      description="An unexpected error occurred in the application shell. Try again, or reload the page."
       logLabel="Unhandled runtime error captured by boundary:"
       showReload
       minHeightClass="min-h-screen"

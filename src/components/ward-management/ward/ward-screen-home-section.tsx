@@ -476,7 +476,7 @@ export function WardScreenHomeSection({
                       {pendingPreparation} of the {capacity.available} ready {capacity.available === 1 ? "bed" : "beds"}{" "}
                       at {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
                     </strong>{" "}
-                    It is not offered until someone opens the bed and taps Ready.
+                    Not offered until marked Ready.
                   </span>
                 </div>
               ) : null}
@@ -485,10 +485,8 @@ export function WardScreenHomeSection({
                 <summary>What these bed figures mean</summary>
                 <p className={styles.bedNote}>
                   Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but not offered; pulled means
-                  allocated to a patient who has not arrived yet. Beds being made ready are counted inside Ready, and
-                  beds held for a patient on leave inside Occupied. Confirmed and expected count discharges due by the
-                  end of tomorrow; held up counts every open discharge with a blocker, on any day, as This shift and the
-                  Discharges tab do. They and leave are flow counts and are not added to that total.
+                  allocated to a patient who has not arrived yet. Ready includes beds being made ready; Occupied
+                  includes beds held for leave. Discharge and leave counts are not added to the total.
                 </p>
               </details>
             </div>

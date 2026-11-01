@@ -794,18 +794,11 @@ describe("the movement detail drawer", () => {
     ).toHaveTextContent(/invented/u);
   });
 
-  it("names the section the drawing has and this does not", () => {
+  // Owner, 1 Nov 2026: the "Watch and flag is not built" note was cut as excess explanation.
+  it("no longer explains the unbuilt Watch and flag section", () => {
     const dialog = openFirstDrawer();
-    expect(dialog).toHaveTextContent(/Watch and flag/u);
-    expect(
-      dialog,
-      "the unbuilt section is not declared, so its absence is indistinguishable from a drop",
-    ).toHaveTextContent(/not built/u);
-    expect(
-      dialog,
-      "the drawer names the unbuilt section without saying WHY, so a reader cannot tell a missing " +
-        "feature from a missing fact",
-    ).toHaveTextContent(/records that somebody is watching/u);
+    expect(dialog).not.toHaveTextContent(/Watch and flag/u);
+    expect(dialog).not.toHaveTextContent(/records that somebody is watching/u);
   });
 });
 
@@ -857,7 +850,7 @@ describe("the movement drawer's one action — the urgent flag", () => {
 
   it("flags an open movement, and the drawer then says the patient leads the queue", () => {
     const dialog = openDrawerFor(openUnflagged[0].id);
-    expect(dialog).toHaveTextContent(/Not flagged\. This patient is ordered by urgency tier/u);
+    expect(dialog).toHaveTextContent(/Not flagged\. Ordered by urgency tier/u);
 
     // Item 37 (2026-09-17): a reason must be chosen before the button does anything.
     fireEvent.change(within(dialog).getByTestId("ward-movement-drawer-urgent-reason"), {
@@ -869,7 +862,7 @@ describe("the movement drawer's one action — the urgent flag", () => {
       screen.getByRole("dialog"),
       "the button toggled but the drawer still reads as unflagged — the click changed the label and " +
         "not the record",
-    ).toHaveTextContent(/Flagged urgent\. This patient leads the queue ahead of every urgency tier/u);
+    ).toHaveTextContent(/Flagged urgent\. Leads the queue ahead of every urgency tier/u);
   });
 
   /**
@@ -897,7 +890,7 @@ describe("the movement drawer's one action — the urgent flag", () => {
       dialog,
       "the control is simply absent on a closed movement, so a coordinator cannot tell a refusal " +
         "from a screen that forgot the section",
-    ).toHaveTextContent(/no longer running, so it is not in the queue at all/u);
+    ).toHaveTextContent(/Closed, so not in the queue/u);
     expect(within(dialog).queryByRole("button", { name: /urgent/iu })).toBeNull();
   });
 });

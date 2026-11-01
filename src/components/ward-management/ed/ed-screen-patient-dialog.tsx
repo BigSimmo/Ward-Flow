@@ -281,7 +281,7 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
           </section>
         </div>
         <div className={styles.popFoot}>
-          <span>This record shows recorded clinical state. Table drafts are not saved.</span>
+          <span>Table drafts are not saved.</span>
         </div>
       </dialog>
     </aside>

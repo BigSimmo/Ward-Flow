@@ -117,7 +117,6 @@ export function BedMeetingSheetDialog({
           </ul>
         </section>
       </div>
-      <p className={styles.mutedXs}>The printed copy carries this preparation time.</p>
     </Dialog>
   );
 }

@@ -67,8 +67,8 @@ export function WardFlowErrorPanel({
   const shownDescription = !chunkFailure
     ? description
     : online
-      ? "The connection dropped while the page was loading. Reload the page to finish loading it. Nothing was changed."
-      : "The connection dropped while the page was loading. This page will reload by itself when the connection returns. Nothing was changed.";
+      ? "The connection dropped. Reload the page to finish loading it. Nothing was changed."
+      : "The connection dropped. This page reloads by itself when it returns. Nothing was changed.";
 
   useEffect(() => {
     // The whole error object, not `error.message`: the console entry is where the stack is
@@ -90,8 +90,7 @@ export function WardFlowErrorPanel({
         className="w-full max-w-2xl rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-subtle)] p-3 text-center text-xs text-[color:var(--text-muted)]"
         data-testid="ward-flow-error-synthetic-notice"
       >
-        This is a synthetic prototype. Nothing behind this message is a real patient, bed or service, and nothing was
-        changed by the failure.
+        This is a synthetic prototype. Nothing was changed by the failure.
       </p>
 
       <div className="w-full max-w-2xl rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-raised)] p-6 text-center shadow-[var(--shadow-elevated)]">
@@ -118,7 +117,7 @@ export function WardFlowErrorPanel({
         >
           {showDetail
             ? error.message || "The error carried no message."
-            : `The details are kept out of view so nothing from a record is shown here. ${
+            : `Details are hidden so nothing from a record shows here. ${
                 error.digest
                   ? "Quote the error reference below when you report this."
                   : "When you report this, say which screen you were on and the time."

@@ -36,7 +36,7 @@ describe("patient identity requires explicit compatible links", () => {
   });
   it("patient identity alone does not establish a community care plan", () => {
     const resolved = resolvePatientNowRecord(patients[0].id, patients, [], [], allUnits(), NOW_ANCHOR)!;
-    expect(resolved.record.community.followUp).toBe("Follow-up status is not recorded here.");
+    expect(resolved.record.community.followUp).toBe("Not recorded.");
     expect(resolved.record.documents).toEqual([]);
   });
 });

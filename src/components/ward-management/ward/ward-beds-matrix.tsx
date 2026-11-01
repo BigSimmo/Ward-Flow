@@ -650,7 +650,7 @@ export function WardBedsMatrix({
         </div>
 
         <p className={styles.positionCaption} data-testid="ward-beds-position-caption">
-          Bed numbers show position on this board; no bed number is recorded for anyone.
+          Bed numbers are board positions only.
         </p>
 
         {/* ─────────────────────────────────────────────────────────────

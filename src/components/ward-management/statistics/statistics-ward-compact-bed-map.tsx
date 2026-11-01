@@ -112,9 +112,7 @@ export function CompactBedMap({ map, wardName }: { map: BedMap; wardName: string
           ))}
         </ul>
         <p className={base.note}>
-          {countsOnly
-            ? "Grouped by state. Bed numbers are not recorded."
-            : "Grouped by state. Bed numbers are not recorded; hover a bed for its admission number, or see the admission roster."}
+          Grouped by state. Bed numbers are not recorded.
           {map.unplacedRecords > 0
             ? ` ${unplaced} recorded ${unplaced === 1 ? "admission is" : "admissions are"} not shown because the ward's bed count has no bed for ${unplaced === 1 ? "it" : "them"}.`
             : ""}

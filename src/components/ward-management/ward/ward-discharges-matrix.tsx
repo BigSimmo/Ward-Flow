@@ -104,7 +104,7 @@ export function WardDischargesMatrix({
           <div className={styles.streamHeading}>Planned today ({releasesCountedToday.length})</div>
           <p data-testid="ward-waiting-on-longest">{WAITING_ON_LONGEST}</p>
           {releasesCountedToday.length === 0 ? (
-            <p className={styles.placeholder}>No bed release is currently scheduled for today at {unit.name}.</p>
+            <p className={styles.placeholder}>None planned today.</p>
           ) : (
             releasesCountedToday.map((release) => (
               <div
@@ -163,7 +163,7 @@ export function WardDischargesMatrix({
         <div className={styles.dischargeStream}>
           <div className={styles.streamHeading}>Leave Monitoring ({unitLeaveBeds.length})</div>
           {unitLeaveBeds.length === 0 ? (
-            <p className={styles.placeholder}>No leave bed is recorded at {unit.name}.</p>
+            <p className={styles.placeholder}>Nobody on leave.</p>
           ) : (
             unitLeaveBeds.map((leaveBed) => (
               <div
@@ -182,10 +182,7 @@ export function WardDischargesMatrix({
                     </span>
                   </div>
                   <div className={styles.dischargeMetaRow}>
-                    <span>
-                      Recorded {formatInstantWithDay(leaveBed.confirmedAt, now)}. Shows nothing about the person on
-                      leave.
-                    </span>
+                    <span>Recorded {formatInstantWithDay(leaveBed.confirmedAt, now)}.</span>
                   </div>
                 </div>
                 <div>
@@ -213,7 +210,7 @@ export function WardDischargesMatrix({
         <div className={styles.dischargeStream}>
           <div className={styles.streamHeading}>Active Discharge Barriers ({blockedReleases.length})</div>
           {blockedReleases.length === 0 ? (
-            <p className={styles.placeholder}>No discharge blocker is currently recorded at {unit.name}.</p>
+            <p className={styles.placeholder}>No barriers recorded.</p>
           ) : (
             blockedReleases.map((release) => (
               <div

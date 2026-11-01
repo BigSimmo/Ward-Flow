@@ -233,7 +233,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 {cannotResolve ? (
                   <>
                     A bed carries no link back to the referral that named this team, so this list cannot be built for{" "}
-                    {team.name}. Its emptiness is a gap in the record rather than an answer about the team.
+                    {team.name}.
                   </>
                 ) : (
                   <>
@@ -308,7 +308,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                 ) : cannotResolve ? (
                   <>
                     A bed carries no link back to the referral that named this team, so this list cannot be built for{" "}
-                    {team.name}. Its emptiness is a gap in the record rather than an answer about the team.
+                    {team.name}.
                   </>
                 ) : (
                   <>No admission referred to this team is recorded as discharged to the community.</>

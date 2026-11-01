@@ -744,9 +744,7 @@ export function Registers({
         >
           {closedToday.length === 0 ? (
             <p className={styles.empty}>
-              {service === null
-                ? "Nobody who was on this screen this morning has left it yet."
-                : `Nobody who was on this screen this morning has left it yet, in ${service}.`}
+              {service === null ? "Nobody resolved yet today." : `Nobody resolved yet today in ${service}.`}
             </p>
           ) : (
             <>

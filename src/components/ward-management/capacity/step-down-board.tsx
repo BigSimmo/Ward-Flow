@@ -87,8 +87,8 @@ export function StepDownBoard({ now, titleSlot }: { now: Instant; titleSlot?: Re
                     // chosen reason goes with the refer for the audit trail.
                     <label className={styles.capReason} data-testid="step-down-cap-reason">
                       <span>
-                        {row.transferMovement.referredUnitIds.length} wards are already asked, the usual limit is{" "}
-                        {configuration.parallelReferralCap}. You can still ask another. Why ask another?
+                        {row.transferMovement.referredUnitIds.length} wards asked, usual limit{" "}
+                        {configuration.parallelReferralCap}. Why ask another?
                       </span>
                       <select
                         value={capReasons[row.admission.id] ?? ""}
@@ -212,8 +212,8 @@ export function StepDownBoard({ now, titleSlot }: { now: Instant; titleSlot?: Re
                       ) : (
                         <p className={styles.meta} data-testid="step-down-swap-waiting">
                           {row.fromUnitHasFreeBed
-                            ? `No incoming referral can be offered for ${row.fromUnit.name} here now.`
-                            : `Incoming referrals show here once a bed on ${row.fromUnit.name} is actually free.`}
+                            ? `No incoming referral fits ${row.fromUnit.name} now.`
+                            : `No bed free on ${row.fromUnit.name} yet.`}
                         </p>
                       )}
                       {row.placementReview.length > 0 ? (

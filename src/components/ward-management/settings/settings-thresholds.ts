@@ -81,25 +81,23 @@ export function publishedThresholds(
         accessTarget === ED_ACCESS_TARGET_MINUTES
           ? `${accessTarget} minutes (${splitDuration(accessTarget)}) in an emergency department, counted from arrival.`
           : `${accessTarget} minutes (${splitDuration(accessTarget)}) in an emergency department, counted from arrival. ` +
-            `The product owner's own figure is ${ED_ACCESS_TARGET_MINUTES} minutes (${splitDuration(ED_ACCESS_TARGET_MINUTES)}); a coordinator has since configured the target on this screen away from it.`,
-      triggers:
-        "The departmental access target line on the Emergency department screen, read against how long the patient has been there.",
+            `Default ${ED_ACCESS_TARGET_MINUTES} minutes (${splitDuration(ED_ACCESS_TARGET_MINUTES)}).`,
+      triggers: "The access target line on the Emergency department screen.",
       livesIn:
         "Coordinator-configured on this screen; defaults to the named constant ED_ACCESS_TARGET_MINUTES in ward-model.ts.",
       setBy:
-        "The product owner, 22 August 2026, replacing an earlier four-hour figure from the spec, in answer to a direct clinical question. A departmental performance measure only, never a Mental Health Act deadline. A coordinator may move it within a bounded range on this screen; every change is recorded.",
+        "The product owner, 22 August 2026. A departmental performance measure only, never a Mental Health Act deadline. A coordinator may change it in Rules; every change is recorded.",
       state: stateFor(pastAccessTarget),
       reached: pastAccessTarget,
     },
     {
       id: "legal-form-deadline",
-      figure:
-        "A legal form's own due time, once it has passed. There is no single number here — each form carries its own deadline.",
+      figure: "A legal form's own due time, once it has passed. Each form carries its own deadline.",
       triggers: "The amber tint on a department's pressure card on Command, and the same card's overdue-form count.",
       livesIn:
         "ward-pressure.ts, which counts movements whose currentLegalDueAt has passed (the legalForm.dueAt still in force; an ended form's expiry is history only); the tint is in coordinator.module.css.",
       setBy:
-        "The product owner, 17 September 2026 (owner answer 1): the clinician types the expiry written on whichever legal form they are holding, and this figure tints once that typed expiry is close or passed. Nothing here computes a deadline for any form — a form with no typed expiry simply never reaches this row.",
+        "The product owner, 17 September 2026: the clinician types the expiry written on the legal form. A form with no typed expiry never reaches this row.",
       state: stateFor(breachedForms),
       reached: breachedForms,
     },

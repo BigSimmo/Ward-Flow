@@ -141,7 +141,7 @@ export function fixedQuestionAnswers(input: FixedQuestionInput): FixedAnswer[] {
         `Bed pulled at ${unitName(units, movement.acceptedUnitId)}. Pull time limit ${formatInstantWithDay(
           movement.pullExpiresAt!,
           now,
-        )}. Still pulled until a person releases it.`,
+        )}.`,
       ),
     );
 
@@ -161,33 +161,31 @@ export function fixedQuestionAnswers(input: FixedQuestionInput): FixedAnswer[] {
     {
       id: "accepted_need_transport",
       question: "Which accepted referrals still need transport?",
-      basis: "Accepted and not yet moving, with no transport booked and transport not recorded as not needed.",
+      basis: "Accepted, not yet moving, with no transport booked or marked not needed.",
       rows: needTransport,
     },
     {
       id: "dependencies_no_owner",
       question: "Which discharge dependencies have no owner?",
-      basis:
-        "Ward Flow records who flagged a discharge block, not who owns clearing it. So every blocked discharge is listed.",
+      basis: "Owners are not recorded, so every blocked discharge is listed.",
       rows: noOwner,
     },
     {
       id: "requests_no_ward_asked",
       question: "Which requests have no ward asked?",
-      basis: "Open bed requests with no ward asked and none accepted.",
+      basis: "Open requests, none accepted.",
       rows: noWardAsked,
     },
     {
       id: "pulls_past_limit",
       question: "Which pulled beds are past their pull time limit?",
-      basis: "Beds still pulled after their recorded pull time limit. Shown only; nothing is released.",
+      basis: "Shown only. Nothing is released.",
       rows: pastLimit,
     },
     {
       id: "transfers_no_escort",
       question: "Which transfers have no recorded escort?",
-      basis:
-        "The escort answer is recorded when transport is booked. Listed: agreed transfers with no transport booked.",
+      basis: "Agreed transfers with no transport booked, so no escort answer yet.",
       rows: noEscort,
     },
   ];

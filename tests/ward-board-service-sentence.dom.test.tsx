@@ -48,7 +48,7 @@ describe("the bed board states how the chosen service relates to it (item 44, ta
     renderWardBoard(UNIT_ID);
 
     expect(screen.getByTestId("ward-board-service-sentence")).toHaveTextContent(
-      `The Service selector is set to ${OWN_SERVICE}, which is this ward's own service.`,
+      `${OWN_SERVICE} is this ward's own service.`,
     );
   });
 
@@ -57,7 +57,7 @@ describe("the bed board states how the chosen service relates to it (item 44, ta
     renderWardBoard(UNIT_ID);
 
     expect(screen.getByTestId("ward-board-service-sentence")).toHaveTextContent(
-      `The Service selector is set to ${OTHER_SERVICE}. This ward is in ${OWN_SERVICE}. The board always shows this one ward.`,
+      `This ward is in ${OWN_SERVICE}, not ${OTHER_SERVICE}.`,
     );
   });
 

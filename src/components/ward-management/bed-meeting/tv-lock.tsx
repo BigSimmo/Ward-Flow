@@ -101,7 +101,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         open={asking}
         onClose={close}
         title="Unlock this TV"
-        description="This screen is locked to TV views. Unlocking lets it leave the TV view again."
+        description="Unlocking lets this screen leave the TV view."
         size="sm"
         className={styles.unlock}
         data-testid="tv-unlock-dialog"
@@ -118,7 +118,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         secondary={[{ label: "Cancel", onAction: close }]}
       >
         {offline ? (
-          <p>The password cannot be checked without a connection. Unlock when the connection is back.</p>
+          <p>The password needs a connection to check.</p>
         ) : needsPassword ? (
           <Field label="Password" error={error ?? undefined}>
             <TextInput
@@ -130,9 +130,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
             />
           </Field>
         ) : (
-          <p>
-            In the shared workspace this asks for your password. This demonstration has none, so unlock to carry on.
-          </p>
+          <p>No password in this demonstration.</p>
         )}
       </Dialog>
     </>

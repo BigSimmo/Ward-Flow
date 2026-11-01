@@ -70,8 +70,8 @@ const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent fi
  * allowed to record. There is no Call ward desk: the model holds no ward desk number.
  *
  * The record sections below keep the five the drawing ships (Person, Journey, Which wards were
- * asked, Escalation, Transport leg). *Watch and flag* is still not built and is named in the foot,
- * because nothing records that somebody is watching a movement.
+ * asked, Escalation, Transport leg). *Watch and flag* is not built (owner, 1 Nov 2026: the foot
+ * no longer explains that; it keeps only the one-line synthetic-data notice).
  */
 
 /**
@@ -113,14 +113,14 @@ const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent fi
 export function personLine(movement: Movement, referrals: Referral[], patients: readonly Patient[]): string {
   const referral = referralForMovement(movement, referrals);
   if (referral === undefined) {
-    return "No referral is recorded against this movement, so there is no person to name.";
+    return "No referral recorded.";
   }
   if (referral.patientId === undefined) {
-    return "The referral that raised this movement names no person, so nobody can be identified from it.";
+    return "The referral names no person.";
   }
   const patient = patients.find((candidate) => candidate.id === referral.patientId);
   if (patient === undefined) {
-    return "The referral names a person this system holds no record of. UMRN not recorded.";
+    return "Person not held in this system.";
   }
   return patient.umrn ? `${patientDisplayName(patient)} · UMRN: ${patient.umrn}` : patientDisplayName(patient);
 }
@@ -561,11 +561,11 @@ export function MovementDrawer({
             <span>
               {movement.flaggedUrgent
                 ? open
-                  ? "Flagged urgent. This patient leads the queue ahead of every urgency tier, including tier 1."
-                  : "Flagged urgent. This movement is no longer in the queue, so the flag orders nothing now. Removing it changes only the record."
+                  ? "Flagged urgent. Leads the queue ahead of every urgency tier."
+                  : "Flagged urgent. Closed, so the flag orders nothing."
                 : open
-                  ? "Not flagged. This patient is ordered by urgency tier and waiting time, like everybody else."
-                  : "Not flagged, and this movement is no longer running, so it is not in the queue at all. Flagging it would change nothing."}
+                  ? "Not flagged. Ordered by urgency tier and wait."
+                  : "Not flagged. Closed, so not in the queue."}
             </span>
           </p>
           {movement.flaggedUrgent ? (
@@ -650,9 +650,7 @@ export function MovementDrawer({
 
         <Section title="Journey">
           {movement.stageChanges.length === 0 ? (
-            <p className={d.muted}>
-              No stage change has been recorded, so this movement has not moved since it opened.
-            </p>
+            <p className={d.muted}>No stage changes yet.</p>
           ) : (
             <ul className={d.list}>
               {[...movement.stageChanges].reverse().map((change) => (
@@ -707,7 +705,7 @@ export function MovementDrawer({
 
         <Section title="Escalation">
           {movement.escalation === undefined ? (
-            <p className={d.muted}>Nothing has been escalated on this movement. That is a record, not a gap.</p>
+            <p className={d.muted}>Not escalated.</p>
           ) : (
             <p className={d.text}>
               Escalated to {movement.escalation.contact} on {formatInstantWithDay(movement.escalation.at, now)}, after{" "}
@@ -719,7 +717,7 @@ export function MovementDrawer({
 
         <Section title="Transport leg">
           {leg === undefined ? (
-            <p className={d.muted}>No transport leg has been booked, so there is nothing to say about a vehicle.</p>
+            <p className={d.muted}>No transport booked.</p>
           ) : (
             <p className={d.text}>
               {leg.provider}
@@ -733,11 +731,7 @@ export function MovementDrawer({
           )}
         </Section>
 
-        <p className={d.foot}>
-          <strong>Watch and flag is not built.</strong> Nothing in this system records that somebody is watching a
-          movement, so there is no state for it to show. Every person in this prototype is invented. Nobody named here
-          is a real patient.
-        </p>
+        <p className={d.foot}>Every patient here is invented.</p>
       </div>
     </Sheet>
   );

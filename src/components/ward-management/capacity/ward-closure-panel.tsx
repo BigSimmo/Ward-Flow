@@ -182,10 +182,6 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
             ))}
           </Select>
         </Field>
-        <p className={styles.note}>
-          The ward stops being offered for new patients. Beds already pulled here, and patients already accepted here,
-          stay until someone moves them.
-        </p>
         <Button
           size="sm"
           variant="sec"
@@ -271,7 +267,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
       {closure?.until !== undefined ? (
         <p className={due ? styles.due : styles.line} role={due ? "status" : undefined}>
           {due
-            ? `Was expected to reopen ${formatInstantWithDay(closure.until, now)}. Reopen it when the ward is ready.`
+            ? `Was expected to reopen ${formatInstantWithDay(closure.until, now)}.`
             : `Expected to reopen ${formatInstantWithDay(closure.until, now)}.`}
         </p>
       ) : null}

@@ -97,8 +97,7 @@ export function communityAttentionItems(view: CommunityScreenView) {
       <>
         <strong>{identityOf(admission)}</strong> was admitted{" "}
         {elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt))} after this team accepted them — the shortest gap
-        of the {admittedWhileAlreadyWithTeam.length} admitted while already with this team, and the one worth checking
-        first.
+        of the {admittedWhileAlreadyWithTeam.length} admitted while already with this team.
       </>,
     );
   }
@@ -276,10 +275,7 @@ export function communityHowToReachPanel(view: CommunityScreenView) {
             </div>
             <div className={v6.sideBody} role="region" aria-label="How to reach this team details">
               {contact === null ? (
-                <p className={v6.sideNote}>
-                  Nobody has yet recorded which real service this name refers to, so no contact detail is shown. That is
-                  not a statement that this team has no phone number.
-                </p>
+                <p className={v6.sideNote}>No contact detail is recorded for this name.</p>
               ) : (
                 <>
                   <dl className={v6.keyValues} data-testid="ward-community-contact-detail">
@@ -333,7 +329,7 @@ export function communityHowToReachPanel(view: CommunityScreenView) {
 
 /** The illustrative roster, rooms and vehicles. Sample content, never a record. */
 export function communityOnDutyPanel(view: CommunityScreenView) {
-  const { team, isDemoMode, teamConfig } = view;
+  const { isDemoMode, teamConfig } = view;
   const onDutyPanel = isDemoMode ? (
     <>
       <div className={styles.cardPanel}>
@@ -461,8 +457,7 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
         </span>
       </div>
       <p className={v6.sampleNote} role="note">
-        Illustrative staffing and logistics only. These are not roster, huddle, room or vehicle records for
-        {` ${team.name}`}.
+        Illustrative staffing and logistics only.
       </p>
       <ul className={v6.roster} aria-label="Sample roster, illustrative">
         {SAMPLE_ROSTER.map((member) => (

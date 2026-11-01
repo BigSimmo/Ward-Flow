@@ -21,7 +21,7 @@ const percent = (inUse: number, beds: number) => (beds > 0 ? `${((inUse / beds) 
  * bed manager opens only its own site's wards.
  */
 export function OtherSitesCounts({ model, focusUnitId }: { model: CapacityModel; focusUnitId?: string }) {
-  const { otherSiteGroups, site } = model;
+  const { otherSiteGroups } = model;
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set());
   const groups = otherSiteGroups.filter((group) => group.wards.length > 0);
   // A ward chosen from Ready beds by road time opens its service once; the reader can fold it again.
@@ -115,9 +115,7 @@ export function OtherSitesCounts({ model, focusUnitId }: { model: CapacityModel;
           );
         })}
       </ul>
-      <p className={styles.foot}>
-        Your desk opens the wards at {site?.name ?? "your site"} only. Other sites show beds, never the people in them.
-      </p>
+      <p className={styles.foot}>Other sites show beds, never the people in them.</p>
     </Card>
   );
 }

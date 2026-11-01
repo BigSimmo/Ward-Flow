@@ -64,11 +64,7 @@ export function ReferralsCard({
               </dt>
             </div>
           </dl>
-          <SrOnly>
-            Asking now counts referrals waiting on this ward right now. Acceptances still standing includes arrivals,
-            but excludes withdrawn acceptances. Ever declined counts recorded declines. One movement can appear in both
-            accepted and declined counts, so the three do not add up.
-          </SrOnly>
+          <SrOnly>One movement can be both accepted and declined, so the three do not add up.</SrOnly>
         </section>
         {statistics.averageEmptyBedMinutes !== null || positive(statistics.emptyBedIncoherentCount) ? (
           <div data-testid="ward-statistics-ward-admissions-discharges">
@@ -79,10 +75,7 @@ export function ReferralsCard({
                 {statistics.averageEmptyBedMinutes === null ? (
                   <span className={styles.tileValue}>
                     <span aria-hidden="true">none</span>
-                    <SrOnly>
-                      No bed on this ward has a usable pair of instants, a bed given away and a person arriving, with
-                      the arrival not earlier than the pull, so there is no empty stretch to average.
-                    </SrOnly>
+                    <SrOnly>No bed has a pull and a later arrival to average.</SrOnly>
                   </span>
                 ) : (
                   <span className={styles.tileValue}>{splitDuration(statistics.averageEmptyBedMinutes)}</span>

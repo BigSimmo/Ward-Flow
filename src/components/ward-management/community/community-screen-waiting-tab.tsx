@@ -541,7 +541,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
           <div className={styles.panelBody} role="region" aria-label="Worth attention details" tabIndex={0}>
             {attentionItems.length === 0 ? (
               <p className={styles.emptyNote} data-testid="ward-community-attention-empty">
-                Nothing on this page currently stands out beyond what the lists above already show.
+                Nothing stands out.
               </p>
             ) : (
               <ul className={styles.attentionList} data-testid="ward-community-attention-list">

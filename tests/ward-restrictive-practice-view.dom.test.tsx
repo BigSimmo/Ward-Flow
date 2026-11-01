@@ -45,7 +45,7 @@ function heroFigure(label: string): string {
 }
 
 const SCOPE_NOTE =
-  "Operational view only. Times are shown as they were typed, and nothing here works out an order length, a review or any legal limit. The legal register stays in the health service's own system.";
+  "Operational view only. Times as typed; no order length, review or legal limit is worked out. The legal register stays in the health service's own system.";
 
 describe("seclusion, restraint and incidents view", () => {
   it("says it is operational only, word for word, and computes no legal limit", () => {

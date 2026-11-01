@@ -31,10 +31,9 @@ import { allUnits } from "@/components/ward-management/ward-sites";
  * attribute spellings — and reported a PROPERTY.**
  *
  * ✅ **`<ol>` IS NOT WRONG EVERYWHERE ON THIS SCREEN, AND THIS FILE DOES NOT SAY IT IS.** Two of the
- * board's other lists are ordered and say so in visible prose — *"Expected within N days, soonest
- * first"* and *"Every occupant of this ward, soonest expected out first; anyone with no date set is
- * last"*. **Those are exemplary and are deliberately left alone.** The property below is about the
- * bed grid only.
+ * board's other lists are ordered and say so in visible prose — *"Within N days, soonest
+ * first"* and *"Soonest expected out first; no date set last"*. **Those are exemplary and are
+ * deliberately left alone.** The property below is about the bed grid only.
  *
  * ⚠️ **POPULATION.** Several seeded wards in jsdom at one viewport. jsdom does not speak, so nothing
  * here proves what a screen reader announces — it proves only that the markup has stopped asserting
