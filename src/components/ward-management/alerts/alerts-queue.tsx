@@ -218,7 +218,7 @@ export function AlertRow({
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its Open button is the keyboard route
     <li
-      className={homeStyles.hrow}
+      className={`${homeStyles.hrow} ${styles.queueRow}`}
       {...rowData(entry, handlers)}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest("a, button")) return;

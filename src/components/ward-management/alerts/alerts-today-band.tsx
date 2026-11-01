@@ -39,7 +39,8 @@ function stackRows(marks: BandMark[]): (BandMark & { row: number })[] {
     .sort((a, b) => a.at - b.at)
     .map((mark) => {
       let row = lastIn.findIndex((at) => mark.at - at >= MIN_GAP);
-      if (row < 0) row = lastIn.indexOf(Math.min(...lastIn));
+      // Every row is taken near this minute: open another row rather than draw over a mark.
+      if (row < 0) row = lastIn.push(-Infinity) - 1;
       lastIn[row] = mark.at;
       return { ...mark, row };
     });
@@ -93,6 +94,7 @@ export function TodayBand({
       broadcast: true,
     })),
   ]);
+  const extraRows = Math.max(0, ...marks.map((mark) => mark.row + 1)) - ROWS;
   const anyBroadcast = broadcasts.length > 0;
   return (
     <section className={styles.band} aria-label="Today">
@@ -116,7 +118,12 @@ export function TodayBand({
           ) : null}
         </span>
       </div>
-      <div className={styles.track} role="group" aria-label="Alerts raised and acted on today">
+      <div
+        className={styles.track}
+        role="group"
+        aria-label="Alerts raised and acted on today"
+        style={extraRows > 0 ? { height: `${74 + extraRows * ROW_HEIGHT}px` } : undefined}
+      >
         <span className={styles.future} style={{ left: pct(now) }} />
         {hours.slice(1, -1).map((hour) => (
           <span key={hour} className={styles.hour} style={{ left: pct(hour) }} />
