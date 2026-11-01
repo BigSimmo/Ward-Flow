@@ -159,36 +159,38 @@ export function TeamClinicians({ find = "" }: { find?: string }) {
               </tr>
             </thead>
             <tbody>
-              {STAFF.filter((s) => shows(filter, s.today) && (!needle || s.name.toLowerCase().includes(needle))).map((s) => {
-                const [tone, label] = TODAY[s.today] ?? ["neutral", s.today];
-                return (
-                  <tr key={s.id}>
-                    <td>
-                      <span className={`${t.cm} ${t.cmLg}`}>
-                        <span className={t.av}>{s.ini}</span>
-                        <span className={t.name}>{s.name}</span>
-                      </span>
-                    </td>
-                    <td>
-                      <span>{s.role}</span>
-                      {s.note ? <span className={t.sub}>{s.note}</span> : null}
-                    </td>
-                    <td>
-                      <Tag tone={tone}>{label}</Tag>
-                      <span className={t.sub}>{s.where}</span>
-                    </td>
-                    <td>
-                      <LoadCell s={s} />
-                    </td>
-                    <td className={t.mono}>{s.ext}</td>
-                    <td className={t.actCell}>
-                      <Button size="sm" icon={Phone}>
-                        Call<SrOnly> {s.name}</SrOnly>
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {STAFF.filter((s) => shows(filter, s.today) && (!needle || s.name.toLowerCase().includes(needle))).map(
+                (s) => {
+                  const [tone, label] = TODAY[s.today] ?? ["neutral", s.today];
+                  return (
+                    <tr key={s.id}>
+                      <td>
+                        <span className={`${t.cm} ${t.cmLg}`}>
+                          <span className={t.av}>{s.ini}</span>
+                          <span className={t.name}>{s.name}</span>
+                        </span>
+                      </td>
+                      <td>
+                        <span>{s.role}</span>
+                        {s.note ? <span className={t.sub}>{s.note}</span> : null}
+                      </td>
+                      <td>
+                        <Tag tone={tone}>{label}</Tag>
+                        <span className={t.sub}>{s.where}</span>
+                      </td>
+                      <td>
+                        <LoadCell s={s} />
+                      </td>
+                      <td className={t.mono}>{s.ext}</td>
+                      <td className={t.actCell}>
+                        <Button size="sm" icon={Phone}>
+                          Call<SrOnly> {s.name}</SrOnly>
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                },
+              )}
             </tbody>
           </table>
         </div>
