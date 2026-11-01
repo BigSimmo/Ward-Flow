@@ -28,4 +28,25 @@ describe("Alerts side panel", () => {
     }
     expect(checked).toBeGreaterThan(0);
   });
+
+  it("moves between Act and Activity with the arrow keys, one tab stop at a time", () => {
+    const { container } = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AlertsScreen />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(within(container.querySelector<HTMLElement>("li[data-alert-id]")!).getByTestId("ward-alerts-open"));
+    const panel = screen.getByRole("complementary", { name: "Selected alert" });
+    const act = within(panel).getByRole("tab", { name: "Act" });
+    const activity = within(panel).getByRole("tab", { name: /^Activity/u });
+    expect(act).toHaveAttribute("tabindex", "0");
+    expect(activity).toHaveAttribute("tabindex", "-1");
+    fireEvent.keyDown(act, { key: "ArrowRight" });
+    expect(activity).toHaveAttribute("aria-selected", "true");
+    expect(activity).toHaveFocus();
+    expect(within(panel).getByRole("tabpanel")).toHaveAttribute("aria-labelledby", activity.id);
+    fireEvent.keyDown(activity, { key: "Home" });
+    expect(act).toHaveAttribute("aria-selected", "true");
+    expect(act).toHaveFocus();
+  });
 });

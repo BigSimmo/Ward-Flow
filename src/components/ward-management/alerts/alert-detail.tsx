@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type Ref } from "react";
+import { useId, useRef, useState, type KeyboardEvent, type Ref } from "react";
 import { DECLINE_REASON_NOT_SHARED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronRight, UserRound } from "lucide-react";
@@ -59,10 +59,9 @@ export type AlertDetailHandlers = {
   onEscalate?: (item: InboxItem) => void;
 };
 
-/**
- * The selected alert: who, what, a picture of its recorded times, the facts behind it and every
- * action this screen can take on it. The right-hand panel on desktop and the sheet on a phone.
- */
+const PANEL_TABS = ["act", "activity"] as const;
+type PanelTab = (typeof PANEL_TABS)[number];
+
 /** "Cadwaller, Rhys" reads "RC": given name first, as people say it. Initials-only bookings keep theirs. */
 function initialsOf(displayName: string): string {
   const initials = /^Initials\s+([A-Z]{1,3})$/u.exec(displayName)?.[1];
@@ -71,6 +70,10 @@ function initialsOf(displayName: string): string {
   return `${given.charAt(0)}${surname.charAt(0)}`.toUpperCase() || "?";
 }
 
+/**
+ * The selected alert: who, what, a picture of its recorded times, the facts behind it and every
+ * action this screen can take on it. The right-hand panel on desktop and the sheet on a phone.
+ */
 export function AlertDetail({
   item,
   movement,
@@ -107,7 +110,26 @@ export function AlertDetail({
 }) {
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
   const [activityOpen, setActivityOpen] = useState(false);
-  const [panelTab, setPanelTab] = useState<"act" | "activity">("act");
+  const [panelTab, setPanelTab] = useState<PanelTab>("act");
+  const panelIds = useId();
+  const tabRefs = useRef<Partial<Record<PanelTab, HTMLButtonElement | null>>>({});
+  const onPanelTabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const at = PANEL_TABS.indexOf(panelTab);
+    const next =
+      event.key === "ArrowRight" || event.key === "ArrowDown"
+        ? PANEL_TABS[(at + 1) % PANEL_TABS.length]
+        : event.key === "ArrowLeft" || event.key === "ArrowUp"
+          ? PANEL_TABS[(at - 1 + PANEL_TABS.length) % PANEL_TABS.length]
+          : event.key === "Home"
+            ? PANEL_TABS[0]
+            : event.key === "End"
+              ? PANEL_TABS[PANEL_TABS.length - 1]
+              : undefined;
+    if (next === undefined) return;
+    event.preventDefault();
+    setPanelTab(next);
+    tabRefs.current[next]?.focus();
+  };
   // Whether Escalate means anything for THIS alert comes first: a movement's escalation record belongs
   // to its bed search, so an unrelated alert on the same movement must not claim it was escalated.
   const escalationApplies = escalationAppliesTo(item, movement, units, now);
@@ -655,26 +677,34 @@ export function AlertDetail({
 
       {/* Alerts redesign: Act and Activity tabs, then the action bar pinned to the bottom. */}
       <div className={rd.tabs} role="tablist" aria-label="Alert">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={panelTab === "act"}
-          className={rd.tab}
-          onClick={() => setPanelTab("act")}
-        >
-          Act
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={panelTab === "activity"}
-          className={rd.tab}
-          onClick={() => setPanelTab("activity")}
-        >
-          Activity{activity.length > 0 ? <span className={rd.tabCount}>{activity.length}</span> : null}
-        </button>
+        {PANEL_TABS.map((tabId) => (
+          <button
+            key={tabId}
+            ref={(node) => {
+              tabRefs.current[tabId] = node;
+            }}
+            type="button"
+            role="tab"
+            id={`${panelIds}-tab-${tabId}`}
+            aria-controls={`${panelIds}-panel`}
+            aria-selected={panelTab === tabId}
+            // One tab stop; the arrow keys, Home and End move between Act and Activity.
+            tabIndex={panelTab === tabId ? 0 : -1}
+            className={rd.tab}
+            onClick={() => setPanelTab(tabId)}
+            onKeyDown={onPanelTabKey}
+          >
+            {tabId === "act" ? "Act" : "Activity"}
+            {tabId === "activity" && activity.length > 0 ? (
+              <>
+                {" "}
+                <span className={rd.tabCount}>{activity.length}</span>
+              </>
+            ) : null}
+          </button>
+        ))}
       </div>
-      <div className={rd.body} role="tabpanel" aria-label={panelTab === "act" ? "Act" : "Activity"}>
+      <div className={rd.body} role="tabpanel" id={`${panelIds}-panel`} aria-labelledby={`${panelIds}-tab-${panelTab}`}>
         {panelTab === "activity" ? (
           activity.length > 0 ? (
             <ul className={rd.activity}>
