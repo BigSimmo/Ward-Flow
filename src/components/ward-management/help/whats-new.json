@@ -5,11 +5,6 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-31-transport-cancel-names",
-    "date": "2026-10-31",
-    "line": "Cancelling community transport now names the patient, and the desk guides match what each desk can open."
-  },
-  {
     "id": "2026-10-31-legal-times-as-typed",
     "date": "2026-10-31",
     "line": "Legal form times now show only as typed, such as \"Ends 15:42 as typed\", never as a countdown."
