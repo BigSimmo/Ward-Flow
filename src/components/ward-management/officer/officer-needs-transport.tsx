@@ -28,7 +28,10 @@ import type { Referral } from "@/components/ward-management/ward-model";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
+import { crewLimitFor } from "./officer-crew-only";
 import { useOfficerPanelHeight } from "./officer-job-panel";
+
+export { crewLimitFor };
 import styles from "./officer.module.css";
 
 /** The desks that log a booking here (Transport mock-up, Josh, 1 Nov 2026). */
@@ -86,7 +89,15 @@ export function useNeedsTransport(movements: readonly Movement[], access: WardAc
     }
   }
   const needing = movementsNeedingTransport(movements).filter((movement) => acting.has(movement.id));
-  return { needing, acting, raise };
+  const crewLimit = crewLimitFor(access);
+  // A desk raises the crew's steps as itself, so the reducer refuses them even if a control slips.
+  const crewRaise = useWardRaise(crewLimit && bookingRole ? bookingRole : "officer");
+  return { needing, acting, raise, crewLimit, crewRaise };
+}
+
+/** The crew's next step with the desk's limit laid over any reason of its own. */
+export function withCrewLimit<T extends { blocked?: string }>(step: T | undefined, limit: string | undefined) {
+  return step && limit ? { ...step, blocked: limit } : step;
 }
 
 /** The hero's Need transport count jumps to the list and its first Log booking button. */

@@ -46,7 +46,6 @@ import { dayOf, formatInstantWithDay, formatSheetMoment, type Instant } from "@/
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { TRANSPORT_PROVIDERS, type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { movementOriginLabel, originSiteCode } from "@/components/ward-management/ward-movement-origin";
@@ -97,6 +96,7 @@ import {
   OfficerBookingPanel,
   scrollToNeedsTransport,
   useNeedsTransport,
+  withCrewLimit,
 } from "./officer-needs-transport";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
@@ -166,11 +166,9 @@ export function OfficerScreen() {
     return movement ? officerListPatientName(movement) : "Not recorded";
   };
   const now = useWardFlowClock();
-  const raise = useWardRaise("officer");
 
   const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
-  // #236 (Josh, 27 Oct 2026): jobs whose crew tapped "Identity checked with the sending team". Sent
-  // with the Collected step; never a gate on it.
+  // #236 (Josh, 27 Oct): jobs whose crew tapped "Identity checked with the sending team". Sent with Collected; no gate.
   const [identityCheckedIds, setIdentityCheckedIds] = useState<ReadonlySet<string>>(() => new Set());
   const identityFor = (movement: Movement) => {
     const info = resolveSubjectPatient(movement, { patients, referrals, movements });
@@ -289,12 +287,12 @@ export function OfficerScreen() {
   // The panel opens only when a patient is chosen (Josh, 9 Oct 2026); until then the table is full width.
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const selectedJob = selectedId === undefined ? undefined : jobs.find((job) => job.id === selectedId);
-  // ROLE BRANCH (officer): the transport officer's own desk (as-officer-home, Josh 31 Oct 2026). A
-  // long list opens on its first rows, then "Show all"; a highlight, a search or a chosen job past
-  // the cut shows every row, so nothing lit is ever hidden.
+  // ROLE BRANCH (officer): the officer's own desk (as-officer-home, Josh 31 Oct 2026). A long list opens on
+  // its first rows, then "Show all"; a highlight, search or chosen job past the cut shows every row.
   const access = useEffectiveWardAccess();
   const officerDesk = access.role === "officer";
   const booking = useNeedsTransport(movements, access, { admissions, referrals });
+  const raise = booking.crewRaise;
   const needing = booking.needing;
   const [showAllJobs, setShowAllJobs] = useState(false);
   const activeProviders = TRANSPORT_PROVIDERS.filter((provider) =>
@@ -516,7 +514,8 @@ export function OfficerScreen() {
     );
 
   /** The one action a job is waiting on, why it cannot be taken yet, and how to take it. */
-  const nextStep = (movement: Movement) => {
+  const nextStep = (movement: Movement) => withCrewLimit(officerStep(movement), booking.crewLimit);
+  const officerStep = (movement: Movement) => {
     const transport = movement.transport;
     const leg = transport ? officerLeg(transport) : undefined;
     if (!leg) return undefined;
@@ -654,7 +653,8 @@ export function OfficerScreen() {
         >
           Inspect form
         </Button>
-        {!job.closure &&
+        {!booking.crewLimit &&
+        !job.closure &&
         job.transport.collectedAt !== undefined &&
         job.transport.arrivedAt === undefined &&
         job.transport.diversion === undefined ? (
