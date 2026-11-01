@@ -5,66 +5,6 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-28-finder-surname-first",
-    "date": "2026-10-28",
-    "line": "Patient search movement rows now show surname first."
-  },
-  {
-    "id": "2026-10-28-uncertain-save-dismiss",
-    "date": "2026-10-28",
-    "line": "You can now dismiss the note about an uncertain save once you have read it."
-  },
-  {
-    "id": "2026-10-28-add-patient-by-desk",
-    "date": "2026-10-28",
-    "line": "Add patient now shows only on desks that are allowed to add a patient."
-  },
-  {
-    "id": "2026-10-28-ward-close-conflict",
-    "date": "2026-10-28",
-    "line": "If two people close the same ward, the second now sees who closed it first and can try again."
-  },
-  {
-    "id": "2026-10-28-coordinator-departure",
-    "date": "2026-10-28",
-    "line": "A coordinator can now record that a person has left, from the Discharges sheet."
-  },
-  {
-    "id": "2026-10-28-help-expansion",
-    "date": "2026-10-28",
-    "line": "Help adds spelling fixes, grouped words, accessibility, first-visit hints and printable desk guides."
-  },
-  {
-    "id": "2026-10-31-release-waits-activity-clock",
-    "date": "2026-10-31",
-    "line": "Release now waits until the shared save is confirmed, and Activity times follow the ward clock."
-  },
-  {
-    "id": "2026-10-31-popup-clarity",
-    "date": "2026-10-31",
-    "line": "Acknowledge visible now explains what it covers, and booking a planned admission shows the patient you chose."
-  },
-  {
-    "id": "2026-10-31-phone-bed-meeting-agenda",
-    "date": "2026-10-31",
-    "line": "On a phone, the bed meeting agenda now opens, and opening a referral moves you straight into it."
-  },
-  {
-    "id": "2026-10-31-referral-legal-status",
-    "date": "2026-10-31",
-    "line": "The patient list shows a referral's recorded legal status instead of 'Not recorded'."
-  },
-  {
-    "id": "2026-10-30-help-how-do-i",
-    "date": "2026-10-31",
-    "line": "Help now opens on How do I…: your desk's common tasks, each with its steps and a Go there link."
-  },
-  {
-    "id": "2026-10-31-calmer-notices",
-    "date": "2026-10-31",
-    "line": "Notices pause while you read them, warnings stay until you close them, and Alt+N jumps to the newest one."
-  },
-  {
     "id": "2026-10-31-smarter-search",
     "date": "2026-10-31",
     "line": "Search now forgives small typos and finds Help answers, contacts and suburbs; there are fewer search boxes."
@@ -98,5 +38,65 @@
     "id": "2026-10-31-legal-time-24-hour",
     "date": "2026-10-31",
     "line": "Legal forms: Record the time written now takes a typed 24-hour time, as Record a form does."
+  },
+  {
+    "id": "2026-10-31-redesign-frame",
+    "date": "2026-10-31",
+    "line": "The sidebar, header and phone dock are tidier: page name first, Alerts on every desk, and Demo from the board clock."
+  },
+  {
+    "id": "2026-10-31-redesign-home",
+    "date": "2026-10-31",
+    "line": "Home shows what changed since your last review in Activity, and a Planned list for the rest of the shift."
+  },
+  {
+    "id": "2026-10-31-redesign-capacity",
+    "date": "2026-10-31",
+    "line": "Capacity has a new look: beds ready first, the bed forecast, a bed map of every ward and this shift's checks."
+  },
+  {
+    "id": "2026-10-31-redesign-referrals",
+    "date": "2026-10-31",
+    "line": "Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot."
+  },
+  {
+    "id": "2026-10-31-redesign-records",
+    "date": "2026-10-31",
+    "line": "Waiting, Alerts, Legal forms, Patients, Movements and the patient record have a new look for each desk."
+  },
+  {
+    "id": "2026-10-31-redesign-ed-transport",
+    "date": "2026-10-31",
+    "line": "The ED board, All EDs, Transport and Out of area have a new look, with a simpler actions menu on the ED board."
+  },
+  {
+    "id": "2026-10-31-redesign-network",
+    "date": "2026-10-31",
+    "line": "Places, All wards, Community team, On-call and Seclusion are tidier, and names wrap in full."
+  },
+  {
+    "id": "2026-10-31-redesign-add-patient",
+    "date": "2026-10-31",
+    "line": "Add a patient checks for duplicates as you type, and its Add patient button says what is still needed."
+  },
+  {
+    "id": "2026-10-31-settings-by-login",
+    "date": "2026-10-31",
+    "line": "Settings is one page shaped by your login, with a short Rules that affect you card. Glare is now Bright light."
+  },
+  {
+    "id": "2026-10-31-help-tabs",
+    "date": "2026-10-31",
+    "line": "Help has one search box and three tabs, shows each login only what it can use, and the tour starts when you choose."
+  },
+  {
+    "id": "2026-10-31-handover-signoff-by-ward",
+    "date": "2026-10-31",
+    "line": "Handover sign-offs now belong to each ward, and a site bed manager can sign off its own site's handover."
+  },
+  {
+    "id": "2026-10-31-role-names-hidden-names",
+    "date": "2026-10-31",
+    "line": "Roles read Nurse in charge, Community team and Site bed manager; hidden names say \"Name not shown on this desk\"."
   }
 ]
