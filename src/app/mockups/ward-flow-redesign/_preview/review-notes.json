@@ -199,29 +199,51 @@
     "issues": [
       {
         "devices": ["Desktop"],
-        "text": "**The same nine people are listed twice**: in the main table and again in the \"Lists, Awaiting review\" section below it, with names written the other way round (\"Noor Tremalow\")."
+        "text": "**The same people are listed twice**: in the main table and again in the Lists section below it, with names written the other way round (\"Noor Tremalow\")."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The Lists had five tabs. **Med clear repeats the table and Referred repeats Review** (Josh, 1 November)."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The handover table has **no presentation**, the form cannot be changed from it, and it cannot be made bigger."
       },
       {
         "devices": ["Desktop"],
         "text": "Form descriptions are cut off (\"Referral for examination…\")."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The links to Statewide capacity and the 24-hour audit sit as full-width rows in the middle of the page."
       }
     ],
     "fixes": [
       {
-        "text": "**One table**. The Lists tabs (Review, Med clear, Expects, Forms, Referred) become filter chips on it."
+        "text": "**Header (Josh, 1 November):** the title is the department alone, with On the board, Past 24h, No bed yet and Under a form beside it as the Waiting page's figures, and one slim line under it. No \"Checking\" label, no \"Board updates once a minute\", and no white band under the header."
       },
       {
-        "text": "The Form column shows the form number. Its description and recorded due time are in the person's record."
+        "text": "**ED handover table** in the Waiting page's pattern: title, count, search and order in one head; the filter chips and tier key under it; quiet capital column heads; rows grouped Over 24 hours, 8 to 24 hours and Under 8 hours."
       },
       {
-        "text": "The two links move to the table footer."
+        "text": "**Presentation** sits between Bay and Form: a fixed list, choose all that apply. Other takes no typed text (Q103)."
+      },
+      {
+        "text": "**Form is a dropdown.** Choosing one asks \"Set Form 1A for Wren, Tobias?\" with the UMRN and bay, then saves with Undo. The expiry stays on the Forms page (Q104)."
+      },
+      {
+        "text": "Medical clearance and review share one **Checks** column."
+      },
+      {
+        "text": "**Enlarge** gives the table the whole screen; Esc or Exit full screen returns."
+      },
+      {
+        "text": "**Lists** is one card with three tabs, Awaiting review, Expected and Forms, each one row per person, surname first with the UMRN. Med clear and Referred are gone."
+      },
+      {
+        "text": "**No T column.** The tier is coloured priority bars before the name (three red bars most urgent, two amber, one grey), with a key over the table."
+      },
+      {
+        "text": "**May pass 24 hours in ED** is a plain card in the Lists style: no coloured left edge, no explanatory sentences, surname first with the UMRN."
       }
     ],
-    "keep": "The ED peer strip, the access-target notice, the Record exam and Log transport actions, and On TV."
+    "keep": "The ED peer strip, the access-target notice, the filter chips, Record exam, Log transport booking, the row menus, the patient record and On TV. Presentation and form choices here are preview only and not saved."
   },
   "wards": {
     "role": "Every ward's beds at a glance, filterable by service, status and cohort.",

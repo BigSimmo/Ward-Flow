@@ -12,9 +12,7 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 
 import {
   Button,
-  CheckingFoot,
   Hero,
-  HeroStat,
   LiveChip,
   PhoneHero,
   StatusGlyph,
@@ -29,6 +27,8 @@ import { healthServiceAcronym } from "@/components/ward-management/ward-service-
 import styles from "@/components/ward-management/ed/ed-overview.module.css";
 import redesign from "./ed-board-redesign.module.css";
 import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
+import waiting from "@/components/ward-management/delays/delays-board.module.css";
+import polish from "@/components/ward-management/delays/waiting-polish.module.css";
 
 type EdOverviewDepartment = {
   id: string;
@@ -142,7 +142,7 @@ export function EdOverview({
 
   return (
     <section
-      className={styles.overview}
+      className={cx(styles.overview, redesign.overviewGround)}
       aria-label="Emergency department overview"
       data-testid={`ward-ed-card-${departmentId}`}
     >
@@ -203,42 +203,60 @@ export function EdOverview({
         <Hero
           level={1}
           eyebrow={`Emergency department · ${current.service}`}
-          title={
-            <>
-              <span className={styles.titleName}>{shortName(current.name)} </span>
-              <span className={styles.answer}>
-                <b className={styles.answerNum}>{onBoard}</b> on the board
-              </span>
-            </>
-          }
-          titleMeta={boardSplit ? <span data-testid="ward-ed-board-split">{boardSplit}</span> : undefined}
-          bar={
-            <div className={styles.chips} role="group" aria-label="Highlight people on the board">
+          // Round 3 (Josh, 1 Nov 2026): the title is the department alone. Its counts sit beside it as
+          // the Waiting page's header figures, and the checking line is the Waiting page's slim bar.
+          title={<span className={styles.titleName}>{shortName(current.name)}</span>}
+          stats={
+            <div className={waiting.stats} role="group" aria-label="Highlight people on the board">
+              <div className={`${waiting.stat} ${waiting.statStatic}`}>
+                <span className={waiting.statV}>{onBoard}</span>
+                <span className={waiting.statL}>On the board</span>
+              </div>
               {heroChips.map((chip) => (
-                <HeroStat
+                <button
                   key={chip.id}
-                  inline
-                  value={chip.value}
-                  label={chip.label}
-                  tone={chip.value > 0 ? chip.tone : undefined}
-                  pressed={highlight === chip.id}
-                  onToggle={() => onHighlight(highlight === chip.id ? null : chip.id)}
-                />
+                  type="button"
+                  className={waiting.stat}
+                  aria-pressed={highlight === chip.id}
+                  onClick={() => onHighlight(highlight === chip.id ? null : chip.id)}
+                >
+                  <span className={waiting.statV}>{chip.value}</span>
+                  <span className={waiting.statL}>
+                    {chip.value > 0 && chip.tone ? <StatusGlyph tone={chip.tone} size={8} /> : null}
+                    {chip.label}
+                  </span>
+                </button>
               ))}
             </div>
           }
-          barAside={
-            highlight && highlightNote ? (
-              <span className={styles.note} aria-live="polite" data-testid="ward-ed-highlight-note">
-                <span>{highlightNote}</span>
-                <Button variant="onHero" size="sm" onClick={() => onHighlight(null)}>
-                  Clear
-                </Button>
-              </span>
-            ) : null
+          bar={
+            <div className={polish.heroBar}>
+              {boardSplit ? (
+                <span className={polish.strip} data-testid="ward-ed-board-split">
+                  <span className={polish.stripValue}>{boardSplit}</span>
+                </span>
+              ) : null}
+              {checks.map((check) => (
+                <span key={check.id} className={polish.strip}>
+                  {check.tone && !check.unavailable ? <StatusGlyph tone={check.tone} size={8} /> : null}
+                  <span className={polish.stripLabel}>{check.label}</span>
+                  <span className={polish.stripValue}>{check.unavailable ? "not checked" : check.value}</span>
+                </span>
+              ))}
+              {highlight && highlightNote ? (
+                <span
+                  className={`${styles.note} ${redesign.heroNote}`}
+                  aria-live="polite"
+                  data-testid="ward-ed-highlight-note"
+                >
+                  <span>{highlightNote}</span>
+                  <Button variant="onHero" size="sm" onClick={() => onHighlight(null)}>
+                    Clear
+                  </Button>
+                </span>
+              ) : null}
+            </div>
           }
-          foot={<CheckingFoot items={checks} />}
-          footAside={<span>Board updates once a minute</span>}
           aside={
             <>
               {/* This department's own TV screen, behind the `bed-meeting-tv` flag. */}

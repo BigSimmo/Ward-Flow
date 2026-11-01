@@ -15,6 +15,7 @@ import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-
 import styles from "@/components/ward-management/ed/ed.module.css";
 import { SearchField } from "@/components/ward-redesign/parts/search-field";
 import redesign from "./ed-board-redesign.module.css";
+import { EdHandoverBoard } from "./ed-handover-board";
 import { TierKey } from "@/components/ward-management/tier-key";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
@@ -41,6 +42,8 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
     sentForBed,
     now,
   } = ctx;
+  // Handover mock-up (Josh, 1 Nov 2026): the wider-screen table is the department's handover table.
+  if (boardTable && !isTabletPortrait) return <EdHandoverBoard ctx={ctx} />;
   return (
     <section
       aria-label="This department's patients"

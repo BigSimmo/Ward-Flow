@@ -32,6 +32,7 @@ import { openReferralSheet } from "@/components/ward-management/shell/ward-drawe
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { edScreenActions } from "@/components/ward-management/ed/ed-screen-actions";
 import { EdBoardSection } from "./ed-screen-board";
+import { EdListsCard } from "./ed-lists-redesign";
 import { EdAccessRiskCard } from "./ed-access-risk-redesign";
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { deriveEdScreen } from "@/components/ward-management/ed/ed-screen-derivations";
@@ -520,23 +521,8 @@ export function EdBoardRedesign({ edId }: EdScreenProps) {
         {fullscreenBoard ? null : isPhone ? (
           <EdListsSection ctx={ctx} />
         ) : (
-          <details className={redesign.listsFold}>
-            <summary>
-              Lists by step{" "}
-              <span>
-                {[
-                  ["Awaiting review", ctx.awaitingReviewPatients.length],
-                  ["Medical clearance", ctx.clearedPatients.length],
-                  ["Expects", ctx.expects.length],
-                  ["Forms", ctx.underFormPatients.length],
-                  ["Referred", ctx.outbox.length + ctx.answeredAll.length],
-                ]
-                  .map(([label, count]) => `${label} ${count}`)
-                  .join(" · ")}
-              </span>
-            </summary>
-            <EdListsSection ctx={ctx} />
-          </details>
+          // Handover mock-up (Josh, 1 Nov 2026): one Lists card, open, with three lists.
+          <EdListsCard ctx={ctx} />
         )}
 
         {selectedPatient ? <EdPatientDialog ctx={ctx} selectedPatient={selectedPatient} /> : null}
