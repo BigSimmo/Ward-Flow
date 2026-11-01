@@ -141,7 +141,7 @@ describe("Statistics phone polish (batch 4)", () => {
     asPhone();
     renderInProvider(<WeeklyReportScreen />);
     const body = screen.getByTestId("ward-weekly-phone");
-    expect(body).toHaveTextContent("Far from home, or by air");
+    expect(body).toHaveTextContent("3h or more from home, or by air only");
     expect(body.textContent).not.toMatch(/Emergency Department/u);
   });
 

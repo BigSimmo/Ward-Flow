@@ -1,55 +1,34 @@
 "use client";
 
-import { useId, useMemo, useState, type ReactNode } from "react";
-import { BedDouble, Clock, Hospital, Printer, XCircle } from "lucide-react";
+import { useId, useMemo, useState } from "react";
+import { CalendarDays, Printer } from "lucide-react";
 
-import {
-  Button,
-  Field,
-  HeroStat,
-  PhoneListRow,
-  Segmented,
-  Select,
-  StatusGlyph,
-  tableClasses,
-  useIsPhone,
-} from "@/components/wf";
+import { Button, HeroStat, SrOnly, buttonClass, cx, useIsPhone } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
+import { formatInstant, formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 import { VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { edById, edShortName } from "@/components/ward-management/ward-sites";
+import { WeeklyBody } from "@/components/ward-redesign/statistics/statistics-redesign-weekly";
 import { dateOf } from "../statistics/statistics-dates";
-import { StatCard, StatisticsHero, useStatisticsLive } from "../statistics/statistics-hero";
-import {
-  PhoneBody,
-  PhoneCard,
-  PhoneFacts,
-  PhoneGroup,
-  PhoneList,
-  PhonePinnedAction,
-  phoneBodyStyles as phone,
-} from "../statistics/statistics-phone-parts";
+import { StatisticsHero, useStatisticsLive } from "../statistics/statistics-hero";
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 import type { ExecutiveReportingWeek } from "../statistics/executive-statistics-contract";
 import {
-  PeopleNotListed,
   ExecutiveStatisticsUnavailable,
   statisticsCountText as reportCount,
 } from "../statistics/statistics-small-numbers";
-import { PilotMeasuresSection, PilotMeasuresView } from "./pilot-measures-section";
+import { useOperationalPilot, usePilotFigures, type WeeklyPilot } from "./pilot-measures-section";
 import { reportWeek, weeklyOperationsReport, type WeeklyReport, type ReportWeek } from "./weekly-report";
 import { useOwnUnits } from "./use-own-units";
 import styles from "./reports.module.css";
 import weekly from "./weekly-report.module.css";
-import { originName } from "@/components/ward-management/ward-movement-origin";
 
-/** The out of area bands, in the words the rest of the app uses for them. */
-const OUT_OF_AREA_META = OUT_OF_AREA_BANDS.map((band) => TRAVEL_BAND_LABELS[band]).join(" or ");
-/** The same bands in the few words a phone card's aside holds without clipping (audit stats-14). */
-const OUT_OF_AREA_PHONE_META = "Far from home, or by air";
+const WAITING_HREF = "/ward-flow/waiting";
+
+/** The out of area bands (`OUT_OF_AREA_BANDS`: three hours or more, or air only), in the mock-up's words. */
+const OUT_OF_AREA_META = "3h or more from home, or by air only";
 
 /** Offsets offered in the week picker: this week so far, the last full week, then seven before it. */
 const WEEK_OFFSETS = [-1, 0, 1, 2, 3, 4, 5, 6, 7] as const;
@@ -57,25 +36,27 @@ const OCCUPIED_TIME_LABEL = "Recorded occupied bed time";
 const OCCUPIED_TIME_DEFINITION =
   "Recorded occupied stay time divided by the current total bed count and counted time. Closed beds stay in the denominator; time pulled for arrival is excluded. Historical bed capacity and pull times are not reconstructed.";
 
-function weekLabel(week: ReportWeek, dayZero: Date): string {
-  const range = `${dateOf(week.start, dayZero)} to ${dateOf(week.end - 1, dayZero)}`;
+/** "19 to 25 Oct", or "28 Sep to 4 Oct" across a month: the band button's short week. */
+function shortRange(week: ReportWeek, dayZero: Date): string {
+  const [, startDay, startMonth] = dateOf(week.start, dayZero).split(" ");
+  const [, endDay, endMonth] = dateOf(week.end - 1, dayZero).split(" ");
+  return startMonth === endMonth
+    ? `${startDay} to ${endDay} ${endMonth}`
+    : `${startDay} ${startMonth} to ${endDay} ${endMonth}`;
+}
+
+function shortWeekLabel(week: ReportWeek, dayZero: Date): string {
+  const range = shortRange(week, dayZero);
   if (week.offset === -1) return `This week so far · ${range}`;
   if (week.offset === 0) return `Last full week · ${range}`;
   return range;
 }
 
-function ReasonList({ reasons, testId }: { reasons: { reason: string; count: number | string }[]; testId: string }) {
-  if (reasons.length === 0) return null;
-  return (
-    <ul className={styles.reasons} data-testid={testId}>
-      {reasons.map((entry) => (
-        <li key={entry.reason}>
-          <span>{entry.reason}</span>
-          <span className={styles.num}>{entry.count}</span>
-        </li>
-      ))}
-    </ul>
-  );
+function weekLabel(week: ReportWeek, dayZero: Date): string {
+  const range = `${dateOf(week.start, dayZero)} to ${dateOf(week.end - 1, dayZero)}`;
+  if (week.offset === -1) return `This week so far · ${range}`;
+  if (week.offset === 0) return `Last full week · ${range}`;
+  return range;
 }
 
 /**
@@ -160,7 +141,7 @@ function ExecutiveWeeklyReport({ offset, setOffset }: WeekPicker) {
       paused={controls.paused}
       togglePause={controls.togglePause}
       scopeLabel={data.network.scope.kind === "statewide" ? "Statewide" : data.network.scope.service}
-      renderPilot={(isPhone) => <PilotMeasuresView measures={selected.pilot} isPhone={isPhone} />}
+      pilot={selected.pilot}
     />
   );
 }
@@ -172,6 +153,19 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
   const units = useOwnUnits(state.units);
 
   const week = useMemo(() => reportWeek(offset, now, dayZero), [offset, now, dayZero]);
+  const pilot = useOperationalPilot(
+    {
+      movements,
+      referrals,
+      patients,
+      now,
+      pullHoldMinutes: configuration.pullHoldMinutes,
+      units,
+      morningRollupConfirmations: state.morningRollupConfirmations,
+      morningRollupDeadlineMinutes: configuration.morningRollupDeadlineMinutes,
+    },
+    week,
+  );
   const report = useMemo(
     () =>
       weeklyOperationsReport(
@@ -215,20 +209,7 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
       admissionLabel={(movementId) =>
         admissions.find((admission) => admission.movementId === movementId)?.id ?? "Not yet admitted"
       }
-      renderPilot={(isPhone) => (
-        <PilotMeasuresSection
-          movements={movements}
-          referrals={referrals}
-          patients={patients}
-          now={now}
-          pullHoldMinutes={configuration.pullHoldMinutes}
-          units={units}
-          morningRollupConfirmations={state.morningRollupConfirmations}
-          morningRollupDeadlineMinutes={configuration.morningRollupDeadlineMinutes}
-          week={week}
-          isPhone={isPhone}
-        />
-      )}
+      pilot={pilot}
     />
   );
 }
@@ -238,41 +219,42 @@ function WeeklyReportView({
   setOffset,
   week,
   report,
+  pilot,
   dayZero,
   now,
   paused,
   togglePause,
   admissionLabel,
-  renderPilot,
   scopeLabel,
 }: WeekPicker & {
   week: ReportWeek;
   report: WeeklyViewReport;
+  pilot: WeeklyPilot;
   dayZero: Date;
   now: Instant;
   paused: boolean;
   togglePause: (() => void) | null;
   admissionLabel?: (movementId: string) => string;
-  renderPilot: (isPhone: boolean) => ReactNode;
   scopeLabel?: string;
 }) {
   const pickerId = useId();
   const isPhone = useIsPhone();
+  const figures = usePilotFigures(pilot);
+  const rows = report.edWaits.rows;
+  const longestRow = rows?.reduce<(typeof rows)[number] | undefined>(
+    (best, row) => (best && best.waitedMinutes >= row.waitedMinutes ? best : row),
+    undefined,
+  );
   const longestWait =
     report.edWaits.longestMinutes !== null && report.edWaits.count !== 0
       ? splitDuration(report.edWaits.longestMinutes)
       : "—";
 
   // Whole hours ("24h") on every device, not "1d 0h" here and "24h" on the phone (UX audit 21 Oct 2026).
-  const targetText = `over ${Math.round(report.edWaits.targetMinutes / 60)}h`;
+  const hoursText = `${Math.round(report.edWaits.targetMinutes / 60)}h`;
   const occupancyText = report.occupancy.averagePercent === null ? "—" : `${report.occupancy.averagePercent}%`;
   const weekRange = `${dateOf(week.start, dayZero)} to ${dateOf(week.end - 1, dayZero)}`;
   const outputMoment = (at: Instant) => formatSheetMoment(at, dayZero, { includeYearAndZone: true });
-  // Phone wording in whole hours ("24h"), as the v10 phone drawing reads.
-  const longHoursLabel = `${Math.round(report.edWaits.targetMinutes / 60)}h`;
-  const phoneTargetText = `over ${longHoursLabel}`;
-  // A wait still open is counted to the end of the week shown, so the figure says when it stops.
-  const waitedBy = `by ${dateOf(week.countedEnd - 1, dayZero)}`;
   // Expected dates set after the week began leave the week only partly measured (audit stats-11).
   const delayedFrom = report.delayedDischarge.recordedFrom;
   const delayedUnknown = delayedFrom !== null && delayedFrom >= week.countedEnd;
@@ -284,19 +266,69 @@ function WeeklyReportView({
         } changed after this week.`
       : null;
   const delayedFromNote =
-    delayedFrom === null
+    delayedFrom === null || delayedUnknown
       ? null
-      : delayedUnknown
-        ? "Not enough history. No expected date held for this week."
-        : `Latest expected date set ${dateOf(delayedFrom, dayZero)}. Each stay counts from when its date was set`;
+      : `Latest expected date set ${dateOf(delayedFrom, dayZero)}. Each stay counts from when its date was set`;
   const delayedNote =
     delayedFromNote && delayedSkipped ? `${delayedFromNote}. ${delayedSkipped}` : (delayedFromNote ?? delayedSkipped);
-  const delayedDays = delayedUnknown ? "Not known" : report.delayedDischarge.bedDays;
-  const delayedPeople = delayedUnknown ? "Not known" : report.delayedDischarge.people;
+  const print = () => {
+    window.print();
+  };
+
+  // The title states the week's main fact, as on Capacity and Waiting; with no published time, the page name.
+  const arrivalTitle = figures.arrival.minutes === null ? null : figures.arrival.typical;
+  const title = arrivalTitle ? (
+    <>
+      <SrOnly>Weekly operations, </SrOnly>
+      {arrivalTitle} from referral to arrival
+    </>
+  ) : (
+    "Weekly operations"
+  );
+
+  const picker = (
+    <label className={cx(buttonClass({ variant: "onHero", size: "sm" }), weekly.weekPick)} data-print-hide>
+      <CalendarDays size={14} aria-hidden="true" />
+      <span aria-hidden="true">{shortWeekLabel(week, dayZero)}</span>
+      <span className="sr-only" id={pickerId}>
+        Week
+      </span>
+      <select
+        aria-labelledby={pickerId}
+        value={String(offset)}
+        onChange={(event) => {
+          setOffset(Number(event.target.value));
+        }}
+        data-testid="ward-weekly-week"
+      >
+        {WEEK_OFFSETS.map((candidate) => (
+          <option key={candidate} value={candidate}>
+            {weekLabel(reportWeek(candidate, now, dayZero), dayZero)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
+  const printLines = (
+    <div className={weekly.printLines}>
+      {/* the exact period and the stamp print on every copy; on screen the band names the week. */}
+      <p className={styles.disclosure} data-testid="ward-weekly-period">
+        Period: {outputMoment(week.start)} (inclusive) to {outputMoment(week.end)} (exclusive).
+        {week.countedEnd < week.end ? <> Counted to {outputMoment(week.countedEnd)} (exclusive).</> : null}
+      </p>
+      <p className={styles.stamp} data-testid="ward-weekly-range">
+        {/* the phone's hero names the week, so its line says only when the report was made. */}
+        {isPhone ? null : <>Week: {weekLabel(week, dayZero)} · </>}
+        {week.countedEnd < week.end ? `Counted to ${outputMoment(week.countedEnd)} · ` : ""}
+        Generated {outputMoment(now)}
+      </p>
+    </div>
+  );
 
   return (
     <div className={styles.page} data-testid="ward-weekly-report" data-ward-design="v6">
-      <main id="main-content" className={styles.main}>
+      <main id="main-content" className={styles.main} data-testid={isPhone ? "ward-weekly-phone" : undefined}>
         <StatisticsHero
           section="weekly"
           now={now}
@@ -307,42 +339,47 @@ function WeeklyReportView({
               <>Weekly report · synthetic demo data{scopeLabel ? ` · ${scopeLabel}` : ""}</>
             )
           }
-          title="Weekly operations"
+          title={title}
+          titleAction={null}
+          tools={
+            isPhone ? undefined : (
+              <>
+                {picker}
+                <span data-print-hide>
+                  <Button variant="onHero" size="sm" icon={Printer} onClick={print} data-testid="ward-weekly-print">
+                    Print
+                  </Button>
+                </span>
+              </>
+            )
+          }
           phone={{
-            sub: weekRange,
+            title: arrivalTitle ? `${arrivalTitle} referral to arrival` : "Weekly operations",
+            sub: arrivalTitle ? `Typical · ${figures.arrival.arrivals} arrivals · ${weekRange}` : weekRange,
             stats: (
               <>
-                <HeroStat value={report.edWaits.count} label={`New ED waits ${longHoursLabel}+`} />
+                <HeroStat
+                  value={report.edWaits.count}
+                  label={`New ED waits ${hoursText}+`}
+                  tone={report.edWaits.count === 0 ? undefined : "danger"}
+                />
                 {/* Phone review F-26 and F-33: each figure names its unit and what it averages. */}
                 <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
-                <HeroStat value={occupancyText} label={OCCUPIED_TIME_LABEL} />
+                <HeroStat value={occupancyText} label="Occupied bed time" />
               </>
             ),
           }}
-          titleAction={
-            isPhone ? undefined : (
-              <span data-print-hide>
-                <Button
-                  variant="light"
-                  size="sm"
-                  icon={Printer}
-                  onClick={() => {
-                    window.print();
-                  }}
-                  data-testid="ward-weekly-print"
-                >
-                  Print
-                </Button>
-              </span>
-            )
-          }
           stats={
             <>
-              <HeroStat value={report.edWaits.count} label={`New ED waits ${targetText}`} />
+              <HeroStat
+                value={report.edWaits.count}
+                label={`New ED waits over ${hoursText}`}
+                tone={report.edWaits.count === 0 ? undefined : "danger"}
+              />
               <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
               {/* "not enough history" is said in the label, never set as a big figure. */}
               <HeroStat
-                value={delayedUnknown ? "—" : delayedDays}
+                value={delayedUnknown ? "—" : report.delayedDischarge.bedDays}
                 label={delayedUnknown ? "Delayed discharge days, not enough history yet" : "Delayed discharge days"}
               />
               <HeroStat value={occupancyText} label={OCCUPIED_TIME_LABEL} />
@@ -351,343 +388,47 @@ function WeeklyReportView({
           paused={paused}
           onTogglePause={togglePause ?? undefined}
         />
-
-        {/* the phone already gives the week in the hero and under the week switch, so the
-            exact period line is hidden on a phone screen and kept for desktop and every print. */}
-        <p className={`${styles.disclosure} ${weekly.phoneScreenHidden}`} data-testid="ward-weekly-period">
-          Period: {outputMoment(week.start)} (inclusive) to {outputMoment(week.end)} (exclusive).
-          {week.countedEnd < week.end ? <> Counted to {outputMoment(week.countedEnd)} (exclusive).</> : null}
-        </p>
-
-        {isPhone ? (
-          <PhoneBody testId="ward-weekly-phone">
-            <Segmented<string>
-              className={phone.seg}
-              size="md"
-              label="Week"
-              value={String(offset)}
-              onChange={(next) => setOffset(Number(next))}
-              items={[
-                { id: "0", label: "Last full week" },
-                { id: "-1", label: "This week so far" },
-              ]}
-            />
-            <p className={phone.note} data-testid="ward-weekly-range">
-              {/* the hero sub already names the week, so this line says only when it was made. */}
-              {week.countedEnd < week.end ? `Counted to ${outputMoment(week.countedEnd)} · ` : ""}
-              Generated {outputMoment(now)}
-            </p>
-            <PhoneCard
-              icon={Clock}
-              // the aside "In the week it passed 24h" was cut off at 390px and repeats the title's
-              // "first passing", so the title carries it alone.
-              title={`ED waits first passing ${phoneTargetText}`}
-            >
-              <PhoneFacts
-                flush
-                facts={[
-                  {
-                    id: "people",
-                    label: "Placement journeys",
-                    value: report.edWaits.count,
-                    testId: "ward-weekly-ed-count",
-                  },
-                  {
-                    id: "longest",
-                    label: "Longest",
-                    value: longestWait,
-                  },
-                ]}
-              />
-            </PhoneCard>
-            <PhoneCard icon={Hospital} title="Out of area" aside={OUT_OF_AREA_PHONE_META}>
-              <PhoneFacts
-                flush
-                facts={[
-                  { id: "days", label: "Bed days", value: report.outOfArea.bedDays, testId: "ward-weekly-ooa-days" },
-                  { id: "people", label: "People", value: report.outOfArea.people },
-                ]}
-              />
-            </PhoneCard>
-            <PhoneCard icon={BedDouble} title="Delayed discharge" aside="Past the expected date">
-              {delayedUnknown ? (
-                <p className={phone.note} data-testid="ward-weekly-delayed-days">
-                  Not enough history: no expected date held for this week.
-                </p>
-              ) : (
-                <PhoneFacts
-                  flush
-                  facts={[
-                    {
-                      id: "days",
-                      label: "Bed days",
-                      value: delayedDays,
-                      testId: "ward-weekly-delayed-days",
-                    },
-                    { id: "people", label: "People", value: delayedPeople },
-                  ]}
-                />
-              )}
-              {delayedNote && !delayedUnknown ? (
-                <p className={phone.note} data-testid="ward-weekly-delayed-history">
-                  {delayedNote}
-                </p>
-              ) : null}
-            </PhoneCard>
-            {/* Josh, 30 Oct 2026: declines and overrides share one card, as on desktop. */}
-            <PhoneCard icon={XCircle} title="Declines and overrides" aside="Placement and referral">
-              <PhoneFacts
-                flush
-                facts={[
-                  { id: "declined-placement", label: "Placement declines", value: report.declines.placement },
-                  { id: "declined-referral", label: "Referral declines", value: report.declines.referral },
-                  { id: "override-placement", label: "Placement overrides", value: report.overrides.placement },
-                  { id: "override-referral", label: "Referral overrides", value: report.overrides.referral },
-                ]}
-              />
-            </PhoneCard>
-            <PhoneCard icon={BedDouble} title="Occupancy" aside={`${report.occupancy.beds} current total beds`}>
-              <PhoneFacts
-                flush
-                facts={[
-                  {
-                    id: "average",
-                    label: OCCUPIED_TIME_LABEL,
-                    value: occupancyText,
-                    testId: "ward-weekly-occupancy",
-                  },
-                  { id: "now", label: "In use now", value: report.occupancy.now.inUse },
-                ]}
-              />
-              <p className={phone.note} data-testid="ward-weekly-occupancy-definition">
-                {OCCUPIED_TIME_DEFINITION}
-              </p>
-            </PhoneCard>
-            <PhoneGroup title={`Waits first passing ${phoneTargetText}`} aside={`${report.edWaits.count} in the week`}>
-              {report.edWaits.rows === undefined ? (
-                <PeopleNotListed />
-              ) : report.edWaits.rows.length === 0 ? (
-                <p className={phone.note}>No wait first passed {phoneTargetText} in this week.</p>
-              ) : (
-                <PhoneList label={`ED waits first passing ${phoneTargetText} in the week`}>
-                  {report.edWaits.rows.map((row) => {
-                    return (
-                      <PhoneListRow
-                        key={row.movement.id}
-                        as="li"
-                        name={admissionLabel?.(row.movement.id)}
-                        meta={`${edShortName(edById(row.movement.originEdId)) || (originName(row.movement) ?? row.movement.originEdId)}${row.stillWaiting ? " · still waiting" : ""}`}
-                        value={
-                          <span className={phone.flagged}>
-                            {/* One tone rule with the ED page: red at the long-wait line, amber before. */}
-                            <StatusGlyph
-                              tone={row.waitedMinutes >= VERY_LONG_WAIT_MINUTES ? "danger" : "warning"}
-                              size={9}
-                            />
-                            {splitDuration(row.waitedMinutes)}
-                          </span>
-                        }
-                        time={waitedBy}
-                      />
-                    );
-                  })}
-                </PhoneList>
-              )}
-            </PhoneGroup>
-            {renderPilot(true)}
-            <p className={styles.disclosure}>
-              Earlier weeks read low: stays before this prototype started are not held.
-            </p>
-            <PhonePinnedAction icon={Printer} onClick={() => window.print()} testId="ward-weekly-print">
-              Print the report
-            </PhonePinnedAction>
-          </PhoneBody>
-        ) : (
-          <>
-            <div className={styles.controls}>
-              <Field label="Week" id={pickerId} className={styles.picker}>
-                <Select
-                  value={String(offset)}
-                  onChange={(event) => {
-                    setOffset(Number(event.target.value));
-                  }}
-                  data-testid="ward-weekly-week"
-                  data-print-hide
-                >
-                  {WEEK_OFFSETS.map((candidate) => (
-                    <option key={candidate} value={candidate}>
-                      {weekLabel(reportWeek(candidate, now, dayZero), dayZero)}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-              {/* The picker already names the week on screen, so the line repeats it only on paper,
-                  where the picker prints as an empty box (UX audit 21 Oct 2026). */}
-              <p className={styles.stamp} data-testid="ward-weekly-range">
-                <span className={styles.printOnlyInline}>Week: {weekLabel(week, dayZero)} · </span>
-                Generated {outputMoment(now)}
-              </p>
-            </div>
-
-            <div className={styles.grid3}>
-              <StatCard title={`ED waits first passing ${targetText}`} icon={Clock}>
-                <dl className={styles.figures}>
-                  <div className={styles.figure}>
-                    <dt>Placement journeys</dt>
-                    <dd data-testid="ward-weekly-ed-count">{report.edWaits.count}</dd>
-                  </div>
-                  <div className={styles.figure}>
-                    <dt>Longest wait</dt>
-                    <dd>{longestWait}</dd>
-                  </div>
-                </dl>
-                {/* Explanations sit under the figures, so the card titles are not cut (UX audit 21 Oct 2026). */}
-                <p className={`${styles.disclosure} ${styles.cardFootNote}`}>
-                  Counted in the week the wait passes the target (a default set in Settings)
-                </p>
-              </StatCard>
-              <StatCard title="Out of area" icon={Hospital}>
-                <dl className={styles.figures}>
-                  <div className={styles.figure}>
-                    <dt>Bed days</dt>
-                    <dd data-testid="ward-weekly-ooa-days">{report.outOfArea.bedDays}</dd>
-                  </div>
-                  <div className={styles.figure}>
-                    <dt>People</dt>
-                    <dd>{report.outOfArea.people}</dd>
-                  </div>
-                </dl>
-                <p className={`${styles.disclosure} ${styles.cardFootNote}`}>{OUT_OF_AREA_META}</p>
-              </StatCard>
-              <StatCard title="Delayed discharge" icon={BedDouble}>
-                {delayedUnknown ? (
-                  // with no expected date held for the week, a sentence instead of two "Not known" figures.
-                  <p className={weekly.sentence} data-testid="ward-weekly-delayed-days">
-                    Not enough history: no expected date held for this week.
-                  </p>
-                ) : (
-                  <dl className={styles.figures}>
-                    <div className={styles.figure}>
-                      <dt>Bed days</dt>
-                      <dd data-testid="ward-weekly-delayed-days">{delayedDays}</dd>
-                    </div>
-                    <div className={styles.figure}>
-                      <dt>People</dt>
-                      <dd>{delayedPeople}</dd>
-                    </div>
-                  </dl>
-                )}
-                {delayedNote && !delayedUnknown ? (
-                  <p
-                    className={`${styles.disclosure} ${styles.cardFootNote}`}
-                    data-testid="ward-weekly-delayed-history"
-                  >
-                    {delayedNote}
-                  </p>
-                ) : null}
-                <p className={`${styles.disclosure} ${styles.cardFootNote}`}>
-                  Counted from when the current expected date was set
-                </p>
-              </StatCard>
-            </div>
-
-            <div className={weekly.grid2}>
-              {/* declines and overrides share one card; an empty list is one line, not a card. */}
-              <StatCard title="Declines and overrides" icon={XCircle} meta="Placement and referral">
-                <div className={weekly.decisionBlocks}>
-                  <section className={weekly.decisionBlock} aria-label="Declines">
-                    <p className={weekly.decisionHead}>
-                      <b>Declines</b>
-                      <span className={styles.num}>
-                        {report.declines.placement} placement · {report.declines.referral} referral
-                      </span>
-                    </p>
-                    <ReasonList reasons={report.declines.byReason} testId="ward-weekly-declines" />
-                  </section>
-                  <section className={weekly.decisionBlock} aria-label="Overrides">
-                    <p className={weekly.decisionHead}>
-                      <b>Overrides</b>
-                      <span className={styles.num}>
-                        {report.overrides.placement} placement · {report.overrides.referral} referral
-                      </span>
-                    </p>
-                    <ReasonList reasons={report.overrides.byReason} testId="ward-weekly-overrides" />
-                  </section>
-                </div>
-              </StatCard>
-              <StatCard title="Occupancy" icon={BedDouble} meta={`${report.occupancy.beds} current total beds`}>
-                <dl className={styles.figures}>
-                  <div className={styles.figure}>
-                    <dt>{OCCUPIED_TIME_LABEL}</dt>
-                    <dd data-testid="ward-weekly-occupancy">{occupancyText}</dd>
-                    <dd className={styles.figureNote}>{report.occupancy.occupiedBedDays} occupied bed days</dd>
-                  </div>
-                  <div className={styles.figure}>
-                    <dt>In use now</dt>
-                    <dd>
-                      {report.occupancy.now.inUse} of {report.occupancy.now.beds}
-                    </dd>
-                    <dd className={styles.figureNote}>{report.occupancy.now.pulled} pulled for arrival</dd>
-                  </div>
-                </dl>
-                <p
-                  className={`${styles.disclosure} ${styles.cardFootNote}`}
-                  data-testid="ward-weekly-occupancy-definition"
-                >
-                  {OCCUPIED_TIME_DEFINITION}
-                </p>
-              </StatCard>
-            </div>
-
-            <StatCard
-              title={`Waits first passing ${targetText}`}
-              icon={Clock}
-              meta={`${report.edWaits.count} in the week`}
-            >
-              {report.edWaits.rows === undefined ? (
-                <PeopleNotListed />
-              ) : report.edWaits.rows.length === 0 ? (
-                <p className={styles.empty}>No wait first passed {targetText} in this week.</p>
-              ) : (
-                <div className={styles.tableWrap}>
-                  <table className={`${tableClasses.table} ${styles.table}`} data-testid="ward-weekly-ed-table">
-                    <caption className={styles.srOnly}>
-                      ED waits first passing {targetText} in the week, synthetic
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Admission</th>
-                        <th scope="col">Emergency department</th>
-                        <th scope="col">Opened</th>
-                        <th scope="col" className={styles.num}>
-                          Waited, {waitedBy}
-                        </th>
-                        <th scope="col">Now</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {report.edWaits.rows.map((row) => (
-                        <tr key={row.movement.id}>
-                          <th scope="row">{admissionLabel?.(row.movement.id)}</th>
-                          <td>{originName(row.movement) ?? row.movement.originEdId}</td>
-                          <td className={styles.time}>{outputMoment(row.movement.openedAt as Instant)}</td>
-                          <td className={styles.num}>{splitDuration(row.waitedMinutes)}</td>
-                          <td>{row.stillWaiting ? "Still waiting" : "Left the ED"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </StatCard>
-
-            {renderPilot(false)}
-
-            <p className={styles.disclosure}>
-              Earlier weeks read low: stays before this prototype started are not held.
-            </p>
-          </>
-        )}
+        <WeeklyBody
+          isPhone={isPhone}
+          pilot={figures}
+          targetText={hoursText}
+          edWaits={{
+            count: report.edWaits.count,
+            longest: longestWait,
+            longestEd: longestRow ? (originName(longestRow.movement) ?? longestRow.movement.originEdId) : undefined,
+            waitedTo: `Waited to ${dateOf(week.countedEnd - 1, dayZero)}`,
+            rows: rows?.map((row) => ({
+              id: row.movement.id,
+              admission: admissionLabel?.(row.movement.id),
+              ed: originName(row.movement) ?? row.movement.originEdId ?? "Emergency department",
+              opened: `${dateOf(row.movement.openedAt as Instant, dayZero)}, ${formatInstant(row.movement.openedAt as Instant)}`,
+              waited: splitDuration(row.waitedMinutes),
+              veryLong: row.waitedMinutes >= VERY_LONG_WAIT_MINUTES,
+              stillWaiting: row.stillWaiting,
+            })),
+          }}
+          outOfArea={{ bedDays: report.outOfArea.bedDays, people: report.outOfArea.people, meta: OUT_OF_AREA_META }}
+          delayed={{
+            bedDays: report.delayedDischarge.bedDays,
+            people: report.delayedDischarge.people,
+            unknown: delayedUnknown,
+            note: delayedNote,
+          }}
+          occupancy={{
+            percent: occupancyText,
+            value: report.occupancy.averagePercent,
+            inUse: report.occupancy.now.inUse,
+            beds: report.occupancy.now.beds,
+            bedDays: report.occupancy.occupiedBedDays,
+            definition: OCCUPIED_TIME_DEFINITION,
+          }}
+          declines={report.declines}
+          overrides={report.overrides}
+          waitingHref={WAITING_HREF}
+          week={{ value: String(offset), onChange: (next) => setOffset(Number(next)) }}
+          onPrint={print}
+          printLines={printLines}
+        />
         <WardPrototypeFooter testId="ward-weekly-footer" note="Synthetic data" />
       </main>
     </div>
