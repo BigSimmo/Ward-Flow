@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { type ReactNode, useEffect, useRef, useState, useReducer } from "react";
+import { Children, type ReactNode, useEffect, useRef, useState, useReducer } from "react";
 import {
+  ArrowUpRight,
   BarChart3,
   BedDouble,
   BedSingle,
@@ -77,6 +78,8 @@ export type WardToolsSheetProps = {
 };
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
+  // A group the search (or the desk's role) has emptied is left out, heading and all.
+  if (Children.count(children) === 0) return null;
   return (
     <section className={styles.group} aria-label={title}>
       <h3 className={styles.groupHeading}>{title}</h3>
@@ -119,7 +122,10 @@ function LinkRow({
   return (
     <Link href={href} className={styles.row} onClick={onNavigate}>
       <RowText icon={icon} name={name} detail={detail} />
-      <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
+      {/* Tools redesign (approved 31 Oct 2026): a row that opens a page ends in an arrow out; a row
+          that opens here, in a caret. The spoken words say the same. */}
+      <ArrowUpRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
+      <span className="sr-only">, opens its page</span>
     </Link>
   );
 }
@@ -275,13 +281,19 @@ function OperationalBedSummary() {
   );
 }
 
+/** One entry in a Tools group, with the words the search box matches. */
+type ToolsEntry = { key: string; name: string; detail: string; href?: string; show?: boolean; node: ReactNode };
+
 /**
  * The Tools sheet, rebuilt from the 15 Oct 2026 Tools review (`/mnt/project-files/reviews/
  * tools-sidebar-review-2026-10-15.md`): one scrolling sheet instead of five tabs. Do now, Look up
  * (All figures first), Print and share, More pages and Demo at the foot. The "Service now" figures
  * block left on 19 Oct 2026 (simplification A5): every page already leads with its own figures. Appearance, Settings, the Digest and the repeated shortcut grids are
  * gone because the rail already carries them. Phone uses the same sheet. Bed meeting TV left on
- * 21 Oct 2026 (change 8, D-77): it has its own place in the rail's More pages.
+ * 21 Oct 2026 (change 8, D-77): it has its own place in the rail's More pages. The Tools redesign
+ * (approved by Josh, 31 Oct 2026) adds a Search tools box, folds More pages and the Hospital feed
+ * into the three groups, and ends each row with what it does: an arrow out opens the tool's page, a
+ * caret opens the tool here.
  */
 export function WardToolsSheet({
   isPhone,
@@ -301,6 +313,7 @@ export function WardToolsSheet({
   const showDemo = isPhone || !executive;
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const [open, setOpen] = useState<ReadonlySet<ToolsSheetToolId>>(() => new Set());
+  const [query, setQuery] = useState("");
   const rows = useRef(new Map<ToolsSheetToolId, HTMLDivElement>());
   const toggle = (id: ToolsSheetToolId) =>
     setOpen((current) => {
@@ -323,6 +336,8 @@ export function WardToolsSheet({
     // still shows the asked-for tool; only the scroll waits for the frames after it has drawn.
     queueMicrotask(() => {
       if (cancelled) return;
+      // A requested tool must show, so any search is cleared first.
+      setQuery("");
       setOpen((current) => new Set(current).add(openRequest.tool));
       frame = window.requestAnimationFrame(() => {
         scroll = window.requestAnimationFrame(() => {
@@ -338,19 +353,169 @@ export function WardToolsSheet({
     };
   }, [openRequest, onRequestHandled]);
 
-  const tool = (id: ToolsSheetToolId, icon: LucideIcon, name: string, detail: string, body: ReactNode) => (
-    <ToolRow
-      id={id}
-      icon={icon}
-      name={name}
-      detail={detail}
-      open={open.has(id)}
-      onToggle={() => toggle(id)}
-      rowRef={rowRef(id)}
-    >
-      {body}
-    </ToolRow>
-  );
+  const tool = (id: ToolsSheetToolId, icon: LucideIcon, name: string, detail: string, body: ReactNode): ToolsEntry => ({
+    key: id,
+    name,
+    detail,
+    node: (
+      <ToolRow
+        key={id}
+        id={id}
+        icon={icon}
+        name={name}
+        detail={detail}
+        open={open.has(id)}
+        onToggle={() => toggle(id)}
+        rowRef={rowRef(id)}
+      >
+        {body}
+      </ToolRow>
+    ),
+  });
+  const link = (href: string, icon: LucideIcon, name: string, detail: string, show?: boolean): ToolsEntry => ({
+    key: href,
+    name,
+    detail,
+    href,
+    show,
+    node: <LinkRow key={href} href={href} icon={icon} name={name} detail={detail} onNavigate={onNavigate} />,
+  });
+
+  // Tools redesign (approved by Josh, 31 Oct 2026): three groups under a search box. Row lines are
+  // short noun phrases, the same words as the phone Create sheet. Change 8 (D-77, 21 Oct 2026)
+  // still holds: on a desktop Tools keeps working tools only; the phone keeps New referral, Handover
+  // sheet and Out of area.
+  const doNow: ToolsEntry[] = [
+    {
+      key: "new-referral",
+      name: "New referral",
+      detail: "Details and destination",
+      show: isPhone && canRefer,
+      node: (
+        <button key="new-referral" type="button" className={styles.row} onClick={() => onNewReferral()}>
+          <RowText icon={Plus} name="New referral" detail="Details and destination" />
+          <ArrowUpRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
+          <span className="sr-only">, opens the referral form</span>
+        </button>
+      ),
+    },
+    link(`${root}/waiting`, Clock3, "Log a delay", "Patient and reason"),
+    ...(updateBedHref === `${root}/wards`
+      ? [
+          // P023 (Josh, 9:57 PM 27 Oct 2026): a network desk chooses the ward here, not on the Wards list.
+          tool(
+            "update-bed",
+            BedSingle,
+            "Update a bed",
+            "Open, close or hold a bed",
+            <UpdateBedWards onNavigate={onNavigate} />,
+          ),
+        ]
+      : updateBedHref
+        ? [link(updateBedHref, BedSingle, "Update a bed", "Open, close or hold a bed")]
+        : []),
+    // The redesign moves the Hospital feed up from the foot: confirming the feed is work to do now.
+    tool(
+      "feed",
+      Inbox,
+      "Hospital feed",
+      "Admissions and discharges to confirm",
+      executive ? <p role="status">Individual feed records are unavailable for this desk.</p> : <WardFeedInbox />,
+    ),
+  ];
+
+  // Find a bed is a look-up, not an action, so it leads Look up. Legal forms (and Out of area on a
+  // phone) join it from the old More pages group. Simplification A5 (19 Oct 2026) still holds: the
+  // full figures stay one row away rather than repeating each page's headline figures.
+  const lookUp: ToolsEntry[] = [
+    tool("bed-finder", BedDouble, "Find a bed", "Ready beds by ward", <WardBedFinder onNavigate={onNavigate} />),
+    tool(
+      "figures",
+      BarChart3,
+      "All figures",
+      "Beds, flow and waits across the network",
+      <NetworkFigures onNavigate={onNavigate} />,
+    ),
+    tool(
+      "catchment",
+      MapIcon,
+      "Catchment lookup",
+      "Suburb or postcode to service and clinic",
+      <WardCatchmentResolver
+        compact
+        renderActions={(result) => {
+          const clinic = contactForTeam(result.communityClinic);
+          return (
+            <>
+              <span className={styles.clinicPhone}>
+                <Phone aria-hidden="true" strokeWidth={1.75} />
+                {clinic?.publishedPhone
+                  ? `${result.communityClinic} clinic ${clinic.publishedPhone}, invented demo number`
+                  : `${result.communityClinic} clinic number not recorded`}
+              </span>
+              {/* Opens a community referral. The slide-out has no clinic field to prefill, so the
+                  label promises only what it does. */}
+              {canRefer && (
+                <button type="button" className={styles.primaryButton} onClick={() => onNewReferral("community")}>
+                  Start a community referral
+                </button>
+              )}
+            </>
+          );
+        }}
+      />,
+    ),
+    tool(
+      "contacts",
+      Search,
+      // UX audit (21 Oct 2026): the page's own name, not a third one.
+      "On-call",
+      "Who is on now, key lines and My list",
+      <WardToolsContacts onNavigate={onNavigate} />,
+    ),
+    tool(
+      "form-times",
+      CalendarClock,
+      "Form times",
+      "Check a time written on a form",
+      <>
+        <WardFormTimes />
+        {canOpen(`${root}/legal-forms`) && (
+          <Link className={styles.moreLink} href={`${root}/legal-forms`} onClick={onNavigate}>
+            See every open form on Legal forms
+          </Link>
+        )}
+      </>,
+    ),
+    link(`${root}/legal-forms`, Scale, "Legal forms", "Every open move that carries a form"),
+    link(`${root}/out-of-area`, MapPinned, "Out of area", "Who is in a bed far from home", isPhone),
+  ];
+
+  const printAndShare: ToolsEntry[] = [
+    tool(
+      "bed-summary",
+      ClipboardCopy,
+      "Copy bed summary",
+      "Text for the executive on-call email or Teams",
+      <BedSummary />,
+    ),
+    link(handoverHref(), FileText, "Handover sheet", "Review and print the current handover", isPhone),
+    link(DOWNTIME_PACK_HREF, Printer, "Downtime pack", "Print a snapshot now"),
+    link(PATIENT_CHRONOLOGY_HREF, FileClock, "Patient chronology", "PIR export"),
+  ];
+
+  // The search matches a tool's name and its line, and keeps each match in its own group.
+  const words = query.trim().toLowerCase();
+  const visible = (entries: ToolsEntry[]) =>
+    entries
+      .filter((entry) => entry.show !== false && (entry.href === undefined || canOpen(entry.href)))
+      .filter((entry) => !words || `${entry.name} ${entry.detail}`.toLowerCase().includes(words));
+  const groups = [
+    { title: "Do now", entries: visible(doNow) },
+    { title: "Look up", entries: visible(lookUp) },
+    { title: "Print and share", entries: visible(printAndShare) },
+  ];
+  const matches = groups.reduce((total, group) => total + group.entries.length, 0);
 
   return (
     <div className={styles.sheet} data-testid="ward-tools-sheet-v2">
@@ -362,184 +527,50 @@ export function WardToolsSheet({
         <WardRoleSwitcher withWords />
       </div>
 
-      {/* Change 8 (D-77, 21 Oct 2026): on a desktop Tools keeps working tools only. New referral,
-          Handover sheet, Bed meeting TV and Out of area each have their own place already. The
-          phone keeps them all. The Demo controls sit at the foot (`showDemo`). */}
-      <Group title="Do now">
-        {isPhone && canRefer ? (
-          <button type="button" className={styles.row} onClick={() => onNewReferral()}>
-            <RowText icon={Plus} name="New referral" detail="Review details and choose a destination" />
-            <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
+      <label className={`${styles.search} ${styles.toolsSearch}`}>
+        <Search aria-hidden="true" strokeWidth={1.75} />
+        <input
+          type="search"
+          aria-label="Search tools"
+          placeholder="Search tools"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </label>
+
+      {matches === 0 ? (
+        <div className={styles.toolsNone} role="status">
+          <p>No tool matches “{query.trim()}”.</p>
+          <button type="button" className={styles.secondaryButton} onClick={() => setQuery("")}>
+            Clear search
           </button>
-        ) : null}
-        <LinkRow
-          href={`${root}/waiting`}
-          icon={Clock3}
-          name="Log a delay"
-          detail="Choose the patient, then the reason"
-          onNavigate={onNavigate}
-        />
-        {updateBedHref === `${root}/wards` ? (
-          // P023 (Josh, 9:57 PM 27 Oct 2026): a network desk chooses the ward here, not on the Wards list.
-          tool(
-            "update-bed",
-            BedSingle,
-            "Update a bed",
-            "Open, close or hold a bed",
-            <UpdateBedWards onNavigate={onNavigate} />,
-          )
-        ) : updateBedHref ? (
-          <LinkRow
-            href={updateBedHref}
-            icon={BedSingle}
-            name="Update a bed"
-            detail="Open, close or hold a bed"
-            onNavigate={onNavigate}
-          />
-        ) : null}
-        {isPhone ? (
-          <LinkRow
-            href={handoverHref()}
-            icon={FileText}
-            name="Handover sheet"
-            detail="Review and print the current handover"
-            onNavigate={onNavigate}
-          />
-        ) : null}
-        {tool("bed-finder", BedDouble, "Find a bed", "Ready beds by ward", <WardBedFinder onNavigate={onNavigate} />)}
-      </Group>
+        </div>
+      ) : (
+        groups.map((group) => (
+          <Group key={group.title} title={group.title}>
+            {group.entries.map((entry) => entry.node)}
+          </Group>
+        ))
+      )}
 
-      {/* Simplification A5 (Josh, 19 Oct 2026): Tools no longer repeats the headline figures every
-          page already shows. The full figures stay one row away, under Look up. */}
-      <Group title="Look up">
-        {tool(
-          "figures",
-          BarChart3,
-          "All figures",
-          "Beds, flow and waits across the network",
-          <NetworkFigures onNavigate={onNavigate} />,
-        )}
-        {tool(
-          "catchment",
-          MapIcon,
-          "Catchment lookup",
-          "Suburb or postcode to service and clinic",
-          <WardCatchmentResolver
-            compact
-            renderActions={(result) => {
-              const clinic = contactForTeam(result.communityClinic);
-              return (
-                <>
-                  <span className={styles.clinicPhone}>
-                    <Phone aria-hidden="true" strokeWidth={1.75} />
-                    {clinic?.publishedPhone
-                      ? `${result.communityClinic} clinic ${clinic.publishedPhone}, invented demo number`
-                      : `${result.communityClinic} clinic number not recorded`}
-                  </span>
-                  {/* Opens a community referral. The slide-out has no clinic field to prefill, so the
-                      label promises only what it does. */}
-                  {canRefer && (
-                    <button type="button" className={styles.primaryButton} onClick={() => onNewReferral("community")}>
-                      Start a community referral
-                    </button>
-                  )}
-                </>
-              );
-            }}
-          />,
-        )}
-        {tool(
-          "contacts",
-          Search,
-          // UX audit (21 Oct 2026): the page's own name, not a third one.
-          "On-call",
-          "Who is on now, key lines and My list",
-          <WardToolsContacts onNavigate={onNavigate} />,
-        )}
-        {tool(
-          "form-times",
-          CalendarClock,
-          "Form times",
-          "Check a time written on a form",
-          <>
-            <WardFormTimes />
-            {canOpen(`${root}/legal-forms`) && (
-              <Link className={styles.moreLink} href={`${root}/legal-forms`} onClick={onNavigate}>
-                See every open form on Legal forms
-              </Link>
-            )}
-          </>,
-        )}
-      </Group>
-
-      <Group title="Print and share">
-        {tool(
-          "bed-summary",
-          ClipboardCopy,
-          "Copy bed summary",
-          "Text for the executive on-call email or Teams",
-          <BedSummary />,
-        )}
-        <LinkRow
-          href={DOWNTIME_PACK_HREF}
-          icon={Printer}
-          name="Downtime pack"
-          detail="Print a snapshot now"
-          onNavigate={onNavigate}
-        />
-        <LinkRow
-          href={PATIENT_CHRONOLOGY_HREF}
-          icon={FileClock}
-          name="Patient chronology"
-          detail="PIR export"
-          onNavigate={onNavigate}
-        />
-      </Group>
-
-      {[`${root}/legal-forms`, ...(isPhone ? [`${root}/out-of-area`] : [])].some(canOpen) ? (
-        <Group title="More pages">
-          <LinkRow
-            href={`${root}/legal-forms`}
-            icon={Scale}
-            name="Legal forms"
-            detail="Every open move that carries a form"
-            onNavigate={onNavigate}
-          />
-          {isPhone ? (
-            <LinkRow
-              href={`${root}/out-of-area`}
-              icon={MapPinned}
-              name="Out of area"
-              detail="Who is in a bed far from home"
-              onNavigate={onNavigate}
-            />
-          ) : null}
-        </Group>
-      ) : null}
-
-      {/* Demo and the Hospital feed. The executive chrome's Demo lives in its Synthetic pill's menu,
-          so its desktop Tools keeps only the Hospital feed here. */}
-      <section className={`${styles.group} ${styles.demoGroup}`} aria-label={showDemo ? "Demo" : "Hospital feed"}>
-        <div className={styles.card}>
-          {showDemo
-            ? tool(
+      {/* The Demo controls at the foot, while nothing is searched. The executive chrome's Demo lives
+          in its Synthetic pill's menu, so its desktop Tools has no foot. */}
+      {showDemo && !words ? (
+        <section className={`${styles.group} ${styles.demoGroup}`} aria-label="Demo">
+          <div className={styles.card}>
+            {
+              tool(
                 "demo",
                 FlaskConical,
                 "Demo",
                 "Scenario, clock and reset. Synthetic data only.",
                 // A desktop shows the one list the pill's Demo menu showed; the phone keeps its own.
                 <WardDemoPanel oneList={!isPhone} />,
-              )
-            : null}
-          {tool(
-            "feed",
-            Inbox,
-            "Hospital feed",
-            "Invented admissions and discharges to confirm or reject.",
-            executive ? <p role="status">Individual feed records are unavailable for this desk.</p> : <WardFeedInbox />,
-          )}
-        </div>
-      </section>
+              ).node
+            }
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
