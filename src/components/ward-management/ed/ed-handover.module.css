@@ -203,9 +203,10 @@
   overflow: visible !important;
   white-space: normal !important;
 }
+/* The pick button's own -8px margin and 8px padding line its text up with the column head and the
+   sub-line under it; the menu's wrapper takes no further shift (visual check, 1 Nov 2026). */
 .cellMenu {
   display: block;
-  margin-left: -10px;
 }
 .cellPick {
   display: flex;
