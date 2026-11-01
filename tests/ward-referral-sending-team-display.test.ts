@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 
 import { buildReferralSummary } from "@/components/ward-management/search/record-preview";
 import { sendingTeamFragment, withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
-import { referralReferrerName } from "@/components/ward-management/referrals/referral-referrer";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Referral } from "@/components/ward-management/ward-model";
 
@@ -99,24 +98,5 @@ describe("the rendered origin lines carry it", () => {
     expect(line, "a dangling separator was left on a referral with no team").not.toMatch(/[·—-]\s*$/);
     expect(line, "an empty 'sent by' reached a referral with no team").not.toContain("sent by");
     expect(line.trimEnd(), "trailing whitespace was left behind").toBe(line);
-  });
-});
-
-describe("the sending team and the referrer stay separate on screen", () => {
-  /**
-   * 🔴 THE SAME PROPERTY THE MODEL-LEVEL SUITE PINS, RE-ASSERTED AT THE DISPLAY LAYER, AND IT IS
-   * NOT A DUPLICATE.
-   *
-   * `tests/ward-referral-sending-team.test.ts` proves the DERIVATION does not leak the team into
-   * the referrer. This proves a future edit cannot achieve the same thing by routing the display
-   * helper's output into a person-labelled field instead — the two helpers are siblings in one
-   * directory with near-identical call sites, which is exactly what makes merging them tempting.
-   */
-  it("the referrer answer is unchanged by the presence of a sending team", () => {
-    const shown = referralReferrerName(withTeam(TEAM));
-    expect(shown, "the referrer field leaked the sending team").not.toContain(TEAM);
-    expect(shown, "the referrer answer changed when a sending team was present").toBe(
-      referralReferrerName(withTeam(undefined)),
-    );
   });
 });

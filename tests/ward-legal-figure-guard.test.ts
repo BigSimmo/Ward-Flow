@@ -1109,7 +1109,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
       `${WARD_DIR}/coordinator/shortlist-panel.tsx`,
       `${WARD_DIR}/ed/ed-screen.tsx`,
       `${WARD_DIR}/officer/officer-screen.tsx`,
-      `${WARD_DIR}/tracker/tracker-derivations.ts`,
+      `${WARD_DIR}/officer/officer-screen-helpers.ts`,
       `${WARD_DIR}/ward/ward-screen.tsx`,
     ]) {
       expect(scannedPaths, `${expected} was never scanned`).toContain(expected);

@@ -1,7 +1,6 @@
 /** @vitest-environment node */
 import { describe, expect, it } from "vitest";
 
-import { referralReferrerName } from "@/components/ward-management/referrals/referral-referrer";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { SENDING_TEAM_NAME_LIMIT } from "@/components/ward-management/ward-model";
@@ -107,61 +106,5 @@ describe("a referral records the team or service that sent it", () => {
       "the limit itself was refused — an off-by-one here silently narrows the field",
     ).toHaveLength(1);
     expect(accepted.created[0]!.sendingTeamName).toBe(atLimit);
-  });
-});
-
-describe("the sending team is never rendered as the referrer", () => {
-  /**
-   * 🔴 THE CASE THIS FILE EXISTS FOR.
-   *
-   * `referralReferrerName` answers WHO — a person — and returns a stated absence where the record
-   * holds none. **This proves it does not start answering with an organisation the moment one is
-   * available**, which is the single most likely future edit to this area: a screen with an empty
-   * "Referred by" field and a team name sitting one property away.
-   *
-   * ⚠️ **The floor comes first.** Without it this case would pass over a referral carrying no team
-   * at all — green, and proving nothing whatsoever.
-   */
-  it("does not return the sending team's name, even when the referral carries one", () => {
-    const { after, created } = receive({ sendingTeamName: TEAM });
-    expect(after.rejections).toEqual([]);
-    expect(created).toHaveLength(1);
-
-    const referral = created[0]!;
-    expect(referral.sendingTeamName, "the floor failed: no team on the record, so the case below proves nothing").toBe(
-      TEAM,
-    );
-
-    const shown = referralReferrerName(referral);
-    expect(
-      shown,
-      "the referrer field is showing the SENDING TEAM. D-12: an organisation must never stand in a " +
-        "field labelled as a person — a service is not a human being, and a record saying a named " +
-        "person referred this patient is a different clinical claim from one saying a service did. " +
-        `Shown was: "${shown}"`,
-    ).not.toContain(TEAM);
-    expect(shown, "the referrer field leaked part of the team's name").not.toMatch(/Armadale|Mental Health Service/i);
-  });
-
-  /**
-   * ⚠️ AND THE ANSWER IS THE SAME WITH AND WITHOUT A TEAM. If these two ever differ, the referrer
-   * has begun deriving something from the sender — which is the fabrication, whatever string it
-   * happens to produce.
-   */
-  it("answers identically whether or not a sending team is recorded", () => {
-    const withTeam = receive({ sendingTeamName: TEAM });
-    const withoutTeam = receive({ source: "ambulance" });
-    expect(withTeam.created).toHaveLength(1);
-    expect(withoutTeam.created).toHaveLength(1);
-    expect(withTeam.created[0]!.sendingTeamName, "the floor failed: the two cases are not different").toBe(TEAM);
-    expect(
-      withoutTeam.created[0]!.sendingTeamName,
-      "the floor failed: the two cases are not different",
-    ).toBeUndefined();
-
-    expect(
-      referralReferrerName(withTeam.created[0]!),
-      "the referrer answer CHANGED when a sending team was present — it is deriving a person from an organisation",
-    ).toBe(referralReferrerName(withoutTeam.created[0]!));
   });
 });

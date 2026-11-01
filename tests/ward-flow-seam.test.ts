@@ -51,10 +51,6 @@ const WARD_DIRS = ["src/components/ward-management", "src/app/ward-flow", "src/a
  */
 const APPROVED_SHARED_MODULES = new Map([
   ["@/components/ui-primitives", "the repository's buttons and form controls"],
-  [
-    "@/components/clinical-dashboard/brand",
-    "the product wordmark, so the prototype is not misread as a separate product",
-  ],
   ["@/components/wf/sheet", "the slide-over panel primitive"],
   [
     "@/lib/synthetic-data-guard",
@@ -329,7 +325,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 12 -> 14 on 2026-10-27: @/lib/front-door-pass, the server-side front door shared with the proxy,
     // and @/lib/brand-mark, the mark's geometry for the front door's band (D-88). The front door
     // components themselves live inside Ward Flow.
-    expect(APPROVED_SHARED_MODULES.size).toBe(14);
+    // 14 -> 13 on 2026-11-01: @/components/clinical-dashboard/brand was deleted (Q96); nothing in
+    // Ward Flow imported it.
+    expect(APPROVED_SHARED_MODULES.size).toBe(13);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -338,7 +336,6 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // applies here word for word. Hand-written rather than derived from the map, because a list
     // computed from the thing it checks is a tautology that passes whatever the map says.
     expect([...APPROVED_SHARED_MODULES.keys()].sort()).toEqual([
-      "@/components/clinical-dashboard/brand",
       "@/components/contextual-back-link",
       "@/components/ui-primitives",
       "@/components/wf",
