@@ -8,7 +8,8 @@ name: Ward Flow backend uptime
 # schedule, which may not be the owner. Only the backend is checked: the signed-in site sleeps when
 # idle, and a check every 30 minutes would keep it awake. `/healthz` needs no sign-in; sent the
 # WARD_FLOW_UPTIME_TOKEN repo secret (audit P177), it reports `database` as "ok" or "unavailable"
-# from a check it repeats at most every 30 seconds (`/readyz`
+# from a check it repeats at most every 30 seconds. A missing or wrong token hides `database`: that
+# counts as up and shows a warning on the run, not a "database down" issue (`/readyz`
 # needs a sign-in). Run it by hand with "Send one test alert" ticked to check the email arrives: it
 # opens and at once closes one clearly labelled test issue and skips the real check.
 # Public repository: free. GitHub turns scheduled workflows off after 60 days without repository
@@ -61,9 +62,16 @@ jobs:
           for attempt in 1 2 3; do
             body=$(curl --silent --show-error --max-time 20 --fail --header "x-ward-flow-uptime-token: $UPTIME_TOKEN" "$BACKEND_URL/healthz" || true)
             if printf '%s' "$body" | grep -q '"service":"ward-flow-backend"'; then
-              # A missing `database` means the token was missing or wrong; count it as down, not up.
-              database=$(printf '%s' "$body" | jq -r '.database // "unavailable"' 2>/dev/null || echo unavailable)
+              # A missing `database` means the token was missing or wrong: the public health check
+              # still passed, so count the backend as up and warn about the token instead of raising
+              # a false "database down" issue.
+              database=$(printf '%s' "$body" | jq -r '.database // "hidden"' 2>/dev/null || echo hidden)
               if [ "$database" = "ok" ]; then state=up; break; fi
+              if [ "$database" = "hidden" ]; then
+                echo "::warning::Database not checked: WARD_FLOW_UPTIME_TOKEN is missing or does not match the backend's value."
+                state=up
+                break
+              fi
               state=database
             else
               state=down
