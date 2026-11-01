@@ -603,7 +603,7 @@ export function EdIndex() {
 
         <WardPrototypeFooter
           testId="ed-index-governance"
-          note="Synthetic prototype. Invented figures under real WA hospital names. Lists update once a minute."
+          note="Synthetic prototype. Invented figures under real WA hospital names."
         />
       </main>
     </div>

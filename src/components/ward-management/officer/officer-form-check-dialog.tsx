@@ -45,7 +45,7 @@ export function OfficerFormCheckDialog({
           </span>
           <span className={styles.modalTitles}>
             <h3 id="form-verify-title" className={styles.modalTitle}>
-              Paperwork checks (not saved)
+              Paperwork checks
             </h3>
             <span className={styles.modalSub}>
               {formRequiredLabel(job.transport!)} · {umrn} · {patientName}
@@ -56,8 +56,8 @@ export function OfficerFormCheckDialog({
         <div className={styles.modalBody}>
           <p className={styles.modalLead}>
             {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-            Confirm paperwork with the clinical team for <strong>{patientName}</strong>. These local checks do not
-            establish legal authorisation and are not saved to the movement record.
+            Confirm paperwork with the clinical team for <strong>{patientName}</strong>. These checks do not establish
+            legal authorisation.
           </p>
           <h4 className={styles.sectionTitle}>Transfer checks</h4>
           <div className={styles.checklist}>
@@ -84,7 +84,7 @@ export function OfficerFormCheckDialog({
         </div>
         <footer className={styles.modalFoot}>
           <span className={styles.muted}>
-            <StatusGlyph tone="neutral" size={9} /> Not saved to the movement record
+            <StatusGlyph tone="neutral" size={9} /> Not saved
           </span>
           <Button variant="pri" size="sm" onClick={onClose}>
             Close checks

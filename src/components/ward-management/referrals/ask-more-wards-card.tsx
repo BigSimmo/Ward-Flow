@@ -69,8 +69,8 @@ export function AskMoreWardsCard({ ask }: { ask: AskMoreWards }) {
         <>
           <p className={styles.hint}>
             {full
-              ? `${ask.waiting} wards are waiting, the most at once. You can ask another when one of them answers.`
-              : `Up to ${ask.cap} wards can be waiting at once. A ward that declines frees its place.`}
+              ? `${ask.waiting} wards waiting, the most at once.`
+              : `Up to ${ask.cap} wards can be waiting at once.`}
           </p>
           <Button
             variant="sec"
@@ -105,7 +105,6 @@ function AskMoreWardsList({ ask }: { ask: AskMoreWards }) {
         chosen={ask.chosen}
         onToggle={ask.toggle}
         canTick={() => ask.chosen.length < ask.slots}
-        note="Each ward asked gets the same referral and bed details, with its own clock."
         testIdPrefix="ward-referral-ask-ward"
       />
     </div>

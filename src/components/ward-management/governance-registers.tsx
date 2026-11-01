@@ -162,7 +162,7 @@ export function GovernanceAccessRecordPanel({ sessionCount }: { sessionCount?: n
       <header className={thirdEdition.panelHead}>
         <div>
           <h2>Access record</h2>
-          <p>What this prototype actually keeps, not a network-wide log</p>
+          <p>This session only</p>
         </div>
       </header>
       <CardBody className={thirdEdition.noticeStack}>
@@ -177,9 +177,7 @@ export function GovernanceAccessRecordPanel({ sessionCount }: { sessionCount?: n
           <History aria-hidden="true" size={16} /> {ACCESS_RECORD_NOTE}
         </p>
         <p className={thirdEdition.notice} data-testid="ward-governance-access-record-scope">
-          <Fingerprint aria-hidden="true" size={16} /> There is no network-wide version of this record here, and no row
-          names who looked: this system has no signed-in user to name, only the screen a search ran from, held in that
-          screen&apos;s own memory and nowhere else.
+          <Fingerprint aria-hidden="true" size={16} /> Rows show the screen a search ran from; no row names who looked.
         </p>
       </CardBody>
     </Card>
@@ -835,9 +833,7 @@ function GovernanceSession({
                 meta={<Count n={toReview.length} />}
                 aside={
                   <span className={thirdEdition.quietText}>
-                    {chip
-                      ? `${chipCount} of ${toReview.length} highlighted, all rows stay`
-                      : "Overrides, refused actions and record access, now with break glass. Newest first."}
+                    {chip ? `${chipCount} of ${toReview.length} highlighted, all rows stay` : "Newest first."}
                   </span>
                 }
               />
@@ -1144,11 +1140,7 @@ function GovernanceSession({
                   <div className={thirdEdition.emptyBlock}>
                     <ClipboardList aria-hidden="true" size={16} />
                     <h3>{events.length ? "No matching events" : "No events captured yet"}</h3>
-                    <p>
-                      {events.length
-                        ? "Change the filters to see other captured events."
-                        : "Recorded actions and discharge-record opens will appear here."}
-                    </p>
+                    {events.length ? <p>Change the filters to see other captured events.</p> : null}
                     {events.length > 0 && (category !== "all" || outcome !== "all" || reviewFilter !== "all") ? (
                       <button
                         type="button"
@@ -1188,11 +1180,11 @@ function GovernanceSession({
             {[
               {
                 title: "Seclusion",
-                text: "Seclusion records: start, reviews, release and duration by ward.",
+                text: "Start, reviews, release and duration by ward.",
               },
               {
                 title: "Bodily restraint",
-                text: "Bodily restraint records: start, reviews, release and duration by ward.",
+                text: "Start, reviews, release and duration by ward.",
               },
               {
                 title: "Notifiable incidents",
@@ -1216,7 +1208,6 @@ function GovernanceSession({
                     <span />
                     <span />
                   </span>
-                  <p className={thirdEdition.quiet}>Nothing is shown until Ward Flow holds these records.</p>
                 </CardBody>
               </Card>
             ))}
@@ -1288,11 +1279,11 @@ function GovernanceSession({
           {[
             {
               title: "Chief Psychiatrist return",
-              text: "Restrictive practice and incident counts. Needs seclusion, bodily restraint and incident records.",
+              text: "Restrictive practice and incident counts.",
             },
             {
               title: "Tribunal and advocacy",
-              text: "Reviews and advocate contact on time. Needs hearing dates and contact times.",
+              text: "Reviews and advocate contact on time.",
             },
           ].map((report) => (
             <Card key={report.title} className={thirdEdition.previewCard} aria-label={report.title}>

@@ -682,7 +682,6 @@ export function HandoverPhone({
                 />
               ) : null}
             </div>
-            <p className={styles.note}>Print, filters and columns are on desktop</p>
           </div>
         ) : tab === "beds" ? (
           <div

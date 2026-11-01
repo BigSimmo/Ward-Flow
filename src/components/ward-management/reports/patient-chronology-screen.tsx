@@ -388,22 +388,17 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
         <CardHead id={`${baseId}-holds`} icon={FileText} title="What a chronology holds" />
         <ul className={start.holdsList}>
           <li>
-            <b>Records.</b> The person&rsquo;s referrals, movements and admissions, each change as it was saved.
+            <b>Records.</b> Referrals, movements and admissions, each change as saved.
           </li>
           <li>
             <b>Audit trail.</b>{" "}
-            {coordinator
-              ? "Coordinator changes and overrides, with the reason given."
-              : "Coordinator changes and overrides. Not shown for this role."}
+            {coordinator ? "Coordinator changes and overrides, with reasons." : "Not shown for this role."}
           </li>
           <li>
-            <b>Session log.</b> What was done in this browser session.
+            <b>Session log.</b> This browser session only.
           </li>
           <li>
-            <b>Times.</b> When each event occurred and when it was recorded, as typed. Nothing is calculated.
-          </li>
-          <li>
-            <b>Output.</b> Print it or download a CSV once a patient is chosen.
+            <b>Times.</b> As recorded or typed. Nothing is calculated.
           </li>
         </ul>
       </Card>
@@ -435,7 +430,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     </p>
   ) : nurseView ? (
     <p className={styles.cardNote} data-testid="ward-chronology-nurse-view">
-      Ward manager view: records and session log only. The coordinator audit is left out.
+      Ward manager view: records and session log only.
     </p>
   ) : null;
 
@@ -1047,9 +1042,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           startPage
         )}
 
-        <p className={styles.disclosure}>
-          Recorded or typed times only, nothing calculated. Audit trail and session log cover this browser session.
-        </p>
+        <p className={styles.disclosure}>Times as recorded or typed, nothing calculated.</p>
         <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" className={phone.phPageFoot} />
       </main>
     </div>

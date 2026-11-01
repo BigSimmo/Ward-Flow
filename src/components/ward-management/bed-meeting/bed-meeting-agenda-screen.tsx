@@ -252,11 +252,7 @@ function BedMeetingAgenda() {
           </Card>
         ))}
       </div>
-      <p className={styles.note}>
-        {chairs ? null : "Read only. The bed coordinator records and completes actions. "}
-        Actions are tasks for people. Recording or completing one changes nothing else, and an overdue action is shown
-        here, never escalated.
-      </p>
+      {chairs ? null : <p className={styles.note}>Read only. The bed coordinator records and completes actions.</p>}
       <WardPrototypeFooter testId="ward-bed-meeting-agenda-governance" />
     </main>
   );

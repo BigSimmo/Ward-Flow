@@ -369,11 +369,8 @@ export function PilotMeasuresView({
 
   const disclosure = (
     <p className={styles.disclosure}>
-      The pilot&apos;s four agreed measures come first, then supporting figures, all counted from the times this
-      prototype records. Calls per placed referral and wrong-patient or lost changes are counted on paper. Bed figures
-      are today&apos;s only, because each ward&apos;s latest confirmation is all that is kept. Targets are still
-      proposals. Booking times are not recorded, so transport is measured against the estimate. People waiting in an ED
-      with no bed request at all are not held here; the daily check on Waiting lists what the record can show.
+      Counted from recorded times. Bed figures are today&apos;s only. Targets are proposals. Transport is measured
+      against the estimate. ED waits with no bed request are not counted.
     </p>
   );
 

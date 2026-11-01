@@ -183,7 +183,7 @@ export function siteBlockersNotReviewedToday(
 }
 
 /** An open bed meeting action due by the end of today, owned by a site ward or on a site ward's stay. */
-export type SiteMeetingAction = {
+type SiteMeetingAction = {
   subject: { kind: "movement" | "admission"; id: string };
   kind: NonNullable<WardFlowState["admissions"][number]["meetingActions"]>[number]["kind"];
   owner: NonNullable<WardFlowState["admissions"][number]["meetingActions"]>[number]["owner"];
@@ -191,7 +191,7 @@ export type SiteMeetingAction = {
   dueAt: Instant;
 };
 
-export function siteMeetingActionsOpenToday(
+function siteMeetingActionsOpenToday(
   state: Pick<WardFlowState, "admissions" | "movements" | "units">,
   siteCode: string,
   now: Instant,

@@ -500,7 +500,7 @@ describe("ward screen bed release controls", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Ended" }));
 
-    expect(screen.getByText("No leave bed is recorded at Mental Health Unit.")).toBeInTheDocument();
+    expect(screen.getByText("Nobody on leave.")).toBeInTheDocument();
     expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("On leave 0");
   });
 

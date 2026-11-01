@@ -772,12 +772,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                  */
                 <div className={styles.emptyNotice} data-testid="community-index-empty">
                   <p>
-                    <strong>This list is empty.</strong> Every team on this page is derived from the vocabulary a
-                    referral can name, so an empty list means that derivation returned no teams.
-                  </p>
-                  <p>
-                    It does not mean this prototype has no community teams, and nothing on this page has checked whether
-                    any exist. Read it as a page that found nothing, not as a service that has nothing.
+                    <strong>This list is empty.</strong> The team derivation returned no teams, which does not mean this
+                    prototype has no community teams.
                   </p>
                 </div>
               ) : (
@@ -850,8 +846,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               <CardBody className={styles.familyBody}>
                 {familyGroups.length === 0 ? (
                   <p className={styles.muted} data-testid="community-gateway-family-empty">
-                    No name in this list currently reads like another. That would itself be a change worth noticing,
-                    since the source document is known to hold near-duplicate spellings.
+                    No name in this list reads like another.
                   </p>
                 ) : (
                   <>
@@ -879,7 +874,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 )}
                 <p className={styles.note}>
                   <Icon icon={Info} size={14} />
-                  <span>Not merged. Spellings are compared, so an abbreviation or a renaming carries no marker.</span>
+                  <span>Not merged. Abbreviations and renamings carry no marker.</span>
                 </p>
               </CardBody>
             </Card>
@@ -898,36 +893,39 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           </div>
         </div>
 
-        <div className="sr-only">
-          <p data-testid="community-index-about">Every community team a referral can name in this prototype</p>
-          {/* H-0829 (WL-37): short sentences only. Each still carries the claim its tests pin. */}
-          <p data-testid="community-index-provenance">
-            These teams are listed alphabetically because the record holds a team&apos;s name and nothing else to group
-            by. Any grouping here would be one this prototype invented.
-          </p>
-          <p data-testid="community-index-restraint">
-            This is a way in, not a caseload. Rows show no counts of people, no discharges and no follow-up. Open a team
-            for its own page.
-          </p>
-          <p data-testid="community-index-marker-explanation">
-            A reads like others marker means a name is spelt like another. It never means they are the same service. No
-            marker is not a guarantee a name appears only once.
-          </p>
-        </div>
+        {/*
+         * Q107 (approved 1 Nov 2026): background caveats sit in one closed "About this data" section.
+         * These were screen-reader-only notes; each still carries the claim its tests pin.
+         */}
+        <details className={styles.about} data-testid="community-index-about-this-data">
+          <summary>
+            <Icon icon={Info} size={16} />
+            About this data
+          </summary>
+          <div className={styles.aboutBody}>
+            <p data-testid="community-index-about">
+              Every community team a referral can name in this prototype, derived from referral vocabulary.
+            </p>
+            <p data-testid="community-index-provenance">
+              Teams are listed alphabetically because the record holds a team&apos;s name and nothing else to group by.
+              Any grouping here would be one this prototype invented.
+            </p>
+            <p data-testid="community-index-restraint">
+              This is a way in, not a caseload. Rows show no counts of people, no discharges and no follow-up.
+            </p>
+            <p data-testid="community-index-marker-explanation">
+              A reads like others marker means a name is spelt like another, never that they are the same service. No
+              marker is not a guarantee a name appears only once.
+            </p>
+            <p data-testid="community-index-source">
+              Every team listed here comes from one extracted source document, and no team has agreed to be represented.
+              Nothing has been checked against a real service.
+            </p>
+          </div>
+        </details>
         <WardPrototypeFooter
           testId="community-index-governance"
-          note={
-            <>
-              <span>
-                Synthetic prototype. Listed A to Z because the record holds a name only. Names come from referral
-                vocabulary, not a roster of WA services.
-              </span>
-              <span className="sr-only">
-                Every team listed here comes from one extracted source document, and no team has agreed to be
-                represented. Nothing has been checked against a real service.
-              </span>
-            </>
-          }
+          note="Synthetic prototype. Names come from referral vocabulary, not a roster of WA services."
         />
 
         <Drawer
@@ -981,10 +979,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   <dd>Not recorded</dd>
                 </div>
               </dl>
-              <p className={styles.muted}>
-                Every team listed here is derived from the referral vocabulary extracted from Western Australian mental
-                health catchment documents. This directory has not been verified with the services.
-              </p>
+              <p className={styles.muted}>Derived from WA catchment documents. Not verified with the services.</p>
             </section>
             <section className={guideStyles.guideSection} aria-labelledby="community-guide-similar">
               <h3 id="community-guide-similar" className={guideStyles.guideHead}>
@@ -1390,10 +1385,7 @@ function SearchEmptyNotice({ query, alikeOnly }: { query: string; alikeOnly: boo
         <p>
           <strong>No team name contains &ldquo;{query}&rdquo;.</strong>
         </p>
-        <p>
-          The list holds names as they reach this page, so a team may be recorded under a spelling you would not expect.
-          Try a shorter fragment.
-        </p>
+        <p>Try a shorter fragment.</p>
       </div>
     );
   }
@@ -1404,7 +1396,7 @@ function SearchEmptyNotice({ query, alikeOnly }: { query: string; alikeOnly: boo
           {alikeOnly ? "No team in this service reads like another." : "No teams found matching active filters."}
         </strong>
       </p>
-      <p>Every name stays in the list below, dimmed. Reset the filters to clear the highlight.</p>
+      <p>Reset the filters to clear the highlight.</p>
     </div>
   );
 }

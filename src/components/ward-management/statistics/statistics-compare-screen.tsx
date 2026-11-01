@@ -497,8 +497,8 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
                 <span className={phone.flagged}>
                   <StatusGlyph tone="warning" size={9} />
                   {wardReferenceProtected
-                    ? "Some counts are not shown. Their bars, count order and network reference are not shown; A to Z is used."
-                    : "Amber dot: well above the mean, by more than one standard deviation. Wards differ in case mix."}
+                    ? "Some counts are hidden, so bars, order and network reference are not shown."
+                    : "Amber dot: over 1 SD above the mean. Wards differ in case mix."}
                 </span>
               </p>
             </>
@@ -845,7 +845,7 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
       >
         {referenceProtected ? (
           <p className={compare.footNote}>
-            Some counts are not shown. Their bars, count order and network reference are not shown; A to Z is used.
+            Some counts are hidden, so bars, order and network reference are not shown.
           </p>
         ) : null}
         <span className={compare.footNote}>Wards differ in case mix</span>
@@ -1000,7 +1000,7 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
       {referenceProtected ? (
         <CardFoot>
           <span className={compare.footNote}>
-            Some counts are not shown. Their bars, count order and network reference are not shown; A to Z is used.
+            Some counts are hidden, so bars, order and network reference are not shown.
           </span>
         </CardFoot>
       ) : (

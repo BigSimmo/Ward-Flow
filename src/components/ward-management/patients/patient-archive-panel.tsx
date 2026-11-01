@@ -42,10 +42,7 @@ export function PatientArchivePanel({ patientId, displayName }: { patientId: Pat
     <Card data-testid="ward-patient-archive">
       <CardHead title="Record added in error" />
       <CardBody>
-        <p>
-          Nothing is recorded against this person yet. If this record should not exist, archive it. It leaves every
-          list, and the audit trail keeps it.
-        </p>
+        <p>Archiving removes it from every list. The audit trail keeps it.</p>
         <fieldset>
           <legend>Why should it go?</legend>
           {PATIENT_ARCHIVE_REASONS.map((option) => (

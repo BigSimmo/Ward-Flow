@@ -170,7 +170,7 @@ describe("tasks drawer: ownership and snooze", () => {
       seed,
     );
     expect(expected.patient, "the red row's movement has a linked synthetic patient").toBeDefined();
-    expect(within(snoozedRow).getByText(expected.displayName)).toBeInTheDocument();
+    expect(within(snoozedRow).getByText(expected.formalName)).toBeInTheDocument();
     expect(within(snoozedRow).getByText(expected.umrn)).toBeInTheDocument();
     expect(snoozedRow.textContent).not.toMatch(/WF-\d/);
     const open = within(snoozedRow).getByRole("button", { name: "Open patient" });

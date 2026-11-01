@@ -54,7 +54,7 @@ function renderWithAcceptedReferral() {
   expect(first).toBeDefined();
   const unit = current!.units.find((candidate) => candidate.id === first!.unitId)!;
   expect(boundedBedAvailability(unit).available).toBeGreaterThan(0);
-  return { referral: first!.referral, unitId: first!.unitId };
+  return { referral: first!.referral, unitId: first!.unitId, unitName: first!.unitName };
 }
 
 describe("Pull the bed in one step", () => {
@@ -64,9 +64,12 @@ describe("Pull the bed in one step", () => {
   });
 
   it("asks only what is not recorded, then one tap starts the journey and pulls the bed at the ward that accepted", async () => {
-    const { referral, unitId } = renderWithAcceptedReferral();
+    const { referral, unitId, unitName } = renderWithAcceptedReferral();
     const form = screen.getByTestId(`ward-pull-accepted-${referral.id}`);
     expect(form).toBeInTheDocument();
+    // The person the bed is for, surname first (D-83), as the form names them.
+    const name = (form.getAttribute("aria-label") ?? "").replace(/^Pull the bed for /u, "");
+    expect(name).toMatch(/^[^,]+, \S/u);
     const status = screen.getByTestId("ward-pull-accepted-legal-status") as HTMLSelectElement;
     const legalForm = screen.getByTestId("ward-pull-accepted-legal-form") as HTMLSelectElement;
     const observation = screen.getByTestId("ward-pull-accepted-observation") as HTMLSelectElement;
@@ -84,6 +87,8 @@ describe("Pull the bed in one step", () => {
     expect(journey).toBeDefined();
     expect(journey!.acceptedUnitId).toBe(unitId);
     expect(journey!.stage).toBe("pulled");
+    // Pop-ups build (toast, round 2): the save confirmation names who the bed was pulled for.
+    expect(await screen.findByText(`Bed pulled at ${unitName} for ${name}`)).toBeInTheDocument();
     expect(acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements)).not.toContainEqual(
       expect.objectContaining({ referral: expect.objectContaining({ id: referral.id }) }),
     );
@@ -148,12 +153,17 @@ describe("Home: Act now and Referrals to decide (WS-02, WS-04)", () => {
     expect(row).toHaveTextContent("Accepted, bed not pulled");
     expect(row).toHaveTextContent(`${first!.unitName} accepted`);
     // The row's title and its Pull the bed button both open the sheet.
-    fireEvent.click(
-      within(row)
-        .getAllByRole("button", { name: /^Pull the bed for / })
-        .at(-1)!,
-    );
-    expect(await screen.findByTestId(`ward-pull-accepted-${first!.referral.id}`)).toBeInTheDocument();
+    const pull = within(row)
+      .getAllByRole("button", { name: /^Pull the bed for / })
+      .at(-1)!;
+    expect(pull).toHaveTextContent("Pull the bed");
+    expect(pull).toHaveAttribute("data-placement-action");
+    fireEvent.click(pull);
+    const sheet = await screen.findByTestId(`ward-pull-accepted-${first!.referral.id}`);
+    expect(sheet).toBeInTheDocument();
+    // Audit 1 Nov 2026: Pull the bed is a placement decision, so it keeps the 48px phone and touch
+    // size the kit gives `data-placement-action`.
+    expect(within(sheet).getByTestId("ward-pull-accepted-confirm")).toHaveAttribute("data-placement-action");
   });
 
   it("makes Decide a link to the referral on the Referrals board, where Accept and Decline are", () => {

@@ -655,7 +655,49 @@
 
 .servicePanel {
   left: 0;
-  width: 17rem;
+  /* Pop-ups build (Service picker, 1 Nov 2026): wide enough for "N waiting in ED" on every row. */
+  width: min(21.25rem, calc(100vw - 16px));
+  gap: 2px;
+  padding: 0 8px 8px;
+  color: var(--wf-ink-1);
+}
+
+/* The title and its quiet line, on every screen size, with Close at the end. */
+.serviceHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 0 8px 8px;
+}
+
+.serviceHeadText {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.serviceHeadTitle {
+  font: 600 var(--wf-fs-15) / 20px var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.serviceHeadLine {
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.serviceClose {
+  position: relative;
+  flex: none;
+}
+
+.serviceGroupLabel {
+  margin: 8px 8px 2px;
+  font: 700 var(--wf-fs-12) / 16px var(--wf-font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
 }
 
 .primaryPanel {
@@ -714,6 +756,22 @@
   font-weight: 600;
 }
 
+/* Pop-ups build (Service picker, 1 Nov 2026): the kit's 40px row, the name in weight, the count
+   after it and the check in its own column. */
+.servicePanel .serviceOption {
+  gap: 12px;
+  min-height: max(40px, var(--wf-tablet-tap, 0px));
+  padding: 0 12px;
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.servicePanel .serviceOption[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--wf-accent) 8%, var(--wf-surface));
+}
+
 .serviceName {
   flex: 1;
   min-width: 0;
@@ -721,17 +779,28 @@
   text-overflow: ellipsis;
 }
 
+/* "N waiting in ED": the number bold in ink, the words quiet; a zero is the same figure, greyed. */
 .serviceOptionCount {
-  font-family: var(--wf-mono);
-  font-size: var(--t-0);
-  font-weight: 500;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}
+
+.serviceOptionCount b {
+  font-size: var(--wf-fs-13);
+  font-weight: 700;
+  color: var(--wf-ink-1);
+}
+
+.serviceOptionCount[data-none="true"],
+.serviceOptionCount[data-none="true"] b {
   color: var(--wf-ink-3);
 }
 
 .serviceCheck {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex: none;
   color: var(--wf-accent-ink);
   visibility: hidden;
@@ -3642,11 +3711,10 @@
   }
 }
 
-/* Service picker on the phone (v10 service sheet): a bottom sheet over a scrim with a grip, the
- * title and its quiet line, then one card of 48px rows (dot, name, open count, check). The rows are
- * the same buttons as the desktop popover. Desktop and tablet are unchanged. */
+/* Service picker on the phone (v10 service sheet; pop-ups build, 1 Nov 2026): a bottom sheet over a
+ * scrim with a grip, the same title, line and 40px rows as the desktop popover. The executive's
+ * Service sheet keeps its own quiet line (`serviceSheetNote`), shown on the phone only. */
 .serviceSheetNote,
-.serviceAllCount,
 .serviceScrim {
   display: none;
 }
@@ -3660,13 +3728,13 @@
     left: 0;
     z-index: 60;
     width: auto;
-    max-height: calc(100dvh - 64px);
+    max-height: 85dvh;
     overflow-y: auto;
-    padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    padding: 12px 8px calc(8px + env(safe-area-inset-bottom, 0px));
     border: 1px solid var(--wf-line-2);
     border-bottom: 0;
-    border-radius: 22px 22px 0 0;
-    background: var(--wf-surface-2);
+    border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
+    background: var(--wf-surface);
     box-shadow: 0 -8px 24px -12px color-mix(in srgb, var(--wf-ink-1) 30%, transparent);
     color: var(--wf-ink-1);
   }
@@ -3686,14 +3754,20 @@
     justify-self: center;
     width: 36px;
     height: 4px;
-    margin: -8px 0 6px;
+    margin: -4px 0 0;
     border-radius: 2px;
     background: var(--wf-line-2);
   }
 
-  .servicePanel .popoverHead {
-    padding: 4px 0 0;
-    font: 600 var(--wf-fs-15) / 20px var(--wf-font);
+  .serviceHead {
+    padding-top: 4px;
+  }
+
+  /* Today's control size, with a larger, invisible touch area. */
+  .serviceClose::after {
+    position: absolute;
+    inset: -6px;
+    content: "";
   }
 
   .serviceSheetNote {
@@ -3707,36 +3781,45 @@
     color: var(--wf-ink-2);
   }
 
-  .servicePanel .popoverRule {
-    display: none;
-  }
-
+  /* Review fix (1 Nov 2026): `--wf-tablet-tap` is 0 on a phone, so each row is a 48px hit area
+     whose 40px face is painted by `::before`, 4px in from the top and bottom. Neighbouring rows
+     meet without overlapping, and the face reads as the same 40px row as the desktop popover. */
   .servicePanel .serviceOption {
-    gap: 12px;
+    position: relative;
+    isolation: isolate;
     min-height: 48px;
-    padding: 0 12px;
-    border: 1px solid var(--wf-line);
-    border-top-width: 0;
-    border-radius: 0;
-    background: var(--wf-surface);
-    color: var(--wf-ink-1);
-    font: 500 var(--wf-fs-14) / 20px var(--wf-font);
+    font-size: var(--wf-fs-14);
   }
 
-  .servicePanel .serviceSheetNote + .sr-only + .serviceOption,
-  .servicePanel :global(.sr-only) + .serviceOption {
-    margin-top: 14px;
-    border-top-width: 1px;
-    border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
+  .servicePanel .serviceOption::before {
+    position: absolute;
+    inset: 4px 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: transparent;
+    content: "";
   }
 
-  .servicePanel .serviceOption:last-child {
-    border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
-  }
-
+  .servicePanel .serviceOption:hover,
   .servicePanel .serviceOption[aria-pressed="true"] {
-    background: var(--wf-surface);
-    font-weight: 600;
+    background: transparent;
+  }
+
+  .servicePanel .serviceOption:hover::before {
+    background: var(--wf-hover);
+  }
+
+  .servicePanel .serviceOption[aria-pressed="true"]::before {
+    background: color-mix(in srgb, var(--wf-accent) 8%, var(--wf-surface));
+  }
+
+  .servicePanel .serviceOption:focus-visible {
+    outline: none;
+  }
+
+  .servicePanel .serviceOption:focus-visible::before {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
   }
 
   .servicePanel .serviceDot {
@@ -3744,18 +3827,7 @@
     height: 8px;
   }
 
-  .servicePanel .serviceOptionCount {
-    font: 500 var(--wf-fs-12) / 16px var(--wf-font);
-    color: var(--wf-ink-3);
-  }
-
-  .serviceAllCount {
-    display: inline;
-  }
-
   .servicePanel .serviceCheck {
-    width: 16px;
-    height: 16px;
     color: var(--wf-accent);
   }
 }

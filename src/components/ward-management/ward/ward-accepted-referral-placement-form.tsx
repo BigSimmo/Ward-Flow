@@ -126,7 +126,7 @@ export function WardAcceptedReferralPlacementForm({
   return acceptedToStart.length > 0 ? (
     <section aria-label="Accepted referrals awaiting placement" className={styles.unitCard}>
       <h2 className={styles.sectionHeading}>Accepted referrals awaiting placement</h2>
-      <p className={styles.cardMeta}>Start the accepted journey, then pull a bed. Starting does not reserve a bed.</p>
+      <p className={styles.cardMeta}>Starting does not reserve a bed.</p>
       {acceptedToStart.map(({ entry, ed }) => (
         <div key={entry.id}>
           <p>{resolvePatientIdentity(entry).displayName}</p>

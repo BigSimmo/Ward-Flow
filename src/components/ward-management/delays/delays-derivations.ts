@@ -72,7 +72,7 @@ const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   {
     cause: "legal_breached",
     title: FORM_TIME_PASSED_TITLE,
-    note: "nothing else on this page outranks it",
+    note: "",
   },
   {
     cause: "legal_expiring",

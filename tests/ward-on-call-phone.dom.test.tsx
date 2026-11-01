@@ -331,7 +331,7 @@ describe("PhoneDirectory, the inset grouped list", () => {
 
   it("shows the empty My list prompt when nothing is starred", () => {
     renderDirectory({ tab: "mine", rows: [] });
-    expect(screen.getByText("Star any line to keep it here. My list stays in this browser.")).toBeInTheDocument();
+    expect(screen.getByText("Star any line to keep it here.")).toBeInTheDocument();
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
   });
 

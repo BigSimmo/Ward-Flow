@@ -129,8 +129,7 @@ export function WardCatchmentResolver({
           <h2 className={styles.title}>WA Suburb-to-Catchment Resolver</h2>
         </div>
         <p className={styles.subtitle}>
-          Look up community clinic records by Western Australian suburb or 4-digit postcode. Service and hospital
-          suggestions are unverified prototype mappings; confirm any referral destination separately.
+          Service and hospital suggestions are unverified. Confirm any referral destination separately.
         </p>
       </header>
 
@@ -418,10 +417,7 @@ export function WardCatchmentResolver({
               </svg>
             </span>
             <h3 className={styles.stateTitle}>Ready to resolve catchment</h3>
-            <p className={styles.stateMessage}>
-              Type a suburb name or 4-digit WA postcode above, or tap one of the common quick-pick suburbs to look up
-              community clinic records and unverified prototype hospital suggestions.
-            </p>
+            <p className={styles.stateMessage}>Type a suburb or postcode, or tap a quick pick above.</p>
           </div>
         )}
       </section>

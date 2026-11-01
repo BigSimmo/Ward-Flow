@@ -62,7 +62,7 @@ export type ReferralDraftAnswers = {
  */
 export function declineReasonBlockedReason(reason: ReferralDeclineReason | undefined): string | undefined {
   if (reason !== undefined) return undefined;
-  return "Choose a reason before recording this decline. None is chosen for you: a reason nobody picked would be filed as this team's own answer.";
+  return "Choose a reason before recording this decline. None is chosen for you.";
 }
 
 /**
@@ -78,13 +78,13 @@ export function referralDraftBlockedReason(draft: ReferralDraftAnswers): string 
     return 'Find the patient by name or UMRN, or choose "Not yet identified".';
   }
   if (draft.cohort === undefined) {
-    return "Choose a cohort before raising this referral. None is chosen for you: a cohort nobody picked would be filed as this patient's own record.";
+    return "Choose a cohort before raising this referral. None is chosen for you.";
   }
   if (draft.security === undefined) {
-    return "Choose a security level before raising this referral. None is chosen for you: a security level nobody picked would be filed as this patient's own record.";
+    return "Choose a security level before raising this referral. None is chosen for you.";
   }
   if (draft.sex === undefined) {
-    return "Choose a sex before raising this referral. None is chosen for you: a sex nobody picked would be filed as this patient's own record.";
+    return "Choose a sex before raising this referral. None is chosen for you.";
   }
   // T11 (item 8): blocked ONLY by the "not yet answered" sentinel, never by the explicit
   // "not_recorded" answer — see `ReferralDraftState.gender`'s own doc comment.
@@ -92,16 +92,16 @@ export function referralDraftBlockedReason(draft: ReferralDraftAnswers): string 
     return 'Choose a gender, or "Not yet recorded". None is chosen for you.';
   }
   if (draft.legalStatus === undefined) {
-    return "Choose a legal status before raising this referral. None is chosen for you: a legal status nobody picked would be filed as this patient's own record.";
+    return "Choose a legal status before raising this referral. None is chosen for you.";
   }
   if (draft.urgency === undefined) {
-    return "Choose an urgency tier before raising this referral. None is chosen for you: an urgency tier nobody picked would be filed as this patient's own record.";
+    return "Choose an urgency tier before raising this referral. None is chosen for you.";
   }
   if (draft.observation === undefined) {
-    return "Choose an observation level before raising this referral. None is chosen for you: a level nobody picked would be filed as this patient's own, and the pull only checks a ward's observation staff when the level needs them.";
+    return "Choose an observation level before raising this referral. None is chosen for you.";
   }
   if (draft.highAcuity === undefined) {
-    return "State whether high-acuity nursing is required before raising this referral. None is chosen for you: an unanswered box would be filed as “not required”, and the acuity gate only checks a ward’s high-acuity staffing when the patient is recorded as needing it.";
+    return "State whether high-acuity nursing is required before raising this referral. None is chosen for you.";
   }
   // T3 (build plan §2): the expiry field is two inputs, and a half-typed pair is neither a
   // finished answer nor the permitted "blank" one — `instantFromDateAndTimeInputs` (`ed-screen.tsx`) refuses
@@ -312,7 +312,7 @@ export function bookTransportBlockedReason(movement: Movement, who?: string): st
   // a booking succeeds: `BOOK_TRANSPORT` leaves the movement at `pulled`, so the card that just
   // booked re-renders with the control unavailable rather than offering a replacement.
   if (movement.transport) {
-    return `${who ?? "This patient"} already has transport booked. Booking again would replace a job the provider may already have accepted, and take its timestamps with it — an existing job has to be cancelled before a new one can be booked.`;
+    return `${who ?? "This patient"} already has transport booked. Cancel that job before booking a new one.`;
   }
   return undefined;
 }

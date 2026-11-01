@@ -81,10 +81,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
         <h2 className={styles.sectionHeading}>
           Still to be moved &middot; {outbox.length} patient{outbox.length === 1 ? "" : "s"}
         </h2>
-        <p className={styles.unitMeta}>
-          Patients referred onward who remain in {department.name}. Bed acceptance does not remove them; elapsed
-          movement time starts at recorded acceptance.
-        </p>
+        <p className={styles.unitMeta}>Referred onward, still in {department.name}.</p>
         {outbox.length === 0 ? (
           <p className={styles.placeholder} data-testid="ward-ed-outbox-empty">
             No patient here is waiting to be moved onward.
@@ -306,10 +303,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
             : answeredAll.length}{" "}
           referral{answeredAll.length === 1 ? "" : "s"}
         </h2>
-        <p className={styles.unitMeta}>
-          Accepted, declined or cancelled referrals, most recently decided first. Shows the latest{" "}
-          {ANSWERED_VISIBLE_CAP}; the heading counts all.
-        </p>
+        <p className={styles.unitMeta}>Most recently decided first. Shows the latest {ANSWERED_VISIBLE_CAP}.</p>
         {answeredAll.length === 0 ? (
           <p className={styles.placeholder} data-testid="ward-ed-answered-empty">
             Nothing addressed to psychiatry at {department.name} has been answered yet.

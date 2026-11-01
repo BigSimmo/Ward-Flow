@@ -46,7 +46,7 @@ export function NextWardAfterRefusal({
         Last refusal: {declinedUnit ? declinedUnit.name : "Unresolved unit"}, {reason.toLowerCase()}.
       </p>
       {next.candidates.length === 0 ? (
-        <p className={styles.note}>No ward that has not been asked passes every eligibility check.</p>
+        <p className={styles.note}>None.</p>
       ) : (
         <>
           <ul className={styles.list}>
@@ -77,7 +77,6 @@ export function NextWardAfterRefusal({
               );
             })}
           </ul>
-          <p className={styles.note}>Listed by health service, then name. Send the referral with Refer.</p>
         </>
       )}
     </section>

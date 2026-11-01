@@ -60,9 +60,7 @@ export function readDeclinesByReason(movements: Movement[]): DeclineReadout {
     return {
       ok: false,
       statement:
-        "Declines cannot be broken down by reason: at least one movement carries a reason this " +
-        "prototype does not recognise. The total is not shown, because a total computed without " +
-        "that reason would be lower than the truth rather than uncertain.",
+        "Declines cannot be broken down by reason: a movement carries an unrecognised reason, so no total is shown.",
       detail: message,
     };
   }

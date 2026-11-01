@@ -300,9 +300,7 @@ function CommitmentsBody({
             </Button>
             {refusal ? <DisabledReason id={`${baseId}-why`}>{refusal}</DisabledReason> : null}
           </div>
-          <p className={styles.when}>
-            Acknowledged means the ward has seen it and agreed to respond. A commitment does not answer the referral.
-          </p>
+          <p className={styles.when}>A commitment does not answer the referral.</p>
         </fieldset>
       )}
     </div>
