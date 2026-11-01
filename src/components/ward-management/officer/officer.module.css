@@ -2373,6 +2373,8 @@
 /* The job and booking panel: the screen's height, its body scrolls, its foot stays. */
 @media (min-width: 62.5625rem) {
   .layout[data-open="true"] > .side {
+    /* Set from the panel's top when it opens (useOfficerPanelHeight); this is its starting value. */
+    --officer-panel-h: calc(100dvh - var(--wgs-bar-h, 3.5rem) - 2rem);
     position: sticky;
     top: calc(var(--wgs-bar-h, 3.5rem) + var(--wf-s-3));
     align-self: start;
@@ -2381,7 +2383,7 @@
   .layout[data-open="true"] > .side > .detail {
     display: flex;
     flex-direction: column;
-    height: var(--officer-panel-h, calc(100dvh - var(--wgs-bar-h, 3.5rem) - 2rem));
+    height: var(--officer-panel-h);
   }
 
   .detailScroll {
