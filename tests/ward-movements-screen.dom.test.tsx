@@ -738,9 +738,9 @@ describe("the Corridors strip", () => {
     const rail = within(strip).getByRole("complementary", { name: "Ranked corridors" });
     expect(rail).toHaveTextContent(`${pairCount} routes`);
     const edCount = new Set(expected.map((row) => row.originEdId)).size;
-    expect(
-      within(rail).getByRole("list", { name: "Accepted corridors by ED, busiest first" }).children,
-    ).toHaveLength(edCount);
+    expect(within(rail).getByRole("list", { name: "Accepted corridors by ED, busiest first" }).children).toHaveLength(
+      edCount,
+    );
 
     const busiest = expected[0];
     const ed = edById(busiest.originEdId);
