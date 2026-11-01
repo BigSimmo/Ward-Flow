@@ -285,12 +285,14 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
              *
              * Arrangements are recorded on the discharge board; this list remains all community
              * departures rather than a follow-up completion measure.
+             *
+             * Q107 (1 Nov 2026): the decision half stays here as one line. That follow-up can be
+             * recorded, and what the list holds, is background in About this data (Coverage limits).
              */}
             <p className={styles.absenceNotice} data-testid="ward-community-follow-up-not-recorded">
               <StatusGlyph tone="warning" className={styles.noticeGlyph} />
-              Follow-up arrangements and contact outcomes can be recorded for this team. An arrangement does not
-              establish that contact occurred. All community departures shows recorded discharges into the community; an
-              empty list does not establish that everybody is being followed up.
+              An empty list does not establish that everybody is being followed up; an arrangement does not establish
+              that contact occurred.
             </p>
 
             {/* Layout sweep MEET-15: the design-system field and select, as every other control here. */}

@@ -523,10 +523,10 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
            * `answerableBy` map to that destination kind alone. What is still true, and still
            * the reason this footnote exists: accepting an INPATIENT admission (a ward's bed)
            * requires a ward or coordinator role and a bed allocation this team never holds.
+           * Q107 (1 Nov 2026): one short line, the phone's wording; "for follow-up only" carries that limit.
            */}
           <p className={styles.footnote} data-testid="ward-community-waiting-not-actionable">
             Community-team roles can accept or decline referrals addressed to their own team, for follow-up only.
-            Inpatient admission acceptance is not recordable from this page.
           </p>
         </div>
       </section>

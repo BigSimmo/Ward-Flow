@@ -268,15 +268,6 @@ type CommunityScreenProps = {
 
 function useCommunityScreenView({ teamId, admissions, referrals, demonstration = false }: CommunityScreenProps) {
   usePrintableDisclosures();
-  // Phone only (8 Oct 2026): the provenance and coverage disclosure starts closed under 48rem so
-  // the team's lists are not followed by a long block of explanatory text. It still opens with a
-  // tap, and above 48rem it renders open exactly as before.
-  const limitsDisclosureRef = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    const disclosure = limitsDisclosureRef.current;
-    if (!disclosure || typeof window.matchMedia !== "function") return;
-    if (window.matchMedia("(max-width: 48rem)").matches) disclosure.open = false;
-  }, []);
   const {
     admissions: liveAdmissions,
     notices,
@@ -918,7 +909,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     admissions,
     referrals,
     demonstration,
-    limitsDisclosureRef,
     liveAdmissions,
     notices,
     units,
