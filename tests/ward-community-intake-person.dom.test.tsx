@@ -39,7 +39,7 @@ function renderTeamPage() {
   render(
     <ToastProvider>
       <WardFlowProvider>
-        <CommunityScreen teamId="midland" />
+        <CommunityScreen teamId="albany" />
       </WardFlowProvider>
     </ToastProvider>,
   );
