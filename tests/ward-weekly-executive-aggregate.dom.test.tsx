@@ -188,4 +188,12 @@ describe("Weekly executive aggregate adoption", () => {
     expect(within(card).getByText("—", { exact: true })).toBeInTheDocument();
     expect(guard.operational).not.toHaveBeenCalled();
   });
+
+  it("draws no occupancy meter, so no 0%, when there is no recorded occupied time", () => {
+    const data = structuredClone(base);
+    data.weeks.find((entry) => entry.week.offset === 0)!.report.occupancy.averagePercent = null;
+    report(data);
+    expect(screen.getByTestId("ward-weekly-occupancy")).toHaveTextContent("—");
+    expect(screen.queryByRole("meter", { name: "Recorded occupied bed time" })).not.toBeInTheDocument();
+  });
 });

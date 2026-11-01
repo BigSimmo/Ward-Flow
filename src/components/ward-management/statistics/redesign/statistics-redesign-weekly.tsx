@@ -403,7 +403,10 @@ export function WeeklyBody(props: WeeklyBodyProps) {
               </>
             }
           >
-            <Meter value={occupancy.value ?? 0} max={100} label="Recorded occupied bed time" valueText={null} />
+            {/* no recorded figure ("—"): no meter, so a screen reader is not told 0%. */}
+            {occupancy.value === null ? null : (
+              <Meter value={occupancy.value} max={100} label="Recorded occupied bed time" valueText={null} />
+            )}
           </Tile>
         </Strip>
       </StatCardR>
