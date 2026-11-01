@@ -156,10 +156,15 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
       const area = scroller.getBoundingClientRect();
       const rect = hero.getBoundingClientRect();
       const barHeight = barHeightIn(scroller);
-      // Where the hero would sit without the bleed, in the scroll area's own coordinates.
-      const naturalTop = rect.top - area.top + scroller.scrollTop + applied.top;
-      const naturalLeft = rect.left - area.left + applied.left;
-      const naturalRight = area.left + scroller.clientWidth - rect.right + applied.right;
+      // Where the hero would sit without the bleed, in the scroll area's own coordinates. The
+      // margins in force are read back rather than assumed to be the last bleed written: on the
+      // first measure the server-rendered band's own insets (12px on a phone) can still be in
+      // force, and adding back nothing then put a phone hero 12px out, so it dropped and rose
+      // again (the /waiting phone layout shift, Q204, 1 Nov 2026).
+      const margins = window.getComputedStyle(hero);
+      const naturalTop = rect.top - area.top + scroller.scrollTop - (parseFloat(margins.marginTop) || 0);
+      const naturalLeft = rect.left - area.left - (parseFloat(margins.marginLeft) || 0);
+      const naturalRight = area.left + scroller.clientWidth - rect.right - (parseFloat(margins.marginRight) || 0);
       // The gap between the header's bottom edge and the hero. Anything taller above the hero (a
       // banner, a breadcrumb, a filter row) means the page does not open on its hero.
       const gap = naturalTop - barHeight;
