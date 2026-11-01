@@ -9,7 +9,7 @@ import loadNextConfig from "../next.config";
  * The header (ward-bar.tsx) is on every page's first load, which the phone script budget measures
  * (script-budget.json). On 31 October 2026 one constant imported from the rail's parts pulled the
  * rail's capacity card, its stylesheet map and the bed alert model into every route, about 10 KB.
- * The rail, its parts, the phone Menu sheet, the executive chrome, the Activity list and the
+ * The rail, its parts, the phone Menu sheet, the executive chrome, the Activity panel and the
  * dialogs (styled confirm, step-up sign-in) load only when needed.
  */
 function staticImportsOf(file: string) {
@@ -28,9 +28,22 @@ describe("the header's first load", () => {
       "./ward-phone-menu-sheet",
       "./ward-executive-chrome",
       "./ward-bar-activity",
+      "@/components/ward-management/coordinator/activity-panel",
     ]) {
       expect(staticImports, heavy).not.toContain(heavy);
     }
+  });
+
+  it("loads the one Activity panel (Q99) only when needed, from the bar's lazy panels", () => {
+    const lazy = staticImportsOf("src/components/ward-management/shell/ward-bar-lazy-panels.tsx").map(
+      (entry) => entry.from,
+    );
+    expect(lazy).not.toContain("@/components/ward-management/coordinator/activity-panel");
+    const source = readFileSync(
+      path.join(process.cwd(), "src/components/ward-management/shell/ward-bar-lazy-panels.tsx"),
+      "utf8",
+    );
+    expect(source).toContain('import("@/components/ward-management/coordinator/activity-panel")');
   });
 
   it("takes the close-menus event from its own small module", () => {

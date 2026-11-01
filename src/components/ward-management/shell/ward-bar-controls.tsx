@@ -21,7 +21,7 @@ import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
 import { hasMovedInWardFlow, markWardRouteReplace } from "./ward-back";
 import { openWardMenu } from "./ward-drawer-bus";
-import type { WardActivityContent, WardPrimaryAction } from "./ward-shell-types";
+import type { WardPrimaryAction } from "./ward-shell-types";
 import {
   NOT_WIRED_SUFFIX,
   SERVICE_SCOPE_NOTE,
@@ -352,7 +352,6 @@ export function WardBarDrawerTriggers({
   openPopover,
   activityHasUnread,
   unreadNoticeCount,
-  shownActivity,
   oneAlertsQueue,
   isPhone,
   onAlertsScreen,
@@ -366,7 +365,6 @@ export function WardBarDrawerTriggers({
   openPopover: (id: WardBarPopoverId) => void;
   activityHasUnread: boolean;
   unreadNoticeCount: number;
-  shownActivity: WardActivityContent;
   oneAlertsQueue: boolean;
   isPhone: boolean;
   onAlertsScreen: boolean;
@@ -394,7 +392,7 @@ export function WardBarDrawerTriggers({
         <span className={styles.triggerLabel}>Activity</span>
         {activityHasUnread ? <span className={styles.unread} aria-hidden="true" /> : null}
         <span className="sr-only">
-          {shownActivity ? ", synthetic activity" : ", activity not available for this page"}
+          , synthetic activity
           {activityHasUnread ? `, ${unreadNoticeCount} unread` : ""}
         </span>
       </button>

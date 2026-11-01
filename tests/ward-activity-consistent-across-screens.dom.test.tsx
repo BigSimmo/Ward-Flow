@@ -1,8 +1,9 @@
 // tests/ward-activity-consistent-across-screens.dom.test.tsx
 //
-// Verifies that the Activity drawer and its recent events feed are consistently
-// wired across the entire application, regardless of which screen is active,
-// while correctly resolving the live tally screen title for the active route.
+// Verifies that the Activity panel and its recent events feed are consistently
+// wired across the entire application, regardless of which screen is active.
+// Q99 (Josh, 1 Nov 2026): every page's Activity button opens Home's Activity panel, one design
+// everywhere, so its feed and statewide live tally read the same on every route.
 
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -45,14 +46,14 @@ const mockContext = {
   setFocusMovementId: vi.fn(),
 };
 
-async function openActivityDrawer() {
+async function openActivityPanel() {
   const user = userEvent.setup();
   render(<WardBar />);
   await user.click(screen.getByTestId("ward-bar-activity-trigger"));
-  return { user, sheet: screen.getByTestId("ward-bar-activity-sheet") };
+  return { user, sheet: await screen.findByTestId("ward-bar-activity-sheet") };
 }
 
-describe("Activity drawer is consistently wired across all screens", () => {
+describe("the Activity panel is consistently wired across all screens", () => {
   beforeEach(() => {
     if (typeof window.requestAnimationFrame !== "function") {
       window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
@@ -62,84 +63,43 @@ describe("Activity drawer is consistently wired across all screens", () => {
     }
   });
 
-  it("shows 20 system events and resolved 'Movements' live tally on the movements screen", async () => {
+  it("labels the trigger as synthetic activity without a clock or a tone", () => {
     currentPathname = "/ward-flow/movements";
-    const { user, sheet } = await openActivityDrawer();
-
+    render(<WardBar />);
     const trigger = screen.getByTestId("ward-bar-activity-trigger");
     expect(trigger.querySelector('[data-tone][aria-hidden="true"]')).toBeNull();
     expect(trigger.textContent).toContain("synthetic activity");
     expect(trigger).not.toHaveTextContent(/\d{1,2}:\d{2}/u);
+  });
 
-    // Header freshness shows synthetic demo time and last event time (not "no recorded event")
+  it.each([
+    ["the movements screen", "/ward-flow/movements"],
+    ["the Waiting screen", "/ward-flow/waiting"],
+    ["a ward route", "/ward-flow/ward/rph-adult-secure"],
+    ["Home", "/ward-flow"],
+  ])("shows the same panel, 20 events and the statewide live tally on %s", async (_name, pathname) => {
+    currentPathname = pathname;
+    const { user, sheet } = await openActivityPanel();
+
+    expect(within(sheet).getByRole("heading", { name: "Activity · Statewide" })).toBeInTheDocument();
+    for (const tab of [/Changes/u, /Recent activity/u, /Notices/u])
+      expect(within(sheet).getByRole("tab", { name: tab })).toBeInTheDocument();
+
+    await user.click(within(sheet).getByRole("tab", { name: /Recent activity/u }));
+    expect(within(sheet).getByRole("tab", { name: /Recent activity/u }).textContent).toMatch(/20$/u);
+    const feed = within(sheet).getByRole("list", { name: "Recent activity" });
+    expect(within(feed).getAllByRole("listitem")).toHaveLength(20);
+    const escalations = within(within(sheet).getByRole("group", { name: "Filter events by category" })).getByRole(
+      "button",
+      { name: /^Escalations/u },
+    );
+    expect(escalations.textContent).toMatch(/Escalations\s*[1-9]/u);
+
+    // The live tally, with its synthetic provenance, opens under whichever tab shows.
     expect(within(sheet).getByText(/Synthetic state · demo time/u)).toBeInTheDocument();
-    expect(within(sheet).getByText(/last event/u)).toBeInTheDocument();
-    expect(within(sheet).queryByText(/no recorded event/u)).toBeNull();
-
-    // Segment buttons show Activity 20 and Live tally Movements
-    const segButtons = within(sheet).getAllByRole("button", { name: /Activity|Live tally/u });
-    expect(segButtons[0].textContent).toMatch(/Activity\s*20/u);
-    expect(segButtons[1].textContent).toMatch(/Live tally\s*Movements/u);
-
-    // Category chips are populated with counts
-    const allChip = within(sheet).getByTestId("ward-bar-activity-filter-all");
-    expect(allChip.textContent).toMatch(/All\s*20/u);
-    const escalationsChip = within(sheet).getByTestId("ward-bar-activity-filter-escalation");
-    expect(escalationsChip.textContent).toMatch(/Escalations\s*[1-9]/u);
-
-    // Recent events list contains 20 items
-    const feed = within(sheet).getByRole("list", { name: "Recent events" });
-    const items = within(feed).getAllByRole("listitem");
-    expect(items).toHaveLength(20);
-
-    // Switch to live tally tab
-    await user.click(segButtons[1]);
-    expect(within(sheet).getByText("Movements now")).toBeInTheDocument();
+    await user.click(within(sheet).getByText("Live tally"));
     expect(within(sheet).getByText("Open movements")).toBeInTheDocument();
     expect(within(sheet).getByText("Beds ready")).toBeInTheDocument();
     expect(within(sheet).getByRole("table", { name: "Emergency departments" })).toBeInTheDocument();
-  });
-
-  it("shows the same 20 system events and 'Waiting' live tally on the Waiting screen", async () => {
-    currentPathname = "/ward-flow/waiting";
-    const { user, sheet } = await openActivityDrawer();
-
-    const segButtons = within(sheet).getAllByRole("button", { name: /Activity|Live tally/u });
-    expect(segButtons[0].textContent).toMatch(/Activity\s*20/u);
-    expect(segButtons[1].textContent).toMatch(/Live tally\s*Waiting/u);
-
-    const feed = within(sheet).getByRole("list", { name: "Recent events" });
-    expect(within(feed).getAllByRole("listitem")).toHaveLength(20);
-
-    await user.click(segButtons[1]);
-    expect(within(sheet).getByText("Waiting now")).toBeInTheDocument();
-  });
-
-  it("resolves the unit place name on a ward route while keeping the consistent 20 events", async () => {
-    currentPathname = "/ward-flow/ward/rph-adult-secure";
-    const unitName = seeded.units.find((u) => u.id === "rph-adult-secure")?.name ?? "RPH Adult Secure";
-    const { user, sheet } = await openActivityDrawer();
-
-    const segButtons = within(sheet).getAllByRole("button", { name: /Activity|Live tally/u });
-    expect(segButtons[0].textContent).toMatch(/Activity\s*20/u);
-    expect(segButtons[1].textContent).toContain(unitName);
-
-    const feed = within(sheet).getByRole("list", { name: "Recent events" });
-    expect(within(feed).getAllByRole("listitem")).toHaveLength(20);
-
-    await user.click(segButtons[1]);
-    expect(within(sheet).getByText(`${unitName} now`)).toBeInTheDocument();
-  });
-
-  it("shows the Home live tally on the ward root screen", async () => {
-    currentPathname = "/ward-flow";
-    const { user, sheet } = await openActivityDrawer();
-
-    const segButtons = within(sheet).getAllByRole("button", { name: /Activity|Live tally/u });
-    expect(segButtons[0].textContent).toMatch(/Activity\s*20/u);
-    expect(segButtons[1].textContent).toMatch(/Live tally\s*Home/u);
-
-    await user.click(segButtons[1]);
-    expect(within(sheet).getByText("Home now")).toBeInTheDocument();
   });
 });

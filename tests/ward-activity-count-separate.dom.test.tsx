@@ -8,6 +8,9 @@
 // own count (`scopedNotices.length`) right below — this file proves the Activity segment now shows
 // only the activity changes, and that the Notices heading keeps counting notices on its own.
 //
+// Q99 (Josh, 1 Nov 2026): the bar's Activity button opens Home's Activity panel. Its tabs carry the
+// counts now: Recent activity counts the feed's events alone and Notices counts unread notices.
+//
 // ⚠️ **`@/components/ward-management/ward-bar` (no `shell/` segment) is a DIFFERENT component with
 // the same exported name** — a generic stacked bar primitive, unrelated to this one.
 // `tests/ward-bar.dom.test.tsx` tests that one. The component under test here is
@@ -47,23 +50,11 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
 });
 
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
-import type { WardActivityContent } from "@/components/ward-management/shell/ward-shell-types";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Notice } from "@/components/ward-management/ward-model";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
-/** Two activity changes — an arbitrary, independently-controlled tally, deliberately not equal to
- *  the notice count below, so a sum (2 + 1 = 3) reads differently from either count alone. */
-const TWO_CHANGES: WardActivityContent = {
-  pageTitle: "Ward 2K",
-  tiles: [],
-  changes: [
-    { id: "change-1", time: "09:00", text: "A bed was marked ready." },
-    { id: "change-2", time: "09:05", text: "A referral was accepted." },
-  ],
-};
-
 /** One notice addressed to the ward role at this exact unit — the shape
  *  `tests/ward-chrome-role.test.ts` already hand-builds a `Notice` with. */
 const ONE_WARD_NOTICE: Notice = {
@@ -87,14 +78,19 @@ const mockContext = {
   setFocusMovementId: vi.fn(),
 };
 
-async function openActivityDrawer() {
+async function openActivityPanel() {
   const user = userEvent.setup();
-  render(<WardBar activity={TWO_CHANGES} />);
+  render(<WardBar />);
   await user.click(screen.getByTestId("ward-bar-activity-trigger"));
-  return screen.getByTestId("ward-bar-activity-sheet");
+  return { user, sheet: await screen.findByTestId("ward-bar-activity-sheet") };
 }
 
-describe("the Activity segment count and the Notices heading are never summed", () => {
+/** A tab's count: the number at the end of its accessible name. */
+function tabCount(tab: HTMLElement) {
+  return Number(/(\d+)\s*$/u.exec(tab.textContent ?? "")?.[1]);
+}
+
+describe("the Recent activity count and the Notices count are never summed", () => {
   // `Sheet`'s open-focus controller schedules work with `requestAnimationFrame` — same polyfill
   // guard `tests/ward-shell-mounted.dom.test.tsx` and `tests/ward-shell-third-edition.dom.test.tsx`
   // already carry for the identical component.
@@ -107,34 +103,26 @@ describe("the Activity segment count and the Notices heading are never summed", 
     }
   });
 
-  it("has one notice scoped to this ward and two activity changes, or the assertions below are vacuous", () => {
+  it("has one notice scoped to this ward, or the assertions below are vacuous", () => {
     expect(mockContext.notices).toHaveLength(1);
-    expect(TWO_CHANGES.changes).toHaveLength(2);
   });
 
-  it("reads the Activity segment count as the activity changes alone, not changes plus notices", async () => {
-    const sheet = await openActivityDrawer();
-    // Targeted by `aria-controls`, not by visible text: the bar's OWN trigger button also carries
-    // the word "Activity" (`data-testid="ward-bar-activity-trigger"`), so a text-based query would
-    // be ambiguous between the two. `aria-controls="ward-bar-activity-events"` names exactly the
-    // segment button under test.
-    const segmentButton = within(sheet).getByRole("button", { name: /^Activity/u });
-    expect(segmentButton.getAttribute("aria-controls")).toBe("ward-bar-activity-events");
-    const count = segmentButton.querySelector("span");
-    expect(count).not.toBeNull();
-    expect(count?.textContent?.trim(), "2 activity changes and 1 notice must not be summed to 3 — addendum §1.4").toBe(
-      "2",
-    );
+  it("reads the Recent activity count as the feed's events alone, not events plus notices", async () => {
+    const { user, sheet } = await openActivityPanel();
+    const recentTab = within(sheet).getByRole("tab", { name: /Recent activity/u });
+    await user.click(recentTab);
+    const events = within(within(sheet).getByRole("list", { name: "Recent activity" })).getAllByRole("listitem");
+    expect(events.length, "the seeded world records events, or this is vacuous").toBeGreaterThan(0);
+    expect(tabCount(recentTab), "events and the 1 notice must not be summed — addendum §1.4").toBe(events.length);
   });
 
-  // Deliberately rewritten for item 48, Q2 (owner answer 48, 2026-09-17): the heading now reads
-  // "Notices · {n} unread" and counts unread notices only, never `scopedNotices.length` — see
-  // `tests/ward-notice-mark-read.dom.test.tsx` for the read/unread distinction itself. The fixture
-  // notice here (`ONE_WARD_NOTICE`) carries no `readAt`, so it is unread and the count is still 1;
-  // only the surrounding text and what the number MEANS changed, not this test's own arithmetic.
-  it("keeps the Notices heading counting notices on its own, unaffected by the fix above — now unread notices only", async () => {
-    const sheet = await openActivityDrawer();
-    const noticesHeading = within(sheet).getByText(/^Notices/u);
-    expect(noticesHeading.textContent?.replace(/\s+/g, " ").trim()).toBe("Notices · 1 unread");
+  // Item 48, Q2 (owner answer 48, 2026-09-17): the notices count reads unread notices only. The
+  // fixture notice (`ONE_WARD_NOTICE`) carries no `readAt`, so it is unread and the count is 1.
+  it("keeps the Notices tab counting unread notices on its own", async () => {
+    const { user, sheet } = await openActivityPanel();
+    const noticesTab = within(sheet).getByRole("tab", { name: /Notices/u });
+    expect(tabCount(noticesTab)).toBe(1);
+    await user.click(noticesTab);
+    expect(within(sheet).getByText("1 unread")).toBeInTheDocument();
   });
 });
