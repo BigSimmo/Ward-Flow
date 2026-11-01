@@ -25,7 +25,11 @@ type State = {
   tagLookupFailures: number;
 };
 const directories: string[] = [];
-afterEach(() => directories.splice(0).forEach((directory) => rmSync(directory, { recursive: true, force: true })));
+afterEach(() =>
+  directories
+    .splice(0)
+    .forEach((directory) => rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })),
+);
 
 // Every GitHub request is intercepted by this executable; an unknown call fails instead of
 // reaching a provider. The real workflow shell, jq, files and failure propagation still execute.
