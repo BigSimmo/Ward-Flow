@@ -17,7 +17,7 @@ import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-managemen
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -1128,8 +1128,9 @@ function AlertsWorkspace() {
       shape: entry.group === "act" ? ("act" as const) : ("wait" as const),
       title: `${entry.item.title} for ${entry.subject.displayName}. Raised ${formatInstantWithDay(entry.raised!, now)}`,
     }));
+  // Acted on today counts only today's timeline day, so a session past midnight starts again at 0.
   const todayActed = history
-    .filter((entry) => entry.action)
+    .filter((entry) => entry.action && dayOf(entry.at) === dayOf(now))
     .map((entry) => ({
       id: entry.id,
       at: entry.at,

@@ -17,6 +17,7 @@ import styles from "./alerts-today-band.module.css";
 
 const SPAN = 6 * 60;
 const ROW_HEIGHT = 22;
+/** Rows the track shows at its resting height; more rows are added only when marks need them. */
 const ROWS = 3;
 /** Marks closer than this many minutes go on the next row. */
 const MIN_GAP = 6;
@@ -32,14 +33,15 @@ const TONE: Record<TodayPoint["shape"], WfTone> = {
 
 type BandMark = { id: string; at: Instant; tone: WfTone; title: string; pick: boolean; broadcast?: boolean };
 
-/** Rows for each mark, in time order, so marks close together stack instead of overlapping. */
-function stackRows(marks: BandMark[]): (BandMark & { row: number })[] {
-  const lastIn = Array.from({ length: ROWS }, () => -Infinity);
+/** Rows for each mark, in time order, so marks close together stack instead of overlapping. When
+ *  every row is taken near a time, the mark opens a new row, so no mark ever covers another. */
+export function stackRows<T extends { at: Instant }>(marks: T[]): (T & { row: number })[] {
+  const lastIn: number[] = Array.from({ length: ROWS }, () => -Infinity);
   return [...marks]
     .sort((a, b) => a.at - b.at)
     .map((mark) => {
       let row = lastIn.findIndex((at) => mark.at - at >= MIN_GAP);
-      if (row < 0) row = lastIn.indexOf(Math.min(...lastIn));
+      if (row < 0) row = lastIn.push(-Infinity) - 1;
       lastIn[row] = mark.at;
       return { ...mark, row };
     });
@@ -75,7 +77,7 @@ export function TodayBand({
   const to = from + SPAN;
   const pct = (at: Instant) => `${(((Math.min(to, Math.max(from, at)) - from) / SPAN) * 100).toFixed(2)}%`;
   const hours = Array.from({ length: 7 }, (_, index) => from + index * 60);
-  const marks = stackRows([
+  const marks = stackRows<BandMark>([
     ...raised.map((point) => ({
       id: point.id,
       at: point.at,
@@ -94,6 +96,8 @@ export function TodayBand({
     })),
   ]);
   const anyBroadcast = broadcasts.length > 0;
+  const rowCount = Math.max(ROWS, ...marks.map((mark) => mark.row + 1));
+  const trackStyle = rowCount > ROWS ? { height: `${74 + (rowCount - ROWS) * ROW_HEIGHT}px` } : undefined;
   return (
     <section className={styles.band} aria-label="Today">
       <div className={styles.head}>
@@ -116,7 +120,12 @@ export function TodayBand({
           ) : null}
         </span>
       </div>
-      <div className={styles.track} role="group" aria-label="Alerts raised and acted on today">
+      <div
+        className={styles.track}
+        style={trackStyle}
+        role="group"
+        aria-label="Alerts raised and acted on today"
+      >
         <span className={styles.future} style={{ left: pct(now) }} />
         {hours.slice(1, -1).map((hour) => (
           <span key={hour} className={styles.hour} style={{ left: pct(hour) }} />
