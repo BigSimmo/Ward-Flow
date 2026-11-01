@@ -30,7 +30,7 @@
 }
 .track {
   position: relative;
-  height: 74px;
+  height: 84px;
   border-bottom: 1px solid var(--wf-on-hero-line);
 }
 .hour {
@@ -60,8 +60,8 @@
   position: absolute;
   transform: translateX(-50%);
   z-index: 1;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
   display: grid;
   place-items: center;

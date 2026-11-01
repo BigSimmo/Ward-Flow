@@ -16,10 +16,13 @@ import type { TodayPoint, TodaySpan } from "./alerts-visuals";
 import styles from "./alerts-today-band.module.css";
 
 const SPAN = 6 * 60;
-const ROW_HEIGHT = 22;
+/** 24px marks with a 2px gap, so each mark meets the 24px target size and spacing (WCAG 2.5.8). */
+const ROW_HEIGHT = 26;
+/** The track's resting height: three rows above a 5px foot. Matches `.track` in the CSS. */
+const TRACK_HEIGHT = 84;
 const ROWS = 3;
 /** Marks closer than this many minutes go on the next row. */
-const MIN_GAP = 6;
+const MIN_GAP = 10;
 /** Hour labels this close to now are hidden so the now label stays readable. */
 const NEAR_NOW = 25;
 
@@ -122,7 +125,7 @@ export function TodayBand({
         className={styles.track}
         role="group"
         aria-label="Alerts raised and acted on today"
-        style={extraRows > 0 ? { height: `${74 + extraRows * ROW_HEIGHT}px` } : undefined}
+        style={extraRows > 0 ? { height: `${TRACK_HEIGHT + extraRows * ROW_HEIGHT}px` } : undefined}
       >
         <span className={styles.future} style={{ left: pct(now) }} />
         {hours.slice(1, -1).map((hour) => (

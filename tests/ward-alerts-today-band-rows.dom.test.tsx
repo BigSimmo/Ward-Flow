@@ -27,6 +27,6 @@ describe("Today band rows", () => {
     const bottoms = raised.map((point) => screen.getByRole("button", { name: point.title }).style.bottom);
     expect(new Set(bottoms).size).toBe(raised.length);
     const track = screen.getByRole("group", { name: "Alerts raised and acted on today" });
-    expect(track.style.height).toBe(`${74 + 2 * 22}px`);
+    expect(track.style.height).toBe(`${84 + 2 * 26}px`);
   });
 });
