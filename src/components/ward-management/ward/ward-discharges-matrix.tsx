@@ -254,22 +254,6 @@ export function WardDischargesMatrix({
         </div>
       )}
 
-      {/* Terminal Clean Status Strip */}
-      <div className={styles.cleaningBox}>
-        <div className={styles.cleaningRow}>
-          <div className={styles.cleaningIcon}>
-            <svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 8 7 12 13 4" />
-            </svg>
-          </div>
-          <div className={styles.cleaningText}>
-            <strong>Bed 01 (Bay 1):</strong> Terminal room clean completed at 09:50 by Environmental Services. Bed is
-            verified clean and ready for allocation.
-          </div>
-        </div>
-        <span className={styles.chkChip}>Ready for Allocation</span>
-      </div>
-
       {/* Preserved test contract for handover link and summary */}
       <div className={styles.visuallyHidden} data-testid="ward-handover-block">
         <h2 id="ward-handover-heading">Print handover</h2>

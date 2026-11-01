@@ -788,10 +788,8 @@ describe("the movement detail drawer", () => {
       dialog,
       "the drawer is back to withholding the name, which O-16.3 reversed on 2026-09-11",
     ).not.toHaveTextContent(/No name is shown here/u);
-    expect(
-      dialog,
-      "the drawer names people without saying they are invented — on a screen a coordinator reads",
-    ).toHaveTextContent(/invented/u);
+    // Owner, 1 Nov 2026 (Q105): the drawer's own "invented" line was cut; the page footer carries the
+    // synthetic-data notice.
   });
 
   // Owner, 1 Nov 2026: the "Watch and flag is not built" note was cut as excess explanation.

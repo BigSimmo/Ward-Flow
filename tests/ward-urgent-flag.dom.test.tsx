@@ -67,12 +67,12 @@ describe("the urgent flag is visible on the row it moved", () => {
 
   /**
    * Item 37 (2026-09-17), widened by the review fix-forward (item 5) to name the reason too:
-   * "Who flagged this, when and why was not recorded." A flag saved before `Movement.urgentFlag`
+   * "Flag details not recorded." A flag saved before `Movement.urgentFlag`
    * existed still says so honestly rather than inventing an author, instant or reason. The
    * synthetic fixture's own flags now carry provenance (overall review, 20 Oct 2026), so this
    * builds a flagged movement without it.
    */
-  it("reads 'Who flagged this, when and why was not recorded' for a flag that carries no provenance", () => {
+  it("reads 'Flag details not recorded' for a flag that carries no provenance", () => {
     const wf018 = wardMovements.find((movement) => movement.id === "WF-018");
     if (!wf018) throw new Error("fixture lost WF-018");
     const legacy: Movement = { ...wf018, urgentFlag: undefined, urgentFlagHistory: undefined };
@@ -87,7 +87,7 @@ describe("the urgent flag is visible on the row it moved", () => {
       />,
     );
     const detail = screen.getByTestId("ward-queue-flag-detail-WF-018");
-    expect(detail).toHaveTextContent("Who flagged this, when and why was not recorded.");
+    expect(detail).toHaveTextContent("Flag details not recorded.");
   });
 
   it("names who flagged each seeded urgent row, so the first rows of Home explain themselves", () => {

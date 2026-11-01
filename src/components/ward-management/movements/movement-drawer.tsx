@@ -730,8 +730,6 @@ export function MovementDrawer({
             </p>
           )}
         </Section>
-
-        <p className={d.foot}>Every patient here is invented.</p>
       </div>
     </Sheet>
   );

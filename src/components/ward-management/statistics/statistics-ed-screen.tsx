@@ -821,7 +821,8 @@ function EdPresentation({
                   Every figure here is invented
                 </h2>
                 <p className={detail.note}>
-                  Every count and every wait above is invented. Nothing on this screen is a real clinical record.
+                  Every count and every wait above is invented. They come from this prototype&apos;s invented records,
+                  never a real department. Nothing on this screen is a real clinical record.
                 </p>
               </section>
             </CardBody>
