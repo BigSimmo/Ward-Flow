@@ -1925,7 +1925,7 @@ describe("ReferralMatchView — every ward names its travel band, and every ward
     const sentence = screen.getByTestId("ward-referral-match-all-not-recorded");
     expect(sentence).toHaveTextContent(NOT_RECORDED_LABEL);
     expect(sentence).toHaveTextContent(
-      "This prototype holds no travel time between this person's home region and these sites. That is a gap in the invented data, not a statement that these beds are far away.",
+      "This prototype holds no travel time between this person's home region and these sites.",
     );
     // Once for the whole list, never once per row.
     expect(screen.getAllByTestId("ward-referral-match-all-not-recorded")).toHaveLength(1);

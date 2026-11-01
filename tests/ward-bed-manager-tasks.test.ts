@@ -75,7 +75,8 @@ function busyWorkspace(): WardFlowState {
             ...admission,
             meetingActions: [
               { kind: "chase_ndis", owner: "ward", ownerUnitId: rphA!.id, dueAt: due, recordedAt: NOW - 60 },
-              // The coordinator's own action is not the bed manager's to mark done.
+              // Q97 (1 Nov 2026): no bed meeting action is the bed manager's to mark done, a ward's
+              // or the coordinator's.
               { kind: "book_transport", owner: "coordinator", dueAt: due, recordedAt: NOW - 60 },
             ],
           }
@@ -103,8 +104,6 @@ describe("Q61: the site bed manager's own tasks", () => {
     expect(tasks.map((task) => task.kind)).toEqual([
       "confirm_bed_numbers",
       "reply_bed_call",
-      // Within a group, a task with a due time comes first.
-      "bed_meeting_action",
       "review_discharge_blocker",
       "review_discharge_blocker",
       "bed_release_ready",
@@ -118,7 +117,9 @@ describe("Q61: the site bed manager's own tasks", () => {
       alertId: "BCAST-90",
       unitId: rphA!.id,
     });
-    expect(tasks.find((task) => task.kind === "bed_meeting_action")?.meetingAction?.kind).toBe("chase_ndis");
+    // Q97 (Josh, 1 Nov 2026): its site's open bed meeting actions give it no task to mark one done.
+    expect(tasks.some((task) => task.id.startsWith("meeting-action-"))).toBe(false);
+    expect(Object.values(BED_MANAGER_TASK_ACTIONS)).not.toContain("COMPLETE_BED_MEETING_ACTION");
   });
 
   it("offers only actions the bed manager already holds, and none of the ward's own decisions", () => {
@@ -157,7 +158,6 @@ describe("Q61: the site bed manager's own tasks", () => {
         ...(task.alertId ? { alertId: task.alertId } : {}),
         ...(task.admissionId ? { admissionId: task.admissionId } : {}),
         ...(task.releaseId ? { releaseId: task.releaseId } : {}),
-        ...(task.meetingAction ? { subject: task.meetingAction.subject, action: task.meetingAction.kind } : {}),
       };
       expect(commandScopeRefusal(state, rphManager, command, options), task.id).toBeNull();
     }

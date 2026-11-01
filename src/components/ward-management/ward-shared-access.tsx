@@ -433,12 +433,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
                     <section className={styles.notice} aria-label="Hospital records unavailable">
                       <h1>Hospital records are not connected</h1>
                       <p>
-                        Hospital-record mode uses real clinical systems in a separately approved workspace. Prototype
-                        mode uses invented records, including when it connects to a shared database.
-                      </p>
-                      <p>
-                        Hospital approval, a separate clinical database and the data connection must be configured
-                        before that mode can open. Selecting this option does not connect or relabel any data.
+                        Needs hospital approval and a separate clinical database. Prototype mode uses invented records.
                       </p>
                       <button
                         type="button"

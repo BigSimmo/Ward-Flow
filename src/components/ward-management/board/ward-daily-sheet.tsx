@@ -489,9 +489,6 @@ export function WardDailySheet({
       <h2 id={`${baseId}-ward-daily-sheet-heading`} className={isEmbedded ? styles.visuallyHidden : styles.heading}>
         Shift brief
       </h2>
-      {isEmbedded ? null : (
-        <p className={styles.intro}>Live at the moment stamped above. Nothing here is held from an earlier hour.</p>
-      )}
 
       {resolvedTimestamp && !isEmbedded ? (
         <p className={styles.stamp} data-testid="ward-daily-sheet-shift-timestamp" style={TNUM}>
@@ -561,10 +558,7 @@ export function WardDailySheet({
               </ul>
             )}
           </div>
-          <p className={styles.note}>
-            No arrival time is shown: the record holds when a bed was given away, and nothing about when anybody will
-            get here.
-          </p>
+          <p className={styles.note}>No arrival time recorded.</p>
         </Card>
 
         {/* WHO IS GOING. Beds first — the figure the ward is judged on — then where the people in
@@ -637,10 +631,6 @@ export function WardDailySheet({
               ))}
             </ul>
           )}
-          <p className={styles.note}>
-            Beds are not people: a bed release records nothing about who is leaving. The destinations above are where
-            the people currently in these beds are expected to head.
-          </p>
         </Card>
 
         <SheetGroup
@@ -650,7 +640,7 @@ export function WardDailySheet({
           emptyText="Nobody on this ward is recorded as held up."
           people={groups.heldUp}
           tone="danger"
-          note="Held-up reasons are about the BED, from a fixed list. An absent reason is silence, never a finding that nothing is outstanding."
+          note="Reasons are about the bed, from a fixed list."
         />
 
         <SheetGroup
@@ -660,7 +650,7 @@ export function WardDailySheet({
           emptyText="Nobody on this ward is past the ward's own expected date."
           people={groups.overdue}
           tone="warning"
-          note="The expected date is the ward's own revisable plan. It carries no legal or contractual weight, and being past it is not a failure of anything."
+          note="The expected date is the ward's own plan, with no legal weight."
         />
 
         <SheetGroup
@@ -670,7 +660,6 @@ export function WardDailySheet({
           emptyText="Everybody in a bed on this ward has an expected date."
           people={groups.noDate}
           tone="neutral"
-          note="An absent date means nobody has set one. It never reads as a plan to stay, and the system never guesses one."
         />
 
         {/*
@@ -700,8 +689,7 @@ export function WardDailySheet({
       {/* The honest limit of the sheet, on the sheet. D10's editable half — the ward's one-minute
         update — is not here, and its absence must not read as "there is nothing to update". */}
       <p className={styles.footnote} data-testid="ward-daily-sheet-limits">
-        This sheet is read-only. Updating a discharge date, or confirming that nothing has changed, is not done from
-        here.
+        This sheet is read-only.
       </p>
 
       {onPrint ? (

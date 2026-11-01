@@ -246,17 +246,15 @@ describe("ward board people panel — what each person's entry states", () => {
 
     const panel = panelIn(renderWardBoard(UNIT_ID).container);
     const confirmations = [...panel.querySelectorAll("p")].filter((p) =>
-      (p.textContent ?? "").includes("a decision, not a plan"),
+      /\. Confirmed(?: by [^.]+)?\.$/u.test((p.textContent ?? "").trim()),
     );
     expect(confirmations).toHaveLength(confirmed.length);
-    expect(within(panel).getAllByText(/Not confirmed — the ward's plan, not yet its decision\./)).toHaveLength(
-      plannedOnly.length,
-    );
+    expect(within(panel).getAllByText(/\. Not confirmed\.$/)).toHaveLength(plannedOnly.length);
 
     // The role, from the record — and the confirming role, not the date-setting one. The fixture
     // deliberately makes those two different so a screen that confuses them looks wrong.
     for (const admission of confirmed) {
-      expect(panel.textContent).toContain(`Confirmed by ${admission.dischargeConfirmedBy} — a decision, not a plan.`);
+      expect(panel.textContent).toContain(`Confirmed by ${admission.dischargeConfirmedBy}.`);
     }
   });
 

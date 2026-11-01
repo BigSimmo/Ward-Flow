@@ -127,10 +127,7 @@ function OperationalStatisticsEdScreen({
         <StatCard icon={Hospital} title="No such department">
           <CardBody className={styles.bodyStack}>
             <p data-testid="ward-statistics-ed-unresolved">
-              No emergency department in this prototype has the id <code className={detail.code}>{edId}</code>. It may
-              have been renamed or removed, or the id in the address may be wrong. This page never falls back to a
-              different department, because a page showing the wrong department under the right heading is worse than a
-              page showing nothing.
+              No emergency department has the id <code className={detail.code}>{edId}</code>.
             </p>
             <p>
               <Link href={STATISTICS_UNIT_FINDER_HREF} data-testid="ward-statistics-ed-chooser-link">
@@ -668,8 +665,7 @@ function EdPresentation({
       {edCountsDesk ? null : (
         <p className={styles.muted} data-testid="ward-statistics-ed-population">
           {stillInEdShown} still in ED · {inTransitShown} in transit
-          <span className="sr-only"> or with a recorded departure</span>. Open journeys retain ED accountability until
-          arrival. The physical split includes recorded ED outcomes; times run from journey opening.
+          <span className="sr-only"> or with a recorded departure</span>. Times run from journey opening.
         </p>
       )}
       {isPhone && countsOnly ? (
@@ -825,9 +821,8 @@ function EdPresentation({
                   Every figure here is invented
                 </h2>
                 <p className={detail.note}>
-                  Every count and every wait above is invented. These invented figures are derived from this
-                  prototype&apos;s own invented movement records and have never been measured against a real department
-                  or a real patient. Nothing on this screen is a real clinical record.
+                  Every count and every wait above is invented. They come from this prototype&apos;s invented records,
+                  never a real department. Nothing on this screen is a real clinical record.
                 </p>
               </section>
             </CardBody>

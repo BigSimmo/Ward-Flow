@@ -392,6 +392,42 @@
   color: var(--wf-ink-1);
 }
 
+/* Q107 (1 Nov 2026): one closed "About this data" section for background caveats. */
+.about {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.about > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-touch);
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.about > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.aboutBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+  color: var(--wf-ink-2);
+}
+
+.aboutBody p {
+  margin: 0;
+}
+
 /* ---- Side cards ---- */
 
 .muted {

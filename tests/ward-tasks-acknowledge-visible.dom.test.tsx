@@ -52,7 +52,7 @@ describe("Tasks drawer: Acknowledge visible asks first and offers Undo (P017)", 
     expect(acks(dispatch)).toHaveLength(0);
     const dialog = screen.getByRole("dialog", { name: `Acknowledge ${n} alerts?` });
     expect(dialog.getAttribute("aria-describedby")).toBeTruthy();
-    expect(dialog.textContent).toContain("current filtered list, including those below the screen");
+    expect(dialog.textContent).toContain("Includes alerts below the screen");
     expect(dialog.textContent).toContain("Act now alerts are excluded");
     expect(dialog.textContent).toContain("does not resolve the underlying condition");
     expect(within(dialog).getByRole("button", { name: `Acknowledge ${n}` })).toBeTruthy();

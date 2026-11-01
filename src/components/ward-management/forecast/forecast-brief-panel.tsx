@@ -25,12 +25,11 @@ export function ForecastBriefPanel({ now }: { now: Instant }) {
           </div>
         ))}
       </dl>
-      <p className={styles.caption}>
-        Written from the counts on this screen.{" "}
-        {latest
-          ? `Yesterday's forecast for today was ${kindRangeWord(latest.forecast.likely)}, and it is now ${kindRangeWord(latest.actual)}.`
-          : "How yesterday's forecast did shows once two days are recorded."}
-      </p>
+      {latest ? (
+        <p className={styles.caption}>
+          {`Yesterday's forecast for today was ${kindRangeWord(latest.forecast.likely)}, and it is now ${kindRangeWord(latest.actual)}.`}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -296,7 +296,8 @@ describe("who may raise which event", () => {
     // H-0978: one exact bed closed or reopened, the same desks as CONFIRM_CAPACITY.
     SET_BED_CLOSED: ["ward", "bed_manager", "coordinator"],
     RECORD_BED_MEETING_ACTION: ["coordinator"],
-    COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
+    // Q97 (Josh, 1 Nov 2026): the site bed manager marks no bed meeting action done (Decision 46).
+    COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community"],
     RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "coordinator"],
     RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "coordinator"],
     RECORD_WARD_INCIDENT: ["ward", "coordinator"],

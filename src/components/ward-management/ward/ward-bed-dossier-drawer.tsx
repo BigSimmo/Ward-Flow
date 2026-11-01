@@ -117,8 +117,6 @@ interface WardBedDossierDrawerProps {
   onSetCriteria?: (admissionId: string, update: DischargeCriteriaUpdate) => ReturnType<WardCommandDispatch>;
 }
 
-const VITAL_SIGNS_NOTE = "Not recorded in Ward Flow. Check the ward's own observation chart.";
-
 type DrawerTab = "over" | "plan" | "time";
 type TabButtons = Map<number, HTMLButtonElement | null>;
 const DRAWER_TABS: { id: DrawerTab; label: string }[] = [
@@ -265,7 +263,7 @@ export function WardBedDossierDrawer({
   const stayDays = typeof bedItem?.stayDays === "number" ? bedItem.stayDays : null;
   const ageSex = [typeof bedItem?.age === "number" ? String(bedItem.age) : null, bedItem?.sex ?? null];
   const subline = isReady
-    ? "No patient is allocated by this drawer. Review current referrals with the bed coordinator."
+    ? "Empty bed."
     : [
         ...ageSex,
         bedItem?.stayBand ??
@@ -397,12 +395,12 @@ export function WardBedDossierDrawer({
   const readyNote =
     staleFor !== undefined ? (
       <p className={styles.meta} data-testid="ward-drawer-cleaning-reminder">
-        Being made ready for {durMinutes(staleFor)}. If the bed is ready, tap Ready so it is offered again.
+        Being made ready for {durMinutes(staleFor)}. Tap Ready if it is ready.
       </p>
     ) : null;
   const prepNote = dueForPrep ? (
     <p className={styles.meta} data-testid="ward-drawer-discharge-prep">
-      Due out within {prepHours} hours. Record any discharge barrier now so it can be sorted before the day.
+      Due out within {prepHours} hours. Record any discharge barrier now.
     </p>
   ) : null;
   // Top 25 item 9 (D-60): criteria led discharge, on the Plan to leave tab and the phone sheet.
@@ -804,12 +802,7 @@ export function WardBedDossierDrawer({
             <div className={styles.drawerBody}>
               <Section title="Placement review">
                 <dl className={styles.kv}>
-                  <Row label="Candidate">No patient match is recorded for this bed.</Row>
-                  <Row label="Allocation">
-                    The bed coordinator reviews eligibility and current capacity before recording a shared bed
-                    reservation.
-                  </Row>
-                  <Row label="Vital signs">{VITAL_SIGNS_NOTE}</Row>
+                  <Row label="Candidate">None recorded.</Row>
                 </dl>
                 {readyNote}
               </Section>
@@ -909,7 +902,6 @@ export function WardBedDossierDrawer({
                       </Row>
                       <Row label="Observation level">{observation}</Row>
                       <Row label="High acuity">{bedItem?.highAcuity ? "Requested" : "Not requested"}</Row>
-                      <Row label="Vital signs">{VITAL_SIGNS_NOTE}</Row>
                     </dl>
                     {bedItem?.observation && bedItem.admissionId ? (
                       <WardObservationControl

@@ -938,20 +938,14 @@ export function WardHomeTab({
   for (const [id, label, hint, at] of isSiteBedManager
     ? []
     : ([
-        ["drugs", "Controlled drug count", "Tick when the register has been checked.", localChecks.drugs],
-        [
-          "seclusion",
-          "Seclusion check",
-          "Tick when the suite and duress alarm have been checked.",
-          localChecks.seclusion,
-        ],
-        ["afternoon", "Afternoon sign-off", "Tick when the midday numbers have been signed.", localChecks.afternoon],
+        ["drugs", "Controlled drug count", "Check the register.", localChecks.drugs],
+        ["seclusion", "Seclusion check", "Check the suite and duress alarm.", localChecks.seclusion],
+        ["afternoon", "Afternoon sign-off", "Sign the midday numbers.", localChecks.afternoon],
       ] as const)) {
     const row: TodoRow = {
       key: id,
-      // The group heading says "Reminders, not saved" once, so each row keeps to its own hint.
       title: label,
-      detail: at === null ? hint : "Ticked here only, not saved or sent.",
+      detail: at === null ? hint : "Ticked here only.",
       meta: at === null ? undefined : formatInstantWithDay(at, now),
       tone: at === null ? "neutral" : "success",
       tick: id,
@@ -1217,10 +1211,7 @@ export function WardHomeTab({
                 </p>
               ) : null}
               {incoming.length === 0 ? (
-                <p className={styles.groupEmpty}>
-                  No referral is currently awaiting an answer from {unit.name}. New referrals appear here as soon as
-                  they are sent.
-                </p>
+                <p className={styles.groupEmpty}>No referrals waiting.</p>
               ) : (
                 <ul className={styles.awaitingList}>
                   {visibleIncoming.map((movement) => {
@@ -1440,7 +1431,7 @@ export function WardHomeTab({
 
           <div className={styles.flowPane} data-active={flowTab === "discharges"}>
             {outRows.length === 0 ? (
-              <p className={styles.groupEmpty}>No discharge is expected or confirmed for {unit.name}.</p>
+              <p className={styles.groupEmpty}>No discharges expected.</p>
             ) : (
               (
                 [
@@ -1591,9 +1582,7 @@ export function WardHomeTab({
                 : `${stayDays.length} in beds, days${stayMedian === null ? "" : ` · median ${stayMedian}d`}`}
             </span>
           </h3>
-          {stayDays.length === 0 ? (
-            <p className={styles.v6Empty}>No length of stay is recorded for anyone in a bed here.</p>
-          ) : (
+          {stayDays.length === 0 ? null : (
             <div className={styles.stayChart}>
               <ColumnChart
                 label={`Length of stay at ${unit.name}, people in beds by days`}
@@ -1828,7 +1817,7 @@ export function WardHomeTab({
           {highlighting && bedRows.length > 0 ? (
             <p className={styles.highlightNote} data-testid="ward-bed-highlight-note">
               <span>
-                <b>{litCount}</b> of <b>{bedRows.length}</b> beds highlighted. All beds stay on the board.
+                <b>{litCount}</b> of <b>{bedRows.length}</b> beds highlighted.
               </span>
               {litCount === 0 ? <span>No bed matches this choice.</span> : null}
               {bedFilter === "all" ? null : (

@@ -349,11 +349,7 @@ export function PatientHistoryTab({
                   <strong>
                     {filter !== "all" ? "No matching presentations" : "No presentation history available"}
                   </strong>
-                  <p>
-                    {filter !== "all"
-                      ? "Change the filter to review other episodes."
-                      : (record.presentationsAbsent ?? "Earlier clinical history is not recorded here.")}
-                  </p>
+                  {filter === "all" ? <p>{record.presentationsAbsent ?? "None recorded."}</p> : null}
                   {filter !== "all" && (
                     <button className={legacy.resetButton} type="button" onClick={() => setFilter("all")}>
                       Clear filters
@@ -362,9 +358,7 @@ export function PatientHistoryTab({
                 </div>
               )}
               {prior.length === 0 && items.length > 0 && (
-                <p className={cx(legacy.note, legacy.noteAfterList)}>
-                  No earlier presentation history is available in this record.
-                </p>
+                <p className={cx(legacy.note, legacy.noteAfterList)}>No earlier presentations.</p>
               )}
             </div>
           </div>
@@ -397,13 +391,8 @@ export function PatientHistoryTab({
               })}
             </ol>
           ) : (
-            <p className={cx(styles.bodyPad, legacy.muted)}>
-              No linked movement events. Patient information remains available in Details.
-            </p>
+            <p className={cx(styles.bodyPad, legacy.muted)}>No linked movement events.</p>
           )}
-          <p className={cx(styles.bodyPad, legacy.note)}>
-            Events are the ones recorded. Missing transitions are not inferred.
-          </p>
         </Card>
       </div>
       {stays.length > 0 ? <WardStaysCard stays={stays} dayZero={dayZero} unitName={unitName} /> : null}
@@ -515,9 +504,7 @@ export function PatientCommunityTab({
               <Row k="GP">{patient?.generalPractitioner ?? notRecorded}</Row>
               <Row k="Suburb">{patient?.suburb ?? notRecorded}</Row>
             </div>
-            <p className={cx(styles.bodyPad, legacy.note)}>
-              A recorded catchment does not confirm current case management or an active appointment.
-            </p>
+            <p className={cx(styles.bodyPad, legacy.note)}>A recorded catchment does not confirm active care.</p>
           </Card>
         </div>
         <div className={styles.col}>
@@ -529,7 +516,7 @@ export function PatientCommunityTab({
                 {stayOpen ? (
                   <span className={styles.nr}>Paused while a placement or stay is open</span>
                 ) : (
-                  <span className={styles.nr}>Not recorded in this prototype</span>
+                  <span className={styles.nr}>Not recorded</span>
                 )}
               </Row>
               <Row
@@ -579,9 +566,7 @@ export function PatientCommunityTab({
                   ))}
                 </div>
               ) : (
-                <p className={legacy.muted}>
-                  {record.community.absent ?? "No community team allocation is established by this movement record."}
-                </p>
+                <p className={legacy.muted}>{record.community.absent ?? "No community team recorded."}</p>
               )}
               <CopyFact value={summary} label="Copy care links" />
             </div>
@@ -716,7 +701,7 @@ export function PatientDetailsTab({
       </Card>
       {mismatch && (
         <p className={legacy.attention} role="status">
-          Patient sex or gender differs from the movement placement record. Both values are shown below for review.
+          Sex or gender differs from the placement record. Both are shown below.
         </p>
       )}
       <div className={styles.cols}>
@@ -979,9 +964,7 @@ export function PatientDocumentsTab({
                     )}
                   </dl>
                   <p className={legacy.note}>
-                    {d.file
-                      ? "Document metadata only. No uploaded file or binary preview is stored in this prototype."
-                      : "This entry records authority information. It is not a preview of a signed legal document."}
+                    {d.file ? "Document metadata only." : "Authority details only, not the signed document."}
                   </p>
                 </div>
               </details>
@@ -990,7 +973,7 @@ export function PatientDocumentsTab({
               <div className={legacy.empty}>
                 <FileText size={24} aria-hidden="true" />
                 <strong>{filter !== "all" ? "No matching document records" : "No documents recorded"}</strong>
-                <p>{filter !== "all" ? "Change the document filter." : record.documentsAbsent}</p>
+                {filter === "all" ? <p>{record.documentsAbsent}</p> : null}
                 {filter !== "all" && (
                   <button type="button" onClick={() => setFilter("all")}>
                     Clear filters
@@ -1001,9 +984,7 @@ export function PatientDocumentsTab({
           </div>
         </div>
       </Card>
-      <p className={legacy.note}>
-        A document entry does not establish medical clearance, travel fitness or a completed handover.
-      </p>
+      <p className={legacy.note}>A document does not confirm medical clearance, fitness to travel or handover.</p>
     </section>
   );
 }

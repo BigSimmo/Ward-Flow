@@ -374,7 +374,7 @@ export function TransportBookingForm({
       {transportCadToFollow(answers) ? (
         <p className={styles.warn} data-testid={tid("cad-to-follow")}>
           <StatusGlyph tone="warning" size={9} />
-          No CAD number yet. The job will show CAD to follow until it is added.
+          No CAD number yet: CAD to follow.
         </p>
       ) : null}
 

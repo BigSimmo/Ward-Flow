@@ -82,15 +82,13 @@ export function ForecastTrackRecordCard({
         <h3 className={styles.groupHead}>Forecast against what happened</h3>
         {record.days.length === 0 ? (
           <p className={styles.caption} data-testid="ward-statistics-forecast-empty">
-            Needs two days of forecasts. Each day the first forecast view records tomorrow&apos;s range, and the next
-            day&apos;s gap is compared with it.
+            Needs two days of forecasts.
           </p>
         ) : (
           <>
             <p className={styles.caption}>
               {record.inRange} of {record.days.length} {record.days.length === 1 ? "day" : "days"} landed inside the
-              forecast range. Average miss {record.averageMiss} {record.averageMiss === 1 ? "bed" : "beds"}. Snapshots
-              are taken at the first view of each day.
+              forecast range. Average miss {record.averageMiss} {record.averageMiss === 1 ? "bed" : "beds"}.
             </p>
             <p className={styles.caption} data-testid="ward-statistics-forecast-reasons">
               {missSummary.missed === 0
@@ -168,8 +166,7 @@ export function ForecastTrackRecordCard({
         <p className={styles.caption} data-testid="ward-statistics-forecast-hours">
           {referralsOnRecord === 0
             ? "No ED referrals on record yet."
-            : `${referralsOnRecord} ED referrals on record. Busiest hour starts at ${String(peak).padStart(2, "0")}:00.`}{" "}
-          Shown to help staff a bed meeting, not to predict arrivals.
+            : `${referralsOnRecord} ED referrals on record. Busiest hour starts at ${String(peak).padStart(2, "0")}:00.`}
         </p>
       </CardBody>
     </StatCard>

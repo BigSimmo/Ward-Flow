@@ -81,7 +81,7 @@ describe("cleaning reminder on the ward screen", () => {
     const buttons = reminderButtons();
     expect(buttons.length).toBeGreaterThan(0);
     fireEvent.click(buttons[0]);
-    expect(screen.getByTestId("ward-drawer-cleaning-reminder")).toHaveTextContent(/If the bed is ready, tap Ready/);
+    expect(screen.getByTestId("ward-drawer-cleaning-reminder")).toHaveTextContent(/Tap Ready if it is ready/);
     const stillPreparing = () => flow!.bedReleases.filter((candidate) => candidate.preparing).length;
     const before = stillPreparing();
     fireEvent.click(screen.getByRole("button", { name: "Ready" }));

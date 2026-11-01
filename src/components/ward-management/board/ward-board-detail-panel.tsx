@@ -179,9 +179,7 @@ export function WardBoardDetailPanel({
                 {/* Rule 2 spelled out where a reader is looking at one person rather than at the
                       grid: this bed is gone from the ward's count, and the person is not here. */}
                 {selectedTile.kind === "waiting" && (
-                  <p className={styles.personLine}>
-                    This ward has already given this bed away. It is taken, not free, and nobody has arrived.
-                  </p>
+                  <p className={styles.personLine}>Bed given away. Nobody has arrived yet.</p>
                 )}
                 {selectedTile.kind === "occupied" && (
                   <div className={styles.leaving} data-testid="ward-board-record-leaving">
@@ -475,10 +473,10 @@ export function WardBoardDetailPanel({
             <div data-testid="ward-board-detail-bed-class">
               <p className={styles.detailLead}>
                 {selectedTile.kind === "empty"
-                  ? `One of this ward's ${emptyTileCount} bed${emptyTileCount === 1 ? "" : "s"} a coordinator can fill right now.`
+                  ? `Free bed, one of ${emptyTileCount}.`
                   : selectedTile.kind === "closed"
-                    ? `One of this ward's ${closedTileCount} bed${closedTileCount === 1 ? "" : "s"} that are empty but not offered by this ward.`
-                    : `One of this ward's ${blockedTileCount} bed${blockedTileCount === 1 ? "" : "s"} that are out of service and cannot be filled today.`}
+                    ? `Closed bed, one of ${closedTileCount}.`
+                    : `Out of service, one of ${blockedTileCount}.`}
               </p>
               {/* The constraint the header already carries, repeated here only where it bites: a
                     reader looking at a fillable bed is exactly the reader who needs to know what
@@ -493,9 +491,7 @@ export function WardBoardDetailPanel({
                * anywhere says WHICH bed. So a reader who has just clicked one of these tiles is
                * told, on the panel, that they have selected a class of bed and not a location.
                */}
-              <p className={styles.detailNotLocation}>
-                Bed location is not recorded; this tile represents part of a count.
-              </p>
+              <p className={styles.detailNotLocation}>Bed location not recorded.</p>
             </div>
           )}
         </>

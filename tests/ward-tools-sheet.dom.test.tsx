@@ -1,10 +1,14 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
 import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sheet";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import {
   DEFAULT_BED_FINDER_FILTERS,
   findBeds,
@@ -36,9 +40,11 @@ function renderSheet(isPhone = false) {
 describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
   it("is one sheet in the reviewed groups, with the repeated items gone", () => {
     renderSheet();
-    for (const group of ["Do now", "Look up", "Print and share", "More pages"]) {
+    // Tools redesign (approved 31 Oct 2026): three groups; More pages folds into Look up.
+    for (const group of ["Do now", "Look up", "Print and share"]) {
       expect(screen.getByRole("region", { name: group })).toBeTruthy();
     }
+    expect(screen.queryByRole("region", { name: "More pages" })).toBeNull();
     for (const gone of [
       "Service now",
       "Figures at a glance",
@@ -176,12 +182,106 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(within(picker).getByRole("button", { name: /Standard day/u })).toBeTruthy();
   });
 
+  it("puts the Hospital feed under Do now and Find a bed, then Legal forms, under Look up", () => {
+    renderSheet();
+    const doNow = screen.getByRole("region", { name: "Do now" });
+    expect(within(doNow).getByTestId("ward-tools-toggle-feed")).toBeTruthy();
+    const lookUp = screen.getByRole("region", { name: "Look up" });
+    const rows = within(lookUp).getAllByRole("button").concat(within(lookUp).getAllByRole("link"));
+    expect(within(lookUp).getAllByRole("button")[0]).toBe(screen.getByTestId("ward-tools-toggle-bed-finder"));
+    expect(rows.some((row) => /Legal forms/u.test(row.textContent ?? ""))).toBe(true);
+    // A row that opens a page says so; a row that opens here is a disclosure.
+    expect(within(lookUp).getByRole("link", { name: /Legal forms.*opens its page/u })).toBeTruthy();
+    expect(screen.getByTestId("ward-tools-toggle-bed-finder").getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("finds a tool by its name or line, keeps its group, and says when nothing matches", () => {
+    renderSheet();
+    const search = screen.getByRole("searchbox", { name: "Search tools" });
+    fireEvent.change(search, { target: { value: "bed" } });
+    expect(screen.getByTestId("ward-tools-toggle-bed-finder")).toBeTruthy();
+    expect(screen.getByTestId("ward-tools-toggle-bed-summary")).toBeTruthy();
+    expect(screen.queryByTestId("ward-tools-toggle-form-times")).toBeNull();
+    // The Demo foot steps aside while a search is typed.
+    expect(screen.queryByRole("region", { name: "Demo" })).toBeNull();
+    fireEvent.change(search, { target: { value: "postcode" } });
+    expect(screen.getByTestId("ward-tools-toggle-catchment")).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Do now" })).toBeNull();
+    fireEvent.change(search, { target: { value: "zzz" } });
+    expect(screen.getByRole("status")).toHaveTextContent("No tool matches “zzz”.");
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(search).toHaveValue("");
+    expect(screen.getByRole("region", { name: "Do now" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
+  });
+
   it("opens every figure in place without repeating the headline figures (simplification A2)", () => {
     renderSheet();
     expect(screen.queryByTestId("ward-tools-service-now")).toBeNull();
     fireEvent.click(screen.getByTestId("ward-tools-toggle-figures"));
     expect(screen.getByTestId("ward-stats-drawer-content")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Open statistics/u }).getAttribute("href")).toBe("/ward-flow/statistics");
+  });
+});
+
+describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2026)", () => {
+  const NETWORK_FIGURE_TOOLS = ["bed-finder", "figures", "bed-summary"] as const;
+
+  function atDesk(access: WardAccess) {
+    act(() => setWardFeatureFlagOnDevice("role-access", true));
+    act(() => setWardAccess(access));
+  }
+
+  afterEach(() => {
+    act(() => setWardFeatureFlagOnDevice("role-access", null));
+    resetWardAccessStoreForTests();
+  });
+
+  it("gives the coordinator Find a bed, All figures, Copy bed summary and Log a delay", () => {
+    renderSheet();
+    for (const id of NETWORK_FIGURE_TOOLS) expect(screen.getByTestId(`ward-tools-toggle-${id}`)).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Log a delay/u })).toBeTruthy();
+  });
+
+  it.each([
+    ["transport officer", { role: "officer", scope: { kind: "jobs" } }],
+    ["access admin", { role: "admin", scope: { kind: "statewide" } }],
+  ] as const)("leaves the network bed figures out for the %s (Decision 47)", (_name, access) => {
+    atDesk(access as WardAccess);
+    renderSheet();
+    for (const id of NETWORK_FIGURE_TOOLS) expect(screen.queryByTestId(`ward-tools-toggle-${id}`)).toBeNull();
+    for (const name of [/Find a bed/u, /All figures/u, /Copy bed summary/u]) {
+      expect(screen.queryByText(name)).toBeNull();
+    }
+    // A search cannot bring them back.
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search tools" }), { target: { value: "bed" } });
+    expect(screen.queryByTestId("ward-tools-toggle-bed-finder")).toBeNull();
+  });
+
+  it("offers Log a delay only to a desk whose role may record a delay", () => {
+    // The site bed manager may open the Waiting list but may not record a blocker there (Q97 audit
+    // item 9), so it is not offered the row. It keeps the network bed figures.
+    atDesk({ role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } });
+    let canOpenWaiting: boolean | undefined;
+    function Probe() {
+      canOpenWaiting = useCanOpenHref()("/ward-flow/waiting");
+      return null;
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Probe />
+        <WardToolsSheet isPhone={false} roleLabel="Site bed manager" onNavigate={vi.fn()} onNewReferral={vi.fn()} />
+      </WardFlowProvider>,
+    );
+    expect(canOpenWaiting).toBe(true);
+    expect(screen.queryByRole("link", { name: /Log a delay/u })).toBeNull();
+    expect(screen.getByTestId("ward-tools-toggle-bed-finder")).toBeTruthy();
+  });
+
+  it("keeps Log a delay for a ward desk, which may record one", () => {
+    atDesk({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } });
+    renderSheet();
+    expect(screen.getByRole("link", { name: /Log a delay/u })).toBeTruthy();
   });
 });
 

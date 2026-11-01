@@ -1,0 +1,286 @@
+/* The Demo panel's layout (pop-demo, approved by Josh 31 Oct 2026): Scenario and See it as grids,
+   the clock on one row, Practise a placement folded, and the file and reset buttons in a footer
+   pinned to the foot of the scroll. Tokens only, no new colour. Controls are 40px tall, with a 48px
+   tap area on phones.
+
+   The footer stays in view because the panel is its own bounded scroller: `.scroll` scrolls and the
+   footer sits after it, outside it. A sticky footer could not do this: the Tools sheet's card clips
+   with `overflow: hidden`, which makes the card the sticky footer's scroll container, and the card
+   is as tall as the panel, so the footer never pinned. */
+.body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: max(18rem, calc(100dvh - 12rem));
+}
+
+.body svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+/* The 4px inset gives the focus rings (2px, 2px offset) and the phone tap covers room inside the
+   scroller's clip; the matching negative margin keeps the panel's edges where they were. */
+.scroll {
+  display: grid;
+  flex: 1 1 auto;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  min-height: 0;
+  margin: -4px -4px 0;
+  padding: 4px 4px var(--wf-s-3);
+  overflow-y: auto;
+}
+
+.group {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.groupHead {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 44px;
+  padding: 6px var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.choice strong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.choice em {
+  flex: none;
+  font-size: var(--wf-fs-12);
+  font-style: normal;
+  font-weight: 600;
+  color: var(--wf-accent-ink, var(--wf-accent));
+}
+
+.choice:hover:not(:disabled) {
+  background: var(--wf-hover);
+}
+
+.choice[aria-current="true"] {
+  border-color: var(--wf-accent);
+  background: color-mix(in srgb, var(--wf-accent) 6%, var(--wf-surface));
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.choice:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.clockRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.clock {
+  margin-right: auto;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.clock b {
+  margin-left: 4px;
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.small,
+.reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.small:hover:enabled {
+  background: var(--wf-hover);
+}
+
+.reset {
+  border-color: color-mix(in srgb, var(--wf-warning) 55%, var(--wf-line-2));
+  background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
+}
+
+.small:disabled,
+.reset:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.choice:focus-visible,
+.small:focus-visible,
+.reset:focus-visible,
+.practice summary:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+/* Practise a placement: one closed row until it is opened. */
+.practice {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.practice summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.practice summary::-webkit-details-marker {
+  display: none;
+}
+
+.practice summary:hover {
+  border-radius: calc(var(--wf-r-md) - 1px);
+  background: var(--wf-hover);
+}
+
+/* The app's chevron, as on Tools' folded rows: down when shut, up when open. */
+.practiceCaret {
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-fast) var(--wf-ease);
+}
+
+.practice[open] .practiceCaret {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .practiceCaret {
+    transition: none;
+  }
+}
+
+.practiceBody {
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+}
+
+/* The row above already names it, so the section's own heading is kept for screen readers only. */
+.practiceHeading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Save to file, Load from file and Reset demo, held at the foot while the panel scrolls above them. */
+.foot {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) 0;
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.footFiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin-right: auto;
+}
+
+.footNote {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Phones: the 40px buttons (44px scenario cards) keep their face and reach a 48px tap area through a
+   transparent cover, the house pattern (home-list's list tabs). Neighbours sit 6px or more apart, so
+   no cover reaches another control. The Practise row's cover reaches up into the gap above it only,
+   so it never sits over the opened section's first line. */
+@media (max-width: 48rem) {
+  .choice,
+  .small,
+  .reset,
+  .practice summary {
+    position: relative;
+  }
+  .small::after,
+  .reset::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+  .choice::after {
+    content: "";
+    position: absolute;
+    inset: -2px 0;
+  }
+  .practice summary::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .choice[aria-current="true"] {
+    background: Highlight;
+    color: HighlightText;
+  }
+  .choice[aria-current="true"] em {
+    color: HighlightText;
+  }
+}

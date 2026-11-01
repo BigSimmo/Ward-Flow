@@ -107,7 +107,7 @@ describe("ready-bed dossier tells the truth", () => {
         />
       </WardFlowProvider>,
     );
-    expect(screen.getByText("No patient match is recorded for this bed.")).toBeInTheDocument();
+    expect(screen.getByText("None recorded.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Review current referrals/ })).toHaveAttribute(
       "href",
       "/ward-flow/referrals",

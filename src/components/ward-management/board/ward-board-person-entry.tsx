@@ -102,8 +102,8 @@ export function PersonEntry({
         {occupant.awayAtEdHours !== null && (
           <p className={styles.personAway} data-testid="ward-board-person-away">
             {occupant.awayAtEdHours === 0
-              ? "At an emergency department — the bed is still theirs."
-              : `At an emergency department for ${occupant.awayAtEdHours} ${occupant.awayAtEdHours === 1 ? "hour" : "hours"} — the bed is still theirs.`}
+              ? "At an emergency department; bed still theirs."
+              : `At an emergency department for ${occupant.awayAtEdHours} ${occupant.awayAtEdHours === 1 ? "hour" : "hours"}; bed still theirs.`}
           </p>
         )}
         <p className={styles.personLine}>
@@ -119,15 +119,13 @@ export function PersonEntry({
         <p className={styles.personExpected}>{expectedPhrase(occupant.expectedDays)}</p>
         {occupant.expectedDays !== null && (
           <p className={styles.personLine}>
-            {occupant.dischargeDateSetBy !== null
-              ? `Date set by ${occupant.dischargeDateSetBy}`
-              : "Date set — the role that set it is not recorded"}
-            , and {movesPhrase(occupant.dischargeDateMoves)}.{" "}
+            {occupant.dischargeDateSetBy !== null ? `Date set by ${occupant.dischargeDateSetBy}` : "Date set"}, and{" "}
+            {movesPhrase(occupant.dischargeDateMoves)}.{" "}
             {occupant.confirmed
               ? occupant.dischargeConfirmedBy !== null
-                ? `Confirmed by ${occupant.dischargeConfirmedBy} — a decision, not a plan.`
-                : "Confirmed — a decision, not a plan; the role that confirmed it is not recorded."
-              : "Not confirmed — the ward's plan, not yet its decision."}
+                ? `Confirmed by ${occupant.dischargeConfirmedBy}.`
+                : "Confirmed."
+              : "Not confirmed."}
           </p>
         )}
         {occupant.blockReason !== null && !blockerInBarrierTag(occupant) && (
@@ -234,8 +232,8 @@ export function PersonEntry({
         {occupant.awayAtEdHours !== null && (
           <p className={styles.personAway} data-testid="ward-board-person-away">
             {occupant.awayAtEdHours === 0
-              ? "At an emergency department — the bed is still theirs."
-              : `At an emergency department for ${occupant.awayAtEdHours} ${occupant.awayAtEdHours === 1 ? "hour" : "hours"} — the bed is still theirs.`}
+              ? "At an emergency department; bed still theirs."
+              : `At an emergency department for ${occupant.awayAtEdHours} ${occupant.awayAtEdHours === 1 ? "hour" : "hours"}; bed still theirs.`}
           </p>
         )}
         <p className={styles.personLine}>
@@ -256,16 +254,14 @@ export function PersonEntry({
         <p className={styles.personExpected}>{expectedPhrase(occupant.expectedDays)}</p>
         {occupant.expectedDays !== null && (
           <p className={styles.personLine}>
-            {occupant.dischargeDateSetBy !== null
-              ? `Date set by ${occupant.dischargeDateSetBy}`
-              : "Date set — the role that set it is not recorded"}
+            {occupant.dischargeDateSetBy !== null ? `Date set by ${occupant.dischargeDateSetBy}` : "Date set"}
             {/* A moved date is said once, by the flag below, not twice. */}
             {occupant.dischargeDateMoves > 0 ? "" : `, and ${movesPhrase(occupant.dischargeDateMoves)}`}.{" "}
             {occupant.confirmed
               ? occupant.dischargeConfirmedBy !== null
-                ? `Confirmed by ${occupant.dischargeConfirmedBy} — a decision, not a plan.`
-                : "Confirmed — a decision, not a plan; the role that confirmed it is not recorded."
-              : "Not confirmed — the ward's plan, not yet its decision."}
+                ? `Confirmed by ${occupant.dischargeConfirmedBy}.`
+                : "Confirmed."
+              : "Not confirmed."}
           </p>
         )}
         {occupant.dischargeDateMoves > 0 && (

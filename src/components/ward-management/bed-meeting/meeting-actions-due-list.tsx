@@ -29,7 +29,7 @@ export function DueActions({
   onMarkDone,
 }: {
   subject: BedMeetingSubject;
-  desk: BedMeetingActionOwner | "bed_manager";
+  desk: BedMeetingActionOwner;
   actions: readonly BedMeetingAction[];
   onMarkDone: MarkBedMeetingActionDone;
 }) {
@@ -71,11 +71,7 @@ export function DueActions({
                   // The second click of a double click is never a fresh Mark done.
                   if (event.detail > 1 || !claimDone()) return;
                   markDone(index);
-                  onMarkDone(
-                    subject,
-                    action.kind,
-                    desk === "ward" || desk === "bed_manager" ? action.ownerUnitId : undefined,
-                  );
+                  onMarkDone(subject, action.kind, desk === "ward" ? action.ownerUnitId : undefined);
                 }}
                 aria-label={`Mark done: ${bedMeetingActionLabel(action.kind)}`}
                 data-testid="meeting-action-mark-done"
