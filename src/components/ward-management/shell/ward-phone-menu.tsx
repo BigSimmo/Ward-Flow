@@ -189,7 +189,14 @@ function phoneMenuModel(
   // B1 (Josh, 19 Oct 2026): the role's own menu first, then everything else in the rail's groups.
   // The access admin's own menu leads with Governance, as on the rail.
   const menu = roleMenu(entries, role, accessAdmin);
-  const main = menu.main.filter((item) => !shown.has(item.id));
+  // Q177 (Josh, 1 Nov 2026): the coordinator's queue slot reads Tasks, so Alerts gets its own Menu row
+  // on the phone (the desktop rail still leaves it out for this desk).
+  const alertsEntry = byId.get("alerts");
+  const alertsRow =
+    alertsEntry && dockRight.some((slot) => slot.kind === "queue") && !menu.main.some((item) => item.id === "alerts")
+      ? [alertsEntry]
+      : [];
+  const main = [...menu.main, ...alertsRow].filter((item) => !shown.has(item.id));
   const groups = [
     { label: roleLabel, entries: main },
     ...menu.more.map((group) => ({ ...group, entries: group.entries.filter((entry) => !shown.has(entry.id)) })),

@@ -269,11 +269,12 @@ describe("the phone dock with one Alerts queue", () => {
     expect(screen.getByTestId("ward-phone-menu-tasks")).toHaveAttribute("aria-current", "page");
   });
 
-  it("lists Alerts once in the menu, as the dock tab, not again in its group", () => {
+  // Q177: the dock slot reads Tasks, so Alerts keeps one row of its own in the phone Menu.
+  it("lists Alerts once in the menu now that the dock tab reads Tasks", () => {
     renderDock();
     act(() => openWardMenu(null));
     const railHrefs = screen.getAllByTestId("ward-rail-link").map((link) => link.getAttribute("href"));
-    expect(railHrefs).not.toContain(WARD_ALERTS_HREF);
+    expect(railHrefs.filter((href) => href === WARD_ALERTS_HREF)).toHaveLength(1);
   });
 
   // The new frame's phone dock per desk (Josh, 31 Oct 2026): the executive's Alerts list is the bed
