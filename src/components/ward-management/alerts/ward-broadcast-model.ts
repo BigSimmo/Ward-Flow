@@ -156,7 +156,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   },
   {
     id: "wa-ed-prolonged-surge",
-    name: "ED waits over 24h",
+    name: "Long ED waits",
     title: "Demo: ED waits over 24 hours",
     severity: "critical",
     category: "ed_surge",
