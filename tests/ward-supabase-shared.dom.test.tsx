@@ -130,8 +130,10 @@ describe("Supabase shared sign-in", () => {
         renders.push(Boolean(connection.snapshot || connection.executiveSnapshot));
         return connection;
       });
-      await waitFor(() => expect(hook.result.current.status).toBe("ready"));
-      expect(renders.at(-1)).toBe(true);
+      // connect() publishes an empty "ready" view before the first read lands, so wait for the
+      // published snapshot itself, not only the status (this flaked on CI unit shard 2, 1 Nov).
+      await waitFor(() => expect(renders.at(-1)).toBe(true));
+      expect(hook.result.current.status).toBe("ready");
       auth.replace("replacement-synthetic-account");
       const before = renders.length;
       hook.rerender();
