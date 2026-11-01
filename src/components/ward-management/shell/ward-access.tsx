@@ -72,6 +72,7 @@ import {
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
 import { useWardFeatureFlag } from "./ward-feature-flag-store";
+import { usePersonaDeskHref, useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import {
   breakGlass,
   endAccessPreview,
@@ -585,6 +586,9 @@ const OWN_PLACE_ENTRY: Partial<Record<WardAccess["scope"]["kind"], { id: string;
   team: { id: "community", label: "My team" },
 };
 
+/** The menu entry that is a chosen desk's own place, by the desk's role (Q201). */
+const PERSONA_OWN_ENTRY: Partial<Record<string, string>> = { ward: "wards", ed: "ed", community: "community" };
+
 /**
  * Nav entries the desk may open. The index entry for the desk's own kind of place (All wards for a
  * ward desk, All EDs for an ED desk, Community for a team) becomes a link to its own place.
@@ -595,9 +599,18 @@ export function useAccessNavFilter(): <T extends { href: string; id: string; lab
   const on = useWardAccessEnabled();
   const access = useEffectiveWardAccess();
   const shell = useWardShellPublic();
+  const personaRole = useShellPersonaRole();
+  const personaHref = usePersonaDeskHref();
   return useCallback(
     <T extends { href: string; id: string; label: string }>(entries: readonly T[]): T[] => {
-      if (!on || accessIsWholeNetwork(access)) return [...entries];
+      if (!on) {
+        // Q201 (Josh, 1 Nov 2026): with role access off, the menu follows the desk chosen in "Go to a
+        // desk", so its "My ward", "My ED board" or "My team" link opens that desk, not the index.
+        const ownId = PERSONA_OWN_ENTRY[personaRole];
+        if (!ownId || !personaHref) return [...entries];
+        return entries.map((entry) => (entry.id === ownId ? { ...entry, href: personaHref } : entry));
+      }
+      if (accessIsWholeNetwork(access)) return [...entries];
       const places = shell?.places;
       const own = OWN_PLACE_ENTRY[access.scope.kind];
       // D-80: Statistics opens a ward, ED or team desk's own place's page.
@@ -613,7 +626,7 @@ export function useAccessNavFilter(): <T extends { href: string; id: string; lab
         return screenDecision(access, screenForPath(shown.href), places).open ? [shown] : [];
       });
     },
-    [on, access, shell],
+    [on, access, shell, personaRole, personaHref],
   );
 }
 

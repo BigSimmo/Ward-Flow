@@ -270,7 +270,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
     rememberDesk(desk.id);
     if (!keepsSignedInRole) {
       onSelectRole?.(desk.role);
-      dispatchPersonaSyncForRole(desk.role, desk.id);
+      dispatchPersonaSyncForRole(desk.role, desk.id, desk.href);
     }
     onClose();
     confirmSwitch(desk.name, deskRoleLabel(desk.role));

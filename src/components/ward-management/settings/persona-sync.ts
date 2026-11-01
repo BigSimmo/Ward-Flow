@@ -19,6 +19,8 @@ export const WARD_PERSONA_SYNC_EVENT = "ward-flow-persona-sync";
 let personaRole: DeskRole = "coordinator";
 /** The one desk chosen with that role, when a desk (not just a role) was chosen (PR #489 review). */
 let personaDeskId: string | undefined;
+/** The page that desk opened, so the menu's own-place link ("My ward") goes there (Q201). */
+let personaDeskHref: string | undefined;
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void): () => void {
@@ -32,10 +34,11 @@ function subscribe(listener: () => void): () => void {
  * Announce the desk now in use. `deskId` names the one desk chosen ("Go to a desk"); a switch that
  * picks only a role (global search's desk commands) passes none, so no single desk counts as theirs.
  */
-export function dispatchPersonaSyncForRole(role: DeskRole, deskId?: string) {
+export function dispatchPersonaSyncForRole(role: DeskRole, deskId?: string, deskHref?: string) {
   if (typeof window === "undefined") return;
   personaRole = role;
   personaDeskId = deskId;
+  personaDeskHref = deskHref;
   for (const listener of listeners) listener();
   window.dispatchEvent(new CustomEvent<{ role: DeskRole }>(WARD_PERSONA_SYNC_EVENT, { detail: { role } }));
 }
@@ -61,6 +64,15 @@ export function usePersonaDeskId(): string | undefined {
   return useSyncExternalStore(
     subscribe,
     () => personaDeskId,
+    () => undefined,
+  );
+}
+
+/** The page the desk last chosen in "Go to a desk" opened, if one was announced. */
+export function usePersonaDeskHref(): string | undefined {
+  return useSyncExternalStore(
+    subscribe,
+    () => personaDeskHref,
     () => undefined,
   );
 }
