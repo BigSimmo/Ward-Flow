@@ -24,6 +24,7 @@ import {
   EmailField,
   PasswordField,
   SESSION_HOURS,
+  IDLE_MINUTES,
   SessionNote,
   Spinner,
 } from "./front-door-parts";
@@ -287,7 +288,9 @@ function SignInDoor({
               </>
             )}
           </button>
-          <SessionNote>Stays signed in for up to {SESSION_HOURS} hours in this tab.</SessionNote>
+          <SessionNote>
+            Stays signed in for up to {SESSION_HOURS} hours in this tab. Locks after {IDLE_MINUTES} minutes without use.
+          </SessionNote>
           <div className={styles.cardFoot}>
             <p>No account yet? Ask the Ward Flow coordinator.</p>
             {form?.signupAvailable && (
