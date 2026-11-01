@@ -244,6 +244,8 @@ describe("ward decisions cockpit", () => {
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent("2 discharges signed off: SYNTHETIC, One; SYNTHETIC, Two");
+    // The names wrap rather than being cut off with an ellipsis on a phone.
+    expect(screen.getByText(/signed off:/u).className).toMatch(/result/u);
   });
 
   it("keeps a refusal past six seconds until it is closed, and lets a recorded step clear (CT-09)", () => {
