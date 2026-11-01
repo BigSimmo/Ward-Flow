@@ -749,7 +749,7 @@ export function WardHomeTab({
       key: "referrals",
       title: "Referrals waiting",
       detail: `${incoming.length} waiting for this ward's answer`,
-      meta: String(incoming.length),
+      meta: `${incoming.length} waiting`,
       tone: "danger",
       action: { label: "Answer", run: focusAwaiting },
     });
@@ -761,7 +761,7 @@ export function WardHomeTab({
       detail: heldUp
         .map((release) => `${bedByAdmission(release.admissionId)?.bedLabel ?? "A bed"} ${release.blocker}`)
         .join(", "),
-      meta: String(heldUp.length),
+      meta: `${heldUp.length} ${heldUp.length === 1 ? "bed" : "beds"}`,
       tone: "danger",
       action: { label: "Review", run: () => onOpenDischarges?.() },
     });
@@ -778,7 +778,7 @@ export function WardHomeTab({
             `${bed.bedLabel}${bed.patientAlias ? ` ${bed.patientAlias}` : ""}, ${bed.bedHold!.short.toLowerCase()}`,
         )
         .join("; "),
-      meta: String(lapsedHolds.length),
+      meta: `${lapsedHolds.length} ${lapsedHolds.length === 1 ? "bed" : "beds"}`,
       tone: "danger",
       action: { label: "Move or release", run: () => onSelectBed?.(Number(lapsedHolds[0]!.bedNumber)) },
     });
@@ -791,7 +791,7 @@ export function WardHomeTab({
       detail: heldAfterStop
         .map((movement) => `${resolvePatientIdentity(movement).formalName}, transport stopped after collection`)
         .join("; "),
-      meta: String(heldAfterStop.length),
+      meta: `${heldAfterStop.length} ${heldAfterStop.length === 1 ? "bed" : "beds"}`,
       tone: "warning",
       action: onOpenArrivals ? { label: "Release pulled bed", run: onOpenArrivals } : undefined,
     });
@@ -1053,17 +1053,20 @@ export function WardHomeTab({
     );
   }
 
-  function renderTodoColumn(id: string, title: string, tone: WfTone, rows: TodoRow[]) {
+  // Polish (1 Nov 2026): each group reads like Home's My list, a tinted head band with its count
+  // and a short note, then one row a task with the time and the action in their own columns.
+  function renderTodoColumn(id: string, title: string, tone: WfTone, rows: TodoRow[], aside?: string) {
     const items = rows.filter((row) => !row.tick);
     const reminders = rows.filter((row) => row.tick);
     return (
-      <section className={styles.todoCol} aria-labelledby={`ward-todo-${id}`}>
+      <section className={styles.todoCol} data-tone={tone} aria-labelledby={`ward-todo-${id}`}>
         <div className={styles.groupHead}>
           <StatusGlyph tone={tone} size={9} />
           <h3 id={`ward-todo-${id}`} className={styles.groupTitle}>
             {title}
           </h3>
           <Count n={items.length} />
+          {aside ? <span className={styles.groupAside}>{aside}</span> : null}
         </div>
         {items.length === 0 ? <p className={styles.groupEmpty}>Nothing here.</p> : renderTodoList(items)}
         {reminders.length > 0 ? (
@@ -1106,7 +1109,7 @@ export function WardHomeTab({
                 </span>
               )}
               {row.meta ? (
-                <span className={row.meta.length > 6 ? `${styles.todoMeta} ${styles.todoMetaBelow}` : styles.todoMeta}>
+                <span className={row.meta.length > 10 ? `${styles.todoMeta} ${styles.todoMetaBelow}` : styles.todoMeta}>
                   {row.meta}
                 </span>
               ) : null}
@@ -1552,9 +1555,9 @@ export function WardHomeTab({
         )}
         <div className={styles.shiftPane} data-active={shiftView === "todo"}>
           <div className={styles.todoGrid}>
-            {renderTodoColumn("now", "Act now", "danger", actNow)}
-            {renderTodoColumn("later", "Later today", "neutral", laterToday)}
-            {renderTodoColumn("done", "Done", "success", doneRows)}
+            {renderTodoColumn("now", "Act now", "danger", actNow, "needs a person now")}
+            {renderTodoColumn("later", "Later today", "neutral", laterToday, "before the shift ends")}
+            {renderTodoColumn("done", "Done", "success", doneRows, "this shift")}
           </div>
         </div>
         <div className={styles.shiftPane} data-active={shiftView === "log"}>
@@ -1890,15 +1893,22 @@ export function WardHomeTab({
                   >
                     <span className={styles.bedTileTop} aria-hidden="true">
                       <b>{row.number}</b>
-                      {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} className={styles.bedTileTag} /> : null}
                       {row.glyph ? <StatusGlyph tone={row.glyph} size={10} /> : null}
                     </span>
                     <span className={styles.bedTileName} aria-hidden="true">
                       {renderTileName(row.name)}
                     </span>
+                    {/* The criteria led tag sits under the name, so the top row keeps only number and glyph. */}
+                    {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} className={styles.bedTileTag} /> : null}
                     <span className={styles.bedTileState} aria-hidden="true">
                       <span className={styles.bedTileNote}>
-                        {row.free ? row.stateWord : row.note === row.name ? "" : row.tileNote}
+                        {row.free
+                          ? row.stateWord === row.name
+                            ? ""
+                            : row.stateWord
+                          : row.note === row.name
+                            ? ""
+                            : row.tileNote}
                       </span>
                       {row.days ? <span className={styles.bedTileDays}>{row.days}</span> : null}
                     </span>
