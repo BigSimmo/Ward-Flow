@@ -12,13 +12,11 @@ export type WardRecordTone = "danger" | "warning" | "good" | "neutral";
  * distinct `*Note` classes. This is one of each, for these three screens; nothing outside them is
  * migrated here.
  *
- * ⚠️ **`tone` DRAWS A COLOURED LEFT EDGE AND NOTHING ELSE**, so a toned row with no state word is a
- * coloured stripe carrying meaning on its own — the exact defect `WardChip`'s own word requirement
- * refuses one level down. An UNTONED row with no states is fine: it makes no claim, and a test
- * asserts that case too, so this guard cannot be satisfied by banning both.
- *
- * The edge is on the LEFT rather than across the top. A left edge survives a row wrapping onto four
- * lines, and it does not compete with the panel heading directly above it.
+ * ⚠️ **`tone` IS A CLAIM ABOUT THE ROW'S STATE**, carried as `data-tone` only: the coloured left
+ * edge it used to draw is gone (Josh, Q94, 1 Nov 2026: no coloured side edges). A toned row with no
+ * state word would still claim a state nobody can read, so it is refused — the same rule `WardChip`'s
+ * own word requirement keeps one level down. An UNTONED row with no states is fine: it makes no
+ * claim, and a test asserts that case too, so this guard cannot be satisfied by banning both.
  */
 export function WardRecordRow({
   id,

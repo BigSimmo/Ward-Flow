@@ -14,7 +14,10 @@ vi.mock("next/link", () => ({
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
 import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
-import { matchReferralPatient } from "@/components/ward-management/referrals/referral-patient-match";
+import {
+  matchReferralPatient,
+  referralPatientLabel,
+} from "@/components/ward-management/referrals/referral-patient-match";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -135,9 +138,26 @@ describe("community intake names its person", () => {
 describe("matchReferralPatient", () => {
   const patients = seedWardFlowState().patients;
   const person = patients.find((patient) => patient.umrn !== "")!;
-  it("finds a person by UMRN or by name, and nobody for a blank", () => {
+  it("finds a person by UMRN or by the picked label, and nobody for a blank", () => {
     expect(matchReferralPatient(patients, person.umrn)?.id).toBe(person.id);
-    expect(matchReferralPatient(patients, `  ${person.givenName}   ${person.familyName} `)?.id).toBe(person.id);
+    expect(matchReferralPatient(patients, ` ${referralPatientLabel(person).toUpperCase()} `)?.id).toBe(person.id);
     expect(matchReferralPatient(patients, "")).toBeUndefined();
+  });
+
+  // Clinical-safety audit (1 Nov 2026): a typed name alone never links a record, even a unique one.
+  it("never links a record from a typed name alone", () => {
+    const unique = patients.filter(
+      (candidate) =>
+        patients.filter((other) => other.givenName === candidate.givenName && other.familyName === candidate.familyName)
+          .length === 1,
+    )[0]!;
+    expect(matchReferralPatient(patients, `${unique.givenName} ${unique.familyName}`)).toBeUndefined();
+    expect(matchReferralPatient(patients, `${unique.familyName}, ${unique.givenName}`)).toBeUndefined();
+  });
+
+  it("labels a record with no UMRN by its date of birth, so a pick still names an identifier", () => {
+    const noUmrn = { ...person, id: "synthetic-no-umrn" as typeof person.id, umrn: "", dateOfBirth: "1990-02-03" };
+    expect(referralPatientLabel(noUmrn)).toBe(`${person.familyName}, ${person.givenName} · born 03/02/1990`);
+    expect(matchReferralPatient([...patients, noUmrn], referralPatientLabel(noUmrn))?.id).toBe(noUmrn.id);
   });
 });

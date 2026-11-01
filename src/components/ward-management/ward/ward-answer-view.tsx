@@ -1333,7 +1333,6 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         </>
                       ) : null}
 
-                      {/* Decision Action Controls */}
                       {/* DA-19 (design audit, 20 Oct 2026): the not-wired "Ask a question" is gone. */}
                       <div className={styles.decisionArea}>
                         {/* D-75 item 5: the desk's one-step accept offers the same hold choice as the phone sheet. */}
@@ -1366,6 +1365,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         <button
                           type="button"
                           data-testid={`ward-decline-toggle-${activeMovement.id}`}
+                          data-placement-action="decline"
                           aria-disabled={blocked ? "true" : undefined}
                           aria-describedby={blocked ? `ward-decline-unavailable-${activeMovement.id}` : undefined}
                           title={blocked ?? undefined}
@@ -1383,6 +1383,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         <button
                           type="button"
                           data-testid={`ward-accept-${activeMovement.id}`}
+                          data-placement-action
                           aria-disabled={blocked || holdPending ? "true" : undefined}
                           aria-describedby={
                             blocked
@@ -1717,7 +1718,6 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         />
       ) : null}
 
-      {/* Action Toast */}
       {/* Outside a phone sheet's background inerting, so a failure is still said and Close still works while the decline sheet stays open. */}
       <div role="status" aria-live="polite" data-sheet-inert-skip="">
         {toastMessage ? (

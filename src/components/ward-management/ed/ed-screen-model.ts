@@ -751,8 +751,20 @@ export type EdStepEvent = Extract<
   }
 >;
 
-/** What the toast says once the engine accepts an ED next step. */
-export function edStepSaid(event: EdStepEvent): string {
+/**
+ * What the toast says once the engine accepts an ED next step, naming the person (surname first),
+ * so two toasts left side by side never leave Undo pointing at the wrong patient (1 Nov 2026).
+ */
+export function edStepSaid(event: EdStepEvent, who: string): string {
+  return `${edStepFact(event)} for ${who}`;
+}
+
+/** What the toast says once an ED next step is undone, naming the same person. */
+export function edStepUndone(who: string): string {
+  return `Undone for ${who}. Back as it was.`;
+}
+
+function edStepFact(event: EdStepEvent): string {
   switch (event.type) {
     case "RECORD_ARRIVED_IN_DEPARTMENT":
       return "Marked arrived in department";

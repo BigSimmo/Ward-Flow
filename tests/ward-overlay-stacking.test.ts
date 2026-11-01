@@ -56,7 +56,6 @@ describe("overlays use the shared layers, not hard-coded ones", () => {
     ["ward/ward-answer-view.module.css", ".modalOverlay", "--z-modal"],
     ["ward/ward-answer-view.module.css", ".toast", "--z-toast"],
     ["delays/delays.module.css", ".toastNotice", "--z-toast"],
-    ["settings/settings-modals.module.css", ".modalOverlay", "--z-modal"],
     ["referrals/ward-referral-drawer.module.css", ".drawerBackdrop", "--z-overlay"],
     ["referrals/arrival-time-modal.module.css", ".overlay", "--z-modal"],
     ["ward-tasks-drawer.module.css", ".drawerBackdrop", "--z-overlay"],

@@ -154,7 +154,7 @@ export function isActNow(standing: ClockStanding): boolean {
  * Legal statuses that wait on a psychiatric examination. The examination itself is recorded on the
  * emergency department screen (`RECORD_EXAMINATION` is an ED event); this page only reads it.
  */
-export function needsExamination(movement: Movement): boolean {
+function needsExamination(movement: Movement): boolean {
   return (
     movement.legalStatus === "Referred for psychiatric examination" ||
     movement.legalStatus === "Detained awaiting examination"

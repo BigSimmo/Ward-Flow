@@ -290,6 +290,71 @@
   font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
   color: var(--wf-ink-1);
 }
+/* The live tally's emergency departments (moved from the bar's old Activity drawer, Q99). */
+.tallyDepartments {
+  width: calc(100% - 2 * var(--wf-s-4));
+  margin: 0 var(--wf-s-4) var(--wf-s-3);
+  border-collapse: collapse;
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+}
+.tallyDepartments caption {
+  padding-bottom: var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-align: left;
+  color: var(--wf-ink-2);
+}
+.tallyDepartments th,
+.tallyDepartments td {
+  height: 40px;
+  padding: 0 var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  text-align: right;
+  color: var(--wf-ink-1);
+}
+.tallyDepartments thead th {
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+.tallyDepartments th:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+.tallyDepartments tbody th {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+.tallyDepartments td > svg {
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+.tallyDepartments a {
+  color: var(--wf-accent-ink);
+  text-decoration: none;
+}
+.tallyDepartments a:hover {
+  text-decoration: underline;
+}
+@media (max-width: 48rem) {
+  .tallyDepartments tbody th,
+  .tallyDepartments tbody td {
+    height: 48px;
+  }
+}
+/* Figure checks (O-9): one line per published check. */
+.checkList {
+  display: grid;
+  gap: var(--wf-s-1);
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.checkList li {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
 .chips {
   padding: 0 var(--wf-s-4) var(--wf-s-2);
 }

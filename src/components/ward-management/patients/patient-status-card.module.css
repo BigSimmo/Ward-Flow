@@ -432,26 +432,3 @@
     background: transparent;
   }
 }
-
-/* Rounded attention markers apply at every responsive breakpoint. */
-.card[data-act="true"] {
-  position: relative;
-}
-
-.card[data-act="true"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .card[data-act="true"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-}
