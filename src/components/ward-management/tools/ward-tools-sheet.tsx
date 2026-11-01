@@ -33,6 +33,9 @@ import { contactForTeam } from "../community/community-team-contact-mapping";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-routes";
 import { handoverHref } from "../shell/ward-facade";
 import { useAccessNavFilter, useCanOpenHref } from "../shell/ward-access";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { useRoleGate, useRouteRole } from "../ward-role-gate";
+import { seesNetworkBedFigures, type WardAccessRole } from "../ward-role-access";
 import { bedSummaryText } from "./ward-bed-summary";
 import { WardBedFinder } from "./ward-bed-finder";
 import { WardToolsContacts } from "./ward-tools-contacts";
@@ -312,6 +315,16 @@ export function WardToolsSheet({
   // here on a desktop too, where the board clock opens them. The executive chrome keeps its pill.
   const showDemo = isPhone || !executive;
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
+  // Audit 1 Nov 2026 (item 9, D-80): Log a delay records a blocker, so only a desk whose role may
+  // record one is offered it, by the same gate the phone Create sheet asks.
+  const gate = useRoleGate();
+  const canLogDelay = gate("RECORD_MOVEMENT_BLOCKER").allowed;
+  // Audit 1 Nov 2026 (item 10): Decision 47. The transport officer and the access admin see no
+  // network bed figures, so Find a bed, All figures and Copy bed summary are left out for them. The
+  // access admin borrows the executive chrome, so its access role is read first.
+  const routeRole = useRouteRole();
+  const accessRole: WardAccessRole = useEffectiveWardAccess().role === "admin" ? "admin" : routeRole;
+  const networkFigures = seesNetworkBedFigures(accessRole);
   const [open, setOpen] = useState<ReadonlySet<ToolsSheetToolId>>(() => new Set());
   const [query, setQuery] = useState("");
   const rows = useRef(new Map<ToolsSheetToolId, HTMLDivElement>());
@@ -353,10 +366,18 @@ export function WardToolsSheet({
     };
   }, [openRequest, onRequestHandled]);
 
-  const tool = (id: ToolsSheetToolId, icon: LucideIcon, name: string, detail: string, body: ReactNode): ToolsEntry => ({
+  const tool = (
+    id: ToolsSheetToolId,
+    icon: LucideIcon,
+    name: string,
+    detail: string,
+    body: ReactNode,
+    show?: boolean,
+  ): ToolsEntry => ({
     key: id,
     name,
     detail,
+    show,
     node: (
       <ToolRow
         key={id}
@@ -399,7 +420,7 @@ export function WardToolsSheet({
         </button>
       ),
     },
-    link(`${root}/waiting`, Clock3, "Log a delay", "Patient and reason"),
+    link(`${root}/waiting`, Clock3, "Log a delay", "Patient and reason", canLogDelay),
     ...(updateBedHref === `${root}/wards`
       ? [
           // P023 (Josh, 9:57 PM 27 Oct 2026): a network desk chooses the ward here, not on the Wards list.
@@ -428,13 +449,21 @@ export function WardToolsSheet({
   // phone) join it from the old More pages group. Simplification A5 (19 Oct 2026) still holds: the
   // full figures stay one row away rather than repeating each page's headline figures.
   const lookUp: ToolsEntry[] = [
-    tool("bed-finder", BedDouble, "Find a bed", "Ready beds by ward", <WardBedFinder onNavigate={onNavigate} />),
+    tool(
+      "bed-finder",
+      BedDouble,
+      "Find a bed",
+      "Ready beds by ward",
+      <WardBedFinder onNavigate={onNavigate} />,
+      networkFigures,
+    ),
     tool(
       "figures",
       BarChart3,
       "All figures",
       "Beds, flow and waits across the network",
       <NetworkFigures onNavigate={onNavigate} />,
+      networkFigures,
     ),
     tool(
       "catchment",
@@ -498,6 +527,7 @@ export function WardToolsSheet({
       "Copy bed summary",
       "Text for the executive on-call email or Teams",
       <BedSummary />,
+      networkFigures,
     ),
     link(handoverHref(), FileText, "Handover sheet", "Review and print the current handover", isPhone),
     link(DOWNTIME_PACK_HREF, Printer, "Downtime pack", "Print a snapshot now"),

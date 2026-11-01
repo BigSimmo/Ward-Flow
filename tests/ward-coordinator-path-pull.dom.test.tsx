@@ -153,12 +153,17 @@ describe("Home: Act now and Referrals to decide (WS-02, WS-04)", () => {
     expect(row).toHaveTextContent("Accepted, bed not pulled");
     expect(row).toHaveTextContent(`${first!.unitName} accepted`);
     // The row's title and its Pull the bed button both open the sheet.
-    fireEvent.click(
-      within(row)
-        .getAllByRole("button", { name: /^Pull the bed for / })
-        .at(-1)!,
-    );
-    expect(await screen.findByTestId(`ward-pull-accepted-${first!.referral.id}`)).toBeInTheDocument();
+    const pull = within(row)
+      .getAllByRole("button", { name: /^Pull the bed for / })
+      .at(-1)!;
+    expect(pull).toHaveTextContent("Pull the bed");
+    expect(pull).toHaveAttribute("data-placement-action");
+    fireEvent.click(pull);
+    const sheet = await screen.findByTestId(`ward-pull-accepted-${first!.referral.id}`);
+    expect(sheet).toBeInTheDocument();
+    // Audit 1 Nov 2026: Pull the bed is a placement decision, so it keeps the 48px phone and touch
+    // size the kit gives `data-placement-action`.
+    expect(within(sheet).getByTestId("ward-pull-accepted-confirm")).toHaveAttribute("data-placement-action");
   });
 
   it("makes Decide a link to the referral on the Referrals board, where Accept and Decline are", () => {

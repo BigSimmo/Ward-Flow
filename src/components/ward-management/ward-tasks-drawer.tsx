@@ -23,7 +23,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
-import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
+import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
+import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
@@ -1435,40 +1436,7 @@ export function WardTasksDrawer({
                 Open the Alerts screen
               </Link>
             ) : null}
-            <Link
-              href={WARD_VIEWS.find((view) => view.id === "delays")?.href ?? "/ward-flow/waiting"}
-              onClick={closeFromLink}
-              data-testid="ward-tasks-jump-delays"
-              className={styles.quickJump}
-            >
-              Waiting list →
-            </Link>
-            <span aria-hidden="true" className={styles.quickJumpSep}>
-              ·
-            </span>
-            {words === ALERTS_WORDS || !alertsScreenOpen ? null : (
-              <>
-                <Link
-                  href={WARD_NAV.find((item) => item.id === "alerts")?.href ?? WARD_ALERTS_HREF}
-                  onClick={closeFromLink}
-                  data-testid="ward-tasks-jump-alerts"
-                  className={styles.quickJump}
-                >
-                  Alerts &amp; watches →
-                </Link>
-                <span aria-hidden="true" className={styles.quickJumpSep}>
-                  ·
-                </span>
-              </>
-            )}
-            <Link
-              href={WARD_HOME_HREF}
-              onClick={closeFromLink}
-              data-testid="ward-tasks-jump-coordinator"
-              className={styles.quickJump}
-            >
-              Home →
-            </Link>
+            <TasksQuickJumps showAlerts={words !== ALERTS_WORDS && alertsScreenOpen} onNavigate={closeFromLink} />
           </nav>
         )}
 
