@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -39,7 +39,6 @@ import { searchHelp } from "@/components/ward-management/help/ward-help-search-i
 import type { WardTourRole } from "@/components/ward-management/help/ward-help-store";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import { tasksForDesk } from "@/components/ward-management/help/ward-help-task-list";
-import { WardShortcutsSheet } from "@/components/ward-management/help/ward-shortcuts-sheet";
 import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
 afterEach(() => {
@@ -81,7 +80,11 @@ describe("Help offers each login only what it can use", () => {
   it("does not show a login a Help task or link for a screen it cannot open", () => {
     for (const role of ["officer", "executive", "admin", "community", "ed"] as const) {
       login.role = role;
-      const { unmount } = render(<WardHelpSheet view="tasks" showMeOn onView={vi.fn()} onClose={vi.fn()} />);
+      const { unmount } = render(
+        <WardHelpSheet view="tasks" showMeOn onView={vi.fn()} onClose={vi.fn()} onTour={vi.fn()} onShowMe={vi.fn()} />,
+      );
+      const more = screen.queryByRole("button", { name: /^Show \d+ more/ });
+      if (more) fireEvent.click(more);
       const listed = screen
         .getAllByTestId(/^ward-help-task-answer-/)
         .map((row) => row.dataset.testid?.replace("ward-help-task-answer-", ""));
@@ -96,8 +99,8 @@ describe("Help offers each login only what it can use", () => {
 
   it("names the desk with Help's labels", () => {
     login.role = "community";
-    render(<WardHelpSheet view="tasks" onView={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getByTestId("ward-help-context").textContent).toMatch(/^Community team/);
+    render(<WardHelpSheet view="tasks" onView={vi.fn()} onClose={vi.fn()} onTour={vi.fn()} onShowMe={vi.fn()} />);
+    expect(screen.getByTestId("ward-help-sheet").textContent).toContain("Community team");
   });
 });
 
@@ -116,12 +119,16 @@ describe("keys each login can use", () => {
     }
   });
 
-  it("draws only those keys in the shortcuts sheet", () => {
+  it("draws only those keys in Help's Shortcuts view", () => {
     login.role = "officer";
-    render(<WardShortcutsSheet onClose={vi.fn()} />);
-    const list = screen.getByTestId("ward-shortcuts-list");
-    expect(within(list).queryByText("Shift+R")).toBeNull();
-    expect(within(list).getByText("Shift+T")).toBeTruthy();
+    render(<WardHelpSheet view="keys" onView={vi.fn()} onClose={vi.fn()} onTour={vi.fn()} onShowMe={vi.fn()} />);
+    const sheet = screen.getByTestId("ward-help-sheet");
+    // Each key is drawn as caps: "Shift" and "T".
+    const caps = [...sheet.querySelectorAll("[title]")].map((row) =>
+      [...row.querySelectorAll("kbd")].map((kbd) => kbd.textContent).join("+"),
+    );
+    expect(caps).not.toContain("Shift+R");
+    expect(caps).toContain("Shift+T");
   });
 
   it("does not offer a key the login cannot use in Help search", () => {

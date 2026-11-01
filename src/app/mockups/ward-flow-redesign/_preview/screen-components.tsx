@@ -77,6 +77,26 @@ const AddPatientForm = dynamic<MockupPageProps>(() =>
   ),
 );
 
+// Movements mock-up (1 Nov 2026): the real screen with the redesign drawn in place.
+const MovementsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/movements/movements-screen").then(
+    (module) =>
+      function MovementsPreview() {
+        return <module.MovementsScreen />;
+      },
+  ),
+);
+
+// Handover mock-up (1 Nov 2026): the real screen with the proposed changes, fed by the preview world.
+const HandoverScreen = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/handover/handover-page").then(
+    (module) =>
+      function HandoverBackdrop() {
+        return <module.HandoverPage />;
+      },
+  ),
+);
+
 // Discharges mock-up (1 Nov 2026): the real board with the redesign drawn in place. Its pop-up opens
 // a held-up release (Glasswell, Delia) on load, as a click on that row does.
 const DischargesScreen = dynamic<MockupPageProps>(() =>
@@ -115,5 +135,7 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "legal-forms": LegalFormsScreen,
   patient: PatientNowBackdrop,
   "add-patient": AddPatientForm,
+  movements: MovementsPage,
+  handover: HandoverScreen,
   discharges: DischargesScreen,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

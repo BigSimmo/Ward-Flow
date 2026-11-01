@@ -1,16 +1,15 @@
 "use client";
 
-import { ArrowRight, ChevronDown, Compass, MousePointerClick } from "lucide-react";
+import { ArrowRight, ChevronDown, MousePointerClick } from "lucide-react";
 import Link from "next/link";
-import { useId, useMemo, useState } from "react";
+import { useId } from "react";
 
 import { useIsPhone } from "@/components/wf";
 
 import { howToFor } from "./ward-help-access";
-import type { ScreenHelp } from "./ward-help-content";
 import { howToHref } from "./ward-help-href";
 import { showWardHowTo } from "./ward-help-events";
-import { canShowMe, HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS, type HowTo } from "./ward-help-howto";
+import { canShowMe, HOW_TO_IDS, HOW_TOS, type HowTo } from "./ward-help-howto";
 import type { WardTourRole } from "./ward-help-store";
 import { recordHowToUsed } from "./ward-help-usage";
 import styles from "./ward-help-sheet.module.css";
@@ -136,152 +135,4 @@ export function showMeAvailable(howTo: HowTo, role: WardTourRole, home: string |
  */
 export function tasksForDesk(role: WardTourRole): readonly HowTo[] {
   return HOW_TOS.filter((howTo) => howToFor(howTo, role));
-}
-
-/**
- * HOW DO I…: the desk's common tasks (Josh, 30 Oct 2026: "common tasks or questions specifically for
- * the app and when clicked on there is launched the interactive help"). Josh, 31 Oct 2026: Help opens
- * here, and the tour is its first row, taken only by choice. Then "On this screen": the screen in
- * view, its own tasks and its questions. Then the rest in fixed groups (`HOW_TO_TOPICS`), each in the
- * list's own order: grouping only, never ranking. One answer is open at a time; `openTask` opens one
- * on arrival (Show me's Back to Help returns here with its task open).
- */
-export function WardHelpTasks({
-  role,
-  home,
-  pathname,
-  onClose,
-  showMeOn,
-  openTask,
-  screen,
-  onTour,
-}: {
-  role: WardTourRole;
-  home: string | undefined;
-  pathname: string;
-  onClose: () => void;
-  showMeOn: boolean;
-  openTask?: string;
-  /** Help for the screen in view, when it has its own. */
-  screen?: ScreenHelp;
-  /** Starts this desk's tour. */
-  onTour?: () => void;
-}) {
-  const phone = useIsPhone();
-  const [open, setOpen] = useState<string | undefined>(openTask);
-  const { here, groups } = useMemo(() => {
-    const mine = tasksForDesk(role);
-    const isHere = (howTo: HowTo) => howToHref(howTo.go, role, home)?.split("#")[0] === pathname;
-    return {
-      here: mine.filter(isHere),
-      groups: HOW_TO_TOPICS.map((topic) => ({
-        topic,
-        tasks: mine.filter((howTo) => howTo.topic === topic && !isHere(howTo)),
-      })).filter((group) => group.tasks.length > 0),
-    };
-  }, [home, pathname, role]);
-
-  const row = (howTo: HowTo) => (
-    <HowToRow
-      key={howTo.id}
-      howTo={howTo}
-      role={role}
-      home={home}
-      pathname={pathname}
-      expanded={open === howTo.id}
-      onToggle={() => setOpen(open === howTo.id ? undefined : howTo.id)}
-      onClose={onClose}
-      showMeOn={showMeOn}
-      testPrefix="ward-help-task"
-    />
-  );
-
-  return (
-    <section className={styles.stack} aria-labelledby="ward-help-tasks-title" data-testid="ward-help-tasks">
-      <h3 id="ward-help-tasks-title" className="sr-only">
-        How do I…
-      </h3>
-      {onTour ? (
-        <ul className={styles.card}>
-          <li>
-            <button type="button" className={styles.linkRow} onClick={onTour} data-testid="ward-help-view-tour">
-              <span className={styles.rowIcon} aria-hidden="true">
-                <Compass aria-hidden="true" strokeWidth={1.75} />
-              </span>
-              <span className={styles.answerName}>Take the tour of your desk</span>
-              <span className={styles.answerMeta}>About 2 minutes</span>
-            </button>
-          </li>
-        </ul>
-      ) : null}
-      <div className={styles.group} data-testid="ward-help-tasks-here">
-        <h4 className={styles.groupHeading}>On this screen{screen ? ` · ${screen.title}` : ""}</h4>
-        <div className={styles.stack} data-testid={screen ? "ward-help-screen" : undefined}>
-          {screen ? <p className={styles.text}>{screen.purpose}</p> : null}
-          {here.length ? (
-            <ul className={styles.card}>{here.map(row)}</ul>
-          ) : (
-            <p className={styles.empty}>No task of yours starts on this screen. Pick one below.</p>
-          )}
-          {screen?.questions?.length ? <Questions items={screen.questions} /> : null}
-          {screen ? (
-            <details className={styles.referenceSection}>
-              <summary>Main actions on this screen</summary>
-              <PointCard points={phone ? (screen.phoneActions ?? screen.actions) : screen.actions} />
-            </details>
-          ) : null}
-        </div>
-      </div>
-      {groups.map((group) => (
-        <div key={group.topic} className={styles.group}>
-          <h4 className={styles.groupHeading}>{group.topic}</h4>
-          <ul className={styles.card}>{group.tasks.map(row)}</ul>
-        </div>
-      ))}
-      <p className={styles.note}>{"Another desk's job? Search Help above to read how it is done."}</p>
-    </section>
-  );
-}
-
-/** A screen's questions, each answer folded until asked for, one open at a time (redesign, #1118). */
-function Questions({ items }: { items: readonly { question: string; answer: string }[] }) {
-  const id = useId();
-  const [open, setOpen] = useState<number | null>(null);
-  return (
-    <ul className={styles.card} data-testid="ward-help-questions">
-      {items.map((item, index) => {
-        const expanded = open === index;
-        return (
-          <li key={item.question}>
-            <button
-              type="button"
-              className={styles.answerTitle}
-              aria-expanded={expanded}
-              aria-controls={`${id}-${index}`}
-              onClick={() => setOpen(expanded ? null : index)}
-            >
-              <span className={styles.answerName}>{item.question}</span>
-              <ChevronDown aria-hidden="true" className={styles.caret} strokeWidth={1.75} />
-            </button>
-            <p id={`${id}-${index}`} className={styles.answer} hidden={!expanded}>
-              {item.answer}
-            </p>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-/** A card of short points. Round 2 (#1118): the row dividers part them, so no dot. */
-export function PointCard({ points, testId }: { points: readonly string[]; testId?: string }) {
-  return (
-    <ul className={styles.card} data-testid={testId}>
-      {points.map((point) => (
-        <li key={point} className={styles.row}>
-          <span className={styles.text}>{point}</span>
-        </li>
-      ))}
-    </ul>
-  );
 }

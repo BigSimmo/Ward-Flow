@@ -1,10 +1,19 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render as rtlRender, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { ToastProvider } from "@/components/wf";
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { atPhoneWidthForEachTest, showPhoneLists } from "./helpers/ed-phone-lists";
+
+// Handover build (Josh, 1 Nov 2026): these lists stay on the phone's Lists pane (see the helper).
+atPhoneWidthForEachTest();
+const render = ((...args: Parameters<typeof rtlRender>) => {
+  const view = rtlRender(...args);
+  showPhoneLists();
+  return view;
+}) as typeof rtlRender;
 
 /*
  * ED page, v10 pass 3: a decline recorded from the ED inbox shows a toast with Undo, and Undo puts

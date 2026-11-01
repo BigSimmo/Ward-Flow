@@ -4,12 +4,12 @@ import { Sheet } from "@/components/wf/sheet";
 
 import { KEYBOARD_SHORTCUTS } from "@/components/ward-management/help/ward-help-content";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
-import {
-  SHORTCUTS_SHEET_HELP_BUTTON,
-  SHORTCUTS_SHEET_TITLE,
-} from "@/components/ward-management/help/ward-shortcuts-sheet";
 
 import styles from "./shortcuts.module.css";
+
+/** The old sheet's words (the app now shows the shortcuts inside Help, 1 Nov 2026). */
+const SHORTCUTS_SHEET_TITLE = "Keyboard shortcuts";
+const SHORTCUTS_SHEET_HELP_BUTTON = "More in Help";
 
 /** The columns the keys sort into (#1119's `SHORTCUT_GROUPS`). */
 const GROUPS = ["Find", "Open", "Move around"] as const;

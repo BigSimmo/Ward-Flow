@@ -3416,6 +3416,14 @@
   font-size: 12px;
   margin: 4px 4px 0 0;
 }
+/* Audit (Josh, 1 Nov 2026): on a phone the opened referral's buttons, Ask for a bed, the
+   clearance answers and Decline among them, reach the 48px tap floor. */
+@media (max-width: 48rem) {
+  .referralDetails .inboxBtn,
+  .inboxActionRow .inboxBtn {
+    min-height: var(--spacing-tap);
+  }
+}
 .referralDetailsTrigger:focus-visible,
 .thinSelect:focus-visible,
 .patientName:focus-visible,

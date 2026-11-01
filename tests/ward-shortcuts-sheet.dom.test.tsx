@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -8,34 +8,44 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
-import { KEYBOARD_SHORTCUTS } from "@/components/ward-management/help/ward-help-content";
 
-/** P120 (Josh 27 Oct 2026): "?" opens a keyboard shortcuts sheet on any screen. */
-describe("keyboard shortcuts sheet", () => {
+import { shortcutsForDesk } from "@/components/ward-management/help/ward-help-content";
+
+/**
+ * P120 (Josh 27 Oct 2026): "?" opens the keyboard shortcuts on any screen. Help redesign (1 Nov 2026):
+ * they are a view inside Help, with Back to Help.
+ */
+describe("keyboard shortcuts in Help", () => {
   afterEach(() => window.localStorage.removeItem("ward-flow-character-shortcuts"));
 
-  it("opens on ? anywhere and lists every shortcut", async () => {
+  async function openKeys() {
     render(<WardHelpHost />);
     fireEvent.keyDown(window, { key: "?" });
-    const list = await screen.findByTestId("ward-shortcuts-list", {}, { timeout: 3000 });
-    for (const item of KEYBOARD_SHORTCUTS) expect(list.textContent).toContain(item.action);
+    await screen.findByRole("heading", { name: "Keyboard shortcuts" }, { timeout: 3000 });
+    return screen.getByTestId("ward-help-sheet");
+  }
+
+  it("opens on ? anywhere and lists every shortcut this desk can use", async () => {
+    const sheet = await openKeys();
+    const titles = [...sheet.querySelectorAll<HTMLElement>("[title]")].map((row) => row.title);
+    for (const item of shortcutsForDesk("coordinator")) expect(titles).toContain(item.action);
   });
 
-  it("shows each key's short label in its column, keeping Help's sentence as the hover title (round 2, #1118)", async () => {
-    render(<WardHelpHost />);
-    fireEvent.keyDown(window, { key: "?" });
-    const list = await screen.findByTestId("ward-shortcuts-list", {}, { timeout: 3000 });
-    for (const group of ["Find", "Open", "Move around"]) expect(list.textContent).toContain(group);
-    const search = Array.from(list.querySelectorAll("dd")).find((cell) => cell.title.startsWith("Search, from"));
+  it("shows each key's short label in its group, keeping Help's sentence as the hover title (round 2, #1118)", async () => {
+    const sheet = await openKeys();
+    for (const group of ["Find", "Open", "Move around"]) {
+      expect(within(sheet).getByRole("region", { name: group })).toBeTruthy();
+    }
+    const search = [...sheet.querySelectorAll<HTMLElement>("[title]")].find((row) =>
+      row.title.startsWith("Search, from"),
+    );
     expect(search?.firstChild?.textContent).toBe("Search");
   });
 
-  it("lets the keyboard reach and scroll the list, named by the sheet title", async () => {
-    render(<WardHelpHost />);
-    fireEvent.keyDown(window, { key: "?" });
-    const region = await screen.findByRole("region", { name: "Keyboard shortcuts" }, { timeout: 3000 });
-    expect(region.tabIndex).toBe(0);
-    expect(region).toContainElement(screen.getByTestId("ward-shortcuts-list"));
+  it("goes back to Help from the shortcuts", async () => {
+    await openKeys();
+    fireEvent.click(screen.getByRole("button", { name: "Back to Help" }));
+    expect(screen.getByRole("tablist", { name: "Help sections" })).toBeTruthy();
   });
 
   it("leaves ? alone in a field, when a page took it, or with single-key shortcuts off", async () => {
@@ -52,6 +62,6 @@ describe("keyboard shortcuts sheet", () => {
     window.localStorage.setItem("ward-flow-character-shortcuts", "off");
     fireEvent.keyDown(window, { key: "?" });
     await new Promise((resolve) => setTimeout(resolve, 300));
-    await waitFor(() => expect(screen.queryByTestId("ward-shortcuts-list")).toBeNull());
+    await waitFor(() => expect(screen.queryByTestId("ward-help-sheet")).toBeNull());
   });
 });

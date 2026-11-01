@@ -360,7 +360,17 @@ export function HandoverSignOffPanel({
         </div>
       </div>
       <div className={styles.section}>
-        <span className={styles.sectionHead}>Before you sign</span>
+        <span className={styles.sectionHead}>
+          Before you sign
+          <span className={styles.checksDone}>
+            {checks.filter((check) => check.done).length} of {checks.length} clear
+          </span>
+        </span>
+        <span className={styles.checkMeter} aria-hidden="true">
+          {checks.map((check) => (
+            <i key={check.id} data-done={check.done ? "true" : undefined} />
+          ))}
+        </span>
         <ul className={styles.checks} data-testid="ward-handover-sign-off-checks">
           {checks.map((check) => (
             <li key={check.id}>

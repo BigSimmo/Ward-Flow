@@ -317,6 +317,10 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_ED_MEDICAL_DETERIORATION",
   "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
   "RECORD_LEGAL_FORM_WRITTEN",
+  // Q124: a form code and ids only. No typed text.
+  "RECORD_LEGAL_FORM_CODE",
+  // Q103: presentations come from a fixed list; the reducer refuses anything off it. No typed text.
+  "RECORD_ED_PRESENTATION",
   "RECORD_COUNTRY_EXTENSION",
   "RECORD_LEGAL_FORM_CONTINUATION",
   "EVALUATE_ARRIVAL_LATENESS",

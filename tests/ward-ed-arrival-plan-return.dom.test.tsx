@@ -26,7 +26,11 @@ describe("ED arrival plan returns only to the record that opened it", () => {
     renderEd();
     const names = screen
       .getAllByRole("button")
-      .filter((button) => button.closest("li") && button.className.includes("nameBtn"));
+      // Handover build (Josh, 1 Nov 2026): the desktop Lists card names each person in a table row.
+      .filter(
+        (button) =>
+          (button.closest("li") && button.className.includes("nameBtn")) || button.className.includes("listName"),
+      );
     for (const name of names) {
       fireEvent.click(name);
       if (recordToggle()) break;

@@ -83,16 +83,19 @@ describe("Weekly ED waits (stats-9)", () => {
       </ToastProvider>,
     );
     // The seeded last full week has long waits, one still open (the audit's own example).
-    const list = screen.getByRole("list", { name: /^ED waits first passing over/u });
-    const rows = within(list).getAllByRole("listitem");
+    const list = screen.getByRole("table", { name: /^ED waits first passing/u });
+    const rows = within(list).getAllByRole("row").slice(1);
     expect(rows.length).toBeGreaterThan(0);
-    expect(rows.some((row) => Number(/(\d+)d \d+h/u.exec(row.textContent ?? "")?.[1] ?? 0) >= 2)).toBe(true);
+    expect(
+      rows.some((row) => Number(/(\d+)d \d+h/u.exec(row.querySelectorAll("td")[1]?.textContent ?? "")?.[1] ?? 0) >= 2),
+    ).toBe(true);
     // D-39: never a WF- journey id; an AD- number or "Not yet admitted".
     expect(list.textContent).not.toMatch(/WF-/u);
     for (const row of rows) expect(row.textContent).toMatch(/^(AD-|Not yet admitted)/u);
+    // the card foot says when the figure stops ("Waited to Sun 25 Oct").
+    expect(screen.getByText(/^Waited to \w{3} \d{1,2} \w{3}$/u)).toBeInTheDocument();
     for (const row of rows) {
-      expect(row.textContent).toMatch(/by \w{3} \d{1,2} \w{3}/u);
-      const days = /(\d+)d \d+h/u.exec(row.textContent ?? "");
+      const days = /(\d+)d \d+h/u.exec(row.querySelectorAll("td")[1]?.textContent ?? "");
       const red = row.querySelector('svg[class*="danger"]');
       if (days && Number(days[1]) >= 2) expect(red, row.textContent ?? "").not.toBeNull();
       else expect(red, row.textContent ?? "").toBeNull();
@@ -103,14 +106,16 @@ describe("Weekly ED waits (stats-9)", () => {
     asPhone();
     const monday = demoDayZero(new Date("2026-10-12T12:00:00+08:00")).getTime();
     renderInProvider(<WeeklyReportScreen />, monday);
-    const rows = within(screen.getByRole("list", { name: /^ED waits first passing over/u })).getAllByRole("listitem");
+    const rows = within(screen.getByRole("table", { name: /^ED waits first passing/u }))
+      .getAllByRole("row")
+      .slice(1);
     let redCount = 0;
     let nonredCount = 0;
     for (const row of rows) {
-      const days = /(\d+)d \d+h/u.exec(row.textContent ?? "");
+      const days = /(\d+)d \d+h/u.exec(row.querySelectorAll("td")[1]?.textContent ?? "");
       const red = row.querySelector('svg[class*="danger"]');
       if (days && Number(days[1]) >= 2) {
-        expect(red).not.toBeNull();
+        expect(red, row.textContent ?? "").not.toBeNull();
         redCount += 1;
       } else {
         expect(red).toBeNull();
@@ -126,8 +131,8 @@ describe("Weekly ED waits (stats-9)", () => {
     const sunday = demoDayZero(new Date("2026-10-18T12:00:00+08:00")).getTime();
     renderInProvider(<WeeklyReportScreen />, sunday);
     expect(screen.getByTestId("ward-weekly-ed-count")).toHaveTextContent(/^0$/u);
-    expect(screen.getByText(/^No wait first passed over/u)).toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: /^ED waits first passing over/u })).not.toBeInTheDocument();
+    expect(screen.getByText(/^No wait first passed/u)).toBeInTheDocument();
+    expect(screen.queryByRole("table", { name: /^ED waits first passing/u })).not.toBeInTheDocument();
   });
 });
 

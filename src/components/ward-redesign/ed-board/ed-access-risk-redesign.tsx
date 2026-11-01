@@ -13,7 +13,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { buttonClass, Card, useIsPhone } from "@/components/wf";
+import { buttonClass, StatusGlyph, useIsPhone } from "@/components/wf";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
@@ -27,6 +27,7 @@ import { BED_KIND_LABEL } from "@/components/ward-management/forecast/forecast-b
 import { shortBlocker } from "@/components/ward-management/forecast/forecast-levers";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import styles from "@/components/ward-management/forecast/forecast.module.css";
+import redesign from "./ed-board-redesign.module.css";
 
 function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boolean): string {
   const kind = BED_KIND_LABEL[row.kind].toLowerCase();
@@ -52,83 +53,88 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
   const rows = useMemo(() => risk.atRisk.filter((row) => edId === undefined || row.edId === edId), [risk, edId]);
   const over = edId === undefined ? risk.alreadyOver : (risk.byEd.find((ed) => ed.edId === edId)?.alreadyOver ?? 0);
   if (rows.length === 0 && over === 0) return null;
-  const hours = targetText(risk.targetMinutes);
-  const summary = `${rows.length} ${rows.length === 1 ? "person" : "people"} will pass the ${hours} access target before a suitable bed is due.${
-    over > 0 ? ` ${over} already ${over === 1 ? "has" : "have"}.` : ""
-  }`;
-  // Redesign (D-83): surname first, as on the board below it.
-  const name = (row: EdAccessRiskRow) => patientOf({ movementId: row.movementId }).formalName;
+  // "24 hours" as a noun here; the shared helper gives the adjective ("24 hour target").
+  const hours = risk.targetMinutes % 60 === 0 ? `${risk.targetMinutes / 60} hours` : targetText(risk.targetMinutes);
+  // Round 3 (Josh, 1 Nov 2026): a plain card in the Lists style, with no coloured side edge, no
+  // summary sentence and no caption, and no tier (the board shows it). Surname first with the UMRN.
+  const person = (row: EdAccessRiskRow) => patientOf({ movementId: row.movementId });
 
   return (
-    <Card className={styles.riskCard} aria-labelledby="forecast-ed-risk-title" data-testid="forecast-ed-risk">
-      <div className={styles.section}>
-        <div className={styles.header}>
-          <h2 id="forecast-ed-risk-title" className={styles.title}>
-            May pass the access target in the next day
+    <section className={redesign.listsCard} aria-labelledby="forecast-ed-risk-title" data-testid="forecast-ed-risk">
+      <header className={redesign.listsHead}>
+        <div className={redesign.handoverTitle}>
+          <h2 id="forecast-ed-risk-title">
+            May pass {hours} in ED <span className={redesign.handoverCount}>{rows.length}</span>
           </h2>
-          <span className={styles.meta}>{summary}</span>
+          {over > 0 ? <p>{over} already past</p> : null}
         </div>
-        {/* Forecast integration (Josh, 27 Oct 2026): read before the rows, so the tier beside a name is
-            never taken as the queue order. */}
-        <p className={styles.caption} data-testid="forecast-ed-risk-caption">
-          Lined up in the order they were referred, not by tier or clinical priority. Earliest release is what wards
-          have recorded. It is not a bed for this person, and new arrivals are not predicted.
-        </p>
-        {rows.length === 0 ? null : isPhone ? (
-          <ul className={styles.riskList}>
+      </header>
+      {rows.length === 0 ? null : isPhone ? (
+        <ul className={styles.riskList}>
+          {rows.map((row) => (
+            <li key={row.movementId} className={styles.riskItem}>
+              <span className={styles.riskTop}>
+                <b>{person(row).formalName}</b>
+                <span className={styles.warn}>in {splitDuration(row.minutesLeft)}</span>
+              </span>
+              <span className={styles.sub}>{BED_KIND_LABEL[row.kind]}</span>
+              <span>{releaseText(row, now, showWards)}</span>
+              <Link
+                href={movementHref(row.movementId)}
+                className={buttonClass({ variant: "sec", size: "sm", className: styles.leverAction })}
+              >
+                Find a bed
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <table className={redesign.listTable} aria-label={`May pass ${hours} in ED`}>
+          <colgroup>
+            <col className={redesign.colRiskWho} />
+            <col className={redesign.colRiskNeeds} />
+            <col className={redesign.colRiskIn} />
+            <col />
+            <col className={redesign.colRiskAct} />
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">Person</th>
+              <th scope="col">Needs</th>
+              <th scope="col">Passes {hours}</th>
+              <th scope="col">Earliest release on record</th>
+              <th scope="col">
+                <span className="sr-only">Action</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
             {rows.map((row) => (
-              <li key={row.movementId} className={styles.riskItem}>
-                <span className={styles.riskTop}>
-                  <b>{name(row)}</b>
-                  <span className={styles.warn}>in {splitDuration(row.minutesLeft)}</span>
-                </span>
-                <span className={styles.sub}>
-                  Tier {row.urgency} · {BED_KIND_LABEL[row.kind]}
-                </span>
-                <span>{releaseText(row, now, showWards)}</span>
-                <Link
-                  href={movementHref(row.movementId)}
-                  className={buttonClass({ variant: "sec", size: "sm", className: styles.leverAction })}
-                >
-                  Find a bed
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <table className={styles.riskTable}>
-            <thead>
-              <tr>
-                <th scope="col">Person</th>
-                <th scope="col">Needs</th>
-                <th scope="col">Passes {hours} target</th>
-                <th scope="col">Earliest release on record</th>
-                <th scope="col">
-                  <span className="sr-only">Action</span>
-                </th>
+              <tr key={row.movementId}>
+                <td>
+                  <span className={redesign.listWho}>
+                    <span className={redesign.listNameStatic}>{person(row).formalName}</span>
+                    <span className={redesign.listUmrn}>{person(row).umrn}</span>
+                  </span>
+                </td>
+                <td>{BED_KIND_LABEL[row.kind]}</td>
+                <td>
+                  <span className={redesign.listTime}>
+                    <StatusGlyph tone="warning" size={8} />
+                    in {splitDuration(row.minutesLeft)}
+                  </span>
+                </td>
+                <td className={redesign.listWrap}>{releaseText(row, now, showWards)}</td>
+                <td className={redesign.alignEnd}>
+                  <Link href={movementHref(row.movementId)} className={buttonClass({ variant: "sec", size: "md" })}>
+                    Find a bed
+                  </Link>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.movementId}>
-                  <td>
-                    <b>{name(row)}</b>
-                    <span className={styles.sub}>Tier {row.urgency}</span>
-                  </td>
-                  <td>{BED_KIND_LABEL[row.kind]}</td>
-                  <td className={styles.warn}>in {splitDuration(row.minutesLeft)}</td>
-                  <td>{releaseText(row, now, showWards)}</td>
-                  <td>
-                    <Link href={movementHref(row.movementId)} className={buttonClass({ variant: "sec", size: "sm" })}>
-                      Find a bed
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </Card>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }

@@ -538,6 +538,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
   // WT-03 (Josh, 26 Oct 2026): the ward records the next form for a person admitted to its bed.
   RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward"],
+  // Q124 (Josh, 1 Nov 2026): the ED Form dropdown records the form with its written time left blank.
+  RECORD_LEGAL_FORM_CODE: ["ed", "coordinator", "ward"],
+  // Q103 (Josh, 1 Nov 2026): the ED handover table's fixed presentation list.
+  RECORD_ED_PRESENTATION: ["ed", "coordinator"],
   RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
   RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
   EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],

@@ -1,0 +1,628 @@
+/* ED handover table, Lists card, header and access card (Josh, 1 Nov 2026). Built from the approved
+   mock-up rules in ward-redesign/ed-board/ed-board-redesign.module.css. */
+
+/* ---------- ED handover table, mock-up round 2 (Josh, 1 Nov 2026) ----------
+   The pattern of the rebuilt Waiting page: card head with title, count and order; filters and the
+   tier key under it; quiet capital column heads; rows grouped by time in the department. */
+/* No clipping boundary: the Presentation and Form menus render inside their cells (no portal),
+   so a clipped card would cut off the last rows' options (Codex review, 1 Nov 2026). The higher
+   specificity also beats .listSection's overflow: hidden. Enlarged view keeps its own scroll. */
+.handover:not([data-enlarged="true"]) {
+  overflow: visible;
+}
+.handoverHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.handoverTitle {
+  min-width: 0;
+  margin-right: auto;
+}
+.handoverTitle h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+.handoverCount {
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+.handoverTitle p {
+  margin: 2px 0 0;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+.handoverTools {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+.handoverSearch {
+  width: 15rem;
+}
+.handoverFilters > * {
+  border-bottom: 0;
+  padding-bottom: 6px;
+}
+.handoverKey {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-4);
+  padding: 6px var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+.handoverKey > p {
+  margin: 0;
+  padding: 0;
+}
+
+/* The table: every column at every desktop width (its own data-columns, so the 1365px step-aside
+   rules for the old board do not apply). */
+.handoverTable[data-columns="handover"] col[data-col="Patient"] {
+  width: auto;
+}
+.handoverTable[data-columns="handover"] col[data-col="In ED"] {
+  width: 96px;
+}
+.handoverTable[data-columns="handover"] col[data-col="Bay"] {
+  width: 52px;
+}
+.handoverTable[data-columns="handover"] col[data-col="Presentation"] {
+  width: 148px;
+}
+.handoverTable[data-columns="handover"] col[data-col="Form"] {
+  width: 108px;
+}
+.handoverTable[data-columns="handover"] col[data-col="Checks"] {
+  width: 136px;
+}
+.handoverTable[data-columns="handover"] col[data-col="Referral"] {
+  width: 16%;
+}
+.handoverTable[data-columns="handover"] col[data-col="Next"] {
+  width: 204px;
+}
+.handoverTable th {
+  top: 0;
+  height: 36px;
+  background: var(--wf-surface);
+  border-bottom-color: var(--wf-line);
+  color: var(--wf-ink-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.handoverTable td {
+  height: 60px;
+}
+.handoverTable td:has(> [class*="a2Referral"]) {
+  white-space: normal;
+}
+.handoverTable [class*="a2Patient"],
+.handoverTable [class*="a2Name"] {
+  white-space: normal;
+}
+.handoverTable [class*="a2Patient"] [class*="a2Sub"] {
+  display: block;
+  white-space: normal;
+}
+.handoverTable[data-columns="handover"] td[class*="a2Tier"] {
+  padding-inline: 12px 6px;
+  overflow: visible;
+}
+.handoverTable td[class*="a2Tier"] [class*="phoneTier"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 999px;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+}
+.handoverTable [class*="a2Next"] button {
+  height: 40px;
+}
+.handoverTable [class*="a2Next"] button[aria-haspopup="menu"] {
+  width: 40px;
+}
+.overTarget {
+  display: block;
+  color: var(--wf-danger-ink);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.checks > span {
+  font-size: var(--wf-fs-13);
+}
+
+/* Group rows by time in the department (the Waiting page's band rows). */
+.handoverTable .bandRow > td,
+.handover[data-enlarged="true"] .handoverTable .bandRow > td {
+  height: 40px;
+  padding: 0;
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+.bandButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  background: none;
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  color: var(--wf-ink-1);
+  text-align: left;
+  cursor: pointer;
+}
+.bandFolded {
+  transform: rotate(-90deg);
+}
+.bandCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-line);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+.bandNote {
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.bandLongest {
+  margin-left: auto;
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.bandLongest b {
+  margin-left: 4px;
+  font-family: var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+/* Presentation and Form: a quiet trigger that reads as text until the row is hovered. */
+.pickCell {
+  overflow: visible !important;
+  white-space: normal !important;
+}
+/* The pick button's own -8px margin and 8px padding line its text up with the column head and the
+   sub-line under it; the menu's wrapper takes no further shift (visual check, 1 Nov 2026). */
+.cellMenu {
+  display: block;
+}
+.cellPick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: calc(100% + 8px);
+  max-width: calc(100% + 8px);
+  min-height: 40px;
+  margin-left: -8px;
+  padding: 4px 6px 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-ctl);
+  background: transparent;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  text-align: left;
+  cursor: pointer;
+}
+.cellPick[data-empty="true"] {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+.cellPickValue {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.cellPickChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+  opacity: 0.5;
+}
+.cellPick:hover,
+.cellPick[aria-expanded="true"] {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface);
+}
+tr:hover .cellPickChevron,
+.cellPick[aria-expanded="true"] .cellPickChevron {
+  opacity: 1;
+}
+.cellPick:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 1px;
+}
+.formOption {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  white-space: normal;
+  max-width: 18rem;
+}
+.formOption > span {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.formConfirm {
+  margin: 0;
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  font: 400 var(--wf-fs-13) / 20px var(--wf-font);
+  color: var(--wf-ink-2);
+}
+.formConfirm b {
+  color: var(--wf-ink-1);
+}
+
+/* Enlarge: the table takes the whole screen, with bigger type for a handover round. */
+.handover[data-enlarged="true"] {
+  position: fixed !important;
+  inset: 0;
+  z-index: var(--z-overlay, 60);
+  margin: 0 !important;
+  max-width: none !important;
+  border-radius: 0 !important;
+  overflow: auto;
+  background: var(--wf-surface);
+}
+.handover[data-enlarged="true"] .handoverHead {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  padding: var(--wf-s-4) var(--wf-s-6);
+  background: var(--wf-surface);
+}
+.handover[data-enlarged="true"] .handoverTitle h2 {
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+}
+.handover[data-enlarged="true"] .handoverKey,
+.handover[data-enlarged="true"] .handoverFilters > * {
+  padding-left: var(--wf-s-6);
+  padding-right: var(--wf-s-6);
+}
+.handover[data-enlarged="true"] .handoverTable th {
+  top: 73px;
+}
+.handover[data-enlarged="true"] .handoverTable th:first-child,
+.handover[data-enlarged="true"] .handoverTable td:first-child,
+.handover[data-enlarged="true"] .bandButton {
+  padding-left: var(--wf-s-6);
+}
+.handover[data-enlarged="true"] .handoverTable td {
+  height: 72px;
+  font-size: var(--wf-fs-15);
+}
+.handover[data-enlarged="true"] [class*="a2Name"] {
+  font-size: var(--wf-fs-16);
+}
+.handover[data-enlarged="true"] .cellPick,
+.handover[data-enlarged="true"] .checks > span {
+  font-size: var(--wf-fs-15);
+}
+.handover[data-enlarged="true"] .handoverTable[data-columns="handover"] col[data-col="Presentation"] {
+  width: 190px;
+}
+.handover[data-enlarged="true"] .handoverTable[data-columns="handover"] col[data-col="Form"] {
+  width: 140px;
+}
+.handover[data-enlarged="true"] .handoverTable[data-columns="handover"] col[data-col="Checks"] {
+  width: 160px;
+}
+.handover[data-enlarged="true"] .handoverTable[data-columns="handover"] col[data-col="In ED"] {
+  width: 124px;
+}
+.handover[data-enlarged="true"] .handoverTable[data-columns="handover"] col[data-col="Next"] {
+  width: 240px;
+}
+
+/* ---------- Lists card (the Capacity page's card head: title left, segmented on the right) ---------- */
+.listsCard {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: clip;
+}
+.listsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.listsHead h2 {
+  margin: 0;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+.listTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+.listTable th {
+  height: 36px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.listTable td {
+  height: 52px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--wf-line);
+  vertical-align: middle;
+}
+.listTable th:first-child,
+.listTable td:first-child {
+  padding-left: var(--wf-s-4);
+}
+.listTable th:last-child,
+.listTable td:last-child {
+  padding-right: var(--wf-s-4);
+}
+.listTable tbody tr:not(.listGroup):not(.listDetails):hover > td {
+  background: var(--wf-hover);
+}
+.listTable tbody:last-child tr:last-child > td {
+  border-bottom: 0;
+}
+.colBay {
+  width: 72px;
+}
+.colFacts {
+  width: 170px;
+}
+.colStep {
+  width: 200px;
+}
+.colEnd {
+  width: 150px;
+}
+.colForm {
+  width: 46%;
+}
+.colExpiry {
+  width: 26%;
+}
+.alignEnd {
+  text-align: right !important;
+}
+.listGroup > td {
+  height: 36px;
+  padding-top: 0;
+  padding-bottom: 0;
+  background: var(--wf-surface-2);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+.listGroup .bandCount {
+  margin: 0 8px;
+}
+.listWho {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.listName,
+.listNameStatic {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+  text-align: left;
+}
+.listName {
+  cursor: pointer;
+}
+.listName:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.listUmrn,
+.listMono {
+  font-family: var(--wf-mono);
+}
+.listUmrn {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.listMono {
+  color: var(--wf-ink-1);
+}
+.listTag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 999px;
+  background: var(--wf-surface);
+  font: 500 var(--wf-fs-12) / 20px var(--wf-font);
+  color: var(--wf-ink-1);
+}
+.listTag[data-tone="accent"] {
+  border-color: transparent;
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+.listQuiet {
+  color: var(--wf-ink-3);
+}
+.listTime {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.listDetails > td {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  background: var(--wf-surface-2);
+}
+.listDetailActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-3);
+}
+.listDetailActions > span {
+  margin-right: auto;
+}
+.listEmpty,
+.listEmptyBlock {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / 20px var(--wf-font);
+}
+.listEmptyBlock {
+  margin: 0;
+  padding: var(--wf-s-4);
+}
+
+/* Narrow desktops (about 1280px wide with the rail open): every column stays, a little tighter,
+   and a long Next button wraps to two lines instead of squeezing the patient's name out. */
+.handoverScroll {
+  container-type: inline-size;
+}
+@container (max-width: 1080px) {
+  .handoverTable[data-columns="handover"] col[data-col="Patient"] {
+    width: 196px;
+  }
+  .handoverTable[data-columns="handover"] col[data-col="In ED"] {
+    width: 84px;
+  }
+  .handoverTable[data-columns="handover"] col[data-col="Bay"] {
+    width: 40px;
+  }
+  .handoverTable[data-columns="handover"] col[data-col="Presentation"] {
+    width: 120px;
+  }
+  .handoverTable[data-columns="handover"] col[data-col="Form"] {
+    width: 92px;
+  }
+  .handoverTable[data-columns="handover"] col[data-col="Checks"] {
+    width: 132px;
+  }
+  .handoverTable[data-columns="handover"] col[data-col="Referral"] {
+    width: auto;
+  }
+  .handoverTable[data-columns="handover"] col[data-col="Next"] {
+    width: 156px;
+  }
+  .handoverTable[data-columns="handover"] th,
+  .handoverTable[data-columns="handover"] td {
+    padding-inline: 6px;
+  }
+  .handoverTable[data-columns="handover"] th:first-child,
+  .handoverTable[data-columns="handover"] td:first-child {
+    padding-left: 12px;
+  }
+  .handoverTable[data-columns="handover"] [class*="a2Next"] button:not([aria-haspopup="menu"]) {
+    height: auto;
+    min-height: 40px;
+    max-width: 110px;
+    padding-block: 4px;
+    white-space: normal;
+    line-height: 1.2;
+    text-align: center;
+  }
+}
+
+/* ---------- Round 3 (Josh, 1 Nov 2026) ---------- */
+
+/* The hero's lip takes this page's ground, so no white band sits between the hero and the strip. */
+.overviewGround {
+  --wf-page-canvas: var(--ground);
+}
+.heroNote {
+  margin-left: auto;
+}
+
+/* Tier as priority bars before the name, in place of the T column. */
+.nameLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.tierBars {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  line-height: 0;
+}
+.tierBars rect {
+  fill: var(--wf-line-ctl);
+}
+.tierBars[data-urgency="1"] rect[data-on] {
+  fill: var(--wf-danger);
+}
+.tierBars[data-urgency="2"] rect[data-on] {
+  fill: var(--wf-warning);
+}
+.tierBars[data-urgency="3"] rect[data-on] {
+  fill: var(--wf-ink-3);
+}
+.tierKey {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: center;
+}
+.tierKey > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The access-target card in the Lists style. */
+.colRiskWho {
+  width: 26%;
+}
+.colRiskNeeds {
+  width: 14%;
+}
+.colRiskIn {
+  width: 14%;
+}
+.colRiskAct {
+  width: 132px;
+}
+.listWrap {
+  white-space: normal;
+}

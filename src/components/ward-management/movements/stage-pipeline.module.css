@@ -80,3 +80,119 @@
     display: none;
   }
 }
+
+/* ---------- Movements redesign (1 Nov 2026): Waiting's tiles ---------- */
+.pipeline {
+  margin-top: var(--wf-s-3);
+  overflow: hidden;
+}
+
+.pipeline ol {
+  padding: 0;
+  gap: 0;
+}
+
+.pipeline li + li {
+  border-left: 1px solid var(--wf-line);
+}
+
+.stage.stage {
+  gap: var(--wf-s-2);
+  align-items: stretch;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 0;
+  border-radius: 0;
+}
+
+.stage[aria-pressed="true"] {
+  box-shadow: inset 0 -2px 0 var(--wf-accent);
+}
+
+.stageTop {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.stageTop .stageName {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.stageBar.stageBar {
+  width: 100%;
+}
+
+.stageWait b {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.stage.stage {
+  justify-content: flex-start;
+}
+
+.stageWait.stageWait {
+  white-space: nowrap;
+}
+
+.stagePast {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.stagePast[data-past="true"] {
+  color: var(--wf-danger-ink, var(--wf-ink-1));
+  font-weight: 600;
+}
+
+.stageArrow.stageArrow {
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  padding: 1px;
+  border-radius: 50%;
+  background: var(--wf-surface);
+  transform: translateY(-50%);
+}
+
+.key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.keyBands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-3);
+}
+
+.keyBands > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.keyBands i {
+  display: inline-block;
+  width: 12px;
+  height: 8px;
+  border-radius: 2px;
+}

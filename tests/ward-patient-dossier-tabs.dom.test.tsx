@@ -53,38 +53,41 @@ describe("polished patient dossier tabs", () => {
   });
   it("makes the record-only brief shortcut open patient details", async () => {
     setup("PT-005");
-    fireEvent.click(screen.getByRole("button", { name: /^View patient details/ }));
+    // Redesign (1 Nov 2026): the record row on Now opens each tab; Details leads with the UMRN.
+    fireEvent.click(
+      within(screen.getByRole("region", { name: "Patient record" })).getByRole("button", { name: /^Details/ }),
+    );
     await waitFor(() => expect(screen.getByRole("tab", { name: /^Details/ })).toHaveFocus());
     expect(screen.getByRole("region", { name: "Patient details" })).toBeVisible();
     // Nothing is open, so there is no fit to travel gate to offer.
     expect(screen.queryByTestId("ward-patient-gate-clearance")).not.toBeInTheDocument();
   });
-  it("filters history by kind, with no free-text box over the short list, and keeps the episode", () => {
+  it("keeps the current episode above earlier ones, with no free-text box over the short list", () => {
     setup();
     const pane = tab("History");
     // Removed in the search and forms review (Josh, 30 Oct 2026): a person's few episodes need no search.
-    expect(pane.queryByRole("textbox", { name: "Search presentation history" })).not.toBeInTheDocument();
-    expect(pane.getByText("Current Presentation")).toBeVisible();
-    fireEvent.click(pane.getByRole("button", { name: "Inpatient" }));
-    expect(pane.getByText("No matching presentations")).toBeVisible();
-    fireEvent.click(pane.getByRole("button", { name: /All \(/ }));
-    expect(pane.getByText("Current Presentation")).toBeVisible();
+    expect(pane.queryByRole("textbox")).not.toBeInTheDocument();
+    // Redesign (1 Nov 2026): one Episodes of care card, this presentation first, then earlier episodes.
+    expect(pane.getByRole("heading", { name: "Current presentation" })).toBeVisible();
+    expect(pane.getByRole("heading", { name: "Earlier episodes" })).toBeVisible();
+    expect(pane.getByText("Events are the ones recorded. Missing transitions are not inferred.")).toBeVisible();
   });
   it("keeps care catchment separate from confirmed follow-up", () => {
     setup();
-    const pane = tab("Community");
-    expect(pane.getByText(/A recorded catchment does not confirm/)).toBeVisible();
-    expect(pane.getByText("Community follow-up is not established by this movement record.")).toBeVisible();
+    // Redesign (1 Nov 2026): Community shows only when engagement is noted; a catchment alone is in Details.
+    expect(screen.queryByRole("tab", { name: /^Community/ })).not.toBeInTheDocument();
+    const pane = tab("Details");
+    const catchment = pane.getByText("Catchment community team", { selector: "dt" }).nextElementSibling;
+    expect(catchment).toHaveTextContent("Catchment only");
     expect(pane.queryByText(/Sarah Jenkins/)).not.toBeInTheDocument();
   });
-  it("isolates missing patient fields without inventing movement ownership", () => {
+  it("leaves out placement facts without inventing movement ownership", () => {
     setup("PT-005");
     const pane = tab("Details");
     expect(pane.getByText("Name", { selector: "dt" })).toBeVisible();
-    fireEvent.click(pane.getByRole("button", { name: "Missing information" }));
-    expect(pane.queryByText("Name", { selector: "dt" })).not.toBeInTheDocument();
-    expect(pane.getByText("Owner", { selector: "dt" }).nextElementSibling).toHaveTextContent("Not recorded");
-    expect(pane.getByRole("button", { name: /Missing information/ })).toHaveAttribute("aria-pressed", "true");
+    // Redesign (1 Nov 2026): nothing is guessed. With no open movement there is no owner or age band.
+    expect(pane.queryByText("Owner", { selector: "dt" })).not.toBeInTheDocument();
+    expect(pane.queryByText("Age band", { selector: "dt" })).not.toBeInTheDocument();
   });
   it("offers no copy of the patient's identifiers (D-71 item 7)", () => {
     setup();
@@ -95,12 +98,10 @@ describe("polished patient dossier tabs", () => {
     setup();
     fireEvent.click(screen.getByRole("button", { name: "Record synthetic metadata" }));
     const pane = tab("Documents");
-    fireEvent.click(pane.getByRole("button", { name: "Transfer documents" }));
-    expect(pane.getByText("Synthetic transport handover")).toBeVisible();
-    fireEvent.click(pane.getByText("Synthetic transport handover"));
-    expect(pane.getByText("PDF · 1 KB")).toBeVisible();
+    const row = pane.getByText("Synthetic transport handover").closest("tr")!;
+    expect(row).toBeVisible();
+    expect(row).toHaveTextContent("PDF · 1 KB");
     expect(pane.getByText(/Document metadata only/)).toBeVisible();
-    expect(pane.queryByRole("textbox", { name: "Search patient documents" })).not.toBeInTheDocument();
   });
   it("records medical clearance only after an explicit outcome and attestation", () => {
     setup();
@@ -149,36 +150,37 @@ describe("polished patient dossier tabs", () => {
     const details = tab("Details");
     expect(details.queryByRole("heading", { name: "Not in the record yet" })).toBeNull();
     expect(details.queryAllByText("Needs a record field")).toHaveLength(0);
-    const community = tab("Community");
-    expect(community.queryByRole("heading", { name: "Family and carers" })).toBeNull();
-    expect(community.getByRole("heading", { name: "Community plan" })).toBeVisible();
+    // No Community tab without engagement noted, and no Family and carers preview anywhere.
+    expect(screen.queryByRole("tab", { name: /^Community/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Family and carers" })).toBeNull();
   });
   it("lists a CTO recorded on the Community tab in the forms register, with no lapse column (D5, D-38)", () => {
     setup("PT-005");
+    fireEvent.click(within(screen.getByTestId("ward-patient-gate-legal")).getByRole("button", { name: "Record CTO" }));
+    // A CTO is community engagement, so the Community tab now appears and states it.
     const community = tab("Community");
-    fireEvent.click(community.getByRole("button", { name: "Record CTO" }));
     expect(community.getByText(/Form 5A in force/)).toBeVisible();
     const documents = tab("Documents");
-    const register = documents.getByRole("table");
-    expect(within(register).getByText("Form 5A")).toBeVisible();
+    const register = documents.getByRole("table", { name: "Document register" });
+    expect(within(register).getByText("5A")).toBeVisible();
     const headers = within(register)
       .getAllByRole("columnheader")
-      .map((h) => h.textContent);
-    expect(headers).toEqual(["Form", "Status", "Recorded", "By"]);
+      .map((h) => h.textContent ?? "");
+    expect(headers.filter((h) => /lapse|expir|remaining/i.test(h))).toEqual([]);
   });
   it("lists an ended CTO as Closed beside a second one, never erasing it (D-40)", () => {
     setup("PT-005");
+    fireEvent.click(within(screen.getByTestId("ward-patient-gate-legal")).getByRole("button", { name: "Record CTO" }));
     const community = tab("Community");
-    fireEvent.click(community.getByRole("button", { name: "Record CTO" }));
     fireEvent.click(community.getByRole("button", { name: "Record ended" }));
     fireEvent.click(community.getByRole("button", { name: "Record CTO" }));
-    const register = tab("Documents").getByRole("table");
+    const register = tab("Documents").getByRole("table", { name: "Document register" });
     const rows = within(register)
       .getAllByRole("row")
-      .slice(1)
-      .map((row) => row.textContent ?? "");
-    expect(rows.filter((row) => row.includes("Form 5A"))).toHaveLength(2);
-    expect(rows.filter((row) => row.includes("Form 5A") && row.includes("Current"))).toHaveLength(1);
-    expect(rows.filter((row) => row.includes("Form 5A") && row.includes("Closed"))).toHaveLength(1);
+      .map((row) => row.textContent ?? "")
+      .filter((row) => row.includes("Community treatment order"));
+    expect(rows).toHaveLength(2);
+    expect(rows.filter((row) => row.includes("In force"))).toHaveLength(1);
+    expect(rows.filter((row) => row.includes("Ended"))).toHaveLength(1);
   });
 });

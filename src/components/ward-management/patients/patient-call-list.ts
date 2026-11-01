@@ -33,7 +33,8 @@ export type CallTarget =
   | { kind: "consultant"; name: string; role: string; siteCode: string | undefined; service: HealthService | undefined }
   /** A health service's executive on call (escalation, ops-6). */
   | { kind: "executive"; name: string; role: string; service: HealthService | undefined }
-  | { kind: "plain"; name: string; role: string };
+  /** A person whose own line the record holds (a case manager); mock-up round 2, 1 Nov 2026. */
+  | { kind: "plain"; name: string; role: string; phone?: string };
 
 export type CallRow = {
   key: string;
@@ -97,7 +98,13 @@ export function callRows(targets: readonly CallTarget[], now: Instant): CallRow[
   const minute = minuteOfDay(now);
   return targets.map((target, index) => {
     const entry = findEntry(target);
-    if (!entry) return { key: `${index}-${target.name}`, name: target.name, role: target.role, number: null };
+    if (!entry)
+      return {
+        key: `${index}-${target.name}`,
+        name: target.name,
+        role: target.role,
+        number: target.kind === "plain" ? (target.phone ?? null) : null,
+      };
     const state = availability(entry, minute);
     const hours =
       state.kind === "on"

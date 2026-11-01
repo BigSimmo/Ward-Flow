@@ -1417,6 +1417,13 @@
       "after": 14,
       "reason": "Dead-code cleanup: shell/ward-dynamic-island.tsx was deleted (its one route use left the ED page on 11 Oct 2026). The 92 removed cases rendered only WardDynamicIsland with hand-built props. The 10 Track B cases that guard live screens stay, and the 4 live screen mounts from the deleted ward-dynamic-island-stress.dom.test.tsx moved here.",
       "approvedOn": "2026-11-01 (Josh, Q96: delete dead code an approved redesign replaced)"
+    },
+    {
+      "path": "tests/ward-ed-presentation-keeps-draft.dom.test.tsx",
+      "before": 1,
+      "after": 0,
+      "reason": "The typed ED presentation editor it tested (EdPresentation) was removed: Q103 (Josh, 1 Nov 2026) replaced the unsaved typed note with the saved fixed list (RECORD_ED_PRESENTATION), which tests/ward-ed-handover-events.test.ts covers.",
+      "approvedOn": "2026-11-01"
     }
   ]
 }

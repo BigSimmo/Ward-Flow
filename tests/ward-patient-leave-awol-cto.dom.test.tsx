@@ -136,7 +136,7 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
     expect(within(screen.getByTestId("ward-patient-who-to-call")).getByText("GP")).toBeVisible();
     fireEvent.click(within(screen.getByTestId("ward-patient-gate-legal")).getByRole("button", { name: "Record CTO" }));
     expect(root).toHaveAttribute("data-patient-mode", "cto");
-    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Not active, on a CTO");
+    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Not currently active, on a CTO");
     const cto = screen.getByTestId("ward-patient-gate-cto");
     expect(cto).toHaveTextContent("Form 5A in force");
     expect(cto).toHaveTextContent("No lapse time shown");

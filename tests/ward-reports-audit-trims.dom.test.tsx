@@ -40,13 +40,14 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
     renderInProvider(<StatisticsCompareScreen />);
     const pinned = screen.getByTestId("ward-statistics-compare-pinned");
     expect(within(pinned).queryByRole("table")).toBeNull();
-    expect(pinned).toHaveTextContent("Pin up to three wards to set beside the network.");
+    expect(pinned).toHaveTextContent("Pin up to three wards to set them beside the network.");
+    expect(within(pinned).getByRole("button", { name: "Pin a ward" })).toBeInTheDocument();
   });
 
-  it("words the All wards chips as counts of wards, not beds", () => {
+  it("words the All wards chips as the approved redesign does (Q135)", () => {
     renderInProvider(<StatisticsWardsIndexScreen />);
-    expect(screen.getAllByText("With a pulled bed").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("With a discharge held up").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Pulled bed").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Discharge held up").length).toBeGreaterThan(0);
   });
 
   it("folds teams with nobody in a bed until asked for", () => {
@@ -54,7 +55,7 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
     const all = screen.getByTestId("ward-statistics-teams-all");
     const before = within(all).getAllByRole("link").length;
     const toggle = within(all).getByTestId("ward-statistics-teams-show-empty");
-    expect(toggle).toHaveTextContent(/^Show \d+ with nobody in a bed$/u);
+    expect(toggle).toHaveTextContent(/^Show all \d+$/u);
     fireEvent.click(toggle);
     expect(within(all).getAllByRole("link").length).toBeGreaterThan(before);
   });

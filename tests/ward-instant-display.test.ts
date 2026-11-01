@@ -30,6 +30,10 @@ const MAY_ASSERT_TODAY = new Map([
     "Clock-only value for an HTML time input; its separately recorded date is preserved on save, and the visible departure display still names the day.",
   ],
   ["now", "the current instant - today by definition"],
+  [
+    "at",
+    "Patient Documents register (1 Nov 2026): moment() shows the bare clock only when dayOf(at) equals dayOf(now), and prefixes the Perth date on any other day, so the row still names the day.",
+  ],
   ["liveNow", "the morning page's live view; the current instant under another name"],
   ["MORNING_HANDOVER_MINUTES", "08:00 of the day being shown, a constant time of day rather than a point in history"],
   [

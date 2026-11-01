@@ -31,7 +31,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 /**
  * ED board redesign (Josh, 30 and 31 Oct 2026). Synthetic seed only.
  * - The ED desk gets no access forecast card, no hero Raise referral and no department strip.
- * - On the larger screen the Lists fold behind one closed "Lists by step" row that counts each list.
+ * - On the larger screen the Lists are one open card with three lists (handover build, 1 Nov 2026).
  * - The links to other pages are one footer line, each link's description its tooltip.
  */
 const ED_DESK: WardAccess = { role: "ed", scope: { kind: "ed", edId: "peel-ed" } };
@@ -72,15 +72,17 @@ describe("ED board redesign", () => {
     expect(screen.getAllByTestId("ward-ed-add-patient")[0]).toHaveAttribute("href", "/ward-flow/people/new");
   });
 
-  it("folds the Lists behind one closed row that counts each list", () => {
+  it("shows the Lists as one open card with three lists (handover build, 1 Nov 2026)", () => {
     renderEd();
-    const fold = screen.getByTestId("ward-ed-lists-fold");
-    expect(fold.tagName).toBe("DETAILS");
-    expect(fold).not.toHaveAttribute("open");
-    const summary = fold.querySelector("summary")!;
-    expect(summary).toHaveTextContent(
-      /^Lists by step Awaiting review \d+ · Medical clearance \d+ · Expects \d+ · Forms \d+ · Referred \d+$/u,
-    );
+    expect(screen.queryByTestId("ward-ed-lists-fold")).toBeNull();
+    const lists = screen.getByRole("region", { name: /^Lists/u });
+    const tabs = within(lists)
+      .getAllByRole("radio")
+      .map((tab) => tab.textContent ?? "");
+    expect(tabs).toHaveLength(3);
+    expect(tabs[0]).toMatch(/^Awaiting review/u);
+    expect(tabs[1]).toMatch(/^Expected/u);
+    expect(tabs[2]).toMatch(/^Forms/u);
   });
 
   it("puts the links to other pages on one footer line, each description its tooltip", () => {
@@ -106,7 +108,7 @@ describe("ED board redesign", () => {
       within(sort)
         .getAllByRole("radio")
         .map((radio) => radio.textContent),
-    ).toEqual(["Current order", "Longest in ED", "Patient name"]);
+    ).toEqual(["Longest in ED", "Name", "Current order"]); // handover build order (Josh, 1 Nov 2026)
     expect(within(sort).getByRole("radio", { name: "Longest in ED" })).toHaveAttribute("aria-checked", "true");
     expect(screen.queryByRole("combobox", { name: /Sort/u })).toBeNull();
   });

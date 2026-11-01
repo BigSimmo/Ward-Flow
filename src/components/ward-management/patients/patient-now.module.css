@@ -2745,6 +2745,24 @@
     display: none;
   }
 
+  /* Round 2 (1 Nov 2026): the count-led chips read on a phone as a figure over its words, and the
+     words wrap rather than cut off ("Constant within sight (1:1)" must never be clipped). */
+  .v6HeroFact,
+  .v6HeroFact:first-child {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: center;
+    align-items: center;
+    column-gap: 4px;
+    white-space: normal;
+    font-size: var(--wf-fs-12);
+    line-height: 16px;
+  }
+
+  .v6HeroFacts .v6HeroWait {
+    flex-basis: 100%;
+  }
+
   /* Layout sweep PT-06: a worded value ("Day not recorded") wraps inside its figure rather than
      running into the next column. */
   .v6HeroFacts .v6HeroWait {
