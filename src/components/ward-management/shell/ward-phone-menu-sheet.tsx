@@ -13,7 +13,20 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { BedSingle, CircleHelp, Inbox, Clock3, LogOut, Plus, Search, Settings, UserPlus, Wrench } from "lucide-react";
+import {
+  BedSingle,
+  ChevronDown,
+  CircleHelp,
+  Inbox,
+  Clock3,
+  LayoutGrid,
+  LogOut,
+  Plus,
+  Search,
+  Settings,
+  UserPlus,
+  Wrench,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/wf/sheet";
@@ -210,8 +223,10 @@ function ActionRow({ action, onClose }: { action: RoleMenuAction; onClose: () =>
 
 function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; onClose: () => void }) {
   return (
-    <section aria-label="More" className={styles.section}>
-      <p className={styles.heading}>More</p>
+    // Phone Menu redesign (approved 31 Oct 2026): "Tools and settings", so two things are no longer
+    // called More.
+    <section aria-label="Tools and settings" className={styles.section}>
+      <p className={styles.heading}>Tools and settings</p>
       <ul className={styles.list}>
         <li>
           <button
@@ -520,26 +535,70 @@ function MenuPages({
   onDrawer: (id: DrawerId) => void;
   onClose: () => void;
 }) {
+  const moreId = useId();
+  const [moreOpen, setMoreOpen] = useState(false);
   if (query.trim().length > 0) {
     return <MenuSearchResults query={query} entries={entries} pageRow={pageRow} onGo={onResult} />;
   }
+  // Phone Menu redesign (approved 31 Oct 2026): the desk's own pages, then every other group behind
+  // one "More pages" row that opens them in place. Search still finds every page.
+  const [own, ...rest] = groups;
+  const restCount = rest.reduce((sum, group) => sum + group.entries.length, 0);
+  const groupSection = (group: PhoneMenuModel["groups"][number]) => (
+    <Section key={group.label} label={group.label}>
+      {group.entries.map((entry) =>
+        isRoleMenuAction(entry) ? <ActionRow key={entry.id} action={entry} onClose={onClose} /> : pageRow(entry),
+      )}
+    </Section>
+  );
   return (
     <>
       {/* UX audit (21 Oct 2026): "Needs you" is Home's one list; this section says what it holds. */}
-      <Section label="Act now and overdue" rich>
+      {/* Phone Menu redesign: "Act now", since "overdue" on these screens means form times. */}
+      <Section label="Act now" rich>
         {needs.length === 0 ? (
-          <li className={styles.empty}>Nothing is act-now or overdue.</li>
+          <li className={styles.empty}>Nothing to act on now.</li>
         ) : (
           needs.map((row) => <NeedRowLink key={row.id} row={row} onGo={onClose} onTasks={() => onDrawer("tasks")} />)
         )}
       </Section>
-      {groups.map((group) => (
-        <Section key={group.label} label={group.label}>
-          {group.entries.map((entry) =>
-            isRoleMenuAction(entry) ? <ActionRow key={entry.id} action={entry} onClose={onClose} /> : pageRow(entry),
-          )}
-        </Section>
-      ))}
+      {own ? groupSection(own) : null}
+      {rest.length > 0 ? (
+        <section aria-label="More pages" className={styles.section}>
+          <ul className={styles.list}>
+            <li>
+              <button
+                type="button"
+                className={`${styles.row} ${styles.moreRow}`}
+                aria-expanded={moreOpen}
+                aria-controls={moreId}
+                data-testid="ward-phone-menu-more-pages"
+                onClick={() => setMoreOpen((was) => !was)}
+              >
+                <RowBody
+                  icon={LayoutGrid}
+                  label="More pages"
+                  meta={
+                    <span>
+                      {restCount} {restCount === 1 ? "page" : "pages"} in {rest.length}{" "}
+                      {rest.length === 1 ? "group" : "groups"}
+                    </span>
+                  }
+                />
+                <ChevronDown
+                  aria-hidden="true"
+                  className={styles.moreCaret}
+                  data-open={moreOpen || undefined}
+                  strokeWidth={1.75}
+                />
+              </button>
+            </li>
+          </ul>
+        </section>
+      ) : null}
+      <div id={moreId} hidden={!moreOpen} className={styles.moreGroups}>
+        {rest.map(groupSection)}
+      </div>
       <WardMyWards variant="sheet" onNavigate={onClose} />
       <MoreSection onDrawer={onDrawer} onClose={onClose} />
     </>
