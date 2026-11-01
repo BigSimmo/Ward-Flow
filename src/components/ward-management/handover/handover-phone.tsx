@@ -566,16 +566,20 @@ export function HandoverPhone({
                   onSelect: onToggleMeeting,
                 },
               ]}
+              // While the meeting timer runs, the trigger says so in words, and its name keeps them.
               trigger={(props) => (
                 <Button
                   {...props}
                   variant="onHero"
                   className={phoneRows.heroPill}
-                  iconOnly
+                  iconOnly={!meetingOn}
                   icon={MoreHorizontal}
-                  aria-label="More handover actions"
+                  aria-label={meetingOn ? "More handover actions, timer on" : "More handover actions"}
                   data-testid="ward-handover-phone-more"
-                />
+                  data-meeting-on={meetingOn || undefined}
+                >
+                  {meetingOn ? "Timer on" : undefined}
+                </Button>
               )}
             />
           </div>
