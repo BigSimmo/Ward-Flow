@@ -4,7 +4,7 @@
    narrow and phone layouts there keep their own rules. The glyph keeps a small gap from the form name. */
 .legalLine.legalLine {
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .legalGlyph {

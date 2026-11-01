@@ -6,6 +6,9 @@ import type { JourneyStage } from "./movements-derivations";
 import { STAGE_SHORT } from "./movements-screen-helpers";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
+import { BandBar } from "@/components/ward-management/delays/delays-board-parts";
+import { WAIT_BANDS, waitBand, type BandCounts } from "@/components/ward-management/delays/delays-board-model";
+import board from "@/components/ward-management/delays/delays-board.module.css";
 import styles from "./stage-pipeline.module.css";
 
 /**
@@ -37,6 +40,7 @@ export function StagePipeline({
       <ol>
         {stages.map((stage, index) => {
           const oldest = stage.movements[0];
+          const waits = stage.movements.map((movement) => Math.max(0, now - movement.openedAt));
           const wait = oldest ? Math.max(0, now - oldest.openedAt) : undefined;
           const tone =
             wait === undefined
@@ -46,6 +50,11 @@ export function StagePipeline({
                 : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES
                   ? "warning"
                   : undefined;
+          // Movements redesign (1 Nov 2026): Waiting's tile, a count, the longest wait and a bar of
+          // the stage's waits by length, so the eye finds where the long waits pile up.
+          const bands: BandCounts = [0, 0, 0, 0];
+          for (const waited of waits) bands[waitBand(waited)] += 1;
+          const pastTarget = waits.filter((waited) => waited >= accessTarget).length;
           return (
             <li key={stage.id}>
               <button
@@ -55,17 +64,23 @@ export function StagePipeline({
                 onClick={() => onToggle(stage.id)}
                 title={stage.blurb}
               >
-                <span className={styles.stageName}>{STAGE_SHORT[stage.id]}</span>
-                <span className={styles.stageCount}>{stage.movements.length}</span>
+                <span className={styles.stageTop}>
+                  <span className={styles.stageCount}>{stage.movements.length}</span>
+                  <span className={styles.stageName}>{STAGE_SHORT[stage.id]}</span>
+                </span>
+                <BandBar bands={bands} className={styles.stageBar} />
                 <span className={styles.stageWait}>
                   {wait === undefined ? (
                     "none waiting"
                   ) : (
                     <>
                       {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-                      longest {durMinutes(wait)}
+                      longest <b>{durMinutes(wait)}</b>
                     </>
                   )}
+                </span>
+                <span className={styles.stagePast} data-past={pastTarget > 0 ? "true" : undefined}>
+                  {pastTarget > 0 ? `${pastTarget} past target` : "None past target"}
                 </span>
               </button>
               {index < stages.length - 1 ? (
@@ -75,6 +90,17 @@ export function StagePipeline({
           );
         })}
       </ol>
+      <p className={styles.key}>
+        <span className={styles.keyBands} aria-hidden="true">
+          {WAIT_BANDS.map((band, index) => (
+            <span key={band}>
+              <i className={board[`band${index}`]} />
+              {band}
+            </span>
+          ))}
+        </span>
+        <span>Each bar is that stage&apos;s waits by length. Choose a stage to highlight its rows.</span>
+      </p>
     </nav>
   );
 }

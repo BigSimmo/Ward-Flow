@@ -565,7 +565,8 @@ test.describe("@mockup Movements — transport panel", () => {
     // for every row whatever its leg. The age must be a real, non-negative duration (the footer no longer clamps at zero the way "since booked" did).
     for (const row of await rows.all()) {
       await expect(row).toHaveAccessibleName(/, (Accepted|En route|Collected|Arrived|Cancelled) via /);
-      await expect(row).toContainText(/Accepted \d+(d|h|m)( \d+(h|m))? ago/);
+      // Movements redesign (1 Nov 2026): the row reads its leg and time since booked ("Collected 53m ago").
+      await expect(row).toContainText(/(Accepted|En route|Collected|Arrived|Cancelled) \d+(d|h|m)( \d+(h|m))? ago/);
     }
   });
 
@@ -606,14 +607,21 @@ test.describe("@mockup Movements — transport panel", () => {
     // The explicit absence now lives in "The day"'s own figures. Each is read from its own metric
     // (`movements-day-metric`), anchored on the label, so the excluded count cannot be satisfied by
     // the included one.
+    // Movements redesign (1 Nov 2026): Transport now's tiles read each count under its words (dt/dd);
+    // the hero's Open figure keeps its <strong>.
+    const tile = (label: RegExp) =>
+      page
+        .getByRole("region", { name: "Transport right now" })
+        .getByTestId("movements-day-metric")
+        .filter({ hasText: label })
+        .locator("dd");
     const dayMetric = (label: RegExp) =>
       page.getByTestId("movements-day-metric").filter({ hasText: label }).locator("strong");
-    await expect(dayMetric(/^Transport legs/)).toHaveText("13");
     // Audit round 2, A4-18 (13 Oct 2026): "No transport leg" now counts only movements that need a
     // vehicle (pulled, handover ready or moving) and have none, so 57 became 8. Re-derived from the
     // seed with the screen's own `withoutTransport` filter, not adjusted by guesswork.
-    await expect(dayMetric(/^No transport leg/)).toHaveText("8");
-    await expect(dayMetric(/^Open/)).toHaveText("70");
+    await expect(tile(/^No transport leg/)).toHaveText("8");
+    await expect(dayMetric(/^Open movements/)).toHaveText("70");
   });
 });
 

@@ -1,7 +1,8 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { dayOf, DEFAULT_DUE_SOON_THRESHOLDS, splitDuration } from "@/components/ward-management/ward-clock";
+import { dayOf, DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import { durMinutes } from "@/components/wf/format";
 import { isOpen, shortlistCandidates } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { causeOf, MovementsScreen } from "@/components/ward-management/movements/movements-screen";
@@ -71,18 +72,27 @@ function findRecordRow(container: HTMLElement, id: string): HTMLElement {
 }
 
 function openShapeOfTheDay(): HTMLElement {
-  fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
+  fireEvent.click(
+    within(screen.getByRole("group", { name: "Movement side view" })).getByRole("button", { name: "Shape of the day" }),
+  );
   return screen.getByRole("region", { name: "Shape of the day" });
 }
 
+// Movements redesign (1 Nov 2026): Transport is the side card's default view, the legs grouped
+// by where they stand; Shape of the day is the other view behind the corner toggle.
 function openTransportSummary(): HTMLElement {
-  const summary = openShapeOfTheDay();
-  fireEvent.click(
-    within(within(summary).getByRole("group", { name: "Movement summary" })).getByRole("button", {
-      name: /Transport/u,
-    }),
-  );
-  return summary;
+  return screen.getByRole("region", { name: "Transport right now" });
+}
+
+function findTransportRow(container: HTMLElement, id: string): HTMLElement {
+  const rows = container.querySelectorAll<HTMLElement>(`[data-transport-key='${id}']`);
+  expect(rows.length, `exactly one transport row for ${id}`).toBe(1);
+  return rows[0];
+}
+
+function transportTile(container: HTMLElement, label: string): HTMLElement {
+  const term = within(container).getByText(label, { selector: "dt" });
+  return term.parentElement as HTMLElement;
 }
 
 describe("the Movements screen", () => {
@@ -137,24 +147,28 @@ describe("the Movements screen", () => {
    * the same person. Every open movement must appear in the transport view: as an accepted leg, an
    * unaccepted request or cancellation, or an explicit absence of a transport record.
    */
-  it("renders every movement once in the worklist and every open movement once in the Transport summary", () => {
+  // Movements redesign (1 Nov 2026): the side card lists the transport legs only, so a movement
+  // with a leg renders twice (worklist and Transport now) and every other movement once.
+  it("renders every movement once in the worklist and every transport leg once in Transport now", () => {
     renderScreen();
-    openTransportSummary();
+    const transportPanel = openTransportSummary();
     const ids = Array.from(document.querySelectorAll("[data-ward-primitive='record-row'][data-record-key]")).map(
       (node) => node.getAttribute("data-record-key") ?? "",
     );
-    const openIds = new Set(openMovements.map((movement) => movement.id));
     const stageMovementIds = stages.flatMap((stage) => stage.movements.map((movement) => movement.id));
     expect(stageMovementIds.length, "no movement rendered — this guard proved nothing").toBeGreaterThan(0);
     expect(stageMovementIds.length).toBe(seededMovements.length);
 
     for (const id of stageMovementIds) {
-      const expectedCount = openIds.has(id) ? 2 : 1;
       expect(
         ids.filter((rendered) => rendered === id).length,
-        `movement ${id} should render ${expectedCount} time(s) (open: ${openIds.has(id)})`,
-      ).toBe(expectedCount);
+        `movement ${id} should render once in the worklist`,
+      ).toBe(1);
     }
+    const legIds = Array.from(transportPanel.querySelectorAll("[data-transport-key]")).map(
+      (node) => node.getAttribute("data-transport-key") ?? "",
+    );
+    expect(legIds.sort()).toEqual(legs.map((leg) => leg.movement.id).sort());
   });
 
   it("gives every stage row the movement's real urgency tier as its state word", () => {
@@ -247,13 +261,18 @@ describe("the Movements screen", () => {
     renderScreen();
     const transportPanel = openTransportSummary();
     for (const leg of legs) {
-      const row = findRecordRow(transportPanel, leg.movement.id);
-      expect(row, `no transport row for ${leg.movement.id}`).not.toBeNull();
-      expect(row, `provider missing for ${leg.movement.id}`).toHaveTextContent(leg.provider);
+      const row = findTransportRow(transportPanel, leg.movement.id);
+      // The redesign keeps the provider and the full route in the row's name and title, and the
+      // short route ("SCGH ED → ward") on the row itself.
+      expect(row.getAttribute("aria-label"), `provider missing for ${leg.movement.id}`).toContain(leg.provider);
+      expect(row.getAttribute("title"), `provider missing for ${leg.movement.id}`).toContain(leg.provider);
 
       const originEd = edById(leg.movement.originEdId);
       const originLabel = departmentLabel(leg.movement.originEdId!, originEd?.name);
-      expect(row, `origin missing for ${leg.movement.id}`).toHaveTextContent(originLabel);
+      expect(row.getAttribute("title"), `origin missing for ${leg.movement.id}`).toContain(originLabel);
+      expect(row, `short origin missing for ${leg.movement.id}`).toHaveTextContent(
+        originEd ? `${originEd.siteCode} ED` : originLabel,
+      );
 
       const destinationUnit = leg.movement.acceptedUnitId
         ? units.find((unit) => unit.id === leg.movement.acceptedUnitId)
@@ -264,11 +283,9 @@ describe("the Movements screen", () => {
       expect(row, `destination missing for ${leg.movement.id}`).toHaveTextContent(destinationLabel);
 
       expect(row, `elapsed booking time missing for ${leg.movement.id}`).toHaveTextContent(
-        splitDuration(Math.max(leg.minutesSinceBooked, 0)),
+        durMinutes(leg.minutesSinceBooked),
       );
-      expect(row, `booking-time meaning missing for ${leg.movement.id}`).toHaveTextContent(/since accepted/iu);
-
-      expect(within(row).getByRole("link", { name: /Review patient/u })).toBeInTheDocument();
+      expect(row, `booking-time meaning missing for ${leg.movement.id}`).toHaveTextContent(/ ago/iu);
     }
   });
 
@@ -290,8 +307,13 @@ describe("the Movements screen", () => {
       Cancelled: "Cancelled",
     };
     for (const leg of legs) {
-      const row = findRecordRow(transportPanel, leg.movement.id);
+      const row = findTransportRow(transportPanel, leg.movement.id);
       expect(row, `state word missing for ${leg.movement.id}`).toHaveTextContent(labels[leg.state]);
+      // The group heading says it too, so the word is not left to the row's hidden text alone.
+      const group = row.closest("section");
+      expect(group?.querySelector("h4"), `group heading missing for ${leg.movement.id}`).toHaveTextContent(
+        labels[leg.state],
+      );
     }
   });
 
@@ -308,15 +330,8 @@ describe("the Movements screen", () => {
     try {
       renderScreen();
       const transportPanel = openTransportSummary();
-      const row = findRecordRow(transportPanel, movement!.id);
-      expect(row).toHaveTextContent("Requested");
-      expect(row).toHaveTextContent("Provider: Ward escort");
-      expect(row).toHaveTextContent("Not accepted");
-      expect(row).toHaveTextContent("No accepted time recorded");
-      expect(within(row).getByRole("link", { name: /Review patient/u })).toHaveAttribute(
-        "href",
-        movementHref(movement!.id),
-      );
+      // Not a leg, so Transport now never shows it with a booked time it does not have.
+      expect(transportPanel.querySelector(`[data-transport-key='${movement!.id}']`)).toBeNull();
       const worklist = screen.getByRole("region", { name: "Movement worklist" });
       fireEvent.click(within(worklist).getByRole("radio", { name: "Transport" }));
       const requestGroup = within(worklist).getByRole("heading", { name: "Transport not accepted" }).parentElement!
@@ -335,24 +350,22 @@ describe("the Movements screen", () => {
   it("states the compact transport summary against the open movement population", () => {
     renderScreen();
     const transportPanel = openTransportSummary();
-    const legCountRow = within(transportPanel).getByText("Transport legs").closest("li");
-    expect(legCountRow, "the transport summary does not state the leg count").toHaveTextContent(String(legs.length));
-
-    const withoutBooked = openMovements.length - legs.length;
-    const unaccepted = openMovements.filter(
-      (movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined,
+    // "No transport leg" counts the open movements past the pull that still have no leg, the ones
+    // a coordinator would expect to be moving.
+    const legIds = new Set(legs.map((leg) => leg.movement.id));
+    const shouldHaveLeg = openMovements.filter(
+      (movement) =>
+        (movement.stage === "pulled" || movement.stage === "handover_ready" || movement.stage === "moving") &&
+        !legIds.has(movement.id),
     );
-    const noRecord = openMovements.filter((movement) => movement.transport === undefined);
-    expect(unaccepted.length + noRecord.length).toBe(withoutBooked);
-    expect(
-      within(transportPanel).getByText("Requested or cancelled before acceptance").closest("li"),
-    ).toHaveTextContent(unaccepted.length === 0 ? "none" : String(unaccepted.length));
-    expect(
-      within(transportPanel)
-        .getAllByText("No transport yet", { selector: "span" })
-        .map((element) => element.closest("li"))
-        .find(Boolean),
-    ).toHaveTextContent(noRecord.length === 0 ? "none" : String(noRecord.length));
+    expect(transportTile(transportPanel, "No transport leg").querySelector("dd")).toHaveTextContent(
+      String(shouldHaveLeg.length),
+    );
+    const legSum = (["On the road", "Booked, not collected", "Arrived"] as const).reduce(
+      (total, label) => total + Number(transportTile(transportPanel, label).querySelector("dd")?.textContent),
+      0,
+    );
+    expect(legSum + counts.Cancelled, "the tiles do not account for every leg").toBe(legs.length);
   });
 
   /**
@@ -360,29 +373,44 @@ describe("the Movements screen", () => {
    * `transportCounts`, never a recomputed or partial one — `WardBar`'s accessible name states every
    * segment and its count, so a reader (and this test) get the same numbers either way.
    */
-  it("reports the real transport-state tally in the 'Transport right now' bar", () => {
+  it("reports the real transport-state tally in the 'Transport right now' tiles", () => {
     renderScreen();
-    expect(
-      screen.getByRole("img", {
-        name: new RegExp(
-          `Accepted ${counts.Accepted}\\b.*En route ${counts["En route"]}\\b.*Collected ${counts.Collected}\\b.*Arrived ${counts.Arrived}\\b.*Cancelled ${counts.Cancelled}\\b`,
-          "su",
-        ),
-      }),
-    ).toBeInTheDocument();
+    const panel = openTransportSummary();
+    const value = (label: string) => transportTile(panel, label).querySelector("dd");
+    expect(value("On the road")).toHaveTextContent(String(counts.Collected + counts["En route"]));
+    expect(value("Booked, not collected")).toHaveTextContent(String(counts.Accepted));
+    expect(value("Arrived")).toHaveTextContent(String(counts.Arrived));
   });
 
+  // Review fix (1 Nov 2026): the hero's "On the road or booked" counts booked or moving legs only,
+  // never arrived or cancelled ones.
+  it("counts only booked or moving legs in the hero's 'On the road or booked' figure", () => {
+    renderScreen();
+    const figure = within(screen.getByRole("group", { name: "Highlight movements" }))
+      .getByText("On the road or booked")
+      .closest("div");
+    expect(figure).toHaveTextContent(
+      new RegExp(`^${counts.Accepted + counts["En route"] + counts.Collected}On the road or booked$`, "u"),
+    );
+  });
+
+  // Movements redesign (1 Nov 2026): Shape of the day opens on "Where they wait", one heat-map row
+  // per open stage with its total; an empty square is named "none", never a bare 0.
   it("shows the open-stage summary count for every stage, stating zero in words rather than a bare 0", () => {
     renderScreen();
     const panel = openShapeOfTheDay();
-    const openStages = journeyStages(openMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
+    const heat = within(panel).getByRole("tabpanel", { name: "Where they wait" });
+    const openStages = journeyStages(openMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS).filter(
+      (stage) => stage.id !== "arrived",
+    );
     for (const stage of openStages) {
-      const item = within(panel).getByText(stage.label).closest("li");
-      expect(item, `no glance row for "${stage.label}"`).not.toBeNull();
-      if (stage.movements.length === 0) {
-        expect(item).toHaveTextContent(/none/iu);
-      } else {
-        expect(item).toHaveTextContent(String(stage.movements.length));
+      const item = within(heat).getByRole("button", { name: stage.label }).closest("tr");
+      expect(item, `no heat-map row for "${stage.label}"`).not.toBeNull();
+      const cells = item!.querySelectorAll("td");
+      expect(cells[cells.length - 1]).toHaveTextContent(String(stage.movements.length));
+      for (const cell of Array.from(cells).slice(0, -1)) {
+        if (cell.textContent === "·") expect(within(cell).getByLabelText("none")).toBeInTheDocument();
+        expect(cell.textContent, `a bare 0 in the "${stage.label}" row`).not.toBe("0");
       }
     }
   });
@@ -718,9 +746,13 @@ describe("the Corridors strip", () => {
     const pairCount = new Set(expected.map((row) => JSON.stringify([row.originEdId, row.acceptedUnitId]))).size;
     expect(pairCount).toBeLessThan(expected.length);
     expect(within(strip).getByRole("button", { name: `Accepted ${pairCount}` })).toBeInTheDocument();
-    expect(
-      within(within(strip).getByRole("complementary", { name: "Ranked corridors" })).getAllByRole("listitem"),
-    ).toHaveLength(pairCount);
+    // Movements redesign (1 Nov 2026): the routes are grouped under their ED, busiest first.
+    const rail = within(strip).getByRole("complementary", { name: "Ranked corridors" });
+    expect(rail).toHaveTextContent(`${pairCount} routes`);
+    const edCount = new Set(expected.map((row) => row.originEdId)).size;
+    expect(within(rail).getByRole("list", { name: "Accepted corridors by ED, busiest first" }).children).toHaveLength(
+      edCount,
+    );
 
     const busiest = expected[0];
     const ed = edById(busiest.originEdId);
@@ -733,10 +765,14 @@ describe("the Corridors strip", () => {
     renderScreen();
     const strip = screen.getByRole("region", { name: "Today’s traffic" });
     fireEvent.click(within(strip).getByRole("button", { name: new RegExp(`Declined ${expected.length}`, "u") }));
-    expect(strip).toHaveTextContent(/declines have no journey stage of their own/iu);
+    // Movements redesign (1 Nov 2026): declines are listed by ward with their count and reasons,
+    // in their own list, apart from the stage pipeline.
+    const declines = within(strip).getByRole("list", { name: "Declines today by ward, most first" });
+    const total = expected.reduce((sum, corridor) => sum + corridor.count, 0);
+    expect(strip).toHaveTextContent(`${total} declines today`);
     for (const corridor of expected) {
-      expect(strip).toHaveTextContent(String(corridor.count));
-      for (const reason of corridor.reasons) expect(strip).toHaveTextContent(reason.replaceAll("_", " "));
+      for (const reason of corridor.reasons)
+        expect(declines.textContent?.toLowerCase()).toContain(reason.replaceAll("_", " ").toLowerCase());
     }
   });
 });
@@ -766,7 +802,7 @@ describe("the movement detail drawer", () => {
 
   it("opens from a row and carries the five sections that are built", () => {
     const dialog = openFirstDrawer();
-    for (const section of ["Person", "Journey", "Which wards were asked", "Escalation", "Transport leg"]) {
+    for (const section of ["Person", "Journey", "Wards asked", "Escalation", "Transport leg"]) {
       expect(within(dialog).getByRole("heading", { name: section })).toBeInTheDocument();
     }
   });
@@ -848,7 +884,9 @@ describe("the movement drawer's one action — the urgent flag", () => {
 
   it("flags an open movement, and the drawer then says the patient leads the queue", () => {
     const dialog = openDrawerFor(openUnflagged[0].id);
-    expect(dialog).toHaveTextContent(/Not flagged\. Ordered by urgency tier/u);
+    // Movements redesign (1 Nov 2026): the picker opens from "Flag urgent" in the foot band.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Flag urgent" }));
+    expect(dialog).toHaveTextContent(/Not flagged: ordered by urgency tier/u);
 
     // Item 37 (2026-09-17): a reason must be chosen before the button does anything.
     fireEvent.change(within(dialog).getByTestId("ward-movement-drawer-urgent-reason"), {
@@ -860,7 +898,7 @@ describe("the movement drawer's one action — the urgent flag", () => {
       screen.getByRole("dialog"),
       "the button toggled but the drawer still reads as unflagged — the click changed the label and " +
         "not the record",
-    ).toHaveTextContent(/Flagged urgent\. Leads the queue ahead of every urgency tier/u);
+    ).toHaveTextContent(/Flagged urgent: leads the queue ahead of every tier/u);
   });
 
   /**
@@ -871,6 +909,7 @@ describe("the movement drawer's one action — the urgent flag", () => {
   it("clears a flag that was already set, so the seeded one is not permanent", () => {
     const dialog = openDrawerFor(flagged[0].id);
     expect(dialog).toHaveTextContent(/Flagged urgent/u);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Flagged urgent" }));
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Remove the urgent flag" }));
 
@@ -882,14 +921,12 @@ describe("the movement drawer's one action — the urgent flag", () => {
    * not hide that behind a missing button and leave it to be discovered by pressing: it says the
    * flag would order nothing. **The button is withheld only where it could do nothing at all.**
    */
-  it("says why a closed movement cannot be flagged, rather than just omitting the control", () => {
+  // Movements redesign (1 Nov 2026): the foot band offers only actions that can work, so a closed
+  // movement has no Flag urgent or Pull now; its closure outcome heads the pop-up instead.
+  it("offers no urgent flag on a closed movement", () => {
     const dialog = openDrawerFor(closedUnflagged[0].id);
-    expect(
-      dialog,
-      "the control is simply absent on a closed movement, so a coordinator cannot tell a refusal " +
-        "from a screen that forgot the section",
-    ).toHaveTextContent(/Closed, so not in the queue/u);
     expect(within(dialog).queryByRole("button", { name: /urgent/iu })).toBeNull();
+    expect(within(dialog).getByRole("link", { name: /Patient record/u })).toBeInTheDocument();
   });
 });
 
@@ -925,6 +962,7 @@ describe("the movement drawer resets its urgent-flag reason between patients (P2
     renderScreen();
 
     const wf001Dialog = openDrawerInPlace("WF-001");
+    fireEvent.click(within(wf001Dialog).getByRole("button", { name: "Flag urgent" }));
     const wf001Select = within(wf001Dialog).getByTestId("ward-movement-drawer-urgent-reason") as HTMLSelectElement;
     fireEvent.change(wf001Select, { target: { value: "cannot_safely_prevent_leaving" } });
     expect(wf001Select.value, "precondition: the reason was actually chosen on WF-001").toBe(
@@ -937,6 +975,7 @@ describe("the movement drawer resets its urgent-flag reason between patients (P2
     expect(screen.queryByRole("dialog"), "the drawer did not actually close").toBeNull();
 
     const wf002Dialog = openDrawerInPlace("WF-002");
+    fireEvent.click(within(wf002Dialog).getByRole("button", { name: "Flag urgent" }));
     const wf002Select = within(wf002Dialog).getByTestId("ward-movement-drawer-urgent-reason") as HTMLSelectElement;
     expect(
       wf002Select.value,

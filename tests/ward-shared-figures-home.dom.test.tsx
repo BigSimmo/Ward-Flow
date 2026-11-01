@@ -40,9 +40,11 @@ describe("Home and Movements print one Tier 1 count (P002)", () => {
         <MovementsScreen />
       </WardFlowProvider>,
     );
-    // Movements redesign (31 Oct 2026): the panel reads "3 of 18 open" under its "Tier 1 now" heading.
-    const meta = within(screen.getByTestId("movements-needs-you")).getByText(/^\d+ of \d+ open$/);
-    expect(Number(/of (\d+) open/.exec(meta.textContent ?? "")?.[1])).toBe(homeTierOne);
+    // Movements redesign (1 Nov 2026, Q102): the Tier 1 figure sits in the hero, a number over its label.
+    const figure = within(screen.getByRole("group", { name: "Highlight movements" })).getByRole("button", {
+      name: /Tier 1$/u,
+    });
+    expect(Number(/^(\d+)/.exec(figure.textContent ?? "")?.[1])).toBe(homeTierOne);
   });
 });
 
