@@ -3,7 +3,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { CalendarClock } from "lucide-react";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { CountBubble, Icon, SrOnly, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
+import { CountBubble, Icon, StatusGlyph, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
 import styles from "./ward-decisions-cockpit.module.css";
 import { openDecisionCount } from "./ward-decision-count";
 
@@ -463,6 +463,11 @@ function Queue({
   const decidable = here.filter((item) => !item.info).length;
   const decided = decidable - open;
   const showBulk = chosen === "departures" && signable.length > 0;
+  // Polish (1 Nov 2026): the side card sums the whole shift and lists only the other windows that
+  // still need a decision; the track above already shows which windows are clear.
+  const shiftDecidable = WINDOWS.reduce((sum, entry) => sum + itemsOf(entry.id).filter((item) => !item.info).length, 0);
+  const shiftDecided = shiftDecidable - WINDOWS.reduce((sum, entry) => sum + openCount(entry.id), 0);
+  const elsewhere = WINDOWS.filter((entry) => entry.id !== chosen && openCount(entry.id) > 0);
 
   function choose(id: WindowId) {
     setChosen(id);
@@ -614,13 +619,12 @@ function Queue({
               <StatusGlyph tone={tone} />
               <span className={styles.stepText}>
                 <b>{entry.title}</b>
-                <span>
-                  {entry.hours}
-                  {entry.id === "staffing" && staffingFact ? ` · ${staffingFact}` : ""}
-                </span>
+                <span>{entry.hours}</span>
               </span>
-              <CountBubble n={count} className={cx(styles.stepCount, tone === "danger" && styles.countAct)} />
-              <SrOnly id={describedBy}>{count > 0 ? `${count} to decide` : "Clear"}</SrOnly>
+              {/* The window's state in words, never a bare 0. */}
+              <span id={describedBy} className={styles.stepStatus} data-tone={count > 0 ? tone : "success"}>
+                {count > 0 ? `${count} to decide` : "Clear"}
+              </span>
             </button>
           );
         })}
@@ -631,9 +635,13 @@ function Queue({
           <header className={styles.head}>
             <Icon icon={CalendarClock} size={16} className={styles.headIcon} />
             <h3 className={styles.headTitle}>{spec.title}</h3>
-            <span className={cx(styles.mono, styles.hideNarrow)}>{spec.hours}</span>
+            <span className={cx(styles.headHours, styles.hideNarrow)}>{spec.hours}</span>
             <span className={styles.headMeta}>{open > 0 ? `${open} to decide` : "Nothing due"}</span>
           </header>
+          {/* The staffing fact shows once: here, unless a row below already carries it. */}
+          {chosen === "staffing" && staffingFact && !here.some((item) => item.sub?.includes(staffingFact)) ? (
+            <p className={styles.headNote}>{staffingFact}</p>
+          ) : null}
 
           <p className={styles.notice} role="status" aria-live="polite">
             {notice ? (
@@ -738,11 +746,14 @@ function Queue({
         <aside className={styles.card} aria-label="Window progress">
           <div className={styles.head}>
             <Icon icon={CalendarClock} size={16} className={styles.headIcon} />
-            <span className={styles.headTitle}>{spec.title}</span>
-            <span className={cx(styles.mono, styles.headEnd)}>{spec.hours}</span>
+            <span className={styles.headTitle}>Progress</span>
+            <span className={styles.headMeta}>
+              {shiftDecidable > 0 ? `${shiftDecided} of ${shiftDecidable} this shift` : "Nothing due this shift"}
+            </span>
           </div>
           <div className={styles.progress}>
             <div className={styles.prow}>
+              <b>{spec.title}</b>
               <span>{decidable > 0 ? `${decided} of ${decidable} decided` : "Nothing due"}</span>
             </div>
             {decidable > 0 ? (
@@ -770,20 +781,20 @@ function Queue({
               </div>
             ) : null}
           </div>
-          <h3 className={styles.sideSec}>Other windows</h3>
-          <ul className={styles.rows}>
-            {WINDOWS.filter((entry) => entry.id !== chosen).map((entry) => {
-              const count = openCount(entry.id);
-              return (
-                <li key={entry.id} className={styles.row}>
-                  <StatusGlyph tone={windowTone(entry.id)} />
-                  <div className={styles.rowText}>
-                    <h4 className={styles.rowTitle}>{entry.title}</h4>
-                    <span className={styles.rowSub}>{entry.hours}</span>
-                  </div>
-                  <span className={styles.when}>{count > 0 ? `${count} to decide` : "Clear"}</span>
-                  <span className={styles.rowActions}>
-                    {count > 0 ? (
+          {elsewhere.length > 0 ? (
+            <>
+              <h3 className={styles.sideSec}>Still to decide</h3>
+              <ul className={styles.rows}>
+                {elsewhere.map((entry) => (
+                  <li key={entry.id} className={styles.row}>
+                    <StatusGlyph tone={windowTone(entry.id)} />
+                    <div className={styles.rowText}>
+                      <h4 className={styles.rowTitle}>{entry.title}</h4>
+                      <span className={styles.rowSub}>
+                        {entry.hours} · {openCount(entry.id)} to decide
+                      </span>
+                    </div>
+                    <span className={styles.rowActions}>
                       <button
                         type="button"
                         className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
@@ -794,12 +805,17 @@ function Queue({
                       >
                         Open
                       </button>
-                    ) : null}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className={styles.sideClear}>
+              <StatusGlyph tone="success" />
+              <span>Every other window is clear</span>
+            </p>
+          )}
         </aside>
       </div>
     </div>

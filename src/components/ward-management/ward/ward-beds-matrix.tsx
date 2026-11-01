@@ -7,7 +7,7 @@ import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-av
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { cx } from "@/components/wf";
+import { StatusGlyph, cx, type WfTone } from "@/components/wf";
 import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
 import { plural } from "@/components/ward-management/ward-plural";
@@ -127,8 +127,31 @@ function areBedCardPropsEqual(prev: WardBedCardProps, next: WardBedCardProps): b
     p.notes === n.notes &&
     p.isPlannedAdmission === n.isPlannedAdmission &&
     p.isLeave === n.isLeave &&
-    p.dischargeDateMoves === n.dischargeDateMoves
+    p.dischargeDateMoves === n.dischargeDateMoves &&
+    p.dischargeConfirmed === n.dischargeConfirmed &&
+    p.expectedDischargeLabel === n.expectedDischargeLabel &&
+    p.dischargeBarrier === n.dischargeBarrier &&
+    p.umrn === n.umrn &&
+    p.homeRegion === n.homeRegion &&
+    p.catchmentCommunityTeam === n.catchmentCommunityTeam &&
+    p.heldFor === n.heldFor &&
+    p.bedHold === n.bedHold
   );
+}
+
+/** Stay bar scale: four months fills the bar, so a long stay reads long without a colour band. */
+const STAY_BAR_DAYS = 120;
+
+/** When the person is expected out, in words, with its tone: past the date reads first. */
+function leavingCell(bed: BedItem): { text: string; tone: "danger" | "warning" | "info" | null } | null {
+  if (bed.status === "ready" || bed.patientAlias == null) return null;
+  const overdue = typeof bed.expectedDays === "number" && bed.expectedDays < 0 ? Math.abs(bed.expectedDays) : null;
+  if (overdue) return { text: `${plural(overdue, "day", "days")} past`, tone: "danger" };
+  if (bed.pastDate === true) return { text: "Past the ward's date", tone: "danger" };
+  if (typeof bed.expectedDays !== "number") return null;
+  if (bed.expectedDays === 0) return { text: "Today", tone: "warning" };
+  if (bed.expectedDays === 1) return { text: "Tomorrow", tone: "info" };
+  return { text: `In ${plural(bed.expectedDays, "day", "days")}`, tone: bed.expectedDays <= 2 ? "info" : null };
 }
 
 const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect }: WardBedCardProps) {
@@ -141,108 +164,143 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
   const signal = bed.patientAlias || isAwayAtEd ? cardSignal(bed, isPastDate, isAwayAtEd) : null;
   const eddMoved = bed.patientAlias && !isReady ? eddMovedBadge(bed.dischargeDateMoves) : null;
   const criteriaLed = bed.patientAlias && !isReady && !isPulled ? (bed.criteriaLedChip ?? null) : null;
-
-  // Color tint band class based on stay duration
-  let bandClass = "";
-  if (stayDaysNum !== null && !isReady) {
-    if (stayDaysNum < 14) bandClass = styles.band1;
-    else if (stayDaysNum < 30) bandClass = styles.band2;
-    else if (stayDaysNum < 90) bandClass = styles.band3;
-    else bandClass = styles.band4;
-  }
-
-  const cardClasses = [
-    styles.bedCard,
-    bandClass,
-    isPastDate ? styles.pastDate : "",
-    isSelected ? styles.selected : "",
-    isReady ? styles.ready : "",
-    isClosed ? styles.closed : "",
-    isPulled ? styles.pulled : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const tone: WfTone | null = bedGlyphTone(bed);
+  const leaving = leavingCell(bed);
+  const meta = cardMetaLine(bed);
+  const umrn = bed.umrn ?? bed.patientInfo?.umrn;
+  const number = String(bed.bedNumber).padStart(2, "0");
+  // The "now" chip repeats nothing the leaving column already says.
+  const nowChip = signal && signal !== "Past date" && !signal.startsWith("Out ") ? signal : null;
 
   const handleClick = useCallback(() => {
     onSelect(bed);
   }, [onSelect, bed]);
 
+  let who: React.ReactNode;
+  if (bed.patientAlias) {
+    who = (
+      <>
+        <span className={styles.rowName}>{bed.patientAlias}</span>
+        <span className={styles.rowSub}>
+          {isPulled
+            ? "Pulled for them, not yet arrived"
+            : [meta, umrn].filter(Boolean).join(" · ") || "Details not recorded"}
+        </span>
+      </>
+    );
+  } else if (isReady && bed.preparing) {
+    who = (
+      <>
+        <span className={styles.rowName}>Not offered yet</span>
+        <span className={styles.rowSub}>Being made ready</span>
+      </>
+    );
+  } else if (isReady) {
+    who = (
+      <>
+        <span className={styles.rowName}>{bed.heldFor ? `Held for ${bed.heldFor}` : "Offered"}</span>
+        <span className={styles.rowSub}>Ready; cleaning completion not recorded</span>
+      </>
+    );
+  } else if (isClosed) {
+    who = (
+      <>
+        <span className={styles.rowName}>Not offered</span>
+        <span className={styles.rowSub}>Closed until it is reopened</span>
+      </>
+    );
+  } else if (isPulled) {
+    who = <span className={styles.rowName}>Given away</span>;
+  } else {
+    who = <span className={styles.rowSub}>{isAwayAtEd ? "Bed held" : "Empty"}</span>;
+  }
+
   return (
     <button
       type="button"
-      className={cardClasses}
+      className={cx(
+        styles.bedRow,
+        isSelected && styles.selected,
+        isReady && styles.ready,
+        isClosed && styles.closed,
+        isPulled && styles.pulled,
+      )}
       data-testid={`ward-bed-card-${bed.bedNumber}`}
       data-admission-id={bed.admissionId}
       data-state={bed.status as string}
+      data-tone={tone ?? undefined}
       onClick={handleClick}
       aria-label={formatBedAriaLabel(bed, eddMoved)}
     >
-      <div className={styles.bedTopRow}>
-        {bed.patientAlias && !isPulled ? (
-          <span className={styles.bedPatientName}>{bed.patientAlias}</span>
-        ) : (
-          <span className={styles.bedStatePill}>
-            {isReady ? "Ready" : isClosed ? "Closed" : isPulled ? "Pulled" : bed.statusText}
+      <span className={styles.cBed}>
+        <b>{number}</b>
+        {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+      </span>
+      <span className={styles.cWho}>{who}</span>
+      <span className={styles.cLegal}>
+        {bed.patientAlias && !isPulled
+          ? (bed.legalStatusLabel ?? <span className={styles.muted}>Not recorded</span>)
+          : null}
+      </span>
+      <span className={styles.cStay}>
+        {stayDaysNum !== null && !isReady ? (
+          <>
+            <span className={styles.stayNum}>{stayDaysNum}d</span>
+            <span className={styles.stayBar} aria-hidden="true">
+              <i style={{ width: `${Math.max(4, Math.min(100, (stayDaysNum / STAY_BAR_DAYS) * 100))}%` }} />
+            </span>
+          </>
+        ) : null}
+      </span>
+      <span className={styles.cOut}>
+        {leaving ? (
+          <span className={styles.outMain} data-tone={leaving.tone ?? undefined}>
+            {leaving.text}
           </span>
-        )}
-        {stayDaysNum !== null && !isReady ? <span className={styles.bedDaysVal}>{stayDaysNum}d</span> : null}
-      </div>
-
-      {bed.patientAlias ? (
-        <div className={styles.bedCardBody}>
-          {isPulled ? <div className={styles.bedPatientName}>{bed.patientAlias}</div> : null}
-          {cardMetaLine(bed) ? <div className={styles.bedPatientSub}>{cardMetaLine(bed)}</div> : null}
-        </div>
-      ) : isReady && bed.preparing ? (
-        <div className={styles.bedCardBody}>
-          <div className={styles.bedPatientName}>Not offered yet</div>
-          <div className={styles.bedPatientSub}>Being made ready</div>
-        </div>
-      ) : isReady ? (
-        <div className={styles.bedCardBody}>
-          <div className={styles.bedPatientName}>Offered</div>
-          <div className={styles.bedPatientSub}>Ready; cleaning completion not recorded</div>
-        </div>
-      ) : isClosed ? (
-        <div className={styles.bedCardBody}>
-          <div className={styles.bedPatientName}>Not offered</div>
-        </div>
-      ) : isPulled ? (
-        <div className={styles.bedCardBody}>
-          <div className={styles.bedPatientName}>Given away</div>
-        </div>
-      ) : (
-        <div className={styles.bedCardBody}>
-          <div className={styles.bedPatientSub}>{isAwayAtEd ? "Bed held" : "Empty"}</div>
-        </div>
-      )}
-
-      {signal || eddMoved || criteriaLed ? (
-        <div className={styles.bedBottomTags}>
-          {signal ? (
-            <span className={isPastDate ? styles.badgePastDate : isAwayAtEd ? styles.badgeAtEd : styles.bedCardChip}>
-              {signal}
-            </span>
-          ) : null}
-          {eddMoved ? (
-            <span className={styles.bedCardChip} data-testid="ward-bed-edd-moved">
-              {eddMoved}
-            </span>
-          ) : null}
-          {criteriaLed ? (
-            <span
-              className={cx(
-                styles.bedCardChip,
-                criteriaLed.tone === "success" && styles.chipGood,
-                criteriaLed.tone === "warning" && styles.chipWarn,
-              )}
-              data-testid="ward-bed-criteria-led"
-            >
-              {criteriaLed.label}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+        ) : bed.patientAlias && !isPulled && !isReady ? (
+          <span className={styles.muted}>No date</span>
+        ) : null}
+        {bed.dischargeConfirmed === true && leaving ? <span className={styles.rowSub}>Confirmed</span> : null}
+        {eddMoved ? (
+          <span className={styles.rowSub} data-testid="ward-bed-edd-moved">
+            {eddMoved}
+          </span>
+        ) : null}
+      </span>
+      <span className={styles.cObs}>
+        {bed.patientAlias && !isPulled && bed.observation ? observationSummary(bed.observation) : null}
+      </span>
+      <span className={styles.cNow}>
+        {nowChip ? (
+          <span className={cx(styles.chip, isAwayAtEd && styles.chipWarn, bed.blockReason && styles.chipAct)}>
+            {nowChip}
+          </span>
+        ) : null}
+        {criteriaLed ? (
+          <span
+            className={cx(
+              styles.chip,
+              criteriaLed.tone === "success" && styles.chipGood,
+              criteriaLed.tone === "warning" && styles.chipWarn,
+            )}
+            data-testid="ward-bed-criteria-led"
+          >
+            {criteriaLed.label}
+          </span>
+        ) : null}
+      </span>
+      <svg
+        className={styles.chev}
+        viewBox="0 0 16 16"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        aria-hidden="true"
+      >
+        <path d="M6 3.5 10.5 8 6 12.5" />
+      </svg>
     </button>
   );
 }, areBedCardPropsEqual);
@@ -356,6 +414,7 @@ export function WardBedsMatrix({
       key: string;
       group: Exclude<ShiftGroup, "all">;
       bedNumber: number;
+      person: string | null;
       title: string;
       badge: string;
       badgeTone: "danger" | "warn" | "info" | "purple";
@@ -380,6 +439,7 @@ export function WardBedsMatrix({
           key: `shift-off-${bed.bedLabel}-${bedNumber}`,
           group: "off-ward",
           bedNumber,
+          person: bed.patientAlias ?? null,
           title: atEd ? "Away at an ED" : isAwol ? "Absent without leave" : "On leave",
           badge: atEd ? (bed.awayAtEdHours! >= 4 ? "Still at ED" : "Away at ED") : bed.statusText || "On leave",
           badgeTone: tone,
@@ -396,6 +456,7 @@ export function WardBedsMatrix({
           key: `shift-transit-${bed.bedLabel}-${bedNumber}`,
           group: "in-transit",
           bedNumber,
+          person: bed.patientAlias ?? null,
           title: "Pulled bed",
           badge: "In transit",
           badgeTone: "purple",
@@ -417,6 +478,7 @@ export function WardBedsMatrix({
           key: `shift-due-${bed.bedLabel}-${bedNumber}`,
           group: "due-out",
           bedNumber,
+          person: bed.patientAlias ?? null,
           title: confirmed ? "Confirmed discharge" : "Expected discharge",
           badge,
           badgeTone: confirmed ? "warn" : "danger",
@@ -434,24 +496,53 @@ export function WardBedsMatrix({
     return items;
   }, [bedsList, unit.name]);
 
+  // The board in figures, for the strip above the list: what a coordinator asks first.
+  const figures = useMemo(() => {
+    const people = bedsList.filter((bed) => bed.patientAlias && bed.status !== "incoming" && bed.isPulled !== true);
+    const stays = people.map((bed) => bed.stayDays).filter((days): days is number => typeof days === "number");
+    return {
+      occupied: people.length,
+      ready: bedsList.filter((bed) => bed.status === "ready").length,
+      away: bedsList.filter((bed) => bed.status === "leave" || bed.awayAtEdHours != null).length,
+      pulled: bedsList.filter((bed) => bed.status === "incoming" || bed.isPulled === true).length,
+      closed: bedsList.filter((bed) => bed.status === "closed" || bed.isClosed === true).length,
+      pastDate: people.filter(
+        (bed) => bed.pastDate === true || (typeof bed.expectedDays === "number" && bed.expectedDays < 0),
+      ).length,
+      median: stays.length > 0 ? [...stays].sort((x, y) => x - y)[Math.floor(stays.length / 2)] : null,
+      longest: stays.length > 0 ? Math.max(...stays) : null,
+    };
+  }, [bedsList]);
+
   const dueOutCount = shiftItems.filter((item) => item.group === "due-out").length;
   const offWardCount = shiftItems.filter((item) => item.group === "off-ward").length;
   const inTransitCount = shiftItems.filter((item) => item.group === "in-transit").length;
   const visibleShiftItems = shiftGroup === "all" ? shiftItems : shiftItems.filter((item) => item.group === shiftGroup);
 
+  const shiftTone = (tone: "danger" | "warn" | "info" | "purple"): WfTone =>
+    tone === "danger" ? "danger" : tone === "warn" ? "warning" : "info";
+
   return (
     <div className={styles.matrixWrap}>
-      <section className={styles.shiftBanner} aria-label="Shift actions and alerts">
-        <div className={styles.shiftBannerHead}>
-          <div className={styles.shiftTitleGroup}>
-            <span className={styles.shiftTitle}>
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+      <section className={styles.card} aria-label="Shift actions and alerts">
+        <div className={styles.cardHead}>
+          <div className={styles.headText}>
+            <h2 className={styles.title}>
+              <svg
+                viewBox="0 0 16 16"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                aria-hidden="true"
+              >
                 <circle cx="8" cy="8" r="6" />
                 <path d="M8 4.5v3.5l2.5 1.5" />
               </svg>
               Before handover
-            </span>
-            <span className={styles.shiftSubtitle}>
+            </h2>
+            <span className={styles.subtitle}>
               {visibleShiftItems.length} of {shiftItems.length} before handover
               {/* Audit TC2-13: with no clock there is no shift to name, so no fixed 15:00 is invented. */}
               {boardNow === undefined ? null : ` at ${formatInstantWithDay(shiftEndInstant(boardNow), boardNow)}`}
@@ -484,65 +575,51 @@ export function WardBedsMatrix({
         </div>
 
         {visibleShiftItems.length === 0 ? (
-          <div className={styles.shiftEmptyNotice}>
-            <span>Nothing in this group right now.</span>
-          </div>
+          <p className={styles.emptyNotice}>Nothing in this group right now.</p>
         ) : (
-          <div className={styles.shiftDenseGrid}>
+          <ul className={styles.handoverList}>
             {visibleShiftItems.map((item) => (
-              <div key={item.key} className={styles.shiftTileCompact} data-tone={item.borderTone}>
-                <div className={styles.shiftTileTop}>
-                  <div className={styles.shiftTagGroup}>
-                    <span className={styles.shiftKindPill}>{item.title}</span>
-                    <span
-                      className={`${styles.shiftStatusBadge} ${
-                        item.badgeTone === "danger"
-                          ? styles.badgeDanger
-                          : item.badgeTone === "warn"
-                            ? styles.badgeWarn
-                            : item.badgeTone === "purple"
-                              ? styles.badgePurple
-                              : styles.badgeInfo
-                      }`}
+              <li key={item.key} className={styles.handoverRow} data-tone={item.borderTone}>
+                <StatusGlyph tone={shiftTone(item.badgeTone)} size={9} />
+                <span className={styles.hBed}>{String(item.bedNumber).padStart(2, "0")}</span>
+                <span className={styles.hMain}>
+                  <span className={styles.hTitle}>
+                    <b>{item.person ?? item.title}</b>
+                    <span className={styles.hKind}>{item.person ? item.title : null}</span>
+                  </span>
+                  <span className={styles.hDesc}>{item.desc}</span>
+                </span>
+                <span className={styles.hBadge} data-tone={item.badgeTone}>
+                  {item.badge}
+                </span>
+                <span className={styles.hTag}>{item.tag}</span>
+                <span className={styles.hActions}>
+                  {item.actions.map((act) => (
+                    <button
+                      key={act.label}
+                      type="button"
+                      className={styles.btnShiftAction}
+                      onClick={() => {
+                        setSelectedBed(item.bedNumber);
+                      }}
                     >
-                      {item.badge}
-                    </span>
-                  </div>
-                  <span className={styles.shiftTimeAgo}>{item.tag}</span>
-                </div>
-                <div className={styles.shiftTileBody}>
-                  <div className={styles.shiftTextLine}>{item.desc}</div>
-                  <div className={styles.shiftTileActions}>
-                    {item.actions.map((act) => (
-                      <button
-                        key={act.label}
-                        type="button"
-                        className={styles.btnShiftAction}
-                        onClick={() => {
-                          setSelectedBed(item.bedNumber);
-                        }}
-                      >
-                        {act.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+                      {act.label}
+                    </button>
+                  ))}
+                </span>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </section>
 
-      {/* ─────────────────────────────────────────────────────────────
-         BEDS SECTION: HEADER & FILTER CONTROLS BAR (IMAGE 1 ENHANCED)
-         ───────────────────────────────────────────────────────────── */}
-      <section className={styles.bedsSection} aria-label="Ward Bed Grid and Capacity">
-        <div className={styles.matrixHead}>
-          <div className={styles.headingGroup}>
+      <section className={styles.card} aria-label="Ward Bed Grid and Capacity">
+        <div className={styles.cardHead}>
+          <div className={styles.headText}>
             <h2 className={styles.title}>Every bed, and who is in it</h2>
-            <p className={styles.subtitle}>
+            <span className={styles.subtitle}>
               Showing {sortedBeds.length} of {unit.beds} beds
-            </p>
+            </span>
             <span className="sr-only">{pendingPreparation} still being made ready</span>
           </div>
 
@@ -570,6 +647,42 @@ export function WardBedsMatrix({
           </div>
         </div>
 
+        {/* The board in figures: one quiet strip, each figure a number over its word. */}
+        <dl className={styles.figures}>
+          <div>
+            <dt>Occupied</dt>
+            <dd>{figures.occupied}</dd>
+          </div>
+          <div>
+            <dt>Ready</dt>
+            <dd>{figures.ready}</dd>
+          </div>
+          <div>
+            <dt>Away or on leave</dt>
+            <dd>{figures.away}</dd>
+          </div>
+          <div>
+            <dt>Pulled</dt>
+            <dd>{figures.pulled}</dd>
+          </div>
+          <div>
+            <dt>Closed</dt>
+            <dd>{figures.closed}</dd>
+          </div>
+          <div>
+            <dt>Past their date</dt>
+            <dd>{figures.pastDate}</dd>
+          </div>
+          <div>
+            <dt>Median stay</dt>
+            <dd>{figures.median === null ? "–" : `${figures.median}d`}</dd>
+          </div>
+          <div>
+            <dt>Longest stay</dt>
+            <dd>{figures.longest === null ? "–" : `${figures.longest}d`}</dd>
+          </div>
+        </dl>
+
         <div className={styles.bedsControlsBar}>
           <div className={styles.segment} role="group" aria-label="Filter beds">
             <button
@@ -581,7 +694,8 @@ export function WardBedsMatrix({
                 setSelectedPod("all");
               }}
             >
-              <span>All beds ({unit.beds})</span>
+              <span>All beds</span>
+              <span className={styles.segmentCount}>{unit.beds}</span>
             </button>
 
             <button
@@ -653,16 +767,13 @@ export function WardBedsMatrix({
           Bed numbers show position on this board; no bed number is recorded for anyone.
         </p>
 
-        {/* ─────────────────────────────────────────────────────────────
-           BAYS CONTAINER & CONTIGUOUS 20-BED GRID (IMAGE 1 ENHANCED)
-           ───────────────────────────────────────────────────────────── */}
         {bays.length === 0 ? (
-          <div className={styles.shiftEmptyNotice} role="status">
+          <div className={styles.emptyNotice} role="status">
             <span>No beds match the selected filter.</span>
             {(activeFilter !== "all" || selectedPod !== "all") && (
               <button
                 type="button"
-                className={`${styles.btnShiftAction} ${styles.resetButton}`}
+                className={styles.btnShiftAction}
                 onClick={() => {
                   setActiveFilter("all");
                   setSelectedPod("all");
@@ -673,20 +784,21 @@ export function WardBedsMatrix({
             )}
           </div>
         ) : (
-          bays.map((bay, idx) => (
-            <div
-              key={bay.beds[0] ? `bay-${bay.beds[0].bedNumber}` : `bay-empty-${idx}`}
-              className={`${styles.bayContainer} ${selectedPod === "all" ? styles.compactBay : ""}`}
-            >
-              {selectedPod !== "all" ? (
-                <div className={styles.bayHeader}>
-                  <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="2" width="12" height="12" rx="2" />
-                  </svg>
-                  <span>{bay.title}</span>
-                </div>
-              ) : null}
-              <div className={styles.bayBedsGrid}>
+          <div className={styles.table}>
+            {/* Column heads for sighted readers; each row's own name carries every fact. */}
+            <div className={styles.tableHead} aria-hidden="true">
+              <span>Bed</span>
+              <span>Person</span>
+              <span>Legal</span>
+              <span>Stay</span>
+              <span>Expected out</span>
+              <span>Observation</span>
+              <span>Now</span>
+              <span />
+            </div>
+            {bays.map((bay, idx) => (
+              <div key={bay.beds[0] ? `bay-${bay.beds[0].bedNumber}` : `bay-empty-${idx}`} className={styles.bay}>
+                {selectedPod !== "all" ? <div className={styles.bayHeader}>{bay.title}</div> : null}
                 {bay.beds.map((bed) => (
                   <WardBedCard
                     key={bed.bedNumber}
@@ -696,44 +808,9 @@ export function WardBedsMatrix({
                   />
                 ))}
               </div>
-            </div>
-          ))
-        )}
-
-        {/* ─────────────────────────────────────────────────────────────
-           FOOTER NOTES, CENSUS & ACCESSIBLE LEGEND
-           ───────────────────────────────────────────────────────────── */}
-        <div className={styles.bedsFooterNotes}>
-          <div className={styles.bedKeyLegend} role="group" aria-label="Bed stay bands and symbol key">
-            <div className={styles.legendItem}>
-              <span className={`${styles.legendDot} ${styles.dotBand1}`} />
-              <span>Under 2 weeks</span>
-            </div>
-            <div className={styles.legendItem}>
-              <span className={`${styles.legendDot} ${styles.dotBand2}`} />
-              <span>2 weeks – 1 month</span>
-            </div>
-            <div className={styles.legendItem}>
-              <span className={`${styles.legendDot} ${styles.dotBand3}`} />
-              <span>1–3 months</span>
-            </div>
-            <div className={styles.legendItem}>
-              <span className={`${styles.legendDot} ${styles.dotBand4}`} />
-              <span>Over 3 months</span>
-            </div>
-            <div className={styles.legendItem}>
-              <span className={styles.badgePastDate}>Past date</span>
-            </div>
-            <div className={styles.legendItem}>
-              <span className={styles.legendSwatch} data-kind="closed" />
-              <span>Out of service</span>
-            </div>
-            <div className={styles.legendItem}>
-              <span className={styles.legendSwatch} data-kind="unoffered" />
-              <span>Not offered</span>
-            </div>
+            ))}
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

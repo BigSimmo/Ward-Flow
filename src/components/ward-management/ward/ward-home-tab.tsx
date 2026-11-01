@@ -748,8 +748,8 @@ export function WardHomeTab({
     actNow.push({
       key: "referrals",
       title: "Referrals waiting",
+      // Polish (1 Nov 2026): no count under these rows; the detail already names each bed or count.
       detail: `${incoming.length} waiting for this ward's answer`,
-      meta: `${incoming.length} waiting`,
       tone: "danger",
       action: { label: "Answer", run: focusAwaiting },
     });
@@ -761,7 +761,6 @@ export function WardHomeTab({
       detail: heldUp
         .map((release) => `${bedByAdmission(release.admissionId)?.bedLabel ?? "A bed"} ${release.blocker}`)
         .join(", "),
-      meta: `${heldUp.length} ${heldUp.length === 1 ? "bed" : "beds"}`,
       tone: "danger",
       action: { label: "Review", run: () => onOpenDischarges?.() },
     });
@@ -778,7 +777,6 @@ export function WardHomeTab({
             `${bed.bedLabel}${bed.patientAlias ? ` ${bed.patientAlias}` : ""}, ${bed.bedHold!.short.toLowerCase()}`,
         )
         .join("; "),
-      meta: `${lapsedHolds.length} ${lapsedHolds.length === 1 ? "bed" : "beds"}`,
       tone: "danger",
       action: { label: "Move or release", run: () => onSelectBed?.(Number(lapsedHolds[0]!.bedNumber)) },
     });
@@ -791,7 +789,6 @@ export function WardHomeTab({
       detail: heldAfterStop
         .map((movement) => `${resolvePatientIdentity(movement).formalName}, transport stopped after collection`)
         .join("; "),
-      meta: `${heldAfterStop.length} ${heldAfterStop.length === 1 ? "bed" : "beds"}`,
       tone: "warning",
       action: onOpenArrivals ? { label: "Release pulled bed", run: onOpenArrivals } : undefined,
     });
@@ -966,6 +963,16 @@ export function WardHomeTab({
     for (const rows of [actNow, laterToday])
       rows.sort((a, b) => Number(b.key === "rollup") - Number(a.key === "rollup"));
   }
+  // Polish (1 Nov 2026): several rows offer the same "Review today's expected discharges" link; it
+  // shows once, on the first row that carries it, so the columns do not repeat it.
+  {
+    let reviewShown = false;
+    for (const row of [...actNow, ...laterToday, ...doneRows]) {
+      if (row.secondaryAction?.label !== "Review today's expected discharges →") continue;
+      if (reviewShown) row.secondaryAction = undefined;
+      reviewShown = true;
+    }
+  }
   const todoOpen = actNow.length + laterToday.filter((row) => !row.tick).length;
 
   // Length of stay: people in beds now, grouped by recorded stay in days.
@@ -1041,21 +1048,9 @@ export function WardHomeTab({
     );
   }
 
-  // Surname on its own line, given name under it, so a name never runs into the tile's edge.
-  function renderTileName(name: string) {
-    const comma = name.indexOf(", ");
-    if (comma < 1) return name;
-    return (
-      <>
-        <span className={styles.bedTileSurname}>{name.slice(0, comma)},</span>
-        <span className={styles.bedTileGiven}>{name.slice(comma + 2)}</span>
-      </>
-    );
-  }
-
-  // Polish (1 Nov 2026): each group reads like Home's My list, a tinted head band with its count
-  // and a short note, then one row a task with the time and the action in their own columns.
-  function renderTodoColumn(id: string, title: string, tone: WfTone, rows: TodoRow[], aside?: string) {
+  // Polish (1 Nov 2026): three columns, each a quiet head with its count, then one row a task with
+  // its action on the right and any time or count under the detail.
+  function renderTodoColumn(id: string, title: string, tone: WfTone, rows: TodoRow[]) {
     const items = rows.filter((row) => !row.tick);
     const reminders = rows.filter((row) => row.tick);
     return (
@@ -1066,7 +1061,6 @@ export function WardHomeTab({
             {title}
           </h3>
           <Count n={items.length} />
-          {aside ? <span className={styles.groupAside}>{aside}</span> : null}
         </div>
         {items.length === 0 ? <p className={styles.groupEmpty}>Nothing here.</p> : renderTodoList(items)}
         {reminders.length > 0 ? (
@@ -1108,11 +1102,7 @@ export function WardHomeTab({
                   </span>
                 </span>
               )}
-              {row.meta ? (
-                <span className={row.meta.length > 10 ? `${styles.todoMeta} ${styles.todoMetaBelow}` : styles.todoMeta}>
-                  {row.meta}
-                </span>
-              ) : null}
+              {row.meta ? <span className={styles.todoMeta}>{row.meta}</span> : null}
               {row.action ? (
                 <button type="button" className={buttonClass({ variant: "sec", size: "sm" })} onClick={row.action.run}>
                   {row.action.label}
@@ -1555,9 +1545,9 @@ export function WardHomeTab({
         )}
         <div className={styles.shiftPane} data-active={shiftView === "todo"}>
           <div className={styles.todoGrid}>
-            {renderTodoColumn("now", "Act now", "danger", actNow, "needs a person now")}
-            {renderTodoColumn("later", "Later today", "neutral", laterToday, "before the shift ends")}
-            {renderTodoColumn("done", "Done", "success", doneRows, "this shift")}
+            {renderTodoColumn("now", "Act now", "danger", actNow)}
+            {renderTodoColumn("later", "Later today", "neutral", laterToday)}
+            {renderTodoColumn("done", "Done", "success", doneRows)}
           </div>
         </div>
         <div className={styles.shiftPane} data-active={shiftView === "log"}>
@@ -1893,13 +1883,12 @@ export function WardHomeTab({
                   >
                     <span className={styles.bedTileTop} aria-hidden="true">
                       <b>{row.number}</b>
+                      {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} className={styles.bedTileTag} /> : null}
                       {row.glyph ? <StatusGlyph tone={row.glyph} size={10} /> : null}
                     </span>
                     <span className={styles.bedTileName} aria-hidden="true">
-                      {renderTileName(row.name)}
+                      {row.name}
                     </span>
-                    {/* The criteria led tag sits under the name, so the top row keeps only number and glyph. */}
-                    {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} className={styles.bedTileTag} /> : null}
                     <span className={styles.bedTileState} aria-hidden="true">
                       <span className={styles.bedTileNote}>
                         {row.free

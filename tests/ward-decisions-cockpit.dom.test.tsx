@@ -70,7 +70,8 @@ describe("ward decisions cockpit", () => {
       </WardDecisionsCockpit>,
     );
     expect(screen.getByRole("button", { name: "Confirm unchanged" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toHaveTextContent("1 allocatable");
+    // Polish (1 Nov 2026): the staffing fact reads under the Staffing card's head, not in the step.
+    expect(screen.getByRole("region", { name: "Staffing" })).toHaveTextContent("1 allocatable");
   });
 
   it("accepts a live intake from its row", () => {
