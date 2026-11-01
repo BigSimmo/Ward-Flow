@@ -257,9 +257,6 @@ function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
             keep it.
           </p>
         ) : null}
-        <p className={styles.liveNote} role="status">
-          {message}
-        </p>
       </div>
       <footer className={demo.foot}>
         {saveScenarioFile && loadScenarioFile ? (
@@ -288,6 +285,10 @@ function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
         >
           Reset demo
         </button>
+        {/* Beside the file controls, so a save or load result is seen without scrolling the lists. */}
+        <p className={styles.liveNote} role="status">
+          {message}
+        </p>
         <p className={demo.footNote}>Scenario files hold synthetic demo data only. Never type real patient details.</p>
       </footer>
       <Dialog
