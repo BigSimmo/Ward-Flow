@@ -8,6 +8,7 @@
 import { ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button, PortraitRail, SearchField, Segmented, StatusGlyph } from "@/components/wf";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { EdBoardChips } from "./ed-board-chips";
 import { EdNeedsYou } from "./ed-needs-you";
 import type { EdScreenContext } from "./ed-screen-context";
@@ -52,6 +53,8 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
   useEffect(() => {
     if (!fullscreenBoard) return;
     const onKey = (event: KeyboardEvent) => {
+      // An Escape a sheet on top (the person sheet) takes is not the board's: one Escape, one layer.
+      if (event.defaultPrevented || hasOpenSheet()) return;
       if (event.key === "Escape" && !document.querySelector("[role=alertdialog],[role=menu]"))
         setFullscreenBoard(false);
     };

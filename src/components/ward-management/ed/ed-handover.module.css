@@ -4,8 +4,11 @@
 /* ---------- ED handover table, mock-up round 2 (Josh, 1 Nov 2026) ----------
    The pattern of the rebuilt Waiting page: card head with title, count and order; filters and the
    tier key under it; quiet capital column heads; rows grouped by time in the department. */
-.handover {
-  overflow: clip;
+/* No clipping boundary: the Presentation and Form menus render inside their cells (no portal),
+   so a clipped card would cut off the last rows' options (Codex review, 1 Nov 2026). The higher
+   specificity also beats .listSection's overflow: hidden. Enlarged view keeps its own scroll. */
+.handover:not([data-enlarged="true"]) {
+  overflow: visible;
 }
 .handoverHead {
   display: flex;
