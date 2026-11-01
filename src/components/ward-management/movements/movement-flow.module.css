@@ -493,7 +493,7 @@
 }
 
 .outcome[data-outcome="arrived"] {
-  background: var(--wf-success-tint, var(--wf-surface-2));
+  background: color-mix(in srgb, var(--wf-success) 14%, var(--wf-surface-2));
   color: var(--wf-success-ink, var(--wf-ink-1));
 }
 
@@ -1460,7 +1460,7 @@
   width: 14px;
   height: 4px;
   border-radius: 2px;
-  background: var(--wf-line-strong, var(--wf-line));
+  background: var(--wf-line-3);
 }
 
 .trTrack i[data-on="true"] {
