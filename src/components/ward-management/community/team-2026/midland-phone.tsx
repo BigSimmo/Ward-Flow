@@ -6,7 +6,7 @@
  * band hero with three figures, the section track, phone rows and the bottom sheet. Nothing is saved.
  */
 
-import { useRef, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { Check, ChevronDown, ChevronRight, FileText, Phone, Plus, Search } from "lucide-react";
 import {
   Button,
@@ -37,6 +37,7 @@ import {
   shortName,
 } from "./midland-demo";
 import { ReferralPage, useAnswer } from "./team-referrals";
+import { useRegisterWardBarPlaceSwitch } from "@/components/ward-management/shell/ward-bar-place-switch";
 import p from "./midland-phone.module.css";
 
 const f = DEMO_FIGURES;
@@ -756,17 +757,24 @@ export function MidlandPhone({
   open,
   onRecordContact,
   onReferFromTeam,
+  onSwitchTeam,
 }: {
   section: CommunityTeamSection;
   open: (section: CommunityTeamSection) => void;
   onRecordContact: () => void;
   onReferFromTeam: () => void;
+  /** Opens Switch team from the bar's place line (Q158). Absent for a desk that sees its own team only. */
+  onSwitchTeam?: (open: boolean) => void;
 }) {
   const [sheet, setSheet] = useState<number | null>(null);
   const [full, setFull] = useState<number | null>(null);
   const { say: note } = useAnswer("");
   const bandRef = useRef<HTMLDivElement>(null);
   useWfBandBleed(bandRef, full === null);
+  const switchTeam = useCallback(() => onSwitchTeam?.(true), [onSwitchTeam]);
+  useRegisterWardBarPlaceSwitch(
+    onSwitchTeam ? { label: "East Metro · Adult", actionLabel: "Switch team", onPress: switchTeam } : null,
+  );
   const figures = FIGURES[section];
   if (full !== null) {
     return (

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { WardBarFrame } from "./ward-chrome-frame";
-import { Wrench } from "lucide-react";
+import { ChevronDown, Wrench } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
@@ -58,6 +58,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 
 import { announceToWardShell } from "./ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
+import { useWardBarPlaceSwitch } from "./ward-bar-place-switch";
 import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
@@ -1026,6 +1027,29 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
       deskPlace={deskPlace}
     />
   );
+  // Q158 (Josh, 1 Nov 2026): on a phone, a page with its own place switch (a community team's
+  // Switch team) names its place under the title and opens its switcher, in place of the service line.
+  const placeSwitch = useWardBarPlaceSwitch();
+  const phonePlaceSwitch =
+    isPhone && placeSwitch ? (
+      <div className={styles.scopeBadgeContainer}>
+        <button
+          type="button"
+          ref={serviceTriggerRef}
+          className={styles.scopeBadgeBtn}
+          data-testid="ward-bar-place-switch"
+          data-service="statewide"
+          data-band={bandState}
+          aria-haspopup="dialog"
+          aria-label={`${placeSwitch.actionLabel}: ${placeSwitch.label}`}
+          onClick={placeSwitch.onPress}
+        >
+          <span className={styles.scopeDot} aria-hidden="true" />
+          <span className={styles.scopeBadgeLabel}>{placeSwitch.label}</span>
+          <ChevronDown className={styles.scopeCaret} aria-hidden="true" strokeWidth={1.75} />
+        </button>
+      </div>
+    ) : null;
   // The place is never said twice: where the page's own title is the place, the chip steps aside.
   const placeIsTitle = deskPlace !== undefined && routeTitle.trim() === deskPlace.trim();
 
@@ -1082,7 +1106,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
           </span>
         </div>
 
-        {placeIsTitle && !isPhone ? null : serviceSelector}
+        {phonePlaceSwitch ?? (placeIsTitle && !isPhone ? null : serviceSelector)}
 
         {/* A page's own header tools land here (`ward-bar-page-tools.tsx`). Empty on most pages. */}
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
