@@ -7,6 +7,11 @@
  * Dates are display strings, as typed. Nothing is computed into a countdown.
  */
 
+import { siteByCode } from "../ward-sites";
+
+/** Site names come from the data layer, never typed a second time here. */
+const GRAYLANDS = siteByCode("GRY")?.name ?? "Graylands";
+
 export type EpisodeKind = "admission" | "ed" | "community";
 
 /** One earlier episode of care, newest first in each list. */
@@ -103,10 +108,10 @@ const PEEL_ED = "Peel Health Campus ED";
 const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
   // Finding a bed, Cannot move. No community engagement: Community tab hidden.
   "PT-023": {
-    phone: "0400 000 231",
+    phone: "0491 570 006",
     alerts: [],
     supports: [
-      { name: "Wren, Ada", role: "Close family member", relationship: "Mother", phone: "0400 000 232", notify: true },
+      { name: "Wren, Ada", role: "Close family member", relationship: "Mother", phone: "0491 570 156", notify: true },
     ],
     episodes: [
       {
@@ -177,10 +182,10 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
 
   // Bed accepted. No community engagement.
   "PT-001": {
-    phone: "0400 000 011",
+    phone: "0491 570 157",
     alerts: ["Penicillin allergy"],
     supports: [
-      { name: "Halloway, Ben", role: "Nominated person", relationship: "Partner", phone: "0400 000 012", notify: true },
+      { name: "Halloway, Ben", role: "Nominated person", relationship: "Partner", phone: "0491 570 158", notify: true },
     ],
     episodes: [],
     documents: [
@@ -213,14 +218,14 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
 
   // Moving, Form 4A. Interpreter required. No community engagement.
   "PT-013": {
-    phone: "0400 000 131",
+    phone: "0491 570 159",
     alerts: ["Type 2 diabetes, insulin", "Falls risk"],
     supports: [
       {
         name: "Marrowvale, Paolo",
         role: "Carer",
         relationship: "Husband",
-        phone: "0400 000 132",
+        phone: "0491 570 110",
         notify: true,
       },
     ],
@@ -271,10 +276,10 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
 
   // On a ward. Past community engagement (ended).
   "PT-003": {
-    phone: "0400 000 031",
+    phone: "0491 570 313",
     alerts: [],
     supports: [
-      { name: "Marrowby, Rosa", role: "Next of kin", relationship: "Sister", phone: "0400 000 032", notify: false },
+      { name: "Marrowby, Rosa", role: "Next of kin", relationship: "Sister", phone: "0491 570 737", notify: false },
     ],
     episodes: [
       {
@@ -372,14 +377,14 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
 
   // On leave. Active community engagement.
   "PT-036": {
-    phone: "0400 000 361",
+    phone: "0491 571 266",
     alerts: [],
     supports: [
       {
         name: "Daviecroft, June",
         role: "Carer",
         relationship: "Mother",
-        phone: "0400 000 362",
+        phone: "0491 571 491",
         notify: true,
       },
     ],
@@ -492,7 +497,7 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
 
   // At ED with a bed kept. No community engagement.
   "PT-029": {
-    phone: "0400 000 291",
+    phone: "0491 571 804",
     alerts: ["Chronic obstructive pulmonary disease, home oxygen"],
     supports: [],
     episodes: [
@@ -530,17 +535,17 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
 
   // Not currently active. Active community engagement; an earlier CTO has ended.
   "PT-002": {
-    phone: "0400 000 021",
+    phone: "0491 572 549",
     alerts: ["Type 2 diabetes", "Hypertension"],
     supports: [
       {
         name: "Nguyen, Lan",
         role: "Nominated person",
         relationship: "Daughter",
-        phone: "0400 000 022",
+        phone: "0491 572 665",
         notify: true,
       },
-      { name: "Hallowin, Thi", role: "Carer", relationship: "Wife", phone: "0400 000 023", notify: true },
+      { name: "Hallowin, Thi", role: "Carer", relationship: "Wife", phone: "0491 572 983", notify: true },
     ],
     episodes: [
       {
@@ -593,7 +598,7 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
         start: "4 Oct 2024",
         end: "1 Nov 2024",
         year: 2024,
-        where: "Graylands Hospital",
+        where: GRAYLANDS,
         from: "Royal Perth Hospital ED",
         stay: "28 days",
         bedDays: 28,
@@ -697,7 +702,7 @@ const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
         date: "1 Nov 2024",
         year: 2024,
         by: "Ward doctor",
-        source: "Graylands Hospital",
+        source: GRAYLANDS,
         status: "Filed",
         meta: "PDF · 4 pages",
       },
