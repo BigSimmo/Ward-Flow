@@ -110,7 +110,7 @@ afterEach(() => {
 describe("H-0117 community decline keeps its reason until accepted", () => {
   it.each(["failed", "refused", "accepted"] as const)("desktop waiting list, %s", async (mode) => {
     const calls = renderTeam(mode);
-    fireEvent.click(screen.getByRole("tab", { name: /Waiting/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Referrals/u }));
     const panel = screen.getByTestId("ward-community-waiting");
     fireEvent.click(within(panel).getByRole("button", { name: /decline referral/i }));
     fireEvent.change(within(panel).getByRole("combobox"), { target: { value: "outside_the_teams_catchment" } });
