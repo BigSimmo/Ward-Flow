@@ -68,7 +68,7 @@ export function WardFlowErrorPanel({
     ? description
     : online
       ? "The connection dropped. Reload the page to finish loading it. Nothing was changed."
-      : "The connection dropped. This page reloads by itself when it returns. Nothing was changed.";
+      : "The connection dropped. This page will reload by itself when the connection returns. Nothing was changed.";
 
   useEffect(() => {
     // The whole error object, not `error.message`: the console entry is where the stack is

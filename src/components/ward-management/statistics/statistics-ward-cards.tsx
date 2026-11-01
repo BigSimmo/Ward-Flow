@@ -64,7 +64,11 @@ export function ReferralsCard({
               </dt>
             </div>
           </dl>
-          <SrOnly>One movement can be both accepted and declined, so the three do not add up.</SrOnly>
+          <SrOnly>
+            Asking now counts referrals waiting on this ward right now. Acceptances still standing includes arrivals,
+            but excludes withdrawn acceptances. Ever declined counts recorded declines. One movement can appear in both
+            accepted and declined counts, so the three do not add up.
+          </SrOnly>
         </section>
         {statistics.averageEmptyBedMinutes !== null || positive(statistics.emptyBedIncoherentCount) ? (
           <div data-testid="ward-statistics-ward-admissions-discharges">
