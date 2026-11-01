@@ -533,3 +533,10 @@
 .dl {
   font-size: 14px;
 }
+
+/* The phone band at its fixed insets: the page's 12px phone gutter on each side and above. */
+.band {
+  --wf-band-top: var(--wf-s-3);
+  --wf-band-left: var(--wf-s-3);
+  --wf-band-right: var(--wf-s-3);
+}
