@@ -23,6 +23,7 @@ import {
 } from "./alerts-model";
 import { UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import styles from "./alerts.module.css";
+import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import parts from "./alerts-screen-parts.module.css";
 
 /** One row of the queue, everything the row, the card and the panel read, computed once. */
@@ -45,6 +46,11 @@ export type QueueEntry = {
 
 export type QueueHandlers = {
   selectedId: string | undefined;
+  /**
+   * Alerts redesign (1 Nov 2026): the first-in-line row, the one alert whose action is a filled
+   * button. Every other row's action is a plain secondary button, so one main action stands out.
+   */
+  firstInLineId?: string;
   onSelect: (entry: QueueEntry) => void;
   onRelease: (entry: QueueEntry) => void;
   onReturn: (entry: QueueEntry) => void;
@@ -86,28 +92,14 @@ function stateLine(entry: QueueEntry, now: Instant): string | undefined {
   return undefined;
 }
 
-function Age({ entry, now, maxAge }: { entry: QueueEntry; now: Instant; maxAge: number }) {
-  // A passed legal form shows its typed time, never an age since it (legal times only as typed).
-  const ended = legalTypedEnd(entry.item);
-  if (ended !== undefined) return <span className={styles.quiet}>{typedTimeLine(ended, now)}</span>;
-  if (entry.raised === undefined) return <span className={styles.quiet}>Time not recorded</span>;
-  const age = Math.max(0, now - entry.raised);
-  return (
-    <span className={styles.age}>
-      <span className={styles.ageTop}>
-        <span className={styles.mono}>{minutesText(age)}</span>
-        <span className={styles.ageBar} aria-hidden="true">
-          <span style={{ width: `${Math.max(6, Math.round((100 * age) / Math.max(1, maxAge)))}%` }} />
-        </span>
-      </span>
-      <span className={styles.quiet}>
-        {extractOverdue(entry.item.detail) ?? `since ${formatInstantWithDay(entry.raised, now)}`}
-      </span>
-    </span>
-  );
-}
-
 function RowAction({ entry, handlers, size = "sm" }: { entry: QueueEntry; handlers: QueueHandlers; size?: "sm" }) {
+  // Only the first-in-line row's action is filled; with no first in line, the row keeps its usual look.
+  const variant =
+    handlers.firstInLineId === undefined
+      ? undefined
+      : handlers.firstInLineId === entry.item.id
+        ? ("pri" as const)
+        : ("sec" as const);
   if (entry.snooze) {
     return (
       <Button
@@ -125,6 +117,7 @@ function RowAction({ entry, handlers, size = "sm" }: { entry: QueueEntry; handle
     return (
       <Button
         size={size}
+        variant={variant}
         className={styles.btn}
         aria-label={`${entry.action.label} for ${entry.subject.displayName}`}
         onClick={() => handlers.onRelease(entry)}
@@ -135,7 +128,7 @@ function RowAction({ entry, handlers, size = "sm" }: { entry: QueueEntry; handle
   }
   return (
     <Link
-      className={buttonClass({ size, className: styles.btn })}
+      className={buttonClass({ size, variant, className: styles.btn })}
       href={entry.action.href}
       aria-label={`${entry.action.label} for ${entry.subject.displayName}`}
     >
@@ -189,41 +182,84 @@ function Who({ entry }: { entry: QueueEntry }) {
   );
 }
 
-/** Desktop row: alert and patient, where, owner, how long, one action. */
+/** "10m overdue" under "10m" says the time twice; the note keeps only what it adds. */
+function ageNoteFor(entry: QueueEntry, age: string | undefined, now: Instant): string {
+  const ended = legalTypedEnd(entry.item);
+  if (ended !== undefined) return typedTimeLine(ended, now);
+  if (entry.snooze) return snoozedLine(entry.snooze, now);
+  if (entry.raised === undefined) return "Time not recorded";
+  const overdue = extractOverdue(entry.item.detail);
+  if (!overdue) return `since ${formatInstantWithDay(entry.raised, now)}`;
+  return age !== undefined && overdue.startsWith(`${age} `) ? overdue.slice(age.length + 1) : overdue;
+}
+
+/**
+ * Desktop row (Alerts redesign, 1 Nov 2026): Home's act-now row. Glyph, the alert, then
+ * "Surname, Given UMRN · where", then how long with a short note, then one action. The owner and
+ * any acknowledgement follow on a quiet line when it is not yours.
+ */
 export function AlertRow({
   entry,
   now,
-  maxAge,
   handlers,
 }: {
   entry: QueueEntry;
   now: Instant;
-  maxAge: number;
+  maxAge?: number;
   handlers: QueueHandlers;
 }) {
-  const state = stateLine(entry, now);
+  const { subject } = entry;
+  const where = subject.to ? `${subject.to}, from ${subject.from}` : subject.from;
+  const state = entry.snooze ? undefined : stateLine(entry, now);
+  // The owner shows only when it is not you, by its full name, as on Home.
+  const owner = entry.mine || !entry.owner ? undefined : entry.owner;
+  const ageFrom = entry.snooze ? undefined : shownAgeFrom(entry.item, entry.raised);
+  const age = ageFrom === undefined ? undefined : minutesText(Math.max(0, now - ageFrom));
   return (
-    <li className={styles.row} {...rowData(entry, handlers)}>
-      <span className={styles.rowGlyph}>
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its Open button is the keyboard route
+    <li
+      className={`${homeStyles.hrow} ${styles.queueRow}`}
+      {...rowData(entry, handlers)}
+      onClick={(event) => {
+        if ((event.target as HTMLElement).closest("a, button")) return;
+        handlers.onSelect(entry);
+      }}
+    >
+      <span className={homeStyles.hrowGlyph}>
         <StatusGlyph tone={glyphTone(entry)} />
       </span>
-      <span className={styles.cell}>
-        <OpenButton entry={entry} handlers={handlers} />
-        <Who entry={entry} />
-      </span>
-      {/* Alerts redesign: place and owner names wrap in full rather than ending in "…". */}
-      <span className={`${styles.cell} ${styles.cellWhere} ${parts.cellWrap}`}>
-        <span className={styles.cellMain}>{entry.subject.to ?? entry.subject.from}</span>
-        <span className={styles.quiet}>
-          {entry.subject.to ? `from ${entry.subject.from}` : (entry.subject.legalStatus ?? "Status not recorded")}
+      <span className={homeStyles.hrowMain}>
+        <button
+          type="button"
+          className={homeStyles.hrowTitle}
+          aria-current={handlers.selectedId === entry.item.id ? "true" : undefined}
+          aria-label={`Open ${entry.item.title} for ${subject.displayName}`}
+          data-testid="ward-alerts-open"
+          onClick={() => handlers.onSelect(entry)}
+        >
+          {entry.item.title}
+        </button>
+        <span className={homeStyles.hrowLine}>
+          <Who entry={entry} />
+          <span className={homeStyles.hrowWhere}> · {where}</span>
         </span>
+        {owner || state ? (
+          <span className={homeStyles.hrowExtra}>
+            {owner ? (
+              <>
+                With <span>{owner}</span>
+              </>
+            ) : null}
+            {owner && state ? " · " : null}
+            {state}
+          </span>
+        ) : null}
       </span>
-      <span className={`${styles.cell} ${parts.cellWrap}`}>
-        <span className={styles.cellMain}>{entry.mine ? "You" : ownerShort(entry.owner, false)}</span>
-        <span className={styles.quiet}>{state ?? entry.owner}</span>
+      <span className={homeStyles.hrowAge}>
+        {age === undefined ? null : <span className={homeStyles.mono}>{age}</span>}
+        <span>{ageNoteFor(entry, age, now)}</span>
       </span>
-      <Age entry={entry} now={now} maxAge={maxAge} />
-      <span className={styles.rowAction}>
+      <span className={homeStyles.hrowAction}>
         <RowAction entry={entry} handlers={handlers} />
       </span>
     </li>
