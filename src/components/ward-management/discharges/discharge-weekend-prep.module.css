@@ -1,44 +1,58 @@
-/* Before the weekend or public holiday: a compact notice above the list (approved 31 Oct 2026). */
+/* Closed this weekend (mock-up, 1 Nov 2026): one card per closed service, no coloured edge. */
+/* Laid out as Capacity's Mismatch card: a head row, then one column per service split by hairlines. */
 .weekend {
   display: flex;
   flex-direction: column;
-  gap: var(--wf-s-2);
   min-width: 0;
   margin-bottom: var(--wf-s-4);
-  padding: var(--wf-s-3) var(--wf-s-4);
+  padding: 0;
+  overflow: hidden;
 }
-.weekendHead {
+.head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-1) var(--wf-s-2);
+  gap: var(--wf-s-3);
+  min-width: 0;
+  min-height: 3.5rem;
+  padding: var(--wf-s-2) var(--wf-s-4);
+}
+.weekend[data-open] .head {
+  border-bottom: 1px solid var(--wf-line);
+}
+.headTile {
+  flex: none;
+}
+.headText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
   min-width: 0;
 }
-.weekendTitle {
+.title {
   margin: 0;
   color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
 }
-.weekendNote {
-  margin: 0 0 0 auto;
+.summary {
+  margin: 0;
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
-.weekendFoldHeading {
+.foldHeading {
   flex: 1 1 100%;
   min-width: 0;
   margin: 0;
 }
-/* Drawn 40px (kit standard, "no 48px controls"); the invisible cover keeps the 48px tap floor. */
-.weekendFold {
+/* Drawn 40px (kit standard); the invisible cover keeps the 48px tap floor. */
+.fold {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--wf-s-2);
-  width: calc(100% + 2 * var(--wf-s-3));
+  gap: var(--wf-s-3);
+  width: 100%;
   min-height: 40px;
-  margin: calc(-1 * var(--wf-s-3));
-  padding: 0 var(--wf-s-3);
+  padding: 0;
   border: 0;
   background: none;
   color: inherit;
@@ -46,99 +60,179 @@
   text-align: start;
   cursor: pointer;
 }
-.weekendFold::after {
+.fold::after {
   content: "";
   position: absolute;
   inset: -4px 0;
 }
-.weekendFold:focus-visible {
+.fold:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
+  outline-offset: 2px;
+  border-radius: var(--wf-r-sm);
 }
-.weekendFold .weekendTitle {
+.chevron {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform 160ms ease;
+}
+.fold[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+.services[hidden] {
+  display: none;
+}
+.services {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  min-width: 0;
+}
+.service {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-3);
+  box-shadow: -1px 0 0 var(--wf-line);
+}
+.serviceHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+.serviceIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+}
+.serviceText {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   min-width: 0;
 }
-.weekendCount {
-  flex: 0 0 auto;
-  color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+.serviceName {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
-.weekendChevron {
-  flex: 0 0 auto;
+.serviceWhen {
   color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font-variant-numeric: tabular-nums;
 }
-.weekendNote[hidden],
-.weekendGroups[hidden] {
-  display: none;
-}
-.weekendGroups {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  gap: var(--wf-s-2) var(--wf-s-4);
-  min-width: 0;
-}
-.weekendGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.weekendGroupTitle {
-  margin: 0;
+.serviceCount {
+  flex: none;
+  min-width: 1.5rem;
+  padding: 2px 6px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  text-align: center;
 }
-.weekendList {
+.rows {
   display: flex;
   flex-direction: column;
-  margin: 0;
+  margin: 0 calc(-1 * var(--wf-s-2));
   padding: 0;
   list-style: none;
 }
-.weekendRow {
+.rows > li + li {
+  box-shadow: 0 -1px 0 var(--wf-line);
+}
+.row {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0;
-  width: calc(100% + 2 * var(--wf-s-2));
-  min-height: 2.5rem;
-  padding: 2px var(--wf-s-2);
-  margin-inline: calc(-1 * var(--wf-s-2));
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 3rem;
+  padding: 6px var(--wf-s-2);
   border: 0;
-  border-radius: var(--wf-r-seg-item);
+  border-radius: var(--wf-r-sm);
   background: transparent;
   color: var(--wf-ink-1);
-  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  font: inherit;
   text-align: start;
   cursor: pointer;
 }
-.weekendRow:hover {
+.row:hover {
   background: var(--wf-hover);
 }
-.weekendRow:focus-visible {
+.row:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
 }
-.weekendWho strong {
-  font-weight: 600;
+.rowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
-.weekendWho span {
-  color: var(--wf-ink-2);
+.rowName {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
-.weekendMeta {
+.rowMeta {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.rowUmrn {
+  font-family: var(--wf-mono);
+}
+.rowSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: none;
+}
+.rowOut {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  white-space: nowrap;
+}
+.rowAfter {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+.rowChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+.note {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 @media screen and (max-width: 48rem) {
   .weekend {
     margin-bottom: var(--wf-s-3);
+  }
+  .head {
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+  .services {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .service {
     padding: var(--wf-s-3);
+    box-shadow: 0 -1px 0 var(--wf-line);
   }
-  .weekendNote {
-    margin-left: 0;
-  }
-  .weekendRow {
+  .row {
     min-height: var(--spacing-tap, 3rem);
   }
 }

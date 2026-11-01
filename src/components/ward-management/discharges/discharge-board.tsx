@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
-import { ChevronDown, ChevronRight, Copy, Filter, OctagonAlert, Printer, TrendingUp, Truck, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, FileText, Filter, OctagonAlert, Printer, TrendingUp, Truck, X } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { dayOf, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -445,9 +445,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           >
             {filterCard}
           </PhoneSheet>
-        ) : (
-          filterCard
-        )}
+        ) : null}
         {guarded.status === "allowed" && isPhone ? (
           /* v10 phone: the two charts are one tap away as cards; each opens a sheet that scrolls
              sideways with 48px tap columns. A tap highlights rows and closes the sheet. */
@@ -532,6 +530,10 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               const record = records.find((candidate) => candidate.admissionId === release.admissionId);
               return record ? recordName(record) : null;
             }}
+            umrnFor={(release) => {
+              const record = records.find((candidate) => candidate.admissionId === release.admissionId);
+              return record?.identity.kind === "linked" ? record.identity.patient.umrn : null;
+            }}
             now={now}
             dayZero={dayZero}
             onOpen={(id, opener) => openReleaseOn(id, opener, "barriers")}
@@ -544,8 +546,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         >
           <Card className={`${pageStyles.register} ${releaseList.list}`} aria-labelledby="discharge-register-heading">
             <header className={pageStyles.panelHeader}>
-              <h2 id="discharge-register-heading" className={pageStyles.localTitle}>
-                {population === "releases" ? "Bed release worklist" : "Admission discharge records"}
+              <h2 id="discharge-register-heading" className={isPhone ? pageStyles.localTitle : pageStyles.listTitle}>
+                {population === "releases" ? "Bed releases" : "Admission discharge records"}
               </h2>
               {/* Redesign (Josh, 30 Oct): the List / Barriers switch is gone. Its Barriers view was a third
                   copy of the barrier counts; the one panel beside the list keeps that job. */}
@@ -584,6 +586,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     : `${shown} shown`}
               </span>
             </header>
+            {isPhone ? null : <DischargeFilterCard s={s} bare />}
             <div
               ref={listRef}
               className={pageStyles.listBody}
@@ -604,6 +607,27 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       ? "Bed releases, held up first. Rows may include identifiers. Completed releases cover the last 24 hours."
                       : "Admission records, held up first. Expected dates do not imply confirmation."}
                   </caption>
+                  {population === "releases" && !isPhone ? (
+                    <thead>
+                      <tr>
+                        <th scope="col" className={pageStyles.colPerson}>
+                          Person
+                        </th>
+                        <th scope="col" className={pageStyles.colOut}>
+                          Expected out
+                        </th>
+                        <th scope="col" className={pageStyles.colStage}>
+                          Stage
+                        </th>
+                        <th scope="col" className={pageStyles.colBlocker}>
+                          Held up by
+                        </th>
+                        <th scope="col" className={releaseList.actionHead}>
+                          <span className="sr-only">Next</span>
+                        </th>
+                      </tr>
+                    </thead>
+                  ) : (
                   <thead>
                     <tr>
                       <th scope="col">{ownWard ? "Patient" : "Patient / ward"}</th>
@@ -616,6 +640,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       ) : null}
                     </tr>
                   </thead>
+                  )}
                   {population === "records" ? (
                     <tbody>
                       {visibleRecords.map((record) => {
@@ -708,7 +733,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         data-has-items={releaseGroups[key].length > 0}
                       >
                         <tr className={pageStyles.groupRow}>
-                          <th colSpan={4} scope="rowgroup">
+                          <th colSpan={isPhone ? 4 : 5} scope="rowgroup">
                             {isPhone ? (
                               <button
                                 type="button"
@@ -730,9 +755,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                               </button>
                             ) : (
                               <div className={pageStyles.groupHead}>
-                                <span className={pageStyles.groupGlyph}>
-                                  <StatusGlyph tone="danger" size={9} />
-                                </span>
+                                <StatusGlyph tone={PHONE_GROUP_TONES[key]} size={10} />
                                 <h3>
                                   {GROUP_TITLES[key]}{" "}
                                   <span className={pageStyles.groupCount}>{releaseGroups[key].length}</span>
@@ -747,7 +770,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         </tr>
                         {isPhone && phoneGroupsFolded[key] ? null : releaseGroups[key].length === 0 ? (
                           <tr>
-                            <td colSpan={4} className={pageStyles.emptyGroup}>
+                            <td colSpan={isPhone ? 4 : 5} className={pageStyles.emptyGroup}>
                               None
                             </td>
                           </tr>
@@ -782,6 +805,79 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 className={pageStyles.interactiveRow}
                                 tabIndex={0}
                               >
+                                {isPhone ? null : (
+                                  <>
+                                    <td className={pageStyles.colPerson}>
+                                      <button
+                                        type="button"
+                                        className={pageStyles.recordButton}
+                                        aria-pressed={releaseId === release.id}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openReleaseOn(release.id, e.currentTarget, "milestones");
+                                        }}
+                                      >
+                                        {linked ? recordName(linked) : "Name not recorded"}
+                                      </button>
+                                      <span className={pageStyles.personMeta}>
+                                        {linked?.identity.kind === "linked" ? (
+                                          <span className={pageStyles.mono}>{linked.identity.patient.umrn}</span>
+                                        ) : null}
+                                        <span>{ownWard ? healthServiceLabel(unit) : unitLabel(unit, release.unitId)}</span>
+                                      </span>
+                                    </td>
+                                    <td className={`${pageStyles.colOut} ${pageStyles.timingCell}`}>
+                                      {overdue ? (
+                                        <span className={pageStyles.outLate}>
+                                          <StatusGlyph tone="danger" size={9} />
+                                          {pastWords(now - release.expectedAt)}
+                                        </span>
+                                      ) : (
+                                        <span className={pageStyles.outBand}>
+                                          {BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
+                                        </span>
+                                      )}
+                                      <span className={pageStyles.outWhen}>
+                                        {release.state === "discharged"
+                                          ? recordedMoment(release.confirmedAt, dayZero)
+                                          : overdue || releaseBand(release, now) === "beyond-today"
+                                            ? recordedDate(release.expectedAt, dayZero)
+                                            : recordedMoment(release.expectedAt, dayZero)}
+                                      </span>
+                                    </td>
+                                    <td className={pageStyles.colStage}>
+                                      <span className={pageStyles.stagePill} data-stage={release.state}>
+                                        {release.state === "discharged" ? null : (
+                                          <StatusGlyph
+                                            tone={release.state === "confirmed" ? "success" : "neutral"}
+                                            size={9}
+                                          />
+                                        )}
+                                        {release.state === "discharged" ? "Discharged" : WORK_STATUS_LABELS[release.state]}
+                                      </span>
+                                    </td>
+                                    <td className={pageStyles.colBlocker}>
+                                      {release.state !== "discharged" && release.blocker ? (
+                                        <span className={pageStyles.blockerCell}>
+                                          <span className={pageStyles.blockerTag}>
+                                            <StatusGlyph tone="danger" size={9} />
+                                            {release.blocker.replace(/^Awaiting (\w)/, (_, first: string) => first.toUpperCase())}
+                                          </span>
+                                          {release.waitingOn ? (
+                                            <span className={pageStyles.personMeta}>
+                                              <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
+                                              {release.waitingOn}
+                                            </span>
+                                          ) : null}
+                                        </span>
+                                      ) : (
+                                        <span className={pageStyles.noneText}>None</span>
+                                      )}
+                                    </td>
+                                  </>
+                                )}
+                                {isPhone ? (
+                                <>
                                 <td data-label={ownWard ? "Patient" : "Patient / ward"}>
                                   <button
                                     type="button"
@@ -854,6 +950,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                     )}
                                   </div>
                                 </td>
+                                </>
+                                ) : null}
                                 <td className={releaseList.actionCell}>
                                   {release.state === "discharged" ? null : (
                                     <Button
@@ -879,7 +977,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         )}
                         {!(isPhone && phoneGroupsFolded[key]) && releaseGroups[key].length > GROUP_CAP ? (
                           <tr className={releaseList.moreRow} data-testid={`ward-discharge-more-${key}`}>
-                            <td colSpan={4}>
+                            <td colSpan={isPhone ? 4 : 5}>
                               <ShowMoreRow
                                 expanded={Boolean(phoneGroupsOpen[key])}
                                 onClick={() => setPhoneGroupsOpen((open) => ({ ...open, [key]: !open[key] }))}
@@ -1051,12 +1149,37 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       </Select>
                     </label>
                   ) : null}
+                  {!isPhone && detailRelease && linkedReleaseRecord ? (
+                    <Button
+                      size="sm"
+                      variant="sec"
+                      icon={FileText}
+                      onClick={(e) => {
+                        s.setPopulation("records");
+                        openRecord(linkedReleaseRecord, e.currentTarget);
+                      }}
+                    >
+                      Discharge record
+                    </Button>
+                  ) : null}
                   <Link
                     href={`/ward-flow/ward/${selectedUnitId}`}
                     className={buttonClass({ size: "sm", variant: "sec" })}
                   >
                     Open ward
                   </Link>
+                  {!isPhone && !canRecordDeparture && detailRelease && detailRelease.state !== "discharged" ? (
+                    <Button
+                      size="sm"
+                      variant="pri"
+                      className={pageStyles.footPri}
+                      onClick={(e) =>
+                        openReleaseOn(detailRelease.id, e.currentTarget, releaseActionPart(detailRelease, canChangeDate))
+                      }
+                    >
+                      {releaseActionLabel(detailRelease, canChangeDate)}
+                    </Button>
+                  ) : null}
                   {canRecordDeparture && detailRelease ? (
                     <Button
                       variant={phoneClearBlocker ? "sec" : "pri"}
