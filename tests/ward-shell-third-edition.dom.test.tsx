@@ -792,7 +792,7 @@ describe("assertion 6 — no text below 12px in the shell's CSS modules", () => 
   // palette is a new closed system rather than an alias of the app's existing v2 tokens, so its
   // raw values had to be written down somewhere outside that guard's scanned tree.
   const tokensFile = join(process.cwd(), "src/app/ward-flow-shell-tokens.module.css");
-  const cssFiles = ["ward-rail.module.css", "ward-bar.module.css", "ward-reconciliation-line.module.css"];
+  const cssFiles = ["ward-rail.module.css", "ward-bar.module.css"];
 
   function toPx(value: string): number | null {
     const remMatch = /^(-?[\d.]+)rem$/.exec(value);

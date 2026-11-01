@@ -33,7 +33,7 @@ import {
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { StatusGlyph } from "@/components/wf";
+import { StatusGlyph, buttonClass } from "@/components/wf";
 import { useUndoableStep } from "../use-undoable-step";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import {
@@ -539,7 +539,8 @@ export function PatientTransitOperations({
             <>
               <button
                 type="button"
-                className={styles.primary}
+                className={buttonClass({ variant: "pri" })}
+                data-placement-action
                 {...holdGate.buttonProps}
                 onClick={() => {
                   if (!holdGate.allowed) return;

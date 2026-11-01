@@ -136,7 +136,33 @@ export function useWardBarTasks({
   return { tasksItems, tasksActiveItems, tasksActiveCount };
 }
 
-/** The Activity drawer: the page's tally (or Command's derived feed), its notices and its filters. */
+/**
+ * The Activity button's unread dot and the phone dock's count: this desk's notices. Since Q99
+ * (1 Nov 2026) the bar opens Home's Activity panel (`coordinator/activity-panel.tsx`, loaded on
+ * demand), which reads its own feed, changes and notices, so the bar keeps only this count.
+ */
+export function useWardBarNotices({
+  role,
+  placeId,
+  now,
+  notices,
+}: Pick<WardBarData, "notices"> & { role: WardChromeRole; placeId: string | undefined; now: Instant }) {
+  const scopedNotices = useMemo(
+    () => notices.filter((notice) => noticeIsForWardChrome(notice, role, placeId, now)),
+    [notices, now, placeId, role],
+  );
+  // Item 48, Q2 (owner answer 48, 2026-09-17): "counts show unread only".
+  const unreadNoticeCount = useMemo(
+    () => scopedNotices.filter((notice) => notice.readAt === undefined).length,
+    [scopedNotices],
+  );
+  return { scopedNotices, unreadNoticeCount };
+}
+
+/**
+ * The old Activity drawer: the page's tally (or Command's derived feed), its notices and its
+ * filters. The app bar no longer uses it (Q99); the mock-up viewer's preview bars still do.
+ */
 export function useWardBarActivity({
   activity,
   pathname,
