@@ -16,7 +16,7 @@ import type { EdStepEvent } from "./ed-screen-model";
 import handover from "./ed-handover.module.css";
 
 /** Q120: shown under a recorded form until the time written on it is typed on the Forms page. */
-export const WRITTEN_TIME_NOT_ENTERED = "Written time not entered";
+const WRITTEN_TIME_NOT_ENTERED = "Written time not entered";
 
 export function PresentationCell({
   movementId,
