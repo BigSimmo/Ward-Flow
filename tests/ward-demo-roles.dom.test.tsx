@@ -196,7 +196,7 @@ describe("Roles within the existing Demo selector", () => {
       </SharedSessionContext.Provider>
     ));
     expect(screen.queryByRole("group", { name: "Demo role" })).toBeNull();
-    expect(screen.getByRole("region", { name: "Roles" })).toHaveTextContent("Use Switch role for your account");
+    expect(screen.getByRole("region", { name: "See it as" })).toHaveTextContent("Use Switch role for your account");
     expect(readWardAccessSnapshot().access.role).toBe("coordinator");
     expect(navigation.push).not.toHaveBeenCalled();
   });
@@ -234,7 +234,8 @@ describe("Roles within the existing Demo selector", () => {
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } });
     });
     renderPanel();
-    const summary = () => screen.getByText(/^Current role:/);
+    // pop-demo (Josh, 31 Oct 2026): "Current role" is spoken; the place line beside Exit is on screen.
+    const summary = () => screen.getByText(/^Current role:/).closest("p")!;
     expect(summary()).toHaveTextContent(`Current role: ${ACCESS_ROLE_LABELS.ward}. Demo ward: ${ward.name}.`);
     act(() => setWardAccess({ role: "ed", scope: { kind: "ed", edId: ed.id } }));
     expect(summary()).toHaveTextContent(`Demo ED: ${ed.name}.`);

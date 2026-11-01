@@ -98,7 +98,6 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
   return (
     <section className={styles.panelCardBody} aria-label="Movement workflow actions">
       <h3>Movement workflow actions</h3>
-      <p>These controls record local workflow facts. Paper authority and expiry are entered from the checked form.</p>
       {localError && <p role="alert">{localError}</p>}
       {submitted !== null && rejections.length > submitted && <p role="alert">{rejections.at(-1)?.reason}</p>}
       <div>
@@ -216,7 +215,6 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             Request ward capacity review
           </button>
         )}
-        <p>A capacity request appears in the ward’s local request list. It does not send an external message.</p>
         {unit && buzzGate.note}
       </div>
       {open && ["pulled", "accepted_awaiting_bed"].includes(movement.stage) && (
@@ -368,7 +366,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
               <Link href="/ward-flow/legal-forms">Forms</Link> first.
             </p>
           )}
-          <p>A missing expiry stays unknown. No statutory interval is calculated.</p>
+          <p>No statutory interval is calculated.</p>
         </details>
       )}
     </section>

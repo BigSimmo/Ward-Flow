@@ -234,7 +234,7 @@ export function WardBoardFlowColumn({
         {/* The honest limit of this list, stated on it. A `BedRelease` deliberately carries
                 NOTHING about the departing patient — not an id, not a sex, not a destination — so
                 these rows are beds and can never become people without breaking that. */}
-        <p className={styles.flowNote}>Beds, not people; bed-release records carry no patient identifier.</p>
+        <p className={styles.flowNote}>Beds, not people.</p>
         {/* 🟢 **FOLDED IN FROM ITS OWN PANEL.** The drawing's footnote: *"Where these beds free
                   up to was folded into Going out. Both panels listed the same beds, the ones with a
                   discharge date."* **Two panels, one population** — so it is now a group inside the
@@ -252,7 +252,7 @@ export function WardBoardFlowColumn({
                       in bold under every region (owner instruction 2026-09-18 below still holds:
                       the absence is shown, never a region lookup). */}
             <p className={styles.destinationsIntro}>
-              Expected within {ARROW_HORIZON_DAYS} days, soonest first. No community team is recorded for these regions.
+              Within {ARROW_HORIZON_DAYS} days, soonest first. No community team recorded.
             </p>
             <ol className={styles.destinationList} data-testid="ward-board-destinations">
               {targets.map((target) => {
@@ -341,9 +341,7 @@ export function WardBoardFlowColumn({
         </ul>
         {/* `discharged` counts departures of every destination and must never be summed across
                 wards as beds returned to the network — see `sinceYesterday`'s own doc comment. */}
-        <p className={styles.flowNote}>
-          A transfer to another psychiatric ward counts here: this ward gets its bed back, the state does not.
-        </p>
+        <p className={styles.flowNote}>Includes transfers to other psychiatric wards.</p>
       </section>
     </div>
   );

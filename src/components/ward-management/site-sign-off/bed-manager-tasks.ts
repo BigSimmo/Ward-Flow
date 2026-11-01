@@ -7,10 +7,8 @@ import { unitInScope, type PlaceLookup, type WardAccess } from "@/components/war
 import {
   bedFigureUnconfirmed,
   siteBlockersNotReviewedToday,
-  siteMeetingActionsOpenToday,
   siteUnansweredBedCalls,
   siteWards,
-  type SiteMeetingAction,
 } from "./site-handover-sign-off";
 
 /**
@@ -20,15 +18,12 @@ import {
  * already holds in `EVENT_ROLE` (no new permission). Referral answers, placement and discharge stay
  * with the ward, so no task offers them. A pure function of the workspace and the desk's access: the
  * shared server already sends a site bed manager only its own site's records, and this keeps to the
- * site again, so a whole workspace passed in still yields only that site's tasks.
+ * site again, so a whole workspace passed in still yields only that site's tasks. Q97 (Josh, 1 Nov
+ * 2026) took bed meeting actions off this desk, so no task offers marking one done: that stays with
+ * the action's owner or the chair (Decision 46).
  */
 export type BedManagerTaskKind =
-  | "confirm_bed_numbers"
-  | "reply_bed_call"
-  | "review_discharge_blocker"
-  | "bed_meeting_action"
-  | "bed_release_ready"
-  | "seclusion_room_status";
+  "confirm_bed_numbers" | "reply_bed_call" | "review_discharge_blocker" | "bed_release_ready" | "seclusion_room_status";
 
 /** The one action each kind of task sends. Every one is a bed manager action in `EVENT_ROLE`. */
 export const BED_MANAGER_TASK_ACTIONS = {
@@ -36,7 +31,6 @@ export const BED_MANAGER_TASK_ACTIONS = {
   reply_bed_call: "REPLY_BROADCAST_ALERT",
   // A review records the blocker again (or the screen clears it with CLEAR_STAY_DISCHARGE_BLOCKER).
   review_discharge_blocker: "RECORD_STAY_DISCHARGE_BLOCKER",
-  bed_meeting_action: "COMPLETE_BED_MEETING_ACTION",
   bed_release_ready: "SET_BED_PREPARATION",
   seclusion_room_status: "SET_SECLUSION_ROOM_STATUS",
 } as const satisfies Record<BedManagerTaskKind, WardFlowEvent["type"]>;
@@ -52,14 +46,12 @@ export type BedManagerTask = {
   group: BedManagerTaskGroup;
   /** The site ward the task is at; the action acts as this ward (`actingUnitId`). */
   unitId: string;
-  /** When it is due, where the record says: a bed figure's stale time or an action's due time. */
+  /** When it is due, where the record says: a bed figure's stale time. */
   dueAt?: Instant;
   /** reply_bed_call: the bed call. */
   alertId?: string;
   /** review_discharge_blocker: the stay (the screen names the patient, surname first). */
   admissionId?: string;
-  /** bed_meeting_action: the record and the action kind COMPLETE_BED_MEETING_ACTION names. */
-  meetingAction?: Pick<SiteMeetingAction, "subject" | "kind">;
   /** bed_release_ready: the release whose bed is being made ready. */
   releaseId?: string;
 };
@@ -123,20 +115,6 @@ export function bedManagerTasks(
         group: "today",
         unitId: row.unitId,
         admissionId: row.admissionId,
-      });
-
-  // Only a site ward's own action: the bed manager completes it acting as that ward (D-80), and an
-  // action owned by the coordinator, an ED or a team is theirs to mark done.
-  for (const action of siteMeetingActionsOpenToday(state, siteCode, now))
-    if (action.owner === "ward" && action.ownerUnitId !== undefined && own(action.ownerUnitId))
-      tasks.push({
-        id: `meeting-action-${action.subject.kind}-${action.subject.id}-${action.kind}`,
-        kind: "bed_meeting_action",
-        action: BED_MANAGER_TASK_ACTIONS.bed_meeting_action,
-        group: "today",
-        unitId: action.ownerUnitId,
-        dueAt: action.dueAt,
-        meetingAction: { subject: action.subject, kind: action.kind },
       });
 
   for (const release of state.bedReleases)

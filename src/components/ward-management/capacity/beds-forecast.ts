@@ -90,8 +90,8 @@ export type BedsForecast = {
  * What the forecast cannot see, stated beside it every time it is shown.
  */
 export const BEDS_FORECAST_LIMITS = [
-  "New people arriving at emergency departments are not predicted. The prototype has no arrival history, so only people already waiting and planned admissions already booked are subtracted.",
-  "Whole network, all bed kinds together. A free bed may not suit the person waiting; the mismatch table shows that.",
+  "New ED arrivals are not predicted. Only people already waiting and admissions already booked are subtracted.",
+  "Whole network, all bed kinds together. A free bed may not suit the person waiting.",
   "Synthetic demonstration data, not live records and not validated decision support.",
 ] as const;
 

@@ -213,10 +213,8 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
           <div className={styles.note}>
             <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
             <span>
-              Saving this plan records how they are arriving, any tracking number, and the estimated ward time. That
-              clears the {pullHoldLabel} pull clock. A late notice may be raised when the saved ETA is already past the{" "}
-              {LATE_ARRIVAL_GRACE_MINUTES}-minute grace window ({OPERATIONAL_DEFAULT_LABEL}) — it is sent to the
-              referrer and the accepting ward.
+              Saving clears the {pullHoldLabel} pull clock. Over {LATE_ARRIVAL_GRACE_MINUTES} minutes late (
+              {OPERATIONAL_DEFAULT_LABEL}), a late notice goes to the referrer and accepting ward.
             </span>
           </div>
 

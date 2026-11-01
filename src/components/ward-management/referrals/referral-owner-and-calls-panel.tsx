@@ -257,10 +257,7 @@ function OwnerAndCalls({
                 </p>
               ) : null}
             </div>
-            <p className={styles.note}>
-              A call does not answer the referral. Record the ward&apos;s answer on its copy. The decision time keeps
-              running.
-            </p>
+            <p className={styles.note}>A call does not answer the referral. The decision time keeps running.</p>
           </fieldset>
         </>
       )}

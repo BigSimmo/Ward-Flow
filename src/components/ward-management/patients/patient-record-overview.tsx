@@ -58,7 +58,7 @@ export function PatientRecordOverview({
           <strong>{patient?.generalPractitioner ?? "Not recorded"}</strong>
           <span className={styles.label}>COMMUNITY CATCHMENT</span>
           <strong>{patient?.catchmentCommunityTeam ?? "Not recorded"}</strong>
-          <p>A catchment link does not establish active care. Follow-up status is not recorded here.</p>
+          <p>Catchment does not confirm active care.</p>
           <button type="button" onClick={() => onOpen("community")}>
             Review community information <ArrowUpRight size={16} aria-hidden="true" />
           </button>
@@ -82,10 +82,7 @@ export function PatientRecordOverview({
           <ArrowUpRight size={16} aria-hidden="true" />
         </button>
       </div>
-      <p className={styles.note}>
-        No linked movement is displayed. Placement, bed reservation and transport controls appear here when a transfer
-        is active.
-      </p>
+      <p className={styles.note}>No linked movement is displayed.</p>
     </section>
   );
 }

@@ -185,9 +185,7 @@ function AccessAdminPanel() {
     <>
       {/* Polish r2: the end date is said once, on Give a role. */}
       <p className={styles.intro}>
-        {desk.role === "admin"
-          ? "No patients are shown on this desk. "
-          : "As a statewide coordinator you also give and remove roles. "}
+        {desk.role === "admin" ? null : "As a statewide coordinator you also give and remove roles. "}
         Nobody grants themselves a role.
       </p>
       {source.problem ? (
@@ -520,8 +518,7 @@ function CoverPanel() {
   return (
     <>
       <p className={styles.intro}>
-        Give a colleague cover of a ward or ED while you are off the floor or the night is short staffed. Cover lasts{" "}
-        {plural(CLINICAL_VALUES.coverLength.value, "hour")} at most and ends by itself. No access admin is needed.
+        Cover lasts {plural(CLINICAL_VALUES.coverLength.value, "hour")} at most and ends by itself.
       </p>
       {result}
       <Card data-testid="ward-access-cover">

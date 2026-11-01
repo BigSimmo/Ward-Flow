@@ -902,8 +902,7 @@ function AlertsWorkspace() {
   const linkedNote = (count: number) =>
     count > 0 ? (
       <p className={styles.groupEmpty}>
-        {count === 1 ? "1 alert here is" : `${count} alerts here are`} shown earlier, grouped with the other alerts on
-        the same record.
+        {count === 1 ? "1 alert here is" : `${count} alerts here are`} shown earlier, with its record.
       </p>
     ) : null;
   const rows = (items: LinkedQueueItem<QueueEntry>[], sectionLabels: readonly string[]) => {

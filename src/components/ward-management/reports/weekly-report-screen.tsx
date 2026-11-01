@@ -412,8 +412,7 @@ function WeeklyReportView({
             <PhoneCard icon={BedDouble} title="Delayed discharge" aside="Past the expected date">
               {delayedUnknown ? (
                 <p className={phone.note} data-testid="ward-weekly-delayed-days">
-                  Not enough history yet. No expected date was held for this week, so delayed discharge bed days and
-                  people cannot be counted.
+                  Not enough history: no expected date held for this week.
                 </p>
               ) : (
                 <PhoneFacts
@@ -497,8 +496,7 @@ function WeeklyReportView({
             </PhoneGroup>
             {renderPilot(true)}
             <p className={styles.disclosure}>
-              Counts only stays, movements and decisions held in this prototype. People who left before it started are
-              not held, so earlier weeks read low.
+              Earlier weeks read low: stays before this prototype started are not held.
             </p>
             <PhonePinnedAction icon={Printer} onClick={() => window.print()} testId="ward-weekly-print">
               Print the report
@@ -565,8 +563,7 @@ function WeeklyReportView({
                 {delayedUnknown ? (
                   // with no expected date held for the week, a sentence instead of two "Not known" figures.
                   <p className={weekly.sentence} data-testid="ward-weekly-delayed-days">
-                    Not enough history yet. No expected date was held for this week, so delayed discharge bed days and
-                    people cannot be counted.
+                    Not enough history: no expected date held for this week.
                   </p>
                 ) : (
                   <dl className={styles.figures}>
@@ -589,7 +586,7 @@ function WeeklyReportView({
                   </p>
                 ) : null}
                 <p className={`${styles.disclosure} ${styles.cardFootNote}`}>
-                  Current expected date, counted only from when it was set (earlier dates are not kept)
+                  Counted from when the current expected date was set
                 </p>
               </StatCard>
             </div>
@@ -687,8 +684,7 @@ function WeeklyReportView({
             {renderPilot(false)}
 
             <p className={styles.disclosure}>
-              Counts only stays, movements and decisions held in this prototype. People who left before it started are
-              not held, so earlier weeks read low.
+              Earlier weeks read low: stays before this prototype started are not held.
             </p>
           </>
         )}

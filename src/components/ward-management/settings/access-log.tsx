@@ -111,8 +111,8 @@ export function AccessLog() {
       <CardBody flush>
         <p className={styles.empty}>
           {shared
-            ? "Who opened which person's record, newest first: patient records, movements and referral details. The server lists its newest 200 openings by desks inside your place. A record is shown by its id only."
-            : "Demo only: made-up openings by the demo staff, held for this tab only. In the shared workspace this list comes from the server's log."}
+            ? "Record openings by desks in your place, newest 200 first. Records show by id only."
+            : "Demo only: made-up openings by the demo staff, held for this tab only."}
         </p>
         <div className={styles.form}>
           <Field label="Find a record id or account">
@@ -126,8 +126,7 @@ export function AccessLog() {
         </div>
         {shared?.problem ? (
           <p className={styles.empty} role="alert">
-            The access log could not be read from the server. Nothing is shown in its place. Open this tab again to
-            retry.
+            The access log could not be read from the server. Open this tab again to retry.
           </p>
         ) : null}
         {shared?.loading ? (

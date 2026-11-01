@@ -325,9 +325,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // H-0978 / WS-15: closing or reopening one exact bed, the same desks as CONFIRM_CAPACITY.
   SET_BED_CLOSED: ["ward", "bed_manager", "coordinator"],
   // Smart features idea 5: the chair records; the owner (a ward for its own action) or the chair
-  // completes. D-80: the site's bed manager may complete an action owned by one of its wards.
+  // completes, on the agenda (chair) or the record's own actions list (owner). Q97 (Josh, 1 Nov
+  // 2026): the site bed manager no longer completes one. Decision 46 gives it the agenda read only,
+  // so the server now matches; this replaces D-80's "bed meeting actions" for that desk.
   RECORD_BED_MEETING_ACTION: ["coordinator"],
-  COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
+  COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community"],
   // D-72: the ward for itself (reducer checks the acting unit), or the coordinator. A record about
   // one patient on one ward is made by the ward that is present, so the site's bed manager keeps the
   // view and the room status only (D-80).

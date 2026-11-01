@@ -217,7 +217,7 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     // §2 "Never hidden", S1: the shortlist is never scoped, so its reassurance sentence renders
     // while a service IS chosen.
     expect(screen.getByTestId("ward-shortlist-not-scoped")).toHaveTextContent(
-      "Beds are never narrowed by service. Every ward in the network is considered.",
+      "Every ward in the network is considered.",
     );
     unmount();
 

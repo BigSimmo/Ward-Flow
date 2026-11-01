@@ -76,7 +76,7 @@ function ExecutiveNetworkFigures({ onNavigate }: { onNavigate?: () => void }) {
         {
           label: "From ED",
           value: "Not shown",
-          sub: "This breakdown is unavailable for this desk",
+          sub: "Unavailable on this desk",
         },
         {
           label: "Admissions today",
@@ -95,7 +95,7 @@ function ExecutiveNetworkFigures({ onNavigate }: { onNavigate?: () => void }) {
         ].map((label) => ({
           label,
           value: "Not shown",
-          sub: "Individual release figures are unavailable for this desk",
+          sub: "Unavailable on this desk",
         })),
       ],
     },

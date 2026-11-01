@@ -1061,8 +1061,8 @@ export function WardIdleLock() {
       onAction={() => setLocked(false)}
     >
       {locked === "signed-out"
-        ? "You were signed out so the next person cannot see this desk's patients or act as you. Sign in again to carry on."
-        : "The screen was covered so the next person cannot see this desk's patients, and any record opened outside your care is closed again."}
+        ? "Signed out so the next person cannot see this desk's patients or act as you."
+        : "Covered so the next person cannot see this desk's patients. Records opened outside your care are closed."}
     </IdleLockScreen>
   );
 }

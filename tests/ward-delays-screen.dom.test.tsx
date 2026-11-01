@@ -404,8 +404,8 @@ describe("the Delays screen", () => {
     renderScreen();
     fireEvent.click(screen.getByRole("tab", { name: /System$/u }));
     const noPerson = screen.getByRole("region", { name: /Delays with no named person/u });
-    expect(noPerson).toHaveTextContent(/records delays only against a movement/u);
-    expect(noPerson).toHaveTextContent(/Ward-wide closures and transport outages are not represented/u);
+    expect(noPerson).toHaveTextContent(/Only delays on a movement are counted/u);
+    expect(noPerson).toHaveTextContent(/ward closures and transport outages are not/u);
 
     /*
      * ⚠️ "Resolved today" MOVED OUT OF ITS OWN PANEL. It is now a TAB inside the panel titled

@@ -80,9 +80,7 @@ export function FeatureFlagsCard() {
         ))}
       </dl>
       <p className={styles.cardNote}>
-        {deviceCanChange
-          ? "Switches change this device only. A demo link can set them too, for example ?flags=bed-meeting-tv:on."
-          : "Production: only the server setting changes a flag."}
+        {deviceCanChange ? "Switches change this device only." : "Production: only the server setting changes a flag."}
       </p>
     </Card>
   );

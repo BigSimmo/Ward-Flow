@@ -56,8 +56,7 @@ export function alertChecks({
       kind: "nobed",
       label: "No eligible bed",
       n: countKind("nobed"),
-      scope:
-        "Watches open movements still waiting for a ward where no ward in the network is currently eligible. The patient stays on the waiting list and this is shown to the bed coordinator.",
+      scope: "Watches open movements still waiting for a ward where no ward in the network is currently eligible.",
     },
     {
       key: "hold",
@@ -115,7 +114,7 @@ export function alertChecks({
       label: "Override recorded",
       n: overrideCount,
       scope:
-        "Watches referrals made by override. This screen cannot identify a prior gate verdict. The record keeps who, when, which fixed reason and which wards. It does not retain a prior gate verdict.",
+        "Watches referrals made by override. The record keeps who, when, which fixed reason and which wards. It does not retain a prior gate verdict.",
     },
   ];
   return checks;

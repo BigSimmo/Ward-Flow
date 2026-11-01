@@ -165,10 +165,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
         </div>
       ) : null}
       {patients.length === 0 ? (
-        <p className={styles.placeholder}>
-          Nobody is on this department&apos;s psychiatry list. Absence here means none is recorded, not that the
-          department is empty.
-        </p>
+        <p className={styles.placeholder}>Nobody recorded on this department&apos;s psychiatry list.</p>
       ) : (
         (() => {
           /** A2: the open person sheet renders after the table, never inside a table row. */
@@ -185,9 +182,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
             return (
               <>
                 {boardMatchCount === 0 ? (
-                  <p className={styles.noPatientMatches}>
-                    No one matches this search and filter. Everyone stays below, dimmed.
-                  </p>
+                  <p className={styles.noPatientMatches}>No one matches. Everyone stays below, dimmed.</p>
                 ) : null}
                 <TierKey />
                 <table
@@ -225,9 +220,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           return (
             <>
               {boardMatchCount === 0 ? (
-                <p className={styles.noPatientMatches}>
-                  No one matches this search and filter. Everyone stays below, dimmed.
-                </p>
+                <p className={styles.noPatientMatches}>No one matches. Everyone stays below, dimmed.</p>
               ) : null}
               <TierKey />
               <ul className={styles.phoneBoardList} aria-label="Emergency department board">

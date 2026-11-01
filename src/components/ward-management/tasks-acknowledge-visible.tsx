@@ -92,7 +92,7 @@ export function AcknowledgeVisibleButton({
           ref={triggerRef}
           type="button"
           className={classes.btn}
-          title="Unacknowledged alerts in the current filtered list. Act now alerts are excluded, as are alerts still in their Undo window."
+          title="Act now alerts and alerts still in their Undo window are excluded."
           aria-describedby={scopeId}
           onClick={() => setAsking({ ids: offered, isCurrent: capture?.() ?? (() => true) })}
         >
@@ -102,14 +102,13 @@ export function AcknowledgeVisibleButton({
         </button>
       ) : null}
       <SrOnly id={scopeId}>
-        Includes alerts below the screen in the current filtered list. Act now alerts, previously acknowledged alerts
-        and alerts still in their Undo window are excluded.
+        Includes alerts below the screen. Act now, already acknowledged and Undo window alerts are excluded.
       </SrOnly>
       <Dialog
         open={asking !== null}
         onClose={() => setAsking(null)}
         title={`Acknowledge ${count} alerts?`}
-        description="Applies to unacknowledged alerts in the current filtered list, including those below the screen. Act now alerts are excluded, as are alerts still in their Undo window. Acknowledging records that you have seen an alert; it does not resolve the underlying condition."
+        description="Includes alerts below the screen. Act now alerts are excluded, as are those still in their Undo window. This does not resolve the underlying condition."
         size="sm"
         returnFocusRef={triggerRef}
         primary={{ label: `Acknowledge ${count}`, onAction: confirm }}

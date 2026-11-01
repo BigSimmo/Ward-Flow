@@ -163,12 +163,11 @@ export function EventTable({
  * does not have to work out from Before, Requested and After that nothing changed.
  */
 function notAppliedLine(event: AuditEvent): string | null {
-  if (event.outcome === "stale")
-    return "Not applied. The record had changed before this request saved, so nothing was changed.";
+  if (event.outcome === "stale") return "Not applied: the record had already changed.";
   if (event.outcome === "denied")
     return event.reasonCode === "none"
-      ? "Not applied. The request was refused, so nothing was changed."
-      : `Not applied. Refused (${reasonLabels[event.reasonCode].toLowerCase()}), so nothing was changed.`;
+      ? "Not applied: refused."
+      : `Not applied: refused (${reasonLabels[event.reasonCode].toLowerCase()}).`;
   return null;
 }
 

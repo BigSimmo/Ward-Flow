@@ -226,7 +226,8 @@ describe("demo scenario save and load", () => {
         <WardDemoPanel />
       </WardFlowProvider>,
     );
-    const message = () => container.querySelector('[data-testid="ward-tools-demo-panel"] > [role="status"]');
+    // pop-demo (Josh, 31 Oct 2026): the panel's status line sits at the foot of its scrolling part.
+    const message = () => container.querySelector('[data-testid="ward-tools-demo-panel"] footer p[role="status"]');
     addTypedPatient();
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Save to file" }));

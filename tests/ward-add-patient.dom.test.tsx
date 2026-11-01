@@ -220,7 +220,7 @@ describe("PatientSearchPage empty state", () => {
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "Zzzznotarealname" } });
 
     expect(screen.getByTestId("ward-patient-search-people-empty")).toHaveTextContent(
-      /No matching person, waiting referral or open movement\. Check the spelling or (record number|UMRN) before adding a patient\./i,
+      /No matches\. Check the spelling or (record number|UMRN) before adding a patient\./i,
     );
   });
 
