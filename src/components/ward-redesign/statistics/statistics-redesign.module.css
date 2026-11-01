@@ -757,3 +757,7 @@ button.link {
   align-items: center;
   gap: 6px;
 }
+.total > th {
+  text-transform: none;
+  letter-spacing: 0;
+}
