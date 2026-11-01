@@ -77,18 +77,19 @@ describe("public place aggregate views", () => {
     expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
     expect(guard.operational).not.toHaveBeenCalled();
   });
-  it("keeps the ward index's grouping, sorting and protected blocked figures", () => {
+  it("keeps the ward index's grouping and protected blocked figures", () => {
     const data = structuredClone(base);
     data.wards[0].blocked = { kind: "small" };
     data.networkDetails.blockedTotal = { kind: "withheld" };
     place(<StatisticsWardsIndexScreen />, data);
     expect(screen.getByTestId("ward-statistics-wards-table")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /^Blocked$/ }));
     fireEvent.click(
       within(screen.getByRole("radiogroup", { name: "Group wards" })).getByRole("radio", { name: "One list" }),
     );
     expect(screen.getAllByText("fewer than 5").length).toBeGreaterThan(0);
-    expect(screen.getByTestId("ward-statistics-wards-blocked")).toHaveTextContent("not shown in all");
+    expect(screen.getByTestId("ward-statistics-wards-blocked")).toHaveTextContent(
+      /^Discharges held upnot shown across \d+ wards?/u,
+    );
     expect(document.body.textContent).not.toContain("[object Object]");
     expect(guard.operational).not.toHaveBeenCalled();
   });
@@ -278,5 +279,28 @@ describe("public place aggregate views", () => {
       200,
     );
     expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
+  });
+  it.each([
+    ["every team unlinked", () => true],
+    ["one team per service unlinked", (index: number) => index === 0],
+  ])("never sums a service's teams past one with no count (%s)", (_name, unlinked) => {
+    installMatchMediaStub(false);
+    const data = structuredClone(base);
+    const seen = new Map<string, number>();
+    for (const team of data.teams) {
+      const index = seen.get(team.code) ?? 0;
+      seen.set(team.code, index + 1);
+      team.figures.admitted = unlinked(index)
+        ? { kind: "unlinkable", words: "not linked to this team" }
+        : { kind: "measured", count: { kind: "exact", value: 3 } };
+    }
+    place(<StatisticsTeamsIndexScreen />, data);
+    const tiles = within(screen.getByTestId("ward-statistics-teams-in-bed")).getAllByRole("listitem");
+    expect(tiles.length).toBeGreaterThan(0);
+    for (const tile of tiles) {
+      expect(tile).toHaveTextContent("—in a bed");
+      expect(tile).not.toHaveTextContent("Nobody in a bed");
+    }
+    expect(guard.operational).not.toHaveBeenCalled();
   });
 });

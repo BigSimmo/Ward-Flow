@@ -126,23 +126,23 @@ describe("Weekly executive aggregate adoption", () => {
       report(data);
       expect(screen.getByTestId("ward-weekly-ed-count")).toHaveTextContent("fewer than 5");
       expect(screen.getByTestId("ward-pilot-arrival-typical")).toHaveTextContent("2h");
-      expect(screen.getByText("from 8 of not shown arrivals")).toBeInTheDocument();
-      expect(screen.getByTestId("ward-pilot-bed-figures-on-time")).toHaveTextContent("16 of 22");
+      expect(screen.getByText(/typical time from 8 of not shown arrivals/)).toBeInTheDocument();
+      expect(screen.getByTestId("ward-pilot-bed-figures-on-time")).toHaveTextContent("16");
+      expect(screen.getByText("of 22 wards")).toBeInTheDocument();
       expect(screen.getByTestId("ward-pilot-missed")).toHaveTextContent("fewer than 5");
       expect(screen.getByTestId("ward-pilot-duplicates")).toHaveTextContent("not shown");
       expect(screen.getByTestId("ward-pilot-holds-ran-out")).toHaveTextContent("not shown");
       expect(screen.getByTestId("ward-pilot-transport-late")).toHaveTextContent("fewer than 5");
       expect(screen.getByTestId("ward-pilot-complete-percent")).toHaveTextContent("—");
       for (const title of [
-        "Referral to arrival",
-        "Bed figures on time",
-        "Counted outside Ward Flow",
-        "Request to bed pulled",
-        "Missed requests",
-        "Bed pulls",
-        "Transport",
-        "Records complete",
+        "Pilot measures",
         "Where the time goes",
+        "Supporting figures",
+        "Pressure this week",
+        "Request to bed pulled",
+        "Same person raised twice",
+        "Bed pulls ran out",
+        "Records complete",
       ])
         expect(screen.getByText(title, { exact: true })).toBeInTheDocument();
       expect(screen.getAllByText("Recorded occupied bed time").length).toBeGreaterThan(0);
@@ -184,8 +184,29 @@ describe("Weekly executive aggregate adoption", () => {
     selected.report.edWaits.longestMinutes = 0;
     report(data);
     expect(screen.getByTestId("ward-weekly-ed-count")).toHaveTextContent("0");
-    const card = screen.getByRole("region", { name: "ED waits first passing over 24h" });
+    const card = screen.getByRole("region", { name: "Pressure this week" });
     expect(within(card).getByText("—", { exact: true })).toBeInTheDocument();
     expect(guard.operational).not.toHaveBeenCalled();
+  });
+
+  it("draws no occupancy meter, so no 0%, when there is no recorded occupied time", () => {
+    const data = structuredClone(base);
+    data.weeks.find((entry) => entry.week.offset === 0)!.report.occupancy.averagePercent = null;
+    report(data);
+    expect(screen.getByTestId("ward-weekly-occupancy")).toHaveTextContent("—");
+    expect(screen.queryByRole("meter", { name: "Recorded occupied bed time" })).not.toBeInTheDocument();
+  });
+
+  it("draws both declines and overrides so a printed report carries both", () => {
+    installMatchMediaStub(false);
+    report(structuredClone(base));
+    const declines = screen.getByTestId("ward-weekly-declines");
+    const overrides = screen.getByTestId("ward-weekly-overrides");
+    // on screen the switch shows one; the other is kept for print only.
+    expect(declines.parentElement?.className ?? "").not.toMatch(/printOnly/u);
+    expect(overrides.parentElement?.className).toMatch(/printOnly/u);
+    fireEvent.click(screen.getByRole("radio", { name: /^Overrides/u }));
+    expect(declines.parentElement?.className).toMatch(/printOnly/u);
+    expect(overrides.parentElement?.className ?? "").not.toMatch(/printOnly/u);
   });
 });
