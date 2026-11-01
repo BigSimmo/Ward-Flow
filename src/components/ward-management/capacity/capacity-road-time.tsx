@@ -60,7 +60,7 @@ export function ReadyByRoadTime({
 
   return (
     <Card as="section" className={styles.card} aria-labelledby={`${baseId}-heading`} data-testid="capacity-road-time">
-      <CardHead icon={MapPin} id={`${baseId}-heading`} level={3} title="Ready beds by road time" />
+      <CardHead icon={MapPin} id={`${baseId}-heading`} level={3} title="Nearest ready beds" />
       <div className={styles.from}>
         <label htmlFor={`${baseId}-from`}>From</label>
         {/* Phone: the real select stays at 16px, so iPhone Safari does not zoom when it is tapped,
