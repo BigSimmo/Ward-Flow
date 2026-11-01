@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -25,11 +25,11 @@ const SEARCH_LABEL = "Find a person by name, UMRN or place";
 afterEach(() => cleanup());
 
 /**
- * Audit 24-7 item 2: the Patients page empty state offered "Add patient" after a one-letter typo
- * with no near spellings, which invites a duplicate record. It now shows "Did you mean?" first.
+ * Josh, 1 Nov 2026 (Q92, same ruling as Search on 31 Oct): the Patients empty state no longer offers
+ * "Did you mean?" names. A typo match on a person risks choosing the wrong patient.
  */
-describe("Patients empty state offers near spellings before Add patient", () => {
-  it("lists the one-keystroke-away name above Add patient", () => {
+describe("Patients empty state offers no near spellings", () => {
+  it("lists no one-keystroke-away name, and still offers Clear search and Add patient", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <PatientSearchPage />
@@ -37,21 +37,10 @@ describe("Patients empty state offers near spellings before Add patient", () => 
     );
     const box = screen.getByLabelText(SEARCH_LABEL);
     fireEvent.change(box, { target: { value: "Hallowey" } });
-    const group = screen.getByRole("group", { name: "Did you mean?" });
-    const link = within(group).getByRole("link", { name: /Talia Halloway/ });
-    expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/people\//);
-    const add = within(group.parentElement!).getByRole("link", { name: /Add patient/ });
-    expect(group.compareDocumentPosition(add) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it("shows no near spellings when nothing is one keystroke away", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <PatientSearchPage />
-      </WardFlowProvider>,
-    );
-    const box = screen.getByLabelText(SEARCH_LABEL);
-    fireEvent.change(box, { target: { value: "Zzqxv" } });
+    expect(screen.getByText("No patient matches “Hallowey”")).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Did you mean?" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Talia Halloway/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Clear search" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /Add patient/ }).length).toBeGreaterThan(0);
   });
 });

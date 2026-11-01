@@ -20,7 +20,6 @@ import {
 import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
 import { PatientRecordTabsRow } from "./patient-flight-header";
 import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -105,7 +104,8 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { Dialog, type JourneyStage, PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
+import { Dialog, type JourneyStage, PhoneSheet, useIsPhone } from "@/components/wf";
+import { PatientClearanceDialog, type ClearanceDraft } from "./patient-clearance-dialog";
 import { patientJourneyStages } from "./patient-journey";
 import { isOnOrder } from "../ward-stay-legal";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
@@ -264,8 +264,7 @@ export function PatientNowScreen({
   const [showUploadFormsModal, setShowUploadFormsModal] = useState(false);
   const [showClearanceModal, setShowClearanceModal] = useState(false);
   const clearanceTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const clearanceModalRef = useRef<HTMLDivElement | null>(null);
-  const [clearanceDraft, setClearanceDraft] = useState<"" | "cleared" | "not-cleared">("");
+  const [clearanceDraft, setClearanceDraft] = useState<ClearanceDraft>("");
   const [clearanceAttested, setClearanceAttested] = useState(false);
   // A34: the one transport booking form's answers. Legal status starts from Legal now (audit A4-7),
   // and a status that differs from Legal now asks for a recorded reason.
@@ -278,17 +277,6 @@ export function PatientNowScreen({
   const closeClearanceModal = useCallback(() => {
     if (!clearanceSave.pending) setShowClearanceModal(false);
   }, [clearanceSave.pending]);
-
-  // The shared modal contract: the page behind is inert and held still, focus starts on the first
-  // control, Tab wraps inside the box, Escape closes only this top layer, and focus returns to the
-  // button that opened it.
-  const { rootRef: clearanceBackdropRef } = useModalFocus({
-    open: showClearanceModal,
-    onClose: closeClearanceModal,
-    panelRef: clearanceModalRef,
-    returnFocusRef: clearanceTriggerRef,
-    focusOnOpen: "immediate",
-  });
 
   // Synchronize document title
   useEffect(() => {
@@ -1241,127 +1229,35 @@ export function PatientNowScreen({
         </section>
       </div>
 
-      {showClearanceModal && (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
-        <div
-          ref={clearanceBackdropRef}
-          className={styles.clearanceModalBackdrop}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="clearanceModalTitle"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeClearanceModal();
-          }}
-        >
-          <div className={styles.clearanceModalBox} ref={clearanceModalRef}>
-            <div className={styles.clearanceModalHead}>
-              <h2 id="clearanceModalTitle" className={styles.clearanceModalTitle}>
-                Record treating-team medical clearance
-              </h2>
-              <button
-                type="button"
-                className={styles.clearanceModalClose}
-                onClick={closeClearanceModal}
-                disabled={clearanceSave.pending}
-                aria-label="Close dialog"
-              >
-                &times;
-              </button>
-            </div>
-            <div className={styles.clearanceModalBody}>
-              <p>
-                Record the medical clearance provided by the treating team. This prototype does not determine fitness
-                for transport or legal transfer requirements.
-              </p>
-              <label className={styles.clearanceField}>
-                Treating-team clearance outcome
-                <select
-                  disabled={clearanceSave.pending}
-                  value={clearanceDraft}
-                  onChange={(event) => setClearanceDraft(event.target.value as typeof clearanceDraft)}
-                >
-                  <option value="">Choose stated outcome</option>
-                  <option value="cleared">Medical clearance provided</option>
-                  <option value="not-cleared">Not medically cleared</option>
-                </select>
-              </label>
-              <label className={styles.clearanceAttestation}>
-                <input
-                  type="checkbox"
-                  disabled={clearanceSave.pending}
-                  checked={clearanceAttested}
-                  onChange={(event) => setClearanceAttested(event.target.checked)}
-                />
-                This is the treating team&apos;s stated outcome.
-              </label>
-              <p>No notification is sent. This records the stated outcome in the shared synthetic journey.</p>
-            </div>
-            <div className={styles.clearanceModalFoot}>
-              {clearanceSave.error && <p role="alert">Clearance was not recorded: {clearanceSave.error}</p>}
-              {clearanceSave.pending && <p role="status">Saving clearance outcome…</p>}
-              {/* A4-32: say why Save is not yet available, beside it. */}
-              {clearanceGate.allowed && (!clearanceDraft || !clearanceAttested) ? (
-                <p id="clearanceSaveReason" className={styles.clearanceReason}>
-                  {!clearanceDraft ? "Choose the outcome to save" : "Tick the statement to save"}
-                </p>
-              ) : null}
-              <button
-                type="button"
-                className={styles.ctl}
-                disabled={clearanceSave.pending}
-                onClick={closeClearanceModal}
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                className={`${styles.ctl} ${styles.ctlPrimary}`}
-                aria-busy={clearanceSave.pending}
-                aria-disabled={
-                  clearanceSave.pending ||
-                  !clearanceDraft ||
-                  !clearanceAttested ||
-                  !liveMovement ||
-                  !clearanceGate.allowed
-                    ? "true"
-                    : undefined
-                }
-                aria-describedby={
-                  clearanceGate.allowed && (!clearanceDraft || !clearanceAttested)
-                    ? "clearanceSaveReason"
-                    : clearanceGate.buttonProps["aria-describedby"]
-                }
-                onClick={(e) => {
-                  if (
-                    clearanceSave.pending ||
-                    !liveMovement ||
-                    !clearanceDraft ||
-                    !clearanceAttested ||
-                    !clearanceGate.allowed
-                  ) {
-                    ignoreUnavailableActivation(e);
-                    return;
-                  }
-                  clearanceSave.submit(
-                    () =>
-                      dispatch({
-                        type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
-                        role: routeRole,
-                        now,
-                        movementId: liveMovement.id,
-                        cleared: clearanceDraft === "cleared",
-                      }),
-                    () => setShowClearanceModal(false),
-                  );
-                }}
-              >
-                {clearanceSave.pending ? "Saving clearance outcome…" : "Save clearance outcome"}
-              </button>
-              {clearanceGate.note}
-            </div>
-          </div>
-        </div>
-      )}
+      <PatientClearanceDialog
+        open={showClearanceModal}
+        onClose={closeClearanceModal}
+        returnFocusRef={clearanceTriggerRef}
+        patientName={displayName}
+        umrn={livePatient?.umrn}
+        gate={clearanceGate}
+        hasJourney={Boolean(liveMovement)}
+        draft={clearanceDraft}
+        onDraftChange={setClearanceDraft}
+        attested={clearanceAttested}
+        onAttestedChange={setClearanceAttested}
+        pending={clearanceSave.pending}
+        error={clearanceSave.error}
+        onSave={() => {
+          if (!liveMovement) return;
+          clearanceSave.submit(
+            () =>
+              dispatch({
+                type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+                role: routeRole,
+                now,
+                movementId: liveMovement.id,
+                cleared: clearanceDraft === "cleared",
+              }),
+            () => setShowClearanceModal(false),
+          );
+        }}
+      />
 
       {targetMovement && showArrivalTimeModal && (
         <ArrivalTimeModal

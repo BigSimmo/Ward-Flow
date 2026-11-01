@@ -345,9 +345,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
         within(screen.getByTestId("ward-patient-gate-clearance")).getByRole("button", { name: /clearance/i }),
       );
       const dialog = screen.getByRole("dialog", { name: "Record treating-team medical clearance" });
-      fireEvent.change(within(dialog).getByLabelText("Treating-team clearance outcome"), {
-        target: { value: "cleared" },
-      });
+      fireEvent.click(within(dialog).getByRole("radio", { name: "Medical clearance provided" }));
       fireEvent.click(within(dialog).getByRole("checkbox"));
       const save = within(dialog).getByRole("button", { name: "Save clearance outcome" });
       fireEvent.click(save);
@@ -360,7 +358,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
       });
       if (refuse) {
         expect(dialog).toBeInTheDocument();
-        expect(within(dialog).getByLabelText("Treating-team clearance outcome")).toHaveValue("cleared");
+        expect(within(dialog).getByRole("radio", { name: "Medical clearance provided" })).toBeChecked();
         expect(within(dialog).getByRole("checkbox")).toBeChecked();
         expect(within(dialog).getByRole("alert")).toHaveTextContent("Clearance was not recorded");
         expect(save).not.toHaveAttribute("aria-disabled", "true");
