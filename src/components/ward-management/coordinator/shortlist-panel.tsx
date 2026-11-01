@@ -586,6 +586,18 @@ export function ShortlistPanel({
   const [urgencyFailure, setUrgencyFailure] = useState<string | undefined>(undefined);
   const [legalStatusFailure, setLegalStatusFailure] = useState<string | undefined>(undefined);
   const [recordChangePending, setRecordChangePending] = useState(false);
+  // Review on #1216: each opening of either form, and each patient, is its own session. A save that
+  // finishes after its form was closed, reopened or moved to another patient leaves the form now
+  // showing as it is, rather than closing or clearing it.
+  const recordFormSession = useRef(0);
+  useEffect(() => {
+    recordFormSession.current += 1;
+  }, [urgencyChangeOpen, legalStatusChangeOpen, movement?.id]);
+  // A legal status already recorded by a save whose form step then failed, in this session. A retry
+  // of the same status and reason sends only the form, so the status change is not recorded twice.
+  const legalStatusRecorded = useRef<
+    { session: number; legalStatus: LegalStatus; reason: LegalStatusChangeReason } | undefined
+  >(undefined);
   // Audit 4 A4-01: while either form is open, a save from it is checked against the board it
   // opened on, as a popup's is, so another desk's change meanwhile is reported, not overwritten.
   const recordFormOpen = urgencyChangeOpen || legalStatusChangeOpen;
@@ -1003,8 +1015,11 @@ export function ShortlistPanel({
     }
     setUrgencyFailure(undefined);
     setRecordChangePending(true);
+    const session = recordFormSession.current;
     sendStepsInOrder(dispatch, steps, (failed) => {
       setRecordChangePending(false);
+      // The form was closed, reopened or moved to another patient while this was saving.
+      if (recordFormSession.current !== session) return;
       if (failed) setUrgencyFailure(failed.failure);
       else setUrgencyChangeOpen(false);
     });
@@ -1058,16 +1073,17 @@ export function ShortlistPanel({
     // reducer requires a reason, so an unguarded Enter would dispatch `undefined`.
     if (legalStatusDraft.legalStatus === undefined || legalStatusDraft.reason === undefined) return;
     if (recordChangePending) return;
-    const steps: WardFlowEvent[] = [
-      {
-        type: "CHANGE_LEGAL_STATUS",
-        role: "coordinator",
-        now,
-        movementId,
-        legalStatus: legalStatusDraft.legalStatus,
-        reason: legalStatusDraft.reason,
-      },
-    ];
+    const session = recordFormSession.current;
+    const chosen = { legalStatus: legalStatusDraft.legalStatus, reason: legalStatusDraft.reason };
+    const recorded = legalStatusRecorded.current;
+    const statusAlreadyRecorded =
+      recorded !== undefined &&
+      recorded.session === session &&
+      recorded.legalStatus === chosen.legalStatus &&
+      recorded.reason === chosen.reason;
+    const steps: WardFlowEvent[] = statusAlreadyRecorded
+      ? []
+      : [{ type: "CHANGE_LEGAL_STATUS", role: "coordinator", now, movementId, ...chosen }];
     // The form is recorded only once the status change itself is recorded (`sendStepsInOrder`).
     if (legalFormAsked && isOwnedLegalFormCode(legalFormDraft.code) && legalFormWrittenAt !== undefined) {
       steps.push({
@@ -1083,9 +1099,14 @@ export function ShortlistPanel({
     setRecordChangePending(true);
     sendStepsInOrder(dispatch, steps, (failed) => {
       setRecordChangePending(false);
+      const failedStep = failed === undefined ? undefined : steps[failed.index];
+      const statusRecorded = statusAlreadyRecorded || failedStep?.type !== "CHANGE_LEGAL_STATUS";
+      if (statusRecorded) legalStatusRecorded.current = { session, ...chosen };
+      // The form was closed, reopened or moved to another patient while this was saving.
+      if (recordFormSession.current !== session) return;
       if (failed) {
         setLegalStatusFailure(
-          failed.index === 0 ? failed.failure : `Legal status recorded, but not the form. ${failed.failure}`,
+          statusRecorded ? `Legal status recorded, but not the form. ${failed.failure}` : failed.failure,
         );
         return;
       }

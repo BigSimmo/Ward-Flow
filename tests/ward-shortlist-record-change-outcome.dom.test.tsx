@@ -118,6 +118,40 @@ describe("Home's legal status change waits for its answer", () => {
       "Legal status recorded, but not the form. Not recorded: Synthetic refusal.",
     );
   });
+
+  it("retries only the form once the status is recorded, so the change is not recorded twice", () => {
+    let refuseForm = true;
+    const sent = renderPanel((event) => (event.type === "RECORD_LEGAL_FORM_WRITTEN" && refuseForm ? REFUSED : undefined));
+    fillLegalStatusWithForm();
+    fireEvent.click(screen.getByRole("button", { name: "Record legal status change" }));
+    expect(sent).toEqual(["CHANGE_LEGAL_STATUS", "RECORD_LEGAL_FORM_WRITTEN"]);
+
+    refuseForm = false;
+    fireEvent.click(screen.getByRole("button", { name: "Record legal status change" }));
+    expect(sent).toEqual(["CHANGE_LEGAL_STATUS", "RECORD_LEGAL_FORM_WRITTEN", "RECORD_LEGAL_FORM_WRITTEN"]);
+    expect(screen.queryByTestId("ward-change-legal-status")).not.toBeInTheDocument();
+  });
+
+  it("leaves a reopened form alone when an earlier save finishes", async () => {
+    let confirm: (outcome: WardCommandOutcome) => void = () => {};
+    renderPanel((event) =>
+      event.type === "CHANGE_LEGAL_STATUS"
+        ? new Promise<WardCommandOutcome>((resolve) => {
+            confirm = resolve;
+          })
+        : undefined,
+    );
+    fillLegalStatusWithForm();
+    fireEvent.click(screen.getByRole("button", { name: "Record legal status change" }));
+    // Closed and opened again while the first save is still pending.
+    fireEvent.click(screen.getByTestId("ward-change-legal-status-toggle"));
+    fillLegalStatusWithForm();
+    fireEvent.change(screen.getByTestId("ward-change-legal-status-form-time"), { target: { value: "08:30" } });
+
+    await act(async () => confirm({ commandId: "synthetic", status: "accepted" }));
+    expect(screen.getByTestId("ward-change-legal-status")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-change-legal-status-form-time")).toHaveValue("08:30");
+  });
 });
 
 describe("Home's urgency change waits for its answer", () => {
