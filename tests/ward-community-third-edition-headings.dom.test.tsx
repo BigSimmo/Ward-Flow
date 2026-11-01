@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -28,9 +28,13 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * the telemetry ribbon read.
  */
 
-const SOVEREIGN_TABS = ["Waiting answer", "In a bed", "Expected back", "Caseload and CTOs"] as const;
+// Locked design (Josh, 1 Nov 2026, design/community-team-2026-11): five section tabs in the ward tab row.
+const SOVEREIGN_TABS = ["Team home", "Caseload", "In hospital", "Referrals", "Clinicians"] as const;
 
-const SOVEREIGN_ACTIONS = ["Refer from team", "Record contact", "CTO register", "Catchment counts"] as const;
+const SOVEREIGN_ACTIONS = ["Refer from team", "Record contact", "More"] as const;
+
+/** Under More since the locked design (1 Nov 2026). */
+const MORE_ITEMS = ["CTO register", "Catchment counts", "How to reach the team"] as const;
 
 /*
  * v10 (10 Oct 2026): at most five hero chips. The four list chips stay in the hero; the caseload
@@ -39,7 +43,8 @@ const SOVEREIGN_ACTIONS = ["Refer from team", "Record contact", "CTO register", 
  */
 // Device audit option A (11 Oct 2026): the four hero list chips are gone (the tabs are the one
 // switch), so "On a CTO" no longer appears; the remaining labels come from the tabs and the foot.
-const SOVEREIGN_TELEMETRY = ["Caseload", "Waiting answer", "In a bed", "Expected back"] as const;
+// Locked design: the hero count chips and the tab labels.
+const SOVEREIGN_TELEMETRY = ["Caseload", "Referrals to answer", "In hospital", "Leaving hospital in 7 days"] as const;
 
 /** The wordings the third edition and sovereign console replaced. */
 const RETIRED_HEADINGS = [
@@ -132,6 +137,10 @@ describe("the community team screen's Sovereign action bar and telemetry capsule
         name: new RegExp(action.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
       });
       expect(button, `Sovereign action button "${action}" is missing`).toBeInTheDocument();
+    }
+    fireEvent.click(screen.getByRole("button", { name: /^More$/ }));
+    for (const item of MORE_ITEMS) {
+      expect(screen.getByRole("menuitem", { name: item }), `More menu item "${item}" is missing`).toBeInTheDocument();
     }
   });
 

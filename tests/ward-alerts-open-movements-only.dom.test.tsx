@@ -92,8 +92,9 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
 
     expect(
       actNowFigure(),
-      "WF-014's breach plus the fixture's other act-now items must read 11 while it is still open",
-    ).toBe(11);
+      // Q111 (1 Nov 2026): the figure includes the fixture's one accepted referral with no bed pulled.
+      "WF-014's breach plus the fixture's other act-now items must read 12 while it is still open",
+    ).toBe(12);
   });
 
   it("drops the alert, and excludes the movement from the count, once it closes", () => {
@@ -110,6 +111,6 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
     expect(
       actNowFigure(),
       "the Act now figure did not drop by one once the breached movement closed, so it still counts WF-014",
-    ).toBe(10);
+    ).toBe(11);
   });
 });

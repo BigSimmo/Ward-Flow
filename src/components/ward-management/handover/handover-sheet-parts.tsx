@@ -2,35 +2,10 @@
 
 import type { SignOffCheck } from "./handover-panels";
 import { useEffect, useState } from "react";
-import { Button, Checkbox, ShowMoreRow as OneShowMoreRow, StatusGlyph, type SinceItem } from "@/components/wf";
+import { Button, Checkbox, ShowMoreRow as OneShowMoreRow, StatusGlyph } from "@/components/wf";
 
 import styles from "./handover-sheet-parts.module.css";
 import refined from "./handover-refined.module.css";
-
-/**
- * Since previous handover as one line of figures, not four tiles that mostly read 0. A figure of
- * 0 is still said, once, so nothing reads as missing. The hero's Changed since chip still hides it.
- */
-export function SinceLine({ since, items }: { since: string; items: SinceItem[] }) {
-  return (
-    <section className={styles.sinceLine} data-testid="ward-handover-since" aria-labelledby="handover-since-title">
-      <h2 id="handover-since-title" className={styles.sinceTitle}>
-        Since previous handover <span className={styles.mono}>{since}</span>
-      </h2>
-      <ul className={styles.sinceItems}>
-        {items.map((item) => (
-          <li key={item.id} title={typeof item.detail === "string" ? item.detail : undefined}>
-            {item.value > 0 && item.tone && item.tone !== "neutral" ? <StatusGlyph tone={item.tone} size={8} /> : null}
-            <b className={styles.mono}>{item.value}</b> {item.word}
-            {item.value > 0 && typeof item.detail === "string" && item.detail !== "None" ? (
-              <span className={styles.sinceDetail}> · {item.detail}</span>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
 
 /**
  * The sign-off bar: stays at the foot of the screen while the 70-row table scrolls, so the checks

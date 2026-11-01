@@ -68,10 +68,17 @@ const RULED_ON: ReadonlyArray<{ file: string; name: RegExp; ruling: string }> = 
 ];
 
 /**
- * Files whose shown hour periods Josh ruled on (rule 2 only), relative to WARD_DIR. Empty: the one
- * entry, the D-29 Act period demo table, was removed with the demo on 20 Oct 2026 (D-70).
+ * Files whose shown hour periods Josh ruled on (rule 2 only), relative to WARD_DIR. The D-29 Act
+ * period demo table was removed with the demo on 20 Oct 2026 (D-70). The Midland demo team files
+ * carry Q142 (1 Nov 2026).
  */
-const RULED_ON_HOUR_PERIODS: ReadonlyArray<{ file: string; ruling: string }> = [];
+const MIDLAND_DEMO_RULING =
+  "Q142 (Josh, 1 Nov 2026): the Midland demo team ported from the locked community mock-up (design/community-team-2026-11; Q126, Q132) may show its demo waits and windows. They are labelled demo data on Midland only, not legal limits.";
+const RULED_ON_HOUR_PERIODS: ReadonlyArray<{ file: string; ruling: string }> = [
+  { file: "community/team-2026/midland-demo.ts", ruling: MIDLAND_DEMO_RULING },
+  { file: "community/team-2026/team-home.tsx", ruling: MIDLAND_DEMO_RULING },
+  { file: "community/team-2026/team-referrals.tsx", ruling: MIDLAND_DEMO_RULING },
+];
 
 type Exclusion = { id: string; why: string; whole?: RegExp; strip?: RegExp };
 

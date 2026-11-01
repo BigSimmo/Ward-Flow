@@ -31,7 +31,9 @@ const SAYS: Record<Exclude<Mode, "accepted">, RegExp> = {
   failed: /Save is not confirmed\. Press Retry when you are back online/u,
   refused: /Not recorded: This record changed while you were looking/u,
 };
-const TEAM = communityTeamById("midland")!;
+// Any team page that answers its own referrals. Not Midland: its page carries the locked mock-up's
+// demo team instead of the live lists (Q132, Josh 1 Nov 2026). The fixture raises its own referral.
+const TEAM = communityTeamById("albany")!;
 
 function outcomeFor(mode: Exclude<Mode, "accepted">): Promise<WardCommandOutcome> {
   return Promise.resolve(
@@ -110,7 +112,7 @@ afterEach(() => {
 describe("H-0117 community decline keeps its reason until accepted", () => {
   it.each(["failed", "refused", "accepted"] as const)("desktop waiting list, %s", async (mode) => {
     const calls = renderTeam(mode);
-    fireEvent.click(screen.getByRole("tab", { name: /Waiting/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Referrals/u }));
     const panel = screen.getByTestId("ward-community-waiting");
     fireEvent.click(within(panel).getByRole("button", { name: /decline referral/i }));
     fireEvent.change(within(panel).getByRole("combobox"), { target: { value: "outside_the_teams_catchment" } });

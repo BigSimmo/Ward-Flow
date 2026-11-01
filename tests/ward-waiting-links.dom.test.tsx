@@ -78,6 +78,7 @@ describe("screens link into a view", () => {
 
   it("Handover opens For handover", () => {
     withProvider(<HandoverPage />);
+    fireEvent.click(screen.getByRole("button", { name: "More handover actions" }));
     expect(screen.getByRole("link", { name: "Open in Waiting" })).toHaveAttribute(
       "href",
       "/ward-flow/waiting?view=handover",

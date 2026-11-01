@@ -3,8 +3,7 @@
 // Home's "My list" (approved Home mock-up v7, 22 Oct 2026): the Alerts queue rows and
 // the referrals awaiting a decision, in one card, built from the real Alerts row components.
 
-import { useRef, useState, type ReactNode } from "react";
-import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -39,16 +38,13 @@ import {
   promiseOverdue,
 } from "@/components/ward-management/referrals/referral-commitments-model";
 
+import { AcceptedPullRows, useAcceptedPull } from "./accepted-pull-rows";
+import { HomeRow, PhoneRow } from "./home-rows";
 import styles from "./home-list.module.css";
 
 const WAIT_ROWS_SHOWN = 3;
 
 const CallSheet = dynamic(() => import("./call-sheet").then((m) => m.CallSheet), { loading: () => null });
-// WS-03: the one-step pull loads only when a coordinator opens it.
-const PullAcceptedReferral = dynamic(
-  () => import("../referrals/pull-accepted-referral").then((m) => m.PullAcceptedReferral),
-  { loading: () => null },
-);
 
 /** "Asked 3 times · Promise overdue", from the records alone, or undefined when nothing is recorded. */
 function followUpMarker(referral: Referral, now: Instant): string | undefined {
@@ -59,16 +55,6 @@ function followUpMarker(referral: Referral, now: Instant): string | undefined {
     items.some((item) => promiseOverdue(item.status, now)) ? "Promise overdue" : undefined,
   ].filter((part): part is string => part !== undefined);
   return parts.length > 0 ? parts.join(" · ") : undefined;
-}
-
-/** When the ward accepted: the accepted arm's recorded decision time, when there is one. */
-function acceptedDecisionAt({ referral, unitId }: AcceptedAwaitingPull): Instant | undefined {
-  return referral.destinations.find(
-    (arm) =>
-      arm.state === "accepted" &&
-      arm.destination.kind === "psychiatric_ward" &&
-      (arm.acceptedUnitId ?? arm.destination.unitId) === unitId,
-  )?.decidedAt;
 }
 
 /** Row text only: "Emergency Department" reads as "ED", as Placement's own header already does. */
@@ -84,11 +70,6 @@ function isYours(entry: QueueEntry): boolean {
   return entry.mine || entry.owner === "Bed coordinator";
 }
 
-/** Clicking a row anywhere that is not itself a control opens it; the row's buttons are the keyboard route. */
-/**
- * Home's desktop row: glyph, a two-line body (what, then who and where), how long, one action. Text
- * wraps instead of being cut, and the owner shows only when it is someone other than you.
- */
 /**
  * Empty state (pop-state-empty, approved by Josh 31 Oct 2026): an empty group is one calm line with
  * a green tick under its heading, not a blank box. The tick is decoration; the words carry it.
@@ -99,91 +80,6 @@ function CalmEmpty({ children }: { children: ReactNode }) {
       <StatusGlyph tone="success" size={10} />
       <span>{children}</span>
     </p>
-  );
-}
-
-function HomeRow({
-  data,
-  tone,
-  act,
-  selected,
-  title,
-  openLabel,
-  onOpen,
-  href,
-  name,
-  umrn,
-  where,
-  extra,
-  age,
-  ageNote,
-  action,
-}: {
-  data: Record<string, string | undefined>;
-  tone: "danger" | "warning" | "info" | "neutral";
-  act: boolean;
-  selected: boolean;
-  title: string;
-  openLabel: string;
-  onOpen?: () => void;
-  /** Opens a page rather than Placement: the title is then a link, and the row click follows it. */
-  href?: string;
-  name: string;
-  umrn: string;
-  where: string;
-  extra?: string;
-  age: string | undefined;
-  ageNote: string;
-  action: ReactNode;
-}) {
-  const linkRef = useRef<HTMLAnchorElement>(null);
-  return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
-    <li
-      className={styles.hrow}
-      data-act={act ? "true" : undefined}
-      data-selected={selected ? "true" : undefined}
-      onClick={(event) => {
-        if ((event.target as HTMLElement).closest("a, button")) return;
-        if (href) linkRef.current?.click();
-        else onOpen?.();
-      }}
-      {...data}
-    >
-      <span className={styles.hrowGlyph}>
-        <StatusGlyph tone={tone} />
-      </span>
-      <span className={styles.hrowMain}>
-        {href ? (
-          <Link ref={linkRef} href={href} className={styles.hrowTitle} aria-label={openLabel}>
-            {title}
-          </Link>
-        ) : (
-          <button
-            type="button"
-            className={styles.hrowTitle}
-            aria-current={selected ? "true" : undefined}
-            aria-label={openLabel}
-            onClick={onOpen}
-          >
-            {title}
-          </button>
-        )}
-        <span className={styles.hrowLine}>
-          <strong className={styles.hrowName}>{name}</strong> <span className={styles.mono}>{umrn}</span>
-          <span className={styles.hrowWhere}>
-            {" · "}
-            <SpelledCodes text={where} />
-          </span>
-        </span>
-        {extra ? <span className={styles.hrowExtra}>{extra}</span> : null}
-      </span>
-      <span className={styles.hrowAge}>
-        {age === undefined ? null : <span className={styles.mono}>{age}</span>}
-        <span>{ageNote}</span>
-      </span>
-      <span className={styles.hrowAction}>{action}</span>
-    </li>
   );
 }
 
@@ -261,95 +157,6 @@ function referralTo(referral: Referral, units: readonly Unit[]): string {
   return names.length === 1 ? names[0]! : `${names[0]} and ${names.length - 1} more`;
 }
 
-/** Home's phone row: the Alerts phone row layout, with the owner named only when it is not you. */
-function PhoneRow({
-  data,
-  tone,
-  act,
-  selected,
-  title,
-  openLabel,
-  onOpen,
-  href,
-  name,
-  umrn,
-  line,
-  age,
-  note,
-  owner,
-}: {
-  data: Record<string, string | undefined>;
-  tone: "danger" | "warning" | "info" | "neutral";
-  act: boolean;
-  selected: boolean;
-  title: string;
-  openLabel: string;
-  onOpen?: () => void;
-  /** Opens a page rather than Placement: the title is then a link, and the row click follows it. */
-  href?: string;
-  name: string;
-  umrn: string;
-  line: string;
-  age: string | undefined;
-  /** A line of its own for a passed legal form's typed time, too long for the age column. */
-  note?: string;
-  owner: string | undefined;
-}) {
-  const linkRef = useRef<HTMLAnchorElement>(null);
-  return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
-    <li
-      className={`${alertStyles.phoneRow} ${styles.compactRow}`}
-      data-act={act ? "true" : undefined}
-      data-selected={selected ? "true" : undefined}
-      onClick={(event) => {
-        if ((event.target as HTMLElement).closest("a, button")) return;
-        if (href) linkRef.current?.click();
-        else onOpen?.();
-      }}
-      {...data}
-    >
-      <span className={alertStyles.phoneRowGlyph}>
-        <StatusGlyph tone={tone} />
-      </span>
-      <span className={`${alertStyles.phoneRowText} ${styles.compactText}`}>
-        {href ? (
-          <Link
-            ref={linkRef}
-            href={href}
-            className={`${alertStyles.rowOpen} ${styles.compactTag}`}
-            aria-label={openLabel}
-          >
-            <span className={alertStyles.rowOpenText}>{title}</span>
-          </Link>
-        ) : (
-          <button
-            type="button"
-            className={`${alertStyles.rowOpen} ${styles.compactTag}`}
-            aria-current={selected ? "true" : undefined}
-            aria-label={openLabel}
-            onClick={onOpen}
-          >
-            <span className={alertStyles.rowOpenText}>{title}</span>
-          </button>
-        )}
-        <span className={`${alertStyles.phoneRowLine} ${styles.compactWho}`}>
-          <span className={alertStyles.who}>
-            <strong className={alertStyles.name}>{name}</strong> <strong className={alertStyles.umrn}>{umrn}</strong>
-          </span>
-        </span>
-        <span className={`${alertStyles.phoneRowLine} ${styles.compactWhere}`}>{line}</span>
-        {note ? <span className={`${alertStyles.phoneRowLine} ${styles.compactLine}`}>{note}</span> : null}
-        {/* The owner sits in the text, not the end column, so a long team name never squeezes the title. */}
-        {owner ? <span className={`${alertStyles.phoneRowLine} ${styles.compactLine}`}>{`With ${owner}`}</span> : null}
-      </span>
-      <span className={`${alertStyles.phoneRowEnd} ${styles.compactEnd}`}>
-        <span className={alertStyles.phoneRowAge}>{age ?? ""}</span>
-      </span>
-    </li>
-  );
-}
-
 function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
   const { subject } = entry;
   return (
@@ -417,7 +224,7 @@ export function MyListCard({
 }) {
   const [allWaiting, setAllWaiting] = useState(false);
   const [callSheetOpen, setCallSheetOpen] = useState(false);
-  const [pulling, setPulling] = useState<AcceptedAwaitingPull | undefined>();
+  const pull = useAcceptedPull();
   const patientOf = usePatientOf();
   const nameFor = usePatientNameDisplay();
   const shownWait = allWaiting ? wait : wait.slice(0, WAIT_ROWS_SHOWN);
@@ -492,59 +299,20 @@ export function MyListCard({
     </ul>
   );
 
-  // WS-02 (workflow speed audit, 26 Oct 2026): after a ward accepts, the pull was found only through
-  // Referrals, History and the row. It now sits in Act now with its own Pull the bed.
-  const pullRows = (
-    <ul className={phone ? alertStyles.phoneRows : styles.hrows} data-testid="home-accepted-to-pull">
-      {toPull.map((entry) => {
-        const { referral } = entry;
-        const who = patientOf(referral);
-        const name = nameFor(who.formalName, who.umrn);
-        const decidedAt = acceptedDecisionAt(entry);
-        const age = decidedAt === undefined ? undefined : minutesText(Math.max(0, now - decidedAt));
-        const shared = {
-          data: { "data-referral-id": referral.id, "data-pull-unit-id": entry.unitId },
-          tone: "danger" as const,
-          act: true,
-          selected: pulling?.referral.id === referral.id,
-          title: "Accepted, bed not pulled",
-          openLabel: `Pull the bed for ${name} at ${entry.unitName}`,
-          onOpen: () => setPulling(entry),
-          name,
-          umrn: who.umrn,
-        };
-        const from = withSendingTeam(`from ${referral.originSiteCode}`, referral);
-        return phone ? (
-          <PhoneRow
-            key={referral.id}
-            {...shared}
-            line={`${entry.unitName} accepted · ${from}`}
-            age={age}
-            owner={undefined}
-          />
-        ) : (
-          <HomeRow
-            key={referral.id}
-            {...shared}
-            where={`${entry.unitName} accepted, ${from}`}
-            age={age}
-            ageNote={decidedAt === undefined ? "Time not recorded" : "since accepted"}
-            action={
-              <Button size="sm" data-placement-action aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
-                Pull the bed
-              </Button>
-            }
-          />
-        );
-      })}
-    </ul>
-  );
-
   const actGroup = (
     // WS-18: the target of the shell's "Skip to Act now" link (shell/ward-skip-to-act-now.tsx).
     <section className={alertStyles.group} aria-label="Act now" id={ACT_NOW_TARGET_ID} tabIndex={-1}>
       <GroupHead tone="danger" label="Act now" count={actCount} aside="needs a person now" />
-      {toPull.length > 0 ? pullRows : null}
+      {toPull.length > 0 ? (
+        <AcceptedPullRows
+          toPull={toPull}
+          now={now}
+          phone={phone}
+          testId="home-accepted-to-pull"
+          pulling={pull.pulling}
+          setPulling={pull.setPulling}
+        />
+      ) : null}
       {act.length > 0 ? (
         alertRows(act)
       ) : toPull.length > 0 ? null : (
@@ -602,6 +370,7 @@ export function MyListCard({
   return (
     <Card className={styles.needsCard} data-testid="home-my-list" aria-label={`My list, ${total} items`}>
       {body}
+      {pull.sheet}
       <div className={styles.needsFoot}>
         <StatusGlyph tone="neutral" size={9} />
         <span>Oldest first within each group. Snoozed items return by themselves.</span>
@@ -615,17 +384,6 @@ export function MyListCard({
           Call sheet
         </button>
       </div>
-      {pulling ? (
-        <Sheet
-          open
-          onClose={() => setPulling(undefined)}
-          title="Pull the bed"
-          description="Anything already recorded is filled in. Check the details, then pull the bed."
-          testId="home-pull-accepted-sheet"
-        >
-          <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
-        </Sheet>
-      ) : null}
       {callSheetOpen ? (
         <Sheet
           open

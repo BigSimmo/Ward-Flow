@@ -8,76 +8,90 @@
  */
 
 import Link from "next/link";
-import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
-import { Button, CheckingFoot, Count, Hero, Icon, Menu, Drawer, SrOnly, TextInput } from "@/components/wf";
+import { ChevronDown, ChevronRight, Clock, House, MoreHorizontal, Phone, Plus, Search } from "lucide-react";
+import { Button, Hero, HeroStat, Icon, Menu, Drawer, SrOnly, TextInput } from "@/components/wf";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { communityTeamSuburbCounts } from "@/components/ward-management/community/community-vocabulary";
 import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
-import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
+import { moveBetweenWardTabs } from "@/components/ward-management/ward/ward-screen-top-bar";
+import ward from "@/components/ward-management/ward/ward.module.css";
+import { contactForTeam } from "@/components/ward-management/community/community-team-contact-mapping";
+import { communityRosterCounts } from "./community-screen-panels";
+import { DEMO_FIGURES } from "./team-2026/midland-demo";
+import type { ActiveTabType } from "./community-screen-helpers";
 import styles from "./community.module.css";
 import v6 from "./community-team-v6.module.css";
 import type { CommunityScreenView } from "./community-screen";
 
 /**
- * The hero's five lists, in the mockup's order. Sent comes first (D-77 group A, approved 21 Oct 2026). Ids are the panels' own. The team's own facts (how
- * to reach it, the sample deployment) are no longer a fifth tab: the v6 page keeps them in view
- * under every list, as the mockup's side column does.
+ * The page's five sections, in the locked design's order (design/community-team-2026-11, Josh
+ * 1 Nov 2026). Each list keeps its own panel: a section shows the panels that belong to it.
  */
-const TEAM_TABS = [
-  { id: "tab-sent", buttonId: "tabBtn-sent", label: "Sent", section: "ward-community-sent" },
-  { id: "tab-triage", buttonId: "tabBtn-triage", label: "Waiting answer", section: "ward-community-waiting" },
-  { id: "tab-inpatients", buttonId: "tabBtn-inpatients", label: "In a bed", section: "ward-community-admitted" },
-  { id: "tab-egress", buttonId: "tabBtn-egress", label: "Expected back", section: "ward-community-expected-back" },
-  { id: "tab-caseload", buttonId: "tabBtn-caseload", label: "Caseload and CTOs", section: "section-caseload" },
-] as const;
+export type CommunityTeamSection = "home" | "caseload" | "hospital" | "referrals" | "clinicians";
 
-/** The desktop hero band, figure strip and other-teams switcher. */
+/** The list a section opens on, for the sections that hold the existing lists. */
+export const SECTION_FIRST_LIST: Record<CommunityTeamSection, ActiveTabType | null> = {
+  home: null,
+  caseload: "tab-caseload",
+  hospital: "tab-inpatients",
+  referrals: "tab-triage",
+  clinicians: null,
+};
+
+/** The desktop hero band (locked design, 1 Nov 2026): the caseload answer, four count chips and the at-a-glance strip. */
 export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView }) {
   const {
     now,
     identityOf,
     team,
     openNewReferral,
-    setActiveTab,
-    setActiveDrawer,
-    setActiveModalType,
+    openTeamSection,
     switchOpen,
     setSwitchOpen,
     switchTriggerRef,
     isDemoMode,
-    scrollToSection,
     teamConfig,
     lists,
     waitingReferrals,
     waitingCount,
     urgentAnswerCount,
     caseloadRows,
-    inBedCount,
-    bedPulledCount,
-    pastPlannedDateCount,
-    admittedWhileAlreadyWithTeam,
-    activeTab,
-    sentReferrals,
     ownTeamOnly,
   } = view;
+  const caseloadCount = isDemoMode ? teamConfig.caseload : caseloadRows.length;
+  const inHospital = isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length;
+  // Instants are minutes on the ward clock.
+  const weekAhead = now + 7 * 24 * 60;
+  const planned = lists.expectedBack.filter(
+    (admission): admission is typeof admission & { expectedDischargeAt: number } =>
+      admission.expectedDischargeAt !== null && admission.expectedDischargeAt >= now,
+  );
+  const leavingSoon = planned.filter((admission) => admission.expectedDischargeAt <= weekAhead);
+  const nextHome = [...planned].sort((a, b) => a.expectedDischargeAt - b.expectedDischargeAt)[0];
+  const oldest = waitingReferrals[0];
+  const hours = contactForTeam(team.name)?.publishedHours ?? null;
+  const roster = communityRosterCounts();
+  // Midland carries the locked mock-up's demo team (Q126, Q132); its figures are stated, not derived.
+  const midland = view.midlandDemo;
+  const f = DEMO_FIGURES;
+  const caseloadShown = midland ? f.caseload : caseloadCount;
   return (
     <div className={v6.standing}>
-      {/*
-       * THE V6 HERO, 7 October 2026 — `design/pages-v6/CommunityTeam.png`. One band carries the
-       * team's name with its team menu, the six counts, the four tabs and the four team actions.
-       * It replaces the inner header (whose Activity, Tasks, Tools and Theme buttons repeated the
-       * shell's own), the action bar and the telemetry ribbon. Every count reads the same
-       * expression the ribbon and tab badges read, so no figure changed.
-       */}
       <Hero
         level={1}
-        eyebrow="Community team"
-        title={team.name}
+        eyebrow={midland ? MIDLAND_EYEBROW : `${team.name} · Community mental health`}
+        title={
+          <span data-testid="ward-community-hero-answer">
+            {caseloadShown} on the caseload<SrOnly>, {team.name}</SrOnly>
+          </span>
+        }
         titleMeta={
           <>
-            <span className={v6.heroAnswer} data-testid="ward-community-hero-answer">
-              <b>{isDemoMode ? teamConfig.caseload : caseloadRows.length}</b> on the caseload
+            <span className={v6.heroSub}>
+              {midland
+                ? `${f.inHospital} in hospital · ${f.unallocated} waiting for a case manager`
+                : `${inHospital} in hospital`}
             </span>
             {/* A community team desk opens its own team only, so it has no way across. */}
             {ownTeamOnly ? null : (
@@ -85,188 +99,240 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
                 ref={switchTriggerRef}
                 type="button"
                 className={v6.heroMenuButton}
-                aria-label="Change team"
-                title="Switch community team"
                 aria-haspopup="dialog"
                 aria-expanded={switchOpen}
                 onClick={() => setSwitchOpen(true)}
                 data-testid="ward-community-switch-team"
               >
+                <span>Switch team</span>
                 <Icon icon={ChevronDown} size={14} />
               </button>
             )}
           </>
         }
-        // Device audit option A (11 Oct 2026): one switch. The tabs below the title are the
-        // lists; the four hero chips that repeated them are gone.
-        foot={
-          <CheckingFoot
-            items={[
-              // A community team desk: the title already says how many are on the caseload.
-              ...(ownTeamOnly
-                ? []
-                : [
-                    {
-                      id: "caseload",
-                      label: "Caseload",
-                      value: isDemoMode ? teamConfig.caseload : caseloadRows.length,
-                    },
-                  ]),
-              {
-                id: "urgent",
-                label: "Urgent answers",
-                value: urgentAnswerCount,
-                tone: urgentAnswerCount > 0 ? "danger" : undefined,
-              },
-              ...(isDemoMode
-                ? [{ id: "crisis", label: "Crisis open", value: teamConfig.crisis }]
-                : [{ id: "pulled", label: "Bed pulled", value: bedPulledCount }]),
-            ]}
-            notChecked={isDemoMode ? [] : ["Crisis open, no record holds a team's crisis episodes"]}
-          />
-        }
         aside={
-          <>
-            <Menu
-              label="Illustrative drawers"
-              align="end"
-              items={[
-                { id: "activity", label: "Activity sample", onSelect: () => setActiveDrawer("activityDrawer") },
-                { id: "tasks", label: "Tasks sample", onSelect: () => setActiveDrawer("tasksDrawer") },
-                { id: "tools", label: "Tools sample", onSelect: () => setActiveDrawer("toolsDrawer") },
-              ]}
-              trigger={(props) => (
-                <Button {...props} variant="onHero" size="sm" iconEnd={ChevronDown}>
-                  Samples
-                </Button>
-              )}
-            />
-          </>
+          <Button variant="light" size="sm" icon={Plus} id="btnMainIntake" onClick={openNewReferral}>
+            Refer from team
+          </Button>
         }
         bar={
-          <div className={v6.trackScroll}>
-            <div className={v6.track} role="tablist" aria-label="Community team lists">
-              {TEAM_TABS.map((tab) => {
-                const selected = activeTab === tab.id;
-                const count =
-                  tab.id === "tab-sent"
-                    ? sentReferrals.sent.length
-                    : tab.id === "tab-triage"
-                      ? waitingCount
-                      : tab.id === "tab-inpatients"
-                        ? isDemoMode
-                          ? teamConfig.inpatients
-                          : lists.currentlyAdmitted.length
-                        : tab.id === "tab-egress"
-                          ? isDemoMode
-                            ? teamConfig.egress
-                            : lists.expectedBack.length
-                          : isDemoMode
-                            ? teamConfig.caseload
-                            : caseloadRows.length;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    id={tab.buttonId}
-                    aria-selected={selected}
-                    aria-controls={tab.id}
-                    tabIndex={selected ? 0 : -1}
-                    className={v6.trackItem}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      scrollToSection(tab.section);
-                    }}
-                    onKeyDown={(event) => {
-                      const index = TEAM_TABS.findIndex((item) => item.id === tab.id);
-                      const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-                      if (step === 0) return;
-                      event.preventDefault();
-                      const next = TEAM_TABS[(index + step + TEAM_TABS.length) % TEAM_TABS.length]!;
-                      setActiveTab(next.id);
-                      document.getElementById(next.buttonId)?.focus();
-                    }}
-                  >
-                    <span>{tab.label}</span>
-                    <Count n={count} className={v6.trackCount} />
-                  </button>
-                );
-              })}
-            </div>
+          <div className={v6.heroChips}>
+            <HeroStat
+              inline
+              command
+              value={midland ? f.actNow : urgentAnswerCount}
+              label="Act now"
+              tone={(midland ? f.actNow : urgentAnswerCount) > 0 ? "danger" : undefined}
+              onToggle={() => openTeamSection(midland ? "home" : "referrals")}
+            />
+            <HeroStat
+              inline
+              command
+              value={midland ? f.referrals : waitingCount}
+              label="Referrals to answer"
+              tone={midland ? "neutral" : undefined}
+              onToggle={() => openTeamSection("referrals")}
+            />
+            <HeroStat
+              inline
+              command
+              value={midland ? f.homeIn7Days : leavingSoon.length}
+              label="Leaving hospital in 7 days"
+              onToggle={() => openTeamSection("hospital")}
+            />
+            {midland ? (
+              <HeroStat
+                inline
+                command
+                value={f.ctoReviewsDue}
+                label="CTO reviews due"
+                onToggle={() => openTeamSection("caseload")}
+              />
+            ) : null}
           </div>
         }
         barAside={
-          <div className={v6.actions}>
-            <Button variant="onHero" size="sm" icon={Phone} onClick={() => setActiveModalType("contact")}>
-              Record contact
-            </Button>
-            <Button
-              variant="onHero"
-              size="sm"
-              icon={FileText}
-              onClick={() => {
-                setActiveTab("tab-caseload");
-                scrollToSection("section-caseload");
-              }}
-            >
-              CTO register
-            </Button>
-            <Button variant="onHero" size="sm" icon={Users} onClick={() => setActiveModalType("handover")}>
-              Catchment counts
-            </Button>
-            {/* New referral in the header is the page's one primary (device audit option A). */}
-            <Button variant="onHero" size="sm" icon={Plus} id="btnMainIntake" onClick={openNewReferral}>
-              Refer from team
-            </Button>
-          </div>
+          midland ? (
+            <button type="button" className={v6.heroLink} onClick={() => openTeamSection("clinicians")}>
+              <b>
+                {f.working} of {f.clinicians}
+              </b>{" "}
+              working today · Clinicians
+            </button>
+          ) : isDemoMode ? (
+            <button type="button" className={v6.heroLink} onClick={() => openTeamSection("clinicians")}>
+              <b>
+                {roster.working} of {roster.total}
+              </b>{" "}
+              working today · Clinicians
+            </button>
+          ) : null
         }
+        foot={
+          midland ? (
+            <MidlandGlance go={openTeamSection} />
+          ) : (
+            <div className={v6.glance} data-testid="ward-community-glance">
+              <button type="button" className={v6.glanceItem} onClick={() => openTeamSection("referrals")}>
+                <Icon icon={Clock} size={14} />
+                <span>Oldest referral</span>
+                {oldest ? (
+                  <>
+                    <b className={v6.glanceMono}>{referralWaitLine(oldest, now)}</b>
+                    <b>{identityOf(oldest)}</b>
+                  </>
+                ) : (
+                  <b>None waiting</b>
+                )}
+              </button>
+              <button type="button" className={v6.glanceItem} onClick={() => openTeamSection("hospital")}>
+                <Icon icon={House} size={14} />
+                <span>Next home</span>
+                {nextHome && nextHome.expectedDischargeAt !== null ? (
+                  <b className={v6.glanceMono}>
+                    {(() => {
+                      // Elapsed wording, never a clock face (the page's rule).
+                      const days = Math.round((nextHome.expectedDischargeAt - now) / (24 * 60));
+                      return days <= 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
+                    })()}
+                  </b>
+                ) : (
+                  <b>None planned</b>
+                )}
+              </button>
+            </div>
+          )
+        }
+        footAside={!midland && hours ? <span>{hours}</span> : undefined}
       />
       <SrOnly>
         {ownTeamOnly
           ? "Your team's referrals and bed flow."
           : "The bed coordinator's view of this team's referrals and bed flow."}
       </SrOnly>
+    </div>
+  );
+}
 
-      {/* ── Figures across the top ── */}
-      <div className={styles.legacyFigureStrip}>
-        <WardFigureStrip>
-          <WardFigure
-            label="Waiting for an answer"
-            value={`${waitingCount}`}
-            sub={`referral${waitingCount === 1 ? "" : "s"} addressed to this team`}
-          />
-          <WardFigure
-            label="Admitted while with the team"
-            value={`${admittedWhileAlreadyWithTeam.length}`}
-            unit={`of ${lists.currentlyAdmitted.length}`}
-            sub="already accepted before the bed began"
-            flagged={admittedWhileAlreadyWithTeam.length > 0}
-          />
-          <WardFigure
-            label="In a bed or with one pulled"
-            value={`${lists.currentlyAdmitted.length}`}
-            sub={`${inBedCount} in the bed · ${bedPulledCount} bed pulled`}
-          />
-          <WardFigure
-            label="Expected back"
-            value={`${lists.expectedBack.length}`}
-            unit={`of ${lists.currentlyAdmitted.length}`}
-            sub={`${pastPlannedDateCount} planned date${pastPlannedDateCount === 1 ? "" : "s"} already passed`}
-          />
-          <WardFigure
-            label="Discharged into the catchment"
-            value={`${lists.dischargedIntoTheArea.length}`}
-            sub="recorded as discharged to the community"
-          />
-          <WardFigure
-            label="Longest wait"
-            value={waitingReferrals.length === 0 ? "None waiting" : referralWaitLine(waitingReferrals[0], now)}
-            sub={waitingReferrals.length === 0 ? undefined : `${identityOf(waitingReferrals[0])} · since it was raised`}
-          />
-        </WardFigureStrip>
+const MIDLAND_EYEBROW = "Midland · Community mental health · East Metro · Adult";
+
+/** Midland's at-a-glance strip, as the locked mock-up states it (demo data). */
+function MidlandGlance({ go }: { go: (section: CommunityTeamSection) => void }) {
+  return (
+    <div className={v6.glance} data-testid="ward-community-glance">
+      <button type="button" className={v6.glanceItem} onClick={() => go("clinicians")}>
+        <Icon icon={Phone} size={14} />
+        <span>Duty officer</span>
+        <b>Byrne, T.</b>
+        <span className={v6.glanceMono}>ext 4105</span>
+        <Icon icon={ChevronRight} size={14} />
+      </button>
+      <button type="button" className={v6.glanceItem} onClick={() => go("referrals")}>
+        <Icon icon={Clock} size={14} />
+        <span>Oldest referral</span>
+        <b className={v6.glanceMono}>{DEMO_FIGURES.oldestReferral}</b>
+        <b>Sallowfield, June</b>
+        <span>from GP</span>
+        <Icon icon={ChevronRight} size={14} />
+      </button>
+      <button type="button" className={v6.glanceItem} onClick={() => go("hospital")}>
+        <Icon icon={House} size={14} />
+        <span>Next home</span>
+        <b className={v6.glanceMono}>Wed 4 Nov</b>
+        <b>Greymantle, Ottoline</b>
+        <span>Moodjar</span>
+        <Icon icon={ChevronRight} size={14} />
+      </button>
+    </div>
+  );
+}
+
+const SECTION_TABS: { id: CommunityTeamSection; label: string }[] = [
+  { id: "home", label: "Team home" },
+  { id: "caseload", label: "Caseload" },
+  { id: "hospital", label: "In hospital" },
+  { id: "referrals", label: "Referrals" },
+  { id: "clinicians", label: "Clinicians" },
+];
+
+/** The ward page's tab row, carrying the team's five sections, with Record contact and More on the right. */
+export function CommunityScreenTabRow({ view }: { view: CommunityScreenView }) {
+  const {
+    teamSection,
+    openTeamSection,
+    isDemoMode,
+    teamConfig,
+    lists,
+    waitingCount,
+    caseloadRows,
+    setActiveModalType,
+    setActiveDrawer,
+  } = view;
+  const f = DEMO_FIGURES;
+  const counts: Partial<Record<CommunityTeamSection, number>> = view.midlandDemo
+    ? { caseload: f.caseload, hospital: f.inHospital, referrals: f.referrals, clinicians: f.clinicians }
+    : {
+        caseload: isDemoMode ? teamConfig.caseload : caseloadRows.length,
+        hospital: isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length,
+        referrals: waitingCount,
+        clinicians: isDemoMode ? communityRosterCounts().total : undefined,
+      };
+  return (
+    <nav className={`${ward.tabBarWrap} ${v6.tabRow}`} aria-label="Team sections">
+      <ul className={ward.tabList} role="tablist" aria-label="Team sections" onKeyDown={moveBetweenWardTabs}>
+        {SECTION_TABS.map((tab) => {
+          const selected = teamSection === tab.id;
+          const count = counts[tab.id];
+          return (
+            <li key={tab.id} role="presentation">
+              <button
+                type="button"
+                role="tab"
+                className={ward.tabBtn}
+                id={`community-section-${tab.id}`}
+                aria-selected={selected}
+                aria-controls={`community-panel-${tab.id}`}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => openTeamSection(tab.id)}
+              >
+                <span className={ward.tabLabel}>{tab.label}</span>
+                {count === undefined ? null : <span className={ward.tabBadge}>{count}</span>}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <div className={ward.tabTools} role="toolbar" aria-label="Team actions">
+        <Button variant="ghost" size="sm" icon={Phone} onClick={() => setActiveModalType("contact")}>
+          Record contact
+        </Button>
+        <Menu
+          label="More team actions"
+          align="end"
+          items={[
+            { id: "cto", label: "CTO register", onSelect: () => openTeamSection("caseload") },
+            { id: "counts", label: "Catchment counts", onSelect: () => setActiveModalType("handover") },
+            { id: "reach", label: "How to reach the team", onSelect: () => openTeamSection("home") },
+            { id: "activity", label: "Activity sample", onSelect: () => setActiveDrawer("activityDrawer") },
+            { id: "tasks", label: "Tasks sample", onSelect: () => setActiveDrawer("tasksDrawer") },
+            { id: "tools", label: "Tools sample", onSelect: () => setActiveDrawer("toolsDrawer") },
+          ]}
+          trigger={(props) => (
+            <Button {...props} variant="ghost" size="sm" icon={MoreHorizontal}>
+              More
+            </Button>
+          )}
+        />
       </div>
+    </nav>
+  );
+}
 
+/** The coordinator's way across to every other team (kept from the v6 page, now under the page body). */
+export function CommunityOtherTeams({ view }: { view: CommunityScreenView }) {
+  const { team, ownTeamOnly } = view;
+  return (
+    <div>
       {/* A community team desk opens its own team only, so it has no way across. */}
       {ownTeamOnly ? null : (
         <>

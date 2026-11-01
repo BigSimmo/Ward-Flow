@@ -27,8 +27,9 @@ function renderTeam(teamId = "midland", explicit = false) {
 }
 
 function expectTotals(waiting: number, urgent: number) {
-  expect(screen.getByRole("tab", { name: /^Waiting answer/u })).toHaveTextContent(`Waiting answer${waiting}`);
-  expect(screen.getByText("Urgent answers").parentElement).toHaveTextContent(`Urgent answers${urgent}`);
+  // Locked design (1 Nov 2026): the Referrals tab carries the queue total; the hero's Act now chip the urgent count.
+  expect(screen.getByRole("tab", { name: /^Referrals/u })).toHaveTextContent(`Referrals${waiting}`);
+  expect(screen.getByRole("button", { name: /Act now/u })).toHaveTextContent(String(urgent));
 }
 
 beforeEach(() => {

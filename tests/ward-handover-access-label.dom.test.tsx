@@ -43,17 +43,25 @@ const TWO_WARD_DESK: WardAccess = {
   scope: { kind: "ward", unitIds: ["brm-adult-secure", "bun-adult-open"] },
 };
 
+// 1 Nov 2026 redesign: Copy summary sits in the toolbar's More handover actions; Print handover is
+// the sheet bar's one primary button.
+function copySummary() {
+  const copyName = /^(Copy summary|Copied)$/;
+  if (!screen.queryByRole("button", { name: copyName }))
+    fireEvent.click(screen.getByRole("button", { name: "More handover actions" }));
+  fireEvent.click(screen.getByRole("button", { name: copyName }));
+}
+
 describe("handover labels describe the records the desk can access", () => {
   it("names a one-ward desk's own ward on screen, in copy and on the print sheet, with no scope picker", async () => {
     const label = "Mabu Liyan / Broome Mental Health Unit";
     const writeText = renderAtDesk({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
     expect(screen.queryByRole("combobox", { name: "Filter the sheet" })).toBeNull();
     expect(screen.getByTestId("ward-handover-page")).toHaveTextContent(label);
-    fireEvent.click(screen.getByRole("button", { name: "Copy summary" }));
+    copySummary();
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
     expect(writeText.mock.calls[0]?.[0]).toContain(label);
-    fireEvent.click(screen.getByTestId("ward-handover-more"));
-    fireEvent.click(screen.getByRole("menuitem", { name: /Print handover/ }));
+    fireEvent.click(screen.getByTestId("ward-handover-print"));
     const print = screen.getByTestId("ward-handover-print-sheet");
     expect(print).toHaveTextContent(label);
     expect(print).not.toHaveTextContent("Whole network");
@@ -69,11 +77,10 @@ describe("handover labels describe the records the desk can access", () => {
       const select = screen.getByRole("combobox", { name: "Filter the sheet" }) as HTMLSelectElement;
       expect(select.selectedOptions[0]?.textContent).toBe(label);
       expect(screen.getByTestId("ward-handover-page")).toHaveTextContent(label);
-      fireEvent.click(screen.getByRole("button", { name: "Copy summary" }));
+      copySummary();
       await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
       expect(writeText.mock.calls[0]?.[0]).toContain(label);
-      fireEvent.click(screen.getByTestId("ward-handover-more"));
-      fireEvent.click(screen.getByRole("menuitem", { name: /Print handover/ }));
+      fireEvent.click(screen.getByTestId("ward-handover-print"));
       const print = screen.getByTestId("ward-handover-print-sheet");
       expect(print).toHaveTextContent(label);
       if (access.role === "ward") expect(print).not.toHaveTextContent("Whole network");
@@ -86,7 +93,7 @@ describe("handover labels describe the records the desk can access", () => {
     for (const optionName of ["Mabu Liyan / Broome Mental Health Unit", "WACHS"]) {
       const option = within(select).getByRole("option", { name: optionName }) as HTMLOptionElement;
       fireEvent.change(select, { target: { value: option.value } });
-      fireEvent.click(screen.getByRole("button", { name: /Copy summary|Copied/ }));
+      copySummary();
       await waitFor(() => expect(writeText.mock.calls.at(-1)?.[0]).toContain(optionName));
     }
   });

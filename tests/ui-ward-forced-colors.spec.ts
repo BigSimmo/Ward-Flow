@@ -303,8 +303,11 @@ test("@mockup a figure's value is readable under forced colours", async ({ page 
   // so the contrast property this test protects is checked there instead. "Midland" is a real
   // catchment-table clinic name (`ward-movements.ts` raises referrals against it by that exact
   // name), so its slug is a genuine, routable team page rather than an invented id.
+  //
+  // ⚠️ **RETARGETED AGAIN** (locked community design, Josh 1 Nov 2026): the team page's figure strip
+  // is gone, replaced by the hero's at-a-glance strip, whose bold values are now the page's figures.
   await open(page, "/ward-flow/community/midland");
-  const figure = await measure(page, '[data-ward-primitive="figure"]', "text");
+  const figure = await measure(page, '[data-testid="ward-community-glance"] b', "text");
 
   expect(figure.found, "no figure on this screen — the assertion below would be vacuous").toBeGreaterThan(0);
   expect(

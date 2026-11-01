@@ -614,6 +614,9 @@
   background:
     radial-gradient(720px 200px at 88% -40%, rgba(122, 170, 220, 0.16), transparent 70%),
     linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  /* Alerts redesign (Josh, 1 Nov 2026): the band stops 4px short of its edge, under the lip. */
+  background-size: 100% calc(100% - 4px);
+  background-repeat: no-repeat;
 }
 
 .hero[data-band="on"]::after,
@@ -622,7 +625,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -1px;
+  bottom: 0;
   height: var(--wf-band-lip);
   border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
   background: var(--wf-page-canvas, var(--wf-canvas));
@@ -658,6 +661,9 @@
     background:
       radial-gradient(720px 200px at 88% -40%, rgba(122, 170, 220, 0.16), transparent 70%),
       linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+    /* Alerts redesign (Josh, 1 Nov 2026): the band stops 4px short of its edge, under the lip. */
+    background-size: 100% calc(100% - 4px);
+    background-repeat: no-repeat;
   }
 
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
@@ -665,7 +671,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -1px;
+    bottom: 0;
     height: var(--wf-band-lip);
     border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
     background: var(--wf-page-canvas, var(--wf-canvas));
@@ -696,6 +702,9 @@
     background:
       radial-gradient(720px 200px at 88% -40%, rgba(122, 170, 220, 0.16), transparent 70%),
       linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+    /* Alerts redesign (Josh, 1 Nov 2026): the band stops 4px short of its edge, under the lip. */
+    background-size: 100% calc(100% - 4px);
+    background-repeat: no-repeat;
   }
 
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
@@ -703,7 +712,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -1px;
+    bottom: 0;
     height: var(--wf-band-lip);
     border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
     background: var(--wf-page-canvas, var(--wf-canvas));

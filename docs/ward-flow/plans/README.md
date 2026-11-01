@@ -24,6 +24,7 @@ Under the **21 September 2026 visual speed rules** ([`HOW-WE-WORK.md`](../HOW-WE
 Current commissioned work is established by the owner's task scope, current source and existing task record under the [receipt contract](../../task-receipts.md). The [task ledger](../../ward-flow-task-ledger.md) indexes existing IDs; [STATUS](../STATUS.md) is dated history. Old plan checkboxes do not establish a current backlog.
 
 - [WF-DOCORG-AUDIT-20261021](2026-10-21-documentation-organisation-repairs.md): local documentation and organisation repairs; the checkpoint records the implementation base, finding dispositions and verification state. Publication remains a separate stage.
+- [Handover redesign build](2026-11-01-handover-redesign.md): approved round 6 Handover screen; built with tests updated, recorded 1 Nov 2026. Merge waits on hosted CI.
 
 ## Dated records and previous work
 
