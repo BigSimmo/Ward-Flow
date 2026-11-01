@@ -86,8 +86,10 @@ export function audienceRecipients(
   audience: BroadcastAudience,
   groups: readonly AudienceGroup[],
   wardsWithBedNow: readonly string[],
+  /** A bed call asks wards only (the reducer drops ED desks), so they are never counted or sent. */
+  wardsOnly = false,
 ): AudienceDesk[] {
-  const all = everyDesk(groups);
+  const all = everyDesk(groups).filter((desk) => !wardsOnly || desk.kind === "ward");
   if (audience.mode === "all") return all;
   if (audience.mode === "pick") return all.filter((desk) => audience.picked.includes(desk.id));
   const chosen = new Set(

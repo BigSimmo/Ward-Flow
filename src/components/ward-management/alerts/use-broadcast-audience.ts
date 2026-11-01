@@ -23,6 +23,7 @@ import type { LiveBedCall } from "./broadcast-composer";
 export function useBroadcastAudience(
   state: Pick<WardFlowState, "units" | "admissions" | "bedReleases">,
   initial: { templateId: string; scope: BroadcastTargetScope },
+  wardsOnly = false,
 ) {
   const { units, admissions, bedReleases } = state;
   const groups = useMemo(() => audienceGroups(units), [units]);
@@ -38,7 +39,7 @@ export function useBroadcastAudience(
     (templateId: string, scope: BroadcastTargetScope) => setAudience(templateAudience(templateId, scope, groups)),
     [groups],
   );
-  const recipients = audienceRecipients(audience, groups, wardsWithBedNow).map((desk) => desk.id);
+  const recipients = audienceRecipients(audience, groups, wardsWithBedNow, wardsOnly).map((desk) => desk.id);
   return {
     audience,
     setAudience,

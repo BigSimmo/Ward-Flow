@@ -282,7 +282,7 @@ function AlertsWorkspace() {
   const audienceState = useBroadcastAudience(state, {
     templateId: defaultTmpl?.id ?? "custom",
     scope: defaultTmpl?.targetScope ?? "all",
-  });
+  }, broadcastType === "bed_call");
   const { audience: broadcastAudience, setAudience: setBroadcastAudience } = audienceState;
   const [broadcastSuccessNotice, setBroadcastSuccessNotice] = useState<string | null>(null);
   const [actionRequest, setActionRequest] = useState<ActionRequest | null>(null);

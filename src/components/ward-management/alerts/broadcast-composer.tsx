@@ -109,7 +109,7 @@ export function BroadcastComposer({
 }) {
   const isPhone = useIsPhone();
   const ask = kind === "bed_call";
-  const list = audienceRecipients(audience, groups, wardsWithBedNow);
+  const list = audienceRecipients(audience, groups, wardsWithBedNow, ask);
   const n = list.length;
   const sev = SEVERITIES.find((item) => item.id === severity) ?? SEVERITIES[0];
   const endsAt = formatInstantWithDay((now + durationMinutes) as Instant, now);
