@@ -6,7 +6,7 @@
 // grouped by year. Each collapsed row already tells the story: kind, dates and length, where and
 // from, the legal path as form codes, the outcome and counts of recorded events. Facts only: no
 // inference, no risk scoring, no diagnoses. Forked from `PatientHistoryTab` in
-// `patient-dossier-tabs.tsx`.
+// `patient-dossier-tabs.tsx` (removed 1 November 2026, Q141).
 
 import Link from "next/link";
 import type { ReactNode } from "react";

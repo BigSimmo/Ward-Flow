@@ -4,8 +4,8 @@
  * Redesign (31 Oct 2026): "Journey so far" was a near-empty bar ("7h 0m", "stage times not recorded"). It is now
  * the list of what this movement actually recorded, newest first: opened, referred, examination,
  * form, declines, escalation, acceptance, clearance, stage changes, transport and closure. The
- * events are read the same way as the History tab's log (`movementEvents` in
- * patient-dossier-tabs.tsx); nothing is inferred between them and no time is computed from them.
+ * events are read the same way as the History tab's log (`movementEvents`, now in
+ * patient-history-tab.tsx); nothing is inferred between them and no time is computed from them.
  */
 
 import { useState } from "react";
