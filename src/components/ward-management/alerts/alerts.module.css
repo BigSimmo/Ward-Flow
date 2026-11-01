@@ -380,7 +380,9 @@ button.check[aria-pressed="true"] {
 .row[data-dim="true"],
 .row[data-dim="true"] *,
 .card[data-dim="true"],
-.card[data-dim="true"] * {
+.card[data-dim="true"] *,
+.queueRow[data-dim="true"],
+.queueRow[data-dim="true"] * {
   color: var(--wf-dim);
 }
 

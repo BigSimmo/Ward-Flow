@@ -80,6 +80,7 @@ import { LinkedAlertItem } from "./alert-linked-group";
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
 import { TodayChart } from "./alerts-visuals";
 import { TodayBand } from "./alerts-today-band";
+import { todayMarks } from "./alerts-today-marks";
 import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
@@ -1149,39 +1150,19 @@ function AlertsWorkspace() {
     </>
   ) : null;
 
-  const todayRaised = allEntries
-    .filter((entry) => entry.raised !== undefined)
-    .map((entry) => ({
-      id: entry.item.id,
-      at: entry.raised!,
-      shape: entry.group === "act" ? ("act" as const) : ("wait" as const),
-      title: `${entry.item.title} for ${entry.subject.displayName}. Raised ${formatInstantWithDay(entry.raised!, now)}`,
-    }));
-  const todayActed = history
-    .filter((entry) => entry.action)
-    .map((entry) => ({
-      id: entry.id,
-      at: entry.at,
-      shape: "done" as const,
-      title: `${entry.title}, ${formatInstantWithDay(entry.at, now)}`,
-    }));
-  const todayBroadcasts = (broadcastAlerts ?? []).map((alert) => ({
-    id: alert.id,
-    from: alert.dispatchedAt,
-    until: alert.stoodDownAt ?? alert.expiresAt,
-    title: `${alert.title}, sent ${formatInstantWithDay(alert.dispatchedAt, now)}`,
-  }));
+  const today = todayMarks(allEntries, history, broadcastAlerts ?? [], now);
+  const pickToday = (id: string) => {
+    const entry = allEntries.find((candidate) => candidate.item.id === id);
+    if (entry) select(entry);
+  };
   const todayChart = (
     <TodayChart
       now={now}
       selectedId={selected?.item.id}
-      onPick={(id) => {
-        const entry = allEntries.find((candidate) => candidate.item.id === id);
-        if (entry) select(entry);
-      }}
-      raised={todayRaised}
-      acted={todayActed}
-      broadcasts={todayBroadcasts}
+      onPick={pickToday}
+      raised={today.raised}
+      acted={today.acted}
+      broadcasts={today.broadcasts}
     />
   );
 
@@ -1203,13 +1184,10 @@ function AlertsWorkspace() {
       <TodayBand
         now={now}
         selectedId={selected?.item.id}
-        onPick={(id) => {
-          const entry = allEntries.find((candidate) => candidate.item.id === id);
-          if (entry) select(entry);
-        }}
-        raised={todayRaised}
-        acted={todayActed}
-        broadcasts={todayBroadcasts}
+        onPick={pickToday}
+        raised={today.raised}
+        acted={today.acted}
+        broadcasts={today.broadcasts}
         noTimeCount={countedActive.filter((entry) => entry.raised === undefined).length}
         checking={<div className={styles.checkingFootWide}>{checkingFoot}</div>}
         liveBroadcast={liveUntil !== undefined ? { until: liveUntil } : undefined}
