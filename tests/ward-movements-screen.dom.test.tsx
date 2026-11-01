@@ -382,6 +382,18 @@ describe("the Movements screen", () => {
     expect(value("Arrived")).toHaveTextContent(String(counts.Arrived));
   });
 
+  // Review fix (1 Nov 2026): the hero's "On the road or booked" counts booked or moving legs only,
+  // never arrived or cancelled ones.
+  it("counts only booked or moving legs in the hero's 'On the road or booked' figure", () => {
+    renderScreen();
+    const figure = within(screen.getByRole("group", { name: "Highlight movements" }))
+      .getByText("On the road or booked")
+      .closest("div");
+    expect(figure).toHaveTextContent(
+      new RegExp(`^${counts.Accepted + counts["En route"] + counts.Collected}On the road or booked$`, "u"),
+    );
+  });
+
   // Movements redesign (1 Nov 2026): Shape of the day opens on "Where they wait", one heat-map row
   // per open stage with its total; an empty square is named "none", never a bare 0.
   it("shows the open-stage summary count for every stage, stating zero in words rather than a bare 0", () => {

@@ -888,7 +888,8 @@ export function MovementsScreen() {
                     );
                   })}
                   <div className={cx(board.stat, board.statStatic)}>
-                    <span className={board.statV}>{legs.length}</span>
+                    {/* Booked or moving only: arrived and cancelled legs are not on the road or booked. */}
+                    <span className={board.statV}>{counts.Accepted + counts["En route"] + counts.Collected}</span>
                     <span className={board.statL}>On the road or booked</span>
                   </div>
                 </div>
