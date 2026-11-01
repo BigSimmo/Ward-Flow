@@ -36,9 +36,11 @@ function renderSheet(isPhone = false) {
 describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
   it("is one sheet in the reviewed groups, with the repeated items gone", () => {
     renderSheet();
-    for (const group of ["Do now", "Look up", "Print and share", "More pages"]) {
+    // Tools redesign (approved 31 Oct 2026): three groups; More pages folds into Look up.
+    for (const group of ["Do now", "Look up", "Print and share"]) {
       expect(screen.getByRole("region", { name: group })).toBeTruthy();
     }
+    expect(screen.queryByRole("region", { name: "More pages" })).toBeNull();
     for (const gone of [
       "Service now",
       "Figures at a glance",
@@ -174,6 +176,39 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     const picker = within(panel).getByRole("group", { name: "Demo scenario" });
     expect(within(picker).queryByRole("button", { name: /Winter surge/u })).toBeNull();
     expect(within(picker).getByRole("button", { name: /Standard day/u })).toBeTruthy();
+  });
+
+  it("puts the Hospital feed under Do now and Find a bed, then Legal forms, under Look up", () => {
+    renderSheet();
+    const doNow = screen.getByRole("region", { name: "Do now" });
+    expect(within(doNow).getByTestId("ward-tools-toggle-feed")).toBeTruthy();
+    const lookUp = screen.getByRole("region", { name: "Look up" });
+    const rows = within(lookUp).getAllByRole("button").concat(within(lookUp).getAllByRole("link"));
+    expect(within(lookUp).getAllByRole("button")[0]).toBe(screen.getByTestId("ward-tools-toggle-bed-finder"));
+    expect(rows.some((row) => /Legal forms/u.test(row.textContent ?? ""))).toBe(true);
+    // A row that opens a page says so; a row that opens here is a disclosure.
+    expect(within(lookUp).getByRole("link", { name: /Legal forms.*opens its page/u })).toBeTruthy();
+    expect(screen.getByTestId("ward-tools-toggle-bed-finder").getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("finds a tool by its name or line, keeps its group, and says when nothing matches", () => {
+    renderSheet();
+    const search = screen.getByRole("searchbox", { name: "Search tools" });
+    fireEvent.change(search, { target: { value: "bed" } });
+    expect(screen.getByTestId("ward-tools-toggle-bed-finder")).toBeTruthy();
+    expect(screen.getByTestId("ward-tools-toggle-bed-summary")).toBeTruthy();
+    expect(screen.queryByTestId("ward-tools-toggle-form-times")).toBeNull();
+    // The Demo foot steps aside while a search is typed.
+    expect(screen.queryByRole("region", { name: "Demo" })).toBeNull();
+    fireEvent.change(search, { target: { value: "postcode" } });
+    expect(screen.getByTestId("ward-tools-toggle-catchment")).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Do now" })).toBeNull();
+    fireEvent.change(search, { target: { value: "zzz" } });
+    expect(screen.getByRole("status")).toHaveTextContent("No tool matches “zzz”.");
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(search).toHaveValue("");
+    expect(screen.getByRole("region", { name: "Do now" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
   });
 
   it("opens every figure in place without repeating the headline figures (simplification A2)", () => {
