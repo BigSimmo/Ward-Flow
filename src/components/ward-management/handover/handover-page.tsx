@@ -16,7 +16,6 @@ import {
   MoreHorizontal,
   Printer,
   Timer as TimerIcon,
-  X,
 } from "lucide-react";
 
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
@@ -60,6 +59,7 @@ import {
   useIsTabletPortrait,
   useMediaQuery,
   SrOnly,
+  AppliedFilter,
 } from "@/components/wf";
 
 import {
@@ -1181,16 +1181,13 @@ export function HandoverPage() {
                 {deskChips
                   .filter((chip) => chips.has(chip.id))
                   .map((chip) => (
-                    <button
+                    <AppliedFilter
                       key={chip.id}
-                      type="button"
-                      className={styles.hlChip}
-                      onClick={() => toggleChip(chip.id)}
-                      aria-label={`Stop highlighting ${chip.label}`}
+                      onRemove={() => toggleChip(chip.id)}
+                      removeLabel={`Stop highlighting ${chip.label}`}
                     >
                       {chip.label}
-                      <X size={12} aria-hidden="true" />
-                    </button>
+                    </AppliedFilter>
                   ))}
               </span>
               <span className={styles.spacer} />

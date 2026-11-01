@@ -1216,26 +1216,6 @@
   gap: 6px;
 }
 
-.hlChip {
-  all: unset;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 8px 0 12px;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-accent-tint);
-  color: var(--wf-accent-ink);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-  cursor: pointer;
-}
-
-.hlChip:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
 .hlCount {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
