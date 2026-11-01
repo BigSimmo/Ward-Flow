@@ -2,7 +2,14 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/ward-flow",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
+import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import {
   LAST_LOOK_STORAGE_KEY,
   parseLastLookSnapshot,
@@ -17,7 +24,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * Home's Activity panel (Home and Activity design, approved by Josh 31 Oct 2026): review is
  * explicit. Opening, switching tabs and closing mark nothing; only "Mark these N reviewed" saves
  * the picture taken when the panel opened, and Undo puts the previous review back. Synthetic seed
- * data only.
+ * data only. Since Q99 (Josh, 1 Nov 2026) the panel is the app bar's one Activity panel, so Home is
+ * drawn under the real bar and its changes button opens the bar's panel.
  */
 const NOW = NOW_ANCHOR;
 
@@ -35,6 +43,7 @@ function renderHome() {
   return render(
     <WardFlowProvider initialNow={NOW}>
       <WorldProbe />
+      <WardBar />
       <CoordinatorScreen />
     </WardFlowProvider>,
   );
@@ -69,7 +78,12 @@ function storeEarlierReview() {
 
 /** The desktop hero's changes chip (jsdom reports a desktop width). */
 const changesChip = () => screen.getByRole("button", { name: /· (Review|Activity)$/u });
-const panel = () => screen.getByTestId("home-activity-panel");
+const panel = () => screen.getByTestId("ward-bar-activity-sheet");
+/** The panel's code loads on demand, so the first open waits for it. */
+async function openFromChip() {
+  fireEvent.click(changesChip());
+  return screen.findByTestId("ward-bar-activity-sheet");
+}
 const closePanel = () => fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
 
 describe("Home's Activity panel: explicit review", () => {
@@ -82,7 +96,7 @@ describe("Home's Activity panel: explicit review", () => {
     const stored = storeEarlierReview();
     renderHome();
     expect(changesChip()).toHaveTextContent(/^2\s*changes since your review at 09:42 · Review$/u);
-    fireEvent.click(changesChip());
+    await openFromChip();
     expect(within(panel()).getByRole("button", { name: "Mark these 2 reviewed" })).toBeInTheDocument();
     fireEvent.click(within(panel()).getByRole("tab", { name: /Recent activity/u }));
     fireEvent.click(within(panel()).getByRole("tab", { name: /Notices/u }));
@@ -98,7 +112,7 @@ describe("Home's Activity panel: explicit review", () => {
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     storeEarlierReview();
     renderHome();
-    fireEvent.click(changesChip());
+    await openFromChip();
     fireEvent.click(within(panel()).getByRole("button", { name: "Copy as handover text" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     const text = writeText.mock.calls[0]![0];
@@ -114,10 +128,10 @@ describe("Home's Activity panel: explicit review", () => {
     expect(await within(panel()).findByText("Copied as handover text.")).toBeInTheDocument();
   });
 
-  it("saves the picture on Mark reviewed, so the hero count drops to 0, and Undo restores it", () => {
+  it("saves the picture on Mark reviewed, so the hero count drops to 0, and Undo restores it", async () => {
     const stored = storeEarlierReview();
     renderHome();
-    fireEvent.click(changesChip());
+    await openFromChip();
     expect(panel()).toHaveTextContent("Since your review at 09:42");
     fireEvent.click(within(panel()).getByRole("button", { name: "Mark these 2 reviewed" }));
 
@@ -133,11 +147,11 @@ describe("Home's Activity panel: explicit review", () => {
     expect(within(panel()).getByRole("button", { name: "Mark these 2 reviewed" })).toBeInTheDocument();
   });
 
-  it("Undo of a first review this shift clears it, so lines count from the shift start again", () => {
+  it("Undo of a first review this shift clears it, so lines count from the shift start again", async () => {
     renderHome();
     const firstLabel = changesChip().textContent;
     expect(firstLabel).toMatch(/^\d+\s*changes? since 07:00 · Review$/u);
-    fireEvent.click(changesChip());
+    await openFromChip();
     expect(panel()).toHaveTextContent("Since 07:00, the start of your shift");
     fireEvent.click(within(panel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))?.at).toBe(NOW);
@@ -148,10 +162,10 @@ describe("Home's Activity panel: explicit review", () => {
     expect(changesChip().textContent).toBe(firstLabel);
   });
 
-  it("shows a change that arrives while open as new, and Mark reviewed does not cover it", () => {
+  it("shows a change that arrives while open as new, and Mark reviewed does not cover it", async () => {
     storeEarlierReview();
     renderHome();
-    fireEvent.click(changesChip());
+    await openFromChip();
     const markTwo = within(panel()).getByRole("button", { name: "Mark these 2 reviewed" });
 
     // A synthetic escalation recorded while the panel is open.

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { WardBarFrame } from "./ward-chrome-frame";
-import { RotateCcwClock, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
@@ -18,7 +18,7 @@ import {
   subscribeGlarePreference,
   subscribeThemePreference,
 } from "@/lib/theme-client";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -27,7 +27,12 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { WARD_ALERTS_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
-import { WardBarActivityBody, WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
+import { ActivityPanel, WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
+import {
+  publishActivityPanelOpen,
+  subscribeActivityPanelRequest,
+  type ActivityPanelRequest,
+} from "./ward-activity-panel-store";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import {
@@ -56,14 +61,13 @@ import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
 import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "./ward-facade";
-import type { WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
-import type { WardActivityEventTone } from "./ward-command-activity";
+import type { WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { useWardChecks } from "./ward-checks";
 import { useDeskRoleLabel } from "./ward-access-store";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
 import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "./ward-access";
-import { useNavigationPendingRef, useWardBarActivity, useWardBarTasks } from "./ward-bar-state";
+import { useNavigationPendingRef, useWardBarNotices, useWardBarTasks } from "./ward-bar-state";
 import { useEffectiveWardAccess } from "./ward-access-store";
 import { deskHomeRouteTitle, deskPlaceLabel } from "./ward-bar-desk-place";
 import { CLOSE_MENUS_EVENT } from "./ward-menu-events";
@@ -135,10 +139,10 @@ export { drawerCloseHistoryStep, isPendingNavigation };
  * ──────────────────────────────────────────────────────────────────────────────────────────────
  * WHAT IS DELIBERATELY LEFT AS A SEAM RATHER THAN BUILT HERE:
  *
- * - **`activity` (the Activity drawer's page tally).** Screens may supply their existing tally.
- *   Command instead projects timestamped reducer records and shared navigation counts into a
- *   synthetic event feed and tally. Authored notices are read from reducer state and filtered to
- *   the current route-derived role and place; no notice text is reconstructed here.
+ * - **Activity (Josh, Q99, 1 Nov 2026).** One panel on every page: Home's Activity panel
+ *   (`coordinator/activity-panel.tsx`, loaded on demand), which reads its own feed, changes and
+ *   notices from the store. Home's changes button opens this same instance
+ *   (`ward-activity-panel-store.ts`). The bar keeps only the notice count for its unread dot.
  * - 🔴 **`primaryAction` (`WARD_PRIMARY_ACTIONS`) IS NOW WIRED — D-16.** This component still takes
  *   one resolved `WardPrimaryAction | undefined` and never performs its own lookup — the
  *   resolution from a pathname lives in `WardBarMount` at the bottom of this file, not here, for
@@ -244,8 +248,6 @@ export function applyGlare(on: boolean) {
 }
 
 export type WardBarProps = {
-  /** The Activity drawer's page tally. Command derives one when this is absent. */
-  activity?: WardActivityContent;
   /**
    * `resolveWardPrimaryAction(pathname)` (`ward-nav.ts`), resolved by the caller — this component
    * never performs its own lookup (`WardBarMount`, at the bottom of this file, is the one caller
@@ -258,7 +260,7 @@ export type WardBarProps = {
   onServiceChange?: (service: HealthService | null) => void;
 };
 
-export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
+export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
@@ -270,10 +272,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     units,
     admissions,
     referrals,
-    rejections,
-    bedReleases,
     leaveBeds,
-    refreshRequests,
     notices,
     dispatch,
     inboxAcknowledgements,
@@ -289,10 +288,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     "units",
     "admissions",
     "referrals",
-    "rejections",
-    "bedReleases",
     "leaveBeds",
-    "refreshRequests",
     "notices",
     "dispatch",
     "inboxAcknowledgements",
@@ -458,44 +454,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
    * All services.
    */
   const waiting = useMemo(() => waitingInEds(movements, now), [movements, now]);
-  const {
-    activityQuery,
-    setActivityQuery,
-    unreadOnly,
-    setUnreadOnly,
-    activityPart,
-    setActivityPart,
-    activityCategoryFilter,
-    setActivityCategoryFilter,
-    commandActivity,
-    usesDerivedActivity,
-    shownActivity,
-    lastActivityAt,
-    activityCategoryCounts,
-    filteredActivityChanges,
-    scopedNotices,
-    noticeText,
-    visibleNotices,
-    unreadNoticeCount,
-    markNoticeRead,
-  } = useWardBarActivity({
-    activity,
-    pathname,
-    role,
-    placeId,
-    now,
-    movements,
-    patients,
-    units,
-    referrals,
-    rejections,
-    bedReleases,
-    admissions,
-    leaveBeds,
-    refreshRequests,
-    notices,
-    dispatch,
-  });
+  const { scopedNotices, unreadNoticeCount } = useWardBarNotices({ role, placeId, now, notices });
 
   const navigationPendingRef = useNavigationPendingRef(pathname);
 
@@ -579,7 +538,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       }
       if (id === "activity") {
         announceToWardShell(
-          `Activity opened. Synthetic data: ${scopedNotices.length} notices and ${shownActivity?.changes.length ?? 0} recent changes.`,
+          `Activity opened. Synthetic data: changes, recent activity and ${scopedNotices.length} notices.`,
         );
       } else if (id === "tasks") {
         announceToWardShell(
@@ -606,14 +565,56 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       router,
       scopedNotices.length,
       setOpenPanel,
-      shownActivity?.changes.length,
       tasksActiveCount,
     ],
   );
   useEffect(() => {
     popoverStepsRef.current = { close: closePopover, open: openPopover };
   }, [closePopover, openPopover]);
-  const activitySheet = usePhoneActivitySheet(isPhone, phoneReturnTarget, activityTriggerRef, openPopover);
+  /*
+   * Activity (Josh, Q99, 1 Nov 2026): one panel, Home's, on every page. The bar's button, the phone
+   * dock and drawer requests open it plainly; Home's changes button asks for a tab, its paused clock
+   * and its own focus return (`openActivityPanel`).
+   */
+  const [activityRequest, setActivityRequest] = useState<ActivityPanelRequest>({});
+  const activityOpenerRef = useRef<HTMLElement | null>(null);
+  const openBarPopover = useCallback(
+    (id: WardBarPopoverId) => {
+      if (id === "activity") {
+        activityOpenerRef.current = null;
+        setActivityRequest({});
+      }
+      openPopover(id);
+    },
+    [openPopover],
+  );
+  useEffect(
+    () =>
+      subscribeActivityPanelRequest((request) => {
+        const focused = typeof document === "undefined" ? null : document.activeElement;
+        activityOpenerRef.current = request.opener ?? (focused instanceof HTMLElement ? focused : null);
+        setActivityRequest(request);
+        openPopover("activity");
+      }),
+    [openPopover],
+  );
+  const activityOpen = openPanel === "activity";
+  useEffect(() => publishActivityPanelOpen(activityOpen), [activityOpen]);
+  useEffect(() => () => publishActivityPanelOpen(false), []);
+  // The panel's code loads on first open and then stays mounted, so closing it can animate.
+  const [activityMounted, setActivityMounted] = useState(false);
+  if (activityOpen && !activityMounted) setActivityMounted(true);
+  const activitySheet = usePhoneActivitySheet(isPhone, phoneReturnTarget, activityTriggerRef, openBarPopover);
+  const activityBarReturn = activitySheet.sheetProps.returnFocusRef;
+  const activityReturnTarget = useMemo<RefObject<HTMLElement | null>>(
+    () => ({
+      get current() {
+        const opener = activityOpenerRef.current;
+        return opener?.isConnected && opener !== document.body ? opener : activityBarReturn.current;
+      },
+    }),
+    [activityBarReturn],
+  );
   /**
    * Opens the referral slide-out with `request`. Every open gets a new id, so the slide-out mounts
    * fresh with what this open asked for. `returnFocus` is where focus goes when it closes.
@@ -758,7 +759,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         );
         return;
       }
-      openPopover(drawerId);
+      openBarPopover(drawerId);
     });
     const unsubClose = subscribeWardDrawerClose(() => {
       // The rail's Escape reaches here before the Sheet's own Escape handler. Any open Sheet
@@ -774,7 +775,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       unsubOpen();
       unsubClose();
     };
-  }, [canOpenReferral, openPopover, openReferral, roleCategory]);
+  }, [canOpenReferral, openBarPopover, openReferral, roleCategory]);
 
   const selectService = useCallback(
     (next: HealthService | null) => {
@@ -956,13 +957,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [closePopover, openPanel, service]);
 
-  /** `"neutral"` is this app's existing word for "nothing asserted either way" (`WardRecordTone`,
-   *  `ward-record-row.tsx`) — reused here rather than inventing a fourth tone name. */
-  const activityTone: "good" | "neutral" = shownActivity || scopedNotices.length > 0 ? "good" : "neutral";
-  const activityToneFor = (id: string): WardActivityEventTone =>
-    usesDerivedActivity ? (commandActivity.tones[id] ?? "info") : "info";
   const publishedChecks = checksPublication.published ? checksPublication.checks : [];
-  const reconciledCheckCount = publishedChecks.filter((check) => check.ok).length;
 
   // The route's place, else the desk's own place (#838): a ward desk never reads "Statewide".
   // Every desk but the coordinator: the chip names the desk's own place (Josh, 30 Oct 2026), and a
@@ -1157,10 +1152,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         toolsTriggerRef={toolsTriggerRef}
         openPanel={openPanel}
         closePopover={closePopover}
-        openPopover={openPopover}
+        openPopover={openBarPopover}
         activityHasUnread={activityHasUnread}
         unreadNoticeCount={unreadNoticeCount}
-        shownActivity={shownActivity}
         oneAlertsQueue={oneAlertsQueue}
         isPhone={isPhone}
         onAlertsScreen={onAlertsScreen}
@@ -1192,93 +1186,21 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         roleCategory={roleCategory}
       />
 
-      <Sheet
-        id="ward-bar-activity-drawer"
-        open={openPanel === "activity"}
-        onClose={() => closePopover("activity")}
-        title="Activity"
-        headerLeading={
-          <span className={styles.drawerTile} aria-hidden="true">
-            <RotateCcwClock aria-hidden="true" className={styles.drawerHeadingIcon} strokeWidth={1.75} />
-          </span>
-        }
-        headerActions={
-          <kbd className={styles.escKbd} aria-hidden="true">
-            Esc
-          </kbd>
-        }
-        placement="right"
-        testId="ward-bar-activity-sheet"
-        {...activitySheet.sheetProps}
-        descriptionContent={
-          isPhone ? (
-            // v10 Activity sheet (phone): one quiet line, then the list.
-            <p className={styles.activityFreshness} data-tone={activityTone}>
-              <span>
-                {unreadNoticeCount > 0 ? `${unreadNoticeCount} unread · ` : ""}
-                {shownActivity?.changes.length ?? 0} events · newest first
-              </span>
-            </p>
-          ) : (
-            <p className={styles.activityFreshness} data-tone={activityTone}>
-              <span>
-                Synthetic state · demo time {formatInstant(now)}
-                {lastActivityAt === undefined
-                  ? " · no recorded event"
-                  : ` · last event ${formatInstantWithDay(lastActivityAt, now)}`}
-              </span>
-            </p>
-          )
-        }
-        desktopBackdropClassName={styles.drawerBackdrop}
-        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
-        headerClassName={styles.drawerHeader}
-        titleClassName={styles.drawerTitle}
-        closeButtonClassName={styles.drawerClose}
-        bodyClassName={styles.drawerBody}
-        footer={
-          isPhone ? undefined : (
-            <div className={styles.drawerFoot}>
-              <span>Synthetic events · newest first</span>
-              <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("activity", from)}>
-                <span className={styles.footClock}>
-                  Demo time <b>{formatInstant(now)}</b>
-                </span>
-              </WardDemoClockPopover>
-            </div>
-          )
-        }
-        footerClassName={styles.drawerFooter}
-      >
-        <WardBarActivityBody
-          isPhone={isPhone}
-          activityPart={activityPart}
-          setActivityPart={setActivityPart}
-          shownActivity={shownActivity}
-          unreadNoticeCount={unreadNoticeCount}
-          lastActivityAt={lastActivityAt}
-          now={now}
-          activityQuery={activityQuery}
-          setActivityQuery={setActivityQuery}
-          activityCategoryFilter={activityCategoryFilter}
-          setActivityCategoryFilter={setActivityCategoryFilter}
-          activityCategoryCounts={activityCategoryCounts}
-          scopedNotices={scopedNotices}
-          unreadOnly={unreadOnly}
-          setUnreadOnly={setUnreadOnly}
-          visibleNotices={visibleNotices}
-          noticeText={noticeText}
-          markNoticeRead={markNoticeRead}
-          filteredActivityChanges={filteredActivityChanges}
-          service={service}
-          activityToneFor={activityToneFor}
-          publishedChecks={publishedChecks}
-          reconciledCheckCount={reconciledCheckCount}
-          usesDerivedActivity={usesDerivedActivity}
-          commandActivity={commandActivity}
-          closePopover={closePopover}
+      {activityMounted ? (
+        <ActivityPanel
+          id="ward-bar-activity-drawer"
+          testId="ward-bar-activity-sheet"
+          open={activityOpen}
+          onClose={() => closePopover("activity")}
+          initialTab={activityRequest.tab}
+          now={activityRequest.now}
+          figureChecks={publishedChecks}
+          returnFocusRef={activityReturnTarget}
+          bodyTabIndex={isPhone ? 0 : undefined}
+          bodyLabel={isPhone ? "Activity list" : undefined}
+          onNavigate={() => closePopover("activity", false)}
         />
-      </Sheet>
+      ) : null}
 
       <Sheet
         id="ward-bar-tasks-drawer"
