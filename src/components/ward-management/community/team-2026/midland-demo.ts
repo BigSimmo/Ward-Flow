@@ -890,7 +890,5 @@ export const DEMO_FIGURES = {
   actNow: 3,
 } as const;
 
-/** True for the one team the mock-up's demo data describes. */
-export function hasMidlandDemo(team: { id: string; name: string }): boolean {
-  return /midland/i.test(team.id) || /midland/i.test(team.name);
-}
+/** The team page that carries this demo team: Midland (Q132). */
+export const MIDLAND_DEMO_TEAM = /^midland$/i;

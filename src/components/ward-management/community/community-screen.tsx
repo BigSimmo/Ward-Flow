@@ -90,7 +90,7 @@ import { CommunityScreenWaitingTab } from "./community-screen-waiting-tab";
 import { CommunityScreenInBedTab } from "./community-screen-in-bed-tab";
 import { CommunityScreenBackTab } from "./community-screen-back-tab";
 import { CommunityScreenCaseloadTab } from "./community-screen-caseload-tab";
-import { hasMidlandDemo } from "./team-2026/midland-demo";
+import { MIDLAND_DEMO_TEAM } from "./team-2026/midland-demo";
 import { MidlandTeamSections } from "./team-2026/midland-sections";
 import {
   CommunityScreenTransportBookDialog,
@@ -441,7 +441,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const isDemoMode = demonstration && !hasExplicitProps;
   // The live Midland page carries the locked mock-up's demo team (Q126, Q132: Midland only). Supplied
   // records, and the older demonstration cohort, keep their own lists.
-  const midlandDemo = !hasExplicitProps && !demonstration && hasMidlandDemo({ id: team?.id ?? "", name: team?.name ?? "" });
+  const midlandDemo = !hasExplicitProps && !demonstration && MIDLAND_DEMO_TEAM.test(teamId);
 
   const { demoTeamReferrals, demoVisibleReferrals, demoVisibleInpatients, demoVisibleEgress, demoVisibleCaseload } =
     useCommunityScreenDemoLists({ teamId, triageFilter, inpatientFilter, egressFilter, caseloadFilter });
