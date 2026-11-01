@@ -52,7 +52,11 @@ export function HandoverOpenPromises({
       const overdue = promiseOverdue(status, now);
       const callback = status.nextCallbackAt?.at;
       const promised = status.step?.step === "promised" ? status.promisedFor : undefined;
-      const when = overdue ? promised! : (callback ?? promised ?? now);
+      const when = overdue
+        ? promised!
+        : callback !== undefined && promised !== undefined
+          ? Math.min(callback, promised)
+          : (callback ?? promised ?? now);
       const ward = wardName(item.unitId);
       const what =
         promised !== undefined
@@ -61,7 +65,7 @@ export function HandoverOpenPromises({
             ? `${ward} acknowledged, no time promised`
             : `Waiting for ${ward} to respond`;
       const then = callback !== undefined && (overdue || promised !== undefined) ? `ring again ${at(callback)}` : null;
-      return { item, overdue, when, ward, what, then, isCallback: !overdue && callback !== undefined };
+      return { item, overdue, when, ward, what, then, isCallback: !overdue && callback !== undefined && callback === when };
     })
     .sort((left, right) => left.when - right.when);
   const overdueCount = rows.filter((row) => row.overdue).length;

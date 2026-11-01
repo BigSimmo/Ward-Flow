@@ -1056,6 +1056,11 @@
   background: color-mix(in srgb, var(--wf-accent) 12%, var(--wf-surface));
 }
 
+/* A picked row keeps its selected tint over a highlight. */
+.row[data-highlighted="true"].rowSelected td {
+  background: var(--wf-selected);
+}
+
 .row[data-dim="true"] {
   --wf-ink-1: var(--wf-dim);
   --wf-ink-2: var(--wf-dim);

@@ -456,10 +456,6 @@ export function HandoverPage() {
   const wardAllShown = ownWard !== undefined && rows.length === allRows.length && outsideAct.length === 0;
 
   /* columns */
-  // Desktop with the sign-off rail beside the table (1201px and up): Standard drops Legal and obs and
-  // fits the rest to the card, so Due and Next step are on screen rather than scrolled off (device
-  // audit 11 Oct 2026). Full and custom columns keep their own set.
-  const railBeside = useMediaQuery("(min-width: 75.0625rem)");
   // iPad landscape (1001px and up) fits the Standard columns to the card too, so Next step is not cut
   // at the card edge behind a sideways scroll (layout sweep 25 Oct 2026).
   const fitsCard = useMediaQuery("(min-width: 62.5625rem)");
@@ -482,11 +478,6 @@ export function HandoverPage() {
 
   /* selection */
   const selected = selectedId === null ? undefined : allRows.find((row) => row.id === selectedId);
-  // The rail's own Sign off shows only when the rail is on screen beside the Patients table and is
-  // not holding a picked patient's flow; everywhere else the hero button is the way in.
-  // ROLE BRANCH (ed): an ED desk never signs off, so there is no sign-off rail.
-  // 1 Nov 2026 mock-up: sign-off is one clear bar at the foot of the sheet, its checklist a drawer.
-  const signOffInRail = false && !edDesk && railBeside && !wide && tab === "pts" && !selected;
   const pick = (id: string) => {
     setSelectedId(id);
     if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
@@ -1438,7 +1429,7 @@ export function HandoverPage() {
         <div className={`${styles.split} ${wide || !flowPanel ? styles.splitFull : ""}`}>
           {table}
           {wide || !flowPanel ? null : (
-            <aside className={styles.side} aria-label={selected ? "Patient flow" : "Sign off"} data-wf-rail="1201">
+            <aside className={styles.side} aria-label="Patient flow" data-wf-rail="1201">
               {flowPanel}
             </aside>
           )}
@@ -1449,7 +1440,7 @@ export function HandoverPage() {
 
   // One Sign off on screen: the bar shows only when the rail's own panel is not beside the table.
   const signBar =
-    tab === "pts" && !sheetOpen && !signOffInRail && !edDesk ? (
+    tab === "pts" && !sheetOpen && !edDesk ? (
       <SignOffBar
         title={`${shiftClock} handover`}
         checks={signChecks}
