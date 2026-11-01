@@ -196,4 +196,17 @@ describe("Weekly executive aggregate adoption", () => {
     expect(screen.getByTestId("ward-weekly-occupancy")).toHaveTextContent("—");
     expect(screen.queryByRole("meter", { name: "Recorded occupied bed time" })).not.toBeInTheDocument();
   });
+
+  it("draws both declines and overrides so a printed report carries both", () => {
+    installMatchMediaStub(false);
+    report(structuredClone(base));
+    const declines = screen.getByTestId("ward-weekly-declines");
+    const overrides = screen.getByTestId("ward-weekly-overrides");
+    // on screen the switch shows one; the other is kept for print only.
+    expect(declines.parentElement?.className ?? "").not.toMatch(/printOnly/u);
+    expect(overrides.parentElement?.className).toMatch(/printOnly/u);
+    fireEvent.click(screen.getByRole("radio", { name: /^Overrides/u }));
+    expect(declines.parentElement?.className).toMatch(/printOnly/u);
+    expect(overrides.parentElement?.className ?? "").not.toMatch(/printOnly/u);
+  });
 });

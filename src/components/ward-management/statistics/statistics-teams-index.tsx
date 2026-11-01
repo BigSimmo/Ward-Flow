@@ -73,7 +73,7 @@ type TeamIndexRow = {
   dueOutWeek: StatisticsCount | null;
   openable?: boolean;
 };
-const shown = (count: StatisticsCount | null, missing = "�") => (count === null ? missing : statisticsCountText(count));
+const shown = (count: StatisticsCount | null, missing = "—") => (count === null ? missing : statisticsCountText(count));
 const exact = (count: StatisticsCount | null) => (count === null ? null : exactStatisticsCount(count));
 const positive = (count: StatisticsCount | null) => count !== null && exact(count) !== 0;
 export function StatisticsTeamsIndexScreen() {
@@ -317,13 +317,17 @@ function TeamsIndexView({
           >
             <Strip label="Teams by service" cols={4}>
               {tileGroups.map((group) => {
-                const counted = group.teams.filter((entry) => entry.inBed !== null);
-                const inBed = sumStatisticsCounts(counted.map((entry) => entry.inBed!));
-                const withDate = sumStatisticsCounts(
-                  group.teams.filter((entry) => entry.withDate !== null).map((entry) => entry.withDate!),
-                );
+                // one team with no count makes the service figure unknown, never a partial sum or a nought.
+                const total = (pick: (entry: TeamIndexRow) => StatisticsCount | null) => {
+                  const counts = group.teams.map(pick);
+                  return counts.some((value) => value === null)
+                    ? null
+                    : sumStatisticsCounts(counts as StatisticsCount[]);
+                };
+                const inBed = total((entry) => entry.inBed);
+                const withDate = total((entry) => entry.withDate);
                 const busy = group.teams.filter((entry) => positive(entry.inBed));
-                const nobody = exactStatisticsCount(inBed) === 0;
+                const nobody = exact(inBed) === 0;
                 return (
                   <Tile
                     key={group.key}

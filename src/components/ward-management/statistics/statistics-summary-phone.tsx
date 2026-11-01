@@ -300,7 +300,7 @@ function StatisticsSummaryPhoneView({
                   {
                     id: "ed",
                     value: statisticsCountText(waitingInEd),
-                    label: <ShortLabel short="In ED now" full="Open ED journeys" />,
+                    label: <ShortLabel short="Open journeys" full="Open ED journeys" />,
                   },
                 ]),
             // The figure names its noun, as the desktop's "Admissions ended today" does.

@@ -655,6 +655,15 @@
   display: flex;
   justify-content: flex-end;
 }
+/* On screen only the chosen view shows; a printed report carries every view. */
+.printOnly {
+  display: none;
+}
+@media print {
+  .printOnly {
+    display: block;
+  }
+}
 
 @media (max-width: 1100px) {
   .thirds {

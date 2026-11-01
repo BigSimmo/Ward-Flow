@@ -469,11 +469,15 @@ export function WeeklyBody(props: WeeklyBodyProps) {
           }
           foot={<Foot>Placement and referral decisions in the week</Foot>}
         >
-          {reasons === "declines" ? (
+          {/* both are drawn so a printed report carries both; the switch hides the other on screen only. */}
+          <div className={reasons === "declines" ? undefined : s.printOnly}>
+            <h3 className={s.printOnly}>Declines</h3>
             <ReasonBars decisions={props.declines} label="Declines by reason" testId="ward-weekly-declines" />
-          ) : (
+          </div>
+          <div className={reasons === "overrides" ? undefined : s.printOnly}>
+            <h3 className={s.printOnly}>Overrides</h3>
             <ReasonBars decisions={props.overrides} label="Overrides by reason" testId="ward-weekly-overrides" />
-          )}
+          </div>
         </StatCardR>
       </Grid>
 

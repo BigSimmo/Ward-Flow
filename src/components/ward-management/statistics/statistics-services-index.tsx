@@ -284,7 +284,10 @@ function ServicesIndexView({
           <>
             <HeroStat value={services.length} label="Services" />
             <HeroStat value={totalBeds} label="Beds" />
-            <HeroStat value={shown(totalWaiting)} label={<ShortLabel short="In ED now" full="Open ED journeys" />} />
+            <HeroStat
+              value={shown(totalWaiting)}
+              label={<ShortLabel short="Open journeys" full="Open ED journeys" />}
+            />
           </>
         ),
       }}

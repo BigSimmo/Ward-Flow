@@ -280,4 +280,27 @@ describe("public place aggregate views", () => {
     );
     expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
   });
+  it.each([
+    ["every team unlinked", () => true],
+    ["one team per service unlinked", (index: number) => index === 0],
+  ])("never sums a service's teams past one with no count (%s)", (_name, unlinked) => {
+    installMatchMediaStub(false);
+    const data = structuredClone(base);
+    const seen = new Map<string, number>();
+    for (const team of data.teams) {
+      const index = seen.get(team.code) ?? 0;
+      seen.set(team.code, index + 1);
+      team.figures.admitted = unlinked(index)
+        ? { kind: "unlinkable", words: "not linked to this team" }
+        : { kind: "measured", count: { kind: "exact", value: 3 } };
+    }
+    place(<StatisticsTeamsIndexScreen />, data);
+    const tiles = within(screen.getByTestId("ward-statistics-teams-in-bed")).getAllByRole("listitem");
+    expect(tiles.length).toBeGreaterThan(0);
+    for (const tile of tiles) {
+      expect(tile).toHaveTextContent("—in a bed");
+      expect(tile).not.toHaveTextContent("Nobody in a bed");
+    }
+    expect(guard.operational).not.toHaveBeenCalled();
+  });
 });
