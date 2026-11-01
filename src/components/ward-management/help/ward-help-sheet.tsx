@@ -266,6 +266,12 @@ function WardHelpSheetView({
   };
 
   const onFieldKey = (event: KeyboardEvent<HTMLInputElement>) => {
+    // Enter, arrows and Escape belong to the input method until composition finishes. Safari
+    // can report keyCode 229 before isComposing is set; keep the native edit and shield the sheet's Escape handler.
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+      event.stopPropagation();
+      return;
+    }
     if (event.key === "Escape" && query) {
       event.preventDefault();
       event.stopPropagation();

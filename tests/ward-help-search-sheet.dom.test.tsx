@@ -49,6 +49,41 @@ function type(words: string) {
 }
 
 describe("Help sheet search field", () => {
+  it.each(["Enter", "ArrowDown", "ArrowUp", "Escape"])(
+    "leaves %s to text composition without navigating or closing Help",
+    (key) => {
+      const onView = vi.fn();
+      const onClose = vi.fn();
+      sheet({ onView, onClose });
+      const field = type("what does pull expired mean");
+      const active = field.getAttribute("aria-activedescendant");
+      const heard = vi.fn();
+      window.addEventListener("keydown", heard);
+      try {
+        const event = new KeyboardEvent("keydown", { key, isComposing: true, bubbles: true, cancelable: true });
+        fireEvent(field, event);
+        expect(event.defaultPrevented).toBe(false);
+        expect(heard).not.toHaveBeenCalled();
+        expect((field as HTMLInputElement).value).toBe("what does pull expired mean");
+        expect(field.getAttribute("aria-activedescendant")).toBe(active);
+        expect(onView).not.toHaveBeenCalled();
+        expect(onClose).not.toHaveBeenCalled();
+        fireEvent.keyDown(field, { key: "Enter" });
+        expect(onView).toHaveBeenCalledWith("reference");
+      } finally {
+        window.removeEventListener("keydown", heard);
+      }
+    },
+  );
+
+  it("also protects composition reported through the legacy 229 key code", () => {
+    const onView = vi.fn();
+    sheet({ onView });
+    const field = type("what does pull expired mean");
+    fireEvent.keyDown(field, { key: "Enter", keyCode: 229 });
+    expect(onView).not.toHaveBeenCalled();
+    expect((field as HTMLInputElement).value).toBe("what does pull expired mean");
+  });
   it("scrolls the active result into view without moving focus out of the search box", () => {
     sheet();
     const field = type("handover");
