@@ -104,7 +104,7 @@ import {
   type HandoverSort,
   type HeldHandover,
 } from "./handover-model";
-import { HandoverFlowPanel, HandoverSignOffPanel } from "./handover-panels";
+import { HandoverFlowPanel, HandoverSignOffPanel, HandoverSiteSignOffSlot } from "./handover-panels";
 import { handoverSignOffChecks, sheetSignOff } from "./handover-sign-off-checks";
 import {
   HandoverKeysHelp,
@@ -845,6 +845,7 @@ export function HandoverPage() {
     </FilterChip>
   ));
 
+  const siteSignOff = <HandoverSiteSignOffSlot phone={isPhoneWidth} onScope={setScopeValue} />;
   if (isPhoneWidth) {
     return (
       <main id="main-content" data-testid="ward-handover-page" data-ward-design="v6">
@@ -888,6 +889,7 @@ export function HandoverPage() {
           meetingOn={meetingStartedAt !== null}
           onToggleMeeting={toggleMeeting}
           history={<HandoverHistory {...historyProps} />}
+          siteSignOff={siteSignOff}
         />
         <WardPrototypeFooter
           testId="ward-handover-governance"
@@ -1474,6 +1476,7 @@ export function HandoverPage() {
     >
       {hero}
       {pastBanner}
+      {sheetOpen || tab !== "pts" ? null : siteSignOff}
       {sheetOpen ? null : sinceStrip}
       {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} />}
       {sheetOpen ? null : toolbar}
