@@ -55,7 +55,7 @@ function sendingWardOf(movement: Movement, records: BookingRecords, referral: Re
  * Only the sending ward or sending community team may book (the reducer refuses anyone else), and an
  * ED desk books only the journeys that start in its own ED.
  */
-function actingFor(access: WardAccess, movement: Movement, records: BookingRecords): BookingActing | undefined {
+export function actingFor(access: WardAccess, movement: Movement, records: BookingRecords): BookingActing | undefined {
   const scope = access.scope;
   if (access.role === "coordinator") return {};
   const referral = movement.referralId ? records.referrals.find((r) => r.id === movement.referralId) : undefined;
