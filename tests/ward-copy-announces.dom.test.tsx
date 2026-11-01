@@ -11,9 +11,9 @@ vi.mock("next/link", () => ({
 }));
 
 const announce = vi.hoisted(() => vi.fn());
-vi.mock("@/components/wf/live-announcer", async (original) => ({
-  ...(await original<typeof import("@/components/wf/live-announcer")>()),
-  announce,
+vi.mock("@/components/ward-management/shell/ward-live-region", async (original) => ({
+  ...(await original<typeof import("@/components/ward-management/shell/ward-live-region")>()),
+  announceToWardShell: announce,
 }));
 
 import { useLegalFormsCopy } from "@/components/ward-management/legal-forms/use-legal-forms-copy";

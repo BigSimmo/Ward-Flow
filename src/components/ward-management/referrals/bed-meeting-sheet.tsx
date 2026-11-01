@@ -13,7 +13,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { announce } from "@/components/wf/live-announcer";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import {
   WaitCell,
   askingForShort,
@@ -64,11 +64,11 @@ function CopyButton({ text, label }: { text: string; label: string }) {
         void copyTextToClipboard(text).then(
           () => {
             setResult("copied");
-            announce("Copied to the clipboard.");
+            announceToWardShell("Copied to the clipboard.");
           },
           () => {
             setResult("failed");
-            announce("Could not copy. Check clipboard access and try again.");
+            announceToWardShell("Could not copy. Check clipboard access and try again.");
           },
         );
       }}

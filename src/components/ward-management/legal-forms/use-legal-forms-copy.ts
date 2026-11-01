@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useOptionalToast } from "@/components/wf";
-import { announce } from "@/components/wf/live-announcer";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /**
@@ -34,7 +34,7 @@ export function useLegalFormsCopy() {
       if (copyAttemptRef.current !== attempt) return;
       setCopied(key);
       // Said aloud as well as shown on the button (design audit, Josh 1 Nov 2026).
-      announce("Copied to the clipboard.");
+      announceToWardShell("Copied to the clipboard.");
       if (copiedTimerRef.current !== null) window.clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = window.setTimeout(() => {
         copiedTimerRef.current = null;
@@ -46,7 +46,7 @@ export function useLegalFormsCopy() {
       // The toast region reads its own words out; without one, the announcer says the failure.
       if (toast)
         toast.push({ tone: "warning", title: "Could not copy", body: "Check clipboard access and try again." });
-      else announce("Could not copy. Check clipboard access and try again.");
+      else announceToWardShell("Could not copy. Check clipboard access and try again.");
     }
   };
   return { copied, copyNotice, copyText };

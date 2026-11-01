@@ -28,7 +28,7 @@ import {
 import styles from "./referral-board.module.css";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { announce } from "@/components/wf/live-announcer";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 
 function meetingText(rows: MeetingRow[], now: Instant): string {
   return rows
@@ -59,11 +59,11 @@ function CopyButton({ text, label }: { text: string; label: string }) {
         void copyTextToClipboard(text).then(
           () => {
             setResult("copied");
-            announce("Copied to the clipboard.");
+            announceToWardShell("Copied to the clipboard.");
           },
           () => {
             setResult("failed");
-            announce("Could not copy. Check clipboard access and try again.");
+            announceToWardShell("Could not copy. Check clipboard access and try again.");
           },
         );
       }}

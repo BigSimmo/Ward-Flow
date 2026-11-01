@@ -14,7 +14,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { announce } from "@/components/wf/live-announcer";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { REFERRAL_SOURCE_WORDS, askingForShort, waitWords } from "./referral-board-parts";
 import { isbarText, type IsbarRecorded } from "./referral-board-sheets";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
@@ -43,11 +43,11 @@ function CopyButton({ text }: { text: string }) {
         void copyTextToClipboard(text).then(
           () => {
             setResult("copied");
-            announce("Copied to the clipboard.");
+            announceToWardShell("Copied to the clipboard.");
           },
           () => {
             setResult("failed");
-            announce("Could not copy. Check clipboard access and try again.");
+            announceToWardShell("Could not copy. Check clipboard access and try again.");
           },
         );
       }}
