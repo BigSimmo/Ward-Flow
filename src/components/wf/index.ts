@@ -109,5 +109,4 @@ export {
   parseTypedDate,
   parseTypedTime,
   type DateFieldProps,
-  type DateTimeFieldProps,
 } from "./date-field";
