@@ -180,8 +180,10 @@ export function AlertDetail({
                 ? // Only the parties still outstanding, as the inbox detail names them.
                   `${item.detail.split(" · ")[0]}.`
                 : undefined;
-  const actNote =
-    kind === "hold"
+  // The transport officer has none of these acts, so no note tells them to take one.
+  const actNote = officerDesk
+    ? undefined
+    : kind === "hold"
       ? "Release needs a reason. Pull again keeps the bed for another pull limit."
       : kind === "nobed"
         ? "Escalate when the bed search is exhausted. It records that the state desk was rung."

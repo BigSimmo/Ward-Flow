@@ -35,16 +35,20 @@ const TONE: Record<TodayPoint["shape"], WfTone> = {
 
 type BandMark = { id: string; at: Instant; tone: WfTone; title: string; pick: boolean; broadcast?: boolean };
 
-/** Rows for each mark, in time order, so marks close together stack instead of overlapping. */
-function stackRows(marks: BandMark[]): (BandMark & { row: number })[] {
+/**
+ * Rows for each mark, by where it is drawn, so marks close together stack instead of overlapping.
+ * A mark before or after the six hours is drawn at that edge, so it is stacked there too.
+ */
+function stackRows(marks: BandMark[], from: number, to: number): (BandMark & { row: number })[] {
+  const drawnAt = (mark: BandMark) => Math.min(to, Math.max(from, mark.at));
   const lastIn = Array.from({ length: ROWS }, () => -Infinity);
   return [...marks]
-    .sort((a, b) => a.at - b.at)
+    .sort((a, b) => drawnAt(a) - drawnAt(b))
     .map((mark) => {
-      let row = lastIn.findIndex((at) => mark.at - at >= MIN_GAP);
+      let row = lastIn.findIndex((at) => drawnAt(mark) - at >= MIN_GAP);
       // Every row is taken near this minute: open another row rather than draw over a mark.
       if (row < 0) row = lastIn.push(-Infinity) - 1;
-      lastIn[row] = mark.at;
+      lastIn[row] = drawnAt(mark);
       return { ...mark, row };
     });
 }
@@ -79,24 +83,34 @@ export function TodayBand({
   const to = from + SPAN;
   const pct = (at: Instant) => `${(((Math.min(to, Math.max(from, at)) - from) / SPAN) * 100).toFixed(2)}%`;
   const hours = Array.from({ length: 7 }, (_, index) => from + index * 60);
-  const marks = stackRows([
-    ...raised.map((point) => ({
-      id: point.id,
-      at: point.at,
-      tone: TONE[point.shape],
-      title: point.title,
-      pick: true,
-    })),
-    ...acted.map((point) => ({ id: point.id, at: point.at, tone: TONE[point.shape], title: point.title, pick: false })),
-    ...broadcasts.map((span) => ({
-      id: span.id,
-      at: span.from,
-      tone: "info" as const,
-      title: span.title,
-      pick: false,
-      broadcast: true,
-    })),
-  ]);
+  const marks = stackRows(
+    [
+      ...raised.map((point) => ({
+        id: point.id,
+        at: point.at,
+        tone: TONE[point.shape],
+        title: point.title,
+        pick: true,
+      })),
+      ...acted.map((point) => ({
+        id: point.id,
+        at: point.at,
+        tone: TONE[point.shape],
+        title: point.title,
+        pick: false,
+      })),
+      ...broadcasts.map((span) => ({
+        id: span.id,
+        at: span.from,
+        tone: "info" as const,
+        title: span.title,
+        pick: false,
+        broadcast: true,
+      })),
+    ],
+    from,
+    to,
+  );
   const extraRows = Math.max(0, ...marks.map((mark) => mark.row + 1)) - ROWS;
   const anyBroadcast = broadcasts.length > 0;
   return (

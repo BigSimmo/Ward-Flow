@@ -156,7 +156,7 @@
 
 .activity li {
   display: grid;
-  grid-template-columns: 3rem 14px minmax(0, 1fr);
+  grid-template-columns: minmax(3rem, max-content) 14px minmax(0, 1fr);
   align-items: baseline;
   gap: var(--wf-s-2);
   padding: 8px 0;
