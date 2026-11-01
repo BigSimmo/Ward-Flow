@@ -89,6 +89,7 @@ import {
   stageStartedAt,
 } from "./officer-screen-helpers";
 import { renderArrivalsCard } from "./officer-arrivals-card";
+import { OfficerOrderNote } from "./officer-order-note";
 import { type OfficerDetailTab, type OfficerJobDetailContext } from "./officer-job-detail";
 import { OfficerJobPanel, formsMissingNote, useOfficerPanelHeight } from "./officer-job-panel";
 import {
@@ -1084,8 +1085,8 @@ export function OfficerScreen() {
                   </span>
                 </div>
 
-                {/* ROLE BRANCH (officer): on a phone the list is the content; the order note stays on the
-                    larger screen, where the Sort control it explains is shown. */}
+                {/* Audit 24-1 decision 5: the next-action order is said on screen (not on the officer's phone). */}
+                <OfficerOrderNote shown={jobs.length > 0 && sortKey === "next" && !(officerDesk && isPhone)} />
                 {jobs.length === 0 ? (
                   <p className={styles.placeholder} data-testid="ward-officer-empty">
                     No outstanding jobs: each has arrived or its movement has closed.
