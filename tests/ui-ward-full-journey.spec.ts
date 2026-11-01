@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { unitById, wardSites } from "@/components/ward-management/ward-sites";
+import { clearToasts } from "./helpers/clear-toasts";
 import { openEdLists } from "./helpers/ward-ed-lists";
 import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
@@ -513,14 +514,17 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     const jobPanel = officerScreen.getByTestId("ward-officer-detail");
     const acceptTransport = jobPanel.getByTestId(`ward-officer-accept-${movementId}`);
     await expect(acceptTransport).not.toHaveAttribute("aria-disabled", "true");
+    await clearToasts(page);
     await acceptTransport.click();
 
     const enRoute = jobPanel.getByTestId(`ward-officer-enroute-${movementId}`);
     await expect(enRoute).not.toHaveAttribute("aria-disabled", "true");
+    await clearToasts(page);
     await enRoute.click();
 
     const collected = jobPanel.getByTestId(`ward-officer-collect-${movementId}`);
     await expect(collected).not.toHaveAttribute("aria-disabled", "true");
+    await clearToasts(page);
     await collected.click();
     // Audit A4-11 / S-2 (13 Oct 2026): with Form 4A or fit to travel not recorded, Collected warns
     // and asks for a recorded reason instead of blocking. Answer it when it is asked.
@@ -537,6 +541,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
 
     const arrived = jobPanel.getByTestId(`ward-officer-arrive-${movementId}`);
     await expect(arrived).not.toHaveAttribute("aria-disabled", "true");
+    await clearToasts(page);
     await arrived.click();
     await expectNoReloadSince(page, "the officer's transport steps");
 

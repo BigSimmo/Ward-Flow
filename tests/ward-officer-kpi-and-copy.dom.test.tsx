@@ -282,10 +282,10 @@ describe("the officer's last step reads Arrived at ward", () => {
     const selectButton = screen.queryByTestId("ward-officer-select-WF-006");
     if (selectButton) fireEvent.click(selectButton);
 
-    // v6: the four stage actions sit in the selected job's panel beside the list.
+    // Transport redesign (Josh, 1 Nov 2026): the one next step is pinned in the panel foot.
     const card = screen.getByTestId("ward-officer-detail");
-    expect(within(card).queryByRole("button", { name: "Delivered" })).not.toBeInTheDocument();
-    const button = within(card).getByRole("button", { name: "Arrived at ward" });
+    expect(within(card).queryByRole("button", { name: /Delivered/ })).not.toBeInTheDocument();
+    const button = within(card).getByRole("button", { name: "Mark arrived at ward" });
 
     fireEvent.click(button);
 
