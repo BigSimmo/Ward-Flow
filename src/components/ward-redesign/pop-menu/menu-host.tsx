@@ -242,7 +242,7 @@ export function PhoneMenuMock({ initial }: { initial: "menu" | "create" }) {
   const onOpenDrawer = (id: DrawerId) => openWardDrawer(id);
   const onNewReferral = () => openWardDrawer("referral");
   const pathname = usePathname() ?? "";
-  const { counts, shellRole, role: routeRole } = useWardNavCounts();
+  const { counts, shellRole } = useWardNavCounts();
   const deskRoleLabel = useDeskRoleLabel(shellRole);
   // Mock-up: opened on load; the bar's own Menu and + still open the real sheets.
   const [open, setOpen] = useState(initial === "menu");
@@ -250,9 +250,9 @@ export function PhoneMenuMock({ initial }: { initial: "menu" | "create" }) {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [query, setQuery] = useState("");
   // One order for the signed-in person (device audit, 11 Oct 2026), as the desktop rail.
-  // The officer's phone is the officer's own (audit round 2, A4-15): on the officer route the dock
-  // holds Transport and Movements, not the coordinator's Home and Referrals.
-  const dockRole = routeRole === "officer" ? routeRole : shellRole;
+  // Q162 (Josh, 1 Nov 2026): each person keeps their own dock on every page, Transport included.
+  // A signed-in transport officer still gets the officer's dock (A4-15), from their own role.
+  const dockRole = shellRole;
   const flagOn = useWardFeatureFlagCheck();
   const accessNav = useAccessNavFilter();
   const {
