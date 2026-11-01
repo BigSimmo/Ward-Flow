@@ -144,7 +144,7 @@ export interface BroadcastTemplate {
 export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   {
     id: "wa-metro-hdu-gridlock",
-    name: "Demo: metro HDU full",
+    name: "HDU full",
     title: "Demo: HDU full — check discharges",
     severity: "critical",
     category: "capacity_gridlock",
@@ -156,7 +156,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   },
   {
     id: "wa-ed-prolonged-surge",
-    name: "Demo: long ED waits",
+    name: "ED waits over 24h",
     title: "Demo: ED waits over 24 hours",
     severity: "critical",
     category: "ed_surge",
@@ -168,7 +168,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   },
   {
     id: "wa-ed-bypass-advisory",
-    name: "Demo: ED liaison busy",
+    name: "ED liaison busy",
     title: "Demo: ED liaison desk constrained",
     severity: "warning",
     category: "ed_surge",
@@ -180,7 +180,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   },
   {
     id: "wa-camhs-bed-gridlock",
-    name: "Demo: adolescent beds full",
+    name: "Adolescent beds full",
     title: "Demo: no CAMHS secure beds",
     severity: "critical",
     category: "clinical_stream",
@@ -192,7 +192,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   },
   {
     id: "wa-forensic-full-advisory",
-    name: "Demo: forensic beds full",
+    name: "Forensic beds full",
     title: "Demo: forensic beds full",
     severity: "warning",
     category: "clinical_stream",
@@ -204,7 +204,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   },
   {
     id: "wa-transport-transit-delay",
-    name: "Demo: transport delayed",
+    name: "Transport delayed",
     title: "Demo: hospital transport delayed",
     severity: "warning",
     category: "transport_delay",
@@ -216,7 +216,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   },
   {
     id: "wa-wachs-aeromedical-delay",
-    name: "Demo: regional flights paused",
+    name: "Regional flights paused",
     title: "Demo: regional air transfers paused",
     severity: "advisory",
     category: "transport_delay",
@@ -228,7 +228,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   },
   {
     id: "wa-infection-bypass-protocol",
-    name: "Demo: unit closed to admissions",
+    name: "Unit closed",
     title: "Demo: admissions paused — outbreak",
     severity: "warning",
     category: "unit_closure",
@@ -241,7 +241,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   {
     id: "wa-adult-bed-call",
     kind: "bed_call",
-    name: "Demo: bed call, adult beds today",
+    name: "Adult beds today",
     title: "Demo: bed call for adult beds today",
     severity: "warning",
     category: "capacity_gridlock",
@@ -250,6 +250,46 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
     defaultDurationMinutes: 120,
     defaultMessage:
       "Demo alert. Not a live broadcast. Adult patients are waiting in metro EDs in this scenario. Tell the desk how many you can take today.",
+  },
+  // Alerts redesign (1 Nov 2026): the composer's other bed call quick starts.
+  {
+    id: "wa-older-bed-call",
+    kind: "bed_call",
+    name: "Older adult beds",
+    title: "Demo: bed call for older adult beds",
+    severity: "warning",
+    category: "capacity_gridlock",
+    targetScope: "older_adult",
+    targetScopeLabel: "Older adult wards",
+    defaultDurationMinutes: 120,
+    defaultMessage:
+      "Demo alert. Not a live broadcast. Older adult wards with a bed today, answer how many and when it is ready.",
+  },
+  {
+    id: "wa-youth-bed-call",
+    kind: "bed_call",
+    name: "Youth beds",
+    title: "Demo: bed call for youth beds",
+    severity: "warning",
+    category: "capacity_gridlock",
+    targetScope: "adolescent",
+    targetScopeLabel: "Youth and CAMHS",
+    defaultDurationMinutes: 120,
+    defaultMessage:
+      "Demo alert. Not a live broadcast. Youth wards with a bed today, answer how many and when it is ready.",
+  },
+  {
+    id: "wa-secure-bed-call",
+    kind: "bed_call",
+    name: "Secure beds",
+    title: "Demo: bed call for secure beds",
+    severity: "critical",
+    category: "capacity_gridlock",
+    targetScope: "all",
+    targetScopeLabel: "Secure and forensic",
+    defaultDurationMinutes: 60,
+    defaultMessage:
+      "Demo alert. Not a live broadcast. Secure wards with a bed today, answer how many and when it is ready.",
   },
 ];
 

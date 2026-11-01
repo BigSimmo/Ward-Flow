@@ -21,7 +21,7 @@ describe("Ward Flow Dialog & Modal Accessibility Semantics", () => {
 
       fireEvent.click(trigger);
 
-      const dialog = screen.getByRole("dialog", { name: /Broadcast network alert/i });
+      const dialog = screen.getByRole("dialog", { name: /New broadcast/i });
       expect(dialog).toBeInTheDocument();
       expect(dialog).toHaveAttribute("aria-modal", "true");
       expect(dialog).toHaveAttribute("aria-labelledby", "broadcast-title");
@@ -29,7 +29,7 @@ describe("Ward Flow Dialog & Modal Accessibility Semantics", () => {
 
       // Verify Escape dismissal
       fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
-      expect(screen.queryByRole("dialog", { name: /Broadcast network alert/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("dialog", { name: /New broadcast/i })).not.toBeInTheDocument();
 
       // Verify focus is restored to the trigger button
       await waitFor(() => {

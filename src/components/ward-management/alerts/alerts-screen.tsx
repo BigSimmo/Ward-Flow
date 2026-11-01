@@ -86,6 +86,8 @@ import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
 import { AlertsSidePanelEmpty, CheckingList, ChecksCard, ChecksChip, ownWardName } from "./alerts-checking";
 import { AlertsBroadcastPanel, AlertsHistoryPanel, AlertsNoticesPanel } from "./alerts-tab-panels";
 import { BroadcastComposer } from "./broadcast-composer";
+import { QUICK_STARTS } from "./broadcast-audience";
+import { liveBedCallFor, useBroadcastAudience } from "./use-broadcast-audience";
 
 import { ForecastAlertsGroup } from "@/components/ward-management/forecast/forecast-alerts-group";
 import styles from "./alerts.module.css";
@@ -165,6 +167,7 @@ function AlertsWorkspace() {
     "notices",
     "plannedAdmissions",
     "admissions",
+    "bedReleases",
     "supportNotifications",
     "leaveBeds",
     "eventLog",
@@ -260,7 +263,9 @@ function AlertsWorkspace() {
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
   const [broadcastConfirmed, setBroadcastConfirmed] = useState(false);
 
-  const defaultTmpl = WA_BROADCAST_TEMPLATES[0];
+  // Alerts redesign (1 Nov 2026): the composer opens on Ask wards for beds, Adult beds today.
+  const defaultTmpl =
+    WA_BROADCAST_TEMPLATES.find((tmpl) => tmpl.id === QUICK_STARTS.bed_call[0]) ?? WA_BROADCAST_TEMPLATES[0];
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(defaultTmpl?.id ?? "custom");
   const [broadcastTitle, setBroadcastTitle] = useState(defaultTmpl?.title ?? "Demo: HDU full — check discharges");
   const [broadcastMessage, setBroadcastMessage] = useState(defaultTmpl?.defaultMessage ?? "");
@@ -272,6 +277,11 @@ function AlertsWorkspace() {
   const [broadcastScope, setBroadcastScope] = useState<BroadcastTargetScope>(defaultTmpl?.targetScope ?? "all");
   const [broadcastDurationMinutes, setBroadcastDurationMinutes] = useState(defaultTmpl?.defaultDurationMinutes ?? 240);
   const [broadcastType, setBroadcastType] = useState<BroadcastKind>(defaultTmpl?.kind ?? "directive");
+  const audienceState = useBroadcastAudience(state, {
+    templateId: defaultTmpl?.id ?? "custom",
+    scope: defaultTmpl?.targetScope ?? "all",
+  });
+  const { audience: broadcastAudience, setAudience: setBroadcastAudience } = audienceState;
   const [broadcastSuccessNotice, setBroadcastSuccessNotice] = useState<string | null>(null);
   const [actionRequest, setActionRequest] = useState<ActionRequest | null>(null);
   const [broadcastRequest, setBroadcastRequest] = useState<{
@@ -308,6 +318,7 @@ function AlertsWorkspace() {
       scope: broadcastScope,
       durationMinutes: broadcastDurationMinutes,
       kind: broadcastType === "bed_call" ? "bed_call" : "directive",
+      audience: broadcastAudience,
     }),
     [
       selectedTemplateId,
@@ -318,21 +329,26 @@ function AlertsWorkspace() {
       broadcastScope,
       broadcastDurationMinutes,
       broadcastType,
+      broadcastAudience,
     ],
   );
-  const restoreBroadcastDraft = useCallback((raw: string) => {
-    const draft = parseBroadcastDraft(raw);
-    if (!draft) return;
-    setSelectedTemplateId(draft.templateId);
-    setBroadcastTitle(draft.title);
-    setBroadcastMessage(draft.message);
-    setBroadcastSeverity(draft.severity);
-    setBroadcastCategory(draft.category);
-    setBroadcastScope(draft.scope);
-    setBroadcastDurationMinutes(draft.durationMinutes);
-    setBroadcastType(draft.kind ?? broadcastDraftBaseline(draft.templateId).kind ?? "directive");
-    setBroadcastModalOpen(true);
-  }, []);
+  const restoreBroadcastDraft = useCallback(
+    (raw: string) => {
+      const draft = parseBroadcastDraft(raw);
+      if (!draft) return;
+      setSelectedTemplateId(draft.templateId);
+      setBroadcastTitle(draft.title);
+      setBroadcastMessage(draft.message);
+      setBroadcastSeverity(draft.severity);
+      setBroadcastCategory(draft.category);
+      setBroadcastScope(draft.scope);
+      setBroadcastDurationMinutes(draft.durationMinutes);
+      setBroadcastType(draft.kind ?? broadcastDraftBaseline(draft.templateId).kind ?? "directive");
+      if (draft.audience) setBroadcastAudience(draft.audience);
+      setBroadcastModalOpen(true);
+    },
+    [setBroadcastAudience],
+  );
   const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({
     key: "alerts-broadcast-directive",
     isDirty: isBroadcastModalOpen && isBroadcastDraftDirty(broadcastDraft),
@@ -702,13 +718,16 @@ function AlertsWorkspace() {
   // ---- Broadcast ----
   const handleSelectTemplate = (tmplId: string) => {
     setSelectedTemplateId(tmplId);
+    setBroadcastConfirmed(false);
+    const base = broadcastDraftBaseline(tmplId);
+    audienceState.resetFor(base.templateId, base.scope);
     if (tmplId === "custom") {
-      setBroadcastTitle("");
-      setBroadcastMessage("");
-      setBroadcastSeverity("critical");
-      setBroadcastCategory("capacity_gridlock");
-      setBroadcastScope("all");
-      setBroadcastDurationMinutes(240);
+      setBroadcastTitle(base.title);
+      setBroadcastMessage(base.message);
+      setBroadcastSeverity(base.severity);
+      setBroadcastCategory(base.category);
+      setBroadcastScope(base.scope);
+      setBroadcastDurationMinutes(base.durationMinutes);
       setBroadcastType("directive");
       return;
     }
@@ -727,20 +746,9 @@ function AlertsWorkspace() {
   const handleDispatchBroadcast = () => {
     if (!broadcastConfirmed || !broadcastTitle.trim() || !broadcastMessage.trim()) return;
     if (broadcastRequest && !broadcastResult) return;
-    const targetScopeLabel =
-      broadcastScope === "all"
-        ? "All Inpatient Units & ED Liaison Desks"
-        : broadcastScope === "metro_adult"
-          ? "Metropolitan Adult Acute Services"
-          : broadcastScope === "ed_liaison"
-            ? "Emergency Department Mental Health Liaison"
-            : broadcastScope === "forensic"
-              ? "Frankland Centre Forensic Mental Health"
-              : broadcastScope === "adolescent"
-                ? "CAMHS Adolescent Acute Units"
-                : broadcastScope === "older_adult"
-                  ? "Psychogeriatric & Older Adult Units"
-                  : "WACHS Regional Mental Health Network";
+    if (audienceState.recipients.length === 0) return;
+    // Alerts redesign (1 Nov 2026): Everyone, the groups chosen or the units ticked.
+    const { targetScope, targetScopeLabel } = audienceState.target;
 
     setBroadcastSuccessNotice(null);
     setActionRequest(null);
@@ -748,7 +756,7 @@ function AlertsWorkspace() {
       type: "DISPATCH_BROADCAST_ALERT",
       logSequence: state.eventLog?.at(-1)?.sequence ?? -1,
       title: broadcastTitle.trim(),
-      scope: broadcastScope,
+      scope: targetScope,
       scopeLabel: targetScopeLabel,
     });
     // The new directive shows on the Broadcast tab, where it can be stood down.
@@ -761,8 +769,7 @@ function AlertsWorkspace() {
       message: broadcastMessage,
       severity: broadcastSeverity,
       category: broadcastCategory,
-      targetScope: broadcastScope,
-      targetScopeLabel,
+      ...audienceState.target,
       durationMinutes: broadcastDurationMinutes,
       dispatchedByName: coordDesk ? "State Mental Health Bed Desk Coordinator" : WARD_FLOW_ROLE_LABELS[deskRole],
       kind: broadcastType === "bed_call" ? "bed_call" : "directive",
@@ -1413,31 +1420,42 @@ function AlertsWorkspace() {
         {isBroadcastModalOpen && (
           <BroadcastComposer
             modalRef={modalRef}
-            handleCloseBroadcastModal={handleCloseBroadcastModal}
             modalCloseRef={modalCloseRef}
-            broadcastRefused={broadcastRefused}
-            broadcastFeedback={broadcastFeedback}
-            selectedTemplateId={selectedTemplateId}
-            handleSelectTemplate={handleSelectTemplate}
-            broadcastType={broadcastType}
-            setBroadcastType={setBroadcastType}
-            broadcastSeverity={broadcastSeverity}
-            setBroadcastSeverity={setBroadcastSeverity}
-            broadcastDurationMinutes={broadcastDurationMinutes}
-            setBroadcastDurationMinutes={setBroadcastDurationMinutes}
-            broadcastScope={broadcastScope}
-            setBroadcastScope={setBroadcastScope}
-            units={units}
-            broadcastTitle={broadcastTitle}
-            setBroadcastTitle={setBroadcastTitle}
-            broadcastMessage={broadcastMessage}
-            setBroadcastMessage={setBroadcastMessage}
-            severityLabel={severityLabel}
-            broadcastConfirmed={broadcastConfirmed}
-            setBroadcastConfirmed={setBroadcastConfirmed}
-            broadcastRequest={broadcastRequest}
-            broadcastResult={broadcastResult}
-            handleDispatchBroadcast={handleDispatchBroadcast}
+            onClose={handleCloseBroadcastModal}
+            refusedFeedback={broadcastRefused ? broadcastFeedback : null}
+            kind={broadcastType}
+            onSelectKind={(kind) => handleSelectTemplate(QUICK_STARTS[kind][0])}
+            templateId={selectedTemplateId}
+            onSelectTemplate={handleSelectTemplate}
+            audience={broadcastAudience}
+            setAudience={setBroadcastAudience}
+            groups={audienceState.groups}
+            wardsWithBedNow={audienceState.wardsWithBedNow}
+            severity={broadcastSeverity}
+            setSeverity={setBroadcastSeverity}
+            durationMinutes={broadcastDurationMinutes}
+            setDurationMinutes={setBroadcastDurationMinutes}
+            title={broadcastTitle}
+            setTitle={setBroadcastTitle}
+            message={broadcastMessage}
+            setMessage={setBroadcastMessage}
+            confirmed={broadcastConfirmed}
+            setConfirmed={setBroadcastConfirmed}
+            sending={Boolean(broadcastRequest && !broadcastResult)}
+            liveBedCall={liveBedCallFor(activeBroadcast, audienceState.recipients, now)}
+            onExtendLive={(alertId) => {
+              track({
+                type: "EXTEND_BROADCAST_ALERT",
+                ok: "Live bed call extended.",
+                refused: "Extension was not accepted.",
+              });
+              raise("EXTEND_BROADCAST_ALERT", { alertId });
+              handleCloseBroadcastModal();
+              setTab("broadcast");
+            }}
+            senderName={coordDesk ? "Bed coordinator" : WARD_FLOW_ROLE_LABELS[deskRole]}
+            now={now}
+            onSend={handleDispatchBroadcast}
           />
         )}
       </main>

@@ -7,6 +7,7 @@ import {
   type BroadcastSeverity,
   type BroadcastTargetScope,
 } from "./ward-broadcast-model";
+import { isTemplateAudience, parseAudience, templateAudienceShape, type BroadcastAudience } from "./broadcast-audience";
 
 /**
  * The WHOLE editable broadcast form as one value, so it can be cached, restored and compared as a
@@ -24,6 +25,8 @@ export interface BroadcastDraft {
   durationMinutes: number;
   /** Global alerts, 10 Oct 2026: a directive or a bed call. Older drafts have none. */
   kind?: "directive" | "bed_call";
+  /** Alerts redesign, 1 Nov 2026: who it goes to. Older drafts have none and go by `scope`. */
+  audience?: BroadcastAudience;
 }
 
 const CUSTOM_BROADCAST_TEMPLATE_ID = "custom";
@@ -36,11 +39,13 @@ export function broadcastDraftBaseline(templateId: string): BroadcastDraft {
       templateId: CUSTOM_BROADCAST_TEMPLATE_ID,
       title: "",
       message: "",
-      severity: "critical",
+      // Alerts redesign (1 Nov 2026): Blank starts as an advisory for an hour, sent to no one yet.
+      severity: "advisory",
       category: "capacity_gridlock",
       scope: "all",
-      durationMinutes: 240,
+      durationMinutes: 60,
       kind: "directive",
+      audience: templateAudienceShape(CUSTOM_BROADCAST_TEMPLATE_ID, "all"),
     };
   }
   return {
@@ -52,6 +57,7 @@ export function broadcastDraftBaseline(templateId: string): BroadcastDraft {
     scope: template.targetScope,
     durationMinutes: template.defaultDurationMinutes,
     kind: template.kind === "bed_call" ? "bed_call" : "directive",
+    audience: templateAudienceShape(template.id, template.targetScope),
   };
 }
 
@@ -65,7 +71,8 @@ export function isBroadcastDraftDirty(draft: BroadcastDraft): boolean {
     draft.category !== baseline.category ||
     draft.scope !== baseline.scope ||
     draft.durationMinutes !== baseline.durationMinutes ||
-    (draft.kind ?? baseline.kind) !== baseline.kind
+    (draft.kind ?? baseline.kind) !== baseline.kind ||
+    (draft.audience !== undefined && !isTemplateAudience(draft.audience, draft.templateId, baseline.scope))
   );
 }
 
@@ -83,7 +90,7 @@ export function parseBroadcastDraft(raw: string): BroadcastDraft | undefined {
   }
   if (typeof value !== "object" || value === null) return undefined;
   const record = value as Record<string, unknown>;
-  const { templateId, title, message, severity, category, scope, durationMinutes, kind } = record;
+  const { templateId, title, message, severity, category, scope, durationMinutes, kind, audience } = record;
   if (
     typeof templateId !== "string" ||
     typeof title !== "string" ||
@@ -103,6 +110,8 @@ export function parseBroadcastDraft(raw: string): BroadcastDraft | undefined {
     (kind !== undefined && kind !== "directive" && kind !== "bed_call")
   )
     return undefined;
+  const parsedAudience = audience === undefined ? undefined : parseAudience(audience);
+  if (audience !== undefined && parsedAudience === undefined) return undefined;
   const knownTemplate =
     templateId === CUSTOM_BROADCAST_TEMPLATE_ID || WA_BROADCAST_TEMPLATES.some((t) => t.id === templateId);
   if (!knownTemplate) return undefined;
@@ -115,5 +124,6 @@ export function parseBroadcastDraft(raw: string): BroadcastDraft | undefined {
     scope: scope as BroadcastTargetScope,
     durationMinutes,
     ...(kind === undefined ? {} : { kind }),
+    ...(parsedAudience === undefined ? {} : { audience: parsedAudience }),
   };
 }
