@@ -134,9 +134,7 @@ export function SuburbLookupCard({
             is spoken on each keystroke without the words that say where it comes from. */}
         <div className={styles.answer} id={`${id}-answer`}>
           {trimmed === "" ? (
-            <p className={styles.hint}>
-              Type a suburb or a 4-digit postcode to see the team the catchment table names.
-            </p>
+            <p className={styles.hint}>Type a suburb or a 4-digit postcode.</p>
           ) : lookups.length === 0 ? (
             <p className={styles.hint}>No suburb is filed under postcode {trimmed} in the catchment documents.</p>
           ) : (

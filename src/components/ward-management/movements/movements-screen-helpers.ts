@@ -70,7 +70,6 @@ export const CAUSES: CauseDefinition[] = [
     key: "legal_breached",
     rank: 1,
     title: "Legal due time passed",
-    note: "a deadline that has already passed, and nothing on this page outranks it",
     sev: "breach",
     mark: "Severe",
   },
@@ -86,7 +85,7 @@ export const CAUSES: CauseDefinition[] = [
     key: "no_eligible_bed",
     rank: 3,
     title: "No eligible bed",
-    note: "every ward asked has declined, and nothing is holding the question",
+    note: "every ward asked has declined",
     sev: "nobed",
     mark: "Severe",
   },
@@ -94,7 +93,6 @@ export const CAUSES: CauseDefinition[] = [
     key: "awaiting_ward_answer",
     rank: 4,
     title: "Waiting on a ward to answer",
-    note: "referrals currently held by receiving wards",
   },
   {
     key: "bed_pull_expired",
@@ -127,7 +125,6 @@ export const CAUSES: CauseDefinition[] = [
     key: "in_transit",
     rank: 0,
     title: "Already travelling",
-    note: "on the road to the receiving ward, open until it arrives and waiting for nothing",
   },
 ];
 

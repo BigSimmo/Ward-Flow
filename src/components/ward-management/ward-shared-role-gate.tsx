@@ -39,7 +39,7 @@ export function WardRolePicker({
   return (
     <main id="main-content" className={styles.notice} aria-label="Choose a role" data-testid="ward-role-picker">
       <h1>Which role are you working as?</h1>
-      <p>This account holds more than one role. You see only what the role you pick needs. You can switch later.</p>
+      <p>You can switch later.</p>
       {named.length === 0 ? (
         <p role="alert">None of this account&apos;s roles can be opened here. Ask your access admin.</p>
       ) : (
@@ -126,13 +126,12 @@ export function WardAskForAccess({
       ) : (
         <>
           <h1>No Ward Flow role yet</h1>
-          <p>You are signed in, but no role is assigned to this account. An access admin gives roles.</p>
+          <p>An access admin gives roles.</p>
         </>
       )}
       {asked ? (
         <p role="status">
           You have asked for {asked.access ? sharedDeskLabel(asked.access) : "a role"}. An access admin will answer it.
-          Check again once they have.
         </p>
       ) : live ? (
         <form
@@ -157,10 +156,7 @@ export function WardAskForAccess({
           }}
         >
           <h2>Ask for access</h2>
-          <p>
-            Bed coordinator and Access admin roles are given by an access admin, so they are not listed. Ask your access
-            admin directly if you need one.
-          </p>
+          <p>Bed coordinator and Access admin roles are given by an access admin. Ask yours if you need one.</p>
           <label>
             Role
             <select

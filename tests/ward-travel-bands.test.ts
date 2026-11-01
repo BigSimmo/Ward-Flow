@@ -215,11 +215,7 @@ describe("travel bands", () => {
     // reads like a caveat while having dropped the part that does the work. Each is therefore
     // pinned as a WHOLE string against an independent copy — never a prefix, never a fragment,
     // never a `toContain`.
-    expect(SYNTHETIC_TRAVEL_TIMES_NOTICE).toBe(
-      "Travel times on this screen are invented, like every bed number in this prototype. Nobody has " +
-        "measured or checked how far any of these hospitals is from anywhere, and no distance shown here " +
-        "should be relied on.",
-    );
+    expect(SYNTHETIC_TRAVEL_TIMES_NOTICE).toBe("Travel times are invented and unchecked. Do not rely on them.");
     expect(INVENTED_OUT_OF_AREA_THRESHOLD_NOTICE).toBe(
       "Out of area here means three hours or more from home, or reachable only by air. This prototype " +
         "invented that line. Nobody has checked whether Western Australian mental health services already " +

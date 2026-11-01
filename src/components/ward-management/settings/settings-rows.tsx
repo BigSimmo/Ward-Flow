@@ -24,11 +24,7 @@ export function ScopeLine({ kind }: { kind: "save" | "live" }) {
           Applies now
         </span>
       )}
-      <span>
-        {kind === "save"
-          ? "Rules change what every screen shows. Each save is recorded in the audit."
-          : "Preferences for this browser."}
-      </span>
+      <span>{kind === "save" ? "Each save is recorded in the audit." : "Preferences for this browser."}</span>
     </p>
   );
 }

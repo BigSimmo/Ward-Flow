@@ -134,7 +134,7 @@ describe("Summary, Map view", () => {
     renderView();
     fireEvent.click(screen.getByRole("radio", { name: /^Stay/ }));
     expect(screen.getByText(/^Ring: share over 3 months/u)).toHaveTextContent(
-      "Centre: average stay in days, everyone who arrived, people who have left included.",
+      "Centre: average stay in days, including people who have left.",
     );
     const rank = screen.getByTestId("ward-statistics-map-rank");
     expect(within(rank).getByRole("heading", { name: "Longest average stay" })).toBeTruthy();

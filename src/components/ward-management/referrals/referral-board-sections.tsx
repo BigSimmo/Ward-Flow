@@ -171,7 +171,7 @@ export function QueuedSection({
               ? filterMiss
                 ? "No queued referral matches this chip."
                 : "No queued referral matches the search."
-              : "None. No referral is currently queued."}
+              : "No referrals queued."}
         </p>
       ) : (
         <>
@@ -563,7 +563,7 @@ export function DecidedSection({
       )}
       {decided.length === 0 ? (
         <p className={styles.v6Empty} data-testid="ward-referral-board-decided-empty">
-          None. No referral has been decided yet.
+          None decided yet.
         </p>
       ) : displayDecided.length === 0 ? (
         <EmptyState

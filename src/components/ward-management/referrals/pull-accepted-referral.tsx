@@ -253,6 +253,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
         <Button
           type="submit"
           variant="pri"
+          data-placement-action
           aria-disabled={refusal !== undefined ? "true" : undefined}
           aria-describedby={refusal ? `${baseId}-why` : undefined}
           data-testid="ward-pull-accepted-confirm"

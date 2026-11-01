@@ -97,7 +97,6 @@ export function RequirementsSheet({
       open={code !== null}
       onClose={onClose}
       title="Form requirements"
-      description="What each form is and what Ward Flow records for it"
       portal={false}
       testId="ward-legal-requirements"
       contentClassName={styles.wideSheet}
@@ -137,7 +136,7 @@ export function RequirementsSheet({
           )}
           <h4 className={styles.sectionHead}>Due time</h4>
           <p className={styles.note} data-testid="ward-legal-requirements-due">
-            Only the due time someone records from the form is shown. Ward Flow does not work out when a form ends.
+            Only the due time recorded from the form is shown. Ward Flow does not work out when a form ends.
           </p>
         </section>
       </div>
@@ -724,7 +723,7 @@ export function TellSheet({
       open={open}
       onClose={onClose}
       title={title}
-      description="Records who was told and when. Advisory only, nothing is blocked."
+      description="Advisory only. Nothing is blocked."
       portal={false}
       testId="ward-legal-tell"
       footer={

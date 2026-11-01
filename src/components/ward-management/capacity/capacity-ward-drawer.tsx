@@ -194,8 +194,8 @@ export function CapacityWardSidebar({
                 {(row.reservationReleaseCapacityConflicts ?? 0) > 0 ? (
                   <li>
                     <StatusGlyph tone="warning" size={9} />
-                    {row.reservationReleaseCapacityConflicts} reservation release(s) need capacity re-confirmation — an
-                    offered count already reported its ceiling. No extra physical vacancy is implied.
+                    {row.reservationReleaseCapacityConflicts} reservation release(s) need capacity re-confirmation. No
+                    extra physical vacancy is implied.
                   </li>
                 ) : null}
                 {(row.arrivalCapacityConflicts ?? 0) > 0 ? (

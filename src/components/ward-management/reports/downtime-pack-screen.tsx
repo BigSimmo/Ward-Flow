@@ -71,7 +71,7 @@ const PRINT_NOTICE = "Prototype data, invented records. Not real patients and no
 const STALE_AFTER_MINUTES = CLINICAL_VALUES.downtimePackStale.value;
 /** Item 9 (Josh, 21 Oct 2026): the pack leaves the tab only as paper or a PDF the person saves. */
 const KEEP_A_COPY =
-  "To keep a file, choose Save as PDF in the print window and save it to your service's approved downtime location. Ward Flow keeps no copy on this device.";
+  "To keep a file, save it as a PDF to your service's approved downtime location. Ward Flow keeps no copy.";
 /** How long "Taking snapshot" shows before the new time, so the change is seen. */
 const TAKING_MS = 450;
 
@@ -504,10 +504,7 @@ export function DowntimePackScreen() {
             </tfoot>
           </table>
         </div>
-        <p className={styles.cardNote}>
-          Beds in “Being made ready” are counted in Ready. Beds “On leave” are held for a patient on leave and counted
-          in Occupied.
-        </p>
+        <p className={styles.cardNote}>Ready includes beds being made ready. Occupied includes beds held for leave.</p>
       </Card>
 
       <Card
@@ -527,7 +524,7 @@ export function DowntimePackScreen() {
           }
         />
         {pack.edQueue.length === 0 ? (
-          <p className={styles.cardNote}>0 waiting. Nobody was in an ED queue when the pack was taken.</p>
+          <p className={styles.cardNote}>0 waiting when the pack was taken.</p>
         ) : (
           <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="ED queue table">
             <table
@@ -594,7 +591,7 @@ export function DowntimePackScreen() {
           }
         />
         {pack.pendingMoves.length === 0 ? (
-          <p className={styles.cardNote}>0 pending. No accepted move was under way when the pack was taken.</p>
+          <p className={styles.cardNote}>0 pending when the pack was taken.</p>
         ) : (
           <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Pending moves table">
             <table
@@ -649,7 +646,7 @@ export function DowntimePackScreen() {
           }
         />
         {pack.legalForms.length === 0 ? (
-          <p className={styles.cardNote}>0 forms. No legal form was on an open movement when the pack was taken.</p>
+          <p className={styles.cardNote}>0 forms when the pack was taken.</p>
         ) : (
           <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Legal forms table">
             <table

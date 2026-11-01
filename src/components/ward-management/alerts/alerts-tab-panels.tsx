@@ -195,7 +195,6 @@ export function AlertsNoticesPanel({
         {feedNotices.length === 0 ? (
           <div className={styles.feedEmpty}>
             <p className={styles.none}>No notices have been raised this session.</p>
-            <p className={styles.quiet}>Recorded referral, bed pull and transport notices appear here.</p>
           </div>
         ) : (
           <ul className={styles.historyList}>
@@ -226,11 +225,7 @@ export function AlertsHistoryPanel({ history, now }: { history: HistoryEntry[]; 
   return (
     <TabPanel idPrefix="alerts" id="history" className={styles.tabBody}>
       {history.length === 0 ? (
-        <EmptyState
-          icon={Clock}
-          title="Nothing recorded this session"
-          meta="Acknowledgements, takes, snoozes, bed releases and broadcasts"
-        />
+        <EmptyState icon={Clock} title="Nothing recorded this session" />
       ) : (
         <ul className={styles.historyList} aria-label="Recorded this session">
           {history.map((entry) => (

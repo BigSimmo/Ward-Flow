@@ -299,9 +299,8 @@ export function ShapeOfTheDay({
               </span>
             </div>
             <p className={styles.paneScope}>
-              No open movement stands at <b>arrived status</b>: arriving is what takes a movement out of the pathway, so
-              it is counted below the divider instead. {openMovements.length} open plus {closedToday.length} that have
-              left the pathway is {openMovements.length + closedToday.length} movements raised in the network today.
+              {openMovements.length} open plus {closedToday.length} left the pathway:{" "}
+              {openMovements.length + closedToday.length} raised today.
             </p>
           </>
         ) : null}

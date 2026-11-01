@@ -195,7 +195,6 @@ describe("the Alerts screen reports on every condition it watches, firing or not
   it("states the override record's prior-gate absence and retained record facts", () => {
     renderScreen();
     const section = within(checkingList()).getByRole("listitem", { name: "Override recorded" });
-    expect(section).toHaveTextContent(/cannot identify a prior gate verdict/u);
     expect(section).toHaveTextContent(/who, when, which fixed reason and which wards/u);
     expect(section).toHaveTextContent(/does not retain a prior gate verdict/u);
   });

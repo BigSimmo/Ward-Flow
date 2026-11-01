@@ -777,7 +777,7 @@ export function CoordinatorScreen() {
           </header>
           {service ? (
             <p className={styles.cardNote} data-testid="ward-shortlist-not-scoped">
-              Beds are never narrowed by service. Every ward in the network is considered.
+              Every ward in the network is considered.
             </p>
           ) : null}
           {/* In the Placement sheet (phone, tablet portrait) the alert's reason leads, as it does on desktop. */}
@@ -1186,8 +1186,7 @@ export function CoordinatorScreen() {
           className={cards.footer}
           note={
             <>
-              Demo coordinator view · Not approved for clinical use · Limited demo coverage: CAHS inpatient wards are
-              not modelled; private live feeds are unavailable
+              Demo coordinator view · Not approved for clinical use · CAHS wards not modelled
               <span
                 className={styles.refusalMarker}
                 data-alert={rejections.length > 0 ? "true" : undefined}

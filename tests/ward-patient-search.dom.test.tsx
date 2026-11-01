@@ -937,7 +937,7 @@ describe("the access record panel", () => {
     // plan's third, unrelated wording. See access-record.ts's own doc comment.
     expect(panel).toHaveTextContent("Search terms and times. Kept for this session only.");
     expect(screen.getByTestId("ward-patient-search-access-record-empty")).toHaveTextContent(
-      /No searches submitted this session\. Press Enter in the search field to record a search\./,
+      /No searches this session\./,
     );
   });
 

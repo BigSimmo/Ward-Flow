@@ -141,7 +141,7 @@ function SignInMessage({
         tone="warning"
         icon="wifi"
         title="No connection."
-        body="Check your Wi-Fi or mobile data. Your details stay here, so you can sign in as soon as you are back online."
+        body="Check your Wi-Fi or mobile data. Your details stay here."
       />
     );
   if (!form)
@@ -452,9 +452,7 @@ function PassphraseMeter({ length, id }: { length: number; id: string }) {
         />
       </div>
       <div className={styles.meterRow} id={id}>
-        <span>
-          At least {NEW_PASSWORD_MIN_LENGTH} characters. A short phrase of unrelated words is easiest to remember.
-        </span>
+        <span>At least {NEW_PASSWORD_MIN_LENGTH} characters.</span>
         <span className={`${styles.monoT} ${ok ? styles.meterOk : ""}`}>
           {length} of {NEW_PASSWORD_MIN_LENGTH}
         </span>

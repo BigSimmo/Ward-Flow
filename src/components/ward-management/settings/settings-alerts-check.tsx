@@ -59,7 +59,7 @@ export function SettingsAlertsPane({
         ? "This browser cannot show notifications. The buzz sound still plays while Ward Flow is open."
         : "Turn on Browser notifications."
     : !buzz
-      ? "Turn on Buzz sound so an urgent buzz is heard."
+      ? "Turn on Buzz sound."
       : "Act-now alerts will reach you while Ward Flow is open here.";
 
   const sendTest = () => {

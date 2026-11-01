@@ -310,7 +310,7 @@ function TeamsIndexView({
             >
               <CardBody>
                 {active.length === 0 ? (
-                  <p className={index.cardNote}>No admission in a bed has a referral that names a community team.</p>
+                  <p className={index.cardNote}>No one in a bed has a named community team.</p>
                 ) : (
                   <BarList
                     label="People in a bed, or with one pulled, by the community team their referral named"
@@ -420,7 +420,7 @@ function TeamsIndexView({
             <CardFoot
               meta={
                 unknown > 0
-                  ? `${unknown} ${plural(unknown, "team", "teams")} show a dash: a referral on record cannot be found, so an empty count would not be a measurement.`
+                  ? `${unknown} ${plural(unknown, "team", "teams")} show a dash: a referral on record cannot be found.`
                   : `${emptyTeams} ${plural(emptyTeams, "team has", "teams have")} nobody in a bed`
               }
             >

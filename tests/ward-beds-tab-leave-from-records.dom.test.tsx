@@ -131,7 +131,7 @@ describe("ward screen Beds tab places On Leave from the ward's leave records, no
     const bedsTab = document.getElementById("tab-beds")!;
     const caption = within(bedsTab).getByTestId("ward-beds-position-caption");
     expect(caption).toHaveTextContent(/position/i);
-    expect(caption).toHaveTextContent(/no bed number is recorded/i);
+    expect(caption).toHaveTextContent(/positions only/i);
   });
 
   /**

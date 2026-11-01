@@ -97,7 +97,7 @@ export function CancelledMoveChecklist({
           {open > 0 ? `${open} to check` : "All checked"}
         </Badge>
       </h3>
-      <p className={styles.line}>A reminder list. Marking an item cancels or releases nothing.</p>
+      <p className={styles.line}>Reminder only.</p>
       <ul className={styles.list}>
         {CANCELLED_MOVE_CHECK_ITEMS.map((item) => {
           const check = cancelledMoveCheck(movement, item);

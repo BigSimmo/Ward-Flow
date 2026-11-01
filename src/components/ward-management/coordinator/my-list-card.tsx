@@ -530,7 +530,7 @@ export function MyListCard({
             age={age}
             ageNote={decidedAt === undefined ? "Time not recorded" : "since accepted"}
             action={
-              <Button size="sm" aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
+              <Button size="sm" data-placement-action aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
                 Pull the bed
               </Button>
             }

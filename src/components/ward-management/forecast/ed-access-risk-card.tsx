@@ -67,8 +67,7 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
         {/* Forecast integration (Josh, 27 Oct 2026): read before the rows, so the tier beside a name is
             never taken as the queue order. */}
         <p className={styles.caption} data-testid="forecast-ed-risk-caption">
-          Lined up in the order they were referred, not by tier or clinical priority. Earliest release is what wards
-          have recorded. It is not a bed for this person, and new arrivals are not predicted.
+          In referral order, not by tier or clinical priority. The earliest release is not a bed for this person.
         </p>
         {rows.length === 0 ? null : isPhone ? (
           <ul className={styles.riskList}>

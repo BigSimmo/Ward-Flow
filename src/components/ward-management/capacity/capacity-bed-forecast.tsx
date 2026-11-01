@@ -157,10 +157,7 @@ export function BedForecast({
             leads "How this is worked out". */}
         <span>Estimate only</span>
         <HowWorkedOut>
-          <p>
-            {siteName ? `Estimate for the wards at ${siteName}. ` : ""}New ED arrivals are not predicted, and a free bed
-            may not suit the person waiting.
-          </p>
+          {siteName ? <p>Estimate for the wards at {siteName}.</p> : null}
           <p>
             From {plural(sourceSummary.discharges, "recorded discharge", "recorded discharges")} on{" "}
             {plural(sourceSummary.wards, "ward", "wards")} and planned admissions.{" "}

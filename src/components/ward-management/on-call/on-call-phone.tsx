@@ -262,9 +262,7 @@ export function PhoneDirectory({
           </Button>
         </div>
       ) : null}
-      {rows.length ? null : (
-        <p className={styles.phoneEmpty}>Star any line to keep it here. My list stays in this browser.</p>
-      )}
+      {rows.length ? null : <p className={styles.phoneEmpty}>Star any line to keep it here.</p>}
       {blocks.map((block) => (
         <div key={block.service ?? "all"} className={styles.phoneBlock}>
           {block.service ? (

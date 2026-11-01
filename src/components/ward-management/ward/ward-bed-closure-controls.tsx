@@ -62,7 +62,7 @@ export function BedClosureControls({
       ) : null}
       {onCloseBed ? (
         <p className={styles.meta} id="ward-drawer-close-bed-note">
-          This bed shows as Closed and is not offered until it is reopened.
+          A closed bed is not offered until reopened.
         </p>
       ) : null}
       {onReopenBed ? (

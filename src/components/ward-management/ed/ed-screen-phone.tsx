@@ -41,7 +41,7 @@ export function EdPhonePanes({ ctx }: { ctx: EdScreenContext }) {
         <PhoneFilterFold
           count={boardFilter === "all" ? 0 : 1}
           title="Filter the board"
-          description="A filter highlights the people it names. Everyone stays on the board."
+          description="Everyone stays on the board."
           data-testid="ward-ed-filter-fold"
         >
           <EdBoardChips ctx={ctx} className={foldRow.sheetChips} />

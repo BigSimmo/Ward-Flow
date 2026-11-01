@@ -547,9 +547,9 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
             : `Tasks opened. ${tasksActiveCount} invented tasks outstanding.`,
         );
       } else if (id === "tools") {
-        announceToWardShell("Tools opened. Quick actions, look ups, print and share, and demo controls are here.");
+        announceToWardShell("Tools opened.");
       } else if (id === "referral") {
-        announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
+        announceToWardShell("Referral drawer opened.");
       }
       // No opening announcement for the Service selector — the standard's §7.4 list of the shell's
       // fixed sentences names an announcement for CHOOSING or CLEARING a service, never for opening
@@ -662,7 +662,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
       setReferralRequest((current) => ({ ...request, id: current.id + 1 }));
       referralReturnFocusRef.current = null;
       setOpenPanel("referral");
-      announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
+      announceToWardShell("Referral drawer opened.");
     });
     return () => {
       window.cancelAnimationFrame(frame);
