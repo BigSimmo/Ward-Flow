@@ -46,6 +46,16 @@ function renderScreen() {
 }
 
 describe("the Forms screen", () => {
+  it("counts missing forms without inferring a voluntary legal status", () => {
+    const withoutForm = openMovements.filter((movement) => movement.legalForm === undefined);
+    expect(withoutForm.some((movement) => movement.legalStatus !== "Voluntary")).toBe(true);
+    renderScreen();
+    const label = screen.getByText("No form recorded", { selector: "dt" });
+    expect(label.nextElementSibling).toHaveTextContent(String(withoutForm.length));
+    expect(screen.getByText(`${withoutForm.length} no form recorded`)).toBeVisible();
+    expect(screen.queryByText(/voluntary, no form/iu)).not.toBeInTheDocument();
+  });
+
   it("keeps the visible time-entry wording in each contextual button name", () => {
     renderScreen();
     const actions = screen.getAllByRole("button", { name: /^Add the time for / });
