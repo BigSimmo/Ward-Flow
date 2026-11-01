@@ -54,7 +54,7 @@
 .shiftBanner {
   background: color-mix(in oklab, var(--surface) 72%, transparent);
   border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
-  border-radius: 28px;
+  border-radius: var(--wf-r-xl);
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
     0 18px 40px -28px rgb(var(--ward-shadow-rgb) / 0.55);
@@ -107,7 +107,7 @@
 .shiftTileCompact {
   background: color-mix(in oklab, var(--surface) 80%, transparent);
   border: 1px solid color-mix(in oklab, var(--ink) 7%, transparent);
-  border-radius: 18px;
+  border-radius: var(--wf-r-lg);
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
@@ -312,7 +312,7 @@
   position: relative;
   background: color-mix(in oklab, var(--surface) 74%, transparent);
   border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
-  border-radius: 28px;
+  border-radius: var(--wf-r-xl);
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
     0 18px 40px -28px rgb(var(--ward-shadow-rgb) / 0.55);
@@ -668,7 +668,7 @@
   padding: 8px 10px;
   background: color-mix(in oklab, var(--surface) 70%, transparent);
   border: 1px solid color-mix(in oklab, var(--ink) 7%, transparent);
-  border-radius: 18px;
+  border-radius: var(--wf-r-lg);
   font-size: var(--wf-fs-12);
   color: var(--ink-soft);
 }

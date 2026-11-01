@@ -952,10 +952,10 @@ export function WardHomeTab({
       ] as const)) {
     const row: TodoRow = {
       key: id,
-      title: `${label} (reminder)`,
-      detail:
-        at === null ? `Reminder only, not saved or sent. ${hint}` : "Reminder ticked here only, not saved or sent.",
-      meta: at === null ? "Not saved" : formatInstantWithDay(at, now),
+      // The group heading says "Reminders, not saved" once, so each row keeps to its own hint.
+      title: label,
+      detail: at === null ? hint : "Ticked here only, not saved or sent.",
+      meta: at === null ? undefined : formatInstantWithDay(at, now),
       tone: at === null ? "neutral" : "success",
       tick: id,
     };
@@ -1038,6 +1038,18 @@ export function WardHomeTab({
           </button>
         )}
       </li>
+    );
+  }
+
+  // Surname on its own line, given name under it, so a name never runs into the tile's edge.
+  function renderTileName(name: string) {
+    const comma = name.indexOf(", ");
+    if (comma < 1) return name;
+    return (
+      <>
+        <span className={styles.bedTileSurname}>{name.slice(0, comma)},</span>
+        <span className={styles.bedTileGiven}>{name.slice(comma + 2)}</span>
+      </>
     );
   }
 
@@ -1882,7 +1894,7 @@ export function WardHomeTab({
                       {row.glyph ? <StatusGlyph tone={row.glyph} size={10} /> : null}
                     </span>
                     <span className={styles.bedTileName} aria-hidden="true">
-                      {row.name}
+                      {renderTileName(row.name)}
                     </span>
                     <span className={styles.bedTileState} aria-hidden="true">
                       <span className={styles.bedTileNote}>

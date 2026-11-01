@@ -30,7 +30,8 @@
   gap: 6px;
   padding: 6px;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-track);
+  /* Same corner as the cards below it; the 10px options nest inside (16 less the 6px inset). */
+  border-radius: var(--wf-r-lg);
   background: var(--wf-track);
 }
 
@@ -115,7 +116,7 @@
   flex-direction: column;
   min-width: 0;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-xl);
+  border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
 }
@@ -318,7 +319,7 @@
   gap: var(--wf-s-2);
   padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
-  border-radius: 0 0 var(--wf-r-xl) var(--wf-r-xl);
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
   background: var(--wf-glass);
   backdrop-filter: blur(24px);
 }
@@ -408,7 +409,7 @@
 @media (max-width: 720px) {
   .steps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    border-radius: var(--wf-r-xl);
+    border-radius: var(--wf-r-lg);
   }
 
   .windowStep {
@@ -461,7 +462,7 @@
   .phoneList {
     overflow: hidden;
     border: 1px solid var(--wf-line);
-    border-radius: var(--wf-r-xl);
+    border-radius: var(--wf-r-lg);
     background: var(--wf-surface);
     box-shadow: var(--wf-e1);
   }

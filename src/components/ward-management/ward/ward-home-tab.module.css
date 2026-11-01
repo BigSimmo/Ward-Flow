@@ -138,9 +138,9 @@
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-auto-rows: 1fr;
-  gap: var(--wf-s-2);
+  gap: 10px;
   margin: 0;
-  padding: var(--wf-s-3) var(--wf-s-4);
+  padding: var(--wf-s-4);
   list-style: none;
 }
 
@@ -154,15 +154,18 @@
 .bedTile {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
   width: 100%;
   /* Redesign: a tile grows to fit a whole name on two lines; the row takes its tallest tile's height. */
   height: auto;
   flex: 1 1 auto;
-  min-height: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
+  /* Polish (1 Nov 2026): roomier insets keep names off the edges, and the corner nests inside the
+     16px card (16 less the 16px inset, rounded up to the 10px step). */
+  min-height: 7rem;
+  padding: var(--wf-s-3) 14px;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
+  border-radius: var(--wf-r-sm);
+  box-shadow: 0 1px 1px rgba(16, 24, 40, 0.03);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: inherit;
@@ -177,6 +180,7 @@
 .bedTile:hover {
   border-color: var(--wf-line-ctl);
   background: var(--wf-hover);
+  box-shadow: var(--wf-e1);
 }
 
 .bedTile:focus-visible {
@@ -263,20 +267,40 @@
   margin-left: auto;
 }
 
+.bedTileTop {
+  min-height: 20px;
+}
+
 .bedTileTop b {
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-14);
+  font-size: var(--wf-fs-13);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--wf-ink-2);
 }
 
 /* Redesign: the whole name shows, wrapping to a second line, with the stay length on its own row. */
 .bedTileName {
-  display: block;
-  font-size: var(--wf-fs-13);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
   font-weight: 500;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.bedTileSurname {
+  font-weight: 650;
+  color: var(--wf-ink-1);
+}
+
+.bedTileGiven {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
 }
 
 .bedTileState {
@@ -286,9 +310,16 @@
   gap: var(--wf-s-2);
   min-width: 0;
   margin-top: auto;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
   white-space: nowrap;
+}
+
+/* A closed or empty bed has no state line, so it draws no rule either. */
+.bedTileState:not(:has(.bedTileDays)):has(.bedTileNote:empty) {
+  border-top-color: transparent;
 }
 
 .bedTileNote {
@@ -824,14 +855,29 @@
   display: none;
 }
 
+/* Polish (1 Nov 2026): Act now runs the full width so each item and its button read on one line;
+   Later today and Done sit side by side under it. */
 .todoGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.todoGrid > .todoCol:first-child {
+  grid-column: 1 / -1;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.todoGrid > .todoCol:nth-child(2) {
+  border-left: 0;
+}
+
+.todoCol h4.groupHead {
+  margin-top: var(--wf-s-3);
 }
 
 .todoCol {
   min-width: 0;
-  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
   border-left: 1px solid var(--wf-line);
 }
 
@@ -857,7 +903,7 @@
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
-  padding: var(--wf-s-2) 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--wf-line);
 }
 
@@ -1152,7 +1198,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 
   .bedTile {
     min-height: var(--spacing-tap, 3rem);
-    padding: var(--wf-s-2);
+    padding: 10px;
   }
 
   .bedTileNote {
