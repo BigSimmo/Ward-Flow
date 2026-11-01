@@ -124,10 +124,12 @@ export function DischargeWeekendPrep({
   if (groups.length === 0) return null;
   // H-0766: the look-ahead runs past the WA holiday list, so a holiday there would read as a working day.
   const pastHolidayList = !holidaysListedFor(calendarDateOf(now + CLOSURE_LOOKAHEAD_DAYS * MINUTES_PER_DAY, dayZero));
-  const beforeReopen = groups.reduce(
-    (sum, group) => sum + group.rows.filter(({ release }) => release.expectedAt < group.closure.reopensAt).length,
-    0,
-  );
+  // Rows are per arrangement, so one person can appear under several services: count people once.
+  const beforeReopen = new Set(
+    groups.flatMap((group) =>
+      group.rows.filter(({ release }) => release.expectedAt < group.closure.reopensAt).map(({ release }) => release.id),
+    ),
+  ).size;
   const holidays = [...new Set(groups.flatMap((group) => group.closure.closedFor))].filter((day) => day !== "Weekend");
   const title = holidays.length > 0 ? `Closed for ${holidays.join(" and ")}` : "Closed this weekend";
   const summary = `${groups.length} ${groups.length === 1 ? "service" : "services"} closed · ${beforeReopen} due out before ${groups.length === 1 ? "it reopens" : "they reopen"}`;
