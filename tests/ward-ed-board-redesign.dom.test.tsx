@@ -108,7 +108,7 @@ describe("ED board redesign", () => {
       within(sort)
         .getAllByRole("radio")
         .map((radio) => radio.textContent),
-    ).toEqual(["Current order", "Longest in ED", "Patient name"]);
+    ).toEqual(["Longest in ED", "Name", "Current order"]); // handover build order (Josh, 1 Nov 2026)
     expect(within(sort).getByRole("radio", { name: "Longest in ED" })).toHaveAttribute("aria-checked", "true");
     expect(screen.queryByRole("combobox", { name: /Sort/u })).toBeNull();
   });

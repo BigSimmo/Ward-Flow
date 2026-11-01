@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, onTestFinished } from "vitest";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { bedMapCards, wardCardName } from "./helpers/capacity-ward-table";
@@ -546,7 +546,25 @@ describe("emergency department cards carry the urgency tier", () => {
   });
 
   it("spells the tier out on every outbox row too", () => {
+    // Handover build (Josh, 1 Nov 2026): the desktop Lists card has no Referred list; the phone's
+    // Lists pane keeps the outbox, so this is read there.
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(max-width: 48rem)",
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      onchange: null,
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    onTestFinished(() => {
+      window.matchMedia = original;
+    });
     renderEdWithUrgencies();
+    const listsPane = screen.queryByRole("radio", { name: /^Lists/u });
+    if (listsPane) fireEvent.click(listsPane);
 
     const rows = screen.getAllByTestId(/^ward-ed-outbox-row-WF-\d+$/);
     expect(rows.length).toBeGreaterThan(0);
@@ -571,12 +589,18 @@ describe("emergency department cards carry the urgency tier", () => {
      * make this pass.
      */
     const subject = ids[0];
+    // On the phone the urgency change sits in the person's sheet, opened from the Board pane.
+    const boardPane = screen.queryByRole("radio", { name: /^Board/u });
+    if (boardPane) fireEvent.click(boardPane);
+    fireEvent.click(within(screen.getByTestId(`ward-ed-patient-${subject}`)).getAllByRole("button")[0]!);
     fireEvent.click(screen.getByTestId(`ward-change-urgency-toggle-${subject}`));
     fireEvent.change(screen.getByLabelText(`Urgency tier for ${seedPatientName(subject)}`), { target: { value: "3" } });
     fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "reassessed" } });
     fireEvent.click(screen.getByText("Record urgency change"));
 
     expect(urgencyInState(subject)).toBe(3);
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    if (listsPane) fireEvent.click(screen.getByRole("radio", { name: /^Lists/u }));
     expect(screen.getByTestId(`ward-ed-outbox-tier-${subject}`)).toHaveTextContent("Tier 3 · least urgent");
 
     // And still one label per row — the row did not lose its label by becoming least urgent.
