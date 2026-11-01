@@ -38,40 +38,40 @@ export function screenColumnsFor(columns: HandoverColumn[], columnIds: readonly 
     },
     ...columns.filter((column) => column.id !== "pt" && column.id !== "st" && column.id !== "next"),
   ];
-  return (
-    merged
-      // Round 5: what is due rides under the wait, so the eye reads one time column, not two.
-      .filter((column) => column.id !== "due")
-      .map((column) =>
-        column.id === "wait"
-          ? {
-              ...column,
-              header: "Waiting",
-              width: 150,
-              cell: (row, cellCtx) => {
-                const due = dueParts(row, cellCtx.now);
-                return (
-                  <span className={styles.two}>
-                    <b className={styles.mono}>{durMinutes(cellCtx.now - row.openedAt)}</b>
-                    {due ? (
-                      <span className={`${styles.sub} ${styles.dueSub}`} title={`${due.what} ${due.when}`}>
-                        <StatusGlyph tone="warning" size={8} />
-                        <span className={styles.trunc}>
-                          {due.what} <b className={styles.mono}>{due.when}</b>
-                        </span>
+  // Round 5: what is due rides under the wait, so the eye reads one time column, not two. Only
+  // when both are chosen: with Waiting hidden, Due keeps its own column; with Due hidden, no due line.
+  const dueUnderWait = columnIds.includes("wait") && columnIds.includes("due");
+  return merged
+    .filter((column) => !(dueUnderWait && column.id === "due"))
+    .map((column) =>
+      column.id === "wait"
+        ? {
+            ...column,
+            header: "Waiting",
+            width: 150,
+            cell: (row, cellCtx) => {
+              const due = dueUnderWait ? dueParts(row, cellCtx.now) : null;
+              return (
+                <span className={styles.two}>
+                  <b className={styles.mono}>{durMinutes(cellCtx.now - row.openedAt)}</b>
+                  {due ? (
+                    <span className={`${styles.sub} ${styles.dueSub}`} title={`${due.what} ${due.when}`}>
+                      <StatusGlyph tone="warning" size={8} />
+                      <span className={styles.trunc}>
+                        {due.what} <b className={styles.mono}>{due.when}</b>
                       </span>
-                    ) : (
-                      <span className={`${styles.sub} ${styles.mono} ${styles.trunc}`}>
-                        since {formatInstantWithDay(row.openedAt, cellCtx.now)}
-                      </span>
-                    )}
-                  </span>
-                );
-              },
-            }
-          : column.id === "route"
-            ? { ...column, header: "From → to" }
-            : column,
-      )
-  );
+                    </span>
+                  ) : (
+                    <span className={`${styles.sub} ${styles.mono} ${styles.trunc}`}>
+                      since {formatInstantWithDay(row.openedAt, cellCtx.now)}
+                    </span>
+                  )}
+                </span>
+              );
+            },
+          }
+        : column.id === "route"
+          ? { ...column, header: "From → to" }
+          : column,
+    );
 }

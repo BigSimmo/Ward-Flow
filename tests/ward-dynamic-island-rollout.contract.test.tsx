@@ -1742,7 +1742,9 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
       resolve(process.cwd(), "src/components/ward-management/handover/handover-page.tsx"),
       "utf8",
     );
-    // Refined Handover A (9 Oct 2026): the hero counts are the meeting-order groups.
+    // Refined Handover A (9 Oct 2026): the hero counts are the meeting-order groups. Round 6 (1 Nov
+    // 2026): the page mounts them from handover-glance.tsx.
+    expect(source).toContain("HandoverHeroCounts");
     const glance = readFileSync(
       resolve(process.cwd(), "src/components/ward-management/handover/handover-glance.tsx"),
       "utf8",

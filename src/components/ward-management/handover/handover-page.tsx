@@ -1030,7 +1030,12 @@ export function HandoverPage() {
           shiftAt={shiftAt}
           beds={ownWard || edDesk ? null : { ready: readyTotal, needed: counts.bed }}
           longest={longest}
-          onOpen={pick}
+          onOpen={(id) => {
+            // The patient opens on the Patients tab, so leave Beds, History or the print builder first.
+            setSheetOpen(false);
+            setTab("pts");
+            pick(id);
+          }}
           sinceAt={newSince}
           sinceLine={sinceLine}
           signOffNote={
