@@ -1,0 +1,7 @@
+/* The record the patient box has linked: name, UMRN and date of birth, so a wrong pick shows. */
+.referralLinked {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 400;
+}

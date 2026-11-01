@@ -374,7 +374,7 @@ describe("the zero-case sentence states D-a's definition, and D-c's narrowed abs
 
     // D-c: "Nobody is waiting..." — narrowed, so it names the service.
     expect(screen.getByTestId("ward-delays-nobody-waiting")).toHaveTextContent(
-      `Nobody is waiting in any emergency department in ${SERVICE} right now.`,
+      `Nobody is waiting in any emergency department in ${SERVICE}, counted over every open movement.`,
     );
 
     // D-b: the escalations register is whole-network and unaffected by narrowing — its own absence
@@ -382,13 +382,13 @@ describe("the zero-case sentence states D-a's definition, and D-c's narrowed abs
     // before switching tabs below, since only one register pane is shown at once.
     expect(screen.getByText("Nobody has been escalated today.")).toBeInTheDocument();
 
-    // D-c: "Nobody who was on this screen this morning has left it yet" — narrowed (`closedToday`
+    // D-c: "Nobody resolved yet today" — narrowed (`closedToday`
     // is built off the already-scoped `movements`), so it names the service too. On the "Resolved
     // today" tab, since that sentence only exists in that pane. Each register tab reads its count,
     // then its name.
     fireEvent.click(screen.getByRole("tab", { name: /Resolved$/u }));
     expect(screen.getByRole("tabpanel", { name: /Resolved$/u }).textContent ?? "").toContain(
-      `Nobody who was on this screen this morning has left it yet, in ${SERVICE}.`,
+      `Nobody resolved yet today in ${SERVICE}.`,
     );
   });
 });

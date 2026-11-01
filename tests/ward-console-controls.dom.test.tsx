@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
 
@@ -20,6 +20,7 @@ import { WardPatientWorkspace } from "@/components/ward-management/ward-manageme
 import { MOVEMENT_STAGES, type LegalStatus, type MovementId } from "@/components/ward-management/ward-model";
 import { movementById } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 
 /**
  * ⚠️ THE CONTROLS ACTUALLY DO SOMETHING — which is the assertion the reducer tests cannot make.
@@ -1428,5 +1429,45 @@ describe("the prompt that tells the sending team a bed is ready to book against"
     expect(afterPull, "no transport item after the pull, so the boundary drops a stage").toBeGreaterThan(0);
     expect(beforePull, "two transport items at once before the pull").toBe(1);
     expect(afterPull, "two transport items at once after the pull").toBe(1);
+  });
+});
+
+describe("the site bed manager's desk (audit 0c5yr2)", () => {
+  /**
+   * EVENT_ROLE gives the site bed manager no blocker or transport cancel, so the shared server
+   * refuses both. The controls show off with the standard reason, like their neighbours, rather
+   * than offering something the server would refuse.
+   */
+  function expectLocked(button: HTMLElement) {
+    expect(button).toBeDisabled();
+    const reasonId = button.getAttribute("aria-describedby");
+    expect(reasonId).toBeTruthy();
+    expect(document.getElementById(reasonId!)?.textContent?.trim()).toBeTruthy();
+  }
+
+  it("shows Record it and Clear off, and records nothing", () => {
+    renderWorkspace("WF-001");
+    act(() => setDeskRole("bed_manager", "/ward-flow"));
+    const panel = screen.getByTestId("ward-patient-blocker");
+    fireEvent.change(screen.getByTestId("ward-console-blocker-input"), { target: { value: "Awaiting cleaner" } });
+    expectLocked(screen.getByRole("button", { name: /record it/i }));
+    expectLocked(screen.getByTestId("ward-console-blocker-clear"));
+    fireEvent.submit(screen.getByTestId("ward-console-blocker-input").closest("form")!);
+    expect(within(panel).queryByText("Awaiting cleaner")).not.toBeInTheDocument();
+    expect(within(panel).getByText("Confirming destination options")).toBeInTheDocument();
+  });
+
+  it("shows Cancel the transport job off", () => {
+    renderWorkspaceWithControls("WF-003");
+    fireEvent.click(screen.getByTestId("test-pull-patient"));
+    fireEvent.click(screen.getByTestId("test-book-transport"));
+    fireEvent.click(screen.getByTestId("test-step-back"));
+    act(() => setDeskRole("bed_manager", "/ward-flow"));
+    expectLocked(screen.getByTestId("ward-console-cancel-transport"));
+  });
+
+  it("leaves the coordinator's controls on", () => {
+    renderWorkspace("WF-001");
+    expect(screen.getByTestId("ward-console-blocker-clear")).not.toBeDisabled();
   });
 });

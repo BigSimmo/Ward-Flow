@@ -56,8 +56,8 @@
  * The network ward table these cases read is gone. Each ward's facts now sit in its ward drawer,
  * opened from its bed map card: Mental Health Act authorisation ("Authorised hospital"), "Ask the
  * ward" (the capacity-refresh control) and the ward's discharge records and bed releases. The
- * excluded-beyond-the-horizon count is stated on Capacity's bed meeting sheet ("N more expected after
- * tomorrow, left out of these figures"), and held-up releases are counted in "This shift". Every
+ * excluded-beyond-the-horizon count is stated on Capacity's bed meeting sheet ("N more after
+ * tomorrow, not counted"), and held-up releases are counted in "This shift". Every
  * case below is the same rule read in its new place.
  */
 
@@ -171,12 +171,12 @@ function openMeetingSheet(): HTMLElement {
   return screen.getByTestId("bed-meeting-sheet-print-copy");
 }
 
-/** The number in the sheet's "N more expected after tomorrow, left out of these figures" (0 when
+/** The number in the sheet's "N more after tomorrow, not counted" (0 when
  *  the line is absent). Since 25 September 2026 the derived seed carries releases beyond today, so
  *  the tests below diff this number rather than assert the line is absent. */
 function excludedBeyondTodayCount(): number {
   const discharges = within(screen.getByTestId("bed-meeting-sheet-print-copy")).getByTestId("bed-meeting-discharges");
-  const line = within(discharges).queryByText(/more expected after tomorrow, left out of these figures/u);
+  const line = within(discharges).queryByText(/more after tomorrow, not counted/u);
   return line ? Number(line.textContent?.match(/\d+/)?.[0]) : 0;
 }
 

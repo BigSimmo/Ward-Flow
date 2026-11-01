@@ -345,6 +345,9 @@ describe("community hub — an empty list must never read as an all-clear", () =
     // populated list and proves nothing about the case that matters.
     expect(within(section).getByTestId("ward-community-discharged-empty")).toBeTruthy();
     const notice = within(section).getByTestId("ward-community-follow-up-not-recorded").textContent ?? "";
+    // Q107 (1 Nov 2026): the notice above the list keeps only the decision half. That follow-up can
+    // be recorded is background, now in About this data's Coverage limits, and is read from there.
+    const recording = screen.getByTestId("ward-community-limits-follow-up").textContent ?? "";
     const page = document.body.textContent ?? "";
     // ⚠️ Wording corrected 2026-09-01. This used to pin "…is not recorded", which was FALSE:
     // `Admission.followUp` exists, carries a state/instant/role, and is seeded. What is true is that
@@ -362,7 +365,7 @@ describe("community hub — an empty list must never read as an all-clear", () =
     // other claims (site 320's "does not mean everybody is being followed up" among them). So the
     // word survived the deletion of the provenance claim and the guard stayed silent a second time.
     // The concept this site owns is narrower than the topic: the field EXISTS AND NOTHING READS IT.
-    expectSays(notice, "the follow-up provenance note", [
+    expectSays(recording, "the follow-up provenance note", [
       "reads it",
       "nothing reads",
       "no screen or figure reads",
@@ -440,7 +443,7 @@ describe("community hub — an empty list must never read as an all-clear", () =
     expect(within(section).getByTestId("ward-community-discharged-list")).toBeTruthy();
     expect(within(section).getByTestId("ward-community-discharged-AD-HOME")).toBeTruthy();
     expect(within(section).getByTestId("ward-community-follow-up-not-recorded").textContent).toContain(
-      "Follow-up arrangements and contact outcomes can be recorded for this team",
+      "does not establish that everybody is being followed up",
     );
   });
 
@@ -488,7 +491,7 @@ describe("community hub — an empty list must never read as an all-clear", () =
         followUp: { state, recordedAt: NOW_ANCHOR, recordedBy: "Bed coordinator" },
       });
       renderTeam(TEAM_A.id, [departed], [toA]);
-      expect(screen.getByTestId("ward-community-follow-up-not-recorded")).toHaveTextContent(
+      expect(screen.getByTestId("ward-community-limits-follow-up")).toHaveTextContent(
         "Follow-up arrangements and contact outcomes can be recorded for this team",
       );
       expect(screen.getByTestId("ward-community-follow-up-not-recorded")).toHaveTextContent(

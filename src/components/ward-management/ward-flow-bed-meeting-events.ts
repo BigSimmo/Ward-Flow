@@ -81,13 +81,10 @@ export function reduceBedMeetingEvent(
     case "COMPLETE_BED_MEETING_ACTION": {
       if (!open) return reject(state, event, `This ${subject.kind} has no open action of that kind`);
       // The chair for anyone; otherwise only the owning role, and a ward only for its own action.
-      // D-80: a bed manager completes a ward's action acting as that ward; the scope check keeps it
-      // to its own site's wards.
+      // Q97 (Josh, 1 Nov 2026): the site bed manager completes none (EVENT_ROLE refuses it first).
       const actsForOwnerWard = open.owner === "ward" && event.actingUnitId === open.ownerUnitId;
       const mayComplete =
-        event.role === "coordinator" ||
-        (event.role === "bed_manager" && actsForOwnerWard) ||
-        (event.role === open.owner && (open.owner !== "ward" || actsForOwnerWard));
+        event.role === "coordinator" || (event.role === open.owner && (open.owner !== "ward" || actsForOwnerWard));
       if (!mayComplete) return reject(state, event, `${event.type} is for the action's owner or the coordinator`);
       next = actions.map((action) =>
         action === open ? { ...action, doneAt: event.now, doneBy: WARD_FLOW_ROLE_LABELS[event.role] } : action,

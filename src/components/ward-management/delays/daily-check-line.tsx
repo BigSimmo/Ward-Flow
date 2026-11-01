@@ -241,7 +241,7 @@ export function DailyCheckLine() {
     return `${person.formalName} · ${person.umrn}`;
   };
   const requests = `${items.length} ${items.length === 1 ? "bed request" : "bed requests"}`;
-  const toCheck = `${requests} to check, missed or sent twice. Open the list to confirm them.`;
+  const toCheck = `${requests} to check, missed or sent twice.`;
   const shownItems = all ? items : items.slice(0, CHECK_LIMIT);
 
   return (
@@ -251,7 +251,7 @@ export function DailyCheckLine() {
         <p id="redesign-daily-check" className={styles.checkText}>
           <b>Daily check:</b>{" "}
           {items.length === 0 ? (
-            "nobody missed. Every open bed request has a ward asked, and none is doubled."
+            "nobody missed or doubled."
           ) : checked ? (
             <>
               <StatusGlyph tone="success" size={9} /> all checked by {checked.by} at{" "}

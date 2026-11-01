@@ -62,7 +62,7 @@ export function WardRestrictionReviews({ unit, now, actor }: { unit: Unit; now: 
           <RestrictionReviewRow key={restriction} unit={unit} restriction={restriction} now={now} actor={actor} />
         ))}
       </ul>
-      <p className={styles.line}>A review time is a reminder. Nothing is lifted until a person changes it.</p>
+      <p className={styles.line}>A review time does not lift a restriction.</p>
     </section>
   );
 }
@@ -227,9 +227,7 @@ export function ClosureTransitionChecklist({ unit, now, actor }: { unit: Unit; n
           {open > 0 ? `${open} to deal with` : "All dealt with"}
         </Badge>
       </p>
-      <p className={styles.line}>
-        Reassign or cancel each one on its own record. This list moves nothing and picks no other ward.
-      </p>
+      <p className={styles.line}>Reassign or cancel each on its own record.</p>
       <ul className={styles.list}>
         {/* Audit 1: no internal journey numbers and no names on a ward panel, so each item is
             numbered in this list only. */}

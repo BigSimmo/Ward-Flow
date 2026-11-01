@@ -338,9 +338,7 @@ function OperationalWardScreen({
         <StatCard icon={BedDouble} title="No such ward">
           <CardBody className={styles.bodyStack}>
             <p data-testid="ward-statistics-ward-unresolved">
-              No ward in this prototype has the id <code className={ward.unresolvedId}>{unitId}</code>. It may have been
-              renamed or removed, or the id in the address may be wrong. This page never falls back to a different ward,
-              because a page showing the wrong ward under the right heading is worse than a page showing nothing.
+              No ward has the id <code className={ward.unresolvedId}>{unitId}</code>.
             </p>
             <p>
               <Link href={STATISTICS_UNIT_FINDER_HREF} data-testid="ward-statistics-ward-chooser-link">

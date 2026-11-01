@@ -410,7 +410,7 @@ export function WardReferralDetail({
               <li key={chart.kind}>
                 <span className={styles.docMain}>
                   <strong>{referralChartLabel(chart)}</strong>
-                  <span>Attached to the referral. The file stays with the sender.</span>
+                  <span>Held by the sender.</span>
                 </span>
               </li>
             ))}

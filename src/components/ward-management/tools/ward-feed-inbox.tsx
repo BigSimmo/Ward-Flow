@@ -119,9 +119,7 @@ export function WardFeedInbox() {
 
   return (
     <div className={styles.toolBody} data-testid="ward-feed-inbox">
-      <p className={styles.note}>
-        Invented messages only. Nothing is connected to a hospital system. Matched by record number only.
-      </p>
+      <p className={styles.note}>Invented messages, matched by record number only.</p>
       <div className={styles.demoRow}>
         <button
           type="button"

@@ -649,7 +649,7 @@ export function DelaysBoardGraphs(props: Props) {
         <div className={styles.gFoot}>
           <span>
             <b className={styles.num}>{shown.length}</b>
-            {` of ${rows.length} match the current filters and are shown in the table.`}
+            {` of ${rows.length} shown in the table.`}
           </span>
           <span className={styles.sp} />
           <button type="button" className={styles.lnk} onClick={onToTable}>

@@ -52,7 +52,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { resolveWardPrimaryAction } from "@/components/ward-management/ward-nav";
-import { waitingInEds, waitingText } from "@/components/ward-management/ward-shared-figures";
+import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 function ServiceScopeProbe() {
@@ -167,6 +167,9 @@ describe("WardBar's Service selector, wired to the store", () => {
     const panel = screen.getByTestId("ward-bar-service-panel");
     expect(within(panel).getByText("Service")).toBeInTheDocument();
     expect(within(panel).queryByText("scopes the lists")).not.toBeInTheDocument();
+    // Pop-ups build (Service picker, round 2): the quiet line under the title, on desktop too.
+    expect(within(panel).getByText("Narrows Capacity, Waiting and Movements")).toBeInTheDocument();
+    expect(within(panel).getByRole("button", { name: "Close Service" })).toBeInTheDocument();
     expect(
       within(panel).getByText(
         "One service, or all of them. Capacity, Waiting and Movements narrow their lists to it. " +
@@ -194,11 +197,15 @@ describe("WardBar's Service selector, wired to the store", () => {
       sum += expectedCount;
       const option = options.find((button) => (button.textContent ?? "").startsWith(service));
       expect(option, `no option button found starting with "${service}"`).toBeDefined();
-      expect(option!.textContent ?? "").toContain(waitingText(expectedCount));
+      // Pop-ups build (Service picker, round 2): "N waiting in ED", a zero greyed rather than reworded.
+      expect(option!.textContent ?? "").toContain(`${expectedCount} waiting in ED`);
+      const count = option!.querySelector("[data-none]");
+      expect(count === null, `${service}'s count is greyed only when it is zero`).toBe(expectedCount > 0);
     }
     expect(sum, "the services add up to All services").toBe(waiting.total);
     const all = options.find((button) => (button.textContent ?? "").startsWith("Statewide"));
-    expect(all!.textContent ?? "").toContain(waitingText(waiting.total));
+    // Statewide carries its total on every screen size.
+    expect(all!.textContent ?? "").toContain(`${waiting.total} waiting in ED`);
   });
 
   // Anti-vacuity: the count test above would pass just as well if every option showed "none waiting"

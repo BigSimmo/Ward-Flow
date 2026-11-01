@@ -48,7 +48,7 @@ export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClos
       open={open}
       onClose={close}
       title="Try a scenario"
-      description="See how tomorrow changes if something happens first. Nothing here is saved."
+      description="Nothing here is saved."
       size="md"
       primary={{ label: "Done", onAction: close }}
       secondary={[

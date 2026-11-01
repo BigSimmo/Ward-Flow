@@ -36,7 +36,6 @@ describe("the site bed manager's bed flow actions (D-80)", () => {
       "CLEAR_STAY_DISCHARGE_BLOCKER",
       "CLOSE_WARD_TO_ADMISSIONS",
       "REOPEN_WARD_TO_ADMISSIONS",
-      "COMPLETE_BED_MEETING_ACTION",
       "REPLY_BROADCAST_ALERT",
       "MARK_NOTICE_READ",
     ] as const) {
@@ -49,6 +48,9 @@ describe("the site bed manager's bed flow actions (D-80)", () => {
       // A sign-off carries no site yet, so one site's would mark every site's sheet.
       "RECORD_HANDOVER_SIGN_OFF",
       "UNDO_HANDOVER_SIGN_OFF",
+      // Q97 (Josh, 1 Nov 2026): Decision 46 gives it the agenda read only, so it marks no action done.
+      "RECORD_BED_MEETING_ACTION",
+      "COMPLETE_BED_MEETING_ACTION",
     ] as const) {
       expect(EVENT_ROLE[type], type).not.toContain("bed_manager");
     }
@@ -84,7 +86,7 @@ describe("the site bed manager's bed flow actions (D-80)", () => {
     expect(closed.units.find((unit) => unit.id === own.id)!.isClosed).toBe(true);
   });
 
-  it("completes a bed meeting action owned by a ward it acts for, and no other", () => {
+  it("completes no bed meeting action, not even one owned by a ward it acts for (Q97)", () => {
     const admission = state.admissions.find((candidate) => candidate.state === "occupied")!;
     const subject = { kind: "admission" as const, id: admission.id };
     const withAction = (owner: "ward" | "ed") =>
@@ -110,12 +112,11 @@ describe("the site bed manager's bed flow actions (D-80)", () => {
 
     const wardOwned = withAction("ward");
     expect(wardOwned.rejections).toEqual(state.rejections);
-    const done = complete(wardOwned, admission.unitId);
-    expect(done.rejections).toEqual(wardOwned.rejections);
-    expect(done.admissions.find((candidate) => candidate.id === admission.id)!.meetingActions![0]).toMatchObject({
-      doneAt: NOW + 10,
-      doneBy: "Site bed manager",
-    });
+    const refused = complete(wardOwned, admission.unitId);
+    expect(refused.rejections).toHaveLength(wardOwned.rejections.length + 1);
+    expect(
+      refused.admissions.find((candidate) => candidate.id === admission.id)!.meetingActions![0].doneAt,
+    ).toBeUndefined();
     expect(complete(wardOwned).rejections).toHaveLength(wardOwned.rejections.length + 1);
     expect(complete(wardOwned, "some-other-ward").rejections).toHaveLength(wardOwned.rejections.length + 1);
 

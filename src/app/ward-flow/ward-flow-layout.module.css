@@ -373,6 +373,15 @@
   padding-bottom: 0;
 }
 
+/* Minimal warnings (design audit, Josh 1 Nov 2026): one pinned note at a time. The layout mounts the
+   notes in priority order (broadcast, recovery, offline, downtime pack, desk preview, practice, demo
+   saving) and each renders nothing when it has nothing to say, so the first one present is the most
+   important and the rest wait until it goes. `!important` because a note's own display rule can be
+   more specific (`.recovery:has(.recoveryClose)` sets flex) and would otherwise show it anyway. */
+.bannerHolder > * + * {
+  display: none !important;
+}
+
 /* Over a hero band (header at rest in ink) the notes sit on the band's top colour, so header, notes
    and hero read as one surface and the page keeps its band (wf/band.ts, Josh 27 Oct 2026). Once the
    page scrolls the header turns light and the holder goes back to the page ground. */

@@ -93,7 +93,6 @@ export function ReferralDocuments({
                 <i key={index} style={{ width: `${92 - ((index * 17) % 40)}%` }} />
               ))}
             </div>
-            <p className={s.muted}>This prototype holds the document&apos;s type and size only, never a real file.</p>
           </div>
         ) : null}
       </Sheet>

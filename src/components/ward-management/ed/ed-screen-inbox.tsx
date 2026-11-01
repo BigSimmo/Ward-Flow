@@ -54,13 +54,10 @@ export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
       <h3 className={styles.inboxSubheading}>
         Referrals &middot; {inbox.length} patient{inbox.length === 1 ? "" : "s"}
       </h3>
-      <p className={styles.inboxMeta}>
-        Oldest first · Department time is from recorded triage; referral time is separate.
-      </p>
+      <p className={styles.inboxMeta}>Oldest first</p>
       {inbox.length === 0 ? (
         <p className={styles.placeholder} data-testid="ward-ed-inbox-empty">
-          No referral for psychiatric review is addressed to {department.name}. Bed-only and medical requests are
-          outside this list.
+          No referral for psychiatric review is addressed to {department.name}.
         </p>
       ) : (
         <ul className={styles.inboxList}>

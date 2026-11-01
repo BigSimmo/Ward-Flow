@@ -64,11 +64,9 @@ export function WardBoardBlockerDialog({
     // first release or a made-up id. With none, nothing is recorded.
     const ownRelease = liveBedReleases?.find((r) => r.admissionId === item.selectableKey && r.state !== "discharged");
     if (!ownRelease) {
-      const msg = `No discharge is recorded for ${who}, so there is nothing to hold up. Nothing was changed.`;
+      const msg = `No discharge is recorded for ${who}. Nothing was changed.`;
       setToastMessage({ warning: msg });
-      announceToWardShell(
-        "No discharge is recorded for this patient, so there is nothing to hold up. Nothing was changed.",
-      );
+      announceToWardShell("No discharge is recorded for this patient. Nothing was changed.");
     } else {
       dispatchAndReport(
         () =>

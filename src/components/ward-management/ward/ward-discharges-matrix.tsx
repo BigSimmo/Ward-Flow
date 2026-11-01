@@ -104,7 +104,7 @@ export function WardDischargesMatrix({
           <div className={styles.streamHeading}>Planned today ({releasesCountedToday.length})</div>
           <p data-testid="ward-waiting-on-longest">{WAITING_ON_LONGEST}</p>
           {releasesCountedToday.length === 0 ? (
-            <p className={styles.placeholder}>No bed release is currently scheduled for today at {unit.name}.</p>
+            <p className={styles.placeholder}>None planned today.</p>
           ) : (
             releasesCountedToday.map((release) => (
               <div
@@ -129,13 +129,6 @@ export function WardDischargesMatrix({
                       Blocker: <strong>{release.blocker ?? "None recorded"}</strong>
                     </span>
                   </div>
-                </div>
-
-                {/* Pre-Departure Readiness Checklist */}
-                <div className={styles.checklistChips}>
-                  <span className={styles.chkChip}>✓ Doctor Summary</span>
-                  <span className={styles.chkChip}>✓ TTO Pharmacy</span>
-                  <span className={styles.chkChip}>✓ Family Transport</span>
                 </div>
 
                 <div>
@@ -163,7 +156,7 @@ export function WardDischargesMatrix({
         <div className={styles.dischargeStream}>
           <div className={styles.streamHeading}>Leave Monitoring ({unitLeaveBeds.length})</div>
           {unitLeaveBeds.length === 0 ? (
-            <p className={styles.placeholder}>No leave bed is recorded at {unit.name}.</p>
+            <p className={styles.placeholder}>Nobody on leave.</p>
           ) : (
             unitLeaveBeds.map((leaveBed) => (
               <div
@@ -182,10 +175,7 @@ export function WardDischargesMatrix({
                     </span>
                   </div>
                   <div className={styles.dischargeMetaRow}>
-                    <span>
-                      Recorded {formatInstantWithDay(leaveBed.confirmedAt, now)}. Shows nothing about the person on
-                      leave.
-                    </span>
+                    <span>Recorded {formatInstantWithDay(leaveBed.confirmedAt, now)}.</span>
                   </div>
                 </div>
                 <div>
@@ -213,7 +203,7 @@ export function WardDischargesMatrix({
         <div className={styles.dischargeStream}>
           <div className={styles.streamHeading}>Active Discharge Barriers ({blockedReleases.length})</div>
           {blockedReleases.length === 0 ? (
-            <p className={styles.placeholder}>No discharge blocker is currently recorded at {unit.name}.</p>
+            <p className={styles.placeholder}>No barriers recorded.</p>
           ) : (
             blockedReleases.map((release) => (
               <div
@@ -256,22 +246,6 @@ export function WardDischargesMatrix({
           <SuburbTeamPanel />
         </div>
       )}
-
-      {/* Terminal Clean Status Strip */}
-      <div className={styles.cleaningBox}>
-        <div className={styles.cleaningRow}>
-          <div className={styles.cleaningIcon}>
-            <svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 8 7 12 13 4" />
-            </svg>
-          </div>
-          <div className={styles.cleaningText}>
-            <strong>Bed 01 (Bay 1):</strong> Terminal room clean completed at 09:50 by Environmental Services. Bed is
-            verified clean and ready for allocation.
-          </div>
-        </div>
-        <span className={styles.chkChip}>Ready for Allocation</span>
-      </div>
 
       {/* Preserved test contract for handover link and summary */}
       <div className={styles.visuallyHidden} data-testid="ward-handover-block">

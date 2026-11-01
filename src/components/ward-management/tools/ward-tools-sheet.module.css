@@ -776,3 +776,31 @@
     min-height: var(--wf-touch);
   }
 }
+
+/* Tools redesign (approved 31 Oct 2026): the Search tools box stays at the kit's 40px on a phone too
+   (round 2), and a search with no match says so once, with a way back. */
+.search.toolsSearch {
+  min-height: 40px;
+}
+
+.toolsSearch svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.toolsNone {
+  display: grid;
+  justify-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4) var(--wf-s-3);
+  border: 1px dashed var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  color: var(--wf-ink-2);
+  text-align: center;
+}
+
+.toolsNone p {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+}

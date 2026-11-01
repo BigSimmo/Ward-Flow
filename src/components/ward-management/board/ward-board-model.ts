@@ -90,9 +90,9 @@ export const BOARD_ORDER_LABELS: Record<BoardOrder, string> = {
 };
 
 export const BOARD_ORDER_NOTES: Record<BoardOrder, string> = {
-  stay: "Longest stay first; beds without a recorded stay follow recorded order.",
-  leaving: "Soonest expected out first; beds without an expected date follow recorded order.",
-  recorded: "Recorded source order; this does not identify bed locations.",
+  stay: "Beds with no recorded stay follow.",
+  leaving: "Beds with no expected date follow.",
+  recorded: "Recorded order, not bed locations.",
 };
 
 export const FLOW_TABS = ["outgoing", "incoming", "since"] as const;

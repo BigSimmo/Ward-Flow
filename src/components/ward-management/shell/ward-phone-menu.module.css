@@ -573,6 +573,16 @@
   min-height: 60px;
 }
 
+/* Pop-ups build (Create, 1 Nov 2026): the small "Or record" heading over the secondary rows. */
+.createHeading {
+  margin: var(--wf-s-3) 0 var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rise,
   .dockItem:active .dockIcon {
@@ -682,4 +692,36 @@
   border-radius: inherit;
   box-shadow: inset 0 0 0 1px var(--wf-danger);
   pointer-events: none;
+}
+
+/* Phone Menu redesign (approved 31 Oct 2026): one "More pages" row opens the other groups in place. */
+.moreRow {
+  font-weight: 600;
+}
+
+.moreCaret {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  transition: transform 160ms ease;
+}
+
+.moreCaret[data-open] {
+  transform: rotate(180deg);
+}
+
+.moreGroups {
+  display: contents;
+}
+
+.moreGroups[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moreCaret {
+    transition: none;
+  }
 }

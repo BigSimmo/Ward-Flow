@@ -605,7 +605,7 @@ export function ReferralPatientStep({
                     {heldBedWardName
                       ? `They already have a bed, or a pulled bed, on ${heldBedWardName}, so this ward cannot send them as a new admission.`
                       : destType === "ward"
-                        ? "A ward usually refers its own inpatients. This goes as a new admission, not a transfer."
+                        ? "This goes as a new admission, not a transfer."
                         : "A ward usually refers its own inpatients."}
                   </small>
                 </span>
@@ -927,7 +927,7 @@ export function ReferralPatientStep({
               {catchmentNotKnown ? (
                 <span className={styles.confirmedNote} data-testid="ward-referral-catchment-not-known-note">
                   <StatusGlyph tone="warning" size={10} />
-                  Catchment not known. The referral letter says so.
+                  Catchment not known.
                 </span>
               ) : catchmentConfirmed ? (
                 <span className={styles.confirmedNote}>

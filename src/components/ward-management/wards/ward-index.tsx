@@ -453,7 +453,6 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             />
           ))}
         </WardCapacityRows>
-        <p className={styles.railNote}>Press a service to highlight its wards.</p>
       </Card>
 
       <Card as="section" className={cx(styles.railCard, styles.wrapText)} aria-labelledby="ward-counts-to-check">
@@ -464,7 +463,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           <span className={styles.serviceMeta}>past each ward&apos;s limit</span>
         </div>
         {staleRows.length === 0 ? (
-          <p className={styles.railNote}>0 wards have a stale bed count.</p>
+          <p className={styles.railNote}>None.</p>
         ) : (
           <ul className={styles.checkList}>
             {staleRows.map((row) => (

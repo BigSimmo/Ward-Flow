@@ -1025,8 +1025,7 @@ export function OfficerScreen() {
                 <OfficerOrderNote shown={jobs.length > 0 && sortKey === "next" && !(officerDesk && isPhone)} />
                 {jobs.length === 0 ? (
                   <p className={styles.placeholder} data-testid="ward-officer-empty">
-                    No transport job is currently outstanding &mdash; every job has either arrived or its movement has
-                    closed.
+                    No outstanding jobs: each has arrived or its movement has closed.
                   </p>
                 ) : (
                   <div className={styles.tableScroll}>
@@ -1274,7 +1273,7 @@ export function OfficerScreen() {
                           ))}
                         </ul>
                       </div>
-                      <p className={styles.panelNote}>Recorded refusals remain visible for this session.</p>
+                      <p className={styles.panelNote}>This session only.</p>
                     </section>
                   ) : (
                     <div className={styles.filterEmpty}>
@@ -1303,9 +1302,7 @@ export function OfficerScreen() {
                           ))}
                         </ul>
                       </div>
-                      <p className={styles.panelNote}>
-                        Cancelled dispatches and ambulance stand-downs for this session.
-                      </p>
+                      <p className={styles.panelNote}>This session only.</p>
                     </section>
                   ) : (
                     <div className={styles.filterEmpty}>

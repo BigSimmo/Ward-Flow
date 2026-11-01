@@ -53,11 +53,7 @@ export function renderArrivalsCard(ctx: OfficerArrivalsContext) {
       />
       <CardBody>
         {arrivals.length === 0 ? (
-          <EmptyState
-            icon={MapPin}
-            title="No open job carries a recorded ward ETA."
-            meta="An ETA appears here once it is recorded at booking or on the arrival plan."
-          />
+          <EmptyState icon={MapPin} title="No open job has a recorded ward ETA." />
         ) : (
           <div className={styles.arrivals}>
             <div className={styles.arrivalsAxis} aria-hidden="true">

@@ -49,7 +49,7 @@ function useLastDowntimePackAt(): number | null {
  * Audit 24-7 (CT-17): while a practice runs, the real screens look the same, so a slim line on every
  * Ward Flow page says practice is on and its steps are real saves. Hidden when none is running.
  */
-function WardPracticeLine() {
+export function WardPracticeLine() {
   const running = usePracticeRunning();
   if (!running) return null;
   return (
@@ -63,14 +63,15 @@ function WardPracticeLine() {
  * A quiet notice when the device loses its network connection. The prototype keeps its state in
  * this tab's memory, so screens keep working; the notice says so, and that nothing is syncing, so
  * nobody reads "Live" as current while Wi-Fi is down. It also says which downtime pack to use if
- * the screen stops. Renders nothing while online. It also carries the practice line (CT-17).
+ * the screen stops. Renders nothing while online. It also carries the practice line (CT-17), unless
+ * `practice` is false: the ward layout mounts that line itself, lower in its notice order.
  */
-export function WardOfflineBanner() {
+export function WardOfflineBanner({ practice = true }: { practice?: boolean } = {}) {
   const authority = useWardShellAuthority();
   if (authority?.role === "executive") return <ExecutiveOfflineNotice />;
   return (
     <>
-      <WardPracticeLine />
+      {practice ? <WardPracticeLine /> : null}
       <WardOfflineNotice />
     </>
   );

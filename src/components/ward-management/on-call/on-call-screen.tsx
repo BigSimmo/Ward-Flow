@@ -781,7 +781,7 @@ function MatchesPanel({
       <div className={styles.cardHead}>
         <div className={styles.cardWho}>
           <h2 className={styles.cardTitle}>Matches</h2>
-          <span className={styles.cardPlace}>For &ldquo;{query.trim()}&rdquo;. Rows stay in place, highlighted.</span>
+          <span className={styles.cardPlace}>For &ldquo;{query.trim()}&rdquo;</span>
         </div>
         <Button variant="ghost" size="sm" onClick={onClear}>
           Clear
@@ -972,7 +972,7 @@ function DirectoryTable({
           {rows.length === 0 ? (
             <tr>
               <td colSpan={5} className={styles.empty}>
-                Star any line to keep it here. My list stays in this browser and holds contact ids only.
+                Star any line to keep it here.
               </td>
             </tr>
           ) : null}
@@ -1111,7 +1111,7 @@ function DowntimeCard({
       open={open}
       onClose={onClose}
       title="Downtime card"
-      description="Key lines and My list, every number and its hours. Copy it out before a planned outage."
+      description="Key lines and My list, with their hours."
       testId="ward-on-call-downtime"
       footer={
         <div className={styles.downtimeFoot}>

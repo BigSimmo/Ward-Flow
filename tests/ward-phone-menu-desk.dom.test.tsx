@@ -93,8 +93,13 @@ describe("Create sheet items match the + button's name (shell-5)", () => {
     fireEvent.click(plus);
     const sheet = screen.getByTestId("ward-phone-create-sheet");
     expect(within(sheet).getByRole("button", { name: /New referral/u })).toBeInTheDocument();
-    expect(within(sheet).getByRole("link", { name: /Log a delay/u })).toBeInTheDocument();
+    expect(within(sheet).getByRole("link", { name: /Log a delay/u })).toHaveTextContent("Patient and reason");
     expect(within(sheet).queryByRole("link", { name: /Book transport/u })).toBeNull();
+    // Pop-ups build (Create, 1 Nov 2026): no subtitle; "Or record" heads the three secondary rows.
+    expect(within(sheet).queryByText("Start something new")).toBeNull();
+    expect(within(sheet).getByRole("region", { name: "Or record" })).toContainElement(
+      within(sheet).getByRole("link", { name: /Add patient/u }),
+    );
     expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/ward-flow/people/new");
   });
 });
@@ -142,5 +147,28 @@ describe("Create sheet asks the access check for Add patient (role access plan v
     fireEvent.click(screen.getByTestId("ward-phone-create"));
     const sheet = screen.getByTestId("ward-phone-create-sheet");
     expect(within(sheet).getByRole("link", { name: /Add patient/u })).toHaveAttribute("href", "/ward-flow/people/new");
+  });
+});
+
+// Phone Menu redesign (approved 31 Oct 2026): Act now first, the desk's own pages, then one
+// "More pages" row that opens every other group in place; the old More is "Tools and settings".
+describe("Menu: Act now, the desk's own pages, then More pages", () => {
+  it("folds the other groups behind one More pages row that opens them in place", () => {
+    openMenu();
+    expect(screen.getByRole("region", { name: "Act now" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Act now and overdue" })).toBeNull();
+    expect(screen.getByRole("region", { name: "Tools and settings" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "More" })).toBeNull();
+
+    const more = screen.getByTestId("ward-phone-menu-more-pages");
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    expect(more).toHaveTextContent(/More pages\d+ pages? in \d+ groups?/u);
+    const folded = document.getElementById(more.getAttribute("aria-controls")!)!;
+    expect(folded).not.toBeVisible();
+    expect(folded.querySelectorAll("a[href]").length).toBeGreaterThan(0);
+
+    fireEvent.click(more);
+    expect(more).toHaveAttribute("aria-expanded", "true");
+    expect(folded).toBeVisible();
   });
 });

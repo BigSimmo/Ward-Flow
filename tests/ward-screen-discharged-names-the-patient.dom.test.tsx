@@ -117,7 +117,6 @@ describe("the ward screen's leave list shows no internal id and nothing about th
     );
     const row = screen.getByTestId(`ward-leave-card-${leaveBed.id}`);
     expect(row).toHaveTextContent("Bed on leave");
-    expect(row).toHaveTextContent("Shows nothing about the person on leave");
     expect(row).not.toHaveTextContent(leaveBed.id);
     expect(row).not.toHaveTextContent(screen.getByTestId("named-name").textContent ?? "");
   });

@@ -68,14 +68,18 @@ import {
   StatusGlyph,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import type { ActivityTab } from "./activity-panel";
 import { useHomeChanges } from "./activity-changes";
 import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import activity from "./home-activity.module.css";
 import cards from "./home-cards.module.css";
 import styles from "./home.module.css";
 import { HomeEdPressure } from "./home-ed-pressure";
-import { ActivityPanel, PlannedList } from "./home-activity-lazy";
+import { PlannedList } from "./home-activity-lazy";
+import {
+  openActivityPanel,
+  useActivityPanelOpen,
+  type ActivityPanelTab,
+} from "@/components/ward-management/shell/ward-activity-panel-store";
 import { useHomeLayout } from "./home-layout";
 import { BedsGapCard, ChosenAlertCard, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
@@ -605,15 +609,15 @@ export function CoordinatorScreen() {
   // Activity: Changes since the coordinator's last review (saved only when they press Mark reviewed).
   const changes = useHomeChanges(now);
   const changeCount = changes.live.length;
-  const [activityOpen, setActivityOpen] = useState(false);
-  const [activityTab, setActivityTab] = useState<ActivityTab | undefined>(undefined);
-  // The panel's code loads on first open and then stays mounted, so closing it can animate.
-  const [activityMounted, setActivityMounted] = useState(false);
-  const openActivity = (tab: ActivityTab) => {
-    setActivityTab(tab);
-    setActivityMounted(true);
-    setActivityOpen(true);
-  };
+  // Q99 (Josh, 1 Nov 2026): one Activity panel, the app bar's, on every page. This button opens
+  // that same panel on its tab, with Home's paused clock while Home is paused.
+  const activityOpen = useActivityPanelOpen();
+  const openActivity = (tab: ActivityPanelTab, opener?: EventTarget | null) =>
+    openActivityPanel({
+      tab,
+      now: paused ? now : undefined,
+      opener: opener instanceof HTMLElement ? opener : undefined,
+    });
   const reviewClock = formatInstantWithDay(changes.reviewedAt ?? changes.shiftStart, now);
   const changesChipLabel =
     changeCount === 0
@@ -621,7 +625,8 @@ export function CoordinatorScreen() {
       : `${changeCount === 1 ? "change" : "changes"} since ${
           changes.reviewedAt !== undefined ? `your review at ${reviewClock}` : reviewClock
         } · Review`;
-  const changesChipOpen = () => openActivity(changeCount > 0 ? "changes" : "recent");
+  const changesChipOpen = (event?: { currentTarget: EventTarget | null }) =>
+    openActivity(changeCount > 0 ? "changes" : "recent", event?.currentTarget);
   const plannedRows = usePlannedRows(now);
 
   // Hero counts: every one is read from an existing derivation, never typed.
@@ -772,7 +777,7 @@ export function CoordinatorScreen() {
           </header>
           {service ? (
             <p className={styles.cardNote} data-testid="ward-shortlist-not-scoped">
-              Beds are never narrowed by service. Every ward in the network is considered.
+              Every ward in the network is considered.
             </p>
           ) : null}
           {/* In the Placement sheet (phone, tablet portrait) the alert's reason leads, as it does on desktop. */}
@@ -874,7 +879,7 @@ export function CoordinatorScreen() {
                     className={`${styles.phoneSince} ${styles.changesChip}`}
                     aria-haspopup="dialog"
                     aria-expanded={activityOpen}
-                    aria-controls="home-activity-panel"
+                    aria-controls="ward-bar-activity-drawer"
                     onClick={changesChipOpen}
                     data-testid="home-changes-chip"
                   >
@@ -1175,22 +1180,13 @@ export function CoordinatorScreen() {
               />
             </Sheet>
           ) : null}
-          {activityMounted ? (
-            <ActivityPanel
-              open={activityOpen}
-              onClose={() => setActivityOpen(false)}
-              initialTab={activityTab}
-              now={now}
-            />
-          ) : null}
         </div>
         <WardPrototypeFooter
           testId="ward-coordinator-governance"
           className={cards.footer}
           note={
             <>
-              Demo coordinator view · Not approved for clinical use · Limited demo coverage: CAHS inpatient wards are
-              not modelled; private live feeds are unavailable
+              Demo coordinator view · Not approved for clinical use · CAHS wards not modelled
               <span
                 className={styles.refusalMarker}
                 data-alert={rejections.length > 0 ? "true" : undefined}

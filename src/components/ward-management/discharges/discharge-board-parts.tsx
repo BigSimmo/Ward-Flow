@@ -66,10 +66,6 @@ export function RecordedDischargeMilestones({
           </li>
         ))}
       </ol>
-      <p className={pageStyles.note}>
-        Medical summary, pharmacy verification and transport booking are not recorded here. Departure does not verify
-        bed preparation.
-      </p>
     </div>
   );
 }

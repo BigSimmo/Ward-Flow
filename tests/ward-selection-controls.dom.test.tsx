@@ -64,7 +64,7 @@ describe("selection controls preserve their action contracts", () => {
     const current = buttons.find((button) => button.getAttribute("aria-current") === "true")!;
     const next = buttons.find((button) => button !== current)!;
     const original = screen.getByTestId("selected-scenario").textContent;
-    expect(current).toHaveTextContent("Loaded");
+    expect(current).toHaveTextContent("Current");
     current.focus();
     fireEvent.keyDown(current, { key: "ArrowRight" });
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -80,6 +80,6 @@ describe("selection controls preserve their action contracts", () => {
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Load / }));
     expect(screen.getByTestId("selected-scenario").textContent).not.toBe(original);
     expect(next).toHaveAttribute("aria-current", "true");
-    expect(next).toHaveTextContent("Loaded");
+    expect(next).toHaveTextContent("Current");
   });
 });

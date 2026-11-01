@@ -444,8 +444,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           <StatusGlyph tone="warning" size={9} />
           <span>
             <strong>Arrival overdue.</strong> More than {LATE_ARRIVAL_GRACE_MINUTES}m past the ward ETA (
-            {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). Notification is not recorded
-            here.
+            {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST).
           </span>
         </div>
       ) : null}

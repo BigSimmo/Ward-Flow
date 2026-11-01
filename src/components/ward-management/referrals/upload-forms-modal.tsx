@@ -232,7 +232,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               >
                 {fileAttached
                   ? `${Math.round(simulatedSize / 1024)} KB · Details ready to record`
-                  : "Select a non-empty PDF, JPEG or PNG. Contents are not retained."}
+                  : "Select a non-empty PDF, JPEG or PNG."}
               </div>
             </div>
           </div>

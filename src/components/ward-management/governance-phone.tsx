@@ -349,7 +349,7 @@ export function GovernancePhone({
           )}
           {sites.length > phoneSites.length ? (
             <p className={thirdEdition.phoneCardNote}>
-              {sites.length - phoneSites.length} more sites. Open on a tablet or computer for every site.
+              {sites.length - phoneSites.length} more sites on a tablet or computer.
             </p>
           ) : null}
         </Card>
@@ -507,9 +507,7 @@ export function GovernancePhone({
             {selected.category !== "review" ? (
               <div className={thirdEdition.stackGap}>
                 <h3 className={thirdEdition.phoneDecisionHead}>Your review</h3>
-                <p className={thirdEdition.quiet}>
-                  Reviewed or Follow-up records it now and opens the next event. You can undo it.
-                </p>
+                <p className={thirdEdition.quiet}>You can undo a review.</p>
               </div>
             ) : (
               <p className={thirdEdition.quiet}>Review attempts cannot be reviewed.</p>
@@ -527,7 +525,7 @@ export function GovernancePhone({
         open={phoneMore !== null}
         onClose={() => setPhoneMore(null)}
         title={phoneMore === "reports" ? "Reports" : "Registers"}
-        description="The full registers and reports are laid out for a tablet or computer."
+        description="Full versions on a tablet or computer."
         height="content"
       >
         {phoneMore === "registers" ? (
@@ -554,11 +552,7 @@ export function GovernancePhone({
                 </span>
               }
             />
-            <PhoneListRow
-              as="li"
-              name="Seclusion, restraint and incidents"
-              meta="Preview. Not recorded in Ward Flow yet."
-            />
+            <PhoneListRow as="li" name="Seclusion, restraint and incidents" meta="Preview" />
           </ul>
         ) : (
           <ul className={thirdEdition.phoneList}>
