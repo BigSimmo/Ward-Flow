@@ -165,7 +165,6 @@
   padding: var(--wf-s-3) 14px;
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-sm);
-  box-shadow: 0 1px 1px rgba(16, 24, 40, 0.03);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: inherit;
