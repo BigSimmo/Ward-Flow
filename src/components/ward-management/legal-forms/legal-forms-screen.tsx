@@ -67,7 +67,7 @@ import {
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
 import { admittedOnAForm, LegalFormsAdmitted, WARD_RECORDS_ADMITTED } from "./legal-forms-admitted";
-import { FocusPanel, type FocusTab } from "./legal-forms-panel";
+import { FocusPanel } from "./legal-forms-panel";
 import { AddTimeDialog } from "./legal-forms-add-time";
 import { ChecklistView, FormRow, GAP_LABEL, PhoneFormRow, ROW_COLUMNS } from "./legal-form-rows";
 import type { WrittenSave } from "./legal-forms-written-time";
@@ -195,7 +195,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const [highlight, setHighlight] = useState<Highlight>(null);
   // Governance links a gap here with ?movement=, so that patient opens selected.
   const [selectedId, setSelectedId] = useState<string | null>(initialMovementId ?? null);
-  const [tab, setTab] = useState<FocusTab>("now");
   const [focusGap, setFocusGap] = useState<{ gap: RecordGap; nonce: number } | null>(null);
   const [requirementsCode, setRequirementsCode] = useState<string | null>(null);
   const [recordOpen, setRecordOpen] = useState(
@@ -266,7 +265,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     : undefined;
 
   const select = (movement: Movement) => {
-    if (movement.id !== selectedId) setTab("now");
     setSelectedId(movement.id);
     setFocusGap(null);
   };
@@ -280,7 +278,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     if (!first) return;
     leaveTasks();
     select(first);
-    setTab("now");
     setFocusGap((previous) => ({ gap, nonce: (previous?.nonce ?? 0) + 1 }));
   };
 
@@ -531,8 +528,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       wardName={wardNameOf(selected)}
       now={now}
       dayZero={dayZero}
-      tab={tab}
-      onTab={setTab}
       onClose={() => setSelectedId(null)}
       focusGap={focusGap}
       refusal={lastWrittenRefusal?.reason}
@@ -571,10 +566,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 : undefined,
           onAction: () => {
             if (nextGap === "received") markReceived(selected);
-            else {
-              setTab("now");
-              setFocusGap((previous) => ({ gap: nextGap, nonce: (previous?.nonce ?? 0) + 1 }));
-            }
+            else setFocusGap((previous) => ({ gap: nextGap, nonce: (previous?.nonce ?? 0) + 1 }));
           },
         }
       : undefined;
@@ -908,7 +900,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               description={
                 selected ? (
                   <>
-                    <span className={styles.mono}>{umrnOf(selected)}</span> · {edNameOf(selected)}
+                    <span className={styles.mono}>{umrnOf(selected)}</span>
+                    {selected.legalForm ? ` · ${formTitle(selected.legalForm.code)}` : ""}
                   </>
                 ) : undefined
               }
@@ -1031,7 +1024,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 }
               />
             </div>
-            <LegalLimitsNotChecked />
 
             {breakdownNote}
 
@@ -1138,6 +1130,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
 
                 {view === "clocks" ? admittedList : null}
                 {view === "history" ? historyList : null}
+                {/* The full notice closes the list it qualifies, not a loose line under the hero. */}
+                <div className={styles.listFoot}>
+                  <LegalLimitsNotChecked />
+                </div>
               </Card>
 
               {selected ? (
@@ -1148,9 +1144,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   title={nameOf(selected)}
                   description={`${umrnOf(selected)}${selected.legalForm ? ` · ${formTitle(selected.legalForm.code)}` : ""}`}
                   testId="ward-legal-form-sheet"
+                  // The panel runs edge to edge and anchors its own action bar at the bottom.
+                  bodyClassName="flex flex-col p-0 sm:p-0"
                 >
                   {/* As on the phone sheet, the drawer's own header names the person, so the panel drops its head. */}
-                  <div className={styles.phoneFocus}>{focusPanel}</div>
+                  <div className={cx(styles.phoneFocus, "flex flex-1 flex-col")}>{focusPanel}</div>
                 </Drawer>
               ) : null}
               <Drawer
