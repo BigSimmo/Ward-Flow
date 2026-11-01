@@ -557,9 +557,9 @@ export function RecordPreview({
                   </Link>
                 </>
               ) : referral ? (
-                <p className={styles.tieEmpty}>No open movement linked.</p>
+                <p className={styles.tieEmpty}>No open movement is linked. No current movement.</p>
               ) : (
-                <p className={styles.tieEmpty}>No referral or movement linked.</p>
+                <p className={styles.tieEmpty}>No referral is linked. No current movement.</p>
               )}
             </section>
           </div>

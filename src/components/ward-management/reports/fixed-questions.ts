@@ -141,7 +141,7 @@ export function fixedQuestionAnswers(input: FixedQuestionInput): FixedAnswer[] {
         `Bed pulled at ${unitName(units, movement.acceptedUnitId)}. Pull time limit ${formatInstantWithDay(
           movement.pullExpiresAt!,
           now,
-        )}.`,
+        )}. Still pulled until a person releases it.`,
       ),
     );
 

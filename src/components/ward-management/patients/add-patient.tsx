@@ -1141,7 +1141,7 @@ export function AddPatientForm() {
           }
         >
           <div className={styles.resetBody}>
-            <p className={styles.resetLead}>Resetting clears every unsaved field.</p>
+            <p className={styles.resetLead}>You have entered patient details. Resetting clears every unsaved field.</p>
             <h3 className={styles.resetHead}>What gets cleared</h3>
             <ul className={styles.resetList}>
               {resetSummary.map((row) => (
