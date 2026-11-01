@@ -99,11 +99,17 @@ describe("Ward Flow sign-in page", () => {
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/ward-flow"));
   });
 
-  it("says so when this site has no account sign-in, and still offers the demo", async () => {
+  it("shows only the demo on a site with no account sign-in (the public demo, Q203)", async () => {
     createWardAuth.mockRejectedValue(new Error("not configured"));
     render(<WardFlowSignInScreen />);
-    expect(await screen.findByText("Sign-in is not available on this site.")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeDisabled();
-    expect(screen.getByRole("link", { name: /Explore the demo/ })).toBeVisible();
+    expect(await screen.findByRole("heading", { level: 1, name: "Explore the demo" })).toBeVisible();
+    expect(screen.getByRole("link", { name: /Explore the demo/ })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/^https:\/\//),
+    );
+    expect(screen.queryByLabelText("Username")).toBeNull();
+    expect(screen.queryByLabelText("Password")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
+    expect(screen.queryByText("Sign-in is not available on this site.")).toBeNull();
   });
 });

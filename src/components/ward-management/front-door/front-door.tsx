@@ -94,6 +94,12 @@ export type FrontDoorProps = {
    * (Josh, Q166, 1 November 2026): the username is the work email, as accounts sign in today.
    */
   accountLabel?: AccountLabel;
+  /**
+   * On a site with no account sign-in (the public demo), show only the demo: no sign-in fields and
+   * no "not available" warning, with Explore the demo as the main action (Josh, Q203, 1 November
+   * 2026). Used by the Ward Flow sign-in page.
+   */
+  demoFirst?: boolean;
 };
 
 export type AccountLabel = "Email" | "Username";
@@ -104,6 +110,7 @@ export function FrontDoor({
   tv = false,
   demoUrl = publicDemoUrl(),
   accountLabel = "Email",
+  demoFirst = false,
 }: FrontDoorProps) {
   const [view, setView] = useState<View>("sign-in");
   const [email, setEmail] = useState("");
@@ -122,6 +129,7 @@ export function FrontDoor({
   if (form && view === "forgot")
     return <ForgotDoor form={form} email={email} setEmail={setEmail} back={() => setView("sign-in")} />;
   if (form && view === "signup") return <SignUpDoor form={form} back={() => setView("sign-in")} />;
+  if (!form && demoFirst && demoUrl) return <DemoFirstDoor demoUrl={demoUrl} />;
   return (
     <SignInDoor
       form={form}
@@ -327,6 +335,31 @@ function SignInDoor({
             )}
           </div>
         </form>
+      </div>
+    </DoorScreen>
+  );
+}
+
+/** The public demo's own entrance on the Ward Flow sign-in page: the demo, and nothing to sign in to. */
+function DemoFirstDoor({ demoUrl }: { demoUrl: string }) {
+  return (
+    <DoorScreen label="Ward Flow demo" note={false}>
+      <div className={styles.card}>
+        <div className={styles.stack}>
+          <span className={styles.demoBadge}>
+            <i aria-hidden="true" />
+            Public demo
+          </span>
+          <header className={styles.cardHead}>
+            <h1>Explore the demo</h1>
+            <p>The demo runs on made-up records across the network. Open it with the demo code you were given.</p>
+          </header>
+          <a className={`${styles.btn} ${styles.btnPrimary}`} href={demoUrl}>
+            <FlaskConical aria-hidden="true" />
+            Explore the demo
+            <Arrow />
+          </a>
+        </div>
       </div>
     </DoorScreen>
   );
