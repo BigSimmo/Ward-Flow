@@ -871,10 +871,12 @@
   overflow: visible;
 }
 
+/* Transport now on a wider screen: the groups sit side by side, each a single list (the base
+   .trGroup flex column), split by a hairline rather than stacked. */
 @media (min-width: 48.0625rem) {
-  .layout.layout > aside [aria-label="Active transport legs"] {
+  .layout.layout > aside .trFeed {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
     max-height: none;
     overflow: visible;
   }
@@ -883,15 +885,64 @@
     border-top: 0;
     border-left: 1px solid var(--wf-line);
   }
+}
 
-  .layout.layout > aside .trGroup {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
-    align-content: start;
-  }
+/* The worklist column is a size container, so the row can respond to the room it actually has
+   (the sidebar takes a share of a tablet or small laptop window). */
+.layout.layout > :not(aside) {
+  container: wf-worklist / inline-size;
+}
 
-  .layout.layout > aside .trGroupHead {
-    grid-column: 1 / -1;
+/* PR #1222 review: the one-line row needs about 830px. Below that, on a tablet or a narrow
+   desk column, each row takes two lines: who, route, barrier and wait first, then legal and
+   the next step under them, so the next-step controls never clip. Phone keeps its own card. */
+@media (min-width: 48.0625rem) {
+  @container wf-worklist (max-width: 53rem) {
+    .columns {
+      display: none;
+    }
+
+    .grid.row {
+      grid-template-columns: 2rem minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.3fr) 5rem 1.5rem;
+      grid-template-areas:
+        "tier who route barrier wait review"
+        ". legal legal next next next";
+      row-gap: var(--wf-s-2);
+    }
+
+    .grid.row > :nth-child(1) {
+      grid-area: tier;
+    }
+
+    .grid.row > :nth-child(2) {
+      grid-area: who;
+    }
+
+    .grid.row > :nth-child(3) {
+      grid-area: route;
+    }
+
+    .grid.row > :nth-child(4) {
+      grid-area: barrier;
+    }
+
+    .grid.row > :nth-child(5) {
+      grid-area: legal;
+    }
+
+    .grid.row > :nth-child(6) {
+      grid-area: wait;
+    }
+
+    .grid.row > :nth-child(7) {
+      grid-area: next;
+      justify-self: end;
+      max-width: 100%;
+    }
+
+    .grid.row > :nth-child(8) {
+      grid-area: review;
+    }
   }
 }
 
@@ -1469,17 +1520,6 @@
 
 .trTrack[data-cancelled="true"] i {
   background: var(--wf-line);
-}
-
-@media (min-width: 48.0625rem) {
-  .layout.layout > aside .trGroup.trGroup {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .layout.layout > aside [aria-label="Active transport legs"] {
-    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
-  }
 }
 
 /* The arrow stays with the ward it points to; a long ward name wraps after it, never before. */

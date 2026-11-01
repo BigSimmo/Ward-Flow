@@ -689,7 +689,12 @@ export function MovementsScreen() {
     Cancelled: 0,
   };
   const transportFeed = (onPicked?: () => void) => (
-    <div className={styles.transportRunsFeed} role="region" aria-label="Active transport legs" tabIndex={0}>
+    <div
+      className={cx(styles.transportRunsFeed, flow.trFeed)}
+      role="region"
+      aria-label="Active transport legs"
+      tabIndex={0}
+    >
       {LEG_GROUP_ORDER.map((state) => {
         const group = legs.filter((leg) => leg.state === state);
         if (group.length === 0) return null;
