@@ -589,6 +589,8 @@
 .stepNote {
   display: block;
   color: var(--wf-ink-3);
+  /* A <small> otherwise shrinks to 80% (10.4px), below the 12px floor. */
+  font-size: var(--wf-fs-12);
   font-weight: 400;
 }
 .stepBar {
