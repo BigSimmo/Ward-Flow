@@ -886,14 +886,11 @@ export function MovementsScreen() {
               </span>
             }
             titleMeta={
-              // F-08 (phone review, Oct 2026): the phone hero says its records are invented, as Home does.
-              isPhone ? (
-                "Prototype data, invented records"
-              ) : (
-                <span className={flow.heroTitleMeta}>
-                  {closedToday.length} resolved today · {activeCorridorCount} active corridors
-                </span>
-              )
+              // Q196 (Josh, 1 Nov 2026): the phone shows the same counts as desktop. Home's phone hero
+              // no longer carries the invented-records line (F-08), so Movements drops it too.
+              <span className={flow.heroTitleMeta}>
+                {closedToday.length} resolved today · {activeCorridorCount} active corridors
+              </span>
             }
             aside={<LiveChip state="live" onHero />}
             // Movements redesign (1 Nov 2026): Waiting's header figures, each a big number over its
