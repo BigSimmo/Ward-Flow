@@ -22,11 +22,22 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { Badge, Card, CardFoot, CardHead, SrOnly, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
+import {
+  Badge,
+  Card,
+  CardFoot,
+  CardHead,
+  SrOnly,
+  StatusGlyph,
+  buttonClass,
+  clk,
+  cx,
+  type WfTone,
+} from "@/components/wf";
 import { formTitleForCode } from "@/lib/form-register";
 import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
 import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
-import { calendarDateOf } from "../ward-clock";
+import { calendarDateOf, perthDateLabel } from "../ward-clock";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { STAGES, type PatientNowRecord } from "./patient-now-records";
@@ -74,8 +85,7 @@ function numericLabel({ y, m, d }: DayParts): string {
 
 /** Today in Perth, from the clock's day zero. */
 function todayParts(dayZero: Date): DayParts {
-  const [d, m, y] = dayZero
-    .toLocaleDateString("en-AU", { day: "numeric", month: "numeric", year: "numeric", timeZone: "Australia/Perth" })
+  const [d, m, y] = perthDateLabel(0, dayZero, { day: "numeric", month: "numeric", year: "numeric" })
     .split("/")
     .map(Number);
   return { y, m: m - 1, d };
@@ -83,19 +93,12 @@ function todayParts(dayZero: Date): DayParts {
 
 /** "Sun 1 Nov", Perth time. */
 function dayLabel(instant: number, dayZero: Date): string {
-  return calendarDateOf(instant, dayZero)
-    .toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: "Australia/Perth" })
-    .replace(",", "");
+  return perthDateLabel(instant, dayZero, { weekday: "short", day: "numeric", month: "short" }).replace(",", "");
 }
 
 /** "10:37", 24-hour Perth time. */
 function timeLabel(instant: number, dayZero: Date): string {
-  return calendarDateOf(instant, dayZero).toLocaleTimeString("en-AU", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: "Australia/Perth",
-  });
+  return clk(calendarDateOf(instant, dayZero));
 }
 
 // ── Episodes ──────────────────────────────────────────────────────────────────────────────────

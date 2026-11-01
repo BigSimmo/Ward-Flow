@@ -146,6 +146,11 @@ export function calendarDateOf(instant: Instant, dayZero: Date): Date {
   return new Date(dayZero.getTime() + instant * 60_000);
 }
 
+/** An instant's Perth calendar day as text, e.g. `{ weekday: "short", day: "numeric", month: "short" }`. */
+export function perthDateLabel(instant: Instant, dayZero: Date, options: Intl.DateTimeFormatOptions): string {
+  return calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", { ...options, timeZone: "Australia/Perth" });
+}
+
 /**
  * An instant, with its day said out loud whenever it is not today.
  *

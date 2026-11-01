@@ -35,7 +35,7 @@ export interface PastEpisode {
   readmit28?: boolean;
 }
 
-export interface CareContact {
+interface CareContact {
   name: string;
   role: string;
   phone?: string;
@@ -77,7 +77,7 @@ export interface RecordDocument {
   meta?: string;
 }
 
-export interface SupportPerson {
+interface SupportPerson {
   name: string;
   /** MHA 2014 (WA) roles: carer, close family member, nominated person; or next of kin. */
   role: string;
@@ -100,7 +100,7 @@ export interface RecordExtras {
 
 const PEEL_ED = "Peel Health Campus ED";
 
-export const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
+const PATIENT_RECORD_EXTRAS: Record<string, RecordExtras> = {
   // Finding a bed, Cannot move. No community engagement: Community tab hidden.
   "PT-023": {
     phone: "0400 000 231",

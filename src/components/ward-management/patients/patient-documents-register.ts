@@ -18,7 +18,7 @@ export const CATEGORY_ORDER: readonly DocumentCategory[] = [
 ];
 
 /** Strong first (in force, to record), then live, then history. */
-export const STATUS_RANK: Record<DocStatus, number> = {
+const STATUS_RANK: Record<DocStatus, number> = {
   "In force": 0,
   "To record": 1,
   Continued: 2,
@@ -87,7 +87,7 @@ export function shownDate(text: string | undefined): string | undefined {
 }
 
 /** "Jul to Aug 2026", "Oct 2024 to Jan 2025", "14 Jun 2026" for a one-day stay. */
-export function episodeSpan(start: string, end?: string): string {
+function episodeSpan(start: string, end?: string): string {
   const a = parseShownDate(start);
   const b = parseShownDate(end);
   if (!a) return start;

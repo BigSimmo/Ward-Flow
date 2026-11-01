@@ -19,6 +19,7 @@ import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 import { calendarDateOf } from "../ward-clock";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { communityTeamById, communityTeamSlug } from "../community/community-derivations";
+import { isOwnStay } from "./patient-now-adapter";
 import { recordExtrasFor, type PastEpisode } from "./patient-record-extras";
 import styles from "./patient-details-tab.module.css";
 
@@ -192,7 +193,7 @@ export function PatientDetailsTab({
     flow?.admissions.some(
       (admission) =>
         admission.state === "occupied" &&
-        ((patient !== undefined && admission.patientId === patient.id) ||
+        ((patient !== undefined && isOwnStay(admission, patient.id)) ||
           (movement?.admissionId !== undefined && admission.id === movement.admissionId)),
     ),
   );

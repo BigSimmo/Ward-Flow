@@ -34,7 +34,15 @@ import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { formProgression } from "../legal-forms/legal-form-progression";
 import { clockStanding, standingWord, STANDING_TONE } from "../legal-forms/legal-forms-view";
 import { fieldsMatchEveryWord } from "../search/search-text";
-import { calendarDateOf, demoDayZero, formatInstant, dayOf, isClockBreached, type Instant } from "../ward-clock";
+import {
+  calendarDateOf,
+  demoDayZero,
+  formatInstant,
+  dayOf,
+  isClockBreached,
+  perthDateLabel,
+  type Instant,
+} from "../ward-clock";
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "../ward-flow-roles";
 import type { Movement } from "../ward-model";
@@ -52,6 +60,7 @@ import {
   type DocStatus,
   type RegisterRow,
 } from "./patient-documents-register";
+import { isOwnStay } from "./patient-now-adapter";
 import type { PatientNowRecord } from "./patient-now-records";
 import { recordExtrasFor, type DocumentCategory } from "./patient-record-extras";
 import styles from "./patient-documents-tab.module.css";
@@ -93,12 +102,7 @@ function roleName(by: string | undefined): string | undefined {
 /** "10:37" today, or "Sun 1 Nov 10:37" on any other day. Never "yesterday", "in 2 days" or "ago". */
 function moment(at: Instant, now: Instant, dayZero: Date): string {
   if (dayOf(at) === dayOf(now)) return formatInstant(at);
-  const day = calendarDateOf(at, dayZero).toLocaleDateString("en-AU", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "Australia/Perth",
-  });
+  const day = perthDateLabel(at, dayZero, { weekday: "short", day: "numeric", month: "short" });
   return `${day.replace(",", "")} ${formatInstant(at)}`;
 }
 
@@ -147,7 +151,7 @@ export function PatientDocumentsTab({
     flow?.admissions.some(
       (admission) =>
         admission.state === "occupied" &&
-        ((patient !== undefined && admission.patientId === patient.id) ||
+        ((patient !== undefined && isOwnStay(admission, patient.id)) ||
           (movement?.admissionId !== undefined && admission.id === movement.admissionId)),
     ),
   );

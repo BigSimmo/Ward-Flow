@@ -24,8 +24,9 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 import { formTitleForCode } from "@/lib/form-register";
 import { communityTeamById, communityTeamSlug } from "../community/community-derivations";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
-import { calendarDateOf, formatInstant, type Instant } from "../ward-clock";
+import { formatInstant, perthDateLabel, type Instant } from "../ward-clock";
 import type { Admission } from "../ward-admissions";
+import { isOwnStay } from "./patient-now-adapter";
 import type { Movement } from "../ward-model";
 import { callRows, type CallRow, type CallTarget } from "./patient-call-list";
 import type { PatientNowRecord } from "./patient-now-records";
@@ -72,12 +73,7 @@ function splitContact(value: string): { when: string; how?: string } {
 /** DD/MM/YYYY 24h, from a demo-clock instant. */
 function dateTime(instant: Instant, dayZero: Date | undefined): string {
   if (!dayZero) return formatInstant(instant);
-  const day = calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    timeZone: "Australia/Perth",
-  });
+  const day = perthDateLabel(instant, dayZero, { day: "2-digit", month: "2-digit", year: "numeric" });
   return `${day} ${formatInstant(instant)}`;
 }
 
@@ -115,7 +111,7 @@ function teamPageHref(name: string): string | undefined {
 /** The person's open ward stay, if the record joins one: occupied first, then any not yet departed. */
 function openStay(admissions: readonly Admission[] | undefined, patientId: string | undefined) {
   if (!admissions || !patientId) return undefined;
-  const own = admissions.filter((admission) => admission.patientId === patientId);
+  const own = admissions.filter((admission) => isOwnStay(admission, patientId));
   return (
     own.findLast((admission) => admission.state === "occupied") ??
     own.findLast((admission) => admission.state !== "departed")
