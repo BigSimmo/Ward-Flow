@@ -2336,6 +2336,17 @@ export type WardFlowEvent =
     }
   | {
       /**
+       * Alerts redesign (Q149, 1 Nov 2026): ask more desks on a live directive or bed call. Each id
+       * must be a real desk the alert has not asked yet; a bed call asks wards only. Ids only.
+       */
+      type: "ADD_BROADCAST_ALERT_UNITS";
+      role: WardFlowRole;
+      now: Instant;
+      alertId: string;
+      unitIds: string[];
+    }
+  | {
+      /**
        * Global alerts, 10 Oct 2026: the coordinator asks the accepting ward (or the wards still
        * considering the referral) to pull one patient now. Ids only, no typed text.
        */

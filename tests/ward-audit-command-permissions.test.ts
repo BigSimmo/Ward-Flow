@@ -93,6 +93,25 @@ describe("audited shared command permission boundaries", () => {
     },
   );
 
+  it("checks every desk added to a live alert as well as the alert itself (Q149)", () => {
+    const rph = seedWorld(at)
+      .state.units.filter((unit) => unit.siteCode === "RPH")
+      .map((unit) => unit.id);
+    const elsewhere = seedWorld(at).state.units.find((unit) => unit.siteCode !== "RPH")!.id;
+    const world = accepted(seedWorld(at), { ...broadcast, targetUnitIds: [rph[0]] });
+    const alertId = world.state.broadcastAlerts[0].id;
+    const add = (unitIds: string[]) => ({
+      type: "ADD_BROADCAST_ALERT_UNITS",
+      role: "bed_manager",
+      now: 642,
+      alertId,
+      unitIds,
+    });
+    expect(commandRefusal(world, rphManager, add([elsewhere]), at)).not.toBeNull();
+    expect(commandRefusal(world, rphManager, add([rph[1]]), at)).toBeNull();
+    accepted(world, add([rph[1]]));
+  });
+
   it("does not turn a ward acknowledgement of a global alert into a global edit", () => {
     const world = accepted(seedWorld(at), { ...broadcast, kind: "directive" });
     const unitId = world.state.units.find((unit) => unit.siteCode === "RPH")!.id;

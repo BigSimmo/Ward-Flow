@@ -33,7 +33,7 @@ import {
   type BroadcastSeverity,
   type WardBroadcastAlert,
 } from "./ward-broadcast-model";
-import { wardsInBroadcastScope } from "./global-alert-view";
+import { askedDesks, wardsInBroadcastScope } from "./global-alert-view";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
 
@@ -238,6 +238,56 @@ export function reduceBroadcastAlertEvent(
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       return extendBroadcastAlert(state, target.id, event.now, DEFAULT_BROADCAST_EXTENSION_MINUTES);
+    }
+
+    case "ADD_BROADCAST_ALERT_UNITS": {
+      const existingAlerts = Array.isArray(state.broadcastAlerts) ? state.broadcastAlerts : [];
+      const target = existingAlerts.find((a: BroadcastAlert) => a.id === event.alertId);
+      if (!target) {
+        return reject(state, event, `ADD_BROADCAST_ALERT_UNITS alertId ${event.alertId} not found`);
+      }
+      if (!isAlertActive(target, event.now)) {
+        return reject(state, event, `ADD_BROADCAST_ALERT_UNITS alertId ${event.alertId} is no longer active`);
+      }
+      const kind = broadcastKind(target);
+      if (kind === "pull_now") {
+        return reject(state, event, "ADD_BROADCAST_ALERT_UNITS a Pull now asks the wards on its referral only");
+      }
+      const named: unknown[] = Array.isArray(event.unitIds) ? [...new Set(event.unitIds as unknown[])] : [];
+      // A bed call asks wards only; a directive may also ask ED desks.
+      const real = (id: unknown): id is string =>
+        typeof id === "string" && (kind === "bed_call" ? findUnit(state, id) !== undefined : isRealDesk(state, id));
+      if (named.length === 0 || !named.every(real)) {
+        return reject(
+          state,
+          event,
+          kind === "bed_call"
+            ? "ADD_BROADCAST_ALERT_UNITS unitIds must name at least one real ward"
+            : "ADD_BROADCAST_ALERT_UNITS unitIds must name at least one real ward or ED desk",
+        );
+      }
+      const asked = askedDesks(target, state.units);
+      const added = (named as string[]).filter((id) => !asked.includes(id));
+      if (added.length === 0) {
+        return reject(state, event, "ADD_BROADCAST_ALERT_UNITS this alert already asks every unit named");
+      }
+      const targetUnitIds = [...asked, ...added];
+      const names = targetUnitIds.map((id) => findUnit(state, id)?.name ?? edById(id)?.name ?? id);
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      return {
+        ...state,
+        broadcastAlerts: existingAlerts.map((a) =>
+          a.id === target.id
+            ? {
+                ...a,
+                targetUnitIds,
+                targetScopeLabel:
+                  names.length === 1 ? names[0] : `${names.length} ${kind === "bed_call" ? "wards" : "units"}`,
+              }
+            : a,
+        ),
+      };
     }
 
     case "RAISE_PULL_NOW": {

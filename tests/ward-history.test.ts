@@ -54,7 +54,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // CAD to follow (Josh, 27 Oct 2026) adds RECORD_TRANSPORT_CAD.
       // #816 (27 Oct 2026) adds ARCHIVE_PATIENT.
       // Q61 (31 Oct 2026) adds RECORD_SITE_HANDOVER_SIGN_OFF and UNDO_SITE_HANDOVER_SIGN_OFF.
-      expect(allEventTypes.length).toBe(170);
+      // Q149 (1 Nov 2026) adds ADD_BROADCAST_ALERT_UNITS.
+      expect(allEventTypes.length).toBe(171);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

@@ -576,6 +576,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],
   STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager"],
   EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager"],
+  ADD_BROADCAST_ALERT_UNITS: ["coordinator", "bed_manager"],
   // Global alerts (10 Oct 2026): only the coordinator raises Pull now (D-30 keeps cross-hospital
   // calls with the central coordinator). Wards answer for their own desk, and the coordinator may
   // record a ward's answer taken by phone. ED acknowledges directives but answers neither kind.
