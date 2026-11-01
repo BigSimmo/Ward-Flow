@@ -1,0 +1,522 @@
+/* Community tab (patient screen round 2, 1 Nov 2026): the team and its people in one hero card,
+   then who to contact beside the CTO and documents, then hospital and community over time.
+   Neutral hairlines only; tone sits in a glyph or a small tag, never in an edge. */
+
+.pane {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.col {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  align-content: start;
+}
+
+.quiet {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.sub {
+  display: block;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.mono {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  white-space: nowrap;
+}
+
+/* A small neutral tag: the glyph carries the tone, the words stay ink. */
+.tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: 18px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.chip {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.chipLg {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--wf-r-md);
+}
+
+/* ── Hero: the team, then one stat row ── */
+
+.hero {
+  overflow: hidden;
+}
+
+.heroHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.heroTitle {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.heroTitle h2 {
+  margin: 0;
+  font: 650 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.heroTitle p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-2);
+}
+
+.teamLink {
+  flex: none;
+  text-decoration: none;
+}
+
+.stats {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+}
+
+.stat {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.stat + .stat {
+  border-left: 1px solid var(--wf-line);
+}
+
+.statLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-bottom: 4px;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.statValue {
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.statSub {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  overflow-wrap: anywhere;
+}
+
+.followUp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.hero > .followUp:only-child {
+  border-top: 0;
+}
+
+.followLabel {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Shared list parts: uppercase group label, hairline rows ── */
+
+.group {
+  border-top: 1px solid var(--wf-line);
+}
+
+.groupLabel {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) 2px;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── Who to contact ── */
+
+.contact {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--wf-s-4);
+  min-height: 48px;
+  padding: 6px var(--wf-s-4);
+}
+
+.contact + .contact {
+  border-top: 1px solid var(--wf-line);
+}
+
+.contactText {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.contactName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--wf-s-2);
+  min-width: 0;
+}
+
+.contactName b {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.contactNumber {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+  text-align: right;
+}
+
+.foot {
+  border-top: 1px solid var(--wf-line);
+}
+
+.caveat {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.copyStatus {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.copyStatus:empty {
+  display: none;
+}
+
+/* ── CTO ── */
+
+.ctoNow {
+  display: grid;
+  gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+}
+
+.ctoNow p {
+  margin: 0;
+}
+
+.ctoValue {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+/* ── Documents and earlier orders: code, title, date, status on one hairline row ── */
+
+.docList {
+  border-top: 1px solid var(--wf-line);
+}
+
+.docRow {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  min-height: 44px;
+  padding: 6px var(--wf-s-4);
+}
+
+.docRow + .docRow {
+  border-top: 1px solid var(--wf-line);
+}
+
+.code {
+  display: inline-grid;
+  place-items: center;
+  height: 22px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-xs);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.docTitle {
+  min-width: 0;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+
+.docTitleWide {
+  grid-column: 1 / 3;
+}
+
+.docDate {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+}
+
+/* ── Hospital and community: date, node on a rail, place and outcome ── */
+
+.timeline {
+  margin: 0;
+  padding: var(--wf-s-1) 0 var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  list-style: none;
+}
+
+.tlRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 140px 24px minmax(0, 1fr);
+  align-items: start;
+  column-gap: var(--wf-s-3);
+  padding: 6px var(--wf-s-4);
+}
+
+/* The rail joins the nodes; it is a neutral hairline, not a tone. */
+.tlRow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--wf-s-4) + 140px + var(--wf-s-3) + 11.5px);
+  width: 1px;
+  background: var(--wf-line);
+}
+
+.tlRow:first-child::before {
+  top: 18px;
+}
+
+.tlRow:last-child::before {
+  bottom: calc(100% - 18px);
+}
+
+.tlRow:only-child::before {
+  display: none;
+}
+
+.tlWhen {
+  padding-top: 3px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-variant-numeric: tabular-nums;
+}
+
+.tlNode {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-3);
+}
+
+.tlNodeCommunity {
+  border-color: transparent;
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.tlText {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.tlWhere {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--wf-s-2);
+}
+
+.tlWhere b {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tlKind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+/* ── Narrow: one column, same order ── */
+
+@media (max-width: 1100px) {
+  .cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .heroHead {
+    flex-wrap: wrap;
+  }
+
+  .teamLink {
+    flex: 1 0 100%;
+    justify-content: center;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+  }
+
+  .stat + .stat {
+    border-left: 0;
+  }
+
+  .stat:nth-child(even) {
+    border-left: 1px solid var(--wf-line);
+  }
+
+  .stat:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .stats[data-count="3"] .stat:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .contact {
+    column-gap: var(--wf-s-2);
+  }
+
+  .docRow {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    row-gap: 2px;
+  }
+
+  .docRow > .docDate {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .docRow > .docTitleWide ~ .docDate {
+    grid-column: 1 / 3;
+  }
+
+  .docRow > .tag {
+    grid-column: 3;
+    grid-row: 1 / 3;
+  }
+
+  .tlRow {
+    grid-template-columns: 24px minmax(0, 1fr);
+    grid-template-areas:
+      "node when"
+      "node text";
+    row-gap: 2px;
+  }
+
+  .tlRow::before {
+    left: calc(var(--wf-s-4) + 11.5px);
+  }
+
+  .tlWhen {
+    grid-area: when;
+    padding-top: 0;
+  }
+
+  .tlNode {
+    grid-area: node;
+  }
+
+  .tlText {
+    grid-area: text;
+    padding-top: 0;
+  }
+}

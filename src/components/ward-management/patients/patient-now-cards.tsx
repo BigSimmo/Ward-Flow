@@ -1,5 +1,5 @@
 import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
-import { useId, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Clock, MapPin, MessageSquare, Scale } from "lucide-react";
 import Link from "next/link";
 import { Button, Card, CardHead, StatusGlyph, buttonClass, useIsPhone, type WfTone } from "@/components/wf";
@@ -65,6 +65,15 @@ export function PatientWhyCard({
   const referralCatchment = referrals
     ?.find((referral) => movement?.referralId !== undefined && referral.id === movement.referralId)
     ?.intake?.catchment?.teamName?.trim();
+  // Round 2 (Josh, 1 Nov 2026: "remove excessive text"): the history shows as two lines with More.
+  // The bed need and observation already lead the hero on desktop, so Needs stays on the phone only,
+  // and the catchment lives in Details unless it came only from the referral.
+  const isPhone = useIsPhone();
+  const [expanded, setExpanded] = useState(false);
+  const text = history?.trim() ? history : fallback;
+  const long = text.length > 110;
+  const showNeeds = movement !== undefined && isPhone;
+  const catchmentFromReferral = !patient?.catchmentCommunityTeam && referralCatchment ? referralCatchment : undefined;
   return (
     <Card data-testid="ward-patient-why-card">
       <CardHead
@@ -73,21 +82,34 @@ export function PatientWhyCard({
         title={title}
         aside={chip ? <span className={styles.chip}>{chip}</span> : null}
       />
-      <p className={styles.para}>{history?.trim() ? history : fallback}</p>
-      <div className={styles.rows}>
-        {movement ? (
-          <Row label="Needs">
-            {movement.security} {movement.cohort.toLowerCase()} bed
-            {isConstantObservation(movement.observation) ? `, ${observationSummary(movement.observation)}` : ""}
-          </Row>
+      <div className={styles.whyBody}>
+        <p className={styles.para} data-clamp={long && !expanded ? "true" : undefined}>
+          {text}
+        </p>
+        {long ? (
+          <button
+            type="button"
+            className={styles.more}
+            aria-expanded={expanded}
+            onClick={() => setExpanded((open) => !open)}
+          >
+            {expanded ? "Less" : "More"}
+          </button>
         ) : null}
-        {/* Interpreter language and Aboriginal status stay in Details, apart from each other and
-            from this history, per the placement rule in person-screen.tsx. */}
-        <Row label="Catchment">
-          {patient?.catchmentCommunityTeam ??
-            (referralCatchment ? `${referralCatchment}, from the referral` : notRecorded)}
-        </Row>
       </div>
+      {showNeeds || catchmentFromReferral ? (
+        <div className={styles.rows}>
+          {showNeeds && movement ? (
+            <Row label="Needs">
+              {movement.security} {movement.cohort.toLowerCase()} bed
+              {isConstantObservation(movement.observation) ? `, ${observationSummary(movement.observation)}` : ""}
+            </Row>
+          ) : null}
+          {/* Interpreter language and Aboriginal status stay in Details, apart from each other and
+              from this history, per the placement rule in person-screen.tsx. */}
+          {catchmentFromReferral ? <Row label="Catchment">{catchmentFromReferral}, from the referral</Row> : null}
+        </div>
+      ) : null}
     </Card>
   );
 }
@@ -299,6 +321,8 @@ export function PatientLegalNowCard({
 export interface ContactRow {
   name: string;
   role: string;
+  /** The person's own line, when the record holds one (a case manager). */
+  phone?: string;
 }
 
 /**

@@ -1,7 +1,18 @@
 import type { MouseEvent, ReactNode } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { BedDouble, CalendarDays, Clock, DoorOpen, Eye, Scale, Stethoscope, Truck, Users } from "lucide-react";
+import {
+  BedDouble,
+  CalendarDays,
+  Clock,
+  DoorOpen,
+  Eye,
+  Scale,
+  Stethoscope,
+  Truck,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -21,6 +32,7 @@ import { calendarDateOf, formatInstantWithDay } from "@/components/ward-manageme
 import { clock, dur } from "./patient-now-records";
 import type { PatientMode } from "./patient-mode";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
+import { recordExtrasFor } from "./patient-record-extras";
 import styles from "./patient-status-card.module.css";
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import { useSenderPresentation } from "../ward-sender-presentation";
@@ -802,10 +814,10 @@ function statusFor(
     const order = ctoOrder;
     return {
       tone: acceptedBedCell ? "info" : "neutral",
-      verdict: acceptedBedCell ? "Accepted, on a CTO" : "Not active, on a CTO",
+      verdict: acceptedBedCell ? "Accepted, on a CTO" : "Not currently active, on a CTO",
       meta: ctx.acceptedReferral
         ? `Accepted at ${ctx.acceptedReferral.unitName}. Next: pull the bed`
-        : "No open placement or stay",
+        : "No open referral, placement or ward stay. The order below is in force.",
       cells: [
         ...(acceptedBedCell ? [acceptedBedCell] : []),
         {
@@ -850,19 +862,34 @@ function statusFor(
 
   // A record with nothing open. Where else they have stayed is not read here (D-14): the screen
   // shows only what the patient record itself holds.
+  const activeEngagement = recordExtrasFor(patient?.id)?.community?.find((item) => item.status === "active");
   return {
     tone: "neutral",
-    verdict: "Not active",
-    meta: "No open placement or stay",
+    // Redesign (Josh, 1 Nov 2026): Now is for a current presentation only, so a record with nothing
+    // open says so plainly and points to the tabs that still hold the record.
+    verdict: "Not currently active",
+    meta: "No open referral, placement or ward stay. The record is in the tabs above.",
     cells: [
-      {
-        key: "catchment",
-        icon: Users,
-        label: "Catchment team",
-        owner: "Community",
-        value: patient?.catchmentCommunityTeam ?? "Not recorded",
-        sub: "Recorded catchment, care not confirmed",
-      },
+      // Round 2 (1 Nov 2026): when a community team is actively caring for the person, the tile says
+      // so and names the case manager; otherwise it stays the recorded catchment, care not confirmed.
+      activeEngagement
+        ? {
+            key: "catchment",
+            icon: Users,
+            label: "Community team",
+            owner: "Community",
+            tone: "success",
+            value: activeEngagement.team,
+            sub: `${activeEngagement.caseManager.name}, case manager${activeEngagement.nextContact ? ` · next ${activeEngagement.nextContact.split(",")[0]}` : ""}`,
+          }
+        : {
+            key: "catchment",
+            icon: Users,
+            label: "Catchment team",
+            owner: "Community",
+            value: patient?.catchmentCommunityTeam ?? "Not recorded",
+            sub: "Recorded catchment, care not confirmed",
+          },
       {
         key: "gp",
         icon: Stethoscope,
@@ -874,10 +901,11 @@ function statusFor(
       {
         key: "legal",
         icon: Scale,
-        label: "Legal status",
+        // Q118 (Josh, 1 Nov 2026): with nothing open, the status is the last one recorded, never current.
+        label: "Last legal status",
         owner: "Treating team",
-        value: legalValue(undefined, patient),
-        sub: "As recorded",
+        value: patient?.legalStatus ?? "Not recorded",
+        sub: patient?.legalStatus ? "Last recorded · no open stay" : "As recorded",
         clear: true,
         // An order here can only be an ended one (an active order shows the CTO mode). A new order
         // keeps the ended one as Closed in `earlier` (D-40), so Record CTO stays available.
@@ -982,23 +1010,31 @@ export function PatientStatusCard({
   /* v10 Patient, phone: outside a placement the card has no verdict row unless it counts steps
    * (absent without leave); the mode is already the hero's eyebrow, and the meta moves to a foot. */
   const placing = mode === "find" || mode === "held" || mode === "transit";
-  const phoneQuiet = isPhone && !placing && !status.meter;
+  // Redesign (1 Nov 2026): a record with nothing open keeps its "Not currently active" head on a
+  // phone too, so the state is said plainly at the top of Now.
+  const phoneQuiet = isPhone && !placing && !status.meter && mode !== "idle" && mode !== "cto";
   return (
     <>
       <section
         className={styles.card}
         aria-label="Status"
-        data-act={status.tone === "danger" || undefined}
+        data-tone={status.tone}
         data-ph-placing={(isPhone && placing) || undefined}
         data-testid="ward-patient-status-card"
       >
         <div className={styles.head} hidden={phoneQuiet}>
-          <span className={styles.verdict} data-testid="ward-patient-status-verdict">
-            <StatusGlyph tone={status.tone} size={12} />
-            {status.verdict}
+          <span className={styles.headText}>
+            <span className={styles.verdict} data-testid="ward-patient-status-verdict">
+              <StatusGlyph tone={status.tone} size={12} />
+              {status.verdict}
+            </span>
+            <span className={styles.meta}>{status.meta}</span>
           </span>
           {status.meter ? (
             <span className={styles.meterGroup}>
+              <span className={styles.meterText} aria-hidden="true">
+                <strong>{status.meter.clear}</strong> of {status.meter.of} {word}
+              </span>
               <span
                 className={styles.meter}
                 role="img"
@@ -1008,12 +1044,8 @@ export function PatientStatusCard({
                   <i key={i} data-on={i < (status.meter?.clear ?? 0)} />
                 ))}
               </span>
-              <span className={styles.meterText} aria-hidden="true">
-                {status.meter.clear} of {status.meter.of} {word}
-              </span>
             </span>
           ) : null}
-          <span className={styles.meta}>{status.meta}</span>
           {/* Qodo review (13 Oct 2026): with every gate clear, the next step (Mark handover ready)
               is the card's one primary on desktop too; on a phone it is pinned in the bar. */}
           {!isPhone && primaryKey === undefined && status.next ? (
@@ -1045,36 +1077,82 @@ export function PatientStatusCard({
             ))}
           </ul>
         ) : null}
-        <div className={styles.cells} hidden={status.cells.length === 0}>
+        <div className={styles.cells} hidden={status.cells.length === 0} data-count={status.cells.length}>
           {status.cells.map((cell) => (
             <div
               key={cell.key}
               className={styles.cell}
               data-testid={`ward-patient-gate-${cell.key}`}
               data-ph-quiet={isPhone || undefined}
+              data-clear={cell.clear || undefined}
+              // Redesign (1 Nov 2026): the one most urgent gate takes a soft tint over its whole
+              // tile, in place of the card's old red side edge (no coloured side edges, Josh 31 Oct).
+              data-hot={(cell.key === primaryKey && cell.tone === "danger") || undefined}
             >
-              <div className={styles.label}>
-                <cell.icon size={14} aria-hidden="true" />
-                <span>{cell.label}</span>
-                <span className={styles.owner}>{cell.owner}</span>
-              </div>
-              <div className={styles.value}>
-                {cell.tone ? <StatusGlyph tone={cell.tone} size={11} /> : null}
-                {cell.href ? (
-                  <Link className={styles.valueLink} href={cell.href}>
-                    {cell.value}
-                  </Link>
-                ) : (
-                  <span>{cell.value}</span>
-                )}
-              </div>
-              <div className={styles.sub}>{cell.sub}</div>
-              {cell.time ? <div className={styles.time}>{cell.time}</div> : null}
-              {cell.action && inList(cell.key) ? (
-                <div className={styles.action}>
-                  <CellAction action={cell.action} primary={cell.key === primaryKey} />
-                </div>
-              ) : null}
+              {isPhone ? (
+                <>
+                  <div className={styles.label}>
+                    <cell.icon size={14} aria-hidden="true" />
+                    <span>{cell.label}</span>
+                    <span className={styles.owner}>{cell.owner}</span>
+                  </div>
+                  <div className={styles.value}>
+                    {cell.tone ? <StatusGlyph tone={cell.tone} size={11} /> : null}
+                    {cell.href ? (
+                      <Link className={styles.valueLink} href={cell.href}>
+                        {cell.value}
+                      </Link>
+                    ) : (
+                      <span>{cell.value}</span>
+                    )}
+                  </div>
+                  <div className={styles.sub}>{cell.sub}</div>
+                  {cell.time ? <div className={styles.time}>{cell.time}</div> : null}
+                  {cell.action && inList(cell.key) ? (
+                    <div className={styles.action}>
+                      <CellAction action={cell.action} primary={cell.key === primaryKey} />
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                /* Round 2 (Josh, 1 Nov 2026: "more condensed, not so large"): three lines per gate.
+                   The label and owner, then the value with its one action beside it, then the why. */
+                <>
+                  <span className={styles.iconChip} aria-hidden="true">
+                    <cell.icon size={15} aria-hidden="true" />
+                  </span>
+                  <div className={styles.cellBody}>
+                    <div className={styles.label}>
+                      <span>{cell.label}</span>
+                      <span className={styles.ownerFoot}>
+                        <UserRound size={12} aria-hidden="true" />
+                        {cell.owner}
+                      </span>
+                    </div>
+                    <div className={styles.cellLine}>
+                      <div className={styles.value}>
+                        {cell.tone ? <StatusGlyph tone={cell.tone} size={10} /> : null}
+                        {cell.href ? (
+                          <Link className={styles.valueLink} href={cell.href}>
+                            {cell.value}
+                          </Link>
+                        ) : (
+                          <span>{cell.value}</span>
+                        )}
+                      </div>
+                      {cell.action && inList(cell.key) ? (
+                        <CellAction action={cell.action} primary={cell.key === primaryKey} />
+                      ) : null}
+                    </div>
+                    {cell.sub || cell.time ? (
+                      <div className={styles.sub}>
+                        {cell.sub}
+                        {cell.time ? <span className={styles.time}>{cell.time}</span> : null}
+                      </div>
+                    ) : null}
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>

@@ -17,7 +17,11 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 
-import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
+import { PatientHistoryTab } from "./patient-history-tab";
+import { PatientCommunityTab } from "./patient-community-tab";
+import { PatientDetailsTab } from "./patient-details-tab";
+import { PatientDocumentsTab } from "./patient-documents-tab";
+import { hasCommunityEngagement, recordExtrasFor } from "./patient-record-extras";
 import { PatientRecordTabsRow } from "./patient-flight-header";
 import pinnedStyles from "@/components/ward-management/ward-pinned-switch.module.css";
 import {
@@ -419,13 +423,19 @@ export function PatientNowScreen({
   }
 
   // Keyboard navigation for tablist
-  // Phone: a "contact" task opens on Community, so that tab stays on the phone's shorter list.
-  const phoneKeepsCommunity = initialTaskAction === "contact";
-  const TAB_KEYS: TabKey[] = isPhone
-    ? isLiveBedflow && liveMovement
-      ? ["now", "history", ...(phoneKeepsCommunity ? (["community"] as const) : []), "details", "documents"]
-      : ["now", "history", ...(phoneKeepsCommunity ? (["community"] as const) : []), "documents"]
-    : ["now", "history", "community", "details", "documents"];
+  // Round 2 (Josh, 1 Nov 2026): Community shows only when community engagement is noted (a team
+  // episode or a CTO); a catchment match alone stays in Details. The phone keeps every tab (Q121).
+  const showCommunity = hasCommunityEngagement(livePatient?.id, livePatient?.communityTreatmentOrder);
+  const extras = recordExtrasFor(livePatient?.id);
+  // A "contact" task opens on Community; with no engagement noted, Now (Who to call) takes it.
+  if (activeTab === "community" && !showCommunity) setActiveTab("now");
+  const TAB_KEYS: TabKey[] = [
+    "now",
+    "history",
+    ...(showCommunity ? (["community"] as const) : []),
+    "details",
+    "documents",
+  ];
   function handleTabKeyDown(e: ReactKeyboardEvent) {
     const currentIndex = TAB_KEYS.indexOf(activeTab);
     let nextIndex = -1;
@@ -848,8 +858,23 @@ export function PatientNowScreen({
     const police = stayLeaveBed?.absentWithoutLeave?.steps.find((done) => done.step === "police_notified")?.at;
     if (mode === "awol" && police !== undefined) contacts.push({ name: "Police", role: `Notified ${clock(police)}` });
   }
+  // Round 2 (1 Nov 2026): with a community team actively caring, the case manager is the first call
+  // in the community and the team is named as caring, not as a catchment.
+  const activeCommunity = recordExtrasFor(livePatient?.id)?.community?.find((item) => item.status === "active");
+  if (activeCommunity)
+    contacts.push({
+      name: activeCommunity.caseManager.name,
+      role: `Case manager, ${activeCommunity.team}`,
+      phone: activeCommunity.caseManager.phone,
+    });
   if (livePatient?.catchmentCommunityTeam)
-    contacts.push({ name: livePatient.catchmentCommunityTeam, role: "Catchment community team" });
+    contacts.push({
+      name: livePatient.catchmentCommunityTeam,
+      role:
+        activeCommunity?.team === livePatient.catchmentCommunityTeam
+          ? "Community team, caring now"
+          : "Catchment community team",
+    });
   if (livePatient?.generalPractitioner && !isLiveBedflow)
     contacts.push({ name: livePatient.generalPractitioner, role: "GP" });
 
@@ -863,30 +888,18 @@ export function PatientNowScreen({
     if (row.name === livePatient?.catchmentCommunityTeam) return { kind: "team", name: row.name, role: row.role };
     if (isTransportBooked && row.name === liveMovement?.transport?.provider)
       return { kind: "transport", name: row.name, role: row.role };
-    return { kind: "plain", name: row.name, role: row.role };
+    return { kind: "plain", name: row.name, role: row.role, phone: row.phone };
   });
   const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
-    { key: "now", label: modeMeta.quiet ? "Overview" : "Now" },
-    { key: "history", label: "History", count: record.presentations.length },
-    { key: "community", label: "Community", count: record.community.teams.length },
+    { key: "now", label: "Now" },
+    { key: "history", label: "History", count: record.presentations.length + (extras?.episodes.length ?? 0) },
+    ...(showCommunity ? [{ key: "community" as const, label: "Community" }] : []),
     { key: "details", label: "Details" },
-    { key: "documents", label: "Documents", count: documentCount },
+    { key: "documents", label: "Documents", count: documentCount + (extras?.documents.length ?? 0) },
   ];
-  /* v10 Patient, Phone: "Segmented control: Now, History, Forms." */
-  /* v10 Movement, Phone: "Now, History, Details, Documents" while a movement is live. The UX audit
-   * (21 Oct 2026) gave the phone the desktop's tab name, "Documents", so the two never disagree. */
   const phoneMovement = isPhone && isLiveBedflow && liveMovement !== undefined;
-  const phoneTabs = phoneMovement
-    ? tabs.filter((tab) => tab.key !== "community" || phoneKeepsCommunity).map((tab) => ({ ...tab, count: undefined }))
-    : tabs
-        .filter(
-          (tab) =>
-            tab.key === "now" ||
-            tab.key === "history" ||
-            tab.key === "documents" ||
-            (tab.key === "community" && phoneKeepsCommunity),
-        )
-        .map((tab) => (tab.key === "documents" ? { ...tab, label: "Forms" } : tab));
+  // The phone shows the same tabs as the desktop, without counts, so the record reads the same everywhere.
+  const phoneTabs = tabs.map((tab) => ({ ...tab, count: undefined }));
   const canWithdraw =
     liveMovement !== undefined &&
     !liveMovement.closure &&

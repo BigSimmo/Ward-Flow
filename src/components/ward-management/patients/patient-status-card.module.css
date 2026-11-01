@@ -12,60 +12,77 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Redesign (1 Nov 2026): the head names the verdict and why, with the count of clear gates on the
+   right; the gates sit as equal tiles in one container, each ending on its action and its owner. */
 .head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-3);
+  gap: var(--wf-s-2) var(--wf-s-4);
   min-height: 48px;
-  padding: var(--wf-s-3) var(--wf-s-4);
+  padding: var(--wf-s-2) var(--wf-s-4);
   box-sizing: border-box;
   border-bottom: 1px solid var(--wf-line);
+}
+
+/* Round 2 (1 Nov 2026): the verdict and its reason read as one line, so the head is one row. */
+.headText {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--wf-s-3);
+  min-width: 0;
+  margin-right: auto;
 }
 
 .verdict {
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);
-  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
-  letter-spacing: -0.01em;
+  align-self: center;
+  font: 650 16px / 24px var(--wf-font);
+  letter-spacing: -0.012em;
+}
+
+.meta {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
 }
 
 .meterGroup {
   display: inline-flex;
   align-items: center;
-  gap: var(--wf-s-2);
+  gap: var(--wf-s-3);
 }
 
 .meter {
   display: inline-flex;
-  gap: 3px;
+  gap: 4px;
 }
 
 .meter i {
   display: block;
-  width: 18px;
+  width: 28px;
   height: 6px;
   border-radius: var(--wf-r-pill);
-  background: var(--wf-track);
-  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+  background: var(--wf-line-2);
 }
 
 .meter i[data-on="true"] {
   background: var(--wf-success);
-  box-shadow: none;
 }
 
 .meterText {
   color: var(--wf-ink-2);
-  font-weight: 550;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
   white-space: nowrap;
 }
 
-.meta {
-  margin-left: auto;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
+.meterText strong {
+  color: var(--wf-ink-1);
+  font: 650 var(--wf-fs-14) / 1 var(--wf-mono);
 }
 
 /* The card's next step once every gate is clear (desktop; the phone pins it in the bar). */
@@ -79,33 +96,123 @@
   container-type: inline-size;
 }
 
-.cell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: var(--wf-s-2);
-  row-gap: 3px;
-  align-content: start;
-  min-width: 0;
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+.cells[data-count="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.cell > * {
-  grid-column: 1;
+.cells[data-count="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--wf-s-4);
 }
 
 .cell + .cell {
   border-left: 1px solid var(--wf-line);
 }
 
+/* The one most urgent gate: a soft danger tint over the whole tile, never a side edge. */
+.cell[data-hot] {
+  background: color-mix(in srgb, var(--wf-danger) 6%, transparent);
+}
+
+.cells > .cell:last-child[data-hot] {
+  border-bottom-right-radius: calc(var(--wf-r-lg) - 1px);
+}
+
+.cells > .cell:first-child[data-hot] {
+  border-bottom-left-radius: calc(var(--wf-r-lg) - 1px);
+}
+
+/* Round 2 desktop tile: icon chip beside three lines (label and owner, value and action, why). */
+.cell:not([data-ph-quiet]) {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.cellBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cellLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  min-width: 0;
+}
+
+.cell:not([data-ph-quiet]) .label {
+  margin-bottom: 0;
+  line-height: 18px;
+}
+
+.cell:not([data-ph-quiet]) .value {
+  font: 650 15px / 22px var(--wf-font);
+}
+
+.cell:not([data-ph-quiet]) .sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.cell:not([data-ph-quiet]) .ownerFoot {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.cell:not([data-ph-quiet]) .iconChip {
+  margin-top: 2px;
+}
+
 .label {
-  grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: var(--wf-ink-3);
+  gap: var(--wf-s-2);
+  margin-bottom: var(--wf-s-1);
+  color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
-  font-weight: 550;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   min-width: 0;
+}
+
+.iconChip {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+}
+
+.cell[data-hot] .iconChip {
+  background: var(--wf-surface);
+}
+
+.cell[data-clear] .iconChip {
+  color: var(--wf-success-ink);
 }
 
 .owner {
@@ -118,9 +225,9 @@
 .value {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
-  letter-spacing: -0.01em;
+  gap: 8px;
+  font: 650 18px / 26px var(--wf-font);
+  letter-spacing: -0.012em;
   min-width: 0;
 }
 
@@ -162,13 +269,38 @@
 }
 
 .sub {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
 }
 
 .time {
   color: var(--wf-ink-3);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+/* Desktop: every tile ends on the same row (its action, then its owner), whatever the lines above. */
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  margin-top: auto;
+  padding-top: var(--wf-s-3);
+}
+
+.foot > button {
+  min-height: 36px;
+}
+
+.ownerFoot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
 }
 
 .action {
@@ -177,37 +309,11 @@
   align-self: end;
 }
 
-/*
- * U1 (site review, 12 Oct 2026): a status value is never cut. When the three cells are narrow (an
- * iPad in portrait), each cell's action moves under its value so the value has the full width.
- * Phone cells (`data-ph-quiet`) keep their own layout.
- */
-@container (max-width: 720px) {
-  .cell:not([data-ph-quiet]) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .cell:not([data-ph-quiet]) .action {
-    grid-column: 1;
-    grid-row: auto;
-    align-self: start;
-    margin-top: var(--wf-s-1);
-  }
-}
-
-/* Device sweep L26: wide cells end on a stretching row, so each cell's action sits on the same
-   baseline at the foot of the strip whatever the lines above it. */
-@container (min-width: 720.02px) {
-  .cell:not([data-ph-quiet]) {
-    grid-template-rows: auto auto auto minmax(0, 1fr);
-    align-content: stretch;
-  }
-}
-
 /* Device sweep R3-02: the same breakpoint as useIsPhone (48rem), so the phone rows never sit three
    abreast at 761-768px with their actions over the labels. */
 @media (max-width: 48rem) {
-  .cells {
+  .cells,
+  .cells[data-count="2"] {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -218,6 +324,13 @@
 
   .action {
     align-self: center;
+  }
+}
+
+/* An iPad in portrait: the tiles stack, so each value keeps the full width. */
+@container (max-width: 640px) {
+  .cell:not([data-ph-quiet]) + .cell:not([data-ph-quiet]) {
+    border-left: 0;
   }
 }
 
@@ -270,14 +383,6 @@
   display: none;
 }
 
-/* v10: act now is an inset coral marker and subtle tint. */
-.card[data-act="true"] {
-  border-color: var(--wf-line);
-
-  background: var(--wf-act-tint);
-  position: relative;
-}
-
 /* v10 phone: the gate board's one primary, pinned at the bottom of the screen with Copy beside it.
  * It sits last in the Now pane (order) so it stays pinned while the whole pane scrolls. */
 .phBar {
@@ -322,6 +427,10 @@
  * over the value and its quiet line, with the one action at the end; a quiet foot line closes the
  * card. `data-ph-quiet` and `.phFoot` render only on phone. */
 .cell[data-ph-quiet] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--wf-s-2);
+  align-content: start;
   position: relative;
   padding: 10px var(--wf-s-3) 10px 44px;
   row-gap: 1px;
@@ -330,6 +439,11 @@
 .cell[data-ph-quiet] .label {
   grid-column: 1;
   gap: 0;
+  margin-bottom: 0;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 550;
+  color: var(--wf-ink-3);
 }
 
 .cell[data-ph-quiet] .label > svg {
@@ -351,7 +465,12 @@
   content: "\00a0·\00a0";
 }
 
+.cell[data-ph-quiet] > * {
+  grid-column: 1;
+}
+
 .cell[data-ph-quiet] .value {
+  font-weight: 600;
   font-size: var(--wf-fs-15, 15px);
   line-height: 22px;
 }
@@ -363,6 +482,7 @@
 }
 
 .cell[data-ph-quiet] .action {
+  grid-column: 2;
   grid-row: 1 / span 4;
   align-self: center;
 }
@@ -430,28 +550,5 @@
     padding-bottom: var(--wf-s-2);
     border-top: 0;
     background: transparent;
-  }
-}
-
-/* Rounded attention markers apply at every responsive breakpoint. */
-.card[data-act="true"] {
-  position: relative;
-}
-
-.card[data-act="true"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .card[data-act="true"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
   }
 }

@@ -37,7 +37,7 @@ function journeyEvents(movement: Movement, unitName: (id: string) => string | un
   if (movement.referredAt !== undefined)
     events.push({ at: movement.referredAt, tone: "info", text: "Referred for a bed" });
   for (const decline of movement.declines)
-    events.push({ at: decline.at, tone: "closed", text: `Declined, ${unitName(decline.unitId) ?? decline.unitId}` });
+    events.push({ at: decline.at, tone: "closed", text: `Declined by ${unitName(decline.unitId) ?? decline.unitId}` });
   if (movement.escalation)
     events.push({
       at: movement.escalation.at,
@@ -48,7 +48,7 @@ function journeyEvents(movement: Movement, unitName: (id: string) => string | un
     events.push({
       at: movement.acceptedAt,
       tone: "success",
-      text: `Accepted for ${unitName(movement.acceptedUnitId) ?? movement.acceptedUnitId}`,
+      text: `Accepted by ${unitName(movement.acceptedUnitId) ?? movement.acceptedUnitId}`,
     });
   if (movement.medicalClearance)
     events.push({
