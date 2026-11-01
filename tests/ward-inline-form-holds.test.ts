@@ -61,6 +61,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "movements/sent-journey-changes.tsx": { cover: "held" },
   "movements/support-notification-checklist.tsx": { cover: "held" },
   "officer/officer-screen.tsx": { cover: "held", why: "The diversion form renders in officer-job-detail.tsx." },
+  "officer/officer-needs-transport.tsx": {
+    cover: "held",
+    why: "The booking panel holds the board while open (useHoldOpenForm).",
+  },
   "out-of-area/home-service-return-panel.tsx": { cover: "page form" },
   "patients/add-patient.tsx": { cover: "popup" },
   "patients/patient-now-screen.tsx": { cover: "popup", why: "Clearance and transport edit in modals." },

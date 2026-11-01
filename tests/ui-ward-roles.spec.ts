@@ -375,7 +375,7 @@ test.describe("@mockup Transport officer screen", () => {
     await page.getByTestId("ward-officer-select-WF-005").click();
     const sheet = page.getByTestId("ward-officer-detail");
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByRole("region", { name: "Steps" }).getByRole("listitem")).toHaveText([
+    await expect(sheet.getByRole("list", { name: /^Progress/ }).getByRole("listitem")).toHaveText([
       /Accepted/,
       /En route/,
       /Collected/,
