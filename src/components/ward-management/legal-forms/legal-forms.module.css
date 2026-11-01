@@ -160,8 +160,8 @@
   column-gap: var(--wf-s-3);
   align-items: center;
   min-width: 0;
-  max-width: 280px;
-  padding: 6px 14px;
+  max-width: 340px;
+  padding: 8px 14px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
   border-radius: var(--wf-r-lg);
   background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
@@ -184,6 +184,7 @@
   align-items: center;
   gap: 6px;
   grid-column: 1;
+  white-space: nowrap;
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -807,10 +808,6 @@ button.taskLabel[aria-pressed="true"] {
   min-width: 0;
   color: var(--wf-ink-3);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.focusTabs {
-  margin: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
 }
 
 .reqChecks {
@@ -1471,4 +1468,17 @@ button.taskLabel[aria-pressed="true"] {
   .phoneViews [role="radio"] {
     min-height: 0;
   }
+}
+
+/* The not-legally-checked notice as the list card's quiet footnote (Josh, 1 Nov 2026). */
+.listFoot {
+  padding: 10px var(--wf-s-4) 12px;
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.listFoot > p {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
