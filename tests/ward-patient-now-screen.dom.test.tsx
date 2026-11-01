@@ -151,7 +151,7 @@ describe("the patient-now screen", () => {
     // PT-005 has no record of any kind since the seed-link work (T1-T3, 25 Sept 2026) gave PT-001 one.
     renderScreen({ patientId: "PT-005" });
     const summary = within(screen.getByRole("region", { name: "Patient summary" }));
-    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Not active");
+    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Not currently active");
     expect(summary.queryByRole("link", { name: "Open the movement" })).not.toBeInTheDocument();
   });
 
@@ -162,15 +162,17 @@ describe("the patient-now screen", () => {
       "href",
       raiseReferralHref({ patientId: "PT-005" }),
     );
-    // Quiet hero: nothing is open, so no stepper, no Live chip and an Overview tab in place of Now.
+    // Quiet hero: nothing is open, so no stepper and no Live chip. Redesign (1 Nov 2026): the tab stays
+    // Now, and the record row under the status card opens each tab.
     expect(screen.getByTestId("ward-person-identity")).toHaveAttribute("data-quiet", "true");
     expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("Not active");
     expect(root).toHaveAttribute("data-bedflow", "inactive");
     expect(within(root).queryByRole("list", { name: /The seven stages/ })).not.toBeInTheDocument();
-    expect(within(root).getByRole("tab", { name: "Overview" })).toBeInTheDocument();
+    expect(within(root).getByRole("tab", { name: "Now" })).toBeInTheDocument();
     expect(within(root).queryByText("Sarah Jenkins, RN (CNS)")).not.toBeInTheDocument();
-    expect(within(root).getByRole("heading", { name: "Record at a glance" })).toBeInTheDocument();
-    fireEvent.click(within(root).getByRole("button", { name: "View patient details" }));
+    const record = within(within(root).getByRole("region", { name: "Patient record" }));
+    expect(record.getByRole("heading", { name: "The record" })).toBeInTheDocument();
+    fireEvent.click(record.getByRole("button", { name: /^Details/ }));
     expect(within(root).getByRole("tab", { name: "Details" })).toHaveAttribute("aria-selected", "true");
   });
 
@@ -253,9 +255,10 @@ describe("the patient-now screen", () => {
     const pane = document.getElementById("pnpane-details")!;
     const fact = (label: string) => within(pane).getByText(label, { selector: "dt" }).nextElementSibling;
     expect(fact("Catchment community team")).toHaveTextContent(patient.catchmentCommunityTeam!);
-    expect(fact("Age band")).toHaveTextContent("Not recorded");
+    // Redesign (1 Nov 2026): absent facts are left out, never filled with a guess.
+    expect(within(pane).queryByText("Age band", { selector: "dt" })).not.toBeInTheDocument();
     expect(within(pane).queryByText("Health service", { selector: "dt" })).not.toBeInTheDocument();
-    expect(fact("Owner")).toHaveTextContent("Not recorded");
+    expect(within(pane).queryByText("Owner", { selector: "dt" })).not.toBeInTheDocument();
   });
 
   it("does not mark earlier stages complete when a later-stage fixture has no transition history", () => {
@@ -278,7 +281,10 @@ describe("the patient-now screen", () => {
     const historyPane = document.getElementById("pnpane-history");
     expect(historyPane).not.toBeNull();
     expect(historyPane).not.toHaveAttribute("hidden");
-    expect(within(historyPane as HTMLElement).getByText("Presentations")).toBeInTheDocument();
+    expect(within(historyPane as HTMLElement).getByRole("heading", { name: "Episodes of care" })).toBeInTheDocument();
+    expect(
+      within(historyPane as HTMLElement).getByRole("heading", { name: "Current presentation" }),
+    ).toBeInTheDocument();
   });
 
   it("every control is a real link or a wired button — none says 'Not wired in this prototype'", () => {
@@ -303,7 +309,7 @@ describe("the patient-now screen", () => {
     expect(within(detailsPane).queryByText("1988-03-14")).not.toBeInTheDocument();
     expect(within(root).queryByText(/Gender identity is not held separately/i)).not.toBeInTheDocument();
     // The same resolved prototype identity is used in the detail pane and operational lists.
-    expect(within(detailsPane).getByText("Record number", { selector: "dt" }).nextElementSibling).toHaveTextContent(
+    expect(within(detailsPane).getByText("UMRN", { selector: "dt" }).nextElementSibling).toHaveTextContent(
       expectedPatient("WF-004").patient?.umrn ?? "Not recorded",
     );
   });

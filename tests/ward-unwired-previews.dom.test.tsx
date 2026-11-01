@@ -131,16 +131,18 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
     expect(within(card).getByRole("heading")).toHaveTextContent(/Arrival checklist, \d of 5 recorded/u);
   });
 
-  it(`${shown ? "shows" : "hides"} the patient record's Family and carers preview`, () => {
+  // Patient redesign (1 Nov 2026): the Community tab lists support people from the record only, so the
+  // unwired Family and carers preview is gone from every build, not just hidden in production.
+  it("never shows a Family and carers preview on the patient record", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <PatientNowScreen patientId="PT-005" />
+        <PatientNowScreen patientId="PT-003" />
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("tab", { name: /^Community/u }));
     const community = within(document.getElementById("pnpane-community")!);
-    expect(community.getByRole("heading", { name: "Care team" })).toBeVisible();
-    expect(community.queryByRole("heading", { name: "Family and carers" }) !== null).toBe(shown);
+    expect(community.getByRole("button", { name: "Record CTO" })).toBeVisible();
+    expect(community.queryByRole("heading", { name: "Family and carers" })).toBeNull();
   });
 
   it(`${shown ? "shows" : "hides"} community clinician assignment, and always offers Assign to the team's desk`, () => {

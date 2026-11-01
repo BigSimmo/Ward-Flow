@@ -60,10 +60,16 @@ function referAndAccept(): number {
   return Number(screen.getByTestId("live-bed-count").textContent);
 }
 describe("unified Patient Now clinical flight deck", () => {
-  it("keeps the local toolbar, focus, and five dossier tabs", () => {
+  it("keeps the local toolbar, focus, and the dossier tabs", () => {
     setup();
     expect(screen.queryByRole("link", { name: "Open the movement" })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("tab")).toHaveLength(5);
+    // Redesign (1 Nov 2026): Community appears only when community engagement is noted.
+    expect(screen.getAllByRole("tab").map((tab) => tab.id)).toEqual([
+      "pntab-now",
+      "pntab-history",
+      "pntab-details",
+      "pntab-documents",
+    ]);
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "true");
     expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("In placement");
     // Device audit 11 Oct 2026 (owner pick A): the placement work left Now; its row opens it as a sheet.
@@ -222,7 +228,10 @@ describe("unified Patient Now clinical flight deck", () => {
       searchParams: Promise.resolve({ taskAction: "contact" }),
     });
     render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
-    expect(screen.getByRole("tab", { name: /Community/ })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("heading", { name: "Transfer coordination contacts" })).toBeVisible();
+    // Redesign (1 Nov 2026): with no community engagement noted there is no Community tab, so the
+    // contact action lands on Now, where Who to call holds the coordination contacts.
+    expect(screen.queryByRole("tab", { name: /Community/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^Now/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByTestId("ward-patient-who-to-call")).toBeVisible();
   });
 });
