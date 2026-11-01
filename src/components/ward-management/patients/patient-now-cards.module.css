@@ -21,6 +21,60 @@
   line-height: 1.5;
 }
 
+/* Round 2 (1 Nov 2026): the history reads as two lines, with More beside the end. */
+.whyBody {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.whyBody .para {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+}
+
+.para[data-clamp="true"] {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.more {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.more {
+  position: relative;
+}
+
+/* The tap area reaches 40px without moving the text. */
+.more::after {
+  content: "";
+  position: absolute;
+  inset: -12px -8px;
+}
+
+.more:hover {
+  text-decoration: underline;
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .rows {
   border-top: 1px solid var(--wf-line);
 }

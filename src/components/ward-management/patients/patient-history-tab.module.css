@@ -1,0 +1,629 @@
+/* Patient screen overhaul, round 2 (Josh, 1 Nov 2026): History. Dense and calm: one stat row,
+   then one card with hairline sections. Neutral borders, no coloured edges; tone sits in the kit
+   StatusGlyph beside the words. Text never below 12px. */
+
+.pane {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.quiet {
+  color: var(--wf-ink-3);
+}
+
+.sub {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+.muted {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+  line-height: 1.5;
+}
+
+/* ── Stat row: one container, hairline dividers, tinted icon chips ───────────────────────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+.stat {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.stat + .stat {
+  border-left: 1px solid var(--wf-line);
+}
+.chip {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+.statText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.statTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.count {
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+}
+.dateValue {
+  font: 600 var(--wf-fs-16) / var(--wf-lh-20) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+}
+.statSub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--wf-s-1);
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.statSub > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.statSub > span + span::before {
+  margin-right: var(--wf-s-1);
+  content: "·";
+}
+/* The tag wraps rather than truncates in a narrow cell. */
+.stat .statTag {
+  justify-self: start;
+  height: auto;
+  min-height: 20px;
+  margin-top: 2px;
+  padding-block: 2px;
+  line-height: var(--wf-lh-12);
+  white-space: normal;
+}
+
+/* ── Section labels and facts ────────────────────────────────────────────────────────────── */
+
+.label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--wf-s-2);
+  margin-bottom: var(--wf-s-2);
+}
+.label h3 {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+.label span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2) var(--wf-s-4);
+  align-content: start;
+  margin: 0;
+}
+.facts > div {
+  display: grid;
+  align-content: start;
+  gap: 1px;
+  min-width: 0;
+}
+.facts .wide {
+  grid-column: 1 / -1;
+}
+.facts dt {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.facts dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+/* The current presentation's facts read across in one line. */
+.factsRow {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  padding-bottom: var(--wf-s-3);
+}
+
+/* ── Current presentation ────────────────────────────────────────────────────────────────── */
+
+.lead {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.block {
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+.block + .block {
+  margin-top: var(--wf-s-3);
+}
+
+.days {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+/* Day on the left, its events on a rail to the right. */
+.day {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+.dayHead {
+  margin: 0;
+  padding-top: 6px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rail {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rail li {
+  display: grid;
+  grid-template-columns: 40px 16px minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  align-items: center;
+  min-height: 28px;
+}
+.time {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+}
+/* The rail joins each glyph to the next within a day. */
+.node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+}
+.node::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 0.5px);
+  width: 1px;
+  background: var(--wf-line);
+  content: "";
+}
+.rail li:first-child .node::before {
+  top: 50%;
+}
+.rail li:last-child .node::before {
+  bottom: 50%;
+}
+.rail li:only-child .node::before {
+  display: none;
+}
+.node > svg {
+  position: relative;
+  box-sizing: content-box;
+  padding: 3px;
+  background: var(--wf-surface);
+}
+.what {
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* ── Ward stays ──────────────────────────────────────────────────────────────────────────── */
+
+.stays {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stays > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+.stay {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: var(--wf-s-3);
+  align-items: start;
+  padding: var(--wf-s-1) 0;
+}
+.stayMain {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.stayMain strong {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--wf-s-1);
+}
+.away {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+/* ── Earlier episodes ────────────────────────────────────────────────────────────────────── */
+
+.history {
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.history .label {
+  margin-bottom: 0;
+}
+.history .muted {
+  margin-top: var(--wf-s-1);
+}
+
+/* Facts that repeat across episodes: one slim strip, label over value, hairline between. */
+.patterns {
+  display: flex;
+  flex-wrap: wrap;
+  margin: var(--wf-s-2) 0 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.patterns > div {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 1px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-right: 1px solid var(--wf-line);
+}
+.patterns > div:last-child {
+  border-right: 0;
+}
+.patterns dt {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.patterns dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Year groups: a quiet band like the Waiting table's group heads. */
+.year {
+  border-top: 1px solid var(--wf-line);
+}
+.yearHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 6px var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: var(--wf-tr-caps);
+  font-variant-numeric: tabular-nums;
+}
+.yearHead span {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.list > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.kind {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+
+.ep details > summary {
+  display: grid;
+  grid-template-columns: 28px 176px minmax(0, 1fr) minmax(150px, 220px) 16px;
+  gap: var(--wf-s-3);
+  align-items: start;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  cursor: pointer;
+  list-style: none;
+}
+.ep details > summary::-webkit-details-marker {
+  display: none;
+}
+.ep details > summary:hover {
+  background: var(--wf-hover);
+}
+.ep details > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.when,
+.place,
+.legal {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.dates {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.where {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.where strong {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.outcomeLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--wf-s-2);
+}
+.outcomeText {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.chev {
+  margin-top: 6px;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+.ep details[open] .chev {
+  transform: rotate(180deg);
+}
+
+/* Legal path: form codes in order, joined by small chevrons. */
+.path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+.pathStep {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.pathArrow {
+  color: var(--wf-ink-3);
+}
+.code {
+  display: inline-grid;
+  min-width: 26px;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 0 5px;
+  place-items: center;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  text-decoration: none;
+}
+
+.epBody {
+  display: grid;
+  gap: var(--wf-s-3);
+  margin: 0 var(--wf-s-4) var(--wf-s-3) calc(28px + var(--wf-s-3) + var(--wf-s-4));
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.epBody .label {
+  margin-bottom: var(--wf-s-1);
+}
+.lines {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lines li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  align-items: center;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+.lines b {
+  font-weight: 600;
+}
+
+/* ── Narrow ──────────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+  .ep details > summary {
+    grid-template-columns: 28px 150px minmax(0, 1fr) 16px;
+    grid-template-areas:
+      "kind when place chev"
+      "kind when legal chev";
+  }
+  .ep summary > .kind {
+    grid-area: kind;
+  }
+  .ep summary > .when {
+    grid-area: when;
+  }
+  .ep summary > .place {
+    grid-area: place;
+  }
+  .ep summary > .legal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--wf-s-2);
+    grid-area: legal;
+  }
+  .ep summary > .chev {
+    grid-area: chev;
+  }
+}
+
+@media (max-width: 900px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .stat:nth-child(3) {
+    border-left: 0;
+  }
+  .stat:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+}
+
+@media (max-width: 600px) {
+  .stat {
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3);
+  }
+  .statSub {
+    flex-direction: column;
+  }
+  .statSub > span + span::before {
+    content: none;
+  }
+  .chip {
+    width: 24px;
+    height: 24px;
+    margin-top: 2px;
+  }
+  .lead,
+  .history {
+    padding: var(--wf-s-3);
+  }
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .factsRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .day {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .dayHead {
+    padding-top: 0;
+  }
+  .patterns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .patterns > div {
+    border-right: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+  .patterns > div:nth-child(-n + 2) {
+    border-top: 0;
+  }
+  .patterns > div:nth-child(odd) {
+    border-right: 1px solid var(--wf-line);
+  }
+  .patterns > div:nth-child(odd):last-child {
+    grid-column: 1 / -1;
+    border-right: 0;
+  }
+  .yearHead {
+    padding: 6px var(--wf-s-3);
+  }
+  .ep details > summary {
+    grid-template-columns: 28px minmax(0, 1fr) 16px;
+    grid-template-areas:
+      "kind when chev"
+      "kind place chev"
+      "kind legal chev";
+    gap: var(--wf-s-1) var(--wf-s-3);
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+  .ep summary > .when {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--wf-s-2);
+  }
+  .epBody {
+    margin: 0 var(--wf-s-3) var(--wf-s-3);
+  }
+  .stay {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+  .stay .tags {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}

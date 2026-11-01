@@ -1,0 +1,502 @@
+/* Documents tab (patient overhaul round 2, 1 Nov 2026): one register, hairline rows, no coloured edges. */
+
+.pane {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.quiet {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+/* At a glance: one slim strip, three facts divided by hairlines. */
+.strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
+  margin: 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.fact {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px var(--wf-s-4) 12px;
+}
+
+.fact + .fact {
+  border-left: 1px solid var(--wf-line);
+}
+
+.fact dt {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fact dd {
+  margin: 0;
+  min-width: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.inForce {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.inForce > svg {
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.formTitle {
+  color: var(--wf-ink-2);
+  font-weight: 450;
+}
+
+/* Search, category chips and the grouping switch on one line, wrapping when narrow. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.search {
+  flex: 0 1 280px;
+  min-width: 200px;
+}
+
+.chips {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.groupBy {
+  margin-left: auto;
+}
+
+/* The register. */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table th,
+.table td {
+  padding: 9px var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.table thead th {
+  padding-block: 0;
+  height: 32px;
+  vertical-align: middle;
+  background: var(--wf-surface-2);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: var(--wf-s-4);
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: var(--wf-s-4);
+}
+
+.table thead th:nth-child(1) {
+  width: 64px;
+}
+.table thead th:nth-child(2) {
+  width: 31%;
+}
+.table thead th:nth-child(3) {
+  width: 19%;
+}
+.table thead th:nth-child(4) {
+  width: 13%;
+}
+.table thead th:nth-child(5) {
+  width: 13%;
+}
+
+.table tbody:last-child tr:last-child > * {
+  border-bottom: 0;
+}
+
+/* Group heading row: the episode or type, its count and a quiet aside. */
+.groupRow th {
+  padding-block: 0;
+  height: 34px;
+  vertical-align: middle;
+  background: var(--wf-surface);
+  font-weight: 400;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  color: var(--wf-ink-1);
+}
+
+.groupHead > svg {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+}
+
+.groupTitle {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.groupAside {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.row > * {
+  font-variant-numeric: tabular-nums;
+}
+
+.chipCell {
+  padding-right: 0;
+}
+
+/* Form code chip: a small mono tag; non-statutory documents show their category icon. */
+.code,
+.codeIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 22px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-tag);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  letter-spacing: 0.02em;
+}
+
+.codeIcon {
+  border-color: transparent;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+
+.codePending {
+  border-style: dashed;
+  border-color: var(--wf-warning);
+  background: transparent;
+}
+
+.titleCell {
+  font-weight: 400;
+}
+
+.title {
+  display: block;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.sub {
+  display: block;
+  margin-top: 1px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.sourceCell,
+.byCell {
+  color: var(--wf-ink-2);
+}
+
+.dateCell {
+  white-space: nowrap;
+}
+
+.statusCell {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* In force and To record are the only strong tags: a soft tint of their tone, never an edge. */
+.statusStrong {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--wf-r-tag);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.statusStrong[data-tone="success"] {
+  background: color-mix(in srgb, var(--wf-success) 13%, transparent);
+}
+
+.statusStrong[data-tone="warning"] {
+  background: color-mix(in srgb, var(--wf-warning) 16%, transparent);
+}
+
+.note {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.ends {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font: 550 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.standing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Ended and superseded rows recede; they stay in place and in order. */
+.row[data-quiet] > *,
+.row[data-quiet] .title,
+.row[data-quiet] .sourceCell,
+.row[data-quiet] .byCell {
+  color: var(--wf-ink-3);
+}
+
+.row[data-quiet] .title {
+  font-weight: 500;
+}
+
+.row[data-quiet] .code {
+  background: transparent;
+  color: var(--wf-ink-2);
+}
+
+/* The one most urgent row may carry the soft act tint over its whole surface (no edge). */
+.row[data-urgent] > * {
+  background: var(--wf-act-tint);
+}
+
+.noMatch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+}
+
+.countLine {
+  margin: 0;
+  padding: 8px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.emptyAll {
+  margin: 0;
+  padding: var(--wf-s-4);
+  color: var(--wf-ink-2);
+  font-weight: 550;
+}
+
+/* Safeguards: kept word for word, one quiet footnote. */
+.notes {
+  margin: 0;
+  padding: 10px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.notes > span + span::before {
+  content: " ";
+}
+
+.notes:last-child {
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
+}
+
+/* Phone: the strip stacks; each document is a row of chip, title and status, with the date under. */
+@media (max-width: 48rem) {
+  .strip {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .fact:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .groupBy {
+    margin-left: 0;
+  }
+
+  .table,
+  .table tbody,
+  .table tr {
+    display: block;
+  }
+
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .groupRow {
+    display: block;
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .table .groupRow th {
+    display: block;
+    height: auto;
+    padding: 8px var(--wf-s-4);
+    border: 0;
+    background: var(--wf-surface-2);
+  }
+
+  .groupHead {
+    flex-wrap: wrap;
+  }
+
+  .groupAside {
+    margin-left: 0;
+    flex-basis: 100%;
+    white-space: normal;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "chip title status"
+      "chip meta status";
+    column-gap: var(--wf-s-3);
+    row-gap: 2px;
+    padding: 10px var(--wf-s-4);
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .table .row > *,
+  .table .row > *:first-child,
+  .table .row > *:last-child {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .table .chipCell {
+    grid-area: chip;
+  }
+
+  .table .titleCell {
+    grid-area: title;
+  }
+
+  .table .sourceCell {
+    display: none;
+  }
+
+  .table .byCell {
+    display: none;
+  }
+
+  .table .dateCell {
+    grid-area: meta;
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+  }
+
+  .table .statusTd {
+    grid-area: status;
+    justify-self: end;
+  }
+
+  .statusCell {
+    justify-items: end;
+    text-align: right;
+  }
+
+  .row[data-urgent] {
+    background: var(--wf-act-tint);
+  }
+
+  .row[data-urgent] > * {
+    background: none;
+  }
+}
+
+/* Phone: the record action pinned at the card foot, full width. */
+.phoneAction {
+  display: grid;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}

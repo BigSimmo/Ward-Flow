@@ -118,9 +118,9 @@ describe("Patient Transport & Transfer Coordination section", () => {
       </WardFlowProvider>,
     );
     const nowPanel = document.getElementById("pnpane-now")!;
-    expect(nowPanel).toHaveTextContent("No linked movement is displayed.");
+    expect(nowPanel).toHaveTextContent("No open referral, placement or ward stay.");
     expect(nowPanel).not.toHaveTextContent("Placement request active across network wards.");
-    expect(screen.getByRole("heading", { name: "Record at a glance" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Patient record" })).toBeInTheDocument();
     expect(screen.queryByTestId("ward-patient-transport-section")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-patient-book-transport-btn")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
@@ -140,7 +140,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
         <PatientNowScreen patientId="PT-005" />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("heading", { name: "Record at a glance" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Patient record" })).toBeInTheDocument();
     expect(screen.queryByTestId("ward-patient-transport-section")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-patient-book-transport-btn")).not.toBeInTheDocument();
