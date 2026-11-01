@@ -409,12 +409,19 @@ test.describe("@mockup Transport officer screen", () => {
     );
     expect(overflow).toBeLessThanOrEqual(2);
 
-    // Desktop keeps the four individually gated stage buttons in the job panel.
+    // Transport mock-up (Josh, 1 Nov 2026): the foot pins the one next step at every width, so
+    // desktop shows the same single En route step, in view without scrolling.
     await page.getByTestId("ward-officer-detail-close").click();
     await page.setViewportSize({ width: 1440, height: 1024 });
     await page.getByTestId("ward-officer-select-WF-005").click();
-    const actions = page.getByTestId("ward-officer-detail").locator('[class*="actionButton"]');
-    await expect(actions).toHaveText(["Accepted", "En route", "Collected", "Arrived at ward"]);
+    const desktopSteps = page
+      .getByTestId("ward-officer-detail")
+      .locator(
+        '[data-testid$="-WF-005"]:is([data-testid^="ward-officer-accept-"], [data-testid^="ward-officer-enroute-"], [data-testid^="ward-officer-collect-"], [data-testid^="ward-officer-arrive-"])',
+      );
+    await expect(desktopSteps).toHaveCount(1);
+    await expect(desktopSteps).toHaveText("Mark en route");
+    await expect(desktopSteps).toBeInViewport();
   });
 
   /**
