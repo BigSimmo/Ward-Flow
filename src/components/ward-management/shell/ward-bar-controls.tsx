@@ -3,11 +3,12 @@
 // The bar's own controls, moved out of `ward-bar.tsx` to keep it under the line cap: the phone
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bell, Plus, Check, ChevronDown, Menu as MenuIcon, RotateCcwClock, Wrench } from "lucide-react";
+import { ArrowLeft, Bell, Plus, Check, ChevronDown, Menu as MenuIcon, RotateCcwClock, Wrench, X } from "lucide-react";
 import type { RefObject } from "react";
 
 import { ContextualBackLink, navigateContextuallyBack } from "@/components/contextual-back-link";
-import { waitingText, type waitingInEds } from "@/components/ward-management/ward-shared-figures";
+import { Button } from "@/components/wf";
+import type { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import type {
   ReferralSheetCategory,
@@ -274,11 +275,25 @@ export function WardBarServiceSelector({
           aria-label="Choose a health service"
           data-testid="ward-bar-service-panel"
         >
-          <p className={styles.popoverHead}>Service</p>
-          {/* Phone (v10 service sheet): the quiet line under the title. */}
-          <p className={styles.serviceSheetNote} aria-hidden="true">
-            {SERVICE_SCOPE_SHEET_LINE}
-          </p>
+          {/* Pop-ups build (Service picker, 1 Nov 2026): the title and its line on every screen size,
+              with a Close button. */}
+          <div className={styles.serviceHead}>
+            <span className={styles.serviceHeadText}>
+              <strong className={styles.serviceHeadTitle}>Service</strong>
+              <span className={styles.serviceHeadLine} aria-hidden="true">
+                {SERVICE_SCOPE_SHEET_LINE}
+              </span>
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={X}
+              aria-label="Close Service"
+              className={styles.serviceClose}
+              onClick={() => closePopover("service", false)}
+            />
+          </div>
           <p className="sr-only">{SERVICE_SCOPE_NOTE}</p>
           <button
             type="button"
@@ -289,34 +304,41 @@ export function WardBarServiceSelector({
             <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
             {/* shell-23 (13 Oct 2026): one word. The header says Statewide, so the option does too. */}
             <span className={styles.serviceName}>Statewide</span>
-            <span className={`${styles.serviceOptionCount} ${styles.serviceAllCount}`} aria-hidden="true">
-              {waitingText(allWaitingCount)}
-            </span>
+            <ServiceWaitingCount count={allWaitingCount} />
             <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === null} />
           </button>
-          <hr className={styles.popoverRule} />
-          {HEALTH_SERVICES.map((candidate) => {
-            const waitingCount = waiting.byService.get(candidate) ?? 0;
-            return (
-              <button
-                key={candidate}
-                type="button"
-                className={styles.serviceOption}
-                aria-pressed={service === candidate}
-                onClick={() => selectService(candidate)}
-              >
-                <span className={styles.serviceDot} data-service={SERVICE_SWATCH_KEY[candidate]} aria-hidden="true" />
-                <span className={styles.serviceName}>{candidate}</span>
-                <span className={styles.serviceOptionCount} aria-hidden="true">
-                  {waitingText(waitingCount)}
-                </span>
-                <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === candidate} />
-              </button>
-            );
-          })}
+          <p className={styles.serviceGroupLabel} aria-hidden="true">
+            One service
+          </p>
+          {HEALTH_SERVICES.map((candidate) => (
+            <button
+              key={candidate}
+              type="button"
+              className={styles.serviceOption}
+              aria-pressed={service === candidate}
+              onClick={() => selectService(candidate)}
+            >
+              <span className={styles.serviceDot} data-service={SERVICE_SWATCH_KEY[candidate]} aria-hidden="true" />
+              <span className={styles.serviceName}>{candidate}</span>
+              <ServiceWaitingCount count={waiting.byService.get(candidate) ?? 0} />
+              <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === candidate} />
+            </button>
+          ))}
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Pop-ups build (Service picker, round 2, 1 Nov 2026): each count names its noun, "N waiting in ED"
+ * with the number bold, so no foot note has to explain it. A zero is the same figure, greyed.
+ */
+function ServiceWaitingCount({ count }: { count: number }) {
+  return (
+    <span className={styles.serviceOptionCount} data-none={count === 0 ? "true" : undefined} aria-hidden="true">
+      <b>{count}</b> waiting in ED
+    </span>
   );
 }
 
