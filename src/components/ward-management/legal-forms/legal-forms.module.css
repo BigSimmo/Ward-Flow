@@ -1463,29 +1463,6 @@ button.taskLabel[aria-pressed="true"] {
   padding: var(--wf-s-2) 0;
 }
 
-/* Rounded attention markers apply at every responsive breakpoint. */
-.focusClock[data-tone="danger"] {
-  position: relative;
-}
-
-.focusClock[data-tone="danger"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .focusClock[data-tone="danger"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-}
-
 /* Phone compact switch (Josh, 12 Oct 2026): the views take the shared phone track (`--wf-phone-*`);
  * each option's hit area reaches the 48px floor, so the face drops its own 44px floor. The switch
  * pins under the phone header through the shared `pinnedSwitch` (ward-pinned-switch.module.css). */

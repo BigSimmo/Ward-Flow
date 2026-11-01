@@ -13,19 +13,8 @@
   min-height: 2.375rem;
   padding: var(--ward-space-10) var(--ward-space-16);
   border-top: 1px solid var(--ward-divider);
-  /* The state marker is a LEFT edge, never a bar across the top: it survives a row wrapping onto
-   * four lines and does not compete with the panel heading above it. Transparent by default so an
-   * untoned row keeps the same text alignment as a toned one. */
-  border-left: var(--ward-space-3) solid transparent;
-}
-.row[data-tone="danger"] {
-  border-left-color: var(--ward-danger);
-}
-.row[data-tone="warning"] {
-  border-left-color: var(--ward-warning);
-}
-.row[data-tone="good"] {
-  border-left-color: var(--ward-success);
+  /* No coloured side edge (Josh, Q94, 1 Nov 2026): a row's state is its state chip (`WardChip`),
+   * and `data-tone` stays only as a hook for tests and print. */
 }
 /* ⚠️ `--ward-ground` IS THE SHELL'S AND MAY NOT BE PAINTED HERE. `ward-shell.dom.test.tsx`
  * pins it: exactly one stylesheet may paint that token as a background, and it is
