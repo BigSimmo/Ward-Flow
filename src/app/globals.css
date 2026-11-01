@@ -223,13 +223,15 @@
      would be overridden at most call sites and silently shift the few without
      one. Set leading/tracking explicitly where a step needs it — see
      `eyebrowText` in ui-primitives.tsx for the uppercase eyebrow treatment
-     (`--text-2xs` used to bake that tracking in; it is now the neutral 11px
+     (`--text-2xs` used to bake that tracking in; it is now the neutral 12px
      step and the tracking lives at the recipe/call site instead).
-       3xs         10px  micro floor: dense metadata, legend labels, count
-                         bubbles. An 8px `4xs` step existed here and is retired
-                         — unreadable at any density in a clinical product, so
-                         nothing below 10px is a legal step. ≤9px snaps here.
-       2xs         11px  Chip `compact` / secondary labels (most common small size)
+       3xs         12px  micro step: dense metadata, legend labels, count
+                         bubbles. Raised from 10px to the 12px text floor (Josh,
+                         design audit 1 Nov 2026); the old 8px `4xs` step is
+                         retired. Kept as a name so existing call sites still
+                         resolve, now at the floor.
+       2xs         12px  Chip `compact` / secondary labels; raised from 11px to the
+                         same 12px floor (1 Nov 2026).
        (xs 12 · sm 14 · base 16 come from Tailwind's default scale —
         Chip `standard` uses xs / 12px; see docs/design-system/TOKENS.md)
        sm-minus    13px  one notch under sm — dense body/labels bigger than xs
@@ -237,8 +239,8 @@
        (lg 18 · xl 20 · 2xl 24 come from Tailwind's default scale)
        lg-minus    17px  one notch under lg — display titles a shade under 18
        2xl-minus   22px  one notch under 2xl — wide-screen nowrap headings */
-  --text-3xs: 0.625rem;
-  --text-2xs: 0.6875rem;
+  --text-3xs: 0.75rem;
+  --text-2xs: 0.75rem;
   --text-sm-minus: 0.8125rem;
   --text-base-minus: 0.9375rem;
   --text-lg-minus: 1.0625rem;
@@ -1219,7 +1221,7 @@ summary::-webkit-details-marker {
    browser before changing any one of them.
 
    The size is `em`, not a named step, because the mark has to scale with the
-   prose it annotates — the scale's floor (`--text-3xs`, 10px) is absolute and
+   prose it annotates — the scale's floor (`--text-3xs`, 12px) is absolute and
    would also overrun the line at this rise. Keeping it here rather than as a
    `text-[…]` utility is the sanctioned form: `check:type-scale` guards the
    utility vocabulary, and unlayered component CSS is how this repo expresses a

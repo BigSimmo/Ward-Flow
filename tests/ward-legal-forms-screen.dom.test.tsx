@@ -323,10 +323,14 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
 
     expect(within(panel).getByText(/^Ends, as typed from the form/u)).toBeInTheDocument();
+    // Design audit (Josh, 1 Nov 2026): the toast names the person, surname first, both ways.
+    const name = resolveSubjectPatient(target, { patients: seed.patients, referrals: seed.referrals }).formalName;
+    expect(name).toMatch(/^[^,]+, .+$/u);
+    expect(screen.getByText(`Form ${target.legalForm?.code ?? ""} extended for ${name}`)).toBeInTheDocument();
     const undoBtn = screen.getByRole("button", { name: "Undo" });
     fireEvent.click(undoBtn);
     expect(within(panel).getByText(/^Ended, as typed from the form/u)).toBeInTheDocument();
-    expect(screen.getByText("Form extension undone.")).toBeInTheDocument();
+    expect(screen.getByText(`Form extension undone for ${name}.`)).toBeInTheDocument();
   });
 
   it("blocks Form 3C on a movement that arrived on Form 3D in Record a form and keeps the sheet open", () => {

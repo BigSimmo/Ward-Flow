@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type RefObject } from "react";
 
 import { cx } from "@/components/wf";
 
@@ -286,13 +286,43 @@ function Node({
           <text x={lx} y={ly} className={styles.label} textAnchor={anchor}>
             {label}
           </text>
-          <text x={lx} y={ly + 17} className={styles.sub} textAnchor={anchor}>
+          {/* `dy` in em, so the second line keeps its gap when the 12px floor enlarges the text. */}
+          <text x={lx} y={ly} dy="1.2em" className={styles.sub} textAnchor={anchor}>
             {node.sub}
           </text>
         </>
       )}
     </g>
   );
+}
+
+/**
+ * The 12px text floor at the size the map is drawn (design audit, Josh 1 Nov 2026). Each SVG scales
+ * its viewBox to the map's width, so a 16px label in a 960-unit view drawn 600px wide reads 10px. This
+ * measures the drawn width and hands each view its units-per-pixel (`--wa-map-k-wide`,
+ * `--wa-map-k-phone`); the stylesheet keeps every label at least `12px * k` in view units, so it
+ * never draws under 12px. Before the first measure (and in tests) k is 1, the set sizes.
+ */
+function useTextFloorScale(ref: RefObject<HTMLDivElement | null>): CSSProperties | undefined {
+  const [width, setWidth] = useState<number | undefined>();
+  useEffect(() => {
+    const map = ref.current;
+    if (map === null) return;
+    const measure = () => {
+      const drawn = Math.round(map.clientWidth);
+      if (drawn > 0) setWidth(drawn);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(map);
+    return () => observer.disconnect();
+  }, [ref]);
+  if (width === undefined) return undefined;
+  return {
+    "--wa-map-k-wide": (VIEW_W / width).toFixed(3),
+    "--wa-map-k-phone": (PHONE_W / width).toFixed(3),
+  } as CSSProperties;
 }
 
 /**
@@ -313,6 +343,8 @@ export function StatisticsWaMap({
   label: string;
 }) {
   const baseId = useId();
+  const mapRef = useRef<HTMLDivElement>(null);
+  const textFloor = useTextFloorScale(mapRef);
   const max = Math.max(1, ...nodes.filter((node) => node.applies).map((node) => node.value));
   const wide: Scale = { rMin: 13, rMax: 27, max };
   const narrow: Scale = { rMin: 10, rMax: 19, max };
@@ -338,7 +370,7 @@ export function StatisticsWaMap({
   );
 
   return (
-    <div className={styles.map} data-testid="ward-statistics-wa-map">
+    <div className={styles.map} data-testid="ward-statistics-wa-map" ref={mapRef} style={textFloor}>
       <svg
         className={styles.wide}
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}

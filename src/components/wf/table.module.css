@@ -162,7 +162,7 @@
   background: var(--wf-act-tint);
 }
 
-/* Focus paints its ring inside the row, clear of the act now edge. */
+/* Focus paints its ring inside the row. */
 .table tr.actNow:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -4px;
@@ -202,31 +202,5 @@
   }
   .sq {
     border-color: CanvasText;
-  }
-}
-
-/* Rounded attention markers apply at every responsive breakpoint. */
-.row.actNow,
-.table tr.actNow > td:first-child {
-  position: relative;
-}
-
-.row.actNow::before,
-.table tr.actNow > td:first-child::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: 999px;
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .row.actNow::before,
-  .table tr.actNow > td:first-child::before {
-    background: CanvasText;
-    forced-color-adjust: none;
   }
 }

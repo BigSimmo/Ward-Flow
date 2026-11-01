@@ -28,19 +28,10 @@ describe("Ward browser-build CSS", () => {
     );
   });
 
-  it("compiles Settings in pure mode, and its modals keep the base button class on composed buttons", async () => {
+  // The Settings modals stylesheet was deleted on 1 Nov 2026 (nothing imported it, Q96).
+  it("compiles Settings in pure mode", async () => {
     const screenCss = await compile("src/components/ward-management/settings/settings.module.css");
     expect(screenCss.css.length).toBeGreaterThan(0);
-
-    const result = await compile("src/components/ward-management/settings/settings-modals.module.css");
-    const exported: Record<string, string> = {};
-    result.root.walkRules(":export", (rule) => {
-      rule.walkDecls((decl) => {
-        exported[decl.prop] = decl.value;
-      });
-    });
-    expect(exported.btn).toBeTruthy();
-    expect(exported.btnSecondary.split(/\s+/)).toContain(exported.btn);
   });
 
   // The third edition statistics sheets were deleted on 15 Oct 2026 (nothing imported them); the

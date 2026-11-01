@@ -34,7 +34,8 @@ import type { EdScreenContext } from "./ed-screen-context";
 import { deriveEdScreen } from "./ed-screen-derivations";
 import { EdListsSection } from "./ed-screen-lists";
 import { EdListsCard } from "./ed-lists-desktop";
-import { edStepSaid, instantFromDateAndTimeInputs, waitLine, type EdStepEvent } from "./ed-screen-model";
+import { edStepSaid, edStepUndone, instantFromDateAndTimeInputs, waitLine, type EdStepEvent } from "./ed-screen-model";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { EdPatientDialog } from "./ed-screen-patient-dialog";
 import { EdPhonePanes } from "./ed-screen-phone";
 import { EdRaiseIntoMovementSection } from "./ed-screen-raise-section";
@@ -150,18 +151,21 @@ export function EdScreen({ edId }: EdScreenProps) {
   const toast = useOptionalToast();
   // v10 pass 3: an ED next step is recorded at once and Undo takes it back (UNDO_ED_STEP).
   const { run: runStep, offer: offerStep } = useUndoableStep({ dispatch, rejections, now, routeRole: "ed", toast });
+  // Each step's toast names its person (surname first), so stacked toasts never Undo the wrong one.
+  const patientOf = usePatientOf();
   const referralSave = useEdReferralSave(referralDraft, edId);
   const examinationSave = useEdExaminationSave({ dispatch, movements, rejections, now, panels: rowPanels, offerStep });
   function recordEdStep(event: EdStepEvent) {
     const subject = "referralId" in event ? { referralId: event.referralId } : { movementId: event.movementId };
+    const who = patientOf(subject).formalName;
     runStep(event, {
-      success: edStepSaid(event),
+      success: edStepSaid(event, who),
       // Audit 1 CS-07: a Form 1A receipt is taken back by the legal form undo, as on Legal forms.
       undo: (at) =>
         event.type === "RECORD_LEGAL_FORM_RECEIVED" || event.type === "RECORD_LEGAL_FORM_CODE"
           ? { type: "UNDO_LEGAL_FORM_RECORD", role: "ed", now: at, movementId: event.movementId }
           : { type: "UNDO_ED_STEP", role: "ed", now: at, ...subject },
-      undone: "Undone. Back as it was.",
+      undone: edStepUndone(who),
     });
   }
   /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */
