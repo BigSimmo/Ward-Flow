@@ -1,4 +1,5 @@
 "use client";
+import { DateTimeField } from "@/components/wf";
 import { useState } from "react";
 import Link from "next/link";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -290,11 +291,11 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           </label>
           <label>
             Form written date and time
-            <input type="datetime-local" value={written} onChange={(e) => setWritten(e.target.value)} />
+            <DateTimeField value={written} onValueChange={setWritten} />
           </label>
           <label>
             Expiry written on paper
-            <input type="datetime-local" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+            <DateTimeField value={expiry} onValueChange={setExpiry} />
           </label>
           <button
             type="button"

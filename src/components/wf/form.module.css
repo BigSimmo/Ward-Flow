@@ -595,3 +595,12 @@
   outline-offset: 2px;
   border-radius: var(--wf-r-xs);
 }
+
+/* THE KIT'S DATE-AND-TIME PAIR (phone audit, 1 Nov 2026): a typed DD/MM/YYYY box beside a typed
+   HH:MM box, in place of the browser's datetime picker. It wraps to two rows on a narrow card. */
+.dateTime {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--wf-s-2);
+  min-width: 0;
+}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { TextInput, type TextInputProps } from "./form";
+import styles from "./form.module.css";
 
 /**
  * THE KIT'S TYPED DATE BOX (bug list row 25, Josh 31 October 2026): one DD/MM/YYYY text box in place
@@ -91,5 +92,119 @@ export function DateField({
         onValueChange(parseTypedDate(text) ?? "");
       }}
     />
+  );
+}
+
+/** "14:30" (or 1430, 14.30, 9:05) as "14:30"; null when not a real 24-hour time. */
+export function parseTypedTime(text: string): string | null {
+  const match = /^(\d{1,2})[:.\s]?(\d{2})$/u.exec(text.trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+/** "2026-10-31T14:30" split into its date and time parts; "" parts when it is not one. */
+function splitDateTime(value: string): { date: string; time: string } {
+  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/u.exec(value);
+  return match ? { date: match[1], time: match[2] } : { date: "", time: "" };
+}
+
+export type DateTimeFieldProps = {
+  /** The date box's id, so a `<label htmlFor>` or kit Field points at it. */
+  id?: string;
+  /** "YYYY-MM-DDTHH:MM" (the old datetime-local shape), or "" for none. Leave out for a form read by name. */
+  value?: string;
+  /** Starting value when `value` is left out. */
+  defaultValue?: string;
+  /** Called with "YYYY-MM-DDTHH:MM" once both boxes hold a real date and time, otherwise with "". */
+  onValueChange?: (value: string) => void;
+  /** A hidden input of this name carries the joined value, for forms read with FormData. */
+  name?: string;
+  required?: boolean;
+  invalid?: boolean;
+  disabled?: boolean;
+  /** Spoken before each box: "<label> date" and "<label> time". */
+  label?: string;
+  "data-testid"?: string;
+};
+
+/**
+ * THE KIT'S TYPED DATE AND TIME (phone audit, 1 Nov 2026): a DD/MM/YYYY box and an HH:MM (24-hour)
+ * box in place of `<input type="datetime-local">`, whose picker showed mm/dd/yyyy and AM/PM on many
+ * phones. The value stays "YYYY-MM-DDTHH:MM", so readers such as `perthDateTimeLocal` are unchanged.
+ * Nothing is filled in for the person, and nothing is worked out from what they type (D5, D-70).
+ *
+ *     <label htmlFor="written">Date and time written</label>
+ *     <DateTimeField id="written" value={written} onValueChange={setWritten} label="Written" />
+ */
+export function DateTimeField({
+  id,
+  value,
+  defaultValue = "",
+  onValueChange,
+  name,
+  required,
+  invalid,
+  disabled,
+  label,
+  "data-testid": testId,
+}: DateTimeFieldProps) {
+  const [own, setOwn] = useState(defaultValue);
+  const current = value ?? own;
+  const parts = splitDateTime(current);
+  const [date, setDate] = useState(parts.date);
+  const [timeText, setTimeText] = useState(parts.time);
+  // A new value from the caller (a reset, or a record loaded) replaces both parts. `lastValue` is
+  // also what this box last sent, so the caller echoing it back leaves the typing alone.
+  const [lastValue, setLastValue] = useState(current);
+  if (current !== lastValue) {
+    setLastValue(current);
+    setDate(parts.date);
+    setTimeText(parts.time);
+  }
+  const emit = (nextDate: string, nextTime: string) => {
+    const time = parseTypedTime(nextTime);
+    const joined = nextDate !== "" && time !== null ? `${nextDate}T${time}` : "";
+    setLastValue(joined);
+    if (value === undefined) setOwn(joined);
+    onValueChange?.(joined);
+  };
+  const timeWrong = timeText.trim().length >= 4 && parseTypedTime(timeText) === null;
+  return (
+    <div className={styles.dateTime} data-wf-date-time="" data-testid={testId}>
+      <DateField
+        id={id}
+        value={date}
+        required={required}
+        disabled={disabled}
+        invalid={invalid}
+        aria-label={label ? `${label} date, DD/MM/YYYY` : undefined}
+        data-testid={testId ? `${testId}-date` : undefined}
+        onValueChange={(nextDate) => {
+          setDate(nextDate);
+          emit(nextDate, timeText);
+        }}
+      />
+      <TextInput
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={5}
+        placeholder="HH:MM"
+        value={timeText}
+        required={required}
+        disabled={disabled}
+        invalid={invalid || timeWrong}
+        aria-label={label ? `${label} time, HH:MM 24-hour` : "Time, HH:MM 24-hour"}
+        data-testid={testId ? `${testId}-time` : undefined}
+        onChange={(event) => {
+          setTimeText(event.target.value);
+          emit(date, event.target.value);
+        }}
+      />
+      {name ? <input type="hidden" name={name} value={current} /> : null}
+    </div>
   );
 }

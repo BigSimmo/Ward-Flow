@@ -19,6 +19,7 @@ import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-m
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
+import { typeDate } from "./helpers/type-date-time";
 
 /**
  * Josh, 15 Oct 2026: the New referral sheet on a ward page sends in that ward's own name, as the
@@ -132,7 +133,7 @@ async function walkToWards(umrn = ON_WARD_UMRN, notOnWardReason?: string) {
   fireEvent.click(within(screen.getByRole("group", { name: "Bed security" })).getByLabelText("Secure"));
   next("Next, clearance");
   answer("Has the patient been medically cleared?", "No");
-  fireEvent.change(screen.getByLabelText("Expected clearance"), { target: { value: "2026-10-07T18:00" } });
+  typeDate(screen.getByLabelText("Expected clearance"), "2026-10-07T18:00");
   fireEvent.change(screen.getByLabelText("Contact name"), { target: { value: "Demo Doctor" } });
   fireEvent.change(screen.getByLabelText("Contact phone"), { target: { value: "0412345678" } });
   answer("Triage and RAMP completed", "Yes");

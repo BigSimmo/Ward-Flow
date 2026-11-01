@@ -17,6 +17,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { perthCalendarDay } from "@/components/ward-management/ward-clock";
 import { EdInboxReferralFixture, openRaiseIntoMovementForm } from "./helpers/ed-raise-into-movement";
+import { typeDate } from "./helpers/type-date-time";
 
 /**
  * WHAT THE CLINICIAN TYPED IS WHAT THE MOVEMENT CARRIES — END TO END, THROUGH THE REAL FORM.
@@ -108,9 +109,7 @@ function raiseTransportReferral(typed: { date: string; time: string } | undefine
   fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
   fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "4A" } });
   if (typed !== undefined) {
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), {
-      target: { value: typed.date },
-    });
+    typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), typed.date);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), {
       target: { value: typed.time },
     });

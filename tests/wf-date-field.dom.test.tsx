@@ -5,7 +5,14 @@ import { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { DateField, isoDateAsTyped, parseTypedDate, type DateFieldProps } from "@/components/wf";
+import {
+  DateField,
+  DateTimeField,
+  isoDateAsTyped,
+  parseTypedDate,
+  parseTypedTime,
+  type DateFieldProps,
+} from "@/components/wf";
 
 describe("kit typed date box (DD/MM/YYYY)", () => {
   it("reads the day as written in Australia and refuses days that do not exist", () => {
@@ -67,5 +74,62 @@ describe("kit typed date box (DD/MM/YYYY)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Load record" }));
     expect(box).toHaveValue("05/01/2026");
+  });
+});
+
+describe("kit typed date and time (DD/MM/YYYY plus HH:MM)", () => {
+  it("reads a 24-hour time as typed and refuses one that does not exist", () => {
+    expect(parseTypedTime("14:30")).toBe("14:30");
+    expect(parseTypedTime("9:05")).toBe("09:05");
+    expect(parseTypedTime("1430")).toBe("14:30");
+    expect(parseTypedTime("24:00")).toBeNull();
+    expect(parseTypedTime("12:60")).toBeNull();
+    expect(parseTypedTime("2pm")).toBeNull();
+  });
+
+  it("joins both boxes as YYYY-MM-DDTHH:MM only once each is real, and carries it in a named form", () => {
+    const seen: string[] = [];
+    const { container } = render(
+      <form>
+        <label htmlFor="when">When</label>
+        <DateTimeField id="when" name="when" onValueChange={(v) => seen.push(v)} />
+      </form>,
+    );
+    const date = screen.getByLabelText("When");
+    const time = screen.getByRole("textbox", { name: "Time, HH:MM 24-hour" });
+    const hidden = container.querySelector<HTMLInputElement>('input[type="hidden"][name="when"]');
+    expect(date).toHaveAttribute("placeholder", "DD/MM/YYYY");
+    expect(time).toHaveAttribute("placeholder", "HH:MM");
+
+    fireEvent.change(date, { target: { value: "01/11/2026" } });
+    expect(seen.at(-1)).toBe("");
+    fireEvent.change(time, { target: { value: "25:00" } });
+    expect(seen.at(-1)).toBe("");
+    expect(time).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(time, { target: { value: "16:05" } });
+    expect(seen.at(-1)).toBe("2026-11-01T16:05");
+    expect(hidden?.value).toBe("2026-11-01T16:05");
+  });
+
+  it("shows a value the caller loads, and nothing is filled in on its own", () => {
+    function Host() {
+      const [value, setValue] = useState("");
+      return (
+        <>
+          <DateTimeField label="Written" value={value} onValueChange={setValue} />
+          <button type="button" onClick={() => setValue("2026-03-12T08:30")}>
+            Load
+          </button>
+        </>
+      );
+    }
+    render(<Host />);
+    const date = screen.getByRole("textbox", { name: "Written date, DD/MM/YYYY" });
+    const time = screen.getByRole("textbox", { name: "Written time, HH:MM 24-hour" });
+    expect(date).toHaveValue("");
+    expect(time).toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: "Load" }));
+    expect(date).toHaveValue("12/03/2026");
+    expect(time).toHaveValue("08:30");
   });
 });

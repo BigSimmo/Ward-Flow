@@ -10,7 +10,7 @@
 import { useCallback, useId, type ReactNode } from "react";
 import { X } from "lucide-react";
 
-import { Button, Sheet, cx } from "@/components/wf";
+import { Button, Sheet, cx, isoDateAsTyped } from "@/components/wf";
 import { DischargeCareJourney } from "../discharges/discharge-care-journey";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -20,6 +20,9 @@ import { patientListName } from "@/components/ward-management/ward-patients";
 import d from "./community-screen-drawer.module.css";
 import { NOT_RECORDED_IN_WARD_FLOW, unitName } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
+
+/** Phone audit (1 Nov 2026): a date of birth reads DD/MM/YYYY, as typed, never 1984-03-12. */
+const dobAsWritten = (iso: string) => isoDateAsTyped(iso) || iso;
 
 /** One card: a small heading, then label and value rows or other content. */
 function Card({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
@@ -148,7 +151,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
     isPx && selectedPatient ? (
       <>
         <span className={d.mono}>{selectedPatient.umrn}</span> · DOB{" "}
-        <span className={d.mono}>{selectedPatient.dateOfBirth}</span>
+        <span className={d.mono}>{dobAsWritten(selectedPatient.dateOfBirth)}</span>
       </>
     ) : null;
   const chip = isPx ? (
@@ -275,7 +278,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                   </Row>
                   <Row label="DOB">
                     <span id="pxDobAge" className={d.mono}>
-                      {selectedPatient.dateOfBirth}
+                      {dobAsWritten(selectedPatient.dateOfBirth)}
                     </span>
                   </Row>
                   <Row label="Community team">{selectedPatient.catchmentCommunityTeam ?? "Not recorded"}</Row>

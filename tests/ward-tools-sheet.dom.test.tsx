@@ -9,6 +9,7 @@ import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
+import { typeDate } from "./helpers/type-date-time";
 import {
   DEFAULT_BED_FINDER_FILTERS,
   findBeds,
@@ -301,7 +302,7 @@ describe("Form times on the Perth clock", () => {
     expect(screen.getByLabelText("Time written on form")).toHaveValue("");
     expect(screen.getByRole("status").textContent).toBe("Not recorded");
     fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
-    fireEvent.change(screen.getByLabelText("Date written on form"), { target: { value: "2026-09-26" } });
+    typeDate(screen.getByLabelText("Date written on form"), "2026-09-26");
     expect(screen.getByRole("status").textContent).toBe("Not recorded");
     fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
     expect(screen.getByRole("status").textContent).toContain("on the demo clock");
@@ -316,7 +317,7 @@ describe("Form times on the Perth clock", () => {
       </WardFlowProvider>,
     );
     fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
-    fireEvent.change(screen.getByLabelText("Date written on form"), { target: { value: "2026-09-26" } });
+    typeDate(screen.getByLabelText("Date written on form"), "2026-09-26");
     fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
     fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "" } });
     expect(screen.getByRole("status").textContent).toBe("Not recorded");

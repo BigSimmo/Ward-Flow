@@ -3,7 +3,7 @@
 // "Ask for a bed": the form that raises a movement from a referral in this department's
 // inbox. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import { useRef, useState } from "react";
-import { DisabledReason } from "@/components/wf";
+import { DateField, DisabledReason } from "@/components/wf";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { legalFormStatusWarning } from "@/components/ward-management/ward-legal-form-fit";
 import {
@@ -393,14 +393,11 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               <p className={styles.cardMeta}>Leave blank if the form has no expiry or you do not have it yet.</p>
               <label className={fieldClass("legalFormDueAtDate", styles.referralField)}>
                 Date
-                <input
-                  type="date"
+                <DateField
                   data-testid="ward-ed-referral-legal-form-due-at-date"
-                  aria-invalid={isMissing("legalFormDueAtDate") || undefined}
+                  invalid={isMissing("legalFormDueAtDate") || undefined}
                   value={draft.legalFormDueAtDate}
-                  onChange={({ target: { value } }) =>
-                    setDraft((current) => ({ ...current, legalFormDueAtDate: value }))
-                  }
+                  onValueChange={(legalFormDueAtDate) => setDraft((current) => ({ ...current, legalFormDueAtDate }))}
                 />
                 {missingNote("legalFormDueAtDate")}
               </label>

@@ -508,8 +508,15 @@ test.describe("@mockup complete care dossier", () => {
     await care.getByRole("combobox", { name: "Appointment mode" }).selectOption("telephone");
     const when = new Date();
     when.setMinutes(when.getMinutes() + 1);
-    const local = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, "0")}-${String(when.getDate()).padStart(2, "0")}T${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
-    await care.getByLabel("Appointment date and time").fill(local);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    // Typed as DD/MM/YYYY and HH:MM in the kit's date and time boxes, never the browser's picker.
+    await care
+      .getByLabel("Appointment date and time")
+      .fill(`${pad(when.getDate())}/${pad(when.getMonth() + 1)}/${when.getFullYear()}`);
+    await care
+      .getByRole("textbox", { name: "Time, HH:MM 24-hour" })
+      .first()
+      .fill(`${pad(when.getHours())}:${pad(when.getMinutes())}`);
     await care.getByRole("button", { name: "Record appointment", exact: true }).click();
     await expect(care).toContainText("Dr Alex Taylor");
     await page.setViewportSize({ width: 375, height: 812 });

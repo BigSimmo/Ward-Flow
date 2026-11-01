@@ -1,5 +1,6 @@
 "use client";
 
+import { DateTimeField } from "@/components/wf";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { downloadBlob } from "@/components/ward-management/ward-download";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -297,7 +298,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                 </label>
                 <label className={styles.filterField}>
                   Appointment date and time
-                  <input name="at" type="datetime-local" required />
+                  <DateTimeField name="at" required />
                 </label>
                 <Choice label="Appointment mode" values={APPOINTMENT_MODES} />
                 <p>
@@ -321,7 +322,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                 <Choice label="Contact outcome" values={CONTACT_OUTCOMES} />
                 <label className={styles.filterField}>
                   Contact date and time
-                  <input name="contactAt" type="datetime-local" required />
+                  <DateTimeField name="contactAt" required />
                 </label>
               </>,
               (d) =>
@@ -467,7 +468,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                   <Choice label="Paper authority" values={["revocation", "5A", "5B"]} />
                   <label className={styles.filterField}>
                     Authority written date and time
-                    <input name="written" type="datetime-local" required />
+                    <DateTimeField name="written" required />
                   </label>
                   <label>
                     <input name="checked" type="checkbox" required />

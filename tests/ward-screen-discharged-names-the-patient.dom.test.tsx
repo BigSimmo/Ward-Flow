@@ -19,6 +19,7 @@ import { bedReleases, leaveBeds } from "@/components/ward-management/ward-moveme
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { typeDate } from "./helpers/type-date-time";
 
 /**
  * Josh, 26 Sept 2026 (answer 1A): "Discharged" records the person the release row already names,
@@ -81,7 +82,7 @@ function openAndPick(admissionId: string, destination: string) {
   fireEvent.change(screen.getByLabelText(/Where are they going/i), { target: { value: destination } });
 }
 
-/** The Perth wall clock `minutes` before the provider's now, as a datetime-local field takes it. */
+/** The Perth wall clock `minutes` before the provider's now, as YYYY-MM-DDTHH:MM for typeDate. */
 function perthLocalBefore(dayZero: Date, minutes: number): string {
   const at = new Date(dayZero.getTime() + (NOW_ANCHOR - minutes) * 60_000);
   const part = (type: string) =>
@@ -257,9 +258,7 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     fireEvent.click(within(gate).getByRole("button", { name: "Record the paper" }));
     const form = screen.getByTestId("ward-drawer-leave-paper");
     fireEvent.click(within(form).getByLabelText("Revocation of the order"));
-    fireEvent.change(within(form).getByLabelText("Date and time written on it"), {
-      target: { value: perthLocalBefore(dayZero, 5) },
-    });
+    typeDate(within(form).getByLabelText("Date and time written on it"), perthLocalBefore(dayZero, 5));
     fireEvent.click(within(form).getByLabelText(/I have checked the paper/u));
     fireEvent.click(within(form).getByRole("button", { name: "Record the paper" }));
 
@@ -299,9 +298,7 @@ describe("the ward screen's Discharged step names its patient and never guesses 
         .map((radio) => radio.getAttribute("value")),
     ).toEqual(["revocation"]);
     fireEvent.click(within(form).getByLabelText("Revocation of the order"));
-    fireEvent.change(within(form).getByLabelText("Date and time written on it"), {
-      target: { value: perthLocalBefore(dayZero, 5) },
-    });
+    typeDate(within(form).getByLabelText("Date and time written on it"), perthLocalBefore(dayZero, 5));
     fireEvent.click(within(form).getByLabelText(/I have checked the paper/u));
     fireEvent.click(within(form).getByRole("button", { name: "Record the paper" }));
 
