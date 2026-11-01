@@ -46,7 +46,7 @@ describe("selected alert: one link to the patient", () => {
     for (const row of Array.from(container.querySelectorAll<HTMLElement>("li[data-alert-id]"))) {
       fireEvent.click(within(row).getByTestId("ward-alerts-open"));
       const panel = screen.getByRole("complementary", { name: "Selected alert" });
-      const action = within(panel).queryByRole("link", { name: "Open patient" });
+      const action = within(panel).queryByRole("link", { name: /^Open patient/u });
       if (!action) {
         // An alert whose action goes elsewhere still has its Patient link.
         if (within(panel).queryByRole("link", { name: /^Patient/ })) retained += 1;
@@ -78,7 +78,7 @@ describe("selected alert: one link to the patient", () => {
     for (const row of rows) {
       fireEvent.click(within(row).getByTestId("ward-alerts-open"));
       const panel = screen.getByRole("complementary", { name: "Selected alert" });
-      expect(within(panel).queryByRole("link", { name: "Open patient" })).toBeNull();
+      expect(within(panel).queryByRole("link", { name: /^Open patient/u })).toBeNull();
       expect(within(panel).getAllByRole("link", { name: /^Patient/ })).toHaveLength(1);
     }
   });
