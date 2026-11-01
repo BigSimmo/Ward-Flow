@@ -18,8 +18,7 @@ type WardFeatureFlagNote = {
 
 export const WARD_FEATURE_FLAG_NOTES: Record<WardFeatureFlag, WardFeatureFlagNote> = {
   "bed-meeting-tv": {
-    description:
-      "Read only, large type screens for the bed meeting, one ward or one ED, linked from the menu, Tools, Capacity, each ward and each ED.",
+    description: "Read only, large type screens for the bed meeting, one ward or one ED.",
     owner: "Josh",
     added: "2026-10-15",
     removeWhen: "Josh signs off the TV views after a real bed meeting, ward and ED trial.",
@@ -31,8 +30,7 @@ export const WARD_FEATURE_FLAG_NOTES: Record<WardFeatureFlag, WardFeatureFlagNot
     removeWhen: "Never in a demonstration build. Keep off in production, where there is no demo data to reset.",
   },
   "role-access": {
-    description:
-      "Each desk sees only the screens, patients and actions its role needs. Switch desk to see what a ward, ED, team, bed manager, officer, executive or access admin gets.",
+    description: "Each desk sees only the screens, patients and actions its role needs.",
     owner: "Josh",
     added: "2026-10-15",
     removeWhen: "The server enforces the same access table (role access plan PR 2) and Josh signs off the roles.",
@@ -72,7 +70,7 @@ export const WARD_FEATURE_FLAG_NOTES: Record<WardFeatureFlag, WardFeatureFlagNot
   },
   "help-ask": {
     description:
-      "An Ask box at the top of Help that answers a typed question from the app's own help, with Show me walkthroughs that light the real buttons. No AI; the question is never saved.",
+      "An Ask box in Help that answers from the app's own help, with Show me walkthroughs. No AI; the question is never saved.",
     owner: "Josh",
     added: "2026-10-26",
     removeWhen: "Josh approves the Ask help screenshots and it has run on the demo site.",

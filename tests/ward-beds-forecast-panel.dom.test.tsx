@@ -22,7 +22,7 @@ describe("bed forecast disclosure", () => {
 
     const forecast = within(screen.getByRole("region", { name: "Bed forecast" }));
     fireEvent.click(forecast.getByText("How this is worked out"));
-    expect(forecast.getByText(/^New people arriving at emergency departments are not predicted\./u)).toBeVisible();
+    expect(forecast.getByText(/^New ED arrivals are not predicted\./u)).toBeVisible();
     expect(forecast.getByText(/^Whole network, all bed kinds together\. A free bed may not suit/u)).toBeVisible();
     expect(
       forecast.getByText("Synthetic demonstration data, not live records and not validated decision support."),

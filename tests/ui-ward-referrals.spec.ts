@@ -13,6 +13,7 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import { allUnits, unitById, wardSites } from "@/components/ward-management/ward-sites";
 import { wardChoiceName } from "./helpers/ward-choice-name";
+import { openPhoneMenuMorePages } from "./helpers/ward-release-gate";
 
 /**
  * Task 7 (Phase 7, "The front door"). One journey: a referral is raised at PHONE WIDTH in the
@@ -589,6 +590,9 @@ async function openRailSheetIfNeeded(page: Page, rail: Locator): Promise<boolean
   await opener.click();
   // Phone (10 Oct 2026): the bar's Menu opens the phone menu rather than the rail's sheet.
   await expect(page.getByTestId("ward-rail-more-pages").or(page.getByTestId("ward-phone-menu"))).toBeVisible();
+  // Phone Menu redesign (approved 31 Oct 2026): the other groups open in place from one "More
+  // pages" row in the phone Menu, so open it too.
+  await openPhoneMenuMorePages(page);
   return true;
 }
 

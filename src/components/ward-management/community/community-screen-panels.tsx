@@ -97,8 +97,7 @@ export function communityAttentionItems(view: CommunityScreenView) {
       <>
         <strong>{identityOf(admission)}</strong> was admitted{" "}
         {elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt))} after this team accepted them — the shortest gap
-        of the {admittedWhileAlreadyWithTeam.length} admitted while already with this team, and the one worth checking
-        first.
+        of the {admittedWhileAlreadyWithTeam.length} admitted while already with this team.
       </>,
     );
   }
@@ -276,10 +275,7 @@ export function communityHowToReachPanel(view: CommunityScreenView) {
             </div>
             <div className={v6.sideBody} role="region" aria-label="How to reach this team details">
               {contact === null ? (
-                <p className={v6.sideNote}>
-                  Nobody has yet recorded which real service this name refers to, so no contact detail is shown. That is
-                  not a statement that this team has no phone number.
-                </p>
+                <p className={v6.sideNote}>No contact detail is recorded for this name.</p>
               ) : (
                 <>
                   <dl className={v6.keyValues} data-testid="ward-community-contact-detail">
@@ -333,7 +329,7 @@ export function communityHowToReachPanel(view: CommunityScreenView) {
 
 /** The illustrative roster, rooms and vehicles. Sample content, never a record. */
 export function communityOnDutyPanel(view: CommunityScreenView) {
-  const { team, isDemoMode, teamConfig } = view;
+  const { isDemoMode, teamConfig } = view;
   const onDutyPanel = isDemoMode ? (
     <>
       <div className={styles.cardPanel}>
@@ -461,8 +457,7 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
         </span>
       </div>
       <p className={v6.sampleNote} role="note">
-        Illustrative staffing and logistics only. These are not roster, huddle, room or vehicle records for
-        {` ${team.name}`}.
+        Illustrative staffing and logistics only.
       </p>
       <ul className={v6.roster} aria-label="Sample roster, illustrative">
         {SAMPLE_ROSTER.map((member) => (
@@ -513,10 +508,12 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
   return onDutyPanel;
 }
 
-/** Provenance, coverage limits and team facts: what this page can and cannot tell you. */
+/**
+ * Provenance, coverage limits and team facts: what this page can and cannot tell you. Rendered
+ * inside the one closed About this data section, so it carries no disclosure of its own (Q107).
+ */
 export function communityCoveragePanel(view: CommunityScreenView) {
   const {
-    limitsDisclosureRef,
     team,
     isDemoMode,
     unattributable,
@@ -528,198 +525,190 @@ export function communityCoveragePanel(view: CommunityScreenView) {
   } = view;
   const coveragePanel = (
     <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-      <details ref={limitsDisclosureRef} className={styles.governanceSection} data-testid="ward-community-limits" open>
-        <summary className={styles.governanceSummary}>Provenance, coverage limits and team facts</summary>
-        <div className={styles.governanceBody}>
-          {/* Coverage limits */}
-          <div className={styles.cardPanel}>
-            <div className={styles.panelHead}>
-              <h3 className={styles.panelTitle}>
-                <span>Coverage limits</span>
-              </h3>
-            </div>
-            <div className={styles.panelBody} role="region" aria-label="Coverage limits details" tabIndex={0}>
-              <ul className={styles.limitsList}>
-                <li>
-                  <strong>Completeness.</strong> Only admissions linked to a referral this page can find are shown;{" "}
-                  <span>{unattributable.length}</span> {unattributable.length === 1 ? "admission is" : "admissions are"}{" "}
-                  counted rather than shown.
-                </li>
-                <li>
-                  <strong>Current care.</strong> No community-team closure is recorded, so prior acceptance does not
-                  establish current care.
-                </li>
-                <li>
-                  <strong>Follow-up.</strong> Follow-up arrangements and contact outcomes can be recorded for this team
-                  on the Back in the community tab.
-                </li>
-                <li>
-                  <strong>Referrals raised.</strong> Community sources carry no team name.
-                </li>
-                <li>
-                  <strong>Population.</strong> This is a destination-team view, not a geographic population view.
-                </li>
-                <li>
-                  <strong>Dates.</strong> Elapsed time is shown instead of synthetic calendar dates.
-                </li>
-              </ul>
-            </div>
+      <div className={styles.governanceBody} data-testid="ward-community-limits">
+        {/* Coverage limits */}
+        <div className={styles.cardPanel}>
+          <div className={styles.panelHead}>
+            <h3 className={styles.panelTitle}>
+              <span>Coverage limits</span>
+            </h3>
           </div>
-
-          {/* This team facts */}
-          <div className={styles.cardPanel} data-testid="ward-community-facts">
-            <div className={styles.panelHead}>
-              <h3 className={styles.panelTitle}>
-                <span>This team facts</span>
-              </h3>
-            </div>
-            <div className={styles.panelBody} role="region" aria-label="This team details" tabIndex={0}>
-              <dl className={styles.factsList}>
-                <div className={styles.factsRow}>
-                  <dt>Name recorded as</dt>
-                  <dd>{team.name}</dd>
-                </div>
-                <div className={styles.factsRow}>
-                  <dt>Suburbs naming it</dt>
-                  <dd data-testid="ward-community-suburb-count">
-                    {suburbsNamingTeam === undefined ? "Not derivable from the catchment table" : suburbsNamingTeam}
-                  </dd>
-                </div>
-                <div className={styles.factsRow}>
-                  <dt>Entries that read alike</dt>
-                  <dd>{nearDuplicates.length}</dd>
-                </div>
-                <div className={styles.factsRow}>
-                  <dt>Hours, contacts, staffing</dt>
-                  <dd>Invented demo contacts held; roster not held</dd>
-                </div>
-              </dl>
-            </div>
-          </div>
-
-          {/* Quick links */}
-          <div className={styles.cardPanel} data-testid="ward-community-links">
-            <div className={styles.panelHead}>
-              <h3 className={styles.panelTitle}>
-                <span>Go to</span>
-              </h3>
-            </div>
-            <div className={styles.panelBody} role="region" aria-label="Go to links" tabIndex={0}>
-              <ul className={styles.linksList}>
-                <li>
-                  <Link className={styles.linksItem} href="/ward-flow/community">
-                    All community teams
-                  </Link>
-                </li>
-                <li>
-                  <Link className={styles.linksItem} href={WARD_REFERRAL_INTAKE_HREF}>
-                    New referral
-                  </Link>
-                </li>
-                <li>
-                  <Link className={styles.linksItem} href="/ward-flow/referrals">
-                    Referrals
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Provenance and matching limits */}
-          <div
-            className={styles.aboutPage}
-            data-testid="ward-community-about"
-            role="group"
-            aria-label="Community data provenance and matching limits"
-          >
-            <div className={styles.noticeGroup}>
-              <p className={styles.notice} data-testid="ward-community-placeholder-notice">
-                <StatusGlyph tone="warning" className={styles.noticeGlyph} />
-                <strong>This team name comes from the S2015 catchment table.</strong> It is referral vocabulary, not a
-                current roster of Western Australian community services. No team has agreed to be represented and this
-                page does not identify who currently provides care.{" "}
-                {nearDuplicates.length > 0 ? (
-                  <strong data-testid="ward-community-near-duplicate-warning">
-                    {" "}
-                    That document also spells some teams more than one way, and this is one of them: it also contains{" "}
-                    {nearDuplicates.map((name, index) => (
-                      <span key={name}>
-                        {index > 0 ? (index === nearDuplicates.length - 1 ? " and " : ", ") : ""}
-                        <span className={styles.fieldName}>{name}</span>
-                      </span>
-                    ))}
-                    {nearDuplicates[nearDuplicates.length - 1].endsWith(".") ? "" : "."} Those are separate pages here,
-                    and each reports only the people whose referral was typed its way — so somebody referred to this
-                    team under another spelling is on that page and not on this one.
-                  </strong>
-                ) : null}
-              </p>
-
-              {sameService.length > 0 && ratifiedBy !== undefined ? (
-                <p className={styles.ratifiedNotice} data-testid="ward-community-ratified-alias">
-                  <strong>
-                    {ratifiedBy.decidedByKind === "person"
-                      ? "A person has ruled that this team and "
-                      : "This team has been recorded as the same service as "}
-                    {sameService.map((name, index) => (
-                      <span key={name}>
-                        {index > 0 ? (index === sameService.length - 1 ? " and " : ", ") : ""}
-                        <span className={styles.fieldName}>{name}</span>
-                      </span>
-                    ))}
-                    {ratifiedBy.decidedByKind === "person" ? " are one service." : ", pending review."}
-                  </strong>{" "}
-                  This is a judgement about the real clinic, not an observation that the names look alike. No rule here
-                  could have reached it and none did. Referrals typed under each spelling are still listed on that
-                  spelling&apos;s own page: the decision is recorded, and nobody has been moved.
-                  <span className={styles.ratifiedProvenance} data-testid="ward-community-ratified-provenance">
-                    {ratifiedBy.decidedByKind === "person" ? (
-                      <>
-                        Decided by {ratifiedBy.decidedBy} on {ratifiedBy.decidedOn}, after being shown each spelling and
-                        the suburbs it routes.
-                      </>
-                    ) : (
-                      <>
-                        Recorded by {ratifiedBy.decidedBy} on {ratifiedBy.decidedOn}. No person has seen these spellings
-                        or the suburbs they route, and this entry is waiting to be reviewed. Treat it as a working note,
-                        not as a decision anyone has signed.
-                      </>
-                    )}
-                  </span>
-                </p>
-              ) : null}
-
-              <p className={styles.notice} data-testid="ward-community-unattributable">
-                <StatusGlyph tone="warning" className={styles.noticeGlyph} />
-                <strong>
-                  {unattributable.length}{" "}
-                  {unattributable.length === 1
-                    ? "admission is on no community team's page"
-                    : "admissions are on no community team's page"}
-                  .
-                </strong>{" "}
-                Only admissions linked to a referral naming this team appear here. Admissions without a matching
-                referral, or whose referral asked only for a bed or emergency department, appear on no team page. This
-                is not a geographic or complete population view.
-              </p>
-            </div>
-
-            <p className={styles.provenance} data-testid="ward-community-association">
-              Matches use the destination team written on the referral, never home region. A later decline or
-              cancellation does not remove that association.{" "}
-              <strong>
-                {waitlistedForTeam.length}{" "}
-                {waitlistedForTeam.length === 1
-                  ? "admission is matched to this team and still on the waiting list"
-                  : "admissions are matched to this team and still on the waiting list"}
-                .
-              </strong>{" "}
-              {waitlistedForTeam.length === 1 ? "That person has" : "Those people have"} no pulled bed, so they appear
-              in neither admitted list nor the unmatched count. A waitlisted match is still a match.
-            </p>
+          <div className={styles.panelBody} role="region" aria-label="Coverage limits details" tabIndex={0}>
+            <ul className={styles.limitsList}>
+              <li>
+                <strong>Completeness.</strong> Only admissions linked to a referral this page can find are shown;{" "}
+                <span>{unattributable.length}</span> {unattributable.length === 1 ? "admission is" : "admissions are"}{" "}
+                counted rather than shown.
+              </li>
+              <li>
+                <strong>Current care.</strong> No community-team closure is recorded, so prior acceptance does not
+                establish current care.
+              </li>
+              <li data-testid="ward-community-limits-follow-up">
+                <strong>Follow-up.</strong> Follow-up arrangements and contact outcomes can be recorded for this team.
+                Back in the community lists recorded discharges into the community.
+              </li>
+              <li>
+                <strong>Referrals raised.</strong> Community sources carry no team name.
+              </li>
+              <li>
+                <strong>Population.</strong> This is a destination-team view, not a geographic population view.
+              </li>
+              <li>
+                <strong>Dates.</strong> Elapsed time is shown instead of synthetic calendar dates.
+              </li>
+            </ul>
           </div>
         </div>
-      </details>
+
+        {/* This team facts */}
+        <div className={styles.cardPanel} data-testid="ward-community-facts">
+          <div className={styles.panelHead}>
+            <h3 className={styles.panelTitle}>
+              <span>This team facts</span>
+            </h3>
+          </div>
+          <div className={styles.panelBody} role="region" aria-label="This team details" tabIndex={0}>
+            <dl className={styles.factsList}>
+              <div className={styles.factsRow}>
+                <dt>Name recorded as</dt>
+                <dd>{team.name}</dd>
+              </div>
+              <div className={styles.factsRow}>
+                <dt>Suburbs naming it</dt>
+                <dd data-testid="ward-community-suburb-count">
+                  {suburbsNamingTeam === undefined ? "Not derivable from the catchment table" : suburbsNamingTeam}
+                </dd>
+              </div>
+              <div className={styles.factsRow}>
+                <dt>Entries that read alike</dt>
+                <dd>{nearDuplicates.length}</dd>
+              </div>
+              <div className={styles.factsRow}>
+                <dt>Hours, contacts, staffing</dt>
+                <dd>Invented demo contacts held; roster not held</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        {/* Quick links */}
+        <div className={styles.cardPanel} data-testid="ward-community-links">
+          <div className={styles.panelHead}>
+            <h3 className={styles.panelTitle}>
+              <span>Go to</span>
+            </h3>
+          </div>
+          <div className={styles.panelBody} role="region" aria-label="Go to links" tabIndex={0}>
+            <ul className={styles.linksList}>
+              <li>
+                <Link className={styles.linksItem} href="/ward-flow/community">
+                  All community teams
+                </Link>
+              </li>
+              <li>
+                <Link className={styles.linksItem} href={WARD_REFERRAL_INTAKE_HREF}>
+                  New referral
+                </Link>
+              </li>
+              <li>
+                <Link className={styles.linksItem} href="/ward-flow/referrals">
+                  Referrals
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Provenance and matching limits */}
+        <div
+          className={styles.aboutPage}
+          data-testid="ward-community-about"
+          role="group"
+          aria-label="Community data provenance and matching limits"
+        >
+          <div className={styles.noticeGroup}>
+            <p className={styles.notice} data-testid="ward-community-placeholder-notice">
+              <strong>This team name comes from the S2015 catchment table.</strong> It is referral vocabulary, not a
+              current roster of Western Australian community services. No team has agreed to be represented.{" "}
+              {nearDuplicates.length > 0 ? (
+                <strong data-testid="ward-community-near-duplicate-warning">
+                  {" "}
+                  That document also spells some teams more than one way, and this is one of them: it also contains{" "}
+                  {nearDuplicates.map((name, index) => (
+                    <span key={name}>
+                      {index > 0 ? (index === nearDuplicates.length - 1 ? " and " : ", ") : ""}
+                      <span className={styles.fieldName}>{name}</span>
+                    </span>
+                  ))}
+                  {nearDuplicates[nearDuplicates.length - 1].endsWith(".") ? "" : "."} Those are separate pages:
+                  somebody referred under another spelling is on that page, not this one.
+                </strong>
+              ) : null}
+            </p>
+
+            {sameService.length > 0 && ratifiedBy !== undefined ? (
+              <p className={styles.ratifiedNotice} data-testid="ward-community-ratified-alias">
+                <strong>
+                  {ratifiedBy.decidedByKind === "person"
+                    ? "A person has ruled that this team and "
+                    : "This team has been recorded as the same service as "}
+                  {sameService.map((name, index) => (
+                    <span key={name}>
+                      {index > 0 ? (index === sameService.length - 1 ? " and " : ", ") : ""}
+                      <span className={styles.fieldName}>{name}</span>
+                    </span>
+                  ))}
+                  {ratifiedBy.decidedByKind === "person" ? " are one service." : ", pending review."}
+                </strong>{" "}
+                This is a judgement about the real clinic, not a name match. Referrals under each spelling stay on that
+                spelling&apos;s own page.
+                <span className={styles.ratifiedProvenance} data-testid="ward-community-ratified-provenance">
+                  {ratifiedBy.decidedByKind === "person" ? (
+                    <>
+                      Decided by {ratifiedBy.decidedBy} on {ratifiedBy.decidedOn}, after being shown each spelling and
+                      the suburbs it routes.
+                    </>
+                  ) : (
+                    <>
+                      Recorded by {ratifiedBy.decidedBy} on {ratifiedBy.decidedOn}. No person has seen these spellings
+                      or the suburbs they route, and this entry is waiting to be reviewed. Treat it as a working note,
+                      not as a decision anyone has signed.
+                    </>
+                  )}
+                </span>
+              </p>
+            ) : null}
+
+            <p className={styles.notice} data-testid="ward-community-unattributable">
+              <strong>
+                {unattributable.length}{" "}
+                {unattributable.length === 1
+                  ? "admission is on no community team's page"
+                  : "admissions are on no community team's page"}
+                .
+              </strong>{" "}
+              Only admissions linked to a referral naming this team appear here. Admissions without a matching referral,
+              or whose referral asked only for a bed or emergency department, appear on no team page. This is not a
+              geographic or complete population view.
+            </p>
+          </div>
+
+          <p className={styles.provenance} data-testid="ward-community-association">
+            Matches use the destination team written on the referral, never home region. A later decline or cancellation
+            does not remove that association.{" "}
+            <strong>
+              {waitlistedForTeam.length}{" "}
+              {waitlistedForTeam.length === 1
+                ? "admission is matched to this team and still on the waiting list"
+                : "admissions are matched to this team and still on the waiting list"}
+              .
+            </strong>{" "}
+            {waitlistedForTeam.length === 1 ? "That person is" : "Those people are"} in neither admitted list nor the
+            unmatched count.
+          </p>
+        </div>
+      </div>
     </div>
   );
   return coveragePanel;

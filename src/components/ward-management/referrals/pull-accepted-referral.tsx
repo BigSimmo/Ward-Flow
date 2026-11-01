@@ -155,7 +155,9 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
           setMessage(pullBed ? `The bed is not pulled and nothing has started. ${failure}` : failure);
           if (pullBed) setPullRefused(true);
         } else if (pullBed) {
-          toast?.push({ tone: "success", title: `Bed pulled at ${unitName}` });
+          // Pop-ups build (toast, round 2, 1 Nov 2026): a save confirmation names who it was for,
+          // surname first through the name display (D-83), so discreet names still apply.
+          toast?.push({ tone: "success", title: `Bed pulled at ${unitName} for ${name}` });
           onDone();
         } else {
           setMessage("The journey has started without the bed. Open it to pull the bed.");
@@ -251,6 +253,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
         <Button
           type="submit"
           variant="pri"
+          data-placement-action
           aria-disabled={refusal !== undefined ? "true" : undefined}
           aria-describedby={refusal ? `${baseId}-why` : undefined}
           data-testid="ward-pull-accepted-confirm"

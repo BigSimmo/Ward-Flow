@@ -518,8 +518,8 @@ function NoStatewideDelays() {
     <p className={styles.empty}>
       <Glyph tone="success" />
       <span>
-        <b>{edDesk ? "No delays recorded." : "No statewide delays recorded."}</b> This model records delays only against
-        a movement. Ward-wide closures and transport outages are not represented as patient movements yet.
+        <b>{edDesk ? "No delays recorded." : "No statewide delays recorded."}</b> Only delays on a movement are counted;
+        ward closures and transport outages are not.
       </span>
     </p>
   );
@@ -744,9 +744,7 @@ export function Registers({
         >
           {closedToday.length === 0 ? (
             <p className={styles.empty}>
-              {service === null
-                ? "Nobody who was on this screen this morning has left it yet."
-                : `Nobody who was on this screen this morning has left it yet, in ${service}.`}
+              {service === null ? "Nobody resolved yet today." : `Nobody resolved yet today in ${service}.`}
             </p>
           ) : (
             <>

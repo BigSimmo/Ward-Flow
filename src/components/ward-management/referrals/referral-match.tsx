@@ -1125,18 +1125,18 @@ export function ReferralMatchView({
           ) : noBed ? (
             <p className={ph.matchHint} role="alert" data-testid="ward-referral-match-no-bed">
               {phone !== undefined
-                ? "No unit accepts this referral right now. Every unit is listed below with its reason."
+                ? "No unit accepts this referral right now."
                 : !aFreeBedCouldChangeThis(noBed)
-                  ? `No unit in this network can take this patient. All ${noBed.total} are ruled out for clinical, legal or cohort reasons, not for want of a bed. A bed becoming free will not on its own change this. Every reason is listed below.`
+                  ? `No unit in this network can take this patient. All ${noBed.total} are ruled out for clinical, legal or cohort reasons, not for want of a bed.`
                   : noBed.notSuitable === 0
-                    ? `No unit accepts this referral right now. ${noBed.noBedFree > 0 ? `${noBed.noBedFree} of ${noBed.total} have no free bed` : `${noBed.total} of ${noBed.total} have never confirmed a bed count`}${noBed.noBedFree > 0 && noBed.capacityUnknown > 0 ? ` and ${noBed.capacityUnknown} have never confirmed a count` : ""}, so this may change. Every reason is listed below.`
-                    : `No unit accepts this referral right now. ${noBed.notSuitable} of ${noBed.total} are ruled out for reasons a free bed alone will not change. The remaining ${noBed.total - noBed.notSuitable} turn on a bed. Every reason is listed below.`}
+                    ? `No unit accepts this referral right now. ${noBed.noBedFree > 0 ? `${noBed.noBedFree} of ${noBed.total} have no free bed` : `${noBed.total} of ${noBed.total} have never confirmed a bed count`}${noBed.noBedFree > 0 && noBed.capacityUnknown > 0 ? ` and ${noBed.capacityUnknown} have never confirmed a count` : ""}, so this may change.`
+                    : `No unit accepts this referral right now. ${noBed.notSuitable} of ${noBed.total} are ruled out for reasons a free bed alone will not change. The remaining ${noBed.total - noBed.notSuitable} turn on a bed.`}
             </p>
           ) : null}
           {phone === undefined && everyCandidateUnrecorded ? (
             <p className={ph.matchHint} data-testid="ward-referral-match-all-not-recorded">
               <strong>{NOT_RECORDED_LABEL}.</strong> This prototype holds no travel time between this person&apos;s home
-              region and these sites. That is a gap in the invented data, not a statement that these beds are far away.
+              region and these sites.
             </p>
           ) : null}
           <DecidedBy allowed={answers("ward")} who="the receiving ward">

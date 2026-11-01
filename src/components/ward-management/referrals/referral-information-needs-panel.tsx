@@ -117,7 +117,7 @@ export function WardInformationNeedsPicker({
             Ask the referrer
           </Button>
           {askRefusal ? <DisabledReason id={`${groupId}-why`}>{askRefusal}</DisabledReason> : null}
-          <p className={styles.note}>Asking does not answer the referral. The decision time keeps running.</p>
+          <p className={styles.note}>The decision time keeps running.</p>
         </fieldset>
       ) : null}
     </div>

@@ -1364,7 +1364,7 @@ export function MovementWorkspaceCockpit({
                   className={styles.controlRow}
                   onSubmit={(submitted) => {
                     submitted.preventDefault();
-                    if (blockerDraft.trim().length === 0) return;
+                    if (blockerDraft.trim().length === 0 || !lock("RECORD_MOVEMENT_BLOCKER").allowed) return;
                     raise("RECORD_MOVEMENT_BLOCKER", {
                       movementId: movement.id,
                       blocker: blockerDraft,
@@ -1396,27 +1396,33 @@ export function MovementWorkspaceCockpit({
                     title={
                       blockerDraft.trim().length === 0 ? "Enter what is holding this movement up first." : undefined
                     }
+                    {...lock("RECORD_MOVEMENT_BLOCKER").buttonProps}
                   >
                     Record it
                   </button>
+                  {lock("RECORD_MOVEMENT_BLOCKER").note}
                   {blockerDraft.trim().length === 0 ? (
                     <span id={`${baseId}-ward-console-blocker-blocked`} className="sr-only">
                       Enter what is holding this movement up first.
                     </span>
                   ) : null}
                   {blockerIsActive && (
-                    <button
-                      type="button"
-                      className={styles.controlButton}
-                      data-testid="ward-console-blocker-clear"
-                      onClick={() =>
-                        raise("CLEAR_MOVEMENT_BLOCKER", {
-                          movementId: movement.id,
-                        })
-                      }
-                    >
-                      Clear — nothing is holding this up
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className={styles.controlButton}
+                        data-testid="ward-console-blocker-clear"
+                        {...lock("CLEAR_MOVEMENT_BLOCKER").buttonProps}
+                        onClick={() =>
+                          raise("CLEAR_MOVEMENT_BLOCKER", {
+                            movementId: movement.id,
+                          })
+                        }
+                      >
+                        Clear — nothing is holding this up
+                      </button>
+                      {lock("CLEAR_MOVEMENT_BLOCKER").note}
+                    </>
                   )}
                 </form>
               )}
@@ -1482,6 +1488,7 @@ export function MovementWorkspaceCockpit({
                           ? CANCEL_TRANSPORT_UNCHOSEN
                           : undefined
                     }
+                    {...lock("CANCEL_TRANSPORT").buttonProps}
                     onClick={
                       wardCannotCancel || cancelTransportReason === undefined
                         ? ignoreUnavailableActivation
@@ -1497,6 +1504,7 @@ export function MovementWorkspaceCockpit({
                   >
                     Cancel the transport job for {commitName}
                   </button>
+                  {lock("CANCEL_TRANSPORT").note}
                   {wardCannotCancel ? (
                     <span
                       id="ward-console-cancel-transport-not-yours"

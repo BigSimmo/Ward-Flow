@@ -211,20 +211,10 @@ describe("bed meeting actions due on a record", () => {
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
   });
 
-  it("lets the site bed manager mark a ward's action done, and shows another site's nothing (D-80)", () => {
+  it("offers the site bed manager no Mark done, even on its own site's ward action (Q97)", () => {
+    // Q97 (Josh, 1 Nov 2026): Done stays with the action's owner or the chair (Decision 46), and the
+    // server refuses the bed manager, so the record shows it no button it would refuse.
     const site = seed.units.find((unit) => unit.id === ownerWard)!.siteCode;
-    const otherSite = seed.units.find((unit) => unit.siteCode !== site)!.siteCode;
-    asDesk({ role: "bed_manager", scope: { kind: "site", siteCode: otherSite } });
-    const { unmount } = render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <RecordAtMeeting subject={MOVEMENT} owner="ward" />
-        <MeetingActionsDue subject={MOVEMENT} />
-      </WardFlowProvider>,
-    );
-    recordAction();
-    expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
-    unmount();
-
     asDesk({ role: "bed_manager", scope: { kind: "site", siteCode: site } });
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -233,8 +223,8 @@ describe("bed meeting actions due on a record", () => {
       </WardFlowProvider>,
     );
     recordAction();
-    fireEvent.click(screen.getByRole("button", { name: "Mark done: Book transport" }));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Mark done/ })).not.toBeInTheDocument();
   });
 });

@@ -33,7 +33,6 @@ export function CommunityNoJourneys({ teamName }: { teamName: string }) {
             <EmptyState
               icon={ArrowRightLeft}
               title="Shows once a ward accepts a team referral"
-              meta="The team books its transport from the journey"
               className={local.empty}
               action={
                 <div className={local.actions}>

@@ -13,7 +13,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedDouble, House, Bell, Plus } from "lucide-react";
+import { Activity, BedDouble, House, Bell, Clock3, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { SrOnly } from "@/components/wf";
@@ -234,11 +234,13 @@ function strictNeeds(byId: ReadonlyMap<string, RailEntry>, counts: CountMap): Ne
         // Audit 6 (Josh, 20 Oct 2026): Waiting's severe causes are "At a time limit", so the menu
         // no longer shows two rows called Waiting with different numbers.
         label: id === "delays" && count?.need ? "At a time limit" : entry.label,
-        meta: id === "delays" && count?.need ? "in Waiting, or with nowhere to go" : need.noun,
+        // Phone Menu redesign (approved 31 Oct 2026): the line names what the row counts, and a time
+        // limit takes the clock.
+        meta: id === "delays" && count?.need ? "people in Waiting" : need.noun,
         count: need.value,
         // shell-9: Delays opens filtered to the severe causes this row counts.
         href: id === "delays" ? `${entry.href}?show=severe` : entry.href,
-        icon: entry.icon,
+        icon: id === "delays" && count?.need ? Clock3 : entry.icon,
         actNow: false,
       });
     }
@@ -254,7 +256,7 @@ function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
         {
           id: "act-now",
           label: "Act-now alerts",
-          meta: "red rows in Alerts",
+          meta: "to act on in Alerts",
           count: actNow,
           href: WARD_ALERTS_HREF,
           icon: Bell,
@@ -265,7 +267,7 @@ function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
         {
           id: "act-now",
           label: "Act-now alerts",
-          meta: "red rows in Alerts",
+          meta: "to act on in Alerts",
           count: actNow,
           icon: Bell,
           actNow: true,

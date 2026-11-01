@@ -196,10 +196,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
           </h2>
           <p className={styles.unitMeta}>Patients in department without a recorded psychiatric review.</p>
           {awaitingReviewPatients.length === 0 ? (
-            <p className={styles.none}>
-              Everyone on this department&rsquo;s psychiatry list has been seen. Absence here means every referral has a
-              recorded review, not that no referral was made.
-            </p>
+            <p className={styles.none}>Everyone on the list has a recorded review.</p>
           ) : (
             <ul className={styles.lst}>
               {awaitingReviewPatients.map((m) => {
@@ -261,10 +258,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
           </h2>
           <p className={styles.unitMeta}>Patients marked medically cleared for psychiatric assessment.</p>
           {clearedPatients.length === 0 ? (
-            <p className={styles.none}>
-              No medical clearance is recorded for anybody here. Absence here means nothing has been written down, not
-              that nobody is fit to be seen.
-            </p>
+            <p className={styles.none}>No medical clearance recorded.</p>
           ) : (
             <ul className={styles.lst}>
               {clearedPatients.map((m) => {
@@ -323,14 +317,10 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
           <h2 className={styles.sectionHeading}>
             Expects &middot; {expects.length} patient{expects.length === 1 ? "" : "s"}
           </h2>
-          <p className={styles.unitMeta}>
-            Not yet in the department; scheduled arrival time first when recorded, longest since referral first
-            otherwise. Accepted referrals stay here until arrival is marked.
-          </p>
+          <p className={styles.unitMeta}>Not yet in the department. Accepted referrals stay until arrival is marked.</p>
           {expects.length === 0 ? (
             <p className={styles.placeholder} data-testid="ward-ed-expects-empty">
-              No expects are recorded for psychiatry at {department.name}; this does not establish that nobody is on the
-              way.
+              No expects recorded for psychiatry at {department.name}.
             </p>
           ) : (
             <ul className={styles.cardList}>
@@ -373,8 +363,8 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                         data-testid={`ward-ed-expects-reconsider-${referral.id}`}
                         title={OPERATIONAL_DEFAULT_LABEL}
                       >
-                        Referred over {EXPECT_RECONSIDER_AFTER_MINUTES / 60} hours ago and not arrived. Reconsider
-                        whether this referral still stands; no record was changed.
+                        Referred over {EXPECT_RECONSIDER_AFTER_MINUTES / 60} hours ago and not arrived. Does it still
+                        stand?
                       </p>
                     ) : null}
                     <button
@@ -413,10 +403,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
           </h2>
           <p className={styles.unitMeta}>Patients with a recorded involuntary form.</p>
           {underFormPatients.length === 0 ? (
-            <p className={styles.none}>
-              Nobody on this department&rsquo;s list is under a legal form. Absence here means no form is recorded, not
-              that no form applies.
-            </p>
+            <p className={styles.none}>No legal form recorded.</p>
           ) : (
             <ul className={styles.lst}>
               {underFormPatients.map((m) => {

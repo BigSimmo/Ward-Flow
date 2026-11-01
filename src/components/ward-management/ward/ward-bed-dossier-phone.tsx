@@ -218,7 +218,7 @@ export function PhoneBedSheet({
               </div>
               <h3 className={styles.phoneSec}>Placement</h3>
               <dl className={styles.phoneKv}>
-                <Row label="Candidate">No patient match is recorded for this bed.</Row>
+                <Row label="Candidate">None recorded.</Row>
                 {bedItem?.designation ? <Row label="Bed">{bedItem.designation}</Row> : null}
               </dl>
               {readyNote}

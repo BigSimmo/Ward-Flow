@@ -47,7 +47,7 @@ export function WardHelpUsageCard() {
           ))}
         </ol>
       ) : (
-        <p className={styles.empty}>No answers used yet. Answers count when someone opens one in Help.</p>
+        <p className={styles.empty}>No answers used yet.</p>
       )}
       <p className={styles.note}>
         Counts an answer when it is opened, or its Show me or Go there is pressed. What anyone typed is never kept.

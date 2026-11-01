@@ -71,9 +71,7 @@ describe("5A: an out-of-service bed says its reason is not recorded", () => {
           <WardBoard unitId={ward.id} />
         </WardFlowProvider>,
       );
-      expect(
-        screen.getAllByText("Out of service. Reason not recorded. No return date recorded.").length,
-      ).toBeGreaterThan(0);
+      expect(screen.getAllByText("Reason and return date not recorded.").length).toBeGreaterThan(0);
     } finally {
       ward.blocked = saved;
     }

@@ -666,3 +666,15 @@
   border-bottom: 1.5px solid var(--wf-ink-3);
   transform: rotate(-45deg);
 }
+
+/* Empty state (pop-state-empty, Josh 31 Oct 2026): an empty group reads as one calm line with a
+   green tick under its heading. */
+.calmEmpty {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.calmEmpty > svg {
+  flex: none;
+}

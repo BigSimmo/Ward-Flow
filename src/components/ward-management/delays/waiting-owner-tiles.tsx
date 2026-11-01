@@ -94,7 +94,7 @@ export function WaitingOwnerTiles({
               </span>
             ))}
           </span>
-          <span>Each bar is that group&apos;s waits by length. Choose a group to show only its people.</span>
+          <span>Choose a group to show only its people.</span>
         </p>
       )}
     </section>

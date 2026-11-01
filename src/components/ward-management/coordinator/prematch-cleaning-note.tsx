@@ -38,8 +38,8 @@ export function PreMatchCleaningNote({
       </div>
       <p className={styles.note}>
         {unit.name} has {state.bedsBeingMadeReady === 1 ? "1 bed" : `${state.bedsBeingMadeReady} beds`} being made
-        ready. The match can stand now and the bed is pulled once it is ready.
-        {state.medicalPause ? " The ED has paused this placement until the patient is medically cleared again." : ""}
+        ready.
+        {state.medicalPause ? " Paused by the ED until medically cleared again." : ""}
       </p>
     </section>
   );

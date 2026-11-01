@@ -51,8 +51,8 @@ export function getStageBedflowDetail(stageId: string, liveMovement?: Movement):
       : changes.length
         ? "Recorded stage changes for this stage."
         : earlier
-          ? "This stage comes before the current one. No stage change was recorded for it, so no time is shown."
-          : "This movement has not reached this stage.",
+          ? "Before the current stage."
+          : "Not reached yet.",
     milestones: changes.map((change) => ({
       time: clock(change.at),
       label: "Stage recorded",

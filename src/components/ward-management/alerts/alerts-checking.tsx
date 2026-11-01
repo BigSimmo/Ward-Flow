@@ -75,10 +75,7 @@ export function CheckingList({
             <X size={12} aria-hidden="true" />
             Not checked: handover sheets
           </span>
-          <SrOnly>
-            Handover sheets. Nothing in this system records when a shift hands over, so there is no deadline to measure
-            and this screen cannot tell you whether one is due.
-          </SrOnly>
+          <SrOnly>Handover sheets. Nothing in this system records when a shift hands over.</SrOnly>
         </li>
       </ul>
     </div>

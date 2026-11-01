@@ -19,11 +19,11 @@ export function PlacementPrompt({
 }) {
   return (
     <Card data-testid="home-placement-prompt" aria-labelledby="home-placement-title">
-      <CardHead id="home-placement-title" title="Placement" meta="opens for the person you choose" />
+      <CardHead id="home-placement-title" title="Placement" />
       <div className={styles.promptBody}>
         <MousePointerClick size={20} aria-hidden="true" />
         <div>
-          <p>Choose someone from the list to place them.</p>
+          <p>Choose someone from the list.</p>
           {next ? (
             <div className={styles.nextUp}>
               {/* Final check: the words stack in one column so Open keeps its full name, not "Open …". */}

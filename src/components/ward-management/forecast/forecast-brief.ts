@@ -59,7 +59,7 @@ function bestAction(levers: readonly ForecastLever[]): string {
   if (!top) return "Nothing on record would move tomorrow's figure.";
   const upTo =
     top.kind === "review_overdue" || top.likelyUplift === 0
-      ? "These beds remain in the range only. Check arrival, dates and blockers before expecting a gain."
+      ? "Widens the range only."
       : `Up to ${top.likelyUplift} ${top.likelyUplift === 1 ? "bed" : "beds"}.`;
   switch (top.kind) {
     case "confirm_dates":

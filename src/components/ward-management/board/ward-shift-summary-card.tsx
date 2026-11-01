@@ -67,10 +67,7 @@ export function WardShiftSummaryCard({ unit, now }: { unit: Pick<Unit, "id" | "n
           </div>
         ))}
       </dl>
-      <p className={styles.note}>
-        Counts only, from times recorded in Ward Flow during this shift. Anything done but not recorded here does not
-        show.
-      </p>
+      <p className={styles.note}>Counts recorded in Ward Flow this shift.</p>
     </Card>
   );
 }
