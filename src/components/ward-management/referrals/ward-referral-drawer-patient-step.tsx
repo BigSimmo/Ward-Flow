@@ -22,7 +22,7 @@ import styles from "./ward-referral-drawer.module.css";
 import { cx } from "@/components/wf";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
-import { ErrorSummary, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
+import { DateField, ErrorSummary, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
@@ -245,12 +245,12 @@ export function ReferralPatientStep({
                   />
                 </Field>
                 <Field label="Date of birth" htmlFor={`${sectionId}-np-dob`} required>
-                  <input
+                  {/* Typed as DD/MM/YYYY in the kit's date box, never the browser's picker (bug list row 25).
+                      The draft still holds YYYY-MM-DD, as Add a patient's does. */}
+                  <DateField
                     id={`${sectionId}-np-dob`}
-                    type="date"
-                    className={styles.fieldInput}
                     value={newPatient.dateOfBirth}
-                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, dateOfBirth: value }))}
+                    onValueChange={(dateOfBirth) => setNewPatient((p) => ({ ...p, dateOfBirth }))}
                   />
                 </Field>
                 <Field label="UMRN" htmlFor={`${sectionId}-np-umrn`} required>

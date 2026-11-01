@@ -125,9 +125,17 @@
   background: none;
   color: var(--wf-ink-1);
   font: inherit;
+  max-width: 100%;
   font-size: var(--wf-fs-14);
   text-align: left;
   cursor: pointer;
+}
+
+/* Phone audit (1 Nov 2026): a long ward name wraps instead of being clipped by the room column
+   (the kit table cell is nowrap). */
+.wardButton b {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .wardButton:focus-visible {

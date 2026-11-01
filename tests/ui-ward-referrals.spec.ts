@@ -142,7 +142,7 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   const newPatient = sheet.getByTestId("ward-referral-new-patient");
   await newPatient.getByLabel("Family name", { exact: true }).fill(referral.patient.familyName);
   await newPatient.getByLabel("Given name", { exact: true }).fill(referral.patient.givenName);
-  await newPatient.getByLabel("Date of birth", { exact: true }).fill("1990-01-02");
+  await newPatient.getByLabel("Date of birth", { exact: true }).fill("02/01/1990");
   await newPatient.getByLabel("UMRN", { exact: true }).fill(referral.patient.umrn);
   // A real suburb from the catchment table, so the slide-out suggests its catchment team.
   await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");

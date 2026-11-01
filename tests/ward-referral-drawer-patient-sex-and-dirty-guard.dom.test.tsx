@@ -100,7 +100,7 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
     const newPatientForm = within(screen.getByTestId("ward-referral-new-patient"));
     fireEvent.change(newPatientForm.getByLabelText(/Family name/), { target: { value: "Rostova" } });
     fireEvent.change(newPatientForm.getByLabelText(/Given name/), { target: { value: "Elena" } });
-    fireEvent.change(newPatientForm.getByLabelText(/Date of birth/), { target: { value: "1991-05-15" } });
+    fireEvent.change(newPatientForm.getByLabelText(/Date of birth/), { target: { value: "15/05/1991" } });
     fireEvent.change(newPatientForm.getByLabelText(/UMRN/), { target: { value: "UM999002" } });
     fireEvent.change(newPatientForm.getByLabelText(/Gender/), { target: { value: "Female" } });
 

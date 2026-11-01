@@ -595,10 +595,6 @@ table.censusTable td *:not(:global(.sr-only)) {
   background: var(--wf-selected);
 }
 
-.row.selected td:first-child {
-  box-shadow: inset 3px 0 0 var(--wf-accent);
-}
-
 .flash td {
   animation: censusFlash 1.6s var(--wf-ease);
 }

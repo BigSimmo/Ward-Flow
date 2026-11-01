@@ -233,7 +233,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     const newPatient = sheet.getByTestId("ward-referral-new-patient");
     await newPatient.getByLabel("Family name", { exact: true }).fill("Communityfield");
     await newPatient.getByLabel("Given name", { exact: true }).fill("Synthetic");
-    await newPatient.getByLabel("Date of birth", { exact: true }).fill("1990-01-02");
+    await newPatient.getByLabel("Date of birth", { exact: true }).fill("02/01/1990");
     await newPatient.getByLabel("UMRN", { exact: true }).fill("UM990703");
     await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
     await newPatient.getByRole("button", { name: "Add patient" }).click();
