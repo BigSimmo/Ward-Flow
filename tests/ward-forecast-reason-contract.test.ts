@@ -1,11 +1,16 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { forecastHistoryInput } from "../backend/ward-flow/forecast-history.mjs";
 import {
   FORECAST_MISS_REASONS,
   parseForecastMissReasons,
 } from "@/components/ward-management/forecast/forecast-miss-reasons";
+
+// Run the backend boundary under its own JavaScript contract, as the shared-mode tests do.
+const backendUrl = pathToFileURL(resolve("backend/ward-flow/forecast-history.mjs")).href;
+const { forecastHistoryInput } = await import(backendUrl);
 
 describe("forecast reason contract across browser, API and database", () => {
   it("keeps every database reason available in the browser and accepted by both input boundaries", () => {
