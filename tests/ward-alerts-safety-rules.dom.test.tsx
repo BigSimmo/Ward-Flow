@@ -17,10 +17,18 @@ function renderScreen() {
 describe("Alerts redesign safety rules", () => {
   it("never dims an act-now row, whichever highlight is on", () => {
     renderScreen();
-    for (const name of [/Waiting/u, /Yours/u]) {
-      fireEvent.click(screen.getAllByRole("button", { name })[0]!);
+    // Q183 (1 Nov 2026): the hero figures are gone, so the highlights left are the checks' own.
+    for (const chip of document.querySelectorAll<HTMLButtonElement>("button[aria-expanded='false']")) {
+      if (chip.closest("[data-wf-hero]")) fireEvent.click(chip);
+    }
+    const checks = [...document.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].filter(
+      (button) => button.closest("[data-wf-hero]") && !button.closest("[data-wf-live]"),
+    );
+    expect(checks.length).toBeGreaterThan(0);
+    for (const check of checks) {
+      fireEvent.click(check);
       expect(document.querySelectorAll('[data-alert-id][data-act="true"][data-dim="true"]')).toHaveLength(0);
-      fireEvent.click(screen.getAllByRole("button", { name })[0]!);
+      fireEvent.click(check);
     }
   });
 

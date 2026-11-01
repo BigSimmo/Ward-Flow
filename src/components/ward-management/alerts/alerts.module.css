@@ -42,34 +42,58 @@
 
 /* ---------- Hero ---------- */
 
-.heroStats {
-  display: contents;
-}
-
-.heroBar {
+/* Q181: a live broadcast sits in the hero as one on-hero line that opens it. */
+.heroDirective {
   display: flex;
   align-items: center;
   gap: var(--wf-s-3);
+  width: 100%;
+  max-width: 40rem;
+  min-height: var(--wf-touch);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.heroDirective .phoneCardMeta {
+  color: var(--wf-hero-ink-2);
+}
+
+.heroDirective .phoneCardMeta b {
+  color: var(--wf-hero-ink);
+}
+
+.heroDirective > svg:last-child {
+  flex: 0 0 auto;
+  color: var(--wf-hero-ink-2);
+}
+
+.heroDirective:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Phone: the broadcast line, then the one action with More beside it (Home's phone hero acts). */
+.heroPhoneBar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  width: 100%;
   min-width: 0;
 }
 
-.heroBar .heroStats {
+.heroPhoneActs {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--wf-s-2);
-}
-
-/* The hero chips read as count-first pills that highlight rows. */
-.heroBar .heroStats button {
-  height: var(--wf-h-sm);
-  padding: 0 12px;
-  border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-ctl);
-}
-
-.heroBar .heroStats button[aria-pressed="true"] {
-  background: var(--wf-on-hero-fill);
-  border-color: color-mix(in srgb, var(--wf-hero-ink) 55%, transparent);
+  width: 100%;
+  min-width: 0;
 }
 
 .heroMeta {
@@ -1342,7 +1366,6 @@ button.check[aria-pressed="true"] {
     width: 100%;
   }
 
-  .deskOnly,
   .toolbar,
   .todayCard {
     display: none;
@@ -1477,7 +1500,6 @@ button.check[aria-pressed="true"] {
 }
 
 /* The directive line and the one-tap cards: a light row with a chevron. */
-.phoneDirective,
 .phoneCard {
   display: flex;
   align-items: center;
@@ -1500,12 +1522,10 @@ button.check[aria-pressed="true"] {
   color: var(--wf-ink-2);
 }
 
-.phoneDirective > svg:last-child,
 .phoneCard > svg:last-child {
   color: var(--wf-ink-3);
 }
 
-.phoneDirective:focus-visible,
 .phoneCard:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
