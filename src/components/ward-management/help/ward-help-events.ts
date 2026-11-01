@@ -4,8 +4,12 @@
  */
 const OPEN_HELP_EVENT = "ward-flow-open-help";
 
-/** "tasks" is How do I…, the desk's common tasks, each with Show me (Josh, 30 Oct 2026). */
-export type HelpView = "tasks" | "desk" | "screen" | "glossary" | "new" | "tour";
+/**
+ * "tasks" is How do I…, the desk's common tasks, each with Show me (Josh, 30 Oct 2026). The redesign
+ * (1 Nov 2026) adds the Common questions and Reference tabs, and Shortcuts ("keys") as a view inside
+ * Help. "screen" still opens How do I… and "glossary" opens Reference.
+ */
+export type HelpView = "tasks" | "questions" | "reference" | "new" | "desk" | "keys" | "screen" | "glossary" | "tour";
 
 type OpenHelpDetail = { view?: HelpView; ask?: string; showMe?: string; task?: string };
 
