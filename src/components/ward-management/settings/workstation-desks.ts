@@ -12,6 +12,7 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EdSummary } from "@/components/ward-management/ed/ed-home-derivations";
 import type { HubEntry } from "@/components/ward-management/hub/hub-derivations";
+import { RATIFIED_SERVICE_ALIASES } from "@/components/ward-management/community/community-ratified-aliases";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { CHROME_ROLE_LABELS, type WardChromeRole, wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import {
@@ -115,8 +116,18 @@ export function workstationDesks(input: {
       confirmedAt: entry.confirmedAt,
       stale: entry.stale,
     }));
-  const teams: Desk[] = hub
-    .filter((entry) => entry.kind === "community")
+  // Q202 (Josh, 1 Nov 2026): a service the owner has ruled is one (several spellings of one clinic)
+  // is one desk, under the first of its names on offer, so Armadale's Mead Centre shows once.
+  const communityEntries = hub.filter((entry) => entry.kind === "community");
+  const offeredTeams = new Set(communityEntries.map((entry) => entry.name));
+  const sameServiceSpellings = new Set(
+    RATIFIED_SERVICE_ALIASES.flatMap((alias) => {
+      const shown = alias.members.find((name) => offeredTeams.has(name));
+      return alias.members.filter((name) => name !== shown);
+    }),
+  );
+  const teams: Desk[] = communityEntries
+    .filter((entry) => !sameServiceSpellings.has(entry.name))
     .map((entry) => ({ id: entry.id, role: "community", name: entry.name, href: entry.href }));
 
   // Hospitals in health service order, then by name; on each, the ED first and then its wards.

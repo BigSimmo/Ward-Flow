@@ -120,3 +120,14 @@ describe("switcher words stay neutral (shell-13)", () => {
     expect(source).toContain('<StatusGlyph tone="danger" />');
   });
 });
+
+describe("one desk for a service the owner ruled is one (Q202)", () => {
+  it("shows Armadale's Mead Centre once, under its first spelling", () => {
+    const names = desks.teams.map((desk) => desk.name);
+    expect(names).toContain("Mead Centre (Armadale)");
+    for (const spelling of ["Armadale (Mead Centre)", "Armadale (Mead)", "Meade Centre (Armadale)"]) {
+      expect(names).not.toContain(spelling);
+    }
+    expect(names).toContain("Mead Centre (Kelmscott)");
+  });
+});
