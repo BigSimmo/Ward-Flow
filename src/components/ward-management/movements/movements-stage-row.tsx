@@ -122,7 +122,7 @@ export function PhoneGroupHeading({
 }
 
 /** Urgency tier as a T1 to T3 pill: neutral, never red, with the word "Tier" for screen readers. */
-export function TierPill({ tier }: { tier: number }) {
+function TierPill({ tier }: { tier: number }) {
   const isPhone = useIsPhone();
   if (isPhone) return <TierTile tier={tier} data-tier={tier} />;
   return (

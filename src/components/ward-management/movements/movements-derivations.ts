@@ -202,7 +202,7 @@ export function journeyStages(movements: Movement[], now: Instant, thresholds: D
  *
  * `Exclude` rather than a re-spelt list, so the compiler is the catcher: add a sixth leg to
  * `transportLeg`'s union and the three `Record` literals over this type — here, and
- * `LEG_STATE_LABEL`/`LEG_STATE_LEVEL` in `movements-screen.tsx` — stop compiling until somebody
+ * `LEG_STATE_LABEL`/`LEG_STATE_TONE` in `movements-screen-helpers.ts` — stop compiling until somebody
  * decides where it belongs and what it is called on screen.
  */
 export type MovementLegState = Exclude<TransportLeg, "Requested"> | "Cancelled";

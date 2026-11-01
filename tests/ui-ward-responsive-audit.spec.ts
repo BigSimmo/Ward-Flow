@@ -361,11 +361,15 @@ test("@mockup movement status stays inside phone, tablet and desktop viewports",
 test.describe("@mockup Ward scroll geometry", () => {
   test.use({ colorScheme: "light", contextOptions: { reducedMotion: "no-preference" } });
 
-  test("the Movements transport panel stays below the header at the end of the page", async ({ page }) => {
+  // Movements redesign (1 Nov 2026): on a wide screen the worklist and Transport now stack at full
+  // width and the page scrolls as one, so the transport feed no longer scrolls inside its card.
+  test("the Movements transport panel ends on screen at the end of the page, with no inner scroll", async ({
+    page,
+  }) => {
     test.setTimeout(120_000);
     await page.goto("/ward-flow/movements", { waitUntil: "networkidle" });
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
-    const panel = page.getByRole("complementary", { name: "Movement details" });
+    const panel = page.getByRole("region", { name: "Transport right now" });
     for (const width of [1361, 1440]) {
       await page.setViewportSize({ width, height: 844 });
       await expect
@@ -378,34 +382,12 @@ test.describe("@mockup Ward scroll geometry", () => {
         )
         .toBeGreaterThan(0);
       await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", "light");
-      await expect
-        .poll(() =>
-          panel.evaluate((element) => {
-            const header = document.querySelector('[data-testid="ward-bar"]')!.getBoundingClientRect();
-            return element.getBoundingClientRect().top - header.bottom;
-          }),
-        )
-        .toBeGreaterThanOrEqual(11);
       const box = await panel.boundingBox();
       expect(box!.y + box!.height).toBeLessThanOrEqual(844);
       const body = panel.getByRole("region", { name: "Active transport legs" });
       await expect
         .poll(() => body.evaluate((element) => element.scrollHeight - element.clientHeight))
-        .toBeGreaterThan(0);
-      const before = await page.locator("[data-wf-scroller]").evaluate((element) => element.scrollTop);
-      await body.evaluate((element) => {
-        element.scrollTop = 0;
-      });
-      await body.focus();
-      await body.press("ArrowDown");
-      await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-      await body.evaluate((element) => {
-        element.scrollTop = 0;
-      });
-      await body.hover();
-      await page.mouse.wheel(0, 300);
-      await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-      expect(await page.locator("[data-wf-scroller]").evaluate((element) => element.scrollTop)).toBe(before);
+        .toBeLessThanOrEqual(1);
     }
   });
 
