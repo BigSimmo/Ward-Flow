@@ -135,8 +135,8 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  * child comes back with its parent, and an unused primitive is a different conversation entirely.
  *
  * ⚠️ **`morning/` LEFT THIS LIST ON 2026-09-17 (item 41, owner-approved), AND ITS EXIT IS A
- * DELETION, NOT A REWORD** — the same convention `statistics-primitives.tsx`'s entry above and the
- * third-edition shell entries below already use. The two entries that named `morning-page.tsx` and
+ * DELETION, NOT A REWORD** — the same convention the third-edition shell entries below already
+ * use. The two entries that named `morning-page.tsx` and
  * `morning-tour.tsx` are gone because the files themselves are gone: `docs/agents/dead-code-deletion.md`
  * governed that removal, not this guard, and a declaration naming a module that no longer exists on
  * disk fails "declares nothing it cannot point at" below rather than staying silently stale.
@@ -170,10 +170,6 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
     module: "src/components/ward-management/patients/person-by-umrn.tsx",
     why: "a UMRN in /people/ is no longer resolved (D-39, PR #280); patient links use the person id and an unknown id gets the plain not-found",
   },
-  {
-    module: "src/components/ward-management/shell/ward-dynamic-island.tsx",
-    why: "its one route use was the ED page's 24 hour timeline, which left the page on 11 Oct 2026 (device audit, owner pick A2) as a link to Governance",
-  },
   /*
    * 🔴 **THE SECOND-EDITION CHROME — RETIRED, 2026-09-11, IN THE SAME CHANGE THAT MOUNTED THE
    * THIRD-EDITION SHELL.** These three entries are the honest record of a retirement, not of a
@@ -205,13 +201,15 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
    * their retired tests, so their entries are gone.
    */
   /*
+   * ✅ **Deleted 1 Nov 2026 (owner approval Q96)** with their tests: `shell/ward-dynamic-island.tsx`,
+   * `movements/traffic-diagram.tsx`, `statistics/statistics-primitives.tsx`,
+   * `shell/ward-reconciliation-line.tsx`, `forecast/forecast-week-panel.tsx`,
+   * `forecast/forecast-network-extras.tsx` and `ward-controls.tsx`. Their entries are gone.
+   */
+  /*
    * ✅ **`ward-standing-strip.tsx` CAME BACK AS FLOATING DYNAMIC ISLAND HUD — 2026-09-30.**
    * Mounted in `src/app/ward-flow/layout.tsx` so the Dynamic Island HUD floats site-wide.
    */
-  {
-    module: "src/components/ward-management/movements/traffic-diagram.tsx",
-    why: "standalone movements visual component; tested directly in ward-movements-traffic-diagram.dom.test.tsx",
-  },
   /*
    * ✅ **`ward-service-scope-bar.tsx` — its entry was deleted when Delays (screens D1) became the
    * first route-rendered screen to mount `WardServiceScopeBar`; Capacity (C1) and Movements (D2)
@@ -223,39 +221,8 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
    * this replaces predicted: "the moment plan §1.3 item 1.2 lands... `layout.tsx` becomes the
    * route-reachable seed... and the 'holds no stale declaration' assertion below will find them
    * reachable on its own and name these exact three lines to delete." It did, and this is that
-   * deletion — not a reword, per this file's own established convention (see
-   * `statistics-primitives.tsx`'s entry, below, retired the same way).
+   * deletion — not a reword, per this file's own established convention.
    */
-  /*
-   * 🔴 **`statistics-primitives.tsx` IS UNREACHABLE AGAIN.** The service screen no longer mounts
-   * `StatFootnote`; only `tests/ward-statistics-primitives.dom.test.tsx` still constructs it. The
-   * earlier "came back" note stays in Git history — this entry is the current measurement.
-   */
-  {
-    module: "src/components/ward-management/statistics/statistics-primitives.tsx",
-    why: "referenced by nothing in src/ at all — StatFootnote is only constructed by its retired DOM suite",
-  },
-  /*
-   * The v6 rail (header and sidebar boards 02, 03 and 03b, 7 October 2026) removed the "Reconciliation
-   * not published" line from the rail. The component stays because `hub/hub-provenance.ts` still
-   * imports its exported helpers; it is no longer mounted on any route.
-   */
-  {
-    module: "src/components/ward-management/shell/ward-reconciliation-line.tsx",
-    why: "unmounted from the rail by the v6 restyle — its helpers stay for hub-provenance",
-  },
-  {
-    module: "src/components/ward-management/forecast/forecast-week-panel.tsx",
-    why: "the Capacity redesign (77fc85319, 31 Oct 2026) drew the seven days inside the Bed forecast card, so the old week panel lost its last route use; kept with its own tests until Josh decides on deletion through the dead-code check",
-  },
-  {
-    module: "src/components/ward-management/forecast/forecast-network-extras.tsx",
-    why: "the Capacity redesign (77fc85319, 31 Oct 2026) folded these extras into the Bed forecast card and How this is worked out; kept with its own tests until Josh decides on deletion through the dead-code check",
-  },
-  {
-    module: "src/components/ward-management/ward-controls.tsx",
-    why: "the Capacity redesign (77fc85319, 31 Oct 2026) removed its last import (the old Capacity controls row); kept with tests/ward-controls.dom.test.tsx until Josh decides on deletion through the dead-code check",
-  },
 ];
 
 describe("every ward component a test renders is one a coordinator can still reach", () => {

@@ -819,7 +819,7 @@ describe("focused test admission", () => {
   it("shares only explicit focused selections and keeps broad or custom-worker runs exclusive", () => {
     expect(vitestLeaseMode(["related", "--run", "src/lib/example.ts"])).toBe("exclusive");
     expect(vitestLeaseMode(["run", "tests/unit-test-population.test.ts", "--reporter=dot"])).toBe("shared");
-    expect(vitestLeaseMode(["run", "tests/ward-dynamic-island.dom.test.tsx"])).toBe("shared");
+    expect(vitestLeaseMode(["run", "tests/ward-checks-publication.dom.test.tsx"])).toBe("shared");
     expect(
       vitestLeaseMode(["tests/unit-test-population.test.ts", "tests/ward-dynamic-island-rollout.contract.test.tsx"]),
     ).toBe("shared");
