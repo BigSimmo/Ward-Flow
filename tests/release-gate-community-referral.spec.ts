@@ -84,14 +84,13 @@ async function openReferralStep(sheet: Locator, name: string) {
 }
 
 /**
- * How many referrals wait for this team's own answer, as its desk shows it: the Referrals tab's
- * count on desktop (locked design, 1 Nov 2026), the "Waiting" team list on a phone.
+ * How many referrals wait for this team's own answer, as its desk shows it: the Referrals count in
+ * the team's section row, a tab on desktop (locked design, 1 Nov 2026) and a section-track radio on
+ * the Midland phone page (Q155).
  */
 async function teamWaitingCount(page: Page): Promise<number> {
   const screen = page.getByTestId("ward-community-screen");
-  const control = isPhoneLayout(page)
-    ? screen.getByRole("radio", { name: /^Waiting/u })
-    : screen.getByRole("tab", { name: /^Referrals/u });
+  const control = screen.getByRole(isPhoneLayout(page) ? "radio" : "tab", { name: /^Referrals/u });
   await expect(control).toBeVisible();
   const text = (await control.innerText()).trim();
   const match = /(\d+)/u.exec(text);
@@ -127,6 +126,12 @@ test("Community referral: a community team refers from its own desk, the ward it
   await expectAccessible(page, testInfo, "community team desk");
 
   // --- The team refers from its own desk. The slide-out opens over the team page. ---
+  // On the Midland phone page (Q155) Refer from team is the Referrals section's hero action.
+  if (isPhoneLayout(page))
+    await page
+      .getByTestId("ward-community-screen")
+      .getByRole("radio", { name: /^Referrals/u })
+      .click();
   await page.getByRole("button", { name: "Refer from team", exact: true }).click();
   const sheet = page.getByTestId("ward-bar-referral-sheet");
   await expect(sheet).toBeVisible({ timeout: 15_000 });

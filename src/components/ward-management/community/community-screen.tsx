@@ -77,6 +77,7 @@ import {
   communityCoveragePanel,
 } from "./community-screen-panels";
 import { CommunityScreenPhone } from "./community-screen-phone";
+import { MidlandPhone } from "./team-2026/midland-phone";
 import { CommunityScreenSentTab } from "./community-screen-sent-tab";
 import {
   CommunityOtherTeams,
@@ -1167,7 +1168,15 @@ export function CommunityScreen(props: CommunityScreenProps) {
             {view.midlandDemo ? null : communitySinceElement(view)}
           </>
         )}
-        {isPhone ? <CommunityScreenPhone view={view} /> : null}
+        {isPhone && view.midlandDemo ? (
+          <MidlandPhone
+            section={teamSection}
+            open={view.openTeamSection}
+            onRecordContact={() => view.setActiveModalType("contact")}
+            onReferFromTeam={view.openNewReferral}
+          />
+        ) : null}
+        {isPhone && !view.midlandDemo ? <CommunityScreenPhone view={view} /> : null}
 
         <CommunityScreenSwitchDrawer view={view} />
 
