@@ -45,6 +45,9 @@ export function frontDoorSecret(env: Env = process.env): string | null {
  */
 const OPEN_PATHS = new Set([
   FRONT_DOOR_SIGN_IN_PATH,
+  // The Ward Flow sign-in page (1 November 2026, Q164 to Q166): the front door's own card, so a
+  // signed-out visitor must be able to reach it.
+  "/ward-flow-sign-in",
   "/api/session",
   "/api/health",
   "/api/local-project-id",

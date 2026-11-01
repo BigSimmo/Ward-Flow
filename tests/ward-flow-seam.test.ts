@@ -42,7 +42,15 @@ import { isRedesignMockup } from "./helpers/redesign-design-copies";
  * and bar around every child, and the front door must load none of them. Unlike that screen it signs
  * a person in with Ward Flow's own Supabase hooks, so it IS ward code and moves with Ward Flow.
  */
-const WARD_DIRS = ["src/components/ward-management", "src/app/ward-flow", "src/app/sign-in"];
+const WARD_DIRS = [
+  "src/components/ward-management",
+  "src/app/ward-flow",
+  "src/app/sign-in",
+  // The Ward Flow sign-in page (1 November 2026, Q164 to Q166) renders the front door's own sign-in
+  // card, so like `src/app/sign-in` it IS ward code and moves with Ward Flow.
+  "src/app/ward-flow-sign-in",
+  "src/components/ward-flow-sign-in",
+];
 
 /**
  * The shared modules Ward Flow may reach outward for, each with the reason it is not worth
@@ -115,28 +123,6 @@ const APPROVED_ROUTE_REFERENCES = new Map([
     "src/lib/front-door-pass.ts",
     "the front door pass: after sign-in a person returns only to a Ward Flow page, and goes home to " +
       "it when the requested page is unsafe (D-88, 27 October 2026)",
-  ],
-  /*
-   * ⚠️ THESE TWO ARE NOT OUTSIDE WARD FLOW — THEY ARE WARD FLOW, SITED ELSEWHERE ON PURPOSE, and
-   * they are here because the route this guard matches (`/ward-flow`) is a PREFIX of
-   * their own route (`/ward-flow-sign-in`). They reference nothing; they are named by it.
-   *
-   * Why the sign-in screen is a sibling rather than a child: `src/app/ward-flow/layout.tsx`
-   * mounts the rail, the bar and the provider around every nested route with no per-route opt-out,
-   * and a sign-in screen is specified to carry none of them. It imports no ward-management code at
-   * all, which is what keeps this guard's real subject — code coupling — untouched.
-   *
-   * 🔴 On the day Ward Flow leaves, these two move WITH it rather than needing an edit, which is
-   * the opposite of every other entry above. Kept in the list anyway, because the alternative is
-   * teaching the guard a second concept of "inside" and this list is read by people.
-   */
-  [
-    "src/app/ward-flow-sign-in/page.tsx",
-    "Ward Flow's own sign-in route — a sibling of the subtree, not a reference to it",
-  ],
-  [
-    "src/components/ward-flow-sign-in/ward-flow-sign-in-screen.tsx",
-    "Ward Flow's own sign-in screen — names its sibling route; imports no ward-management code",
   ],
   [
     "src/app/mockups/ward-flow-digest/route.ts",
@@ -371,7 +357,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 7 -> 8 on 2026-10-15: the web app manifest's start_url and shortcuts name Ward Flow pages, so the
     // installed app opens on Ward Flow rather than following the "/" redirect (phone PWA plan).
     // 8 -> 9 on 2026-10-27: the front door pass names the Ward Flow home it returns people to (D-88).
-    expect(APPROVED_ROUTE_REFERENCES.size).toBe(9);
+    // 9 -> 7 on 2026-11-01: the sign-in page became ward code (it renders the front door's card), so
+    // its route and screen files moved inside WARD_DIRS and no longer count as outside references.
+    expect(APPROVED_ROUTE_REFERENCES.size).toBe(7);
     expect(wardFiles.length).toBeGreaterThan(50);
     expect(allSourceFiles.length).toBeGreaterThan(wardFiles.length);
   });

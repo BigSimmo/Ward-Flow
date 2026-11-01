@@ -102,7 +102,6 @@
     "tests/ward-flow-raise.test.ts",
     "tests/ward-flow-seam.test.ts",
     "tests/ward-flow-service-coverage.test.ts",
-    "tests/ward-flow-sign-in-screen.dom.test.tsx",
     "tests/ward-flow-single-source.test.ts",
     "tests/ward-forced-colors-tokens.test.ts",
     "tests/ward-form-labels-from-register.test.ts",

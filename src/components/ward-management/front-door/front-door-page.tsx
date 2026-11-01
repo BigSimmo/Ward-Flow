@@ -5,7 +5,7 @@ import { KeyRound } from "lucide-react";
 
 import { DEMO_PASS_HOURS } from "@/lib/front-door-pass";
 
-import { FrontDoor, FrontDoorStatus, publicDemoUrl } from "./front-door";
+import { FrontDoor, FrontDoorStatus, publicDemoUrl, type AccountLabel } from "./front-door";
 import { Arrow, DoorBanner, DoorScreen, SessionNote, Spinner } from "./front-door-parts";
 import { requestFrontDoorPass } from "./front-door-pass-client";
 import { useFrontDoorAuth } from "./use-front-door-auth";
@@ -16,11 +16,25 @@ import styles from "./front-door.module.css";
  * with an account; the public demo opens with a demo code. Either way the page then opens `next`,
  * which the server has already checked is a Ward Flow address.
  */
-export function FrontDoorPage({ next, mode, tv }: { next: string; mode: "account" | "demo-code"; tv: boolean }) {
-  return mode === "demo-code" ? <DemoCodeDoor next={next} /> : <AccountDoor next={next} tv={tv} />;
+export function FrontDoorPage({
+  next,
+  mode,
+  tv,
+  accountLabel,
+}: {
+  next: string;
+  mode: "account" | "demo-code";
+  tv: boolean;
+  accountLabel?: AccountLabel;
+}) {
+  return mode === "demo-code" ? (
+    <DemoCodeDoor next={next} />
+  ) : (
+    <AccountDoor next={next} tv={tv} accountLabel={accountLabel} />
+  );
 }
 
-function AccountDoor({ next, tv }: { next: string; tv: boolean }) {
+function AccountDoor({ next, tv, accountLabel }: { next: string; tv: boolean; accountLabel?: AccountLabel }) {
   const { phase, form } = useFrontDoorAuth(next);
   if (phase !== "ready")
     return (
@@ -29,7 +43,7 @@ function AccountDoor({ next, tv }: { next: string; tv: boolean }) {
         status={phase === "checking" ? "Checking your sign-in." : "Signed in. Opening your home page."}
       />
     );
-  return <FrontDoor form={form} tv={tv} demoUrl={tv ? null : publicDemoUrl()} />;
+  return <FrontDoor form={form} tv={tv} demoUrl={tv ? null : publicDemoUrl()} accountLabel={accountLabel} />;
 }
 
 function DemoCodeDoor({ next }: { next: string }) {

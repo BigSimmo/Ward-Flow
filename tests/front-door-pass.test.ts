@@ -58,9 +58,16 @@ describe("front door switch and secret", () => {
   });
 
   it("opens only the sign-in page, its API and the files a signed-out device still needs", () => {
-    for (const path of ["/sign-in", "/api/session", "/api/health", "/ward-flow-offline.html", "/ward-flow-push-sw.js"])
+    for (const path of [
+      "/sign-in",
+      "/ward-flow-sign-in",
+      "/api/session",
+      "/api/health",
+      "/ward-flow-offline.html",
+      "/ward-flow-push-sw.js",
+    ])
       expect(isFrontDoorOpenPath(path)).toBe(true);
-    for (const path of ["/", "/ward-flow", "/api/workspace", "/sign-in/extra", "/mockups"])
+    for (const path of ["/", "/ward-flow", "/api/workspace", "/sign-in/extra", "/ward-flow-sign-in/extra", "/mockups"])
       expect(isFrontDoorOpenPath(path)).toBe(false);
   });
 });
@@ -147,6 +154,7 @@ describe("proxy front door", () => {
     const { value } = await issuePass(SECRET, { kind: "account", hours: 12 });
     expect(await frontDoorVerdict(page("/ward-flow/capacity", value), ON)).toBeNull();
     expect(await frontDoorVerdict(page("/sign-in"), ON)).toBeNull();
+    expect(await frontDoorVerdict(page("/ward-flow-sign-in"), ON)).toBeNull();
   });
 
   it("fails closed without a signing secret", async () => {

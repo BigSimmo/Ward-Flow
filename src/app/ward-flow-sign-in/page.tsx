@@ -4,17 +4,14 @@ import { WardFlowSignInScreen } from "@/components/ward-flow-sign-in/ward-flow-s
 
 export const metadata: Metadata = {
   title: "Sign in — Ward Flow",
-  description: "Synthetic prototype: choose a Ward Flow role and see what the design system's screens index gives it.",
+  description: "Sign in to Ward Flow, a prototype with synthetic data.",
 };
 
 /**
- * A sibling of `/ward-flow`, not a child of it — see
- * `ward-flow-sign-in-screen.tsx`'s own header comment for why. `src/app/ward-flow/layout.tsx`
- * mounts the rail and top bar around every route beneath it with no per-route opt-out, and the
- * approved drawing (`design/third-edition-mockups/sign-in-third-edition.html`) is explicit that this
- * screen carries neither: "a person who has not signed in has no rail to stand in and no bar to
- * read" (owner ruling, 10 September 2026). This route has no ancestor layout beyond the app root,
- * so it renders with neither.
+ * A sibling of `/ward-flow`, not a child of it. `src/app/ward-flow/layout.tsx` mounts the rail and
+ * top bar around every route beneath it with no per-route opt-out, and a sign-in page carries
+ * neither: "a person who has not signed in has no rail to stand in and no bar to read" (owner
+ * ruling, 10 September 2026). The card is the front door's own (see `ward-flow-sign-in-screen.tsx`).
  */
 export default function WardFlowSignInPage() {
   return <WardFlowSignInScreen />;

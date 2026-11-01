@@ -86,11 +86,6 @@ const pending = (text: string, file: string) =>
 /** Lines that name a phrase for a reason other than doing it, each with that reason. */
 const PERMANENT: { file: string; text: RegExp; why: string }[] = [
   {
-    file: "src/components/ward-flow-sign-in/ward-flow-sign-in-data.ts",
-    text: /words: "Read a risk score, an acuity score or a best match"/u,
-    why: "the sign-in list of things no role can do",
-  },
-  {
     file: "src/components/ward-redesign/sign-in/sign-in-data.ts",
     text: /words: "Read a risk score, an acuity score or a best match"/u,
     why:
