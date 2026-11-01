@@ -28,7 +28,10 @@ import type { Referral } from "@/components/ward-management/ward-model";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
+import { crewLimitFor } from "./officer-crew-only";
 import { useOfficerPanelHeight } from "./officer-job-panel";
+
+export { crewLimitFor };
 import styles from "./officer.module.css";
 
 /** The desks that log a booking here (Transport mock-up, Josh, 1 Nov 2026). */
@@ -90,17 +93,6 @@ export function useNeedsTransport(movements: readonly Movement[], access: WardAc
   // A desk raises the crew's steps as itself, so the reducer refuses them even if a control slips.
   const crewRaise = useWardRaise(crewLimit && bookingRole ? bookingRole : "officer");
   return { needing, acting, raise, crewLimit, crewRaise };
-}
-
-/**
- * Q154 (Josh, 1 Nov 2026): the ED, ward and community desks open Transport to follow their own
- * journeys (`ROLE_SCREENS`). The crew's steps stay the transport officer's, so a desk sees each one
- * disabled with this reason. The officer and the coordinator act as before.
- */
-export function crewLimitFor(access: WardAccess): string | undefined {
-  return access.role === "ed" || access.role === "ward" || access.role === "community"
-    ? "Transport officer only"
-    : undefined;
 }
 
 /** The crew's next step with the desk's limit laid over any reason of its own. */

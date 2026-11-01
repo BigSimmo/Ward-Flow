@@ -18,6 +18,7 @@ import {
   type PackSlotKey,
 } from "@/components/ward-management/ward-transport-checks";
 
+import { OfficerOnly } from "./officer-crew-only";
 import styles from "./officer.module.css";
 
 /**
@@ -135,15 +136,17 @@ export function FormsPack({ movement, now, who }: { movement: Movement; now: Ins
                   )}
                 </span>
               </span>
-              <Button
-                variant={form ? "ghost" : "sec"}
-                size="sm"
-                icon={form ? undefined : Upload}
-                aria-label={`${form ? "Replace" : "Upload"} ${slot.label.toLowerCase()} for ${who}`}
-                onClick={() => setUploading(slot.key)}
-              >
-                {form ? "Replace" : "Upload"}
-              </Button>
+              <OfficerOnly>
+                <Button
+                  variant={form ? "ghost" : "sec"}
+                  size="sm"
+                  icon={form ? undefined : Upload}
+                  aria-label={`${form ? "Replace" : "Upload"} ${slot.label.toLowerCase()} for ${who}`}
+                  onClick={() => setUploading(slot.key)}
+                >
+                  {form ? "Replace" : "Upload"}
+                </Button>
+              </OfficerOnly>
             </div>
           );
         })}

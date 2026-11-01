@@ -33,6 +33,7 @@ import {
 
 import { FormsPack, PACK_SLOTS, packCount, packRequired } from "./officer-forms-pack";
 import { HowWorkedOut } from "@/components/ward-management/capacity/capacity-how-worked-out";
+import { OfficerOnly } from "./officer-crew-only";
 import styles from "./officer.module.css";
 import {
   holdEndsBeforeEta,
@@ -563,11 +564,13 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           </dl>
           {/* CAD to follow (Josh, 27 Oct 2026): the officer often hears the number first. */}
           {cadNumberToFollow(transport) && !movement.closure ? (
-            <TransportCadToFollow
-              movementId={movement.id}
-              role="officer"
-              testId={`ward-officer-cad-to-follow-${movement.id}`}
-            />
+            <OfficerOnly>
+              <TransportCadToFollow
+                movementId={movement.id}
+                role="officer"
+                testId={`ward-officer-cad-to-follow-${movement.id}`}
+              />
+            </OfficerOnly>
           ) : null}
         </section>
       </TabPanel>
