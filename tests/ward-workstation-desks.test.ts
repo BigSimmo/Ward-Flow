@@ -130,4 +130,18 @@ describe("one desk for a service the owner ruled is one (Q202)", () => {
     }
     expect(names).toContain("Mead Centre (Kelmscott)");
   });
+
+  it("keeps a desk signed in as another spelling on its own name, and finds the kept desk by any spelling", () => {
+    const own = workstationDesks({
+      hub: hubEntries({ units: seed.units, bedReleases: seed.bedReleases, now: NOW_ANCHOR, sites: wardSites }),
+      eds: edHomeSummaries(seed.movements, NOW_ANCHOR, 1440),
+      movements: seed.movements,
+      ownTeam: "Armadale (Mead)",
+    });
+    const names = own.teams.map((desk) => desk.name);
+    expect(names).toContain("Armadale (Mead)");
+    expect(names).not.toContain("Mead Centre (Armadale)");
+    const kept = desks.teams.find((desk) => desk.name === "Mead Centre (Armadale)")!;
+    expect(deskMatches(kept, "Meade Centre")).toBe(true);
+  });
 });

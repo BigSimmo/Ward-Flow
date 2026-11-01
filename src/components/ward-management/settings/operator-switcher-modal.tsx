@@ -169,8 +169,19 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
         hub: hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: network.sites }),
         eds: edHomeSummaries(movements, now, configuration.edAccessTargetMinutes),
         movements,
+        ownTeam: currentAccess.scope.kind === "team" ? currentAccess.scope.teamName : undefined,
       }),
-    [units, bedReleases, admissions, leaveBeds, movements, now, configuration.edAccessTargetMinutes, network],
+    [
+      units,
+      bedReleases,
+      admissions,
+      leaveBeds,
+      movements,
+      now,
+      configuration.edAccessTargetMinutes,
+      network,
+      currentAccess.scope,
+    ],
   );
   const allDesks = useMemo(
     () => [...statewide, ...sites.flatMap((site) => site.desks), ...teams],
