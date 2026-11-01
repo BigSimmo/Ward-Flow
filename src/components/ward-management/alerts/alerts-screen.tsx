@@ -279,10 +279,14 @@ function AlertsWorkspace() {
   const [broadcastScope, setBroadcastScope] = useState<BroadcastTargetScope>(defaultTmpl?.targetScope ?? "all");
   const [broadcastDurationMinutes, setBroadcastDurationMinutes] = useState(defaultTmpl?.defaultDurationMinutes ?? 240);
   const [broadcastType, setBroadcastType] = useState<BroadcastKind>(defaultTmpl?.kind ?? "directive");
-  const audienceState = useBroadcastAudience(state, {
-    templateId: defaultTmpl?.id ?? "custom",
-    scope: defaultTmpl?.targetScope ?? "all",
-  }, broadcastType === "bed_call");
+  const audienceState = useBroadcastAudience(
+    state,
+    {
+      templateId: defaultTmpl?.id ?? "custom",
+      scope: defaultTmpl?.targetScope ?? "all",
+    },
+    broadcastType === "bed_call",
+  );
   const { audience: broadcastAudience, setAudience: setBroadcastAudience } = audienceState;
   const [broadcastSuccessNotice, setBroadcastSuccessNotice] = useState<string | null>(null);
   const [actionRequest, setActionRequest] = useState<ActionRequest | null>(null);
