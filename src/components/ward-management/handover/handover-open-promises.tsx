@@ -65,7 +65,15 @@ export function HandoverOpenPromises({
             ? `${ward} acknowledged, no time promised`
             : `Waiting for ${ward} to respond`;
       const then = callback !== undefined && (overdue || promised !== undefined) ? `ring again ${at(callback)}` : null;
-      return { item, overdue, when, ward, what, then, isCallback: !overdue && callback !== undefined && callback === when };
+      return {
+        item,
+        overdue,
+        when,
+        ward,
+        what,
+        then,
+        isCallback: !overdue && callback !== undefined && callback === when,
+      };
     })
     .sort((left, right) => left.when - right.when);
   const overdueCount = rows.filter((row) => row.overdue).length;
