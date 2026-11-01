@@ -71,8 +71,3 @@ export function initialsOf(name: string): string {
     .reverse()
     .join("");
 }
-
-/** The one demo-data line every demo block carries (Q107: a caveat that matters stays visible). */
-export function DemoNote() {
-  return <span className={t.meta}>Demo data</span>;
-}
