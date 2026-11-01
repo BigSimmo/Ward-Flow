@@ -304,6 +304,8 @@ const eslintConfig = defineConfig([
     // drift. The prototypes are byte-pinned. The kit's .mjs check scripts stay linted.
     "design/third-edition-mockups/third-edition-kit/shell/*.js",
     "design/prototypes/**",
+    // Mock-up drawing scripts (browser code run through Playwright), not app code.
+    "design/community-team-2026-11/mockup/**",
     // Recursive `**/` variants cover nested worktrees; the bare globs above already
     // ignore the repo-root dirs, so only the recursive forms are kept here.
     "**/.claude/**",

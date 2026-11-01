@@ -43,6 +43,9 @@ docs/ward-flow/control/work-claims.md
 # enforced the match were retired on 18 October 2026; the files stay unformatted to avoid churn.
 design/prototypes/
 
+# The community team mock-up's drawing scripts and styles are design artefacts, kept as written.
+design/community-team-2026-11/mockup/
+
 # The ward journey map's GENERATED output. `npm run ward:journey` rewrites each of these from
 # `src/components/ward-management/`, so a whole-tree format pass and the generator reformat the
 # same file two different ways and the pre-push format guard flip-flops between them. The
