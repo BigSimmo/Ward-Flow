@@ -8,9 +8,9 @@ import { useState } from "react";
 import { buttonClass, Segmented, StatusGlyph } from "@/components/wf";
 import { formatElapsed, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { referralPurposeLabel } from "@/components/ward-management/ward-referrals";
+import { referralClocks, referralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import type { EdScreenContext } from "./ed-screen-context";
-import { outstandingItem } from "./ed-screen-model";
+import { edReferralClockLines, outstandingItem } from "./ed-screen-model";
 import { askForBedFromReferral, EdInboxDecline } from "./ed-screen-inbox";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import { formTitleForCode } from "@/lib/form-register";
@@ -103,6 +103,7 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                 const person = who(referral);
                 const open = referralDetailsOpenFor === referral.id;
                 const linked = movements.find((m) => m.referralId === referral.id);
+                const clockLines = edReferralClockLines(referralClocks(referral, now));
                 return [
                   <tr
                     key={referral.id}
@@ -115,6 +116,17 @@ export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
                         <span className={handover.listNameStatic}>{person.formalName}</span>
                         <span className={handover.listUmrn}>{person.umrn}</span>
                       </span>
+                      {/* Both clocks stay with the referral for screen readers; the mock-up shows neither. */}
+                      <dl className="sr-only" data-testid={`ward-ed-inbox-clocks-${referral.id}`}>
+                        <div data-testid={`ward-ed-inbox-department-clock-${referral.id}`}>
+                          <dt>{clockLines.department.term}</dt>
+                          <dd>{clockLines.department.value}</dd>
+                        </div>
+                        <div data-testid={`ward-ed-inbox-referral-clock-${referral.id}`}>
+                          <dt>{clockLines.referral.term}</dt>
+                          <dd>{clockLines.referral.value}</dd>
+                        </div>
+                      </dl>
                     </td>
                     <td className={handover.listMono}>{linked ? patientBay(linked.id).replace(/^Bay /, "") : "–"}</td>
                     <td>{[linked?.cohort, linked?.sex].filter(Boolean).join(" · ") || "–"}</td>
