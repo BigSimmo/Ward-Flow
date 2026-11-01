@@ -466,7 +466,8 @@ function AlertsWorkspace() {
         .map((item) => entryFor(item, snoozed))
         .map((entry) => {
           const highlighted = isHighlighted(entry);
-          return { ...entry, highlighted, dimmed: highlightOn && !highlighted };
+          // Alerts redesign safety rule 2 (1 Nov 2026): a highlight never dims an act-now row.
+          return { ...entry, highlighted, dimmed: highlightOn && !highlighted && entry.group !== "act" };
         })
         .sort((a, b) => byOldest({ at: a.raised }, { at: b.raised })),
     [entryFor, isHighlighted, highlightOn],
@@ -983,14 +984,7 @@ function AlertsWorkspace() {
         urgencyLink(0),
         pullRows,
       )}
-      {access.role === "coordinator" || access.role === "bed_manager" ? (
-        <ForecastAlertsGroup
-          now={now}
-          className={styles.group}
-          readOnly={access.role === "bed_manager"}
-          head={(count) => <GroupHead tone="warning" label="Forecast" count={count} />}
-        />
-      ) : null}
+      {/* Alerts redesign (1 Nov 2026): Act now, then Waiting, then Forecast. */}
       {groupSection(
         "wait",
         "Waiting",
@@ -999,6 +993,14 @@ function AlertsWorkspace() {
         "Nothing is waiting on a transport leg or a planned arrival.",
         urgencyLink(1),
       )}
+      {access.role === "coordinator" || access.role === "bed_manager" ? (
+        <ForecastAlertsGroup
+          now={now}
+          className={styles.group}
+          readOnly={access.role === "bed_manager"}
+          head={(count) => <GroupHead tone="warning" label="Forecast" count={count} />}
+        />
+      ) : null}
       {runningEntries.length > 0
         ? groupSection(
             "running",
@@ -1067,7 +1069,10 @@ function AlertsWorkspace() {
     </div>
   );
   const ownerView = owners.map((owner) => {
-    const list = allEntries.filter((entry) => entry.owner === owner);
+    // Alerts redesign safety rule 3 (1 Nov 2026): act now first inside each owner, then oldest first.
+    const list = allEntries
+      .filter((entry) => entry.owner === owner)
+      .sort((a, b) => Number(b.group === "act") - Number(a.group === "act"));
     const actCount = list.filter((entry) => entry.group === "act").length;
     return groupSection(
       `owner-${owner}`,
