@@ -2,20 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarClock, LayoutGrid, Search, Users } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 
-import {
-  BarList,
-  Button,
-  CardBody,
-  CardFoot,
-  HeroStat,
-  PhoneListRow,
-  Segmented,
-  TextInput,
-  cx,
-  useIsPhone,
-} from "@/components/wf";
+import { HeroStat, PhoneListRow, Segmented, TextInput, cx, tableClasses, useIsPhone } from "@/components/wf";
 import { communityStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { COMMUNITY_SERVICE_OPTIONS } from "@/components/ward-management/community/community-index";
 import {
@@ -29,10 +18,8 @@ import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-mapping";
 
-import { countAxisMax } from "./statistics-axis";
 import { communityFigures } from "./statistics-community-figures";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
-import { FlushRow } from "./statistics-layout";
 import { statisticsSectionById } from "./statistics-sections";
 import { ServiceDot } from "./statistics-services-index";
 import { PhoneBody, PhoneList, PhoneShowAll, phoneBodyStyles as phone } from "./statistics-phone-parts";
@@ -45,9 +32,17 @@ import {
   ExecutiveStatisticsUnavailable,
   statisticsCountText,
   exactStatisticsCount,
-  withheldBar,
+  sumStatisticsCounts,
   type StatisticsCount,
 } from "./statistics-small-numbers";
+import {
+  Foot,
+  Glyph,
+  Now,
+  Strip,
+  Tile,
+  redesignStyles as redesign,
+} from "@/components/ward-redesign/statistics/statistics-redesign-parts";
 
 /** The community index's service codes, as the health services whose colour each one wears. */
 const CODE_SERVICE: Record<string, HealthService> = {
@@ -187,7 +182,7 @@ function TeamsIndexView({
   const [phoneView, setPhoneView] = useState<"active" | "all">("active");
   const [phoneQuery, setPhoneQuery] = useState("");
   const [phoneShowAll, setPhoneShowAll] = useState(false);
-  const [showEmptyTeams, setShowEmptyTeams] = useState(false);
+  const [listAll, setListAll] = useState(false);
   const active = teams
     .filter((entry) => positive(entry.inBed))
     .sort((a, b) => {
@@ -201,6 +196,20 @@ function TeamsIndexView({
     teams: teams.filter((entry) => entry.code === option.value).sort((a, b) => a.team.name.localeCompare(b.team.name)),
   })).filter((group) => group.teams.length > 0);
   const otherTeams = teams.filter((entry) => !GROUPS.some((option) => option.value === entry.code));
+  const groupLabel = (code: string) => GROUPS.find((option) => option.value === code)?.label ?? "Service not mapped";
+  const tileGroups = [
+    ...groups.map((group) => ({ key: group.option.value, name: group.service ?? group.option.label, ...group })),
+    ...(otherTeams.length > 0
+      ? [{ key: "other", name: "Service not mapped", service: undefined, teams: otherTeams }]
+      : []),
+  ];
+  // In a bed: the busiest first. All: the same teams first, then every other team A to Z.
+  const listed = listAll
+    ? [
+        ...active,
+        ...teams.filter((entry) => !positive(entry.inBed)).sort((a, b) => a.team.name.localeCompare(b.team.name)),
+      ]
+    : active;
 
   // Phone: the teams with someone in a bed (busiest first) or every team A to Z, narrowed by name.
   const needle = phoneQuery.trim().toLowerCase();
@@ -299,142 +308,134 @@ function TeamsIndexView({
         </PhoneBody>
       ) : (
         <>
-          <FlushRow layout="lead2">
-            <StatCard
-              icon={Users}
-              id="in-a-bed"
-              className={index.anchorTarget}
-              title="Patients in a bed, by team"
-              aside={<span className={cx(styles.muted, index.phoneHide)}>Teams with someone in</span>}
-              data-testid="ward-statistics-teams-in-bed"
-            >
-              <CardBody>
-                {active.length === 0 ? (
-                  <p className={index.cardNote}>No one in a bed has a named community team.</p>
-                ) : (
-                  <BarList
-                    label="People in a bed, or with one pulled, by the community team their referral named"
-                    track
-                    axis
-                    max={countAxisMax(active.map((entry) => exact(entry.inBed) ?? 0))}
-                    labelWidth="13rem"
-                    rows={active.map((entry) => ({
-                      id: entry.team.id,
-                      label: entry.team.name,
-                      sub: GROUPS.find((option) => option.value === entry.code)?.label,
-                      ...withheldBar(exact(entry.inBed) ?? 0, shown(entry.inBed)),
-                    }))}
+          <StatCard
+            id="by-service"
+            className={index.anchorTarget}
+            title="Teams by service"
+            meta={`${teams.length} ${plural(teams.length, "team", "teams")}`}
+            data-testid="ward-statistics-teams-in-bed"
+          >
+            <Strip label="Teams by service" cols={4}>
+              {tileGroups.map((group) => {
+                const counted = group.teams.filter((entry) => entry.inBed !== null);
+                const inBed = sumStatisticsCounts(counted.map((entry) => entry.inBed!));
+                const withDate = sumStatisticsCounts(
+                  group.teams.filter((entry) => entry.withDate !== null).map((entry) => entry.withDate!),
+                );
+                const busy = group.teams.filter((entry) => positive(entry.inBed));
+                const nobody = exactStatisticsCount(inBed) === 0;
+                return (
+                  <Tile
+                    key={group.key}
+                    muted={nobody}
+                    title={
+                      <span className={redesign.nameSub}>
+                        <ServiceDot service={group.service} />
+                        {group.name}
+                      </span>
+                    }
+                    now={<Now>{`${group.teams.length} ${plural(group.teams.length, "team", "teams")}`}</Now>}
+                    fig={shown(inBed)}
+                    unit="in a bed"
+                    sub={
+                      nobody
+                        ? "Nobody in a bed"
+                        : `${shown(withDate)} with a discharge date · ${busy.map((entry) => entry.team.name).join(", ")}`
+                    }
                   />
-                )}
-              </CardBody>
-              <CardFoot
-                meta={`A person counts for a team only when their referral named it. ${shown(noTeamInBed)} in a bed have no team named.`}
-              />
-            </StatCard>
-
-            <StatCard
-              icon={CalendarClock}
-              id="discharge-dates"
-              className={index.anchorTarget}
-              title="With a discharge date"
-              aside={<span className={cx(styles.muted, index.phoneHide)}>{shown(withDateTotal)} in all</span>}
-              data-testid="ward-statistics-teams-with-date"
-            >
-              <CardBody>
-                {active.length === 0 ? (
-                  <p className={index.cardNote}>No team has anyone in a bed.</p>
-                ) : (
-                  <BarList
-                    label="Of each team's people in a bed, those with an expected discharge date"
-                    track
-                    labelWidth="10rem"
-                    rows={active.map((entry) => ({
-                      id: entry.team.id,
-                      label: entry.team.name,
-                      ...withheldBar(exact(entry.withDate) ?? 0, shown(entry.withDate)),
-                    }))}
-                  />
-                )}
-              </CardBody>
-            </StatCard>
-          </FlushRow>
+                );
+              })}
+            </Strip>
+            <Foot how={["A person counts for a team only when their referral named it."]}>
+              {positive(noTeamInBed) ? <Glyph tone="warning" /> : null} <b>{shown(noTeamInBed)}</b> people in a bed have
+              no team named
+            </Foot>
+          </StatCard>
 
           <StatCard
-            icon={LayoutGrid}
             id="all-teams"
             className={index.anchorTarget}
-            title={`All ${teams.length} teams`}
-            aside={<span className={cx(styles.muted, index.phoneHide)}>Grouped by service · in a bed now</span>}
+            title="Teams with someone in a bed"
+            meta={`${active.length} of ${teams.length} teams`}
+            action={
+              <Segmented<"bed" | "all">
+                label="Teams shown"
+                value={listAll ? "all" : "bed"}
+                onChange={(next) => setListAll(next === "all")}
+                items={[
+                  { id: "bed", label: "In a bed" },
+                  { id: "all", label: `All ${teams.length}` },
+                ]}
+              />
+            }
             data-testid="ward-statistics-teams-all"
           >
-            <div className={index.teamColumns}>
-              {[
-                ...groups.map((group) => ({ key: group.option.value, label: group.option.label, ...group })),
-                ...(otherTeams.length > 0
-                  ? [{ key: "other", label: "Service not mapped", service: undefined, teams: otherTeams }]
-                  : []),
-              ].map((group) => (
-                <section
-                  key={group.key}
-                  className={index.teamGroup}
-                  aria-labelledby={`team-group-${group.key}`}
-                  id={`teams-${group.key.toLowerCase()}`}
-                >
-                  <h3 className={index.teamGroupHead} id={`team-group-${group.key}`}>
-                    <ServiceDot service={group.service} />
-                    {group.label}
-                    <span className={styles.muted}>{group.teams.length}</span>
-                  </h3>
-                  {group.teams.every((entry) => exact(entry.inBed) === 0) && !showEmptyTeams ? (
-                    <p className={index.cardNote}>Nobody in a bed</p>
-                  ) : null}
-                  <ul className={index.teamList}>
-                    {group.teams
-                      .filter((entry) => showEmptyTeams || exact(entry.inBed) !== 0)
-                      .map((entry) => (
-                        <li key={entry.team.id}>
-                          <TeamLink
-                            href={entry.openable === false ? undefined : communityStatisticsHref(entry.team.id)}
-                            className={index.teamChip}
-                            data-testid={`ward-statistics-teams-link-${entry.team.id}`}
-                            aria-label={
-                              entry.inBed === null
-                                ? `${entry.team.name}, count not available`
-                                : `${entry.team.name}, ${shown(entry.inBed)} in a bed`
-                            }
-                          >
-                            <span className={index.teamName}>{entry.team.name}</span>
-                            <span
-                              className={cx(index.teamCount, exact(entry.inBed) === 0 && index.teamCountZero)}
-                              aria-hidden="true"
-                            >
-                              {shown(entry.inBed)}
-                            </span>
-                          </TeamLink>
-                        </li>
+            {listed.length === 0 ? (
+              <p className={redesign.empty}>No one in a bed has a named community team.</p>
+            ) : (
+              <div className={redesign.tableWrap} tabIndex={0} role="region" aria-label="Teams, scrollable">
+                <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-teams-table">
+                  <caption className={styles.srOnly}>
+                    Community teams: people in a bed, those with a discharge date and those due out within 7 days
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Team</th>
+                      {["In a bed", "With a discharge date", "Due out within 7 days"].map((label) => (
+                        <th key={label} scope="col" className={redesign.r}>
+                          {label}
+                        </th>
                       ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
-            <CardFoot
-              meta={
-                unknown > 0
-                  ? `${unknown} ${plural(unknown, "team", "teams")} show a dash: a referral on record cannot be found.`
-                  : `${emptyTeams} ${plural(emptyTeams, "team has", "teams have")} nobody in a bed`
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {listed.map((entry) => {
+                      const num = (count: StatisticsCount | null) =>
+                        cx(redesign.r, tableClasses.num, exact(count) !== null && exact(count) === 0 && redesign.zero);
+                      return (
+                        <tr key={entry.team.id}>
+                          <th scope="row">
+                            <span className={redesign.name}>
+                              <TeamLink
+                                href={entry.openable === false ? undefined : communityStatisticsHref(entry.team.id)}
+                                className={redesign.nameLink}
+                                data-testid={`ward-statistics-teams-link-${entry.team.id}`}
+                              >
+                                {entry.team.name}
+                              </TeamLink>
+                              <small>{groupLabel(entry.code)}</small>
+                            </span>
+                          </th>
+                          <td className={num(entry.inBed)}>{shown(entry.inBed)}</td>
+                          <td className={num(entry.withDate)}>{shown(entry.withDate)}</td>
+                          <td className={num(entry.dueOutWeek)}>{shown(entry.dueOutWeek)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <Foot
+              link={
+                emptyTeams > 0 || unknown > 0 ? (
+                  <button
+                    type="button"
+                    className={redesign.link}
+                    aria-expanded={listAll}
+                    onClick={() => setListAll((value) => !value)}
+                    data-testid="ward-statistics-teams-show-empty"
+                  >
+                    {listAll ? "Show fewer" : `Show all ${teams.length}`}
+                    <ChevronRight size={14} aria-hidden="true" />
+                  </button>
+                ) : null
               }
             >
-              {emptyTeams > 0 ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowEmptyTeams((value) => !value)}
-                  data-testid="ward-statistics-teams-show-empty"
-                >
-                  {showEmptyTeams ? "Hide teams with nobody in a bed" : `Show ${emptyTeams} with nobody in a bed`}
-                </Button>
-              ) : null}
-            </CardFoot>
+              {unknown > 0
+                ? `${unknown} ${plural(unknown, "team", "teams")} show a dash: a referral on record cannot be found.`
+                : `${emptyTeams} ${plural(emptyTeams, "team has", "teams have")} nobody in a bed`}
+            </Foot>
           </StatCard>
         </>
       )}

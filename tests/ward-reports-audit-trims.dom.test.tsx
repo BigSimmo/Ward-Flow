@@ -55,7 +55,7 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
     const all = screen.getByTestId("ward-statistics-teams-all");
     const before = within(all).getAllByRole("link").length;
     const toggle = within(all).getByTestId("ward-statistics-teams-show-empty");
-    expect(toggle).toHaveTextContent(/^Show \d+ with nobody in a bed$/u);
+    expect(toggle).toHaveTextContent(/^Show all \d+$/u);
     fireEvent.click(toggle);
     expect(within(all).getAllByRole("link").length).toBeGreaterThan(before);
   });
