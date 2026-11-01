@@ -56,8 +56,8 @@ describe("Handover carries open promises over (closing-the-loop package A)", () 
     inProvider(<HandoverPage />);
     const panel = screen.getByTestId("ward-handover-open-promises");
     const rf001 = within(panel).getByTestId("ward-handover-promise-RF-001");
-    expect(rf001).toHaveTextContent("Promise overdue");
+    expect(rf001).toHaveTextContent("Overdue");
     expect(within(rf001).getByRole("link")).toHaveAttribute("href", referralBoardHref("RF-001"));
-    expect(within(panel).getByTestId("ward-handover-promise-RF-005")).toHaveTextContent("next callback");
+    expect(within(panel).getByTestId("ward-handover-promise-RF-005")).toHaveTextContent("ring back");
   });
 });

@@ -11,7 +11,7 @@ import refined from "./handover-refined.module.css";
  * Since previous handover as one line of figures, not four tiles that mostly read 0. A figure of
  * 0 is still said, once, so nothing reads as missing. The hero's Changed since chip still hides it.
  */
-export function SinceLine({ since, items }: { since: string; items: SinceItem[] }) {
+function SinceLine({ since, items }: { since: string; items: SinceItem[] }) {
   return (
     <section className={styles.sinceLine} data-testid="ward-handover-since" aria-labelledby="handover-since-title">
       <h2 id="handover-since-title" className={styles.sinceTitle}>

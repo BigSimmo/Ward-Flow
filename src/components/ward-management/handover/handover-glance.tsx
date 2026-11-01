@@ -142,7 +142,7 @@ export function HandoverHeroCounts({
           aria-pressed={pressed === id}
           aria-label={
             id === "act"
-              ? `${counts.act} act now, ${actNowAlerts} ${actNowAlerts === 1 ? "alert" : "alerts"}`
+              ? `Act now (${counts.act} ${counts.act === 1 ? "person" : "people"}, ${actNowAlerts} ${actNowAlerts === 1 ? "alert" : "alerts"})`
               : undefined
           }
           onClick={() => onPress(id)}

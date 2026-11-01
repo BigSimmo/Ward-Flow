@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -33,7 +33,7 @@ describe("Handover sign-off with Undo", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
+    fireEvent.click(within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Sign off" }));
     // Approved redesign (31 Oct 2026): on the Patients tab the sign-off bar, not the hero, carries Sign off.
     expect(screen.getByTestId("ward-handover-sign-bar")).toHaveTextContent("Signed 10:42");
 

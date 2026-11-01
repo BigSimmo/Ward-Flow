@@ -1743,10 +1743,14 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
       "utf8",
     );
     // Refined Handover A (9 Oct 2026): the hero counts are the meeting-order groups.
-    expect(source).toContain("ward-handover-kpi-strip");
-    expect(source).toContain("Act now");
-    expect(source).toContain("Finding a ward");
-    expect(source).toContain("Moving");
+    const glance = readFileSync(
+      resolve(process.cwd(), "src/components/ward-management/handover/handover-glance.tsx"),
+      "utf8",
+    );
+    expect(glance).toContain("ward-handover-kpi-strip");
+    expect(glance).toContain("Act now");
+    expect(glance).toContain("Finding a ward");
+    expect(glance).toContain("Moving");
   });
 
   it("Integration Screen 2: DischargeBoard mounts with WardFlowProvider and renders KPI testIds", () => {

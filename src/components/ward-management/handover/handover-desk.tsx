@@ -51,11 +51,6 @@ export function peopleToHandOver(n: number): string {
   return `${n} ${n === 1 ? "person" : "people"} to hand over`;
 }
 
-/** The ward desk's Act now chip shows two words; its spoken label keeps the breakdown. */
-export function actNowChipLabel(people: number, alerts: number): string {
-  return `${people} act now: ${people} ${people === 1 ? "person" : "people"}, ${alerts} ${alerts === 1 ? "alert" : "alerts"}`;
-}
-
 /**
  * Highlight chips on a ward desk: Declined and Escalated are the coordinator's bed search, and a
  * ward does not learn another ward's refusal (FD-23), so they are left out here.
