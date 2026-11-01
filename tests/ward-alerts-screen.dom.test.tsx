@@ -299,7 +299,7 @@ describe("Alerts owner menu (remaining-pages audit ops-15, 13 Oct 2026; one menu
 });
 
 describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => {
-  it("makes Next alert the one primary and Broadcast a secondary", () => {
+  it("makes Next alert the one primary and puts Broadcast under the menu (Q153)", () => {
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
@@ -316,9 +316,8 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
       expect(hero.getByRole("button", { name: /^Next alert/u }).className).toBe(
         buttonClass({ variant: "light", className: phoneRows.heroPill }),
       );
-      expect(hero.getByRole("button", { name: /^Broadcast/u }).className).toBe(
-        buttonClass({ variant: "onHero", className: phoneRows.heroPill }),
-      );
+      expect(hero.queryByRole("button", { name: /^Broadcast/u })).toBeNull();
+      expect(hero.getByRole("button", { name: "More alert actions" }).className).toContain(phoneRows.heroPill);
     } finally {
       vi.unstubAllGlobals();
     }

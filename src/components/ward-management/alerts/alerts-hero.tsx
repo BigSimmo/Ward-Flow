@@ -3,13 +3,14 @@
 // The Alerts screen's hero: the phone hero with its directive card and Today sheet, or the desktop
 // hero with its figures, broadcast and tools. Moved out of `alerts-screen.tsx` for the line cap.
 import type { ReactNode, RefObject } from "react";
-import { Bell, BellRing, ChevronRight, Copy, Pause, Play, Radio } from "lucide-react";
+import { Bell, BellRing, ChevronRight, Copy, MoreHorizontal, Pause, Play, Radio } from "lucide-react";
 
 import {
   Button,
   Hero,
   HeroStat,
   LiveChip,
+  Menu,
   PhoneHero,
   PhoneSheet,
   StatusGlyph,
@@ -97,6 +98,7 @@ export function AlertsHero({
   // Nurse in charge: a ward desk never broadcasts, so the greyed Broadcast is left out too.
   const wardDesk = deskRole === "ward";
   const canBroadcast = !officerDesk && !wardDesk;
+  const showNext = !(wardDesk && nextQueue.length === 0);
   return (
     <>
       {isPhone ? (
@@ -147,12 +149,10 @@ export function AlertsHero({
             ]}
             actions={
               <div className={phoneRows.heroPills}>
-                {/* Phone (Josh, 31 Oct 2026): Home's hero pills, side by side. */}
-                {/* Ops-14 (13 Oct 2026): working the next alert is the common action, so it is the
-                      one primary; a statewide broadcast stays one tap away as a secondary, with Pause between
-                      the two so a thumb aiming for Next cannot start a broadcast (P017, 27 Oct 2026). */}
-                {/* Nurse in charge: a quiet ward has no next alert, so no filled button that does nothing. */}
-                {wardDesk && nextQueue.length === 0 ? null : (
+                {/* Phone (Josh, Q153, 1 Nov 2026): one hero action, the rest under "…". Working the
+                    next alert is the common action (Ops-14), so it is the one shown; a statewide
+                    broadcast is never a single tap from it (P017). A quiet ward has no next alert. */}
+                {showNext ? (
                   <Button
                     className={phoneRows.heroPill}
                     variant="light"
@@ -162,28 +162,62 @@ export function AlertsHero({
                   >
                     Next alert
                   </Button>
-                )}
-                <Button
-                  className={phoneRows.heroPill}
-                  variant="onHero"
-                  icon={live.paused ? Play : Pause}
-                  aria-pressed={live.paused}
-                  title={live.paused ? "Resume live updates" : "Hold the list still"}
-                  onClick={live.togglePause}
-                >
-                  {live.paused ? "Resume" : "Pause"}
-                </Button>
-                {canBroadcast ? (
+                ) : (
                   <Button
                     className={phoneRows.heroPill}
-                    ref={broadcastTriggerRef}
-                    variant="onHero"
-                    icon={Radio}
-                    disabledReason={broadcastDisabledReason}
-                    onClick={(event) => openComposer(event.currentTarget)}
+                    variant="light"
+                    icon={live.paused ? Play : Pause}
+                    aria-pressed={live.paused}
+                    title={live.paused ? "Resume live updates" : "Hold the list still"}
+                    onClick={live.togglePause}
                   >
-                    Broadcast
+                    {live.paused ? "Resume" : "Pause"}
                   </Button>
+                )}
+                {showNext || canBroadcast ? (
+                  <Menu
+                    label="More alert actions"
+                    align="end"
+                    items={[
+                      ...(showNext
+                        ? [
+                            {
+                              id: "pause",
+                              label: live.paused ? "Resume live updates" : "Hold the list still",
+                              icon: live.paused ? Play : Pause,
+                              onSelect: live.togglePause,
+                            },
+                          ]
+                        : []),
+                      ...(canBroadcast
+                        ? [
+                            {
+                              id: "broadcast",
+                              label: "Broadcast alert",
+                              icon: Radio,
+                              disabled: broadcastDisabledReason !== undefined,
+                              meta: broadcastDisabledReason,
+                              onSelect: () => {
+                                if (broadcastTriggerRef.current) openComposer(broadcastTriggerRef.current);
+                              },
+                            },
+                          ]
+                        : []),
+                    ]}
+                    trigger={(props) => (
+                      <Button
+                        {...props}
+                        ref={(element: HTMLButtonElement | null) => {
+                          props.ref.current = element;
+                          broadcastTriggerRef.current = element;
+                        }}
+                        className={phoneRows.heroPill}
+                        variant="onHero"
+                        icon={MoreHorizontal}
+                        aria-label="More alert actions"
+                      />
+                    )}
+                  />
                 ) : null}
               </div>
             }

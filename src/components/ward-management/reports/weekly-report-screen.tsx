@@ -7,6 +7,7 @@ import { Button, HeroStat, SrOnly, buttonClass, cx, useIsPhone } from "@/compone
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { originName } from "@/components/ward-management/ward-movement-origin";
+import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { ShortLabel } from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import { WeeklyBody } from "@/components/ward-management/statistics/redesign/statistics-redesign-weekly";
@@ -244,6 +245,11 @@ function WeeklyReportView({
   const isPhone = useIsPhone();
   const figures = usePilotFigures(pilot);
   const rows = report.edWaits.rows;
+  // The phone names each ED by its short name (stats-14); the desktop keeps the full name.
+  const edLabel = (movement: NonNullable<typeof rows>[number]["movement"]) => {
+    const full = originName(movement) ?? movement.originEdId;
+    return isPhone ? edShortName(edById(movement.originEdId)) || full : full;
+  };
   const longestRow = rows?.reduce<(typeof rows)[number] | undefined>(
     (best, row) => (best && best.waitedMinutes >= row.waitedMinutes ? best : row),
     undefined,
@@ -403,12 +409,12 @@ function WeeklyReportView({
           edWaits={{
             count: report.edWaits.count,
             longest: longestWait,
-            longestEd: longestRow ? (originName(longestRow.movement) ?? longestRow.movement.originEdId) : undefined,
+            longestEd: longestRow ? edLabel(longestRow.movement) : undefined,
             waitedTo: `Waited to ${dateOf(week.countedEnd - 1, dayZero)}`,
             rows: rows?.map((row) => ({
               id: row.movement.id,
               admission: admissionLabel?.(row.movement.id),
-              ed: originName(row.movement) ?? row.movement.originEdId ?? "Emergency department",
+              ed: edLabel(row.movement) ?? "Emergency department",
               opened: formatSheetMoment(row.movement.openedAt as Instant, dayZero),
               waited: splitDuration(row.waitedMinutes),
               veryLong: row.waitedMinutes >= VERY_LONG_WAIT_MINUTES,
