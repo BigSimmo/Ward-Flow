@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 
-import { minutesText } from "./alerts-model";
 import styles from "./alerts.module.css";
 
 /**
@@ -310,51 +309,5 @@ export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant 
         {nowLine}
       </svg>
     </div>
-  );
-}
-
-/** Time left on a broadcast: the used part of its life drawn as a ring, time left in the centre. */
-export function TimeRing({
-  from,
-  until,
-  now,
-  size = 64,
-  onHero = false,
-}: {
-  from: Instant;
-  until: Instant;
-  now: Instant;
-  size?: number;
-  onHero?: boolean;
-}) {
-  const radius = size / 2 - 5;
-  const circumference = 2 * Math.PI * radius;
-  const left = Math.max(0, until - now);
-  const fraction = Math.max(0, Math.min(1, left / Math.max(1, until - from)));
-  const centre = size / 2;
-  return (
-    <svg
-      className={onHero ? styles.ringOnHero : styles.ring}
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      role="img"
-      aria-label={`${minutesText(left)} left`}
-    >
-      <circle cx={centre} cy={centre} r={radius} className={styles.ringTrack} />
-      <circle
-        cx={centre}
-        cy={centre}
-        r={radius}
-        className={styles.ringFill}
-        strokeDasharray={`${(circumference * fraction).toFixed(1)} ${circumference.toFixed(1)}`}
-        transform={`rotate(-90 ${centre} ${centre})`}
-      />
-      {size >= 48 ? (
-        <text x="50%" y={centre + 1} className={styles.ringText} textAnchor="middle" dominantBaseline="middle">
-          {minutesText(left).replace(" ", "")}
-        </text>
-      ) : null}
-    </svg>
   );
 }
