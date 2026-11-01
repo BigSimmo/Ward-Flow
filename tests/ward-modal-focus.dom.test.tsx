@@ -271,8 +271,8 @@ describe("hand-built Ward modals on the shared contract", () => {
     trigger.focus();
     fireEvent.click(trigger);
 
-    const dialog = screen.getByRole("dialog", { name: /Broadcast network alert/i });
-    const close = within(dialog).getByRole("button", { name: "Close broadcast modal" });
+    const dialog = screen.getByRole("dialog", { name: /New broadcast/i });
+    const close = within(dialog).getByRole("button", { name: "Close" });
     expect(close).toHaveFocus();
     expect(trigger.closest("[inert]")).not.toBeNull();
 
@@ -285,7 +285,7 @@ describe("hand-built Ward modals on the shared contract", () => {
     expect(close).toHaveFocus();
 
     fireEvent.keyDown(close, { key: "Escape" });
-    expect(screen.queryByRole("dialog", { name: /Broadcast network alert/i })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: /New broadcast/i })).toBeNull();
     expect(trigger).toHaveFocus();
     expect(trigger.closest("[inert]")).toBeNull();
   });

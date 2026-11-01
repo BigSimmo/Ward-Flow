@@ -19,10 +19,11 @@ describe("broadcast draft: whole-form dirtiness", () => {
   it.each([
     ["title", { title: "Edited headline" }],
     ["message", { message: "Edited body" }],
-    ["severity", { severity: "advisory" as const }],
+    ["severity", { severity: "critical" as const }],
     ["scope", { scope: "forensic" as const }],
-    ["duration", { durationMinutes: 60 }],
+    ["duration", { durationMinutes: 240 }],
     ["category", { category: "ed_surge" as const }],
+    ["audience", { audience: { mode: "pick" as const, groups: [], picked: ["rph-ed"], bedNow: false } }],
   ])("is dirty when only the %s changes", (_name, change) => {
     const base = broadcastDraftBaseline("custom");
     const draft = { ...base, ...change };
@@ -55,6 +56,13 @@ describe("broadcast draft: round trip", () => {
     ["unknown scope", JSON.stringify({ ...broadcastDraftBaseline("custom"), scope: "everywhere" })],
     ["unknown template", JSON.stringify({ ...broadcastDraftBaseline("custom"), templateId: "nope" })],
     ["bad duration", JSON.stringify({ ...broadcastDraftBaseline("custom"), durationMinutes: -5 })],
+    [
+      "unknown audience group",
+      JSON.stringify({
+        ...broadcastDraftBaseline("custom"),
+        audience: { mode: "groups", groups: ["everywhere"], picked: [], bedNow: false },
+      }),
+    ],
   ])("rejects a malformed draft instead of restoring part of it: %s", (_name, raw) => {
     expect(parseBroadcastDraft(raw)).toBeUndefined();
   });
