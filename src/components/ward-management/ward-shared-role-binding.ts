@@ -1,5 +1,5 @@
 import { forgetDowntimePack } from "./reports/downtime-pack";
-import type { SharedRoleChoice, SharedView } from "./ward-shared-client-types";
+import type { SharedRoleChoice, SharedSnapshot, SharedView } from "./ward-shared-client-types";
 
 // The shared client's role-binding checks, kept apart so ward-shared-client.ts stays under the line
 // limit. Each reply is bound to the signed-in account, its current role and access context before
@@ -97,6 +97,37 @@ export function viewLifetimeChanged(view: SharedView, update: Partial<SharedView
   );
 }
 
+/** A committed revision is definitive even if its display binding changed. Older servers may
+ * omit it, but their full operational snapshot must be valid before recovery can be cleared. */
+async function hasCommandCompletionEvidence(value: Reply): Promise<boolean> {
+  if (Number.isSafeInteger(value.commandRevision) && Number(value.commandRevision) > 0) return true;
+  const snapshot = value.snapshot as (Partial<SharedSnapshot> & { kind?: unknown }) | null | undefined;
+  if (
+    !snapshot ||
+    typeof snapshot !== "object" ||
+    Array.isArray(snapshot) ||
+    snapshot.kind !== undefined ||
+    snapshot.dataMode !== "prototype" ||
+    !Number.isSafeInteger(snapshot.revision) ||
+    Number(snapshot.revision) < 1 ||
+    !Number.isFinite(snapshot.now) ||
+    (snapshot.accessContext !== undefined &&
+      (typeof snapshot.accessContext !== "string" || !/^[a-f0-9]{64}$/.test(snapshot.accessContext))) ||
+    snapshot.payload?.version !== 1 ||
+    typeof snapshot.payload.dayZero !== "string" ||
+    !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||
+    typeof snapshot.payload.startedAt !== "string" ||
+    !Number.isFinite(Date.parse(snapshot.payload.startedAt))
+  )
+    return false;
+  const { isValidSharedWardFlowState } = await import("./ward-shared-state-validation");
+  try {
+    return isValidSharedWardFlowState(snapshot.payload.state);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Checks a reply against the account, role and access context its request was sent under. Returns
  * a replacement answer when a command or opening's binding changed, and throws when a read's did.
@@ -126,6 +157,11 @@ export async function verifyResponseBinding(
   const { path, body, response, value, sentBinding, authenticatedActor, workspaceRead } = request;
   const { parseStoredAccess } = await import("./shell/ward-access-store");
   host.current();
+  if (path === "/v1/workspace/commands" && body && response.ok) {
+    if (!(await hasCommandCompletionEvidence(value))) throw new Error("Save not confirmed");
+    // Legacy snapshot validation can yield; do not act on a role that ended in the meantime.
+    host.current();
+  }
   const view = host.view();
   const access = parseStoredAccess(JSON.stringify(value.access), { shared: true });
   const aggregate = value.snapshot?.kind === "executive-aggregate";

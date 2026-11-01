@@ -5,11 +5,6 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-31-legal-times-as-typed",
-    "date": "2026-10-31",
-    "line": "Legal form times now show only as typed, such as \"Ends 15:42 as typed\", never as a countdown."
-  },
-  {
     "id": "2026-10-31-settings-restore-export",
     "date": "2026-10-31",
     "line": "Settings: Restore now names all twelve rules, and Export saves only the saved rules."
@@ -98,5 +93,10 @@
     "id": "2026-11-01-alerts-redesign",
     "date": "2026-11-01",
     "line": "Alerts is redesigned, with a Today band, a side panel with one action bar, and Add units on a live broadcast."
+  },
+  {
+    "id": "2026-11-01-arrival-and-save-recovery",
+    "date": "2026-11-01",
+    "line": "Arrivals respect closed beds, unconfirmed saves can be retried, and reconnecting checks for unfinished work."
   }
 ]
