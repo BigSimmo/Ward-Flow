@@ -16,6 +16,7 @@ import {
   Server,
   Shield,
   TriangleAlert,
+  User,
   WifiOff,
 } from "lucide-react";
 
@@ -304,6 +305,7 @@ export function EmailField({
   invalid,
   inputRef,
   label = "Email",
+  icon = "mail",
 }: {
   id: string;
   value: string;
@@ -312,13 +314,15 @@ export function EmailField({
   invalid?: boolean;
   inputRef?: RefObject<HTMLInputElement | null>;
   label?: string;
+  /** The Ward Flow sign-in page calls the account's email its username, with a person icon. */
+  icon?: "mail" | "user";
 }) {
   return (
     <div className={styles.field}>
       <label htmlFor={id}>{label}</label>
       <div className={styles.inwrap}>
         <span className={styles.lead}>
-          <Mail aria-hidden="true" />
+          {icon === "user" ? <User aria-hidden="true" /> : <Mail aria-hidden="true" />}
         </span>
         <input
           ref={inputRef}

@@ -89,9 +89,22 @@ export type FrontDoorProps = {
   tv?: boolean;
   /** The public demo, offered under the card. `null` leaves it off; unset uses `publicDemoUrl()`. */
   demoUrl?: string | null;
+  /**
+   * What the sign-in card calls the account's email. The Ward Flow sign-in page says "Username"
+   * (Josh, Q166, 1 November 2026): the username is the work email, as accounts sign in today.
+   */
+  accountLabel?: AccountLabel;
 };
 
-export function FrontDoor({ form, notice, tv = false, demoUrl = publicDemoUrl() }: FrontDoorProps) {
+export type AccountLabel = "Email" | "Username";
+
+export function FrontDoor({
+  form,
+  notice,
+  tv = false,
+  demoUrl = publicDemoUrl(),
+  accountLabel = "Email",
+}: FrontDoorProps) {
   const [view, setView] = useState<View>("sign-in");
   const [email, setEmail] = useState("");
   // P190: a tab signed out from a page must not keep that page's name in its title.
@@ -116,6 +129,7 @@ export function FrontDoor({ form, notice, tv = false, demoUrl = publicDemoUrl() 
       email={email}
       setEmail={setEmail}
       demoUrl={demoUrl}
+      accountLabel={accountLabel}
       forgot={() => {
         form?.cancel();
         setView("forgot");
@@ -130,10 +144,12 @@ function SignInMessage({
   form,
   notice,
   online,
+  accountLabel = "Email",
 }: {
   form: WardCredentialForm | undefined;
   notice?: string | null;
   online: boolean;
+  accountLabel?: AccountLabel;
 }) {
   if (!online)
     return (
@@ -159,7 +175,7 @@ function SignInMessage({
         <DoorBanner
           tone="danger"
           icon="alert"
-          title="Email or password is not right."
+          title={`${accountLabel} or password is not right.`}
           body="Check both and try again."
         />
       );
@@ -206,6 +222,7 @@ function SignInDoor({
   email,
   setEmail,
   demoUrl,
+  accountLabel,
   forgot,
   signup,
 }: {
@@ -214,6 +231,7 @@ function SignInDoor({
   email: string;
   setEmail: (value: string) => void;
   demoUrl?: string | null;
+  accountLabel: AccountLabel;
   forgot: () => void;
   signup: () => void;
 }) {
@@ -241,9 +259,11 @@ function SignInDoor({
             <h1>Sign in</h1>
             <p>Use your Ward Flow account.</p>
           </header>
-          <SignInMessage form={form} notice={notice} online={online} />
+          <SignInMessage form={form} notice={notice} online={online} accountLabel={accountLabel} />
           <EmailField
             id={`${uid}-email`}
+            label={accountLabel}
+            icon={accountLabel === "Username" ? "user" : "mail"}
             value={email}
             onChange={setEmail}
             disabled={busy || !form}

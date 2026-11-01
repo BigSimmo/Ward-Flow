@@ -843,7 +843,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-flow-provider.dom.test.tsx`** (579 lines) — WardFlowProvider
 - **`tests/ward-flow-queue-selection.dom.test.tsx`** (130 lines) — the Delays screen reflects a dispatch made after mount, not the records it first rendered
 - **`tests/ward-flow-recovery.dom.test.tsx`** (327 lines) — conservative demo recovery
-- **`tests/ward-flow-sign-in-screen.dom.test.tsx`** (124 lines) — Ward Flow sign-in screen — static credential-field guard
+- **`tests/ward-flow-sign-in-screen.dom.test.tsx`** (109 lines) — Ward Flow sign-in page: the front door card with Username and Password, real account sign-in, Explore the demo
 - **`tests/ward-freshness.dom.test.tsx`** (54 lines) — freshness stamp
 - **`tests/ward-movement-drawer-person.test.ts`** (122 lines) — the Movement drawer's Person line (O-16.3)
 - **`tests/ward-notification-center.dom.test.tsx`** (513 lines) — WardNotificationCenter DOM Component

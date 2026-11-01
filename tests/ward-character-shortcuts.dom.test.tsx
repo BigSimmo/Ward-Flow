@@ -15,7 +15,6 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { WardFlowSignInScreen } from "@/components/ward-flow-sign-in/ward-flow-sign-in-screen";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { isGlobalSearchShortcut } from "@/components/ward-management/search/search-shortcut";
@@ -125,16 +124,6 @@ describe("the browser's single-key shortcut preference", () => {
     act(() => setCharacterShortcutsEnabled(true));
     fireEvent.keyDown(document.body, { key: "2" });
     expect(screen.getByTestId("statistics-view")).toHaveTextContent("journey");
-  });
-
-  it("scopes the standalone role chooser's number keys to its focused picker", () => {
-    render(<WardFlowSignInScreen />);
-    const roles = within(screen.getByRole("group", { name: /^Your role/ })).getAllByRole("button");
-    fireEvent.keyDown(document.body, { key: "2" });
-    expect(roles[0]).toHaveAttribute("aria-pressed", "true");
-    roles[0]!.focus();
-    fireEvent.keyDown(roles[0]!, { key: "2" });
-    expect(roles[1]).toHaveAttribute("aria-pressed", "true");
   });
 
   it("controls Shift+letter drawer shortcuts", () => {
