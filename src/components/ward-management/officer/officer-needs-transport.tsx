@@ -22,21 +22,70 @@ import type { TransportBookingAnswers } from "@/components/ward-management/ward-
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { useWardRaise, type WardRaise } from "@/components/ward-management/ward-flow-raise";
+import { communityTeamById, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { Referral } from "@/components/ward-management/ward-model";
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
 import styles from "./officer.module.css";
 
-/**
- * The desks that log a booking here. Only the statewide coordinator: a ward, community or ED desk must
- * book as its own place (`actingUnitId` / `actingPlaceId`), so it books from the patient record instead.
- */
-const BOOKING_ROLES = ["coordinator"] as const;
+/** The desks that log a booking here (Transport mock-up, Josh, 1 Nov 2026). */
+const BOOKING_ROLES = ["coordinator", "ed", "ward", "community"] as const;
+type BookingRole = (typeof BOOKING_ROLES)[number];
 
-/** The pulled beds this desk may log a booking for, and the raise that logs it. */
-export function useNeedsTransport(movements: readonly Movement[], role: string | undefined) {
-  const bookingRole = BOOKING_ROLES.find((candidate) => candidate === role);
+/** The place a booking is raised as: a ward books as its unit, a community team as its team. */
+export type BookingActing = { actingUnitId?: string; actingPlaceId?: string };
+
+type BookingRecords = { admissions: readonly Admission[]; referrals: readonly Referral[] };
+
+/**
+ * The sending ward, in the reducer's own order (`case "BOOK_TRANSPORT"`): the source admission's
+ * unit, then the referral's origin unit, then the movement's own.
+ */
+function sendingWardOf(movement: Movement, records: BookingRecords, referral: Referral | undefined) {
+  const source = movement.sourceAdmissionId
+    ? records.admissions.find((admission) => admission.id === movement.sourceAdmissionId)
+    : undefined;
+  return source?.unitId ?? referral?.originUnitId ?? (movement as { originUnitId?: string }).originUnitId;
+}
+
+/**
+ * The place this desk books `movement` as, or `undefined` when the journey is not this desk's to book.
+ * Only the sending ward or sending community team may book (the reducer refuses anyone else), and an
+ * ED desk books only the journeys that start in its own ED.
+ */
+function actingFor(access: WardAccess, movement: Movement, records: BookingRecords): BookingActing | undefined {
+  const scope = access.scope;
+  if (access.role === "coordinator") return {};
+  const referral = movement.referralId ? records.referrals.find((r) => r.id === movement.referralId) : undefined;
+  if (access.role === "ed") return scope.kind === "ed" && movement.originEdId === scope.edId ? {} : undefined;
+  if (access.role === "ward" && scope.kind === "ward") {
+    const unitId = sendingWardOf(movement, records, referral);
+    return unitId && scope.unitIds.includes(unitId) ? { actingUnitId: unitId } : undefined;
+  }
+  if (access.role === "community" && scope.kind === "team") {
+    const team = communityTeamById(communityTeamSlug(scope.teamName));
+    const sending = referral?.sendingTeamName;
+    if (!team || sending === undefined || communityTeamSlug(sending) !== team.id) return undefined;
+    return { actingPlaceId: team.id };
+  }
+  return undefined;
+}
+
+/** The pulled beds this desk may log a booking for, the place it books each as, and the raise. */
+export function useNeedsTransport(movements: readonly Movement[], access: WardAccess, records: BookingRecords) {
+  const bookingRole: BookingRole | undefined = BOOKING_ROLES.find((candidate) => candidate === access.role);
   const raise = useWardRaise(bookingRole ?? "coordinator");
-  return { needing: bookingRole ? movementsNeedingTransport(movements) : [], raise };
+  const acting = new Map<string, BookingActing>();
+  if (bookingRole) {
+    for (const movement of movementsNeedingTransport(movements)) {
+      const place = actingFor(access, movement, records);
+      if (place) acting.set(movement.id, place);
+    }
+  }
+  const needing = movementsNeedingTransport(movements).filter((movement) => acting.has(movement.id));
+  return { needing, acting, raise };
 }
 
 /** The hero's Need transport count jumps to the list and its first Log booking button. */
@@ -167,6 +216,7 @@ type BookingPanelProps = {
   now: Instant;
   isPhone: boolean;
   raise: WardRaise;
+  acting: BookingActing;
   onClose: () => void;
   onSaved: (name: string) => void;
 };
@@ -181,6 +231,7 @@ export function OfficerBookingPanel({
   now,
   isPhone,
   raise,
+  acting,
   onClose,
   onSaved,
 }: BookingPanelProps) {
@@ -238,7 +289,7 @@ export function OfficerBookingPanel({
             error={save.error}
             onSubmit={(booking) =>
               save.submit(
-                () => raise("BOOK_TRANSPORT", { movementId: movement.id, ...booking }),
+                () => raise("BOOK_TRANSPORT", { movementId: movement.id, ...acting, ...booking }),
                 () => onSaved(name),
               )
             }
