@@ -97,14 +97,15 @@ describe("Discharges charts under the table (direction A)", () => {
   it("clears a hiding status filter on a chart click, and drops the highlight on a population switch", () => {
     renderBoard();
     fireEvent.click(screen.getByRole("button", { name: /^History/u }));
-    const statusSelect = () => screen.getByRole("combobox", { name: "Status" }) as HTMLSelectElement;
-    fireEvent.change(statusSelect(), { target: { value: "confirmed" } });
-    expect(statusSelect().value).toBe("confirmed");
+    const confirmedChip = () =>
+      within(screen.getByRole("group", { name: "Status" })).getByRole("button", { name: /^Confirmed/u });
+    fireEvent.click(confirmedChip());
+    expect(confirmedChip()).toHaveAttribute("aria-pressed", "true");
     const first = within(barrierBars()).getAllByRole("button")[0]!;
     const count = Number(/: (\d+) held up/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
     expect(count).toBeGreaterThan(0);
     fireEvent.click(first);
-    expect(statusSelect().value).toBe("all");
+    expect(confirmedChip()).toHaveAttribute("aria-pressed", "false");
     expect(worklistRows().filter((row) => row.getAttribute("data-highlighted") === "true")).toHaveLength(count);
     fireEvent.click(screen.getByRole("button", { name: /^Now,/u }));
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
@@ -115,14 +116,20 @@ describe("Discharges charts under the table (direction A)", () => {
     expect(screen.queryByRole("toolbar", { name: "Quick blocker filters" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Filter by discharge status")).not.toBeInTheDocument();
     expect(screen.getAllByRole("combobox", { name: "Blocker" })).toHaveLength(1);
-    // The Status dropdown's counts are the hero chips' counts, so the two never disagree.
-    const options = within(screen.getByRole("combobox", { name: "Status" })).getAllByRole("option");
+    // The Status chips' counts are the hero chips' counts, so the two never disagree.
+    const statusChips = within(screen.getByRole("group", { name: "Status" })).getAllByRole("button");
+    const chipLabels: Record<string, RegExp> = {
+      blocked: /^Held up/u,
+      confirmed: /^Confirmed/u,
+      expected: /^Expected/u,
+      departed: /^Discharged/u,
+    };
     for (const key of ["blocked", "confirmed", "expected", "departed"]) {
       const chip = screen.getByTestId(`ward-discharge-kpi-${key}`);
       // P082: the chip's name starts with the count it shows.
       const count = /^(\d+) /u.exec(chip.getAttribute("aria-label") ?? "")?.[1];
-      const option = options.find((candidate) => (candidate as HTMLOptionElement).value === key)!;
-      expect(option.textContent).toMatch(new RegExp(` · ${count}$`, "u"));
+      const statusChip = statusChips.find((candidate) => chipLabels[key]!.test(candidate.textContent ?? ""))!;
+      expect(statusChip.textContent).toMatch(new RegExp(`${count}$`, "u"));
     }
   });
 
