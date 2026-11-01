@@ -131,13 +131,6 @@ export function WardDischargesMatrix({
                   </div>
                 </div>
 
-                {/* Pre-Departure Readiness Checklist */}
-                <div className={styles.checklistChips}>
-                  <span className={styles.chkChip}>✓ Doctor Summary</span>
-                  <span className={styles.chkChip}>✓ TTO Pharmacy</span>
-                  <span className={styles.chkChip}>✓ Family Transport</span>
-                </div>
-
                 <div>
                   {release.state === "expected" ? (
                     <button
