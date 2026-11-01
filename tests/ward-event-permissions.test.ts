@@ -502,6 +502,7 @@ describe("who may raise which event", () => {
     ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],
     STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager"],
     EXTEND_BROADCAST_ALERT: ["coordinator", "bed_manager"],
+    ADD_BROADCAST_ALERT_UNITS: ["coordinator", "bed_manager"],
     RAISE_PULL_NOW: ["coordinator"],
     REPLY_BROADCAST_ALERT: ["ward", "bed_manager", "coordinator"],
     UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],

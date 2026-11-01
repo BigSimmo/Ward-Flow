@@ -164,6 +164,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "ACKNOWLEDGE_BROADCAST_ALERT":
     case "STAND_DOWN_BROADCAST_ALERT":
     case "EXTEND_BROADCAST_ALERT":
+    case "ADD_BROADCAST_ALERT_UNITS":
     case "REPLY_BROADCAST_ALERT":
       return event.alertId;
     case "RAISE_PULL_NOW":

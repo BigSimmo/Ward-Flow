@@ -1491,6 +1491,22 @@ export function candidateEvents(
         }));
     case "DISPATCH_BROADCAST_ALERT":
       return [
+        // Q149 (1 Nov 2026): one sent to a single ward, so Add units has desks left to add. First, as
+        // the sweep applies the first candidate the reducer accepts.
+        ...unitIds.slice(0, 1).map((unitId) => ({
+          type,
+          role,
+          now,
+          title: "Synthetic chosen-ward notice",
+          message: "Synthetic broadcast for the legal-figure sweep",
+          severity: BROADCAST_SEVERITIES[0]!,
+          category: BROADCAST_CATEGORIES[0]!,
+          targetScope: BROADCAST_TARGET_SCOPES[0]!,
+          targetScopeLabel: "Synthetic scope",
+          durationMinutes: 60,
+          dispatchedByName: "Synthetic coordinator",
+          targetUnitIds: [unitId],
+        })),
         {
           type,
           role,
@@ -1512,6 +1528,8 @@ export function candidateEvents(
     case "STAND_DOWN_BROADCAST_ALERT":
     case "EXTEND_BROADCAST_ALERT":
       return state.broadcastAlerts.map((alert) => ({ type, role, now, alertId: alert.id }));
+    case "ADD_BROADCAST_ALERT_UNITS":
+      return state.broadcastAlerts.map((alert) => ({ type, role, now, alertId: alert.id, unitIds }));
     // Global alerts (10 Oct 2026): a Pull now for every movement, then each ward answering every
     // live alert. Read from live state, like the broadcast trio above.
     case "RAISE_PULL_NOW":

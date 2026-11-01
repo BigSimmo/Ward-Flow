@@ -2114,6 +2114,14 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
   [
     0.5,
     (state, random) => ({
+      type: "ADD_BROADCAST_ALERT_UNITS",
+      alertId: id(pick(random, alerts(state))),
+      unitIds: [id(pick(random, state.units))],
+    }),
+  ],
+  [
+    0.5,
+    (state, random) => ({
       type: "STAND_DOWN_BROADCAST_ALERT",
       alertId: id(prefer(random, alerts(state), (alert) => alert.status === "active")),
     }),

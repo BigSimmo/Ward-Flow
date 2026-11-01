@@ -84,6 +84,8 @@ export function BroadcastLiveCard({
   sentByYou,
   acknowledgements,
   onExtend,
+  onAddUnits,
+  addUnitsDisabledReason,
   onCopyAnswers,
   onStandDown,
 }: {
@@ -94,6 +96,8 @@ export function BroadcastLiveCard({
   /** A directive's acknowledgements against the desks this desk can see; undefined shows none. */
   acknowledgements: { acknowledged: number; of: number } | undefined;
   onExtend: () => void;
+  onAddUnits: () => void;
+  addUnitsDisabledReason?: string;
   onCopyAnswers: (text: string) => void;
   onStandDown: () => void;
 }) {
@@ -209,11 +213,7 @@ export function BroadcastLiveCard({
         <Button icon={Clock} onClick={onExtend}>
           Extend {durMinutes(DEFAULT_BROADCAST_EXTENSION_MINUTES)}
         </Button>
-        <Button
-          icon={Users}
-          disabledReason="Adding units to a live broadcast is not built yet."
-          reasonDisplay="tooltip"
-        >
+        <Button icon={Users} onClick={onAddUnits} disabledReason={addUnitsDisabledReason} reasonDisplay="tooltip">
           Add units
         </Button>
         {board ? (

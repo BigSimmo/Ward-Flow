@@ -51,7 +51,8 @@ describe("Broadcast tab", () => {
     ).toBeInTheDocument();
     expect(within(card).getByText(`0 of ${metro} answered`)).toBeInTheDocument();
     expect(within(card).getAllByRole("row")).toHaveLength(metro + 1);
-    expect(within(card).getByRole("button", { name: /Add units/ })).toHaveAttribute("aria-disabled", "true");
+    // Q149 (1 Nov 2026): Add units is built, and other wards are still free to ask.
+    expect(within(card).getByRole("button", { name: /Add units/ })).not.toHaveAttribute("aria-disabled", "true");
     expect(within(card).getByRole("button", { name: /Copy answers/ })).toBeInTheDocument();
 
     fireEvent.click(within(card).getByRole("button", { name: "Stand down this alert" }));

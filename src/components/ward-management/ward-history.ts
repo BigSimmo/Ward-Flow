@@ -206,6 +206,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   ACKNOWLEDGE_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast directive acknowledged" },
   STAND_DOWN_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast directive stood down" },
   EXTEND_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast alert extended" },
+  ADD_BROADCAST_ALERT_UNITS: { category: "neither", plainWording: "Units added to a broadcast alert" },
   RAISE_PULL_NOW: { category: "neither", plainWording: "Pull now alert raised" },
   REPLY_BROADCAST_ALERT: { category: "neither", plainWording: "Alert answered" },
   // Bed history finds a booking's events by its ward; patient history finds the change, cancel and
