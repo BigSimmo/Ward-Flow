@@ -26,7 +26,8 @@ describe("Broadcast tab", () => {
   it("offers Broadcast alert when nothing is live", () => {
     mount();
     broadcastTab();
-    expect(screen.getByText("No broadcast live")).toBeInTheDocument();
+    // The header band says it too (Alerts redesign), so read the tab panel.
+    expect(within(screen.getByRole("tabpanel")).getByText("No broadcast live")).toBeInTheDocument();
     const panel = screen.getByRole("tabpanel");
     fireEvent.click(within(panel).getByRole("button", { name: "Broadcast alert" }));
     expect(screen.getByRole("dialog", { name: /New broadcast/ })).toBeInTheDocument();
@@ -52,7 +53,8 @@ describe("Broadcast tab", () => {
     expect(within(card).getByRole("button", { name: /Copy answers/ })).toBeInTheDocument();
 
     fireEvent.click(within(card).getByRole("button", { name: "Stand down this alert" }));
-    expect(screen.getByText("No broadcast live")).toBeInTheDocument();
+    // The header band says it too (Alerts redesign), so read the tab panel.
+    expect(within(screen.getByRole("tabpanel")).getByText("No broadcast live")).toBeInTheDocument();
     const earlier = screen.getByRole("region", { name: "Earlier broadcasts" });
     expect(within(earlier).getByText(/Warning · Metro adult wards · stood down/)).toBeInTheDocument();
   });
