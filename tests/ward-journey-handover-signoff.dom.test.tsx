@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useEffect } from "react";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
@@ -29,7 +29,12 @@ describe("handover sign-off selection integrity", () => {
         <Probe />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: new RegExp(time) }));
+    // 1 Nov 2026 redesign: one handover menu, and the checklist opens from the sign-off bar.
+    fireEvent.click(screen.getByTestId("ward-handover-shift"));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: new RegExp(time) }));
+    fireEvent.click(
+      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
+    );
     const button = screen.queryByTestId("ward-handover-sign-off-button");
     if (!allowed) {
       expect(

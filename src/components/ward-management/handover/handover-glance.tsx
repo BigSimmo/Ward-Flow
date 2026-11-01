@@ -178,6 +178,7 @@ export function HandoverShiftMenu({
         id: option.id,
         label: `${formatInstantWithDay(handoverAt(option.id, now), now)} ${option.label}`,
         checked: shift === option.id,
+        checkable: "radio" as const,
         onSelect: () => onChange(option.id),
       }))}
       trigger={(props) => (

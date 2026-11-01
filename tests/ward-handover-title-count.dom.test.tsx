@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -59,12 +59,14 @@ describe("Handover title count (NA2-01)", () => {
   // Audit 24-4 decision 5 (Josh): Act now counts people, Alerts counts alerts. Both are named.
   it("names the people and the alerts on the Act now count", () => {
     renderAt();
-    const pill = screen.getByRole("button", { name: /Act now \(/ });
-    const match = /^(\d+)\s*Act now \((\d+) (?:person|people), (\d+) alerts?\)$/.exec(
-      (pill.textContent ?? "").replace(/\s+/g, " ").trim(),
-    );
-    expect(match, pill.textContent ?? "").not.toBeNull();
-    const [, count, people, alerts] = match!.map(Number);
+    // 1 Nov 2026 redesign: the count's accessible name says "n act now, m alerts"; its face shows n.
+    const pill = within(screen.getByTestId("ward-handover-kpi-strip")).getByRole("button", {
+      name: /act now, \d+ alerts?$/,
+    });
+    const match = /^(\d+) act now, (\d+) alerts?$/.exec(pill.getAttribute("aria-label") ?? "");
+    expect(match, pill.getAttribute("aria-label") ?? "").not.toBeNull();
+    const [, people, alerts] = match!.map(Number);
+    const count = Number(/^\d+/.exec((pill.textContent ?? "").trim())?.[0]);
     expect(people).toBe(count);
     expect(people).toBeGreaterThan(0);
     // One person can carry more than one alert, never the other way round on the whole network.
