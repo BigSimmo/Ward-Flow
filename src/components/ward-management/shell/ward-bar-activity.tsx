@@ -369,13 +369,18 @@ export function WardBarActivityBody({
                     {commandActivity.departments.map((row) => (
                       <tr key={row.ed.id}>
                         <th scope="row">
-                          <Link
-                            href={edHref(row.ed.id)}
-                            onClick={() => closePopover("activity", false)}
-                            title={row.ed.name}
-                          >
-                            {row.ed.siteCode}
-                          </Link>
+                          {/* Like the event rows above: a link only where this desk may open the page. */}
+                          {canOpenHref(edHref(row.ed.id)) ? (
+                            <Link
+                              href={edHref(row.ed.id)}
+                              onClick={() => closePopover("activity", false)}
+                              title={row.ed.name}
+                            >
+                              {row.ed.siteCode}
+                            </Link>
+                          ) : (
+                            <span title={row.ed.name}>{row.ed.siteCode}</span>
+                          )}
                         </th>
                         <td>{row.waiting}</td>
                         <td>{row.waiting ? splitDuration(row.longestWaitMinutes) : "—"}</td>
