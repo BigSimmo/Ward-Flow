@@ -555,8 +555,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
       ) : null}
       {accessOn && shared && !searching ? (
         <p className={styles.empty} role="note" data-testid="workstation-shared-role-note">
-          In the shared workspace your role comes from your sign-in. Opening a desk here shows its screens only. To work
-          as another of your roles, use Switch role.
+          Opening a desk here shows its screens only. To work as another of your roles, use Switch role.
         </p>
       ) : null}
       {previewNote && !searching ? (

@@ -1149,8 +1149,7 @@ export function HandoverPage() {
       <StatusGlyph tone="neutral" size={9} />
       <span>
         The {formatInstantWithDay(shiftAt, now)} handover has passed
-        {signedAt === null ? " and no sign-off was recorded" : ""}. The sheet shows the board now, with due times read
-        to {formatInstantWithDay(cutoff, now)}.
+        {signedAt === null ? " and no sign-off was recorded" : ""}. Showing the board now.
       </span>
       <Button variant="ghost" size="sm" onClick={() => setTab("hist")}>
         History

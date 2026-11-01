@@ -48,7 +48,7 @@ describe("CoordinatorScreen", () => {
     expect(footer).toBeInTheDocument();
     expect(footer).toHaveTextContent("Demo coordinator view · Not approved for clinical use");
     expect(footer).toHaveTextContent("Synthetic prototype");
-    expect(footer).toHaveTextContent("CAHS inpatient wards are not modelled; private live feeds are unavailable");
+    expect(footer).toHaveTextContent("CAHS wards not modelled");
   });
 
   // Simplification A1 (Josh, 19 Oct 2026): the hero keeps three figures, the same three the phone

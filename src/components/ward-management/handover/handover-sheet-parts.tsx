@@ -162,10 +162,7 @@ export function HandoverKeysHelp({
         checked={enabled}
         onChange={(event) => onEnabledChange(event.target.checked)}
       />
-      <p>
-        This browser setting applies across Ward Flow. Letter shortcuts work while focus is in this handover. Escape and
-        Ctrl/Cmd+K stay available.
-      </p>
+      <p>Applies across Ward Flow in this browser.</p>
       <dl className={refined.keys}>
         {KEYS.filter(([keys]) => signOff || keys !== "S").map(([keys, text]) => (
           <div key={keys}>

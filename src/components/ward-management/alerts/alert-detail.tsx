@@ -306,7 +306,7 @@ export function AlertDetail({
             (!movement
               ? "This alert has no movement to escalate"
               : !escalationApplies
-                ? "Escalation records that the bed search is exhausted, which is not the case for this alert"
+                ? "Escalation is only for an exhausted bed search"
                 : isEscalated
                   ? "Already escalated"
                   : undefined)

@@ -50,7 +50,7 @@ function EdTransportDialog({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenCo
       closeOnScrim={false}
       title="Log transport booking"
       // Surname first (D-83), named once under the one-line title.
-      description={`${patientInfo.formalName} · booked by phone. Fill in each answer as the provider gives it.`}
+      description={`${patientInfo.formalName} · booked by phone`}
       size="md"
       initialFocusRef={firstQuestion}
       data-testid={`ward-ed-book-transport-${movement.id}`}

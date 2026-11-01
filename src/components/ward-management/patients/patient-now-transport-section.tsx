@@ -144,8 +144,8 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
       {isTransportBooked && (
         <p className={styles.transportEmptyText}>
           {liveMovement.transport?.collectedAt !== undefined
-            ? "Booking details cannot be edited after collection. Ask the bed coordinator to review any transport changes."
-            : "Booking details cannot be edited here. Ask the bed coordinator or booking team to cancel the active job before recording a new booking."}
+            ? "Booking details cannot be edited after collection. Ask the bed coordinator."
+            : "Booking details cannot be edited here. Ask the bed coordinator or booking team to cancel the active job first."}
         </p>
       )}
       {/* A34: the one transport booking form every screen uses. */}
@@ -259,14 +259,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
       {!liveMovement || (!isTransportBooked && !showTransportForm) ? (
         <div className={styles.transportEmptyState}>
           <p className={styles.transportEmptyText}>
-            {liveMovement ? (
-              <>
-                No transport vehicle has been logged for this patient yet. Once arranged by phone with the transport
-                provider, click <strong>Mark as Booked</strong> to record the CAD (dispatch) number and quoted ETA.
-              </>
-            ) : (
-              "No linked transport record displayed."
-            )}
+            {liveMovement ? "No transport booked yet." : "No linked transport record displayed."}
           </p>
         </div>
       ) : null}

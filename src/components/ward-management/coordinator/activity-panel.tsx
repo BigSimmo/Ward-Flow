@@ -294,7 +294,7 @@ function ChangeRow({ line, now }: { line: ChangeLine; now: Instant }) {
         {line.text}
         {line.alsoInAlerts ? (
           <span className={styles.alertTag} title="Reviewing it here does not acknowledge the alert">
-            Also in Alerts · not acknowledged here
+            Also in Alerts
           </span>
         ) : null}
       </span>
@@ -332,7 +332,6 @@ function ReviewFoot({ review, now }: { review: Review; now: Instant }) {
           <Button variant="pri" onClick={review.markReviewed}>
             Mark these {count} reviewed
           </Button>
-          <p className={styles.reviewNote}>Alerts, tasks and notices stay as they are.</p>
           <p className={styles.reviewNote}>
             <button type="button" className={styles.textButton} onClick={copyHandover}>
               Copy as handover text
@@ -380,11 +379,10 @@ function RecentBody({ events, tones }: { events: Activity["content"]["changes"];
   return (
     <>
       <p className={styles.metaLine}>
-        The latest {events.length} events, not the full history ·{" "}
+        Latest {events.length} events · Full audit trail in{" "}
         <Link href="/ward-flow/governance" className={styles.metaLink}>
           Governance
-        </Link>{" "}
-        holds the audit trail
+        </Link>
       </p>
       <ChipGroup label="Filter events by category" className={styles.chips}>
         {ACTIVITY_CATEGORY_CHIPS.filter((chip) => chip.id === "all" || counts[chip.id] > 0).map((chip) => (

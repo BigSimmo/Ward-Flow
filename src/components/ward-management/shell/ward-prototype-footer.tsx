@@ -47,7 +47,7 @@ const AUTHORITY_PILL = (
 
 export function WardPrototypeFooter({
   testId,
-  note = "Western Australia Mental Health Bed Flow Prototype · All patient records, clinical journeys, bed states, and timestamps are synthetic demonstration figures · Not approved for clinical use",
+  note = "All records are synthetic demonstration figures · Not approved for clinical use",
   extra,
   style,
   className,

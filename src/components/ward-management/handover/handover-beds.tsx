@@ -617,7 +617,7 @@ export function HandoverBeds({ rows, wards: allWards, held, now, waitingForBed, 
               ))}
             </table>
           </div>
-          <div className={styles.foot}>Ward feed values, each shows its age. A feed over 15 minutes old is amber.</div>
+          <div className={styles.foot}>A feed over 15 minutes old is amber.</div>
         </Card>
       </div>
       <div className={styles.side}>

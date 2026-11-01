@@ -276,8 +276,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(drawerTitle).not.toHaveTextContent(/Bed 01/i);
     // Ward Flow holds no observations. The drawer used to type in the same SpO2, heart rate, blood
     // pressure, pacing mode and transmitter readings for every bed (25 September 2026 audit, A3);
-    // it now says vital signs are not recorded, and no reading appears anywhere in it.
-    expect(drawer).toHaveTextContent(/Vital signs\s*Not recorded in Ward Flow/i);
+    // no reading appears anywhere in it (the "not recorded" vital signs row was cut, Nov 2026).
     expect(drawer).not.toHaveTextContent(/SpO2|bpm|mmHg|Transmitter|Telemetry|1:4/i);
 
     // Close the drawer

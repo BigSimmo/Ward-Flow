@@ -639,7 +639,7 @@ export function resolvePatientNowRecord(
                 },
               ]
             : [],
-          followUp: "Follow-up status is not recorded here.",
+          followUp: "Not recorded.",
         },
         documents: specialDocuments,
         documentsAbsent: "No legal forms recorded for this presentation.",
@@ -685,7 +685,7 @@ export function resolvePatientNowRecord(
       transport: [["Transport", "No linked transport record displayed"]],
       transportNote: "Transport needs are not established by this patient identity record.",
       presentations: [],
-      presentationsAbsent: "No linked presentation history is displayed here.",
+      presentationsAbsent: "None recorded.",
       community: {
         teams: patient.catchmentCommunityTeam
           ? [
@@ -696,13 +696,10 @@ export function resolvePatientNowRecord(
               },
             ]
           : [],
-        followUp: "Follow-up status is not recorded here.",
+        followUp: "Not recorded.",
       },
       documents: specialDocuments,
-      documentsAbsent:
-        specialDocuments.length > 0
-          ? ""
-          : "No linked legal documents are displayed here. Legal status alone does not establish an order document.",
+      documentsAbsent: specialDocuments.length > 0 ? "" : "No legal documents recorded.",
     };
 
     return {

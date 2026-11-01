@@ -105,7 +105,7 @@ export function ForecastMissReasonControl({
       </div>
       {candidates.length > 0 ? (
         <>
-          <p className={styles.caption}>Recorded events in this span, to look at. None is chosen for you.</p>
+          <p className={styles.caption}>Recorded events in this span. None is chosen for you.</p>
           <ul className={styles.missCandidates}>
             {candidates.map((candidate) => (
               <li key={candidate.key}>

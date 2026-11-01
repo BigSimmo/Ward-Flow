@@ -142,7 +142,7 @@ export function SettingsRulesPane({
       ) : (
         <p className={cx(styles.scopeLine, rx.scopeWords)}>
           <strong>Changes wait for Save.</strong>
-          <span>Rules change what every screen shows. Each save is recorded in the audit.</span>
+          <span>Each save is recorded in the audit.</span>
         </p>
       )}
 
@@ -246,7 +246,7 @@ export function SettingsRulesPane({
             />
             <RuleRow
               {...common("hold")}
-              sub="How long a pulled bed is kept. A change applies from the next pull"
+              sub="Applies from the next pull"
               noun="pull time limit"
               range={rangeOf("hold", "setting-hold-duration", PULL_HOLD_RANGE_MINUTES)}
               onChange={(minutes) => setRule({ pullHoldMinutes: minutes })}

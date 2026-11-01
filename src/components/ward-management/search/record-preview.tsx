@@ -178,7 +178,7 @@ function legalStatutoryInfo(legalStatus: string) {
   if (registerTitle) {
     return {
       title: registerTitle,
-      req: "Recorded on this patient. This prototype does not hold what the form authorises.",
+      req: "Recorded on this patient.",
       countdown: "Expiry not recorded",
     };
   }
@@ -289,7 +289,7 @@ export function RecordPreview({
     return (
       <WardPanel title="Selected person" testId="ward-patient-search-preview" headingLevel={2}>
         <p className={styles.idle} data-testid="ward-patient-search-preview-idle">
-          Select a person or an open movement below to preview their record here — the list stays on screen.
+          Select a person to preview their record.
         </p>
       </WardPanel>
     );
@@ -557,13 +557,9 @@ export function RecordPreview({
                   </Link>
                 </>
               ) : referral ? (
-                <p className={styles.tieEmpty}>
-                  No open movement is linked to this referral. No current movement, so no stage is shown.
-                </p>
+                <p className={styles.tieEmpty}>No open movement is linked. No current movement.</p>
               ) : (
-                <p className={styles.tieEmpty}>
-                  No referral is linked, so no movement can be, either. No current movement, so no stage is shown.
-                </p>
+                <p className={styles.tieEmpty}>No referral is linked. No current movement.</p>
               )}
             </section>
           </div>
@@ -656,8 +652,8 @@ export function RecordPreview({
                 <button
                   type="button"
                   className={styles.btnSecondary}
-                  title="Bed allocation is not recorded from this preview."
-                  onClick={() => setActionNotice("Bed allocation is not recorded from this preview.")}
+                  title="Not available from this preview."
+                  onClick={() => setActionNotice("Bed allocation is not available from this preview.")}
                 >
                   Bed allocation
                 </button>
@@ -673,10 +669,8 @@ export function RecordPreview({
                   <button
                     type="button"
                     className={styles.btnSecondary}
-                    title="No movement is linked, so transport cannot be booked."
-                    onClick={() =>
-                      setActionNotice("Transport is not recorded yet — open a movement to book transport.")
-                    }
+                    title="No movement linked."
+                    onClick={() => setActionNotice("Open a movement to book transport.")}
                   >
                     Transport order
                   </button>
@@ -694,16 +688,16 @@ export function RecordPreview({
                 <button
                   type="button"
                   className={styles.btnSecondary}
-                  title="Past admission history is not recorded in this prototype."
-                  onClick={() => setActionNotice("Past admission history is not recorded yet.")}
+                  title="Not recorded yet."
+                  onClick={() => setActionNotice("Past admissions are not recorded yet.")}
                 >
                   Past admissions
                 </button>
                 <button
                   type="button"
                   className={styles.btnSecondary}
-                  title="Contact logging is not recorded from this preview."
-                  onClick={() => setActionNotice("Contact with the team is not recorded yet.")}
+                  title="Not recorded yet."
+                  onClick={() => setActionNotice("Team contact is not recorded yet.")}
                 >
                   Contact team
                 </button>
@@ -1110,8 +1104,8 @@ export function RecordPreview({
           <button
             type="button"
             className={styles.btnSecondary}
-            title="Bed allocation is not recorded from this preview."
-            onClick={() => setActionNotice("Bed allocation is not recorded from this preview.")}
+            title="Not available from this preview."
+            onClick={() => setActionNotice("Bed allocation is not available from this preview.")}
           >
             Bed allocation
           </button>

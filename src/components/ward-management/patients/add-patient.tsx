@@ -688,14 +688,12 @@ export function AddPatientForm() {
               ) : null}
               {candidates.sameNameSameBirthDate.length > 0 ? (
                 <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-same-name-same-dob">
-                  Already in this system with the same name AND the same date of birth — almost certainly the same
-                  person.
+                  Same name and date of birth: almost certainly the same person.
                 </p>
               ) : null}
               {candidates.sameNameBirthDateNotMatched.length > 0 ? (
                 <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-same-name">
-                  Already in this system with the same name. The date of birth does not confirm it either way — open the
-                  record and check.
+                  Same name already in this system. Open the record and check.
                 </p>
               ) : null}
               {nearMatches.length > 0 ? (
@@ -703,8 +701,8 @@ export function AddPatientForm() {
                   {nearMatches.length === 1
                     ? "A person already in this system has"
                     : "People already in this system have"}{" "}
-                  {nearMatches.length === 1 ? "a name" : "names"} one keystroke from this one. Check whether this is the
-                  same person before adding a second record.
+                  {nearMatches.length === 1 ? "a name" : "names"} one keystroke from this one. Check it is not the same
+                  person.
                 </p>
               ) : null}
             </div>
@@ -763,7 +761,7 @@ export function AddPatientForm() {
             // F-08 (phone review, Oct 2026): the standard Demo pill, so a typed record reads as invented.
             chip={<LiveChip state="live" onHero />}
             title="Add a patient"
-            sub="Identity only · same duplicate check"
+            sub="Identity only"
             data-testid="ward-add-patient-phone-hero"
             // Redesign: the Identity card's head says "0 of 4 required" just below, so the hero shows
             // no figure of its own and the form starts higher.
@@ -773,7 +771,6 @@ export function AddPatientForm() {
           open={phoneSheet !== null}
           onClose={() => setPhoneSheet(null)}
           title="On a larger screen"
-          description="Kept off the phone so the form stays short"
           height="content"
           secondary={{ label: "Done", onAction: () => setPhoneSheet(null) }}
           data-testid="ward-add-patient-phone-sheet"
@@ -812,7 +809,7 @@ export function AddPatientForm() {
               <div className={styles.heroBar}>
                 <p className={styles.heroLine}>
                   <Icon icon={ShieldCheck} size={14} />
-                  Identity is saved to the record. Check for an existing record before adding.
+                  Check for an existing record before adding.
                 </p>
                 {/* Redesign: the chips repeated the page. The required count is the Identity card's,
                     the record count and any possible duplicates are the duplicate check's, and the
@@ -1144,9 +1141,7 @@ export function AddPatientForm() {
           }
         >
           <div className={styles.resetBody}>
-            <p className={styles.resetLead}>
-              You have entered patient details. Resetting clears every unsaved field in this session.
-            </p>
+            <p className={styles.resetLead}>You have entered patient details. Resetting clears every unsaved field.</p>
             <h3 className={styles.resetHead}>What gets cleared</h3>
             <ul className={styles.resetList}>
               {resetSummary.map((row) => (
@@ -1159,7 +1154,7 @@ export function AddPatientForm() {
             </ul>
             <p className={styles.resetNote}>
               <StatusGlyph tone="info" size={9} />
-              Nothing has been added to Ward Flow yet. No record is deleted.
+              No record is deleted.
             </p>
           </div>
         </Sheet>

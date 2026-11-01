@@ -109,7 +109,8 @@ const TEAM_CLAIMS = [
      * nothing else in Ward Flow could contradict it.
      */
     protects: "that an empty follow-up list is not a statement that follow-up happened",
-    clause: "an empty list does not establish that everybody is being followed up",
+    // Q107 (1 Nov 2026): the notice is now this one line, so the clause starts after its subject.
+    clause: "empty list does not establish that everybody is being followed up",
   },
   {
     protects: "that follow-up is recorded for the explicitly linked team",
@@ -167,10 +168,10 @@ describe("the claims the live community screens make", () => {
     renderIndex([]);
     const text = pageText();
     expect(text, "the empty index no longer says the derivation returned nothing").toContain(
-      "that derivation returned no teams",
+      "derivation returned no teams",
     );
     expect(text, "the empty index no longer distinguishes finding nothing from having nothing").toContain(
-      "not as a service that has nothing",
+      "does not mean this prototype has no community teams",
     );
   });
 });
