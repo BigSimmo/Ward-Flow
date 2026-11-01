@@ -131,7 +131,7 @@ describe("Ask help in the Help sheet", () => {
     expect(within(best).getByRole("list", { name: "Steps" })).toBeTruthy();
     fireEvent.click(within(best).getByRole("button", { name: "Show me on screen" }));
     expect(onShowMe).toHaveBeenCalledWith("pull-bed");
-    fireEvent.click(within(best).getByRole("button", { name: /Open in How do I/ }));
+    fireEvent.click(within(best).getByRole("button", { name: /Open in How to/ }));
     expect(screen.getByTestId("ward-help-task-answer-pull-bed")).toBeTruthy();
   });
 

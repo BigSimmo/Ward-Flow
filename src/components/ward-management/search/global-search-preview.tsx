@@ -664,7 +664,7 @@ function SimplePreview({
         <div className={styles.headText}>
           <p className={styles.title}>{item.title}</p>
           {helpRow ? (
-            <p className={styles.sub}>Help · How do I…</p>
+            <p className={styles.sub}>Help · How to</p>
           ) : item.meta ? (
             <p className={styles.sub}>{item.meta}</p>
           ) : null}

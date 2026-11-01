@@ -227,7 +227,7 @@ describe("How do I… in the Help sheet", () => {
     const tabs = within(screen.getByRole("tablist", { name: "Help sections" })).getAllByRole("tab");
     // What's new may carry this device's unread count after its name.
     expect(tabs.map((tab) => tab.textContent?.replace(/\d+$/u, ""))).toEqual([
-      "How do I…",
+      "How to",
       "Common questions",
       "Reference",
       "What\u2019s new",

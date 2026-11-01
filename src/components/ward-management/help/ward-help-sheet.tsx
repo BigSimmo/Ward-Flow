@@ -184,7 +184,7 @@ function WardHelpSheetView({
       label: (
         <>
           <BookOpen aria-hidden="true" strokeWidth={1.75} />
-          How do I…
+          How to
         </>
       ),
     },

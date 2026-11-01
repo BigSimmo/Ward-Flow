@@ -234,7 +234,7 @@ function BestAnswer({
           ) : null}
           {goes ? (
             <Button variant={showMe ? "ghost" : "sec"} iconEnd={ArrowRight} onClick={() => onChoose(result)}>
-              {group === "Shortcuts" ? "All shortcuts" : howToId ? "Open in How do I…" : "Go there"}
+              {group === "Shortcuts" ? "All shortcuts" : howToId ? "Open in How to" : "Go there"}
             </Button>
           ) : null}
         </div>
