@@ -1132,6 +1132,8 @@ export type CommunityScreenView = NonNullable<ReturnType<typeof useCommunityScre
 
 export function CommunityScreen(props: CommunityScreenProps) {
   const view = useCommunityScreenView(props);
+  // The Midland team's find box (Q190): narrows Caseload and Clinicians as you type.
+  const [find, setFind] = useState("");
   if (view === null) {
     return (
       <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
@@ -1163,7 +1165,7 @@ export function CommunityScreen(props: CommunityScreenProps) {
           <>
             <CommunityScreenDesktopHero view={view} />
 
-            <CommunityScreenTabRow view={view} />
+            <CommunityScreenTabRow view={view} find={view.midlandDemo ? { value: find, set: setFind } : undefined} />
 
             {view.midlandDemo ? null : communitySinceElement(view)}
           </>
@@ -1184,7 +1186,7 @@ export function CommunityScreen(props: CommunityScreenProps) {
         {isPhone ? null : (
           <div className={`${styles.contentWorkspace} ${v6.sections}`} data-community-section={teamSection}>
             {view.midlandDemo ? (
-              <MidlandTeamSections panel={sectionPanel} open={view.openTeamSection} now={view.now} />
+              <MidlandTeamSections panel={sectionPanel} open={view.openTeamSection} now={view.now} find={find} />
             ) : (
               <>
                 {/* ── Referrals: To answer (the waiting list) and Sent by team (D-77 group A) ── */}

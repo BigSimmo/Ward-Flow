@@ -55,8 +55,9 @@ function LoadCell({ s }: { s: DemoStaff }) {
   return <span className={t.muted}>—</span>;
 }
 
-export function TeamClinicians() {
+export function TeamClinicians({ find = "" }: { find?: string }) {
   const [filter, setFilter] = useState<StaffFilter>("all");
+  const needle = find.trim().toLowerCase();
   const count = (key: StaffFilter) => STAFF.filter((s) => shows(key, s.today)).length;
   return (
     <>
@@ -158,7 +159,7 @@ export function TeamClinicians() {
               </tr>
             </thead>
             <tbody>
-              {STAFF.filter((s) => shows(filter, s.today)).map((s) => {
+              {STAFF.filter((s) => shows(filter, s.today) && (!needle || s.name.toLowerCase().includes(needle))).map((s) => {
                 const [tone, label] = TODAY[s.today] ?? ["neutral", s.today];
                 return (
                   <tr key={s.id}>

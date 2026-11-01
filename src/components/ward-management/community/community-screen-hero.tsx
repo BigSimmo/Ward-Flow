@@ -256,7 +256,14 @@ const SECTION_TABS: { id: CommunityTeamSection; label: string }[] = [
 ];
 
 /** The ward page's tab row, carrying the team's five sections, with Record contact and More on the right. */
-export function CommunityScreenTabRow({ view }: { view: CommunityScreenView }) {
+export function CommunityScreenTabRow({
+  view,
+  find,
+}: {
+  view: CommunityScreenView;
+  /** The Midland team's find box; left out for teams without searchable lists. */
+  find?: { value: string; set: (value: string) => void };
+}) {
   const {
     teamSection,
     openTeamSection,
@@ -303,6 +310,22 @@ export function CommunityScreenTabRow({ view }: { view: CommunityScreenView }) {
         })}
       </ul>
       <div className={ward.tabTools} role="toolbar" aria-label="Team actions">
+        {find ? (
+          <TextInput
+            type="search"
+            icon={Search}
+            boxClassName={ward.findBox}
+            aria-label="Find a client or clinician"
+            placeholder="Find client or clinician"
+            value={find.value}
+            onChange={(event) => {
+              find.set(event.target.value);
+              if (teamSection !== "caseload" && teamSection !== "clinicians") openTeamSection("caseload");
+            }}
+            onClear={() => find.set("")}
+            data-testid="community-find-input"
+          />
+        ) : null}
         <Button variant="ghost" size="sm" icon={Phone} onClick={() => setActiveModalType("contact")}>
           Record contact
         </Button>
