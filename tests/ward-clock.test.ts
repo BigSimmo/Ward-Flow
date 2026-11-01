@@ -270,3 +270,18 @@ describe("the clock knows what day it is, not only what time it is", () => {
     );
   });
 });
+
+it("does not initialise date-label formatters on routes that only import the clock", async () => {
+  vi.resetModules();
+  const formatter = vi.spyOn(Intl, "DateTimeFormat");
+  try {
+    const clock = await import("../src/components/ward-management/ward-clock");
+    expect(formatter).not.toHaveBeenCalled();
+    const zero = clock.perthMidnight(2026, 9, 29);
+    expect(clock.perthDayLabel(0, zero)).toBe("Thu 29 Oct");
+    expect(clock.perthDayLabel(1440, zero)).toBe("Fri 30 Oct");
+    expect(formatter).toHaveBeenCalledTimes(2);
+  } finally {
+    formatter.mockRestore();
+  }
+});

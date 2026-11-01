@@ -69,19 +69,7 @@ function noticeKindWords(kind: string): string {
  * (`ward-activity-panel-store.ts`). The bar passes its published figure checks (O-9), which show
  * once under the tabs.
  */
-export function ActivityPanel({
-  open,
-  onClose,
-  id = "home-activity-panel",
-  testId = "home-activity-panel",
-  initialTab,
-  now: givenNow,
-  figureChecks = [],
-  returnFocusRef,
-  bodyTabIndex,
-  bodyLabel,
-  onNavigate,
-}: {
+type ActivityPanelProps = {
   open: boolean;
   onClose: () => void;
   /** The drawer's id, for the opener's `aria-controls`. */
@@ -100,7 +88,27 @@ export function ActivityPanel({
   bodyLabel?: string;
   /** Called when a link in the panel is followed: the panel outlives the page, so it closes. */
   onNavigate?: () => void;
-}) {
+};
+
+export function ActivityPanel(props: ActivityPanelProps) {
+  // The bar retains this entry point after its first opening. Keep board/clock subscriptions and
+  // review derivations inside the open lifetime; every reopening captures the current review anew.
+  return props.open ? <OpenActivityPanel {...props} /> : null;
+}
+
+function OpenActivityPanel({
+  open,
+  onClose,
+  id = "home-activity-panel",
+  testId = "home-activity-panel",
+  initialTab,
+  now: givenNow,
+  figureChecks = [],
+  returnFocusRef,
+  bodyTabIndex,
+  bodyLabel,
+  onNavigate,
+}: ActivityPanelProps) {
   const liveNow = useWardFlowClock();
   const now = givenNow ?? liveNow;
   const review = useExplicitReview(now);
