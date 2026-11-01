@@ -24,7 +24,17 @@ describe("Today band", () => {
       shape: "act" as const,
       title: `Synthetic alert ${index}`,
     }));
-    render(<TodayBand raised={raised} acted={[]} broadcasts={[]} now={at(640)} onPick={() => {}} noTimeCount={0} onOpenBroadcast={() => {}} />);
+    render(
+      <TodayBand
+        raised={raised}
+        acted={[]}
+        broadcasts={[]}
+        now={at(640)}
+        onPick={() => {}}
+        noTimeCount={0}
+        onOpenBroadcast={() => {}}
+      />,
+    );
     const marks = screen.getAllByRole("button", { name: /^Synthetic alert/ });
     expect(new Set(marks.map((mark) => mark.style.bottom)).size).toBe(4);
     expect(screen.getByRole("group", { name: "Alerts raised and acted on today" })).toHaveStyle({ height: "96px" });

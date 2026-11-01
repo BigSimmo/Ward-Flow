@@ -120,12 +120,7 @@ export function TodayBand({
           ) : null}
         </span>
       </div>
-      <div
-        className={styles.track}
-        style={trackStyle}
-        role="group"
-        aria-label="Alerts raised and acted on today"
-      >
+      <div className={styles.track} style={trackStyle} role="group" aria-label="Alerts raised and acted on today">
         <span className={styles.future} style={{ left: pct(now) }} />
         {hours.slice(1, -1).map((hour) => (
           <span key={hour} className={styles.hour} style={{ left: pct(hour) }} />
