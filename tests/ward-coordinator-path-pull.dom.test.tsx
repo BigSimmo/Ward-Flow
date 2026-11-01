@@ -156,6 +156,8 @@ describe("Home: Act now and Referrals to decide (WS-02, WS-04)", () => {
     const pull = within(row)
       .getAllByRole("button", { name: /^Pull the bed for / })
       .at(-1)!;
+    expect(pull).toHaveTextContent("Pull the bed");
+    expect(pull).toHaveAttribute("data-placement-action");
     fireEvent.click(pull);
     const sheet = await screen.findByTestId(`ward-pull-accepted-${first!.referral.id}`);
     expect(sheet).toBeInTheDocument();
