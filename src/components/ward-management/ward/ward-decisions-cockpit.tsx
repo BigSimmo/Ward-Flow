@@ -583,7 +583,9 @@ function Queue({
   const noticeBody = notice ? (
     <>
       <StatusGlyph tone={notice.tone} />
-      <span title={notice.text}>{notice.text}</span>
+      <span className={sent?.kind === "sign" ? bulkStyles.result : undefined} title={notice.text}>
+        {notice.text}
+      </span>
       {notice.tone === "success" || !sent ? null : (
         <button
           type="button"
