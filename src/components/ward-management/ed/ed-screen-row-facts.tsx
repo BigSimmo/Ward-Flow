@@ -18,7 +18,8 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import { EdAdmissionChecklist } from "./ed-admission-checklist";
 import { referralBoardHref } from "./ed-bed-search-step";
-import { EdPlanPicker, EdPresentation } from "./ed-board-controls";
+import { EdPlanPicker } from "./ed-board-controls";
+import { PresentationCell } from "./ed-handover-cells";
 import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
@@ -286,18 +287,28 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
     referredTo,
     destinationLabel,
   } = row;
-  const { boardTable, presentationDrafts, setPresentationDrafts } = ctx;
+  const { boardTable, now, recordEdStep } = ctx;
   const { readmissionFact, patientFactsTail, formExpiryFacts, clearanceFact, reviewFacts, referredFact } = facts;
   const patientExtras = (
     <>
       {boardTable ? null : readmissionFact}
-      <EdPresentation
-        testId={`ward-ed-outstanding-${movement.id}`}
-        kind={item.kind}
-        patientName={patientInfo.displayName}
-        value={presentationDrafts[movement.id] ?? item.detail}
-        onChange={(value) => setPresentationDrafts((current) => ({ ...current, [movement.id]: value }))}
-      />
+      {/* Q103 (Josh, 1 Nov 2026): the presentation is the saved fixed list, never typed text. */}
+      <span
+        id={`ward-ed-outstanding-${movement.id}`}
+        data-testid={`ward-ed-outstanding-${movement.id}`}
+        data-kind={item.kind}
+      >
+        {item.detail}
+      </span>
+      {boardTable ? null : (
+        <PresentationCell
+          movementId={movement.id}
+          patientName={patientInfo.formalName}
+          chosen={movement.edPresentations ?? []}
+          now={now}
+          record={recordEdStep}
+        />
+      )}
       {boardTable ? null : patientFactsTail}
     </>
   );
