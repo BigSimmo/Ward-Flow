@@ -257,6 +257,12 @@
     "tnum" 1;
 }
 
+/* pop-alerts: a filter with nothing in it keeps its place but its zero goes quiet. */
+.count[data-zero] {
+  background: transparent;
+  color: var(--wf-ink-3);
+}
+
 .filterMeta {
   display: flex;
   min-width: 0;
@@ -407,9 +413,9 @@
   border-bottom: 0;
 }
 
+/* The open row is marked by its tint alone: no coloured side edge (design rule). */
 .row[data-expanded="true"] {
   background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
 }
 
 .rowHead {
@@ -449,7 +455,6 @@
   max-width: 100%;
   justify-self: start;
   padding: 0;
-  overflow: hidden;
   border: 0;
   border-radius: var(--wf-r-xs);
   background: none;
@@ -459,8 +464,8 @@
   font-weight: 600;
   line-height: var(--wf-lh-13);
   text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Alert titles wrap in full, as on the Alerts page: a phone has no hover to read a cut title. */
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 
@@ -477,21 +482,19 @@
 .rowMeta {
   display: flex;
   min-width: 0;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 2px 5px;
   margin: 0;
-  overflow: hidden;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .rowMeta strong {
-  overflow: hidden;
   color: var(--wf-ink-2);
   font-weight: 600;
-  text-overflow: ellipsis;
 }
 
 .rowWhen {
@@ -983,6 +986,77 @@
   }
 }
 
+/* pop-alerts (Josh, 31 Oct 2026): alerts of the same kind share one row, one line per person. */
+.groupTitle {
+  min-width: 0;
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: var(--wf-lh-13);
+  overflow-wrap: anywhere;
+}
+
+.groupList {
+  display: grid;
+  margin: 0;
+  padding: 0 0 0 calc(var(--wf-h-sm) + var(--wf-s-3));
+  list-style: none;
+}
+
+.groupMember {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: 6px 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.memberText {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.memberWho {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.memberWho strong {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.memberWhen {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 5px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.memberWhen .rowValue {
+  font-size: var(--wf-fs-12);
+}
+
+.memberActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /*
  * Phone (v10 Tasks sheet, 11 Oct 2026): a plain list sheet. Title and one note line, the status
  * switch across the width, then state and order as two equal selects on one row, then the rows.
@@ -990,6 +1064,20 @@
  * Buttons are 44px pills sharing their row. Phone only; desktop and tablet are unchanged.
  */
 @media (max-width: 48rem) {
+  /* pop-alerts: a group's lines stack on a narrow screen. */
+  .groupList {
+    padding-left: 0;
+  }
+
+  .groupMember {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--wf-s-2) 0;
+  }
+
+  .memberActions {
+    grid-column: 1 / -1;
+  }
+
   .drawer {
     background: var(--wf-surface-2);
   }
@@ -1228,8 +1316,7 @@
   }
 
   .rowWho {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
   }
 
   /* An acknowledged row says so while collapsed, so Acknowledge visible shows what it did. */

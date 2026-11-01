@@ -35,6 +35,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { buttonClass } from "@/components/wf";
 import { ToastProvider } from "@/components/wf/toast-provider";
 
 import { installMatchMediaStub } from "./setup/jsdom.setup";
@@ -131,6 +132,85 @@ describe("the drawer with one Alerts queue", () => {
     const row = action.closest("li")!;
     expect(within(row).getAllByRole("link")).toHaveLength(1);
     expect(within(row).getByRole("button", { name: "Open patient" })).toBeInTheDocument();
+  });
+});
+
+describe("the Alerts drawer redesign (pop-alerts, approved 31 Oct 2026)", () => {
+  const records = { movements: seed.movements, patients: seed.patients, referrals: seed.referrals, units: seed.units };
+
+  function renderDrawer(list = items) {
+    render(
+      <WardTasksDrawer
+        items={list}
+        acknowledgements={{}}
+        completions={{}}
+        role="coordinator"
+        now={NOW_ANCHOR}
+        dispatch={vi.fn()}
+        onClose={vi.fn()}
+        onSelectMovement={vi.fn()}
+        records={records}
+      />,
+    );
+    return screen.getByRole("complementary", { name: "Alerts" });
+  }
+
+  it("gives only the most urgent row a filled button, and outlines Open Alerts", () => {
+    const drawer = renderDrawer();
+    const actions = Array.from(drawer.querySelectorAll<HTMLElement>('[data-testid^="ward-task-action-"]'));
+    expect(actions.length, "the seeded inbox has several alerts").toBeGreaterThan(2);
+    const [first, ...rest] = actions;
+    for (const other of rest) expect(other.className).not.toBe(first!.className);
+    expect(new Set(rest.map((action) => action.className)).size).toBe(1);
+    expect(within(drawer).getByTestId("ward-tasks-open-alerts").className).toBe(
+      buttonClass({ variant: "sec", size: "sm" }),
+    );
+  });
+
+  it("shares one row between same-kind alerts, one line per person, surname first", () => {
+    const drawer = renderDrawer();
+    const counts = new Map<string, number>();
+    for (const item of items) counts.set(item.title, (counts.get(item.title) ?? 0) + 1);
+    const [title, count] = [...counts].find(([, n]) => n > 1) ?? [];
+    if (!title || !count) throw new Error("fixture drifted: the seeded inbox has no two alerts of one kind");
+    const list = within(drawer).getByRole("list", { name: `${title}, ${count} people` });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(count);
+    expect(within(drawer).getAllByRole("heading", { level: 4, name: title })).toHaveLength(1);
+    // Names read "Surname, Given" (D-83), never given name first.
+    const member = within(list).getAllByRole("listitem")[0]!;
+    expect(member.querySelector("strong")?.textContent).toMatch(/^[^,]+, [^,]+$/u);
+  });
+
+  it("shows a long group's first 6, then Show more", () => {
+    const transport = items.find((item) => /transport/iu.test(item.title));
+    if (!transport) throw new Error("fixture drifted: the seeded inbox has no transport alert");
+    const many = Array.from({ length: 9 }, (_, index) => ({ ...transport, id: `${transport.id}-copy-${index}` }));
+    const drawer = renderDrawer(many);
+    const list = within(drawer).getByRole("list", { name: `${transport.title}, 9 people` });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(6);
+    fireEvent.click(within(drawer).getByRole("button", { name: "Show 3 more" }));
+    expect(within(list).getAllByRole("listitem")).toHaveLength(9);
+    expect(within(drawer).getByRole("button", { name: "Show fewer" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("says a bed pull is past its pull limit, not overdue", () => {
+    const pull = items.find((item) => /bed pull/iu.test(item.title));
+    if (!pull) throw new Error("fixture drifted: the seeded inbox has no bed pull alert");
+    const drawer = renderDrawer([pull]);
+    expect(drawer).toHaveTextContent("Past pull limit");
+    expect(drawer).not.toHaveTextContent(/Overdue/u);
+  });
+
+  it("shows '12 of 12 alerts' only while a filter narrows the list, and greys an empty filter's zero", () => {
+    const drawer = renderDrawer(items.filter((item) => item.tone === "danger"));
+    const status = within(drawer).getByRole("status");
+    expect(status).toHaveClass("sr-only");
+    const filters = within(drawer).getByRole("group", { name: "Filter alerts by status" });
+    const waiting = within(filters).getByRole("button", { name: "Waiting 0" });
+    expect(waiting.querySelector("[data-zero]")).not.toBeNull();
+    expect(within(filters).getByRole("button", { name: /^All / }).querySelector("[data-zero]")).toBeNull();
+    fireEvent.click(waiting);
+    expect(within(drawer).getByRole("status")).not.toHaveClass("sr-only");
   });
 });
 

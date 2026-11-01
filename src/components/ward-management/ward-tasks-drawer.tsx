@@ -71,6 +71,7 @@ import { useDirtyStateGuard } from "./use-dirty-state-guard";
 import { AcknowledgeVisibleButton } from "./tasks-acknowledge-visible";
 
 import styles from "./ward-tasks-drawer.module.css";
+import { AlertKindGroupRow, groupByTitle } from "./ward-tasks-drawer-group";
 import { originName, originSiteCode } from "@/components/ward-management/ward-movement-origin";
 
 type WardTasksDrawerProps = {
@@ -214,9 +215,9 @@ function rowIcon(item: InboxItem) {
 
 /**
  * The value and state shown at the right of a row, read from the movement's own recorded times.
- * Nothing here is a computed deadline: an overdue bed pull counts up from the time the record
- * holds, a passed legal form shows only its typed time, and a waiting transport counts up from
- * when it was accepted.
+ * Nothing here is a computed deadline: a bed pull past its limit counts up from the time the
+ * record holds, a passed legal form shows only its typed time, and a waiting transport counts up
+ * from when it was accepted.
  */
 function rowTiming(
   item: InboxItem,
@@ -225,7 +226,13 @@ function rowTiming(
   waitWord: string,
 ): { value?: string; word?: string; state: string; tone: WfTone; stateTone?: WfTone } {
   if (movement && /bed pull/i.test(item.title) && movement.pullExpiresAt !== undefined) {
-    return { value: durMinutes(now - movement.pullExpiresAt), state: "Overdue", tone: "danger", stateTone: "danger" };
+    // pop-alerts (Josh, 31 Oct 2026): "Past pull limit", because "overdue" means form times.
+    return {
+      value: durMinutes(now - movement.pullExpiresAt),
+      state: "Past pull limit",
+      tone: "danger",
+      stateTone: "danger",
+    };
   }
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
     // Legal times only as typed (31 Oct 2026): the typed clock time, never a count past it.
@@ -248,14 +255,16 @@ function rowTiming(
     return {
       value: String(movement.declines.length),
       word: "wards",
-      state: "Declined",
+      // pop-alerts: the row's title already says "declined", so the right side keeps the figure only.
+      state: "",
       tone: "closed",
     };
   }
   // Ops-8 (remaining-pages audit, 13 Oct 2026): a row that records when it started (a planned
   // arrival not yet recorded) shows how long it has waited, the figure the phone list sorts by.
   if (item.tone !== "danger" && item.since !== undefined && item.since <= now) {
-    return { value: durMinutes(now - item.since), word: "waiting", state: waitWord, tone: "warning" };
+    // pop-alerts: the figure already says "waiting"; the row's meta line names its group.
+    return { value: durMinutes(now - item.since), word: "waiting", state: "", tone: "warning" };
   }
   return item.tone === "danger"
     ? { state: "Act now", tone: "danger", stateTone: "danger" }
@@ -558,6 +567,88 @@ export function WardTasksDrawer({
       ? null
       : (filteredItems[0]?.id ?? null);
 
+  // pop-alerts (Josh, 31 Oct 2026): the drawer's one filled button belongs to its most urgent row,
+  // the first one shown.
+  const urgentId = (filteredFacts[0] ?? filteredCommitments[0])?.id;
+
+  /** pop-alerts: alerts of the same kind share one row ("Transport awaiting departure"), one line per person. */
+  function renderRows(rows: readonly InboxItem[]) {
+    if (!oneAction) return rows.map(renderRow);
+    return groupByTitle(rows).map((group) => {
+      const first = group.items[0]!;
+      if (group.items.length === 1) return renderRow(first);
+      const groupWord =
+        alertGroupOf(first) === "running"
+          ? (words.running ?? words.wait)
+          : first.tone === "danger"
+            ? words.act
+            : words.wait;
+      return (
+        <AlertKindGroupRow
+          key={group.key}
+          group={group}
+          icon={rowIcon(first)}
+          groupWord={groupWord}
+          listId={`${sectionId}-${group.key}`}
+          renderMember={renderGroupMember}
+        />
+      );
+    });
+  }
+
+  function renderGroupMember(item: InboxItem) {
+    const movement = records?.movements.find((row) => row.id === item.movementId);
+    const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
+    const patient = records
+      ? resolveSubjectPatient(movement ?? admission ?? item.plannedAdmission, records)
+      : undefined;
+    const timing = isComplete(item)
+      ? { value: undefined, word: undefined, state: "Done", tone: "success" as WfTone, stateTone: undefined }
+      : rowTiming(item, movement, now, words.wait);
+    const name = patient?.formalName ?? "Patient not linked";
+    return (
+      <li key={item.id} className={styles.groupMember} data-testid={`ward-task-member-${item.id}`}>
+        <span className={styles.memberText}>
+          <span className={styles.memberWho}>
+            <strong>{name}</strong>
+            {patient?.patient ? <span className={styles.mono}>{patient.umrn}</span> : null}
+          </span>
+          <span className={styles.memberWhen}>
+            {timing.value ? (
+              <span className={styles.rowValue}>
+                {timing.tone !== "neutral" ? <StatusGlyph tone={timing.tone} size={9} /> : null}
+                {timing.value}
+                {timing.word ? <span className={styles.rowWord}>{timing.word}</span> : null}
+              </span>
+            ) : null}
+            {/* The dot only joins two parts, so a line with no figure never starts with one. */}
+            {timing.value && timing.state ? <span aria-hidden="true">·</span> : null}
+            {timing.state ? (
+              <span className={styles.rowState} data-tone={timing.stateTone}>
+                {timing.state}
+              </span>
+            ) : null}
+          </span>
+        </span>
+        <span className={styles.memberActions}>
+          {renderOneAction(item, movement)}
+          <button
+            type="button"
+            className={styles.btn}
+            data-testid={`ward-task-${item.id}`}
+            aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
+            onClick={() => {
+              openItem(item);
+            }}
+          >
+            <ArrowUpRight aria-hidden="true" />
+            Open
+          </button>
+        </span>
+      </li>
+    );
+  }
+
   function renderMovementActions(item: InboxItem, movement?: Movement) {
     if (!movement || movement.closure || movement.stage === "arrived") return null;
     return (
@@ -742,7 +833,7 @@ export function WardTasksDrawer({
         }
         onClick={closeFromLink}
         data-testid={`ward-task-action-${item.id}`}
-        className={`${styles.btn} ${styles.btnPrimary}`}
+        className={`${styles.btn} ${item.id === urgentId ? styles.btnPrimary : ""}`}
       >
         {action.label}
       </Link>
@@ -776,7 +867,7 @@ export function WardTasksDrawer({
     const severity: WfTone = item.tone === "danger" ? "danger" : "warning";
     const detail = rowDetail(item, movement, records?.units, now);
     const phoneName = patient
-      ? nameFor(patient.displayName, patient.patient ? patient.umrn : null)
+      ? nameFor(patient.formalName, patient.patient ? patient.umrn : null)
       : "Patient not linked";
 
     return (
@@ -822,7 +913,7 @@ export function WardTasksDrawer({
                   {phoneName}
                   {/* Audit A1-15: name plus UMRN, matching the Exceptions sheet. Discreet names
                       already carry the UMRN, so it is not repeated. */}
-                  {patient?.patient && phoneName === patient.displayName ? ` · ${patient.umrn}` : ""}
+                  {patient?.patient && phoneName === patient.formalName ? ` · ${patient.umrn}` : ""}
                 </span>
                 {latestAck && !isExpanded ? (
                   <span className={styles.rowSeen} data-testid={`ward-task-seen-${item.id}`}>
@@ -842,7 +933,7 @@ export function WardTasksDrawer({
                     : words.wait}
               </span>
               <span aria-hidden="true">·</span>
-              <strong>{patient?.displayName ?? "Patient not linked"}</strong>
+              <strong>{patient?.formalName ?? "Patient not linked"}</strong>
               {patient?.patient ? (
                 <>
                   <span aria-hidden="true">·</span>
@@ -866,9 +957,11 @@ export function WardTasksDrawer({
                 {timing.word ? <span className={styles.rowWord}>{timing.word}</span> : null}
               </span>
             ) : null}
-            <span className={styles.rowState} data-tone={timing.stateTone}>
-              {timing.state}
-            </span>
+            {timing.state ? (
+              <span className={styles.rowState} data-tone={timing.stateTone}>
+                {timing.state}
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -984,7 +1077,7 @@ export function WardTasksDrawer({
               ) : null}
               {!oneAction && role === "coordinator" && !done ? (
                 <InboxSnoozeControl
-                  subject={`${item.title}, ${patient?.displayName ?? "patient not linked"}`}
+                  subject={`${item.title}, ${patient?.formalName ?? "patient not linked"}`}
                   actNow={inboxItemIsActNow(item.id)}
                   now={now}
                   onSnooze={(until, reason) => {
@@ -1109,14 +1202,18 @@ export function WardTasksDrawer({
                     setTaskFilter(value);
                   }}
                 >
-                  {label} <span className={styles.count}>{count}</span>
+                  {label}{" "}
+                  <span className={styles.count} data-zero={count === 0 || undefined}>
+                    {count}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
 
           <div className={styles.filterMeta}>
-            <span role="status" className={styles.filterStatus}>
+            {/* pop-alerts: "12 of 12" repeats the All count, so it shows only while a filter narrows the list. */}
+            <span role="status" className={filteredItems.length === items.length ? "sr-only" : styles.filterStatus}>
               <strong className={styles.mono}>{filteredItems.length}</strong> of {items.length}{" "}
               <span className="sr-only">invented </span>alerts
             </span>
@@ -1216,7 +1313,7 @@ export function WardTasksDrawer({
                     <span className={styles.count}>{filteredFacts.length}</span>
                     <span className={styles.sectionNote}>Leaves when no longer true</span>
                   </div>
-                  <ul className={styles.list}>{filteredFacts.map(renderRow)}</ul>
+                  <ul className={styles.list}>{renderRows(filteredFacts)}</ul>
                 </section>
               ) : null}
 
@@ -1230,7 +1327,7 @@ export function WardTasksDrawer({
                     <span className={styles.count}>{filteredCommitments.length}</span>
                     <span className={styles.sectionNote}>Leaves when marked done</span>
                   </div>
-                  <ul className={styles.list}>{filteredCommitments.map(renderRow)}</ul>
+                  <ul className={styles.list}>{renderRows(filteredCommitments)}</ul>
                 </section>
               ) : null}
             </>
@@ -1268,7 +1365,7 @@ export function WardTasksDrawer({
                         <div className={styles.rowText}>
                           <span className={styles.rowTitle}>{item.title}</span>
                           <p className={styles.rowMeta}>
-                            <strong>{patient?.displayName ?? "Patient not linked"}</strong>
+                            <strong>{patient?.formalName ?? "Patient not linked"}</strong>
                             {patient?.patient ? (
                               <>
                                 <span aria-hidden="true">·</span>
@@ -1296,7 +1393,7 @@ export function WardTasksDrawer({
                             type="button"
                             className={styles.btn}
                             data-testid={`ward-task-unsnooze-${item.id}`}
-                            aria-label={`Return ${item.title} now, ${patient?.displayName ?? "patient not linked"}`}
+                            aria-label={`Return ${item.title} now, ${patient?.formalName ?? "patient not linked"}`}
                             onClick={() => {
                               returnSnoozed(item.id);
                             }}
@@ -1371,7 +1468,7 @@ export function WardTasksDrawer({
               href={WARD_ALERTS_HREF}
               onClick={closeFromLink}
               data-testid="ward-tasks-open-alerts"
-              className={buttonClass({ variant: "pri", size: "sm" })}
+              className={buttonClass({ variant: "sec", size: "sm" })}
             >
               Open Alerts
             </Link>
