@@ -539,6 +539,18 @@
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
   cursor: pointer;
+  /* The arrow says it opens, as the desk rows above do; the browser's own marker is hidden. */
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  list-style: none;
+}
+
+.canFold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.canFold[open] > summary > .chev {
+  transform: rotate(180deg);
 }
 
 .cannot > span:nth-child(2) {
@@ -612,6 +624,22 @@
   .siteHead,
   .deskHead {
     min-height: var(--ward-tap, 3rem);
+  }
+
+  /* A hospital's figures go under its name, as a service's do, so "Armadale Health Service" is
+     not cut to "A…" (design audit, 1 Nov 2026). The figures line up under the name. */
+  .siteHead {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    padding-block: var(--wf-s-2);
+  }
+
+  .siteHead > .siteName {
+    flex-basis: calc(100% - 30px - 2 * var(--wf-s-2));
+  }
+
+  .siteHead > .siteName + .mini {
+    margin-left: calc(30px + 2 * var(--wf-s-2));
   }
 
   .preview2 {

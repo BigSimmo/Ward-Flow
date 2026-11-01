@@ -932,7 +932,10 @@ function DeskRow({
               and folds what the desk can do, keeping Open desk in view. */}
           {compact ? (
             <details className={styles.canFold}>
-              <summary>What this desk can do</summary>
+              <summary>
+                What this desk can do
+                <Icon icon={ChevronDown} size={14} className={styles.chev} />
+              </summary>
               <CanList role={desk.role} short />
             </details>
           ) : (
