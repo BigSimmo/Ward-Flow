@@ -65,8 +65,9 @@ import type { BedRelease } from "@/components/ward-management/ward-model";
  */
 // Discharges redesign (approved 31 Oct 2026): the person leads each row, and a fourth column holds the
 // row's one action (its header is read by screen readers only, and its cell carries no phone label).
-const WORKLIST_COLUMNS = ["Patient / ward", "Timing", "Stage / blocker", "Next"];
-const LABELLED_CELLS = ["Patient / ward", "Timing", "Stage / blocker", null];
+const WORKLIST_COLUMNS = ["Person", "Expected out", "Stage", "Held up by", "Next"];
+// Desktop cells carry no phone labels; the column classes are the per-cell contract.
+const CELL_CLASSES = ["colPerson", "colOut", "colStage", "colBlocker", "actionCell"];
 const GROUPS = ["blocked", "confirmed", "expected", "discharged-today"] as const;
 
 function headersFor(groupKey: string): string[] {
@@ -114,11 +115,13 @@ describe("the discharges board's column contract", () => {
     );
     expect(rows.length, `${key} must exercise actual release rows`).toBeGreaterThan(0);
     for (const row of rows) {
-      expect([...row.querySelectorAll("td")].map((cell) => cell.getAttribute("data-label"))).toEqual(LABELLED_CELLS);
-      const stageCell = row.querySelector('td[data-label="Stage / blocker"]');
-      expect(stageCell?.querySelector("[data-status]")).not.toBeNull();
-      if (key === "blocked") expect(stageCell?.querySelector('[class*="blocker"]')?.textContent).toBeTruthy();
-      else expect(stageCell?.querySelector('[class*="blocker"]')).toBeNull();
+      const cells = [...row.querySelectorAll("td")];
+      expect(cells.map((cell, i) => cell.className.includes(CELL_CLASSES[i]))).toEqual(CELL_CLASSES.map(() => true));
+      const stageCell = cells[2];
+      const blockerCell = cells[3];
+      expect(stageCell?.querySelector("[data-stage]")).not.toBeNull();
+      if (key === "blocked") expect(blockerCell?.textContent).toBeTruthy();
+      else expect(blockerCell?.querySelector('[class*="blockerTag"]')).toBeNull();
       fireEvent.click(within(row).getAllByRole("button")[0]);
       expect(details).toBeInTheDocument();
       const reported = within(details).getByText("Last reported", { selector: "dt" }).nextElementSibling;
@@ -131,7 +134,7 @@ describe("the discharges board's column contract", () => {
   it("renders `Stage` in every group, including the three where it restates the heading", () => {
     renderBoard();
     for (const key of GROUPS) {
-      expect(headersFor(key), `${key} has lost its Stage column`).toContain("Stage / blocker");
+      expect(headersFor(key), `${key} has lost its Stage column`).toContain("Stage");
     }
   });
 

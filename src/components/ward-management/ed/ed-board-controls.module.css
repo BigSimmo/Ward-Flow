@@ -93,7 +93,7 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: var(--wf-r-md);
   padding: 6px;
   /* CRIT-03: a shadow shows at an edge only while more of the menu is scrolled past it. */
   background:
@@ -372,7 +372,7 @@ input.planInput {
   max-height: calc(100dvh - 48px);
   margin: auto;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: var(--wf-r-lg);
   padding: 0;
   background: var(--surface);
   color: var(--ink);

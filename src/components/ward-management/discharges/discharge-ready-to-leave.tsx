@@ -75,6 +75,12 @@ export function ReadyToLeave({
           tone={done === items.length ? "success" : undefined}
         />
       </header>
+      <div className={styles.progress} aria-hidden="true">
+        <span
+          style={{ width: `${Math.round((done / items.length) * 100)}%` }}
+          data-done={done === items.length || undefined}
+        />
+      </div>
       <ul className={styles.list}>
         {items.map((item) => {
           const on = ticked.includes(item.id);
@@ -107,7 +113,6 @@ export function ReadyToLeave({
           );
         })}
       </ul>
-      <p className={styles.note}>Synthetic demo ticks. Items and starting ticks are pending confirmation.</p>
       {lastChange && changedLabel ? (
         <ToastView
           className={styles.toast}

@@ -1343,6 +1343,11 @@ test.describe("@mockup Role switcher — the loop", () => {
     const incoming = page.getByTestId("ward-incoming-WF-315");
     await expect(incoming).toBeVisible();
     await incoming.getByRole("button", { name: "Accept in principle" }).click();
+    // Q93: Accept opens the named accept dialog; choose the standard pull time limit and confirm.
+    const acceptDialog = page.getByTestId("ward-accept-dialog");
+    await acceptDialog.getByRole("radio", { name: /standard/u }).click();
+    await acceptDialog.getByRole("button", { name: "Confirm acceptance" }).click();
+    await expect(acceptDialog).toHaveCount(0);
 
     // --- Step 4: Ward — hold a bed. ---
     await openAllArrivals(page);
