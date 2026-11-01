@@ -1173,6 +1173,7 @@ export function CommunityScreen(props: CommunityScreenProps) {
             section={teamSection}
             open={view.openTeamSection}
             onRecordContact={() => view.setActiveModalType("contact")}
+            onReferFromTeam={view.openNewReferral}
           />
         ) : null}
         {isPhone && !view.midlandDemo ? <CommunityScreenPhone view={view} /> : null}

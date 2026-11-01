@@ -7,7 +7,7 @@
  */
 
 import { useRef, useState, type ReactNode } from "react";
-import { Check, ChevronDown, ChevronRight, FileText, Phone, Search } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, FileText, Phone, Plus, Search } from "lucide-react";
 import {
   Button,
   LiveChip,
@@ -41,6 +41,8 @@ import p from "./midland-phone.module.css";
 
 const f = DEMO_FIGURES;
 const SHOWN = 8;
+/** HOW-WE-WORK D4: an unconnected control says exactly this. */
+const NOT_WIRED = "Not wired in this prototype.";
 
 const SECTIONS: { id: CommunityTeamSection; label: string; count?: number }[] = [
   { id: "home", label: "Home" },
@@ -175,7 +177,7 @@ function HomeSection({
       meta: "Moodjar · Mallard, J.",
       when: "Wed 4 Nov",
       action: "Book",
-      run: () => note("Booking opens the clinic diary"),
+      run: () => note(NOT_WIRED),
     },
   ];
   const thisWeek = [
@@ -226,7 +228,7 @@ function HomeSection({
             Duty officer today · {f.working} of {f.clinicians} working
           </span>
         </div>
-        <Button size="sm" onClick={() => note(`Calling ${duty.name}, ext ${duty.ext}`)}>
+        <Button size="sm" onClick={() => note(NOT_WIRED)}>
           Call<SrOnly> {duty.name}</SrOnly>
         </Button>
       </section>
@@ -452,7 +454,7 @@ function CaseloadSection() {
   );
 }
 
-function HospitalSection({ note }: { note: (t: string) => void }) {
+function HospitalSection({ note, onRecord }: { note: (t: string) => void; onRecord: () => void }) {
   return (
     <>
       <Card title="In hospital now" aside={<span className={p.small}>{f.datesPassed} dates passed</span>}>
@@ -493,8 +495,7 @@ function HospitalSection({ note }: { note: (t: string) => void }) {
                   ? undefined
                   : {
                       label: d.state === "booked" ? "Open" : d.state === "due" ? "Record" : "Book",
-                      onAction: () =>
-                        note(d.state === "due" ? "Record contact opens the note" : "Booking opens the clinic diary"),
+                      onAction: () => (d.state === "due" ? onRecord() : note(NOT_WIRED)),
                     }
               }
             />
@@ -629,7 +630,7 @@ function CliniciansSection({ note }: { note: (t: string) => void }) {
                 name={s.name}
                 meta={`${s.role} · ${label} · ${s.where}`}
                 value={s.load ? `${s.load}/${s.cap}` : undefined}
-                action={{ label: "Call", icon: Phone, onAction: () => note(`Calling ${s.name}, ext ${s.ext}`) }}
+                action={{ label: "Call", icon: Phone, onAction: () => note(NOT_WIRED) }}
               />
             );
           })}
@@ -664,7 +665,7 @@ function ReferralSheet({
           onClose();
         },
       }}
-      secondary={{ label: "Decline", onAction: () => note("Decline opens a reason list and where to send the person") }}
+      secondary={{ label: "Decline", onAction: () => note(NOT_WIRED) }}
       data-testid="ward-community-phone-demo-referral"
     >
       {r ? (
@@ -754,10 +755,12 @@ export function MidlandPhone({
   section,
   open,
   onRecordContact,
+  onReferFromTeam,
 }: {
   section: CommunityTeamSection;
   open: (section: CommunityTeamSection) => void;
   onRecordContact: () => void;
+  onReferFromTeam: () => void;
 }) {
   const [sheet, setSheet] = useState<number | null>(null);
   const [full, setFull] = useState<number | null>(null);
@@ -798,6 +801,15 @@ export function MidlandPhone({
                 <Phone size={16} aria-hidden="true" />
                 Record contact
               </button>
+            ) : section === "referrals" ? (
+              <button
+                type="button"
+                className={buttonClass({ variant: "onHero", size: "md" })}
+                onClick={onReferFromTeam}
+              >
+                <Plus size={16} aria-hidden="true" />
+                Refer from team
+              </button>
             ) : undefined
           }
         />
@@ -813,7 +825,7 @@ export function MidlandPhone({
         />
         {section === "home" ? <HomeSection go={open} onRecord={onRecordContact} note={note} /> : null}
         {section === "caseload" ? <CaseloadSection /> : null}
-        {section === "hospital" ? <HospitalSection note={note} /> : null}
+        {section === "hospital" ? <HospitalSection note={note} onRecord={onRecordContact} /> : null}
         {section === "referrals" ? <ReferralsSection open={setSheet} /> : null}
         {section === "clinicians" ? <CliniciansSection note={note} /> : null}
         <p className={p.foot}>

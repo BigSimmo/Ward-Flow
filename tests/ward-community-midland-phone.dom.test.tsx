@@ -68,6 +68,16 @@ describe("Midland community team on a phone (approved design)", () => {
     expect(screen.queryByTestId("ward-community-phone-hero")).not.toBeInTheDocument();
   });
 
+  it("offers Refer from team on Referrals and says unconnected actions are not wired", () => {
+    renderTeam();
+    expect(screen.queryByRole("button", { name: "Refer from team" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /^Referrals/u }));
+    expect(screen.getByRole("button", { name: "Refer from team" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /^Clinicians/u }));
+    fireEvent.click(screen.getAllByRole("button", { name: /^Call/u })[0]!);
+    expect(screen.getByText("Not wired in this prototype.")).toBeInTheDocument();
+  });
+
   it("leaves other teams on the generic phone tree", () => {
     renderTeam("albany");
     expect(screen.queryByRole("radiogroup", { name: "Team sections" })).not.toBeInTheDocument();

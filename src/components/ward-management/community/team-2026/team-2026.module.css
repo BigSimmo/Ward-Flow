@@ -1533,3 +1533,24 @@ select.ctl {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
+
+/* The full referral page pushed on a phone (Midland phone page, Q155): one column, so the side
+   column and the facts strip fit 390 px without sideways scroll. */
+@media (max-width: 48rem) {
+  .refPage .rpGrid,
+  .refPage .two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .refPage .rpStrip,
+  .refPage .rpFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .refPage .rpStrip > div {
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+  .refPage .isbar > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}
