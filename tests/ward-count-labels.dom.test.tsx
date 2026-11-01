@@ -19,6 +19,7 @@ import { HandoverPage } from "@/components/ward-management/handover/handover-pag
 import { heroHighlights } from "@/components/ward-management/movements/movements-screen-helpers";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
@@ -77,12 +78,17 @@ describe("count labels say what they count", () => {
     expect(rphTile).toHaveTextContent(`${rph.waiting}waiting`);
   });
 
-  it("Alerts leads with the Act now figure the menu's act-now row shows", () => {
+  // Q111/Q112 (Josh, 1 Nov 2026): Act now counts accepted referrals with no bed pulled, as Home
+  // does, and the title is "{act} act now, {waiting} waiting" with no "new to you" clause.
+  it("Alerts leads with Home's Act now figure, then the waiting figure", () => {
     inProvider(<AlertsScreen />);
-    const actNow = activeActNowItems(state, NOW_ANCHOR).length;
+    const actNow =
+      activeActNowItems(state, NOW_ANCHOR).length +
+      acceptedReferralsAwaitingPull(state.referrals, state.units, state.movements).length;
     expect(actNow).toBeGreaterThan(0);
     const title = screen.getByRole("heading", { level: 1 });
-    expect(title.textContent).toMatch(new RegExp(`^${actNow} act now(, \\d+ new to you)?$`, "u"));
+    expect(title.textContent).toMatch(new RegExp(`^${actNow} act now, \\d+ waiting$`, "u"));
+    expect(title.textContent).not.toMatch(/new to you/u);
   });
 
   // Audit 6 (Josh, 20 Oct 2026): the figures the audit found still counting for themselves.
