@@ -70,8 +70,8 @@ const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent fi
  * allowed to record. There is no Call ward desk: the model holds no ward desk number.
  *
  * The record sections below keep the five the drawing ships (Person, Journey, Which wards were
- * asked, Escalation, Transport leg). *Watch and flag* is still not built and is named in the foot,
- * because nothing records that somebody is watching a movement.
+ * asked, Escalation, Transport leg). *Watch and flag* is not built (owner, 1 Nov 2026: the foot
+ * no longer explains that; it keeps only the one-line synthetic-data notice).
  */
 
 /**
@@ -113,14 +113,14 @@ const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent fi
 export function personLine(movement: Movement, referrals: Referral[], patients: readonly Patient[]): string {
   const referral = referralForMovement(movement, referrals);
   if (referral === undefined) {
-    return "No referral is recorded against this movement, so there is no person to name.";
+    return "No referral recorded.";
   }
   if (referral.patientId === undefined) {
-    return "The referral that raised this movement names no person, so nobody can be identified from it.";
+    return "The referral names no person.";
   }
   const patient = patients.find((candidate) => candidate.id === referral.patientId);
   if (patient === undefined) {
-    return "The referral names a person this system holds no record of. UMRN not recorded.";
+    return "Person not held in this system.";
   }
   return patient.umrn ? `${patientDisplayName(patient)} · UMRN: ${patient.umrn}` : patientDisplayName(patient);
 }
@@ -665,9 +665,7 @@ export function MovementDrawer({
 
         <Section title="Journey">
           {movement.stageChanges.length === 0 ? (
-            <p className={d.muted}>
-              No stage change yet.
-            </p>
+            <p className={d.muted}>No stage changes yet.</p>
           ) : (
             <ul className={d.list}>
               {[...movement.stageChanges].reverse().map((change) => (
@@ -734,7 +732,7 @@ export function MovementDrawer({
 
         <Section title="Transport leg">
           {leg === undefined ? (
-            <p className={d.muted}>Not booked.</p>
+            <p className={d.muted}>No transport booked.</p>
           ) : (
             <p className={d.text}>
               {leg.provider}
@@ -747,7 +745,6 @@ export function MovementDrawer({
             </p>
           )}
         </Section>
-
       </div>
     </Sheet>
   );

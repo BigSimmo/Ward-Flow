@@ -84,7 +84,7 @@ const onFormExamined = {
 describe("declineReasonBlockedReason", () => {
   it("blocks until a reason is chosen, with the exact text", () => {
     expect(declineReasonBlockedReason(undefined)).toBe(
-      "Choose a reason before recording this decline. None is chosen for you: a reason nobody picked would be filed as this team's own answer.",
+      "Choose a reason before recording this decline. None is chosen for you.",
     );
   });
   it("allows once a reason is chosen", () => {
@@ -112,34 +112,16 @@ describe("referralDraftBlockedReason", () => {
   });
   it.each<[Partial<ReferralDraftAnswers>, string]>([
     [{ unidentified: false }, 'Find the patient by name or UMRN, or choose "Not yet identified".'],
-    [
-      { cohort: undefined },
-      "Choose a cohort before raising this referral. None is chosen for you: a cohort nobody picked would be filed as this patient's own record.",
-    ],
-    [
-      { security: undefined },
-      "Choose a security level before raising this referral. None is chosen for you: a security level nobody picked would be filed as this patient's own record.",
-    ],
-    [
-      { sex: undefined },
-      "Choose a sex before raising this referral. None is chosen for you: a sex nobody picked would be filed as this patient's own record.",
-    ],
+    [{ cohort: undefined }, "Choose a cohort before raising this referral. None is chosen for you."],
+    [{ security: undefined }, "Choose a security level before raising this referral. None is chosen for you."],
+    [{ sex: undefined }, "Choose a sex before raising this referral. None is chosen for you."],
     [{ gender: undefined }, 'Choose a gender, or "Not yet recorded". None is chosen for you.'],
-    [
-      { legalStatus: undefined },
-      "Choose a legal status before raising this referral. None is chosen for you: a legal status nobody picked would be filed as this patient's own record.",
-    ],
-    [
-      { urgency: undefined },
-      "Choose an urgency tier before raising this referral. None is chosen for you: an urgency tier nobody picked would be filed as this patient's own record.",
-    ],
-    [
-      { observation: undefined },
-      "Choose an observation level before raising this referral. None is chosen for you: a level nobody picked would be filed as this patient's own, and the pull only checks a ward's observation staff when the level needs them.",
-    ],
+    [{ legalStatus: undefined }, "Choose a legal status before raising this referral. None is chosen for you."],
+    [{ urgency: undefined }, "Choose an urgency tier before raising this referral. None is chosen for you."],
+    [{ observation: undefined }, "Choose an observation level before raising this referral. None is chosen for you."],
     [
       { highAcuity: undefined },
-      "State whether high-acuity nursing is required before raising this referral. None is chosen for you: an unanswered box would be filed as “not required”, and the acuity gate only checks a ward’s high-acuity staffing when the patient is recorded as needing it.",
+      "State whether high-acuity nursing is required before raising this referral. None is chosen for you.",
     ],
     [
       { legalFormDueAtDate: "2026-10-15" },
@@ -294,7 +276,7 @@ describe("bookTransportBlockedReason", () => {
       "Alex Test is placement requested, not bed pulled — transport can only be booked once a bed is pulled, or after handover is marked ready.",
     );
     expect(bookTransportBlockedReason(movement({ stage: "pulled", transport: job() }))).toBe(
-      "This patient already has transport booked. Booking again would replace a job the provider may already have accepted, and take its timestamps with it — an existing job has to be cancelled before a new one can be booked.",
+      "This patient already has transport booked. Cancel that job before booking a new one.",
     );
   });
   it("allows booking once pulled or handover-ready with no job", () => {

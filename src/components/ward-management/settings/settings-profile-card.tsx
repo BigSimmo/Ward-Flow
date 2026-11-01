@@ -83,7 +83,7 @@ export function SettingsProfileCard({
             <span className={styles.readout}>{service ?? "All services"}</span>
           </SettingRow>
         ) : null}
-        <SettingRow setting="profile-shift" title="Shift now" sub="The labelled default pattern, not a roster">
+        <SettingRow setting="profile-shift" title="Shift now" sub="Default pattern">
           <span className={styles.readout}>
             {shiftName}, {clock24(shift.startMinute)} to {clock24(shift.endMinute)}
           </span>

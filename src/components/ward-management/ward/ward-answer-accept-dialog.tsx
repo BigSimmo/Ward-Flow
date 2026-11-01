@@ -84,7 +84,7 @@ export function WardAcceptDialog({
         </dl>
 
         <p className={styles.note} data-testid="ward-answer-no-bed-named">
-          Accepting does not allocate a bed. No bed number is recorded.
+          Accepting does not allocate a bed.
         </p>
 
         <fieldset className={styles.options} id="hold-duration-select">

@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
@@ -7,6 +7,10 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { supportNotificationTaskId } from "@/components/ward-management/ward-support-notifications";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
 
 /**
  * 🔴 **THE TASKS DRAWER HAD NO TEST OF ITS OWN UNTIL NOW, AND IT IS ON EVERY WARD ROUTE.**
@@ -293,8 +297,9 @@ describe("task workspace state filters and actions", () => {
     const { drawer, onSelectMovement, dispatch } = renderDrawer({ records: seed });
     const item = items.find((item) => item.title === "Multiple destinations declined")!;
     const card = within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!;
-    // v6 (TasksDrawer.webp): the meta line reads "Critical · Tobias Wren · UM100023", record number bare.
-    expect(card).toHaveTextContent(/Tobias Wren·UM\d+/u);
+    // v6 (TasksDrawer.webp): the meta line reads "Critical · Wren, Tobias · UM100023", record number bare,
+    // surname first (D-83, pop-alerts 31 Oct 2026).
+    expect(card).toHaveTextContent(/Wren, Tobias·UM\d+/u);
     expect(card).not.toHaveTextContent(item.movementId);
     expect(card).not.toHaveTextContent("Bed coordinator");
     fireEvent.click(within(card).getByRole("button", { name: "Refer" }));
@@ -413,5 +418,63 @@ describe("carer, PSP and MHAS rows open the right checklist", () => {
     fireEvent.click(screen.getByTestId(`ward-task-${supportNotificationTaskId("admission", "WF-300")}`));
     expect(onSelectMovement).toHaveBeenCalledWith("WF-300");
     expect(onSelectDischarge).not.toHaveBeenCalled();
+  });
+});
+
+describe("the quick jumps go only where the desk may go (audit item 11, 1 Nov 2026)", () => {
+  afterEach(() => {
+    act(() => setWardFeatureFlagOnDevice("role-access", null));
+    resetWardAccessStoreForTests();
+  });
+
+  function renderAtDesk(access: WardAccess | null) {
+    if (access) {
+      act(() => setWardFeatureFlagOnDevice("role-access", true));
+      act(() => setWardAccess(access));
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardTasksDrawer
+          alertsScreenOpen={false}
+          items={items}
+          acknowledgements={{}}
+          completions={{}}
+          role="coordinator"
+          now={NOW_ANCHOR}
+          dispatch={vi.fn()}
+          onClose={vi.fn()}
+          onSelectMovement={vi.fn()}
+        />
+      </WardFlowProvider>,
+    );
+    return screen.getByTestId("ward-tasks-quick-jumps");
+  }
+
+  it("keeps Waiting list and Home for the coordinator, Home being Ward Flow's own", () => {
+    const jumps = renderAtDesk(null);
+    expect(within(jumps).getByTestId("ward-tasks-jump-delays")).toHaveAttribute("href", "/ward-flow/waiting");
+    expect(within(jumps).getByTestId("ward-tasks-jump-coordinator")).toHaveAttribute("href", "/ward-flow");
+    expect(jumps.textContent).toBe("Waiting list →·Home →");
+  });
+
+  it("sends a ward desk's Home to its own ward", () => {
+    const jumps = renderAtDesk({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } });
+    expect(within(jumps).getByTestId("ward-tasks-jump-delays")).toBeInTheDocument();
+    expect(within(jumps).getByTestId("ward-tasks-jump-coordinator")).toHaveAttribute(
+      "href",
+      "/ward-flow/ward/rph-adult-secure",
+    );
+  });
+
+  it("leaves the Waiting list out for a desk that cannot open it, with no stray separator", () => {
+    // The transport officer has no Waiting list (ROLE_SCREENS), so the link would end at "Not part
+    // of your role". Its Home is its own jobs.
+    const jumps = renderAtDesk({ role: "officer", scope: { kind: "jobs" } });
+    expect(within(jumps).queryByTestId("ward-tasks-jump-delays")).toBeNull();
+    expect(within(jumps).getByTestId("ward-tasks-jump-coordinator")).toHaveAttribute(
+      "href",
+      "/ward-flow/transport/officer",
+    );
+    expect(jumps.textContent).toBe("Home →");
   });
 });

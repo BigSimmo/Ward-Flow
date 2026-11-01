@@ -69,7 +69,7 @@ export default function GlobalError({ error, retry }: { error: Error & { digest?
             Something went wrong
           </h1>
           <p style={{ margin: "0 0 1.25rem", fontSize: "0.875rem", lineHeight: 1.6 }}>
-            The application failed to load. Please try again, or reload the page if the problem persists.
+            The application failed to load. Try again, or reload the page.
           </p>
           {error.digest && (
             <div

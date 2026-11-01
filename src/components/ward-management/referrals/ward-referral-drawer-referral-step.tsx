@@ -61,10 +61,7 @@ function CommunityPurposeAndFollowUp({ s }: { s: WardReferralDrawerState }) {
               setFlowError(null);
             }}
           />
-          <p className={styles.bodyMeta}>
-            No bed is asked for either way. The team sees the purpose in its inbox. Older referrals read as Community
-            follow-up.
-          </p>
+          <p className={styles.bodyMeta}>No bed is asked for either way.</p>
         </div>
       </section>
       <section className={styles.refCard} data-testid="ward-referral-needs">
@@ -220,7 +217,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
         <div className={styles.cardBody}>
           {sendingWard ? (
             <p className={styles.asideText} data-testid="ward-referral-drawer-sending-ward">
-              Sent from {sendingWard.name}, in this ward&apos;s own name.
+              Sent from {sendingWard.name}.
             </p>
           ) : senderMissing ? (
             <p className={styles.asideText} data-testid="ward-referral-drawer-no-sending-ward">

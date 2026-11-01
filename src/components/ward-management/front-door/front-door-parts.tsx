@@ -67,7 +67,7 @@ export function BedBoardTexture({ rows = 18 }: { rows?: number }) {
 const IDLE_MINUTES = CLINICAL_VALUES.idleLock.value;
 const SESSION_HOURS = CLINICAL_VALUES.sessionLimit.value;
 
-export function Brand() {
+function Brand() {
   return (
     <section className={styles.brand} aria-label="About Ward Flow">
       <div className={styles.brandTop}>

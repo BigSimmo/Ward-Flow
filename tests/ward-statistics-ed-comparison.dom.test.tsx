@@ -182,7 +182,7 @@ describe("comparison across departments", () => {
     const bands = screen.getByTestId("ward-statistics-eds-bands");
     expect(within(bands).getByRole("heading", { name: "Time since opening" })).toBeInTheDocument();
     expect(bands).toHaveTextContent("Open ED journeys");
-    expect(bands).toHaveTextContent("The bands do not overlap: they add up to all open ED journeys.");
+    expect(bands).toHaveTextContent("The bands add up to all open ED journeys.");
     expect(screen.queryByTestId("ward-statistics-eds-swarm")).not.toBeInTheDocument();
     expect(
       within(screen.getByTestId("ward-statistics-eds-swarm-card")).getByText(

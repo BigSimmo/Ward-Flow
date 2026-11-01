@@ -58,7 +58,7 @@ export function referralFit(gates: readonly GateResult[], unit: Unit, now: Insta
       text:
         gate.gate === "capacity_freshness"
           ? `Bed count last confirmed ${ageWords(now - unit.allocatable.confirmedAt)} ago.`
-          : "No free bed now. You can still accept in principle and take the patient when a bed frees.",
+          : "No free bed now. You can still accept in principle.",
     })),
   };
 }

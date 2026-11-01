@@ -138,7 +138,6 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
                     <Inbox aria-hidden="true" />
                   </span>
                   <h3>No referrals waiting</h3>
-                  <p>Sent referrals arrive in each ward&apos;s inbox</p>
                 </div>
               )
             ) : (

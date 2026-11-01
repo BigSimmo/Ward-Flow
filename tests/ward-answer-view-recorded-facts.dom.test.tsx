@@ -103,7 +103,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     const dispatch = renderAnswer("sjgm-adult-open");
     const id = shownId();
     const dialog = openDialog();
-    expect(dialog).toHaveTextContent("Accepting does not allocate a bed. No bed number is recorded.");
+    expect(dialog).toHaveTextContent("Accepting does not allocate a bed.");
     act(() =>
       setAdjust((movements) => {
         const held = movements.find((movement) => movement.id === id)!;
@@ -139,7 +139,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
   it("starts the pull time limit with neither choice chosen, and holds Confirm until one is", () => {
     const dispatch = renderAnswer("sjgm-adult-open");
     const dialog = openDialog();
-    expect(dialog).toHaveTextContent("Accepting does not allocate a bed. No bed number is recorded.");
+    expect(dialog).toHaveTextContent("Accepting does not allocate a bed.");
     const hold = within(dialog).getByRole("group", { name: "Pull time limit" });
     const radios = within(hold).getAllByRole("radio");
     expect(radios).toHaveLength(2);

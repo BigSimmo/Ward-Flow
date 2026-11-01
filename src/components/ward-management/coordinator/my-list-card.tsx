@@ -89,6 +89,19 @@ function isYours(entry: QueueEntry): boolean {
  * Home's desktop row: glyph, a two-line body (what, then who and where), how long, one action. Text
  * wraps instead of being cut, and the owner shows only when it is someone other than you.
  */
+/**
+ * Empty state (pop-state-empty, approved by Josh 31 Oct 2026): an empty group is one calm line with
+ * a green tick under its heading, not a blank box. The tick is decoration; the words carry it.
+ */
+function CalmEmpty({ children }: { children: ReactNode }) {
+  return (
+    <p className={`${alertStyles.groupEmpty} ${styles.calmEmpty}`}>
+      <StatusGlyph tone="success" size={10} />
+      <span>{children}</span>
+    </p>
+  );
+}
+
 function HomeRow({
   data,
   tone,
@@ -517,7 +530,7 @@ export function MyListCard({
             age={age}
             ageNote={decidedAt === undefined ? "Time not recorded" : "since accepted"}
             action={
-              <Button size="sm" aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
+              <Button size="sm" data-placement-action aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
                 Pull the bed
               </Button>
             }
@@ -535,18 +548,14 @@ export function MyListCard({
       {act.length > 0 ? (
         alertRows(act)
       ) : toPull.length > 0 ? null : (
-        <p className={alertStyles.groupEmpty}>None firing now. The checks run are named in the header.</p>
+        <CalmEmpty>None firing now. The checks run are named in the header.</CalmEmpty>
       )}
     </section>
   );
   const decideGroup = (
     <section className={alertStyles.group} aria-label="Referrals to decide">
       <GroupHead tone="info" label="Referrals to decide" count={referrals.length} aside="oldest first" />
-      {referrals.length > 0 ? (
-        referralRows
-      ) : (
-        <p className={alertStyles.groupEmpty}>No referral is waiting on a decision.</p>
-      )}
+      {referrals.length > 0 ? referralRows : <CalmEmpty>No referral is waiting on a decision.</CalmEmpty>}
     </section>
   );
   const waitGroup = (
@@ -555,7 +564,7 @@ export function MyListCard({
       {wait.length > 0 ? (
         alertRows(shownWait)
       ) : (
-        <p className={alertStyles.groupEmpty}>Nothing is waiting on a transport leg or an arrival.</p>
+        <CalmEmpty>Nothing is waiting on a transport leg or an arrival.</CalmEmpty>
       )}
       {wait.length > WAIT_ROWS_SHOWN ? (
         <button

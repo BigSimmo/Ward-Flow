@@ -6,6 +6,8 @@ import ts from "typescript";
 
 import { WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
+import { openPhoneMenuMorePages } from "./helpers/ward-release-gate";
+
 // Read the authoritative declaration without importing its React/CSS component graph into
 // Playwright's Node-side collector. The unit chrome contract also checks it against real routes.
 const workspaceSource = ts.createSourceFile(
@@ -298,6 +300,9 @@ test.describe("@mockup Ward Flow command view", () => {
         if (!(await sheet.isVisible())) await opener.click();
         await expect(sheet).toBeVisible({ timeout: 2_000 });
       }).toPass({ timeout: 20_000 });
+      // Phone Menu redesign (approved 31 Oct 2026): the other groups open in place from one
+      // "More pages" row, so the views in them are measured once that row is open.
+      await openPhoneMenuMorePages(page);
     }
 
     // By `href`, not by counting every link this landmark now contains: the sheet also carries the

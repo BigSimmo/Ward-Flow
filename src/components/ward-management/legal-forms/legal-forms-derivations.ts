@@ -371,5 +371,5 @@ export function legalExpiryReminderText(summary: LegalExpiryReminderSummary): st
   if (summary.withinSoon > 0) parts.push(`${summary.withinSoon} within ${formatReminderHours(summary.soonHours)}`);
   if (parts.length === 0) return undefined;
   const total = summary.withinUrgent + summary.withinSoon;
-  return `Synthetic demo reminder: ${total} recorded form ${total === 1 ? "expiry is" : "expiries are"} close (${parts.join(", ")}). Expiry times are typed from the form and not legally checked; warning windows are set in Settings.`;
+  return `Synthetic demo reminder: ${total} recorded form ${total === 1 ? "expiry is" : "expiries are"} close (${parts.join(", ")}). Typed from the form, not legally checked.`;
 }

@@ -382,8 +382,8 @@ function EdsIndexView({
       }
     >
       <p className={styles.muted} data-testid="ward-statistics-eds-population">
-        {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Open journeys retain ED
-        accountability until arrival. The physical split includes recorded ED outcomes; times run from journey opening.
+        {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Times run from journey
+        opening.
       </p>
       {isPhone ? (
         <PhoneBody testId="ward-statistics-eds-phone">
@@ -435,7 +435,7 @@ function EdsIndexView({
             >
               {renderSwarm(96)}
               <p className={phone.note}>
-                {`Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines show time since opening, using local defaults, not legal limits.`}
+                {`The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`}
               </p>
             </PhoneSheetRow>
           )}
@@ -459,7 +459,7 @@ function EdsIndexView({
               meta={
                 executive
                   ? undefined
-                  : `Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines show time since opening, using local defaults, not legal limits. Open a row for that ED's page.`
+                  : `Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`
               }
             />
           </StatCard>
@@ -581,7 +581,7 @@ function EdsIndexView({
                     height={220}
                   />
                 </CardBody>
-                <CardFoot meta="The bands do not overlap: they add up to all open ED journeys." />
+                <CardFoot meta="The bands add up to all open ED journeys." />
               </StatCard>
             </Follow>
           </FlushRow>

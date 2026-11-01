@@ -296,7 +296,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
           </section>
           <p className={styles.deliveryNote}>
             <Info aria-hidden="true" />
-            Each location gets it in its inbox. Sending reserves no bed.
+            Sending reserves no bed.
           </p>
         </>
       )}

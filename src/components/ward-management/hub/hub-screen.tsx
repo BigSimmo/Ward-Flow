@@ -584,9 +584,7 @@ export function HubScreen() {
               <h3>On-site mental health wards</h3>
               {/* ⚠️ An empty list is a fact and is stated as one, never as "0 on-site beds". */}
               {selected.onSiteUnits === undefined || selected.onSiteUnits.length === 0 ? (
-                <p className={styles.absent}>
-                  No mental health beds on-site — this department places patients elsewhere in the network.
-                </p>
+                <p className={styles.absent}>No mental health beds on-site.</p>
               ) : (
                 <ul className={styles.notesList}>
                   {selected.onSiteUnits.map((unit) => (
@@ -601,8 +599,7 @@ export function HubScreen() {
               <h3>Notes</h3>
               <ul className={styles.notesList}>
                 <li>Team name is a synthetic placeholder.</li>
-                <li>A community team holds no beds; it takes people for follow-up in the community.</li>
-                <li>Referral queue not available for this entry.</li>
+                <li>Holds no beds.</li>
               </ul>
             </div>
           )}
@@ -610,9 +607,7 @@ export function HubScreen() {
 
         <div className={styles.detailCta}>
           {selected.kind === "community" ? (
-            <p className={styles.statsAbsent}>
-              Statistics are unavailable for this regional entry. Community directory; no page for this regional entry.
-            </p>
+            <p className={styles.statsAbsent}>Statistics are unavailable for this regional entry.</p>
           ) : null}
           {/* ROLE BRANCH (bed_manager): the closed page's sentence in full, wrapping (QA 31 Oct). The
               greyed button below carries it for a screen reader. */}

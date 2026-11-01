@@ -54,14 +54,11 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
       </h3>
       {inShared ? (
         <p className={styles.intro} data-testid="ward-practice-shared-off">
-          Practice is off in the shared workspace. Every step would be saved for everyone signed in. Practise on the
-          demo on this device instead.
+          Practice is off in the shared workspace, where every step is saved for everyone. Use the demo on this device.
         </p>
       ) : progress === null ? (
         <>
-          <p className={styles.intro}>
-            Six steps from bed request to arrival. Each one ticks off here as you do it in the real screens.
-          </p>
+          <p className={styles.intro}>Six steps, from bed request to arrival.</p>
           <Button
             size="sm"
             onClick={() =>
@@ -103,7 +100,7 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
           </ol>
           <p className={styles.intro} role="status">
             {finished
-              ? "All six steps done. Stop practice, then start again to practise once more."
+              ? "All six steps done."
               : progress.movementId
                 ? "Following the first bed request raised since you started."
                 : "Waiting for a new bed request."}

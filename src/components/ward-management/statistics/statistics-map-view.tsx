@@ -345,7 +345,7 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key
     id: "stay",
     label: "Stay",
     rankTitle: "Longest average stay",
-    key: "Ring: share over 3 months. Centre: average stay in days, everyone who arrived, people who have left included.",
+    key: "Ring: share over 3 months. Centre: average stay in days, including people who have left.",
   },
 ];
 

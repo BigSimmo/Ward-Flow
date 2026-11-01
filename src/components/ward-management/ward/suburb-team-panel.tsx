@@ -43,8 +43,7 @@ import styles from "./ward.module.css";
  * needs it — owner instruction, and `ward-suburb-team-panel.dom.test.tsx` asserts it both before and
  * after a lookup. Copied from the drawing's own lede.
  */
-const QUALIFIER =
-  "The key is the suburb and never the postcode. Nothing on this panel asks for a bed, and nothing here is sent until somebody sends it.";
+const QUALIFIER = "Keyed by suburb, never the postcode. Nothing here is sent.";
 
 const FREQUENT_SUBURBS = [
   { name: "Albany", region: "Great Southern" },
@@ -132,9 +131,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
             <p className={styles.suburbNote}>{found.note}</p>
             {/* The refusal is stated, not merely enacted. Rendering both readings and then quietly
                 routing on one would make the display honest and the behaviour dishonest. */}
-            <p className={styles.suburbNote}>
-              Both readings are shown and neither is chosen. Nothing is sent from a contested answer — a person picks.
-            </p>
+            <p className={styles.suburbNote}>Neither reading is chosen. A person picks.</p>
           </div>
         </div>
       );
@@ -153,10 +150,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
                 facts here — that the row exists and the cell is empty — which `found.note` says one line
                 above. **The tests could not see it: they assert presence, and a duplicated sentence is
                 present twice.** Found by reading the rendered panel in a browser. */}
-            <p className={styles.suburbNote}>
-              The place is real and the mapping was never written down. This is a gap to fill in, not an address to
-              re-check — which is the whole reason it is not the same answer as a suburb the table does not carry.
-            </p>
+            <p className={styles.suburbNote}>A gap to fill in, not an address to re-check.</p>
           </div>
         </div>
       ) : (
@@ -168,10 +162,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
               <span className={`${styles.statusPillBadge} ${styles.danger}`}>Not in catchment table</span>
             </div>
             <p className={styles.suburbNote}>{found.note}</p>
-            <p className={styles.suburbNote}>
-              Check the spelling and the address. A suburb absent from the table may be a misspelling, or somebody out
-              of this catchment altogether — no answer is guessed at from a similar name.
-            </p>
+            <p className={styles.suburbNote}>Check the spelling and the address.</p>
           </div>
         </div>
       );
@@ -210,9 +201,6 @@ export function SuburbTeamPanel() {
             <h2 id={headingId} className={styles.suburbHeaderMainTitle}>
               The team for this suburb
             </h2>
-            <p className={styles.suburbHeaderSubText}>
-              Find which Community Mental Health Team covers a patient&rsquo;s residence
-            </p>
           </div>
         </div>
         <span className={styles.badgePill}>Community catchment directory</span>
@@ -282,7 +270,7 @@ export function SuburbTeamPanel() {
 
       {found === null ? (
         <p className={styles.placeholder} data-testid="ward-suburb-team-empty">
-          No suburb has been looked up yet. Absence here means none was asked for, not that no team exists.
+          No suburb looked up yet.
         </p>
       ) : found.length === 0 ? (
         <p className={styles.placeholder} data-testid="ward-suburb-team-empty">

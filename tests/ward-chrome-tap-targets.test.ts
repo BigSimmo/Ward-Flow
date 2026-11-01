@@ -165,3 +165,31 @@ describe("Phone service chip tap target (overall review, 20 Oct 2026)", () => {
     expect(phoneValues(css, ".scopeBadgeBtn::before", "inset").at(-1)).toBe("-12px -8px");
   });
 });
+
+describe("Phone service picker rows (Codex review, PR #1207, 1 Nov 2026)", () => {
+  /** Every declaration of `prop` on exactly `selector` inside the phone block, in source order. */
+  function phoneValues(source: string, selector: string, prop: string): string[] {
+    const values: string[] = [];
+    postcss.parse(source).walkRules((rule) => {
+      const parent = rule.parent;
+      const inPhone = parent?.type === "atrule" && (parent as postcss.AtRule).params.trim() === "(max-width: 48rem)";
+      if (!inPhone || !rule.selectors.some((candidate) => candidate.trim() === selector)) return;
+      rule.walkDecls(prop, (decl) => {
+        values.push(decl.value);
+      });
+    });
+    return values;
+  }
+
+  it("keeps a 48px hit area on a phone, where --wf-tablet-tap is 0, with a 40px face", () => {
+    const css = read(BAR_CSS);
+    // The row itself is the hit area: 48px tall on a phone, not the 0px tablet token.
+    expect(phoneValues(css, ".servicePanel .serviceOption", "min-height").at(-1)).toBe("48px");
+    // The face is 4px in from the top and bottom: 48 - 4 - 4 = 40px, so rows never overlap.
+    expect(phoneValues(css, ".servicePanel .serviceOption::before", "inset").at(-1)).toBe("4px 0");
+    // The row's own fill stays clear on a phone, so only the 40px face is painted.
+    expect(phoneValues(css, '.servicePanel .serviceOption[aria-pressed="true"]', "background").at(-1)).toBe(
+      "transparent",
+    );
+  });
+});

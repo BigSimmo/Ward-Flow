@@ -148,9 +148,7 @@ export function ReferralHistoryAndCorrections({
               >
                 Add a correction
               </button>
-              <span className={styles.correctionDisclaimer}>
-                Corrections are added as new notes. The history sent with the referral is never changed.
-              </span>
+              <span className={styles.correctionDisclaimer}>The history sent is never changed.</span>
             </div>
             {failure ? (
               <p className={styles.rejection} role="alert" data-testid="ward-referral-correction-failure">

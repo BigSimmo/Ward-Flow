@@ -641,10 +641,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       <span data-testid="ward-out-of-area-count-people">
         {entries.length} {entries.length === 1 ? "person is" : "people are"} recorded as being in a bed far from home.
       </span>{" "}
-      <span data-testid="ward-out-of-area-count-not-banded">
-        {notBanded} more could not be placed in a band because the combined count does not separate a missing home area
-        from a missing travel-time pair.
-      </span>
+      <span data-testid="ward-out-of-area-count-not-banded">{notBanded} more could not be placed in a band.</span>
     </p>
   );
 
