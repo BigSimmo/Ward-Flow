@@ -14,6 +14,7 @@ import {
   useIsPhone,
   type WfTone,
 } from "@/components/wf";
+import bulkStyles from "./ward-decisions-bulk-confirm.module.css";
 import styles from "./ward-decisions-cockpit.module.css";
 import { openDecisionCount } from "./ward-decision-count";
 
@@ -634,13 +635,11 @@ function Queue({
       }}
       data-testid="ward-decisions-bulk-sign-off-confirm"
     >
-      <ul className={styles.rows} aria-label="Discharges to sign off">
+      <ul className={bulkStyles.list} aria-label="Discharges to sign off">
         {bulkRows.map((row) => (
-          <li key={row.id} className={styles.row}>
-            <span className={styles.rowText}>
-              <span className={styles.rowTitle}>{splitTitle(row.title).name}</span>
-              {row.identity ? <span className={styles.rowSub}>{row.identity}</span> : null}
-            </span>
+          <li key={row.id} className={bulkStyles.person}>
+            <span className={bulkStyles.name}>{splitTitle(row.title).name}</span>
+            {row.identity ? <span className={bulkStyles.identity}>{row.identity}</span> : null}
           </li>
         ))}
       </ul>
