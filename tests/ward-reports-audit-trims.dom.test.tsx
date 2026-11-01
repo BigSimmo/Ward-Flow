@@ -40,7 +40,8 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
     renderInProvider(<StatisticsCompareScreen />);
     const pinned = screen.getByTestId("ward-statistics-compare-pinned");
     expect(within(pinned).queryByRole("table")).toBeNull();
-    expect(pinned).toHaveTextContent("Pin up to three wards to set beside the network.");
+    expect(pinned).toHaveTextContent("Pin up to three wards to set them beside the network.");
+    expect(within(pinned).getByRole("button", { name: "Pin a ward" })).toBeInTheDocument();
   });
 
   it("words the All wards chips as counts of wards, not beds", () => {

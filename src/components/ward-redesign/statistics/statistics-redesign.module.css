@@ -733,3 +733,13 @@
   font-size: var(--wf-fs-14);
   color: var(--wf-ink-2);
 }
+
+/* A foot toggle (Show all) drawn as the foot's link. */
+button.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

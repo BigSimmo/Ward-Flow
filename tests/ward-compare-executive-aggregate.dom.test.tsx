@@ -95,7 +95,7 @@ describe("Compare uses its released aggregate model", () => {
     expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
   });
 
-  it("keeps chart, group, search and sorting controls while protecting bars, order and the complete reference", () => {
+  it("keeps chart, group and search controls while protecting bars, order and the complete reference", () => {
     installMatchMediaStub(false);
     const data = protectedReport();
     render(wrap(<StatisticsCompareScreen />, data));
@@ -111,13 +111,14 @@ describe("Compare uses its released aggregate model", () => {
     );
     expect(figure.querySelectorAll('span[style*="width"]')).toHaveLength(0);
     expect(figure).not.toHaveTextContent("Mean of wards:");
-    fireEvent.click(within(wardCard()).getByRole("radio", { name: "Lowest" }));
-    expect(within(wardCard()).getByRole("radio", { name: "Lowest" })).toHaveAttribute("aria-checked", "true");
-    fireEvent.click(within(wardCard()).getByRole("radio", { name: /^Secure/ }));
+    // the redesign (Josh, 1 Nov 2026) draws highest first with no sort switch; the group chips stay.
+    expect(within(wardCard()).queryByRole("radio", { name: "Lowest" })).not.toBeInTheDocument();
+    fireEvent.click(within(wardCard()).getByRole("button", { name: /^Secure/ }));
+    expect(within(wardCard()).getByRole("button", { name: /^Secure/ })).toHaveAttribute("aria-pressed", "true");
     fireEvent.change(within(wardCard()).getByRole("searchbox"), { target: { value: data.wards[0].name } });
     expect(wardCard()).toHaveTextContent("network reference are not shown");
     fireEvent.change(within(wardCard()).getByRole("searchbox"), { target: { value: "" } });
-    fireEvent.click(within(wardCard()).getByRole("radio", { name: /^All/ }));
+    fireEvent.click(within(wardCard()).getByRole("button", { name: /^All/ }));
     fireEvent.click(within(edCard()).getByRole("radio", { name: "No ward" }));
     const edFigure = chart("Emergency department placements with no ward bar chart");
     expect(edFigure).not.toHaveTextContent("Mean of EDs:");
@@ -177,14 +178,18 @@ describe("Compare uses its released aggregate model", () => {
     data.wards[0].statistics.readyToLeaveCannot = { kind: "exact", value: 10 };
     render(wrap(<StatisticsCompareScreen />, data));
     const pinned = screen.getByTestId("ward-statistics-compare-pinned");
-    fireEvent.change(within(pinned).getByRole("combobox"), { target: { value: data.wards[0].id } });
+    const pin = () => {
+      fireEvent.click(within(pinned).getByRole("button", { name: "Pin a ward" }));
+      fireEvent.click(screen.getByRole("menuitem", { name: new RegExp(`^${data.wards[0].name}`) }));
+    };
+    pin();
     const blocker = within(pinned)
       .getAllByRole("row")
       .find((row) => row.textContent?.startsWith("Discharges held up"));
     expect(blocker).toHaveTextContent("10not shown");
     fireEvent.click(within(pinned).getByRole("button", { name: `Unpin ${data.wards[0].name}` }));
     expect(pinned).toHaveTextContent("Pin up to three wards");
-    fireEvent.change(within(pinned).getByRole("combobox"), { target: { value: data.wards[0].id } });
+    pin();
     fireEvent.click(within(pinned).getByRole("button", { name: "Clear" }));
     expect(pinned).toHaveTextContent("Pin up to three wards");
   });
