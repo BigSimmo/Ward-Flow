@@ -1,6 +1,6 @@
 import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Profiler, type ReactNode } from "react";
+import { Profiler, useState, type ReactNode } from "react";
 
 /**
  * Show me (Josh, 26 and 30 Oct 2026): opens the screen a task is done on, then lights each control in
@@ -250,6 +250,79 @@ describe("Show me player", () => {
     fireEvent.click(screen.getByTestId("ward-show-me-continue"));
     expect(screen.queryByTestId("ward-show-me-spot")).toBeNull();
     expect(screen.getByText("Step 1 of 2")).toBeTruthy();
+  });
+
+  it("returns focus to the last page control when the paused guide closes", () => {
+    const pageControl = control("audit-page-control");
+    function Host() {
+      const [open, setOpen] = useState(true);
+      return open ? <WardShowMe id="new-referral" onClose={() => setOpen(false)} onBack={vi.fn()} /> : null;
+    }
+    render(<Host />);
+    fireEvent.click(screen.getByTestId("ward-show-me-try"));
+    pageControl.focus();
+    const close = screen.getByRole("button", { name: "Close Show me" });
+    close.focus();
+    fireEvent.click(close);
+    expect(screen.queryByTestId("ward-show-me-paused")).toBeNull();
+    expect(document.activeElement).toBe(pageControl);
+  });
+
+  it("returns focus inside an open form when closing the paused guide", async () => {
+    function Host({ formOpen }: { formOpen: boolean }) {
+      const [open, setOpen] = useState(true);
+      return (
+        <>
+          {open ? <WardShowMe id="new-referral" onClose={() => setOpen(false)} onBack={vi.fn()} /> : null}
+          <Dialog open={formOpen} title="Synthetic form" onClose={vi.fn()}>
+            <button type="button">Continue editing form</button>
+          </Dialog>
+        </>
+      );
+    }
+    const view = render(<Host formOpen={false} />);
+    fireEvent.click(screen.getByTestId("ward-show-me-try"));
+    view.rerender(<Host formOpen />);
+    const field = screen.getByRole("button", { name: "Continue editing form" });
+    field.focus();
+    const close = screen.getByRole("button", { name: "Close Show me" });
+    close.focus();
+    fireEvent.click(close);
+    expect(screen.queryByTestId("ward-show-me-paused")).toBeNull();
+    expect(document.activeElement).toBe(field);
+    expect(screen.getByRole("dialog", { name: "Synthetic form" })).toBeTruthy();
+  });
+
+  it("ignores repeated, composing and modified continuation shortcuts", () => {
+    render(<WardShowMe id="new-referral" onClose={vi.fn()} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByTestId("ward-show-me-try"));
+    for (const extra of [{ repeat: true }, { isComposing: true }, { shiftKey: true }, { ctrlKey: true }]) {
+      fireEvent.keyDown(window, { altKey: true, key: "ArrowRight", ...extra });
+      expect(screen.getByTestId("ward-show-me-paused")).toBeTruthy();
+    }
+    const handled = new KeyboardEvent("keydown", { altKey: true, key: "ArrowRight", cancelable: true });
+    handled.preventDefault();
+    fireEvent(window, handled);
+    expect(screen.getByTestId("ward-show-me-paused")).toBeTruthy();
+    fireEvent.keyDown(window, { altKey: true, key: "ArrowRight" });
+    expect(screen.getByRole("dialog", { name: "Destinations, then send" })).toBeTruthy();
+  });
+
+  it("reserves plain arrow presses for steps without intercepting browser shortcuts or key repeats", () => {
+    render(<WardShowMe id="sign-off-handover" onClose={vi.fn()} onBack={vi.fn()} />);
+    const next = screen.getByTestId("ward-show-me-next");
+    for (const extra of [
+      { altKey: true },
+      { ctrlKey: true },
+      { shiftKey: true },
+      { repeat: true },
+      { isComposing: true },
+    ]) {
+      fireEvent.keyDown(next, { key: "ArrowRight", ...extra });
+      expect(screen.getByText("Step 1 of 3")).toBeTruthy();
+    }
+    fireEvent.keyDown(next, { key: "ArrowRight" });
+    expect(screen.getByText("Step 2 of 3")).toBeTruthy();
   });
 });
 

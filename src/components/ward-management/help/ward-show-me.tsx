@@ -5,7 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
-import { SHEET_INERT_SKIP_ATTRIBUTE } from "@/components/wf/sheet-focus";
+import { canRestoreFocusTo, SHEET_INERT_SKIP_ATTRIBUTE, topSheetRoot } from "@/components/wf/sheet-focus";
+import { modalFocusTargets } from "@/components/wf/focus-targets";
 
 import { howToHref } from "./ward-help-href";
 import { howToFor } from "./ward-help-access";
@@ -55,6 +56,8 @@ function ShowMeJourney({
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
+  const pausedRef = useRef<HTMLElement>(null);
+  const pageFocusRef = useRef<HTMLElement | null>(null);
   const spotRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -94,6 +97,13 @@ function ShowMeJourney({
   // when one exists; never click it, choose a record, or perform a domain action on the user's behalf.
   useEffect(() => {
     if (!paused) return;
+    pageFocusRef.current = null;
+    const rememberFocus = (event: FocusEvent) => {
+      if (event.target instanceof HTMLElement && !pausedRef.current?.contains(event.target)) {
+        pageFocusRef.current = event.target;
+      }
+    };
+    document.addEventListener("focusin", rememberFocus);
     const control = targets
       ?.map(findTourTarget)
       .find((element) =>
@@ -102,7 +112,19 @@ function ShowMeJourney({
         ),
       );
     (control ?? continueRef.current)?.focus({ preventScroll: true });
+    return () => document.removeEventListener("focusin", rememberFocus);
   }, [paused, targets]);
+
+  function closePaused() {
+    const previous = pageFocusRef.current;
+    const usable =
+      previous?.isConnected &&
+      !previous.closest('[inert], [hidden], [aria-hidden="true"]') &&
+      canRestoreFocusTo(previous);
+    const target = usable ? previous : modalFocusTargets(topSheetRoot(), false, false)[0];
+    target?.focus({ preventScroll: true });
+    onClose();
+  }
 
   function resume() {
     if (paused?.advance && !last) setIndex(index + 1);
@@ -115,7 +137,16 @@ function ShowMeJourney({
   useEffect(() => {
     if (!paused) return;
     const continueGuide = (event: globalThis.KeyboardEvent) => {
-      if (event.altKey && !event.ctrlKey && !event.metaKey && event.key === "ArrowRight") {
+      if (
+        !event.defaultPrevented &&
+        !event.isComposing &&
+        !event.repeat &&
+        event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey &&
+        event.key === "ArrowRight"
+      ) {
         event.preventDefault();
         event.stopImmediatePropagation();
         if (paused.advance && index < steps.length - 1) setIndex(index + 1);
@@ -134,6 +165,15 @@ function ShowMeJourney({
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      event.nativeEvent.isComposing
+    )
+      return;
     if (event.key === "ArrowRight" && !last) {
       event.preventDefault();
       next();
@@ -147,6 +187,7 @@ function ShowMeJourney({
     return (
       <OverlayPortal layer="modal" name="ward-show-me-paused">
         <section
+          ref={pausedRef}
           className={styles.paused}
           data-device={device}
           data-testid="ward-show-me-paused"
@@ -155,7 +196,7 @@ function ShowMeJourney({
         >
           <div className={styles.head}>
             <p className={styles.who}>Guide paused · {howTo.title}</p>
-            <button type="button" className={styles.close} onClick={onClose} aria-label="Close Show me">
+            <button type="button" className={styles.close} onClick={closePaused} aria-label="Close Show me">
               <X aria-hidden="true" strokeWidth={1.75} />
             </button>
           </div>
