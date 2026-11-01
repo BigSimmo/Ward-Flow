@@ -44,9 +44,12 @@ describe("ED page — decline with Undo", () => {
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-confirm-${referralId}`));
 
     expect(screen.queryByTestId(`ward-ed-inbox-decline-${referralId}`)).toBeNull();
-    const toast = screen.getByText("Referral declined").closest("[role='status'], [role='alert'], div")!;
+    // The toast names the person, surname first, so stacked toasts never Undo the wrong one.
+    const toast = screen.getByText(/^Referral declined for \S.*, \S/u).closest("[role='status'], [role='alert'], div")!;
+    const who = toast.textContent!.match(/^Referral declined for (.+?)(Undo|$)/u)?.[1] ?? "";
     fireEvent.click(within(toast.parentElement as HTMLElement).getByRole("button", { name: /Undo/u }));
     expect(screen.getByTestId(`ward-ed-inbox-decline-${referralId}`)).toBeInTheDocument();
-    expect(screen.getByText("Decline undone")).toBeInTheDocument();
+    expect(screen.getByText(/^Decline undone for \S.*, \S/u)).toBeInTheDocument();
+    expect(screen.getByText(/^Decline undone for /u).textContent).toContain(who.trim().split(",")[0]);
   });
 });
