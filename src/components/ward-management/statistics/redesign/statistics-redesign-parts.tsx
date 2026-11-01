@@ -268,7 +268,8 @@ export function DataTable({
 }) {
   const right = cols.map((col) => col.startsWith(">"));
   return (
-    <div className={s.tableWrap}>
+    // A table can scroll sideways, so its wrapper takes focus and a name (axe scrollable-region-focusable).
+    <div className={s.tableWrap} tabIndex={0} role="region" aria-label={`${caption}, scrollable table`}>
       <table className={cx(tableClasses.table, s.table, className)}>
         <caption className="sr-only">{caption}</caption>
         <thead>

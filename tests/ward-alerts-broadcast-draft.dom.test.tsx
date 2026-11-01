@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
@@ -21,8 +21,13 @@ function openComposer() {
 }
 
 function selectCustomTemplate() {
-  fireEvent.change(screen.getByLabelText(/^Start from$/i), { target: { value: "custom" } });
+  // Alerts redesign (1 Nov 2026): Blank is the last quick start under Tell areas something.
+  fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Blank" }));
 }
+
+const choose = (group: string, option: string) =>
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: group })).getByRole("radio", { name: option }));
 
 function unloadWasPrevented() {
   const event = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
@@ -53,19 +58,19 @@ describe("alerts broadcast composer keeps one draft of the whole form", () => {
     expect(sessionStorage.getItem(DRAFT_KEY)).toBeNull();
   });
 
-  it("guards a severity, scope or duration edit on its own", () => {
-    for (const [id, value] of [
-      ["alerts-broadcast-severity", "advisory"],
-      ["alerts-broadcast-target", "forensic"],
-      ["alerts-broadcast-duration", "60"],
+  it("guards a severity, audience or duration edit on its own", () => {
+    for (const [group, option] of [
+      ["Severity", "Critical"],
+      ["Audience", "Everyone"],
+      ["Ends after", "4h"],
     ] as const) {
       sessionStorage.clear();
       const { unmount } = mount();
       openComposer();
       selectCustomTemplate();
       expect(unloadWasPrevented()).toBe(false);
-      fireEvent.change(document.getElementById(id)!, { target: { value } });
-      expect(unloadWasPrevented(), id).toBe(true);
+      choose(group, option);
+      expect(unloadWasPrevented(), group).toBe(true);
       unmount();
     }
   });
@@ -75,28 +80,28 @@ describe("alerts broadcast composer keeps one draft of the whole form", () => {
     openComposer();
     selectCustomTemplate();
     fireEvent.change(screen.getByLabelText(/^Title$/i), { target: { value: "Reload headline" } });
-    fireEvent.change(document.getElementById("alerts-broadcast-severity")!, { target: { value: "warning" } });
-    fireEvent.change(document.getElementById("alerts-broadcast-target")!, { target: { value: "adolescent" } });
-    fireEvent.change(document.getElementById("alerts-broadcast-duration")!, { target: { value: "480" } });
-    fireEvent.change(screen.getByLabelText(/^Directive$/i), {
+    choose("Severity", "Warning");
+    fireEvent.click(screen.getByRole("button", { name: /Youth and CAMHS/ }));
+    choose("Ends after", "8h");
+    fireEvent.change(screen.getByLabelText(/^Message$/i), {
       target: { value: "Reload body" },
     });
     first.unmount();
 
     expect(sessionStorage.getItem(DRAFT_KEY)).toBeNull();
     mount();
-    expect(screen.queryByRole("dialog", { name: /Broadcast network alert/i })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: /New broadcast/i })).toBeNull();
     expect(unloadWasPrevented()).toBe(false);
     openComposer();
     selectCustomTemplate();
     expect(screen.getByLabelText(/^Title$/i)).toHaveValue("");
-    expect(screen.getByLabelText(/^Directive$/i)).toHaveValue("");
+    expect(screen.getByLabelText(/^Message$/i)).toHaveValue("");
     expect(sessionStorage.getItem(DRAFT_KEY)).toBeNull();
   });
 
   it("ignores a malformed stored draft rather than restoring part of it", () => {
     sessionStorage.setItem(DRAFT_KEY, "plain old message text");
     mount();
-    expect(screen.queryByRole("dialog", { name: /Broadcast network alert/i })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: /New broadcast/i })).toBeNull();
   });
 });
