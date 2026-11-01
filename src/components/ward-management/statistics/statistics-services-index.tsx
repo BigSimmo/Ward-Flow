@@ -62,10 +62,10 @@ const shortSite = (name: string) => name.replace(/\s+(Hospital|Health Campus|Hea
 
 const wardsWord = (count: number) => (count === 1 ? "ward" : "wards");
 
-/** The heat map's shade (the redesign's four steps): none, then 1, 2 and 3 or more; a held-back count takes the first. */
+/** The heat map's shade (the redesign's four steps): none, then 1, 2, 3 and 4 or more; a held-back count takes the first. */
 function heatLevel(count: number | null): number {
   if (count === null) return 1;
-  return count === 0 ? 0 : Math.min(4, 1 + Math.floor(((count - 1) * 3) / 2));
+  return count === 0 ? 0 : Math.min(4, count);
 }
 
 /**
@@ -419,7 +419,8 @@ function ServicesIndexView({
                   );
                 }
                 const percent = Math.round(entry.share * 100);
-                const hot = percent >= BED_ALERT_THRESHOLD_PERCENT;
+                // The warning sits on "N of M wards at 85%+", so it follows that count, as the hero stat does.
+                const hot = entry.over > 0;
                 return (
                   <Tile
                     key={entry.service}

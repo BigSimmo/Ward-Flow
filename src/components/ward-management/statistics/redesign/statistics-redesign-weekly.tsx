@@ -285,7 +285,10 @@ export function WeeklyBody(props: WeeklyBodyProps) {
           <ol className={s.steps} aria-label="Typical time per step" data-testid="ward-pilot-steps">
             {pilot.steps.map((step) => (
               <li key={step.id} data-longest={step.id === pilot.longestStepId ? "" : undefined}>
-                <span title={step.note}>{step.label}</span>
+                <span>
+                  {step.label}
+                  {step.note ? <small className={s.stepNote}>{step.note}</small> : null}
+                </span>
                 <span className={s.stepBar} aria-hidden="true">
                   <i style={{ width: `${((step.minutes ?? 0) / stepMax) * 100}%` }} />
                 </span>

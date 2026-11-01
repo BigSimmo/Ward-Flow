@@ -586,6 +586,11 @@
 .steps li[data-longest] > span:first-child {
   font-weight: 600;
 }
+.stepNote {
+  display: block;
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
 .stepBar {
   position: relative;
   height: 10px;

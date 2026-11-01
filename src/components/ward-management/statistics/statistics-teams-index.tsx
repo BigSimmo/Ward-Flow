@@ -344,7 +344,9 @@ function TeamsIndexView({
                     sub={
                       nobody
                         ? "Nobody in a bed"
-                        : `${shown(withDate)} with a discharge date · ${busy.map((entry) => entry.team.name).join(", ")}`
+                        : [`${shown(withDate)} with a discharge date`, busy.map((entry) => entry.team.name).join(", ")]
+                            .filter(Boolean)
+                            .join(" · ")
                     }
                   />
                 );

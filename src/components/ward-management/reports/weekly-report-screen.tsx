@@ -358,7 +358,9 @@ function WeeklyReportView({
           }
           phone={{
             title: arrivalTitle ? `${arrivalTitle} referral to arrival` : "Weekly operations",
-            sub: arrivalTitle ? `Typical · ${figures.arrival.arrivals} arrivals · ${weekRange}` : weekRange,
+            sub: arrivalTitle
+              ? `Typical · ${figures.arrival.arrivals} ${figures.arrival.arrivals === 1 ? "arrival" : "arrivals"} · ${weekRange}`
+              : weekRange,
             stats: (
               <>
                 <HeroStat
