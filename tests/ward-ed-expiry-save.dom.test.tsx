@@ -13,6 +13,7 @@ import {
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { instantFromDateAndTimeInputs } from "@/components/ward-management/ed/ed-screen-model";
+import { typeDate } from "./helpers/type-date-time";
 
 vi.mock("next/link", () => ({
   default: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
@@ -105,7 +106,7 @@ describe("ED expiry save confirmation", () => {
     const sheet = within(screen.getByTestId(`ward-ed-phone-sheet-${ID}`));
     const date = sheet.getByTestId(`ward-ed-legal-form-expiry-date-${ID}`);
     const time = sheet.getByTestId(`ward-ed-legal-form-expiry-time-${ID}`);
-    fireEvent.change(date, { target: { value: DRAFT.date } });
+    typeDate(date, DRAFT.date);
     fireEvent.change(time, { target: { value: DRAFT.time } });
     fireEvent.submit(sheet.getByTestId(`ward-ed-legal-form-expiry-${ID}`));
     expect(sheet.queryByTestId(`ward-ed-legal-form-expiry-${ID}`)).toBeNull();
@@ -125,7 +126,7 @@ describe("ED expiry save confirmation", () => {
     fireEvent.click(sheet.getByTestId(`ward-ed-legal-form-expiry-toggle-${ID}`));
     const date = sheet.getByTestId(`ward-ed-legal-form-expiry-date-${ID}`);
     const time = sheet.getByTestId(`ward-ed-legal-form-expiry-time-${ID}`);
-    fireEvent.change(date, { target: { value: DRAFT.date } });
+    typeDate(date, DRAFT.date);
     fireEvent.change(time, { target: { value: DRAFT.time } });
     const form = sheet.getByTestId(`ward-ed-legal-form-expiry-${ID}`);
     fireEvent.submit(form);
@@ -139,7 +140,7 @@ describe("ED expiry save confirmation", () => {
       </Wrapper>,
     );
     await act(async () => reply.resolve({ commandId: "synthetic-expiry", status: "failed" }));
-    expect(date).toHaveValue(DRAFT.date);
+    expect(date).toHaveValue("25/10/2026");
     expect(time).toHaveValue(DRAFT.time);
     expect(form).toBeVisible();
     expect(within(form).getByRole("status")).toHaveTextContent("Save is not confirmed");

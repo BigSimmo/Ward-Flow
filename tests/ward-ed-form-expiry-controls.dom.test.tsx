@@ -21,6 +21,7 @@ import {
   markNotYetIdentified,
   openRaiseIntoMovementForm,
 } from "./helpers/ed-raise-into-movement";
+import { typeDate } from "./helpers/type-date-time";
 
 /**
  * T3 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), owner answers 1 and 5: the
@@ -109,7 +110,7 @@ describe("intake: the typed expiry reaches the movement for any selected form", 
     openReferralForm();
     fillRequiredFields();
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "3D" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), { target: { value: TODAY } });
+    typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "15:45" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
     // 15:45 on day 0 (today) is 945 minutes past dayZero.
@@ -164,7 +165,7 @@ describe("the actions block: recording a first expiry and an extension", () => {
       "nothing typed yet — the save control must not offer to submit a blank pair",
     ).toBe(true);
 
-    fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-date-${id}`), { target: { value: TODAY } });
+    typeDate(screen.getByTestId(`ward-ed-legal-form-expiry-date-${id}`), TODAY);
     expect(save.getAttribute("aria-disabled") === "true", "date only — still an incomplete pair").toBe(true);
     fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-time-${id}`), { target: { value: "11:00" } });
     expect(save.getAttribute("aria-disabled")).toBeNull();
@@ -182,7 +183,7 @@ describe("the actions block: recording a first expiry and an extension", () => {
     openReferralForm();
     fillRequiredFields();
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "1A" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), { target: { value: TODAY } });
+    typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "10:00" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
     const { id } = lastMovementProbeParts();
@@ -197,7 +198,7 @@ describe("the actions block: recording a first expiry and an extension", () => {
     // An earlier or equal expiry is refused — "An extension's new expiry must be later than the
     // expiry already recorded." (the reducer's own sentence, T2). Proved by the save control
     // declining to offer a dispatch it already knows the reducer would refuse.
-    fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-date-${id}`), { target: { value: TODAY } });
+    typeDate(screen.getByTestId(`ward-ed-legal-form-expiry-date-${id}`), TODAY);
     fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-time-${id}`), { target: { value: "10:00" } });
     expect(
       save.getAttribute("aria-disabled") === "true",
@@ -205,7 +206,7 @@ describe("the actions block: recording a first expiry and an extension", () => {
     ).toBe(true);
 
     // A genuinely later expiry is accepted.
-    fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-date-${id}`), { target: { value: TOMORROW } });
+    typeDate(screen.getByTestId(`ward-ed-legal-form-expiry-date-${id}`), TOMORROW);
     fireEvent.change(screen.getByTestId(`ward-ed-legal-form-expiry-time-${id}`), { target: { value: "10:00" } });
     expect(save.getAttribute("aria-disabled")).toBeNull();
     fireEvent.click(save);
@@ -226,7 +227,7 @@ describe("a past expiry only ever warns — it never blocks a clinical control",
     openReferralForm();
     fillRequiredFields();
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "1A" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), { target: { value: TODAY } });
+    typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "09:00" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
     const breached = lastMovementProbeParts();
@@ -272,7 +273,7 @@ describe("a stale typed value never lands on the wrong form", () => {
     openReferralForm();
     fillRequiredFields();
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "4A" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), { target: { value: TODAY } });
+    typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "14:00" } });
 
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "1A" } });
@@ -291,11 +292,11 @@ describe("a stale typed value never lands on the wrong form", () => {
     openReferralForm();
     fillRequiredFields();
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "4A" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), { target: { value: TODAY } });
+    typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "14:00" } });
 
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "1A" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), { target: { value: TODAY } });
+    typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "16:00" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
 

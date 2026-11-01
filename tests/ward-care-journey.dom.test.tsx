@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { useState } from "react";
+import { typeDate } from "./helpers/type-date-time";
 import { describe, it, expect, vi } from "vitest";
 
 const download = vi.hoisted(() => ({ blob: vi.fn<(blob: Blob, filename: string) => void>() }));
@@ -68,16 +69,15 @@ describe("care journey controls use the actual guarded provider", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Responsible community service" }), {
       target: { value: COMMUNITY_TEAM_PAGES[0].id },
     });
-    fireEvent.change(screen.getByLabelText("Appointment date and time"), {
-      target: { value: screen.getByTestId("appointment-time").textContent },
-    });
+    typeDate(
+      screen.getByLabelText("Appointment date and time"),
+      screen.getByTestId("appointment-time").textContent ?? "",
+    );
     fireEvent.change(screen.getByRole("combobox", { name: "Appointment mode" }), { target: { value: "telephone" } });
     fireEvent.click(screen.getByRole("button", { name: "Record appointment" }));
     expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("Dr Alex Taylor");
     fireEvent.change(screen.getByRole("combobox", { name: "Contact outcome" }), { target: { value: "completed" } });
-    fireEvent.change(screen.getByLabelText("Contact date and time"), {
-      target: { value: screen.getByTestId("appointment-time").textContent },
-    });
+    typeDate(screen.getByLabelText("Contact date and time"), screen.getByTestId("appointment-time").textContent ?? "");
     fireEvent.click(screen.getByRole("button", { name: "Record contact outcome" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("recorded Bed coordinator");
@@ -112,9 +112,7 @@ describe("care journey controls use the actual guarded provider", () => {
   it("shows a failed contact action without displaying completion", () => {
     start();
     fireEvent.change(screen.getByRole("combobox", { name: "Contact outcome" }), { target: { value: "completed" } });
-    fireEvent.change(screen.getByLabelText("Contact date and time"), {
-      target: { value: screen.getByTestId("appointment-time").textContent },
-    });
+    typeDate(screen.getByLabelText("Contact date and time"), screen.getByTestId("appointment-time").textContent ?? "");
     fireEvent.click(screen.getByRole("button", { name: "Record contact outcome" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Record responsibility and an appointment first");
     expect(screen.getByRole("region", { name: "Care journey" })).not.toHaveTextContent("recorded Bed coordinator");

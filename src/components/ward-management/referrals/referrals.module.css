@@ -4167,8 +4167,11 @@
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Phone audit (1 Nov 2026): a warning glyph marks the gap, not a coloured side edge. */
 .screen[data-ward-design="v6"] .structuralGap {
-  border-left: 3px solid var(--wf-warning);
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
 }
 
 .screen[data-ward-design="v6"] .noBedAccepts {

@@ -1120,7 +1120,8 @@ export function ReferralMatchView({
           ) : null}
           {!hasCohort ? (
             <p className={styles.structuralGap} role="alert" data-testid="ward-referral-match-structural-gap">
-              No {referral.ageBand.toLowerCase()} unit exists in this network.
+              <StatusGlyph tone="warning" size={9} />
+              <span>No {referral.ageBand.toLowerCase()} unit exists in this network.</span>
             </p>
           ) : noBed ? (
             <p className={ph.matchHint} role="alert" data-testid="ward-referral-match-no-bed">

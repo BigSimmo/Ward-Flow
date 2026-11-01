@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Button, StatusGlyph } from "@/components/wf";
+import { Button, DateTimeField, StatusGlyph } from "@/components/wf";
 import { formTitleForCode } from "@/lib/form-register";
 import type { Admission } from "../ward-admissions";
-import { MINUTES_PER_DAY, PERTH_UTC_OFFSET_MS, perthDateTimeLocal } from "../ward-clock";
+import { MINUTES_PER_DAY, perthDateTimeLocal } from "../ward-clock";
 import {
   INVOLUNTARY_DEPARTURE_REFUSAL,
   departureNeedsPaperAuthority,
@@ -22,9 +22,6 @@ const registerLabel = (code: string) => `Form ${code} (${formTitleForCode(code) 
 
 /** #67: paper written longer ago than this is warned, never refused. */
 const OLD_PAPER_DAYS = 3;
-
-/** A moment as the `datetime-local` value Perth wall time reads, the inverse of `perthDateTimeLocal`. */
-const perthLocalValue = (moment: Date) => new Date(moment.getTime() + PERTH_UTC_OFFSET_MS).toISOString().slice(0, 16);
 
 const AUTHORITIES = [
   { id: "revocation", label: "Revocation of the order" },
@@ -175,14 +172,8 @@ export function WardLeavePaperAuthority({
       )}
       <label>
         Date and time written on it
-        <input
-          name="written"
-          type="datetime-local"
-          required
-          max={perthLocalValue(nowMoment)}
-          value={written}
-          onChange={(event) => setWritten(event.target.value)}
-        />
+        {/* Typed as DD/MM/YYYY and HH:MM, never the browser's picker. A time later than now is refused on save. */}
+        <DateTimeField name="written" label="Written" required value={written} onValueChange={setWritten} />
       </label>
       {writtenOld ? (
         <p className={styles.hint} data-testid="ward-drawer-leave-paper-old">

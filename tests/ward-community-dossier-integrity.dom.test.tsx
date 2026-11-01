@@ -2,6 +2,7 @@ import { act, fireEvent, screen, within } from "@testing-library/react";
 import { renderWithToasts as render } from "./helpers/with-toasts";
 import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
+import { typeDate } from "./helpers/type-date-time";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -208,9 +209,10 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     fireEvent.change(within(care).getByRole("combobox", { name: "Responsible clinician" }), {
       target: { value: "demo-adult-clinician" },
     });
-    fireEvent.change(within(care).getByLabelText("Appointment date and time"), {
-      target: { value: screen.getByTestId("appointment-at").textContent },
-    });
+    typeDate(
+      within(care).getByLabelText("Appointment date and time"),
+      screen.getByTestId("appointment-at").textContent ?? "",
+    );
     fireEvent.change(within(care).getByRole("combobox", { name: "Appointment mode" }), {
       target: { value: "telephone" },
     });
@@ -221,9 +223,10 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     fireEvent.change(within(care).getByRole("combobox", { name: "Contact outcome" }), {
       target: { value: "completed" },
     });
-    fireEvent.change(within(care).getByLabelText("Contact date and time"), {
-      target: { value: screen.getByTestId("appointment-at").textContent },
-    });
+    typeDate(
+      within(care).getByLabelText("Contact date and time"),
+      screen.getByTestId("appointment-at").textContent ?? "",
+    );
     fireEvent.click(within(care).getByRole("button", { name: "Record contact outcome" }));
     expect(care).toHaveTextContent("Completed · first booking");
     fireEvent.click(screen.getByRole("button", { name: "Close drawer" }));

@@ -7,6 +7,7 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
+import { typeDate } from "./helpers/type-date-time";
 function Workspace() {
   const { movements } = useWardFlow();
   const [id] = useState(() => movements.find((m) => !m.closure && !m.expectFlag)!.id);
@@ -90,9 +91,7 @@ describe("checked paper continuation paths", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Continuation form" }), {
       target: { value: formCode },
     });
-    fireEvent.change(screen.getByLabelText("Form written date and time"), {
-      target: { value: "2026-10-07T10:00" },
-    });
+    typeDate(screen.getByLabelText("Form written date and time"), "2026-10-07T10:00");
     const action = screen.getByRole("button", { name: "Record legal form continuation" });
     expect(action).toHaveAttribute("aria-disabled", "true");
     expect(action).toHaveAccessibleDescription(`Form ${formCode} continuation is not recorded in this prototype.`);
@@ -203,9 +202,7 @@ describe("checked paper continuation paths", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Set current 5A" }));
     fireEvent.change(screen.getByRole("combobox", { name: "Continuation form" }), { target: { value: "5B" } });
-    fireEvent.change(screen.getByLabelText("Form written date and time"), {
-      target: { value: screen.getByTestId("paper-time").textContent },
-    });
+    typeDate(screen.getByLabelText("Form written date and time"), screen.getByTestId("paper-time").textContent!);
     fireEvent.click(screen.getByRole("button", { name: "Record legal form continuation" }));
     expect(screen.getByTestId("continuation-code")).toHaveTextContent("5B");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();

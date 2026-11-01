@@ -2,7 +2,7 @@
 
 import { Check, Circle, FileText, Lock, Stethoscope, Upload, User, UserRound, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { Button, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
+import { Button, DateTimeField, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
 import type { ProfileLookup } from "@/components/ward-management/settings/settings-profile";
 import { uploadedFileTypeOf } from "../ward-uploaded-file";
 import { useWardDataMode } from "../ward-shared-access";
@@ -377,12 +377,11 @@ export function DocumentationPanel({
                       Expected clearance
                     </label>
                   </div>
-                  <input
+                  <DateTimeField
                     id={`${id}-expected`}
-                    className={styles.fieldInput}
-                    type="datetime-local"
+                    label="Expected clearance"
                     value={draft.expectedAt}
-                    onChange={(e) => onChange({ ...draft, expectedAt: e.target.value })}
+                    onValueChange={(expectedAt) => onChange({ ...draft, expectedAt })}
                   />
                 </div>
                 <div className={styles.formField}>
