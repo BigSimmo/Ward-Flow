@@ -2,7 +2,7 @@
 // the "outside this filter" footer, patient resolution and the sign-off dispatch. Split out of
 // handover-page.tsx to keep that file under the line cap; handover-page.tsx re-exports the public ones.
 import { type Dispatch } from "react";
-import { communityTeamById } from "@/components/ward-management/community/community-derivations";
+import { communityTeamById, namesTeam } from "@/components/ward-management/community/community-derivations";
 import { type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { accessIsWholeNetwork, type WardAccess } from "@/components/ward-management/ward-role-access";
@@ -69,7 +69,8 @@ export function movementInHandoverScope(
       const referral = referralForMovement(movement, referrals);
       if (referral === undefined) return false;
       return referral.destinations.some(
-        (addressed) => addressed.destination.kind === "community_team" && addressed.destination.teamName === team.name,
+        (addressed) =>
+          addressed.destination.kind === "community_team" && namesTeam(addressed.destination.teamName, team),
       );
     }
   }
