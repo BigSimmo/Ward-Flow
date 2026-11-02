@@ -736,12 +736,12 @@ export function MovementsScreen() {
         if (group.length === 0) return null;
         return (
           <section key={state} className={flow.trGroup} aria-label={`${LEG_STATE_LABEL[state]}, ${group.length}`}>
-            <h4 className={flow.trGroupHead}>
+            <div className={flow.trGroupHead}>
               <StatusGlyph tone={LEG_STATE_TONE[state]} size={9} />
               {LEG_STATE_LABEL[state]}
               <span className={flow.trGroupCount}>{group.length}</span>
               <span className={flow.trGroupWord}>{LEG_GROUP_WORD[state]}</span>
-            </h4>
+            </div>
             {group.map((leg) => {
               const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
               const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);

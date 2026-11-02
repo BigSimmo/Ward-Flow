@@ -275,7 +275,7 @@ export function communityHowToReachPanel(view: CommunityScreenView) {
         return (
           <section className={v6.sideCard} aria-label="How to reach this team" data-testid="ward-community-contact">
             <div className={v6.sideHead}>
-              <h3 className={v6.sideTitle}>How to reach</h3>
+              <h2 className={v6.sideTitle}>How to reach</h2>
               {contact === null ? null : <span className={v6.sideMeta}>Invented for the demo</span>}
             </div>
             <div className={v6.sideBody} role="region" aria-label="How to reach this team details">
