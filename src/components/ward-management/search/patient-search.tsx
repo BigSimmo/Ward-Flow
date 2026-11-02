@@ -909,6 +909,13 @@ export function PatientSearchPage() {
     <CensusEmpty
       query={`${text} ${dobOn ? dob : ""}`.trim()}
       onReset={resetAllFilters}
+      nothingHeld={
+        census.rows.length === 0 &&
+        !searching &&
+        !legacyNarrowing &&
+        settingFilter === "all" &&
+        presenceFilter === "all"
+      }
       addHref={canAddPatient ? WARD_ADD_PERSON_HREF : undefined}
       onAdd={addPatientClick}
     />
