@@ -354,6 +354,19 @@ button.check[aria-pressed="true"] {
   border-top: 0;
 }
 
+/* Josh, 2 Nov 2026: the heading's glyph and words sit in the same columns as the rows below it. */
+.groupHead {
+  min-height: 40px;
+}
+
+.groupGlyph {
+  display: inline-flex;
+  flex: none;
+  justify-content: center;
+  width: 1rem;
+  margin-right: var(--wf-s-1);
+}
+
 .groupAside {
   margin-left: auto;
   color: var(--wf-ink-3);
@@ -1395,8 +1408,8 @@ button.check[aria-pressed="true"] {
 
   .groupHead,
   .groupEmpty {
-    padding-right: var(--wf-s-1);
-    padding-left: var(--wf-s-1);
+    padding-right: var(--wf-s-3);
+    padding-left: var(--wf-s-3);
     border: 0;
     background: none;
   }
@@ -1716,7 +1729,7 @@ button.check[aria-pressed="true"] {
 
   .phoneList .group + .group .groupHead,
   .phoneList .groupHead {
-    min-height: 36px;
+    min-height: 40px;
     padding: 0 var(--wf-s-3);
     border-top: 1px solid var(--wf-line);
     background: var(--wf-surface-2);
@@ -1724,6 +1737,11 @@ button.check[aria-pressed="true"] {
 
   .phoneList .group:first-child .groupHead {
     border-top: 0;
+  }
+
+  .groupGlyph {
+    width: 14px;
+    margin-right: 2px;
   }
 
   .phoneList .groupEmpty {
