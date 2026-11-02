@@ -63,7 +63,7 @@ beforeEach(() => {
   window.localStorage.clear();
   window.sessionStorage.clear();
   vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-    matches: guard.phone && query === "(max-width: 48rem)",
+    matches: guard.phone && query === "(max-width: 46.4375rem)",
     media: query,
     onchange: null,
     addListener() {},

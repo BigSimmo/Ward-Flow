@@ -111,7 +111,7 @@
   min-width: 0;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .ptItem {
     height: var(--wf-touch);
   }
@@ -385,7 +385,7 @@
 }
 
 /* Phone: segmented options and hero track items meet the 48px tap floor. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .segItem,
   .trk .segItem {
     min-height: var(--spacing-tap, 3rem);
@@ -486,7 +486,7 @@
 }
 
 /* Phone (v10 mockup): the hero track has the same shape as the phone Segmented. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .trk {
     padding: 3px;
     border-radius: var(--wf-r-track);
@@ -527,7 +527,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   @supports (animation-timeline: scroll()) {
     .seg,
     .trk {
@@ -560,7 +560,7 @@
  * option's hit area run the full 48px without being clipped. A chip row does the same with padding.
  * A page that pins the track can give it a `background-color` to hide the list under the band.
  * Nothing here applies above 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   :where(.seg) {
     --wf-phone-seg-h: 48px;
     --wf-phone-seg-item-h: 40px;
@@ -694,7 +694,7 @@
 /* Phone taps (13 Oct 2026): the edge fade's mask also clipped presses to the tab row's own box, so
  * a 28px pill tab lost the top and bottom of its 48px hit area. `no-clip` keeps the fade as drawn
  * and lets the transparent hit area outside the row take the press. Nothing here applies above 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .tabs {
     -webkit-mask-clip: no-clip;
     mask-clip: no-clip;
@@ -711,7 +711,7 @@
  *   keep their 34px (44px on a phone).
  * Written as `html .x.x` so it wins over the size rules above at the same weight the mock-ups used.
  */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   :global(html) .segItem.segItem,
   :global(html) .ptItem.ptItem {
     height: 30px;
@@ -719,7 +719,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   :global(html) .pt.pt {
     padding: 3px;
     overflow: visible;

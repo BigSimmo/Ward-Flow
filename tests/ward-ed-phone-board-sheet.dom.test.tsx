@@ -25,7 +25,7 @@ const original = typeof window !== "undefined" ? window.matchMedia : undefined;
 
 beforeEach(() => {
   window.matchMedia = ((query: string) => ({
-    matches: query === "(max-width: 48rem)",
+    matches: query === "(max-width: 46.4375rem)",
     media: query,
     addEventListener: () => undefined,
     removeEventListener: () => undefined,

@@ -66,7 +66,7 @@ describe("Global alert banner on a phone (remaining-pages audit ops-10)", () => 
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
-        matches: query === "(max-width: 48rem)",
+        matches: query === "(max-width: 46.4375rem)",
         media: query,
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),

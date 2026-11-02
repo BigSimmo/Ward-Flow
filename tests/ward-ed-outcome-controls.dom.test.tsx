@@ -83,7 +83,7 @@ describe("recording an ED outcome clears the outbox row and the gender control",
     // Lists pane keeps it, so this is read there.
     const original = window.matchMedia;
     window.matchMedia = ((query: string) => ({
-      matches: query === "(max-width: 48rem)",
+      matches: query === "(max-width: 46.4375rem)",
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,

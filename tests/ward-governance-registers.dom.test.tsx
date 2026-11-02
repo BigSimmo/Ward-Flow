@@ -217,7 +217,7 @@ describe("Governance phone review sheet (audit settings-4, 13 Oct 2026)", () => 
   it("records Reviewed in one tap, with no greyed button, then loads the next waiting event", () => {
     const original = window.matchMedia;
     window.matchMedia = ((query: string) => ({
-      matches: query === "(max-width: 48rem)",
+      matches: query === "(max-width: 46.4375rem)",
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
@@ -253,7 +253,7 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
   function withPhone(run: () => void) {
     const original = window.matchMedia;
     window.matchMedia = ((query: string) => ({
-      matches: query === "(max-width: 48rem)",
+      matches: query === "(max-width: 46.4375rem)",
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,

@@ -36,7 +36,7 @@ function renderEmpty() {
 function withPhone(run: () => void) {
   const original = window.matchMedia;
   window.matchMedia = ((query: string) => ({
-    matches: query === "(max-width: 48rem)",
+    matches: query === "(max-width: 46.4375rem)",
     media: query,
     addEventListener: () => undefined,
     removeEventListener: () => undefined,

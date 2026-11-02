@@ -344,7 +344,7 @@ test.describe("@mockup Ward design sweep: text size, target size and sticky bars
         const targets = findings.filter((finding) => finding.rule === "target");
         const lines = summarise(hard);
 
-        if (viewport.width < 768) {
+        if (viewport.width < 744) {
           // Phone: small controls fail once the page has more than its baseline.
           const baseline = PHONE_TARGET_BASELINE[href] ?? 0;
           if (targets.length > baseline) {
