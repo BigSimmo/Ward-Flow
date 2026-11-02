@@ -17,7 +17,7 @@ import type { WardScreenId } from "@/components/ward-management/ward-role-access
 
 import { deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
 import type { WardTourRole } from "./ward-help-store";
-import { SCREEN_TOURS } from "./ward-help-screen-tours";
+import { MORE_JOBS, SCREEN_TOURS } from "./ward-help-screen-tours";
 import { HELP_SYNONYMS } from "./ward-help-synonyms";
 import { nearestWord } from "./ward-help-typo";
 import type { TourDevice, TourTarget } from "./ward-tour-steps";
@@ -640,35 +640,6 @@ const JOBS: readonly HowTo[] = [
     ],
   },
   {
-    id: "find-on-call",
-    topic: "Finding your way",
-    title: "Find who is on call",
-    keywords: "oncall phone number call roster consultant registrar switchboard",
-    answer:
-      "Open On-call and search by role, hospital, ward, team or number. Use Cover at to see who answers at a later time, and star a line to keep it under Mine.",
-    desks: EVERY_DESK,
-    go: "on-call",
-    showMe: [
-      {
-        target: [{ sel: '[data-testid="ward-on-call-directory"]' }, { sel: '#main-content [role="tablist"]' }],
-        title: "Search the directory",
-        body: "Hospitals, Teams, State and Mine. Search by role, place or number.",
-      },
-      {
-        device: "desk",
-        target: { sel: '[data-testid="ward-on-call-role-panel"]' },
-        title: "Who answers",
-        body: "Choose a line to see who answers it now and until when.",
-      },
-      {
-        device: "phone",
-        target: { sel: '[data-testid="ward-on-call-phone-more"]' },
-        title: "Cover at",
-        body: "Under more tools, Cover at shows who answers at a later time.",
-      },
-    ],
-  },
-  {
     id: "notifications",
     topic: "Settings and display",
     title: "Get alerts when I am on another screen",
@@ -837,110 +808,10 @@ const JOBS: readonly HowTo[] = [
       },
     ],
   },
-  {
-    id: "record-legal-form",
-    topic: "Handover and reports",
-    title: "Record a new legal form",
-    keywords: "mha form written renew continuation paper legal",
-    answer:
-      "Open Legal forms and choose the patient. Use Record next form when a new form is written, typing the time from the paper form. Ward Flow never works out the expiry: it keeps the time as typed.",
-    desks: ["ed", "coordinator", "ward"],
-    acts: ["RECORD_LEGAL_FORM_WRITTEN"],
-    go: "legal-forms",
-    showMe: [
-      {
-        target: { sel: '[data-testid="ward-legal-forms-groups"]' },
-        title: "Choose the patient",
-        body: "Forms are grouped by the typed expiry, earliest typed time first. Choose the patient to open their form.",
-      },
-      {
-        target: { sel: '[data-testid="ward-legal-forms-record-region"]' },
-        title: "Record next form",
-        body: "Type the time from the paper form, then record it. Record and tell lists who to let know.",
-      },
-    ],
-  },
-  {
-    id: "plan-return-home",
-    topic: "Beds and referrals",
-    title: "Plan a patient's return home",
-    keywords: "out area repatriation repat away home region transfer back",
-    answer:
-      "Open Out of area and choose the person. Fill in their return plan, then Record sent to ward or Record return.",
-    desks: ["coordinator"],
-    acts: ["RECORD_REPATRIATION"],
-    go: "out-of-area",
-    showMe: [
-      {
-        target: [{ sel: '[data-testid^="ward-out-of-area-row-"]' }, { sel: '[data-testid^="wf-phone-hero-figure-"]' }],
-        title: "Choose the person",
-        body: "Everyone in a bed outside their home health service, with days away.",
-      },
-      {
-        target: [
-          { sel: '[data-testid="ward-out-of-area-plan-sheet"]' },
-          { sel: '[data-testid="ward-out-of-area-subject"]' },
-        ],
-        title: "Fill in the return plan",
-        body: "Then Record sent to ward, or Record return once they are home.",
-      },
-    ],
-  },
-  {
-    id: "record-seclusion",
-    topic: "Beds and referrals",
-    title: "Record seclusion, restraint or an incident",
-    keywords: "seclusion restraint restrictive practice incident room start end",
-    answer:
-      "Open Seclusion and choose the ward. Record start when seclusion or restraint begins and Record end when it finishes, or Record incident for an incident. Times are as typed, and nothing works out a legal limit.",
-    desks: ["ward", "coordinator"],
-    acts: ["RECORD_RESTRICTIVE_PRACTICE_START", "RECORD_WARD_INCIDENT"],
-    go: "seclusion",
-    showMe: [
-      {
-        target: { sel: '[data-testid="seclusion-ward-table"]' },
-        title: "Choose the ward",
-        body: "Each ward's seclusion room, what is in use now and its incidents.",
-      },
-      {
-        target: { sel: '[data-testid="seclusion-start-form"]' },
-        title: "Record start",
-        body: "Choose the patient and what is in use, type the time, then Record start. Record end when it finishes.",
-      },
-      {
-        target: { sel: '[data-testid="seclusion-incident-form"]' },
-        title: "Record incident",
-        body: "Choose the kind, type the time, then Record incident.",
-      },
-    ],
-  },
-  {
-    id: "clear-held-up-discharge",
-    topic: "Beds and referrals",
-    title: "Clear a held-up discharge",
-    keywords: "discharge held up blocked barrier blocker release delay",
-    answer:
-      "Open Discharges, where held-up discharges come first. Open one to see what is blocking it and the bed release, and update the barrier once it is sorted.",
-    desks: ["ward", "coordinator"],
-    acts: ["CLEAR_STAY_DISCHARGE_BLOCKER", "SET_DISCHARGE_BARRIER"],
-    go: "discharges",
-    showMe: [
-      {
-        target: { sel: '[data-testid="ward-discharge-kpi-blocked"]' },
-        title: "Held up",
-        body: "How many discharges have something in the way.",
-      },
-      {
-        target: { sel: '[data-testid="ward-discharge-group-blocked"]' },
-        title: "Open one",
-        body: "Held up comes first. Open a discharge to see its barrier and the bed release.",
-      },
-    ],
-  },
 ];
 
-/** The desks' jobs, then the walks round each screen. */
-export const HOW_TOS: readonly HowTo[] = [...JOBS, ...SCREEN_TOURS];
+/** The desks' jobs, the jobs added with the walk-rounds, then the walks round each screen. */
+export const HOW_TOS: readonly HowTo[] = [...JOBS, ...MORE_JOBS, ...SCREEN_TOURS];
 
 /* Matching ----------------------------------------------------------------------------------- */
 

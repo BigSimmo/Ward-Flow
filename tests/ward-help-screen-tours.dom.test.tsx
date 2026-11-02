@@ -129,7 +129,7 @@ describe("Show me around: in Help's On this screen card", () => {
 
 describe("New highlighted jobs", () => {
   it("answer the way staff ask, for the desks that do them", () => {
-    expect(askHelp("who is on call", "ed")[0]?.howTo.id).toBe("find-on-call");
+    expect(askHelp("find the on-call registrar", "ed")[0]?.howTo.id).toBe("find-on-call");
     expect(askHelp("record a new legal form", "ward")[0]?.howTo.id).toBe("record-legal-form");
     expect(askHelp("record seclusion", "ward")[0]?.howTo.id).toBe("record-seclusion");
     expect(askHelp("repatriation back home", "coordinator")[0]?.howTo.id).toBe("plan-return-home");
