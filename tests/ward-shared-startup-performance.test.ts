@@ -3,10 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const schemaPath = "../src/components/ward-management/ward-shared-state-validation";
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((done) => {
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((done, fail) => {
     resolve = done;
+    reject = fail;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 afterEach(() => {
   vi.doUnmock(schemaPath);
@@ -140,6 +142,102 @@ it("does not send or revive a client disposed while startup imports are pending"
   } finally {
     schema.resolve();
     await refreshing;
+    client.dispose();
+  }
+});
+
+it("observes a late schema rejection after a synchronous expired-token failure", async () => {
+  const started = deferred<void>();
+  const schema = deferred<void>();
+  vi.doMock(schemaPath, async () => {
+    started.resolve();
+    await schema.promise;
+    return vi.importActual(schemaPath);
+  });
+  const { SharedWorkspaceClient } = await import("../src/components/ward-management/ward-shared-client");
+  const { WardAuthError } = await import("../src/components/ward-management/ward-supabase-auth");
+  const send = vi.fn(async () => Response.json({}));
+  const changed = vi.fn();
+  const client = new SharedWorkspaceClient({
+    baseUrl: "https://example.test",
+    token: () => {
+      throw new WardAuthError("session", "Synthetic expired session");
+    },
+    fetch: send,
+    changed,
+  });
+  try {
+    await client.refresh();
+    await started.promise;
+    expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ status: "not-authorised", snapshot: null }));
+    schema.reject(new Error("synthetic late schema failure"));
+    await expect(import("../src/components/ward-management/ward-shared-state-validation")).rejects.toThrow();
+    // Let a detached rejection reach the process if the parallel operation was not observed.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(send).not.toHaveBeenCalled();
+    expect(changed).toHaveBeenCalledTimes(1);
+  } finally {
+    schema.resolve();
+    client.dispose();
+  }
+});
+
+it("observes simultaneous schema and token failures without sending a workspace request", async () => {
+  vi.doMock(schemaPath, async () => {
+    throw new Error("synthetic schema failure");
+  });
+  const { SharedWorkspaceClient } = await import("../src/components/ward-management/ward-shared-client");
+  const token = vi.fn(async () => {
+    throw new Error("synthetic auth failure");
+  });
+  const send = vi.fn(async () => Response.json({}));
+  const changed = vi.fn();
+  const client = new SharedWorkspaceClient({ baseUrl: "https://example.test", token, fetch: send, changed });
+  try {
+    await client.refresh();
+    await expect(import("../src/components/ward-management/ward-shared-state-validation")).rejects.toThrow();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(token).toHaveBeenCalledOnce();
+    expect(send).not.toHaveBeenCalled();
+    expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ status: "unavailable", snapshot: null }));
+  } finally {
+    client.dispose();
+  }
+});
+
+it("retries a single server 401 with a freshly requested token and adopts only its successful reply", async () => {
+  const { SharedWorkspaceClient } = await import("../src/components/ward-management/ward-shared-client");
+  const { seedWardFlowStateAt } = await import("../src/components/ward-management/ward-flow-reducer");
+  const token = vi.fn(async (options?: { refresh?: boolean }) =>
+    options?.refresh ? "synthetic-fresh" : "synthetic-old",
+  );
+  const snapshot = {
+    dataMode: "prototype",
+    revision: 1,
+    now: 642,
+    payload: {
+      version: 1,
+      state: JSON.parse(JSON.stringify(seedWardFlowStateAt(0))),
+      dayZero: "2026-10-07T00:00:00Z",
+      startedAt: "2026-10-07T10:00:00Z",
+    },
+  };
+  const send = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json({ error: "Synthetic token expired" }, { status: 401 }))
+    .mockResolvedValueOnce(Response.json({ snapshot }));
+  const changed = vi.fn();
+  const client = new SharedWorkspaceClient({ baseUrl: "https://example.test", token, fetch: send, changed });
+  try {
+    await client.refresh();
+    expect(token.mock.calls).toEqual([[], [{ refresh: true }]]);
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(new Headers(send.mock.calls[0][1].headers).get("authorization")).toBe("Bearer synthetic-old");
+    expect(new Headers(send.mock.calls[1][1].headers).get("authorization")).toBe("Bearer synthetic-fresh");
+    expect(changed).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: "ready", snapshot: expect.objectContaining({ revision: 1 }) }),
+    );
+  } finally {
     client.dispose();
   }
 });

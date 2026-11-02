@@ -176,3 +176,69 @@ describe("server Sentry collector recovery", () => {
     }
   });
 });
+
+describe("server Sentry adverse collector behaviour", () => {
+  it("bounds an outage to 64 pending requests and recovers after they abort", async () => {
+    const controllers: AbortController[] = [];
+    vi.spyOn(AbortSignal, "timeout").mockImplementation(() => {
+      const controller = new AbortController();
+      controllers.push(controller);
+      return controller.signal;
+    });
+    let recovered = false;
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
+      if (recovered) return Promise.resolve(new Response(null, { status: 200 }));
+      return new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal!.reason), { once: true });
+      });
+    });
+    const sentry = await import("@/lib/sentry-server");
+    sentry.startServerSentry({ NODE_ENV: "production", SENTRY_DSN: DSN, SENTRY_ENABLE_LOGS: "false" });
+    const { getClient } = await import("@sentry/core");
+    const report = (index: number) => {
+      const error = new Error(`Synthetic collector pressure ${index}`);
+      error.name = `SyntheticPressure${index}`;
+      sentry.captureServerFailure(error, { routeType: "route" });
+    };
+    try {
+      for (let index = 0; index < 64; index += 1) report(index);
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(64));
+      report(64);
+      expect(await getClient()!.flush(25)).toBe(false);
+      expect(fetchMock).toHaveBeenCalledTimes(64);
+      for (const controller of controllers) controller.abort();
+      expect(await getClient()!.flush(2000)).toBe(true);
+      recovered = true;
+      report(65);
+      expect(await getClient()!.flush(2000)).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(65);
+    } finally {
+      for (const controller of controllers) controller.abort();
+      await getClient()?.close(0);
+    }
+  });
+
+  it("honours collector Retry-After without retaining requests or sending during backoff", async () => {
+    const now = vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000);
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(null, { status: 429, headers: { "Retry-After": "60" } }))
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    const sentry = await import("@/lib/sentry-server");
+    sentry.startServerSentry({ NODE_ENV: "production", SENTRY_DSN: DSN, SENTRY_ENABLE_LOGS: "false" });
+    const { getClient } = await import("@sentry/core");
+    try {
+      sentry.captureServerFailure(new RangeError("Synthetic collector rate limit"), { routeType: "route" });
+      expect(await getClient()!.flush(2000)).toBe(true);
+      sentry.captureServerFailure(new TypeError("Synthetic suppressed report"), { routeType: "route" });
+      expect(await getClient()!.flush(2000)).toBe(true);
+      expect(fetchMock).toHaveBeenCalledOnce();
+      now.mockReturnValue(1_800_000_061_000);
+      sentry.captureServerFailure(new SyntaxError("Synthetic resumed report"), { routeType: "route" });
+      expect(await getClient()!.flush(2000)).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      await getClient()?.close(0);
+    }
+  });
+});

@@ -33,8 +33,7 @@ function board(state: WardFlowState, patientSort: string, patientQuery = "") {
 }
 
 /** Count actual registry scans without replacing the resolver or its cache. */
-function countedState() {
-  const state = seedWardFlowState();
+function countedState(state = seedWardFlowState()) {
   const original = state.patients;
   const patients = [...original];
   let scans = 0;
@@ -79,5 +78,63 @@ describe("ED patient resolver work", () => {
     expect(searched.scans()).toBe(afterFirstMatch);
     // The separate expected-output resolution above adds one scan to the empty-query fixture.
     expect(afterFirstMatch).toBeLessThanOrEqual(emptyQuery.scans());
+  });
+});
+
+describe("ED resolver stress boundaries", () => {
+  it("keeps equal-name order and scan work bounded for a 1000-person registry", () => {
+    const seed = seedWardFlowState();
+    const base = board(seed, "current").visiblePatients[0]!;
+    const person = resolveSubjectPatient(base, seed).patient!;
+    const movements = Array.from({ length: 128 }, (_, index) => ({
+      ...base,
+      id: `WF-PERF-${index}` as const,
+      patientId: person.id,
+      referralId: undefined,
+      openedAt: NOW_ANCHOR - index - 1,
+    }));
+    const patients = [
+      ...seed.patients,
+      ...Array.from({ length: 1000 - seed.patients.length }, (_, index) => ({
+        ...person,
+        id: `PT-PERF-${index}` as const,
+        umrn: `SYN-PERF-${index}`,
+      })),
+    ];
+    const state = { ...seed, movements, patients };
+    const current = countedState(state);
+    const sorted = countedState(state);
+    const expected = board(current.state, "current").visiblePatients.map((movement) => movement.id);
+    const view = board(sorted.state, "name", person.umrn);
+    expect(view.visiblePatients.map((movement) => movement.id)).toEqual(expected);
+    expect(view.boardMatchCount).toBe(movements.length);
+    expect(sorted.scans()).toBe(current.scans());
+    const beforeDimming = sorted.scans();
+    view.visiblePatients.forEach((movement) => expect(view.isBoardRowDim(movement)).toBe(false));
+    expect(sorted.scans()).toBe(beforeDimming);
+    expect(state.movements.map((movement) => movement.id)).toEqual(expected);
+    expect(state.patients).toHaveLength(1000);
+  });
+
+  it("adopts an immutable identity update without changing a retained prior view", () => {
+    const seed = seedWardFlowState();
+    const source = board(seed, "current").visiblePatients[0]!;
+    const person = resolveSubjectPatient(source, seed).patient!;
+    const query = "SyntheticRenamed Autonomous";
+    const previous = board(seed, "name", query);
+    const updated = {
+      ...seed,
+      patients: seed.patients.map((patient) =>
+        patient.id === person.id ? { ...patient, givenName: "SyntheticRenamed", familyName: "Autonomous" } : patient,
+      ),
+    };
+    const next = board(updated, "name", query);
+    expect(previous.isBoardRowDim(source)).toBe(true);
+    expect(next.isBoardRowDim(source)).toBe(false);
+    expect(next.boardMatchCount).toBeGreaterThanOrEqual(1);
+    const nextNames = next.visiblePatients.map((movement) => resolveSubjectPatient(movement, updated).displayName);
+    expect(nextNames).toEqual([...nextNames].sort((a, b) => a.localeCompare(b)));
+    expect(resolveSubjectPatient(source, seed).patient).toBe(person);
+    expect(previous.visiblePatients).not.toBe(next.visiblePatients);
   });
 });
