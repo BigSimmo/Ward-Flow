@@ -8,8 +8,14 @@ import { useWardFlowClock } from "@/components/ward-management/ward-flow-provide
 
 import { useOpenOnLoad } from "./open-on-load";
 
-// Go to a desk opens from the rail's own persona card, as a click does (Josh, 2 Nov 2026).
-const HOME_POPUPS = { desk: ["[data-testid='ward-rail-persona-trigger']"] } as const;
+// Go to a desk opens from the rail's own persona card, as a click does (Josh, 2 Nov 2026); on a phone,
+// from the bar's Menu.
+const HOME_POPUPS = {
+  desk: [
+    "[data-testid='ward-rail-persona-trigger'], [data-testid='ward-bar-phone-menu']",
+    "Bed coordinator. Go to a desk",
+  ],
+} as const;
 
 /**
  * Preview only. Home is built into the app (lane H, 31 Oct 2026), so the preview draws the real

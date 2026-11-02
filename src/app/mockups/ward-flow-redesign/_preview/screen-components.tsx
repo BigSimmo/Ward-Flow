@@ -40,7 +40,8 @@ const WARD_POPUPS = {
   "shift-brief": ["More ward actions", "Shift brief"],
   "ward-notices": ["More ward actions", "Notices"],
   "ward-switcher": ["Switch ward, now"],
-  "bed-record": ["Open Bed 01"],
+  // The bed card, which opens the bed record on every width ("Bed 01" opens the round on a phone).
+  "bed-record": ["[data-testid='ward-bed-card-1']"],
   "confirm-beds": ["Confirm numbers"],
 } as const;
 const EdBoardPage = dynamic<MockupPageProps>(() =>
@@ -53,8 +54,12 @@ const EdBoardPage = dynamic<MockupPageProps>(() =>
   ),
 );
 const ED_BOARD_POPUPS = {
-  "ed-actions": ["Actions for"],
-  "log-transport": ["Log transport booking"],
+  // Phones have no row menu; the patient's sheet holds the same actions.
+  "ed-actions": ["[data-testid='ward-ed-unfold-WF-020'], [data-testid='ward-ed-patient-WF-020'] > button"],
+  "log-transport": [
+    "[data-testid='ward-ed-patient-WF-311'] > button, [data-testid='ward-ed-row-name-WF-311']",
+    "Log transport booking",
+  ],
 } as const;
 // Legal forms is built into the app (lane L, 31 Oct 2026). Its slug stays as the backdrop the Record
 // exam pop-up draws over, so it shows the real screen, fed by the preview world.
@@ -68,7 +73,8 @@ const LegalFormsScreen = dynamic<MockupPageProps>(() =>
   ),
 );
 const LEGAL_FORMS_POPUPS = {
-  "add-time": ["Add the time for"],
+  // On a phone the form's own sheet holds Add the time.
+  "add-time": ["[aria-label^='Add the time for'], button[aria-label^='Ridgeholt, Fiora, UM']"],
   "record-form": ["Record a form"],
   "record-exam": ["Record and tell", "Record exam"],
 } as const;
@@ -113,7 +119,12 @@ const MovementsPage = dynamic<MockupPageProps>(() =>
       },
   ),
 );
-const MOVEMENTS_POPUPS = { movement: ["What is recorded for"] } as const;
+const MOVEMENTS_POPUPS = {
+  movement: [
+    "[data-testid='movements-group-toggle-placement_requested'], [data-ward-primitive='record-id']",
+    "What is recorded for",
+  ],
+} as const;
 
 // Handover mock-up (1 Nov 2026): the real screen with the proposed changes, fed by the preview world.
 const HandoverScreen = dynamic<MockupPageProps>(() =>
@@ -179,7 +190,7 @@ const StaysScreen = dynamic<MockupPageProps>(() =>
   ),
 );
 const STAYS_POPUPS = {
-  "board-blocker": ["Needs a look", "[data-bed-kind='occupied'] button", "Record a blocker"],
+  "board-blocker": ["[data-bed-kind='occupied'] button", "Record a blocker"],
 } as const;
 
 const PatientsScreen = dynamic<MockupPageProps>(() =>

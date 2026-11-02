@@ -28,7 +28,7 @@ export function useOpenOnLoad(openOnLoad: string | undefined, steps: Readonly<Re
         control.click();
         step += 1;
       }
-      if (step >= names.length || tries++ > 60) window.clearInterval(timer);
+      if (step >= names.length || tries++ > 200) window.clearInterval(timer);
     }, 150);
     return () => window.clearInterval(timer);
   }, [openOnLoad, steps]);
