@@ -10,6 +10,7 @@ import type { SinceItem } from "@/components/wf";
 import {
   isAwaitingTeamAnswer,
   leavingDestinationLabel,
+  namesTeam,
   type CommunityTeam,
 } from "@/components/ward-management/community/community-derivations";
 import { elapsedDaysPhrase } from "@/components/ward-management/community/community-elapsed";
@@ -289,7 +290,7 @@ function communityAddressingFor(
   referral: CommunityScopedReferral,
   team: CommunityTeam,
 ): CommunityScopedAddressing | undefined {
-  return referral.addressing.destination.teamName === team.name ? referral.addressing : undefined;
+  return namesTeam(referral.addressing.destination.teamName, team) ? referral.addressing : undefined;
 }
 
 export function caseloadStatutoryFormCode(row: CaseloadRow): string | undefined {

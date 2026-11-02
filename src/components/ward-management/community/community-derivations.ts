@@ -5,6 +5,7 @@ import {
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
+import { ratifiedSameServiceNames } from "@/components/ward-management/community/community-ratified-aliases";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
 import type { CommunityScopedReferral } from "@/components/ward-management/ward-referral-visibility";
@@ -129,6 +130,17 @@ export function communityTeamById(teamId: string): CommunityTeam | null {
  * nobody out. Filtering on state here would quietly remove from a team's page the very people whose
  * referral went wrong — which is the population this hub exists to make visible.
  */
+/**
+ * Q223 (Josh, 2 Nov 2026): a referral written to any spelling the owner has ruled is the same service
+ * (`RATIFIED_SERVICE_ALIASES`) names every one of those team pages, so the clinic's page shows its
+ * patients whichever spelling the referral used. Still only what somebody wrote down, read through
+ * a ruling a person made; nothing is inferred from where anyone lives.
+ */
+export function namesTeam(teamName: string | undefined, team: CommunityTeam): boolean {
+  if (teamName === undefined) return false;
+  return teamName === team.name || ratifiedSameServiceNames(team.name).includes(teamName);
+}
+
 export function admissionBelongsToTeam(
   admission: Admission,
   team: CommunityTeam,
@@ -138,7 +150,7 @@ export function admissionBelongsToTeam(
   const referral = referrals.find((candidate) => candidate.id === admission.referralId);
   if (referral === undefined) return false;
   return communityArmsOf(referral).some(
-    (addressed) => addressed.destination.kind === "community_team" && addressed.destination.teamName === team.name,
+    (addressed) => addressed.destination.kind === "community_team" && namesTeam(addressed.destination.teamName, team),
   );
 }
 
