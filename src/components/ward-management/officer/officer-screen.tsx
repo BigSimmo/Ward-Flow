@@ -362,8 +362,7 @@ export function OfficerScreen() {
   };
   const bookingMovement = bookingId === undefined ? undefined : needing.find((movement) => movement.id === bookingId);
 
-  // Between the phone sheet and the two-column layout the panel stacks above the lists, so a
-  // newly chosen job is scrolled into view rather than opening off-screen.
+  // Tablet portrait: the panel stacks above the lists, so a chosen job scrolls into view.
   const sideRef = useRef<HTMLDivElement>(null);
   const isTabletPortrait = useIsTabletPortrait();
   useEffect(() => {
