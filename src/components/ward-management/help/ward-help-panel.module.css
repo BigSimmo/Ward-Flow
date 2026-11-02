@@ -133,9 +133,11 @@
 }
 
 /* The rest of the top suggestion, faint after the typed letters: the input's own box and font. */
-.ghost {
+.field .ghost {
   padding: 0 40px 0 36px;
   font: 400 var(--wf-fs-14) / 1 var(--wf-font);
+  /* The input draws without the body's stylistic sets, so the faint text must too, or it drifts. */
+  font-feature-settings: normal;
 }
 
 /* The suggestions block, between the field and the answers: in the flow, so nothing jumps. */
