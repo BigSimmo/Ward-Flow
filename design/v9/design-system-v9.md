@@ -1,5 +1,7 @@
 # Ward Flow design system v9
 
+> **Superseded (2 Nov 2026, Q327).** [docs/design/DESIGN-SYSTEM.md](../../docs/design/DESIGN-SYSTEM.md) is the design system of record. This file is background only. Its control sizes are out of date: phone small buttons are now 40px (Q295), phone tabs are 40px items on a 48px track and phone chips are 40px (Q225). Where the two differ, DESIGN-SYSTEM.md wins.
+
 Synthetic prototype, not a medical device. This file is the written v9 standard. The reference CSS sheet (`ward-flow-v9.css`) and live HTML board (`ward-flow-design-system-v9.html`) are not in this branch; they remain on [`backup/claude/design-system-v7-4ygmui-pre-slim-20261010`](https://github.com/BigSimmo/Ward-Flow/tree/backup/claude/design-system-v7-4ygmui-pre-slim-20261010/design/v9). The app loads the v9 tokens from `src/app/ward-flow-v9-tokens.css`.
 
 **Status.** This is the standard. v9 replaces v8 to v8.2 as one document, so nobody has to apply a chain of amendments. v8 (`../v8/`) and v7 (`../v7/`) stay unchanged for provenance. The app loads the v9 tokens (phase 1 of the rollout) and the core shared parts follow them (phase 2). Screens move onto v9 one at a time next (section 15).
