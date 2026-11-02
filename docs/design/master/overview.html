@@ -250,6 +250,16 @@
       const m = document.getElementById("m");
       let g = null,
         grid;
+      // The hub moves the archived "As ..." role views to the end (Q156), so map each card to the hub's index.
+      const HUB = [];
+      {
+        const rest = [],
+          arch = [];
+        ALL.forEach((r, i) => (r[1].startsWith("As ") ? arch : rest).push(i));
+        [...rest, ...arch].forEach((orig, hub) => {
+          HUB[orig] = hub;
+        });
+      }
       ALL.forEach(([l, gr, dir], i) => {
         if (gr !== g) {
           g = gr;
@@ -260,12 +270,12 @@
           m.append(h, grid);
         }
         const a = document.createElement("a");
-        a.href = `index.html#all/${i}`;
+        a.href = `index.html#all/${HUB[i]}`;
         a.onclick = (e) => {
           try {
             if (parent !== window) {
               e.preventDefault();
-              parent.location.hash = `all/${i}`;
+              parent.location.hash = `all/${HUB[i]}`;
             }
           } catch (x) {}
         };
