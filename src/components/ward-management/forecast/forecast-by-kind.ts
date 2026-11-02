@@ -34,6 +34,9 @@ export type KindForecast = {
   heldUp: number;
   overdue: number;
   plannedNotFlagged: number;
+  /** Unflagged occupied stays whose current date and lack of blocker let confirmation lift likely.
+   * Older caller-built figures may omit this; absence never implies eligibility. */
+  confirmationEligible?: number;
   plannedAdmissions: number;
 };
 
@@ -131,7 +134,7 @@ export function forecastByKind(
     const onTime = clear.filter((release) => dayOf(expectedAt(release)) >= dayOf(now));
     const confirmed = onTime.filter((release) => release.state === "confirmed").length;
     const expected = onTime.filter((release) => release.state === "expected").length;
-    const plannedNotFlagged = admissions.filter((admission) => {
+    const unflaggedPlans = admissions.filter((admission) => {
       const unit = openUnits.get(admission.unitId);
       return (
         unit !== undefined &&
@@ -141,7 +144,14 @@ export function forecastByKind(
         !flagged.has(admission.id) &&
         bedKindOfBed(unit, admission) === id
       );
-    }).length;
+    });
+    const plannedNotFlagged = unflaggedPlans.length;
+    const confirmationEligible = unflaggedPlans.filter(
+      (admission) =>
+        admission.state === "occupied" &&
+        admission.blockReason === null &&
+        dayOf(admission.expectedDischargeAt!) >= dayOf(now),
+    ).length;
     const plannedAdmissionsOfKind = planned.filter((booking) => bedKindOfPlannedAdmission(booking) === id).length;
     const heldUp = due.length - clear.length;
     const overdue = clear.length - onTime.length;
@@ -160,6 +170,7 @@ export function forecastByKind(
       heldUp,
       overdue,
       plannedNotFlagged,
+      confirmationEligible,
       plannedAdmissions: plannedAdmissionsOfKind,
     };
   });
@@ -168,7 +179,7 @@ export function forecastByKind(
     (sum, kind) => {
       const { id, ...figures } = kind;
       void id;
-      for (const key of Object.keys(figures) as (keyof typeof figures)[]) sum[key] += figures[key];
+      for (const key of Object.keys(figures) as (keyof typeof figures)[]) sum[key] += figures[key] ?? 0;
       return sum;
     },
     {
@@ -183,6 +194,7 @@ export function forecastByKind(
       heldUp: 0,
       overdue: 0,
       plannedNotFlagged: 0,
+      confirmationEligible: 0,
       plannedAdmissions: 0,
     },
   );

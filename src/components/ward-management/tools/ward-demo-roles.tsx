@@ -10,6 +10,7 @@ import { accessPlaceLabel } from "../shell/ward-access-labels";
 import { useWardFeatureFlags } from "../shell/ward-feature-flag-store";
 import { SharedAccessContext } from "../shell/ward-shared-access-context";
 import { SharedSessionContext } from "../shell/ward-shared-session-context";
+import { confirmLeavingShell } from "../shell/ward-bar-controls";
 import { dispatchPersonaSyncForRole, usePersonaDeskId, useShellPersonaRole } from "../settings/persona-sync";
 import { useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
 import {
@@ -124,37 +125,44 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
   function choose(role: WardAccessRole) {
     const next = choices[role];
     if (!enabled || !next) return;
-    selectDemoRole(next, {
-      desk: previewOf ?? desk,
-      deviceFlag: roleFlag?.source === "device" ? roleFlag.on : null,
-      persona,
-      personaDeskId,
-    });
-    go(next);
+    const proceed = () => {
+      selectDemoRole(next, {
+        desk: previewOf ?? desk,
+        deviceFlag: roleFlag?.source === "device" ? roleFlag.on : null,
+        persona,
+        personaDeskId,
+      });
+      go(next);
+    };
+    if (confirmLeavingShell(proceed)) proceed();
   }
   function exit() {
     if (!enabled) return;
-    const saved = session?.desk;
-    const scope = saved?.scope;
-    const placeExists =
-      scope?.kind === "ward"
-        ? scope.unitIds.length > 0 && scope.unitIds.every((id) => world.units.some((candidate) => candidate.id === id))
-        : scope?.kind === "ed"
-          ? network.sites.some((site) => site.emergencyDepartment?.id === scope.edId)
-          : scope?.kind === "site"
-            ? network.sites.some((site) => site.code === scope.siteCode)
-            : scope?.kind === "service"
-              ? network.sites.some((site) => site.service === scope.service)
-              : true;
-    const original = exitDemoRole(placeExists ? saved : STATEWIDE_COORDINATOR);
-    if (original) go(original);
-    else {
-      // A reload keeps the existing local desk, but loses the memory-only return history.
-      // Give that desk an explicit way back without inventing its previous role.
-      setWardAccess(STATEWIDE_COORDINATOR);
-      dispatchPersonaSyncForRole("coordinator");
-      go(STATEWIDE_COORDINATOR);
-    }
+    const proceed = () => {
+      const saved = session?.desk;
+      const scope = saved?.scope;
+      const placeExists =
+        scope?.kind === "ward"
+          ? scope.unitIds.length > 0 &&
+            scope.unitIds.every((id) => world.units.some((candidate) => candidate.id === id))
+          : scope?.kind === "ed"
+            ? network.sites.some((site) => site.emergencyDepartment?.id === scope.edId)
+            : scope?.kind === "site"
+              ? network.sites.some((site) => site.code === scope.siteCode)
+              : scope?.kind === "service"
+                ? network.sites.some((site) => site.service === scope.service)
+                : true;
+      const original = exitDemoRole(placeExists ? saved : STATEWIDE_COORDINATOR);
+      if (original) go(original);
+      else {
+        // A reload keeps the existing local desk, but loses the memory-only return history.
+        // Give that desk an explicit way back without inventing its previous role.
+        setWardAccess(STATEWIDE_COORDINATOR);
+        dispatchPersonaSyncForRole("coordinator");
+        go(STATEWIDE_COORDINATOR);
+      }
+    };
+    if (confirmLeavingShell(proceed)) proceed();
   }
   return (
     <section className={styles.section} aria-label="See it as">

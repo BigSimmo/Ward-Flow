@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
+import { ConfirmHost } from "@/components/wf/confirm-dialog";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { exitDemoRole } from "@/components/ward-management/tools/ward-demo-role-session";
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
 import {
@@ -97,6 +99,16 @@ const choose = (label: string) =>
   fireEvent.click(within(roles()).getByRole("button", { name: new RegExp(`^${label}`) }));
 const proof = () => screen.getByTestId("role-proof");
 
+function UnsavedWork({ children }: { children: ReactNode }) {
+  useDirtyStateGuard({ isDirty: true });
+  return (
+    <>
+      <ConfirmHost />
+      {children}
+    </>
+  );
+}
+
 beforeEach(() => {
   navigation.path = "/ward-flow";
   navigation.push.mockImplementation((path: string) => {
@@ -118,6 +130,38 @@ afterEach(() => {
 });
 
 describe("Roles within the existing Demo selector", () => {
+  it("asks before role selection and exit, preserving access until Leave without saving", async () => {
+    renderPanel((child) => <UnsavedWork>{child}</UnsavedWork>);
+    const original = readWardAccessSnapshot().access;
+    choose("Transport officer");
+    const question = await screen.findByRole("alertdialog", { name: "Leave this page?" });
+    expect(readWardAccessSnapshot().access).toEqual(original);
+    expect(navigation.push).not.toHaveBeenCalled();
+    fireEvent.click(within(question).getByRole("button", { name: "Keep editing" }));
+    expect(readWardAccessSnapshot().access).toEqual(original);
+    choose("Transport officer");
+    await act(async () =>
+      fireEvent.click(
+        within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Leave without saving" }),
+      ),
+    );
+    expect(readWardAccessSnapshot().access.role).toBe("officer");
+    expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/ward-flow/transport/officer");
+    navigation.push.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Exit role demo" }));
+    const exitQuestion = await screen.findByRole("alertdialog", { name: "Leave this page?" });
+    expect(readWardAccessSnapshot().access.role).toBe("officer");
+    fireEvent.click(within(exitQuestion).getByRole("button", { name: "Keep editing" }));
+    expect(navigation.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Exit role demo" }));
+    await act(async () =>
+      fireEvent.click(
+        within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Leave without saving" }),
+      ),
+    );
+    expect(readWardAccessSnapshot().access).toEqual(original);
+    expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/ward-flow");
+  });
   it("lists all canonical roles beside the existing scenarios and survives repeated switches", () => {
     renderPanel();
     expect(screen.getByRole("button", { name: /Winter surge/ })).toBeVisible();

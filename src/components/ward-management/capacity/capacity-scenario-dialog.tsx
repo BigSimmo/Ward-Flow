@@ -35,7 +35,7 @@ export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClos
   const tightest = [...result.kinds].sort((a, b) => a.after - b.after)[0];
   const options: { key: Toggle; label: string; beds: number }[] = [
     { key: "clearHeldUp", label: "Held-up releases go ahead", beds: tomorrow.total.heldUp },
-    { key: "confirmDates", label: "Planned dates are confirmed", beds: tomorrow.total.plannedNotFlagged },
+    { key: "confirmDates", label: "Planned dates are confirmed", beds: tomorrow.total.confirmationEligible ?? 0 },
     { key: "overdueGoAhead", label: "Overdue releases go ahead", beds: tomorrow.total.overdue },
   ];
   const close = () => {
