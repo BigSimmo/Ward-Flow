@@ -308,7 +308,7 @@ export function buildCensus(state: {
       whereSub: moving
         ? `From ${edText}`
         : lost
-          ? `Journey stopped after leaving ${edText}`
+          ? `Movement stopped after leaving ${edText}`
           : source
             ? "Ward transfer"
             : movementOriginService(movement),

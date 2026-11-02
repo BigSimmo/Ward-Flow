@@ -562,7 +562,7 @@ function wardGroup(unit: Pick<ComparisonUnit, "cohort" | "lockedBeds">): WardGro
   return unit.lockedBeds > 0 ? "secure" : "open";
 }
 
-const GROUP_LABELS: Record<WardGroup, string> = { secure: "Secure", open: "Open", older: "Older", youth: "Youth" };
+const GROUP_LABELS: Record<WardGroup, string> = { secure: "Locked", open: "Open", older: "Older", youth: "Youth" };
 
 type WardRow = {
   unit: ComparisonUnit;

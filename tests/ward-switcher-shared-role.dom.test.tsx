@@ -104,6 +104,6 @@ describe("Go to a desk in the shared workspace", () => {
     const site = screen.getByRole("button", { name: new RegExp(department.siteName) });
     expect(within(site).getByText(String(department.waiting), { exact: true })).toBeInTheDocument();
     expect(site).toHaveTextContent(`${department.waiting} waiting in ED`);
-    expect(screen.queryAllByText(/open ED journeys/u)).toHaveLength(0);
+    expect(screen.queryAllByText(/open ED (?:journeys|movements)/u)).toHaveLength(0);
   });
 });

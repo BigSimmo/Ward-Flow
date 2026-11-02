@@ -1589,7 +1589,7 @@ describe("community follow-up filters report real empty results", () => {
       });
       expect(within(section).queryByTestId("ward-community-discharged-list")).toBeNull();
       expect(within(section).getByTestId("ward-community-discharged-empty").textContent).toContain(
-        "No community departures match this follow-up filter",
+        "No community discharges match this follow-up filter",
       );
     },
   );

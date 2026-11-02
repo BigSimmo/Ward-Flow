@@ -207,7 +207,7 @@ export function tierOverdueRuleText(): string {
 /**
  * TIER 1 (P002, Josh 27 Oct 2026): every open journey (`isOpen`) at urgency tier 1, in transit
  * included. Home's Tier 1 chip and highlight and Movements' "Tier 1 now" read this, so the screens
- * print one count. The label says what it counts: "Tier 1 open journeys".
+ * print one count. The label says what it counts: "Tier 1 open movements" (Q262).
  */
 export function isTierOneOpen(movement: Movement): boolean {
   return isOpen(movement) && movement.urgency === 1;
@@ -246,7 +246,7 @@ export function homeChipFigures(queue: readonly Movement[], now: Instant, siteSh
     overdueInQueue: queue.filter((movement) => inEdTierOverdue(movement, now)).length,
     tierOneInQueue: queue.filter(isTierOneOpen).length,
     overdueLabel: scopedChipLabel("Overdue waits", "Overdue waits", siteShort),
-    tierOneLabel: scopedChipLabel("Tier 1 open journeys", "Tier 1", siteShort),
+    tierOneLabel: scopedChipLabel("Tier 1 open movements", "Tier 1", siteShort),
   };
 }
 

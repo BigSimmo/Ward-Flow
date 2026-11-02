@@ -788,7 +788,7 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (place) return place.name;
 
   if (normalized === "/ward-flow" || normalized === "/ward-flow/command") return "Home";
-  if (isUnder("/ward-flow/board")) return "Bed Board";
+  if (isUnder("/ward-flow/board")) return "Bed board";
   if (isUnder("/ward-flow/ward")) return "Ward";
   if (isUnder("/ward-flow/ed")) return "All EDs";
   if (isUnder("/ward-flow/community")) return "Community";

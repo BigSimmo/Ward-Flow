@@ -191,7 +191,7 @@ export function WardBoardFlowColumn({
         <div
           className={styles.flowToggle}
           role="group"
-          aria-label="Which of today's departures the Going out list shows"
+          aria-label="Which of today's discharges the Going out list shows"
         >
           <span className={styles.flowToggleLabel}>Going out shows</span>
           {OUTGOING_BASES.map((basis) => (

@@ -9,7 +9,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 /**
  * P002 and P003 (Josh, 27 Oct 2026, "Go ahead with all recommendations"): Home and Movements print
  * one Tier 1 count (every open journey at tier 1, in transit included) and each label says what it
- * counts. Choosing an ED card narrows Home's chips and the labels say so ("Tier 1 open journeys · RPH", spoken; "Tier 1 · RPH" shown); Clear
+ * counts. Choosing an ED card narrows Home's chips and the labels say so ("Tier 1 open movements · RPH", spoken; "Tier 1 · RPH" shown); Clear
  * also resets the ED card.
  */
 function chip(name: RegExp): HTMLElement {
@@ -31,7 +31,7 @@ describe("Home and Movements print one Tier 1 count (P002)", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
-    const homeTierOne = chipValue(chip(/^\s*\d+\s*Tier 1 open journeys$/));
+    const homeTierOne = chipValue(chip(/^\s*\d+\s*Tier 1 open movements$/));
     expect(homeTierOne).toBeGreaterThan(0);
     home.unmount();
 
@@ -60,15 +60,15 @@ describe("an ED card narrows Home's chips and says so (P003)", () => {
     fireEvent.click(edCard);
     expect(edCard).toHaveAttribute("aria-pressed", "true");
     expect(chip(/^\s*\d+\s*Past target waits · RPH$/)).toBeInTheDocument();
-    const tierOne = chip(/^\s*\d+\s*Tier 1 open journeys · RPH$/);
-    expect(screen.queryByRole("button", { name: /Tier 1 open journeys$/ })).not.toBeInTheDocument();
+    const tierOne = chip(/^\s*\d+\s*Tier 1 open movements · RPH$/);
+    expect(screen.queryByRole("button", { name: /Tier 1 open movements$/ })).not.toBeInTheDocument();
 
     fireEvent.click(tierOne);
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
 
     expect(screen.getByTestId("ward-ed-rph-ed")).toHaveAttribute("aria-pressed", "false");
     expect(chip(/^\s*\d+\s*Past target waits$/)).toBeInTheDocument();
-    expect(chip(/^\s*\d+\s*Tier 1 open journeys$/)).toHaveAttribute("aria-pressed", "false");
+    expect(chip(/^\s*\d+\s*Tier 1 open movements$/)).toHaveAttribute("aria-pressed", "false");
     expect(window.sessionStorage.length).toBe(0);
   });
 });

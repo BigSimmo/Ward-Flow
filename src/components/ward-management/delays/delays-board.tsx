@@ -1144,7 +1144,7 @@ export function DelaysBoard({
                       setFlat(false);
                     }}
                   >
-                    By blocker
+                    By hold-up
                   </button>
                   <button
                     type="button"

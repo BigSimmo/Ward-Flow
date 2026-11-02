@@ -113,7 +113,7 @@ export function delayTimelineSegments(movement: Movement, now: Instant, scaleMin
   const waiting = Math.max(0, now - movement.openedAt);
   const latest = lastRecordedActivity(movement, now);
   // Opening the journey is the arrival baseline, not a later update.
-  const activity = latest?.what === "the journey opened" ? undefined : latest;
+  const activity = latest?.what === "the movement opened" ? undefined : latest;
   // Records before arrival or after the current demo time cannot extend the drawn wait.
   const beforeUpdate = activity === undefined ? 0 : Math.min(waiting, Math.max(0, activity.at - movement.openedAt));
   const width = (minutes: number) => (Math.min(minutes, scaleMinutes) / scaleMinutes) * 100;

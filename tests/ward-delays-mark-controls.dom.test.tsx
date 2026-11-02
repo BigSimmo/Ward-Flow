@@ -228,7 +228,7 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     fireEvent.click(screen.getByTestId("test-clear-urgent-flag"));
     // The blocker groups are drawn in the By blocker order; the board opens on Longest wait.
     fireEvent.click(
-      within(screen.getByRole("group", { name: "Order the table" })).getByRole("button", { name: "By blocker" }),
+      within(screen.getByRole("group", { name: "Order the table" })).getByRole("button", { name: "By hold-up" }),
     );
     showEveryRow();
 

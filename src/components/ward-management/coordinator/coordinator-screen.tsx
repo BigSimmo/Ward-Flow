@@ -659,7 +659,7 @@ export function CoordinatorScreen() {
   // The highlight chips count the queue they highlight (after the ED and service filters), P002/P003.
   const chips = homeChipFigures(queue, now, selectedEd?.siteCode);
   // Shortest clear words (Josh, 30 Oct 2026); a chosen ED is still named.
-  // The spoken name keeps the noun (P002: "Tier 1 open journeys", as Movements says it).
+  // The spoken name keeps the noun (P002: "Tier 1 open movements", as Movements says it; Q262).
   const edSuffix = selectedEd ? ` · ${selectedEd.siteCode}` : "";
   const overdueWord = (
     <>
@@ -669,7 +669,7 @@ export function CoordinatorScreen() {
   );
   const tierOneWord = (
     <>
-      Tier 1 <SrOnly>open journeys</SrOnly>
+      Tier 1 <SrOnly>open movements</SrOnly>
       {edSuffix}
     </>
   );
@@ -709,7 +709,7 @@ export function CoordinatorScreen() {
     .toLowerCase();
   const heroTitle = (
     <>
-      <span className={styles.heroNum}>{edJourneys.total}</span> open ED journeys,{" "}
+      <span className={styles.heroNum}>{edJourneys.total}</span> open ED movements,{" "}
       <span className={styles.heroNum}>{bedsReady}</span> {bedsReady === 1 ? "bed" : "beds"} ready
     </>
   );

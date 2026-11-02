@@ -134,7 +134,7 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Pull the bed" }));
     fireEvent.click(screen.getByText("Step back with recorded reason"));
     expect(screen.getByRole("button", { name: "Record step-back" })).toHaveAttribute("aria-disabled", "true");
-    fireEvent.change(screen.getByLabelText("Earlier journey stage"), { target: { value: "accepted_awaiting_bed" } });
+    fireEvent.change(screen.getByLabelText("Earlier movement stage"), { target: { value: "accepted_awaiting_bed" } });
     expect(screen.getByRole("button", { name: "Record step-back" })).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByLabelText("Clinical / operational reason"), {
       target: { value: STEP_BACK_REASONS[0] },
