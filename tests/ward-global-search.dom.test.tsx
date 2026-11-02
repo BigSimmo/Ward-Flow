@@ -349,7 +349,8 @@ describe("WardGlobalSearch", () => {
   it("keeps Home/End for editing until a row is selected and preserves modified text-selection keys", () => {
     renderSearch();
     const input = screen.getByTestId("ward-global-search-input");
-    fireEvent.change(input, { target: { value: "form" } });
+    // A query with no best match (Josh, 3 Nov 2026): "form" now leads with the Forms screen, already active.
+    fireEvent.change(input, { target: { value: "ridge" } });
     for (const key of ["Home", "End"]) {
       expect(fireEvent.keyDown(input, { key })).toBe(true);
       expect(input).not.toHaveAttribute("aria-activedescendant");

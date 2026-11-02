@@ -985,3 +985,181 @@ button.option {
   text-align: start;
   cursor: pointer;
 }
+
+/* Search improvements approved by Josh, 3 Nov 2026: highlights, Try asking, best match, taller tablet, phone sheet. */
+.hit {
+  background: color-mix(in srgb, var(--wf-warning) 28%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.askRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0 10px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.askChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 10px;
+}
+
+.askChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.groupItem[data-best] .option {
+  min-height: 52px;
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+}
+
+.groupItem[data-best] .resultTitle {
+  font-size: var(--wf-fs-15, 15px);
+}
+
+@media (min-width: 700px) and (min-height: 1000px) {
+  .popup:not([data-above-sheets]) {
+    max-height: min(52rem, calc(100dvh - 8rem));
+  }
+}
+
+.sheetLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.sheetScrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: color-mix(in srgb, var(--wf-ink-1) 32%, transparent);
+  cursor: pointer;
+}
+
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 80%;
+  overflow-y: auto;
+  padding: 8px 16px max(16px, var(--wgs-kb), env(safe-area-inset-bottom, 0px));
+  border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+  animation: wgsSheetUp var(--wf-m-base) var(--wf-ease);
+}
+
+.sheetHandle {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wf-line-3);
+}
+
+.sheetBack {
+  height: 40px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14, 14px) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+@keyframes wgsSheetUp {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    animation: none;
+  }
+}
+
+.optionItem {
+  position: relative;
+}
+
+.quickAction {
+  position: absolute;
+  top: 50%;
+  right: 34px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  text-decoration: none;
+  box-shadow: var(--wf-e1, none);
+}
+
+.quickAction:hover {
+  border-color: var(--wf-line-3);
+}
+
+.emptyTry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.emptyTryLabel {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+a.askChip {
+  text-decoration: none;
+}
+
+/* Best match: the key fact gets its own line, never cut off behind the title. */
+.groupItem[data-best] .resultContent {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.groupItem[data-best] .resultMeta {
+  white-space: normal;
+  color: var(--wf-ink-2);
+}
+
+.groupItem[data-best] .resultTitle {
+  max-width: 100%;
+  white-space: normal;
+}
