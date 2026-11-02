@@ -8,8 +8,11 @@ import {
   Compass,
   Info,
   LayoutDashboard,
+  Link2,
   Play,
   SlidersHorizontal,
+  ThumbsDown,
+  ThumbsUp,
   Truck,
   type LucideIcon,
 } from "lucide-react";
@@ -17,6 +20,7 @@ import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
 import { Button, buttonClass, useIsPhone } from "@/components/wf";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 import { readTourStep, type WardTourRole } from "./ward-help-store";
 import { tourSteps, type TourDevice } from "./ward-tour-steps";
@@ -27,6 +31,8 @@ import { howToHref } from "./ward-help-href";
 import { HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS, showMeSteps, type HowTo } from "./ward-help-howto";
 import { aroundId } from "./ward-help-screen-tours";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
+import { helpLinkHref } from "./ward-help-events";
+import { recordHelpFeedback } from "./ward-help-feedback";
 import { recordHowToUsed } from "./ward-help-usage";
 import s from "./ward-help-panel.module.css";
 
@@ -63,6 +69,67 @@ function PlayMark() {
     <span className={s.play} aria-hidden="true">
       <Play aria-hidden="true" strokeWidth={0} />
     </span>
+  );
+}
+
+/**
+ * The foot of an open answer: "Was this helpful?" (counted on this device, by id only) and Copy
+ * link, which copies an address that opens Help at this job (`#help=<id>`, nothing typed).
+ */
+function AnswerFoot({ id, path }: { id: string; path: string }) {
+  const [voted, setVoted] = useState(false);
+  const [copy, setCopy] = useState<"idle" | "done" | "failed">("idle");
+  const vote = (helpful: boolean) => {
+    recordHelpFeedback(id, helpful, HOW_TO_IDS);
+    setVoted(true);
+  };
+  return (
+    <div className={s.answerFoot} data-testid="ward-help-task-foot">
+      {voted ? (
+        <span className={s.footStatus} role="status">
+          Thanks. Counted on this device only.
+        </span>
+      ) : (
+        <span className={s.helpful} role="group" aria-label="Was this helpful?">
+          <span aria-hidden="true">Was this helpful?</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={ThumbsUp}
+            onClick={() => vote(true)}
+            data-testid="ward-help-helpful-yes"
+          >
+            Yes
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={ThumbsDown}
+            onClick={() => vote(false)}
+            data-testid="ward-help-helpful-no"
+          >
+            No
+          </Button>
+        </span>
+      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        icon={Link2}
+        onClick={() => {
+          copyTextToClipboard(helpLinkHref(window.location.origin, path, id)).then(
+            () => setCopy("done"),
+            () => setCopy("failed"),
+          );
+        }}
+        data-testid="ward-help-copy-link"
+      >
+        Copy link
+      </Button>
+      <span className={s.footStatus} aria-live="polite">
+        {copy === "done" ? "Link copied" : copy === "failed" ? "Could not copy the link" : ""}
+      </span>
+    </div>
   );
 }
 
@@ -172,6 +239,7 @@ function TaskRow({
                 : "Show me lights each control in turn. It never presses anything for you."}
             </p>
           ) : null}
+          <AnswerFoot id={task.id} path={href ?? pathname} />
         </div>
       ) : null}
     </li>

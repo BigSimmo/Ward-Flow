@@ -669,6 +669,35 @@
   line-height: var(--wf-lh-12);
 }
 
+/* An open answer's foot: Was this helpful? and Copy link. */
+.answerFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.helpful {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-right: auto;
+}
+
+.footStatus {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.footStatus:empty {
+  display: none;
+}
+
 .safety svg {
   flex: none;
   width: 13px;

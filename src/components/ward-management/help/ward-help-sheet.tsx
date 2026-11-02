@@ -2,7 +2,7 @@
 
 import { BookOpen, CircleHelp, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 
 import { TabPanel, Tabs, useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
@@ -17,7 +17,9 @@ import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statis
 import { ADMIN_SETTINGS_HELP, glossaryForSites, screenHelpFor, type GlossaryTerm } from "./ward-help-content";
 import type { HelpView } from "./ward-help-events";
 import { findInHelp, foundRows, HelpFindResults, HelpTryAsking } from "./ward-help-find";
-import { HOW_TOS } from "./ward-help-howto";
+import { HOW_TO_IDS, HOW_TOS } from "./ward-help-howto";
+import { aroundId } from "./ward-help-screen-tours";
+import { useHelpUsed } from "./ward-help-usage";
 import { howToHref } from "./ward-help-href";
 import { canShowTask, HelpTasks } from "./ward-help-jobs";
 import s from "./ward-help-panel.module.css";
@@ -40,6 +42,36 @@ const TAB_VIEWS: readonly HelpView[] = ["tasks", "questions", "reference", "new"
 function tabFor(view: HelpView): TabView {
   if (view === "glossary") return "reference";
   return (TAB_VIEWS as readonly string[]).includes(view) ? (view as TabView) : "tasks";
+}
+
+/**
+ * What this device can point with (2 Nov 2026). A phone-sized screen with a keyboard or trackpad
+ * (a tablet with a keyboard case) still gets Shortcuts, and a touch-only screen of any size is not
+ * shown keyboard hints it cannot use.
+ */
+function pointerQuery(query: string): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches;
+}
+function subscribePointer(onChange: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => undefined;
+  const lists = ["(any-pointer: fine)", "(any-pointer: coarse)"].map((query) => window.matchMedia(query));
+  for (const list of lists) list.addEventListener?.("change", onChange);
+  return () => {
+    for (const list of lists) list.removeEventListener?.("change", onChange);
+  };
+}
+function usePointer(): { fine: boolean; touchOnly: boolean } {
+  const fine = useSyncExternalStore(
+    subscribePointer,
+    () => pointerQuery("(any-pointer: fine)"),
+    () => false,
+  );
+  const coarse = useSyncExternalStore(
+    subscribePointer,
+    () => pointerQuery("(any-pointer: coarse)"),
+    () => false,
+  );
+  return { fine, touchOnly: coarse && !fine };
 }
 
 /** The real list (`whats-new.json`), oldest first. */
@@ -135,6 +167,9 @@ function WardHelpSheetView({
   const { home, deskHome } = useTourFacts(role);
   const deskHref = deskHome ?? home;
   const phone = useIsPhone();
+  const pointer = usePointer();
+  const keysOn = !phone || pointer.fine;
+  const used = useHelpUsed(HOW_TO_IDS);
   const entries = useMemo(() => railEntries(), []);
   // Home's address prefixes every page, so it matches only itself: Settings must not show Home's help.
   const screen = useMemo(() => {
@@ -168,13 +203,21 @@ function WardHelpSheetView({
     return Boolean(each && canShowTask(each, role, deskHref, phone, showMeOn));
   };
 
-  // Questions to try: this desk's first two jobs, a word people mix up, and this screen's own question.
+  // Questions to try (2 Nov 2026): the desk's jobs most used on this device (else its first two),
+  // this screen's walk round and its own questions, then a word people mix up. At most five.
   const examples = useMemo(() => {
-    const jobs = tasksForDesk(role)
+    const desk = tasksForDesk(role);
+    const mostUsed = used.flatMap((entry) => desk.filter((task) => task.id === entry.id));
+    const jobs = [...mostUsed, ...desk]
+      .filter((task, index, all) => all.indexOf(task) === index)
       .slice(0, 2)
       .map((each) => `How do I ${each.title.charAt(0).toLowerCase()}${each.title.slice(1)}?`);
-    return [...jobs, "What does Held up mean?", screen?.questions?.[0]?.question ?? "Is my change saved?"];
-  }, [role, screen]);
+    const around = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id))?.title : undefined;
+    const asked = (screen?.questions ?? []).slice(0, 2).map((each) => each.question);
+    return [
+      ...new Set([...jobs, ...(around ? [around] : []), ...asked, "What does Held up mean?", "Is my change saved?"]),
+    ].slice(0, 5);
+  }, [role, screen, used]);
 
   const tab = tabFor(view);
   const QuestionsIcon = QUESTIONS_ICON;
@@ -325,7 +368,7 @@ function WardHelpSheetView({
             <UserRound aria-hidden="true" strokeWidth={1.75} />
             Your desk
           </button>
-          {phone ? null : (
+          {keysOn ? (
             <button
               type="button"
               className={s.footButton}
@@ -335,9 +378,9 @@ function WardHelpSheetView({
             >
               <Keyboard aria-hidden="true" strokeWidth={1.75} />
               Shortcuts
-              <kbd aria-hidden="true">?</kbd>
+              {pointer.touchOnly ? null : <kbd aria-hidden="true">?</kbd>}
             </button>
-          )}
+          ) : null}
           <span className={s.footNote} data-testid="ward-help-synthetic">
             Synthetic prototype
           </span>
@@ -381,7 +424,7 @@ function WardHelpSheetView({
               >
                 <X aria-hidden="true" strokeWidth={2} />
               </button>
-            ) : phone ? null : (
+            ) : phone || pointer.touchOnly ? null : (
               <kbd className={s.slash} aria-hidden="true">
                 /
               </kbd>

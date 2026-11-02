@@ -42,6 +42,19 @@ export function looksLikeHelpQuestion(query: string): boolean {
   return /^\s*(how|where|why|what)\b\s*\S/i.test(query);
 }
 
+/**
+ * The how-to a Help link names: "#help=<id>", a fixed how-to id and nothing typed (2 Nov 2026), so a
+ * trainer can send a link that opens Help at one job. Unknown ids open How to with nothing unfolded.
+ */
+export function helpLinkTask(hash: string): string | undefined {
+  return /^#help=([a-z0-9-]{1,60})$/.exec(hash)?.[1];
+}
+
+/** The address that opens Help at the how-to `id` on `path`. */
+export function helpLinkHref(origin: string, path: string, id: string): string {
+  return `${origin}${path.split("#")[0]}#help=${id}`;
+}
+
 export type HelpRequest =
   { kind: "view"; view: HelpView; task?: string } | { kind: "ask"; question: string } | { kind: "show-me"; id: string };
 
