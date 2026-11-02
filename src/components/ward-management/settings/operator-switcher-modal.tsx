@@ -708,6 +708,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
         {visibleTeams.length ? (
           <TeamGroup
             count={visibleTeams.length}
+            teams={visibleTeams.reduce((sum, desk) => sum + (desk.teamPages ?? 1), 0)}
             forceOpen={searching || visibleTeams.some((desk) => desk.id === hereId)}
           >
             {visibleTeams.map((desk) => row(desk))}
@@ -804,7 +805,17 @@ function DeskGroup({ label, service, children }: { label: string; service: strin
   );
 }
 
-function TeamGroup({ count, forceOpen, children }: { count: number; forceOpen: boolean; children: ReactNode }) {
+function TeamGroup({
+  count,
+  teams,
+  forceOpen,
+  children,
+}: {
+  count: number;
+  teams: number;
+  forceOpen: boolean;
+  children: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const isOpen = forceOpen || open;
   return (
@@ -820,10 +831,16 @@ function TeamGroup({ count, forceOpen, children }: { count: number; forceOpen: b
           <Icon icon={ChevronDown} size={14} className={styles.chev} />
           <Icon icon={Home} size={16} />
           <b className={styles.siteName}>Community teams</b>
-          {/* Q260 (pre-launch review T1, 2 Nov 2026): this counts desks, one per service (Q202 folds the
-              spellings a person ruled are one service), so it no longer reads as Community's team count. */}
+          {/* Q260 (pre-launch review T1, 2 Nov 2026): the team count comes from Community's own team
+              pages, as the Community screen's does; the desks follow when Q202 folds spellings into one. */}
           <span className={styles.mini}>
-            <span className={styles.mono}>{count}</span> {count === 1 ? "desk" : "desks"}
+            <span className={styles.mono}>{teams}</span> {teams === 1 ? "team" : "teams"}
+            {count === teams ? null : (
+              <>
+                {" · "}
+                <span className={styles.mono}>{count}</span> {count === 1 ? "desk" : "desks"}
+              </>
+            )}
           </span>
         </button>
         {isOpen ? <div className={styles.siteBody}>{children}</div> : null}

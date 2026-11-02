@@ -85,7 +85,7 @@ describe("the examination outcome popup", () => {
 
   function openExam() {
     window.matchMedia = ((query: string) => ({
-      matches: query === "(max-width: 48rem)",
+      matches: query === "(max-width: 46.4375rem)",
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,

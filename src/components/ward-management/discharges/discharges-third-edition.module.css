@@ -559,6 +559,8 @@
 .blocker {
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  /* Q283: a typed hold-up with a long unbroken string wraps instead of running out of its cell. */
+  overflow-wrap: anywhere;
 }
 
 .inlineIcon {
@@ -1200,7 +1202,7 @@
 }
 
 /* Phone (to 48rem, where the phone details render): the selected record becomes a bottom sheet. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .scrim {
     display: block;
     position: fixed;
@@ -1351,7 +1353,7 @@
    the admission-records population and the quick blocker chips are left to the larger screen
    (the status tabs still filter Blocked), and each release row becomes a compact block: ward
    first, then timing and stage side by side. Desktop and tablet above 48rem are unchanged. */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   /* 12px gutters on phone. */
   .main {
     gap: var(--wf-s-3);
@@ -1636,7 +1638,7 @@
 
 /* A4-23 (audit round 2): on the phone the act-now row has no tint. Owner ruling (31 Oct 2026): no side
    edges either; the Held up badge's glyph carries the tone. */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .workTable tr[data-act="true"] {
     background: none;
   }
@@ -1646,7 +1648,7 @@
   color: var(--wf-ink-1);
 }
 
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .desktopOnly {
     display: none;
   }
@@ -1730,7 +1732,7 @@
   display: none;
 }
 
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .main {
     padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-8);
   }
@@ -2031,7 +2033,7 @@
   display: none;
 }
 
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .phMoreRow {
     display: table-row;
   }
@@ -2262,7 +2264,7 @@
  * through the shared `pinnedSwitch` (ward-pinned-switch.module.css), as Home's queue switch does.
  * The switch takes the shared phone track (`--wf-phone-*`): 34px with 28px options, 13px 600 labels;
  * each option's transparent hit area reaches the 48px tap floor. Nothing here applies above 48rem. */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .phToolbar {
     padding: var(--wf-s-2) 0;
   }
@@ -2409,7 +2411,7 @@
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
 }
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .register .panelHeader {
     min-height: 3.25rem;
   }
@@ -2429,7 +2431,7 @@
 }
 
 /* Desktop list: one fact a column. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .workTable:has(th.colPerson) {
     table-layout: fixed;
   }
@@ -2595,7 +2597,7 @@
 .detailTabs {
   margin-top: 2px;
 }
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .timelineItem {
     position: relative;
     padding: 0 0 var(--wf-s-3);

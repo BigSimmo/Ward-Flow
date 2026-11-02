@@ -266,7 +266,7 @@ export function smartSearchGroups(
         kindLabel: "Community",
         id: c.team.id,
         title: c.team.name,
-        meta: "Community Mental Health Team",
+        meta: "Community team",
         href: c.href,
       })),
     });

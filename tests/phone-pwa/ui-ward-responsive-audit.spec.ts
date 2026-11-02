@@ -9,7 +9,7 @@ test("@mockup global alert title remains readable on small and large phones", as
   await page.getByRole("button", { name: "More alert actions" }).click();
   await page.getByRole("menuitem", { name: /^Broadcast alert/u }).click();
   const composer = page.getByRole("dialog", { name: "New broadcast" });
-  await composer.getByRole("radio", { name: /Tell areas something/u }).click();
+  await composer.getByRole("radio", { name: /Tell desks something/u }).click();
   await composer.getByRole("button", { name: "HDU full", exact: true }).click();
   await composer.getByRole("checkbox", { name: /^I'm authorised to send this to/u }).check();
   await composer.getByTestId("ward-alerts-broadcast-confirm").click();

@@ -274,7 +274,7 @@ describe("How do I… in the Help sheet", () => {
 describe("Search Help in the sheet", () => {
   it("shows the chosen answer straight away when a result is picked with Enter", () => {
     sheet();
-    const field = screen.getByRole("searchbox", { name: "Search Help" });
+    const field = screen.getByRole("combobox", { name: "Search Help" });
     fireEvent.focus(field);
     fireEvent.change(field, { target: { value: "pull the bed" } });
     fireEvent.keyDown(field, { key: "Enter" });
@@ -285,7 +285,7 @@ describe("Search Help in the sheet", () => {
   it("opens another Settings tab by fragment while Help is open on Settings", () => {
     route.pathname = "/ward-flow/settings";
     sheet();
-    const field = screen.getByRole("searchbox", { name: "Search Help" });
+    const field = screen.getByRole("combobox", { name: "Search Help" });
     fireEvent.change(field, { target: { value: "ED wait target" } });
     fireEvent.click(screen.getAllByRole("button", { name: /ED wait target/ })[0]);
     expect(window.location.hash).toBe("#rules");

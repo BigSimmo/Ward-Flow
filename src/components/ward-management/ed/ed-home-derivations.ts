@@ -46,7 +46,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
  * explanation.
  */
 export const ED_HOME_POPULATION_NOTE =
-  "Every number on this screen counts the patient physically present in the department, awaiting an inpatient bed — never a referral raised for them. Counts exclude ward-origin transfers, people already collected or in transit, and recorded discharge or community outcomes. The department's psychiatry board separately retains journeys it is still accountable for, including transit. A patient can be waiting before any referral exists, so this is deliberately never a referral count.";
+  "Every number on this screen counts the patient physically present in the department, awaiting an inpatient bed — never a referral raised for them. Counts exclude ward-origin transfers, people already collected or in transit, and recorded discharge or community outcomes. The department's psychiatry board separately retains movements it is still accountable for, including transit. A patient can be waiting before any referral exists, so this is deliberately never a referral count.";
 
 /**
  * "Detained under the Act" — the two legal statuses that place a person under the Mental Health

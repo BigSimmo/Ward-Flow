@@ -40,7 +40,7 @@ describe("kit placement decisions", () => {
     // Josh, 31 Oct 2026, 10:34: Accept, Pull and Decline stay 48px on phones, the one exception to
     // "no 48px controls". With a mouse they match every other button.
     const touchOnly =
-      /@media \(max-width: 48rem\), \(pointer: coarse\) \{\s*\.b\[data-placement-action\] \{[^}]*max\(3rem/u;
+      /@media \(max-width: 46.4375rem\), \(pointer: coarse\) \{\s*\.b\[data-placement-action\] \{[^}]*max\(3rem/u;
     expect(css).toMatch(touchOnly);
     const outside = css.replace(touchOnly, "");
     expect(outside).not.toMatch(/\.b\[data-placement-action\]\s*\{[^}]*3rem/u);

@@ -21,8 +21,8 @@ function openComposer() {
 }
 
 function selectCustomTemplate() {
-  // Alerts redesign (1 Nov 2026): Blank is the last quick start under Tell areas something.
-  fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+  // Alerts redesign (1 Nov 2026): Blank is the last quick start under Tell desks something.
+  fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
   fireEvent.click(screen.getByRole("button", { name: "Blank" }));
 }
 

@@ -79,10 +79,10 @@ export function WaitingStagesCard({
     <StatCardR
       id="waiting-stages"
       title="Where waiting time builds up"
-      meta="All journeys on record"
+      meta="All movements on record"
       data-testid="ward-statistics-waiting-stages"
       foot={
-        <Foot>Recorded times only. A typical time needs {MINIMUM_EFFECTIVENESS_SAMPLE} journeys with both times.</Foot>
+        <Foot>Recorded times only. A typical time needs {MINIMUM_EFFECTIVENESS_SAMPLE} movements with both times.</Foot>
       }
     >
       <div
@@ -143,7 +143,7 @@ export function WaitingStagesCard({
         {openRow && open ? (
           <>
             <h3 className={styles.listHead}>
-              {openRow.label}: {openJourneys.length} {openJourneys.length === 1 ? "journey" : "journeys"}{" "}
+              {openRow.label}: {openJourneys.length} {openJourneys.length === 1 ? "movement" : "movements"}{" "}
               {GROUP_WORDS[open.group]}
             </h3>
             <ul className={styles.list} data-testid="ward-waiting-stage-journeys">

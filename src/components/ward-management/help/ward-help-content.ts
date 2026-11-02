@@ -302,7 +302,7 @@ const PAGE_HELP: readonly PageHelp[] = [
   {
     id: "add-patient",
     path: /^\/ward-flow\/people\/new$/u,
-    title: "Add a patient",
+    title: "Add patient",
     purpose: "Adds a new invented patient record with identity only. The referral or movement holds the rest.",
     actions: [
       "Fill in UMRN, date of birth, given name and family name.",
@@ -352,7 +352,7 @@ const PAGE_HELP: readonly PageHelp[] = [
     actions: [
       "Work down My list first. Act-now items carry the Act now mark.",
       "Each row's button is its next step, such as Record exam, Refer to a ward or Handover ready. A referral waiting in the inbox has Ask for a bed.",
-      "Raise referral starts a new one. Tap a figure in the header to highlight those patients.",
+      "New referral starts a new one. Tap a figure in the header to highlight those patients.",
     ],
     questions: [TV_QUESTION],
   },

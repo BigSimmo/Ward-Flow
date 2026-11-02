@@ -167,10 +167,8 @@ test.describe("@mockup Ward phone scrolling", () => {
     await page.touchscreen.tap(trigger!.x + trigger!.width / 2, trigger!.y + trigger!.height / 2);
     await expect.poll(() => columnScrollTop(page)).toBeGreaterThan(0);
     await page.getByTestId("ward-phone-menu-search").fill("On-call");
-    await page
-      .getByTestId("ward-phone-menu")
-      .getByRole("link", { name: /on.call/i })
-      .click();
+    // The menu's own On-call row; Help answers about on-call (2 Nov 2026) also match the search.
+    await page.getByTestId("ward-phone-menu").getByRole("link", { name: "On-call", exact: true }).click();
     await expect(page).toHaveURL(/\/on-call$/);
     await expect.poll(() => columnScrollTop(page)).toBe(0);
     for (const height of [664, 1100]) {
@@ -204,7 +202,7 @@ test.describe("@mockup Ward responsive containment", () => {
       await page.waitForLoadState("networkidle");
 
       const geometry: { viewport: number; document: number }[] = [];
-      for (const width of [320, 390, 768]) {
+      for (const width of [320, 390, 743]) {
         await page.setViewportSize({ width, height: 844 });
         // These widths use ServicePhone. Network idle can precede its hydration swap;
         // wait for the actual tree before enumerating its scrollable table regions.
@@ -456,21 +454,21 @@ test.describe("@mockup Ward scroll geometry", () => {
       });
       await expect
         .poll(() => bar.evaluate((element) => element.getBoundingClientRect().height))
-        .toBe(width <= 768 ? 56 : 60);
+        .toBe(width <= 743 ? 56 : 60);
       for (const offset of [9, 12, 300, 600]) {
         await page.evaluate(
           ({ width, offset }) => {
             // Phone and desktop scroll the work column; tablet (48rem to 1000px) the window.
-            if (width > 768 && width <= 1000) window.scrollTo(0, offset);
+            if (width > 743 && width <= 1000) window.scrollTo(0, offset);
             else document.querySelector<HTMLElement>("[data-wf-scroller]")!.scrollTop = offset;
           },
           { width, offset },
         );
-        if (width <= 768) await expect(bar).toHaveAttribute("data-scrolled", "true");
+        if (width <= 743) await expect(bar).toHaveAttribute("data-scrolled", "true");
         else await expect(bar).toHaveAttribute("data-band", "light");
         await expect
           .poll(() => bar.evaluate((element) => element.getBoundingClientRect().height))
-          .toBe(width <= 768 ? 56 : 60);
+          .toBe(width <= 743 ? 56 : 60);
       }
       const geometry = await bar.evaluate((element) => {
         const shell = element.closest<HTMLElement>("[data-wf-scroller]")!;
@@ -478,7 +476,7 @@ test.describe("@mockup Ward scroll geometry", () => {
         return { top: rect.top, shellTop: shell.getBoundingClientRect().top, page: window.scrollY };
       });
       expect(geometry.top).toBeCloseTo(width <= 1000 ? 0 : geometry.shellTop, 0);
-      if (width <= 768 || width > 1000) expect(geometry.page).toBe(0);
+      if (width <= 743 || width > 1000) expect(geometry.page).toBe(0);
     }
   });
 

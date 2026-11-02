@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import { COMMUNITY_TEAM_PAGES } from "../src/components/ward-management/community/community-derivations";
 import { CHROME_ROLE_LABELS } from "../src/components/ward-management/ward-chrome-role";
 import { edHomeSummaries } from "../src/components/ward-management/ed/ed-home-derivations";
 import { hubEntries } from "../src/components/ward-management/hub/hub-derivations";
@@ -143,5 +144,11 @@ describe("one desk for a service the owner ruled is one (Q202)", () => {
     expect(names).not.toContain("Mead Centre (Armadale)");
     const kept = desks.teams.find((desk) => desk.name === "Mead Centre (Armadale)")!;
     expect(deskMatches(kept, "Meade Centre")).toBe(true);
+  });
+  it("counts teams from Community's own team pages, so Go to a desk and Community agree (Q260)", () => {
+    const teams = desks.teams.reduce((sum, desk) => sum + (desk.teamPages ?? 1), 0);
+    expect(teams).toBe(COMMUNITY_TEAM_PAGES.length);
+    expect(desks.teams.length).toBeLessThan(teams);
+    expect(desks.teams.find((desk) => desk.name === "Mead Centre (Armadale)")?.teamPages).toBe(4);
   });
 });

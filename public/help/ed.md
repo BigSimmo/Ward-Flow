@@ -8,7 +8,7 @@ My ED board
 
 ## Jobs you do most
 
-1. Raise a referral. Use New referral, or Raise referral on the board. Choose one or more destinations and send it.
+1. Raise a referral. Use New referral, from the header or on the board. Choose one or more destinations and send it.
 2. Record ED steps. On a patient, use Record examination, Record medically cleared and Mark handover ready.
 3. Legal paperwork. Use Change legal status and Mark Form 1A received. Type any expiry time from the paper form.
 

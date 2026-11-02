@@ -8,7 +8,7 @@ import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-u
 export async function generateMetadata({ params }: { params: Promise<{ unitId: string }> }): Promise<Metadata> {
   const unit = knownWardUnit(safeDecodeURIComponent((await params).unitId));
   return {
-    title: unit ? `Ward answer — ${unit.name}` : "Ward answer not found — Ward Flow",
+    title: unit ? `Ward answer — ${unit.name} — Ward Flow` : "Ward answer not found — Ward Flow",
     description: "Synthetic ward bed-request answer view for the Ward Flow prototype.",
   };
 }

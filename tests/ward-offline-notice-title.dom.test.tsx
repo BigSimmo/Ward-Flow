@@ -28,7 +28,7 @@ describe("P133: offline link notice wording", () => {
       link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
     });
     const toast = screen.getByTestId("toast");
-    expect(toast).toHaveTextContent("You're offline. This page will open when the connection is back.");
+    expect(toast).toHaveTextContent("You're offline. Tap again once you're back online.");
     expect(toast).toHaveTextContent("This page keeps working.");
   });
 });

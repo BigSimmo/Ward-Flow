@@ -163,7 +163,7 @@ describe("help sheet", () => {
   it("lists the glossary in Reference, with Help's one search box only (Josh, 31 Oct 2026)", () => {
     sheet("glossary");
     expect(screen.queryByTestId("ward-help-glossary-filter")).toBeNull();
-    expect(screen.getAllByRole("searchbox")).toHaveLength(1);
+    expect(screen.getAllByRole("combobox")).toHaveLength(1);
     expect(screen.getByRole("button", { name: /Glossary/ }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByText("CAD number")).toBeTruthy();
     // Short forms are under Codes.

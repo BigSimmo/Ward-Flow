@@ -431,7 +431,7 @@ export function WardBoardDetailPanel({
                             htmlFor="ward-board-barrier-select"
                             className={cx(styles.leavingLabel, redesign.fieldLabel)}
                           >
-                            Primary Discharge Barrier (Stay: {selectedOccupant.days} days)
+                            Main discharge hold-up (stay: {selectedOccupant.days} days)
                           </label>
                           <Select
                             id="ward-board-barrier-select"

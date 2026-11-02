@@ -251,7 +251,7 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (pathname === onCallHref() ? "On-call" : undefined) ??
     (/^\/ward-flow\/reports\/downtime\/?$/u.test(pathname) ? "Downtime pack" : undefined) ??
     (/^\/ward-flow\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
-    (pathname === WARD_ADD_PERSON_HREF ? "Add a patient" : undefined) ??
+    (pathname === WARD_ADD_PERSON_HREF ? "Add patient" : undefined) ??
     (/^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
     (place?.kind === "ward" && /\/answer\/?$/u.test(pathname) ? "Ward Answer" : undefined) ??
     (/^\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Stays and discharges") : undefined) ??

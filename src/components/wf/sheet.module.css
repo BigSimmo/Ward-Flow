@@ -98,14 +98,14 @@
 
 /* Phone (8 Oct 2026): no hardware keyboard, so the Esc hint leaves the header and the title gets
  * the room. Above 48rem the header is unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .header kbd {
     display: none;
   }
 }
 
 /* Some phone surfaces stay mounted through 48rem, while the default utility layout switches at sm. */
-@media (min-width: 40rem) and (max-width: 48rem) {
+@media (min-width: 40rem) and (max-width: 46.4375rem) {
   .phoneBreakpointBackdrop {
     align-items: flex-end !important;
     justify-content: center !important;

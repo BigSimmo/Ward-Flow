@@ -471,7 +471,7 @@ export function lastRecordedActivity(movement: Movement, now: Instant): { at: In
   const known = candidates.filter((candidate) => candidate.at <= now);
   // The floor. `openedAt` is required, never optional, so this candidate always exists — see the
   // doc comment above for why that makes `undefined` unreachable rather than a real branch.
-  known.push({ at: movement.openedAt, what: "the journey opened" });
+  known.push({ at: movement.openedAt, what: "the movement opened" });
   return pickLatest(known);
 }
 

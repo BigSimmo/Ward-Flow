@@ -1,5 +1,7 @@
 "use client";
 
+import { WF_PHONE_QUERY } from "@/components/wf";
+
 export type WardDrawerId = "activity" | "tasks" | "tools" | "referral" | "service";
 
 const WARD_DRAWER_EVENT = "ward-flow-open-drawer";
@@ -49,7 +51,7 @@ export function subscribeWardDrawerClose(onClose: () => void) {
 const WARD_MENU_EVENT = "ward-flow-open-menu";
 
 /** The phone layout's one breakpoint (8 Oct 2026). Everything phone-only in the shell keys off it. */
-const PHONE_QUERY = "(max-width: 48rem)";
+const PHONE_QUERY = WF_PHONE_QUERY;
 
 /** Read once, outside React, so the phone menu and the rail's sheet never both answer Menu. */
 export function isPhoneViewport(): boolean {

@@ -262,7 +262,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
           <span className={`${styles.sxDue} ${styles.sxDueHot}`} style={{ left: `${passedP}%` }} />
         ) : null}
       </div>
-      <ol className={`${styles.sxLabs} ${redesign.sxWrap}`} aria-label="This person's recorded journey">
+      <ol className={`${styles.sxLabs} ${redesign.sxWrap}`} aria-label="This person's recorded movement">
         {labels.map((label, index) => (
           <li key={`${label.time}-${label.text}`} className={styles.sxL} style={{ left: `${pos[index]}%` }}>
             <b className={styles.num}>

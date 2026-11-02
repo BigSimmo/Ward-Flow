@@ -246,9 +246,9 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
             </p>
           </section>
           <section className={styles.pxBlock}>
-            <h3>The journey the record holds</h3>
+            <h3>The movement the record holds</h3>
             {selectedPatientJourneyEvents.length === 0 ? (
-              <p className={styles.none}>No journey events recorded.</p>
+              <p className={styles.none}>No movement events recorded.</p>
             ) : (
               <ol className={`${styles.tl} ${styles.tlTight}`}>
                 {selectedPatientJourneyEvents.map((e, index) => (

@@ -106,9 +106,18 @@
 .handoverTable td:has(> [class*="a2Referral"]) {
   white-space: normal;
 }
-.handoverTable [class*="a2Patient"],
-.handoverTable [class*="a2Name"] {
+.handoverTable [class*="a2Patient"] {
   white-space: normal;
+}
+/* Q286 (pre-launch check D8, 2 Nov 2026): a long name was cut mid-word on one line and then kept
+   wrapping. It now takes at most two lines and ends in an ellipsis, as the other tables do. */
+.handoverTable [class*="a2Name"] {
+  display: -webkit-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .handoverTable [class*="a2Patient"] [class*="a2Sub"] {
   display: block;

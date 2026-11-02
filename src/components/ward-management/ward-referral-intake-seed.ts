@@ -304,7 +304,7 @@ export function syntheticMovementReferralDossier(movement: Movement): ReferralDo
     supports: [{ label: "Plan", detail: "Synthetic support contact available through the referring clinician." }],
     referrer,
     arrival: [
-      { label: "Plan", detail: "See the recorded journey and transport plan. No arrival is implied by this record." },
+      { label: "Plan", detail: "See the recorded movement and transport plan. No arrival is implied by this record." },
     ],
     documents: [
       {
@@ -338,7 +338,7 @@ export function syntheticMovementReferralDossier(movement: Movement): ReferralDo
         paragraphs: [
           cleared
             ? "Synthetic observations reviewed for this offer."
-            : "Medical review remains pending on the recorded journey.",
+            : "Medical review remains pending on the recorded movement.",
         ],
       },
     ],

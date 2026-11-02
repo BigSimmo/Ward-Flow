@@ -144,7 +144,8 @@ describe("Phone service chip tap target (overall review, 20 Oct 2026)", () => {
     const values: string[] = [];
     postcss.parse(source).walkRules((rule) => {
       const parent = rule.parent;
-      const inPhone = parent?.type === "atrule" && (parent as postcss.AtRule).params.trim() === "(max-width: 48rem)";
+      const inPhone =
+        parent?.type === "atrule" && (parent as postcss.AtRule).params.trim() === "(max-width: 46.4375rem)";
       if (!inPhone || !rule.selectors.some((candidate) => candidate.trim() === selector)) return;
       rule.walkDecls(prop, (decl) => {
         values.push(decl.value);
@@ -172,7 +173,8 @@ describe("Phone service picker rows (Codex review, PR #1207, 1 Nov 2026)", () =>
     const values: string[] = [];
     postcss.parse(source).walkRules((rule) => {
       const parent = rule.parent;
-      const inPhone = parent?.type === "atrule" && (parent as postcss.AtRule).params.trim() === "(max-width: 48rem)";
+      const inPhone =
+        parent?.type === "atrule" && (parent as postcss.AtRule).params.trim() === "(max-width: 46.4375rem)";
       if (!inPhone || !rule.selectors.some((candidate) => candidate.trim() === selector)) return;
       rule.walkDecls(prop, (decl) => {
         values.push(decl.value);

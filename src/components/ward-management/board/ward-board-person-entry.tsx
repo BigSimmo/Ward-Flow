@@ -27,7 +27,7 @@ function blockerInBarrierTag(occupant: Occupant): boolean {
 function barrierText(occupant: Occupant): string {
   if (occupant.dischargeBarrier) return `Discharge barrier: ${occupant.dischargeBarrier}`;
   if (occupant.blockReason !== null) return `Held up: ${occupant.blockReason}`;
-  return "Discharge barrier unrecorded (Stay ≥ 7d)";
+  return "Hold-up not recorded (stay ≥ 7d)";
 }
 
 /**

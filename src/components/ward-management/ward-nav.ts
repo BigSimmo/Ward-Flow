@@ -788,7 +788,7 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (place) return place.name;
 
   if (normalized === "/ward-flow" || normalized === "/ward-flow/command") return "Home";
-  if (isUnder("/ward-flow/board")) return "Bed Board";
+  if (isUnder("/ward-flow/board")) return "Bed board";
   if (isUnder("/ward-flow/ward")) return "Ward";
   if (isUnder("/ward-flow/ed")) return "All EDs";
   if (isUnder("/ward-flow/community")) return "Community";
@@ -803,7 +803,7 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (normalized === "/ward-flow/reports/chronology") return "Patient chronology";
   if (normalized === "/ward-flow/referrals/new") return "New referral";
   if (isUnder("/ward-flow/referrals")) return "Referrals";
-  if (normalized === "/ward-flow/people/new") return "Add a patient";
+  if (normalized === "/ward-flow/people/new") return "Add patient";
   if (isUnder("/ward-flow/people")) return "Patients";
   if (isUnder("/ward-flow/transport/officer")) return "Transport";
   if (isUnder("/ward-flow/transport")) return "Transport";

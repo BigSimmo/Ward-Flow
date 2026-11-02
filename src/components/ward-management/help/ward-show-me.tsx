@@ -1,13 +1,13 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Info, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 
 import { howToHref } from "./ward-help-href";
-import { HOW_TOS } from "./ward-help-howto";
+import { HOW_TOS, showMeSteps } from "./ward-help-howto";
 import { useTourRole } from "./ward-help-store";
 import { SPOT_NOT_HERE, usePlacedCard, useSpotlight } from "./ward-spotlight";
 import { useTourFacts } from "./ward-tour-facts";
@@ -18,20 +18,24 @@ import styles from "./ward-tour.module.css";
  * SHOW ME: a short walk through one how-to (`ward-help-howto.ts`) over the real screen. It opens the
  * screen the job is done on, then lights each control in turn with a line on what to do, using the
  * tour's card and spotlight (`ward-spotlight.ts`). It presses nothing: the person does the job.
- * Back on the first step returns to Help with this task open.
+ * Back to Help, on the first and last steps, returns to Help with this task open.
  */
 export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () => void; onBack: () => void }) {
   const role = useTourRole();
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
   const { home, deskHome } = useTourFacts(role);
   const howTo = HOW_TOS.find((candidate) => candidate.id === id);
-  const steps = useMemo(() => howTo?.showMe ?? [], [howTo]);
-  const [index, setIndex] = useState(0);
+  // Steps marked for the other device are skipped, so a phone never walks to a computer-only part.
+  const steps = useMemo(() => showMeSteps(howTo, device), [howTo, device]);
+  const [stepIndex, setIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const spotRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname() ?? "";
   const router = useRouter();
+  // A computer and a phone walk different steps, so a window narrowed mid-walk (or a tablet
+  // turned) keeps the walk on its last step rather than running past the end and vanishing.
+  const index = Math.min(stepIndex, Math.max(steps.length - 1, 0));
   const step = steps[index];
   const last = index >= steps.length - 1;
 
@@ -53,7 +57,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     () => (target ? (Array.isArray(target) ? target : [target as TourTarget]) : undefined),
     [target],
   );
-  const { box, missing } = useSpotlight(targets, `${index}|${pathname}`);
+  const { box, missing, held } = useSpotlight(targets, `${index}|${pathname}`, device);
   usePlacedCard(cardRef, spotRef, box, device, step, missing);
 
   const { rootRef } = useModalFocus({
@@ -63,6 +67,11 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     initialFocusRef: nextRef,
     keyPhase: "capture",
   });
+
+  // A step change can take away the focused button (Back on the first step), so focus goes to Next.
+  useEffect(() => {
+    if (document.activeElement === document.body) nextRef.current?.focus();
+  }, [index]);
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "ArrowRight" && !last) {
@@ -78,17 +87,25 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
 
   return (
     <OverlayPortal layer="modal" name="ward-show-me">
-      <div ref={rootRef} className={styles.layer} data-testid="ward-show-me" data-device={device}>
+      <div ref={rootRef} className={styles.layer} data-testid="ward-show-me" data-device={device} data-flow="show-me">
+        {/* Keyed apart, so a new spot is never the dim's box reused and flown in from the corner. */}
         {box ? (
           <div
+            key="spot"
             ref={spotRef}
             className={styles.spot}
-            style={{ transform: `translate(${box.left}px, ${box.top}px)`, width: box.width, height: box.height }}
+            style={{
+              transform: `translate(${box.left}px, ${box.top}px)`,
+              width: box.width,
+              height: box.height,
+              borderRadius: box.radius,
+            }}
             data-testid="ward-show-me-spot"
+            data-held={held ? "" : undefined}
             aria-hidden="true"
           />
         ) : (
-          <div className={styles.dim} aria-hidden="true" />
+          <div key="dim" className={styles.dim} aria-hidden="true" />
         )}
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches the arrow keys bubbling up from the focused button inside */}
         <div
@@ -104,7 +121,8 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
           data-step={index}
         >
           <div className={styles.head}>
-            <p className={styles.who}>Show me · {howTo.title}</p>
+            {/* A walk round's title already starts "Show me around", so it is not said twice. */}
+            <p className={styles.who}>{howTo.around ? howTo.title : `Show me · ${howTo.title}`}</p>
             <button
               type="button"
               className={styles.close}
@@ -116,9 +134,11 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
               <X aria-hidden="true" strokeWidth={1.75} />
             </button>
           </div>
-          <div className={styles.progress}>
-            <div className={styles.bar} aria-hidden="true">
-              <i style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
+          <div className={styles.steps}>
+            <div className={styles.segments} aria-hidden="true">
+              {steps.map((each, at) => (
+                <i key={at} data-on={at <= index ? "" : undefined} />
+              ))}
             </div>
             <p className={styles.meta}>
               Step {index + 1} of {steps.length}
@@ -130,25 +150,48 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
           <p id="ward-show-me-body" className={styles.body}>
             {step.body}
           </p>
+          {device === "desk" && steps.length > 1 ? (
+            // Said for sighted keyboard users; the buttons' own key shortcuts tell a screen reader.
+            <p className={styles.hint} aria-hidden="true">
+              Use ← and → to move
+            </p>
+          ) : null}
           {target && missing ? (
-            <p className={styles.notHere} data-testid="ward-show-me-not-here">
-              {SPOT_NOT_HERE}
+            <p className={styles.notHere} role="note" data-testid="ward-show-me-not-here">
+              <Info aria-hidden="true" strokeWidth={1.75} />
+              <span>{SPOT_NOT_HERE}</span>
             </p>
           ) : null}
           <div className={styles.buttons}>
-            <button
-              type="button"
-              className={styles.secondary}
-              onClick={index === 0 ? onBack : () => setIndex(index - 1)}
-              data-testid="ward-show-me-back"
-            >
-              {index === 0 ? "Back to Help" : "Back"}
-            </button>
+            {/* The quiet way back to Help, on the first step and on the last (so Done is not the only
+                way on); between them, Back steps back. */}
+            {index === 0 || last ? (
+              <button
+                type="button"
+                className={styles.skip}
+                onClick={onBack}
+                data-testid={index === 0 ? "ward-show-me-back" : "ward-show-me-help"}
+              >
+                Back to Help
+              </button>
+            ) : null}
+            {index > 0 ? (
+              <button
+                type="button"
+                className={styles.secondary}
+                onClick={() => setIndex(index - 1)}
+                aria-keyshortcuts="ArrowLeft"
+                data-testid="ward-show-me-back"
+              >
+                Back
+              </button>
+            ) : null}
             <button
               ref={nextRef}
               type="button"
               className={styles.primary}
               onClick={last ? onClose : () => setIndex(index + 1)}
+              aria-keyshortcuts={last ? undefined : "ArrowRight"}
               data-testid={last ? "ward-show-me-done" : "ward-show-me-next"}
             >
               {last ? "Done" : "Next"}

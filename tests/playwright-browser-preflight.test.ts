@@ -309,6 +309,45 @@ describe("playwright browser preflight", () => {
     expect(result.missing?.[0]?.source).toContain("unmapped Playwright project future-browser");
   });
 
+  it("rejects a directory used as an executable override", () => {
+    const directory = mkdtempSync(join(tmpdir(), "pw-preflight-directory-"));
+    try {
+      const result = playwrightBrowserPreflight(["--project=chromium"], {
+        NODE_ENV: "test",
+        PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: directory,
+      });
+      expect(result.ok).toBe(false);
+      expect(result.missing?.[0]?.path).toBe(directory);
+    } finally {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  });
+
+  it.skipIf(process.platform === "win32")("rejects a nonexecutable file override", () => {
+    const directory = mkdtempSync(join(tmpdir(), "pw-preflight-nonexecutable-"));
+    const binary = join(directory, "chrome");
+    try {
+      writeFileSync(binary, "");
+      const result = playwrightBrowserPreflight(["--project=chromium"], {
+        NODE_ENV: "test",
+        PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: binary,
+      });
+      expect(result.ok).toBe(false);
+      expect(result.missing?.[0]?.path).toBe(binary);
+    } finally {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  });
+
+  it("passes when an override path is a launchable file", () => {
+    const result = playwrightBrowserPreflight(["--project=chromium-mockups"], {
+      NODE_ENV: "test",
+      PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: process.execPath,
+    });
+    expect(result.ok).toBe(true);
+    expect(result.checked?.[0]?.path).toBe(process.execPath);
+  });
+
   it("accepts a platform file-prerequisite fixture without claiming browser launch", async () => {
     const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");

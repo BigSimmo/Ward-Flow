@@ -516,7 +516,7 @@ export function PatientTransitOperations({
           <div className={styles.destination}>
             <span>Receiving ward</span>
             <strong>{destination?.name ?? "No destination recorded"}</strong>
-            <p>{movement.blocker || "No blocker recorded"}</p>
+            <p>{movement.blocker || "No hold-up recorded"}</p>
           </div>
           {destination && (
             <details>
@@ -883,7 +883,7 @@ export function PatientTransitOperations({
                   cancelled.
                 </p>
                 <label>
-                  Earlier journey stage
+                  Earlier movement stage
                   <select value={backTo} onChange={(e) => setBackTo(e.target.value as MovementStage)}>
                     <option value="">Choose stage</option>
                     {MOVEMENT_STAGES.slice(0, MOVEMENT_STAGES.indexOf(movement.stage)).map((s) => (
@@ -1015,7 +1015,7 @@ export function PatientTransitOperations({
         ) : latestAudit ? (
           <p>
             {latestAudit.outcome === "accepted"
-              ? "Recorded in the shared patient journey."
+              ? "Recorded in the shared patient movement."
               : "Review the action outcome in the audit record."}
           </p>
         ) : null}
@@ -1069,7 +1069,7 @@ export function PatientTransitOperations({
       ) : null}
       {!open && (
         <p className={styles.notice}>
-          Journey complete. The recorded placement and transport remain visible; operational actions are closed.
+          Movement complete. The recorded placement and transport remain visible; operational actions are closed.
         </p>
       )}
       {overridePanel}
@@ -1087,7 +1087,7 @@ export function PatientTransitOperations({
       </div>
       <details className={`${styles.card} ${styles.additional}`}>
         <summary>
-          Additional workflow controls <span>Blockers, urgency, transport exceptions & paper authority</span>
+          Additional workflow controls <span>Hold-ups, urgency, transport exceptions & paper authority</span>
         </summary>
         <MovementWorkspaceCockpit
           movementId={movement.id}

@@ -500,7 +500,7 @@ describe("lastRecordedActivity", () => {
       result,
       "lastRecordedActivity returned undefined even though openedAt is required and always present",
     ).toBeDefined();
-    expect(result).toEqual({ at: BASE_MOVEMENT.openedAt, what: "the journey opened" });
+    expect(result).toEqual({ at: BASE_MOVEMENT.openedAt, what: "the movement opened" });
   });
 
   it("finds WF-003's recorded examination as more recent than its own openedAt (real fixture, not constructed)", () => {
@@ -628,7 +628,7 @@ describe("lastRecordedActivity", () => {
   it("drops a future-dated candidate rather than reporting it as the most recent activity", () => {
     const movement: Movement = { ...BASE_MOVEMENT, referredAt: NOW + 999 };
     // The future candidate must not win, and there is nothing else recorded, so the floor answers.
-    expect(lastRecordedActivity(movement, NOW)).toEqual({ at: movement.openedAt, what: "the journey opened" });
+    expect(lastRecordedActivity(movement, NOW)).toEqual({ at: movement.openedAt, what: "the movement opened" });
   });
 });
 

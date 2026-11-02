@@ -56,7 +56,7 @@ export function StrandedPrompts({
                 {flag.days} day{flag.days === 1 ? "" : "s"} in bed
               </span>
               <span className={styles.reason}>{strandedPromptText(flag)}</span>
-              {flag.barrier !== null && <span className={styles.barrier}>Barrier recorded: {flag.barrier}</span>}
+              {flag.barrier !== null && <span className={styles.barrier}>Held up by: {flag.barrier}</span>}
             </button>
           </li>
         ))}

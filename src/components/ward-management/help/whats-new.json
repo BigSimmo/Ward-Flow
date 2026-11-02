@@ -1,15 +1,5 @@
 [
   {
-    "id": "2026-10-27-stay-tile-day-number",
-    "date": "2026-10-27",
-    "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
-  },
-  {
-    "id": "2026-10-31-capacity-panel-links",
-    "date": "2026-10-31",
-    "line": "Capacity's ward panel only offers pages your desk can open."
-  },
-  {
     "id": "2026-10-31-legal-time-24-hour",
     "date": "2026-10-31",
     "line": "Legal forms: Record the time written now takes a typed 24-hour time, as Record a form does."
@@ -98,5 +88,15 @@
     "id": "2026-11-02-downtime-one-table",
     "date": "2026-11-02",
     "line": "Downtime pack: on a tablet or computer, each tab shows just its own table. Printing still includes all four."
+  },
+  {
+    "id": "2026-11-02-prelaunch-wording",
+    "date": "2026-11-02",
+    "line": "Same words everywhere (Locked, movements, held up, Bed board), and long names and iPads behave better."
+  },
+  {
+    "id": "2026-11-02-help-show-me-around",
+    "date": "2026-11-02",
+    "line": "Help: Show me around walks you through each screen. Each answer can be rated helpful and has Copy link."
   }
 ]

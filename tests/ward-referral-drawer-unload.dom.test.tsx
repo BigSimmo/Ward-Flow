@@ -125,7 +125,7 @@ describe("referral drawer reload prompt (P158)", () => {
     act(() => vi.advanceTimersByTime(500));
     expect(unloadPrompts()).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "Patient" }));
-    fireEvent.click(screen.getByRole("button", { name: "New patient" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add patient" }));
     const form = screen.getByTestId("ward-referral-new-patient");
     fireEvent.change(within(form).getByLabelText("Family name"), { target: { value: "Synthetica" } });
     act(() => vi.advanceTimersByTime(500));

@@ -2,7 +2,7 @@
 
 import { BookOpen, CircleHelp, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 
 import { TabPanel, Tabs, useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
@@ -17,7 +17,12 @@ import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statis
 import { ADMIN_SETTINGS_HELP, glossaryForSites, screenHelpFor, type GlossaryTerm } from "./ward-help-content";
 import type { HelpView } from "./ward-help-events";
 import { findInHelp, foundRows, HelpFindResults, HelpTryAsking } from "./ward-help-find";
-import { HOW_TOS } from "./ward-help-howto";
+import { howToLogins } from "./ward-help-access";
+import { HOW_TO_IDS, HOW_TOS } from "./ward-help-howto";
+import { aroundId } from "./ward-help-screen-tours";
+import { helpSuggestionId, GhostCompletion, HelpSuggestList } from "./ward-help-suggest-list";
+import { typeAheadHelp, type HelpSuggestion } from "./ward-help-suggest";
+import { useHelpUsed } from "./ward-help-usage";
 import { howToHref } from "./ward-help-href";
 import { canShowTask, HelpTasks } from "./ward-help-jobs";
 import s from "./ward-help-panel.module.css";
@@ -27,6 +32,7 @@ import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { tasksForDesk } from "./ward-help-task-list";
 import { useTourFacts } from "./ward-tour-facts";
 import { HelpDesk, HelpKeys, HelpNews } from "./ward-help-views";
+import { WardHelpChecklistView } from "./ward-help-checklist-view";
 import { markWhatsNewSeen, unseenWhatsNew, WHATS_NEW, WHATS_NEW_STORAGE_KEY } from "./ward-whats-new";
 
 /**
@@ -40,6 +46,36 @@ const TAB_VIEWS: readonly HelpView[] = ["tasks", "questions", "reference", "new"
 function tabFor(view: HelpView): TabView {
   if (view === "glossary") return "reference";
   return (TAB_VIEWS as readonly string[]).includes(view) ? (view as TabView) : "tasks";
+}
+
+/**
+ * What this device can point with (2 Nov 2026). A phone-sized screen with a keyboard or trackpad
+ * (a tablet with a keyboard case) still gets Shortcuts, and a touch-only screen of any size is not
+ * shown keyboard hints it cannot use.
+ */
+function pointerQuery(query: string): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches;
+}
+function subscribePointer(onChange: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => undefined;
+  const lists = ["(any-pointer: fine)", "(any-pointer: coarse)"].map((query) => window.matchMedia(query));
+  for (const list of lists) list.addEventListener?.("change", onChange);
+  return () => {
+    for (const list of lists) list.removeEventListener?.("change", onChange);
+  };
+}
+function usePointer(): { fine: boolean; touchOnly: boolean } {
+  const fine = useSyncExternalStore(
+    subscribePointer,
+    () => pointerQuery("(any-pointer: fine)"),
+    () => false,
+  );
+  const coarse = useSyncExternalStore(
+    subscribePointer,
+    () => pointerQuery("(any-pointer: coarse)"),
+    () => false,
+  );
+  return { fine, touchOnly: coarse && !fine };
 }
 
 /** The real list (`whats-new.json`), oldest first. */
@@ -78,6 +114,8 @@ type WardHelpSheetProps = {
 };
 
 const BASE_GLOSSARY = glossaryForSites([]);
+/** Row ids of the suggestions list are `${SUGGEST_ID}-${index}`; the list is `${SUGGEST_ID}-list`. */
+const SUGGEST_ID = "ward-help-suggest";
 
 export function WardHelpSheet(props: WardHelpSheetProps) {
   return useExecutiveStatisticsControl().executive ? (
@@ -135,6 +173,9 @@ function WardHelpSheetView({
   const { home, deskHome } = useTourFacts(role);
   const deskHref = deskHome ?? home;
   const phone = useIsPhone();
+  const pointer = usePointer();
+  const keysOn = !phone || pointer.fine;
+  const used = useHelpUsed(HOW_TO_IDS);
   const entries = useMemo(() => railEntries(), []);
   // Home's address prefixes every page, so it matches only itself: Settings must not show Home's help.
   const screen = useMemo(() => {
@@ -156,25 +197,52 @@ function WardHelpSheetView({
   const [focused, setFocused] = useState(false);
   const [active, setActive] = useState(0);
   const [task, setTask] = useState(openTask);
+  const [checklist, setChecklist] = useState<string>();
   const [unread, setUnread] = useState(readUnread);
   const field = useRef<HTMLInputElement>(null);
+  // Try asking sits outside the field, so Tab from the field moves into it instead of losing focus.
+  const tryAsking = useRef<HTMLDivElement>(null);
+  const focusStays = (next: EventTarget | null) =>
+    next instanceof Node && (next === field.current || Boolean(tryAsking.current?.contains(next)));
   const found = useMemo(
     () => (query.trim() ? findInHelp(query, role, terms, !literal) : undefined),
     [query, role, terms, literal],
   );
   const rows = foundRows(found);
+  // Suggestions as you type (2 Nov 2026): worked out in render from the words and this device's
+  // usage counts by how-to id; never stored. A clinical question gets none (only Help's fixed reply).
+  const usedMap = useMemo(() => new Map(used.map(({ id, count }) => [id, count])), [used]);
+  const suggested = useMemo(() => typeAheadHelp(query, role, terms, usedMap), [query, role, terms, usedMap]);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  // Esc or a pick hides the list until the words change again.
+  const [dismissed, setDismissed] = useState(false);
+  // Whether the arrow keys have gone on past the suggestions into the answers underneath.
+  const [inRows, setInRows] = useState(false);
+  const showList =
+    query.trim().length > 0 && focused && !dismissed && found?.kind !== "clinical" && suggested.suggestions.length > 0;
+  const suggestions = showList ? suggested.suggestions : [];
+  const nothingFound = found?.kind === "results" && !found.best && found.groups.length === 0;
+  const completion = showList ? suggested.completion : undefined;
   const canShow = (id: string) => {
     const each = HOW_TOS.find((howTo) => howTo.id === id);
-    return Boolean(each && canShowTask(each, role, deskHref, phone, showMeOn));
+    return Boolean(each && canShowTask(each, role, deskHref, phone, showMeOn, pathname));
   };
 
-  // Questions to try: this desk's first two jobs, a word people mix up, and this screen's own question.
+  // Questions to try (2 Nov 2026): the desk's jobs most used on this device (else its first two),
+  // this screen's walk round and its own questions, then a word people mix up. At most five.
   const examples = useMemo(() => {
-    const jobs = tasksForDesk(role)
+    const desk = tasksForDesk(role);
+    const mostUsed = used.flatMap((entry) => desk.filter((task) => task.id === entry.id));
+    const jobs = [...mostUsed, ...desk]
+      .filter((task, index, all) => all.indexOf(task) === index)
       .slice(0, 2)
       .map((each) => `How do I ${each.title.charAt(0).toLowerCase()}${each.title.slice(1)}?`);
-    return [...jobs, "What does Held up mean?", screen?.questions?.[0]?.question ?? "Is my change saved?"];
-  }, [role, screen]);
+    const around = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id))?.title : undefined;
+    const asked = (screen?.questions ?? []).slice(0, 2).map((each) => each.question);
+    return [
+      ...new Set([...jobs, ...(around ? [around] : []), ...asked, "What does Held up mean?", "Is my change saved?"]),
+    ].slice(0, 5);
+  }, [role, screen, used]);
 
   const tab = tabFor(view);
   const QuestionsIcon = QUESTIONS_ICON;
@@ -221,7 +289,20 @@ function WardHelpSheetView({
   const typed = (words: string) => {
     setQuery(words);
     setActive(0);
+    setActiveSuggestion(-1);
+    setInRows(false);
+    setDismissed(false);
     field.current?.focus();
+  };
+
+  /** New words in the field: the list shows again from the top, with nothing chosen yet. */
+  const fieldWords = (words: string) => {
+    setQuery(words);
+    setLiteral(false);
+    setActive(0);
+    setActiveSuggestion(-1);
+    setInRows(false);
+    setDismissed(false);
   };
 
   const choose = (result: HelpSearchResult) => {
@@ -260,16 +341,91 @@ function WardHelpSheetView({
     }
   };
 
+  /**
+   * A suggestion picked: a job opens in How to, a walk round starts Show me where it can play, and a
+   * word, question, screen or shortcut becomes the search so the full answer shows underneath.
+   */
+  const pick = (suggestion: HelpSuggestion) => {
+    setActiveSuggestion(-1);
+    setDismissed(true);
+    const id = suggestion.howToId;
+    const howTo = id ? HOW_TOS.find((each) => each.id === id) : undefined;
+    if (id && howTo && suggestion.kind === "walk" && canShow(id)) {
+      setFocused(false);
+      setQuery("");
+      onShowMe(id);
+      return;
+    }
+    // A walk round that cannot play here falls through to its answer in search (How to never
+    // lists walk rounds, so it could not show it there).
+    if (id && howTo && suggestion.kind !== "walk" && howToLogins(howTo).includes(role)) {
+      setFocused(false);
+      setQuery("");
+      setTask(id);
+      onView("tasks");
+      return;
+    }
+    // Another desk's job, and every other kind: its answer, read in full by the search below.
+    setQuery(suggestion.text);
+    setLiteral(false);
+    setActive(0);
+    field.current?.focus();
+  };
+
+  /** The caret sits after the last letter, with nothing selected. */
+  const caretAtEnd = (input: HTMLInputElement) =>
+    input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
+
   const onFieldKey = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Escape" && query) {
+    const count = suggestions.length;
+    if (completion && (event.key === "Tab" || (event.key === "ArrowRight" && caretAtEnd(event.currentTarget)))) {
+      // Only a completion to take keeps Tab here; with none, Tab moves focus on as usual.
+      if (event.key === "Tab" && (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey)) return;
+      event.preventDefault();
+      setQuery(completion);
+      setActive(0);
+      setActiveSuggestion(-1);
+      setInRows(false);
+      return;
+    }
+    if (event.key === "Escape" && showList) {
+      // First Esc hides the suggestions; the next clears the words (below).
+      event.preventDefault();
+      event.stopPropagation();
+      setDismissed(true);
+      setActiveSuggestion(-1);
+    } else if (event.key === "Escape" && query) {
       event.preventDefault();
       event.stopPropagation();
       setQuery("");
+      setActiveSuggestion(-1);
+      setDismissed(false);
+    } else if (event.key === "ArrowDown" && count && activeSuggestion < count - 1 && !inRows) {
+      // Down moves through the suggestions first, then on into the answers underneath.
+      event.preventDefault();
+      setActiveSuggestion(activeSuggestion + 1);
+    } else if (event.key === "ArrowDown" && count && !inRows) {
+      event.preventDefault();
+      setActiveSuggestion(rows.length ? -1 : 0);
+      setInRows(rows.length > 0);
+      setActive(0);
+    } else if (event.key === "ArrowUp" && count && activeSuggestion >= 0) {
+      event.preventDefault();
+      setActiveSuggestion(activeSuggestion - 1);
+    } else if (event.key === "ArrowUp" && count && inRows && active === 0) {
+      event.preventDefault();
+      setInRows(false);
+      setActiveSuggestion(count - 1);
+    } else if (event.key === "Enter" && suggestions[activeSuggestion]) {
+      event.preventDefault();
+      pick(suggestions[activeSuggestion]);
     } else if (event.key === "ArrowDown" && rows.length) {
       event.preventDefault();
+      setInRows(true);
       setActive((active + 1) % rows.length);
     } else if (event.key === "ArrowUp" && rows.length) {
       event.preventDefault();
+      setInRows(true);
       setActive((active - 1 + rows.length) % rows.length);
     } else if (event.key === "Enter" && rows[active]) {
       event.preventDefault();
@@ -279,7 +435,7 @@ function WardHelpSheetView({
 
   const searching = query.trim().length > 0;
   const suggesting = !searching && focused;
-  const inView = view === "desk" || view === "keys";
+  const inView = view === "desk" || view === "keys" || (view === "checklist" && Boolean(checklist));
 
   return (
     <Sheet
@@ -296,7 +452,7 @@ function WardHelpSheetView({
       descriptionContent={
         <p className={s.context}>
           <span className={s.deskTag}>
-            <UserRound aria-hidden="true" strokeWidth={2} />
+            <UserRound aria-hidden="true" strokeWidth={1.75} />
             {deskLabel(role)}
           </span>
           {screen ? (
@@ -306,7 +462,12 @@ function WardHelpSheetView({
           ) : null}
         </p>
       }
-      placement="right"
+      // A right panel on a computer; on a phone (through 48rem) a near-full bottom sheet whose header
+      // controls stay below the top safe area (Josh, 2 Nov 2026).
+      placement="responsive-right"
+      mobilePlacement="bottom"
+      mobileBreakpoint="phone"
+      mobileHeaderSafeArea="padding"
       desktopBackdropClassName={barStyles.drawerBackdrop}
       contentClassName={`${barStyles.drawerSheet} ${barStyles.drawerSheetWide} ${s.sheet}`}
       headerClassName={barStyles.drawerHeader}
@@ -325,7 +486,7 @@ function WardHelpSheetView({
             <UserRound aria-hidden="true" strokeWidth={1.75} />
             Your desk
           </button>
-          {phone ? null : (
+          {keysOn ? (
             <button
               type="button"
               className={s.footButton}
@@ -335,9 +496,9 @@ function WardHelpSheetView({
             >
               <Keyboard aria-hidden="true" strokeWidth={1.75} />
               Shortcuts
-              <kbd aria-hidden="true">?</kbd>
+              {pointer.touchOnly ? null : <kbd aria-hidden="true">?</kbd>}
             </button>
-          )}
+          ) : null}
           <span className={s.footNote} data-testid="ward-help-synthetic">
             Synthetic prototype
           </span>
@@ -352,22 +513,35 @@ function WardHelpSheetView({
             ref={field}
             type="search"
             value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setLiteral(false);
-              setActive(0);
-            }}
+            onChange={(event) => fieldWords(event.target.value)}
             onKeyDown={onFieldKey}
             onFocus={() => setFocused(true)}
-            onBlur={() => window.setTimeout(() => setFocused(false), 150)}
+            onBlur={(event) => {
+              if (focusStays(event.relatedTarget)) return;
+              // A pointer press on a suggestion can blur first, so close only once focus has settled away.
+              window.setTimeout(() => {
+                if (!focusStays(document.activeElement)) setFocused(false);
+              }, 150);
+            }}
             placeholder="Ask a question or search Help"
             aria-label="Search Help"
-            aria-controls="ward-help-found"
-            aria-activedescendant={searching && rows.length ? `ward-help-found-${active}` : undefined}
+            // A combobox (2 Nov 2026): the suggestions list while it shows, else the answers below.
+            role="combobox"
+            aria-autocomplete="both"
+            aria-expanded={showList}
+            aria-controls={showList ? `${SUGGEST_ID}-list` : searching ? "ward-help-found" : undefined}
+            aria-activedescendant={
+              activeSuggestion >= 0 && suggestions[activeSuggestion]
+                ? helpSuggestionId(SUGGEST_ID, activeSuggestion)
+                : searching && rows.length
+                  ? `ward-help-found-${active}`
+                  : undefined
+            }
             autoComplete="off"
             spellCheck={false}
             data-testid="ward-help-search"
           />
+          <GhostCompletion typed={query} completion={completion} className={s.ghost} />
           <span className={s.fieldEnd}>
             {query ? (
               <button
@@ -379,9 +553,9 @@ function WardHelpSheetView({
                   field.current?.focus();
                 }}
               >
-                <X aria-hidden="true" strokeWidth={2} />
+                <X aria-hidden="true" strokeWidth={1.75} />
               </button>
-            ) : phone ? null : (
+            ) : phone || pointer.touchOnly ? null : (
               <kbd className={s.slash} aria-hidden="true">
                 /
               </kbd>
@@ -400,13 +574,32 @@ function WardHelpSheetView({
         )}
       </div>
 
-      {searching ? (
-        <div id="ward-help-found" className={s.panel} aria-live="polite">
+      {/* While suggestions show for an unfinished word, a "No match" line below them would only
+          contradict them, so it waits until the words match nothing on their own. */}
+      {showList ? (
+        <div className={s.suggest} data-testid="ward-help-suggestions">
+          <HelpSuggestList
+            suggestions={suggestions}
+            activeIndex={activeSuggestion}
+            onPick={pick}
+            idPrefix={SUGGEST_ID}
+            label="Suggestions"
+          />
+        </div>
+      ) : null}
+      {/* One short polite line, in place of reading the list out at each key press. It stays mounted
+          (so it is heard) and has no status role, so Help's one status line stays the answer count
+          or the clinical reply. */}
+      <span className="sr-only" aria-live="polite" aria-atomic="true" data-testid="ward-help-suggest-summary">
+        {showList ? "Suggestions are listed below the search box" : ""}
+      </span>
+      {searching && showList && nothingFound ? null : searching ? (
+        <div id="ward-help-found" className={s.panel}>
           <HelpFindResults
             found={found}
             query={query}
             role={role}
-            active={active}
+            active={activeSuggestion >= 0 ? -1 : active}
             onChoose={choose}
             onShowMe={onShowMe}
             canShow={canShow}
@@ -417,13 +610,30 @@ function WardHelpSheetView({
           />
         </div>
       ) : suggesting ? (
-        <div className={s.panel}>
+        <div
+          ref={tryAsking}
+          className={s.panel}
+          onBlur={(event) => {
+            if (!focusStays(event.relatedTarget)) setFocused(false);
+          }}
+        >
           <HelpTryAsking examples={examples} onPick={typed} />
         </div>
       ) : inView ? (
         <div className={s.panel}>
           {view === "keys" ? (
             <HelpKeys role={role} onBack={() => onView("tasks")} />
+          ) : view === "checklist" && checklist ? (
+            <WardHelpChecklistView
+              id={checklist}
+              role={role}
+              home={deskHref}
+              onBack={() => onView("tasks")}
+              onClose={onClose}
+              onShowMe={onShowMe}
+              screenName={screenName}
+              showMeOn={showMeOn}
+            />
           ) : (
             <HelpDesk
               role={role}
@@ -451,6 +661,10 @@ function WardHelpSheetView({
               openTask={task}
               screenName={screenName}
               showMeOn={showMeOn}
+              onOpenChecklist={(id) => {
+                setChecklist(id);
+                onView("checklist");
+              }}
             />
           ) : null}
           {tab === "questions" ? <HelpQuestions screen={screen} /> : null}

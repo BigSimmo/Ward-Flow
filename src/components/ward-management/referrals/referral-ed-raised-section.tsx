@@ -131,8 +131,8 @@ export function ReferralEdRaisedSection({ view, now }: { view: EdDeskView; now: 
                         href={movementHref(movement.id)}
                         className={buttonClass({ variant: "ghost", size: "sm", className: styles.openLink })}
                       >
-                        {/* A quiet link, not eight outlined buttons; the name says whose journey. */}
-                        Journey
+                        {/* A quiet link, not eight outlined buttons; the name says whose movement. */}
+                        Movement
                         <span className="sr-only">, {nameFor(who.formalName, who.umrn)}</span>
                       </Link>
                     </td>
