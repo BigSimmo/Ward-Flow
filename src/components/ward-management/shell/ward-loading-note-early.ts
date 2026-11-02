@@ -11,7 +11,11 @@
  */
 export const WARD_LOADING_SLOW_MS = 15_000;
 export const WARD_LOADING_SLOW_ATTRIBUTE = "data-wf-load-slow";
-/** The note's Reload button (app/ward-flow/layout.tsx); a click anywhere on it reloads the page. */
-export const WARD_LOADING_RELOAD_ATTRIBUTE = "data-wf-loading-reload";
+/**
+ * The note's Reload button (app/ward-flow/layout.tsx) and the slow page change's Try again button
+ * (app/ward-flow/loading.tsx, Q275): a click on either reloads the page. The listener stays for the
+ * whole visit, so it also serves page changes made after the code has loaded.
+ */
+const WARD_LOADING_RELOAD_ATTRIBUTE = "data-wf-loading-reload";
 
 export const WARD_LOADING_NOTE_EARLY_SCRIPT = `(function(){var d=document.documentElement;document.addEventListener("click",function(e){var t=e.target;if(t&&t.closest&&t.closest("[${WARD_LOADING_RELOAD_ATTRIBUTE}]"))location.reload();});setTimeout(function(){if(d.hasAttribute("data-wf-bar-ready"))return;d.setAttribute("${WARD_LOADING_SLOW_ATTRIBUTE}","");},${WARD_LOADING_SLOW_MS});})();`;

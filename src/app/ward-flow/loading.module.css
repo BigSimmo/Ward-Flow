@@ -22,7 +22,8 @@
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-/* Q275: the "taking longer than usual" line and its Try again button (shell/ward-loading-slow.tsx). */
+/* Q275: the "taking longer than usual" line and its Try again button stay hidden (not read out, not
+   focusable) until the placeholder has shown for 10 seconds. */
 .status {
   flex-wrap: wrap;
 }
@@ -32,6 +33,14 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
+  visibility: hidden;
+  animation: wardLoadingSlowShow 0s 10s forwards;
+}
+
+@keyframes wardLoadingSlowShow {
+  to {
+    visibility: visible;
+  }
 }
 
 .retry {

@@ -157,6 +157,12 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }} />
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_DESK_EARLY_SCRIPT }} />
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }} />
+        {/* Serves the slow page change's Try again button (app/ward-flow/loading.tsx). */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: WARD_LOADING_NOTE_EARLY_SCRIPT }}
+        />
       </WardFirstDocumentOnly>
       <WardAccessibility />
       <WardRowDensity />

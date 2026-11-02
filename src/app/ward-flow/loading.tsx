@@ -1,4 +1,3 @@
-import { WardLoadingSlow } from "@/components/ward-management/shell/ward-loading-slow";
 import { WardLoadingShape, type WardLoadingShapePaths } from "@/components/ward-management/shell/ward-loading-shape";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
@@ -29,8 +28,17 @@ export default function WardFlowLoading() {
       <p className={styles.status} role="status">
         <span className={styles.spin} aria-hidden="true" />
         Loading page
-        {/* Q275: after 10 s, "This is taking longer than usual." with Try again. */}
-        <WardLoadingSlow className={styles.slow} buttonClassName={styles.retry} />
+        {/* Q275 (pre-launch review E3, 2 Nov 2026): a page change that never finished showed this
+            forever. After 10 s this line shows (a CSS delay, so the boundary ships no extra code); its
+            Try again button is handled by the layout's inline script (ward-loading-note-early.ts),
+            which reloads the address. */}
+        <span className={styles.slow} data-testid="ward-loading-slow">
+          This is taking longer than usual.
+          {/* eslint-disable-next-line local/require-button-wiring -- wired by WARD_LOADING_NOTE_EARLY_SCRIPT */}
+          <button type="button" className={styles.retry} data-wf-loading-reload="">
+            Try again
+          </button>
+        </span>
       </p>
       <WardLoadingShape paths={SHAPED_PAGES} />
       <WardPrototypeFooter />

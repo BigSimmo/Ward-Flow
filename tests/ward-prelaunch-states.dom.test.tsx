@@ -1,8 +1,8 @@
-import { act, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CensusEmpty } from "@/components/ward-management/search/patient-census-view";
-import { WARD_PAGE_SLOW_MS, WardLoadingSlow } from "@/components/ward-management/shell/ward-loading-slow";
+import WardFlowLoading from "@/app/ward-flow/loading";
 import {
   WARD_LOADING_NOTE_EARLY_SCRIPT,
   WARD_LOADING_SLOW_ATTRIBUTE,
@@ -105,15 +105,29 @@ describe("Q274: the loading note offers Reload when the code never arrives", () 
 });
 
 describe("Q275: a hung page change offers Try again", () => {
-  it("adds the line after 10 seconds", () => {
-    vi.useFakeTimers();
-    render(<WardLoadingSlow />);
-    expect(screen.queryByTestId("ward-loading-slow")).toBeNull();
-    act(() => {
-      vi.advanceTimersByTime(WARD_PAGE_SLOW_MS);
+  it("draws the slow line with a Try again button the early script reloads from", () => {
+    render(<WardFlowLoading />);
+    const slow = screen.getByTestId("ward-loading-slow");
+    expect(slow).toHaveTextContent("This is taking longer than usual.");
+    const retry = screen.getByRole("button", { name: "Try again", hidden: true });
+    expect(retry).toHaveAttribute("data-wf-loading-reload");
+  });
+
+  it("the early script reloads when a reload button is pressed", () => {
+    const reload = vi.fn();
+    const listeners: EventListener[] = [];
+    const add = vi.spyOn(document, "addEventListener").mockImplementation((type, listener) => {
+      if (type === "click") listeners.push(listener as EventListener);
     });
-    expect(screen.getByTestId("ward-loading-slow")).toHaveTextContent("This is taking longer than usual.");
-    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+    new Function("location", WARD_LOADING_NOTE_EARLY_SCRIPT)({ reload });
+    add.mockRestore();
+    const button = document.createElement("button");
+    button.setAttribute("data-wf-loading-reload", "");
+    document.body.append(button);
+    listeners.forEach((listener) => listener({ target: button } as unknown as Event));
+    expect(reload).toHaveBeenCalledTimes(1);
+    listeners.forEach((listener) => listener({ target: document.body } as unknown as Event));
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 });
 

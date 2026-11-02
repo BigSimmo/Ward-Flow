@@ -39,20 +39,18 @@ export function offlineCanOpen(
   freshMs: number = OFFLINE_PREFETCH_FRESH_MS,
 ): boolean {
   if (!link.matches(FULL_PREFETCH_LINKS)) return false;
+  const want = url.origin + url.pathname + url.search;
   return entries.some((entry) => {
-    let fetched: URL;
-    try {
-      fetched = new URL(entry.name);
-    } catch {
-      return false;
-    }
-    if (fetched.origin !== url.origin || fetched.pathname !== url.pathname) return false;
+    const fetched = new URL(entry.name);
     if (!fetched.searchParams.has("_rsc")) return false;
     fetched.searchParams.delete("_rsc");
-    if (fetched.search !== url.search) return false;
-    if (entry.responseStatus !== undefined && entry.responseStatus !== 200) return false;
-    if (entry.responseStatus === undefined && !(entry.encodedBodySize && entry.encodedBodySize > 0)) return false;
-    return now - (entry.startTime + entry.duration) <= freshMs;
+    // Safari gives no status; a fetch that carried a body came back.
+    const whole = entry.responseStatus === undefined ? (entry.encodedBodySize ?? 0) > 0 : entry.responseStatus === 200;
+    return (
+      whole &&
+      fetched.origin + fetched.pathname + fetched.search === want &&
+      now - entry.startTime - entry.duration <= freshMs
+    );
   });
 }
 
@@ -80,11 +78,7 @@ export function WardOfflineLinks() {
       const url = new URL(target.href, window.location.href);
       if (url.origin !== window.location.origin) return;
       if (url.pathname === window.location.pathname && url.search === window.location.search) return;
-      const entries =
-        typeof performance.getEntriesByType === "function"
-          ? (performance.getEntriesByType("resource") as ResourceEntry[])
-          : [];
-      if (offlineCanOpen(target, url, entries, performance.now())) return;
+      if (offlineCanOpen(target, url, performance.getEntriesByType("resource"), performance.now())) return;
       event.preventDefault();
       event.stopPropagation();
       toast?.push({
