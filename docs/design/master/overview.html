@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>All pages overview</title>
+    <style>
+      @font-face {
+        font-family: "Geist";
+        src: url("m/geist-latin.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      :root {
+        --bg: #e8ecf0;
+        --panel: #fdfdfe;
+        --fg: #161e28;
+        --muted: #414953;
+        --line: #d5dbe2;
+        --accent: #245a8c;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0d141b;
+          --panel: #141d26;
+          --fg: #e8edf2;
+          --muted: #bcc8d4;
+          --line: #2c3540;
+          --accent: #7fb6e6;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #0d141b;
+        --panel: #141d26;
+        --fg: #e8edf2;
+        --muted: #bcc8d4;
+        --line: #2c3540;
+        --accent: #7fb6e6;
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          13px/1.4 "Geist",
+          system-ui,
+          sans-serif;
+      }
+      main {
+        padding-block: 16px 32px;
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+      }
+      h2 {
+        font-size: 14px;
+        margin: 20px 0 10px;
+        letter-spacing: 0.02em;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+        gap: 14px;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      a:hover,
+      a:focus-visible {
+        border-color: var(--accent);
+        outline: none;
+      }
+      img {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        object-position: top;
+        display: block;
+        border-bottom: 1px solid var(--line);
+        background: var(--bg);
+      }
+      .cap {
+        padding: 7px 10px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .cap span {
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="m"></main>
+    <script>
+      const ALL = [
+        ["Add a patient", "Places and records", "m", "add-patient", "", ""],
+        ["Community", "Places and records", "mn", "community", "", ""],
+        ["Community team (locked mock-up)", "Places and records", "static", "cm/index.html"],
+        ["Patient record", "Places and records", "pa", "patient", "", "&patient=PT-003&tab=now"],
+        ["Places", "Places and records", "mn", "places", "", ""],
+        ["Settings", "Places and records", "mn", "settings", "", ""],
+        ["Sign in", "Places and records", "mn", "sign-in", "", ""],
+        ["Ward answer", "Places and records", "mn", "ward-answer", "", ""],
+        ["Meeting agenda", "Bed meeting and reports", "mn", "agenda", "", ""],
+        ["Bed meeting TV", "Bed meeting and reports", "mn", "bed-meeting-tv", "", ""],
+        ["Patient chronology", "Bed meeting and reports", "mn", "chronology", "", ""],
+        ["Downtime pack", "Bed meeting and reports", "mn", "downtime", "", ""],
+        ["Alerts (approved redesign)", "Reference", "static", "al/desktop.html"],
+        ["Alerts clarity proposal (interactive, not approved)", "Reference", "static", "ac/index.html"],
+        ["Governance", "Reference", "mn", "governance", "", ""],
+        ["Legal forms", "Reference", "m", "legal-forms", "", ""],
+        ["On-call", "Reference", "mn", "on-call", "", ""],
+        ["Out of area", "Reference", "mn", "out-of-area", "", ""],
+        ["Seclusion", "Reference", "mn", "seclusion", "", ""],
+        ["Governance", "As access admin", "b", "as-admin-governance", "", ""],
+        ["Settings", "As access admin", "b", "as-admin-home", "", ""],
+        ["Discharges", "As site bed manager", "b", "as-bed-manager-discharges", "", ""],
+        ["Capacity", "As site bed manager", "b", "as-bed-manager-home", "", ""],
+        ["Places", "As site bed manager", "b", "as-bed-manager-places", "", ""],
+        ["Referrals", "As site bed manager", "b", "as-bed-manager-referrals", "", ""],
+        ["Seclusion", "As site bed manager", "b", "as-bed-manager-seclusion", "", ""],
+        ["Statistics", "As site bed manager", "b", "as-bed-manager-statistics", "", ""],
+        ["My ward", "As site bed manager", "b", "as-bed-manager-ward", "", ""],
+        ["All wards", "As site bed manager", "b", "as-bed-manager-wards", "", ""],
+        ["Community team", "As community clinician", "b", "as-community-home", "", ""],
+        ["Movements", "As community clinician", "b", "as-community-movements", "", ""],
+        ["Patient record", "As community clinician", "b", "as-community-patient", "", ""],
+        ["Referrals", "As community clinician", "b", "as-community-referrals", "", ""],
+        ["Statistics", "As community clinician", "b", "as-community-statistics", "", ""],
+        ["Handover", "As ED clinician", "b", "as-ed-handover", "", ""],
+        ["ED board", "As ED clinician", "b", "as-ed-home", "", ""],
+        ["Legal forms", "As ED clinician", "b", "as-ed-legal-forms", "", ""],
+        ["Referrals", "As ED clinician", "b", "as-ed-referrals", "", ""],
+        ["Statistics", "As ED clinician", "b", "as-ed-statistics", "", ""],
+        ["Waiting", "As ED clinician", "b", "as-ed-waiting", "", ""],
+        ["Capacity", "As executive", "b", "as-executive-capacity", "", ""],
+        ["Statistics", "As executive", "b", "as-executive-home", "", ""],
+        ["Settings", "As executive", "b", "as-executive-settings", "", ""],
+        ["Alerts", "As transport officer", "b", "as-officer-alerts", "", ""],
+        ["Transport desk", "As transport officer", "b", "as-officer-home", "", ""],
+        ["Alerts", "As nurse in charge", "b", "as-ward-alerts", "", ""],
+        ["Discharges", "As nurse in charge", "b", "as-ward-discharges", "", ""],
+        ["Handover", "As nurse in charge", "b", "as-ward-handover", "", ""],
+        ["My ward", "As nurse in charge", "b", "as-ward-home", "", ""],
+        ["Legal forms", "As nurse in charge", "b", "as-ward-legal-forms", "", ""],
+        ["Referrals", "As nurse in charge", "b", "as-ward-referrals", "", ""],
+        ["Seclusion", "As nurse in charge", "b", "as-ward-seclusion", "", ""],
+        ["Settings", "As nurse in charge", "b", "as-ward-settings", "", ""],
+        ["Statistics", "As nurse in charge", "b", "as-ward-statistics", "", ""],
+        ["Stays and discharges", "As nurse in charge", "b", "as-ward-stays", "", ""],
+        ["Waiting", "As nurse in charge", "b", "as-ward-waiting", "", ""],
+        ["Capacity", "Coordinator", "m", "capacity", "", ""],
+        ["All EDs", "Coordinator", "mn", "eds", "", ""],
+        ["Handover", "Coordinator", "ho", "handover", "", ""],
+        ["Home", "Coordinator", "mn", "home", "", ""],
+        ["Movements", "Coordinator", "mn", "movements", "", ""],
+        ["New referral", "Coordinator", "m", "new-referral", "", ""],
+        ["Referrals", "Coordinator", "mn", "referrals", "", ""],
+        ["Waiting", "Coordinator", "m", "waiting", "", ""],
+        ["Discharges", "Work and reports", "m", "discharges", "", ""],
+        ["Patients", "Work and reports", "mn", "patients", "", ""],
+        ["Statistics", "Work and reports", "st", "statistics", "", ""],
+        ["Statistics: services", "Work and reports", "st", "statistics-services", "", ""],
+        ["Statistics: wards", "Work and reports", "st", "statistics-wards", "", ""],
+        ["Statistics: EDs", "Work and reports", "st", "statistics-eds", "", ""],
+        ["Statistics: teams", "Work and reports", "st", "statistics-teams", "", ""],
+        ["All wards", "Work and reports", "mn", "wards", "", ""],
+        ["ED board", "Desks", "ed", "ed-board", "", ""],
+        ["Stays and discharges", "Desks", "mn", "stays", "", ""],
+        ["Transport", "Desks", "tr", "transport", "", ""],
+        ["My ward", "Desks", "m", "ward", "", ""],
+        ["Activity", "Shell popups", "m", "home", "activity-panel", ""],
+        ["Alerts drawer", "Shell popups", "m", "home", "alerts", ""],
+        ["Create", "Shell popups", "m", "home", "create", ""],
+        ["Demo menu", "Shell popups", "m", "home", "demo", ""],
+        ["Go to a desk", "Shell popups", "mn", "home", "desk", ""],
+        ["Help", "Shell popups", "he", "home", "help", ""],
+        ["Phone menu", "Shell popups", "m", "home", "menu", ""],
+        ["More pages", "Shell popups", "m", "home", "more-pages", ""],
+        ["Search", "Shell popups", "m", "home", "search", ""],
+        ["Service picker", "Shell popups", "m", "home", "service-picker", ""],
+        ["Shift brief", "Shell popups", "mn", "ward", "shift-brief", ""],
+        ["Keyboard shortcuts", "Shell popups", "m", "home", "shortcuts", ""],
+        ["Tools", "Shell popups", "m", "home", "tools", ""],
+        ["Tour", "Shell popups", "m", "home", "tour", ""],
+        ["Ward switcher", "Shell popups", "mn", "ward", "ward-switcher", ""],
+        ["Add the time", "Page popups", "mn", "legal-forms", "add-time", ""],
+        ["Bed meeting sheet", "Page popups", "mn", "capacity", "sheet", ""],
+        ["Bed record", "Page popups", "mn", "ward", "bed-record", ""],
+        ["Broadcast", "Page popups", "mn", "alerts", "broadcast", ""],
+        ["Capacity ward panel", "Page popups", "mn", "capacity", "ward", ""],
+        ["Confirm beds", "Page popups", "mn", "ward", "confirm-beds", ""],
+        ["ED actions", "Page popups", "mn", "ed-board", "ed-actions", ""],
+        ["Phone bed forecast", "Page popups", "mn", "capacity", "forecast", ""],
+        ["Log transport", "Page popups", "mn", "ed-board", "log-transport", ""],
+        ["Movement drawer", "Page popups", "mn", "movements", "movement", ""],
+        ["Officer job panel", "Page popups", "mn", "transport", "officer-job", ""],
+        ["Record exam", "Page popups", "mn", "legal-forms", "record-exam", ""],
+        ["Record a form", "Page popups", "mn", "legal-forms", "record-form", ""],
+        ["Refer to a ward", "Page popups", "m", "ed-board", "refer-ward", ""],
+        ["Try a scenario", "Page popups", "mn", "capacity", "scenario", ""],
+        ["Ward notices", "Page popups", "mn", "ward", "ward-notices", ""],
+        ["Record a bed blocker", "Older popups", "mn", "stays", "board-blocker", ""],
+        ["Medical clearance", "Older popups", "m", "patient", "clearance", ""],
+        ["Community note", "Older popups", "mn", "community-team", "community-note", ""],
+        ["Discard escalation", "Older popups", "m", "home", "confirm-discard", ""],
+        ["Leave with unsaved changes", "Older popups", "m", "add-patient", "confirm-leave", ""],
+        ["Idle lock", "Older popups", "m", "home", "idle-lock", ""],
+        ["Idle warning", "Older popups", "m", "home", "idle-warning", ""],
+        ["Accept in principle", "Older popups", "mn", "ward-answer", "ward-accept", ""],
+        ["Empty", "States", "m", "home", "state-empty", ""],
+        ["Error", "States", "m", "home", "state-error", ""],
+        ["Loading", "States", "m", "home", "state-loading", ""],
+        ["Loading (Capacity)", "States", "m", "capacity", "state-loading", ""],
+        ["Loading (Waiting)", "States", "m", "waiting", "state-loading", ""],
+        ["Not wired", "States", "b", "home", "state-not-wired", ""],
+        ["Offline", "States", "m", "home", "state-offline", ""],
+        ["Toast", "States", "m", "home", "state-toast", ""],
+        ["Compare", "Statistics pages", "st", "statistics-compare", "", ""],
+        ["Ward list", "Statistics pages", "mn", "statistics-list", "", ""],
+        ["One ward", "Statistics pages", "mn", "statistics-unit", "", ""],
+        ["Weekly", "Statistics pages", "st", "statistics-weekly", "", ""],
+      ];
+      const NOTE = {
+        m: "shipped",
+        b: "older",
+        mn: "main",
+        st: "Statistics",
+        tr: "Transport",
+        mv: "Movements",
+        ed: "ED",
+        ho: "Handover",
+        pa: "Patients",
+        he: "Help",
+        static: "static",
+      };
+      const m = document.getElementById("m");
+      let g = null,
+        grid;
+      // The hub moves the archived "As ..." role views to the end (Q156), so map each card to the hub's index.
+      const HUB = [];
+      {
+        const rest = [],
+          arch = [];
+        ALL.forEach((r, i) => (r[1].startsWith("As ") ? arch : rest).push(i));
+        [...rest, ...arch].forEach((orig, hub) => {
+          HUB[orig] = hub;
+        });
+      }
+      ALL.forEach(([l, gr, dir], i) => {
+        if (gr !== g) {
+          g = gr;
+          const h = document.createElement("h2");
+          h.textContent = gr;
+          grid = document.createElement("div");
+          grid.className = "grid";
+          m.append(h, grid);
+        }
+        const a = document.createElement("a");
+        a.href = `index.html#all/${HUB[i]}`;
+        a.onclick = (e) => {
+          try {
+            if (parent !== window) {
+              e.preventDefault();
+              parent.location.hash = `all/${HUB[i]}`;
+            }
+          } catch (x) {}
+        };
+        a.innerHTML = `<img loading="lazy" src="th/${i}.jpg" alt=""><div class="cap"><b></b><span>${NOTE[dir]}</span></div>`;
+        a.querySelector("b").textContent = `${i + 1}. ${l}`;
+        a.querySelector("img").alt = l;
+        grid.append(a);
+      });
+    </script>
+  </body>
+</html>
