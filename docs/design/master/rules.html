@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow rules and lessons</title>
+    <style>
+      @font-face {
+        font-family: "Geist";
+        src: url("m/geist-latin.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      :root {
+        --bg: #e8ecf0;
+        --panel: #fdfdfe;
+        --fg: #161e28;
+        --muted: #414953;
+        --line: #d5dbe2;
+        --accent: #245a8c;
+        --tint: #e6eef6;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0d141b;
+          --panel: #141d26;
+          --fg: #e8edf2;
+          --muted: #bcc8d4;
+          --line: #2c3540;
+          --accent: #7fb6e6;
+          --tint: #1b2a38;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #0d141b;
+        --panel: #141d26;
+        --fg: #e8edf2;
+        --muted: #bcc8d4;
+        --line: #2c3540;
+        --accent: #7fb6e6;
+        --tint: #1b2a38;
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.55 "Geist",
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding-block: 20px 40px;
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+        text-wrap: balance;
+      }
+      .lead {
+        color: var(--muted);
+        margin: 0 0 18px;
+        max-width: 75ch;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 18px;
+      }
+      nav a {
+        font-size: 13px;
+        color: var(--accent);
+        text-decoration: none;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 4px 10px;
+        background: var(--panel);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+        gap: 16px;
+      }
+      section {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        min-width: 0;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 0 0 8px;
+      }
+      ul {
+        margin: 0;
+        padding-left: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      li {
+        overflow-wrap: anywhere;
+      }
+      code {
+        font-family: ui-monospace, "Geist Mono", monospace;
+        font-size: 12px;
+        background: var(--tint);
+        border-radius: 4px;
+        padding: 0 4px;
+      }
+      .src {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      b.key {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Rules and lessons</h1>
+      <p class="lead">
+        Everything Josh has ruled, plus what the screen builds taught us, in one place. Read this before building any
+        page. The sources are AGENTS.md, HOW-WE-WORK §6, design-system-v9 §14 and §17, building-ui.md, HANDOVER.md (the
+        question log) and project memory, as at 1 Nov 2026.
+      </p>
+      <nav>
+        <a href="#look">Look</a><a href="#controls">Controls</a><a href="#pages">Pages</a><a href="#popups">Pop-ups</a
+        ><a href="#graphs">Graphs</a><a href="#words">Words and safety</a><a href="#build">How to build</a
+        ><a href="#lessons">Lessons from the builds</a><a href="#process">Process</a><a href="#talk">Talking to Josh</a>
+      </nav>
+      <div class="grid">
+        <section id="look">
+          <h2>Look (owner rulings)</h2>
+          <ul>
+            <li>
+              <b class="key">Tokens only, never hex.</b> Every colour, size and radius comes from
+              <code>src/app/ward-flow-v9-tokens.css</code>, which the Tokens tab lists.
+            </li>
+            <li>
+              <b class="key">No coloured side edges.</b> No left or right stripe, inset bar or tone-coloured border on
+              any row, card, tile or stat box ("it feels tacky", 31 Oct). Show tone with the StatusGlyph or a small
+              tinted tag. A selected item gets the selected tint with a neutral border. This is enforced by
+              <code>tests/wf-no-side-stripes.test.ts</code>.
+            </li>
+            <li>
+              <b class="key">The minimum text size is 12px</b>, with no exception for uppercase text and none for column
+              heads.
+            </li>
+            <li>
+              Colour lives in glyphs and the hero. Red means act now: those items take the act tint and their glyph,
+              never an edge.
+            </li>
+            <li>
+              Figures are in mono with tabular digits. Chart axes are in Geist. Strip figures are 15px, with 20px used
+              only in one focal strip per page (Ward shipped its 20px figures).
+            </li>
+            <li>
+              Rows are 44px by default, 36px dense and 52px for touch. The T1 pill is neutral. Closed things are slate.
+            </li>
+            <li>
+              Glass is about 80% opaque with the sheen kept. There is one action blue and a lit hero. Bright light is a
+              setting.
+            </li>
+            <li>
+              The phone is its own design, not a squashed desktop. Every page has a focal part, a part of its own and a
+              page-specific hero.
+            </li>
+          </ul>
+        </section>
+
+        <section id="controls">
+          <h2>Controls</h2>
+          <ul>
+            <li>
+              <b class="key">No 48px controls.</b> A phone button is drawn at 40px (32px small), with an invisible cover
+              that keeps the 48px tap area. Phone tabs are 32px in a 40px track. Desktop segmented and pill tabs are
+              30px at 13px. Desktop buttons are 28px (<code>--wf-target</code>).
+            </li>
+            <li>
+              <b class="key">The one exception:</b> Accept, Pull and Decline (<code>data-placement-action</code>) stay a
+              full 48px on phones.
+            </li>
+            <li>
+              Dates are typed in the kit's DD/MM/YYYY <code>DateField</code>, never the browser's date picker. Use
+              <code>TimePresets</code>, <code>SearchField</code> and <code>ShowMoreRow</code> from the kit, never a
+              page's own copy.
+            </li>
+            <li>One filled button per row or panel. The rest are quiet.</li>
+            <li>
+              A control a desk can never use is not shown. A control that is unavailable for now stays, with
+              <code>aria-disabled</code> and its reason (<code>disabledReason</code>).
+            </li>
+            <li>An unconnected control says exactly "Not wired in this prototype." (D4).</li>
+            <li>
+              Leaving with unsaved work uses <code>requestConfirm</code>: "Leave this page?", with "Leave without
+              saving" and "Keep editing", and focus starts on Keep editing. Never use the browser's confirm, alert or
+              prompt.
+            </li>
+            <li>Toasts sit <code>--wf-toast-dock-gap</code> above the phone dock.</li>
+          </ul>
+        </section>
+
+        <section id="pages">
+          <h2>Pages</h2>
+          <ul>
+            <li>
+              <b class="key">Restructure, not restyle.</b> Ask what each part's job is. Each fact lives in one right
+              place.
+            </li>
+            <li>
+              Keep a slim header strip in a full-height band: the title, one strip of figures and at most one on-hero
+              action. Never shrink the band itself.
+            </li>
+            <li>
+              A list-and-panel page opens on the first useful item, never empty. Home's Placement panel is the
+              exception.
+            </li>
+            <li>Show about eight rows, then "Show 8 more". Never use a small box that scrolls inside a panel.</li>
+            <li>Group repeats into one row with one action, such as "Chase all".</li>
+            <li>One design for every desk. Role versions differ only in what that desk may see or do.</li>
+            <li>
+              Filter and highlight chips sit in one row, and a chip with nobody in it is hidden. Phone chip rows put the
+              count first and slide sideways with an edge fade.
+            </li>
+            <li>
+              Checklists have one head line with the counts, a bulk action and Hide, then a grid of one-line cards,
+              three across, showing the first nine.
+            </li>
+            <li>Less is more. Add a mark, tag or tab only when it answers a question the page can't already answer.</li>
+            <li>
+              The drawer is headed "Alerts", not "Tasks". Pinned sidebar pages last for the open browser tab only.
+            </li>
+          </ul>
+        </section>
+
+        <section id="popups">
+          <h2>Pop-ups and side panels</h2>
+          <ul>
+            <li>
+              <b class="key">The anatomy:</b> the name, then a small status tag beside it, then one quiet context line.
+              The close button takes focus. There is no second Back link.
+            </li>
+            <li>Open on a short Summary first. Long lists go behind tabs inside the panel, each tab with its count.</li>
+            <li>
+              Facts are label and value pairs in short titled groups, three to five per group, never repeating the
+              header.
+            </li>
+            <li>Blocked, escalated and clearance notes sit together in one compact list with icons.</li>
+            <li>Actions are pinned at the foot, kit-sized, with one filled.</li>
+            <li>Documents are chips that open a clearly marked synthetic preview.</li>
+            <li><b class="key">Forms open blank.</b> Nothing is pre-selected: no day, no legal answer, no ward.</li>
+          </ul>
+        </section>
+
+        <section id="graphs">
+          <h2>Graphs, grids and beds</h2>
+          <ul>
+            <li>
+              Heat-map cells show the number alone, with the shade deepening as it grows. An empty day is a faint dot.
+              Days after tomorrow carry the shared "may move" hatch. Day heads are two lines, with today in accent blue.
+            </li>
+            <li>
+              Bed pictures read "1 ready of 20 beds", with a bed-type tag, the squares on one line, then a note line
+              only when there is something to note.
+            </li>
+            <li>
+              Each record has one timeline: a single rail in time order with a live Now point and the due time. History
+              folds underneath.
+            </li>
+            <li>
+              Draw charts to scale and only from existing figures. Never add calculations for a mock-up. Weekly figures
+              are illustrative.
+            </li>
+          </ul>
+        </section>
+
+        <section id="words">
+          <h2>Words and safety</h2>
+          <ul>
+            <li>
+              <b class="key">Synthetic data only.</b> No patient names or typed text in URLs, logs, screenshots, commits
+              or memory.
+            </li>
+            <li>
+              <b class="key">Names are surname first</b>, in full, with the UMRN, wrapping rather than cut ("Jenkinwood,
+              Sarah"). Place names wrap too.
+            </li>
+            <li>
+              <b class="key">Times exactly as typed.</b> Legal-form times are never a countdown, "due in" or "passed
+              ago" (D-93). Never default a written time to now (Q120). Never compute or show Mental Health Act periods
+              or section numbers (D5, D-70).
+            </li>
+            <li>
+              <b class="key">Fewer warnings.</b> Keep a warning only where a rule or a real risk needs it, say it once,
+              and keep it quiet. Safeguard wording stays word for word ("Not legally checked."). A missing fact reads
+              "Not recorded" in ink-3.
+            </li>
+            <li>Say a time once: "Sent 3 days ago · Due 2 days ago".</li>
+            <li>
+              Never say something is not stored, private or anonymised unless a test proves it. No typed text goes in
+              browser storage.
+            </li>
+            <li>Line caps never change on-screen words. Split the file instead.</li>
+          </ul>
+        </section>
+
+        <section id="build">
+          <h2>How to build a screen fast</h2>
+          <ul>
+            <li>
+              <b class="key">Build only approved designs.</b> A page changes its look only after Josh approves that
+              page's mock-up (D-91). Team search is not approved.
+            </li>
+            <li>
+              <b class="key">Port, don't redraw.</b> Lift the components and tokens from the screen's tab here (the same
+              React the app uses) and apply them straight to the site. Compare against the approved patch, not an older
+              static HTML.
+            </li>
+            <li>
+              Approved sources: Handover is <code>handover-hifi.patch</code> (not mock.html), Movements v4, ED r3,
+              Transport is Josh's zip viewer (desk-book.html is an older draft), Patients is its zip, Statistics is
+              <code>statistics-hifi.patch</code>, and Forms is the shipped main version (Q133).
+            </li>
+            <li>Where a merged PR deliberately differs from its mock-up, follow what shipped.</li>
+            <li>Build with the kit in <code>src/components/wf</code>, and never copy a primitive into a screen.</li>
+            <li>Each page build removes its page's remaining coloured edges and lowers the side-stripe baseline.</li>
+            <li>New events go in EVENT_ROLE and its permissions test.</li>
+            <li>
+              Phone script limits: a PR may raise one by up to 5 KB per screen after diagnosing the growth and trying a
+              trim. More than that needs Josh's yes (D-82).
+            </li>
+          </ul>
+        </section>
+
+        <section id="lessons">
+          <h2>Lessons from the 1 Nov builds</h2>
+          <ul>
+            <li>
+              <b class="key">Mock-ups take the shell from the master, never from main</b> (Josh, 1 Nov). Copy the
+              sidebar, header, phone dock, kit and tokens from the newest master screens (the redesign preview with
+              <code>?shell=next</code>), not from a running page on main: main's Alerts page still draws the pre-30 Oct
+              header. Before posting, compare each desk with the master's Home and Ward pages at 390, 820, 1280 and
+              1440, in light and dark.
+            </li>
+            <li>
+              <b class="key">The band hero is the header.</b> Every page uses the kit Hero with
+              <code>data-wf-hero="band"</code>, full width and joined to the dark app bar, with the light sheet below.
+              The phone uses the same Hero, not the older card hero.
+            </li>
+            <li>
+              <b class="key">Use the kit's Badge</b>, not one-off <code>.tag</code>, <code>.chip</code> or
+              <code>.pill</code> CSS. This was the audit's most common miss.
+            </li>
+            <li>
+              <b class="key">Use the shared formatters</b> (<code>clk</code>, <code>dur</code>, <code>durMinutes</code>,
+              DateField). Patients re-implemented <code>clk()</code>.
+            </li>
+            <li>
+              <b class="key">Check phone buttons</b>: several builds drew 48px buttons that should be 40px with a cover.
+            </li>
+            <li>
+              knip fails on unused exports, so each PR carries only the parts its own tab uses (Statistics). Deleting
+              replaced code under 30 days old needs Josh's yes (Q138, Q141).
+            </li>
+            <li>
+              Rewrite tests that pin old wording to the new wording, keeping their coverage. Never skip a test to get
+              green.
+            </li>
+            <li>
+              Stacked PRs (Transport #1235 on #1221, Alerts #1233 on #1230) are not duplicates. Confirm with the thread
+              before calling anything a duplicate.
+            </li>
+            <li>
+              The cloud clone is shallow. Deepening it (<code>git fetch --deepen</code>) is network Git and needs Josh's
+              yes (Q139). Until then the sign-out and format guards treat the checkout as non-public, so run prettier
+              directly.
+            </li>
+            <li>
+              The cloud has Node 22 but the app needs 24. Use <code>/opt/node24/bin</code>, or
+              <code>npm ci --engine-strict=false</code> for mock-up builds. Josh's PC session does the local renders.
+            </li>
+            <li>
+              Sign-out log: <code>/mnt/project-files/ward-flow/signout/</code>, with one claim file per branch. Only
+              exact paths or folders ending in "/" count as a claim.
+            </li>
+            <li>The old ARTIFACTS.md links don't open. Use mockups/LINKS.md and this master page.</li>
+          </ul>
+        </section>
+
+        <section id="process">
+          <h2>Process</h2>
+          <ul>
+            <li>Ward Flow repo only. Check that origin names <code>BigSimmo/Ward-Flow</code> before any Git write.</li>
+            <li>
+              Ask before any provider, live service or network Git. Stage named files only. Never use
+              <code>--no-verify</code>.
+            </li>
+            <li>Claim files on issue #688 and in the sign-out log before editing.</li>
+            <li>
+              Auto-merge counts as Josh's yes. Never merge by hand, and never turn auto-merge on or off yourself (#1230
+              stays off until its bug is fixed).
+            </li>
+            <li>
+              Hosted CI is the full gate, so don't run duplicate test suites. Open PRs as drafts and take them out of
+              draft once CI is green and the page matches its mock-up.
+            </li>
+            <li>
+              Merging is not going live. The live site follows the <code>live</code> branch through the 6 am Perth
+              release, or a manual run when Josh says "release now".
+            </li>
+            <li>
+              Check each mock-up against this page before posting it: side edges, 40px phone buttons, one on-hero
+              action, eight rows then "Show 8 more", and kit glyphs, buttons and Badge.
+            </li>
+            <li>
+              Q134: keep outside commits that match the mock-up, and revert the ones that don't with revert commits.
+            </li>
+            <li>
+              Keep one handover file per screen in /mnt/project-files/ward-flow/handover/ and update it when you stop.
+            </li>
+          </ul>
+        </section>
+
+        <section id="talk">
+          <h2>Talking to Josh</h2>
+          <ul>
+            <li>Plain, warm Australian English. Give the answer first, in short sentences.</li>
+            <li>Say what is verified, what isn't, and any action he must take.</li>
+            <li>
+              Number questions, give one recommendation each, and log each one in HANDOVER.md, which is the source of
+              truth for the next free Q number (Q146 at present).
+            </li>
+            <li>Keep tokens ultra-light. Post only finished links and real questions.</li>
+            <li>Leave clinical, privacy and product decisions to Josh.</li>
+          </ul>
+        </section>
+      </div>
+      <p class="src">
+        Kept with the master design source in mockups/master/rules.html. Add a new ruling here the day Josh gives it.
+      </p>
+    </main>
+  </body>
+</html>

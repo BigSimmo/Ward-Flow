@@ -1,0 +1,723 @@
+<meta name="robots" content="noindex" />
+<title>Ward Flow Master Design</title>
+<style>
+  @font-face {
+    font-family: "Geist";
+    src: url("m/geist-latin.woff2") format("woff2");
+    font-weight: 100 900;
+    font-display: swap;
+  }
+  :root {
+    --bg: #e8ecf0;
+    --panel: #fdfdfe;
+    --fg: #161e28;
+    --muted: #414953;
+    --line: #d5dbe2;
+    --accent: #1f6f8b;
+    --accent-ink: #ffffff;
+    --ui: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d141b;
+      --panel: #141d26;
+      --fg: #e8edf2;
+      --muted: #bcc8d4;
+      --line: #2c3540;
+      --accent: #5fb3cf;
+      --accent-ink: #0b1216;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d141b;
+    --panel: #141d26;
+    --fg: #e8edf2;
+    --muted: #bcc8d4;
+    --line: #2c3540;
+    --accent: #5fb3cf;
+    --accent-ink: #0b1216;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font: 14px/1.4 var(--ui);
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 10px max(16px, env(safe-area-inset-left)) 0;
+  }
+  .top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+  }
+  h1 {
+    font-size: 15px;
+    margin: 0;
+    font-weight: 600;
+  }
+  .spacer {
+    flex: 1;
+  }
+  .lab {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .seg {
+    display: inline-flex;
+  }
+  button,
+  select,
+  a.btn {
+    font: inherit;
+    font-size: 13px;
+    color: var(--fg);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 10px;
+    min-height: 32px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+  }
+  .seg button {
+    border-radius: 0;
+    margin-left: -1px;
+  }
+  .seg button:first-child {
+    border-radius: 8px 0 0 8px;
+    margin-left: 0;
+  }
+  .seg button:last-child {
+    border-radius: 0 8px 8px 0;
+  }
+  button[aria-pressed="true"],
+  button[aria-selected="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  nav {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 10px 0;
+    scrollbar-width: thin;
+  }
+  nav button {
+    white-space: nowrap;
+    border-radius: 999px;
+  }
+  nav .sep {
+    width: 1px;
+    background: var(--line);
+    margin: 4px 6px;
+    flex: none;
+  }
+  .info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    align-items: center;
+    padding: 8px max(16px, env(safe-area-inset-left));
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+    font-size: 13px;
+  }
+  .info .src {
+    color: var(--muted);
+  }
+  .info select {
+    max-width: 60vw;
+  }
+  #views {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    color: var(--muted);
+  }
+  main {
+    flex: 1;
+    min-height: 0;
+    padding: 12px 16px;
+    overflow: auto;
+  }
+  .stage {
+    margin: 0 auto;
+    overflow: hidden;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    position: relative;
+  }
+  iframe {
+    border: 0;
+    display: block;
+    transform-origin: 0 0;
+    background: #fff;
+  }
+  .pic {
+    max-width: 100%;
+    display: block;
+    margin: 0 auto;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+  }
+</style>
+<header>
+  <div class="top">
+    <h1>Ward Flow master design</h1>
+    <span class="lab">Synthetic demo data only</span>
+    <span class="spacer"></span>
+    <span class="lab">Width</span><span class="seg" id="width"></span> <span class="lab">Theme</span
+    ><span class="seg" id="theme"></span>
+    <a class="btn" id="open" target="_blank" rel="noopener">Open full size</a>
+  </div>
+  <nav id="tabs" role="tablist" aria-label="Sections"></nav>
+</header>
+<div class="info"><span id="views"></span><b id="status"></b><span class="src" id="src"></span></div>
+<main id="main">
+  <div class="stage" id="stage"><iframe id="frame" title="Design"></iframe></div>
+  <img class="pic" id="pic" alt="" hidden />
+</main>
+<script>
+  // Each tab points at the real redesign-preview bundle that holds that screen's newest approved design.
+  // m/ = main dce1194a0 (2 Nov 2026, after #1287-#1300), which holds the merged Ward, Pop-ups, Forms and Discharges work; m/ and mn/ are the same build.
+  const F =
+    (dir, screen, extra = "") =>
+    (t) =>
+      `${dir}/frame.html?screen=${screen}&shell=next&theme=${t}${extra}`;
+  const P = (dir, over, pop) => F(dir, over, `&pop=${pop}`);
+  const ALL = [
+    ["Add a patient", "Places and records", "m", "add-patient", "", ""],
+    ["Community", "Places and records", "mn", "community", "", ""],
+    ["Community team (locked mock-up)", "Places and records", "static", "cm/index.html"],
+    ["Patient record", "Places and records", "pa", "patient", "", "&patient=PT-003&tab=now"],
+    ["Places", "Places and records", "mn", "places", "", ""],
+    ["Settings", "Places and records", "mn", "settings", "", ""],
+    ["Sign in", "Places and records", "mn", "sign-in", "", ""],
+    ["Ward answer", "Places and records", "mn", "ward-answer", "", ""],
+    ["Meeting agenda", "Bed meeting and reports", "mn", "agenda", "", ""],
+    ["Bed meeting TV", "Bed meeting and reports", "mn", "bed-meeting-tv", "", ""],
+    ["Patient chronology", "Bed meeting and reports", "mn", "chronology", "", ""],
+    ["Downtime pack", "Bed meeting and reports", "mn", "downtime", "", ""],
+    ["Alerts (approved redesign)", "Reference", "static", "al/desktop.html"],
+    ["Alerts clarity proposal (interactive, not approved)", "Reference", "static", "ac/index.html"],
+    ["Governance", "Reference", "mn", "governance", "", ""],
+    ["Legal forms", "Reference", "m", "legal-forms", "", ""],
+    ["On-call", "Reference", "mn", "on-call", "", ""],
+    ["Out of area", "Reference", "mn", "out-of-area", "", ""],
+    ["Seclusion", "Reference", "mn", "seclusion", "", ""],
+    ["Governance", "As access admin", "b", "as-admin-governance", "", ""],
+    ["Settings", "As access admin", "b", "as-admin-home", "", ""],
+    ["Discharges", "As site bed manager", "b", "as-bed-manager-discharges", "", ""],
+    ["Capacity", "As site bed manager", "b", "as-bed-manager-home", "", ""],
+    ["Places", "As site bed manager", "b", "as-bed-manager-places", "", ""],
+    ["Referrals", "As site bed manager", "b", "as-bed-manager-referrals", "", ""],
+    ["Seclusion", "As site bed manager", "b", "as-bed-manager-seclusion", "", ""],
+    ["Statistics", "As site bed manager", "b", "as-bed-manager-statistics", "", ""],
+    ["My ward", "As site bed manager", "b", "as-bed-manager-ward", "", ""],
+    ["All wards", "As site bed manager", "b", "as-bed-manager-wards", "", ""],
+    ["Community team", "As community clinician", "b", "as-community-home", "", ""],
+    ["Movements", "As community clinician", "b", "as-community-movements", "", ""],
+    ["Patient record", "As community clinician", "b", "as-community-patient", "", ""],
+    ["Referrals", "As community clinician", "b", "as-community-referrals", "", ""],
+    ["Statistics", "As community clinician", "b", "as-community-statistics", "", ""],
+    ["Handover", "As ED clinician", "b", "as-ed-handover", "", ""],
+    ["ED board", "As ED clinician", "b", "as-ed-home", "", ""],
+    ["Legal forms", "As ED clinician", "b", "as-ed-legal-forms", "", ""],
+    ["Referrals", "As ED clinician", "b", "as-ed-referrals", "", ""],
+    ["Statistics", "As ED clinician", "b", "as-ed-statistics", "", ""],
+    ["Waiting", "As ED clinician", "b", "as-ed-waiting", "", ""],
+    ["Capacity", "As executive", "b", "as-executive-capacity", "", ""],
+    ["Statistics", "As executive", "b", "as-executive-home", "", ""],
+    ["Settings", "As executive", "b", "as-executive-settings", "", ""],
+    ["Alerts", "As transport officer", "b", "as-officer-alerts", "", ""],
+    ["Transport desk", "As transport officer", "b", "as-officer-home", "", ""],
+    ["Alerts", "As nurse in charge", "b", "as-ward-alerts", "", ""],
+    ["Discharges", "As nurse in charge", "b", "as-ward-discharges", "", ""],
+    ["Handover", "As nurse in charge", "b", "as-ward-handover", "", ""],
+    ["My ward", "As nurse in charge", "b", "as-ward-home", "", ""],
+    ["Legal forms", "As nurse in charge", "b", "as-ward-legal-forms", "", ""],
+    ["Referrals", "As nurse in charge", "b", "as-ward-referrals", "", ""],
+    ["Seclusion", "As nurse in charge", "b", "as-ward-seclusion", "", ""],
+    ["Settings", "As nurse in charge", "b", "as-ward-settings", "", ""],
+    ["Statistics", "As nurse in charge", "b", "as-ward-statistics", "", ""],
+    ["Stays and discharges", "As nurse in charge", "b", "as-ward-stays", "", ""],
+    ["Waiting", "As nurse in charge", "b", "as-ward-waiting", "", ""],
+    ["Capacity", "Coordinator", "m", "capacity", "", ""],
+    ["All EDs", "Coordinator", "mn", "eds", "", ""],
+    ["Handover", "Coordinator", "ho", "handover", "", ""],
+    ["Home", "Coordinator", "mn", "home", "", ""],
+    ["Movements", "Coordinator", "mn", "movements", "", ""],
+    ["New referral", "Coordinator", "m", "new-referral", "", ""],
+    ["Referrals", "Coordinator", "mn", "referrals", "", ""],
+    ["Waiting", "Coordinator", "m", "waiting", "", ""],
+    ["Discharges", "Work and reports", "m", "discharges", "", ""],
+    ["Patients", "Work and reports", "mn", "patients", "", ""],
+    ["Statistics", "Work and reports", "st", "statistics", "", ""],
+    ["Statistics: services", "Work and reports", "st", "statistics-services", "", ""],
+    ["Statistics: wards", "Work and reports", "st", "statistics-wards", "", ""],
+    ["Statistics: EDs", "Work and reports", "st", "statistics-eds", "", ""],
+    ["Statistics: teams", "Work and reports", "st", "statistics-teams", "", ""],
+    ["All wards", "Work and reports", "mn", "wards", "", ""],
+    ["ED board", "Desks", "ed", "ed-board", "", ""],
+    ["Stays and discharges", "Desks", "mn", "stays", "", ""],
+    ["Transport", "Desks", "tr", "transport", "", ""],
+    ["My ward", "Desks", "m", "ward", "", ""],
+    ["Activity", "Shell popups", "m", "home", "activity-panel", ""],
+    ["Alerts drawer", "Shell popups", "m", "home", "alerts", ""],
+    ["Create", "Shell popups", "m", "home", "create", ""],
+    ["Demo menu", "Shell popups", "m", "home", "demo", ""],
+    ["Go to a desk", "Shell popups", "mn", "home", "desk", ""],
+    ["Help", "Shell popups", "he", "home", "help", ""],
+    ["Phone menu", "Shell popups", "m", "home", "menu", ""],
+    ["More pages", "Shell popups", "m", "home", "more-pages", ""],
+    ["Search", "Shell popups", "m", "home", "search", ""],
+    ["Service picker", "Shell popups", "m", "home", "service-picker", ""],
+    ["Shift brief", "Shell popups", "mn", "ward", "shift-brief", ""],
+    ["Keyboard shortcuts", "Shell popups", "m", "home", "shortcuts", ""],
+    ["Tools", "Shell popups", "m", "home", "tools", ""],
+    ["Tour", "Shell popups", "m", "home", "tour", ""],
+    ["Ward switcher", "Shell popups", "mn", "ward", "ward-switcher", ""],
+    ["Add the time", "Page popups", "mn", "legal-forms", "add-time", ""],
+    ["Bed meeting sheet", "Page popups", "mn", "capacity", "sheet", ""],
+    ["Bed record", "Page popups", "mn", "ward", "bed-record", ""],
+    ["Broadcast", "Page popups", "mn", "alerts", "broadcast", ""],
+    ["Capacity ward panel", "Page popups", "mn", "capacity", "ward", ""],
+    ["Confirm beds", "Page popups", "mn", "ward", "confirm-beds", ""],
+    ["ED actions", "Page popups", "mn", "ed-board", "ed-actions", ""],
+    ["Phone bed forecast", "Page popups", "mn", "capacity", "forecast", ""],
+    ["Log transport", "Page popups", "mn", "ed-board", "log-transport", ""],
+    ["Movement drawer", "Page popups", "mn", "movements", "movement", ""],
+    ["Officer job panel", "Page popups", "mn", "transport", "officer-job", ""],
+    ["Record exam", "Page popups", "mn", "legal-forms", "record-exam", ""],
+    ["Record a form", "Page popups", "mn", "legal-forms", "record-form", ""],
+    ["Refer to a ward", "Page popups", "m", "ed-board", "refer-ward", ""],
+    ["Try a scenario", "Page popups", "mn", "capacity", "scenario", ""],
+    ["Ward notices", "Page popups", "mn", "ward", "ward-notices", ""],
+    ["Record a bed blocker", "Older popups", "mn", "stays", "board-blocker", ""],
+    ["Medical clearance", "Older popups", "m", "patient", "clearance", ""],
+    ["Community note", "Older popups", "mn", "community-team", "community-note", ""],
+    ["Discard escalation", "Older popups", "m", "home", "confirm-discard", ""],
+    ["Leave with unsaved changes", "Older popups", "m", "add-patient", "confirm-leave", ""],
+    ["Idle lock", "Older popups", "m", "home", "idle-lock", ""],
+    ["Idle warning", "Older popups", "m", "home", "idle-warning", ""],
+    ["Accept in principle", "Older popups", "mn", "ward-answer", "ward-accept", ""],
+    ["Empty", "States", "m", "home", "state-empty", ""],
+    ["Error", "States", "m", "home", "state-error", ""],
+    ["Loading", "States", "m", "home", "state-loading", ""],
+    ["Loading (Capacity)", "States", "m", "capacity", "state-loading", ""],
+    ["Loading (Waiting)", "States", "m", "waiting", "state-loading", ""],
+    ["Not wired", "States", "b", "home", "state-not-wired", ""],
+    ["Offline", "States", "m", "home", "state-offline", ""],
+    ["Toast", "States", "m", "home", "state-toast", ""],
+    ["Compare", "Statistics pages", "st", "statistics-compare", "", ""],
+    ["Ward list", "Statistics pages", "mn", "statistics-list", "", ""],
+    ["One ward", "Statistics pages", "mn", "statistics-unit", "", ""],
+    ["Weekly", "Statistics pages", "st", "statistics-weekly", "", ""],
+  ];
+  // Q156 (Josh, 1 Nov 2026): the 36 role views are archived. They still show older layouts, so they move to
+  // the end of the list under an Archive label and are not to be built from.
+  {
+    const arch = ALL.filter((r) => r[1].startsWith("As "));
+    const rest = ALL.filter((r) => !r[1].startsWith("As "));
+    ALL.splice(0, ALL.length, ...rest, ...arch.map((r) => [r[0], "Archive, old layout: " + r[1], ...r.slice(2)]));
+  }
+  const NOTE = {
+    m: "main build (shipped), rebuilt from dce1194a0 on 2 Nov 2026",
+    b: "all-screens viewer (BL86) with main's current tokens",
+    mn: "main dce1194a0 (2 Nov 2026, after #1287-#1300), real pages and pop-ups",
+    st: "Statistics build",
+    tr: "Transport zip",
+    mv: "Movements round 4",
+    ed: "ED round 3",
+    ho: "Handover round 6",
+    pa: "Patients zip",
+    he: "Help zip",
+    static: "static mock-up",
+  };
+  const ALLVIEWS = ALL.map(([l, g, dir, screen, pop, extra]) => [
+    l,
+    dir === "static" ? () => screen : F(dir, screen, (pop ? `&pop=${pop}` : "") + (extra || "")),
+    g,
+    NOTE[dir],
+  ]);
+  const SECTIONS = [
+    {
+      id: "rules",
+      label: "Rules and lessons",
+      kit: true,
+      status: "Read first",
+      src: "Every owner rule and build lesson to date.",
+      views: [["Rules", () => "rules.html"]],
+    },
+    {
+      id: "system",
+      label: "Design system",
+      kit: true,
+      status: "Read first (2 Nov)",
+      src: "The perfected design system: tokens, kit, shell, words and the variation zone for each page's signature part. Source docs/design/DESIGN-SYSTEM.md.",
+      views: [["Design system", () => "system.html"]],
+    },
+    {
+      id: "tokens",
+      label: "Tokens",
+      kit: true,
+      status: "Shared",
+      src: "Every token in src/app/ward-flow-v9-tokens.css, read live from main. Click a token to copy var().",
+      views: [["All tokens", (t) => `m/kit.html?view=tokens&theme=${t}`]],
+    },
+    {
+      id: "components",
+      label: "Components",
+      kit: true,
+      status: "Shared",
+      src: "The real src/components/wf kit from main, in each state. Use these; never copy a primitive into a screen. Take the sidebar, header and dock from the master screens: main's Alerts page is still on the pre-30 Oct header until the Alerts redesign ships.",
+      views: [["Kit", (t) => `m/kit.html?theme=${t}`]],
+    },
+    {
+      id: "overview",
+      label: "All pages at a glance",
+      kit: true,
+      status: "Overview",
+      src: "A small picture of every page in light mode. Click one to open it.",
+      views: [["Overview", () => "overview.html"]],
+    },
+    {
+      id: "all",
+      label: "Every page (" + ALL.length + ")",
+      status: "All pages",
+      src: "Every page, pop-up and state, each from its newest approved build. The role views at the end are archived (Q156): older layouts, not to be built from.",
+      views: ALLVIEWS,
+    },
+    {
+      id: "ward",
+      label: "Ward",
+      status: "Shipped (#1212)",
+      src: "Main build. Follows the shipped version where it differs from the mock-up (e.g. 20px figures).",
+      views: [["My ward", F("m", "ward")]],
+    },
+    {
+      id: "transport",
+      label: "Transport",
+      status: "Open (#1221, #1235)",
+      src: "Josh's Transport Mock-up.zip.",
+      views: [
+        ["Transport", F("tr", "transport")],
+        ["Booking panel", P("tr", "transport", "transport-booking")],
+        ["Job panel", P("tr", "transport", "transport-job")],
+      ],
+    },
+    {
+      id: "movements",
+      label: "Movements",
+      status: "Shipped (#1222, Q227)",
+      src: "Main (rebuilt from dce1194a0 on 2 Nov 2026 after #1287-#1300; Q230 check was on the #1285 build), checked against the round 4 bundle at 390, 820, 1280 and 1440, light and dark (Q230). Phone opens the first stage, link cards after the list, dock says Alerts with the bell (Q268, replacing Q177's Tasks).",
+      views: [
+        ["Movements", F("mn", "movements")],
+        ["Round 4 bundle (older phone layout)", F("mv", "movements")],
+      ],
+    },
+    {
+      id: "ed",
+      label: "ED",
+      status: "Open (#1223, #1231)",
+      src: "Approved round 3 ED handover bundle.",
+      views: [["ED board", F("ed", "ed-board")]],
+    },
+    {
+      id: "alerts",
+      label: "Alerts",
+      status: "Shipped (#1230 to #1258). Approved 1 Nov (Q180 to Q184; Q179 no, keeps Act now and Waiting). Building",
+      src: "Clarity proposal v2: interactive, on the master's new sidebar, header and band hero (main's Alerts page still has the pre-30 Oct header). Change the width to see phone, tablet and desktop. Not approved yet; build only after Josh says yes.",
+      views: [
+        ["Clarity proposal: bed coordinator (interactive)", (t) => `ac/index.html?theme=${t}#desk-coord`],
+        ["Clarity proposal: nurse in charge", (t) => `ac/index.html?theme=${t}#desk-ward`],
+        ["Clarity proposal: ED triage liaison", (t) => `ac/index.html?theme=${t}#desk-ed`],
+        ["Clarity proposal: transport officer", (t) => `ac/index.html?theme=${t}#desk-transport`],
+        ["Clarity proposal: community clinician", (t) => `ac/index.html?theme=${t}#desk-community`],
+        ["Shipped redesign: desktop (static)", () => "al/desktop.html"],
+        ["Shipped redesign: phone (static)", () => "al/phone.html"],
+      ],
+    },
+    {
+      id: "forms",
+      label: "Forms",
+      status: "Shipped (#1228)",
+      src: "Main build; matches the later Forms zip.",
+      views: [["Legal forms", F("m", "legal-forms")]],
+    },
+    {
+      id: "handover",
+      label: "Handover",
+      status: "Open (#1232)",
+      src: "Approved round 6 bundle (handover-hifi).",
+      views: [["Handover", F("ho", "handover")]],
+    },
+    {
+      id: "community",
+      label: "Community",
+      status: "Open (#1227, #1234)",
+      src: "Locked static mock-up (design-lock 7ca1e0c3e).",
+      views: [["Community team", () => "cm/index.html"]],
+    },
+    {
+      id: "discharges",
+      label: "Discharges",
+      status: "Shipped (#1229)",
+      src: "Main build of the approved Discharges Redesign.",
+      views: [["Discharges", F("m", "discharges")]],
+    },
+    {
+      id: "popups",
+      label: "Pop-ups / Activity",
+      status: "Shipped (#1206-#1211, #1226)",
+      src: "Main build; every pop-up and state.",
+      views: [
+        ["Activity", P("m", "home", "activity-panel")],
+        ["Alerts drawer", P("m", "home", "alerts")],
+        ["Tools", P("m", "home", "tools")],
+        ["Search", P("m", "home", "search")],
+        ["Keyboard shortcuts", P("m", "home", "shortcuts")],
+        ["Demo menu", P("m", "home", "demo")],
+        ["Phone menu", P("m", "home", "menu")],
+        ["Create", P("m", "home", "create")],
+        ["Service picker", P("m", "home", "service-picker")],
+        ["More pages", P("m", "home", "more-pages")],
+        ["Tour", P("m", "home", "tour")],
+        ["Refer to a ward", P("m", "ed-board", "refer-ward")],
+        ["Discharge detail", P("m", "discharges", "discharge-detail")],
+        ["Medical clearance", P("m", "patient", "clearance")],
+        ["Idle warning", P("m", "home", "idle-warning")],
+        ["Idle lock", P("m", "home", "idle-lock")],
+        ["Leave with unsaved changes", P("m", "add-patient", "confirm-leave")],
+        ["Discard escalation", P("m", "home", "confirm-discard")],
+        ["Loading", P("m", "home", "state-loading")],
+        ["Loading (Capacity)", P("m", "capacity", "state-loading")],
+        ["Loading (Waiting)", P("m", "waiting", "state-loading")],
+        ["Empty", P("m", "home", "state-empty")],
+        ["Error", P("m", "home", "state-error")],
+        ["Offline", P("m", "home", "state-offline")],
+        ["Toast", P("m", "home", "state-toast")],
+        ["Approved Activity picture", () => "pu/3-approved-mockup.png"],
+      ],
+    },
+    {
+      id: "help",
+      label: "Help",
+      status: "Open (#1242)",
+      src: "Josh's Ward Flow Redesign 1.zip (Help round 2).",
+      views: [["Help", P("he", "home", "help")]],
+    },
+    {
+      id: "patients",
+      label: "Patients",
+      status: "Open (#1224)",
+      src: "Josh's Patient Screen Redesign.zip.",
+      views: ["now", "history", "community", "details", "documents"].flatMap((tab) =>
+        [
+          ["PT-003", "On ward"],
+          ["PT-013", "In transit"],
+          ["PT-036", "On leave"],
+          ["PT-029", "In ED"],
+        ].map(([p, w]) => [`${w}: ${tab}`, F("pa", "patient", `&patient=${p}&tab=${tab}`)]),
+      ),
+    },
+    {
+      id: "statistics",
+      label: "Statistics / Weekly",
+      status: "Building (#1243 Weekly)",
+      src: "statistics-hifi build, all seven tabs; figures are illustrative.",
+      views: [
+        ["Overview", F("st", "statistics")],
+        ["Compare", F("st", "statistics-compare")],
+        ["Services", F("st", "statistics-services")],
+        ["Wards", F("st", "statistics-wards")],
+        ["EDs", F("st", "statistics-eds")],
+        ["Teams", F("st", "statistics-teams")],
+        ["Weekly", F("st", "statistics-weekly")],
+      ],
+    },
+  ];
+  const WIDTHS = [1440, 1280, 820, 390];
+  const HEIGHTS = { 1440: 900, 1280: 800, 820: 1180, 390: 844 };
+  const state = { s: 0, v: 0, w: 1440, theme: "light" };
+  try {
+    const k = JSON.parse(localStorage.getItem("wf-master") || "{}");
+    if (WIDTHS.includes(k.w)) state.w = k.w;
+    if (k.theme === "dark") state.theme = "dark";
+  } catch (e) {}
+  const fromHash = () => {
+    const [id, v] = location.hash.slice(1).split("/");
+    const i = SECTIONS.findIndex((x) => x.id === id);
+    if (i >= 0) {
+      state.s = i;
+      state.v = Math.max(0, Math.min(Number(v) || 0, SECTIONS[i].views.length - 1));
+    }
+  };
+  fromHash();
+  const $ = (id) => document.getElementById(id);
+
+  function seg(el, items, key) {
+    el.innerHTML = "";
+    for (const [value, label] of items) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = label;
+      b.setAttribute("aria-pressed", String(state[key] === value));
+      b.onclick = () => {
+        state[key] = value;
+        render();
+      };
+      el.append(b);
+    }
+  }
+  const tabs = $("tabs");
+  SECTIONS.forEach((s, i) => {
+    if (i === 4 || i === 6) {
+      const d = document.createElement("span");
+      d.className = "sep";
+      tabs.append(d);
+    }
+    const b = document.createElement("button");
+    b.type = "button";
+    b.role = "tab";
+    b.textContent = s.label;
+    b.dataset.i = i;
+    b.onclick = () => {
+      state.s = i;
+      state.v = 0;
+      render();
+      b.scrollIntoView({ block: "nearest", inline: "nearest" });
+    };
+    tabs.append(b);
+  });
+
+  let last = "";
+  function render() {
+    const s = SECTIONS[state.s];
+    document.documentElement.dataset.theme = state.theme;
+    for (const b of tabs.querySelectorAll("button"))
+      b.setAttribute("aria-selected", String(Number(b.dataset.i) === state.s));
+    seg(
+      $("width"),
+      WIDTHS.map((w) => [w, String(w)]),
+      "w",
+    );
+    seg(
+      $("theme"),
+      [
+        ["light", "Light"],
+        ["dark", "Dark"],
+      ],
+      "theme",
+    );
+    const views = $("views");
+    views.innerHTML = "";
+    if (s.views.length > 1) {
+      const sel = document.createElement("select");
+      sel.setAttribute("aria-label", "View");
+      let grp = null,
+        og = null;
+      s.views.forEach(([l, , g], i) => {
+        if (g && g !== grp) {
+          grp = g;
+          og = document.createElement("optgroup");
+          og.label = g;
+          sel.append(og);
+        }
+        const o = document.createElement("option");
+        o.value = i;
+        o.textContent = l;
+        (g ? og : sel).append(o);
+      });
+      sel.value = state.v;
+      sel.onchange = () => {
+        state.v = Number(sel.value);
+        render();
+      };
+      const step = (d) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = d < 0 ? "Previous" : "Next";
+        b.onclick = () => {
+          state.v = (state.v + d + s.views.length) % s.views.length;
+          render();
+        };
+        return b;
+      };
+      views.append(step(-1), sel, step(1), ` ${state.v + 1} of ${s.views.length} `);
+    }
+    $("status").textContent = s.status;
+    $("src").textContent = s.views[state.v][3] ? `From the ${s.views[state.v][3]}.` : s.src;
+    const url = s.views[state.v][1](state.theme);
+    $("open").href = url;
+    try {
+      localStorage.setItem("wf-master", JSON.stringify({ w: state.w, theme: state.theme }));
+    } catch (e) {}
+    const h = `#${s.id}/${state.v}`;
+    if (location.hash !== h) history.replaceState(null, "", h);
+    const isPic = url.endsWith(".png");
+    $("stage").hidden = isPic;
+    $("pic").hidden = !isPic;
+    if (isPic) {
+      $("pic").src = url;
+      $("pic").alt = s.views[state.v][0];
+      return;
+    }
+    if (url !== last) {
+      $("frame").src = url;
+      last = url;
+    }
+    layout();
+  }
+  function layout() {
+    const s = SECTIONS[state.s],
+      f = $("frame"),
+      st = $("stage");
+    const avail = Math.max(200, $("main").clientWidth - 32);
+    if (s.kit) {
+      f.style.transform = "";
+      f.style.width = "100%";
+      st.style.width = "100%";
+      f.style.height = st.style.height = Math.max(400, $("main").clientHeight - 26) + "px";
+      return;
+    }
+    const k = Math.min(1, avail / state.w);
+    const viewH = Math.max(300, $("main").clientHeight - 26);
+    f.style.width = state.w + "px";
+    f.style.height = Math.round(viewH / k) + "px";
+    f.style.transform = `scale(${k})`;
+    st.style.width = Math.round(state.w * k) + "px";
+    st.style.height = viewH + "px";
+  }
+  window.addEventListener("resize", layout);
+  window.addEventListener("hashchange", () => {
+    fromHash();
+    render();
+  });
+  render();
+</script>
