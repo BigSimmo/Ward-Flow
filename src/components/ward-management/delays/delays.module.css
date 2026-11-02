@@ -1287,3 +1287,16 @@
     bottom: 136px;
   }
 }
+
+/* Q240 (spacing review, 2 Nov 2026): on a phone the page's own ground runs down to the dock, rather
+   than stopping at the scroller's dock clearance (--wf-dock-clear plus the 12px end gap from
+   ward-phone-page-dock.module.css) and leaving a band of the shell's grey under the footer note.
+   The padding paints the ground there and the equal negative margin keeps the scroll length and the
+   footer's place unchanged. */
+@media (max-width: 48rem) {
+  .screen[data-ward-page="delays"] {
+    --wf-waiting-dock-tail: calc(var(--wf-dock-clear, 0px) + var(--wf-s-3, 12px));
+    margin-bottom: calc(-1 * var(--wf-waiting-dock-tail));
+    padding-bottom: var(--wf-waiting-dock-tail);
+  }
+}

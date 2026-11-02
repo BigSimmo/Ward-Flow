@@ -4826,8 +4826,11 @@
 .a2Table col[data-col="Referral"] {
   width: 17%;
 }
+/* Q242 (spacing review, 2 Nov 2026): wide enough for the longest Next button, "Log transport
+ * booking" with its More button (198px measured), plus the cell's 8px sides. At 204px it spilt
+ * past the heading's left edge on the iPad board. */
 .a2Table col[data-col="Next"] {
-  width: 204px;
+  width: 228px;
 }
 .a2Table[data-columns="priority"] col[data-col="Referral"] {
   width: 22%;

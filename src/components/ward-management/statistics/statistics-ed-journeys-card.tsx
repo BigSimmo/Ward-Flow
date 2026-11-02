@@ -134,7 +134,7 @@ export function StatisticsEdJourneysCard({
         role="region"
         aria-label="Emergency department waits for a mental health bed, scrollable table"
       >
-        <table className={cx(tableClasses.table, redesign.table)} id="edPressureTable">
+        <table className={cx(tableClasses.table, redesign.table, redesign.tableFit)} id="edPressureTable">
           <caption className="sr-only">Emergency department waits for a mental health bed</caption>
           <thead>
             <tr>
