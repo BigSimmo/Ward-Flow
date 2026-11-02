@@ -30,14 +30,13 @@
   font-size: var(--wf-fs-12);
 }
 
-/* A table that is not the chosen tab: hidden on screen, printed in full. */
-.printOnlyPanel {
-  display: none;
-}
-
-@media print {
-  .printOnlyPanel {
-    display: block;
+/* A table that is not the chosen tab: hidden on screen, printed in full. The kit Card sets its own
+   display with the same weight and loads later, so the class is doubled to win on screen (Q217,
+   2 Nov 2026: all four tables showed at once on tablet and desktop). Print keeps the Card's own
+   display, so every table prints. */
+@media screen {
+  .printOnlyPanel.printOnlyPanel {
+    display: none;
   }
 }
 

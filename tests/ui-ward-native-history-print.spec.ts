@@ -393,4 +393,23 @@ test.describe("native history and handover print @mockup", () => {
     await expect(chip).toBeVisible();
     await page.emulateMedia({ media: "screen" });
   });
+
+  // Q217 (Josh, 2 Nov 2026): the kit Card's own display once beat the hide class, so all four tables
+  // showed at once under the tabs. On screen only the chosen tab's table shows; print holds all four.
+  for (const width of [1440, 820]) {
+    test(`Downtime pack shows one table per tab on screen and all four in print at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`${HOME}/reports/downtime`);
+      await settled(page);
+      const panels = ["beds", "ed", "moves", "forms"].map((id) => page.locator(`#downtime-panel-${id}`));
+      await expect(panels[0]).toBeVisible();
+      for (const other of panels.slice(1)) await expect(other).toBeHidden();
+      await page.getByRole("tab", { name: "ED queue" }).click();
+      await expect(panels[1]).toBeVisible();
+      for (const other of [panels[0], panels[2], panels[3]]) await expect(other).toBeHidden();
+      await page.emulateMedia({ media: "print" });
+      for (const panel of panels) await expect(panel).toBeVisible();
+      await page.emulateMedia({ media: "screen" });
+    });
+  }
 });
