@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
-import { X } from "lucide-react";
+import { Info, X } from "lucide-react";
 
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 
@@ -63,7 +63,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   // Find the step's control, light it and keep the card clear of it (`ward-spotlight.ts`).
   const target = step?.target;
   const targets = useMemo(() => (target ? [target] : undefined), [target]);
-  const { box, missing } = useSpotlight(targets, `${step?.id ?? ""}|${pathname}`);
+  const { box, missing } = useSpotlight(targets, `${step?.id ?? ""}|${pathname}`, device);
   usePlacedCard(cardRef, spotRef, box, device, step, missing);
 
   const finish = useCallback(() => {
@@ -88,6 +88,11 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     initialFocusRef: nextRef,
     keyPhase: "capture",
   });
+
+  // A step change can take away the focused button (Back on the first step), so focus goes to Next.
+  useEffect(() => {
+    if (document.activeElement === document.body) nextRef.current?.focus();
+  }, [index]);
 
   function go(next: number) {
     const clamped = Math.min(Math.max(0, next), steps.length - 1);
@@ -135,16 +140,23 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   return (
     <OverlayPortal layer="modal" name="ward-tour">
       <div ref={rootRef} className={styles.layer} data-testid="ward-tour" data-device={device}>
+        {/* Keyed apart, so a new spot is never the dim's box reused and flown in from the corner. */}
         {box ? (
           <div
+            key="spot"
             ref={spotRef}
             className={styles.spot}
-            style={{ transform: `translate(${box.left}px, ${box.top}px)`, width: box.width, height: box.height }}
+            style={{
+              transform: `translate(${box.left}px, ${box.top}px)`,
+              width: box.width,
+              height: box.height,
+              borderRadius: box.radius,
+            }}
             data-testid="ward-tour-spot"
             aria-hidden="true"
           />
         ) : (
-          <div className={styles.dim} aria-hidden="true" />
+          <div key="dim" className={styles.dim} aria-hidden="true" />
         )}
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape, arrow keys and Tab bubbling up from the focused button inside */}
         <div
@@ -222,8 +234,9 @@ export function WardTour({ onClose }: { onClose: () => void }) {
             </div>
           ) : null}
           {step.target && missing ? (
-            <p className={styles.notHere} data-testid="ward-tour-not-here">
-              {SPOT_NOT_HERE}
+            <p className={styles.notHere} role="note" data-testid="ward-tour-not-here">
+              <Info aria-hidden="true" strokeWidth={1.75} />
+              <span>{SPOT_NOT_HERE}</span>
             </p>
           ) : null}
           {step.canDo ? (
@@ -250,7 +263,12 @@ export function WardTour({ onClose }: { onClose: () => void }) {
             </button>
             {/* Round 2 (#1118): no dead Back on the first card. */}
             {index > 0 ? (
-              <button type="button" className={styles.secondary} onClick={() => go(index - 1)}>
+              <button
+                type="button"
+                className={styles.secondary}
+                onClick={() => go(index - 1)}
+                aria-keyshortcuts="ArrowLeft"
+              >
                 Back
               </button>
             ) : null}
@@ -259,6 +277,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
               type="button"
               className={styles.primary}
               onClick={last ? finish : () => go(index + 1)}
+              aria-keyshortcuts={last ? undefined : "ArrowRight"}
               data-testid={last ? "ward-tour-done" : "ward-tour-next"}
             >
               {last ? "Done" : "Next"}
