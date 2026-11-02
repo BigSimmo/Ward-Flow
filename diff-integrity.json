@@ -1438,6 +1438,13 @@
       "after": 0,
       "reason": "The file tested only WardHelpSearch, the variant-A search box that no screen imported after the Help redesign of 1 Nov 2026; the component is deleted with it (Josh approved retiring the unused Help views and merging the search paths on 2 Nov 2026). The live search is tested by tests/ward-help-search-sheet.dom.test.tsx, tests/ward-help-ask.dom.test.tsx, tests/ward-help-search-index.test.ts, tests/ward-help-search-quality.test.ts and tests/ward-global-search-help.dom.test.tsx.",
       "approvedOn": "2026-11-02"
+    },
+    {
+      "path": "tests/ward-bed-drawer-stay-day.dom.test.tsx",
+      "before": 3,
+      "after": 2,
+      "reason": "Drops the What's new (P102) case, which checked that the release-notes list still held the 27 Oct Stay tile line. The list is capped at 20 and rolls off its oldest line when a new one is added (git-publication.md); Josh approved rolling off the oldest line and updating this check on 2 Nov 2026. The Stay tile behaviour itself stays covered by the file's two remaining cases.",
+      "approvedOn": "2026-11-02"
     }
   ]
 }
