@@ -59,7 +59,7 @@ it("names identified release rows and distinguishes aggregate copying from print
     expect(screen.queryByText(/anonymous releases|Bed frees \(no name\)/i)).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-discharge-copy"));
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
-    expect(writeText.mock.calls[0][0]).toMatch(/^Synthetic prototype\.\nDischarges by bed, as of/);
+    expect(writeText.mock.calls[0][0]).toMatch(/^Synthetic prototype\.\nDischarges, by bed, as of/);
     expect(writeText.mock.calls[0][0]).not.toMatch(/UMRN|WF-|PT-|WR-/);
   } finally {
     if (originalClipboard) Object.defineProperty(navigator, "clipboard", originalClipboard);

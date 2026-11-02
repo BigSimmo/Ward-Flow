@@ -150,7 +150,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const copyCounts = nowView
     ? () => {
         const text =
-          `Discharges by bed, as of ${formatSheetMoment(base.now, base.dayZero)}. ` +
+          `Discharges, by bed, as of ${formatSheetMoment(base.now, base.dayZero)}. ` +
           `${toWorkCount} to work now of ${openReleases.length} open: ${groups.blocked.length} held up, ` +
           `${groups.confirmed.length} confirmed, ${groups.expected.length} expected · ` +
           `${groups["discharged-today"].length} discharged today. ` +

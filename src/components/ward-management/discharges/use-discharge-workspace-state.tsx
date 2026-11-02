@@ -465,7 +465,7 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   const bedDaysPast = Math.round(datePassed.reduce((sum, at) => sum + (now - at), 0) / MINUTES_PER_DAY);
   const copySummary = () => {
     const text =
-      `Discharges, ${population === "records" ? "admission records" : "discharges by bed"}, as of ${formatSheetMoment(now, dayZero)}. ` +
+      `Discharges, ${population === "records" ? "admission records" : "by bed"}, as of ${formatSheetMoment(now, dayZero)}. ` +
       `${openCount} open: ${counts.blocked} held up, ${counts.confirmed} confirmed, ${counts.expected} expected. ` +
       `${datePassed.length} past the ward's date, ${bedDaysPast} bed days. ${counts.departed} departed.`;
     copyTextToClipboard(text).then(
