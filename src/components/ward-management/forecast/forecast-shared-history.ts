@@ -10,7 +10,7 @@
 // a day, a list value, a role and a time. Nothing about a patient and no typed text is sent.
 "use client";
 
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import {
   SharedAccessContext,
@@ -48,12 +48,26 @@ export function sharedForecastReply(reply: unknown, generation: number): SharedF
   };
 }
 
-// The brief and the track record both read the history; a read already in flight is shared.
-const reads = new WeakMap<ForecastHistoryCall, Promise<unknown>>();
-function readOnce(call: ForecastHistoryCall): Promise<unknown> {
+// A save acknowledged in any view invalidates earlier reads in every view of this desk. This is
+// only a local read fence; ordering writes from different devices needs a server history revision.
+const saved = new WeakMap<ForecastHistoryCall, number>();
+const saveVersion = (call: ForecastHistoryCall) => saved.get(call) ?? 0;
+type PendingRead = { generation: number; version: number; promise: Promise<unknown> };
+
+// The brief and the track record share a read only while it is from the same world and no save
+// has since been acknowledged. An older read finishing cannot remove a newer world's read.
+const reads = new WeakMap<ForecastHistoryCall, PendingRead>();
+function readOnce(call: ForecastHistoryCall, generation: number): PendingRead {
+  const version = saveVersion(call);
   const held = reads.get(call);
-  if (held) return held;
-  const read = call().finally(() => reads.delete(call));
+  if (held?.generation === generation && held.version === version) return held;
+  const read: PendingRead = {
+    generation,
+    version,
+    promise: call().finally(() => {
+      if (reads.get(call) === read) reads.delete(call);
+    }),
+  };
   reads.set(call, read);
   return read;
 }
@@ -67,23 +81,29 @@ export function useSharedForecastHistory(generation: number) {
   // The reply held is for one call and world generation; anything else reads as still loading.
   const [held, setHeld] = useState<{ call: ForecastHistoryCall; generation: number; value: SharedForecastHistory }>();
   const state = !call ? LOCAL : held?.call === call && held.generation === generation ? held.value : LOADING;
+  const lifetime = useRef<{ call: ForecastHistoryCall; generation: number; live: boolean } | null>(null);
 
   useEffect(() => {
     if (!call) return;
-    let live = true;
-    const take = (value: SharedForecastHistory) => live && setHeld({ call, generation, value });
+    const active = { call, generation, live: true };
+    lifetime.current = active;
+    const take = (value: SharedForecastHistory) => active.live && setHeld({ call, generation, value });
     // A failed first read falls back to the browser's copy; a failed later read keeps what is held.
     let read = false;
-    const load = () =>
-      readOnce(call).then(
+    const load = () => {
+      const pending = readOnce(call, generation);
+      const current = () => active.live && pending.version === saveVersion(call);
+      return pending.promise.then(
         (reply) => {
+          if (!current()) return;
           read = true;
           take(sharedForecastReply(reply, generation));
         },
         () => {
-          if (!read) take(LOCAL);
+          if (current() && !read) take(LOCAL);
         },
       );
+    };
     void load();
     const timer = window.setInterval(load, READ_EVERY_MS);
     const onShown = () => {
@@ -92,12 +112,16 @@ export function useSharedForecastHistory(generation: number) {
     document.addEventListener("visibilitychange", onShown);
     // Another view recorded something: take the history it was answered with.
     const onShared = (event: Event) => {
-      const detail = (event as CustomEvent<{ call: ForecastHistoryCall; reply: unknown }>).detail;
-      if (detail?.call === call) take(sharedForecastReply(detail.reply, generation));
+      const detail = (event as CustomEvent<{ call: ForecastHistoryCall; generation: number; reply: unknown }>).detail;
+      if (detail?.call !== call || detail.generation !== generation) return;
+      const value = sharedForecastReply(detail.reply, generation);
+      if (value.status !== "shared") return;
+      read = true;
+      take(value);
     };
     window.addEventListener(SHARED_EVENT, onShared);
     return () => {
-      live = false;
+      active.live = false;
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onShown);
       window.removeEventListener(SHARED_EVENT, onShared);
@@ -106,11 +130,15 @@ export function useSharedForecastHistory(generation: number) {
 
   const send = useCallback(
     async (body: { snapshot: ForecastHistoryEntry } | { reason: ForecastMissReasonEntry }): Promise<boolean> => {
-      if (!call) return false;
+      const active = lifetime.current;
+      if (!call || !active?.live || active.call !== call || active.generation !== generation) return false;
       try {
         const reply = await call({ generation, ...body });
-        window.dispatchEvent(new CustomEvent(SHARED_EVENT, { detail: { call, reply } }));
-        return sharedForecastReply(reply, generation).status === "shared";
+        if (!active.live || lifetime.current !== active || sharedForecastReply(reply, generation).status !== "shared")
+          return false;
+        saved.set(call, saveVersion(call) + 1);
+        window.dispatchEvent(new CustomEvent(SHARED_EVENT, { detail: { call, generation, reply } }));
+        return true;
       } catch {
         return false;
       }
