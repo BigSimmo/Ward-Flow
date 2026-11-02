@@ -1,6 +1,6 @@
 "use client";
 
-import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
+import { WF_PHONE_QUERY } from "@/components/wf";
 
 export type WardDrawerId = "activity" | "tasks" | "tools" | "referral" | "service";
 
