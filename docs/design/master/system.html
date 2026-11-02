@@ -419,7 +419,8 @@
               <code>&lt;small&gt;</code>.
             </li>
             <li>
-              Strip figures are 15px. 20px figures appear in one focal strip per page only. 28px is the hero title.
+              Strip figures are 15px. 20px figures appear in one focal strip per page only. The kit hero title is 20px
+              (<code>--wf-fs-20</code>); 28px is for a page's one display figure, such as the TV and Statistics heroes.
             </li>
             <li>
               Tracking: <code>--wf-tr-20</code>, <code>--wf-tr-15</code>, <code>--wf-tr-caps</code> for the few capital
@@ -454,16 +455,18 @@
                 <tr>
                   <td>Button</td>
                   <td>40px drawn, 48px tap cover</td>
-                  <td>28px (<code>--wf-target</code>)</td>
+                  <td>36px (<code>--wf-h-md</code>); 28px is the smallest target (<code>--wf-target</code>)</td>
                 </tr>
                 <tr>
                   <td>Small button</td>
                   <td>40px on phone (Q295)</td>
-                  <td>28px</td>
+                  <td>32px (<code>--wf-h-sm</code>)</td>
                 </tr>
                 <tr>
                   <td>Tabs and segments</td>
-                  <td>32px items in a 40px track, 48px cover</td>
+                  <td>
+                    40px items on a 48px track (Q225; the kit overrides the older <code>--wf-phone-seg-*</code> 32/40)
+                  </td>
                   <td>30px at 13px (Q231)</td>
                 </tr>
                 <tr>

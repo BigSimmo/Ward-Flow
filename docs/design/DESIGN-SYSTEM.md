@@ -46,7 +46,7 @@ Dark mode and the Bright light setting come from the same tokens. Check every sc
 
 - Faces: `--wf-font` (Geist) for words and chart axes; `--wf-mono` (Geist Mono, tabular digits) for figures, times and counts.
 - Scale: 12, 13, 14, 15, 16, 20 and 28px (`--wf-fs-*` with `--wf-lh-*`). **12px is the floor**, with no exception for capitals, column heads, chart labels or `<small>`.
-- Strip figures are 15px. 20px figures appear in one focal strip per page only. 28px is the hero title.
+- Strip figures are 15px. 20px figures appear in one focal strip per page only. The kit hero title is 20px (`--wf-fs-20`); 28px is for a page's one display figure, such as the TV and Statistics heroes.
 - Tracking: `--wf-tr-20`, `--wf-tr-15`, `--wf-tr-caps` for the few capital labels.
 
 ### Space, shape and size
@@ -56,14 +56,14 @@ Dark mode and the Bright light setting come from the same tokens. Check every sc
 - Rows: 44px default (`--wf-row-default`), 36px dense, 52px touch, 40px group heads.
 - Controls, by device:
 
-| Control                | Phone                                                       | Tablet and desktop   |
-| ---------------------- | ----------------------------------------------------------- | -------------------- |
-| Button                 | 40px drawn, 48px tap cover                                  | 28px (`--wf-target`) |
-| Small button           | 40px on phone (Q295)                                        | 28px                 |
-| Tabs and segments      | 32px items in a 40px track, 48px cover                      | 30px at 13px (Q231)  |
-| Chips and filter pills | 40px (`--wf-phone-pill-h`)                                  | 22 to 30px           |
-| Accept, Pull, Decline  | Full 48px (the one exception)                               | Kit size             |
-| Controls at 200% text  | Grow with the text: min-height, never a fixed height (Q306) | Same                 |
+| Control                | Phone                                                                                   | Tablet and desktop                                              |
+| ---------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Button                 | 40px drawn, 48px tap cover                                                              | 36px (`--wf-h-md`); 28px is the smallest target (`--wf-target`) |
+| Small button           | 40px on phone (Q295)                                                                    | 32px (`--wf-h-sm`)                                              |
+| Tabs and segments      | 40px items on a 48px track (Q225; the kit overrides the older `--wf-phone-seg-*` 32/40) | 30px at 13px (Q231)                                             |
+| Chips and filter pills | 40px (`--wf-phone-pill-h`)                                                              | 22 to 30px                                                      |
+| Accept, Pull, Decline  | Full 48px (the one exception)                                                           | Kit size                                                        |
+| Controls at 200% text  | Grow with the text: min-height, never a fixed height (Q306)                             | Same                                                            |
 
 ### Motion
 
