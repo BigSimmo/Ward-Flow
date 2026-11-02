@@ -1983,7 +1983,7 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-    gap: 2px var(--wf-s-2);
+    gap: 2px 14px;
     min-width: 0;
     overflow: hidden;
     text-align: left;
@@ -2008,6 +2008,18 @@
     white-space: normal;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+  }
+
+  /* Q248 (spacing review, 2 Nov 2026): the master's "Stage · barrier" dot, drawn only when the two
+     share a line. Each item reaches 14px left into the gap and paints the dot there; an item that
+     wraps to a new line starts at the cluster's edge, so that 14px falls outside the cluster's
+     clip and no stray dot leads the line (Q238). Readers still hear the hidden comma. */
+  .stageCluster .blocker,
+  .stageCluster .secondary {
+    margin-left: -14px;
+    padding-left: 14px;
+    background: radial-gradient(circle closest-side, currentColor 70%, transparent 100%) no-repeat 6px
+      calc(var(--wf-lh-12) / 2 - 1.5px) / 3px 3px;
   }
 }
 
