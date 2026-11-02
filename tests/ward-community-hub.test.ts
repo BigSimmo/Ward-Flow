@@ -237,6 +237,17 @@ describe("who belongs to a community team", () => {
     expect(admissionBelongsToTeam(noRegion, TEAM_A, [toA, toB])).toBe(true);
   });
 
+  it("Q223: a referral to any ruled spelling of one clinic belongs to every page of that clinic", () => {
+    const mead = COMMUNITY_TEAM_PAGES.find((team) => team.name === "Mead Centre (Armadale)");
+    const other = COMMUNITY_TEAM_PAGES.find((team) => team.name === "Armadale (Mead)");
+    expect(mead && other).toBeTruthy();
+    const referral = referralNaming("Armadale (Mead)", "Perth Metropolitan");
+    const person = admission({ id: "AD-MEAD", referralId: referral.id });
+    expect(admissionBelongsToTeam(person, mead!, [referral])).toBe(true);
+    expect(admissionBelongsToTeam(person, other!, [referral])).toBe(true);
+    expect(admissionBelongsToTeam(person, TEAM_B, [referral])).toBe(false);
+  });
+
   it("belongs to nobody without a referral, or with a referral that named no community team", () => {
     const referral = referralNaming(TEAM_A.name, "Perth Metropolitan");
     // No referral at all — every admission created by PULL_PATIENT during a session.
@@ -367,7 +378,7 @@ describe("the lists a team's page renders", () => {
  * (final addendum) is the account.
  */
 describe("the shipped seed reaches a team page", () => {
-  it("puts AD-LEFT-01 on Inner City Clinic's page, and on no other team's", () => {
+  it("puts AD-LEFT-01 on Inner City Clinic's page and its ruled same-service pages (Q223), and on no other team's", () => {
     const { admissions, referrals } = seedWardFlowState();
 
     const withPeople = COMMUNITY_TEAM_PAGES.filter(
@@ -378,7 +389,10 @@ describe("the shipped seed reaches a team page", () => {
       "the seeded community link is gone. AD-LEFT-01's referralId must be the id of a real " +
         "referral naming a community team (RF-010 today) — NOT a value composed from its own id, " +
         "which is what every other seeded admission carries and what joins to nothing.",
-    ).toEqual(["Inner City Clinic", "Midland"]);
+    ).toEqual(expect.arrayContaining(["Inner City Clinic", "Inner City", "ICC", "Inner City (central)", "Midland"]));
+    // Q223 (Josh, 2 Nov 2026): the four ruled spellings of Inner City share one service, so the one
+    // referral reaches each of their pages. Nothing else does.
+    expect(withPeople).toHaveLength(5);
 
     // ⚠️ MIDLAND IS DEMONSTRATION DATA AND INNER CITY CLINIC IS NOT, which is why this test now
     // NAMES the team it goes on to measure instead of taking the first of a list. Nine referrals

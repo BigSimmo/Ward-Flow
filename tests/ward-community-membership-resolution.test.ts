@@ -4,6 +4,7 @@ import {
   admissionsWithUnresolvableReferral,
   communityMembershipResolution,
   COMMUNITY_TEAM_PAGES,
+  namesTeam,
 } from "@/components/ward-management/community/community-derivations";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -153,7 +154,10 @@ describe("a team's empty list says which kind of empty it is", () => {
    * "not-computable" here, the seed has regressed to manufacturing links again.**
    */
   it("reports measured-empty, never not-computable, for teams with no real member", () => {
-    const others = COMMUNITY_TEAM_PAGES.filter((team) => !TEAMS_WITH_A_REAL_JOIN.has(team.name));
+    // Q223 (Josh, 2 Nov 2026): a joined team's ruled same-service spellings share its members.
+    const others = COMMUNITY_TEAM_PAGES.filter(
+      (team) => ![...TEAMS_WITH_A_REAL_JOIN].some((name) => namesTeam(name, team)),
+    );
     expect(others.length, "there is only one team, so this proves nothing").toBeGreaterThan(10);
     // ⚠️ Floor the EXCLUSION too. An exclusion set that grew to cover every team would leave the
     // loop below walking nothing and reporting a clean estate — the failure this file's own
