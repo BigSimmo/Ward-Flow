@@ -549,11 +549,16 @@ export function ReferralBoard({
   useEffect(() => {
     if (!selectedReferralId || !detailRef.current) return;
     detailRef.current.scrollTop = 0;
-    if (typeof window !== "undefined" && window.innerWidth <= 743) {
+    // Below the split layout (64rem) the detail is a slide-over over the queue, so it takes focus.
+    const slideOver =
+      typeof window.matchMedia === "function"
+        ? !window.matchMedia(SPLIT_DETAIL_MEDIA_QUERY).matches
+        : window.innerWidth <= 743;
+    if (slideOver) {
       if (typeof detailRef.current.scrollIntoView === "function") {
         detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
       }
-      // On a phone the detail opens over the queue, so focus moves into it with the reader.
+      // The detail opens over the queue, so focus moves into it with the reader.
       detailRef.current.focus({ preventScroll: true });
     }
   }, [selectedReferralId]);
