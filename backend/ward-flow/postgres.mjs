@@ -505,8 +505,8 @@ export function createWorkspaceStore(
   /**
    * The workspace records this server last read or saved (limits audit, 25 Oct 2026: reading the
    * whole board from the database on every save and refresh would use up Supabase's monthly data
-   * allowance in about a day). `confirmed` is a state read from the database. `pending` is the
-   * state a save of this server wrote, trusted only once the database shows that save committed.
+   * allowance in about a day). `confirmed` is a state read from the database. `pending` is a
+   * successfully committed save, reused only while the database still names that exact state.
    * Each is named by the workspace row's revision and update time. A matching workspace row needs
    * no record read; otherwise only records whose content changed since `confirmed` are sent. The
    * bodies here are never handed out: every reader gets its own copy.
@@ -515,12 +515,15 @@ export function createWorkspaceStore(
   let confirmed = null;
   /** @type {{ revision: number, updatedAt: number, rows: Map<string, any> } | null} */
   let pending = null;
+  /** A save stays private to its transaction until COMMIT succeeds. */
+  /** @type {WeakMap<object, ReturnType<typeof savedState>>} */
+  const transactionRecords = new WeakMap();
   const rowKey = (collection, recordId) => `${collection}\u0000${recordId}`;
   /** The cached state the workspace row names, promoting a committed save; null when none does. */
   function cachedState(revision, updatedAt) {
     const at = updatedAt instanceof Date ? updatedAt.getTime() : Number.NaN;
     if (pending && pending.revision === Number(revision) && pending.updatedAt === at) confirmed = pending;
-    // A save still committing is newer than this row; any other pending state never committed.
+    // A read may predate this committed save; a newer matching row supersedes its candidate.
     if (!pending || pending.revision <= Number(revision)) pending = null;
     return confirmed && confirmed.revision === Number(revision) && confirmed.updatedAt === at ? confirmed : null;
   }
@@ -604,6 +607,10 @@ export function createWorkspaceStore(
       // A transaction owns this clock value; lock() refreshes it after any row-lock wait.
       const result = await run(client, new Date(clock().getTime()));
       await client.query("COMMIT");
+      const saved = transactionRecords.get(client);
+      // COMMIT replies can arrive out of order. An older transaction cannot replace records
+      // another read or save has already confirmed at a later revision.
+      if (saved && saved.revision > Math.max(confirmed?.revision ?? 0, pending?.revision ?? 0)) pending = saved;
       return result;
     } catch (error) {
       forgetVersionOnMissing(error);
@@ -614,6 +621,7 @@ export function createWorkspaceStore(
       }
       throw error;
     } finally {
+      transactionRecords.delete(client);
       client.release(rollbackFailure);
     }
   }
@@ -855,11 +863,11 @@ export function createWorkspaceStore(
       at,
     ]);
     await writeRecords(client, plan, at);
-    pending = savedState(row, plan, revision, at);
+    transactionRecords.set(client, savedState(row, plan, revision, at));
   }
   /**
-   * The records as this save leaves them, from the cached rows it started from; trusted once the
-   * database shows the save committed (`cachedState`). Null when a row it kept is not cached.
+   * The records as this save leaves them, from the cached rows it started from; published only
+   * after its own COMMIT succeeds. Null when a row it kept is not cached.
    */
   function savedState(row, plan, revision, at) {
     if (!row.cache) return null;
