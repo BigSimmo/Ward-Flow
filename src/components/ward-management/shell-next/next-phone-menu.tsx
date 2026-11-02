@@ -27,7 +27,9 @@ import {
 } from "@/components/ward-management/ward-chrome-role";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
+import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
+import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
@@ -707,24 +709,28 @@ export function NextPhoneMenu({
   const actNowCount = useMemo(
     () =>
       wardTasksAreActionableForRole(shellRole)
-        ? activeActNowItems(
-            {
-              movements,
-              units,
-              configuration,
-              inboxSnoozes,
-              leaveBeds,
-              admissions,
-              patients,
-              referrals,
-              supportNotifications,
-              plannedAdmissions,
-              // The bar's shape exactly, so this reuses the bar's task list instead of building its own
-              // on every page load (F-11). The wording setting changes no act-now row.
-              stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
-            },
-            flowNow,
-          ).length
+        ? // Q260: Act now as Home and Alerts count it, accepted referrals awaiting a bed pull included.
+          alertsNowFigures(
+            activeTaskItems(
+              {
+                movements,
+                units,
+                configuration,
+                inboxSnoozes,
+                leaveBeds,
+                admissions,
+                patients,
+                referrals,
+                supportNotifications,
+                plannedAdmissions,
+                // The bar's shape exactly, so this reuses the bar's task list instead of building its own
+                // on every page load (F-11). The wording setting changes no act-now row.
+                stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
+              },
+              flowNow,
+            ),
+            acceptedReferralsAwaitingPull(referrals, units, movements).length,
+          ).actNow
         : 0,
     [
       shellRole,
