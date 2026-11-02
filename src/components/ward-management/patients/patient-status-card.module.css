@@ -193,6 +193,8 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   min-width: 0;
+  /* Q234 (2 Nov 2026): on a narrow cell the owner drops under the title instead of hitting the edge. */
+  flex-wrap: wrap;
 }
 
 .iconChip {

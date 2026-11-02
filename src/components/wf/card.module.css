@@ -60,7 +60,9 @@
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);
-  flex: 0 0 auto;
+  /* Q235 (2 Nov 2026): a long aside gives way before the title collapses. */
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .body {
