@@ -249,7 +249,7 @@ export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
             ))}
           </ul>
         )}
-        <p className={styles.note}>Shows in Alerts at that time.</p>
+        <p className={styles.note}>Saved in this browser. Alerts does not show reminders yet.</p>
       </section>
     </div>
   );

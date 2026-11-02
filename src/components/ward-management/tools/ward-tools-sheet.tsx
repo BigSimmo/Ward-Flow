@@ -262,15 +262,22 @@ function UpdateBedWards({ onNavigate }: { onNavigate: () => void }) {
 }
 
 /** Q316: hands the typed words to the header's Search Ward Flow box. The words stay in the app. */
-function searchWardFlow(words: string, close: () => void) {
+/**
+ * Q316: hand the words to the header search. The Patients page has no header search (it is the
+ * search), so its own field takes them. With neither, the sheet stays open and says so.
+ */
+function searchWardFlow(words: string, close: () => void): boolean {
+  const input =
+    document.querySelector<HTMLInputElement>('input[placeholder="Search Ward Flow"]') ??
+    document.querySelector<HTMLInputElement>('input[data-testid="ward-patient-typeahead-input"]');
+  if (!input) return false;
   close();
   window.requestAnimationFrame(() => {
-    const input = document.querySelector<HTMLInputElement>('input[placeholder="Search Ward Flow"]');
-    if (!input) return;
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, words);
     input.dispatchEvent(new Event("input", { bubbles: true }));
     input.focus();
   });
+  return true;
 }
 
 /**
@@ -327,6 +334,7 @@ function ToolsSheetView({
 
   const [open, setOpen] = useState<ToolsSheetToolId | null>(null);
   const [query, setQuery] = useState("");
+  const [noSearch, setNoSearch] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
 
   const openTool = (id: ToolsSheetToolId) => {
@@ -598,7 +606,8 @@ function ToolsSheetView({
       <div className={styles.toolBody}>
         <WardDemoPanel oneList={!isPhone} grow />
         {/* Q320: the feed's demo button moves here from Do now. */}
-        <ReceiveNextFeedMessage />
+        {/* The executive desk has no live World, so the feed's demo button is not offered there. */}
+        {executive ? null : <ReceiveNextFeedMessage />}
       </div>
     ),
   };
@@ -658,7 +667,10 @@ function ToolsSheetView({
           label="Search tools"
           placeholder="Search tools"
           value={query}
-          onValueChange={setQuery}
+          onValueChange={(value) => {
+            setQuery(value);
+            setNoSearch(false);
+          }}
           inputRef={searchRef}
           shortcut={!isPhone}
         />
@@ -691,11 +703,12 @@ function ToolsSheetView({
         {matches === 0 ? (
           <div className={styles.none} role="status">
             <p>No tool matches “{query.trim()}”.</p>
+            {noSearch ? <p>Search is not on this page. Open Patients to search.</p> : null}
             <div className={styles.noneActions}>
               <button
                 type="button"
                 className={buttonClass({ variant: "pri", size: "sm" })}
-                onClick={() => searchWardFlow(query.trim(), onNavigate)}
+                onClick={() => setNoSearch(!searchWardFlow(query.trim(), onNavigate))}
               >
                 Search Ward Flow
               </button>
