@@ -40,7 +40,6 @@ import {
   type RailEntry,
 } from "@/components/ward-management/shell/ward-rail-entries";
 import { nextRoleMenu } from "@/components/ward-management/shell-next/next-role-menu";
-import { NextPhoneMenuTop } from "@/components/ward-management/shell-next/next-phone-menu-top";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { useAccessNavFilter } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlagCheck } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -571,6 +570,11 @@ const PhoneMenuSheets = dynamic(
   { ssr: false },
 );
 preloadWhenIdle(loadMenuSheets);
+// The Menu's top block (the desk's capacity card) shows only inside the Menu sheet, so it is its own
+// chunk too, fetched with the sheets once the browser is idle (phone script budget, 2 Nov 2026).
+const loadMenuTop = () => import("@/components/ward-management/shell-next/next-phone-menu-top");
+const NextPhoneMenuTop = dynamic(() => loadMenuTop().then((m) => m.NextPhoneMenuTop), { ssr: false });
+preloadWhenIdle(loadMenuTop);
 
 function PhoneMenuSheetsRetry(props: PhoneMenuSheetsProps) {
   const [Sheets, setSheets] = useState<ComponentType<PhoneMenuSheetsProps> | null>(null);

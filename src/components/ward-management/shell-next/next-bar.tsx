@@ -105,7 +105,8 @@ import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import polish from "@/components/ward-management/shell-next/next-bar.module.css";
-import { CLOSE_MENUS_EVENT } from "@/components/ward-management/shell-next/next-rail-parts";
+// The shell's one close-menus event, from its own small module so the bar does not carry the rail's parts.
+import { CLOSE_MENUS_EVENT } from "@/components/ward-management/shell/ward-menu-events";
 /**
  * ROLE BRANCH (every desk but the coordinator), Josh, 30 Oct 2026: the bar's place chip names the
  * desk's own place, not the service or "Statewide". The words are the app's own (`accessPlaceLabel`),
