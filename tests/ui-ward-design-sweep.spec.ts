@@ -4,7 +4,8 @@ import { WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 /**
  * Design sweep (2 November 2026): every main Ward Flow screen, at the phone (390x844), tablet
- * portrait (744x1133 iPad mini, 768x1024 iPad; Q330) and desktop (1280x800) sizes, fails on three
+ * portrait (744x1133 iPad mini, 768x1024 iPad; Q330), tablet landscape icon rail (1180x820 iPad Air) and
+ * desktop (1280x800) sizes, fails on three
  * owner design rules that screenshots kept missing:
  *
  * 1. visible text smaller than 12px;
@@ -24,6 +25,8 @@ const VIEWPORTS = [
   // Tablet portrait. The phone layout ends at 743px (useIsPhone, Q292), so both are tablet sizes.
   { name: "iPad mini 744x1133", width: 744, height: 1133 },
   { name: "iPad 768x1024", width: 768, height: 1024 },
+  // Tablet landscape (1001 to 1200px): the icon rail layout, unchecked until 2 Nov 2026.
+  { name: "iPad Air landscape 1180x820", width: 1180, height: 820 },
   { name: "desktop 1280x800", width: 1280, height: 800 },
 ] as const;
 

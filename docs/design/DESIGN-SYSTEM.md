@@ -25,20 +25,20 @@ Use tokens only. A raw hex value, pixel size or radius in a screen is a defect. 
 
 ### Colour roles
 
-| Role                | Tokens                                                                                                                   | Use                                                                                            |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| Ground and surfaces | `--wf-canvas`, `--wf-surface`, `--wf-surface-2`, `--wf-raised`, `--wf-overlay`, `--wf-track`                             | Canvas behind the sheet; solid surfaces carry data.                                            |
-| States of a surface | `--wf-hover`, `--wf-selected`, `--wf-e-sel`                                                                              | A selected item takes the selected tint with a neutral border, never a coloured edge.          |
-| Lines               | `--wf-line`, `--wf-line-2`, `--wf-line-3`, `--wf-line-ctl`                                                               | Hairlines, dividers and control outlines.                                                      |
-| Ink                 | `--wf-ink-1`, `--wf-ink-2`, `--wf-ink-3`, `--wf-ink-off`, `--wf-dim`                                                     | Text. "Not recorded" is ink-3.                                                                 |
-| Action blue         | `--wf-accent` (+ `-strong`, `-tint`, `-ink`, `-hover`, `-press`), `--wf-pri-1`, `--wf-pri-2` (+ hover, press)            | One action blue. Filled buttons, links, the focus ring, today, Now.                            |
-| Hero                | `--wf-hero-1`, `--wf-hero-2`, `--wf-hero-glow`, `--wf-hero-ink` (2, 3), `--wf-on-hero-*`                                 | The lit slate band only.                                                                       |
-| Tones               | `--wf-danger`, `--wf-warning`, `--wf-success`, `--wf-info`, `--wf-neutral` and their `-ink`; `--wf-hero-*` tones on hero | Glyphs and tags. Danger is act now.                                                            |
-| Tints               | `--wf-act-tint`, `--wf-hold-tint`, `--wf-fit-tint` (and `-edge` for glyph rings only)                                    | Row and tag backgrounds for act now, held and fits. The `-edge` tokens never draw a side edge. |
-| Data                | `--wf-data-1` to `--wf-data-3`, `--wf-data-ready`, `--wf-data-closed`, `--wf-data-rest`, `--wf-hatch`, `--wf-now`        | Charts, bed squares, heat maps. The hatch means "may move" everywhere.                         |
-| Health services     | `--wf-svc-north`, `-south`, `-east`, `-wachs`, `-cahs`, `-private`, `-statewide`                                         | Service identity on maps and legends only.                                                     |
-| Materials           | `--wf-glass-bar`, `--wf-glass-pop`, `--wf-glass-sheet`, `--wf-sheen`, `--wf-scrim`, `--wf-scrim-strong`                  | Glass about 80% opaque, with the sheen, for chrome and overlays. Never glass on data.          |
-| Elevation           | `--wf-e1`, `--wf-e2`, `--wf-e3`, `--wf-e-bar`                                                                            | One raise per role. Cards that are not separate objects take no shadow.                        |
+| Role                | Tokens                                                                                                                   | Use                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Ground and surfaces | `--wf-canvas`, `--wf-surface`, `--wf-surface-2`, `--wf-raised`, `--wf-overlay`, `--wf-track`                             | Canvas behind the sheet; solid surfaces carry data.                                         |
+| States of a surface | `--wf-hover`, `--wf-selected`, `--wf-e-sel`                                                                              | A selected item takes the selected tint with a neutral border, never a coloured edge.       |
+| Lines               | `--wf-line`, `--wf-line-2`, `--wf-line-3`, `--wf-line-ctl`                                                               | Hairlines, dividers and control outlines.                                                   |
+| Ink                 | `--wf-ink-1`, `--wf-ink-2`, `--wf-ink-3`, `--wf-ink-off`, `--wf-dim`                                                     | Text. "Not recorded" is ink-3.                                                              |
+| Action blue         | `--wf-accent` (+ `-strong`, `-tint`, `-ink`, `-hover`, `-press`), `--wf-pri-1`, `--wf-pri-2` (+ hover, press)            | One action blue. Filled buttons, links, the focus ring, today, Now.                         |
+| Hero                | `--wf-hero-1`, `--wf-hero-2`, `--wf-hero-glow`, `--wf-hero-ink` (2, 3), `--wf-on-hero-*`                                 | The lit slate band only.                                                                    |
+| Tones               | `--wf-danger`, `--wf-warning`, `--wf-success`, `--wf-info`, `--wf-neutral` and their `-ink`; `--wf-hero-*` tones on hero | Glyphs and tags. Danger is act now.                                                         |
+| Tints               | `--wf-act-tint`, `--wf-hold-tint`, `--wf-fit-tint` (`--wf-hold-edge`, `--wf-fit-edge` for glyph rings only)              | Row and tag backgrounds for act now, held and fits. The edge tokens never draw a side edge. |
+| Data                | `--wf-data-1` to `--wf-data-3`, `--wf-data-ready`, `--wf-data-closed`, `--wf-data-rest`, `--wf-hatch`, `--wf-now`        | Charts, bed squares, heat maps. The hatch means "may move" everywhere.                      |
+| Health services     | `--wf-svc-north`, `-south`, `-east`, `-wachs`, `-cahs`, `-private`, `-statewide`                                         | Service identity on maps and legends only.                                                  |
+| Materials           | `--wf-glass-bar`, `--wf-glass-pop`, `--wf-glass-sheet`, `--wf-sheen`, `--wf-scrim`, `--wf-scrim-strong`                  | Glass about 80% opaque, with the sheen, for chrome and overlays. Never glass on data.       |
+| Elevation           | `--wf-e1`, `--wf-e2`, `--wf-e3`, `--wf-e-bar`                                                                            | One raise per role. Cards that are not separate objects take no shadow.                     |
 
 Dark mode and the Bright light setting come from the same tokens. Check every screen in both light and dark. In dark, a red badge on the phone bar needs the deeper red fill to pass 4.5:1 (Q302).
 
@@ -61,7 +61,7 @@ Dark mode and the Bright light setting come from the same tokens. Check every sc
 | Button                 | 40px drawn, 48px tap cover                                                              | 36px (`--wf-h-md`); 28px is the smallest target (`--wf-target`) |
 | Small button           | 40px on phone (Q295)                                                                    | 32px (`--wf-h-sm`)                                              |
 | Tabs and segments      | 40px items on a 48px track (Q225; the kit overrides the older `--wf-phone-seg-*` 32/40) | 30px at 13px (Q231)                                             |
-| Chips and filter pills | 40px (`--wf-phone-pill-h`)                                                              | 22 to 30px                                                      |
+| Chips and filter pills | 40px (`--wf-phone-pill-h`)                                                              | 24 to 30px; never a target under 24px (`--wf-target-min`)       |
 | Accept, Pull, Decline  | Full 48px (the one exception)                                                           | Kit size                                                        |
 | Controls at 200% text  | Grow with the text: min-height, never a fixed height (Q306)                             | Same                                                            |
 
@@ -82,10 +82,11 @@ A 2px `--wf-focus-ring` with a 2px gap, never clipped, light on the hero. Escape
 | Tablet portrait     | 744 to 1000px          | No rail beside the work. iPads at 744 and 768 get this layout (Q292).                          |
 | Tablet landscape    | 1001 to 1200px         | Icon rail.                                                                                     |
 | Desktop             | 1201px and up          | Full master sidebar.                                                                           |
+| Content stack       | below about 900px      | Not a shell change: two crowded side-by-side cards stack (Q291).                               |
 
-The queries live in `src/components/wf/use-is-phone.ts`; CSS repeats them as `(max-width: 46.4375rem)` and `(min-width: 46.5rem)`. Use one breakpoint value everywhere.
+The queries live in `src/components/wf/use-is-phone.ts`; CSS repeats them as `(max-width: 46.4375rem)` and `(min-width: 46.5rem)`. Use these values for every phone, tablet and desktop switch. A content-fit point (a table's measured width, the 900px stack) is allowed only with a comment saying what it measures. Older `40rem` (640px) phone switches are being moved onto the phone value.
 
-**Check every page at 390, 744, 768, 820, 1280 and 1440, in light and dark, and at 200% text on phone.**
+**Check every page at 390, 744, 768, 820, 1180, 1280 and 1440, in light and dark, and at 200% text on phone.** 1180 is the icon rail (tablet landscape).
 
 The shell is the same on every page. Copy it from the master's newest screens (the redesign preview with `?shell=next`), never from a page on `main`.
 
@@ -174,7 +175,7 @@ States: empty pages say what is empty without a Clear button ("No patients yet."
 - **Headings and landmarks.** No skipped levels; each landmark has a unique name (Q303, Q304).
 - **Keyboard.** Scrollable strips are focusable. Arrow keys move through rows and tiles.
 - **Contrast.** 4.5:1 for text and badges in both themes.
-- **Stickies.** A sticky bar never covers content or a tab row (Q224). The design sweep test fails text under 12px and covering sticky bars, and phone controls under 40px above each page's baseline (`tests/ui-ward-design-sweep.spec.ts`).
+- **Stickies.** A sticky bar never covers content or a tab row (Q224). The design sweep test fails text under 12px and covering sticky bars, and phone controls under 40px above each page's baseline, at 390, 744, 768, 1180 and 1280 (`tests/ui-ward-design-sweep.spec.ts`).
 
 ## 8. The variation zone
 
@@ -214,7 +215,7 @@ Each page may take **one signature part**: a bespoke visual that shows its own d
 ## 9. Before posting a mock-up or marking a PR ready
 
 - [ ] Shell copied from the master's newest screens, compared side by side with the master's Home and Ward.
-- [ ] Checked at 390, 744, 768, 820, 1280 and 1440, light and dark, and at 200% text on phone.
+- [ ] Checked at 390, 744, 768, 820, 1180, 1280 and 1440, light and dark, and at 200% text on phone.
 - [ ] Tokens only; kit parts only; no one-off pills.
 - [ ] No coloured side edges; no text under 12px; phone controls 40px; desktop tabs 30px.
 - [ ] One on-hero action, one filled button per panel, eight rows then Show more.

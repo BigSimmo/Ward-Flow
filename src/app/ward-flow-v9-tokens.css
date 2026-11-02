@@ -54,7 +54,6 @@
   --wf-data-3: #c9d3dd;
   --wf-data-ready: #2f8a5f;
   --wf-data-closed: #b9c4cf;
-  --wf-glass-thin: var(--wf-glass-bar);
   --wf-glass: var(--wf-glass-pop);
   --wf-glass-thick: var(--wf-glass-sheet);
   --wf-glass-rim: linear-gradient(
@@ -65,9 +64,6 @@
   );
   --wf-scrim: rgba(22, 30, 40, 0.14);
   --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.75), transparent 50%);
-  --wf-backdrop:
-    radial-gradient(1200px 520px at 8% -10%, rgba(143, 176, 212, 0.32), transparent 60%),
-    radial-gradient(900px 480px at 100% 0%, rgba(150, 196, 180, 0.2), transparent 55%), #e8ecf0;
   --wf-e1:
     inset 0 1px 0 var(--wf-hl), 0 1px 1px rgba(16, 24, 40, 0.03), 0 2px 6px -2px rgba(16, 24, 40, 0.05),
     0 12px 28px -20px rgba(16, 24, 40, 0.22);
@@ -119,9 +115,7 @@
   --wf-row-compact: 44px;
   --wf-m-fast: 120ms;
   --wf-m-base: 200ms;
-  --wf-m-slow: 320ms;
   --wf-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --wf-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
   --wf-font: var(--font-geist-sans), Geist, "Segoe UI", system-ui, sans-serif;
   --wf-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, monospace;
   color-scheme: light;
@@ -171,7 +165,6 @@
   --wf-data-3: #2a3a4b;
   --wf-data-ready: #4cb383;
   --wf-data-closed: #3a4b5c;
-  --wf-glass-thin: var(--wf-glass-bar);
   --wf-glass: var(--wf-glass-pop);
   --wf-glass-thick: var(--wf-glass-sheet);
   --wf-glass-rim: linear-gradient(
@@ -182,9 +175,6 @@
   );
   --wf-scrim: rgba(0, 0, 0, 0.4);
   --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 50%);
-  --wf-backdrop:
-    radial-gradient(1200px 520px at 8% -10%, rgba(79, 115, 152, 0.28), transparent 60%),
-    radial-gradient(900px 480px at 100% 0%, rgba(76, 179, 131, 0.08), transparent 55%), #0d141b;
   --wf-e1: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
   --wf-e2: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 10px 24px -10px rgba(0, 0, 0, 0.6);
   --wf-e3: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
@@ -236,7 +226,6 @@
     --wf-data-3: #2a3a4b;
     --wf-data-ready: #4cb383;
     --wf-data-closed: #3a4b5c;
-    --wf-glass-thin: var(--wf-glass-bar);
     --wf-glass: var(--wf-glass-pop);
     --wf-glass-thick: var(--wf-glass-sheet);
     --wf-glass-rim: linear-gradient(
@@ -247,9 +236,6 @@
     );
     --wf-scrim: rgba(0, 0, 0, 0.4);
     --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 50%);
-    --wf-backdrop:
-      radial-gradient(1200px 520px at 8% -10%, rgba(79, 115, 152, 0.28), transparent 60%),
-      radial-gradient(900px 480px at 100% 0%, rgba(76, 179, 131, 0.08), transparent 55%), #0d141b;
     --wf-e1: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.2), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
     --wf-e2: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 10px 24px -10px rgba(0, 0, 0, 0.6);
     --wf-e3: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 60px -18px rgba(0, 0, 0, 0.7);
@@ -401,6 +387,8 @@
 
   /* the smallest pointer target on desktop */
   --wf-target: 28px;
+  /* The smallest target any control may have (WCAG 2.2 target size, 24px). */
+  --wf-target-min: 24px;
   /* A control's floor on a touch tablet; 0 elsewhere, so desktop and phone are unchanged. */
   --wf-tablet-tap: 0px;
 
@@ -413,7 +401,6 @@
 
   /* status glyphs: 10 beside text, 12 in hero chips */
   --wf-glyph: 10px;
-  --wf-glyph-hero: 12px;
 
   /* motion by role. Quick in, quicker out. */
   --wf-t-micro: 100ms;
@@ -429,7 +416,6 @@
   /* v6 motion names now point at the v9 roles */
   --wf-m-fast: var(--wf-t-micro);
   --wf-m-base: var(--wf-t-enter);
-  --wf-m-slow: var(--wf-t-sheet);
   --wf-ease: var(--wf-ease-out);
 }
 
@@ -471,7 +457,6 @@
   --wf-e-sel: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(16, 24, 40, 0.12), 0 0 0 1px var(--wf-line-ctl);
   --wf-e1-hover: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 20px -12px rgba(16, 24, 40, 0.24);
   --wf-focus-gap: var(--wf-surface);
-  --wf-live-mark: var(--wf-accent);
 }
 
 /* ---------- night: surfaces step lighter as they rise. The glass aliases are repeated here
@@ -549,7 +534,6 @@
   --wf-hold-edge: light-dark(rgba(172, 114, 10, 0.34), rgba(217, 164, 65, 0.36));
   /* Approved attention: inset rounded coral marker and a quiet theme-aware tint. */
   --wf-act-tint: light-dark(rgba(196, 81, 63, 0.06), rgba(226, 122, 104, 0.07));
-  --wf-act-edge: light-dark(rgba(196, 81, 63, 0.6), rgba(226, 122, 104, 0.62));
   --wf-neutral-ink: light-dark(#414953, #bcc8d4);
   /* A remainder that is never the only mark of a value (the old light data step). */
   --wf-data-rest: light-dark(#c9d3dd, #2a3a4b);
@@ -561,7 +545,6 @@
   --wf-hatch: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, transparent 2px 4px);
   --wf-hatch-faint: repeating-linear-gradient(135deg, var(--wf-line-2) 0 2px, transparent 2px 6px);
   --wf-now: var(--wf-accent);
-  --wf-overdue-zone: light-dark(rgba(196, 81, 63, 0.06), rgba(226, 122, 104, 0.08));
 }
 
 /* Dim convention (v10): any part marked data-dim="true" recedes by colour only. Its words take
@@ -640,12 +623,10 @@ tr[data-dim="true"] > :is(td, th) :is(a, b, strong, em, span, time, abbr, small,
     --wf-glass-bar: #ffffff;
     --wf-glass-pop: #ffffff;
     --wf-glass-sheet: #ffffff;
-    --wf-glass-thin: #ffffff;
     --wf-glass: #ffffff;
     --wf-glass-thick: #ffffff;
     --wf-glass-rim: none;
     --wf-glass-hl: transparent;
-    --wf-backdrop: var(--wf-canvas);
     --wf-sheen: none;
   }
 }
