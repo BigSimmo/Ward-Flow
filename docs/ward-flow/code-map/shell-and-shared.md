@@ -565,14 +565,13 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   how-tos with `around` set, kept out of the desk's job list and closest suggestions, and ranked after
   a job sharing their words. A Show me step may carry `device` ("desk" or "phone"); `showMeSteps`
   skips the other device's steps in the player, the step lists and the step count.
-  `ward-help-ask.tsx` applies the same clinical-question guard and fixed reply as main search,
+  The Help sheet's search (`ward-help-find.tsx`) applies the clinical-question guard and fixed reply,
   suppressing ordinary results for those questions. With no matching answer, glossary term or setting,
-  it offers up to three closest how-tos; another desk's topics retain their read-only presentation.
-  Ask results, fallback suggestions and the clinical reply share a polite live region.
-  Ask accepts an explicit public `termsSource` without reading the operational network hook,
-  retaining PR #997's aggregate-host interface; its default host still uses the current site's glossary.
-  Search listbox options have one action each, shared by pointer and Enter; Open/Show me labels
-  are plain text within the option rather than nested interactive controls.
+  it offers the closest how-tos; another desk's topics keep their read-only presentation. Results,
+  fallback suggestions and the clinical reply share a polite live region. The stand-alone Ask box
+  (`ward-help-ask.tsx`) and the variant-A search box (`ward-help-search.tsx`) were retired on
+  2 Nov 2026, unused since the 1 Nov redesign; `ward-help-task-list.ts` keeps only `showMeAvailable`
+  and `tasksForDesk`.
   `help-content/` supplies the compact Reference group, accessible grouped glossary and quiet
   first-visit hints. Definitions remain in the existing Help sources; related-term links and group
   filters never save typed words. Hints are lazy, wait for the tour and other overlays, and retain

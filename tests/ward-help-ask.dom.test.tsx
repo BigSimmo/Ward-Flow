@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 /**
- * Ask help (26 Oct 2026): the Ask box answers from the app's own help, offers Show me only for the
- * desk's own jobs, and keeps the typed question out of browser storage.
+ * Ask help (26 Oct 2026): a question handed to Help is answered from the app's own help, offers
+ * Show me only for the desk's own jobs, and keeps the typed question out of browser storage. The
+ * stand-alone Ask box was retired on 2 Nov 2026 (Josh approved); these cases cover the Help sheet.
  */
 
 vi.mock("next/link", () => ({
@@ -28,12 +29,6 @@ vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import { HELP_USED_STORAGE_KEY } from "@/components/ward-management/help/ward-help-usage";
 import { CLINICAL_REPLY } from "@/components/ward-management/help/ward-help-search-index";
-import { WardHelpAsk } from "@/components/ward-management/help/ward-help-ask";
-
-/** The Ask box on its own, empty, as a question handed over with no words opens it. */
-function renderAsk() {
-  return render(<WardHelpAsk role="coordinator" home="/ward-flow" initialQuery="" onClose={vi.fn()} />);
-}
 
 function renderSheet(ask: string | undefined, onShowMe = vi.fn()) {
   return render(
@@ -54,19 +49,6 @@ function helpField() {
 }
 
 describe("Ask help in the Help sheet", () => {
-  it("uses an explicitly supplied public glossary for a report-only host", () => {
-    render(
-      <WardHelpAsk
-        role="executive"
-        home={undefined}
-        initialQuery="signal"
-        onClose={vi.fn()}
-        termsSource={[{ term: "Signal", meaning: "Synthetic public glossary definition." }]}
-      />,
-    );
-    expect(screen.getByText("Synthetic public glossary definition.")).toBeTruthy();
-  });
-
   it.each([
     "what dose should I give",
     "should I discharge transport",
@@ -90,24 +72,6 @@ describe("Ask help in the Help sheet", () => {
     fireEvent.change(helpField(), { target: { value: "dark mode" } });
     expect(screen.queryByText(/These are the closest/)).toBeNull();
     expect(screen.getByRole("region", { name: "Best answer" }).textContent).toMatch(/Theme|dark/i);
-  });
-
-  it("keeps another desk's closest topics readable without offering its actions", () => {
-    render(
-      <WardHelpAsk
-        role="executive"
-        home="/ward-flow/statistics"
-        initialQuery="bed giraffe elephant"
-        onClose={vi.fn()}
-      />,
-    );
-    expect(screen.getByText("Done by another desk")).toBeTruthy();
-    const answers = screen.getAllByTestId(/^ward-help-ask-answer-/);
-    for (const answer of answers) {
-      fireEvent.click(within(answer).getByRole("button"));
-      expect(within(answer).queryByTestId("ward-help-ask-show-me")).toBeNull();
-      expect(within(answer).queryByRole("link")).toBeNull();
-    }
   });
 
   it("returns to ordinary results after a clinical question is replaced", () => {
@@ -145,48 +109,5 @@ describe("Ask help in the Help sheet", () => {
     expect(JSON.stringify([...write.mock.calls, ...push.mock.calls, ...replace.mock.calls])).not.toMatch(
       /qzxvwk|qzxvwl/,
     );
-  });
-
-  it("finds settings and says plainly when nothing matches", () => {
-    renderAsk();
-    const input = screen.getByTestId("ward-help-ask-input");
-    fireEvent.change(input, { target: { value: "dark mode" } });
-    expect(screen.getByTestId("ward-help-ask-answer-theme")).toBeTruthy();
-    fireEvent.change(input, { target: { value: "xyzzy plover" } });
-    expect(screen.getByTestId("ward-help-ask-none")).toBeTruthy();
-  });
-
-  it("never writes the typed question to storage or URL history, including after opening a suggestion", () => {
-    const write = vi.spyOn(Storage.prototype, "setItem");
-    const push = vi.spyOn(window.history, "pushState");
-    const replace = vi.spyOn(window.history, "replaceState");
-    const before = window.location.href;
-    renderAsk();
-    fireEvent.change(screen.getByTestId("ward-help-ask-input"), { target: { value: "bed qzxvwk qzxvwl" } });
-    fireEvent.click(within(screen.getAllByTestId(/^ward-help-ask-answer-/)[0]).getByRole("button"));
-    const stored = [window.localStorage, window.sessionStorage]
-      .flatMap((store) => Object.keys(store).map((key) => store.getItem(key) ?? ""))
-      .join(" ");
-    expect(stored).not.toMatch(/qzxvwk|qzxvwl/);
-    expect(JSON.stringify([...write.mock.calls, ...push.mock.calls, ...replace.mock.calls])).not.toMatch(
-      /qzxvwk|qzxvwl/,
-    );
-    expect(window.location.href).toBe(before);
-  });
-
-  it("counts an answer as used when someone opens it, as its id only", () => {
-    window.localStorage.removeItem(HELP_USED_STORAGE_KEY);
-    renderAsk();
-    fireEvent.change(screen.getByTestId("ward-help-ask-input"), { target: { value: "how do I cancel transport" } });
-    // The first answer shows by itself, which is not a use.
-    expect(window.localStorage.getItem(HELP_USED_STORAGE_KEY)).toBeNull();
-    const second = screen.getAllByTestId(/^ward-help-ask-answer-/)[1] as HTMLElement;
-    const id = second.dataset.testid?.replace("ward-help-ask-answer-", "");
-    const title = within(second).getAllByRole("button")[0] as HTMLElement;
-    fireEvent.click(title);
-    fireEvent.click(title);
-    fireEvent.click(title);
-    expect(window.localStorage.getItem(HELP_USED_STORAGE_KEY)).toBe(`${id}:2`);
-    window.localStorage.removeItem(HELP_USED_STORAGE_KEY);
   });
 });

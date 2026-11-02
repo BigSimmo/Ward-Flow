@@ -1424,6 +1424,20 @@
       "after": 0,
       "reason": "The typed ED presentation editor it tested (EdPresentation) was removed: Q103 (Josh, 1 Nov 2026) replaced the unsaved typed note with the saved fixed list (RECORD_ED_PRESENTATION), which tests/ward-ed-handover-events.test.ts covers.",
       "approvedOn": "2026-11-01"
+    },
+    {
+      "path": "tests/ward-help-ask.dom.test.tsx",
+      "before": 11,
+      "after": 6,
+      "reason": "Retires the five cases that rendered the stand-alone WardHelpAsk box, which no screen imported after the Help redesign of 1 Nov 2026 (the Help sheet's own search replaced it). Josh approved removing the unused Ask view and its test on 2 Nov 2026. The six remaining cases already test the live Help sheet: the clinical-question reply, the closest-topics fallback, returning to results, opening on the tabs, a handed-over question with Show me, and that typed words never reach storage or the address. Usage counting by id stays covered by tests/ward-help-usage.dom.test.tsx and tests/ward-help-tasks.dom.test.tsx.",
+      "approvedOn": "2026-11-02"
+    },
+    {
+      "path": "tests/ward-help-search.dom.test.tsx",
+      "before": 13,
+      "after": 0,
+      "reason": "The file tested only WardHelpSearch, the variant-A search box that no screen imported after the Help redesign of 1 Nov 2026; the component is deleted with it (Josh approved retiring the unused Help views and merging the search paths on 2 Nov 2026). The live search is tested by tests/ward-help-search-sheet.dom.test.tsx, tests/ward-help-ask.dom.test.tsx, tests/ward-help-search-index.test.ts, tests/ward-help-search-quality.test.ts and tests/ward-global-search-help.dom.test.tsx.",
+      "approvedOn": "2026-11-02"
     }
   ]
 }
