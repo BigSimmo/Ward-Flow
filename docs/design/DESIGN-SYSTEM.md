@@ -4,7 +4,7 @@ The one design standard for every Ward Flow screen, mock-up and build, written o
 
 Ward Flow is a prototype that uses synthetic data only. Nothing here is validated clinical decision support.
 
-**What wins.** [AGENTS.md](../../AGENTS.md) and Josh's rulings, then the master design's newest screens, then this page, then [design-system-v9.md](../../design/v9/design-system-v9.md) (kept as background). Where a merged page deliberately differs from its mock-up, follow what shipped. Values live in [`src/app/ward-flow-v9-tokens.css`](../../src/app/ward-flow-v9-tokens.css); this page names roles, never new values.
+**What wins.** This page is the design system of record (Q327). [AGENTS.md](../../AGENTS.md) and Josh's rulings, then the master design's newest screens, then this page, then [design-system-v9.md](../../design/v9/design-system-v9.md) (kept as background). Where a merged page deliberately differs from its mock-up, follow what shipped. Values live in [`src/app/ward-flow-v9-tokens.css`](../../src/app/ward-flow-v9-tokens.css); this page names roles, never new values.
 
 The lessons behind each rule are in [lessons/2026-11-02-design-lessons.md](lessons/2026-11-02-design-lessons.md).
 
@@ -222,11 +222,11 @@ Each page may take **one signature part**: a bespoke visual that shows its own d
 - [ ] At most one signature part, inside the limits in section 8.
 - [ ] Synthetic data only; no names or typed text in URLs, screenshots or logs.
 
-## 10. Questions for Josh
+## 10. Decisions
 
-Q308 to Q326 belong to the Tools review. These start at Q327.
+Josh said yes to all four on 2 Nov 2026 (21:00 UTC). Q308 to Q326 belong to the Tools review; this page's block is Q327 to Q349.
 
-1. **Q327.** Make this page the design system of record, with design-system-v9.md kept as background only? _Recommend yes._
-2. **Q328.** Allow one signature part per page, inside the limits in section 8, approved in that page's mock-up? _Recommend yes._
-3. **Q329.** When two pages use the same signature part, move it into the kit? _Recommend yes._
-4. **Q330.** Add 744 and 768 to the design sweep test's widths, so the iPad layout is checked on every PR? _Recommend yes, as its own small PR._
+1. **Q327.** This page is the design system of record. design-system-v9.md is background only. _Yes._
+2. **Q328.** Each page may take one signature part inside the limits in section 8, approved in that page's mock-up. _Yes._
+3. **Q329.** When a second page wants the same signature part, it moves into the kit. _Yes._
+4. **Q330.** The design sweep test checks 744 and 768 too, so the iPad layout is checked on every PR. _Yes, built in its own small PR._

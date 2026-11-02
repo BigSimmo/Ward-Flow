@@ -237,9 +237,10 @@
         Ward Flow is a prototype that uses synthetic data only. Nothing here is validated clinical decision support.
       </p>
       <p class="lead">
-        <b>What wins.</b> <span class="ref">AGENTS.md</span> and Josh's rulings, then the master design's newest
-        screens, then this page, then <span class="ref">design-system-v9.md</span> (kept as background). Where a merged
-        page deliberately differs from its mock-up, follow what shipped. Values live in
+        <b>What wins.</b> This page is the design system of record (Q327). <span class="ref">AGENTS.md</span> and Josh's
+        rulings, then the master design's newest screens, then this page, then
+        <span class="ref">design-system-v9.md</span> (kept as background). Where a merged page deliberately differs from
+        its mock-up, follow what shipped. Values live in
         <span class="ref"><code>src/app/ward-flow-v9-tokens.css</code></span
         >; this page names roles, never new values.
       </p>
@@ -253,7 +254,7 @@
         ><a href="#6-words">Words</a><a href="#7-accessibility-and-resilience">Accessibility and resilience</a
         ><a href="#8-the-variation-zone">The variation zone</a
         ><a href="#9-before-posting-a-mockup-or-marking-a-pr-ready">Before posting a mock-up or marking a PR ready</a
-        ><a href="#10-questions-for-josh">Questions for Josh</a>
+        ><a href="#10-decisions">Decisions</a>
       </nav>
       <div class="grid">
         <section id="1-principles" class="sec">
@@ -950,24 +951,24 @@
             <li class="chk">Synthetic data only; no names or typed text in URLs, screenshots or logs.</li>
           </ul>
         </section>
-        <section id="10-questions-for-josh" class="sec">
-          <h2>10. Questions for Josh</h2>
-          <p>Q308 to Q326 belong to the Tools review. These start at Q327.</p>
+        <section id="10-decisions" class="sec">
+          <h2>10. Decisions</h2>
+          <p>
+            Josh said yes to all four on 2 Nov 2026 (21:00 UTC). Q308 to Q326 belong to the Tools review; this page's
+            block is Q327 to Q349.
+          </p>
           <ol>
             <li>
-              <b>Q327.</b> Make this page the design system of record, with design-system-v9.md kept as background only?
-              <i>Recommend yes.</i>
+              <b>Q327.</b> This page is the design system of record. design-system-v9.md is background only. <i>Yes.</i>
             </li>
             <li>
-              <b>Q328.</b> Allow one signature part per page, inside the limits in section 8, approved in that page's
-              mock-up? <i>Recommend yes.</i>
+              <b>Q328.</b> Each page may take one signature part inside the limits in section 8, approved in that page's
+              mock-up. <i>Yes.</i>
             </li>
+            <li><b>Q329.</b> When a second page wants the same signature part, it moves into the kit. <i>Yes.</i></li>
             <li>
-              <b>Q329.</b> When two pages use the same signature part, move it into the kit? <i>Recommend yes.</i>
-            </li>
-            <li>
-              <b>Q330.</b> Add 744 and 768 to the design sweep test's widths, so the iPad layout is checked on every PR?
-              <i>Recommend yes, as its own small PR.</i>
+              <b>Q330.</b> The design sweep test checks 744 and 768 too, so the iPad layout is checked on every PR.
+              <i>Yes, built in its own small PR.</i>
             </li>
           </ol>
         </section>
