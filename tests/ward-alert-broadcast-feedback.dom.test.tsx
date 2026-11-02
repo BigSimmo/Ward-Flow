@@ -39,7 +39,7 @@ function prepareBroadcast() {
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-  fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+  fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
   fireEvent.click(screen.getByRole("radio", { name: "By group" }));
   fireEvent.click(screen.getByRole("button", { name: /Regional \(WACHS\)/ }));
   fireEvent.click(screen.getByLabelText(/I'm authorised to send this to/i));

@@ -187,7 +187,7 @@ export function EdPreviewFoot({ row }: { row: EdRow }) {
         className={buttonClass({ variant: "sec" })}
         href={raiseReferralHref({ source: "ed_medical", originEdId: row.summary.ed.id })}
       >
-        Raise referral
+        New referral
       </Link>
       <Link
         className={buttonClass({ variant: "pri" })}

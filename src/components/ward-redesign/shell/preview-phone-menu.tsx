@@ -250,7 +250,7 @@ function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
         {
           id: "act-now",
           label: "Act-now tasks",
-          meta: "red rows in Tasks",
+          meta: "red rows in Alerts",
           count: actNow,
           icon: ListChecks,
           actNow: true,
@@ -315,7 +315,7 @@ function PhoneDock({
   counts: CountMap;
   pathname: string;
   tasksCount: number;
-  /** One Alerts queue: the Tasks tab is the Alerts tab and opens the Alerts screen. */
+  /** One Alerts queue: the dock's Alerts tab opens the Alerts screen. */
   oneAlertsQueue: boolean;
   activityUnread: number;
   onGo: (entry: RailEntry) => void;
@@ -368,7 +368,8 @@ function PhoneDock({
         );
       }
       case "queue":
-        // Q177 (Josh, 1 Nov 2026): the coordinator's dock says Tasks again and opens the same queue.
+        // Q268 (Josh, 2 Nov 2026): the coordinator's dock says Alerts, with the bell, as the header and
+        // Menu do (one name and one icon on every desk, 31 Oct). It replaces Q177's "Tasks".
         return oneAlertsQueue ? (
           <Link
             key="tasks"
@@ -377,13 +378,13 @@ function PhoneDock({
             className={styles.dockItem}
             aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
             data-testid="ward-phone-menu-tasks"
-            onClick={() => announceToWardShell("Tasks.")}
+            onClick={() => announceToWardShell("Alerts.")}
           >
             <DockFace
-              icon={ListChecks}
-              label="Tasks"
+              icon={Bell}
+              label="Alerts"
               count={tasksCount}
-              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+              tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
             />
           </Link>
         ) : (
@@ -396,10 +397,10 @@ function PhoneDock({
             onClick={() => onDrawer("tasks")}
           >
             <DockFace
-              icon={ListChecks}
-              label="Tasks"
+              icon={Bell}
+              label="Alerts"
               count={tasksCount}
-              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+              tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
             />
           </button>
         );

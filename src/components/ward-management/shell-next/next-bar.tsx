@@ -1287,7 +1287,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
             <span>Whole network · synthetic prototype</span>
             <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("tools", from)}>
               <span className={styles.footClock}>
-                Demo time <b>{formatInstant(now)}</b>
+                Board time <b>{formatInstant(now)}</b>
               </span>
             </WardDemoClockPopover>
           </div>

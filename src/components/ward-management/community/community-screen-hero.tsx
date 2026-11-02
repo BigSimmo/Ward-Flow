@@ -460,7 +460,7 @@ export function CommunityScreenSwitchDrawer({ view }: { view: CommunityScreenVie
         setSwitchQuery("");
       }}
       title="Switch team"
-      description={`${COMMUNITY_TEAM_PAGES.length} WA community mental health teams`}
+      description={`${COMMUNITY_TEAM_PAGES.length} WA community teams`}
       returnFocusRef={switchTriggerRef}
       testId="ward-community-switch-drawer"
     >

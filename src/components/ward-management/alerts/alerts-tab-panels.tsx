@@ -81,7 +81,7 @@ export function AlertsLiveBroadcasts({
           }}
           onAddUnits={() => setAddingUnits(activeBroadcast.id)}
           addUnitsDisabledReason={
-            addableGroups(activeBroadcast, units).length === 0 ? "Every unit is already asked." : undefined
+            addableGroups(activeBroadcast, units).length === 0 ? "Every desk is already asked." : undefined
           }
           onCopyAnswers={onCopyAnswers}
           onStandDown={() => handleStandDown(activeBroadcast.id)}
@@ -96,8 +96,8 @@ export function AlertsLiveBroadcasts({
             setAddingUnits(null);
             track({
               type: "ADD_BROADCAST_ALERT_UNITS",
-              ok: `Added ${unitIds.length === 1 ? "1 unit" : `${unitIds.length} units`} to "${activeBroadcast.title}".`,
-              refused: "Adding units was not accepted.",
+              ok: `Added ${unitIds.length === 1 ? "1 desk" : `${unitIds.length} desks`} to "${activeBroadcast.title}".`,
+              refused: "Adding desks was not accepted.",
             });
             raise("ADD_BROADCAST_ALERT_UNITS", { alertId: activeBroadcast.id, unitIds });
           }}

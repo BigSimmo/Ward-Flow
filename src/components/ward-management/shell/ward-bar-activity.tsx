@@ -136,7 +136,7 @@ export function WardBarActivityBody({
             {lastActivityAt === undefined ? (
               <div>
                 <strong>{formatInstant(now)}</strong>
-                <span>Demo time</span>
+                <span>Board time</span>
               </div>
             ) : (
               <div>

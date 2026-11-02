@@ -136,7 +136,7 @@ describe("review caller regressions", () => {
     );
     expect(occupied).toBeDefined();
     fireEvent.click(occupied!);
-    fireEvent.click(screen.getAllByRole("button", { name: /^Raise referral$/ }).at(-1)!);
+    fireEvent.click(screen.getAllByRole("button", { name: /^New referral$/ }).at(-1)!);
     expect(routing.dispatch.mock.calls.filter(([event]) => event.type === "RECEIVE_REFERRAL")).toEqual([]);
     expect(routing.push).toHaveBeenCalledWith(expect.stringMatching(/^\/ward-flow\/referrals\/new\?category=ward/));
   });

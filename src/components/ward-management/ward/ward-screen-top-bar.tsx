@@ -250,7 +250,7 @@ export function WardScreenTopBar({
 
       {isPhone ? (
         <>
-          {/* No Raise referral button on the phone (the More menu names the lock on its own row), so its
+          {/* No New referral button on the phone (the More menu names the lock on its own row), so its
               lock note is not shown above the tabs. */}
           {wardRoleLockNote}
           {/* Phone notices (20 Oct 2026): the bell opens a pop-up sheet rather than a panel pushed
@@ -386,7 +386,7 @@ export function WardScreenTopBar({
                 {...raiseReferralGate.buttonProps}
               >
                 <Send size={16} aria-hidden="true" />
-                Raise referral
+                New referral
               </button>
               <Link
                 className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}

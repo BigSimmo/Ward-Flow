@@ -527,7 +527,7 @@ export function PatientCommunityTab({
 
       <div className={styles.cols}>
         <Card aria-label="Recorded care directory">
-          <CardHead level={2} icon={Phone} title="Who to contact" meta="Mock numbers" />
+          <CardHead level={2} icon={Phone} title="Who to contact" meta="Synthetic numbers" />
           <ContactGroup label="Community team" items={careTeam} />
           <ContactGroup label="Primary care" items={primary} />
           <ContactGroup label="Must be told" items={mustTell} />

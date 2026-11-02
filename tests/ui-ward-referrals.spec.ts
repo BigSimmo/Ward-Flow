@@ -90,7 +90,7 @@ function syntheticChart(name: string) {
 }
 
 type SlideOutReferral = {
-  /** A synthetic person registered inside the slide-out ("New patient"), so the age band is the
+  /** A synthetic person registered inside the slide-out ("Add patient"), so the age band is the
    *  journey's own choice rather than the one a sample movement already carries. */
   patient: { familyName: string; givenName: string; umrn: string };
   ageBand: string;
