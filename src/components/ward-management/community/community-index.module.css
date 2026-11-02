@@ -871,9 +871,14 @@
     padding-top: var(--wf-s-2);
   }
 
+  /* House rule (Q330 sweep, 2 Nov 2026): the name link is a 40px target. It spans both lines of
+   * the row with the name at the top, so the row keeps its two-line shape. */
   .letterSection .teamRow > .teamRowLink {
     grid-column: 1 / 4;
-    grid-row: 1;
+    grid-row: 1 / span 2;
+    align-self: stretch;
+    align-items: flex-start;
+    min-height: 40px;
     font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
   }
 
@@ -1120,9 +1125,11 @@
     overflow: clip;
   }
 
+  /* Q330 sweep (2 Nov 2026): flush under the view switch band (header + 4.5rem band since Q225's
+   * 48px track), so no scrolled name shows in a strip above the stuck letter. */
   .letterHeading {
     position: sticky;
-    top: 8.125rem;
+    top: calc(var(--wf-header-height, 3.5rem) + 4.5rem);
     z-index: 2;
     background: var(--wf-surface);
   }
