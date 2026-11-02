@@ -9,7 +9,11 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 
 import { useOpenOnLoad } from "./open-on-load";
 
-const WARD_ANSWER_POPUPS = { "ward-accept": ["button[aria-label$=' READY']"] } as const;
+// A ready census bed opens the dialog; on a phone the census is not pressable, so the request's own
+// Accept in principle opens its sheet instead.
+const WARD_ANSWER_POPUPS = {
+  "ward-accept": ["button[aria-label$=' READY'] || [data-testid^='ward-accept-WF-']"],
+} as const;
 const DEFAULT_WARD = "rph-adult-secure";
 
 /**

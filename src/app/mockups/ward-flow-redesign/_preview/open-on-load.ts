@@ -18,7 +18,11 @@ export function useOpenOnLoad(openOnLoad: string | undefined, steps: Readonly<Re
       const name = names[step]!;
       // A step in square brackets, or naming a button by an attribute, is a selector instead.
       const control = /^(\[|button\[)/.test(name)
-        ? document.querySelector<HTMLElement>(name)
+        ? // " || " lists selectors in order of preference: the first one on the page is pressed.
+          name
+            .split(" || ")
+            .map((selector) => document.querySelector<HTMLElement>(selector))
+            .find(Boolean)
         : [...document.querySelectorAll<HTMLElement>("button, [role='menuitem']")].find(
             (element) =>
               element.offsetParent !== null &&
