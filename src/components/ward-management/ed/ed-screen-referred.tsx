@@ -222,7 +222,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                     <div className={styles.tableActionGroup}>
                       <select
                         data-testid={`ward-ed-record-gender-${movement.id}`}
-                        aria-label={`Record gender for ${patientInfo.displayName}`}
+                        aria-label={`Record gender for ${patientInfo.formalName}`}
                         value={genderRecordDraft[movement.id] ?? ""}
                         onChange={({ target: { value } }) =>
                           setGenderRecordDraft((current) => ({

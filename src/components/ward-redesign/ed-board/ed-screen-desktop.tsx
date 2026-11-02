@@ -173,7 +173,7 @@ export function renderEdBoardTableRow(
         )}
         {movement.closure ? null : (
           <EdActionsMenu
-            patientName={patientInfo.displayName}
+            patientName={patientInfo.formalName}
             testId={`ward-ed-actions-menu-${movement.id}`}
             triggerTestId={`ward-ed-unfold-${movement.id}`}
             onViewRecord={openSheet}
@@ -218,7 +218,7 @@ export function renderEdBoardTableRow(
             type="button"
             className={styles.a2Name}
             onClick={openSheet}
-            title={`View patient details for ${patientInfo.displayName}`}
+            title={`View patient details for ${patientInfo.formalName}`}
             data-testid={`ward-ed-row-name-${movement.id}`}
           >
             {patientInfo.formalName}

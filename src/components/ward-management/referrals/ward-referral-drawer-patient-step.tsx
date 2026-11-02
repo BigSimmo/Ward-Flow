@@ -203,7 +203,7 @@ export function ReferralPatientStep({
             }}
           >
             <UserPlus aria-hidden="true" />
-            New patient
+            Add patient
           </button>
         </CardHead>
         <div className={styles.cardBody}>
@@ -495,7 +495,7 @@ export function ReferralPatientStep({
           ) : unidentified === null ? (
             <div className={styles.confirmRow}>
               {noPatientChosen ? (
-                // The search, New patient and Not yet identified already say how, so the
+                // The search, Add patient and Not yet identified already say how, so the
                 // line says only what is true.
                 <p className={`${styles.patientSub} ${styles.patientSubWrap}`} data-testid="ward-referral-no-patient">
                   No patient chosen
@@ -822,7 +822,7 @@ export function ReferralPatientStep({
                 />
               </Field>
               <Field
-                label="Catchment team"
+                label="Community team"
                 htmlFor={`${sectionId}-team`}
                 error={patientShowErrors && !catchmentTeam.trim() ? "Choose the catchment" : null}
               >

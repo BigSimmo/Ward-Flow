@@ -44,15 +44,15 @@ export function AddUnitsDialog({
     <Dialog
       open
       onClose={onClose}
-      title="Add units"
-      description={`Ask more ${broadcastKind(alert) === "bed_call" ? "wards" : "units"} on "${alert.title}".`}
+      title="Add desks"
+      description={`Ask more ${broadcastKind(alert) === "bed_call" ? "wards" : "desks"} on "${alert.title}".`}
       closeLabel="Close dialog"
       size="md"
       secondary={[{ label: "Cancel", onAction: onClose }]}
       primary={{
-        label: count === 1 ? "Add 1 unit" : `Add ${count} units`,
+        label: count === 1 ? "Add 1 desk" : `Add ${count} desks`,
         onAction: () => onAdd(picked),
-        disabledReason: count === 0 ? "Choose at least one unit." : undefined,
+        disabledReason: count === 0 ? "Choose at least one desk." : undefined,
       }}
     >
       <div className={css.unitPick}>

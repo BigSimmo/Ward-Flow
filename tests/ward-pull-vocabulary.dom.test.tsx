@@ -298,7 +298,7 @@ describe("the emergency department's blocked-control reasons say pulled", () => 
     const titles = [...page.querySelectorAll("[title]")].map((node) => node.getAttribute("title") ?? "");
     const reasons = [...page.querySelectorAll(".sr-only, p")].map((node) => node.textContent ?? "");
     const everything = [...titles, ...reasons].join(" | ");
-    expect(everything).toMatch(/not bed pulled/);
+    expect(everything).toMatch(/no bed pulled yet/);
     expect(everything).not.toMatch(/not bed held/);
   });
 });

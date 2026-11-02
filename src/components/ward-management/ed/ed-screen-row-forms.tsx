@@ -131,7 +131,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
   // D-74: the team and what the referral is for are both required before it can be sent.
   const cmhtReady = communityTeamChoice !== "" && communityPurposeChoice !== "";
   const cmhtMissing = !communityTeamChoice
-    ? "Choose a community mental health team first."
+    ? "Choose a community team first."
     : "Choose what the referral is for first.";
   // Why the legal status change cannot be recorded yet: the new status first, then the reason.
   const legalStatusBlocked =
@@ -184,7 +184,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
 
       {communityReferralOpenFor === movement.id && !cmhtBlocked ? (
         <div className={styles.declineForm} data-testid={`ward-ed-cmht-panel-${movement.id}`}>
-          <p className={styles.cardMeta}>Community Mental Health Team referral. No bed is requested.</p>
+          <p className={styles.cardMeta}>Community team referral. No bed is requested.</p>
           <p className={styles.cardMeta} data-testid={`ward-ed-cmht-legal-status-${movement.id}`}>
             Legal status: {/* Never defaults to Voluntary (owner rule, 19 Oct 2026): nothing recorded says so. */}
             {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
@@ -207,7 +207,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               onChange={(e) => setCommunityTeamChoice(e.target.value)}
               className={styles.capacityInput}
             >
-              <option value="">Choose a community mental health team</option>
+              <option value="">Choose a community team</option>
               {teamOptions.map((team) => (
                 <option key={team} value={team}>
                   {team}

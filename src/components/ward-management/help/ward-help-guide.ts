@@ -144,7 +144,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       {
         job: "Raise a referral",
         howTo: "ed-raise",
-        how: "Use New referral, or Raise referral on the board. Choose one or more destinations and send it.",
+        how: "Use New referral, from the header or on the board. Choose one or more destinations and send it.",
         go: "referral-intake",
       },
       {

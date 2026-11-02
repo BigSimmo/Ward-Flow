@@ -31,7 +31,7 @@ describe("Alerts — confirm controls (F3.1)", () => {
   it("Dispatch Broadcast requires clinical confirmation safeguard and dispatches directive", () => {
     renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
     const confirm = screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(confirm).toHaveAttribute("aria-disabled", "true");
 

@@ -105,7 +105,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                         spoken: `${forms(deadlines.length)} on track`,
                       }
                     : row.waiting > 0
-                      ? { tone: "neutral", text: "No forms due", spoken: "No form due time recorded" }
+                      ? { tone: "neutral", text: "No due time recorded", spoken: "No form due time recorded" }
                       : { tone: "neutral", text: "", spoken: "" };
 
           const longestTone: WfTone | null = edLongestWaitTone(

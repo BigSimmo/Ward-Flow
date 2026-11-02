@@ -145,14 +145,9 @@ function phoneMenuModel(
   ]);
   // B1 (Josh, 19 Oct 2026): the role's own menu first, then everything else in the rail's groups.
   const menu = roleMenu(entries, role);
-  // Q177 (Josh, 1 Nov 2026): the coordinator's queue slot reads Tasks, so Alerts gets its own Menu row
-  // on the phone (the desktop rail still leaves it out for this desk).
-  const alertsEntry = byId.get("alerts");
-  const alertsRow =
-    alertsEntry && dockRight.some((slot) => slot.kind === "queue") && !menu.main.some((item) => item.id === "alerts")
-      ? [alertsEntry]
-      : [];
-  const main = [...menu.main, ...alertsRow].filter((item) => !shown.has(item.id));
+  // Q268 (Josh, 2 Nov 2026): the dock's queue slot reads Alerts and opens the Alerts screen, so the
+  // Menu does not list Alerts a second time (Q177's extra row went with its "Tasks" name).
+  const main = menu.main.filter((item) => !shown.has(item.id));
   const groups = [
     { label: roleLabel, entries: main },
     ...menu.more.map((group) => ({ ...group, entries: group.entries.filter((entry) => !shown.has(entry.id)) })),
@@ -229,7 +224,7 @@ function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
         {
           id: "act-now",
           label: "Act-now tasks",
-          meta: "to act on in Tasks",
+          meta: "to act on in Alerts",
           count: actNow,
           icon: ListChecks,
           actNow: true,
@@ -339,7 +334,7 @@ export function PhoneMenuMock({ initial }: { initial: "menu" | "create" }) {
     wardTasksAreActionableForRole(shellRole) &&
     accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
-  // Q177 (Josh, 1 Nov 2026): the dock's queue slot reads Tasks, so Alerts keeps its Menu row.
+  // Q268 (Josh, 2 Nov 2026): the dock's queue slot reads Alerts; the Menu lists it once, in the dock.
   const menuGroups = groups;
 
   const close = () => setOpen(false);

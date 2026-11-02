@@ -214,7 +214,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const raise = useWardRaise(routeRole === "bed_manager" ? "bed_manager" : "ward");
   const completeCommand = useWardCommandCompletion();
 
-  // Feature 11: Raise referral is the ward's own act (role access plan, 15 Oct 2026). The reducer
+  // Feature 11: New referral is the ward's own act (role access plan, 15 Oct 2026). The reducer
   // takes it from a ward only as source `psychiatric_ward` with this ward as the sender.
   const raiseReferralGate = useRoleGate()("RECEIVE_REFERRAL");
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
@@ -1996,7 +1996,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           : [
               {
                 id: "referral",
-                label: "Raise referral",
+                label: "New referral",
                 icon: Send,
                 disabled: !raiseReferralGate.allowed,
                 meta: raiseReferralGate.allowed ? undefined : raiseReferralGate.reason,
