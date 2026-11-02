@@ -31,9 +31,9 @@ Original objective: reassess all 54 findings in the supplied master report, stre
 
 ## Verification boundaries
 
-Exact-path formatting and changed-path lint passed; the unused clock-format import left by the legal-copy change was removed and its lint rechecked. The repository source typecheck command passed. The completed repair commit must pass the normal safety/ownership/lint/type admission hook; its result and identity are recorded in the task checkpoint. Earlier maintained-document link checking passed for 523 files with zero broken links; the edited report will be rechecked at handoff. These are local results, not full-suite or hosted verdicts.
+Exact-path formatting and changed-path lint passed; the unused clock-format import left by the legal-copy change was removed and its lint rechecked. The repository source typecheck command passed. Repair commit `5d2aa8778` passed the normal safety/ownership scan and lint/type admission for all nineteen changed TypeScript files. Maintained-document link checking passed for 523 files with zero broken links after this report was updated. These are local results, not full-suite or hosted verdicts.
 
-Pinned Playwright Chromium is unavailable (expected revision 1248, no managed install). Browser, print/PDF and physical-device acceptance are unrun. The offline local server was identity-verified as Ward Flow. Alerts and Legal forms each compiled and returned HTTP 200; this is HTTP/SSR evidence only, not a browser interaction check. The server will be stopped after verification. No provider backend, hosted CI, full unit suite or production build is claimed.
+Pinned Playwright Chromium is unavailable (expected revision 1248, no managed install). Browser, print/PDF and physical-device acceptance are unrun. The offline local server was identity-verified as Ward Flow. Alerts and Legal forms each compiled and returned HTTP 200; this is HTTP/SSR evidence only, not a browser interaction check. The task-owned server was stopped after verification; no peer server was stopped. No provider backend, hosted CI, full unit suite or production build is claimed.
 
 Local locked dependencies were freshly installed through the repository installer and attested with lifecycle scripts disabled. Matching npm 11.17.0 was provisioned outside the checkout. No source push, PR, merge or deployment is authorised or performed.
 
@@ -41,7 +41,7 @@ Local locked dependencies were freshly installed through the repository installe
 
 Josh approved the exact fifteen-file takeover in this chat. Public issue 688 was refreshed and the scoped claim posted as comment 6584733484. Native exact-file checks recognise the approval. New helper/regression paths and this report have their own task claims. No other owner’s branch or claim is released.
 
-Task checkpoint and historical proposal/evidence files: `/workspace/ward-flow-review/fix-task/`. The source repairs are applied in `/workspace/ward-flow-fixes`; the external proposal bundle is historical preparation, not a second task or publication artifact. All three diagnostic regression files now accompany their repaired implementation. The earlier backup-scope commit is `5bdcf9941`; the final repair commit is recorded in the checkpoint. The final working tree and own claim releases are recorded there as well. Memory recall was performed once earlier in the session; routine test facts are not saved to memory.
+Task checkpoint and historical proposal/evidence files: `/workspace/ward-flow-review/fix-task/`. The source repairs are applied in `/workspace/ward-flow-fixes`; the external proposal bundle is historical preparation, not a second task or publication artifact. All three diagnostic regression files now accompany their repaired implementation. The earlier backup-scope commit is `5bdcf9941`; the final repair commit is `5d2aa8778`. The final working tree and own claim releases are recorded in the checkpoint. Memory recall was performed once earlier in the session; routine test facts are not saved to memory.
 
 ## Every original issue retained for traceability
 
