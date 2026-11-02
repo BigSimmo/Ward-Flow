@@ -57,10 +57,20 @@ export function isClinicalQuestion(query: string): boolean {
   return CLINICAL.test(query);
 }
 
-type Entry = HelpSearchResult & { readonly strong: ReadonlySet<string>; readonly weak: ReadonlySet<string> };
+type Entry = HelpSearchResult & {
+  readonly strong: ReadonlySet<string>;
+  readonly weak: ReadonlySet<string>;
+  /** The indexed words as written, for finding a word that is still being typed. */
+  readonly source: string;
+};
 
 function entry(result: HelpSearchResult, strong: string, weak: string): Entry {
-  return { ...result, strong: new Set(questionWords(strong)), weak: new Set(questionWords(weak)) };
+  return {
+    ...result,
+    strong: new Set(questionWords(strong)),
+    weak: new Set(questionWords(weak)),
+    source: `${strong} ${weak}`,
+  };
 }
 
 function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
@@ -223,6 +233,43 @@ function indexFor(glossary: readonly GlossaryTerm[]): readonly Entry[] {
   }
   return index;
 }
+const WORD_BREAK = /[\s,.?!/]+/u;
+/** The fewest letters a word still being typed needs before it is read as the start of a word. */
+const PARTIAL_LETTERS = 3;
+
+const writtenWords = new WeakMap<readonly Entry[], readonly (readonly [written: string, stem: string])[]>();
+/** Every indexed word as written (lower case), with its stem, in index order. */
+function writtenWordsFor(index: readonly Entry[]): readonly (readonly [string, string])[] {
+  let words = writtenWords.get(index);
+  if (!words) {
+    const seen = new Map<string, string>();
+    for (const item of index)
+      for (const word of item.source.toLowerCase().split(WORD_BREAK)) {
+        const written = word.replace(/[^a-z0-9]/gu, "");
+        if (written.length < 2 || seen.has(written)) continue;
+        const [stem] = questionWords(written);
+        if (stem) seen.set(written, stem);
+      }
+    words = [...seen];
+    writtenWords.set(index, words);
+  }
+  return words;
+}
+
+/**
+ * The stems a last word still being typed may be the start of ("pul" for pull, "be" is too short).
+ * A completion that would turn the question into a clinical one is never used.
+ */
+function partialStems(query: string, word: string, index: readonly Entry[]): readonly string[] {
+  const start = word.toLowerCase().replace(/[^a-z0-9]/gu, "");
+  if (start.length < PARTIAL_LETTERS) return [];
+  const before = query.slice(0, query.length - word.length);
+  const stems = new Set<string>();
+  for (const [written, stem] of writtenWordsFor(index))
+    if (written.startsWith(start) && !isClinicalQuestion(`${before}${written}`)) stems.add(stem);
+  return [...stems];
+}
+
 function vocabularyFor(index: readonly Entry[]): ReadonlySet<string> {
   let words = vocabularies.get(index);
   if (!words) {
@@ -279,21 +326,40 @@ export function searchHelp(
   const vocabulary = vocabularyFor(index);
   // Keep exact words from every indexed reference. Only unknown words need correction against
   // the how-to vocabulary, and correcting before stemming preserves typos such as "thme".
-  const words = [
-    ...new Set(
-      query.split(/[\s,.?!/]+/).flatMap((word) => {
-        const exact = questionWords(word);
-        return exact.every((stem) => vocabulary.has(stem)) ? exact : correctedQuestionWords(word);
-      }),
-    ),
-  ];
+  // The last word, when the query does not end in a space or a stop, may still be being typed: an
+  // unknown one is read as the start of any Help word it begins ("pull a be" stays "be", "transp"
+  // finds transport), before typo mending. Each word is a set of stems any one of which counts.
+  const typed = query.split(WORD_BREAK).filter(Boolean);
+  const open = typed.length > 0 && !/[\s,.?!/]$/u.test(query);
+  const seen = new Set<string>();
+  const words: (readonly string[])[] = [];
+  const add = (stems: readonly string[]) => {
+    const id = stems.join(" ");
+    if (!stems.length || seen.has(id)) return;
+    seen.add(id);
+    words.push(stems);
+  };
+  typed.forEach((word, position) => {
+    const exact = questionWords(word);
+    const partial =
+      exact.every((stem) => vocabulary.has(stem)) || !open || position < typed.length - 1
+        ? []
+        : partialStems(query, word, index);
+    if (exact.every((stem) => vocabulary.has(stem))) for (const stem of exact) add([stem]);
+    else if (partial.length) add(partial);
+    else for (const stem of correctedQuestionWords(word)) add([stem]);
+  });
   if (words.length === 0) return { kind: "empty" };
   const needed = Math.max(1, Math.ceil(words.length / 2));
   const scored = index.flatMap((item, order) => {
     let hits = 0;
     let score = 0;
-    for (const word of words) {
-      const weight = item.strong.has(word) ? 3 : item.weak.has(word) ? 1 : 0;
+    for (const stems of words) {
+      const weight = stems.some((word) => item.strong.has(word))
+        ? 3
+        : stems.some((word) => item.weak.has(word))
+          ? 1
+          : 0;
       if (weight) {
         hits += 1;
         score += weight;
