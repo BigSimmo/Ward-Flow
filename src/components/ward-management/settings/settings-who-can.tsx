@@ -45,7 +45,7 @@ export function SettingsWhoCan() {
   return (
     <Card aria-labelledby="who-can-title" data-setting="who-can" data-testid="ward-settings-who-can">
       <CardHead iconPlain id="who-can-title" icon={Users} title="Who can change what" meta="Read only" />
-      <div className={styles.tableWrap} role="region" aria-label="Who can change what" tabIndex={0}>
+      <div className={styles.tableWrap} role="region" aria-label="Who can change what table" tabIndex={0}>
         <table className={styles.table}>
           <thead>
             <tr>

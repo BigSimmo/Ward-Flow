@@ -2616,9 +2616,22 @@ button.gLaneL:hover {
     line-height: var(--wf-lh-15);
   }
 
+  /* Q297 follow-up: with large text the label wraps under its figure ("Form due 1h") instead of
+     ending in "…"; at today's size it still fits on one line. */
   .statL {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+
+  /* The order switch: each half grows to two lines with large text instead of running into the
+     other half ("By blocker" under "Longest wait"). Doubled class: beats the pill sizes below. */
+  .tableCard > .chead .seg.seg button {
+    height: auto;
+    min-height: var(--wf-phone-seg-item-h);
+    line-height: 1.15;
+    white-space: normal;
+    overflow-wrap: break-word;
   }
 }
 
