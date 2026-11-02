@@ -1120,6 +1120,7 @@ function AlertsWorkspace() {
       list,
       <GroupHead
         tone={ownerAct > 0 ? "danger" : undefined}
+        icon={ownerAct > 0 ? undefined : <span aria-hidden="true" />}
         label={yours ? `You, ${owner}` : owner}
         count={list.length + (yours ? toPull.length : 0)}
         aside={ownerAct > 0 ? `${ownerAct} act now` : undefined}
