@@ -1,16 +1,23 @@
 "use client";
 
+// The app's sidebar mount (Josh, 2 Nov 2026): the rail's code loads on demand, and a phone keeps only
+// the page-wide preferences and drawer shortcuts. It replaced the old shell's lazy rail.
+
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
 
 import { useIsPhone } from "@/components/wf";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
-import { useCanOpenHref } from "./ward-access";
-import { closeWardDrawer } from "./ward-drawer-bus";
-import { isTypingTarget, openDrawerForShortcut, useWardDocumentPreferences } from "./ward-rail-preferences";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { closeWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
+import {
+  isTypingTarget,
+  openDrawerForShortcut,
+  useWardDocumentPreferences,
+} from "@/components/ward-management/shell/ward-rail-preferences";
 // The rail's styles stay in the shell's own stylesheet, in the same order as before, so the
 // desktop page is drawn exactly as it was. Only the rail's script is split out.
-import "./ward-rail.module.css";
+import "@/components/ward-management/shell/ward-rail.module.css";
 
 /**
  * Repo score follow-up (16 October 2026): a phone never draws the rail (it is hidden under 48rem
@@ -20,7 +27,9 @@ import "./ward-rail.module.css";
  * and the server waits for it). On a phone only the page-wide preferences and drawer shortcuts
  * the rail used to keep run, so its code is never fetched.
  */
-const RailLoaded = dynamic(() => import("./ward-rail").then((m) => m.WardRail));
+const RailLoaded = dynamic(() =>
+  import("@/components/ward-management/shell-next/next-rail-body").then((m) => m.NextRailBody),
+);
 
 function PhonePreferences() {
   useWardDocumentPreferences();
@@ -40,6 +49,7 @@ function PhonePreferences() {
   return null;
 }
 
-export function WardRail() {
+/** Drop-in for the real `WardRail` (same props: none). */
+export function NextRail() {
   return useIsPhone() ? <PhonePreferences /> : <RailLoaded />;
 }

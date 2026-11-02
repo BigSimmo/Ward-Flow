@@ -89,8 +89,6 @@ import {
 } from "./ward-service-bed-alerts";
 import { useServiceScope } from "./ward-service-store";
 
-export type { ServiceBedAlert } from "./ward-service-bed-alerts";
-
 /**
  * Ward Flow's rail, restyled to the v6 shell (boards 02, 03 and 03b of the header and sidebar
  * mockups, 7 October 2026). The layout and element placement are the third edition's; only the
