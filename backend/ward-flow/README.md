@@ -13,7 +13,7 @@ always answers 200 while the server runs, and reports `database` as `ok` or `una
 reason) from a check it repeats at most every 30 seconds; the uptime workflow alerts on either. The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005` and accepts later versions through <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->.
+to `005` and accepts later versions through <!-- fact:latest-migration -->017-forecast-consistency<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
 
 ## How the UI connects
@@ -127,7 +127,7 @@ These source files do not establish a current hosted connection or deployment.
   Use migration 11 or later when server-side sign-out and access-history guarantees are required;
   older schemas remain rollback compatibility, not evidence that those capabilities are present.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->017-forecast-consistency<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
