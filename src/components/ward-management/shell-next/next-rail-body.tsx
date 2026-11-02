@@ -39,7 +39,6 @@ import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/component
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
 import { WARD_CAPACITY_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
-import { surnameFirst } from "@/components/ward-management/settings/settings-profile";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import { shiftAtMinute } from "@/components/ward-management/ward-board-time-features";
@@ -370,9 +369,8 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
   const deskAccess = useEffectiveWardAccess();
   const currentPersona = deskAccess.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
-  // Q58 (Josh, 31 Oct 2026): the person card names the person surname first ("Okafor, A."), as
-  // Settings does; a desk named by its role keeps its name.
-  const personaName = surnameFirst(currentPersona.name);
+  // Q226 (2 Nov 2026): one spelling of the signed-in name, the master's ("Dr S. Chen").
+  const personaName = currentPersona.name;
   // The access admin is named for itself, not the executive chrome it borrows (as the phone menu does).
   const deskRoleLabel = useDeskRoleLabel(role);
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
