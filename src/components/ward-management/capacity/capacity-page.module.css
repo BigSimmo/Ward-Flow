@@ -30,7 +30,7 @@
   padding: var(--wf-s-4);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .main {
     padding: var(--wf-s-3);
     padding-bottom: calc(var(--wf-s-8) + var(--wf-s-8));
@@ -143,7 +143,7 @@
   display: inline-flex;
   align-items: center;
 }
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .heroLive {
     --wf-h-chip: var(--wf-h-md);
   }
@@ -876,7 +876,7 @@
 
 /* Final check (30 Oct 2026): the scenario and bed meeting dialogs open in the overlay layer, outside
    the page container, so the container rules above never reach them. On a phone they stack. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .sheetCols,
   .scenarioRow {
     grid-template-columns: minmax(0, 1fr);
@@ -1007,7 +1007,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .mapGrid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1082,7 +1082,7 @@
     grid-column: 1 / -1;
   }
 }
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .lowerRow {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1278,6 +1278,11 @@
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: thin;
+}
+/* A8 (accessibility check, 2 Nov 2026): the strip takes keyboard focus so it can be scrolled. */
+.mmStrip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
 }
 .mmTile {
   display: flex;

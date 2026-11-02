@@ -159,7 +159,7 @@
 
 /* Phone (v10): every page sits on the canvas, the same grey the hero's lip and pinned switches
    paint, so cards read as white on grey as in the phone mockup. Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .shell {
     --wf-page-canvas: var(--wf-canvas);
     background: var(--wf-canvas);

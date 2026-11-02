@@ -1654,7 +1654,7 @@ describe("Ward index — every ward in the network has a way in", () => {
   it("groups the wards under the health services in wardServiceOrder, in that order", () => {
     // The headings, read out of the markup in the order they render. `wardServiceOrder` is the one
     // canonical order and this page must not carry a second copy of it.
-    const headings = [...markup.matchAll(/<h3[^>]*>([^<]*)/g)].map((match) => match[1].trim());
+    const headings = [...markup.matchAll(/<h2[^>]*>([^<]*)/g)].map((match) => match[1].trim());
     for (const service of wardServiceOrder) {
       expect(headings, `no heading for the health service ${service}`).toContain(service);
     }

@@ -722,7 +722,7 @@
 
 /* ---------- phone: a card per row (never alters the desktop grid above) ---------- */
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* 48px tap floor on phone for the hero's own controls (shared buttons carry their own). */
   .highlight,
   .highlightNote {
@@ -873,7 +873,7 @@
 
 /* Transport now on a wider screen: the groups sit side by side, each a single list (the base
    .trGroup flex column), split by a hairline rather than stacked. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .layout.layout > aside .trFeed {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
@@ -896,7 +896,7 @@
 /* PR #1222 review: the one-line row needs about 830px. Below that, on a tablet or a narrow
    desk column, each row takes two lines: who, route, barrier and wait first, then legal and
    the next step under them, so the next-step controls never clip. Phone keeps its own card. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   @container wf-worklist (max-width: 53rem) {
     .columns {
       display: none;
@@ -1007,7 +1007,7 @@
   display: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Hero figures: three across, number over label, thin dividers, no pill. */
   .highlights.highlights {
     display: grid;
@@ -1317,7 +1317,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phList .trRow {
     min-height: 3.5rem;
     padding-inline: var(--wf-s-4);
@@ -1405,7 +1405,7 @@
 
 /* Tablet (device audit, 11 Oct 2026): on portrait the Needs you items read as one column so three
    items never leave an empty grid cell. */
-@media (min-width: 48.0625rem) and (max-width: 64rem) {
+@media (min-width: 46.5rem) and (max-width: 64rem) {
   .needsList {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1417,7 +1417,7 @@
 
 /* Device audit, 11 Oct 2026: on the wider worklist the Barrier column already says why there is no
    destination, so the Route cell drops "no destination yet" and both columns fit. Phone keeps it. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   /* Layout sweep PT-09: beside Transport now the worklist is narrow, so the name, route, barrier,
      legal form and next owner take up to two lines rather than an ellipsis after a few words. */
   .row .name {

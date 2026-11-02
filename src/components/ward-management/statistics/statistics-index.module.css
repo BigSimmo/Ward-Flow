@@ -252,7 +252,7 @@
    themselves. Sized from their content, they left about 10px spare at 1180px, so the wider fallback
    font before the web font loads pushed the switch onto a second line and the table jumped
    (layout shift 0.45 on an iPad in landscape). */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .chips {
     flex: 1 1 0;
     min-width: min(100%, 20rem);
@@ -413,7 +413,7 @@
 
 /* ── Phone ─────────────────────────────────────────────────────────────────────────────────── */
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The card's hint gives the title its room on a phone. */
   .phoneHide {
     display: none;
@@ -451,7 +451,7 @@ tr[data-dim="true"] .rowSub {
 
 /* Layout sweep STATS-12: on a touch tablet a row's name link is a full-height tap target, not a
    line of text. */
-@media (pointer: coarse) and (min-width: 48.0625rem) {
+@media (pointer: coarse) and (min-width: 46.5rem) {
   .rowLink {
     display: inline-flex;
     align-items: center;

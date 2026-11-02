@@ -882,7 +882,7 @@
   outline-offset: 1px;
 }
 
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .controlSelect,
   .blockerInput {
     font-size: max(1rem, 16px);
@@ -899,7 +899,7 @@
 /* Phone (visual check, 21 Oct 2026): inside the transit deck its "select { min-width: 44px }" rule
    outranks .controlSelect, so at 390 px the stage and reason selects shrank to "Cl" and the blocker
    placeholder was cut off. On a narrow screen each select and the blocker field take a full row. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .controlRow > .controlSelect,
   .controlRow > .blockerInput {
     flex: 1 1 100%;
@@ -982,7 +982,7 @@
 }
 
 /* v10 phone: one disclaimer line per page, the shared footer; this page-level copy hides on phone (A7). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phPageFoot {
     display: none;
   }

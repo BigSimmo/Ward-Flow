@@ -240,7 +240,7 @@
 }
 
 /* Phone (v10): the clock after "Live" is mono at the chip's own weight and ink ("Live 10:42"). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Keep the folded pause at the 48px minimum touch target on phone. */
   .toggle {
     --wf-live-hit: 48px;

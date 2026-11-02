@@ -99,7 +99,7 @@
 }
 
 /* Phone (v10 phone rows): the T-digit pill, 20px high on the surface, T1 with a firmer ink edge. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .sq {
     height: 20px;
     min-width: 28px;

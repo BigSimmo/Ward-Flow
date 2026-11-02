@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -49,5 +49,22 @@ describe("phone referral board with a referral open", () => {
     expect(detail, "no referral was selected, so this proves nothing").toHaveAttribute("data-has-selection", "true");
     expect(detail).toHaveFocus();
     expect(queue).toHaveAttribute("inert");
+  });
+
+  it("returns focus to the referral's own row when Escape closes it (A3, 2 Nov 2026)", async () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ReferralBoard />
+      </WardFlowProvider>,
+    );
+    const select = screen.getAllByTestId(/^ward-referral-board-(card-)?select-/)[0]!;
+    const testId = select.getAttribute("data-testid")!;
+    select.focus();
+    fireEvent.click(select);
+    const detail = screen.getByRole("region", { name: "Selected referral detail" });
+    expect(detail).toHaveFocus();
+    fireEvent.keyDown(detail, { key: "Escape" });
+    await waitFor(() => expect(detail).toHaveAttribute("data-has-selection", "false"));
+    await waitFor(() => expect(document.activeElement).toHaveAttribute("data-testid", testId));
   });
 });

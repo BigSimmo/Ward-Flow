@@ -76,7 +76,7 @@
 /* Phone rows (Josh, 30 Oct): three lines, not four. The name and timing share the first, the ward the
    second, the stage line the third with the row's button at its right. The button is drawn 32px tall
    and keeps a 48px tap area through an invisible cover. */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .list td.timing.timing {
     grid-row: 1;
   }

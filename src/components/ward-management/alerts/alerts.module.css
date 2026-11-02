@@ -1361,7 +1361,7 @@ button.check[aria-pressed="true"] {
    Title and three figures, then the tools; the queue is one column of cards; the selected alert
    opens in a sheet. Arrange by, highlights, the Today chart and Handover copy stay on the desk.
    Nothing here applies above 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .main {
     gap: var(--wf-s-3);
     padding: var(--wf-s-3);
@@ -1657,7 +1657,7 @@ button.check[aria-pressed="true"] {
 
 /* F-05 (phone review, Oct 2026): a long alert title, name or route wraps to a second line on phone
    instead of losing its end ("No eligible bed: bed coordinat…"). Clamped at two lines. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneRowText .rowOpen {
     white-space: normal;
   }
@@ -1716,7 +1716,7 @@ button.check[aria-pressed="true"] {
   text-align: center;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The views stay under the header while the list scrolls. */
   .tabsBar {
     position: sticky;
@@ -1954,7 +1954,7 @@ button.check[aria-pressed="true"] {
   width: 100%;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .moreActions > summary {
     min-height: 48px;
   }
@@ -1970,7 +1970,7 @@ button.check[aria-pressed="true"] {
   display: none;
 }
 
-@media (min-width: 48.0625rem) and (max-width: 64rem) {
+@media (min-width: 46.5rem) and (max-width: 64rem) {
   .checkingFootWide {
     display: none;
   }

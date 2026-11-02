@@ -1071,7 +1071,7 @@
  * No accent stripe or tinted fill on an open row (Josh); the row icon is a bare glyph, not a tile.
  * Buttons are 44px pills sharing their row. Phone only; desktop and tablet are unchanged.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* pop-alerts: a group's lines stack on a narrow screen. */
   .groupList {
     padding-left: 0;

@@ -500,7 +500,7 @@
   color: var(--wf-ink-3);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .resetButton {
     min-height: 48px;
   }
@@ -688,7 +688,7 @@
 /* Phone polish (8 Oct 2026): 12px gutters, toolbars on one row, the four referral figures in one
  * row, and the two pressure tables cut to the columns that carry the pressure (the rest stay on
  * the larger screen). Under 48rem only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .page {
     padding: var(--wf-s-3);
   }
@@ -873,7 +873,7 @@
 /* Device audit 11 Oct 2026, tablet: the two wide tables take a row each so no column is cut, and
  * the three small charts sit two across (the third spans) rather than three cut titles or one
  * long column. Phone keeps its own layout. */
-@media (min-width: 48.0625rem) and (max-width: 80rem) {
+@media (min-width: 46.5rem) and (max-width: 80rem) {
   .grid2 {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -903,7 +903,7 @@
 
 /* Layout sweep STATS-12: on a touch tablet a row's name link and each finder row are full-height
    tap targets. */
-@media (pointer: coarse) and (min-width: 48.0625rem) {
+@media (pointer: coarse) and (min-width: 46.5rem) {
   .rowLink {
     display: inline-flex;
     align-items: center;

@@ -372,7 +372,7 @@
 }
 
 /* Tablet portrait: Accepted by is the first column to go at 820px. */
-@media (min-width: 48.0625rem) and (max-width: 62.5rem) {
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
   .packAccepted {
     display: none;
   }
@@ -874,7 +874,7 @@
   border-top: 1px solid var(--wf-line);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .page {
     padding: var(--wf-s-3);
   }

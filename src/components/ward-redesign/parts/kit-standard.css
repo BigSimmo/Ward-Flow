@@ -15,7 +15,7 @@ html[data-mockup-kit] {
   --wf-phone-seg-item-h: 32px;
 }
 
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   html[data-mockup-kit] :is([class*="_segItem__"], [class$="_segItem"], [class*="_segItem "]),
   html[data-mockup-kit] :is([class*="_ptItem__"], [class$="_ptItem"], [class*="_ptItem "]) {
     height: 30px;
@@ -23,7 +23,7 @@ html[data-mockup-kit] {
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   html[data-mockup-kit] :is([class*="_pt__"], [class$="_pt"], [class*="_pt "]) {
     padding: 3px;
     overflow: visible;
@@ -57,7 +57,7 @@ html[data-mockup-kit] :is([class*="_queueMore__"], [class$="_queueMore"], [class
   font: 600 var(--wf-fs-13) / 18px var(--wf-font);
   text-align: center;
 }
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   html[data-mockup-kit] :is([class*="_showMore__"], [class$="_showMore"], [class*="_showMore "]),
   html[data-mockup-kit] :is([class*="_queueMore__"], [class$="_queueMore"], [class*="_queueMore "]) {
     height: 48px;

@@ -131,7 +131,7 @@
   overflow-wrap: anywhere;
   line-height: 18px;
 }
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .detailButtonWrap.detailButtonWrap.detailButtonWrap {
     min-height: 40px;
   }

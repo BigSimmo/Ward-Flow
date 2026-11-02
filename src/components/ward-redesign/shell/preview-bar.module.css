@@ -12,14 +12,14 @@
   padding-inline: 14px;
 }
 
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .primaryEven.primaryEven::before {
     inset: 6px 0;
   }
 }
 
 /* Icon only (the bar's own narrow widths): the + sits centred in its pill. */
-@media (min-width: 48.0625rem) and (max-width: 860px) {
+@media (min-width: 46.5rem) and (max-width: 860px) {
   .primaryEven.primaryEven {
     padding-inline: 10px;
   }

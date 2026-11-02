@@ -274,9 +274,9 @@ describe("assertion 2 — Escape never clears the Service selector", () => {
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     await user.click(screen.getByRole("button", { name: "South Metro" }));
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
-    expect(screen.getByRole("group", { name: "Choose a health service" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Choose a health service" })).toBeInTheDocument();
     await user.click(screen.getByRole("textbox", { name: "Search" }));
-    expect(screen.queryByRole("group", { name: "Choose a health service" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Choose a health service" })).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-bar-service-trigger")).toHaveTextContent("South Metro");
   });
 
