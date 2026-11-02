@@ -143,6 +143,10 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/shell/ward-rail.tsx",
+    why: "the master design's sidebar (shell-next/next-rail-body.tsx, a fork of this rail with Josh's 30 Oct fixes) now mounts in the Ward Flow layout (Josh, 2 Nov 2026). Kept with its tests until Josh decides whether to delete it",
+  },
+  {
     module: "src/components/ward-management/help/ward-help-ask.tsx",
     why: "the Help redesign round 2 (1 Nov 2026, #1242) replaced it with the one smart search and the Reference tab (ward-help-find.tsx, ward-help-reference-tabs.tsx). Kept with its tests until Josh decides whether to delete it",
   },
