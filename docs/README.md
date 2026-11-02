@@ -2,7 +2,7 @@
 
 <!-- last-checked: 2026-10-24 -->
 
-_Updated 2026-10-24 - removed a duplicated link-check paragraph, listed every agent topic file, marked the two historical process playbooks and added operations, facts and decisions to Start here; Documentation owns._
+_Updated 2026-11-02 - linked the design system of record and the design folder; Documentation owns._
 
 > **Current Ward Flow work belongs in `BigSimmo/Ward-Flow`.** Start with the repository's
 > [`AGENTS.md`](../AGENTS.md) and [`docs/ward-flow/README.md`](ward-flow/README.md). This index
