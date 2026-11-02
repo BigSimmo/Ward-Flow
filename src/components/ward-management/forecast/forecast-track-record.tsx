@@ -60,7 +60,19 @@ export function ForecastTrackRecordTiles({
   const model = useForecastModel(now);
   const { record } = useForecastHistory(model, now);
   const role = useRouteRole();
-  const { entries: reasonEntries, record: recordReason } = useForecastMissReasons();
+  const {
+    entries: reasonEntries,
+    record: recordReason,
+    pending,
+    reasonVersions,
+    writable,
+    error,
+    retry,
+    discard,
+    legacy,
+    inactive,
+    discardInactive,
+  } = useForecastMissReasons();
   const latestReasons = useMemo(() => latestMissReasons(reasonEntries), [reasonEntries]);
   const patientOf = usePatientOf();
   const describeAdmission = (admission: Admission) =>
@@ -76,6 +88,33 @@ export function ForecastTrackRecordTiles({
   const referralsOnRecord = hours.reduce((a, b) => a + b, 0);
 
   const [showRecord, setShowRecord] = useState(false);
+  const shownReasonDays = new Set(
+    showRecord
+      ? record.days
+          .slice(-7)
+          .filter((day) => day.miss !== 0)
+          .map((day) => day.day)
+      : [],
+  );
+  const otherDraftDays = [...new Set([...pending.map((draft) => draft.entry.day), ...legacy.map((draft) => draft.day)])]
+    .filter((day) => !shownReasonDays.has(day))
+    .sort((a, b) => a - b);
+  const reasonControl = (day: number) => (
+    <ForecastMissReasonControl
+      now={now}
+      day={day}
+      entry={latestReasons.get(day)}
+      candidates={[]}
+      pending={pending.filter((draft) => draft.entry.day === day)}
+      legacy={legacy.filter((draft) => draft.day === day)}
+      version={reasonVersions[day] ?? 0}
+      writable={writable}
+      error={error}
+      onRetry={retry}
+      onDiscard={discard}
+      onRecord={(reason, expectedDayVersion) => recordReason({ day, reason, by: role, at: now }, expectedDayVersion)}
+    />
+  );
   const recordId = useId();
   const heldCount = held.reduce((sum, row) => sum + row.met, 0);
   const consideredCount = held.reduce((sum, row) => sum + row.consideredCount, 0);
@@ -108,6 +147,34 @@ export function ForecastTrackRecordTiles({
         >
           {showRecord ? "Hide the record" : "Show the record"}
         </Button>
+        {otherDraftDays.length ? (
+          <section aria-label="Forecast choices awaiting review">
+            <h3 className={styles.groupHead}>Choices awaiting confirmation or review</h3>
+            {otherDraftDays.map((day) => (
+              <div key={day}>
+                <p>Day {day}</p>
+                {reasonControl(day)}
+              </div>
+            ))}
+          </section>
+        ) : null}
+        {inactive.length ? (
+          <section aria-label="Earlier demonstration drafts">
+            <h3 className={styles.groupHead}>Earlier demonstration drafts</h3>
+            <p>
+              These choices belong to a previous demonstration and will not be sent in this one. Removing a draft does
+              not undo a save already accepted.
+            </p>
+            {inactive.map(({ draft }) => (
+              <p key={draft.operationId}>
+                Day {draft.entry.day}: {FORECAST_MISS_REASON_LABELS[draft.entry.reason]}.{" "}
+                <Button size="sm" variant="ghost" onClick={() => discardInactive(draft.operationId)}>
+                  Discard earlier draft
+                </Button>
+              </p>
+            ))}
+          </section>
+        ) : null}
         <div id={recordId} hidden={!showRecord}>
           <h3 className={styles.groupHead}>Forecast against what happened</h3>
           {record.days.length === 0 ? (
@@ -148,7 +215,16 @@ export function ForecastTrackRecordTiles({
                         day={day.day}
                         entry={latestReasons.get(day.day)}
                         candidates={missCandidates(day, movements, admissions, describeAdmission)}
-                        onRecord={(reason) => recordReason({ day: day.day, reason, by: role, at: now })}
+                        pending={pending.filter((draft) => draft.entry.day === day.day)}
+                        legacy={legacy.filter((draft) => draft.day === day.day)}
+                        version={reasonVersions[day.day] ?? 0}
+                        writable={writable}
+                        error={error}
+                        onRetry={retry}
+                        onDiscard={discard}
+                        onRecord={(reason, expectedDayVersion) =>
+                          recordReason({ day: day.day, reason, by: role, at: now }, expectedDayVersion)
+                        }
                       />
                     )}
                   </li>

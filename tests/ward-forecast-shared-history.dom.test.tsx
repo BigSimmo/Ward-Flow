@@ -30,15 +30,16 @@ const yesterday: ForecastHistoryEntry = {
 type Seen = {
   history: ForecastHistoryEntry[];
   reasons: number;
+  pending?: number;
   record?: ReturnType<typeof useForecastMissReasons>["record"];
 };
 function Probe({ onSeen }: { onSeen: (seen: Seen) => void }) {
   const model = useForecastModel(NOW_ANCHOR);
   const { history } = useForecastHistory(model, NOW_ANCHOR);
-  const { entries, record } = useForecastMissReasons();
+  const { entries, record, pending } = useForecastMissReasons();
   useEffect(() => {
-    onSeen({ history, reasons: entries.length, record });
-  }, [onSeen, history, entries, record]);
+    onSeen({ history, reasons: entries.length, pending: pending.length, record });
+  }, [onSeen, history, entries, pending, record]);
   return null;
 }
 
@@ -46,6 +47,8 @@ function Probe({ onSeen }: { onSeen: (seen: Seen) => void }) {
 function fakeServer({ shared = true, failing = false } = {}) {
   const sent: Record<string, unknown>[] = [];
   let generation = 0;
+  let revision = 0;
+  const versions: Record<string, number> = {};
   const snapshots: ForecastHistoryEntry[] = [yesterday];
   const reasons: Record<string, unknown>[] = [];
   const control = { failWrites: false };
@@ -58,13 +61,25 @@ function fakeServer({ shared = true, failing = false } = {}) {
       const snapshot = body.snapshot as ForecastHistoryEntry | undefined;
       if (snapshot && !snapshots.some((entry) => entry.day === snapshot.day)) snapshots.push(snapshot);
       if (body.reason) addReason(body.reason as Record<string, unknown>);
+      revision += 1;
     }
-    return { shared: true, generation, snapshots: [...snapshots], reasons: [...reasons] };
+    return {
+      shared: true,
+      generation,
+      scopeKey: "a".repeat(64),
+      historyRevision: revision,
+      writable: true,
+      reasonVersions: versions,
+      snapshots: [...snapshots],
+      reasons: [...reasons],
+      ...(body ? { operationId: body.operationId, outcome: "accepted", commandRevision: revision } : {}),
+    };
   };
   function addReason(reason: Record<string, unknown>) {
     const index = reasons.findIndex((held) => held.day === reason.day);
     if (index >= 0) reasons.splice(index, 1);
     reasons.push(reason);
+    versions[String(reason.day)] = (versions[String(reason.day)] ?? 0) + 1;
   }
   const api = { forecastHistory } as unknown as SharedAccessApi;
   return { api, sent, control, addReason };
@@ -97,7 +112,7 @@ describe("shared forecast history (proposal 013)", () => {
       { shared: true, generation: 0, snapshots: [yesterday, { day: "x" }], reasons: [{ day: 1, reason: "free text" }] },
       0,
     );
-    expect(reply).toEqual({ status: "shared", snapshots: [yesterday], reasons: [] });
+    expect(reply).toMatchObject({ status: "shared", snapshots: [yesterday], reasons: [], writable: false });
   });
 
   it("shows the desk's shared history and records today's snapshot there once", async () => {
@@ -109,7 +124,9 @@ describe("shared forecast history (proposal 013)", () => {
     expect(sent[0]).toMatchObject({ generation: 0, snapshot: { day: today } });
 
     // A reason chosen on this device goes to the desk's shared record too.
-    await act(async () => seen.record?.({ day: today, reason: "capacity_changed", by: "coordinator", at: NOW_ANCHOR }));
+    await act(async () => {
+      seen.record?.({ day: today, reason: "capacity_changed", by: "coordinator", at: NOW_ANCHOR });
+    });
     await waitFor(() => expect(seen.reasons).toBe(1));
     expect(sent.at(-1)).toMatchObject({ reason: { day: today, reason: "capacity_changed" } });
   });
@@ -130,8 +147,11 @@ describe("shared forecast history (proposal 013)", () => {
     renderWith(api, seen);
     await waitFor(() => expect(seen.history).toHaveLength(2));
     control.failWrites = true;
-    await act(async () => seen.record?.({ day: today, reason: "other", by: "coordinator", at: NOW_ANCHOR }));
-    expect(seen.reasons).toBe(1);
+    await act(async () => {
+      seen.record?.({ day: today, reason: "other", by: "coordinator", at: NOW_ANCHOR });
+    });
+    expect(seen.reasons).toBe(0);
+    expect(seen.pending).toBe(1);
     control.failWrites = false;
     // The view reads the history again when it is shown again, and the unsaved reason goes with it.
     await act(async () => document.dispatchEvent(new Event("visibilitychange")));

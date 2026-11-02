@@ -248,7 +248,8 @@ export function forecastHistoryStore({ workspaceId, schemaVersion, withWorkspace
               code: "forecast-operation-reused",
               error: "This save reference was already used for another change. Review the latest history.",
             });
-          const { kind: _kind, ...metadata } = receipt.result;
+          const metadata = { ...receipt.result };
+          delete metadata.kind;
           return answer(receipt.status, { ...metadata, replayed: true });
         }
 

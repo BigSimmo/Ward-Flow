@@ -1,4 +1,5 @@
 import { anySignal, onDeviceClock, sentence, untilAborted, withoutChartContent } from "./ward-shared-client-helpers";
+import { forecastHistoryResponse } from "./forecast/forecast-shared-types";
 import { CommandDisplayHold, requireCommandCompletion, validSharedSnapshot } from "./ward-shared-command-completion";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 import { commandSheetHandles, openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
@@ -662,6 +663,7 @@ export class SharedWorkspaceClient {
     const grantGeneration = this.grantGeneration;
     const authenticatedActor = this.options.authenticatedActorId?.();
     const workspaceRead = path === "/v1/workspace" || path.startsWith("/v1/workspace?");
+    const forecastRead = path === "/v1/workspace/forecast-history";
     const tvRead = workspaceRead && globalThis.location?.pathname.startsWith("/ward-flow/bed-meeting");
     const current = () => {
       if (
@@ -673,7 +675,10 @@ export class SharedWorkspaceClient {
         this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "unavailable" });
         throw new Error("The signed-in account changed; reconnect.");
       }
-      if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
+      if (
+        generation !== this.viewGeneration ||
+        ((workspaceRead || forecastRead) && grantGeneration !== this.grantGeneration)
+      )
         throw new Error("The working view changed; try again.");
     };
     await loadSharedStateCheck();
@@ -1373,11 +1378,9 @@ export class SharedWorkspaceClient {
       throw new Error(typeof value?.error === "string" ? value.error : "The access log could not be read");
     return Array.isArray(value.views) ? value.views : [];
   }
-  /** Proposal 013: this desk's shared forecast history; with a body, records a snapshot or reason first. */
   async forecastHistory(body?: Record<string, unknown>): Promise<unknown> {
     const { response, value } = await this.request("/v1/workspace/forecast-history", body);
-    if (!response.ok) throw new Error("Forecast history could not be read");
-    return value;
+    return forecastHistoryResponse(response, value);
   }
   /** Cover given or held by this account, and, for a coordinator, inside its place. */
   async listCovers(): Promise<SharedMembership[]> {

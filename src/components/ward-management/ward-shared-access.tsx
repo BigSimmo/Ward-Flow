@@ -345,12 +345,17 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     [sessionOpen, accountEmail, canSwitchRole],
   );
   const actorId = typeof connection.actorId === "string" ? connection.actorId : null;
+  const accessContext = connection.snapshot?.accessContext ?? connection.executiveSnapshot?.accessContext ?? null;
   const sharedAccess = useMemo(
     () =>
       connection.enabled
-        ? { api: connected && !connection.recovering && accessApi ? accessApi : unavailableAccessApi, actorId }
+        ? {
+            api: connected && !connection.recovering && accessApi ? accessApi : unavailableAccessApi,
+            actorId,
+            accessContext,
+          }
         : null,
-    [connection.enabled, connection.recovering, connected, accessApi, actorId],
+    [connection.enabled, connection.recovering, connected, accessApi, actorId, accessContext],
   );
   // The header holds the Prototype pill, so the only strip above the app is the account strip
   // (`WardSharedSaveStatus`), which publishes its own height as --wf-data-bar-height.

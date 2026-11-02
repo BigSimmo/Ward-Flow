@@ -6,7 +6,7 @@
 // Home, Capacity, ED, the bed meeting, Alerts and Statistics all call this hook with their own clock,
 // so the same records give the same figure on every screen. Pure engine calls only; nothing here
 // writes a record.
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 import {
@@ -41,13 +41,8 @@ import {
   recordForecastHistory,
 } from "./forecast-history";
 import { blockerGroups, forecastLevers, notYetCounted } from "./forecast-levers";
-import {
-  FORECAST_MISS_REASONS_STORAGE_KEY,
-  parseForecastMissReasons,
-  recordForecastMissReason,
-  type ForecastMissReasonEntry,
-} from "./forecast-miss-reasons";
 import { useSharedForecastHistory } from "./forecast-shared-history";
+export { useForecastMissReasons } from "./use-forecast-miss-reasons";
 
 /** "Peel ED" style name for an emergency department id; never a different department. */
 export function forecastEdName(edId: string): string {
@@ -322,11 +317,11 @@ export function useForecastHistory(model: ForecastModel, now: Instant) {
   // One try a demo day: a refused or failed send is not repeated with every clock tick.
   const sentDay = useRef<string | null>(null);
   useEffect(() => {
-    const attempt = `${worldGeneration}:${entry.day}`;
+    const attempt = `${key}:${shared.state.status === "shared" ? shared.state.scopeKey : ""}:${entry.day}`;
     if (sharedHasToday || sentDay.current === attempt) return;
     sentDay.current = attempt;
     void send({ snapshot: entry });
-  }, [sharedHasToday, send, entry, worldGeneration]);
+  }, [sharedHasToday, send, entry, key, shared.state]);
   useEffect(() => {
     const before = parseForecastHistory(readLocal(key));
     if (before.some((existing) => existing.day === entry.day)) return;
@@ -341,62 +336,4 @@ export function useForecastHistory(model: ForecastModel, now: Instant) {
   }, [key, entry]);
   const shown = sharedHistory ?? history;
   return useMemo(() => ({ history: shown, record: forecastTrackRecord(shown) }), [shown]);
-}
-
-// Closing-the-loop features (Josh, 24 Oct 2026): reasons a person records for forecast misses.
-const MISS_REASONS_EVENT = "ward-flow-forecast-miss-reasons-change";
-
-function subscribeMissReasons(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(MISS_REASONS_EVENT, onChange);
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(MISS_REASONS_EVENT, onChange);
-  };
-}
-
-/**
- * The reasons recorded against the track record's missed days, kept under the same person,
- * scenario and reseed as the snapshots they explain, and shared by the desk with them once the
- * server has migration 16. Only `record` writes, and only when a person chooses a reason; nothing
- * here assigns one.
- */
-export function useForecastMissReasons() {
-  const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
-  const account = useContext(SharedAccessContext);
-  const key = `${FORECAST_MISS_REASONS_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}:${scenario}:${worldGeneration}`;
-  const stored = useSyncExternalStore(subscribeMissReasons, () => readLocal(key), serverLook);
-  const local = useMemo(() => parseForecastMissReasons(stored), [stored]);
-  const { state: shared, send } = useSharedForecastHistory(worldGeneration);
-  // A reason chosen here shows at once and stays shown until the desk's shared record has it. A
-  // save that fails is tried again whenever the shared history is read again, never dropped.
-  const [unsaved, setUnsaved] = useState<{ key: string; entries: ForecastMissReasonEntry[] }>({ key, entries: [] });
-  const pending = useMemo(() => (unsaved.key === key ? unsaved.entries : []), [unsaved, key]);
-  const entries = useMemo(
-    () => (shared.status === "shared" ? [...shared.reasons, ...pending] : local),
-    [shared, pending, local],
-  );
-  useEffect(() => {
-    if (shared.status !== "shared") return;
-    for (const entry of pending)
-      void send({ reason: entry }).then((saved) => {
-        if (saved)
-          setUnsaved((held) => (held.key === key ? { key, entries: held.entries.filter((e) => e !== entry) } : held));
-      });
-  }, [shared, pending, send, key]);
-  const record = useCallback(
-    (entry: ForecastMissReasonEntry) => {
-      setUnsaved((held) => ({ key, entries: [...(held.key === key ? held.entries : []), entry] }));
-      const next = recordForecastMissReason(parseForecastMissReasons(readLocal(key)), entry);
-      dropEarlierWorlds(key);
-      try {
-        window.localStorage.setItem(key, JSON.stringify(next));
-      } catch {
-        // Private windows and full storage keep no reasons, the same as the snapshots.
-      }
-      window.dispatchEvent(new Event(MISS_REASONS_EVENT));
-    },
-    [key],
-  );
-  return { entries, record };
 }
