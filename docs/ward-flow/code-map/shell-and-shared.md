@@ -565,6 +565,14 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   how-tos with `around` set, kept out of the desk's job list and closest suggestions, and ranked after
   a job sharing their words. A Show me step may carry `device` ("desk" or "phone"); `showMeSteps`
   skips the other device's steps in the player, the step lists and the step count.
+  Also from 2 Nov 2026: `#help=<id>` (fixed how-to id, `helpLinkTask` in `ward-help-events.ts`)
+  opens Help at that job and is then removed from the address; each open answer has Copy link
+  (through `ward-clipboard.ts`) and Was this helpful? (`ward-help-feedback.ts`, ids and counts only
+  in `ward_flow_choice_help_helpful`, shown and cleared with the usage card). Questions to try put
+  the desk's most-used jobs and the screen's walk round first. Shortcuts show on a phone-sized
+  screen with a fine pointer; keyboard hints hide on touch-only screens. Help links the desk's A4
+  guide (Your desk) and the screen's A4 guide (`public/help/screens/`, built by
+  `scripts/build-help-cheat-sheets.mjs` from `printScreenGuides`).
   The Help sheet's search (`ward-help-find.tsx`) applies the clinical-question guard and fixed reply,
   suppressing ordinary results for those questions. With no matching answer, glossary term or setting,
   it offers the closest how-tos; another desk's topics keep their read-only presentation. Results,
