@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
+import { WardDemoRoles } from "@/components/ward-management/tools/ward-demo-roles";
 import { ConfirmHost } from "@/components/wf/confirm-dialog";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { exitDemoRole } from "@/components/ward-management/tools/ward-demo-role-session";
@@ -130,6 +131,73 @@ afterEach(() => {
 });
 
 describe("Roles within the existing Demo selector", () => {
+  function pendingChoice({ show = true, enabled = true } = {}) {
+    return (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <UnsavedWork>{show ? <WardDemoRoles enabled={enabled} /> : null}</UnsavedWork>
+      </WardFlowProvider>
+    );
+  }
+
+  it("keeps the first pending role choice through repeated clicks, cancel and retry", async () => {
+    render(pendingChoice());
+    choose("Transport officer");
+    choose("Executive");
+    fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Keep editing" }));
+    expect(readWardAccessSnapshot().access.role).toBe("coordinator");
+    expect(navigation.push).not.toHaveBeenCalled();
+    choose("Transport officer");
+    choose("Executive");
+    await act(async () =>
+      fireEvent.click(
+        within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Leave without saving" }),
+      ),
+    );
+    expect(readWardAccessSnapshot().access.role).toBe("officer");
+    expect(navigation.push).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["disabled", "unmounted"] as const)(
+    "does not execute an earlier role choice after the selector is %s",
+    async (state) => {
+      const mounted = render(pendingChoice());
+      choose("Transport officer");
+      await screen.findByRole("alertdialog");
+      mounted.rerender(pendingChoice(state === "disabled" ? { enabled: false } : { show: false }));
+      await act(async () =>
+        fireEvent.click(
+          within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Leave without saving" }),
+        ),
+      );
+      expect(readWardAccessSnapshot().access.role).toBe("coordinator");
+      expect(navigation.push).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["disabled", "unmounted"] as const)(
+    "does not execute an earlier role exit after the selector is %s",
+    async (state) => {
+      const mounted = render(pendingChoice());
+      choose("Transport officer");
+      const firstQuestion = await screen.findByRole("alertdialog");
+      await act(async () =>
+        fireEvent.click(within(firstQuestion).getByRole("button", { name: "Leave without saving" })),
+      );
+      navigation.push.mockClear();
+      const original = readWardAccessSnapshot().access;
+      fireEvent.click(screen.getByRole("button", { name: "Exit role demo" }));
+      await screen.findByRole("alertdialog");
+      mounted.rerender(pendingChoice(state === "disabled" ? { enabled: false } : { show: false }));
+      await act(async () =>
+        fireEvent.click(
+          within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Leave without saving" }),
+        ),
+      );
+      expect(readWardAccessSnapshot().access).toEqual(original);
+      expect(navigation.push).not.toHaveBeenCalled();
+    },
+  );
+
   it("asks before role selection and exit, preserving access until Leave without saving", async () => {
     renderPanel((child) => <UnsavedWork>{child}</UnsavedWork>);
     const original = readWardAccessSnapshot().access;

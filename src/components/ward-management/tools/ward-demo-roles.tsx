@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useId, useMemo } from "react";
+import { useContext, useEffect, useId, useMemo, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { COMMUNITY_TEAM_PAGES, communityHubLists, communityTeamSlug } from "../community/community-derivations";
@@ -55,6 +55,15 @@ export function WardDemoRoles({ enabled }: { enabled: boolean }) {
 }
 
 function LocalDemoRoles({ enabled }: { enabled: boolean }) {
+  // A confirmation belongs to this enabled lifetime, not to a hidden or replacement selector.
+  const activeLifetime = useRef<{ enabled: boolean } | null>(null);
+  useEffect(() => {
+    const lifetime = { enabled };
+    activeLifetime.current = lifetime;
+    return () => {
+      if (activeLifetime.current === lifetime) activeLifetime.current = null;
+    };
+  }, [enabled]);
   const world = useUnscopedWardFlow();
   const network = useWardNetwork();
   const { desk, access, previewOf } = useWardAccessSnapshot();
@@ -124,8 +133,10 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
   }
   function choose(role: WardAccessRole) {
     const next = choices[role];
-    if (!enabled || !next) return;
+    const lifetime = activeLifetime.current;
+    if (!enabled || !next || !lifetime?.enabled) return;
     const proceed = () => {
+      if (activeLifetime.current !== lifetime) return;
       selectDemoRole(next, {
         desk: previewOf ?? desk,
         deviceFlag: roleFlag?.source === "device" ? roleFlag.on : null,
@@ -137,8 +148,10 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
     if (confirmLeavingShell(proceed)) proceed();
   }
   function exit() {
-    if (!enabled) return;
+    const lifetime = activeLifetime.current;
+    if (!enabled || !lifetime?.enabled) return;
     const proceed = () => {
+      if (activeLifetime.current !== lifetime) return;
       const saved = session?.desk;
       const scope = saved?.scope;
       const placeExists =

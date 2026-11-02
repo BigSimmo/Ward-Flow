@@ -326,6 +326,18 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
 });
 
 describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () => {
+  it("keeps Next alert unnumbered when the Now list also contains accepted referrals", () => {
+    const seed = seedWardFlowState();
+    const toPull = acceptedReferralsAwaitingPull(seed.referrals, seed.units, seed.movements);
+    expect(toPull.length).toBeGreaterThan(0);
+    renderScreen();
+    const next = screen.getByRole("button", { name: /^Next alert/u });
+    expect(next).toHaveTextContent(/^Next alert$/u);
+    expect(next).toHaveAccessibleName("Next alert");
+    expect(next).toBeEnabled();
+    expect(screen.getByTestId("ward-alerts-accepted-to-pull")).toBeInTheDocument();
+  });
+
   it("counts active tasks and accepted referrals awaiting a pull in Now, including running targets", () => {
     const lapsed = taskItems(seedWardFlowState(), NOW).find((item) => alertKindOf(item.id) === "hold");
     expect(lapsed?.movementId, "the seed has a lapsed bed pull").toBeTruthy();

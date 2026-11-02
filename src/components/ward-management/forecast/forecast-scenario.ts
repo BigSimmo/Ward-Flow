@@ -57,7 +57,7 @@ export function applyScenario(
   const kinds = forecast.kinds.map((kind) => {
     const change = scenario.bedChanges.reduce((total, entry) => {
       const unit = units.find((candidate) => candidate.id === entry.unitId);
-      return unit && scenarioKindOfUnit(unit) === kind.id ? total + entry.delta : total;
+      return unit && !unit.isClosed && scenarioKindOfUnit(unit) === kind.id ? total + entry.delta : total;
     }, 0);
     // Confirmation does not clear an unflagged stay's blocker or renew its overdue date. The
     // other choices concern already flagged releases, counted separately from these plans.

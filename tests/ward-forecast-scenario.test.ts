@@ -135,4 +135,22 @@ describe("confirmation in a bed forecast scenario", () => {
     const result = applyScenario(withoutEligibility, { ...EMPTY_SCENARIO, confirmDates: true }, [unit]);
     expect(result.after).toBe(result.before);
   });
+
+  it.each([-3, 3])("stops applying a retained bed change of %i after its ward closes or disappears", (delta) => {
+    const openUnit = { ...unit, isClosed: false };
+    const scenario = { ...EMPTY_SCENARIO, bedChanges: [{ unitId: openUnit.id, delta }] };
+    const openForecast = forecastByKind([openUnit], [], [], [], now, 1);
+    const openResult = applyScenario(openForecast, scenario, [openUnit]);
+    expect(openResult.after - openResult.before).toBe(delta);
+
+    const closedUnit = { ...openUnit, isClosed: true };
+    const closedForecast = forecastByKind([closedUnit], [], [], [], now, 1);
+    expect(closedForecast.total.likely).toBe(0);
+    const closedResult = applyScenario(closedForecast, scenario, [closedUnit]);
+    expect(closedResult.after).toBe(closedResult.before);
+
+    const removedForecast = forecastByKind([], [], [], [], now, 1);
+    const removedResult = applyScenario(removedForecast, scenario, []);
+    expect(removedResult.after).toBe(removedResult.before);
+  });
 });

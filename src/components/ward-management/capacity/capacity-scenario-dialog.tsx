@@ -85,10 +85,15 @@ export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClos
         {scenario.bedChanges.map((change, index) => {
           const unit = units.find((candidate) => candidate.id === change.unitId);
           const beds = Math.abs(change.delta) === 1 ? "bed" : "beds";
+          const noLongerApplies = !unit
+            ? "Ward unavailable; this change no longer applies."
+            : unit.isClosed
+              ? "Ward closed; this change no longer applies."
+              : "";
           return (
             <Checkbox
               key={`${change.unitId}-${index}`}
-              label={`${unit?.name ?? "Ward"} ${change.delta < 0 ? `closes ${-change.delta}` : `opens ${change.delta}`} ${beds}`}
+              label={`${unit?.name ?? "Ward"} ${change.delta < 0 ? `closes ${-change.delta}` : `opens ${change.delta}`} ${beds}${noLongerApplies ? ` · ${noLongerApplies}` : ""}`}
               checked
               onChange={() =>
                 setScenario((current) => ({
