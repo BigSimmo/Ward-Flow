@@ -81,6 +81,7 @@ import { publishLiveClock } from "@/components/wf";
 import bar from "./ward-bar.module.css";
 import rail from "./ward-rail.module.css";
 import phone from "./ward-phone-menu.module.css";
+import { useFitDockLabels } from "./use-fit-dock-labels";
 import pageDock from "./ward-phone-page-dock.module.css";
 import layout from "@/app/ward-flow/ward-flow-layout.module.css";
 
@@ -440,6 +441,9 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   // Only while the first report is on its way does the calm loading line stand in for the desk. A
   // report that cannot be made still draws the frame, so Settings, the closed "Not part of your role"
   // page and the way home work, and report pages say "unavailable" inside it (round 4, 31 Oct 2026).
+  // Q307: the phone dock's labels shrink to fit at large text (before the early return below).
+  const dockRef = useRef<HTMLElement>(null);
+  useFitDockLabels(dockRef, `.${phone.dockLabel}`);
   if (!shell || (!report && reportLoading)) return <ExecutiveStatisticsUnavailable />;
   const entries = accessNav(railEntries(flagOn));
   const resolvedMenu = roleMenu(entries, "executive", accessAdmin);
@@ -790,6 +794,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
           {/* The new frame's dock for a desk with nothing to start: no + and no hump, so the tabs
               share the width evenly (Statistics, Capacity, Activity). */}
           <nav
+            ref={dockRef}
             className={phone.dock}
             aria-label="Quick open"
             data-testid="ward-phone-dock"

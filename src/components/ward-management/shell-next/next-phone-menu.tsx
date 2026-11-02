@@ -18,6 +18,7 @@ import {
 import { Activity, BedDouble, House, Bell, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
+import { useFitDockLabels } from "@/components/ward-management/shell/use-fit-dock-labels";
 import { SrOnly } from "@/components/wf";
 import { useNextNavCounts } from "@/components/ward-management/shell-next/next-nav-counts";
 import {
@@ -357,6 +358,8 @@ function PhoneDock({
   canCreate: boolean;
   onDrawer: (id: DrawerId, opener?: HTMLElement) => void;
 }) {
+  const dockRef = useRef<HTMLElement>(null);
+  useFitDockLabels(dockRef, `.${styles.dockLabel}`);
   const alertsLink = (count: number | undefined) => (
     <Link
       key="alerts"
@@ -492,6 +495,7 @@ function PhoneDock({
   const twoLine = [...places, ...right].some((item) => "label" in item && item.label.length > DOCK_ONE_LINE_CHARS);
   return (
     <nav
+      ref={dockRef}
       className={`${styles.dock} ${dockStyles.dock} ${twoLine ? dockStyles.twoLine : ""}`}
       aria-label="Quick open"
       data-testid="ward-phone-dock"
