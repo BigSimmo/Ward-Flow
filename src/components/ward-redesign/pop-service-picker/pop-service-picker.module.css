@@ -159,7 +159,7 @@
   visibility: visible;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Josh, 30 Oct: today's control sizes. The close keeps a larger, invisible touch area. */
   .head button {
     position: relative;

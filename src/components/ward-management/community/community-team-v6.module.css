@@ -59,7 +59,7 @@
 
 /* Desktop and tablet: the tabs keep their whole width and the four actions drop to their own line
  * when both do not fit. At 1440 with the rail open the actions covered Caseload and CTOs. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   :has(> * > .trackScroll) {
     flex-wrap: wrap;
     row-gap: var(--wf-s-2);
@@ -394,7 +394,7 @@ div.workspace > .side {
 
 /* Phone (≤48rem), 8 Oct 2026: a shorter hero. The figures share one row of three and the four team
  * actions sit on one row that scrolls sideways, with Intake referral first. Desktop is untouched. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroStats {
     display: grid;
     grid-column: 1 / -1;
@@ -474,7 +474,7 @@ div.workspace > .side {
   gap: var(--wf-s-2);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroStats[role="group"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--wf-s-2);
@@ -545,7 +545,7 @@ div.workspace > .side {
   color: var(--wf-ink-3);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .switchItem {
     min-height: var(--wf-touch);
   }
@@ -646,7 +646,7 @@ div.workspace > .side {
 /* Q228 (design review, 2 Nov 2026): at tablet width the five team tabs take the whole row and Find,
  * Record contact and More drop to their own line after them, so the tabs never run into the find
  * box. The find box then takes the free width of that line. */
-@media (min-width: 48.0625rem) and (max-width: 64rem) {
+@media (min-width: 46.5rem) and (max-width: 64rem) {
   .tabRow > [role="tablist"] {
     flex: 1 0 100%;
   }

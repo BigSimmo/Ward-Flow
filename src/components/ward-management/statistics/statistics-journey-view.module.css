@@ -455,7 +455,7 @@
 }
 
 /* ── Phone ──────────────────────────────────────────────────────────────── */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The ribbon keeps its shape and scrolls sideways inside its card. */
   .ribbonScroll {
     overflow-x: auto;

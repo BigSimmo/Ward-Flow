@@ -218,7 +218,7 @@
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .weekend {
     margin-bottom: var(--wf-s-3);
   }

@@ -619,7 +619,7 @@
 }
 
 /* Phone (≤48rem), 8 Oct 2026: the hero actions start at the left edge like every other hero row. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroActions {
     justify-content: flex-start;
   }
@@ -727,7 +727,7 @@
   min-width: 0;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .layout[data-phone-pane="az"] [data-pane]:not([data-pane="az"]),
   .layout[data-phone-pane="suburb"] [data-pane]:not([data-pane="suburb"]),
   .layout[data-phone-pane="alike"] [data-pane]:not([data-pane="alike"]),
@@ -770,7 +770,7 @@
  * two-line rows (name, then the service dot, service and suburbs) with the reads-alike dot and a
  * chevron at the end. No letter rail and no column head on phone; the letter rows carry the count.
  * Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .directoryCard {
     gap: var(--wf-s-3);
     overflow: visible;
@@ -967,7 +967,7 @@
 /* v10 phone second pass (11 Oct 2026): the view switch spans the width; the search is a 44px pill;
  * the health services and Reads alike are separate pill chips, the picked one edged in the accent.
  * (31 Oct 2026: the hero's Guide and Raise referral are Home's hero pills, phone-rows.module.css.) */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroActions {
     width: 100%;
     gap: var(--wf-s-2);
@@ -1033,7 +1033,7 @@
 }
 
 /* v10 phone: the view switch stays under the bar while the list scrolls, as on Home. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* R2-03 / R1-15 / R3-15 (device sweep, 24 Oct 2026): doubled so it outranks the kit's
      ScrollRow "position: relative", which turned this "top" into a 56px shove: a blank band above
      the switch and the switch lying over the Suburb search and its Clear button. */
@@ -1049,7 +1049,7 @@
 
 /* v10 phone panes run the full width. The Suburb pane's lookup draws no card chrome of its own
  * (the shared card's `plainOnPhone`, D-91). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phonePanes > div,
   .phonePanes :global([role="radiogroup"]) {
     flex: 1 1 auto;
@@ -1058,7 +1058,7 @@
 }
 
 /* The 44px chips reach a 48px hit area. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .toolbar > :global([role="radiogroup"]) > :global([role="radio"]),
   .toolbar > button[aria-pressed] {
     position: relative;
@@ -1077,7 +1077,7 @@
  * stable shared header. The pinned "Reads alike" chip leaves the phone: the hero's
  * Read alike figure is that filter there. A name that reads like others says so at the end of its
  * meta line, as the mockup ("EMHS · 1 suburb · reads like 3 others"). Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phonePanes {
     max-width: none;
   }
@@ -1114,7 +1114,7 @@
 
 /* Device audit 11 Oct 2026, phone: the letter heads stick under the view switch while 64 names
  * scroll. `clip` rather than `hidden` on the card, so the card is not the sticky container. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .directoryCard,
   .directoryCard .listWrap {
     overflow: clip;
@@ -1129,7 +1129,7 @@
 }
 
 /* Tablet portrait: the suburb lookup, the faster job, leads above the A to Z. */
-@media (min-width: 48.0625rem) and (max-width: 62.5625rem) {
+@media (min-width: 46.5rem) and (max-width: 62.5625rem) {
   .layout {
     display: flex;
     flex-direction: column;
@@ -1147,7 +1147,7 @@
 
 /* Device audit 11 Oct 2026, phone: the compared spellings are the point of the Alike tab, so they
  * wrap in their columns rather than being cut or hidden off the side; the note wraps too. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .sideTable {
     white-space: normal;
   }
@@ -1164,7 +1164,7 @@
 /* Phone compact chips (Josh, 12 Oct 2026): the toolbar chips take the shared phone pill
  * (`--wf-phone-*`): 32px faces, 13px 600 labels, 12px mono counts. The row carries the hit area in
  * its padding so the 48px target is not clipped by the sideways scroll. Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .toolbar > :global([role="radiogroup"]) {
     gap: var(--wf-phone-pill-gap);
     padding: var(--wf-phone-pill-hit) 2px;
@@ -1191,7 +1191,7 @@
 /* Layout sweep MEET-18: on an iPad in landscape the two highlight chips take their own row under the
    title and actions (as the band already does below 900px), so neither the chip nor the eyebrow is
    cut. The first rule selects the band's row, the second its stats slot. */
-@media (min-width: 48.0625rem) and (max-width: 68.75rem) {
+@media (min-width: 46.5rem) and (max-width: 68.75rem) {
   .main :has(> * > .heroChips) {
     flex-wrap: wrap;
   }

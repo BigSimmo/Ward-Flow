@@ -135,7 +135,7 @@
 /* R2-04 (device sweep, 24 Oct 2026): the five lists (Sent, Waiting, In bed, Back, CTOs) fit one
    row at 390 with tighter item padding, and wrap onto a second row on a narrower phone, so the
    chosen list is never scrolled out of sight. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .lists > .segmented {
     flex-wrap: wrap;
     overflow-x: visible;

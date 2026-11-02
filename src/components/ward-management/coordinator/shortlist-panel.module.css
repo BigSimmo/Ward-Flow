@@ -813,7 +813,7 @@
   min-height: 3rem;
 }
 
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .body select {
     font-size: max(1rem, 16px);
   }
@@ -1082,7 +1082,7 @@
   display: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .shortlistBackdrop {
     display: block;
     position: fixed;
@@ -1179,7 +1179,7 @@
 
 /* Phone (v10 Home "Patient open", 11 Oct 2026): Override and Refer share the foot as 48px pills,
    Refer taking the rest of the row. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .actionToolbar > div:not([data-testid]) {
     flex: 1 1 100%;
     margin-left: 0;
@@ -1202,7 +1202,7 @@
 /* Phone patient sheet, second pass (v10 Home phone "Patient open"). Phone only: the sheet reaches
  * 16px from the top, the body sits on the sheet's own 16px gutter (no second inset), the name row
  * leaves room for the round Close, and the facts are a two-across card. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .shortlistRegion.shortlistRegion {
     max-height: calc(100dvh - 16px);
     border-top-color: var(--wf-line-2);
@@ -1409,7 +1409,7 @@
 }
 
 /* Desktop: Refer, Quick send and Override at the kit's standard button height. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .actions.actions > :is(button, a) {
     min-height: var(--wf-h-md);
     height: var(--wf-h-md);
@@ -1418,7 +1418,7 @@
 
 /* Phone (kit standard, Josh 31 Oct 2026: no 48px controls): the disclosures show at 40px and keep
    the 48px tap floor with an invisible cover above and below. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .disclosure.disclosure.disclosure::after {
     content: "";
     position: absolute;

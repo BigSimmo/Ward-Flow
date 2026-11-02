@@ -2696,7 +2696,7 @@ button.searchBox:hover {
 
 /* ── Responsive Adaptations ─────────────────────────────────────────────── */
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .exampleMenu {
     margin-left: 0;
   }
@@ -2779,7 +2779,7 @@ button.searchBox:hover {
   cursor: pointer;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The card's patient line is a touch target, so it keeps the tap floor. */
   .refOpen {
     min-height: var(--ward-tap, 3rem);
@@ -3183,7 +3183,7 @@ button.searchBox:hover {
 
 /* v10 phone team page (11 Oct 2026): Worth attention reads as one divided list inside its card, with
    no tinted boxes. Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   [data-testid="ward-community-attention-list"].attentionList {
     gap: 0;
   }
@@ -3202,7 +3202,7 @@ button.searchBox:hover {
 }
 
 /* Phone (v10, 11 Oct 2026): the intake form's UMRN field reads as a field, 48px like its selects. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .intakeField .searchInput {
     min-height: 48px;
     padding: 0 var(--wf-s-3);
@@ -3215,7 +3215,7 @@ button.searchBox:hover {
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
    with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
    tablet keep the toast above. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .actionToast {
     --toast-bg: light-dark(
       color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
