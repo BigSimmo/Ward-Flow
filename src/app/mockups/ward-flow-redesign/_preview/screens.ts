@@ -53,6 +53,66 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/ward-flow/people/196zcp24w5t0" },
   { slug: "add-patient", label: "Add a patient", group: "Places and records", appPath: "/ward-flow/people/new" },
+  // Q218 (Josh, 2 Nov 2026): the pages with no approved redesign are drawn from main in the newest
+  // shell, so the master design no longer shows their older (BL86) content.
+  { slug: "eds", label: "All EDs", group: "Coordinator", appPath: "/ward-flow/ed" },
+  { slug: "referrals", label: "Referrals", group: "Coordinator", appPath: "/ward-flow/referrals" },
+  { slug: "stays", label: "Stays and discharges", group: "Desks", appPath: "/ward-flow/board/rph-adult-secure" },
+  { slug: "patients", label: "Patients", group: "Work and reports", appPath: "/ward-flow/search" },
+  { slug: "wards", label: "All wards", group: "Work and reports", appPath: "/ward-flow/wards" },
+  { slug: "alerts", label: "Alerts", group: "Reference", appPath: "/ward-flow/alerts" },
+  { slug: "out-of-area", label: "Out of area", group: "Reference", appPath: "/ward-flow/out-of-area" },
+  { slug: "on-call", label: "On-call", group: "Reference", appPath: "/ward-flow/on-call" },
+  { slug: "seclusion", label: "Seclusion", group: "Reference", appPath: "/ward-flow/seclusion" },
+  { slug: "governance", label: "Governance", group: "Reference", appPath: "/ward-flow/governance" },
+  {
+    slug: "bed-meeting-tv",
+    label: "Bed meeting TV",
+    group: "Bed meeting and reports",
+    appPath: "/ward-flow/bed-meeting",
+    bare: true,
+  },
+  {
+    slug: "agenda",
+    label: "Meeting agenda",
+    group: "Bed meeting and reports",
+    appPath: "/ward-flow/bed-meeting/agenda",
+  },
+  {
+    slug: "downtime",
+    label: "Downtime pack",
+    group: "Bed meeting and reports",
+    appPath: "/ward-flow/reports/downtime",
+  },
+  {
+    slug: "chronology",
+    label: "Patient chronology",
+    group: "Bed meeting and reports",
+    appPath: "/ward-flow/reports/chronology",
+  },
+  { slug: "places", label: "Places", group: "Places and records", appPath: "/ward-flow/hub" },
+  { slug: "community", label: "Community", group: "Places and records", appPath: "/ward-flow/community" },
+  {
+    slug: "community-team",
+    label: "Community team",
+    group: "Places and records",
+    appPath: "/ward-flow/community/midland",
+  },
+  {
+    slug: "ward-answer",
+    label: "Ward answer",
+    group: "Places and records",
+    appPath: "/ward-flow/ward/rph-adult-secure/answer",
+  },
+  { slug: "settings", label: "Settings", group: "Places and records", appPath: "/ward-flow/settings" },
+  { slug: "sign-in", label: "Sign in", group: "Places and records", appPath: "/ward-flow-sign-in", bare: true },
+  { slug: "statistics-list", label: "Ward list", group: "Statistics pages", appPath: "/ward-flow/statistics/wards" },
+  {
+    slug: "statistics-unit",
+    label: "One ward",
+    group: "Statistics pages",
+    appPath: "/ward-flow/statistics/ward/fsh-adult-secure",
+  },
 ];
 
 /** Popups drawn over their page. Each page opens its own; the viewer asks it to on load. */
@@ -113,6 +173,15 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
   { slug: "pop-state-error", label: "Error", group: "States", over: "home", pop: "state-error" },
   { slug: "pop-state-offline", label: "Offline", group: "States", over: "home", pop: "state-offline" },
   { slug: "pop-state-toast", label: "Toast", group: "States", over: "home", pop: "state-toast" },
+  // Q221 (Josh, 2 Nov 2026): the real page opens its own pop-up on load.
+  { slug: "pop-broadcast", label: "Broadcast", group: "Page popups", over: "alerts", pop: "broadcast" },
+  {
+    slug: "pop-community-note",
+    label: "Community note",
+    group: "Older popups",
+    over: "community-team",
+    pop: "community-note",
+  },
 ];
 
 /** Prefix routes: any address under these opens the one example drawn for them. */

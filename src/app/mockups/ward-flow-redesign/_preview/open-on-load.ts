@@ -1,0 +1,31 @@
+"use client";
+
+import { useEffect } from "react";
+
+/**
+ * Preview only (Q221, Josh, 2 Nov 2026): opens a real page's own pop-up on load, the way a click
+ * does, so the master design shows main's current dialog. Each step is a control's accessible name
+ * (its text or aria-label), pressed in turn once it is on the page. Nothing is recorded.
+ */
+export function useOpenOnLoad(openOnLoad: string | undefined, steps: Readonly<Record<string, readonly string[]>>) {
+  useEffect(() => {
+    const names = openOnLoad ? steps[openOnLoad] : undefined;
+    if (!names?.length) return;
+    let step = 0;
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      const name = names[step];
+      const control = [...document.querySelectorAll<HTMLElement>("button, [role='menuitem']")].find(
+        (element) =>
+          element.offsetParent !== null &&
+          (element.getAttribute("aria-label") === name || element.textContent?.trim().startsWith(name)),
+      );
+      if (control) {
+        control.click();
+        step += 1;
+      }
+      if (step >= names.length || tries++ > 60) window.clearInterval(timer);
+    }, 150);
+    return () => window.clearInterval(timer);
+  }, [openOnLoad, steps]);
+}
