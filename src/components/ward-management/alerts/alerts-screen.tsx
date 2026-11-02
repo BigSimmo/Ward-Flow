@@ -86,7 +86,7 @@ import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
 import { alertsHistory } from "./alerts-history";
-import { AlertsHero, alertsHeadline, type AlertsTab } from "./alerts-hero";
+import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
@@ -261,6 +261,7 @@ function AlertsWorkspace() {
 
   const [tab, setTab] = useState<AlertsTab>("now");
   const [arrangeBy, setArrangeBy] = useState<ArrangeBy>("urgency");
+  const [pill, setPill] = useState<HeroPill | null>(null);
   const [ownerHighlight, setOwnerHighlight] = useState<string | null>(null);
   const [watchHighlight, setWatchHighlight] = useState<AlertKind | null>(null);
   const [chosenId, setChosenId] = useState<string | undefined>(undefined);
@@ -480,11 +481,14 @@ function AlertsWorkspace() {
   );
   const isHighlighted = useCallback(
     (entry: Omit<QueueEntry, "highlighted">) =>
+      (pill === "act" && entry.group === "act") ||
+      (pill === "wait" && entry.group === "wait") ||
+      (pill === "mine" && entry.mine) ||
       (ownerHighlight !== null && entry.owner === ownerHighlight) ||
       (watchHighlight !== null && alertKindOf(entry.item.id) === watchHighlight),
-    [ownerHighlight, watchHighlight],
+    [pill, ownerHighlight, watchHighlight],
   );
-  const highlightOn = ownerHighlight !== null || watchHighlight !== null;
+  const highlightOn = pill !== null || ownerHighlight !== null || watchHighlight !== null;
   const toEntries = useCallback(
     (items: InboxItem[], snoozed: boolean): QueueEntry[] =>
       items
@@ -562,6 +566,10 @@ function AlertsWorkspace() {
     );
     return ranked.length > 0 ? ranked : countedActive;
   }, [countedActive]);
+  // Ops-3: "open" is the one active list the Now tab and Tasks badge count, running targets included,
+  // so Act now plus Waiting plus running adds up to open.
+  const openCount = activeEntries.length;
+  const runningText = runningEntries.length > 0 ? ` · ${runningEntries.length} running` : "";
 
   const chosen = allEntries.find((entry) => entry.item.id === chosenId);
   // On the desktop the panel always shows an alert: the chosen one, else the first in line.
@@ -875,7 +883,9 @@ function AlertsWorkspace() {
     );
   };
 
+  const togglePill = (next: HeroPill) => setPill((current) => (current === next ? null : next));
   const clearHighlights = () => {
+    setPill(null);
     setOwnerHighlight(null);
     setWatchHighlight(null);
   };
@@ -886,9 +896,14 @@ function AlertsWorkspace() {
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
 
-  // Q183 (Josh, 1 Nov 2026): one headline on every desk, "3 need you now" or "Nothing needs you".
-  // It counts Act now (Home's count included) plus Waiting; Q179 keeps those two groups below.
-  const heroTitle = alertsHeadline(actCount + waitEntries.length);
+  // Alerts redesign (Q112, Josh 1 Nov 2026): the title is the Act now and Waiting figures, Home's
+  // count included. "New to you" is gone: nothing on the page explained it.
+  const heroTitle =
+    actCount > 0 || waitEntries.length > 0
+      ? `${actCount} act now, ${waitEntries.length} waiting`
+      : wardName
+        ? `No alert for ${wardName}`
+        : "No alert needs you";
 
   // ---- Queue views ----
   const rowFor = (entry: QueueEntry) =>
@@ -1238,10 +1253,15 @@ function AlertsWorkspace() {
         <AlertsHero
           isPhone={isPhone}
           heroTitle={heroTitle}
-          place={deskPlace}
+          openCount={openCount}
+          runningText={runningText}
           oldestRaised={oldestRaised}
           now={now}
           live={live}
+          actCount={actCount}
+          waitEntries={waitEntries}
+          pill={pill}
+          togglePill={togglePill}
           yoursCount={yoursCount}
           handleNext={handleNext}
           broadcastTriggerRef={broadcastTriggerRef}

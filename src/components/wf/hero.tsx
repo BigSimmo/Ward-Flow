@@ -25,11 +25,6 @@ export type HeroProps = {
    * hospital, a shift). Desktop and tablet are unchanged.
    */
   phoneEyebrow?: "show" | "hide";
-  /**
-   * One plain sentence under the eyebrow saying what this page is for at this desk (Alerts, Q182).
-   * Drawn on every screen size.
-   */
-  purpose?: ReactNode;
   /** Five words at most. */
   title: ReactNode;
   /** Small text after the title ("20 beds, all locked"). */
@@ -88,7 +83,6 @@ export function Hero({
   lead,
   eyebrow,
   phoneEyebrow = "hide",
-  purpose,
   title,
   titleMeta,
   stats,
@@ -128,7 +122,6 @@ export function Hero({
         ) : null}
         <div className={styles.titleBlock}>
           {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
-          {purpose ? <p className={styles.purpose}>{purpose}</p> : null}
           <div className={styles.titleLine}>
             <Heading id={titleId} className={styles.title}>
               {title}

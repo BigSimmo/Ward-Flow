@@ -11,7 +11,6 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { alertsBroadcastItem, openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 const NOW = NOW_ANCHOR;
 
@@ -41,7 +40,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
   });
   it("renders the broadcast trigger button and opens the modal", () => {
     renderAlertsScreen();
-    const trigger = alertsBroadcastItem();
+    const trigger = screen.getByRole("button", { name: "Broadcast alert" });
     expect(trigger).toBeInTheDocument();
 
     fireEvent.click(trigger);
@@ -54,7 +53,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("counts every ward and ED desk for Everyone and names severity in one word set (ops-12)", () => {
     renderAlertsScreen();
-    openAlertsBroadcast();
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
     fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
     const everyone = allUnits().length + allEmergencyDepartments().length;
     expect(
@@ -71,7 +70,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("populates form fields when choosing a quick start", () => {
     renderAlertsScreen();
-    openAlertsBroadcast();
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
     fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
     fireEvent.click(screen.getByRole("button", { name: "Unit closed" }));
 
@@ -84,7 +83,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("requires the authorisation tick before enabling Send", () => {
     renderAlertsScreen();
-    openAlertsBroadcast();
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
 
     const confirmBtn = () => screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(confirmBtn()).toHaveAttribute("aria-disabled", "true");
@@ -100,7 +99,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("dispatches statewide alert, mounts global banner, and renders active directive card", () => {
     renderAlertsScreen();
-    openAlertsBroadcast();
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
     fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
 
     const safeguard = screen.getByLabelText(/I'm authorised to send this to/i);
@@ -136,7 +135,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     renderAlertsScreen(ward.id);
 
     // Dispatch alert first
-    openAlertsBroadcast();
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
     fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
     fireEvent.click(screen.getByLabelText(/I'm authorised to send this to/i));
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
