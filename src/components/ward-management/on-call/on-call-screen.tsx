@@ -4,7 +4,7 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Star, Users } from "lucide-react";
-import { minuteOfDay } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, dayOf, minuteOfDay } from "@/components/ward-management/ward-clock";
 import {
   useOptionalWardFlowSelect,
   useWardFlowClock,
@@ -139,11 +139,15 @@ export function OnCallScreen() {
   const baseEntries = useMemo(() => buildOnCallDirectory(network.sites), [network.sites]);
   // Closing-the-loop (package E): recorded checks replace the synthetic ones, in the same order.
   const directoryChecks = useOptionalWardFlowSelect("directoryChecks")?.directoryChecks;
+  // #839: a check's age is counted in whole days, so the list is rebuilt once a day, not on every
+  // clock tick. The ids come from the base list (a check never adds or drops an entry), so the
+  // favourites subscription below is not torn down and rebuilt each minute either.
+  const boardDay = dayOf(boardNow);
   const entries = useMemo(
-    () => withRecordedChecks(baseEntries, directoryChecks, boardNow),
-    [baseEntries, directoryChecks, boardNow],
+    () => withRecordedChecks(baseEntries, directoryChecks, boardDay * MINUTES_PER_DAY),
+    [baseEntries, directoryChecks, boardDay],
   );
-  const ids = useMemo(() => new Set(entries.map((entry) => entry.id)), [entries]);
+  const ids = useMemo(() => new Set(baseEntries.map((entry) => entry.id)), [baseEntries]);
 
   const [tab, setTab] = useState<DirectoryTab>("hospitals");
   const [groupBy, setGroupBy] = useState<"place" | "role">("place");
