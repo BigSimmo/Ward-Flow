@@ -63,7 +63,7 @@ export function alertsNowFigures(activeItems: readonly { id: string }[], awaitin
 }
 
 /** The id stem of an accepted-referral row in the bar's task list (never an inbox category). */
-export const ACCEPTED_PULL_ROW_PREFIX = "accepted-pull-";
+const ACCEPTED_PULL_ROW_PREFIX = "accepted-pull-";
 
 export function isAcceptedPullRow(id: string): boolean {
   return id.startsWith(ACCEPTED_PULL_ROW_PREFIX);
