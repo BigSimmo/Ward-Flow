@@ -32,8 +32,19 @@ export function TransportCadToFollow({
   testId: string;
 }) {
   const raise = useWardRaise(role);
-  const save = useWardFormSave(`${movementId}:cad-to-follow`);
-  const [cad, setCad] = useState("");
+  const scope = JSON.stringify([movementId, role, actingUnitId ?? null]);
+  const save = useWardFormSave(`${scope}:cad-to-follow`);
+  // A panel can switch jobs or desks without unmounting. Keep each unfinished number only with
+  // the movement and desk that typed it; an accepted save clears only that scope's draft.
+  const [drafts, setDrafts] = useState<ReadonlyMap<string, string>>(() => new Map());
+  const cad = drafts.get(scope) ?? "";
+  const setCad = (value: string) =>
+    setDrafts((current) => {
+      const next = new Map(current);
+      if (value === "") next.delete(scope);
+      else next.set(scope, value);
+      return next;
+    });
   const problem = cad.trim() ? cadNumberProblem(cad) : undefined;
   const blocked = save.pending
     ? "Saving"
