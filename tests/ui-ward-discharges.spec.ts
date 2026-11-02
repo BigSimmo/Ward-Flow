@@ -363,7 +363,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
      * every group, three columns wide, blocker folded into the third column instead of broken out
      * on its own.
      */
-    const DISCHARGE_COLUMNS = ["Patient / ward", "Timing", "Stage / hold-up"];
+    const DISCHARGE_COLUMNS = ["Person", "Expected out", "Stage", "Held up by"];
     const table = page.getByRole("table");
     await expect(table, "the discharges board renders no table, so its column contract went unchecked").toBeVisible();
     const headers = table.locator("thead th");
