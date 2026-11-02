@@ -376,7 +376,7 @@ function WardHelpSheetView({
             }}
             onKeyDown={onFieldKey}
             onFocus={() => setFocused(true)}
-            onBlur={() => window.setTimeout(() => setFocused(false), 150)}
+            onBlur={() => window.setTimeout(() => setFocused(document.activeElement === field.current), 150)}
             placeholder="Ask a question or search Help"
             aria-label="Search Help"
             aria-controls="ward-help-found"

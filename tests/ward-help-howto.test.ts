@@ -98,21 +98,58 @@ describe("how-to list", () => {
     expect(targets[1]?.sel).toBe('[data-testid="ward-officer-detail"]');
   });
 
-  it("lets a phone reopen the current Settings section before locating its controls", () => {
-    for (const id of ["theme", "density", "notifications", "buzz", "rules"]) {
+  it("closes a phone sheet before pointing at quick settings that are omitted from its sheets", () => {
+    for (const [id, title, desktopBody] of [
+      ["theme", "Theme", "In Settings, This device. It saves at once, on this device only."],
+      ["density", "Row density", "In Settings, This device: Comfortable or Compact."],
+      ["buzz", "Buzz sound", "In Settings, This device. A chime on an urgent buzz."],
+    ]) {
       const task = HOW_TOS.find((howTo) => howTo.id === id);
       const phoneSteps = showMeSteps(task, true);
       const deskSteps = showMeSteps(task, false);
-      const section = id === "rules" ? "rules" : "device";
+      expect(phoneSteps, id).toHaveLength(2);
+      expect(phoneSteps[0]?.device, id).toBe("phone");
+      expect(phoneSteps[0]?.continueLabel, id).toMatch(/^Close /);
+      const target = phoneSteps[0]?.target;
+      const targets = target === undefined ? [] : Array.isArray(target) ? target : [target];
+      expect(targets[0]?.sel, id).toBe('[data-testid="ward-settings-phone-sheet"] button[aria-label="Close"]');
+      expect(targets[1]?.sel, id).toBe(`[data-setting="${id}"]`);
+      expect(JSON.stringify(phoneSteps), id).not.toContain("ward-settings-phone-area-device");
+      expect(phoneSteps[1]?.title, id).toBe(title);
+      expect(phoneSteps[1]?.target, id).toEqual({ sel: `[data-setting="${id}"]` });
+      expect(phoneSteps[1]?.body, id).toContain("On this phone");
+      expect(deskSteps, id).toHaveLength(1);
+      expect(deskSteps[0]?.title, id).toBe(title);
+      expect(deskSteps[0]?.target, id).toEqual({ sel: `[data-setting="${id}"]` });
+      expect(deskSteps[0]?.body, id).toBe(desktopBody);
+    }
+  });
+
+  it("requires the intended phone Settings section instead of accepting any open sheet", () => {
+    for (const [id, section, label] of [
+      ["notifications", "device", "This device"],
+      ["rules", "rules", "Rules"],
+    ]) {
+      const task = HOW_TOS.find((howTo) => howTo.id === id);
+      const phoneSteps = showMeSteps(task, true);
+      const deskSteps = showMeSteps(task, false);
       expect(task?.go, id).toBe(`settings#${section}`);
       expect(phoneSteps[0]?.device, id).toBe("phone");
       expect(phoneSteps[0]?.continueLabel, id).toMatch(/^Open /);
-      const openingTargets = JSON.stringify(phoneSteps[0]?.target);
-      expect(openingTargets, id).toContain("ward-settings-phone-sheet");
-      expect(openingTargets, id).toContain(`ward-settings-phone-area-${section}`);
-      expect(openingTargets, id).toContain("button");
+      const target = phoneSteps[0]?.target;
+      const targets = target === undefined ? [] : Array.isArray(target) ? target : [target];
+      // A wrong underlying sheet needs closing before the section row becomes usable.
+      expect(targets[0], id).toEqual({ sel: '[data-testid="ward-settings-phone-sheet"] h2', text: label });
+      expect(targets[1]?.sel, id).toBe('[data-testid="ward-settings-phone-sheet"] button[aria-label="Close"]');
+      expect(targets[2]?.sel, id).toBe(`[data-testid="ward-settings-phone-area-${section}"] button`);
       expect(phoneSteps.slice(1), id).toEqual(deskSteps);
       expect(JSON.stringify(deskSteps), id).not.toContain("ward-settings-phone-area-");
+    }
+  });
+
+  it("names the current Settings sections in each task", () => {
+    for (const id of ["theme", "density", "notifications", "buzz", "rules"]) {
+      const task = HOW_TOS.find((howTo) => howTo.id === id);
       expect(JSON.stringify(task), id).not.toMatch(/Settings, (Display|Alerts)|phone-area-(display|alerts)/);
     }
     expect(HOW_TOS.find((howTo) => howTo.id === "tour")?.answer).toContain("Settings, Help");

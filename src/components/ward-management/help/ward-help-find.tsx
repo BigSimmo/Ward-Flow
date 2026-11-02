@@ -267,7 +267,14 @@ export function HelpFindResults({
   canShow: (id: string) => boolean;
   onUseTyped: (words: string) => void;
 }) {
-  if (!found) return null;
+  if (!found || (found.kind === "results" && !found.best && !found.groups.length)) {
+    return (
+      <div className={`${s.card} ${s.clinical}`} role="status">
+        <CircleHelp aria-hidden="true" strokeWidth={1.75} />
+        <span>No Help answers found. Try a task or screen name, or clear your search to browse Help.</span>
+      </div>
+    );
+  }
   if (found.kind === "clinical") {
     return (
       <div className={`${s.card} ${s.clinical}`} role="status">

@@ -104,13 +104,14 @@ function ShowMeJourney({
       }
     };
     document.addEventListener("focusin", rememberFocus);
-    const control = targets
-      ?.map(findTourTarget)
-      .find((element) =>
-        element?.matches(
-          'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), summary, [tabindex="0"]',
-        ),
-      );
+    const entry = targets?.map(findTourTarget).find((element) => element !== null);
+    // Match the spotlight's first usable target. A later fallback may be Close on a different
+    // sheet; a noninteractive heading instead hands focus to Continue.
+    const control = entry?.matches(
+      'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), summary, [tabindex="0"]',
+    )
+      ? entry
+      : null;
     (control ?? continueRef.current)?.focus({ preventScroll: true });
     return () => document.removeEventListener("focusin", rememberFocus);
   }, [paused, targets]);
@@ -152,6 +153,7 @@ function ShowMeJourney({
       if (
         !event.defaultPrevented &&
         !event.isComposing &&
+        event.keyCode !== 229 &&
         !event.repeat &&
         event.altKey &&
         !event.ctrlKey &&
@@ -183,7 +185,8 @@ function ShowMeJourney({
       event.metaKey ||
       event.shiftKey ||
       event.repeat ||
-      event.nativeEvent.isComposing
+      event.nativeEvent.isComposing ||
+      event.nativeEvent.keyCode === 229
     )
       return;
     if (event.key === "ArrowRight" && !last) {

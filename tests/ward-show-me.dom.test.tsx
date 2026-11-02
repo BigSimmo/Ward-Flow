@@ -199,6 +199,34 @@ describe("Show me player", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it.each([true, false])("hands focus to the intended Settings action when the open sheet matches: %s", (intended) => {
+    phone.on = true;
+    route.pathname = "/ward-flow/settings";
+    const sheet = document.createElement("section");
+    sheet.dataset.testid = "ward-settings-phone-sheet";
+    sheet.dataset.testControl = "";
+    const rect = new DOMRect(100, 100, 250, 500);
+    sheet.getClientRects = () => [rect] as unknown as DOMRectList;
+    sheet.getBoundingClientRect = () => rect;
+    const heading = document.createElement("h2");
+    heading.textContent = intended ? "Rules" : "Help";
+    heading.getClientRects = () => [rect] as unknown as DOMRectList;
+    heading.getBoundingClientRect = () => rect;
+    const close = control("audit-settings-close");
+    close.setAttribute("aria-label", "Close");
+    sheet.append(heading, close);
+    document.body.append(sheet);
+    const area = document.createElement("div");
+    area.dataset.testid = "ward-settings-phone-area-rules";
+    area.dataset.testControl = "";
+    area.append(control("audit-settings-open"));
+    document.body.append(area);
+    render(<WardShowMe id="rules" onClose={vi.fn()} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByTestId("ward-show-me-try"));
+    expect(document.activeElement).toBe(intended ? screen.getByTestId("ward-show-me-continue") : close);
+    expect(sheet.isConnected).toBe(true);
+  });
+
   it("can resume above a form without closing it or losing its own focus trap", async () => {
     const formClose = vi.fn();
     const view = render(
@@ -318,7 +346,13 @@ describe("Show me player", () => {
   it("ignores repeated, composing and modified continuation shortcuts", () => {
     render(<WardShowMe id="new-referral" onClose={vi.fn()} onBack={vi.fn()} />);
     fireEvent.click(screen.getByTestId("ward-show-me-try"));
-    for (const extra of [{ repeat: true }, { isComposing: true }, { shiftKey: true }, { ctrlKey: true }]) {
+    for (const extra of [
+      { repeat: true },
+      { isComposing: true },
+      { keyCode: 229 },
+      { shiftKey: true },
+      { ctrlKey: true },
+    ]) {
       fireEvent.keyDown(window, { altKey: true, key: "ArrowRight", ...extra });
       expect(screen.getByTestId("ward-show-me-paused")).toBeTruthy();
     }
@@ -339,6 +373,7 @@ describe("Show me player", () => {
       { shiftKey: true },
       { repeat: true },
       { isComposing: true },
+      { keyCode: 229 },
     ]) {
       fireEvent.keyDown(next, { key: "ArrowRight", ...extra });
       expect(screen.getByText("Step 1 of 3")).toBeTruthy();
@@ -349,6 +384,24 @@ describe("Show me player", () => {
 });
 
 describe("spotlight work and recovery", () => {
+  it("uses CSS visibility when the browser has no checkVisibility API", async () => {
+    vi.useFakeTimers();
+    const hidden = control("audit-css-hidden");
+    hidden.style.visibility = "hidden";
+    const fallback = control("audit-css-visible", new DOMRect(100, 300, 160, 40));
+    for (const element of [hidden, fallback]) {
+      Object.defineProperty(element, "checkVisibility", { configurable: true, value: undefined });
+    }
+    const targets = [{ sel: '[data-testid="audit-css-hidden"]' }, { sel: '[data-testid="audit-css-visible"]' }];
+    const { result } = renderHook(() => useSpotlight(targets, "css-fallback"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150);
+    });
+    expect(hidden.getClientRects().length).toBeGreaterThan(0);
+    expect(result.current.box?.left).toBe(96);
+    expect(result.current.missing).toBe(false);
+  });
+
   it("retains unchanged geometry while still reacting to a resize and stopping work when paused", async () => {
     vi.useFakeTimers();
     const target = control("audit-fixed");

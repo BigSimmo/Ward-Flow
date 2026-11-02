@@ -95,12 +95,22 @@ const setting = (id: string): TourTarget => ({
 /** A closed phone section can retain its hash, so let the person reopen it before finding a row. */
 const openPhoneSettingsSection = (section: "device" | "rules", label: string): ShowMeStep => ({
   target: [
-    { sel: '[data-testid="ward-settings-phone-sheet"]' },
+    { sel: '[data-testid="ward-settings-phone-sheet"] h2', text: label },
+    { sel: '[data-testid="ward-settings-phone-sheet"] button[aria-label="Close"]' },
     { sel: `[data-testid="ward-settings-phone-area-${section}"] button` },
   ],
   title: `Open ${label}`,
-  body: `Open ${label} in Settings. If its sheet is already open, continue to the setting.`,
+  body: `Open ${label} in Settings. If a different settings sheet is open, close it first. Continue when ${label} is open.`,
   continueLabel: `Open ${label}, then continue`,
+  device: "phone",
+});
+
+/** Theme, density and buzz stay on the phone page; their controls are omitted from its sheets. */
+const showPhoneQuickSetting = (id: string, label: string): ShowMeStep => ({
+  target: [{ sel: '[data-testid="ward-settings-phone-sheet"] button[aria-label="Close"]' }, setting(id)],
+  title: "On this phone",
+  body: `${label} is under On this phone on the Settings page. Close any open settings sheet, then continue. If no sheet is open, continue to the setting.`,
+  continueLabel: "Close any settings sheet, then continue",
   device: "phone",
 });
 
@@ -713,11 +723,18 @@ export const HOW_TOS: readonly HowTo[] = [
     desks: EVERY_DESK,
     go: "settings#device",
     showMe: [
-      openPhoneSettingsSection("device", "This device"),
+      showPhoneQuickSetting("theme", "Theme"),
       {
         target: setting("theme"),
         title: "Theme",
         body: "In Settings, This device. It saves at once, on this device only.",
+        device: "desk",
+      },
+      {
+        target: setting("theme"),
+        title: "Theme",
+        body: "Under On this phone in Settings. It saves at once, on this device only.",
+        device: "phone",
       },
     ],
   },
@@ -730,11 +747,18 @@ export const HOW_TOS: readonly HowTo[] = [
     desks: EVERY_DESK,
     go: "settings#device",
     showMe: [
-      openPhoneSettingsSection("device", "This device"),
+      showPhoneQuickSetting("density", "Row density"),
       {
         target: setting("density"),
         title: "Row density",
         body: "In Settings, This device: Comfortable or Compact.",
+        device: "desk",
+      },
+      {
+        target: setting("density"),
+        title: "Row density",
+        body: "Under On this phone in Settings: Comfortable or Compact.",
+        device: "phone",
       },
     ],
   },
@@ -772,11 +796,18 @@ export const HOW_TOS: readonly HowTo[] = [
     needs: "alerts",
     go: "settings#device",
     showMe: [
-      openPhoneSettingsSection("device", "This device"),
+      showPhoneQuickSetting("buzz", "Buzz sound"),
       {
         target: setting("buzz"),
         title: "Buzz sound",
         body: "In Settings, This device. A chime on an urgent buzz.",
+        device: "desk",
+      },
+      {
+        target: setting("buzz"),
+        title: "Buzz sound",
+        body: "Under On this phone in Settings. A chime on an urgent buzz.",
+        device: "phone",
       },
     ],
   },

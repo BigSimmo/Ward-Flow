@@ -46,7 +46,7 @@ function bringIntoView(element: HTMLElement): void {
 function shown(element: HTMLElement): boolean {
   if (element.getClientRects().length === 0) return false;
   // A control laid out but hidden (the phone dock under another dialog) is not on screen.
-  return element.checkVisibility?.({ visibilityProperty: true }) ?? true;
+  return element.checkVisibility?.({ visibilityProperty: true }) ?? getComputedStyle(element).visibility === "visible";
 }
 
 /** The step's control on screen now, or null. See `TourTarget`. */

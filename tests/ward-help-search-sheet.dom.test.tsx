@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -71,6 +71,54 @@ function type(words: string) {
 }
 
 describe("Help sheet search field", () => {
+  it.each(["???", "how do I", "unfindablezxqvbnm"])("offers recovery for a search with no answers: %s", (query) => {
+    const onView = vi.fn();
+    sheet({ onView });
+    const field = type(query);
+    expect(screen.getByRole("status").textContent).toContain("No Help answers found. Try a task or screen name");
+    expect(screen.queryByText(/These are the closest/)).toBeNull();
+    expect(field.hasAttribute("aria-activedescendant")).toBe(false);
+    for (const key of ["ArrowDown", "ArrowUp", "Enter"]) fireEvent.keyDown(field, { key });
+    expect(onView).not.toHaveBeenCalled();
+
+    fireEvent.change(field, { target: { value: "what does pull expired mean" } });
+    expect(screen.getByRole("region", { name: "Best answer" }).textContent).toContain("Pull expired");
+    expect(document.getElementById(field.getAttribute("aria-activedescendant") ?? "")).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect((field as HTMLInputElement).value).toBe("");
+    expect(field.hasAttribute("aria-activedescendant")).toBe(false);
+    expect(screen.getByRole("region", { name: "Try asking" })).toBeTruthy();
+  });
+
+  it("keeps suggestions after Clear refocuses the field before a pending blur settles", () => {
+    vi.useFakeTimers();
+    try {
+      sheet();
+      const field = type("handover");
+      field.focus();
+      const clear = screen.getByRole("button", { name: "Clear search" });
+      clear.focus();
+      fireEvent.click(clear);
+      expect(document.activeElement).toBe(field);
+      act(() => vi.advanceTimersByTime(150));
+      expect(screen.getByRole("region", { name: "Try asking" })).toBeTruthy();
+      expect(document.activeElement).toBe(field);
+
+      const shortcuts = screen.getByTestId("ward-help-shortcuts");
+      shortcuts.focus();
+      field.focus();
+      act(() => vi.advanceTimersByTime(150));
+      expect(screen.getByRole("region", { name: "Try asking" })).toBeTruthy();
+
+      shortcuts.focus();
+      act(() => vi.advanceTimersByTime(150));
+      expect(screen.queryByRole("region", { name: "Try asking" })).toBeNull();
+      expect(document.activeElement).toBe(shortcuts);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it.each([
     { change: "reordered", codes: ["AX0", "AXA", "AXB", "AXC"] },
     { change: "removed", codes: ["AXA"] },

@@ -104,19 +104,31 @@ describe("what's new note", () => {
   });
 });
 
+/** The recent list and its archive keep the same plain release-note records. */
+function expectValidEntries(value: unknown): asserts value is readonly WhatsNewEntry[] {
+  expect(Array.isArray(value)).toBe(true);
+  const entries = value as WhatsNewEntry[];
+  const ids = entries.map((entry) => entry.id);
+  expect(new Set(ids).size).toBe(ids.length);
+  for (const [index, entry] of entries.entries()) {
+    expect(entry).toEqual(
+      expect.objectContaining({ id: expect.any(String), date: expect.any(String), line: expect.any(String) }),
+    );
+    expect(entry.id).not.toBe("");
+    expect(entry.date, entry.id).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(Number.isNaN(Date.parse(entry.date)), entry.id).toBe(false);
+    expect(new Date(entry.date).toISOString().slice(0, 10), entry.id).toBe(entry.date);
+    if (index > 0) expect(entry.date >= (entries[index - 1] as WhatsNewEntry).date, entry.id).toBe(true);
+    expect(entry.line.length, entry.id).toBeLessThanOrEqual(120);
+    expect(entry.line, entry.id).toMatch(/^[A-Z].*\.$/);
+    // Staff words only: no pull request numbers, file names or code.
+    expect(entry.line, entry.id).not.toMatch(/#\d|\.tsx?\b|`|\bPR\b/);
+  }
+}
+
 describe("what's new list", () => {
   it("has unique ids, real dates in order and short plain lines", () => {
-    const ids = WHATS_NEW.map((entry) => entry.id);
-    expect(new Set(ids).size).toBe(ids.length);
-    for (const [index, entry] of WHATS_NEW.entries()) {
-      expect(entry.date, entry.id).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(Number.isNaN(Date.parse(entry.date)), entry.id).toBe(false);
-      if (index > 0) expect(entry.date >= (WHATS_NEW[index - 1] as WhatsNewEntry).date, entry.id).toBe(true);
-      expect(entry.line.length, entry.id).toBeLessThanOrEqual(120);
-      expect(entry.line, entry.id).toMatch(/^[A-Z].*\.$/);
-      // Staff words only: no pull request numbers, file names or code.
-      expect(entry.line, entry.id).not.toMatch(/#\d|\.tsx?\b|`|\bPR\b/);
-    }
+    expectValidEntries(WHATS_NEW);
   });
 
   it("stays short enough to load with every page", () => {
@@ -124,7 +136,8 @@ describe("what's new list", () => {
   });
 
   it("preserves retired notes separately from the recent entries", () => {
-    const archived = JSON.parse(readFileSync("docs/ward-flow/archive/whats-new.json", "utf8")) as WhatsNewEntry[];
+    const archived: unknown = JSON.parse(readFileSync("docs/ward-flow/archive/whats-new.json", "utf8"));
+    expectValidEntries(archived);
     expect(archived).toEqual(
       expect.arrayContaining([
         {
@@ -144,6 +157,6 @@ describe("what's new list", () => {
     expect(WHATS_NEW.find((entry) => entry.id === "2026-10-27-stay-tile-day-number")?.line).toBe(
       'Bed drawer: the Stay tile now shows the day of the stay, for example "Day 37".',
     );
-    expect(WHATS_NEW.some((entry) => entry.id === "2026-11-01-design-audit-tidy")).toBe(true);
+    expect(combined.some((entry) => entry.id === "2026-11-01-design-audit-tidy")).toBe(true);
   });
 });
