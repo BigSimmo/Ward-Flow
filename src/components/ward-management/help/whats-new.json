@@ -98,5 +98,10 @@
     "id": "2026-10-28-help-expansion",
     "date": "2026-10-28",
     "line": "Help adds spelling fixes, grouped words, accessibility, first-visit hints and printable desk guides."
+  },
+  {
+    "id": "2026-11-02-save-and-recovery",
+    "date": "2026-11-02",
+    "line": "Saving reports uncertain replies clearly, and forecast history and saved demonstrations recover more reliably."
   }
 ]

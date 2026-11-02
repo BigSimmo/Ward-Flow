@@ -39,10 +39,10 @@ const SAVE_FROM_EARLIER_DAY =
 const SAVE_REJECTED =
   "The saved demonstration could not be restored safely. A fresh synthetic demonstration has started.";
 
-/** A parsed save brought to this build's version when a migration exists (v6 only); any other
- *  version is returned unchanged, so the version check below still refuses it. */
+/** Apply supported version and legacy observation migrations before validating a save.
+ * Unsupported versions are returned unchanged, so the version check below still refuses them. */
 function upgradeDemoPayload(value: unknown): unknown {
-  if (!isPlainObject(value) || value.version === WARD_FLOW_DEMO_STORAGE_VERSION) return value;
+  if (!isPlainObject(value)) return value;
   const state = migrateStoredWardFlowState(value.state, value.version);
   return state === null ? value : { ...value, version: WARD_FLOW_DEMO_STORAGE_VERSION, state };
 }

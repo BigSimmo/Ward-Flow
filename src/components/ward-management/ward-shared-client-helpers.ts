@@ -1,4 +1,6 @@
 import type { WardFlowEvent } from "./ward-flow-events";
+import type { SharedSnapshot } from "./ward-shared-client-types";
+import { payloadUnchanged } from "./ward-shared-client-reuse";
 
 export { onDeviceClock } from "./ward-shared-clock";
 
@@ -69,4 +71,31 @@ export function withoutChartContent(event: WardFlowEvent): WardFlowEvent {
       }),
     },
   };
+}
+
+/** Validates a returned board without adopting it or clearing uncertain-save recovery. */
+export function checkSharedSnapshot(
+  snapshot: SharedSnapshot,
+  previous: SharedSnapshot["payload"] | null,
+  validateState: ((value: unknown) => boolean) | undefined,
+): boolean {
+  // Audit PS-06: content equal to the payload already held passed the shared-state check then.
+  const unchanged = payloadUnchanged(previous, snapshot?.payload);
+  if (
+    !snapshot ||
+    snapshot.dataMode !== "prototype" ||
+    !Number.isSafeInteger(snapshot.revision) ||
+    snapshot.revision < 1 ||
+    !Number.isFinite(snapshot.now) ||
+    (snapshot.accessContext !== undefined &&
+      (typeof snapshot.accessContext !== "string" || !/^[a-f0-9]{64}$/.test(snapshot.accessContext))) ||
+    snapshot.payload?.version !== 1 ||
+    !(unchanged || validateState?.(snapshot.payload.state)) ||
+    !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||
+    !Number.isFinite(Date.parse(snapshot.payload.startedAt))
+  )
+    throw new Error("Incompatible workspace data");
+  if (Number.isFinite(snapshot.accessUntil) && snapshot.accessUntil! <= Date.now())
+    throw new Error("Access verification expired");
+  return unchanged;
 }
