@@ -31,6 +31,12 @@ export interface ResolvedPatientNow {
   currentStageIndex: number;
 }
 
+/** The recorded departure as an event: a community discharge stays "Discharge"; a transfer or death keeps its own name. */
+function departureEventLabel(destination: Admission["leavingDestination"] | null): string | undefined {
+  if (destination === "discharged-to-the-community") return "Discharge";
+  return leavingDestinationLabel(destination) ?? undefined;
+}
+
 function movementVerdict(
   movement: Movement,
   acceptedUnit?: Unit,
@@ -42,7 +48,7 @@ function movementVerdict(
   if (departed)
     return {
       tone: "warn",
-      short: departureLabel,
+      short: departureLabel === "Discharge" ? "Discharged" : departureLabel,
       title: `${departureLabel} recorded; no current ward stay.`,
       gates: [],
     };
@@ -239,7 +245,7 @@ export function resolvePatientNowRecord(
       .reverse()
       .find((admission) => admission.id === movement.admissionId || admission.movementId === movement.id);
     const departed = linkedAdmission?.state === "departed";
-    const departureLabel = leavingDestinationLabel(linkedAdmission?.leavingDestination ?? null) ?? undefined;
+    const departureLabel = departureEventLabel(linkedAdmission?.leavingDestination ?? null);
     const verdict = movementVerdict(movement, acceptedUnit, departed, admissions, departureLabel);
     const historical = departed || movement.closure?.outcome === "did_not_proceed";
 
@@ -424,7 +430,7 @@ export function resolvePatientNowRecord(
       ? undefined
       : [...patientAdmissions].reverse().find((a) => a.state === "departed" && a.movementId === activeMovement?.id);
     const latestDeparture = departedAdmission !== undefined;
-    const departureLabel = leavingDestinationLabel(departedAdmission?.leavingDestination ?? null) ?? undefined;
+    const departureLabel = departureEventLabel(departedAdmission?.leavingDestination ?? null);
 
     // A legal document only from the record: the active movement's own recorded form. PT-042 and
     // PT-043 used to get a Form 1A and a Form 3A "running to" three hours from whenever the page was
