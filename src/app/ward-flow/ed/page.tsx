@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { EdIndex } from "@/components/ward-management/ed/ed-index";
 
 export const metadata: Metadata = {
-  title: "Emergency departments — Ward Flow",
+  title: "All EDs — Ward Flow",
   description:
     "Synthetic statewide emergency department index for the Ward Flow prototype — every ED with the people waiting there for a bed, each linking to its own ED screen.",
 };

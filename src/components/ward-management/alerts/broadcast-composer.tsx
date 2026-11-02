@@ -37,9 +37,10 @@ const DURATIONS = [
 const AUDIENCE_ITEMS: { id: AudienceMode; label: string }[] = [
   { id: "all", label: "Everyone" },
   { id: "groups", label: "By group" },
-  { id: "pick", label: "Choose units" },
+  { id: "pick", label: "Choose desks" },
 ];
-const units = (n: number) => `${n} ${n === 1 ? "unit" : "units"}`;
+// Q269 (Josh, 2 Nov 2026): every recipient is a desk, wards and ED desks alike.
+const deskCount = (n: number) => `${n} ${n === 1 ? "desk" : "desks"}`;
 const quickStartName = (id: string) =>
   id === "custom" ? "Blank" : (WA_BROADCAST_TEMPLATES.find((tmpl) => tmpl.id === id)?.name ?? id);
 
@@ -197,7 +198,7 @@ export function BroadcastComposer({
                   "Ask wards for beds",
                   "Wards answer: can take, after a discharge, or can't",
                 )}
-                {kindCard("directive", Megaphone, "Tell areas something", "Desks acknowledge they have seen it")}
+                {kindCard("directive", Megaphone, "Tell desks something", "Desks acknowledge they have seen it")}
               </div>
               <div className={css.field}>
                 <span className={css.fieldLabel} id="broadcast-start">
@@ -221,7 +222,7 @@ export function BroadcastComposer({
 
             <section className={css.step}>
               <h3>
-                <span className={css.stepN}>2</span>Who gets it<span className={css.stepAside}>{units(n)}</span>
+                <span className={css.stepN}>2</span>Who gets it<span className={css.stepAside}>{deskCount(n)}</span>
               </h3>
               <Segmented
                 items={AUDIENCE_ITEMS}
@@ -410,9 +411,7 @@ export function BroadcastComposer({
                 <span className={css.bnEnds}>until {endsAt}</span>
               </div>
             </div>
-            <h3 className={css.secHead}>
-              Shows on {n} {n === 1 ? "screen" : "screens"}
-            </h3>
+            <h3 className={css.secHead}>Shows on {deskCount(n)}</h3>
             <div className={css.tagWrap}>
               {n ? (
                 <>
@@ -444,7 +443,7 @@ export function BroadcastComposer({
             className={css.check}
             checked={confirmed}
             onChange={(e) => setConfirmed(e.target.checked)}
-            label={`I'm authorised to send this to ${units(n)}.`}
+            label={`I'm authorised to send this to ${deskCount(n)}.`}
           />
           <div className={css.acts}>
             {block ? (
@@ -464,7 +463,7 @@ export function BroadcastComposer({
                 if (!block) onSend();
               }}
             >
-              {ask ? `Send bed call to ${units(n)}` : `Send to ${units(n)}`}
+              {ask ? `Send bed call to ${deskCount(n)}` : `Send to ${deskCount(n)}`}
             </Button>
           </div>
         </div>

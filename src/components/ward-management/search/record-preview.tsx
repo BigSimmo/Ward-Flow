@@ -256,7 +256,7 @@ export function RecordPreview({
   onClose: () => void;
 }) {
   const flow = useOptionalWardFlow();
-  // Access audit (31 Oct 2026): Raise referral shows only where this desk can open the referral form.
+  // Access audit (31 Oct 2026): New referral shows only where this desk can open the referral form.
   const canOpenHref = useCanOpenHref();
   const activeDate = useMemo(() => {
     const activeDayZero = dayZero ?? flow?.dayZero ?? demoDayZero(new Date());
@@ -452,7 +452,7 @@ export function RecordPreview({
                   href={raiseReferralHref({ patientId: patient.id })}
                   data-testid="ward-patient-preview-raise-referral"
                 >
-                  Raise referral for this patient &rarr;
+                  New referral for this patient &rarr;
                 </Link>
               ) : null}
             </div>

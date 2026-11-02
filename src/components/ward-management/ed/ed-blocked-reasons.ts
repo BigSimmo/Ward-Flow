@@ -1,4 +1,3 @@
-import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type {
   Cohort,
@@ -274,12 +273,13 @@ export function handoverBlockedReason(movement: Movement, who?: string): string 
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     return `${who ?? "This patient"} has no transport booked — book it first, then mark the handover ready.`;
   }
-  // Blocker review (26 Oct 2026): already ready is not "not bed pulled", so it is named as it is.
+  // Blocker review (26 Oct 2026): already ready is not "no bed pulled yet", so it is named as it is.
   if (movement.stage === "handover_ready") {
     return `${who ?? "This patient"} is already marked handover ready.`;
   }
   if (movement.stage !== "pulled") {
-    return `${who ?? "This patient"} is ${stageCopy[movement.stage].label.toLowerCase()}, not bed pulled — a handover can only be marked ready once a bed is pulled.`;
+    // Q270 (Josh, 2 Nov 2026): plain words, not the stage code read out as a sentence.
+    return `${who ?? "This patient"} has no bed pulled yet — a handover can only be marked ready once a bed is pulled.`;
   }
   return undefined;
 }
@@ -301,11 +301,11 @@ export function bookTransportBlockedReason(movement: Movement, who?: string): st
   // Owner answer 30 (2026-09-17), build plan item 30: cancelling a booked transport no longer
   // leaves a replacement job standing while a bed is held, so a person must be able to book again
   // from `handover_ready` as well as `pulled` — before this ruling nobody needed to, because a job
-  // was always already there. The message still says "not bed pulled" when it fires, which stays
+  // was always already there. The message still says "no bed pulled yet" when it fires, which stays
   // true: every stage this guard now refuses genuinely is earlier than `pulled`.
   if (movement.stage !== "pulled" && movement.stage !== "handover_ready") {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    return `${who ?? "This patient"} is ${stageCopy[movement.stage].label.toLowerCase()}, not bed pulled — transport can only be booked once a bed is pulled, or after handover is marked ready.`;
+    return `${who ?? "This patient"} has no bed pulled yet — transport can only be booked once a bed is pulled, or after handover is marked ready.`;
   }
   // The reducer refuses a second booking because it would replace a job a provider may already
   // have accepted and take the acceptance timestamps with it. Reachable on this screen the moment

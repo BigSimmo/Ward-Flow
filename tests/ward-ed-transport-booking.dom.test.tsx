@@ -324,7 +324,7 @@ describe("booking transport from the sending emergency department", () => {
     expect((screen.getByTestId(`ward-ed-transport-cad-number-${movement.id}`) as HTMLInputElement).value).toBe("");
   });
 
-  it("does not offer a booking outside stage pulled, and names the stage it is at", () => {
+  it("does not offer a booking outside stage pulled, and says no bed is pulled yet", () => {
     const held = heldBedMovement();
     const other = notHeldMovementAtSameEd(held.originEdId!);
     renderEdFor(other);
@@ -333,7 +333,7 @@ describe("booking transport from the sending emergency department", () => {
     expect(toggle).toHaveAttribute("aria-disabled", "true");
     expect(toggle).not.toHaveAttribute("disabled");
     const reasonId = toggle.getAttribute("aria-describedby");
-    expect(document.getElementById(reasonId!)?.textContent ?? "").toContain("not bed pulled");
+    expect(document.getElementById(reasonId!)?.textContent ?? "").toContain("no bed pulled yet");
     expect(screen.queryByTestId(`ward-ed-book-transport-${other.id}`)).toBeNull();
   });
 });

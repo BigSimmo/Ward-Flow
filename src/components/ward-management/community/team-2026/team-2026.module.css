@@ -49,6 +49,15 @@ select.ctl {
   gap: 16px;
   min-width: 0;
 }
+
+/* Q291 (pre-launch check W4, 2 Nov 2026): on a portrait tablet (769 to about 880px) the Team list
+ * shared the row with the 360px Team flow column, leaving its titles one word a line. Below 900px
+ * the two columns stack, full width. */
+@media (max-width: 56.25rem) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .meta {
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   color: var(--wf-ink-3);

@@ -229,7 +229,14 @@
 
   .overview .heroStats > * {
     flex: 0 0 auto;
-    padding-inline: 12px;
+    padding-inline: 10px;
+  }
+
+  /* Q290 (pre-launch check W3, 2 Nov 2026): at 1025-1060 and 1201-1260 the figures still ran under
+   * the actions and clipped "Under a form". The figures keep their full width and the title column
+   * (department name and eyebrow) wraps first. */
+  .overview :has(> .heroStats) {
+    flex: 0 0 auto;
   }
 }
 

@@ -324,9 +324,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "raise",
-          { sel: '[aria-label="Ward actions"] button', text: "Raise referral" },
+          { sel: '[aria-label="Ward actions"] button', text: "New referral" },
           "Refer a patient on",
-          `Raise referral sends a patient from ${place ?? "your ward"} to a medical ward or a community team.`,
+          `New referral sends a patient from ${place ?? "your ward"} to a medical ward or a community team.`,
         ),
         step(
           "Finding your way",
@@ -399,7 +399,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "raise",
           ED_RAISE,
           "Raise a referral",
-          "Raise referral starts a referral for someone on your board, to a ward or a community team.",
+          "New referral starts a referral for someone on your board, to a ward or a community team.",
         ),
         step(
           "Finding your way",

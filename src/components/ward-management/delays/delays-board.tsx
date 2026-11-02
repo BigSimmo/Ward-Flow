@@ -20,7 +20,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { bandIncludes, originCode, tightHours, WAIT_BANDS, windowText, type WaitBandId } from "./wait-bands";
-import { ShowMoreRow } from "@/components/wf";
+import { FormalName, ShowMoreRow } from "@/components/wf";
 import {
   readDelaysFlat,
   transitNote,
@@ -538,7 +538,9 @@ export function DelaysBoard({
             }}
             data-testid={`delays-select-${movement.id}`}
           >
-            <b className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`}>{patient.formalName}</b>
+            <b className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`}>
+              <FormalName name={patient.formalName} />
+            </b>
             <span className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`} data-ward-type-floor="delays-profile">
               {isPhone ? phonePrefix(row, now, thresholds) : null}
               {/* Josh, 30 Oct 2026: on a phone the ED leads, so a form shown first never cuts it off.

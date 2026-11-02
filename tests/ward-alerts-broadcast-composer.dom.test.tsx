@@ -55,7 +55,7 @@ describe("broadcast audience", () => {
     const ids = audienceRecipients(audience, groups, []).map((desk) => desk.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(audienceLabel(audience, groups)).toBe("Metro adult wards, Secure and forensic");
-    expect(audienceLabel({ ...audience, mode: "pick" }, groups)).toBe("Chosen units");
+    expect(audienceLabel({ ...audience, mode: "pick" }, groups)).toBe("Chosen desks");
   });
 });
 
@@ -69,13 +69,13 @@ describe("broadcast composer", () => {
       "true",
     );
     expect(screen.getByRole("button", { name: /Wards with a bed now/ })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toHaveTextContent(`Send bed call to ${metro} units`);
+    expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toHaveTextContent(`Send bed call to ${metro} desks`);
     expect(screen.getByText("Bed call · Warning")).toBeInTheDocument();
   });
 
   it("says why Send is unavailable, step by step", () => {
     open();
-    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
     fireEvent.click(screen.getByRole("button", { name: "Blank" }));
     expect(screen.getByText("Choose who gets it")).toBeInTheDocument();
     expect(screen.getByText("No one chosen yet")).toBeInTheDocument();
@@ -85,15 +85,15 @@ describe("broadcast composer", () => {
     fireEvent.change(screen.getByLabelText(/^Message$/i), { target: { value: "Synthetic message" } });
     expect(screen.getByText("Tick the box to send")).toBeInTheDocument();
     const eds = allEmergencyDepartments().length;
-    fireEvent.click(screen.getByLabelText(`I'm authorised to send this to ${eds} units.`));
+    fireEvent.click(screen.getByLabelText(`I'm authorised to send this to ${eds} desks.`));
     const send = screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(send).not.toHaveAttribute("aria-disabled");
-    expect(send).toHaveTextContent(`Send to ${eds} units`);
+    expect(send).toHaveTextContent(`Send to ${eds} desks`);
   });
 
   it("chooses units by group with All and Clear, and counts each group", () => {
     open();
-    fireEvent.click(radio("Audience", "Choose units"));
+    fireEvent.click(radio("Audience", "Choose desks"));
     const ed = screen.getByRole("group", { name: /ED desks/ });
     const eds = allEmergencyDepartments().length;
     expect(within(ed).getByText(`0 of ${eds}`)).toBeInTheDocument();
@@ -106,18 +106,18 @@ describe("broadcast composer", () => {
   it("sends a bed call to the chosen wards only, then offers to extend it instead of a second", () => {
     open();
     const first = audienceGroups(allUnits())[0].desks[0];
-    fireEvent.click(radio("Audience", "Choose units"));
+    fireEvent.click(radio("Audience", "Choose desks"));
     fireEvent.click(
       within(screen.getByRole("group", { name: /Metro adult wards/ })).getByRole("button", { name: /^Clear/ }),
     );
     fireEvent.click(within(screen.getByRole("group", { name: /Metro adult wards/ })).getByLabelText(first.name));
-    fireEvent.click(screen.getByLabelText("I'm authorised to send this to 1 unit."));
+    fireEvent.click(screen.getByLabelText("I'm authorised to send this to 1 desk."));
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Current broadcast")).toHaveTextContent("Chosen units");
+    expect(screen.getByLabelText("Current broadcast")).toHaveTextContent("Chosen desks");
 
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-    expect(screen.getByText(/A bed call to Chosen units is already live/)).toBeInTheDocument();
+    expect(screen.getByText(/A bed call to Chosen desks is already live/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Extend that one" })).toBeInTheDocument();
   });
 });

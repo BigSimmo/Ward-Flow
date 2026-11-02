@@ -52,7 +52,7 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "ed-board", label: "ED board", group: "Desks", appPath: "/ward-flow/ed/peel-ed" },
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/ward-flow/people/196zcp24w5t0" },
-  { slug: "add-patient", label: "Add a patient", group: "Places and records", appPath: "/ward-flow/people/new" },
+  { slug: "add-patient", label: "Add patient", group: "Places and records", appPath: "/ward-flow/people/new" },
   // Q218 (Josh, 2 Nov 2026): the pages with no approved redesign are drawn from main in the newest
   // shell, so the master design no longer shows their older (BL86) content.
   { slug: "eds", label: "All EDs", group: "Coordinator", appPath: "/ward-flow/ed" },

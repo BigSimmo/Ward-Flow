@@ -119,7 +119,7 @@ export function EdOverview({
       onClick={onRaiseReferral}
     >
       <Plus size={14} aria-hidden="true" />
-      Raise referral
+      New referral
     </button>
   );
   // P142 (Josh, 27 Oct 2026, 10:12 PM AWST): Add patient sits beside the referral button.

@@ -99,10 +99,10 @@ export function audienceRecipients(
   return all.filter((desk) => chosen.has(desk.id));
 }
 
-/** How the Broadcast tab names the audience: "Everyone", "Chosen units" or the groups chosen. */
+/** How the Broadcast tab names the audience: "Everyone", "Chosen desks" or the groups chosen. */
 export function audienceLabel(audience: BroadcastAudience, groups: readonly AudienceGroup[]): string {
   if (audience.mode === "all") return "Everyone";
-  if (audience.mode === "pick") return "Chosen units";
+  if (audience.mode === "pick") return "Chosen desks";
   const names = [
     audience.bedNow ? "Wards with a bed now" : "",
     ...groups.filter((group) => audience.groups.includes(group.id)).map((group) => group.label),

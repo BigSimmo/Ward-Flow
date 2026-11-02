@@ -390,7 +390,7 @@ export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenCont
       {movement.acceptedUnitId !== undefined ? (
         <EdAdmissionChecklist movement={movement} referrals={referrals} />
       ) : null}
-      <section className={styles.expandedCard} aria-label={`Where ${patientInfo.displayName} is up to`}>
+      <section className={styles.expandedCard} aria-label={`Where ${patientInfo.formalName} is up to`}>
         <h3 className={styles.expandedHeading}>Where they are up to</h3>
         <ol className={styles.upTo}>
           {journeyEventsFor(movement)
@@ -407,7 +407,7 @@ export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenCont
             ))}
         </ol>
       </section>
-      <section className={styles.expandedCard} aria-label={`Facts for ${patientInfo.displayName}`}>
+      <section className={styles.expandedCard} aria-label={`Facts for ${patientInfo.formalName}`}>
         <h3 className={styles.expandedHeading}>Facts</h3>
         <dl className={styles.factList}>
           <div>
@@ -441,7 +441,7 @@ export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenCont
             <dd>
               <EdPlanPicker
                 triggerId={`ward-ed-plan-${movement.id}`}
-                patientName={patientInfo.displayName}
+                patientName={patientInfo.formalName}
                 labels={planDrafts[movement.id] ?? []}
                 onChange={(labels) => setPlanDrafts((current) => ({ ...current, [movement.id]: labels }))}
               />

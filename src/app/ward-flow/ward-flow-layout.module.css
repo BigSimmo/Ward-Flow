@@ -318,6 +318,58 @@
   }
 }
 
+/* Q276 (pre-launch review E4, 2 Nov 2026): on a phone the note under the header covered the page
+   title ("62 waiting in ED", the Demo pill). It rests at the foot of the window instead, as on a
+   tablet, just above the dock (--wf-dock-clear counts the home indicator; same sum as the toasts). */
+@media (max-width: 46.4375rem) {
+  .loadingNote {
+    top: auto;
+    bottom: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 0.5rem);
+  }
+}
+
+/* Q274: the slow line and its Reload button wait until the early script marks the load slow
+   (ward-loading-note-early.ts). Only the button takes taps; the rest of the note lets them through. */
+.loadingNoteSlow {
+  display: none;
+}
+
+:global(html[data-wf-load-slow]) .loadingNoteWait {
+  display: none;
+}
+
+:global(html[data-wf-load-slow]) .loadingNoteSlow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.loadingNoteReload {
+  display: inline-flex;
+  align-items: center;
+  pointer-events: auto;
+  min-block-size: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 0.75rem / 1.2 var(--wf-font);
+  cursor: pointer;
+}
+
+.loadingNoteReload:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 46.4375rem) {
+  .loadingNoteReload {
+    min-block-size: 40px;
+    padding: 0 14px;
+  }
+}
+
 /* display: none, not visibility: hidden, so a finished note can never cover the page or be read out.
    (It once took a line in the page, and hidden-but-present space pushed a page's Hero below the band
    threshold: journeys, 18 Oct 2026.) */

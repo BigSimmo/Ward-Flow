@@ -13,7 +13,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedDouble, House, Bell, Clock3, ListChecks, Plus } from "lucide-react";
+import { Activity, BedDouble, House, Bell, Clock3, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { SrOnly } from "@/components/wf";
@@ -191,14 +191,9 @@ function phoneMenuModel(
   // B1 (Josh, 19 Oct 2026): the role's own menu first, then everything else in the rail's groups.
   // The access admin's own menu leads with Governance, as on the rail.
   const menu = roleMenu(entries, role, accessAdmin);
-  // Q177 (Josh, 1 Nov 2026): the coordinator's queue slot reads Tasks, so Alerts gets its own Menu row
-  // on the phone (the desktop rail still leaves it out for this desk).
-  const alertsEntry = byId.get("alerts");
-  const alertsRow =
-    alertsEntry && dockRight.some((slot) => slot.kind === "queue") && !menu.main.some((item) => item.id === "alerts")
-      ? [alertsEntry]
-      : [];
-  const main = [...menu.main, ...alertsRow].filter((item) => !shown.has(item.id));
+  // Q268 (Josh, 2 Nov 2026): the dock's queue slot reads Alerts and opens the Alerts screen, so the
+  // Menu does not list Alerts a second time (Q177's extra row went with its "Tasks" name).
+  const main = menu.main.filter((item) => !shown.has(item.id));
   const groups = [
     { label: roleLabel, entries: main },
     ...menu.more.map((group) => ({ ...group, entries: group.entries.filter((entry) => !shown.has(entry.id)) })),
@@ -347,7 +342,7 @@ function PhoneDock({
   counts: CountMap;
   pathname: string;
   tasksCount: number;
-  /** One Alerts queue: the Tasks tab opens the coordinator's queue on the Alerts screen. */
+  /** One Alerts queue: the Alerts tab opens the coordinator's queue on the Alerts screen. */
   oneAlertsQueue: boolean;
   activityUnread: number;
   onGo: (entry: RailEntry) => void;
@@ -400,8 +395,8 @@ function PhoneDock({
         );
       }
       case "queue":
-        // Q177 (Josh, 1 Nov 2026): the coordinator's dock says Tasks again, with a checklist icon and
-        // the act-now count. It opens the same list as before; Alerts stays on its screen and in the Menu.
+        // Q268 (Josh, 2 Nov 2026): the coordinator's dock says Alerts, with the bell, as the header and
+        // Menu do (one name and one icon on every desk, 31 Oct). It replaces Q177's "Tasks".
         return oneAlertsQueue ? (
           <Link
             key="tasks"
@@ -410,13 +405,13 @@ function PhoneDock({
             className={styles.dockItem}
             aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
             data-testid="ward-phone-menu-tasks"
-            onClick={() => announceToWardShell("Tasks.")}
+            onClick={() => announceToWardShell("Alerts.")}
           >
             <DockFace
-              icon={ListChecks}
-              label="Tasks"
+              icon={Bell}
+              label="Alerts"
               count={tasksCount}
-              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+              tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
             />
           </Link>
         ) : (
@@ -429,10 +424,10 @@ function PhoneDock({
             onClick={() => onDrawer("tasks")}
           >
             <DockFace
-              icon={ListChecks}
-              label="Tasks"
+              icon={Bell}
+              label="Alerts"
               count={tasksCount}
-              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+              tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
             />
           </button>
         );
@@ -728,7 +723,7 @@ export function WardPhoneMenu({
     wardTasksAreActionableForRole(shellRole) &&
     accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
-  // Q177 (Josh, 1 Nov 2026): the dock's queue slot reads Tasks, so Alerts keeps its Menu row.
+  // Q268 (Josh, 2 Nov 2026): the dock's queue slot reads Alerts; the Menu lists it once, in the dock.
   const menuGroups = groups;
 
   const sheetReturnRef = useMemo<RefObject<HTMLButtonElement | null>>(

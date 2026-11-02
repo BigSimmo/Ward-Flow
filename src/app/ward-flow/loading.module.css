@@ -22,6 +22,58 @@
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Q275: the "taking longer than usual" line and its Try again button stay hidden (not read out, not
+   focusable) until the placeholder has shown for 10 seconds. */
+.status {
+  flex-wrap: wrap;
+}
+
+.slow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  visibility: hidden;
+  animation: wardLoadingSlowShow 0s 10s forwards;
+}
+
+@keyframes wardLoadingSlowShow {
+  to {
+    visibility: visible;
+  }
+}
+
+/* Ward Flow's own Reduce motion setting turns every animation off under the shell
+   (ward-flow-layout.module.css, `animation: none !important`), which would keep this line hidden
+   for ever. The reveal is a zero-length step after a wait, not motion, so it is kept here; this
+   selector outranks that rule. */
+:global(html[data-reduced-motion]) .main .slow {
+  animation: wardLoadingSlowShow 0s 10s forwards !important;
+}
+
+.retry {
+  min-block-size: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  cursor: pointer;
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 46.4375rem) {
+  .retry {
+    min-block-size: 40px;
+    padding: 0 14px;
+  }
+}
+
 /* The kit Spinner's rule (wf/primitives.module.css), copied so this boundary stays light. */
 .spin {
   display: inline-block;

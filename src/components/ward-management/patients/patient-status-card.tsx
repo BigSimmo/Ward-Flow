@@ -795,7 +795,7 @@ function statusFor(
           {
             key: "catchment",
             icon: Users,
-            label: "Catchment team",
+            label: "Community team",
             owner: "Community",
             value: patient?.catchmentCommunityTeam ?? "Not recorded",
             sub: "Recorded catchment",
@@ -838,7 +838,7 @@ function statusFor(
         {
           key: "catchment",
           icon: Users,
-          label: "Catchment team",
+          label: "Community team",
           owner: "Community",
           value: patient.catchmentCommunityTeam ?? "Not recorded",
           sub: "Recorded catchment",
@@ -880,7 +880,7 @@ function statusFor(
         : {
             key: "catchment",
             icon: Users,
-            label: "Catchment team",
+            label: "Community team",
             owner: "Community",
             value: patient?.catchmentCommunityTeam ?? "Not recorded",
             sub: "Recorded catchment, care not confirmed",

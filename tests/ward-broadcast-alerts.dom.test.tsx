@@ -54,13 +54,13 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
   it("counts every ward and ED desk for Everyone and names severity in one word set (ops-12)", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
     const everyone = allUnits().length + allEmergencyDepartments().length;
     expect(
       within(screen.getByRole("radiogroup", { name: "Audience" })).getByRole("radio", { name: "Everyone" }),
     ).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("heading", { name: `Shows on ${everyone} screens` })).toBeInTheDocument();
-    expect(screen.getByLabelText(`I'm authorised to send this to ${everyone} units.`)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: `Shows on ${everyone} desks` })).toBeInTheDocument();
+    expect(screen.getByLabelText(`I'm authorised to send this to ${everyone} desks.`)).toBeInTheDocument();
     expect(
       within(screen.getByRole("radiogroup", { name: "Severity" }))
         .getAllByRole("radio")
@@ -71,7 +71,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
   it("populates form fields when choosing a quick start", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
     fireEvent.click(screen.getByRole("button", { name: "Unit closed" }));
 
     const titleInput = screen.getByLabelText(/^Title$/i) as HTMLInputElement;
@@ -100,7 +100,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
   it("dispatches statewide alert, mounts global banner, and renders active directive card", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
 
     const safeguard = screen.getByLabelText(/I'm authorised to send this to/i);
     fireEvent.click(safeguard);
@@ -136,7 +136,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
     // Dispatch alert first
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
     fireEvent.click(screen.getByLabelText(/I'm authorised to send this to/i));
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
 
