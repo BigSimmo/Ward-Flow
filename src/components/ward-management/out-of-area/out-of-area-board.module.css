@@ -353,7 +353,7 @@
 
 /* Tablet portrait (device audit 11 Oct 2026): the rail cards sit two-up under the register; an odd
    last card takes the full width. */
-@media (min-width: 48.0625rem) and (max-width: 62.5rem) {
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
   .side {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1816,7 +1816,7 @@ fieldset.formRow {
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
    with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
    tablet keep the toast above. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneToast {
     --toast-bg: light-dark(
       color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
@@ -1862,7 +1862,7 @@ fieldset.formRow {
  * (`--wf-phone-*`), whose 48px box carries a transparent band round the 34px track. The pinned
  * switch paints that band in the canvas and sits flush under the bar; the collar runs to the sides
  * and below only, so it never covers the bar. Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneTabs [role="radio"] {
     min-height: 0;
   }

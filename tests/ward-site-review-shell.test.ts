@@ -25,7 +25,7 @@ describe("site review shell fixes", () => {
     expect(toggle).toMatch(/--wf-live-hit:\s*max\(28px, var\(--wf-tablet-tap, 0px\)\)/u);
     expect(toggle).toMatch(/min-height:\s*var\(--wf-live-hit\)/u);
     expect(toggle).toMatch(/margin-block:/u);
-    expect(live).toMatch(/@media \(max-width: 48rem\) \{\s*\.toggle\s*\{\s*--wf-live-hit:\s*48px;/u);
+    expect(live).toMatch(/@media \(max-width: 46\.4375rem\) \{\s*\.toggle\s*\{\s*--wf-live-hit:\s*48px;/u);
     // One control: no hairline splitting the glyph off as a separate tile.
     const glyph = /\n\.toggleGlyph\s*\{([^}]*)\}/u.exec(live)?.[1] ?? "";
     expect(glyph).not.toMatch(/border-left/u);
@@ -37,7 +37,7 @@ describe("site review shell fixes", () => {
 
   it("makes the phone Tasks row title a 44px target that keeps the row's layout", () => {
     const css = read("src/components/ward-management/ward-tasks-drawer.module.css");
-    const phone = css.slice(css.lastIndexOf("@media (max-width: 48rem)"));
+    const phone = css.slice(css.lastIndexOf("@media (max-width: 46.4375rem)"));
     const title = /\.rowTitle\s*\{([^}]*justify-self:\s*stretch[^}]*)\}/u.exec(phone)?.[1] ?? "";
     expect(title).toMatch(/margin-block:\s*-12px/u);
     expect(title).toMatch(/padding-block:\s*12px/u);

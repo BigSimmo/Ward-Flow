@@ -40,7 +40,7 @@
  * 44px box to a 26px target, and the hero lines above and below took the rest. The title lets it
  * out (the name keeps its own ellipsis) and the button sits above those lines; it has no fill, so
  * nothing looks different. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   :global(h1):has(> .who) {
     overflow: visible;
   }
@@ -239,7 +239,7 @@
 }
 
 /* v10 phone: one disclaimer line per page, the shared footer; this page-level copy hides on phone (A7). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phPageFoot {
     display: none;
   }

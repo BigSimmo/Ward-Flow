@@ -7,7 +7,7 @@
   min-width: 0;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .tools {
     display: none;
   }

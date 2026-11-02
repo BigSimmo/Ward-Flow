@@ -516,7 +516,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Phone widths: segmented items keep a 48px tap target. */
   .boardTab,
   .orderBtn,
@@ -1975,7 +1975,7 @@
   font-size: var(--wf-fs-12);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .needsYou {
     flex-direction: column;
   }
@@ -1998,7 +1998,7 @@
  * the transport side panel and each row's Bed Board link stay on the larger screen. Each worklist row becomes a compact
  * block: tier, name and wait on the first line, from and to on one line, then the barrier and legal
  * status, the tags and the two actions. Desktop and tablet are unchanged: everything here sits under 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .trafficPanel,
   .secondary {
     display: none;
@@ -2072,7 +2072,7 @@
  * corner, round tier markers, the Arrange options as one segmented row, and worklist rows trimmed
  * to the person, the place, the barrier and the transport line. A row's stage and owner tags stay
  * on the larger screen and in the record. Desktop is unchanged: everything here sits under 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .main {
     padding-inline: var(--wf-s-3);
   }
@@ -2117,7 +2117,7 @@
 /* Phone (v10 mockup, 11 Oct 2026): the worklist loses its outer card. The Open / Resolved tabs and
  * the Arrange options become full-width pill segments, search is a pill, and each stage group is its
  * own card with an uppercase head. Desktop and tablet are unchanged: everything sits under 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .wlCard.wlCard {
     overflow: visible;
     border: 0;
@@ -2189,7 +2189,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Needs you head on one line: the uppercase label left, "3 of 18 Tier 1" right. */
   .needsYouHead.needsYouHead {
     flex-direction: row;
@@ -2214,7 +2214,7 @@
 
 /* v10 phone: the "Arrange" label sits outside the order track. Layout sweep PT-14: it sits above
    the track, so the three options share the full width and "Longest wait" is not cut. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .orderBar.orderBar {
     position: relative;
     width: auto;
@@ -2239,7 +2239,7 @@
  * 600 labels and 12px mono counts. Each option's transparent hit area reaches the 48px tap floor.
  * The Open / Resolved switch pins under the phone header while the list scrolls, through the shared
  * pinned switch class, as Home's queue switch does. Desktop and tablet are unchanged: everything here sits under 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The head pins through the shared `pinnedSwitch` (ward-pinned-switch.module.css); this sets its band. */
   .wlCard > :first-child {
     padding: var(--wf-s-2) 0;

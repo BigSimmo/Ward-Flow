@@ -83,7 +83,7 @@
   outline-offset: 2px;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .card {
     right: 12px;
     bottom: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 12px);

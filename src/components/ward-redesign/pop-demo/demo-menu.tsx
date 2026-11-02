@@ -3,7 +3,7 @@
 import { FlaskConical, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef } from "react";
 
-import { Button, OverlayPortal } from "@/components/wf";
+import { Button, OverlayPortal, WF_PHONE_QUERY } from "@/components/wf";
 
 import { DemoPanelMock } from "./demo-panel";
 import styles from "./pop-demo.module.css";
@@ -28,7 +28,7 @@ export function DemoMenuMock({ onClose }: { onClose: (refocus?: boolean) => void
       if (!menu) return;
       // Final round: on a phone the menu is a bottom sheet over the dock (pop-demo.module.css), so it
       // is not placed under the pill.
-      if (window.matchMedia("(max-width: 48rem)").matches) {
+      if (window.matchMedia(WF_PHONE_QUERY).matches) {
         menu.style.top = "";
         menu.style.left = "";
         menu.style.visibility = "visible";

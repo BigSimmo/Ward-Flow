@@ -175,7 +175,7 @@
 }
 
 /* Phone review F-33: the mono face gave the decimal point a full digit cell ("85 . 2%"). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .ringFigure {
     font-family: var(--wf-font);
   }
@@ -484,7 +484,7 @@ button.groupHead:focus-visible {
   color: var(--wf-ink-2);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .digest {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -631,7 +631,7 @@ button.groupHead:focus-visible {
 }
 
 /* Phone (v10 phone group head): a sans caps label on a grey band, the count at the right end. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .groupHead {
     min-height: 36px;
     padding: 0 var(--wf-s-3);
@@ -668,7 +668,7 @@ button.groupHead:focus-visible {
 
 /* Phone (v10 mockup): a non-letter group head carries its count as a small round pill right after
  * the title; a letter divider keeps the count at the right end. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .groupHead:not(.groupLetter) .groupTitle {
     flex: 0 1 auto;
     min-width: 0;
