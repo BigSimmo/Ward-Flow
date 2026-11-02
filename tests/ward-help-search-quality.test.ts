@@ -67,6 +67,11 @@ const GOLDEN: readonly (readonly [question: string, top: string])[] = [
   ["permissions", "give-access"],
   ["mha expiry", "mha-times"],
   ["tranport job pickup", "transport-job"],
+  // Everyday ward words added 2 Nov 2026.
+  ["secluded room", "record-seclusion"],
+  ["repatriate patient", "plan-return-home"],
+  ["pager", "find-on-call"],
+  ["bleep the registrar", "find-on-call"],
 ];
 
 describe("Help search golden set", () => {

@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Button } from "@/components/wf";
+import { Button, useIsPhone } from "@/components/wf";
 
 import { SCREEN_HELP, type GlossaryTerm } from "./ward-help-content";
-import { HOW_TOS } from "./ward-help-howto";
+import { HOW_TOS, showMeSteps } from "./ward-help-howto";
 import { CLINICAL_REPLY, searchHelp, type HelpSearchResult } from "./ward-help-search-index";
 import type { WardTourRole } from "./ward-help-store";
 import { HELP_SYNONYMS } from "./ward-help-synonyms";
@@ -185,7 +185,13 @@ function BestAnswer({
   const group = groupOf(result);
   const Icon = ICON[group];
   const howToId = result.key.startsWith("howto:") ? result.key.slice("howto:".length) : undefined;
-  const steps = howToId ? (HOW_TOS.find((howTo) => howTo.id === howToId)?.showMe ?? []) : [];
+  const device = useIsPhone() ? "phone" : "desk";
+  const steps = howToId
+    ? showMeSteps(
+        HOW_TOS.find((howTo) => howTo.id === howToId),
+        device,
+      )
+    : [];
   const showMe = howToId && steps.length && canShow(howToId) ? howToId : undefined;
   const alike = group === "Words" ? relatedTerms(result.title) : [];
   // A guide with nowhere to go is read here; it offers no button that would do nothing.
@@ -267,13 +273,31 @@ export function HelpFindResults({
   canShow: (id: string) => boolean;
   onUseTyped: (words: string) => void;
 }) {
-  if (!found) return null;
-  if (found.kind === "clinical") {
+  if (found?.kind === "clinical") {
     return (
       <div className={`${s.card} ${s.clinical}`} role="status">
         <CircleHelp aria-hidden="true" strokeWidth={1.75} />
         <span>{CLINICAL_REPLY}</span>
       </div>
+    );
+  }
+  const count = foundRows(found).length;
+  // One short line for screen readers, in place of reading every answer out at each key press.
+  const summary = (
+    <span className="sr-only" role="status" data-testid="ward-help-found-summary">
+      {/* Said without a number: an announced figure must carry a provenance claim, and Help's
+          answers are not records, so the words alone say what changed. */}
+      {count === 0 ? "No answers in Help" : "Help answers are listed below"}
+    </span>
+  );
+  if (!found || count === 0) {
+    return (
+      <>
+        {summary}
+        <p className={s.emptyFind} data-testid="ward-help-found-empty">
+          No match in Help for &ldquo;{query.trim()}&rdquo;. Try fewer words, or browse How to.
+        </p>
+      </>
     );
   }
   const marks = found.readAs ?? query;
@@ -317,6 +341,7 @@ export function HelpFindResults({
   };
   return (
     <>
+      {summary}
       {found.readAs ? (
         <p className={s.readAs}>
           <Wand2 aria-hidden="true" strokeWidth={1.75} />
@@ -358,6 +383,7 @@ export function HelpFindResults({
         <span>
           <kbd>Esc</kbd>clear
         </span>
+        {/* Proved by tests/ward-help-ask.dom.test.tsx, "never writes words typed in Help's search to storage or URL history". */}
         <span className={s.keysHintEnd}>Nothing you type is saved</span>
       </div>
     </>

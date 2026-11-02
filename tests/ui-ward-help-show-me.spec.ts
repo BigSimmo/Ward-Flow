@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "playwright/test";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
+import { showMeSteps } from "@/components/ward-management/help/ward-help-howto";
+import { SCREEN_TOURS } from "@/components/ward-management/help/ward-help-screen-tours";
 import { homeHrefFor, type WardAccess } from "@/components/ward-management/ward-role-access";
 
 /**
@@ -39,6 +41,12 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
       "sign-off-handover",
       "statistics",
       "search-patient",
+      // Added 2 Nov 2026, proved lit on a desktop and a phone.
+      "find-on-call",
+      "record-legal-form",
+      "plan-return-home",
+      "record-seclusion",
+      "clear-held-up-discharge",
     ],
     ward: ["confirm-numbers", "answer-ward-referrals", "bed-board", "new-referral", "sign-off-handover", "tv"],
     ed: ["ed-raise", "new-referral", "find-bed", "search-patient"],
@@ -46,7 +54,19 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
     bed_manager: ["tv", "sign-off-handover", "statistics", "service-in-view"],
   },
   phone: {
-    coordinator: ["release-pulled-bed", "decide-referral", "pull-bed", "ask-more-wards", "log-call", "new-referral"],
+    coordinator: [
+      "release-pulled-bed",
+      "decide-referral",
+      "pull-bed",
+      "ask-more-wards",
+      "log-call",
+      "new-referral",
+      "find-on-call",
+      "record-legal-form",
+      "plan-return-home",
+      "record-seclusion",
+      "clear-held-up-discharge",
+    ],
     ward: ["confirm-numbers", "answer-ward-referrals", "bed-board", "new-referral"],
     ed: ["ed-raise", "new-referral", "find-bed"],
     officer: ["transport-job", "alerts"],
@@ -76,7 +96,7 @@ async function firstStepLit(page: Page, id: string): Promise<boolean> {
   await page.waitForLoadState("networkidle");
   const lit = await expect
     // Show me may first open another screen; a cold page takes a while to draw on a dev server.
-    .poll(() => page.getByTestId("ward-show-me-spot").count(), { timeout: 20_000 })
+    .poll(() => page.locator('[data-testid="ward-show-me-spot"]:not([data-held])').count(), { timeout: 20_000 })
     .toBe(1)
     .then(
       () => true,
@@ -103,5 +123,54 @@ for (const device of ["desk", "phone"] as const) {
         expect(dark, `${name} ${device}: Show me lit nothing for these tasks`).toEqual([]);
       });
     }
+  });
+}
+
+/**
+ * Show me around (2 Nov 2026): every step of each screen's walk round names a part the screen draws
+ * without anyone choosing a record first, so every step must light, on both devices. Steps marked
+ * for the other device are skipped by the player and here. The bed coordinator opens every screen.
+ */
+async function stepsLit(page: Page, id: string, total: number): Promise<readonly string[]> {
+  const card = page.getByTestId("ward-show-me-card");
+  await expect(async () => {
+    await page.evaluate((task) => {
+      window.dispatchEvent(new CustomEvent("ward-flow-open-help", { detail: { showMe: task } }));
+    }, id);
+    await expect(card).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  await page.waitForLoadState("networkidle");
+  const dark: string[] = [];
+  for (let step = 0; step < total; step += 1) {
+    await expect(card).toHaveAttribute("data-step", String(step));
+    const lit = await expect
+      .poll(() => page.locator('[data-testid="ward-show-me-spot"]:not([data-held])').count(), { timeout: 20_000 })
+      .toBe(1)
+      .then(
+        () => true,
+        () => false,
+      );
+    if (!lit) dark.push(`${id} step ${step + 1}`);
+    if (step < total - 1) await page.getByTestId("ward-show-me-next").click();
+  }
+  await page.keyboard.press("Escape");
+  await expect(card).toBeHidden();
+  return dark;
+}
+
+for (const device of ["desk", "phone"] as const) {
+  test.describe(`Show me around on a ${device} @mockup`, () => {
+    if (device === "phone") test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    else test.use({ viewport: { width: 1440, height: 1024 } });
+
+    test("every step of every screen walk round lights its part", async ({ page }) => {
+      test.setTimeout(600_000);
+      await signIn(page, DESKS.coordinator);
+      const dark: string[] = [];
+      // Page walk rounds (one ward, one ED board) play only on their own page, so they are not run here.
+      for (const tour of SCREEN_TOURS.filter((each) => each.go))
+        dark.push(...(await stepsLit(page, tour.id, showMeSteps(tour, device).length)));
+      expect(dark, `Show me around lit nothing for these steps on a ${device}`).toEqual([]);
+    });
   });
 }

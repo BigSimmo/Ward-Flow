@@ -1,12 +1,23 @@
 /*
  * HELP, redesign mock-up (1 Nov 2026). One quiet panel: who you are and where you are in the header,
- * one search field, three tabs, white cards on the drawer's grey body, and a pinned foot. Kit tokens
- * only; no coloured side edges; every control is at least 40px tall; no text under 12px.
+ * one search field, four tabs, white cards on the drawer's grey body, and a pinned foot. Kit tokens
+ * only; no coloured side edges; no text under 12px. Desktop controls follow the kit (tabs 34px,
+ * chips 32px); on a phone they draw 40px and an invisible cover takes the tap area to 48px.
  */
 
 /* ── sheet and header ─────────────────────────────────────────────────────────────────────────────────── */
 .sheet {
   max-width: min(calc(100vw - 1.5rem), 34rem);
+}
+
+/* Phone (through 48rem): the kit's bottom sheet, full width and near-full height, so the sheet does
+ * not jump in size as answers come and go. */
+@media (max-width: 48rem) {
+  .sheet {
+    width: 100%;
+    max-width: none;
+    height: calc(100dvh - 2rem);
+  }
 }
 
 .headTile {
@@ -37,7 +48,7 @@
   align-items: center;
   gap: 4px;
   height: 20px;
-  padding: 0 7px;
+  padding: 0 8px;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface);
@@ -57,16 +68,26 @@
   top: -16px;
   z-index: 2;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
+  min-width: 0;
   margin: -14px -16px 0;
-  padding: 16px 16px 0;
+  padding: 16px 16px 8px;
   background: var(--wf-surface-2);
+}
+
+/* A short window (a phone on its side) keeps the panel for reading: the dock scrolls away. */
+@media (max-height: 30rem) {
+  .dock {
+    position: static;
+  }
 }
 
 .field {
   position: relative;
   display: flex;
   align-items: center;
+  min-width: 0;
   height: 40px;
   border: 1px solid var(--wf-line-ctl);
   border-radius: var(--wf-r-ctl);
@@ -111,6 +132,20 @@
   display: none;
 }
 
+/* The rest of the top suggestion, faint after the typed letters: the input's own box and font. */
+.field .ghost {
+  padding: 0 40px 0 36px;
+  font: 400 var(--wf-fs-14) / 1 var(--wf-font);
+  /* The input draws without the body's stylistic sets, so the faint text must too, or it drifts. */
+  font-feature-settings: normal;
+}
+
+/* The suggestions block, between the field and the answers: in the flow, so nothing jumps. */
+.suggest {
+  min-width: 0;
+  margin: 0 0 12px;
+}
+
 .fieldEnd {
   position: absolute;
   right: 4px;
@@ -125,7 +160,7 @@
   place-items: center;
   min-width: 20px;
   height: 20px;
-  padding: 0 5px;
+  padding: 0 4px;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-xs);
   background: var(--wf-surface-2);
@@ -143,6 +178,9 @@
   background: transparent;
   color: var(--wf-ink-3);
   cursor: pointer;
+  transition:
+    background-color var(--wf-t-micro) var(--wf-ease-out),
+    transform var(--wf-t-press) var(--wf-ease-out);
 }
 
 .clear:hover {
@@ -157,17 +195,17 @@
 
 .tabs {
   gap: var(--wf-s-6);
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .tabs > button {
-  height: 40px;
-  gap: 7px;
+  gap: 6px;
 }
 
 .tabs > button svg {
-  width: 15px;
-  height: 15px;
+  flex: none;
+  width: 14px;
+  height: 14px;
   color: var(--wf-ink-3);
 }
 
@@ -177,8 +215,8 @@
 
 .panel {
   display: grid;
-  gap: 18px;
-  padding-top: 12px;
+  gap: 16px;
+  padding-top: 4px;
 }
 
 /* ── shared blocks ──────────────────────────────────────────────────────────────────────────── */
@@ -226,8 +264,8 @@
 }
 
 .sectionHeadIcon svg {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
 }
 
 .note {
@@ -250,30 +288,14 @@
   cursor: pointer;
 }
 
-.more {
-  display: flex;
-  width: 100%;
-  min-height: 40px;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 0;
-  border-top: 1px solid var(--wf-line);
-  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
-  background: transparent;
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  cursor: pointer;
+.inlineLink:hover {
+  text-decoration-color: currentColor;
 }
 
-.more:hover {
-  background: var(--wf-hover);
-  color: var(--wf-ink-1);
-}
-
-.more svg {
-  width: 14px;
-  height: 14px;
+.inlineLink:focus-visible {
+  border-radius: var(--wf-r-xs);
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 /* ── How do I: this screen ──────────────────────────────────────────────────────────────────── */
@@ -346,7 +368,15 @@
   cursor: pointer;
   transition:
     border-color var(--wf-m-fast) var(--wf-ease),
-    box-shadow var(--wf-m-fast) var(--wf-ease);
+    box-shadow var(--wf-m-fast) var(--wf-ease),
+    transform var(--wf-t-press) var(--wf-ease-out);
+}
+
+.tile[data-wide] {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 0;
 }
 
 .tile:hover {
@@ -374,12 +404,64 @@
   font-weight: 600;
 }
 
+/* The screen's walk round: the card's first action, full width above the screen's own jobs. */
+.aroundTile {
+  grid-column: 1 / -1;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  padding: 10px 12px;
+  border-color: color-mix(in srgb, var(--wf-accent) 22%, var(--wf-line));
+  background: var(--wf-accent-tint);
+}
+
+.aroundTile:hover {
+  border-color: color-mix(in srgb, var(--wf-accent) 40%, var(--wf-line));
+}
+
+.aroundDisc {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--wf-accent);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-on-accent);
+}
+
+.aroundDisc svg {
+  width: 12px;
+  height: 12px;
+  margin-left: 2px;
+  fill: currentColor;
+}
+
+.aroundText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aroundSub {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.aroundGo {
+  width: 16px;
+  height: 16px;
+  color: var(--wf-accent-ink);
+}
+
 /* ── How do I: the tour row ─────────────────────────────────────────────────────────────────── */
 .tour {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 12px 12px 14px;
+  padding: 12px 14px;
 }
 
 .tourIcon {
@@ -419,8 +501,8 @@
 
 .segments {
   display: flex;
-  gap: 3px;
-  margin-top: 5px;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 .segments i {
@@ -436,47 +518,79 @@
 }
 
 /* ── How do I: topic chips ──────────────────────────────────────────────────────────────────── */
+/* The row scrolls sideways; its padding leaves room for each chip's focus ring and phone tap cover. */
 .chips {
   display: flex;
-  gap: 6px;
-  margin: 0 -16px;
-  padding: 0 16px 2px;
+  gap: 8px;
+  margin: -4px -16px;
+  padding: 4px 16px 6px;
   overflow-x: auto;
   scrollbar-width: none;
   mask-image: linear-gradient(90deg, black calc(100% - 28px), transparent);
 }
 
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
 .chip {
+  position: relative;
   display: inline-flex;
   flex: none;
   align-items: center;
   gap: 6px;
-  height: 40px;
+  height: var(--wf-h-sm);
   padding: 0 12px;
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / 1 var(--wf-font);
   cursor: pointer;
+  transition:
+    background-color var(--wf-t-micro) var(--wf-ease-out),
+    border-color var(--wf-t-micro) var(--wf-ease-out),
+    color var(--wf-t-micro) var(--wf-ease-out),
+    transform var(--wf-t-press) var(--wf-ease-out);
 }
 
 .chip:hover {
+  border-color: var(--wf-line-3);
   color: var(--wf-ink-1);
-  background: var(--wf-hover);
 }
 
 .chip[aria-pressed="true"] {
-  border-color: var(--wf-ink-1);
-  background: var(--wf-ink-1);
-  color: var(--wf-surface);
+  border-color: color-mix(in srgb, var(--wf-accent) 60%, transparent);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  font-weight: 600;
 }
 
 .chip .n {
-  color: inherit;
+  color: var(--wf-ink-2);
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-12);
-  opacity: 0.7;
+  font-weight: 500;
+}
+
+.chip[aria-pressed="true"] .n {
+  color: inherit;
+}
+
+/* The key under the job chips: what the play mark means. */
+.playKey {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.playKey .play {
+  width: 20px;
+  height: 20px;
 }
 
 .chip svg {
@@ -498,7 +612,7 @@
 .taskHead {
   display: flex;
   width: 100%;
-  min-height: 48px;
+  min-height: var(--wf-row);
   align-items: center;
   gap: 10px;
   padding: 0 12px 0 14px;
@@ -531,6 +645,10 @@
   flex: 1;
   min-width: 0;
   padding: 12px 0;
+}
+
+.taskHead:active {
+  background: var(--wf-selected);
 }
 
 .play {
@@ -580,7 +698,7 @@
   margin: 0;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
-  line-height: 1.55;
+  line-height: var(--wf-lh-14);
 }
 
 .steps {
@@ -640,7 +758,7 @@
   display: block;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
-  line-height: 1.5;
+  line-height: var(--wf-lh-14);
 }
 
 .answerActions {
@@ -660,10 +778,70 @@
   line-height: var(--wf-lh-12);
 }
 
+/* An open answer's foot: Was this helpful? and Copy link, quieter than the answer above it. */
+.answerFoot {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.answerFoot button {
+  color: var(--wf-ink-2);
+}
+
+.answerFoot button:hover {
+  color: var(--wf-ink-1);
+}
+
+.helpful {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.answerFoot [data-copied] {
+  color: var(--wf-accent-ink);
+}
+
+.copyFailed {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.footStatus {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+/* Empty until a vote, but still in the page so its words are announced when they arrive. */
+.footStatus:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .safety svg {
   flex: none;
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   margin-top: 1px;
 }
 
@@ -686,8 +864,8 @@
   position: relative;
   display: grid;
   align-content: start;
-  gap: 3px;
-  padding: 11px 14px;
+  gap: 4px;
+  padding: 12px 14px;
 }
 
 .pairCell + .pairCell {
@@ -703,7 +881,7 @@
 .pairCell > span:last-child {
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
-  line-height: 1.45;
+  line-height: var(--wf-lh-12);
 }
 
 .vs {
@@ -765,8 +943,8 @@
 
 .deskRow {
   display: grid;
-  gap: 3px;
-  padding: 11px 14px;
+  gap: 4px;
+  padding: 12px 14px;
   border-top: 1px solid var(--wf-line);
 }
 
@@ -786,14 +964,14 @@
 .deskRow > span {
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
-  line-height: 1.5;
+  line-height: var(--wf-lh-14);
 }
 
 .you {
   display: inline-flex;
   align-items: center;
   height: 20px;
-  padding: 0 7px;
+  padding: 0 8px;
   border-radius: var(--wf-r-pill);
   background: var(--wf-accent-tint);
   color: var(--wf-accent-ink);
@@ -801,25 +979,10 @@
   font-weight: 600;
 }
 
-.moreCard {
-  display: flex;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  cursor: pointer;
-}
-
-.moreCard:hover {
-  color: var(--wf-ink-1);
-  background: var(--wf-hover);
-}
-
-.moreCard svg {
-  width: 14px;
-  height: 14px;
+/* A kit Show more row standing alone in a card: the card's edge replaces the row's top line. */
+.moreCard > button {
+  border-top: 0;
+  border-radius: var(--wf-r-lg);
 }
 
 .terms {
@@ -863,15 +1026,15 @@
   margin: 0;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
-  line-height: 1.5;
+  line-height: var(--wf-lh-14);
 }
 
 /* ── What's new ─────────────────────────────────────────────────────────────────────────────── */
 .newHead {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 10px 10px 14px;
+  gap: 12px;
+  padding: 8px 8px 8px 14px;
 }
 
 .newHead p {
@@ -900,7 +1063,7 @@
   display: grid;
   grid-template-columns: 8px 1fr;
   gap: 10px;
-  padding: 9px 14px;
+  padding: 8px 14px;
   border-top: 1px solid var(--wf-line);
 }
 
@@ -921,7 +1084,7 @@
   margin: 0;
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-13);
-  line-height: 1.5;
+  line-height: var(--wf-lh-14);
 }
 
 .area {
@@ -943,7 +1106,7 @@
 .result {
   display: flex;
   width: 100%;
-  min-height: 48px;
+  min-height: var(--wf-row);
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
@@ -959,9 +1122,18 @@
   border-top: 1px solid var(--wf-line);
 }
 
-.result:hover,
-.result[data-active] {
+.result:hover {
+  background: var(--wf-hover);
+}
+
+.result[data-active],
+.result:active {
   background: var(--wf-selected);
+}
+
+.result:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
 }
 
 .result:first-child {
@@ -1009,7 +1181,7 @@
   overflow: hidden;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
-  line-height: 1.45;
+  line-height: var(--wf-lh-12);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -1055,13 +1227,22 @@
   margin-left: auto;
 }
 
+/* Nothing found: one quiet line, and no key hints for a list that is not there. */
+.emptyFind {
+  margin: 0;
+  padding: 4px 2px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
 .clinical {
   display: flex;
   gap: 10px;
   padding: 12px 14px;
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-13);
-  line-height: 1.5;
+  line-height: var(--wf-lh-14);
 }
 
 .clinical svg {
@@ -1090,8 +1271,9 @@
 .viewTitle {
   margin: 0;
   color: var(--wf-ink-1);
-  font-size: var(--wf-fs-16);
+  font-size: var(--wf-fs-15);
   font-weight: 600;
+  line-height: var(--wf-lh-15);
 }
 
 .keyRow {
@@ -1121,7 +1303,7 @@
   place-items: center;
   min-width: 26px;
   height: 26px;
-  padding: 0 7px;
+  padding: 0 8px;
   border: 1px solid var(--wf-line-2);
   border-bottom-width: 2px;
   border-radius: var(--wf-r-sm);
@@ -1175,7 +1357,7 @@
   display: block;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
-  line-height: 1.5;
+  line-height: var(--wf-lh-14);
 }
 
 .points {
@@ -1183,7 +1365,7 @@
   padding: 4px 14px 4px 30px;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
-  line-height: 1.5;
+  line-height: var(--wf-lh-14);
 }
 
 .points li {
@@ -1201,7 +1383,7 @@
 .footButton {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   height: 40px;
   padding: 0 10px;
   border: 0;
@@ -1210,6 +1392,9 @@
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / 1 var(--wf-font);
   cursor: pointer;
+  transition:
+    background-color var(--wf-t-micro) var(--wf-ease-out),
+    transform var(--wf-t-press) var(--wf-ease-out);
 }
 
 .footButton:hover {
@@ -1223,8 +1408,8 @@
 }
 
 .footButton svg {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
 }
 
 .footButton kbd {
@@ -1256,6 +1441,10 @@
     align-items: center;
   }
 
+  .aroundTile {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
   .pair,
   .pair[data-size="3"] {
     grid-template-columns: 1fr;
@@ -1281,14 +1470,14 @@
   margin: 0;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
-  line-height: 1.5;
+  line-height: var(--wf-lh-14);
 }
 
 .readAs svg {
   flex: none;
-  width: 15px;
-  height: 15px;
-  margin-top: 2px;
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
   color: var(--wf-accent-ink);
 }
 
@@ -1300,10 +1489,13 @@
   display: grid;
   gap: 12px;
   padding: 14px;
-  border-color: color-mix(in srgb, var(--wf-accent) 28%, var(--wf-line));
-  box-shadow:
-    var(--wf-e1),
-    0 0 0 3px color-mix(in srgb, var(--wf-accent-tint) 70%, transparent);
+  box-shadow: var(--wf-e2);
+}
+
+/* Chosen with the arrow keys (Enter opens it): the same ring as keyboard focus, while typing. */
+.dock:has(input:focus) ~ .panel .best[data-active] {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .bestEyebrow {
@@ -1319,8 +1511,8 @@
 }
 
 .bestEyebrow svg {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
 }
 
 .bestHead {
@@ -1344,9 +1536,72 @@
 }
 
 /* ── How do I: how this screen works, and the place a job is done ───────────────────────────── */
+/* The card's foot rows: How this screen works and the printable guide, drawn alike and run to the
+ * card's edges. The card's own 12px gap is taken back so the two rows meet on one line. */
 .works {
   border-top: 1px solid var(--wf-line);
   margin: 0 -14px -14px;
+}
+
+.works:not(:last-child) {
+  margin-bottom: 0;
+}
+
+.works:not(:last-child) .worksToggle {
+  border-radius: 0;
+}
+
+.works + .printRow {
+  margin-top: -12px;
+}
+
+/* The printable guide: a quiet row that opens the A4 page in a new tab. */
+.printRow {
+  position: relative;
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -14px -14px;
+  padding: 0 14px;
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  text-decoration: none;
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+
+.printRow:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.printRow:active {
+  background: var(--wf-selected);
+}
+
+.printRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.printRow svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+.printRow .printGo {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+}
+
+/* The desk guide's row, alone in a card of its own. */
+.printCard .printRow {
+  margin: 0;
+  border-top: 0;
+  border-radius: var(--wf-r-lg);
 }
 
 .worksToggle {
@@ -1362,11 +1617,27 @@
   color: var(--wf-ink-2);
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);
   cursor: pointer;
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
 }
 
 .worksToggle:hover {
   background: var(--wf-hover);
   color: var(--wf-ink-1);
+}
+
+.worksToggle:active {
+  background: var(--wf-selected);
+}
+
+.worksToggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.worksIcon {
+  flex: none;
+  width: 14px;
+  height: 14px;
 }
 
 .worksToggle[aria-expanded="true"] .caret {
@@ -1379,10 +1650,10 @@
 
 .worksList {
   margin: 0;
-  padding: 0 14px 12px 32px;
+  padding: 0 14px 12px 36px;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
-  line-height: 1.5;
+  line-height: var(--wf-lh-14);
 }
 
 .worksList li + li {
@@ -1398,4 +1669,95 @@
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.place::first-letter {
+  text-transform: uppercase;
+}
+
+/* ── focus and press for Help's own controls ─────────────────────────────────────────────────── */
+.chip:focus-visible,
+.footButton:focus-visible,
+.clear:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.chip:active,
+.footButton:active,
+.clear:active,
+.tile:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip,
+  .footButton,
+  .clear,
+  .tile {
+    transition: none;
+  }
+
+  .chip:active,
+  .footButton:active,
+  .clear:active,
+  .tile:active {
+    transform: none;
+  }
+}
+
+/* ── phone sizes: 40px faces, 48px tap areas ────────────────────────────────────────────────── */
+@media (max-width: 48rem) {
+  /* The row scrolls sideways when the tabs do not fit, so its end fades as the chips do. */
+  .tabs {
+    padding-top: var(--wf-phone-pill-hit);
+    padding-right: 24px;
+    mask-image: linear-gradient(90deg, black calc(100% - 28px), transparent);
+  }
+
+  .tabs > button {
+    position: relative;
+    height: var(--wf-phone-pill-h);
+  }
+
+  /* Upward only: the underline sits on the row's bottom line. */
+  .tabs > button::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0 0;
+  }
+
+  .chip {
+    height: var(--wf-phone-pill-h);
+  }
+
+  .chip::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+}
+
+/* Touch: tiles and the print row reach a 48px tap area without a bigger face. */
+@media (pointer: coarse) {
+  .aroundTile {
+    position: relative;
+  }
+
+  .aroundTile::after,
+  .printRow::after {
+    content: "";
+    position: absolute;
+    inset: 50% 0 auto;
+    height: max(100%, var(--spacing-tap, 3rem));
+    transform: translateY(-50%);
+  }
+}
+
+/* A checklist row's leading icon, the same size and tone as the card's other row icons. */
+.rowIcon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--wf-ink-3);
 }

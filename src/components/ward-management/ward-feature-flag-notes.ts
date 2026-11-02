@@ -73,6 +73,6 @@ export const WARD_FEATURE_FLAG_NOTES: Record<WardFeatureFlag, WardFeatureFlagNot
       "An Ask box in Help that answers from the app's own help, with Show me walkthroughs. No AI; the question is never saved.",
     owner: "Josh",
     added: "2026-10-26",
-    removeWhen: "Josh approves the Ask help screenshots and it has run on the demo site.",
+    removeWhen: "It has run on the demo site and Josh agrees it can be on everywhere (on for demo from 2 Nov 2026).",
   },
 };

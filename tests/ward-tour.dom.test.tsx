@@ -38,10 +38,10 @@ import {
   resetTourSeenForTests,
   saveTourStep,
 } from "@/components/ward-management/help/ward-help-store";
-import { tourSteps } from "@/components/ward-management/help/ward-tour-steps";
+import { fullTourSteps } from "@/components/ward-management/help/ward-tour-more-steps";
 import { WardWhatsNew } from "@/components/ward-management/help/ward-whats-new";
 
-const STEPS = tourSteps("coordinator", "desk", tourFacts.facts);
+const STEPS = fullTourSteps("coordinator", "desk", tourFacts.facts);
 
 function card() {
   return screen.getByTestId("ward-tour-card");
@@ -161,13 +161,13 @@ describe("tour player", () => {
     const { rerender } = render(<WardTour onClose={vi.fn()} />);
     for (let index = 1; index < STEPS.length; index++) fireEvent.click(screen.getByTestId("ward-tour-next"));
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(card().dataset.step).toBe("help");
+    expect(card().dataset.step).toBe("more-learn");
     phone.on = true;
     rerender(<WardTour onClose={vi.fn()} />);
-    const phoneSteps = tourSteps("coordinator", "phone", tourFacts.facts);
-    expect(card().dataset.step).toBe("help");
+    const phoneSteps = fullTourSteps("coordinator", "phone", tourFacts.facts);
+    expect(card().dataset.step).toBe("more-learn");
     expect(card().textContent).toContain(
-      `Step ${phoneSteps.findIndex((candidate) => candidate.id === "help") + 1} of ${phoneSteps.length}`,
+      `Step ${phoneSteps.findIndex((candidate) => candidate.id === "more-learn") + 1} of ${phoneSteps.length}`,
     );
   });
 

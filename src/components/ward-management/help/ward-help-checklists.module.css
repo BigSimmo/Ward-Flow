@@ -1,0 +1,279 @@
+/* Guided checklists and practice inside Help, matching the Help panel's cards and heads
+   (`ward-help-panel.module.css`). Tokens only; no coloured side edges. */
+
+.card {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  list-style: none;
+}
+
+.section {
+  display: grid;
+  gap: 8px;
+}
+
+.back {
+  justify-self: start;
+  margin-left: -10px;
+}
+
+.viewTitle {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-15);
+  font-weight: 600;
+  line-height: var(--wf-lh-15);
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.headRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+
+.count {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--wf-lh-12);
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+/* ── One checklist ─────────────────────────────────────────────────────────────────────────── */
+
+.step {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--wf-line);
+}
+
+.step:first-child {
+  border-top: 0;
+}
+
+/* The kit checkbox row, with a long label wrapping beside the box. */
+.tick {
+  align-items: flex-start;
+  width: 100%;
+}
+
+.tick > span:first-of-type {
+  margin-top: 2px;
+}
+
+.stepText {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-14);
+}
+
+.step[data-ticked] .stepText {
+  color: var(--wf-ink-2);
+}
+
+.stepNote {
+  margin: 0;
+  padding-left: 26px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.stepActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: 16px;
+}
+
+.footRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Practice card ─────────────────────────────────────────────────────────────────────────── */
+
+.practice {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: 14px;
+}
+
+.practiceTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: var(--wf-lh-13);
+}
+
+.practiceTitle svg {
+  color: var(--wf-ink-2);
+}
+
+.practiceTitle > span {
+  flex-basis: 100%;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  line-height: var(--wf-lh-12);
+}
+
+.intro {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.practiceSteps {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.practiceStep {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  align-items: start;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.practiceStep[data-state="done"],
+.practiceStep[data-state="current"] {
+  color: var(--wf-ink-1);
+}
+
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--wf-line);
+  border-radius: 50%;
+  font-size: var(--wf-fs-12);
+}
+
+.practiceStep[data-state="done"] .mark {
+  border-color: currentColor;
+}
+
+.state {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+.how {
+  display: block;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.practiceShow {
+  margin: 4px 0 0 -10px;
+}
+
+.practiceActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: center;
+}
+
+.link {
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.confirm {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: 12px 14px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.confirm p {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+/* Phone: the tick row is a 40px target, with a cover keeping the 48px tap area on touch screens. */
+@media (max-width: 48rem) {
+  .tick {
+    min-height: 40px;
+  }
+}
+
+@media (pointer: coarse) {
+  .tick::after {
+    content: "";
+    position: absolute;
+    inset: 50% 0 auto;
+    height: max(100%, var(--spacing-tap, 3rem));
+    transform: translateY(-50%);
+  }
+
+  .link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+
+  .link::after {
+    content: "";
+    position: absolute;
+    inset: 50% 0 auto;
+    height: var(--spacing-tap, 3rem);
+    transform: translateY(-50%);
+  }
+}

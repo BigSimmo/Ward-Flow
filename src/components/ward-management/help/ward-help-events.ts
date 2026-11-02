@@ -9,7 +9,8 @@ const OPEN_HELP_EVENT = "ward-flow-open-help";
  * (1 Nov 2026) adds the Common questions and Reference tabs, and Shortcuts ("keys") as a view inside
  * Help. "screen" still opens How do I… and "glossary" opens Reference.
  */
-export type HelpView = "tasks" | "questions" | "reference" | "new" | "desk" | "keys" | "screen" | "glossary" | "tour";
+export type HelpView =
+  "tasks" | "questions" | "reference" | "new" | "desk" | "keys" | "checklist" | "screen" | "glossary" | "tour";
 
 type OpenHelpDetail = { view?: HelpView; ask?: string; showMe?: string; task?: string };
 
@@ -40,6 +41,19 @@ export function showWardHowTo(id: string): void {
  */
 export function looksLikeHelpQuestion(query: string): boolean {
   return /^\s*(how|where|why|what)\b\s*\S/i.test(query);
+}
+
+/**
+ * The how-to a Help link names: "#help=<id>", a fixed how-to id and nothing typed (2 Nov 2026), so a
+ * trainer can send a link that opens Help at one job. Unknown ids open How to with nothing unfolded.
+ */
+export function helpLinkTask(hash: string): string | undefined {
+  return /^#help=([a-z0-9-]{1,60})$/.exec(hash)?.[1];
+}
+
+/** The address that opens Help at the how-to `id` on `path`. */
+export function helpLinkHref(origin: string, path: string, id: string): string {
+  return `${origin}${path.split("#")[0]}#help=${id}`;
 }
 
 export type HelpRequest =

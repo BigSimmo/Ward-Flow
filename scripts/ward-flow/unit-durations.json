@@ -842,7 +842,6 @@
     "tests/ward-help-search-index.test.ts": 0.5,
     "tests/ward-help-search-quality.test.ts": 0.3,
     "tests/ward-help-search-sheet.dom.test.tsx": 2.2,
-    "tests/ward-help-search.dom.test.tsx": 3.6,
     "tests/ward-help-tasks.dom.test.tsx": 3.1,
     "tests/ward-help-usage.dom.test.tsx": 2.3,
     "tests/ward-help.dom.test.tsx": 2.6,

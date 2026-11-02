@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 
-import { Button, StatusGlyph } from "@/components/wf";
+import { Button, foldLimit, ShowMoreRow, StatusGlyph } from "@/components/wf";
 
 import { SCREEN_HELP, type GlossaryTerm, type ScreenHelp } from "./ward-help-content";
 import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
@@ -100,7 +100,7 @@ export function HelpQuestions({ screen }: { screen: (ScreenHelp & { id: string }
         .map(([id, help]) => ({ id, title: help.title, questions: help.questions ?? [] })),
     [screen?.id],
   );
-  const shown = all ? others : others.slice(0, FIRST_SCREENS);
+  const shown = all ? others : others.slice(0, foldLimit(others.length, FIRST_SCREENS));
   return (
     <>
       {screen?.questions?.length ? (
@@ -120,10 +120,11 @@ export function HelpQuestions({ screen }: { screen: (ScreenHelp & { id: string }
         </section>
       ))}
       {others.length > shown.length ? (
-        <button type="button" className={`${s.card} ${s.moreCard}`} onClick={() => setAll(true)}>
-          Questions on {others.length - shown.length} more screens
-          <ChevronDown aria-hidden="true" strokeWidth={1.75} />
-        </button>
+        <div className={`${s.card} ${s.moreCard}`}>
+          <ShowMoreRow onClick={() => setAll(true)}>
+            Questions on {others.length - shown.length} more screens
+          </ShowMoreRow>
+        </div>
       ) : null}
       <p className={s.note}>
         Help answers how to use Ward Flow. For clinical questions, use your clinical guidelines or speak to the treating
@@ -166,17 +167,14 @@ function Terms({ terms, code }: { terms: readonly GlossaryTerm[]; code?: boolean
 function TermGroup({ title, terms, code }: { title: string; terms: readonly GlossaryTerm[]; code?: boolean }) {
   const [all, setAll] = useState(false);
   if (!terms.length) return null;
-  const shown = all ? terms : terms.slice(0, FIRST_TERMS);
+  const shown = all ? terms : terms.slice(0, foldLimit(terms.length, FIRST_TERMS));
   return (
     <section className={s.section} aria-label={title}>
       <SectionHead n={terms.length}>{title}</SectionHead>
       <div className={s.card}>
         <Terms terms={shown} code={code} />
         {terms.length > shown.length ? (
-          <button type="button" className={s.more} onClick={() => setAll(true)}>
-            Show {terms.length - shown.length} more
-            <ChevronDown aria-hidden="true" strokeWidth={1.75} />
-          </button>
+          <ShowMoreRow onClick={() => setAll(true)}>Show {terms.length - shown.length} more</ShowMoreRow>
         ) : null}
       </div>
     </section>

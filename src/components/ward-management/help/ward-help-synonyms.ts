@@ -49,4 +49,12 @@ export const HELP_SYNONYMS: readonly (readonly [word: string, family: string])[]
   ["dashboard", "board"],
   ["login", "access"],
   ["permissions", "access"],
+  // As-you-type additions (2 Nov 2026): everyday ward words for existing Help words only.
+  ["seclude", "seclusion"],
+  ["obs", "observation"],
+  ["nok", "carer"],
+  ["abscond", "awol"],
+  ["bleep", "oncall"],
+  ["pager", "oncall"],
+  ["repatriate", "repatriation"],
 ];

@@ -11,7 +11,8 @@ import { homeHrefFor, type WardAccess } from "@/components/ward-management/ward-
  * Each desk is signed in the way `?flags=role-access:on` signs one in locally: its role and place
  * ids in session storage. The config marks every tour seen, so none starts by itself; the test opens
  * it the way Help's Take the tour does. Steps whose control only shows with data (an empty list) are
- * left out of the lists below, as the tour allows.
+ * left out of the lists below, as the tour allows. The "more-" steps (`ward-tour-more-steps.ts`,
+ * 2 Nov 2026) light the header, Help and the menu entries for the desk's other screens.
  */
 
 type Desk = { role: string; scope: Record<string, unknown> };
@@ -44,26 +45,88 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
       "search",
       "tasks",
       "tools",
+      ...["more-capacity", "more-waiting", "more-activity", "more-learn"],
     ],
-    ward: ["you", "hero", "checking", "confirm", "beds", "answer", "decisions", "raise", "brief", "pin"],
-    ed: ["you", "card", "row", "form", "next", "raise", "find-bed"],
-    community: ["you", "hero", "actions", "contact", "raise", "menu"],
-    officer: ["you", "summary", "jobs", "next", "stepper", "alerts"],
-    bed_manager: ["menu", "hero", "mismatch", "meeting", "map", "help"],
-    executive: ["hero", "tabs", "export", "trends"],
-    admin: ["review"],
+    ward: [
+      ...["you", "hero", "checking", "confirm", "beds", "answer", "decisions", "raise", "brief", "pin"],
+      ...["more-coming", "more-search", "more-alerts", "more-learn"],
+    ],
+    ed: [
+      "you",
+      "card",
+      "row",
+      "form",
+      "next",
+      "raise",
+      "find-bed",
+      "more-referrals",
+      "more-search",
+      "more-alerts",
+      "more-learn",
+    ],
+    community: [
+      "you",
+      "hero",
+      "actions",
+      "contact",
+      "raise",
+      "menu",
+      "more-referrals",
+      "more-search",
+      "more-alerts",
+      "more-learn",
+    ],
+    officer: ["you", "summary", "jobs", "next", "stepper", "alerts", "more-on-call", "more-activity", "more-learn"],
+    bed_manager: [
+      "menu",
+      "hero",
+      "mismatch",
+      "meeting",
+      "map",
+      "help",
+      "more-movements",
+      "more-waiting",
+      "more-discharges",
+      "more-learn",
+    ],
+    executive: ["hero", "tabs", "export", "trends", "more-capacity", "more-board-time", "more-learn"],
+    admin: ["review", "more-settings", "more-board-time", "more-learn"],
   },
   phone: {
-    coordinator: ["welcome", "chips", "eds", "queue", "create", "dock", "search", "menu", "help"],
-    ward: ["hero", "confirm", "tabs", "answer", "create", "dock", "pin", "help"],
+    coordinator: [
+      "welcome",
+      "chips",
+      "eds",
+      "queue",
+      "create",
+      "dock",
+      "search",
+      "menu",
+      "help",
+      "more-service",
+      "more-learn",
+    ],
+    ward: [
+      "hero",
+      "confirm",
+      "tabs",
+      "answer",
+      "create",
+      "dock",
+      "pin",
+      "help",
+      "more-coming",
+      "more-search",
+      "more-learn",
+    ],
     // ce1975388 (31 Oct 2026): the ED hero's Raise referral is gone, so the phone tour leaves a new
     // referral to its Create step and has no raise step of its own.
-    ed: ["card", "row", "create", "dock", "find-bed", "help"],
-    community: ["hero", "chips", "tabs", "create", "dock", "help"],
-    officer: ["hero", "next", "jobs", "dock", "help"],
-    bed_manager: ["hero", "tabs", "mismatch", "dock", "help"],
-    executive: ["hero", "tabs", "trends", "dock", "help"],
-    admin: ["review", "dock", "help"],
+    ed: ["card", "row", "create", "dock", "find-bed", "help", "more-referrals", "more-search", "more-learn"],
+    community: ["hero", "chips", "tabs", "create", "dock", "help", "more-referrals", "more-search", "more-learn"],
+    officer: ["hero", "next", "jobs", "dock", "help", "more-on-call", "more-learn"],
+    bed_manager: ["hero", "tabs", "mismatch", "dock", "help", "more-waiting", "more-search", "more-learn"],
+    executive: ["hero", "tabs", "trends", "dock", "help", "more-capacity", "more-learn"],
+    admin: ["review", "dock", "help", "more-settings", "more-learn"],
   },
 };
 
@@ -94,7 +157,7 @@ async function walkTour(page: Page): Promise<Map<string, boolean>> {
   for (let index = 0; index < 20; index++) {
     const id = (await card.getAttribute("data-step")) ?? "";
     const lit = await expect
-      .poll(() => page.getByTestId("ward-tour-spot").count(), { timeout: 8_000 })
+      .poll(() => page.locator('[data-testid="ward-tour-spot"]:not([data-held])').count(), { timeout: 8_000 })
       .toBe(1)
       .then(
         () => true,

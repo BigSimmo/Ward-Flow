@@ -11,7 +11,7 @@ export type RoleReferenceEntry = {
  * Each login's name in Help (Josh, 31 Oct 2026): the access names, so "Site bed manager" and
  * "Nurse in charge", and "Community team" for the community desk.
  */
-export function helpDeskLabel(role: WardAccessRole): string {
+function helpDeskLabel(role: WardAccessRole): string {
   return role === "community" ? "Community team" : ACCESS_ROLE_LABELS[role];
 }
 

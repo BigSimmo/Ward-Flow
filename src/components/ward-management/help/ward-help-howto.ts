@@ -17,16 +17,19 @@ import type { WardScreenId } from "@/components/ward-management/ward-role-access
 
 import { deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
 import type { WardTourRole } from "./ward-help-store";
+import { MORE_JOBS, SCREEN_TOURS } from "./ward-help-screen-tours";
 import { HELP_SYNONYMS } from "./ward-help-synonyms";
 import { nearestWord } from "./ward-help-typo";
-import type { TourTarget } from "./ward-tour-steps";
+import type { TourDevice, TourTarget } from "./ward-tour-steps";
 
 /**
  * One spotlight in a Show me. Its targets are tried in order and the first on screen is lit, so a
  * step can name the desktop control and a phone stand-in. A step whose control is not on screen
- * shows its card with no spotlight.
+ * shows its card with no spotlight. A step marked with a `device` is walked on that device only, so
+ * a phone is never sent to a part only a computer draws.
  */
-type ShowMeStep = {
+export type ShowMeStep = {
+  readonly device?: TourDevice;
   readonly target?: TourTarget | readonly TourTarget[];
   readonly title: string;
   readonly body: string;
@@ -72,6 +75,11 @@ export type HowTo = {
    * told so instead of being offered a Show me that could light nothing.
    */
   readonly computerOnly?: true;
+  /**
+   * A walk round this screen (its rail id), not a job (`ward-help-screen-tours.ts`). Offered from
+   * Help's "On this screen" card and search, and left out of the desk's job list.
+   */
+  readonly around?: string;
 };
 
 const EVERY_DESK = "all";
@@ -88,12 +96,17 @@ const setting = (id: string, tab: string): TourTarget => ({
   sel: `[data-setting="${id}"], [data-testid="ward-settings-phone-area-${tab}"]`,
 });
 
-/** Whether Show me can walk this how-to on this device (`computerOnly` ones cannot on a phone). */
-export function canShowMe(howTo: HowTo, phone: boolean): boolean {
-  return Boolean(howTo.showMe?.length) && !(phone && howTo.computerOnly);
+/** The Show me steps walked on this device: those for every device and those marked for it. */
+export function showMeSteps(howTo: HowTo | undefined, device: TourDevice): readonly ShowMeStep[] {
+  return (howTo?.showMe ?? []).filter((step) => !step.device || step.device === device);
 }
 
-export const HOW_TOS: readonly HowTo[] = [
+/** Whether Show me can walk this how-to on this device (`computerOnly` ones cannot on a phone). */
+export function canShowMe(howTo: HowTo, phone: boolean): boolean {
+  return showMeSteps(howTo, phone ? "phone" : "desk").length > 0 && !(phone && howTo.computerOnly);
+}
+
+const JOBS: readonly HowTo[] = [
   {
     id: "pull-bed",
     topic: "Beds and referrals",
@@ -797,6 +810,9 @@ export const HOW_TOS: readonly HowTo[] = [
   },
 ];
 
+/** The desks' jobs, the jobs added with the walk-rounds, then the walks round each screen. */
+export const HOW_TOS: readonly HowTo[] = [...JOBS, ...MORE_JOBS, ...SCREEN_TOURS];
+
 /* Matching ----------------------------------------------------------------------------------- */
 
 /** Words that carry no meaning in a question. */
@@ -965,7 +981,12 @@ export function askHelp(query: string, role: WardTourRole, limit = 6): readonly 
     .filter((entry) => entry.score * 2 >= best)
     .sort(
       (a, b) =>
-        b.hits - a.hits || Number(b.forThisDesk) - Number(a.forThisDesk) || b.score - a.score || a.order - b.order,
+        b.hits - a.hits ||
+        // A job comes before a walk round that shares its words; "show me around" asks for one.
+        Number(Boolean(a.howTo.around)) - Number(Boolean(b.howTo.around)) ||
+        Number(b.forThisDesk) - Number(a.forThisDesk) ||
+        b.score - a.score ||
+        a.order - b.order,
     );
   return onceEach(ranked)
     .slice(0, limit)
@@ -980,6 +1001,8 @@ export function closestHowTos(query: string, role: WardTourRole, limit = 3): rea
   const words = correctedQuestionWords(query);
   if (words.length === 0) return [];
   const scored = HOW_TOS.flatMap((howTo, order) => {
+    // A walk round a screen answers only when asked for; it is never a "closest" job.
+    if (howTo.around) return [];
     const { strong, weak } = wordsOf(howTo);
     const score = words.reduce((sum, word) => sum + (strong.has(word) ? 3 : weak.has(word) ? 1 : 0), 0);
     const own = ownTwinOf(howTo, role);
