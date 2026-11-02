@@ -29,6 +29,7 @@ import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { tasksForDesk } from "./ward-help-task-list";
 import { useTourFacts } from "./ward-tour-facts";
 import { HelpDesk, HelpKeys, HelpNews } from "./ward-help-views";
+import { WardHelpChecklistView } from "./ward-help-checklist-view";
 import { markWhatsNewSeen, unseenWhatsNew, WHATS_NEW, WHATS_NEW_STORAGE_KEY } from "./ward-whats-new";
 
 /**
@@ -191,6 +192,7 @@ function WardHelpSheetView({
   const [focused, setFocused] = useState(false);
   const [active, setActive] = useState(0);
   const [task, setTask] = useState(openTask);
+  const [checklist, setChecklist] = useState<string>();
   const [unread, setUnread] = useState(readUnread);
   const field = useRef<HTMLInputElement>(null);
   // Try asking sits outside the field, so Tab from the field moves into it instead of losing focus.
@@ -326,7 +328,7 @@ function WardHelpSheetView({
 
   const searching = query.trim().length > 0;
   const suggesting = !searching && focused;
-  const inView = view === "desk" || view === "keys";
+  const inView = view === "desk" || view === "keys" || (view === "checklist" && Boolean(checklist));
 
   return (
     <Sheet
@@ -488,6 +490,17 @@ function WardHelpSheetView({
         <div className={s.panel}>
           {view === "keys" ? (
             <HelpKeys role={role} onBack={() => onView("tasks")} />
+          ) : view === "checklist" && checklist ? (
+            <WardHelpChecklistView
+              id={checklist}
+              role={role}
+              home={deskHref}
+              onBack={() => onView("tasks")}
+              onClose={onClose}
+              onShowMe={onShowMe}
+              screenName={screenName}
+              showMeOn={showMeOn}
+            />
           ) : (
             <HelpDesk
               role={role}
@@ -515,6 +528,10 @@ function WardHelpSheetView({
               openTask={task}
               screenName={screenName}
               showMeOn={showMeOn}
+              onOpenChecklist={(id) => {
+                setChecklist(id);
+                onView("checklist");
+              }}
             />
           ) : null}
           {tab === "questions" ? <HelpQuestions screen={screen} /> : null}

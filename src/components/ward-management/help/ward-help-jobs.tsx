@@ -5,6 +5,7 @@ import {
   BedDouble,
   Check,
   ChevronDown,
+  ChevronRight,
   ClipboardList,
   Compass,
   ExternalLink,
@@ -34,6 +35,9 @@ import type { ScreenHelp } from "./ward-help-content";
 import { howToHref } from "./ward-help-href";
 import { HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS, showMeSteps, type HowTo } from "./ward-help-howto";
 import { aroundId, SCREEN_TOURS } from "./ward-help-screen-tours";
+import { checklistsForDesk } from "./ward-help-checklists";
+import { WardHelpPracticeCard } from "./ward-help-practice-card";
+import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 import { helpLinkHref } from "./ward-help-events";
 import { recordHelpFeedback } from "./ward-help-feedback";
@@ -296,6 +300,11 @@ function HowItWorks({ actions }: { actions: readonly string[] }) {
   );
 }
 
+/** Practice needs the live demo record, so it shows only where the Ward Flow data is mounted. */
+function PracticeWhenLive({ role, onShowMe }: { role: WardTourRole; onShowMe: (id: string) => void }) {
+  return useOptionalWardFlowSelect("scenario") ? <WardHelpPracticeCard role={role} onShowMe={onShowMe} /> : null;
+}
+
 /** The tour as one row: where this desk stopped, and Start or Resume. */
 function TourRow({ role, onTour }: { role: WardTourRole; onTour: () => void }) {
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
@@ -344,6 +353,7 @@ export function HelpTasks({
   openTask,
   screenName,
   showMeOn,
+  onOpenChecklist,
 }: {
   role: WardTourRole;
   home: string | undefined;
@@ -356,8 +366,11 @@ export function HelpTasks({
   openTask?: string;
   screenName: (href: string) => string;
   showMeOn: boolean;
+  /** Opens one checklist as a view inside Help (`ward-help-checklist-view.tsx`). */
+  onOpenChecklist?: (id: string) => void;
 }) {
   const phone = useIsPhone();
+  const checklists = useMemo(() => checklistsForDesk(role), [role]);
   const [open, setOpen] = useState<string | undefined>(openTask);
   const [topic, setTopic] = useState<Topic | "all">("all");
   const [all, setAll] = useState(Boolean(openTask));
@@ -497,6 +510,36 @@ export function HelpTasks({
       ) : null}
 
       <TourRow role={role} onTour={onTour} />
+
+      {checklists.length && onOpenChecklist ? (
+        <section className={s.section} aria-labelledby="ward-help-checklists" data-testid="ward-help-checklists">
+          <h3 id="ward-help-checklists" className={s.sectionHead}>
+            Checklists <span className={s.n}>{checklists.length}</span>
+          </h3>
+          <div className={s.card}>
+            <ul className={s.list}>
+              {checklists.map((checklist) => (
+                <li key={checklist.id} className={s.task}>
+                  <button
+                    type="button"
+                    className={s.taskHead}
+                    onClick={() => onOpenChecklist(checklist.id)}
+                    data-testid={`ward-help-checklist-open-${checklist.id}`}
+                  >
+                    <ListChecks aria-hidden="true" className={s.rowIcon} strokeWidth={1.75} />
+                    <span className={s.taskName}>{checklist.title}</span>
+                    <span className={s.place}>{checklist.steps.length} steps</span>
+                    <ChevronRight aria-hidden="true" className={s.caret} strokeWidth={1.75} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
+
+      {/* The access admin records no ward work, so there is nothing to practise. */}
+      {role === "admin" ? null : <PracticeWhenLive role={role} onShowMe={onShowMe} />}
 
       <section className={s.section} aria-labelledby="ward-help-jobs" data-testid="ward-help-tasks">
         <h3 id="ward-help-jobs" className={s.sectionHead}>

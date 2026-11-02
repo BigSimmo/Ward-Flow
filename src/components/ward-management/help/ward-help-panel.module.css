@@ -1739,3 +1739,11 @@
     transform: translateY(-50%);
   }
 }
+
+/* A checklist row's leading icon, the same size and tone as the card's other row icons. */
+.rowIcon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--wf-ink-3);
+}
