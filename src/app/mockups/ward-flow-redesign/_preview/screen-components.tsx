@@ -221,7 +221,8 @@ const AlertsScreen = dynamic<MockupPageProps>(() =>
       },
   ),
 );
-const ALERTS_POPUPS = { broadcast: ["More alert actions", "Broadcast alert"] } as const;
+// Broadcast alert sits in the page header on a tablet or computer, and in the More menu on a phone.
+const ALERTS_POPUPS = { broadcast: ["?More alert actions", "Broadcast alert"] } as const;
 
 const OutOfAreaScreen = dynamic<MockupPageProps>(() =>
   import("@/components/ward-management/out-of-area/out-of-area-board").then(
