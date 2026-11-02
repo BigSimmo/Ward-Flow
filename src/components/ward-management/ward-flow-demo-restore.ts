@@ -1,12 +1,14 @@
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import {
+  DEMO_TABS_CONFLICT_NOTICE,
   RESTORED_NOTICE_PREFIX,
   STORAGE_UNAVAILABLE,
   WARD_FLOW_DEMO_STORAGE_KEY,
-  WARD_FLOW_STORED_STATE_VERSION as WARD_FLOW_DEMO_STORAGE_VERSION,
+  WARD_FLOW_DEMO_ENVELOPE_VERSION as WARD_FLOW_DEMO_STORAGE_VERSION,
 } from "./ward-flow-demo-storage-constants";
 import { demoSaveIsCurrent } from "./ward-flow-demo-save-marker";
+import { readDemoSync } from "./ward-flow-demo-sync";
 import type { DemoRead, WardFlowDemoPayload } from "./ward-flow-demo-storage";
 import {
   isValidStoredWardFlowState,
@@ -43,6 +45,8 @@ const SAVE_REJECTED =
  *  version is returned unchanged, so the version check below still refuses it. */
 function upgradeDemoPayload(value: unknown): unknown {
   if (!isPlainObject(value) || value.version === WARD_FLOW_DEMO_STORAGE_VERSION) return value;
+  // Envelope 7 held the same domain world; only its surrounding tab history is new.
+  if (value.version === 7) return { ...value, version: WARD_FLOW_DEMO_STORAGE_VERSION };
   const state = migrateStoredWardFlowState(value.state, value.version);
   return state === null ? value : { ...value, version: WARD_FLOW_DEMO_STORAGE_VERSION, state };
 }
@@ -84,7 +88,10 @@ export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOv
     // day and hour next to a demo clock. The board resumes at the save plus the real minutes since,
     // so a save from the board's previous day says so.
     const resumedAt = parsed.now + (mountedAtAbsolute - parsed.savedAtAbsolute);
-    const saved = { ...parsed, state: withInboxStreamADefaults(parsed.state) };
+    const sync = readDemoSync(parsed.sync);
+    const saved = { ...parsed, sync, state: withInboxStreamADefaults(parsed.state) };
+    if (sync?.conflicted || (parsed.sync !== undefined && !sync))
+      return { saved, recoveryNotice: DEMO_TABS_CONFLICT_NOTICE };
     // WS-13 (workflow speed audit, 26 Oct 2026): an ordinary reload of a save that is still the
     // session's latest restores quietly. The notice stays for a save that a later failed write left.
     const restoredFrom = `${RESTORED_NOTICE_PREFIX} ${formatInstantWithDay(parsed.now, resumedAt)} on the board clock.`;

@@ -44,7 +44,7 @@ describe("remediated demo storage compatibility", () => {
       </WardFlowProvider>,
     );
     const restored = JSON.parse(sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)!);
-    expect(restored.version).toBe(7);
+    expect(restored.version).toBe(8);
     expect(restored.state.clockOffsetMinutes).toBe(0);
   });
 
@@ -75,7 +75,7 @@ describe("remediated demo storage compatibility", () => {
       </WardFlowProvider>,
     );
     const restored = JSON.parse(sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)!);
-    expect(restored.version).toBe(7);
+    expect(restored.version).toBe(8);
     expect(restored.state.plannedAdmissions).toEqual([]);
     expect(restored.state.plannedAdmissionSequence).toBe(0);
     // Every v6 fact survives as saved, the advanced clock included.

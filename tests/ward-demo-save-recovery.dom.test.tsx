@@ -10,6 +10,7 @@ import {
 } from "@/components/ward-management/ward-flow-demo-storage";
 import { tryReadDemoState } from "@/components/ward-management/ward-flow-demo-restore";
 import { WARD_FLOW_STORED_STATE_VERSION } from "@/components/ward-management/ward-flow-storage-validation";
+import { WARD_FLOW_STORED_STATE_VERSION as SHALLOW_DOMAIN_VERSION } from "@/components/ward-management/ward-flow-demo-storage-constants";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
@@ -82,8 +83,23 @@ describe("WS-13: a restore says later changes may be lost only after a write rea
 });
 
 describe("successful save identity after storage failure", () => {
-  it("writes saves at the version the on-demand stored-state schema reads", () => {
-    expect(WARD_FLOW_DEMO_STORAGE_VERSION).toBe(WARD_FLOW_STORED_STATE_VERSION);
+  it("versions the tab-lineage envelope independently from the unchanged domain world", () => {
+    expect(WARD_FLOW_DEMO_STORAGE_VERSION).toBe(8);
+    expect(WARD_FLOW_STORED_STATE_VERSION).toBe(7);
+    expect(SHALLOW_DOMAIN_VERSION).toBe(WARD_FLOW_STORED_STATE_VERSION);
+  });
+
+  it("upgrades a version-7 envelope without changing its domain world or inventing ancestry", () => {
+    const state = seedWardFlowState();
+    const dayZero = new Date("2026-10-16T00:00:00Z");
+    const savedAt = Date.parse("2026-10-16T10:00:00Z") / 60_000;
+    expect(tryWriteDemoState(state, dayZero, NOW_ANCHOR, savedAt)).toBe(true);
+    const old = JSON.parse(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)!);
+    window.sessionStorage.setItem(WARD_FLOW_DEMO_STORAGE_KEY, JSON.stringify({ ...old, version: 7 }));
+    const restored = tryReadDemoState(dayZero, savedAt + 5).saved;
+    expect(restored?.version).toBe(8);
+    expect(restored?.state).toEqual(old.state);
+    expect(restored?.sync).toBeUndefined();
   });
 
   it("restores and labels the retained older successful save after a later quota failure", () => {

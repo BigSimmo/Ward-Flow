@@ -9,6 +9,7 @@ import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/wa
 import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
+import { DemoTabSync, listenForDemoTabs } from "./ward-flow-demo-sync";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { Admission, LeavingDestination } from "./ward-admissions";
@@ -69,14 +70,13 @@ import {
   deviceSaveUnchanged,
   type DeviceSaveInputs,
   loadTypedTextScrub,
-  readDemoStateLater,
   readScenarioFileLater,
   STORAGE_UNAVAILABLE,
   tryWriteDemoState,
   useDemoStateRead,
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
-import { BROUGHT_UP_TO_DATE_NOTICE, OPEN_ITEMS_CLOSED_NOTICE } from "./ward-flow-demo-storage-constants";
+import { OPEN_ITEMS_CLOSED_NOTICE } from "./ward-flow-demo-storage-constants";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
 import * as closingLoop from "./ward-flow-closing-loop-context";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -720,6 +720,7 @@ function WardFlowWorld({
   const localEditsSinceBroadcastRef = useRef(false);
   // Design audit DA-01: true while this tab is on the untouched seed day (`useOpenTabsDay`).
   const freshSeedRef = useRef(true);
+  const demoSync = useRef(new DemoTabSync());
   // Codex P1 (PR #267): whether an action recorded now is really kept on this device, for the
   // offline toast note ("Saved on this device"). A ref read through a stable getter at push time:
   // the committed value is copied in after each render (below), and `dispatch` clears it at once
@@ -771,15 +772,20 @@ function WardFlowWorld({
       const next = wardFlowReducer(before, event);
       if (before.worldGeneration !== next.worldGeneration) clearReferralDraftSession();
       commandsRef.current.world = next;
+      const outcome = localCommandOutcome(
+        before,
+        next,
+        () => commandsRef.current.active && commandsRef.current.world.worldGeneration === next.worldGeneration,
+      );
+      if (outcome.status === "accepted" && before !== next) {
+        if (before.worldGeneration !== next.worldGeneration) demoSync.current.resolve();
+        else demoSync.current.changed();
+      }
       dispatchContainer(event);
       broadcastDispatchEvent(event.type, getOrCreateBroadcastInstanceId(broadcastInstanceIdRef));
       return {
         commandId,
-        ...localCommandOutcome(
-          before,
-          next,
-          () => commandsRef.current.active && commandsRef.current.world.worldGeneration === next.worldGeneration,
-        ),
+        ...outcome,
       };
     },
     [dispatchContainer, container.sessionAdopted],
@@ -805,6 +811,13 @@ function WardFlowWorld({
   // only ever consulted on this component's first render, so recomputing it here costs nothing on
   // every later render and stays correct exactly once, which is the only time it matters.
   const openRequestSequence = useRef(nextOpenRequestSequence(state.auditEvents));
+  useLayoutEffect(() => {
+    if (demoSync.current.committed(state, container.recoveryNotice, container.earlyOutcomes)) {
+      lastAdoptedBroadcastWorldRef.current = state;
+      freshSeedRef.current = false;
+      openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(state.auditEvents));
+    }
+  }, [state, container.recoveryNotice, container.earlyOutcomes]);
 
   /**
    * Minutes since the epoch at mount, carrying the DATE and not only the time of day.
@@ -908,78 +921,24 @@ function WardFlowWorld({
     };
   }, [initialNow, mountedAtAbsolute]);
 
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
-    const instanceId = getOrCreateBroadcastInstanceId(broadcastInstanceIdRef);
-    // A read settling after cleanup or after a newer broadcast's read must not adopt (stale closure).
-    const reads = { live: true, latest: 0 };
-    try {
-      const channel = new BroadcastChannel("ward-flow-sync");
-      channel.onmessage = (messageEvent) => {
-        if (
-          initialNow !== undefined ||
-          messageEvent.data?.type !== "WARD_FLOW_DISPATCH" ||
-          !messageEvent.data.payload
-        ) {
-          return;
-        }
-        if (messageEvent.data?.type === "WARD_FLOW_DISPATCH") {
-          if (messageEvent.data.senderId && messageEvent.data.senderId === instanceId) {
-            return;
-          }
-          if (!shared.enabled && !localEditsSinceBroadcastRef.current) {
-            const rawPayload = typeof messageEvent.data.payload === "string" ? messageEvent.data.payload : undefined;
-            const referenceAbsolute = Math.max(mountedAtAbsolute ?? 0, absoluteWallClockMinutes());
-            const read = ++reads.latest;
-            void readDemoStateLater(dayZero, referenceAbsolute, rawPayload).then(({ saved }) => {
-              if (!reads.live || read !== reads.latest || !saved || localEditsSinceBroadcastRef.current) return;
-              openRequestSequence.current = Math.max(
-                openRequestSequence.current,
-                nextOpenRequestSequence(saved.state.auditEvents),
-              );
-              lastAdoptedBroadcastWorldRef.current = saved.state;
-              localEditsSinceBroadcastRef.current = false;
-              // Read before the updater, which may run twice and clears the ref the first time.
-              const firstAdoption = freshSeedRef.current;
-              dispatchContainer({
-                type: "ADOPT_SAVED_SESSION",
-                [ADOPT_SESSION]: (current) => {
-                  if (current.typedTextSeen || !current.sessionAdopted) return current;
-                  const baseMounted = mountedAtAbsolute ?? saved.savedAtAbsolute;
-                  const restoredElapsed =
-                    saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + baseMounted - saved.savedAtAbsolute;
-                  const isSameWorld =
-                    JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] });
-                  if (isSameWorld) {
-                    return current;
-                  }
-                  freshSeedRef.current = false; // only once accepted: a refused day leaves the seed (DA-01)
-                  return {
-                    ...current,
-                    // NB-08: the new tab's first day from another tab is said, never silent.
-                    ...(firstAdoption ? { recoveryNotice: BROUGHT_UP_TO_DATE_NOTICE, recoveryNoticeQuiet: false } : {}),
-                    world: saved.state,
-                    restoredElapsed,
-                    sessionAdopted: true,
-                    // As an ordinary restore does, so screens keyed on the seed day start from this world.
-                    sessionRestored: true,
-                    preAdoptionEvents: undefined,
-                  };
-                },
-              });
-            });
-          }
-          setTick((tick) => tick + 1);
-        }
-      };
-      return () => {
-        reads.live = false;
-        channel.close();
-      };
-    } catch {
-      return undefined;
-    }
-  }, [dayZero, mountedAtAbsolute, initialNow, shared.enabled]);
+  useEffect(
+    () =>
+      listenForDemoTabs({
+        initialNow,
+        shared: shared.enabled,
+        dayZero,
+        mountedAtAbsolute,
+        nowAnchor: NOW_ANCHOR,
+        instance: broadcastInstanceIdRef,
+        fresh: freshSeedRef,
+        unsaved: localEditsSinceBroadcastRef,
+        sync: demoSync.current,
+        dispatch: dispatchContainer,
+        tick: () => setTick((tick) => tick + 1),
+      }),
+    [initialNow, shared.enabled, dayZero, mountedAtAbsolute],
+  );
+
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   // The world generation whose typed-text copy could not be made safely, or "loaded" to re-run the
   // save once the copy's code arrives.
@@ -1034,6 +993,7 @@ function WardFlowWorld({
     if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null || !demoRead) return;
     const { saved, recoveryNotice, quietRecoveryNotice } = demoRead;
+    if (saved) demoSync.current.restore(saved.sync);
     if (saved) freshSeedRef.current = false; // a restored day is not the untouched seed (DA-01)
     // Never move the allocator backwards: a record opened before adoption already used its number.
     if (saved)
@@ -1096,7 +1056,8 @@ function WardFlowWorld({
     if (initialNow !== undefined || mountedAtAbsolute === null || !container.sessionAdopted) return;
     if (storageUnavailable) return;
     // Fresh audit P-1: a refused or empty action would store the same world again, so skip it.
-    const saveInputs = { state, held: container, locked: typedTextLocked, dayZero, mountedAtAbsolute };
+    const sync = demoSync.current.forSave();
+    const saveInputs = { state, held: container, locked: typedTextLocked, dayZero, mountedAtAbsolute, sync };
     const previousSave = lastDeviceSaveRef.current;
     lastDeviceSaveRef.current = undefined;
     if (deviceSaveUnchanged(previousSave, saveInputs)) {
@@ -1129,6 +1090,7 @@ function WardFlowWorld({
         nowRef.current,
         mountedAtAbsolute + Math.max(0, elapsedRef.current),
         seedSafeSenderId(isFromRemoteBroadcast || freshSeedRef.current, broadcastInstanceIdRef),
+        sync,
       )
     ) {
       setStorageUnavailable(true);
@@ -1186,6 +1148,7 @@ function WardFlowWorld({
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
       clearReferralDraftSession();
+      demoSync.current.resolve();
       commandsRef.current.world = world;
       dispatchContainer({
         type: "LOAD_SCENARIO_FILE_INTERNAL",

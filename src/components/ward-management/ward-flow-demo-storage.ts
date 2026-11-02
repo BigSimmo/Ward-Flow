@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
+import type { DemoSyncMetadata } from "./ward-flow-demo-sync";
 import { loadScenarioNetworks } from "./ward-scenario-network-loader";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
@@ -10,6 +11,7 @@ import {
   RESTORED_NOTICE_PREFIX,
   STORAGE_UNAVAILABLE,
   WARD_FLOW_DEMO_STORAGE_KEY,
+  WARD_FLOW_DEMO_ENVELOPE_VERSION,
   WARD_FLOW_STORED_STATE_VERSION,
 } from "./ward-flow-demo-storage-constants";
 import { markDemoSaveCurrent } from "./ward-flow-demo-save-marker";
@@ -49,7 +51,7 @@ export { RESTORED_NOTICE_PREFIX, STORAGE_UNAVAILABLE, WARD_FLOW_DEMO_STORAGE_KEY
 // v7 (2026-10-09, stream D): planned admissions and their id sequence are part of the state.
 // A v6 save is the one exception to refusal (Josh, 9 Oct 2026): it gains an empty booking list
 // (`migrateStoredWardFlowState`) and is then validated exactly as a v7 save.
-export const WARD_FLOW_DEMO_STORAGE_VERSION = WARD_FLOW_STORED_STATE_VERSION;
+export const WARD_FLOW_DEMO_STORAGE_VERSION = WARD_FLOW_DEMO_ENVELOPE_VERSION;
 
 /**
  * What actually goes to `sessionStorage`. Carries the world's calendar day ALONGSIDE the state, not
@@ -67,6 +69,8 @@ export type WardFlowDemoPayload = {
   now: Instant;
   savedAtAbsolute: number;
   state: WardFlowState;
+  /** Optional on upgraded legacy saves; missing metadata proves no ancestry. */
+  sync?: DemoSyncMetadata;
 };
 
 /** `quietRecoveryNotice` is the restore line for a current save, said only if the restore closed something open. */
@@ -136,6 +140,7 @@ export type DeviceSaveInputs = {
   locked: boolean;
   dayZero: Date;
   mountedAtAbsolute: number;
+  sync?: DemoSyncMetadata;
 };
 
 /**
@@ -148,6 +153,7 @@ export type DeviceSaveInputs = {
 export function deviceSaveUnchanged(previous: DeviceSaveInputs | undefined, next: DeviceSaveInputs): boolean {
   if (
     !previous ||
+    previous.sync !== next.sync ||
     previous.locked !== next.locked ||
     previous.dayZero !== next.dayZero ||
     previous.mountedAtAbsolute !== next.mountedAtAbsolute ||
@@ -200,14 +206,14 @@ export function useDemoStateRead(
  *  the same reason as `readDemoStateLater`. A failed load changes nothing and says so. */
 export function buildScenarioFileLater(state: WardFlowState, now: Instant): Promise<ScenarioFileBuild> {
   return import("./ward-flow-scenario-file").then(
-    ({ buildScenarioFile }) => buildScenarioFile(state, now, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
+    ({ buildScenarioFile }) => buildScenarioFile(state, now, WARD_FLOW_STORED_STATE_VERSION, new Date()),
     () => ({ ok: false, reason: SCENARIO_TOOLS_UNAVAILABLE }),
   );
 }
 
 export function readScenarioFileLater(text: string): Promise<ScenarioFileRead> {
   return Promise.all([import("./ward-flow-scenario-file"), loadScenarioNetworks()]).then(
-    ([{ readScenarioFile }]) => readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION),
+    ([{ readScenarioFile }]) => readScenarioFile(text, WARD_FLOW_STORED_STATE_VERSION),
     () => ({ ok: false, reason: SCENARIO_TOOLS_UNAVAILABLE }),
   );
 }
@@ -218,6 +224,7 @@ export function tryWriteDemoState(
   now: Instant,
   savedAtAbsolute: number,
   senderId?: string,
+  sync?: DemoSyncMetadata,
 ): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -228,6 +235,7 @@ export function tryWriteDemoState(
 
       now,
       savedAtAbsolute,
+      ...(sync ? { sync } : {}),
       // Refusal records are never stored (Josh, D-18, 25 Sept 2026): a refusal can quote a
       // caller-supplied id back in `reason`/`id`, so a saved day keeps its work but not its refusals.
       state: { ...state, rejections: [] },

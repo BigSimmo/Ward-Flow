@@ -438,7 +438,7 @@ describe("WardFlowProvider", () => {
       fireEvent.click(screen.getByRole("button", { name: "advance" }));
       const stored = readStoredState();
       expect(stored.state.clockOffsetMinutes).toBe(20);
-      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stored, version: stored.version - 1 }));
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stored, version: 0 }));
       unmount();
 
       render(

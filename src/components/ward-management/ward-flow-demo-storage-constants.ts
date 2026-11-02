@@ -2,10 +2,11 @@
  * The demonstration save's fixed values, shared by the write (`ward-flow-demo-storage.ts`) and the
  * on-demand read (`ward-flow-demo-restore.ts`) without either importing the other at run time, and
  * without loading the stored-state schema (Josh, 21 Oct 2026: no phone script budget raises).
- * `WARD_FLOW_STORED_STATE_VERSION` must equal the one in `ward-flow-storage-validation.ts`;
- * tests/ward-demo-save-recovery.dom.test.tsx checks that.
+ * The envelope version is independent of the domain-state version: version 8 adds tab lineage
+ * around the unchanged version-7 world. Version-7 envelopes upgrade without inventing record data.
  */
 export const WARD_FLOW_STORED_STATE_VERSION = 7;
+export const WARD_FLOW_DEMO_ENVELOPE_VERSION = 8;
 
 export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
 
@@ -41,3 +42,7 @@ export const TYPED_TEXT_NOT_KEPT = "Typed text not kept on this device";
 export function plannedInitialsLabel(initials: string): string {
   return `Initials ${initials === TYPED_TEXT_NOT_KEPT ? "not kept on this device" : initials}`;
 }
+
+/** A fork stays visible until an explicit reset or a chosen scenario file replaces this copy. */
+export const DEMO_TABS_CONFLICT_NOTICE =
+  "The demo copies in these tabs differ. This tab’s changes are kept here. In the Demo menu, use Save to file in each tab to keep both copies. Close the other tabs, then use Load from file to continue with the copy you choose.";
