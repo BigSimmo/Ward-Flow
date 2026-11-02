@@ -4,7 +4,7 @@ _Updated 2026-11-01 - first edition, written when Josh locked the design; Design
 
 **In one line:** how to turn the locked mock-up in this folder into the real community team page, one small PR at a time. This file plans work. It authorises no release or data change. Josh approved the build on 1 November 2026 at 08:33.
 
-Read first: [AGENTS.md](../../AGENTS.md), [HOW-WE-WORK §6](../../docs/ward-flow/HOW-WE-WORK.md#6-owner-rules-that-fail-builds-or-reviews), [building-ui.md](../../docs/agents/building-ui.md) and [design-system-v9.md](../v9/design-system-v9.md). Compare every screen against the screenshots in `screenshots/` and the interactive mock-up linked in [README.md](README.md).
+Read first: [AGENTS.md](../../../../AGENTS.md), [HOW-WE-WORK §6](../../../ward-flow/HOW-WE-WORK.md#6-owner-rules-that-fail-builds-or-reviews), [building-ui.md](../../../agents/building-ui.md) and [design-system-v9.md](../../../../design/v9/design-system-v9.md). Compare every screen against the screenshots in `screenshots/` and the interactive mock-up linked in [README.md](README.md).
 
 ## 1. The page in one picture
 
