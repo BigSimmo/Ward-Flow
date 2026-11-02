@@ -105,7 +105,8 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
           data-step={index}
         >
           <div className={styles.head}>
-            <p className={styles.who}>Show me · {howTo.title}</p>
+            {/* A walk round's title already starts "Show me around", so it is not said twice. */}
+            <p className={styles.who}>{howTo.around ? howTo.title : `Show me · ${howTo.title}`}</p>
             <button
               type="button"
               className={styles.close}
