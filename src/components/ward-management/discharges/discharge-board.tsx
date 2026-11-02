@@ -716,7 +716,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                               <div className={pageStyles.stageCluster}>
                                 {badge(recordStage(record))}
                                 {recordStatus(record) === "blocked" && (
-                                  <span className={pageStyles.blocker}>{record.blockReason}</span>
+                                  <>
+                                    {/* Q238: the phone line parts its items by a gap, not a "· ", so
+                                    this hidden comma keeps the stage and barrier apart when read. */}
+                                    <SrOnly>, </SrOnly>
+                                    <span className={pageStyles.blocker}>{record.blockReason}</span>
+                                  </>
                                 )}
                                 {criteriaChip ? (
                                   <span data-testid="ward-discharge-criteria-led">
@@ -725,10 +730,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                   </span>
                                 ) : null}
                                 {record.leavingDestination && (
-                                  <span className={pageStyles.secondary}>
-                                    {LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)
-                                      ?.label ?? "Not recorded"}
-                                  </span>
+                                  <>
+                                    <SrOnly>, </SrOnly>
+                                    <span className={pageStyles.secondary}>
+                                      {LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)
+                                        ?.label ?? "Not recorded"}
+                                    </span>
+                                  </>
                                 )}
                               </div>
                             </td>
@@ -967,13 +975,20 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                           badge(release.state === "discharged" ? "departed" : release.state)
                                         )}
                                         {release.blocker && (
-                                          <span className={pageStyles.blocker}>{release.blocker}</span>
+                                          <>
+                                            {/* Q238: a hidden comma in place of the old "· " prefix. */}
+                                            <SrOnly>, </SrOnly>
+                                            <span className={pageStyles.blocker}>{release.blocker}</span>
+                                          </>
                                         )}
                                         {release.waitingOn && (
-                                          <span className={pageStyles.secondary}>
-                                            <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
-                                            {release.waitingOn}
-                                          </span>
+                                          <>
+                                            <SrOnly>, </SrOnly>
+                                            <span className={pageStyles.secondary}>
+                                              <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
+                                              {release.waitingOn}
+                                            </span>
+                                          </>
                                         )}
                                       </div>
                                     </td>
