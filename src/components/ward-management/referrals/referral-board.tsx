@@ -550,11 +550,7 @@ export function ReferralBoard({
     if (!selectedReferralId || !detailRef.current) return;
     detailRef.current.scrollTop = 0;
     // Below the split layout (64rem) the detail is a slide-over over the queue, so it takes focus.
-    const slideOver =
-      typeof window.matchMedia === "function"
-        ? !window.matchMedia(SPLIT_DETAIL_MEDIA_QUERY).matches
-        : window.innerWidth <= 743;
-    if (slideOver) {
+    if (!(window.matchMedia?.(SPLIT_DETAIL_MEDIA_QUERY).matches ?? window.innerWidth > 743)) {
       if (typeof detailRef.current.scrollIntoView === "function") {
         detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
       }
