@@ -90,7 +90,7 @@ function movementNextSteps(
     return [
       {
         w: `${departureLabel} recorded`,
-        d: "No current ward stay. Review recorded discharge and community follow-up separately.",
+        d: "No current ward stay. Review the recorded destination and follow-up separately.",
         tone: "good",
       },
     ];
