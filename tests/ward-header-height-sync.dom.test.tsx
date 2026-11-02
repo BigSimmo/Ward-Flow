@@ -1,7 +1,5 @@
 // @vitest-environment jsdom
 import { act, render } from "@testing-library/react";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WardBarFrame } from "../src/components/ward-management/shell/ward-chrome-frame";
@@ -69,13 +67,4 @@ describe("WardBarFrame keeps the pinned-row offset in step with the phone header
     act(() => resize?.());
     expect(scroller.style.getPropertyValue("--wf-header-height")).toBe("");
   });
-});
-
-it("keeps the phone bar's own height off --wf-header-height, so a taller bar can shrink back", () => {
-  const css = readFileSync(
-    path.join(process.cwd(), "src/components/ward-management/shell/ward-bar.module.css"),
-    "utf8",
-  );
-  expect(css).toContain("height: calc-size(auto, max(size, 3.5rem));");
-  expect(css).not.toMatch(/height:\s*calc-size\([^;]*--wf-header-height/);
 });

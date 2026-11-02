@@ -19,7 +19,7 @@ const PHONE_BAR_REST_PX = 56;
  * height on the scroller (`[data-wf-scroller]`); at its resting height the layout's own value
  * stands. Desktop is never touched.
  */
-export function useHeaderHeightSync(header: HTMLElement | null) {
+function useHeaderHeightSync(header: HTMLElement | null) {
   useEffect(() => {
     if (!header || typeof ResizeObserver === "undefined" || typeof window.matchMedia !== "function") return;
     const host = header.closest<HTMLElement>("[data-wf-scroller]") ?? header.parentElement;
