@@ -196,7 +196,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       if (bed1Btn.getAttribute("aria-pressed") !== "true") fireEvent.click(bed1Btn);
 
       // Long-stay occupant drawer must show the discharge barrier select
-      const barrierSelect = screen.getByLabelText(/Primary Discharge Barrier/i);
+      const barrierSelect = screen.getByLabelText(/Main discharge hold-up/i);
       expect(barrierSelect).toBeDefined();
       expect(screen.getByText(/Accommodation \/ Housing/i)).toBeDefined();
       expect(screen.getByText(/NDIS/i)).toBeDefined();
@@ -221,7 +221,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       fireEvent.click(bed2Btn);
 
       // Short-stay occupant drawer must NOT show the discharge barrier select
-      expect(screen.queryByLabelText(/Primary Discharge Barrier/i)).toBeNull();
+      expect(screen.queryByLabelText(/Main discharge hold-up/i)).toBeNull();
     });
   });
 

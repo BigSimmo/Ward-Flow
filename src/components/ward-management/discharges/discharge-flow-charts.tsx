@@ -201,7 +201,7 @@ export function DischargeBarrierBars({
       <header className={styles.head}>
         <h2 id={headingId} className={styles.title}>
           <OctagonAlert size={16} aria-hidden="true" />
-          Held up by barrier
+          Held up by reason
         </h2>
         {/* Redesign (Josh, 30 Oct): the same held-up releases the hero chip counts, so one figure. */}
         <span className={styles.count}>
