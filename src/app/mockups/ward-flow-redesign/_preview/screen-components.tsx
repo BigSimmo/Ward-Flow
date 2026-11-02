@@ -300,11 +300,13 @@ const SettingsScreen = dynamic<MockupPageProps>(() =>
   ),
 );
 
+// Drawn without the live sign-in hook, so a preview tab that is already signed in is not sent on to
+// the app (as the hook does on the real page). With no account form this is the page's own default.
 const SignInScreen = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-flow-sign-in/ward-flow-sign-in-screen").then(
+  import("@/components/ward-management/front-door/front-door").then(
     (module) =>
       function SignInScreenPreview() {
-        return <module.WardFlowSignInScreen />;
+        return <module.FrontDoor form={undefined} demoUrl={module.publicDemoUrl()} accountLabel="Username" demoFirst />;
       },
   ),
 );
