@@ -179,7 +179,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     fireEvent.change(searchInput, { target: { value: "FSH" } });
 
     // FSH units are highlighted; v10 dims the others by colour and never hides them.
-    const card = (name: string) => screen.getByRole("heading", { level: 3, name }).closest("article");
+    const card = (name: string) => screen.getByRole("heading", { level: 2, name }).closest("article");
     expect(card("FSH Adult Secure")).not.toHaveAttribute("data-dim");
     expect(card("Dabakarn")).toHaveAttribute("data-dim", "true");
     expect(screen.getByTestId("ward-index-count-note")).toHaveTextContent(/of \d+ wards highlighted/);

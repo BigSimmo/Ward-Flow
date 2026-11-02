@@ -1279,6 +1279,11 @@
   scroll-snap-type: x mandatory;
   scrollbar-width: thin;
 }
+/* A8 (accessibility check, 2 Nov 2026): the strip takes keyboard focus so it can be scrolled. */
+.mmStrip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
 .mmTile {
   display: flex;
   flex-direction: column;
