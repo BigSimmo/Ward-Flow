@@ -3,6 +3,7 @@
 import { useWardFormSave } from "../use-ward-form-save";
 import type { WardCommandOutcome } from "../ward-shared-client";
 import type { WardFlowEvent } from "../ward-flow-events";
+import { wardRaise } from "../ward-flow-raise";
 import type { UndoableStep } from "../use-undoable-step";
 
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
@@ -399,7 +400,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     };
     returnSave.submit(
       () => {
-        const completion = dispatch({ ...event, type: "RECORD_REPATRIATION" });
+        const raise = wardRaise(dispatch, event.role, event.now);
+        const completion = raise("RECORD_REPATRIATION", event);
         if (completion && "then" in completion)
           return completion.then((outcome) => {
             remember(outcome);
