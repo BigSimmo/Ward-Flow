@@ -83,7 +83,7 @@ describe("search-first Help layout", () => {
     expect(screen.getByTestId("ward-help-found-empty").textContent).toMatch(/No match in Help for .zzqx./u);
     expect(screen.queryByText(/These are the closest/)).toBeNull();
     expect(screen.queryByText("Nothing you type is saved")).toBeNull();
-    expect(screen.getByRole("status").textContent).toBe("No answers");
+    expect(screen.getByRole("status").textContent).toBe("No answers in Help");
     expect(screen.getByRole("combobox").getAttribute("aria-controls")).toBe("ward-help-found");
   });
 

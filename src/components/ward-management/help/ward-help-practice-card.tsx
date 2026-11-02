@@ -185,8 +185,8 @@ export function WardHelpPracticeCard({ role, onShowMe }: { role: WardTourRole; o
             <Button
               ref={resetButton}
               onClick={() => setConfirming(true)}
-              disabled={!demoOn}
-              aria-describedby={demoOn ? undefined : offId}
+              disabledReason={demoOn ? undefined : DEMO_CONTROLS_OFF}
+              reasonDisplay="tooltip"
               aria-expanded={demoOn ? confirming : undefined}
               data-testid="ward-help-practice-reset"
             >

@@ -2,16 +2,16 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GLOSSARY } from "@/components/ward-management/help/ward-help-content";
-import { suggestHelp, type HelpSuggestion } from "@/components/ward-management/help/ward-help-suggest";
+import { typeAheadHelp, type HelpSuggestion } from "@/components/ward-management/help/ward-help-suggest";
 import {
   GhostCompletion,
   HelpSuggestList,
   helpSuggestionId,
 } from "@/components/ward-management/help/ward-help-suggest-list";
 
-/** The suggestion rows and ghost completion (2 Nov 2026), drawn from `suggestHelp`'s answer. */
+/** The suggestion rows and ghost completion (2 Nov 2026), drawn from `typeAheadHelp`'s answer. */
 
-const pull = suggestHelp("how do i pu", "coordinator", GLOSSARY);
+const pull = typeAheadHelp("how do i pu", "coordinator", GLOSSARY);
 
 describe("HelpSuggestList", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -66,7 +66,7 @@ describe("HelpSuggestList", () => {
   it("writes nothing to browser storage", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     render(<HelpSuggestList suggestions={pull.suggestions} activeIndex={0} onPick={() => {}} idPrefix="s" />);
-    suggestHelp("how do i book", "coordinator", GLOSSARY);
+    typeAheadHelp("how do i book", "coordinator", GLOSSARY);
     expect(setItem).not.toHaveBeenCalled();
   });
 });

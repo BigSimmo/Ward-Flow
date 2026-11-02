@@ -67,7 +67,9 @@ describe("Help suggestions as you type", () => {
     expect(field.getAttribute("aria-expanded")).toBe("true");
     expect(field.getAttribute("aria-autocomplete")).toBe("both");
     expect(field.getAttribute("aria-controls")).toBe(list()?.id);
-    expect(screen.getByTestId("ward-help-suggest-summary").textContent).toMatch(/^[1-6] suggestions?$/u);
+    expect(screen.getByTestId("ward-help-suggest-summary").textContent).toBe(
+      "Suggestions are listed below the search box",
+    );
     // The full answers still show underneath.
     expect(document.getElementById("ward-help-found")).not.toBeNull();
   });

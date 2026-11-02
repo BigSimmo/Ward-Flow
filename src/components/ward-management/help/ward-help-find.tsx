@@ -285,7 +285,9 @@ export function HelpFindResults({
   // One short line for screen readers, in place of reading every answer out at each key press.
   const summary = (
     <span className="sr-only" role="status" data-testid="ward-help-found-summary">
-      {count === 0 ? "No answers" : count === 1 ? "1 answer" : `${count} answers`}
+      {/* Said without a number: an announced figure must carry a provenance claim, and Help's
+          answers are not records, so the words alone say what changed. */}
+      {count === 0 ? "No answers in Help" : "Help answers are listed below"}
     </span>
   );
   if (!found || count === 0) {

@@ -101,7 +101,8 @@ describe("practice inside Help", () => {
   it("disables Reset practice with the existing reason when demo controls are off", () => {
     renderCard({ demoOff: true });
     fireEvent.click(screen.getByTestId("ward-help-practice-start"));
-    expect(screen.getByTestId("ward-help-practice-reset")).toBeDisabled();
+    // Unavailable but still focusable, so a keyboard user can read why (AUD-A11Y-02).
+    expect(screen.getByTestId("ward-help-practice-reset")).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByTestId("ward-help-practice-reset-off")).toHaveTextContent(
       "Demo controls are switched off on the shared workspace. Nothing will change.",
     );

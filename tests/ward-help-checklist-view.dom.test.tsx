@@ -47,11 +47,12 @@ describe("a guided checklist in Help", () => {
     expect(screen.getByText("Each row opens the record it is about.")).toBeInTheDocument();
   });
 
-  it("ticks and unticks, counts in a polite status, and stores fixed ids only", () => {
+  it("ticks and unticks, shows the count (not announced: each box says its state), and stores fixed ids only", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     renderView();
     const status = screen.getByTestId("ward-help-checklist-count");
-    expect(status).toHaveAttribute("role", "status");
+    expect(status).not.toHaveAttribute("role");
+    expect(status).not.toHaveAttribute("aria-live");
     expect(status).toHaveTextContent("0 of 5 ticked");
     fireEvent.click(screen.getByTestId("ward-help-checklist-tick-start-of-shift:0"));
     fireEvent.click(screen.getByTestId("ward-help-checklist-tick-start-of-shift:2"));

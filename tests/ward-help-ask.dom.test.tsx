@@ -70,7 +70,8 @@ describe("Ask help in the Help sheet", () => {
     expect(note).toBeTruthy();
     // A short count is announced, not every row at each key press.
     const summary = screen.getByRole("status");
-    expect(summary.textContent).toMatch(/^[1-9]\d* answers?$/);
+    // Said without a number: an announced figure must carry a provenance claim (2 Nov 2026).
+    expect(summary.textContent).toBe("Help answers are listed below");
     expect(screen.queryByRole("region", { name: "Best answer" })).toBeNull();
     fireEvent.change(helpField(), { target: { value: "dark mode" } });
     expect(screen.queryByText(/These are the closest/)).toBeNull();

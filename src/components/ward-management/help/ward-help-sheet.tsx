@@ -21,7 +21,7 @@ import { howToLogins } from "./ward-help-access";
 import { HOW_TO_IDS, HOW_TOS } from "./ward-help-howto";
 import { aroundId } from "./ward-help-screen-tours";
 import { helpSuggestionId, GhostCompletion, HelpSuggestList } from "./ward-help-suggest-list";
-import { suggestHelp, type HelpSuggestion } from "./ward-help-suggest";
+import { typeAheadHelp, type HelpSuggestion } from "./ward-help-suggest";
 import { useHelpUsed } from "./ward-help-usage";
 import { howToHref } from "./ward-help-href";
 import { canShowTask, HelpTasks } from "./ward-help-jobs";
@@ -212,7 +212,7 @@ function WardHelpSheetView({
   // Suggestions as you type (2 Nov 2026): worked out in render from the words and this device's
   // usage counts by how-to id; never stored. A clinical question gets none (only Help's fixed reply).
   const usedMap = useMemo(() => new Map(used.map(({ id, count }) => [id, count])), [used]);
-  const suggested = useMemo(() => suggestHelp(query, role, terms, usedMap), [query, role, terms, usedMap]);
+  const suggested = useMemo(() => typeAheadHelp(query, role, terms, usedMap), [query, role, terms, usedMap]);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   // Esc or a pick hides the list until the words change again.
   const [dismissed, setDismissed] = useState(false);
@@ -589,7 +589,7 @@ function WardHelpSheetView({
           (so it is heard) and has no status role, so Help's one status line stays the answer count
           or the clinical reply. */}
       <span className="sr-only" aria-live="polite" aria-atomic="true" data-testid="ward-help-suggest-summary">
-        {showList ? (suggestions.length === 1 ? "1 suggestion" : `${suggestions.length} suggestions`) : ""}
+        {showList ? "Suggestions are listed below the search box" : ""}
       </span>
       {searching && showList && nothingFound ? null : searching ? (
         <div id="ward-help-found" className={s.panel}>

@@ -1,5 +1,5 @@
 /**
- * HELP SUGGESTIONS LIST (Josh, 2 Nov 2026): the rows `suggestHelp` returns, drawn as a listbox under
+ * HELP SUGGESTIONS LIST (Josh, 2 Nov 2026): the rows `typeAheadHelp` returns, drawn as a listbox under
  * Help's field, and the ghost text that shows the rest of the top suggestion inside the field.
  * Presentational only: it holds no state and stores nothing. Mounted by ward-help-sheet.tsx.
  *

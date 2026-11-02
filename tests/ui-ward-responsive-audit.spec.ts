@@ -167,10 +167,8 @@ test.describe("@mockup Ward phone scrolling", () => {
     await page.touchscreen.tap(trigger!.x + trigger!.width / 2, trigger!.y + trigger!.height / 2);
     await expect.poll(() => columnScrollTop(page)).toBeGreaterThan(0);
     await page.getByTestId("ward-phone-menu-search").fill("On-call");
-    await page
-      .getByTestId("ward-phone-menu")
-      .getByRole("link", { name: /on.call/i })
-      .click();
+    // The menu's own On-call row; Help answers about on-call (2 Nov 2026) also match the search.
+    await page.getByTestId("ward-phone-menu").getByRole("link", { name: "On-call", exact: true }).click();
     await expect(page).toHaveURL(/\/on-call$/);
     await expect.poll(() => columnScrollTop(page)).toBe(0);
     for (const height of [664, 1100]) {

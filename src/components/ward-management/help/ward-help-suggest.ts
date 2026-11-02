@@ -2,7 +2,7 @@
  * HELP SUGGESTIONS AS YOU TYPE (Josh, 2 Nov 2026: "how it smartly adapts and fills in and has
  * suggestions based on what is typed").
  *
- * From the first two letters, `suggestHelp` offers up to six ways to finish the question, drawn from
+ * From the first two letters, `typeAheadHelp` offers up to six ways to finish the question, drawn from
  * Help's own approved content only: the how-tos, the walks round each screen, the screens, the
  * glossary, the screens' questions and the keyboard shortcuts. The way a question starts picks the
  * phrasing ("how do i pu" offers "How do I pull the bed for a patient?", "what does hel" offers
@@ -524,7 +524,7 @@ function rank(
  * `used` is this device's Help usage counts by how-to id, used only to break ties. Nothing typed is
  * stored or sent; a clinical question, typed or about to be, gets nothing.
  */
-export function suggestHelp(
+export function typeAheadHelp(
   query: string,
   role: WardTourRole,
   terms: readonly GlossaryTerm[],

@@ -122,7 +122,8 @@ export function WardHelpChecklistView({
       <section className={s.section} aria-labelledby={titleId} data-testid={`ward-help-checklist-${checklist.id}`}>
         <div className={s.headRow}>
           <h4 className={s.sectionHead}>Steps</h4>
-          <p className={s.count} role="status" aria-live="polite" data-testid="ward-help-checklist-count">
+          {/* Shown, not announced: each tick box already says whether it is ticked. */}
+          <p className={s.count} data-testid="ward-help-checklist-count">
             {ticked} of {ids.length} ticked
           </p>
         </div>
