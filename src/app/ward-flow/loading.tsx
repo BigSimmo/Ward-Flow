@@ -1,3 +1,4 @@
+import { WardLoadingSlow } from "@/components/ward-management/shell/ward-loading-slow";
 import { WardLoadingShape, type WardLoadingShapePaths } from "@/components/ward-management/shell/ward-loading-shape";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
@@ -28,6 +29,8 @@ export default function WardFlowLoading() {
       <p className={styles.status} role="status">
         <span className={styles.spin} aria-hidden="true" />
         Loading page
+        {/* Q275: after 10 s, "This is taking longer than usual." with Try again. */}
+        <WardLoadingSlow className={styles.slow} buttonClassName={styles.retry} />
       </p>
       <WardLoadingShape paths={SHAPED_PAGES} />
       <WardPrototypeFooter />

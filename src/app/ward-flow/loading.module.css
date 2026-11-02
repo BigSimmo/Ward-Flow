@@ -22,6 +22,41 @@
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Q275: the "taking longer than usual" line and its Try again button (shell/ward-loading-slow.tsx). */
+.status {
+  flex-wrap: wrap;
+}
+
+.slow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.retry {
+  min-block-size: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  cursor: pointer;
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem) {
+  .retry {
+    min-block-size: 40px;
+    padding: 0 14px;
+  }
+}
+
 /* The kit Spinner's rule (wf/primitives.module.css), copied so this boundary stays light. */
 .spin {
   display: inline-block;

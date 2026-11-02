@@ -13,6 +13,7 @@ import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-
 import { WardPwaRegistration } from "@/components/ward-management/shell/ward-pwa-registration";
 import { NextBarMount as WardBarMount } from "@/components/ward-management/shell-next/next-bar";
 import { WARD_EARLY_TAP_SCRIPT } from "@/components/ward-management/shell/ward-early-tap";
+import { WARD_LOADING_NOTE_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-loading-note-early";
 import { WardFirstDocumentOnly } from "@/components/ward-management/shell/ward-first-document-only";
 import { WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-rail-early";
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
@@ -221,8 +222,25 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
                 ready. Hidden once the header is ready (`data-wf-bar-ready`, ward-early-tap.ts). */}
                   <p className={styles.loadingNote} role="status" data-testid="ward-loading-note" data-print-hide>
-                    Loading, not live yet. Taps work once this goes.
+                    <span className={styles.loadingNoteWait}>Loading, not live yet. Taps work once this goes.</span>
+                    {/* Q274: shown after 15 s if the code has still not arrived (ward-loading-note-early.ts). */}
+                    <span className={styles.loadingNoteSlow}>
+                      Still loading. Check the connection.
+                      {/* Wired by the inline script below (ward-loading-note-early.ts), because the page's own
+                    code is what failed to arrive. */}
+                      {/* eslint-disable-next-line local/require-button-wiring -- wired by WARD_LOADING_NOTE_EARLY_SCRIPT */}
+                      <button type="button" className={styles.loadingNoteReload} data-wf-loading-reload="">
+                        Reload
+                      </button>
+                    </span>
                   </p>
+                  <WardFirstDocumentOnly>
+                    <script
+                      nonce={nonce}
+                      suppressHydrationWarning
+                      dangerouslySetInnerHTML={{ __html: WARD_LOADING_NOTE_EARLY_SCRIPT }}
+                    />
+                  </WardFirstDocumentOnly>
                   {/* `data-wf-bar-notes`: the band counts these notes as part of the header (wf/band.ts), so a
                 page still opens on its hero band while a note is showing.
                 Minimal warnings (design audit, Josh 1 Nov 2026): at most one note shows at a time. They sit
