@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
+import { isAcceptedPullRow } from "@/components/ward-management/ward-alerts-figures";
 import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -533,7 +534,10 @@ export function WardTasksDrawer({
   const facts = items.filter((item) => item.kind === "fact");
   const criticalFactsCount = facts.filter((item) => item.tone === "danger").length;
   const overdueCount = facts.filter(isOverdue).length;
-  const openCount = items.filter((item) => !isComplete(item)).length;
+  // Q260 review (#1296): as the bell counts, a running countdown (not yet late) is listed, not counted.
+  const openCount = items.filter(
+    (item) => !isComplete(item) && !(words === ALERTS_WORDS && alertGroupOf(item) === "running"),
+  ).length;
 
   const acknowledgedFactsCount = facts.filter((item) => acknowledgements[item.id]?.length).length;
   const unacknowledged = facts.filter((item) => !acknowledgements[item.id]?.length);
@@ -601,7 +605,10 @@ export function WardTasksDrawer({
     const movement = records?.movements.find((row) => row.id === item.movementId);
     const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
     const patient = records
-      ? resolveSubjectPatient(movement ?? admission ?? item.plannedAdmission, records)
+      ? resolveSubjectPatient(
+          movement ?? admission ?? item.plannedAdmission ?? (item.personId ? { patientId: item.personId } : undefined),
+          records,
+        )
       : undefined;
     const timing = isComplete(item)
       ? { value: undefined, word: undefined, state: "Done", tone: "success" as WfTone, stateTone: undefined }
@@ -857,7 +864,10 @@ export function WardTasksDrawer({
     const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
     // A planned admission row has no movement or stay: the booking itself names the person.
     const patient = records
-      ? resolveSubjectPatient(movement ?? admission ?? item.plannedAdmission, records)
+      ? resolveSubjectPatient(
+          movement ?? admission ?? item.plannedAdmission ?? (item.personId ? { patientId: item.personId } : undefined),
+          records,
+        )
       : undefined;
     const Icon = rowIcon(item);
     const isFact = item.kind === "fact";
@@ -1021,7 +1031,7 @@ export function WardTasksDrawer({
             ) : null}
 
             <div className={styles.rowActions}>
-              {oneAction ? (
+              {oneAction || isAcceptedPullRow(item.id) ? (
                 renderOneAction(item, movement)
               ) : isFact ? (
                 <button

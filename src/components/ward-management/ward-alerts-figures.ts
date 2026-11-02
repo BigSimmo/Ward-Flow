@@ -10,7 +10,13 @@
  * Pure and light (reducer ids only), so the shell can read it without loading the Alerts screen.
  * `alerts-model.ts` groups rows with `alertGroupOfId`, so the screen and the badge cannot disagree.
  */
+import { BedDouble } from "lucide-react";
+
+import type { Instant } from "@/components/ward-management/ward-clock";
+import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { INBOX_CATEGORIES, inboxItemIsActNow } from "@/components/ward-management/ward-inbox-reducer";
+import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
+import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 
 export type AlertGroup = "act" | "wait" | "running";
 
@@ -54,4 +60,36 @@ export function alertsNowFigures(activeItems: readonly { id: string }[], awaitin
   }
   const actNow = act + awaitingPull;
   return { actNow, waiting, running, outstanding: actNow + waiting };
+}
+
+/** The id stem of an accepted-referral row in the bar's task list (never an inbox category). */
+export const ACCEPTED_PULL_ROW_PREFIX = "accepted-pull-";
+
+export function isAcceptedPullRow(id: string): boolean {
+  return id.startsWith(ACCEPTED_PULL_ROW_PREFIX);
+}
+
+/**
+ * Q260 review (#1296): the bell's quick look lists what the badge counts, so a ward's acceptance
+ * with no bed pulled is a row there too, in Act now. It opens Alerts, where the bed is pulled. It is
+ * not an inbox row: it leaves when the bed is pulled, so it is never acknowledged or snoozed.
+ * Pass these rows in the item list and `awaitingPull` 0 to `alertsNowFigures`, never both.
+ */
+export function acceptedPullTaskRows(toPull: readonly AcceptedAwaitingPull[], now: Instant): InboxItem[] {
+  return toPull.map(({ referral, unitName }) => {
+    const accepted = referral.destinations.find((arm) => arm.state === "accepted");
+    return {
+      id: `${ACCEPTED_PULL_ROW_PREFIX}${referral.id}`,
+      kind: "fact",
+      tone: "danger",
+      icon: BedDouble,
+      title: "Accepted, bed not pulled",
+      detail: `${unitName} accepted. Pull the bed from Alerts.`,
+      owner: "Bed coordinator",
+      movementId: "",
+      href: WARD_ALERTS_HREF,
+      ...(referral.patientId ? { personId: referral.patientId } : {}),
+      since: accepted?.decidedAt ?? referral.raisedAt ?? now,
+    };
+  });
 }

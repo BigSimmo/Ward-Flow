@@ -8,7 +8,11 @@ import { deriveServiceBedAlerts } from "@/components/ward-management/shell/ward-
 import { occupancyPercent, occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { activeActNowItems, activeTaskItems, taskItems } from "@/components/ward-management/ward-act-now-items";
-import { alertGroupOfId, alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
+import {
+  acceptedPullTaskRows,
+  alertGroupOfId,
+  alertsNowFigures,
+} from "@/components/ward-management/ward-alerts-figures";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
@@ -108,6 +112,15 @@ describe("the shared figures agree on the seed (hero, chip, badge and list)", ()
     // The Alerts heading "N act now, M waiting" adds up to the bell and the Tasks dock.
     expect(figures.outstanding).toBe(act + wait + awaitingPull);
     expect(figures.waiting).toBe(wait);
+  });
+
+  it("the bell's list (Q260 review): accepted-referral rows count once, the same as passing their number", () => {
+    const active = activeTaskItems(state, now);
+    const toPull = acceptedReferralsAwaitingPull(state.referrals, state.units, state.movements);
+    const rows = acceptedPullTaskRows(toPull, now);
+    expect(rows).toHaveLength(toPull.length);
+    for (const row of rows) expect(alertGroupOfId(row.id)).toBe("act");
+    expect(alertsNowFigures([...active, ...rows], 0)).toEqual(alertsNowFigures(active, toPull.length));
   });
 
   it("outstanding (Q260): a running countdown is listed on Alerts but is not yet outstanding", () => {

@@ -4,7 +4,7 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
-import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
+import { acceptedPullTaskRows, alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import {
   noticeIsForWardChrome,
@@ -99,7 +99,9 @@ export function useWardBarTasks({
   // Alerts screen does (same rows, tones and counts either way).
   const tasksItems = useMemo(() => {
     if (!wardTasksAreActionableForRole(shellRole)) return [];
-    return taskItems(
+    // Q260 review (#1296): a ward's acceptance with no bed pulled is a row here, as the badge counts it.
+    const pullRows = acceptedPullTaskRows(acceptedReferralsAwaitingPull(referrals, units, movements), now);
+    const rows = taskItems(
       {
         movements,
         units,
@@ -115,6 +117,7 @@ export function useWardBarTasks({
       },
       now,
     );
+    return [...rows, ...pullRows];
   }, [
     movements,
     now,
@@ -135,14 +138,9 @@ export function useWardBarTasks({
     [tasksItems, inboxSnoozes, now],
   );
   // Q260 (pre-launch review T1, 2 Nov 2026): the bell and the Tasks dock show the Alerts heading's
-  // figure, act now plus waiting, so a ward's acceptance with no bed pulled (Act now on Home and
-  // Alerts, Q111) counts here too and a running countdown (not yet late) does not.
-  const awaitingPull = useMemo(
-    () =>
-      wardTasksAreActionableForRole(shellRole) ? acceptedReferralsAwaitingPull(referrals, units, movements).length : 0,
-    [shellRole, referrals, units, movements],
-  );
-  const tasksActiveCount = alertsNowFigures(tasksActiveItems, awaitingPull).outstanding;
+  // figure, act now plus waiting. The accepted-referral rows are in the list above, so a running
+  // countdown (not yet late) is the only row it leaves out, as the drawer's header does.
+  const tasksActiveCount = alertsNowFigures(tasksActiveItems, 0).outstanding;
   return { tasksItems, tasksActiveItems, tasksActiveCount };
 }
 
