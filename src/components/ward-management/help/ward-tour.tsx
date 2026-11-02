@@ -63,7 +63,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   // Find the step's control, light it and keep the card clear of it (`ward-spotlight.ts`).
   const target = step?.target;
   const targets = useMemo(() => (target ? [target] : undefined), [target]);
-  const { box, missing } = useSpotlight(targets, `${step?.id ?? ""}|${pathname}`, device);
+  const { box, missing, held } = useSpotlight(targets, `${step?.id ?? ""}|${pathname}`, device);
   usePlacedCard(cardRef, spotRef, box, device, step, missing);
 
   const finish = useCallback(() => {
@@ -153,6 +153,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
               borderRadius: box.radius,
             }}
             data-testid="ward-tour-spot"
+            data-held={held ? "" : undefined}
             aria-hidden="true"
           />
         ) : (

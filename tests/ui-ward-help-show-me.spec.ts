@@ -96,7 +96,7 @@ async function firstStepLit(page: Page, id: string): Promise<boolean> {
   await page.waitForLoadState("networkidle");
   const lit = await expect
     // Show me may first open another screen; a cold page takes a while to draw on a dev server.
-    .poll(() => page.getByTestId("ward-show-me-spot").count(), { timeout: 20_000 })
+    .poll(() => page.locator('[data-testid="ward-show-me-spot"]:not([data-held])').count(), { timeout: 20_000 })
     .toBe(1)
     .then(
       () => true,
@@ -144,7 +144,7 @@ async function stepsLit(page: Page, id: string, total: number): Promise<readonly
   for (let step = 0; step < total; step += 1) {
     await expect(card).toHaveAttribute("data-step", String(step));
     const lit = await expect
-      .poll(() => page.getByTestId("ward-show-me-spot").count(), { timeout: 20_000 })
+      .poll(() => page.locator('[data-testid="ward-show-me-spot"]:not([data-held])').count(), { timeout: 20_000 })
       .toBe(1)
       .then(
         () => true,
@@ -167,7 +167,9 @@ for (const device of ["desk", "phone"] as const) {
       test.setTimeout(600_000);
       await signIn(page, DESKS.coordinator);
       const dark: string[] = [];
-      for (const tour of SCREEN_TOURS) dark.push(...(await stepsLit(page, tour.id, showMeSteps(tour, device).length)));
+      // Page walk rounds (one ward, one ED board) play only on their own page, so they are not run here.
+      for (const tour of SCREEN_TOURS.filter((each) => each.go))
+        dark.push(...(await stepsLit(page, tour.id, showMeSteps(tour, device).length)));
       expect(dark, `Show me around lit nothing for these steps on a ${device}`).toEqual([]);
     });
   });

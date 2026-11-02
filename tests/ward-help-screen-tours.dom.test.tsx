@@ -160,3 +160,24 @@ describe("Show me around a page", () => {
     expect(askHelp("show me around this ward", "ward")[0]?.howTo.id).toBe("around-ward");
   });
 });
+
+describe("Show me around a page: where it is offered", () => {
+  it("plays only on its own page, and only for desks that open that page", async () => {
+    const { walkPlaysHere } = await import("@/components/ward-management/help/ward-help-screen-tours");
+    const { howToFor } = await import("@/components/ward-management/help/ward-help-access");
+    const ward = SCREEN_TOURS.find((each) => each.id === "around-ward")!;
+    const ed = SCREEN_TOURS.find((each) => each.id === "around-ed-board")!;
+    expect(walkPlaysHere(ward, "/ward-flow/ward/fsh-adult-secure")).toBe(true);
+    expect(walkPlaysHere(ward, "/ward-flow/alerts")).toBe(false);
+    expect(walkPlaysHere(ed, "/ward-flow/ed/fsh-ed")).toBe(true);
+    expect(walkPlaysHere(ed, "/ward-flow/ed")).toBe(false);
+    expect(
+      walkPlaysHere(
+        SCREEN_TOURS.find((each) => each.id === "around-capacity")!,
+        "/anywhere",
+      ),
+    ).toBe(true);
+    expect(howToFor(ed, "ed")).toBe(true);
+    expect(howToFor(ed, "officer")).toBe(false);
+  });
+});

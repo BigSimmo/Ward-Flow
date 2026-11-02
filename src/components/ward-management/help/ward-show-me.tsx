@@ -27,12 +27,15 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   const howTo = HOW_TOS.find((candidate) => candidate.id === id);
   // Steps marked for the other device are skipped, so a phone never walks to a computer-only part.
   const steps = useMemo(() => showMeSteps(howTo, device), [howTo, device]);
-  const [index, setIndex] = useState(0);
+  const [stepIndex, setIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const spotRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname() ?? "";
   const router = useRouter();
+  // A computer and a phone walk different steps, so a window narrowed mid-walk (or a tablet
+  // turned) keeps the walk on its last step rather than running past the end and vanishing.
+  const index = Math.min(stepIndex, Math.max(steps.length - 1, 0));
   const step = steps[index];
   const last = index >= steps.length - 1;
 
@@ -54,7 +57,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     () => (target ? (Array.isArray(target) ? target : [target as TourTarget]) : undefined),
     [target],
   );
-  const { box, missing } = useSpotlight(targets, `${index}|${pathname}`, device);
+  const { box, missing, held } = useSpotlight(targets, `${index}|${pathname}`, device);
   usePlacedCard(cardRef, spotRef, box, device, step, missing);
 
   const { rootRef } = useModalFocus({
@@ -98,6 +101,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
               borderRadius: box.radius,
             }}
             data-testid="ward-show-me-spot"
+            data-held={held ? "" : undefined}
             aria-hidden="true"
           />
         ) : (

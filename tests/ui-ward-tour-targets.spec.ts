@@ -94,7 +94,7 @@ async function walkTour(page: Page): Promise<Map<string, boolean>> {
   for (let index = 0; index < 20; index++) {
     const id = (await card.getAttribute("data-step")) ?? "";
     const lit = await expect
-      .poll(() => page.getByTestId("ward-tour-spot").count(), { timeout: 8_000 })
+      .poll(() => page.locator('[data-testid="ward-tour-spot"]:not([data-held])').count(), { timeout: 8_000 })
       .toBe(1)
       .then(
         () => true,

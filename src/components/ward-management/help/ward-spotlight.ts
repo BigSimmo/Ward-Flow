@@ -195,7 +195,7 @@ export function useSpotlight(
   targets: readonly TourTarget[] | undefined,
   key: string,
   device: TourDevice = "desk",
-): { box: SpotBox | null; missing: boolean } {
+): { box: SpotBox | null; missing: boolean; held: boolean } {
   const [spot, setSpot] = useState<{ key: string; box: SpotBox | null; missing: boolean } | null>(null);
   useEffect(() => {
     // The last step's light is let go when this step has none, or its control is not found in time.
@@ -249,10 +249,11 @@ export function useSpotlight(
       window.removeEventListener("resize", measure);
     };
   }, [targets, key, device]);
-  if (spot && spot.key === key) return { box: spot.box, missing: spot.missing };
-  // Still looking: the last step's light stays put until this step's control is found.
-  if (spot?.box && targets?.length) return { box: spot.box, missing: false };
-  return { box: null, missing: false };
+  if (spot && spot.key === key) return { box: spot.box, missing: spot.missing, held: false };
+  // Still looking: the last step's light stays put until this step's control is found. It says so
+  // (`held`), so a check that this step lit its control never counts the last step's light.
+  if (spot?.box && targets?.length) return { box: spot.box, missing: false, held: true };
+  return { box: null, missing: false, held: false };
 }
 
 /**

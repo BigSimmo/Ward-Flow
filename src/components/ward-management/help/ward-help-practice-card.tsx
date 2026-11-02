@@ -88,6 +88,8 @@ export function WardHelpPracticeCard({ role, onShowMe }: { role: WardTourRole; o
       generation: worldGeneration,
       startedWith: new Set(movements.map((movement) => movement.id)),
     });
+    // Said only once the demo data has actually been reloaded, never on the press alone.
+    announceToWardShell("Practice reset. Synthetic demo data only.");
   }, [movements, scenario, worldGeneration]);
 
   // The confirm takes focus on Cancel as it opens, never on the reset, so a second Enter cannot reset.
@@ -104,7 +106,6 @@ export function WardHelpPracticeCard({ role, onShowMe }: { role: WardTourRole; o
     setConfirming(false);
     raise("SET_SCENARIO", { scenario });
     restartFrom.current = worldGeneration;
-    announceToWardShell("Practice reset. Synthetic demo data only.");
   }
 
   const nextStep = progress?.next ? PRACTICE_STEPS.find((step) => step.id === progress.next) : undefined;

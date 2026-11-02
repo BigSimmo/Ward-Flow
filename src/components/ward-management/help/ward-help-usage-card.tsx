@@ -20,6 +20,12 @@ export function WardHelpUsageCard() {
   const used = useHelpUsed(HOW_TO_IDS);
   const feedback = useHelpFeedback(HOW_TO_IDS);
   const titles = new Map(HOW_TOS.map((howTo) => [howTo.id, howTo.title]));
+  // An answer rated but never counted as used still shows, so every count can be seen and cleared.
+  const rows = [
+    ...used,
+    ...[...feedback.keys()].filter((id) => !used.some((entry) => entry.id === id)).map((id) => ({ id, count: 0 })),
+  ];
+  const shown = [...rows.slice(0, SHOWN), ...rows.slice(SHOWN).filter((entry) => feedback.has(entry.id))];
   return (
     <Card aria-labelledby="help-usage-title" data-testid="ward-settings-help-usage">
       <CardHead
@@ -28,7 +34,7 @@ export function WardHelpUsageCard() {
         icon={CircleHelp}
         title="Help answers used on this device"
         action={
-          used.length ? (
+          rows.length ? (
             <button
               type="button"
               className={buttonClass({ variant: "ghost", size: "sm" })}
@@ -43,9 +49,9 @@ export function WardHelpUsageCard() {
           ) : undefined
         }
       />
-      {used.length ? (
+      {rows.length ? (
         <ol className={styles.list}>
-          {used.slice(0, SHOWN).map((entry) => (
+          {shown.map((entry) => (
             <li key={entry.id} className={styles.row}>
               <span>
                 {titles.get(entry.id)}

@@ -19,7 +19,7 @@ import type { WardTourRole } from "./ward-help-store";
 
 export type ChecklistId = "start-of-shift" | "handover" | "bed-meeting" | "downtime";
 
-export type ChecklistStep = {
+type ChecklistStep = {
   readonly text: string;
   readonly note?: string;
   /** Where the step is done: "home", a rail entry id or "settings#<tab>". */
@@ -116,7 +116,7 @@ export const CHECKLISTS: readonly Checklist[] = [
 ];
 
 /** A step as one desk sees it: its place in the list, with only the links that desk may use. */
-export type DeskChecklistStep = {
+type DeskChecklistStep = {
   readonly index: number;
   readonly text: string;
   readonly note?: string;

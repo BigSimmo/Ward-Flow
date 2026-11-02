@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** P11: deterministic printable guides generated from the in-app Help source. */
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -132,7 +132,8 @@ async function writeDocuments(output, sheets, check, formatName, render) {
   const previous = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8")) : undefined;
   if (
     existsSync(output) &&
-    readdirSync(output).some((name) => !statSync(path.join(output, name)).isDirectory()) &&
+    // The screen guides' own folder sits inside the desk guides' folder; anything else counts.
+    readdirSync(output).some((name) => !(name === "screens" && lstatSync(path.join(output, name)).isDirectory())) &&
     previous?.format !== formatName
   )
     throw new Error("Output directory contains files not owned by this guide builder; choose an empty directory.");

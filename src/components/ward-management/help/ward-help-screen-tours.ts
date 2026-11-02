@@ -11,6 +11,8 @@
  * other, so a phone is never walked to a part only a computer draws. Words describe what the screen
  * shows; nothing here ranks, suggests or places, or works out a legal time.
  */
+import type { WardScreenId } from "@/components/ward-management/ward-role-access";
+
 import type { HowTo, ShowMeStep } from "./ward-help-howto";
 import type { TourTarget } from "./ward-tour-steps";
 
@@ -32,7 +34,13 @@ type Around = {
    * round plays on the page already open, so it names no `go`, and its purpose is said here for the
    * printed guide.
    */
-  readonly page?: { readonly purpose: string };
+  readonly page?: {
+    readonly purpose: string;
+    /** The page's own address; its walk round is offered only there. */
+    readonly path: RegExp;
+    /** The screen a desk must open to see the page, so another desk is never offered it. */
+    readonly needs: WardScreenId;
+  };
   readonly steps: readonly ShowMeStep[];
 };
 
@@ -180,7 +188,7 @@ const AROUND: readonly Around[] = [
       {
         target: id("delays-owner-yours"),
         title: "Who the wait is on",
-        body: "Split by who can move it on next: you, the wards, transport or someone else.",
+        body: "Split by who can move it on next: you, the ED, the wards, transport or someone else.",
       },
       {
         target: [id("delays-view-needs-me"), id("delays-filter-fold")],
@@ -470,7 +478,7 @@ const AROUND: readonly Around[] = [
       {
         target: id("ward-alerts-forecast"),
         title: "Forecast",
-        body: "Kinds of bed likely to be short tomorrow, to help plan at the bed meeting.",
+        body: "Forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a worse forecast.",
       },
     ],
   },
@@ -478,7 +486,11 @@ const AROUND: readonly Around[] = [
     screen: "ward",
     name: "this ward",
     keywords: "ward beds bed board my ward round",
-    page: { purpose: "One ward's beds, who is coming and going, and the decisions due this shift." },
+    page: {
+      purpose: "One ward's beds, who is coming and going, and the decisions due this shift.",
+      path: /^\/ward-flow\/ward\/[^/]+$/u,
+      needs: "ward",
+    },
     steps: [
       {
         target: starts("ward-unit-card-"),
@@ -519,7 +531,11 @@ const AROUND: readonly Around[] = [
     screen: "ed-board",
     name: "this ED board",
     keywords: "emergency department ed board waiting next step",
-    page: { purpose: "One emergency department's mental health patients, each row with its next step." },
+    page: {
+      purpose: "One emergency department's mental health patients, each row with its next step.",
+      path: /^\/ward-flow\/ed\/[^/]+$/u,
+      needs: "ed",
+    },
     steps: [
       {
         target: starts("ward-ed-card-"),
@@ -706,6 +722,7 @@ export const SCREEN_TOURS: readonly HowTo[] = AROUND.map((each) => ({
   answer: `A short walk round ${each.name}: Show me lights each part in turn and says what it shows. It never presses anything.`,
   desks: "all",
   go: each.page ? undefined : each.screen,
+  needs: each.page?.needs,
   around: each.screen,
   showMe: each.steps,
 }));
@@ -713,4 +730,13 @@ export const SCREEN_TOURS: readonly HowTo[] = AROUND.map((each) => ({
 /** What a walked page is for, for its printed guide (rail screens take theirs from `SCREEN_HELP`). */
 export function aroundPagePurpose(screen: string): string | undefined {
   return AROUND.find((each) => each.screen === screen)?.page?.purpose;
+}
+
+/**
+ * Whether `howTo` can play at `pathname`: always, except a page walk round (one ward, one ED board),
+ * which plays only on its own page, where its parts are drawn (review, 2 Nov 2026).
+ */
+export function walkPlaysHere(howTo: HowTo, pathname: string): boolean {
+  const page = howTo.around ? AROUND.find((each) => each.screen === howTo.around)?.page : undefined;
+  return !page || page.path.test(pathname.replace(/\/+$/u, ""));
 }

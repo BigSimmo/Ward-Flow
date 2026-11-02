@@ -34,7 +34,7 @@ import type { ScreenHelp } from "./ward-help-content";
 
 import { howToHref } from "./ward-help-href";
 import { HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS, showMeSteps, type HowTo } from "./ward-help-howto";
-import { aroundId, SCREEN_TOURS } from "./ward-help-screen-tours";
+import { aroundId, SCREEN_TOURS, walkPlaysHere } from "./ward-help-screen-tours";
 import { checklistsForDesk } from "./ward-help-checklists";
 import { WardHelpPracticeCard } from "./ward-help-practice-card";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
@@ -68,8 +68,9 @@ export function canShowTask(
   home: string | undefined,
   phone: boolean,
   showMeOn: boolean,
+  pathname: string = typeof window === "undefined" ? "" : window.location.pathname,
 ): boolean {
-  return showMeOn && showMeAvailable(task, role, home, phone);
+  return showMeOn && showMeAvailable(task, role, home, phone) && walkPlaysHere(task, pathname);
 }
 
 /** The small play mark that says Show me can walk a job. `label` names it where no words sit beside it. */
@@ -193,7 +194,7 @@ function TaskRow({
   const href = howToHref(task.go, role, home);
   // Another Settings tab is still somewhere to go, even while Help is open on Settings.
   const goThere = href && (href.includes("#") || href !== pathname) ? href : undefined;
-  const showMe = canShowTask(task, role, home, phone, showMeOn);
+  const showMe = canShowTask(task, role, home, phone, showMeOn, pathname);
   const computerOnly = phone && task.computerOnly;
   const steps = showMeSteps(task, phone ? "phone" : "desk");
   return (
@@ -382,7 +383,7 @@ export function HelpTasks({
   // This screen's walk round (`ward-help-screen-tours.ts`), when Show me can play it here.
   const around = useMemo(() => {
     const walk = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id)) : undefined;
-    return walk && canShowTask(walk, role, home, phone, showMeOn) ? walk : undefined;
+    return walk && canShowTask(walk, role, home, phone, showMeOn, pathname) ? walk : undefined;
   }, [home, phone, role, screen, showMeOn]);
   const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk").length : 0;
   const hereTiles = here.slice(0, 4);
@@ -390,7 +391,7 @@ export function HelpTasks({
   const counts = HOW_TO_TOPICS.map((name) => ({ name, n: mine.filter((task) => task.topic === name).length })).filter(
     (entry) => entry.n > 0,
   );
-  const anyShowMe = mine.some((task) => canShowTask(task, role, home, phone, showMeOn));
+  const anyShowMe = mine.some((task) => canShowTask(task, role, home, phone, showMeOn, pathname));
   const shown = topic === "all" ? mine : mine.filter((task) => task.topic === topic);
   const limit = all || topic !== "all" ? shown.length : foldLimit(shown.length, FIRST);
   // The first `limit` tasks in topic order, still grouped by topic.
@@ -465,7 +466,7 @@ export function HelpTasks({
                 </button>
               ) : null}
               {hereTiles.map((task, index) => {
-                const can = canShowTask(task, role, home, phone, showMeOn);
+                const can = canShowTask(task, role, home, phone, showMeOn, pathname);
                 return (
                   <button
                     key={task.id}
