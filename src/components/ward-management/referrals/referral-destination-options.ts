@@ -416,7 +416,7 @@ function reasonsFor(
       if (inputs.ward.involuntaryBedNeeded) {
         reasons.push("Some units have a bed free that can hold someone involuntarily.");
       } else if (inputs.ward.secureBedNeeded) {
-        reasons.push("Some units have a secure bed free.");
+        reasons.push("Some units have a locked bed free.");
       } else {
         reasons.push("Some units have a bed free that accepts this request.");
       }

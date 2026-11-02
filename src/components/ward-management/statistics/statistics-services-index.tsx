@@ -286,7 +286,7 @@ function ServicesIndexView({
             <HeroStat value={totalBeds} label="Beds" />
             <HeroStat
               value={shown(totalWaiting)}
-              label={<ShortLabel short="Open journeys" full="Open ED journeys" />}
+              label={<ShortLabel short="Open movements" full="Open ED movements" />}
             />
           </>
         ),
@@ -337,7 +337,7 @@ function ServicesIndexView({
                     {entry.departments === 0 ? <span className={phone.word}>No ED</span> : shown(entry.waiting)}
                   </span>
                 }
-                time={entry.departments === 0 ? undefined : "open ED journeys"}
+                time={entry.departments === 0 ? undefined : "open ED movements"}
                 href={entry.openable === false ? undefined : serviceStatisticsHref(entry.service)}
               />
             ))}
@@ -413,7 +413,7 @@ function ServicesIndexView({
                       now={<Now>{`${entry.wards} ${wardsWord(entry.wards)}`}</Now>}
                     >
                       <p className={redesign.outside}>No inpatient beds recorded</p>
-                      <Facts items={[{ value: ed, label: "open ED journeys" }]} />
+                      <Facts items={[{ value: ed, label: "open ED movements" }]} />
                       {pastLine}
                     </Tile>
                   );
@@ -548,13 +548,13 @@ function ServicesIndexView({
             <StatCard
               id="ed-waits"
               className={index.anchorTarget}
-              title="Open ED journeys, by service"
+              title="Open ED movements, by service"
               meta={`${shown(totalWaiting)} open`}
               data-testid="ward-statistics-services-ed-waits"
             >
               <div className={redesign.bars}>
                 <BarList
-                  label="Open ED journeys, by originating health service"
+                  label="Open ED movements, by originating health service"
                   track
                   rows={services.map((entry) => ({
                     id: entry.service,

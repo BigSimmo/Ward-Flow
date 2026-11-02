@@ -123,7 +123,7 @@ describe("community team: the Sent tab's wording", () => {
       { destination: ward(WARD_A), state: "queued" },
       { destination: secureWard, state: "queued" },
     ]);
-    expect(sentAskedFor(sent)).toBe("Ward bed and Ward bed, secure");
+    expect(sentAskedFor(sent)).toBe("Ward bed and Ward bed, locked");
     expect(sentToLine(sent, UNITS)).toBe("Asked 2 wards");
   });
 

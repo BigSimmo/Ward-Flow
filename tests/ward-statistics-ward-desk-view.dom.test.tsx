@@ -59,7 +59,7 @@ describe("one ward's statistics, coordinator and ward desk", () => {
     expect(screen.getByTestId("ward-statistics-ward-beds-now")).toBeTruthy();
     expect(screen.getByTestId("ward-statistics-ward-referrals-panel")).toBeTruthy();
     expect(screen.getByTestId("ward-statistics-ward-roster")).toBeTruthy();
-    expect(screen.getByText("Due out, 7 days")).toBeTruthy();
+    expect(screen.getByText("Discharges due, 7 days")).toBeTruthy();
   });
 
   it("opens the coordinator's roster on its first eight rows, then Show more", () => {
@@ -80,7 +80,7 @@ describe("one ward's statistics, coordinator and ward desk", () => {
     expect(screen.queryByTestId("ward-statistics-ward-beds-now")).toBeNull();
     expect(screen.getAllByTestId("ward-stat-capacity-allocatable")).toHaveLength(1);
     expect(screen.getAllByTestId("ward-stat-capacity-empty")).toHaveLength(1);
-    expect(screen.queryByText("Due out, 7 days")).toBeNull();
+    expect(screen.queryByText("Discharges due, 7 days")).toBeNull();
     expect(screen.getByText(/due in the next 7 days/u)).toBeTruthy();
   });
 

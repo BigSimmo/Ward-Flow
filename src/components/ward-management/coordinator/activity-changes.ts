@@ -35,7 +35,7 @@ type ChangeGroupId = "escalations" | "referrals" | "journeys" | "acceptances" | 
 export const CHANGE_GROUPS: readonly { id: ChangeGroupId; label: string }[] = [
   { id: "escalations", label: "Escalations" },
   { id: "referrals", label: "Referrals" },
-  { id: "journeys", label: "New ED journeys" },
+  { id: "journeys", label: "New ED movements" },
   { id: "acceptances", label: "Acceptances withdrawn" },
   { id: "beds", label: "Beds" },
   { id: "delays", label: "Delays" },

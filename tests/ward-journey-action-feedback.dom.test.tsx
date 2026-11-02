@@ -355,7 +355,7 @@ describe("role restrictions and record actors", () => {
     expect(screen.getByText("The discharge changed.")).toBeInTheDocument();
     await act(async () => fireEvent.click(screen.getByTestId("ward-discharge-save-time-btn")));
     expect(screen.queryByTestId("ward-discharge-new-time-input")).not.toBeInTheDocument();
-    expect(screen.getByText("Expected departure updated.")).toBeInTheDocument();
+    expect(screen.getByText("Expected discharge updated.")).toBeInTheDocument();
   });
 
   it("offers a ward desk no coordinator-only capacity request in the ward drawer or This shift", () => {

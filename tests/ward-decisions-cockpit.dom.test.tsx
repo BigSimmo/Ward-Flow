@@ -18,7 +18,7 @@ describe("ward decisions cockpit", () => {
     render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
     expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Intake, 09:30–13:00" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Departures, 11:00–14:00" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Discharges, 11:00–14:00" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Leave, 14:00–18:00" })).toBeInTheDocument();
     expect(screen.queryByText(/GATE 1/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Demonstration only/i)).not.toBeInTheDocument();
@@ -185,7 +185,7 @@ describe("ward decisions cockpit", () => {
     for (const [name, region] of [
       ["Staffing, 07:00–09:30", "Staffing"],
       ["Intake, 09:30–13:00", "Intake"],
-      ["Departures, 11:00–14:00", "Departures"],
+      ["Discharges, 11:00–14:00", "Discharges"],
       ["Leave, 14:00–18:00", "Leave"],
     ] as const) {
       const step = screen.getByRole("button", { name });
@@ -310,7 +310,7 @@ describe("ward decisions cockpit", () => {
     view.rerender(<WardDecisionsCockpit unit={mockUnit} departures={[other]} />);
     expect(screen.getByRole("status")).toHaveTextContent("Synthetic one signed off");
     expect(screen.getByRole("heading", { name: "Done" })).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "Departures decided" })).toHaveAttribute("aria-valuenow", "1");
+    expect(screen.getByRole("progressbar", { name: "Discharges decided" })).toHaveAttribute("aria-valuenow", "1");
   });
 
   it("collapses more than two done decisions behind Show", () => {

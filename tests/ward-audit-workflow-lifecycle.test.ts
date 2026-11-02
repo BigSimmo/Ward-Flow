@@ -111,10 +111,10 @@ describe("patient and movement routes share lifecycle truth", () => {
     expect(f.state.rejections).toHaveLength(0);
     for (const id of [f.patient.id, f.movement.id]) {
       const record = f.resolve(id).record;
-      expect(record.verdict.short).toBe("Departed");
-      expect(record.next[0].w).toBe("Departure recorded");
+      expect(record.verdict.short).toBe("Discharged");
+      expect(record.next[0].w).toBe("Discharge recorded");
       expect(record.presentations[0].current).toBe(false);
-      expect(record.presentations[0].outcome).toBe("Departure recorded; no current ward stay.");
+      expect(record.presentations[0].outcome).toBe("Discharge recorded; no current ward stay.");
     }
   });
   it.each([false, true])("withdrawal closes both routes before/after acceptance (%s)", (accepted) => {

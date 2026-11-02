@@ -31,7 +31,7 @@ describe("discharge detail tabs", () => {
     expect(tabs[1]).toHaveAttribute("aria-selected", "true");
     expect(tabs.map((tab) => tab.tabIndex)).toEqual([-1, 0, -1, -1]);
     await user.tab();
-    expect(screen.getByRole("tabpanel", { name: /^Barriers/u })).toHaveFocus();
+    expect(screen.getByRole("tabpanel", { name: /^Held up/u })).toHaveFocus();
     await user.tab({ shift: true });
     expect(tabs[1]).toHaveFocus();
     await user.keyboard("{End}");

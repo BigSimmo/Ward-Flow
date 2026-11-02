@@ -62,7 +62,7 @@ export function WardDischargesMatrix({
           data-active={subTab === "all"}
           onClick={() => startTransition(() => setSubTab("all"))}
         >
-          All Discharges ({releasesCountedToday.length + unitLeaveBeds.length})
+          All discharges ({releasesCountedToday.length + unitLeaveBeds.length})
         </button>
         <button
           type="button"
@@ -70,7 +70,7 @@ export function WardDischargesMatrix({
           data-active={subTab === "scheduled"}
           onClick={() => startTransition(() => setSubTab("scheduled"))}
         >
-          Scheduled Departures ({releasesCountedToday.length})
+          Planned discharges ({releasesCountedToday.length})
         </button>
         <button
           type="button"
@@ -86,7 +86,7 @@ export function WardDischargesMatrix({
           data-active={subTab === "barriers"}
           onClick={() => startTransition(() => setSubTab("barriers"))}
         >
-          Discharge Barriers ({blockedReleases.length})
+          Held up ({blockedReleases.length})
         </button>
         <button
           type="button"
@@ -94,7 +94,7 @@ export function WardDischargesMatrix({
           data-active={subTab === "suburb"}
           onClick={() => startTransition(() => setSubTab("suburb"))}
         >
-          Catchment Team Lookup
+          Catchment team lookup
         </button>
       </nav>
 
@@ -126,7 +126,7 @@ export function WardDischargesMatrix({
                     </span>
                     <span>&middot;</span>
                     <span>
-                      Blocker: <strong>{release.blocker ?? "None recorded"}</strong>
+                      Held up by: <strong>{release.blocker ?? "None recorded"}</strong>
                     </span>
                   </div>
                 </div>
@@ -139,7 +139,7 @@ export function WardDischargesMatrix({
                       data-testid={`ward-today-release-confirm-${release.id}`}
                       onClick={() => confirmBedRelease(release.id)}
                     >
-                      Confirm Ready
+                      Confirm ready
                     </button>
                   ) : (
                     <span className={styles.chkChip}>{bedReleaseStateLabels[release.state]}</span>
@@ -154,7 +154,7 @@ export function WardDischargesMatrix({
       {/* Leave Monitoring Stream */}
       {(subTab === "all" || subTab === "leave") && (
         <div className={styles.dischargeStream}>
-          <div className={styles.streamHeading}>Leave Monitoring ({unitLeaveBeds.length})</div>
+          <div className={styles.streamHeading}>Leave monitoring ({unitLeaveBeds.length})</div>
           {unitLeaveBeds.length === 0 ? (
             <p className={styles.placeholder}>Nobody on leave.</p>
           ) : (
@@ -201,9 +201,9 @@ export function WardDischargesMatrix({
       {/* Discharge Barriers Stream */}
       {(subTab === "all" || subTab === "barriers") && (
         <div className={styles.dischargeStream}>
-          <div className={styles.streamHeading}>Active Discharge Barriers ({blockedReleases.length})</div>
+          <div className={styles.streamHeading}>Held up ({blockedReleases.length})</div>
           {blockedReleases.length === 0 ? (
-            <p className={styles.placeholder}>No barriers recorded.</p>
+            <p className={styles.placeholder}>Nothing held up.</p>
           ) : (
             blockedReleases.map((release) => (
               <div
@@ -220,7 +220,7 @@ export function WardDischargesMatrix({
                   </div>
                   <div className={styles.dischargeMetaRow}>
                     <span>
-                      <strong>Barrier:</strong> {release.blocker}
+                      <strong>Held up by:</strong> {release.blocker}
                     </span>
                     {release.blockedBy ? <span>recorded by {release.blockedBy}</span> : null}
                   </div>
@@ -231,7 +231,7 @@ export function WardDischargesMatrix({
                     className={`${styles.btnDischargeAction} ${styles.btnSec}`}
                     onClick={() => clearBedReleaseBlock(release.id)}
                   >
-                    No longer blocked
+                    No longer held up
                   </button>
                 </div>
               </div>

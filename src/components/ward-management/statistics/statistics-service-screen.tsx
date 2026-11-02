@@ -488,7 +488,7 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
             <StatisticsEdSwarm
               rows={edSwarmRows}
               labelWidth={180}
-              label={`Each open ED journey from ${service}, by time since opening`}
+              label={`Each open ED movement from ${service}, by time since opening`}
               testId="ward-statistics-service-ed-swarm"
             />
           ),
@@ -603,7 +603,7 @@ function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlot
           <>
             <HeroStat value={totalBedBase} label="Beds" />
             <HeroStat value={totalReady} label="Ready" />
-            <HeroStat value={small(edWaiting)} label="Open ED journeys" tone={longEdWait ? "warning" : undefined} />
+            <HeroStat value={small(edWaiting)} label="Open ED movements" tone={longEdWait ? "warning" : undefined} />
           </>
         ),
       }}
@@ -731,8 +731,8 @@ function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlot
             id="ed-waits"
             className={detail.anchor}
             icon={Clock}
-            title="ED journeys"
-            aside={`${small(edWaiting)} open journeys from ${edCount} ${edCount === 1 ? "ED" : "EDs"}`}
+            title="ED movements"
+            aside={`${small(edWaiting)} open movements from ${edCount} ${edCount === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-service-ed-waits"
           >
             <CardBody className={detail.swarmBody}>{slots.swarm}</CardBody>
@@ -874,7 +874,7 @@ function ServicePhone({
           </PhoneList>
         )}
       </PhoneGroup>
-      <PhoneGroup title="ED journeys" aside={`${edWaiting} open ED journeys`}>
+      <PhoneGroup title="ED movements" aside={`${edWaiting} open ED movements`}>
         {busiest.length === 0 ? (
           <p className={phone.note}>No emergency department is recorded for this service.</p>
         ) : (

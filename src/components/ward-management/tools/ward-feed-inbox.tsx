@@ -165,7 +165,7 @@ export function WardFeedInbox() {
                 const done =
                   suggestion.kind === "arrival"
                     ? `Arrival confirmed: ${who} on ${unitName(suggestion.unitId)}.`
-                    : `Departure recorded: ${who} from ${unitName(suggestion.unitId)}.`;
+                    : `Discharge recorded: ${who} from ${unitName(suggestion.unitId)}.`;
                 offerUndo(
                   {
                     success: done,
@@ -348,7 +348,7 @@ function FeedRow({
                 }}
                 data-testid={`ward-feed-confirm-${item.seq}`}
               >
-                {suggestion.kind === "arrival" ? "Confirm arrival" : "Record departure"}
+                {suggestion.kind === "arrival" ? "Confirm arrival" : "Record discharge"}
               </button>
               <button
                 type="button"

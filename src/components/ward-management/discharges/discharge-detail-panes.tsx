@@ -37,7 +37,7 @@ import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
 
 const DETAIL_TABS = [
   ["milestones", "Milestones"],
-  ["barriers", "Barriers"],
+  ["barriers", "Held up"],
   ["transport", "Transport"],
   ["dossier", "Record"],
 ] as const;
@@ -154,7 +154,7 @@ export function DischargeRecordDetail({
           <dd>{recordedMoment(activeRecord.expectedDischargeAt, dayZero)}</dd>
         </div>
         <div>
-          <dt>Blocker</dt>
+          <dt>Held up by</dt>
           <dd>{activeRecord.blockReason ? "Recorded" : "None"}</dd>
         </div>
       </dl>
@@ -185,12 +185,12 @@ export function DischargeRecordDetail({
                   : `${recordedMoment(activeRecord.dischargeConfirmedAt, dayZero)} · ${activeRecord.dischargeConfirmedBy ?? "Role not recorded"}`,
             },
             {
-              label: "Recorded discharge blocker",
+              label: "Recorded hold-up",
               state: activeRecord.blockReason ? "blocked" : "pending",
-              detail: activeRecord.blockReason ?? "No discharge blocker recorded",
+              detail: activeRecord.blockReason ?? "Nothing recorded holding it up",
             },
             {
-              label: "Physical departure",
+              label: "Discharge",
               state: activeRecord.leftAt === null ? "pending" : "complete",
               detail: activeRecord.leftAt === null ? "Not recorded" : recordedMoment(activeRecord.leftAt, dayZero),
             },
@@ -310,7 +310,7 @@ export function DischargeRecordDetail({
                       if (!mountedRef.current) return;
                       if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
                         setShowUpdateDate(false);
-                        setDateMessage("Expected departure updated.");
+                        setDateMessage("Expected discharge updated.");
                       } else {
                         setDateMessage(
                           outcome?.message ??
@@ -376,11 +376,11 @@ export function DischargeRecordDetail({
           </dd>
           {activeRecord.blockReason && (
             <>
-              <dt>Recorded blocker</dt>
+              <dt>Recorded hold-up</dt>
               <dd className={pageStyles.blocker}>{activeRecord.blockReason}</dd>
             </>
           )}
-          <dt>Recorded departure</dt>
+          <dt>Recorded discharge</dt>
           <dd>{recordedMoment(activeRecord.leftAt, dayZero)}</dd>
           <dt>Destination</dt>
           <dd>
@@ -625,19 +625,19 @@ export function DischargeReleaseDetail({
               ? []
               : [
                   {
-                    label: "Recorded discharge blocker",
+                    label: "Recorded hold-up",
                     state: detailRelease.blocker ? ("blocked" as const) : ("pending" as const),
-                    detail: detailRelease.blocker ?? "No discharge blocker recorded",
+                    detail: detailRelease.blocker ?? "Nothing recorded holding it up",
                   },
                 ]),
             {
-              label: "Physical departure",
+              label: "Discharge",
               state: detailRelease.state === "discharged" ? "complete" : "pending",
               detail:
                 linkedReleaseRecord?.leftAt != null
                   ? recordedMoment(linkedReleaseRecord.leftAt, dayZero)
                   : detailRelease.state === "discharged"
-                    ? "Departure recorded; time not recorded"
+                    ? "Discharge recorded; time not recorded"
                     : "Not recorded",
             },
           ]}
@@ -665,7 +665,7 @@ export function DischargeReleaseDetail({
       </div>
 
       <div ref={panelRef} {...releasePanelProps("barriers")} className={releasePaneClass("barriers")}>
-        <div ref={barrierRef} tabIndex={-1} className={releaseList.focusTarget} aria-label="Barriers">
+        <div ref={barrierRef} tabIndex={-1} className={releaseList.focusTarget} aria-label="Held up">
           {detailRelease.blocker ? (
             <div className={pageStyles.barrierBox}>
               <div className={pageStyles.barrierText}>
@@ -732,7 +732,7 @@ export function DischargeReleaseDetail({
           )}
           {detailRelease.blocker && (
             <>
-              <dt>Blocker</dt>
+              <dt>Held up by</dt>
               <dd className={pageStyles.blocker}>{detailRelease.blocker}</dd>
             </>
           )}
@@ -762,7 +762,7 @@ export function DischargeRestingDetail({ s }: { s: DischargeWorkspaceState }) {
   const { units, population, records, releaseGroups, visibleReleaseGroups, selectRelease } = s;
   return (
     <div className={pageStyles.resting}>
-      <EmptyState icon={ClipboardList} title="Select a record to view dates, blockers and ward follow-up." />
+      <EmptyState icon={ClipboardList} title="Select a record to view dates, hold-ups and ward follow-up." />
       {population === "releases" && visibleReleaseGroups.includes("blocked") && releaseGroups.blocked.length > 0 && (
         <div className={pageStyles.restingQueue}>
           <h3 className={pageStyles.sectionLabel}>

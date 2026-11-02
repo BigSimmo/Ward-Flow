@@ -211,7 +211,7 @@ describe("the bed meeting TV view", () => {
       "Waiting in ED",
       "Longest ED wait",
       "Beds ready now",
-      "Due out today and tomorrow",
+      "Discharges due today and tomorrow",
       "Open movements",
     ]);
     // Every box says its state in words as well as colour.

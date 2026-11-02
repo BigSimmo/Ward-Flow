@@ -30,9 +30,9 @@ export const badge = (stage: WorkStatus) => (
     <StatusGlyph tone={stageTone(stage)} size={9} />
     <span className="sr-only">
       {stage === "blocked"
-        ? "Blocked: "
+        ? "Held up: "
         : stage === "departed"
-          ? "Departed: "
+          ? "Discharged: "
           : stage === "confirmed"
             ? "Confirmed: "
             : "Expected: "}
@@ -165,7 +165,7 @@ export function DischargeGroupSection({
                   <th scope="col">Health service</th>
                   <th scope="col">Expected</th>
                   <th scope="col">Stage</th>
-                  {showsBlocker ? <th scope="col">Blocker</th> : null}
+                  {showsBlocker ? <th scope="col">Held up by</th> : null}
                   <th scope="col">Freshness</th>
                 </tr>
               </thead>

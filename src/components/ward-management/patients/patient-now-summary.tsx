@@ -5,7 +5,7 @@
 // it has already derived.
 import { isTierOverdue, tierOverdueAfterMinutes } from "../ward-shared-figures";
 import { TIER_QUALIFIER } from "../ward-priority";
-import type { Security } from "../ward-model-vocabulary";
+import { securityWord, type Security } from "../ward-model-vocabulary";
 
 /*
  * UX audit (21 Oct 2026): the hero used to say "Tier 1 · open", which read as an open tier. The tier
@@ -16,7 +16,7 @@ function tierChipText(tier: 1 | 2 | 3 | undefined): string {
 }
 
 function bedTypeChipText(security: Security | undefined): string {
-  return security === undefined ? "Bed type not recorded" : `${security} bed`;
+  return security === undefined ? "Bed type not recorded" : `${securityWord(security)} bed`;
 }
 import Link from "next/link";
 import { BedDouble, Check, Clock, Copy, Eye, FileText, Scale } from "lucide-react";

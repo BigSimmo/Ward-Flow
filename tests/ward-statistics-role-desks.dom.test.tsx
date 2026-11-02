@@ -79,7 +79,7 @@ describe("a team desk's own Statistics page leads with its counts", () => {
     expect(card).not.toBeNull();
     const labels = [...card!.querySelectorAll("dt")].map((term) => (term.textContent ?? "").trim());
     expect(labels).toEqual([
-      "Due out within 7 days",
+      "Discharges due within 7 days",
       "Past discharge date",
       "No discharge date",
       "Discharged here",
