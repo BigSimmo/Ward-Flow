@@ -64,7 +64,7 @@ const STEPS: { stage: MovementStage; label: string }[] = [
 function Stepper({ stage }: { stage: MovementStage }) {
   const current = STEPS.findIndex((step) => step.stage === stage);
   return (
-    <ol className={styles.stepper} aria-label={`Journey, ${STAGE_LABEL[stage]}`}>
+    <ol className={styles.stepper} aria-label={`Movement, ${STAGE_LABEL[stage]}`}>
       {STEPS.map((step, index) => (
         <li
           key={step.stage}

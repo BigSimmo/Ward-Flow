@@ -132,9 +132,9 @@ describe("Movements redesign: the community clinician desk (D-76)", () => {
     desk.noMovements = true;
     renderScreen();
     expect(screen.getByRole("heading", { level: 1, name: "Movements" })).toBeInTheDocument();
-    expect(screen.getByText("No journeys for the team")).toBeInTheDocument();
+    expect(screen.getByText("No movements for the team")).toBeInTheDocument();
     expect(screen.getByText("Shows once a ward accepts a team referral")).toBeInTheDocument();
-    const panel = screen.getByRole("region", { name: "The team's journeys" });
+    const panel = screen.getByRole("region", { name: "The team's movements" });
     expect(within(panel).getByRole("link", { name: "Refer from team" })).toBeInTheDocument();
     expect(within(panel).getByRole("link", { name: "Team’s inpatients" })).toHaveAttribute(
       "href",
@@ -147,7 +147,7 @@ describe("Movements redesign: the community clinician desk (D-76)", () => {
   it("keeps the coordinator's board, not the team panel, when the coordinator's data has no journey", () => {
     desk.noMovements = true;
     renderScreen();
-    expect(screen.queryByText("No journeys for the team")).not.toBeInTheDocument();
+    expect(screen.queryByText("No movements for the team")).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Movement worklist" })).toBeInTheDocument();
   });
 });

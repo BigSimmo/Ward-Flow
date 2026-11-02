@@ -101,7 +101,7 @@ export function PatientJourneyTimeline({
     <section className={styles.journey} aria-labelledby="pn-journey-head">
       <div className={styles.journeyHead}>
         <h2 id="pn-journey-head" className={styles.journeyTitle}>
-          Journey so far
+          Movement so far
         </h2>
         <span className={styles.journeyMeta}>
           {events.length} recorded {events.length === 1 ? "event" : "events"}, newest first

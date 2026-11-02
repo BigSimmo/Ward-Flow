@@ -86,7 +86,7 @@ function ExecutiveNetworkFigures({ onNavigate }: { onNavigate?: () => void }) {
         {
           label: "Discharges today",
           value: String(releasedCountText(report.network.people.admissionsEndedToday)),
-          sub: "Recorded departures",
+          sub: "Recorded discharges",
         },
         ...[
           CAPACITY_FIGURE_LABELS.confirmedToday,
@@ -219,7 +219,7 @@ function OperationalNetworkFigures({ onNavigate }: { onNavigate?: () => void }) 
             admissions.filter((admission) => admission.leftAt !== null && dayOf(admission.leftAt) === dayOf(now))
               .length,
           ),
-          sub: "Recorded departures",
+          sub: "Recorded discharges",
         },
         {
           label: CAPACITY_FIGURE_LABELS.confirmedToday,

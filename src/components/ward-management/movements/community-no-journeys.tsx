@@ -24,12 +24,12 @@ export function CommunityNoJourneys({ teamName }: { teamName: string }) {
         <div className={local.body}>
           <Hero
             eyebrow={`Movements · ${teamName} team`}
-            title="No journeys for the team"
+            title="No movements for the team"
             aside={<LiveChip state="live" onHero />}
           />
           {/* The kit's empty state on its own (it carries its border), with no card head repeating
               the title above it. */}
-          <section aria-label="The team's journeys">
+          <section aria-label="The team's movements">
             <EmptyState
               icon={ArrowRightLeft}
               title="Shows once a ward accepts a team referral"
@@ -53,7 +53,7 @@ export function CommunityNoJourneys({ teamName }: { teamName: string }) {
             />
           </section>
         </div>
-        <WardPrototypeFooter note="Patient journeys, transport legs and departments are invented · Not approved for clinical use" />
+        <WardPrototypeFooter note="Patient movements, transport legs and departments are invented · Not approved for clinical use" />
       </main>
     </div>
   );

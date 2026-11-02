@@ -117,7 +117,7 @@ export function PopClearance({ page }: { page: ReactNode }) {
       : !clearanceAttested
         ? "Tick the statement to save"
         : !liveMovement
-          ? "No journey is open to record against"
+          ? "No movement is open to record against"
           : undefined;
 
   return (
@@ -168,7 +168,7 @@ export function PopClearance({ page }: { page: ReactNode }) {
           />
 
           <p className={styles.note}>
-            No notification is sent. This records the stated outcome in the shared synthetic journey.
+            No notification is sent. This records the stated outcome in the shared synthetic movement.
           </p>
 
           {/* One footer row, as the other popups: Close, then the reason and the one filled button. */}

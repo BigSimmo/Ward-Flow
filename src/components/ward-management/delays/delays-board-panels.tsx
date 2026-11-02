@@ -160,7 +160,7 @@ export function PersonPanel({
       )}
       {escalation === undefined && !wardDesk ? escalationGate.note : null}
       <Link className={styles.btn} href={movementHref(movement.id)}>
-        Journey
+        Movement
       </Link>
     </div>
   );

@@ -65,7 +65,7 @@ describe("Site bed manager's site sign-off on Handover", () => {
     const checks = within(within(panel).getByTestId("ward-handover-site-checks")).getAllByRole("listitem");
     expect(checks.map((row) => row.querySelector("b")?.textContent?.trim())).toEqual([
       "Bed numbers confirmed",
-      "Discharge blockers reviewed",
+      "Discharge hold-ups reviewed",
       "Bed meeting actions due today",
       "Bed calls answered",
     ]);

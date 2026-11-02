@@ -164,7 +164,7 @@ function Action({
 function Journey({ stage }: { stage: MovementStage }) {
   const current = journeyIndex(stage);
   return (
-    <ol className={styles.journey} aria-label={`Journey: ${stageCopy[stage].label}`}>
+    <ol className={styles.journey} aria-label={`Movement: ${stageCopy[stage].label}`}>
       {JOURNEY.map((step, index) => {
         const state = index < current ? "done" : index === current ? "current" : "next";
         return (
@@ -274,7 +274,7 @@ function MovementPreview({
         <dd>{needs}</dd>
         {movement.blocker ? (
           <>
-            <dt>Blocker</dt>
+            <dt>Held up by</dt>
             <dd>{movement.blocker}</dd>
           </>
         ) : null}

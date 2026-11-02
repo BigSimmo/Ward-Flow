@@ -118,7 +118,7 @@ describe("Handover page", () => {
     const panel = screen.getByTestId("ward-handover-flow-panel");
     expect(panel).toHaveTextContent("Next step");
     expect(panel).toHaveTextContent("ISBAR");
-    expect(within(panel).getByRole("list", { name: /Journey/ })).toBeInTheDocument();
+    expect(within(panel).getByRole("list", { name: /Movement/ })).toBeInTheDocument();
     expect(screen.queryByTestId("ward-handover-sign-off")).not.toBeInTheDocument();
 
     await user.click(within(panel).getByRole("button", { name: "Close patient" }));

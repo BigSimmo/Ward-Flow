@@ -82,7 +82,7 @@ describe("discharge arrangements panel", () => {
         dispatch={() => {}}
       />,
     );
-    expect(screen.getByText("Recorded blocker: Awaiting transport")).toBeTruthy();
+    expect(screen.getByText("Held up by: Awaiting transport")).toBeTruthy();
   });
 });
 
