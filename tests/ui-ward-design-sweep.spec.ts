@@ -3,23 +3,27 @@ import { expect, test, type Page } from "playwright/test";
 import { WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 /**
- * Design sweep (2 November 2026): every main Ward Flow screen, at the phone (390x844) and desktop
- * (1280x800) sizes, fails on three owner design rules that screenshots kept missing:
+ * Design sweep (2 November 2026): every main Ward Flow screen, at the phone (390x844), tablet
+ * portrait (744x1133 iPad mini, 768x1024 iPad; Q330) and desktop (1280x800) sizes, fails on three
+ * owner design rules that screenshots kept missing:
  *
  * 1. visible text smaller than 12px;
  * 2. a visible control (button, link, tab, input, select, summary) under 40px tall or wide: on a
- *    phone, more of them than the page's recorded baseline; on a desktop, logged only (Q231);
+ *    phone, more of them than the page's recorded baseline; on a tablet or desktop, logged only (Q231);
  * 3. a sticky or top-fixed bar that covers text, sits below the place it should stick (the phone
  *    tab bar that rendered 56px low over a heading), or leaves a gap above itself where scrolled
  *    content shows through.
  *
  * Synthetic demo data only, as every Ward journey. Failure messages name elements by tag, test id
  * and class, never by their text, so a record's name never reaches a log. Every page reports all
- * of its violations, at both sizes, in one failure message.
+ * of its violations, at every size, in one failure message.
  */
 
 const VIEWPORTS = [
   { name: "phone 390x844", width: 390, height: 844 },
+  // Tablet portrait. The phone layout ends at 743px (useIsPhone, Q292), so both are tablet sizes.
+  { name: "iPad mini 744x1133", width: 744, height: 1133 },
+  { name: "iPad 768x1024", width: 768, height: 1024 },
   { name: "desktop 1280x800", width: 1280, height: 800 },
 ] as const;
 
@@ -331,7 +335,7 @@ test.describe("@mockup Ward design sweep: text size, target size and sticky bars
   test.use({ colorScheme: "light" });
 
   for (const { label, href } of PAGES) {
-    test(`${label} (${href}) meets the 12px text, 40px target and sticky bar rules at phone and desktop`, async ({
+    test(`${label} (${href}) meets the 12px text, 40px target and sticky bar rules at phone, tablet and desktop`, async ({
       page,
     }) => {
       test.setTimeout(120_000);
@@ -359,11 +363,11 @@ test.describe("@mockup Ward design sweep: text size, target size and sticky bars
             console.log(note);
           }
         } else if (targets.length) {
-          // Desktop: logged only. Q231 (Josh, 2 Nov 2026): the 40px rule is for phones; desktop
+          // Tablet and desktop: logged only. Q231 (Josh, 2 Nov 2026): the 40px rule is for phones; desktop
           // segmented and pill tabs stay 30px (kit standard of 30 October 2026), so small desktop
           // controls are reported here and never fail the sweep.
-          const note = `${label} (${href}) desktop: ${targets.length} controls under ${MIN_TARGET_PX}px (advisory, Q231)\n${summarise(targets).join("\n")}`;
-          test.info().annotations.push({ type: "desktop controls under 40px (Q231)", description: note });
+          const note = `${label} (${href}) ${viewport.name}: ${targets.length} controls under ${MIN_TARGET_PX}px (advisory, Q231)\n${summarise(targets).join("\n")}`;
+          test.info().annotations.push({ type: "tablet or desktop controls under 40px (Q231)", description: note });
           console.log(note);
         }
         if (lines.length) report.push(`${viewport.name}:`, ...lines);
