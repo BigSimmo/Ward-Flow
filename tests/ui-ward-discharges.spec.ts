@@ -324,7 +324,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
   test("no column of the discharges board's table is off the screen at any width the table is used at", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 641, height: 900 });
+    await page.setViewportSize({ width: 744, height: 900 });
     await page.goto("/ward-flow/discharges", { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     // The streamed-content guard `tests/ui-ward-referrals.spec.ts` uses, and for the same reason:
@@ -378,7 +378,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
       ).toBeVisible();
     }
 
-    for (const width of [641, 700, 760, 820]) {
+    for (const width of [744, 760, 820, 1000]) {
       await page.setViewportSize({ width, height: 900 });
       const measured = await scrollers.evaluateAll((nodes) =>
         nodes.map((scroll) => {

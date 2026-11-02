@@ -1433,7 +1433,7 @@
   }
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .bar {
     gap: 2px;
     padding: 0 4px;
@@ -4016,7 +4016,7 @@
   }
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .primary.primaryEven {
     padding: 0;
   }

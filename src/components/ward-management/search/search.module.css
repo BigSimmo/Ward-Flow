@@ -2289,7 +2289,7 @@
   color: var(--ink);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   /* f93703edee hid the typeahead's own 48px Clear and put this chip in its place. Same floor the
    * typeahead's .clear carries: a tap target inside a 48px field is not a 48px tap target. */
   .clearBtn {

@@ -2071,7 +2071,7 @@ details.refCard > summary {
   gap: var(--wf-s-2);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .fieldGrid,
   .fieldGrid[data-layout="three"],
   .priorityGrid,
@@ -2491,7 +2491,7 @@ details.refCard > summary {
   gap: var(--wf-s-2);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .destLabel,
   .fromText {
     display: none;

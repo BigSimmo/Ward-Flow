@@ -796,7 +796,7 @@
   }
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .teamList {
     grid-template-columns: 1fr;
   }
@@ -1140,7 +1140,7 @@
   letter-spacing: 0;
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .main {
     padding: 0.875rem;
   }
@@ -1200,7 +1200,7 @@
 .attentionItem {
   line-height: 1.55;
 }
-@media screen and (max-width: 40rem) {
+@media screen and (max-width: 46.4375rem) {
   .pageHeader {
     gap: 0.35rem 0.65rem;
     padding: 0.75rem;
@@ -2303,7 +2303,7 @@ button.searchBox:hover {
   font-weight: 600;
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .intakeCheck {
     min-height: var(--ward-tap, 3rem);
   }
@@ -2835,7 +2835,7 @@ button.searchBox:hover {
   display: none;
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   /* Hide legacy figure strip on mobile to guarantee first fold Y <= 420px */
   .legacyFigureStrip {
     display: none;
@@ -3173,7 +3173,7 @@ button.searchBox:hover {
   list-style: none;
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   /* Q-B8 (Josh, 31 Oct 2026): 44px (--wf-touch), never 48px. */
   .governanceSummary {
     min-height: var(--wf-touch);

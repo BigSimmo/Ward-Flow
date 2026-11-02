@@ -231,7 +231,7 @@
 
 /* Below 40rem every group's table gives way to its card list — a table is right at a desk and
  * wrong in a corridor. */
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .tableScroll {
     display: none;
   }
@@ -313,7 +313,7 @@
   padding: var(--ward-space-12) var(--ward-space-16);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .scrim {
     display: block;
     position: fixed;

@@ -345,7 +345,7 @@
 
 /* Phone: the list runs in the page, and the hero keeps its figures (Copy summary and Print list
    are desk tools). */
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .listBody {
     max-height: none;
     overflow-y: visible;
@@ -1234,7 +1234,7 @@
 }
 
 /* Phone: table rows become cards. */
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .workTable thead {
     position: absolute;
     width: 1px;
