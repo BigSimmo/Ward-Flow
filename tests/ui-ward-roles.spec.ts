@@ -738,7 +738,7 @@ test.describe("@mockup Emergency department screen", () => {
     expect(await formExpiryLines.count()).toBeGreaterThan(0);
 
     // A department can raise a referral.
-    await expect(page.getByRole("button", { name: /Raise referral/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /New referral/ })).toBeVisible();
   });
 
   /**
@@ -859,7 +859,7 @@ test.describe("@mockup Emergency department screen", () => {
 
     const blockedHandover = page.getByTestId("ward-ed-handover-WF-303");
     await expect(blockedHandover).toHaveAttribute("aria-disabled", "true");
-    await expect(blockedHandover).toHaveAttribute("title", /accepted, awaiting bed/i);
+    await expect(blockedHandover).toHaveAttribute("title", /no bed pulled yet/i);
 
     const readyHandover = page.getByTestId("ward-ed-handover-WF-016");
     // HANDOVER_READY now refuses a movement with no transport booked — the reducer's own
