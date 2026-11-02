@@ -24,7 +24,7 @@
 
 /* Compact steppers on a desktop: the kit's own 36px buttons in a squared control, the value boxed
  * between them, not floating in a wide pill. Coarse pointers keep the kit's 44px buttons. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   /* Final round: the effect column is at least 13rem, so "No referrals past target if saved" fits
    * on one line beside the stepper instead of running into it. */
   .ruleRow {
@@ -86,7 +86,7 @@
   }
 }
 
-@media (min-width: 48.0625rem) and (pointer: coarse) {
+@media (min-width: 46.5rem) and (pointer: coarse) {
   .ruleStepper > span:first-child > button {
     width: 44px;
   }

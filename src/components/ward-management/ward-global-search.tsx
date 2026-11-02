@@ -35,7 +35,7 @@ import { GlobalSearchPreview } from "@/components/ward-management/search/global-
 import { buildCensus } from "@/components/ward-management/search/patient-census";
 import { answerQuestion } from "@/components/ward-management/search/search-answers";
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
-import { useIsPhone } from "@/components/wf";
+import { useIsPhone, WF_PHONE_QUERY } from "@/components/wf";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -361,7 +361,7 @@ export function clearGlobalSearchRecents() {
 
 /** The header's bottom edge, so the scrim and palette start under the bar rather than covering it. */
 /** The width where the open search is a full screen sheet (`.popup` in the module's phone block). */
-const PHONE_SEARCH_QUERY = "(max-width: 48rem)";
+const PHONE_SEARCH_QUERY = WF_PHONE_QUERY;
 
 /** The phone sheet's top: the open field's bottom edge (the bar's top or the status bar, plus the bar). */
 const PHONE_SHEET_TOP = "calc(max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px)) + var(--wgs-bar-h, 3.5rem))";

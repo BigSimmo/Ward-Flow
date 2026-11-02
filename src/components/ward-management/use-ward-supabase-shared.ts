@@ -38,6 +38,17 @@ import { createWardAuth, tabStorage } from "./ward-auth-session";
 import { renewFrontDoorPass } from "@/components/ward-management/front-door/front-door-pass-client";
 import { SIGNED_OUT_NOTICE } from "@/components/ward-management/front-door/front-door-notice";
 
+/** #805, #839: fetch the shared client and every chunk its first read awaits (state checks and the
+ * scenario wards) while the sign-in is checked, not one after another once it is. */
+function prefetchSharedClient() {
+  void Promise.all([
+    import("./ward-shared-client"),
+    import("./ward-shared-state-validation"),
+    import("./ward-partial-view-contract"),
+    import("./ward-scenario-networks"),
+  ]).catch(() => {});
+}
+
 /**
  * At sign-out: revoke this account's phone alerts for this device, so the next person at a shared
  * phone starts with them off, then end the sign-in on the server, so its token is refused at once
@@ -391,12 +402,7 @@ export function useWardSupabaseShared(
         } catch {
           // Storage unavailable: the client loads at connect, as before.
         }
-        if (savedSignIn)
-          void Promise.all([
-            import("./ward-shared-client"),
-            import("./ward-shared-state-validation"),
-            import("./ward-partial-view-contract"),
-          ]).catch(() => {});
+        if (savedSignIn) prefetchSharedClient();
         const created = await createAuthRef.current();
         if (closed) {
           created.dispose();
@@ -422,6 +428,7 @@ export function useWardSupabaseShared(
           signIn: (email, password) =>
             run(async () => {
               disconnect();
+              prefetchSharedClient();
               await auth!.signIn(email, password);
               // A site behind the front door renews its pass, which an idle sign-out ended.
               void renewFrontDoorPass(() => auth!.token());

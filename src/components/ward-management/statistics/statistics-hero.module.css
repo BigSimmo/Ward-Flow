@@ -78,7 +78,7 @@
 
 /* Phone (8 Oct 2026): the section chooser and the Live chip share one row, and the Samples switch
  * is left to the larger screen. 12px page gutters. Under 48rem only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .page {
     padding: var(--wf-s-3);
   }
@@ -194,7 +194,7 @@
 /* v10 phone Overview: the occupancy gauge sits beside the title, under the eyebrow line, as the
  * mockup draws it. The shared hero puts a lead under the title on phone, so this hero lets its
  * title block flow into the first row and reorders it. Only a phone stats hero with a lead. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneLeadBeside > div:first-child {
     align-items: center;
   }

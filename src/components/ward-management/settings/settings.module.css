@@ -1102,7 +1102,7 @@
 }
 
 /* Tablet (touch): rule steppers reach 44px. A mouse keeps the 32px desktop stepper. */
-@media (pointer: coarse) and (min-width: 48.0625rem) {
+@media (pointer: coarse) and (min-width: 46.5rem) {
   .ruleStepper > span:first-child {
     height: var(--wf-touch);
   }

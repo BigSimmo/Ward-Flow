@@ -500,7 +500,7 @@
 /* Phone: stacked pods and Put down, four cells a row. The waiting and coming-free chips take the
    shared phone pill size (`--wf-phone-*`): a 32px face with a transparent 48px hit area, carried in
    the scrolling row's own padding so it is not clipped. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .body {
     padding: var(--wf-s-3);
   }
@@ -555,7 +555,7 @@
 }
 
 /* Phone: the sentence may take two lines rather than cut off the instruction. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .sayText {
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -567,7 +567,7 @@
 
 /* Phone (v10 bed board): no outer card. "Waiting for this ward" heads the waiting chips, then the
    hint and the pods sit straight on the page. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .boardPhone {
     border: 0;
     border-radius: 0;
@@ -593,7 +593,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .boardPhone .waitlist {
     padding-inline: var(--wf-s-1);
   }

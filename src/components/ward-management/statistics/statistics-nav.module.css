@@ -161,7 +161,7 @@
 }
 
 @supports (animation-timeline: scroll()) {
-  @media (max-width: 48rem) {
+  @media (max-width: 46.4375rem) {
     .chipNav {
       animation: chipFade linear both;
       animation-timeline: scroll(self inline);

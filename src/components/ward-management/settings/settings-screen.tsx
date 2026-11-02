@@ -1316,7 +1316,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               key={section}
               id={`settings-section-${section}`}
               className={rx.section}
-              aria-label={editsRules || section !== "rules" ? SECTION_LABELS[section] : "Rules that affect you"}
+              // A8 (accessibility check, 2 Nov 2026): a card inside carries the bare name, so this one says Settings.
+              aria-label={`Settings, ${editsRules || section !== "rules" ? SECTION_LABELS[section] : "Rules that affect you"}`}
               data-pane={section}
             >
               {sectionContent[section]}

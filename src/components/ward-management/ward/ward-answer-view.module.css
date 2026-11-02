@@ -1681,7 +1681,7 @@
   }
 }
 
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .gatesCard .declineFieldset {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1705,7 +1705,7 @@
  * running off the edge, the request counter never breaks mid label, ask, decline and accept stay
  * on one line, and the bed confirmation input takes the free width with full height tap targets.
  * Desktop is unchanged. */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .workspace > [data-testid="ward-unit-status-hud"] {
     margin-bottom: 0;
   }
@@ -1792,7 +1792,7 @@
 /* Phone polish (8 Oct 2026): the answer band is title, then one row with Accept in principle on the
  * right (Back is in the header since 20 Oct 2026). The page foot keeps the 12px gutter. Desktop is
  * unchanged. */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .answerScreen > footer {
     width: auto;
     align-self: stretch;
@@ -1845,7 +1845,7 @@
   text-overflow: ellipsis;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroChips {
     max-width: 100%;
     overflow-x: auto;
@@ -1997,7 +1997,7 @@ details[open] > summary > .phoneFoldChevron {
   display: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .answerTop .heroNav {
     display: flex;
     flex: 1 1 100%;
@@ -2208,7 +2208,7 @@ details[open] > summary > .phoneFoldChevron {
 }
 
 /* Phone: the eligibility sentence is a line of text, not a pill, so it never wraps inside one. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .badge[data-level] {
     display: block;
     height: auto;
@@ -2223,7 +2223,7 @@ details[open] > summary > .phoneFoldChevron {
 }
 
 /* Phone (v10): the request card opens with "This patient" beside a person tile, then pill chips. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phonePatientHead {
     display: flex;
     align-items: center;
@@ -2275,7 +2275,7 @@ details[open] > summary > .phoneFoldChevron {
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .referralCard .answerFacts {
     border: 1px solid var(--wf-line);
   }
@@ -2476,7 +2476,7 @@ details[open] > summary > .phoneFoldChevron {
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
    with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
    tablet keep the toast above. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .toast {
     --toast-bg: light-dark(
       color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
@@ -2525,7 +2525,7 @@ details[open] > summary > .phoneFoldChevron {
    1440 x 900 and about 1,690px down on iPad portrait. Above phone width the decision row pins to
    the foot of the window while its card is on screen, on a solid surface. The card clips rather
    than hides its overflow, so the row can stick. Phone keeps its own pinned bar. */
-@media screen and (min-width: 48.0625rem) {
+@media screen and (min-width: 46.5rem) {
   .gatesCard {
     overflow: clip;
   }
@@ -2541,7 +2541,7 @@ details[open] > summary > .phoneFoldChevron {
 
 /* iPad portrait: the two cards stack, so the gates card (and its decision row) starts below the
    fold. The row pins to the window foot, as the phone bar does, and the page keeps room for it. */
-@media screen and (min-width: 48.0625rem) and (max-width: 64rem) {
+@media screen and (min-width: 46.5rem) and (max-width: 64rem) {
   .answerScreen:has(.decisionArea) {
     padding-bottom: 5rem;
   }
@@ -2570,7 +2570,7 @@ details[open] > summary > .phoneFoldChevron {
 }
 
 /* iPad portrait: the Census bed strip fits a 20-bed ward on one row (bed 19 no longer wraps). */
-@media screen and (min-width: 48.0625rem) and (max-width: 64rem) {
+@media screen and (min-width: 46.5rem) and (max-width: 64rem) {
   .bedGrid {
     grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
   }

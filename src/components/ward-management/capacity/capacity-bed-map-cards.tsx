@@ -140,7 +140,7 @@ export function BedMapCards({
           const isOpen = open.has(group.service);
           const panelId = `capacity-map-${group.service.replace(/\W+/g, "-").toLowerCase()}`;
           return (
-            <section key={group.service} className={styles.mapGroup} aria-label={group.service}>
+            <section key={group.service} className={styles.mapGroup} aria-label={`${group.service} bed map`}>
               <h3 className={styles.mapGroupHead}>
                 <button
                   type="button"

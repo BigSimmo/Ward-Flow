@@ -99,7 +99,7 @@
 
 /* The exact period line: the phone already gives the week in the hero and under the week switch,
    so the line is hidden on a phone screen only. Print keeps it at every width. */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .phoneScreenHidden {
     display: none;
   }
@@ -111,7 +111,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .grid2 {
     grid-template-columns: minmax(0, 1fr);
   }

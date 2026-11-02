@@ -12,7 +12,7 @@
 }
 
 /* Phone: 40px buttons with an invisible cover for a larger tap area, never 48px tall. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .actions .btn {
     min-height: 40px;
     height: 40px;
