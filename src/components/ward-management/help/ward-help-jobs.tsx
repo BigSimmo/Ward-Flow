@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Link2,
   Play,
+  Printer,
   SlidersHorizontal,
   ThumbsDown,
   ThumbsUp,
@@ -29,7 +30,7 @@ import type { ScreenHelp } from "./ward-help-content";
 
 import { howToHref } from "./ward-help-href";
 import { HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS, showMeSteps, type HowTo } from "./ward-help-howto";
-import { aroundId } from "./ward-help-screen-tours";
+import { aroundId, SCREEN_TOURS } from "./ward-help-screen-tours";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 import { helpLinkHref } from "./ward-help-events";
 import { recordHelpFeedback } from "./ward-help-feedback";
@@ -448,6 +449,18 @@ export function HelpTasks({
             </div>
           ) : null}
           <HowItWorks actions={phone ? (screen.phoneActions ?? screen.actions) : screen.actions} />
+          {SCREEN_TOURS.some((tour) => tour.around === screen.id) ? (
+            <a
+              href={`/help/screens/${screen.id}.html`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={s.printRow}
+              data-testid="ward-help-screen-print"
+            >
+              <Printer aria-hidden="true" strokeWidth={1.75} />
+              Printable screen guide (A4)
+            </a>
+          ) : null}
         </section>
       ) : null}
 

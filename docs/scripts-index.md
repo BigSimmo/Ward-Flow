@@ -89,7 +89,8 @@ script here.
 ## Documents and generated indexes
 
 `node scripts/build-help-cheat-sheets.mjs --output public/help` generates nine Markdown and
-A4 print guides from the same typed content as in-app Help. Add `--check` to detect drift without
+A4 print desk guides from the same typed content as in-app Help, and one A4 screen guide per
+Show me around walk round in `public/help/screens/`. Add `--check` to detect drift without
 writing. The builder preserves unowned documents and hand-edited output. Help links to the HTML
 guides; they load only when opened and add no script to a phone page.
 

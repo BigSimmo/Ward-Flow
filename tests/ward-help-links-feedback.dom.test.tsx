@@ -50,6 +50,7 @@ import {
 } from "@/components/ward-management/help/ward-help-feedback";
 import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { HOW_TO_IDS } from "@/components/ward-management/help/ward-help-howto";
+import { SCREEN_HELP } from "@/components/ward-management/help/ward-help-content";
 import { HelpTasks } from "@/components/ward-management/help/ward-help-jobs";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import { HELP_USED_STORAGE_KEY } from "@/components/ward-management/help/ward-help-usage";
@@ -170,5 +171,32 @@ describe("Help sheet upgrades", () => {
     installMatchMediaStub(true);
     sheet();
     expect(screen.getByTestId("ward-help-shortcuts")).toBeTruthy();
+  });
+});
+
+describe("printable guides from Help", () => {
+  it("links this screen's one-page guide from the On this screen card", () => {
+    render(
+      <HelpTasks
+        role="coordinator"
+        home="/ward-flow"
+        pathname="/ward-flow/discharges"
+        screen={{ ...SCREEN_HELP.discharges, id: "discharges" }}
+        onClose={vi.fn()}
+        onShowMe={vi.fn()}
+        onTour={vi.fn()}
+        onSearch={vi.fn()}
+        screenName={() => "Discharges"}
+        showMeOn
+      />,
+    );
+    expect(screen.getByTestId("ward-help-screen-print").getAttribute("href")).toBe("/help/screens/discharges.html");
+  });
+
+  it("links the desk's A4 guide from Your desk", () => {
+    render(
+      <WardHelpSheet view="desk" showMeOn onView={vi.fn()} onClose={vi.fn()} onTour={vi.fn()} onShowMe={vi.fn()} />,
+    );
+    expect(screen.getByTestId("ward-help-desk-print").getAttribute("href")).toMatch(/^\/help\/[a-z_]+\.html$/);
   });
 });

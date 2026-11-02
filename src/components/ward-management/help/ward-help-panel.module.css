@@ -1387,6 +1387,38 @@
   margin: 0 -14px -14px;
 }
 
+/* With the printable guide below it, the guide row takes the card's foot instead. */
+.works:has(+ .printRow) {
+  margin-bottom: 0;
+}
+
+/* The printable screen guide, a quiet row under How this screen works. */
+.printRow {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -14px -14px;
+  padding: 0 14px;
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  text-decoration: none;
+}
+
+.printRow:hover {
+  color: var(--wf-ink-1);
+}
+
+.printRow svg {
+  width: 15px;
+  height: 15px;
+}
+
+.printLink {
+  justify-self: start;
+}
+
 .worksToggle {
   display: flex;
   width: 100%;

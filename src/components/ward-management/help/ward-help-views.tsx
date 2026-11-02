@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, ChevronDown, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, Printer, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -224,6 +224,16 @@ export function HelpDesk({
           </ul>
         </section>
       ))}
+      <a
+        href={`/help/${role}.html`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${buttonClass({ variant: "ghost" })} ${s.printLink}`}
+        data-testid="ward-help-desk-print"
+      >
+        <Printer aria-hidden="true" size={14} strokeWidth={1.75} />
+        Printable desk guide (A4)
+      </a>
     </>
   );
 }
