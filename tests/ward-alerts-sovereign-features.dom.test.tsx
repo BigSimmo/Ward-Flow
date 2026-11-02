@@ -37,18 +37,26 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     expect(screen.getByRole("region", { name: "ED mental health team" })).toBeInTheDocument();
   });
 
-  it("highlights rows from a hero figure without hiding any, with no owner menu on desktop", () => {
+  it("highlights rows from a check without hiding any, with no owner menu on desktop", () => {
     const { container } = renderScreen();
     const total = container.querySelectorAll("li[data-alert-id]").length;
     expect(total).toBeGreaterThan(0);
 
-    const summary = screen.getByRole("group", { name: "Alert summary" });
-    const actNow = within(summary).getByRole("button", { name: /Act now/ });
-    fireEvent.click(actNow);
-    expect(actNow).toHaveAttribute("aria-pressed", "true");
+    // Q183 (1 Nov 2026): the hero figures are gone; a flagged check in the Checking list highlights.
+    fireEvent.click(screen.getByRole("button", { name: /^Checking \d+ flagged · \d+ clear$/u }));
+    const checks = within(screen.getByRole("list", { name: "Conditions checked" })).getAllByRole("button");
+    // The first check whose kind has a row in the list.
+    const flagged = checks.find((button) => {
+      if (!button.hasAttribute("aria-pressed")) return false;
+      fireEvent.click(button);
+      if (container.querySelector("li[data-highlighted]")) return true;
+      fireEvent.click(button);
+      return false;
+    });
+    expect(flagged, "the seed flags at least one listed condition").toBeDefined();
+    expect(flagged).toHaveAttribute("aria-pressed", "true");
     const highlighted = container.querySelectorAll("li[data-highlighted]");
     expect(highlighted.length).toBeGreaterThan(0);
-    for (const row of highlighted) expect(row).toHaveAttribute("data-tone", "danger");
     expect(container.querySelectorAll("li[data-alert-id]")).toHaveLength(total);
     const clear = screen.getByRole("button", { name: `Clear highlights, ${highlighted.length} highlighted` });
 
@@ -133,13 +141,11 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
   // The feed used to render two typed-in items, one naming "Luke Davies" as WF-021's patient and
   // calling a transfer complete that the record does not hold (25 September 2026 audit, A7). It
   // now lists only the notices the reducer has raised, and says plainly when there are none.
-  it("renders the Operational Notices & Shift Communication Feed from recorded notices only", () => {
-    renderScreen();
-    fireEvent.click(screen.getByRole("tab", { name: /Notices/ }));
-    const feed = screen.getByRole("region", { name: "Operational notices and shift communication feed" });
-    expect(within(feed).getByText("Role notices")).toBeInTheDocument();
-    expect(within(feed).getByText("No notices have been raised this session.")).toBeInTheDocument();
-    expect(feed.textContent).not.toMatch(/Catchment Override Logged|Custodial Transfer Completed|Luke Davies/);
+  it("shows notices from recorded notices only, and no Notices group while there are none", () => {
+    // Q181 (1 Nov 2026): unread notices are a group in Now; with none recorded there is no group.
+    const { container } = renderScreen();
+    expect(screen.queryByRole("region", { name: "Notices" })).not.toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/Catchment Override Logged|Custodial Transfer Completed|Luke Davies/);
   });
 
   it("lists a notice in the feed once the reducer raises one", () => {
@@ -169,10 +175,8 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "release the pull" }));
-    fireEvent.click(screen.getByRole("tab", { name: /Notices/ }));
 
-    const feed = screen.getByRole("region", { name: "Operational notices and shift communication feed" });
-    expect(within(feed).queryByText("No notices have been raised this session.")).not.toBeInTheDocument();
+    const feed = screen.getByRole("region", { name: "Notices" });
     const items = within(feed).getAllByRole("listitem");
     expect(items).toHaveLength(1);
     expect(items[0]!.textContent).toMatch(/Unread/);

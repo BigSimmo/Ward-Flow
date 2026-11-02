@@ -211,10 +211,10 @@ const PHONE_BAR_MAX_WIDTH = 768;
 const PHONE_DOCK_BUTTONS: Readonly<Record<string, string>> = {
   "ward-bar-activity-trigger": "ward-phone-menu-activity",
 };
-// One Alerts queue (D-61): the bed coordinator's dock carries an Alerts link to the Alerts screen,
-// not a drawer button, so on a phone the bar's Alerts quick look has no opener.
+// One Alerts queue (D-61): the bed coordinator's dock carries a Tasks link (Q177) to the Alerts
+// screen, not a drawer button, so on a phone the bar's Alerts quick look has no opener.
 const PHONE_DOCK_LINKS: Readonly<Record<string, string>> = {
-  "ward-bar-tasks-trigger": "ward-phone-menu-alerts",
+  "ward-bar-tasks-trigger": "ward-phone-menu-tasks",
 };
 
 function phoneOpens(testId: string, width: number): boolean {
@@ -848,9 +848,9 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
   await page.keyboard.press("Escape");
   await expect(page.getByTestId(PHONE_MENU[0])).toBeFocused();
 
-  // One Alerts queue (D-61): the bed coordinator's dock carries Alerts, which opens the Alerts
+  // One Alerts queue (D-61): the bed coordinator's dock carries Tasks (Q177), which opens the Alerts
   // screen. Every queue row there must still be reachable on a short phone.
-  await page.getByTestId("ward-phone-menu-alerts").click();
+  await page.getByTestId("ward-phone-menu-tasks").click();
   await expect(page).toHaveURL(/\/ward-flow\/alerts(?:[?#]|$)/u);
   await expect(
     page.locator('div[hidden][id^="S:"]'),

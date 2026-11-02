@@ -252,11 +252,20 @@ describe("Alerts v10 pass (10 Oct 2026)", () => {
     for (const row of document.querySelectorAll('[data-alert-id][data-act="true"]')) {
       expect(row.getAttribute("data-tone")).not.toBeNull();
     }
-    fireEvent.click(screen.getByRole("button", { name: /Act now/ }));
+    // Q183 (1 Nov 2026): the hero figures are gone; a check in the Checking list highlights instead.
+    const flagged = within(checkingList())
+      .getAllByRole("button")
+      .find((button) => button.hasAttribute("aria-pressed") && !/^0\b/u.test(button.textContent ?? ""));
+    expect(flagged, "the seed flags at least one condition").toBeDefined();
+    fireEvent.click(flagged!);
     expect(rows().length).toBe(before);
     const dimmed = document.querySelectorAll('[data-alert-id][data-dim="true"]').length;
     const lit = document.querySelectorAll('[data-alert-id][data-highlighted="true"]').length;
-    expect(dimmed + lit).toBe(before);
+    // Safety rule: an act-now row is never dimmed, so an unlit act-now row keeps its full colour.
+    const actUnlit = document.querySelectorAll(
+      '[data-alert-id][data-act="true"]:not([data-highlighted="true"])',
+    ).length;
+    expect(dimmed + lit + actUnlit).toBe(before);
     expect(screen.getByText(new RegExp(`^${lit} of \\d+ highlighted, all rows stay$`))).toBeInTheDocument();
   });
 
@@ -312,10 +321,8 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
     try {
       renderScreen();
       const hero = within(screen.getByTestId("ward-alerts-phone-hero"));
-      // Redesign (31 Oct 2026): both sit as Home's hero pills; Next keeps the one light (primary) face.
-      expect(hero.getByRole("button", { name: /^Next alert/u }).className).toBe(
-        buttonClass({ variant: "light", className: phoneRows.heroPill }),
-      );
+      // Alerts redesign (Q184, 1 Nov 2026): Next keeps the one light (primary) face; More is a hero pill.
+      expect(hero.getByRole("button", { name: /^Next alert/u }).className).toBe(buttonClass({ variant: "light" }));
       expect(hero.queryByRole("button", { name: /^Broadcast/u })).toBeNull();
       expect(hero.getByRole("button", { name: "More alert actions" }).className).toContain(phoneRows.heroPill);
     } finally {

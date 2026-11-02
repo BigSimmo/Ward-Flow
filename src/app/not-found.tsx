@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ArrowLeft, FileQuestion } from "lucide-react";
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { cn, primaryControl } from "@/components/ui-primitives";
 
 // Design audit DA-28: the tab named only "Ward Flow" on a missing page.
 export const metadata: Metadata = {
@@ -29,7 +28,8 @@ export default function NotFound() {
         <div className="mt-6 flex flex-col gap-2">
           <ContextualBackLink
             fallbackHref="/ward-flow"
-            className={cn(primaryControl, "flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium")}
+            // Q197 (Josh, 1 Nov 2026): the accent button of the in-app not-found card, not the black one.
+            className="flex min-h-10 items-center justify-center gap-2 rounded-[var(--wf-r-ctl)] bg-[color:var(--wf-accent)] px-4 py-2 text-sm font-semibold text-[color:var(--wf-on-accent)] no-underline"
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
             Back to Ward Flow

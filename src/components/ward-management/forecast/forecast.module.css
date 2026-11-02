@@ -516,3 +516,11 @@
   padding-left: var(--wf-s-4);
   font-size: var(--wf-fs-12);
 }
+
+/* Q192 (1 Nov 2026): "Show all" under the ED card's first few rows, as Transport's Needs transport. */
+.riskMore {
+  display: flex;
+  justify-content: center;
+  padding: var(--wf-s-1);
+  border-top: 1px solid var(--wf-line);
+}

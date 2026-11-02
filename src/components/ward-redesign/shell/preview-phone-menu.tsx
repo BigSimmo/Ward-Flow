@@ -368,8 +368,24 @@ function PhoneDock({
         );
       }
       case "queue":
+        // Q177 (Josh, 1 Nov 2026): the coordinator's dock says Tasks again and opens the same queue.
         return oneAlertsQueue ? (
-          alertsLink(tasksCount)
+          <Link
+            key="tasks"
+            href={WARD_ALERTS_HREF}
+            prefetch={true}
+            className={styles.dockItem}
+            aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
+            data-testid="ward-phone-menu-tasks"
+            onClick={() => announceToWardShell("Tasks.")}
+          >
+            <DockFace
+              icon={ListChecks}
+              label="Tasks"
+              count={tasksCount}
+              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+            />
+          </Link>
         ) : (
           <button
             key="tasks"

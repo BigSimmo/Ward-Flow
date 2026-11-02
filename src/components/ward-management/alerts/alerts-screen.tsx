@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
 import { AlarmClock, ChevronRight, Clock, X } from "lucide-react";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -85,12 +86,12 @@ import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
 import { alertsHistory } from "./alerts-history";
-import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
+import { AlertsHero, alertsHeadline, type AlertsTab } from "./alerts-hero";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
 import { AlertsSidePanelEmpty, CheckingList, ChecksCard, ChecksChip, ownWardName } from "./alerts-checking";
-import { AlertsBroadcastPanel, AlertsHistoryPanel, AlertsNoticesPanel } from "./alerts-tab-panels";
+import { AlertsEarlierPanel, AlertsLiveBroadcasts, AlertsNoticesGroup } from "./alerts-tab-panels";
 import { BroadcastComposer } from "./broadcast-composer";
 import { QUICK_STARTS } from "./broadcast-audience";
 import { liveBedCallFor, useBroadcastAudience } from "./use-broadcast-audience";
@@ -245,10 +246,21 @@ function AlertsWorkspace() {
     [allInbox, inboxSnoozes, now],
   );
   const feedNotices = useMemo(() => [...notices].sort((a, b) => b.raisedAt - a.raisedAt), [notices]);
+  // Q181: unread notices sit in Now; read ones in Earlier today.
+  const unreadNotices = feedNotices.filter((notice) => notice.readAt === undefined);
+  const readNotices = feedNotices.filter((notice) => notice.readAt !== undefined);
+  // Where this desk is, in words, for the hero eyebrow and the empty state.
+  const deskPlace = accessPlaceLabel(access, units);
+  // Q181: the live broadcast sits at the top of Now; the hero's broadcast line and Today open it.
+  function openLiveBroadcast() {
+    setTab("now");
+    window.requestAnimationFrame(() =>
+      document.getElementById("alerts-live-broadcast")?.scrollIntoView({ block: "nearest" }),
+    );
+  }
 
   const [tab, setTab] = useState<AlertsTab>("now");
   const [arrangeBy, setArrangeBy] = useState<ArrangeBy>("urgency");
-  const [pill, setPill] = useState<HeroPill | null>(null);
   const [ownerHighlight, setOwnerHighlight] = useState<string | null>(null);
   const [watchHighlight, setWatchHighlight] = useState<AlertKind | null>(null);
   const [chosenId, setChosenId] = useState<string | undefined>(undefined);
@@ -468,14 +480,11 @@ function AlertsWorkspace() {
   );
   const isHighlighted = useCallback(
     (entry: Omit<QueueEntry, "highlighted">) =>
-      (pill === "act" && entry.group === "act") ||
-      (pill === "wait" && entry.group === "wait") ||
-      (pill === "mine" && entry.mine) ||
       (ownerHighlight !== null && entry.owner === ownerHighlight) ||
       (watchHighlight !== null && alertKindOf(entry.item.id) === watchHighlight),
-    [pill, ownerHighlight, watchHighlight],
+    [ownerHighlight, watchHighlight],
   );
-  const highlightOn = pill !== null || ownerHighlight !== null || watchHighlight !== null;
+  const highlightOn = ownerHighlight !== null || watchHighlight !== null;
   const toEntries = useCallback(
     (items: InboxItem[], snoozed: boolean): QueueEntry[] =>
       items
@@ -553,10 +562,6 @@ function AlertsWorkspace() {
     );
     return ranked.length > 0 ? ranked : countedActive;
   }, [countedActive]);
-  // Ops-3: "open" is the one active list the Now tab and Tasks badge count, running targets included,
-  // so Act now plus Waiting plus running adds up to open.
-  const openCount = activeEntries.length;
-  const runningText = runningEntries.length > 0 ? ` · ${runningEntries.length} running` : "";
 
   const chosen = allEntries.find((entry) => entry.item.id === chosenId);
   // On the desktop the panel always shows an alert: the chosen one, else the first in line.
@@ -779,8 +784,8 @@ function AlertsWorkspace() {
       scope: targetScope,
       scopeLabel: targetScopeLabel,
     });
-    // The new directive shows on the Broadcast tab, where it can be stood down.
-    setTab("broadcast");
+    // The new directive shows at the top of Now, where it can be stood down (Q181).
+    openLiveBroadcast();
     dispatch({
       type: "DISPATCH_BROADCAST_ALERT",
       role: deskRole,
@@ -870,9 +875,7 @@ function AlertsWorkspace() {
     );
   };
 
-  const togglePill = (next: HeroPill) => setPill((current) => (current === next ? null : next));
   const clearHighlights = () => {
-    setPill(null);
     setOwnerHighlight(null);
     setWatchHighlight(null);
   };
@@ -883,14 +886,9 @@ function AlertsWorkspace() {
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
 
-  // Alerts redesign (Q112, Josh 1 Nov 2026): the title is the Act now and Waiting figures, Home's
-  // count included. "New to you" is gone: nothing on the page explained it.
-  const heroTitle =
-    actCount > 0 || waitEntries.length > 0
-      ? `${actCount} act now, ${waitEntries.length} waiting`
-      : wardName
-        ? `No alert for ${wardName}`
-        : "No alert needs you";
+  // Q183 (Josh, 1 Nov 2026): one headline on every desk, "3 need you now" or "Nothing needs you".
+  // It counts Act now (Home's count included) plus Waiting; Q179 keeps those two groups below.
+  const heroTitle = alertsHeadline(actCount + waitEntries.length);
 
   // ---- Queue views ----
   const rowFor = (entry: QueueEntry) =>
@@ -967,6 +965,14 @@ function AlertsWorkspace() {
       )}
     </section>
   );
+  // Q184 (Josh, 1 Nov 2026): a desk with nothing late or blocked gets one calm empty state.
+  const nothingNeedsYou = (
+    <div className={styles.nothingEmpty} data-testid="ward-alerts-nothing">
+      <StatusGlyph tone="success" size={16} />
+      <strong>Nothing needs you</strong>
+      <span>Nothing is late or blocked for {deskPlace}. You&apos;ll be told when that changes.</span>
+    </div>
+  );
   const urgencyLabels = ["Act now", "Waiting", "Targets running"] as const;
   // Safety rule 4: a snoozed act-now alert stays listed in Act now, with its return time.
   const snoozedAct = snoozedEntries.filter((entry) => entry.group === "act");
@@ -977,19 +983,23 @@ function AlertsWorkspace() {
     shownEarlier: urgencyLinked.shownEarlier[section] ?? 0,
     sectionLabels: urgencyLabels,
   });
+  // Q179 no: Act now and Waiting stay two groups; only when both are empty do they give way to one line.
+  const nothingNow = actListed.length === 0 && toPull.length === 0 && waitEntries.length === 0;
   const urgencyView = quietWard ? (
-    <p className={styles.groupEmpty}>Nothing in Act now or Waiting.</p>
+    nothingNeedsYou
   ) : (
     <>
-      {groupSection(
-        "act",
-        "Act now",
-        actListed,
-        <GroupHead tone="danger" label="Act now" count={actCount} aside="needs a person now" />,
-        "Nothing to act on now.",
-        urgencyLink(0),
-        pullRows,
-      )}
+      {nothingNow
+        ? nothingNeedsYou
+        : groupSection(
+            "act",
+            "Act now",
+            actListed,
+            <GroupHead tone="danger" label="Act now" count={actCount} aside="needs a person now" />,
+            "Nothing to act on now.",
+            urgencyLink(0),
+            pullRows,
+          )}
       {access.role === "coordinator" || access.role === "bed_manager" ? (
         <ForecastAlertsGroup
           now={now}
@@ -998,14 +1008,16 @@ function AlertsWorkspace() {
           head={(count) => <GroupHead tone="warning" label="Forecast" count={count} />}
         />
       ) : null}
-      {groupSection(
-        "wait",
-        "Waiting",
-        waitEntries,
-        <GroupHead tone="warning" label="Waiting" count={waitEntries.length} aside="oldest first" />,
-        "Nothing is waiting on a transport leg or a planned arrival.",
-        urgencyLink(1),
-      )}
+      {nothingNow
+        ? null
+        : groupSection(
+            "wait",
+            "Waiting",
+            waitEntries,
+            <GroupHead tone="warning" label="Waiting" count={waitEntries.length} aside="oldest first" />,
+            "Nothing is waiting on a transport leg or a planned arrival.",
+            urgencyLink(1),
+          )}
       {runningEntries.length > 0
         ? groupSection(
             "running",
@@ -1119,12 +1131,31 @@ function AlertsWorkspace() {
   });
   const view: ArrangeBy = isPhone ? "urgency" : arrangeBy;
 
+  const liveBroadcasts = (
+    <AlertsLiveBroadcasts
+      livePullNows={livePullNows}
+      handleStandDown={handleStandDown}
+      activeBroadcast={activeBroadcast}
+      broadcastAcks={broadcastAcks}
+      units={units}
+      now={now}
+      track={track}
+      raise={raise}
+      deskRole={deskRole}
+      onCopyAnswers={(text) =>
+        copyTextToClipboard(text).then(
+          () => setBroadcastSuccessNotice("Copied the answers."),
+          () => setBroadcastSuccessNotice("Copy was blocked by the browser."),
+        )
+      }
+    />
+  );
+  const noticesGroup = <AlertsNoticesGroup notices={unreadNotices} now={now} umrnLookup={umrnLookup} />;
+  // Q181 (Josh, 1 Nov 2026): two views. Now counts what the headline counts; Earlier today has no count.
   const tabs = [
-    { id: "now" as const, label: "Now", count: activeEntries.length },
-    { id: "broadcast" as const, label: "Broadcast", count: (activeBroadcast ? 1 : 0) + livePullNows.length },
-    { id: "notices" as const, label: "Notices", count: feedNotices.length },
-    { id: "history" as const, label: "History", count: history.length },
-  ].filter((item) => access.role !== "officer" || item.id === "now" || item.count > 0); // Officer: no empty tabs.
+    { id: "now" as const, label: "Now", count: actCount + waitEntries.length },
+    { id: "earlier" as const, label: "Earlier today", count: 0 },
+  ];
 
   // Audit 1 (CS-15, Josh 20 Oct): an alert shown because it is first in line, not because somebody
   // chose it, says so above its actions.
@@ -1196,7 +1227,7 @@ function AlertsWorkspace() {
         noTimeCount={countedActive.filter((entry) => entry.raised === undefined).length}
         checking={<div className={styles.checkingFootWide}>{checkingFoot}</div>}
         liveBroadcast={liveUntil !== undefined ? { until: liveUntil } : undefined}
-        onOpenBroadcast={() => setTab("broadcast")}
+        onOpenBroadcast={openLiveBroadcast}
       />
     );
 
@@ -1207,22 +1238,17 @@ function AlertsWorkspace() {
         <AlertsHero
           isPhone={isPhone}
           heroTitle={heroTitle}
-          openCount={openCount}
-          runningText={runningText}
+          place={deskPlace}
           oldestRaised={oldestRaised}
           now={now}
           live={live}
-          actCount={actCount}
-          waitEntries={waitEntries}
-          pill={pill}
-          togglePill={togglePill}
           yoursCount={yoursCount}
           handleNext={handleNext}
           broadcastTriggerRef={broadcastTriggerRef}
           openComposer={openComposer}
           broadcastDisabledReason={broadcastDisabledReason}
           activeBroadcast={activeBroadcast}
-          setTab={setTab}
+          onOpenBroadcast={openLiveBroadcast}
           directiveTone={directiveTone}
           broadcastAcks={broadcastAcks}
           phoneToday={phoneToday}
@@ -1295,6 +1321,7 @@ function AlertsWorkspace() {
 
               {tab === "now" ? (
                 <TabPanel idPrefix="alerts" id="now">
+                  {liveBroadcasts}
                   {/* Nurse in charge: one ward needs no arrange-by or owner lens. */}
                   {wardName !== undefined || !anyHighlight ? null : (
                     <div className={styles.toolbar}>
@@ -1335,11 +1362,13 @@ function AlertsWorkspace() {
                         </div>
                       ) : null}
                       <div className={styles.phoneList}>{urgencyView}</div>
+                      {noticesGroup}
                       {quietWard ? null : <p className={styles.phoneNote}>{alertsOrderLine("urgency")}</p>}
                     </>
                   ) : (
                     <>
                       {view === "lanes" ? lanesView : view === "owner" ? ownerView : urgencyView}
+                      {noticesGroup}
                       {quietWard && view === "urgency" ? null : (
                         <p className={styles.orderNote} data-testid="ward-alerts-order-note">
                           {alertsOrderLine(view)}
@@ -1350,35 +1379,17 @@ function AlertsWorkspace() {
                 </TabPanel>
               ) : null}
 
-              {tab === "broadcast" ? (
-                <AlertsBroadcastPanel
-                  livePullNows={livePullNows}
-                  handleStandDown={handleStandDown}
-                  activeBroadcast={activeBroadcast}
-                  broadcastAcks={broadcastAcks}
-                  units={units}
-                  now={now}
-                  track={track}
-                  raise={raise}
+              {tab === "earlier" ? (
+                <AlertsEarlierPanel
+                  history={history}
+                  readNotices={readNotices}
                   pastBroadcasts={pastBroadcasts}
+                  units={units}
                   movements={movements}
-                  deskRole={deskRole}
-                  onCompose={openComposer}
-                  composeDisabledReason={broadcastDisabledReason}
-                  onCopyAnswers={(text) =>
-                    copyTextToClipboard(text).then(
-                      () => setBroadcastSuccessNotice("Copied the answers."),
-                      () => setBroadcastSuccessNotice("Copy was blocked by the browser."),
-                    )
-                  }
+                  now={now}
+                  umrnLookup={umrnLookup}
                 />
               ) : null}
-
-              {tab === "notices" ? (
-                <AlertsNoticesPanel feedNotices={feedNotices} now={now} umrnLookup={umrnLookup} />
-              ) : null}
-
-              {tab === "history" ? <AlertsHistoryPanel history={history} now={now} /> : null}
             </Card>
 
             {isPhone ? (
@@ -1467,7 +1478,7 @@ function AlertsWorkspace() {
               });
               raise("EXTEND_BROADCAST_ALERT", { alertId });
               handleCloseBroadcastModal();
-              setTab("broadcast");
+              openLiveBroadcast();
             }}
             senderName={coordDesk ? "Bed coordinator" : WARD_FLOW_ROLE_LABELS[deskRole]}
             now={now}

@@ -45,8 +45,25 @@ describe("Midland community team demo (locked design)", () => {
     expect(within(caseload).getByRole("combobox", { name: "Case manager" })).toHaveValue("byrne");
   });
 
+  it("finds a client or clinician from the tab row (Q190)", () => {
+    renderTeam("midland");
+    const find = screen.getByRole("searchbox", { name: "Find a client or clinician" });
+    fireEvent.change(find, { target: { value: "ashcombe" } });
+    expect(screen.getByRole("tab", { name: /^Caseload/u })).toHaveAttribute("aria-selected", "true");
+    const caseload = screen.getByRole("tabpanel", { name: /^Caseload/u });
+    expect(within(caseload).getAllByText("Ashcombe, Rhys").length).toBeGreaterThan(0);
+    expect(within(caseload).queryByText("Bellworth, Tamsin")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /^Clinicians/u }));
+    fireEvent.change(find, { target: { value: "petrov" } });
+    expect(screen.getByRole("tab", { name: /^Clinicians/u })).toHaveAttribute("aria-selected", "true");
+    const clinicians = screen.getByRole("tabpanel", { name: /^Clinicians/u });
+    expect(within(clinicians).getAllByText("Petrov, Dr Lena").length).toBeGreaterThan(0);
+    expect(within(clinicians).queryByText("Ramsay, Dr Kofi")).not.toBeInTheDocument();
+  });
+
   it("leaves other teams on their own records", () => {
     renderTeam("albany");
+    expect(screen.queryByRole("searchbox", { name: "Find a client or clinician" })).not.toBeInTheDocument();
     expect(screen.queryByText(/waiting for a case manager/u)).not.toBeInTheDocument();
     expect(screen.queryByText("Byrne, T.")).not.toBeInTheDocument();
   });

@@ -265,23 +265,6 @@
   color: var(--wf-ink-1);
 }
 
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--wf-s-2);
-  padding: 32px var(--wf-s-4);
-  border: 1px dashed var(--wf-line-2);
-  border-radius: var(--wf-r-lg);
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-.empty strong {
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
-}
-
 @media (max-width: 599px) {
   .tabBody {
     padding: var(--wf-s-3) 0;

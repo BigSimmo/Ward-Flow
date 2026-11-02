@@ -120,3 +120,28 @@ describe("switcher words stay neutral (shell-13)", () => {
     expect(source).toContain('<StatusGlyph tone="danger" />');
   });
 });
+
+describe("one desk for a service the owner ruled is one (Q202)", () => {
+  it("shows Armadale's Mead Centre once, under its first spelling", () => {
+    const names = desks.teams.map((desk) => desk.name);
+    expect(names).toContain("Mead Centre (Armadale)");
+    for (const spelling of ["Armadale (Mead Centre)", "Armadale (Mead)", "Meade Centre (Armadale)"]) {
+      expect(names).not.toContain(spelling);
+    }
+    expect(names).toContain("Mead Centre (Kelmscott)");
+  });
+
+  it("keeps a desk signed in as another spelling on its own name, and finds the kept desk by any spelling", () => {
+    const own = workstationDesks({
+      hub: hubEntries({ units: seed.units, bedReleases: seed.bedReleases, now: NOW_ANCHOR, sites: wardSites }),
+      eds: edHomeSummaries(seed.movements, NOW_ANCHOR, 1440),
+      movements: seed.movements,
+      ownTeam: "Armadale (Mead)",
+    });
+    const names = own.teams.map((desk) => desk.name);
+    expect(names).toContain("Armadale (Mead)");
+    expect(names).not.toContain("Mead Centre (Armadale)");
+    const kept = desks.teams.find((desk) => desk.name === "Mead Centre (Armadale)")!;
+    expect(deskMatches(kept, "Meade Centre")).toBe(true);
+  });
+});

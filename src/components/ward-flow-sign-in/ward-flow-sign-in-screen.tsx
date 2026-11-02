@@ -13,12 +13,12 @@ import { FrontDoorPage } from "@/components/ward-management/front-door/front-doo
  * "Explore the demo" under the card opens the public demo, which asks for its usual demo code; the
  * code is never built into this page.
  *
- * A site without account sign-in set up (the local demo) says so on the card rather than pretending
- * to sign anyone in. Nothing here keeps the password: the card clears it as soon as it is sent.
+ * The public demo has no accounts, so there the page shows only the demo, with Explore the demo as
+ * its main action and no sign-in fields or warning (Josh, Q203, 1 November 2026). Nothing here keeps the password: the card clears it as soon as it is sent.
  *
  * A sibling of `/ward-flow`, not a child of it, so it carries no rail or bar: a person who has not
  * signed in has no rail to stand in and no bar to read.
  */
 export function WardFlowSignInScreen() {
-  return <FrontDoorPage next="/ward-flow" mode="account" tv={false} accountLabel="Username" />;
+  return <FrontDoorPage next="/ward-flow" mode="account" tv={false} accountLabel="Username" demoFirst />;
 }

@@ -11,6 +11,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useAccessShellRole, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
@@ -74,6 +75,9 @@ export function useWardNavCounts(): {
   const routeRole = wardChromeRole(pathname);
   // Role access plan: a non-coordinator desk's nav and Tasks follow its own role.
   const deskRole = useAccessShellRole(WARD_SHELL_ROLE);
+  // Q201 (Josh, 1 Nov 2026): the menu, phone dock and Tasks follow the desk chosen in "Go to a desk",
+  // as the person card and the "Working as" note already do. Role access, when on, still decides.
+  const personaRole = useShellPersonaRole();
   const { scope } = useEffectiveWardAccess();
   const placeUnits = useMemo(() => {
     if (scope.kind !== "site" && scope.kind !== "service" && scope.kind !== "ward") return null;
@@ -94,7 +98,7 @@ export function useWardNavCounts(): {
   });
   return {
     role: deskRole === WARD_SHELL_ROLE ? routeRole : deskRole,
-    shellRole: deskRole,
+    shellRole: personaRole,
     counts:
       placeUnits && counts.capacity
         ? {

@@ -8,6 +8,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { audienceGroups } from "@/components/ward-management/alerts/broadcast-audience";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 afterEach(() => {
   cleanup();
@@ -20,25 +21,19 @@ const mount = () =>
       <AlertsScreen />
     </WardFlowProvider>,
   );
-const broadcastTab = () => fireEvent.click(screen.getByRole("tab", { name: /^Broadcast/ }));
-// The selected alert's side panel has tab panels of its own, so name this one.
-const broadcastPanel = () => screen.getByRole("tabpanel", { name: /^Broadcast/ });
-
-describe("Broadcast tab", () => {
-  it("offers Broadcast alert when nothing is live", () => {
+// Q181 (Josh, 1 Nov 2026): a live broadcast sits at the top of Now; ended ones are in Earlier today.
+describe("Broadcasts in Now and Earlier today", () => {
+  it("shows no live card when nothing is live, and offers Broadcast alert under More", () => {
     mount();
-    broadcastTab();
-    // The header band says it too (Alerts redesign), so read the tab panel.
-    expect(within(broadcastPanel()).getByText("No broadcast live")).toBeInTheDocument();
-    const panel = broadcastPanel();
-    fireEvent.click(within(panel).getByRole("button", { name: "Broadcast alert" }));
+    expect(screen.queryByTestId("ward-alerts-live")).not.toBeInTheDocument();
+    openAlertsBroadcast();
     expect(screen.getByRole("dialog", { name: /New broadcast/ })).toBeInTheDocument();
   });
 
   it("shows a sent bed call as a live card with its answers, then lists it as earlier once stood down", () => {
     mount();
     const metro = audienceGroups(allUnits())[0].desks.length;
-    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+    openAlertsBroadcast();
     fireEvent.click(screen.getByLabelText(`I'm authorised to send this to ${metro} units.`));
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
 
@@ -55,9 +50,11 @@ describe("Broadcast tab", () => {
     expect(within(card).getByRole("button", { name: /Add units/ })).not.toHaveAttribute("aria-disabled", "true");
     expect(within(card).getByRole("button", { name: /Copy answers/ })).toBeInTheDocument();
 
+    expect(screen.getByTestId("ward-alerts-hero-broadcast")).toHaveTextContent("Broadcast live");
+
     fireEvent.click(within(card).getByRole("button", { name: "Stand down this alert" }));
-    // The header band says it too (Alerts redesign), so read the tab panel.
-    expect(within(broadcastPanel()).getByText("No broadcast live")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-alerts-live")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /^Earlier today/ }));
     const earlier = screen.getByRole("region", { name: "Earlier broadcasts" });
     expect(within(earlier).getByText(/Warning · Metro adult wards · stood down/)).toBeInTheDocument();
   });

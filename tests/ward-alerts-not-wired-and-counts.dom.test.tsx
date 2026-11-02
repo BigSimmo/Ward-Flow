@@ -7,6 +7,7 @@ import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 /**
  * F3 (P1), 2026-09-17 fix round.
@@ -30,7 +31,7 @@ function renderScreen() {
 describe("Alerts — confirm controls (F3.1)", () => {
   it("Dispatch Broadcast requires clinical confirmation safeguard and dispatches directive", () => {
     renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+    openAlertsBroadcast();
     fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
     const confirm = screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(confirm).toHaveAttribute("aria-disabled", "true");

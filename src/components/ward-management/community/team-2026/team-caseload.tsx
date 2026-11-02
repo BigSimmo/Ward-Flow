@@ -21,21 +21,25 @@ type CaseFilter = "all" | "hosp" | "cto" | "ctoDue" | "notSeen" | "unalloc";
 export function TeamCaseload({
   caseManager,
   setCaseManager,
+  find = "",
 }: {
   caseManager: string;
   setCaseManager: (id: string) => void;
+  find?: string;
 }) {
   const [filter, setFilter] = useState<CaseFilter>("all");
   const f = DEMO_FIGURES;
+  const needle = find.trim().toLowerCase();
   const rows = useMemo(
     () =>
       CLIENTS.filter((c) => {
         if (filter !== "all" && !(c.flags ?? []).includes(filter)) return false;
+        if (needle && !`${c.n} ${c.u}`.toLowerCase().includes(needle)) return false;
         if (caseManager === "psych") return Boolean(c.psychOnly);
         if (caseManager) return c.cm === caseManager;
         return true;
       }),
-    [filter, caseManager],
+    [filter, caseManager, needle],
   );
   return (
     <Card className={home.v6Card}>

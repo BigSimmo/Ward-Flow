@@ -52,6 +52,19 @@ describe("rail persona follows the desk", () => {
   });
 });
 
+describe("rail menu follows the chosen desk (Q201)", () => {
+  it("links My ward to the ward chosen in Go to a desk, not the all-wards index", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardRail />
+      </WardFlowProvider>,
+    );
+    act(() => dispatchPersonaSyncForRole("ward", "test-ward", "/ward-flow/ward/test-ward"));
+    const myWard = screen.getByRole("link", { name: /My ward/u });
+    expect(myWard).toHaveAttribute("href", "/ward-flow/ward/test-ward");
+  });
+});
+
 describe("rail popover and sheets share one Escape", () => {
   // B6 (Josh, 19 Oct 2026): the persona popover is gone (one switcher), so the shared Escape is
   // pinned on the rail's other popover, Appearance, which uses the same Escape handling.

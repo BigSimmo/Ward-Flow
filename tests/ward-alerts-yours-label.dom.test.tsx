@@ -26,13 +26,13 @@ describe("Alerts hero: your own alerts are called Yours", () => {
     installMatchMediaStub(true);
     const { container } = renderAlerts();
     expect(container.textContent).not.toContain("Assigned to you");
-    expect(screen.getAllByText("Yours").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { level: 1 }).parentElement).toHaveTextContent(/\d+ yours/u);
   });
 
   it("says Yours on a desktop", () => {
     installMatchMediaStub(false);
     const { container } = renderAlerts();
     expect(container.textContent).not.toContain("Assigned to you");
-    expect(screen.getAllByText("Yours").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { level: 1 }).parentElement).toHaveTextContent(/\d+ yours/u);
   });
 });

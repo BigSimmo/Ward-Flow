@@ -26,7 +26,7 @@ describe("phone Alerts hero: one action, Broadcast under the menu", () => {
     const next = screen.getByTestId("ward-alerts-phone-next");
     const buttons = Array.from(next.parentElement!.querySelectorAll("button"));
     expect(buttons.map((button) => button.getAttribute("aria-label") ?? (button.textContent ?? "").trim())).toEqual([
-      "Next alert",
+      expect.stringMatching(/^Next alert, \d+ in turn$/u),
       "More alert actions",
     ]);
     fireEvent.click(screen.getByRole("button", { name: "More alert actions" }));

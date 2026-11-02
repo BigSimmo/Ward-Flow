@@ -69,6 +69,14 @@
   overflow-wrap: break-word;
 }
 
+/* Q182: one sentence under the eyebrow saying what the page is for at this desk. */
+.purpose {
+  margin: 2px 0 6px;
+  max-width: 60ch;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-hero-ink-2);
+}
+
 /* Device sweep (24 Oct 2026): the title never clips mid-word ("70 open mo"). When the title and its
  * meta cannot share a line, the meta drops under the title, and a title wider than the band wraps. */
 .titleLine {

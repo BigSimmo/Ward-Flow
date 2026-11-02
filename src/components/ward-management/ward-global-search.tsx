@@ -1277,7 +1277,7 @@ export function WardGlobalSearch({
                 onSwitchDesk={(role, href) => {
                   if (!confirmLeave()) return;
                   setDeskRole(role, href);
-                  dispatchPersonaSyncForRole(role);
+                  dispatchPersonaSyncForRole(role, undefined, href);
                   select(href, true);
                 }}
                 onHandover={() => select("/ward-flow/handover")}

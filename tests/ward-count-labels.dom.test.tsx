@@ -78,16 +78,18 @@ describe("count labels say what they count", () => {
     expect(rphTile).toHaveTextContent(`${rph.waiting}waiting`);
   });
 
-  // Q111/Q112 (Josh, 1 Nov 2026): Act now counts accepted referrals with no bed pulled, as Home
-  // does, and the title is "{act} act now, {waiting} waiting" with no "new to you" clause.
-  it("Alerts leads with Home's Act now figure, then the waiting figure", () => {
+  // Q111 (Josh, 1 Nov 2026): Act now counts accepted referrals with no bed pulled, as Home does.
+  // Q183: the title is one headline, "{act + waiting} need you now", with no "new to you" clause.
+  it("Alerts leads with one headline that counts Home's Act now figure and the waiting figure", () => {
     inProvider(<AlertsScreen />);
     const actNow =
       activeActNowItems(state, NOW_ANCHOR).length +
       acceptedReferralsAwaitingPull(state.referrals, state.units, state.movements).length;
     expect(actNow).toBeGreaterThan(0);
     const title = screen.getByRole("heading", { level: 1 });
-    expect(title.textContent).toMatch(new RegExp(`^${actNow} act now, \\d+ waiting$`, "u"));
+    const waiting = within(screen.getByRole("region", { name: "Waiting" })).getByRole("heading", { level: 2 });
+    const waitCount = Number.parseInt((waiting.textContent ?? "").replace(/^Waiting/u, ""), 10);
+    expect(title.textContent).toBe(`${actNow + waitCount} need${actNow + waitCount === 1 ? "s" : ""} you now`);
     expect(title.textContent).not.toMatch(/new to you/u);
   });
 

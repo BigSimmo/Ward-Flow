@@ -257,6 +257,9 @@ export function EdOverview({
                   </Button>
                 </span>
               ) : null}
+              {/* Q191 (Josh, 1 Nov 2026): "N updates since" sits at the end of this bar, as Home's
+                  changes link does, so the counts and title keep one row beside the actions. */}
+              {sinceLastLook ? <span className={handover.heroNote}>{sinceLastLook}</span> : null}
             </div>
           }
           aside={
@@ -272,7 +275,6 @@ export function EdOverview({
                   On TV
                 </Link>
               ) : null}
-              {sinceLastLook}
               {actions}
             </>
           }

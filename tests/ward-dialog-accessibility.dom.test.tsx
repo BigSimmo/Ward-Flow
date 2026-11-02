@@ -5,6 +5,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { alertsMoreButton, openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 describe("Ward Flow Dialog & Modal Accessibility Semantics", () => {
   describe("AlertsScreen — Broadcast Network Alert Dialog", () => {
@@ -15,11 +16,11 @@ describe("Ward Flow Dialog & Modal Accessibility Semantics", () => {
         </WardFlowProvider>,
       );
 
-      const trigger = screen.getByRole("button", { name: /^Broadcast alert$/i });
+      const trigger = alertsMoreButton();
       trigger.focus();
       expect(document.activeElement).toBe(trigger);
 
-      fireEvent.click(trigger);
+      openAlertsBroadcast();
 
       const dialog = screen.getByRole("dialog", { name: /New broadcast/i });
       expect(dialog).toBeInTheDocument();

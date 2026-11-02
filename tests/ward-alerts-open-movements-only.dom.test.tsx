@@ -60,10 +60,11 @@ function renderScreen() {
   );
 }
 
-/** The hero's Act now figure, read from its own button. */
+/** The Act now figure, read from its group heading (Q183: the hero carries one headline now). */
 function actNowFigure(): number {
-  const summary = screen.getByRole("group", { name: "Alert summary" });
-  return Number.parseInt(within(summary).getByRole("button", { name: /Act now/ }).textContent ?? "", 10);
+  const group = screen.getByRole("region", { name: "Act now" });
+  const head = within(group).getByRole("heading", { level: 2 });
+  return Number.parseInt((head.textContent ?? "").replace(/^Act now/u, ""), 10);
 }
 
 describe("the alerts screen scopes buildActionInbox to open movements only", () => {

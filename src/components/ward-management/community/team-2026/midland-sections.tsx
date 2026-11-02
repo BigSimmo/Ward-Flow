@@ -24,10 +24,12 @@ export function MidlandTeamSections({
   panel,
   open,
   now,
+  find = "",
 }: {
   panel: (section: CommunityTeamSection) => HTMLAttributes<HTMLDivElement>;
   open: (section: CommunityTeamSection) => void;
   now: Instant;
+  find?: string;
 }) {
   const [caseManager, setCaseManager] = useState("");
   const go = (section: CommunityTeamSection, cm?: string) => {
@@ -40,7 +42,7 @@ export function MidlandTeamSections({
         <TeamHome go={go} now={clockOf(now)} />
       </div>
       <div {...panel("caseload")}>
-        <TeamCaseload caseManager={caseManager} setCaseManager={setCaseManager} />
+        <TeamCaseload caseManager={caseManager} setCaseManager={setCaseManager} find={find} />
       </div>
       <div {...panel("hospital")}>
         <TeamHospital />
@@ -49,7 +51,7 @@ export function MidlandTeamSections({
         <TeamReferrals />
       </div>
       <div {...panel("clinicians")}>
-        <TeamClinicians />
+        <TeamClinicians find={find} />
       </div>
     </>
   );
