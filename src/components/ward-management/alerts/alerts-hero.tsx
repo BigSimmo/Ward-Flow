@@ -29,11 +29,18 @@ import styles from "./alerts.module.css";
 export type AlertsTab = "now" | "earlier";
 export type HeroPill = "act" | "wait" | "mine";
 
+// Alerts redesign (Q112, Josh 1 Nov 2026): the title is the Act now and Waiting figures, Home's
+// count included. "New to you" is gone: nothing on the page explained it.
+export function alertsHeroTitle(actCount: number, waitCount: number, wardName: string | undefined): string {
+  if (actCount > 0 || waitCount > 0) return `${actCount} act now, ${waitCount} waiting`;
+  return wardName ? `No alert for ${wardName}` : "No alert needs you";
+}
+
 export function AlertsHero({
   isPhone,
   heroTitle,
   openCount,
-  runningText,
+  runningCount,
   oldestRaised,
   now,
   live,
@@ -62,8 +69,9 @@ export function AlertsHero({
 }: {
   isPhone: boolean;
   heroTitle: string;
+  /** Ops-3: the one active list the Now tab and Tasks badge count, running targets included. */
   openCount: number;
-  runningText: string;
+  runningCount: number;
   oldestRaised: Instant | undefined;
   now: Instant;
   live: ReturnType<typeof usePageLive>;
@@ -102,6 +110,7 @@ export function AlertsHero({
   const wardDesk = deskRole === "ward";
   const canBroadcast = !officerDesk && !wardDesk;
   const showNext = !(wardDesk && nextQueue.length === 0);
+  const runningText = runningCount > 0 ? ` · ${runningCount} running` : "";
   return (
     <>
       {isPhone ? (
