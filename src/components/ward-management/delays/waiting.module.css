@@ -96,6 +96,10 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+/* Q297 follow-up: Show list keeps its own width with large text; the sentence beside it wraps. */
+.checkRow[data-phone] > button {
+  flex: none;
+}
 
 /* The person panel's blocker title wraps rather than cutting off ("Form due soon, as typed"). */
 .wrapTitle {

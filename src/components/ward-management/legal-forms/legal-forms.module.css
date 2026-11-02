@@ -494,6 +494,13 @@ button.taskLabel[aria-pressed="true"] {
   min-height: 34px;
 }
 
+/* Q297 follow-up: with large text a column head wraps inside its own column ("Ends, as typed"). */
+.headRow.headRow > * {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
 .groupHead {
   display: flex;
   align-items: center;

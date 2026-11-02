@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function NewReferralPage() {
-  return <ReferralBoard defaultSelectFirst />;
+  return <ReferralBoard defaultSelectFirst heading="New referral" />;
 }

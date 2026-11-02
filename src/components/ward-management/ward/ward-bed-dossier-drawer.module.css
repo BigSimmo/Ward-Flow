@@ -202,6 +202,14 @@
   text-decoration: underline;
 }
 
+/* A phone on its side opens this drawer (Q289): the link takes the phone's 40px touch height. */
+@media (max-width: 46.4375rem), (pointer: coarse) and (max-height: 500px) {
+  .headPatient {
+    min-height: 40px;
+    margin-top: 0;
+  }
+}
+
 /* Pill tabs */
 .tabsWrap {
   padding: var(--wf-s-3) var(--wf-s-4) 0;

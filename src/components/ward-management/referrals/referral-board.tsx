@@ -266,8 +266,10 @@ export function ReferralBoard({
   defaultSelectFirst = false,
   readOnly: readOnlyProp,
   historyOpenOnLoad = false,
+  heading = "Referrals",
 }: {
   defaultSelectFirst?: boolean;
+  heading?: string;
   /** Viewing, filters and the detail only: no decision, placement, owner or call control. */
   readOnly?: boolean;
   /** Opens on History rather than the queue (the redesign preview draws it this way). */
@@ -376,7 +378,6 @@ export function ReferralBoard({
     setSelectedReferralId(referralId);
     setInspectorTab("place");
   }, []);
-
   const closeDetail = useCallback(() => {
     // `null`, not `undefined`: a closed detail stays closed rather than falling back to the default.
     setSelectedReferralId(null);
@@ -387,7 +388,6 @@ export function ReferralBoard({
       if (focusIsLost(detailRef.current)) returnFocusToOpener(opener);
     });
   }, []);
-
   const clearHighlights = useCallback(() => {
     setHighlight(null);
   }, []);
@@ -778,7 +778,7 @@ export function ReferralBoard({
       data-referral-layout="queue-panel"
     >
       <main id="main-content" className={cx(styles.main, redesign.page)}>
-        <h1 className="sr-only">Referrals</h1>
+        <h1 className="sr-only">{heading}</h1>
         {phoneLayout ? (
           <ReferralPhoneTop>
             <ReferralPhoneHero
