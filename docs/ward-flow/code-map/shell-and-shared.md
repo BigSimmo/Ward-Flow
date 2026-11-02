@@ -560,6 +560,11 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   reply instead of transport how-tos.
   The index also covers Roles, colour meanings and shapes, saved-state guidance and downtime
   guidance, reusing their approved source content. Exact indexed words survive typo correction.
+  `ward-help-screen-tours.ts` (2 Nov 2026) adds a Show me walk round for 15 main screens, offered
+  from the "On this screen" card and search only, never as marks on the screens. Walk-rounds are
+  how-tos with `around` set, kept out of the desk's job list and closest suggestions, and ranked after
+  a job sharing their words. A Show me step may carry `device` ("desk" or "phone"); `showMeSteps`
+  skips the other device's steps in the player, the step lists and the step count.
   `ward-help-ask.tsx` applies the same clinical-question guard and fixed reply as main search,
   suppressing ordinary results for those questions. With no matching answer, glossary term or setting,
   it offers up to three closest how-tos; another desk's topics retain their read-only presentation.

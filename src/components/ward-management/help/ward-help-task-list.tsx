@@ -131,8 +131,9 @@ export function showMeAvailable(howTo: HowTo, role: WardTourRole, home: string |
 
 /**
  * This login's tasks: those named for its desk that it can actually do, on screens it can open
- * (audit finding 11, Josh 31 Oct 2026; `howToFor`).
+ * (audit finding 11, Josh 31 Oct 2026; `howToFor`). Walks round a screen are not tasks.
  */
 export function tasksForDesk(role: WardTourRole): readonly HowTo[] {
-  return HOW_TOS.filter((howTo) => howToFor(howTo, role));
+  // A walk round a screen is offered on that screen's card, not listed among the jobs.
+  return HOW_TOS.filter((howTo) => !howTo.around && howToFor(howTo, role));
 }

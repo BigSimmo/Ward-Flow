@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 
 import { howToHref } from "./ward-help-href";
-import { HOW_TOS } from "./ward-help-howto";
+import { HOW_TOS, showMeSteps } from "./ward-help-howto";
 import { useTourRole } from "./ward-help-store";
 import { SPOT_NOT_HERE, usePlacedCard, useSpotlight } from "./ward-spotlight";
 import { useTourFacts } from "./ward-tour-facts";
@@ -25,7 +25,8 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
   const { home, deskHome } = useTourFacts(role);
   const howTo = HOW_TOS.find((candidate) => candidate.id === id);
-  const steps = useMemo(() => howTo?.showMe ?? [], [howTo]);
+  // Steps marked for the other device are skipped, so a phone never walks to a computer-only part.
+  const steps = useMemo(() => showMeSteps(howTo, device), [howTo, device]);
   const [index, setIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);

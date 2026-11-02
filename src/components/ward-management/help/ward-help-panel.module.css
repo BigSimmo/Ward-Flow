@@ -374,6 +374,15 @@
   font-weight: 600;
 }
 
+/* The screen's walk round: a full-width tile above the screen's own jobs. */
+.aroundTile {
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  min-height: 0;
+  background: var(--wf-accent-tint);
+}
+
 /* ── How do I: the tour row ─────────────────────────────────────────────────────────────────── */
 .tour {
   display: flex;

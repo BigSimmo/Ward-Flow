@@ -24,7 +24,8 @@ import { useTourFacts } from "./ward-tour-facts";
 import type { ScreenHelp } from "./ward-help-content";
 
 import { howToHref } from "./ward-help-href";
-import { HOW_TO_IDS, HOW_TO_TOPICS, type HowTo } from "./ward-help-howto";
+import { HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS, showMeSteps, type HowTo } from "./ward-help-howto";
+import { aroundId } from "./ward-help-screen-tours";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 import { recordHowToUsed } from "./ward-help-usage";
 import s from "./ward-help-panel.module.css";
@@ -100,6 +101,7 @@ function TaskRow({
   const goThere = href && (href.includes("#") || href !== pathname) ? href : undefined;
   const showMe = canShowTask(task, role, home, phone, showMeOn);
   const computerOnly = phone && task.computerOnly;
+  const steps = showMeSteps(task, phone ? "phone" : "desk");
   return (
     <li className={s.task} data-testid={`ward-help-task-answer-${task.id}`}>
       <button
@@ -117,9 +119,9 @@ function TaskRow({
       {expanded ? (
         <div id={`${id}-answer`} className={s.answer}>
           <p className={s.answerText}>{task.answer}</p>
-          {task.showMe?.length && !computerOnly ? (
+          {steps.length && !computerOnly ? (
             <ol className={s.steps} aria-label="Steps">
-              {task.showMe.map((step) => (
+              {steps.map((step) => (
                 <li key={step.title}>
                   <div>
                     <b>{step.title}</b>
@@ -272,6 +274,12 @@ export function HelpTasks({
     const isHere = (task: HowTo) => howToHref(task.go, role, home)?.split("#")[0] === pathname;
     return { here: desk.filter(isHere), mine: desk };
   }, [home, pathname, role]);
+  // This screen's walk round (`ward-help-screen-tours.ts`), when Show me can play it here.
+  const around = useMemo(() => {
+    const walk = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id)) : undefined;
+    return walk && canShowTask(walk, role, home, phone, showMeOn) ? walk : undefined;
+  }, [home, phone, role, screen, showMeOn]);
+  const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk").length : 0;
 
   const counts = HOW_TO_TOPICS.map((name) => ({ name, n: mine.filter((task) => task.topic === name).length })).filter(
     (entry) => entry.n > 0,
@@ -330,8 +338,22 @@ export function HelpTasks({
               <p className={s.herePurpose}>{screen.purpose}</p>
             </div>
           </div>
-          {here.length ? (
+          {here.length || around ? (
             <div className={s.tiles}>
+              {around ? (
+                <button
+                  type="button"
+                  className={`${s.tile} ${s.aroundTile}`}
+                  onClick={() => showMe(around.id)}
+                  data-testid="ward-help-show-me-around"
+                >
+                  <span className={s.tileTitle}>Show me around this screen</span>
+                  <span className={s.tileAction}>
+                    <PlayMark />
+                    {aroundSteps} steps
+                  </span>
+                </button>
+              ) : null}
               {here.slice(0, 4).map((task) => {
                 const can = canShowTask(task, role, home, phone, showMeOn);
                 return (
