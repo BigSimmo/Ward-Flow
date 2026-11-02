@@ -443,20 +443,22 @@
 
 .dockLabel {
   display: -webkit-box;
-  max-width: 100%;
+  /* Q307: a 4px gap between neighbouring labels when large text fills each tab. */
+  max-width: calc(100% - 4px);
   overflow: hidden;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   font-weight: 500;
-  /* Q297 (pre-launch A1, 2 Nov 2026): a line height that scales with the text, and a long word
-     that breaks inside its own column, so large text does not run into the next label. */
+  /* Q297 (pre-launch A1, 2 Nov 2026): a line height that scales with the text, so large text does
+     not run into the next label. */
   line-height: 1;
   text-align: center;
   white-space: normal;
-  /* Q297 follow-up: where a word must break, it breaks at a syllable with a hyphen ("Refer-rals"),
-     and only a word with no syllable break left is cut inside the word. */
-  overflow-wrap: break-word;
-  hyphens: auto;
+  /* Q307 (Josh, 2 Nov 2026): a word is never split ("Refer-rals"). At large text the label shrinks
+     to fit its tab instead, down to 12px (use-fit-dock-labels.ts). */
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: manual;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
