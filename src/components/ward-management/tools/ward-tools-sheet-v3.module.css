@@ -371,29 +371,30 @@
   flex: none;
 }
 
-/* Phone: rows and chips at touch size (40px drawn). */
+/* Phone: rows and chips at touch size (40px drawn). The quick picks stay on one line and scroll
+   sideways, so the first tool row sits higher on a small screen. */
 @media (max-width: 46.4375rem) {
+  .chips {
+    flex-wrap: nowrap;
+    margin-inline: -4px;
+    padding: 2px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chips::-webkit-scrollbar {
+    display: none;
+  }
+
   .chip {
+    flex: none;
     min-height: 40px;
+    white-space: nowrap;
   }
 
   .row {
     min-height: 56px;
   }
-}
-
-/* QA 2 Nov: inside Tools the demo panel grows with the sheet, so it never scrolls inside a scroller. */
-.toolBody [class*="ward_demo_panel_scroll"],
-.paneBody [class*="ward_demo_panel_scroll"] {
-  max-height: none;
-  overflow: visible;
-}
-
-.toolBody [class*="ward_demo_panel_practiceHeading"],
-.paneBody [class*="ward_demo_panel_practiceHeading"] {
-  flex-wrap: wrap;
-  min-width: 0;
-  white-space: normal;
 }
 
 /* QA 2 Nov: the open tool reads apart from a hovered row: a neutral ring, never a side edge. */

@@ -67,31 +67,40 @@ describe("Figures in the Tools sheet", () => {
 
   it("keeps Figures out of the header and does not repeat the headline figures in Tools", async () => {
     const tools = await openTools();
-    // Simplification A5 (19 Oct 2026): the "Service now" block left; All figures stays one row away.
+    // Simplification A5 (19 Oct 2026): the "Service now" block left; Key figures stays one row away.
     expect(within(tools).queryByTestId("ward-tools-service-now")).toBeNull();
     expect(within(tools).queryByRole("region", { name: "Service now" })).toBeNull();
     expect(within(tools).getByTestId("ward-tools-toggle-figures")).toBeVisible();
   });
 
-  it("opens all figure clusters in place within the same Tools dialog", async () => {
+  it("opens Key figures in place within the same Tools dialog", async () => {
     const tools = await openTools(70);
     const toggle = within(tools).getByTestId("ward-tools-toggle-figures");
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    for (const heading of ["Waits and recorded limits", "Beds and capacity", "Flow and discharges"]) {
-      expect(within(tools).getByRole("heading", { name: heading })).toBeVisible();
+    // Tools overhaul Q321: four headline figures; the clusters live on Statistics, one link away.
+    const figures = within(tools).getByTestId("ward-stats-drawer-content");
+    for (const label of ["Beds ready", "Occupancy", "Open ED movements", "Waiting in ED"]) {
+      expect(within(figures).getByText(label)).toBeVisible();
     }
+    expect(within(figures).getByRole("link", { name: /See all on Statistics/u })).toHaveAttribute(
+      "href",
+      "/ward-flow/statistics",
+    );
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
   });
 
-  it("keeps catchment, form times and the demo row in the same sheet, with no tab bar", async () => {
+  it("keeps Suburb lookup, form times and the demo row in the same sheet, with no tab bar", async () => {
     const tools = await openTools();
     expect(within(tools).queryByRole("group", { name: "Tools sections" })).toBeNull();
     expect(within(tools).queryByRole("button", { name: "Shift desk" })).toBeNull();
     fireEvent.click(within(tools).getByTestId("ward-tools-toggle-form-times"));
     expect(within(tools).getByTestId("ward-form-times")).toBeVisible();
     fireEvent.click(within(tools).getByTestId("ward-tools-toggle-catchment"));
-    expect(await within(tools).findByTestId("ward-catchment-resolver", {}, { timeout: 15_000 })).toBeVisible();
+    expect(await within(tools).findByTestId("suburb-lookup-card", {}, { timeout: 15_000 })).toBeVisible();
+    // One tool open at a time (Q310): opening Suburb lookup closed Form times.
+    expect(within(tools).queryByTestId("ward-form-times")).toBeNull();
+    expect(within(tools).getByTestId("ward-tools-toggle-form-times")).toHaveAttribute("aria-expanded", "false");
     // The app bar no longer has a Synthetic pill, so on a desktop the demo controls sit in Tools as
     // one Demo row (the board clock opens them). There is still no separate demo trigger.
     expect(within(tools).getByTestId("ward-tools-toggle-demo")).toBeVisible();
@@ -101,13 +110,13 @@ describe("Figures in the Tools sheet", () => {
   it("searches contacts without losing the On-call link", async () => {
     const tools = await openTools();
     fireEvent.click(within(tools).getByTestId("ward-tools-toggle-contacts"));
-    const search = within(tools).getByRole("searchbox", { name: "Search a team, ward or role" });
+    const search = within(tools).getByRole("searchbox", { name: "Find a contact" });
     fireEvent.change(search, { target: { value: "no-such-team" } });
-    expect(within(tools).getByText("No contact matches.")).toBeVisible();
+    expect(within(tools).getByText("No contact matches")).toBeVisible();
     expect(within(tools).getByRole("link", { name: "Open On-call" })).toBeVisible();
   });
 
-  it("closes Tools from All figures without leaving a second drawer open", async () => {
+  it("closes Tools from Key figures without leaving a second drawer open", async () => {
     const tools = await openTools();
     fireEvent.click(within(tools).getByTestId("ward-tools-toggle-figures"));
     fireEvent.click(within(tools).getByRole("button", { name: /^close$/i }));

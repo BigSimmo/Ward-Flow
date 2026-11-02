@@ -16,14 +16,9 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 // The lookup itself lives in `ward-catchment-query.ts`; these stay importable from here.
 export {
   QUICK_PICK_SUBURBS,
-  findSuburbsByPostcode,
   formatCatchmentSummary,
   resolveCatchmentQuery,
   resolveSuburb,
-  type CatchmentQueryResult,
-  type CatchmentStatus,
-  type ContestedAnswerDetail,
-  type QueryResolutionType,
   type ResolvedCatchment,
 } from "./ward-catchment-query";
 

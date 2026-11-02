@@ -83,7 +83,8 @@ function writeStored(filters: Filters) {
 
 function summaryText(filters: Filters): string {
   const bed = filters.bed === "any" ? "Any bed" : filters.bed === "locked" ? "Locked bed" : "Open bed";
-  const sex = filters.sex === "any" ? "Any" : filters.sex;
+  // "Any" alone read as nothing in the summary line (polish 3 Nov), so the ward filter says "ward".
+  const sex = filters.sex === "any" ? "Any ward" : `${filters.sex} ward`;
   const legal =
     filters.legalStatus === "voluntary"
       ? "Voluntary"

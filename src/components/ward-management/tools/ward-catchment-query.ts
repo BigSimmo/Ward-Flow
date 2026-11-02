@@ -11,9 +11,9 @@ import {
 } from "@/components/ward-management/ward-catchment";
 import { mapClinicToServiceAndHospital, type HealthServiceInfo } from "./ward-catchment-mapping";
 
-export type CatchmentStatus = "Reviewed clinic match" | "Contested / split" | "Unreviewed" | "Not found";
+type CatchmentStatus = "Reviewed clinic match" | "Contested / split" | "Unreviewed" | "Not found";
 
-export interface ContestedAnswerDetail {
+interface ContestedAnswerDetail {
   readonly clinics: readonly string[];
   readonly documentId: string;
   readonly documentLabel: string;
@@ -35,7 +35,7 @@ export interface ResolvedCatchment {
   readonly rawLookup?: CatchmentLookup;
 }
 
-export type QueryResolutionType = "suburb" | "postcode" | "not-found" | "empty";
+type QueryResolutionType = "suburb" | "postcode" | "not-found" | "empty";
 
 export interface CatchmentQueryResult {
   readonly query: string;
@@ -194,7 +194,7 @@ export function resolveSuburb(suburbQuery: string): ResolvedCatchment | null {
 /**
  * Searches for all suburbs located within a specified 4-digit WA postcode.
  */
-export function findSuburbsByPostcode(postcodeQuery: string): readonly ResolvedCatchment[] {
+function findSuburbsByPostcode(postcodeQuery: string): readonly ResolvedCatchment[] {
   const cleanPostcode = postcodeQuery.trim();
   const rows = ROWS_BY_POSTCODE.get(cleanPostcode);
   if (!rows || rows.length === 0) {

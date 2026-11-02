@@ -132,7 +132,12 @@ const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> =
     share: ["downtime"],
   },
   officer: { do: ["remind"], look: ["contacts", "catchment"], share: [] },
-  executive: { do: ["remind"], look: ["figures", "bed-finder", "contacts"], share: ["messages", "downtime"] },
+  // The executive desk reads released reports only, so it has no tool that writes to or reads the live World.
+  executive: {
+    do: [],
+    look: ["figures", "bed-finder", "contacts", "catchment", "form-times"],
+    share: ["messages", "downtime"],
+  },
   admin: { do: [], look: ["contacts", "catchment"], share: [] },
 };
 
@@ -274,7 +279,34 @@ function searchWardFlow(words: string, close: () => void) {
  * One tool opens at a time and scrolls into view; from 1280 wide the open tool sits in its own pane.
  * Viewing as and the Demo controls sit together at the foot.
  */
-export function WardToolsSheet({
+/** Live counts on the rows. The executive desk has none: it never reads the operational World. */
+type SheetCounts = { bedsReady?: number; feed?: number; reminders?: number; leave?: number };
+
+export function WardToolsSheet(props: WardToolsSheetProps) {
+  return useExecutiveStatisticsControl().executive ? (
+    <ToolsSheetView {...props} executive counts={{}} />
+  ) : (
+    <OperationalToolsSheet {...props} />
+  );
+}
+
+function OperationalToolsSheet(props: WardToolsSheetProps) {
+  const { counts } = useWardNavCounts();
+  const feed = useFeedWaitingCount();
+  const reminders = useReminderCount();
+  const leave = useLeaveDueCount();
+  return (
+    <ToolsSheetView
+      {...props}
+      executive={false}
+      counts={{ bedsReady: counts.capacity?.value, feed, reminders, leave }}
+    />
+  );
+}
+
+function ToolsSheetView({
+  executive,
+  counts,
   isPhone,
   twoPane = false,
   roleLabel,
@@ -282,26 +314,20 @@ export function WardToolsSheet({
   onNewReferral,
   openRequest,
   onRequestHandled,
-}: WardToolsSheetProps) {
+}: WardToolsSheetProps & { executive: boolean; counts: SheetCounts }) {
   const accessNav = useAccessNavFilter();
   const updateBedHref = accessNav([{ id: "wards", href: `${root}/wards`, label: "Update a bed" }])[0]?.href;
   const canOpen = useCanOpenHref();
-  const executive = useExecutiveStatisticsControl().executive;
   const role: WardAccessRole = useEffectiveWardAccess().role;
   const networkFigures = seesNetworkBedFigures(role);
   const gate = useRoleGate();
   const canLogDelay = gate("RECORD_MOVEMENT_BLOCKER").allowed;
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
-  const { counts } = useWardNavCounts();
-  const feedCount = useFeedWaitingCount();
-  const reminderCount = useReminderCount();
-  const leaveCount = useLeaveDueCount();
   const recent = useRecent();
 
   const [open, setOpen] = useState<ToolsSheetToolId | null>(null);
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement | null>(null);
-  const rows = useRef(new Map<string, HTMLElement>());
 
   const openTool = (id: ToolsSheetToolId) => {
     // Q310: one tool at a time; opening another closes the first.
@@ -310,7 +336,9 @@ export function WardToolsSheet({
     if (twoPane) return;
     window.requestAnimationFrame(() =>
       window.requestAnimationFrame(() =>
-        rows.current.get(id)?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() }),
+        document
+          .querySelector(`[data-tool-row="${id}"]`)
+          ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() }),
       ),
     );
   };
@@ -367,14 +395,16 @@ export function WardToolsSheet({
               href: updateBedHref,
             }
           : null,
-    remind: {
-      key: "remind",
-      icon: BellRing,
-      name: "Remind me",
-      detail: "A nudge at a set time",
-      count: { n: reminderCount, label: "reminders set" },
-      body: <ToolRemindMe onNavigate={onNavigate} />,
-    },
+    remind: executive
+      ? null
+      : {
+          key: "remind",
+          icon: BellRing,
+          name: "Remind me",
+          detail: "A nudge at a set time",
+          count: { n: counts.reminders ?? 0, label: "reminders set" },
+          body: <ToolRemindMe onNavigate={onNavigate} />,
+        },
     // QA 2 Nov: Book transport opens the Transport desk, so it is a link row, like Log a delay.
     "book-transport":
       role === "officer" || role === "admin" || role === "executive"
@@ -396,7 +426,7 @@ export function WardToolsSheet({
             icon: Inbox,
             name: "Hospital feed",
             detail: "Messages to confirm",
-            count: { n: feedCount, label: "messages to confirm", act: true },
+            count: { n: counts.feed ?? 0, label: "messages to confirm", act: true },
             body: <ToolFeed onNavigate={onNavigate} />,
           }
         : null,
@@ -408,8 +438,8 @@ export function WardToolsSheet({
           detail: "Ready beds by ward",
           // The sidebar's count follows the desk's own place, so only a network-wide desk shows it here.
           count:
-            counts.capacity && (role === "coordinator" || role === "executive")
-              ? { n: counts.capacity.value, label: "beds ready now" }
+            counts.bedsReady !== undefined && role === "coordinator"
+              ? { n: counts.bedsReady, label: "beds ready now" }
               : undefined,
           body: <ToolFindBed onNavigate={onNavigate} />,
         }
@@ -424,14 +454,14 @@ export function WardToolsSheet({
         }
       : null,
     "leave-due":
-      role === "officer" || role === "admin" || role === "community"
+      executive || role === "officer" || role === "admin" || role === "community"
         ? null
         : {
             key: "leave-due",
             icon: CalendarCheck,
             name: "Due back",
             detail: "Leave ending today",
-            count: { n: leaveCount, label: "due back today" },
+            count: { n: counts.leave ?? 0, label: "due back today" },
             body: <ToolLeaveDue onNavigate={onNavigate} />,
           },
     catchment: {
@@ -547,7 +577,10 @@ export function WardToolsSheet({
   const matches = groups.reduce((total, group) => total + group.entries.length, 0);
 
   // Q309: recent tools first; until there are any, the desk's likely three.
-  const toolIds = (ids: readonly ToolsSheetToolId[]) => ids.filter((id) => usable(id)?.body !== undefined);
+  // Only tools this desk lists, so a chip remembered from another desk never opens here.
+  const listed = (id: ToolsSheetToolId) => GROUPS.some((group) => order[group.id].includes(id));
+  const toolIds = (ids: readonly ToolsSheetToolId[]) =>
+    ids.filter((id) => listed(id) && usable(id)?.body !== undefined);
   const recentIds = toolIds(recent);
   const quickIds = recentIds.length > 0 ? recentIds : toolIds(ROLE_SUGGESTED[role] ?? []);
   const quickTitle = recentIds.length > 0 ? "Recent" : "Suggested";
@@ -563,7 +596,7 @@ export function WardToolsSheet({
     detail: "Synthetic data only",
     body: (
       <div className={styles.toolBody}>
-        <WardDemoPanel oneList={!isPhone} />
+        <WardDemoPanel oneList={!isPhone} grow />
         {/* Q320: the feed's demo button moves here from Do now. */}
         <ReceiveNextFeedMessage />
       </div>
@@ -592,15 +625,7 @@ export function WardToolsSheet({
     const id = entry.key as ToolsSheetToolId;
     const isOpen = shown === id;
     return (
-      <div
-        key={entry.key}
-        className={styles.tool}
-        data-open={isOpen || undefined}
-        ref={(node) => {
-          if (node) rows.current.set(id, node);
-          else rows.current.delete(id);
-        }}
-      >
+      <div key={entry.key} className={styles.tool} data-open={isOpen || undefined} data-tool-row={id}>
         <button
           type="button"
           className={styles.row}
@@ -704,7 +729,8 @@ export function WardToolsSheet({
                 </span>
                 <WardRoleSwitcher withWords />
               </div>
-              {renderRow(demoEntry, "look")}
+              {/* The executive desktop keeps its own scenario controls, so the demo row shows there on phone only. */}
+              {isPhone || !executive ? renderRow(demoEntry, "look") : null}
             </div>
           </section>
         ) : null}

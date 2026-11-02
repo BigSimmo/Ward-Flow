@@ -59,6 +59,15 @@
   line-height: var(--wf-lh-28);
 }
 
+/* A held-back figure ("not shown") reads as a quiet note, not a big number. */
+.value[data-words] {
+  color: var(--wf-ink-2);
+  font-family: inherit;
+  font-size: var(--wf-fs-14);
+  font-weight: 500;
+  line-height: var(--wf-lh-28);
+}
+
 .more {
   display: inline-flex;
   align-items: center;

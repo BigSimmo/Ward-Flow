@@ -97,7 +97,9 @@ function FiguresView({
         {figures.map((figure) => (
           <div key={figure.label} className={styles.cell}>
             <dt className={styles.label}>{figure.label}</dt>
-            <dd className={styles.value}>{figure.value}</dd>
+            <dd className={styles.value} data-words={/\d/u.test(figure.value) ? undefined : true}>
+              {figure.value}
+            </dd>
           </div>
         ))}
       </dl>
