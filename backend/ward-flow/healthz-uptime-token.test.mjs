@@ -58,9 +58,15 @@ test("P177: the uptime workflow sends the token and warns, not alarms, when the 
   const workflow = readFileSync(new URL("../../.github/workflows/backend-uptime.yml", import.meta.url), "utf8");
   assert.match(workflow, /UPTIME_TOKEN: \$\{\{ secrets\.WARD_FLOW_UPTIME_TOKEN \}\}/);
   assert.match(workflow, /--header "x-ward-flow-uptime-token: \$UPTIME_TOKEN"/);
-  // A hidden `database` (missing or wrong token) is up with a warning naming the token (#1117).
+  // A hidden `database` (missing or wrong token) is unknown with a warning naming the token (#1117).
   assert.match(workflow, /\.database \/\/ "hidden"/);
   assert.match(workflow, /::warning::Database not checked: WARD_FLOW_UPTIME_TOKEN/);
+  // Hidden is unknown, not up: it must not close a real open incident.
+  assert.match(workflow, /WARD_FLOW_UPTIME_TOKEN is missing[^\n]*\n\s*state=unknown/);
+  assert.match(workflow, /= "unknown" \]; then exit 0; fi/);
+  // A failed curl or malformed JSON counts as down, never as hidden.
+  assert.doesNotMatch(workflow, /\|\| true\)/);
+  assert.doesNotMatch(workflow, /\|\| echo hidden/);
   // Only "ok" counts as a healthy database; "unavailable" still raises the database issue.
   assert.match(workflow, /if \[ "\$database" = "ok" \]; then state=up; break; fi/);
   assert.match(workflow, /state=database/);
