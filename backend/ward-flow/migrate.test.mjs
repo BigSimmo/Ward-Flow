@@ -25,12 +25,12 @@ function database(version) {
   return { pool: { connect: async () => client }, queries, current: () => current, released: () => released };
 }
 
-for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) {
-  const expected = Array.from({ length: 16 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
-  test(`migration runner advances ${from ?? "fresh"} to version 16 in order`, async () => {
+for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]) {
+  const expected = Array.from({ length: 17 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
+  test(`migration runner advances ${from ?? "fresh"} to version 17 in order`, async () => {
     const db = database(from);
     await migrate(db.pool);
-    assert.equal(db.current(), 16);
+    assert.equal(db.current(), 17);
     assert.deepEqual(
       db.queries.flatMap((sql) => {
         const match = /INSERT INTO ward_flow\.migrations\(version\) VALUES\((\d+)\)/.exec(sql);
@@ -46,7 +46,7 @@ for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 }
 
 test("unknown migration versions fail closed and roll back", async () => {
-  for (const version of [0, 17, "5"]) {
+  for (const version of [0, 18, "5"]) {
     const db = database(version);
     await assert.rejects(migrate(db.pool), /Unsupported database migration version/);
     assert.equal(db.queries.at(-1), "ROLLBACK");
@@ -218,6 +218,43 @@ test("migration 16 adds the two forecast history tables only, and its rollback d
   assert.match(undo, /IS DISTINCT FROM 16/);
   assert.match(undo, /DROP TABLE ward_flow\.forecast_miss_reasons;\nDROP TABLE ward_flow\.forecast_snapshots;/);
   assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 16;/);
+});
+
+test("migration 17 adds a positive forecast reason version without replacing history, and rollback preserves values", async () => {
+  const sql = await readFile(new URL("./migrations/017-forecast-consistency.sql", import.meta.url), "utf8");
+  const undo = await readFile(new URL("./infra/rollback-017-forecast-consistency.sql", import.meta.url), "utf8");
+  assert.match(
+    sql,
+    /ALTER TABLE ward_flow\.forecast_miss_reasons ADD COLUMN revision bigint NOT NULL DEFAULT 1 CHECK \(revision > 0\);/,
+  );
+  const statements = sql
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith("--"))
+    .join("\n")
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter(Boolean);
+  assert.equal(statements.length, 5, "only the lock, column, two version updates and ledger insert are allowed");
+  assert.equal(statements[0], "LOCK TABLE ward_flow.workspaces IN EXCLUSIVE MODE");
+  assert.deepEqual(
+    statements.filter((statement) => /^UPDATE\b/.test(statement)),
+    [
+      "UPDATE ward_flow.workspaces SET revision = revision + 1, updated_at = clock_timestamp() WHERE data_mode = 'prototype'",
+      "UPDATE ward_flow.forecast_miss_reasons r SET revision = w.revision FROM ward_flow.workspaces w WHERE r.workspace_id = w.id",
+    ],
+    "only revision metadata changes; chosen reasons, authors, times, snapshots and counts are preserved",
+  );
+  assert.ok(statements[1].startsWith("ALTER TABLE ward_flow.forecast_miss_reasons ADD COLUMN revision "));
+  assert.ok(statements[2].startsWith("UPDATE ward_flow.workspaces SET revision = revision + 1"));
+  assert.ok(statements[3].startsWith("UPDATE ward_flow.forecast_miss_reasons r SET revision = w.revision"));
+  assert.equal(statements[4], "INSERT INTO ward_flow.migrations(version) VALUES(17)");
+  assert.doesNotMatch(sql, /^\s*(?:DROP|DELETE|TRUNCATE|CREATE TABLE|GRANT|REVOKE)\b/m);
+  assert.match(sql, /INSERT INTO ward_flow\.migrations\(version\) VALUES\(17\);\n$/);
+  assert.match(undo, /SELECT pg_advisory_xact_lock\(782322\);/);
+  assert.match(undo, /IS DISTINCT FROM 17/);
+  assert.match(undo, /ALTER TABLE ward_flow\.forecast_miss_reasons DROP COLUMN revision;/);
+  assert.match(undo, /DELETE FROM ward_flow\.migrations WHERE version = 17;/);
+  assert.doesNotMatch(undo, /^\s*(?:DROP TABLE|TRUNCATE|UPDATE|DELETE FROM ward_flow\.(?!migrations))\b/m);
 });
 
 test("migration 14 adds the archive table only, and its rollback puts the archived records back first", async () => {

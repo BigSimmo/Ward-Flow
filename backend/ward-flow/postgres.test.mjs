@@ -969,9 +969,9 @@ test(
       assert.ok(tables.every((row) => row.relrowsecurity && !row.relforcerowsecurity));
 
       await runtimeOk(runtime);
-      // Migration 16: forecast snapshots are only added and read; a miss reason may be replaced.
+      // Migration 17 preserves table-wide reason update grants, including its CAS revision column.
       await runtime.query("SELECT 1 FROM ward_flow.forecast_snapshots WHERE false");
-      await runtime.query("UPDATE ward_flow.forecast_miss_reasons SET reason='other' WHERE false");
+      await runtime.query("UPDATE ward_flow.forecast_miss_reasons SET reason='other', revision=revision+1 WHERE false");
       await assert.rejects(runtime.query("DELETE FROM ward_flow.forecast_snapshots WHERE false"), /permission denied/);
       await assert.rejects(
         runtime.query("UPDATE ward_flow.forecast_snapshots SET ready_gap_now=0 WHERE false"),
@@ -1099,10 +1099,12 @@ test(
       await assert.rejects(rollBack("./infra/rollback-013-referral-record-views.sql"), /not at migration 13/);
       await assert.rejects(rollBack("./infra/rollback-014-archived-records.sql"), /not at migration 14/);
       await assert.rejects(rollBack("./infra/rollback-015-list-and-tv-views.sql"), /not at migration 15/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 16);
+      await assert.rejects(rollBack("./infra/rollback-016-forecast-history.sql"), /not at migration 16/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 17);
       let beforeRecordsRollback;
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-017-forecast-consistency.sql", 16],
         ["./infra/rollback-016-forecast-history.sql", 15],
         ["./infra/rollback-015-list-and-tv-views.sql", 14],
         ["./infra/rollback-014-archived-records.sql", 13],
@@ -1598,6 +1600,9 @@ test(
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-017-forecast-consistency.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-016-forecast-history.sql", import.meta.url), "utf8"),
         );

@@ -92,6 +92,11 @@ export const MIGRATIONS = Object.freeze([
     file: "016-forecast-history.sql",
     sha256: "5668c4567ba7e86c8d09e18de0d3c15bcc56f5a7e3f2b82ed9019089a23d22bc",
   },
+  {
+    version: 17,
+    file: "017-forecast-consistency.sql",
+    sha256: "a5e7bfb7f0b98aecf64337fb53812f6575721e142f2858653bcd534954d82d63",
+  },
 ]);
 
 export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
@@ -99,7 +104,7 @@ export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
 /**
  * The oldest schema the running backend accepts. Row-level security (6), the prototype-only check
  * (7), role access (8), cover with requests (9), records saved one by one (10) and the record access
- * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 16:
+ * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 17:
  * it can deploy before those migrations, and keeps running if their infra/rollback-*.sql scripts take
  * the database back. Before 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in. Before 9 there
  * is no cover, no request for access, no "not used" switch-off and no phone alert by role. Before 10
@@ -108,7 +113,8 @@ export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
  * on this server. Migration 12 adds indexes only, so nothing behaves differently before it. Before
  * 13 opening a referral's full detail is not logged. Before 14 closed records are never archived, so
  * the live workspace keeps growing towards its 8 MB limit. Before 15 list and TV reads are not
- * logged. Before 16 there is no shared forecast history, so each browser keeps its own.
+ * logged. Before 16 there is no shared forecast history. At 16 it is readable but writes require
+ * 17's per-day server versions, so an older tab or retry cannot overwrite another desk silently.
  */
 export const MINIMUM_RUNTIME_MIGRATION = 5;
 
@@ -135,6 +141,9 @@ export const LIST_VIEW_MIGRATION = 15;
 
 /** The first schema with the shared forecast history: snapshots and miss reasons (migration 16). */
 export const FORECAST_HISTORY_MIGRATION = 16;
+
+/** The first schema with per-day forecast reason versions and safe shared writes (migration 17). */
+export const FORECAST_CONSISTENCY_MIGRATION = 17;
 
 /** Reads one migration's SQL and refuses it when the file no longer matches its recorded checksum. */
 export async function readMigration(migration) {

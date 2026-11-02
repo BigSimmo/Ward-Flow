@@ -130,6 +130,7 @@ const addedColumns = [
   [8, "audit", "actor_scope:jsonb"],
   [9, "memberships", "kind:text!='role',last_used_at:timestamp with time zone"],
   [9, "push_subscriptions", "membership_id:uuid"],
+  [17, "forecast_miss_reasons", "revision:bigint!=1"],
 ];
 
 /** The migration that created each table; a table missing from here has been there since 1. */
@@ -385,6 +386,7 @@ function expectedConstraints(version, tables) {
     for (const check of [
       ...((version >= 8 && table === "audit" ? auditChecksFrom8 : checks[table]) ?? []),
       ...(version >= 9 && table === "memberships" ? membershipChecksFrom9 : []),
+      ...(version >= 17 && table === "forecast_miss_reasons" ? ["revision > 0"] : []),
       // Migration 13 added the referral detail to the screens a record view names, 15 the list and TV.
       ...(table === "record_access"
         ? [

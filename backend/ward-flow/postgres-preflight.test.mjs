@@ -22,6 +22,7 @@ const sqlFiles = [
   "014-archived-records",
   "015-list-and-tv-views",
   "016-forecast-history",
+  "017-forecast-consistency",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
@@ -240,6 +241,12 @@ function fixture(version = LATEST_MIGRATION) {
     for (const match of sqlFiles[8].matchAll(/ALTER TABLE ward_flow\.(\w+) ADD CONSTRAINT \w+ (CHECK [^;]+);/g))
       checks(match[1], match[2]);
   }
+  if (version >= 17) {
+    for (const match of sqlFiles[16].matchAll(/ALTER TABLE ward_flow\.(\w+) ADD COLUMN (\w+) ([^;]+);/g)) {
+      catalog.objects.find((o) => o.name === match[1]).columns.push(column(match[2], match[3]));
+      checks(match[1], match[3]);
+    }
+  }
   if (version >= 7)
     catalog.constraints.find((c) => c.table_name === "workspaces" && c.definition.includes("'live'")).definition =
       "CHECK (data_mode = 'prototype')";
@@ -322,6 +329,52 @@ for (const version of ALL_VERSIONS)
     assert.equal(db.queries.length, 2);
     assert.match(db.queries[1], new RegExp(`LIMIT ${LATEST_MIGRATION + 1}$`));
   });
+
+test("migration 17 requires the exact positive forecast reason revision column and check", async () => {
+  for (const alter of [
+    (c) => {
+      const table = c.objects.find((o) => o.name === "forecast_miss_reasons");
+      table.columns = table.columns.filter((field) => field.name !== "revision");
+    },
+    (c) => {
+      c.objects
+        .find((o) => o.name === "forecast_miss_reasons")
+        .columns.find((field) => field.name === "revision").type = "integer";
+    },
+    (c) => {
+      c.objects
+        .find((o) => o.name === "forecast_miss_reasons")
+        .columns.find((field) => field.name === "revision").required = false;
+    },
+    (c) => {
+      c.objects
+        .find((o) => o.name === "forecast_miss_reasons")
+        .columns.find((field) => field.name === "revision").default_value = "0";
+    },
+    (c) => {
+      c.constraints = c.constraints.filter(
+        (constraint) =>
+          !(constraint.table_name === "forecast_miss_reasons" && constraint.definition.includes("revision > 0")),
+      );
+    },
+  ]) {
+    const catalog = fixture();
+    alter(catalog);
+    await assert.rejects(verifyPostgresNamespace(pool(catalog)), /Unrecognised or unsafe/);
+  }
+});
+
+test("a revision column is not accepted before migration 17 is recorded", async () => {
+  await assert.rejects(
+    verifyPostgresNamespace(
+      pool(
+        fixture(17),
+        Array.from({ length: 16 }, (_, index) => index + 1),
+      ),
+    ),
+    /Unrecognised or unsafe/,
+  );
+});
 
 test("PostgreSQL text-literal casts in defaults, checks and index predicates permit the known schema", async () => {
   const catalog = withPostgresTextDeparse(fixture());

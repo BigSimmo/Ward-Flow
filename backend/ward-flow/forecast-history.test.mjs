@@ -21,6 +21,13 @@ const snapshot = { day: 3, at: 3 * 1440 + 480, nowGap: -2, tomorrow: { low: -4, 
 const reason = { day: 3, reason: "discharge_postponed", by: "coordinator", at: 3 * 1440 + 600 };
 
 test("a forecast history body is checked: whole numbers, an ordered range and the closed lists", () => {
+  const operationId = "33333333-3333-4333-8333-333333333333";
+  assert.deepEqual(forecastHistoryInput({ generation: 1, operationId, expectedDayVersion: 0, reason }), {
+    generation: 1,
+    operationId,
+    expectedDayVersion: 0,
+    reason,
+  });
   assert.deepEqual(forecastHistoryInput({ generation: 0, snapshot }), { generation: 0, snapshot });
   assert.deepEqual(forecastHistoryInput({ generation: 2, reason }), { generation: 2, reason });
   // Extra fields are dropped, never stored.
@@ -39,6 +46,9 @@ test("a forecast history body is checked: whole numbers, an ordered range and th
     { generation: 1, snapshot: { ...snapshot, day: 2 ** 31 } },
     { generation: 1, reason: { ...reason, reason: "free text" } },
     { generation: 1, reason: { ...reason, by: "admin" } },
+    { generation: 1, operationId: "invalid", reason },
+    { generation: 1, operationId, expectedDayVersion: -1, reason },
+    { generation: 1, operationId, expectedDayVersion: Number.MAX_SAFE_INTEGER, reason },
   ])
     assert.equal(forecastHistoryInput(body), null, JSON.stringify(body));
 });
@@ -56,10 +66,12 @@ test("each desk's history is its own: the key is its role and place", () => {
 test("before migration 16 the store says the history is not shared, and touches no table", async () => {
   const queries = [];
   const store = forecastHistoryStore({
-    pool: { query: async (sql) => (queries.push(sql), { rows: [] }) },
     workspaceId: randomUUID(),
     schemaVersion: async () => 15,
-    worldGeneration: async () => 0,
+    withWorkspace: async () => {
+      queries.push("unexpected transaction");
+      assert.fail("no shared tables before migration 16");
+    },
     forgetVersionOnMissing: () => {},
   });
   assert.deepEqual(await store.forecastHistory(STATEWIDE_VIEW), { shared: false });
@@ -174,31 +186,61 @@ test(
       assert.deepEqual(await store.forecastHistory(coordinator), {
         shared: true,
         generation,
+        scopeKey: forecastScopeKey(coordinator),
+        historyRevision: world.revision,
+        writable: true,
+        reasonVersions: {},
         snapshots: [],
         reasons: [],
       });
-      const recorded = await store.recordForecast(coordinator, { generation, snapshot });
+      const scopeKey = forecastScopeKey(coordinator);
+      const recorded = await store.recordForecast(coordinator, {
+        generation,
+        scopeKey,
+        operationId: randomUUID(),
+        snapshot,
+      });
       assert.equal(recorded.status, 200);
       assert.deepEqual(recorded.body.snapshots, [snapshot]);
 
       // The colleague's later view the same day changes nothing; their next day adds one.
       const later = { ...snapshot, at: snapshot.at + 60, nowGap: 5, tomorrow: { low: 0, likely: 1, high: 9 } };
-      await store.recordForecast(colleague, { generation, snapshot: later });
+      await store.recordForecast(colleague, { generation, scopeKey, operationId: randomUUID(), snapshot: later });
       const nextDay = { ...snapshot, day: 4, at: 4 * 1440 + 480 };
-      await store.recordForecast(colleague, { generation, snapshot: nextDay });
+      await store.recordForecast(colleague, { generation, scopeKey, operationId: randomUUID(), snapshot: nextDay });
       assert.deepEqual((await store.forecastHistory(coordinator)).snapshots, [snapshot, nextDay]);
 
-      // A later reason for the same day replaces the earlier one, whoever chose it.
-      await store.recordForecast(coordinator, { generation, reason });
-      const changed = { ...reason, reason: "capacity_changed", by: "bed_manager", at: reason.at + 30 };
-      await store.recordForecast(colleague, { generation, reason: changed });
+      // A later deliberate change names the reason version it actually saw. A lost reply replay
+      // never reapplies the older choice over that change, even through a second server instance.
+      const firstChoice = { generation, scopeKey, operationId: randomUUID(), expectedDayVersion: 0, reason };
+      const firstReason = await store.recordForecast(coordinator, firstChoice);
+      const changed = { ...reason, reason: "capacity_changed", by: "coordinator", at: reason.at + 30 };
+      const secondStore = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date() });
+      await secondStore.recordForecast(colleague, {
+        generation,
+        scopeKey,
+        operationId: randomUUID(),
+        expectedDayVersion: firstReason.body.reasonVersions[reason.day],
+        reason: changed,
+      });
       assert.deepEqual((await store.forecastHistory(coordinator)).reasons, [changed]);
+      const replay = await store.recordForecast(coordinator, firstChoice);
+      assert.equal(replay.body.replayed, true);
+      assert.deepEqual(replay.body.reasons, [changed]);
+      const conflict = await store.recordForecast(coordinator, { ...firstChoice, operationId: randomUUID() });
+      assert.equal(conflict.status, 409);
+      assert.equal(conflict.body.code, "forecast-conflict");
 
       // A ward desk counts only its own records, so it keeps its own history.
       assert.deepEqual((await store.forecastHistory(ward)).snapshots, []);
 
       // A browser still counting in another world generation is refused, and nothing is written.
-      const stale = await store.recordForecast(coordinator, { generation: generation + 1, snapshot: nextDay });
+      const stale = await store.recordForecast(coordinator, {
+        generation: generation + 1,
+        scopeKey,
+        operationId: randomUUID(),
+        snapshot: nextDay,
+      });
       assert.equal(stale.status, 409);
       assert.equal(stale.body.code, "world-changed");
 
@@ -215,6 +257,9 @@ test(
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-017-forecast-consistency.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-016-forecast-history.sql", import.meta.url), "utf8"),
         );

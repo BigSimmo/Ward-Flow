@@ -1892,14 +1892,47 @@ export function createWorkspaceStore(
     viewer,
     // Proposal 013 (migration 16): each desk's shared forecast snapshots and miss reasons.
     ...forecastHistoryStore({
-      pool,
       workspaceId,
       schemaVersion,
-      worldGeneration: async () => {
-        const stored = await readWorld(pool);
-        return stored && engine.validWorld(stored.payload) ? stored.payload.state.worldGeneration : null;
-      },
       forgetVersionOnMissing,
+      withWorkspace: (view, write, run) =>
+        transaction(async (client, at) => {
+          // Forecast tables share the workspace lock with commands, reset and role changes. Reads
+          // hold SHARE until their revision and rows are built; writes recheck access under UPDATE.
+          let row = write ? await lock(client, view.actorId, at, view) : await lockedWorld(client, "SHARE");
+          if (!row) row = await lock(client, view.actorId, at, view);
+          at.setTime(clock().getTime());
+          if (!engine.validWorld(row.payload)) throw new Error("Stored workspace is incompatible");
+          if (!write && view.membershipId) {
+            const current = await resolveViewer(
+              view.actorId,
+              { workingAs: view.membershipId },
+              client,
+              at,
+              await schemaVersion(),
+            );
+            if (current.status !== "ok") throw new Error("role-ended");
+            Object.assign(view, current);
+          }
+          const context = {
+            client,
+            generation: row.payload.state.worldGeneration,
+            revision: Number(row.revision),
+            advance: async () => {
+              context.revision += 1;
+              // No domain record changed: advance only the shared ordering marker. Other server
+              // caches see this revision and reuse unchanged record bodies after checking rows.
+              await client.query("UPDATE ward_flow.workspaces SET revision=$2, updated_at=$3 WHERE id=$1", [
+                workspaceId,
+                context.revision,
+                at,
+              ]);
+              return context.revision;
+            },
+            audit: (entry) => audit(client, view, view.actorId, entry),
+          };
+          return run(context);
+        }),
     }),
     /**
      * History's archived records (migration 14): the newest `ARCHIVE_READ_LIMIT` of this world

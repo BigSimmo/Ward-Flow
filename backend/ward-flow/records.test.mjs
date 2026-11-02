@@ -484,7 +484,9 @@ test(
         [workspaceId],
       );
       const expected = planSave([], world, 4);
-      assert.equal(workspace[0].revision, "4");
+      // Migration 17 fences pre-upgrade forecast edits by advancing the workspace only. Record
+      // content and its revision remain exactly what migration 10 extracted from this world.
+      assert.equal(workspace[0].revision, "5");
       assert.deepEqual(workspace[0].payload, expected.core);
       const shape = (list) =>
         list
@@ -506,10 +508,13 @@ test(
         [2, 1, 2],
       );
 
-      // The rollback puts every record back in the workspace row, in order (016 to 011 go first).
+      // The rollback puts every record back in the workspace row, in order (017 to 011 go first).
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-017-forecast-consistency.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-016-forecast-history.sql", import.meta.url), "utf8"),
         );
