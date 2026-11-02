@@ -98,5 +98,15 @@
     "id": "2026-11-02-downtime-one-table",
     "date": "2026-11-02",
     "line": "Downtime pack: on a tablet or computer, each tab shows just its own table. Printing still includes all four."
+  },
+  {
+    "id": "2026-11-02-prelaunch-wording",
+    "date": "2026-11-02",
+    "line": "Same words everywhere: Locked wards, movements, held up, Bed board, New referral and Alerts."
+  },
+  {
+    "id": "2026-11-02-prelaunch-screens",
+    "date": "2026-11-02",
+    "line": "Long names, offline taps, slow loads, keyboard focus and iPad screens now behave better across the app."
   }
 ]
