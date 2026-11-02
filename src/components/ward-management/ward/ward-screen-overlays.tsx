@@ -198,7 +198,7 @@ export function WardScreenBedDrawer({
                             blocker: blocker as BedReleaseBlocker,
                           });
                         })()),
-                      blocker === null ? "Hold-up cleared." : `Hold-up recorded: ${blocker}`,
+                      blocker === null ? "Today's hold-up cleared." : `Hold-up recorded: ${blocker}`,
                     );
                     return completion;
                   }
@@ -299,7 +299,7 @@ export function WardScreenBedDrawer({
                           admissionId,
                           barrier,
                         }),
-                      barrier ? `Hold-up recorded: ${barrier}` : "Hold-up cleared.",
+                      barrier ? `Long-stay reason recorded: ${barrier}` : "Long-stay reason cleared.",
                     );
                   }
                 : undefined

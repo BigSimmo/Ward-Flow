@@ -653,7 +653,7 @@ function JourneyPresentation({
             id="journey-waiting"
             icon={Clock}
             title="Open ED movements"
-            meta={`${statisticsCountText(totalWaiting)} open journeys from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
+            meta={`${statisticsCountText(totalWaiting)} open movements from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-journey-waiting"
           >
             <CardBody>
@@ -683,7 +683,7 @@ function JourneyPresentation({
                   rows={waitingRows}
                   labelWidth={128}
                   testId="ward-statistics-journey-swarm"
-                  label="Each open ED journey, by originating department and time since opening"
+                  label="Each open ED movement, by originating department and time since opening"
                 />
               )}
               <SrOnly>

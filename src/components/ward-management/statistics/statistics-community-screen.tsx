@@ -610,7 +610,7 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
         sub: ownTeamDesk
           ? undefined
           : figures.expected.kind === "measured"
-            ? `${dueOutText} due out in the next 7 days`
+            ? `${dueOutText} discharges due in the next 7 days`
             : `Discharges due in the next 7 days: ${dueOutText}`,
         stats: (
           <>

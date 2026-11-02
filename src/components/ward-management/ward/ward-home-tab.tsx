@@ -928,11 +928,12 @@ export function WardHomeTab({
   for (const admission of dueSoon) {
     const bed = bedByAdmission(admission.id);
     if (!bed || admission.expectedDischargeAt === null) continue;
+    const holdUp = admission.blockReason ?? admission.dischargeBarrier;
     laterToday.push({
       key: `prep-${admission.id}`,
       title: `${bed.bedLabel} discharge due ${formatInstantWithDay(admission.expectedDischargeAt, now)}`,
-      detail: admission.dischargeBarrier ? `Held up: ${admission.dischargeBarrier}` : "Nothing holding it up",
-      tone: admission.dischargeBarrier ? "warning" : "neutral",
+      detail: holdUp ? `Held up: ${holdUp}` : "Hold-up not recorded",
+      tone: holdUp ? "warning" : "neutral",
       action: { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) },
     });
   }

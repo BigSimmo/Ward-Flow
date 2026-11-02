@@ -14,6 +14,7 @@ import {
 } from "@/components/ward-management/patients/patient-now-records";
 import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import { leavingDestinationLabel } from "@/components/ward-management/community/community-derivations";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 
 export interface ResolvedPatientNow {
@@ -35,9 +36,16 @@ function movementVerdict(
   acceptedUnit?: Unit,
   departed = false,
   admissions: readonly Admission[] = [],
+  departureLabel = "Departure",
 ): PatientNowRecord["verdict"] {
+  // A departed stay is named by its recorded destination: a transfer or a death is not a discharge.
   if (departed)
-    return { tone: "warn", short: "Discharged", title: "Discharge recorded; no current ward stay.", gates: [] };
+    return {
+      tone: "warn",
+      short: departureLabel,
+      title: `${departureLabel} recorded; no current ward stay.`,
+      gates: [],
+    };
   if (movement.closure?.outcome === "did_not_proceed")
     return {
       tone: "warn",
@@ -72,11 +80,16 @@ function movementVerdict(
   return { tone: "warn", short: "Seeking Bed", title: "Placement request active across network wards.", gates: [] };
 }
 
-function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = false): PatientNowRecord["next"] {
+function movementNextSteps(
+  movement: Movement,
+  acceptedUnit?: Unit,
+  departed = false,
+  departureLabel = "Departure",
+): PatientNowRecord["next"] {
   if (departed)
     return [
       {
-        w: "Discharge recorded",
+        w: `${departureLabel} recorded`,
         d: "No current ward stay. Review recorded discharge and community follow-up separately.",
         tone: "good",
       },
@@ -226,7 +239,8 @@ export function resolvePatientNowRecord(
       .reverse()
       .find((admission) => admission.id === movement.admissionId || admission.movementId === movement.id);
     const departed = linkedAdmission?.state === "departed";
-    const verdict = movementVerdict(movement, acceptedUnit, departed, admissions);
+    const departureLabel = leavingDestinationLabel(linkedAdmission?.leavingDestination ?? null) ?? undefined;
+    const verdict = movementVerdict(movement, acceptedUnit, departed, admissions, departureLabel);
     const historical = departed || movement.closure?.outcome === "did_not_proceed";
 
     const dynamicRecord: PatientNowRecord = {
@@ -267,7 +281,7 @@ export function resolvePatientNowRecord(
           : []),
       ],
       ladder: "Review the current movement for escalation and next actions",
-      next: movementNextSteps(movement, acceptedUnit, departed),
+      next: movementNextSteps(movement, acceptedUnit, departed, departureLabel),
       transport: movement.transport
         ? [
             ["Status", transportLeg(movement.transport) ?? "Booked"],
@@ -406,8 +420,11 @@ export function resolvePatientNowRecord(
         ) ?? newestMovement.find((m) => m.id === activeAdmission.movementId || m.admissionId === activeAdmission.id))
       : (newestMovement.find((m) => !m.closure) ?? newestMovement[0]);
     const linkedReferral = referrals.find((r) => r.id === (activeMovement?.referralId ?? activeAdmission?.referralId));
-    const latestDeparture =
-      !activeAdmission && patientAdmissions.some((a) => a.state === "departed" && a.movementId === activeMovement?.id);
+    const departedAdmission = activeAdmission
+      ? undefined
+      : [...patientAdmissions].reverse().find((a) => a.state === "departed" && a.movementId === activeMovement?.id);
+    const latestDeparture = departedAdmission !== undefined;
+    const departureLabel = leavingDestinationLabel(departedAdmission?.leavingDestination ?? null) ?? undefined;
 
     // A legal document only from the record: the active movement's own recorded form. PT-042 and
     // PT-043 used to get a Form 1A and a Form 3A "running to" three hours from whenever the page was
@@ -437,7 +454,7 @@ export function resolvePatientNowRecord(
           ? liveUnit(activeAdmission.unitId)
           : undefined;
 
-      const verdict = movementVerdict(activeMovement, acceptedUnit, latestDeparture, admissions);
+      const verdict = movementVerdict(activeMovement, acceptedUnit, latestDeparture, admissions, departureLabel);
       const historical = latestDeparture || activeMovement.closure?.outcome === "did_not_proceed";
 
       const dynamicRecord: PatientNowRecord = {
@@ -478,7 +495,7 @@ export function resolvePatientNowRecord(
             : []),
         ],
         ladder: "Review the current movement for escalation and next actions",
-        next: movementNextSteps(activeMovement, acceptedUnit, latestDeparture),
+        next: movementNextSteps(activeMovement, acceptedUnit, latestDeparture, departureLabel),
         transport: activeMovement.transport
           ? [
               ["Status", transportLeg(activeMovement.transport) ?? "Booked"],

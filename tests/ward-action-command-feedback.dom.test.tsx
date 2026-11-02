@@ -131,9 +131,9 @@ describe("Ward command feedback", () => {
     });
     fireEvent.click(drawer.getByRole("button", { name: "Save hold-up" }));
     expect(control.record).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText(/^Discharge blocker recorded:/)).toBeNull();
+    expect(screen.queryByText(/^Hold-up recorded:/)).toBeNull();
     await act(async () => control.refuse("refused"));
-    expect(screen.queryByText(/^Discharge blocker recorded:/)).toBeNull();
+    expect(screen.queryByText(/^Hold-up recorded:/)).toBeNull();
     // The refusal is said at the blocker form, which stays open with the choice, as well as in the toast.
     expect(drawer.getByTestId("ward-blocker-error")).toHaveTextContent(/Review the shared board/);
     expect(drawer.getByRole("button", { name: "Save hold-up" })).toBeInTheDocument();
