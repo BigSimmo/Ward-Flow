@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({
 describe("Help glossary and compact Reference", () => {
   it("lists every word with no filter of its own, Help's one search box finds them", () => {
     render(<WardHelpGlossary termsSource={GLOSSARY} />);
-    expect(screen.queryByRole("searchbox")).toBeNull();
+    expect(screen.queryByRole("combobox")).toBeNull();
     expect(screen.queryByRole("combobox", { name: "Group" })).toBeNull();
     expect(screen.getByText("NIC")).toBeTruthy();
   });

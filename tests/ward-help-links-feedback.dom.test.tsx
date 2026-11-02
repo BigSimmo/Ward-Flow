@@ -164,7 +164,7 @@ describe("Help sheet upgrades", () => {
   it("suggests this screen's walk round and the desk's most used jobs first", async () => {
     window.localStorage.setItem(HELP_USED_STORAGE_KEY, "theme:9,clear-held-up-discharge:4");
     sheet();
-    fireEvent.focus(screen.getByRole("searchbox", { name: "Search Help" }));
+    fireEvent.focus(screen.getByRole("combobox", { name: "Search Help" }));
     await waitFor(() => expect(screen.getByText("Show me around Discharges")).toBeTruthy());
     const tries = screen.getAllByRole("button").map((button) => button.textContent ?? "");
     expect(tries.some((text) => /How do I use dark mode/i.test(text))).toBe(true);

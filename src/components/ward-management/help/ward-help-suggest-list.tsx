@@ -1,7 +1,7 @@
 /**
  * HELP SUGGESTIONS LIST (Josh, 2 Nov 2026): the rows `suggestHelp` returns, drawn as a listbox under
  * Help's field, and the ghost text that shows the rest of the top suggestion inside the field.
- * Presentational only: it holds no state and stores nothing. Not mounted yet.
+ * Presentational only: it holds no state and stores nothing. Mounted by ward-help-sheet.tsx.
  *
  * Wiring (ward-help-sheet.tsx, later): the field is a combobox (`role="combobox"`,
  * `aria-autocomplete="both"`, `aria-controls={`${idPrefix}-list`}`, `aria-expanded`), keeps focus,

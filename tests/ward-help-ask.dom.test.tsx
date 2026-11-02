@@ -44,7 +44,7 @@ function renderSheet(ask: string | undefined, onShowMe = vi.fn()) {
 }
 
 function helpField() {
-  return screen.getByRole("searchbox", { name: "Search Help" });
+  return screen.getByRole("combobox", { name: "Search Help" });
 }
 
 describe("Ask help in the Help sheet", () => {
