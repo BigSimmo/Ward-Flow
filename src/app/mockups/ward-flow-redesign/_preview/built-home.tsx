@@ -6,6 +6,11 @@ import { ActivityPanel } from "@/components/ward-management/coordinator/activity
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 
+import { useOpenOnLoad } from "./open-on-load";
+
+// Go to a desk opens from the rail's own persona card, as a click does (Josh, 2 Nov 2026).
+const HOME_POPUPS = { desk: ["[data-testid='ward-rail-persona-trigger']"] } as const;
+
 /**
  * Preview only. Home is built into the app (lane H, 31 Oct 2026), so the preview draws the real
  * coordinator screen on the preview world. Pop-ups are still drawn over it, so the slug stays.
@@ -16,6 +21,7 @@ import { useWardFlowClock } from "@/components/ward-management/ward-flow-provide
 export function BuiltHome({ openOnLoad }: { openOnLoad?: string }) {
   const now = useWardFlowClock();
   const [open, setOpen] = useState(openOnLoad === "activity-panel");
+  useOpenOnLoad(openOnLoad, HOME_POPUPS);
   useEffect(() => {
     const show = () => setOpen(true);
     window.addEventListener("wf-mockup:open-activity", show);

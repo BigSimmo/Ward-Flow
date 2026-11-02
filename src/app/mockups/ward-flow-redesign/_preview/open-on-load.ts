@@ -4,8 +4,9 @@ import { useEffect } from "react";
 
 /**
  * Preview only (Q221, Josh, 2 Nov 2026): opens a real page's own pop-up on load, the way a click
- * does, so the master design shows main's current dialog. Each step is a control's accessible name
- * (its text or aria-label), pressed in turn once it is on the page. Nothing is recorded.
+ * does, so the master design shows main's current dialog. Each step is the start of a control's
+ * accessible name (its aria-label or its text), or a selector (square brackets), pressed in turn
+ * once it is on the page. Nothing is recorded.
  */
 export function useOpenOnLoad(openOnLoad: string | undefined, steps: Readonly<Record<string, readonly string[]>>) {
   useEffect(() => {
@@ -14,12 +15,15 @@ export function useOpenOnLoad(openOnLoad: string | undefined, steps: Readonly<Re
     let step = 0;
     let tries = 0;
     const timer = window.setInterval(() => {
-      const name = names[step];
-      const control = [...document.querySelectorAll<HTMLElement>("button, [role='menuitem']")].find(
-        (element) =>
-          element.offsetParent !== null &&
-          (element.getAttribute("aria-label") === name || element.textContent?.trim().startsWith(name)),
-      );
+      const name = names[step]!;
+      // A step in square brackets, or naming a button by an attribute, is a selector instead.
+      const control = /^(\[|button\[)/.test(name)
+        ? document.querySelector<HTMLElement>(name)
+        : [...document.querySelectorAll<HTMLElement>("button, [role='menuitem']")].find(
+            (element) =>
+              element.offsetParent !== null &&
+              (element.getAttribute("aria-label")?.startsWith(name) || element.textContent?.trim().startsWith(name)),
+          );
       if (control) {
         control.click();
         step += 1;
