@@ -34,6 +34,7 @@ export const MOCKUP_PAGE_SLUGS = [
   "sign-in",
   "statistics-list",
   "statistics-unit",
+  "transport",
 ] as const;
 
 export type BuiltPageSlug = (typeof MOCKUP_PAGE_SLUGS)[number];

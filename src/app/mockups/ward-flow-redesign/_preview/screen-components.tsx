@@ -25,27 +25,59 @@ const WaitingPage = dynamic<MockupPageProps>(() =>
       },
   ),
 );
-// My ward is built (31 Oct 2026); its preview draws the real screen, kept as the page the Shift brief
-// pop-up opens over.
+// My ward is built (31 Oct 2026); its preview draws the real screen. Its pop-ups open from the page's
+// own controls, as a click does (Josh, 2 Nov 2026).
 const RealWardScreen = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-management/ward/ward-screen").then((module) => {
-    const RealWard = () => <module.WardScreen unitId="rph-adult-secure" />;
-    return RealWard;
-  }),
+  Promise.all([import("@/components/ward-management/ward/ward-screen"), import("./open-on-load")]).then(
+    ([module, open]) =>
+      function RealWard({ openOnLoad }: MockupPageProps) {
+        open.useOpenOnLoad(openOnLoad, WARD_POPUPS);
+        return <module.WardScreen unitId="rph-adult-secure" />;
+      },
+  ),
 );
+const WARD_POPUPS = {
+  "shift-brief": ["More ward actions", "Shift brief"],
+  "ward-notices": ["More ward actions", "Notices"],
+  "ward-switcher": ["Switch ward, now"],
+  // The bed card, which opens the bed record on every width ("Bed 01" opens the round on a phone).
+  "bed-record": ["[data-testid='ward-bed-card-1']"],
+  "confirm-beds": ["Confirm numbers"],
+} as const;
 const EdBoardPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/ed-board/ed-board-page").then((module) => module.EdBoardPage),
+  Promise.all([import("@/components/ward-redesign/ed-board/ed-board-page"), import("./open-on-load")]).then(
+    ([module, open]) =>
+      function EdBoardPreview({ openOnLoad }: MockupPageProps) {
+        open.useOpenOnLoad(openOnLoad, ED_BOARD_POPUPS);
+        return <module.EdBoardPage />;
+      },
+  ),
 );
+const ED_BOARD_POPUPS = {
+  // Phones have no row menu; the patient's sheet holds the same actions.
+  "ed-actions": ["[data-testid='ward-ed-unfold-WF-020'], [data-testid='ward-ed-patient-WF-020'] > button"],
+  "log-transport": [
+    "[data-testid='ward-ed-patient-WF-311'] > button, [data-testid='ward-ed-row-name-WF-311']",
+    "Log transport booking",
+  ],
+} as const;
 // Legal forms is built into the app (lane L, 31 Oct 2026). Its slug stays as the backdrop the Record
 // exam pop-up draws over, so it shows the real screen, fed by the preview world.
 const LegalFormsScreen = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-management/legal-forms/legal-forms-screen").then(
-    (module) =>
-      function LegalFormsBackdrop() {
+  Promise.all([import("@/components/ward-management/legal-forms/legal-forms-screen"), import("./open-on-load")]).then(
+    ([module, open]) =>
+      function LegalFormsBackdrop({ openOnLoad }: MockupPageProps) {
+        open.useOpenOnLoad(openOnLoad, LEGAL_FORMS_POPUPS);
         return <module.LegalFormsScreen />;
       },
   ),
 );
+const LEGAL_FORMS_POPUPS = {
+  // On a phone the form's own sheet holds Add the time.
+  "add-time": ["[aria-label^='Add the time for'], button[aria-label^='Ridgeholt, Fiora, UM']"],
+  "record-form": ["Record a form"],
+  "record-exam": ["Record and tell", "Record exam"],
+} as const;
 // The patient record is built into the app (lane L, 31 Oct 2026). Its slug stays as the backdrop the
 // Medical clearance pop-up draws over: the real screen, opened on the sample record's coded address
 // `/ward-flow/people/196zcp24w5t0` and resolved the same way the route does.
@@ -79,13 +111,20 @@ const AddPatientForm = dynamic<MockupPageProps>(() =>
 
 // Movements mock-up (1 Nov 2026): the real screen with the redesign drawn in place.
 const MovementsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-management/movements/movements-screen").then(
-    (module) =>
-      function MovementsPreview() {
+  Promise.all([import("@/components/ward-management/movements/movements-screen"), import("./open-on-load")]).then(
+    ([module, open]) =>
+      function MovementsPreview({ openOnLoad }: MockupPageProps) {
+        open.useOpenOnLoad(openOnLoad, MOVEMENTS_POPUPS);
         return <module.MovementsScreen />;
       },
   ),
 );
+const MOVEMENTS_POPUPS = {
+  movement: [
+    "[data-testid='movements-group-toggle-placement_requested'], [data-ward-primitive='record-id']",
+    "What is recorded for",
+  ],
+} as const;
 
 // Handover mock-up (1 Nov 2026): the real screen with the proposed changes, fed by the preview world.
 const HandoverScreen = dynamic<MockupPageProps>(() =>
@@ -142,13 +181,17 @@ const ReferralsScreen = dynamic<MockupPageProps>(() =>
 );
 
 const StaysScreen = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-management/board/ward-board").then(
-    (module) =>
-      function StaysScreenPreview() {
+  Promise.all([import("@/components/ward-management/board/ward-board"), import("./open-on-load")]).then(
+    ([module, open]) =>
+      function StaysScreenPreview({ openOnLoad }: MockupPageProps) {
+        open.useOpenOnLoad(openOnLoad, STAYS_POPUPS);
         return <module.WardBoard unitId="rph-adult-secure" />;
       },
   ),
 );
+const STAYS_POPUPS = {
+  "board-blocker": ["[data-bed-kind='occupied'] button", "Record a blocker"],
+} as const;
 
 const PatientsScreen = dynamic<MockupPageProps>(() =>
   import("@/components/ward-management/search/patient-search").then(
@@ -282,14 +325,22 @@ const CommunityTeamScreen = dynamic<MockupPageProps>(() =>
 );
 const COMMUNITY_POPUPS = { "community-note": ["Record contact"] } as const;
 
+// Its Accept in principle pop-up opens over the first ward a request waits on (ward-answer-preview.tsx).
 const WardAnswerScreen = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-management/ward/ward-screen").then(
-    (module) =>
-      function WardAnswerScreenPreview() {
-        return <module.WardScreen unitId="rph-adult-secure" presentation="answer" />;
+  import("./ward-answer-preview").then((module) => module.WardAnswerPreview),
+);
+
+// The transport officer's phone page, drawn as the page the Officer job panel opens over.
+const TransportScreen = dynamic<MockupPageProps>(() =>
+  Promise.all([import("@/components/ward-management/officer/officer-screen"), import("./open-on-load")]).then(
+    ([module, open]) =>
+      function TransportScreenPreview({ openOnLoad }: MockupPageProps) {
+        open.useOpenOnLoad(openOnLoad, TRANSPORT_POPUPS);
+        return <module.OfficerScreen />;
       },
   ),
 );
+const TRANSPORT_POPUPS = { "officer-job": ["[data-testid^='ward-officer-select-']"] } as const;
 
 const SettingsScreen = dynamic<MockupPageProps>(() =>
   import("@/components/ward-management/settings/settings-screen").then(
@@ -369,4 +420,5 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "sign-in": SignInScreen,
   "statistics-list": StatisticsListScreen,
   "statistics-unit": StatisticsUnitScreen,
+  transport: TransportScreen,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;
