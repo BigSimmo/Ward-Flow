@@ -27,7 +27,6 @@ vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
 }));
 
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
-import { HELP_USED_STORAGE_KEY } from "@/components/ward-management/help/ward-help-usage";
 import { CLINICAL_REPLY } from "@/components/ward-management/help/ward-help-search-index";
 
 function renderSheet(ask: string | undefined, onShowMe = vi.fn()) {
