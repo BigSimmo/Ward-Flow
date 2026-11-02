@@ -108,7 +108,7 @@
 }
 
 /* Above 48rem the card is never shown, so it never holds the menus back there. */
-@media not all and (max-width: 48rem) {
+@media not all and (max-width: 46.4375rem) {
   .shellRow:has([data-wf-tv-clean]) {
     --wf-header-height: 0px;
   }
@@ -203,7 +203,7 @@
 }
 
 /* The phone header keeps one height while its control faces condense on scroll. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   :global(html):has(.shellRow) {
     --wf-header-height: 3.5rem;
   }
@@ -219,7 +219,7 @@
  * The row and column are positioned so screen-reader-only text cannot stretch the document.
  * Screen only, so a printout is never cut to one screen's height.
  */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   :global(html):has(.shellRow) {
     overflow: hidden;
     overscroll-behavior: none;
@@ -311,7 +311,7 @@
 /* From 769px to 1000px the tablet rail sits in the page under the header, and can wrap to more than
    one row, so a note under the header would lie over it. There the note rests at the foot of the
    window instead (no phone dock at these widths). */
-@media (min-width: 769px) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 1000px) {
   .loadingNote {
     top: auto;
     bottom: 0.75rem;
@@ -408,7 +408,7 @@
  * clearance for the route-level pinned view row (Ward views, Referrals switch: up to 6.5rem).
  * Layout only: no wording changes.
  */
-@media screen and (max-width: 48rem) and (max-height: 32rem) {
+@media screen and (max-width: 46.4375rem) and (max-height: 32rem) {
   .bannerHolder {
     position: static;
   }

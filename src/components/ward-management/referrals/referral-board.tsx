@@ -549,7 +549,7 @@ export function ReferralBoard({
   useEffect(() => {
     if (!selectedReferralId || !detailRef.current) return;
     detailRef.current.scrollTop = 0;
-    if (typeof window !== "undefined" && window.innerWidth <= 768) {
+    if (typeof window !== "undefined" && window.innerWidth <= 743) {
       if (typeof detailRef.current.scrollIntoView === "function") {
         detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
       }
