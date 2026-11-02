@@ -738,7 +738,7 @@ test.describe("@mockup Emergency department screen", () => {
     expect(await formExpiryLines.count()).toBeGreaterThan(0);
 
     // A department can raise a referral.
-    await expect(page.getByRole("button", { name: /New referral/ })).toBeVisible();
+    await expect(page.getByTestId("ward-ed-raise-referral-toggle")).toBeVisible();
   });
 
   /**
