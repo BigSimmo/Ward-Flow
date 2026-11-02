@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readdirSync } from "node:fs";
+import { closeSync, existsSync, openSync, readSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { chromium, firefox, webkit } from "playwright";
 import { isLaunchableFile, playwrightBrowserRevisionCheck } from "./check-playwright-browser-revision.mjs";
@@ -266,7 +266,33 @@ export function resolvePlaywrightBrowserExecutable(
   };
 }
 
+// Windows has no POSIX X_OK check. Inspect only the DOS/PE headers, not the whole
+// browser image. Header admission does not prove architecture, dependencies or launch.
+// Format: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format
+function hasWindowsExecutableHeader(filePath) {
+  try {
+    const descriptor = openSync(filePath, "r");
+    try {
+      const dosHeader = Buffer.alloc(64);
+      if (readSync(descriptor, dosHeader, 0, dosHeader.length, 0) !== dosHeader.length) return false;
+      if (dosHeader.readUInt16LE(0) !== 0x5a4d) return false;
+      const peOffset = dosHeader.readUInt32LE(0x3c);
+      if (peOffset < dosHeader.length) return false;
+      const peHeader = Buffer.alloc(24);
+      if (readSync(descriptor, peHeader, 0, peHeader.length, peOffset) !== peHeader.length) return false;
+      if (peHeader.readUInt32LE(0) !== 0x00004550) return false;
+      const characteristics = peHeader.readUInt16LE(22);
+      return (characteristics & 0x0002) !== 0 && (characteristics & 0x2000) === 0;
+    } finally {
+      closeSync(descriptor);
+    }
+  } catch {
+    return false;
+  }
+}
+
 export function playwrightBrowserPreflight(args = [], env = process.env, resolveOptions = {}) {
+  const platform = resolveOptions.platform ?? process.platform;
   const projects = requestedPlaywrightBrowserProjects(args, env);
   const unsupportedProjects = projects.filter((project) => !browserFamilyForProject(project));
   const families = [...new Set(projects.map(browserFamilyForProject).filter(Boolean))];
@@ -279,7 +305,13 @@ export function playwrightBrowserPreflight(args = [], env = process.env, resolve
   for (const family of families) {
     const resolved = resolvePlaywrightBrowserExecutable(family, env, resolveOptions);
     checked.push(resolved);
-    if (!resolved.path || !isLaunchableFile(resolved.path)) missing.push(resolved);
+    // This is a file-level prerequisite, not proof that browser libraries or sandboxing work.
+    if (
+      !resolved.path ||
+      !isLaunchableFile(resolved.path, platform) ||
+      (platform === "win32" && !hasWindowsExecutableHeader(resolved.path))
+    )
+      missing.push(resolved);
   }
   if (missing.length === 0) {
     return { ok: true, projects, checked };

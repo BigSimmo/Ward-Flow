@@ -11,6 +11,16 @@ import {
   resolvePlaywrightBrowserExecutable,
 } from "../scripts/playwright-browser-preflight.mjs";
 
+// Header admission fixture only; this is not a complete or runnable Windows image.
+function windowsPeHeaderFixture() {
+  const bytes = Buffer.alloc(128);
+  bytes.write("MZ", 0);
+  bytes.writeUInt32LE(64, 0x3c);
+  bytes.write("PE\0\0", 64);
+  bytes.writeUInt16LE(0x0002, 64 + 22); // IMAGE_FILE_EXECUTABLE_IMAGE, not a DLL.
+  return bytes;
+}
+
 // Loading the actual project definitions must not start or require a local server.
 vi.mock("../scripts/playwright-base-url", () => ({
   getPlaywrightBaseUrl: () => "http://127.0.0.1:3000",
@@ -336,5 +346,131 @@ describe("playwright browser preflight", () => {
     });
     expect(result.ok).toBe(true);
     expect(result.checked?.[0]?.path).toBe(process.execPath);
+  });
+
+  it("accepts a platform file-prerequisite fixture without claiming browser launch", async () => {
+    const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const directory = mkdtempSync(join(tmpdir(), "pw-preflight-"));
+    const binary = join(directory, "chrome");
+    try {
+      writeFileSync(binary, process.platform === "win32" ? windowsPeHeaderFixture() : "#!/bin/sh\nexit 0\n", {
+        mode: 0o700,
+      });
+      const result = playwrightBrowserPreflight(["--project=chromium-mockups"], {
+        NODE_ENV: "test",
+        PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: binary,
+      });
+      expect(result.ok).toBe(true);
+      expect(result.checked?.[0]?.path).toBe(binary);
+    } finally {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  });
+
+  it.each([
+    { name: "plain text", filename: "not-a-browser.txt", contents: Buffer.from("synthetic text\n") },
+    { name: "text renamed as exe", filename: "browser.exe", contents: Buffer.from("synthetic text\n") },
+    { name: "truncated DOS header", filename: "browser.exe", contents: Buffer.from("MZ") },
+    {
+      name: "PE offset beyond the file",
+      filename: "browser.exe",
+      contents: (() => {
+        const bytes = windowsPeHeaderFixture();
+        bytes.writeUInt32LE(0xfffffff0, 0x3c);
+        return bytes;
+      })(),
+    },
+    {
+      name: "invalid PE signature",
+      filename: "browser.exe",
+      contents: (() => {
+        const bytes = windowsPeHeaderFixture();
+        bytes.write("NOPE", 64);
+        return bytes;
+      })(),
+    },
+    {
+      name: "non-executable PE image",
+      filename: "browser.exe",
+      contents: (() => {
+        const bytes = windowsPeHeaderFixture();
+        bytes.writeUInt16LE(0, 64 + 22);
+        return bytes;
+      })(),
+    },
+    {
+      name: "DLL image",
+      filename: "browser.exe",
+      contents: (() => {
+        const bytes = windowsPeHeaderFixture();
+        bytes.writeUInt16LE(0x2002, 64 + 22);
+        return bytes;
+      })(),
+    },
+  ])("rejects $name for a Windows-target browser override", ({ filename, contents }) => {
+    const directory = mkdtempSync(join(tmpdir(), "pw-preflight-windows-"));
+    const binary = join(directory, filename);
+    try {
+      // POSIX executable permission cannot make a text file a Windows image.
+      writeFileSync(binary, contents, { mode: 0o700 });
+      const result = playwrightBrowserPreflight(
+        ["--project=chromium-mockups"],
+        { NODE_ENV: "test", PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: binary },
+        { platform: "win32" },
+      );
+      expect(result.ok).toBe(false);
+      expect(result.missing?.[0]?.path).toBe(binary);
+    } finally {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  });
+
+  it("admits only the Windows PE-header prerequisite without launching the fixture", () => {
+    const directory = mkdtempSync(join(tmpdir(), "pw-preflight-pe-header-"));
+    const binary = join(directory, "browser.exe");
+    try {
+      writeFileSync(binary, windowsPeHeaderFixture(), { mode: 0o700 });
+      const result = playwrightBrowserPreflight(
+        ["--project=chromium-mockups"],
+        { NODE_ENV: "test", PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: binary },
+        { platform: "win32" },
+      );
+      expect(result.ok).toBe(true);
+      expect(result.checked[0]?.path).toBe(binary);
+    } finally {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  });
+
+  it("rejects a directory supplied as the browser override", () => {
+    const directory = mkdtempSync(join(tmpdir(), "pw-preflight-directory-"));
+    try {
+      const result = playwrightBrowserPreflight(["--project=chromium-mockups"], {
+        NODE_ENV: "test",
+        PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: directory,
+      });
+      expect(result.ok).toBe(false);
+      expect(result.missing?.[0]?.path).toBe(directory);
+    } finally {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  });
+
+  it.skipIf(process.platform === "win32")("rejects a regular browser override without execute permission", () => {
+    const directory = mkdtempSync(join(tmpdir(), "pw-preflight-permission-"));
+    const binary = join(directory, "chrome");
+    try {
+      writeFileSync(binary, "#!/bin/sh\nexit 0\n", { mode: 0o600 });
+      const result = playwrightBrowserPreflight(["--project=chromium-mockups"], {
+        NODE_ENV: "test",
+        PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: binary,
+      });
+      expect(result.ok).toBe(false);
+      expect(result.missing?.[0]?.path).toBe(binary);
+    } finally {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
   });
 });
