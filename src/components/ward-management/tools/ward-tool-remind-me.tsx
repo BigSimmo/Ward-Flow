@@ -4,9 +4,10 @@ import { useMemo, useState } from "react";
 import { BellPlus, X } from "lucide-react";
 
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { edById } from "@/components/ward-management/ward-sites";
 import { Button, ChipGroup, FilterChip, Segmented, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 import {
   REMIND_REASONS,
@@ -48,6 +49,11 @@ function bedText(bed: number): string {
 }
 
 /** Q323: a reminder on a ward, a bed or an open movement, picked from lists only (no typed text). */
+function movementFrom(edId: string | undefined): string {
+  const ed = edById(edId);
+  return ed ? `From ${ed.name}` : "From another site";
+}
+
 export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
   void onNavigate;
   const { units, movements } = useWardFlowSelect("units", "movements");
@@ -87,7 +93,10 @@ export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
       : kind === "bed" && ward && bed !== null
         ? { id: `${ward.id}:${bed}`, label: `Bed ${bedText(bed)}, ${unitName(ward.id) ?? ward.name}` }
         : kind === "movement" && movementId
-          ? { id: movementId, label: movementId }
+          ? {
+              id: movementId,
+              label: `Movement ${movementFrom(movements.find((move) => move.id === movementId)?.originEdId).toLowerCase()}`,
+            }
           : null;
   const missing = !target
     ? kind === "bed" && ward
@@ -139,7 +148,8 @@ export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
                         aria-pressed={picked}
                         onClick={() => setMovementId(picked ? null : move.id)}
                       >
-                        <span className={styles.mono}>{move.id}</span>
+                        {/* D-39: a movement is named by where it starts, never by its record id. */}
+                        <span>{movementFrom(move.originEdId)}</span>
                         <span className={styles.meta}>{to ? `To ${to}` : "No bed yet"}</span>
                       </button>
                     </li>
@@ -199,7 +209,7 @@ export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
 
       <div className={styles.step}>
         <span className={styles.label}>
-          When <span className={styles.at}>{formatInstant(dueAt)}</span>
+          When <span className={styles.at}>{formatInstantWithDay(dueAt, now)}</span>
         </span>
         <Segmented items={WHEN_ITEMS} value={when} onChange={setWhen} label="When" size="md" />
       </div>
@@ -231,9 +241,9 @@ export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
           <ul className={styles.list}>
             {reminders.map((item) => (
               <li key={item.id} className={styles.reminder}>
-                <span className={styles.time}>{formatInstant(item.dueAt)}</span>
+                <span className={styles.time}>{formatInstantWithDay(item.dueAt, now)}</span>
                 <span className={styles.what}>
-                  <span className={item.kind === "movement" ? styles.mono : undefined}>{item.targetLabel}</span>
+                  <span>{item.targetLabel}</span>
                   <span className={styles.meta}>{item.reason}</span>
                 </span>
                 <Button
@@ -241,7 +251,7 @@ export function ToolRemindMe({ onNavigate }: { onNavigate: () => void }) {
                   size="sm"
                   icon={X}
                   onClick={() => removeReminder(item.id)}
-                  aria-label={`Remove reminder for ${item.targetLabel} at ${formatInstant(item.dueAt)}`}
+                  aria-label={`Remove reminder for ${item.targetLabel} at ${formatInstantWithDay(item.dueAt, now)}`}
                 >
                   Remove
                 </Button>

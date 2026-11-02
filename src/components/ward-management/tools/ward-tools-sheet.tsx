@@ -44,7 +44,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { useExecutiveStatisticsControl } from "@/components/ward-management/statistics/executive-statistics-context";
 // D-91: the one suburb lookup card, shared with Community and the ward's Discharges tab.
-import { SuburbLookupCard } from "@/components/ward-redesign/community/suburb-lookup-card";
+import { SuburbLookupCard } from "@/components/ward-management/community/community-suburb-lookup-card";
 import { buttonClass, Count, SearchField } from "@/components/wf";
 
 import { ToolFeed, ReceiveNextFeedMessage, useFeedWaitingCount } from "./ward-tool-feed";
@@ -339,9 +339,11 @@ function ToolsSheetView({
 
   const openTool = (id: ToolsSheetToolId) => {
     // Q310: one tool at a time; opening another closes the first.
-    setOpen((current) => (current === id && !twoPane ? null : id));
+    // The demo row always opens in place, so it toggles even in two panes.
+    const inline = !twoPane || id === "demo";
+    setOpen((current) => (current === id && inline ? null : id));
     pushRecent(id);
-    if (twoPane) return;
+    if (!inline) return;
     window.requestAnimationFrame(() =>
       window.requestAnimationFrame(() =>
         document
@@ -594,8 +596,10 @@ function ToolsSheetView({
   const quickTitle = recentIds.length > 0 ? "Recent" : "Suggested";
 
   // Q311: two panes always show a tool, never an empty pane; the first quick pick opens with the sheet.
-  const shown: ToolsSheetToolId | null = twoPane ? (open ?? quickIds[0] ?? null) : open;
-  const paneEntry = shown && shown !== "demo" ? usable(shown) : null;
+  // The demo controls are setup, not a tool to work in, so they open in place under their row
+  // and the pane keeps showing a tool.
+  const shown: ToolsSheetToolId | null = twoPane ? (open && open !== "demo" ? open : (quickIds[0] ?? null)) : open;
+  const paneEntry = shown ? usable(shown) : null;
 
   const demoEntry: Entry = {
     key: "demo",
@@ -632,26 +636,28 @@ function ToolsSheetView({
       );
     }
     const id = entry.key as ToolsSheetToolId;
-    const isOpen = shown === id;
+    const inline = !twoPane || id === "demo";
+    const isOpen = inline ? open === id : shown === id;
     return (
       <div key={entry.key} className={styles.tool} data-open={isOpen || undefined} data-tool-row={id}>
         <button
           type="button"
           className={styles.row}
-          aria-expanded={twoPane ? undefined : isOpen}
-          aria-current={twoPane && isOpen ? "true" : undefined}
-          aria-controls={`ward-tools-${id}`}
+          aria-expanded={inline ? isOpen : undefined}
+          aria-current={!inline && isOpen ? "true" : undefined}
+          // Only an open tool's panel exists, so a closed row names no panel (axe aria-valid-attr-value).
+          aria-controls={isOpen ? `ward-tools-${id}` : undefined}
           data-testid={`ward-tools-toggle-${id}`}
           onClick={() => openTool(id)}
         >
           <RowText entry={entry} group={group} />
-          {twoPane ? (
+          {!inline ? (
             <ChevronRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
           ) : (
             <ChevronDown className={styles.rowCaret} aria-hidden="true" strokeWidth={1.75} />
           )}
         </button>
-        {isOpen && !twoPane ? (
+        {isOpen && inline ? (
           <div id={`ward-tools-${id}`} className={styles.toolPanel}>
             {entry.body}
           </div>
@@ -752,14 +758,14 @@ function ToolsSheetView({
       {twoPane ? (
         <section
           className={styles.pane}
-          aria-label={shown === "demo" ? demoEntry.name : (paneEntry?.name ?? "Tool")}
+          aria-label={paneEntry?.name ?? "Tool"}
           id={shown ? `ward-tools-${shown}` : undefined}
         >
-          {shown === "demo" || paneEntry ? (
+          {paneEntry ? (
             <>
               <header className={styles.paneHead}>
                 {(() => {
-                  const entry = shown === "demo" ? demoEntry : (paneEntry as Entry);
+                  const entry = paneEntry;
                   const Icon = entry.icon;
                   return (
                     <>
@@ -774,7 +780,7 @@ function ToolsSheetView({
                   );
                 })()}
               </header>
-              <div className={styles.paneBody}>{shown === "demo" ? demoEntry.body : paneEntry?.body}</div>
+              <div className={styles.paneBody}>{paneEntry.body}</div>
             </>
           ) : (
             <p className={styles.quiet}>Choose a tool.</p>

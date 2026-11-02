@@ -10,6 +10,7 @@ import {
   unitHasLockedBeds,
   unitHasOpenBeds,
 } from "@/components/ward-management/ward-bed-designation";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { sexDesignationAccepts } from "@/components/ward-management/ward-eligibility";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { COHORTS, type Cohort } from "@/components/ward-management/ward-model";
@@ -99,6 +100,8 @@ type FoundRow = {
   name: string;
   place: string;
   free: number;
+  /** Ready beds still being made ready: the pull is refused until they are (owner ruling 5 Sept). */
+  pending: number;
   locked: boolean;
   open: boolean;
   designation: string;
@@ -204,6 +207,7 @@ function OperationalResults({ filters, onNavigate }: { filters: Filters; onNavig
       name: row.unit.name,
       place: siteByCode(row.unit.siteCode)?.name ?? row.unit.siteCode,
       free: row.free,
+      pending: bedsPendingPreparation(row.unit.id, bedReleases),
       locked: unitHasLockedBeds(row.unit),
       open: unitHasOpenBeds(row.unit),
       designation: designationSummary(row.unit),
@@ -234,6 +238,7 @@ function ExecutiveResults({ filters, onNavigate }: { filters: Filters; onNavigat
       name: ward.name,
       place: report.catalogue.sites.find((site) => site.code === ward.siteCode)?.name ?? ward.siteCode,
       free,
+      pending: ward.pendingPreparation,
       // The report carries Ready counts by kind, not designations, so the glyph follows those.
       locked: ward.lockedReady > 0,
       open: ward.openReady > 0,
@@ -258,8 +263,9 @@ function ResultList({ rows, onNavigate }: { rows: FoundRow[]; onNavigate: () => 
   return (
     <div className={styles.results}>
       <p className={styles.total} role="status">
-        <span className={styles.mono}>{total}</span> ready in <span className={styles.mono}>{rows.length}</span>{" "}
-        {rows.length === 1 ? "ward" : "wards"}
+        {/* The noun carries the provenance, so the announced count says what it counts. */}
+        <span className={styles.mono}>{total}</span> ready synthetic beds in{" "}
+        <span className={styles.mono}>{rows.length}</span> {rows.length === 1 ? "ward" : "wards"}
       </p>
       <ul className={styles.list} id={listId} aria-label="Ready beds by ward">
         {rows.slice(0, shown).map((row) => (
@@ -296,7 +302,10 @@ function RowText({ row }: { row: FoundRow }) {
       </span>
       <span className={styles.name}>
         <strong>{row.name}</strong>
-        <small>{row.place}</small>
+        <small>
+          {row.place}
+          {row.pending > 0 ? ` · ${row.pending} being made ready` : null}
+        </small>
       </span>
       <span className={styles.count}>
         <b className={styles.mono}>{row.free}</b>

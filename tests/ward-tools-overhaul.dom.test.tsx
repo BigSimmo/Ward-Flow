@@ -205,7 +205,7 @@ describe("Find a bed (Q317)", () => {
 
     fireEvent.click(within(legal).getByRole("radio", { name: "Voluntary" }));
     expect(summary).toHaveTextContent("Adult · Any bed · Any ward · Voluntary");
-    expect(within(tool).getByRole("status")).toHaveTextContent(/\d+ ready in \d+ wards?/u);
+    expect(within(tool).getByRole("status")).toHaveTextContent(/\d+ ready synthetic beds in \d+ wards?/u);
     const links = within(within(tool).getByRole("list", { name: "Ready beds by ward" })).getAllByRole("link");
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) expect(wardHrefs).toContain(link.getAttribute("href"));

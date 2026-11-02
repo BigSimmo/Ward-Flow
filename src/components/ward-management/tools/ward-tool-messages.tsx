@@ -228,13 +228,13 @@ function executiveMessage(id: MessageId, report: ExecutiveReport): Message {
       foot: "",
     };
   }
-  const at = formatInstant(network.asAt.now);
+  // The released report's own clock is the executive desk's present, so its time is today's.
+  const now = network.asAt.now;
+  const at = formatInstant(now);
   const pending = report.capacity.pendingPreparation;
   const readyLine = `Ready beds: ${network.beds.ready} of ${network.beds.total}${pending > 0 ? `, ${pending} pending preparation` : ""}.`;
-  const waitingLines = [
-    `Waiting in ED: ${releasedCountText(network.people.waitingInEd)}.`,
-    `Over 24 hours: ${releasedCountText(report.edIndex.over24)}.`,
-  ];
+  // No typed hour window here: a wait threshold needs a named source (invented-figures guard).
+  const waitingLines = [`Waiting in ED: ${releasedCountText(network.people.waitingInEd)}.`];
   const byService = services.map(
     (service) =>
       `${service.service}: ${service.beds.ready} ready, ${releasedCountText(service.waiting)} waiting in ED.`,
