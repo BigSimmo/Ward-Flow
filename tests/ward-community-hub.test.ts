@@ -6,6 +6,7 @@ import {
   communityHubLists,
   communityTeamById,
   communityTeamSlug,
+  COMMUNITY_SERVICE_PAGES,
   COMMUNITY_TEAM_PAGES,
   leavingDestinationLabel,
 } from "@/components/ward-management/community/community-derivations";
@@ -246,6 +247,16 @@ describe("who belongs to a community team", () => {
     expect(admissionBelongsToTeam(person, mead!, [referral])).toBe(true);
     expect(admissionBelongsToTeam(person, other!, [referral])).toBe(true);
     expect(admissionBelongsToTeam(person, TEAM_B, [referral])).toBe(false);
+  });
+
+  it("Q223: network totals walk one page per service, so a person counts once", () => {
+    const names = COMMUNITY_SERVICE_PAGES.map((team) => team.name);
+    expect(names).toContain("Mead Centre (Armadale)");
+    expect(names).toContain("Inner City");
+    for (const spelling of ["Armadale (Mead)", "Armadale (Mead Centre)", "ICC", "Inner City Clinic"]) {
+      expect(names).not.toContain(spelling);
+    }
+    expect(names).toContain("Mead Centre (Kelmscott)");
   });
 
   it("belongs to nobody without a referral, or with a referral that named no community team", () => {

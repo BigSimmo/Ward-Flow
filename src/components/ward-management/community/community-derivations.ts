@@ -5,7 +5,10 @@ import {
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
-import { ratifiedSameServiceNames } from "@/components/ward-management/community/community-ratified-aliases";
+import {
+  RATIFIED_SERVICE_ALIASES,
+  ratifiedSameServiceNames,
+} from "@/components/ward-management/community/community-ratified-aliases";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
 import type { CommunityScopedReferral } from "@/components/ward-management/ward-referral-visibility";
@@ -103,6 +106,20 @@ export const COMMUNITY_TEAM_PAGES: readonly CommunityTeam[] = communityTeamOptio
   id: communityTeamSlug(name),
   name,
 }));
+
+/**
+ * One page per service, for figures summed across teams (Q223, Josh, 2 Nov 2026). Every page of a
+ * ruled same-service group lists the whole service's patients, so a total over every page would
+ * count each of them once per spelling. A network total walks this list instead: the group's first
+ * spelling with a page stands for it, as it does in Go to a desk (Q202).
+ */
+export const COMMUNITY_SERVICE_PAGES: readonly CommunityTeam[] = COMMUNITY_TEAM_PAGES.filter((team) =>
+  RATIFIED_SERVICE_ALIASES.every((alias) => {
+    if (!alias.members.includes(team.name)) return true;
+    const shown = alias.members.find((name) => COMMUNITY_TEAM_PAGES.some((page) => page.name === name));
+    return shown === team.name;
+  }),
+);
 
 /**
  * The team a URL segment names, or `null` — never a guess and never a fallback team, the same

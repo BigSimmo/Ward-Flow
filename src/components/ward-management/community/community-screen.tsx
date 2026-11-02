@@ -11,6 +11,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 import {
   admissionBelongsToTeam,
+  namesTeam,
   admissionsWithNoCommunityTeam,
   communityMembershipResolution,
   communityHubLists,
@@ -790,7 +791,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     }
     return true;
   });
-  const hasAnyReferralsForTeam = sourceReferrals.some((r) => r.addressing.destination.teamName === team.name);
+  const hasAnyReferralsForTeam = sourceReferrals.some((r) => namesTeam(r.addressing.destination.teamName, team));
   // Use the same unfiltered queue as the rendered list. Priority chips narrow visible rows,
   // while the tab and urgent total continue to describe the whole queue.
   const usesDemoReferrals = isDemoMode && !hasAnyReferralsForTeam;
