@@ -663,7 +663,7 @@
     scroll-margin-block-start: 8rem;
   }
 }
-@media (width < 768px), (max-width: 768px) {
+@media (max-width: 46.4375rem) {
   .detailBackdrop {
     display: block;
     position: fixed;
@@ -1214,7 +1214,7 @@
 /* Phone pass 2 (8 Oct 2026). Phone only; nothing here applies above 48rem. 12px gutters; a
    panel's title sits centred in its header; the register tabs share the panel width instead of
    clipping the last one. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .screen[data-ward-design="v6"] .main {
     padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-8);
   }
@@ -1247,7 +1247,7 @@
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
    with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
    tablet keep the toast above. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .toastNotice {
     --toast-bg: light-dark(
       color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
@@ -1293,7 +1293,7 @@
    ward-phone-page-dock.module.css) and leaving a band of the shell's grey under the footer note.
    The padding paints the ground there and the equal negative margin keeps the scroll length and the
    footer's place unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .screen[data-ward-page="delays"] {
     --wf-waiting-dock-tail: calc(var(--wf-dock-clear, 0px) + var(--wf-s-3, 12px));
     margin-bottom: calc(-1 * var(--wf-waiting-dock-tail));

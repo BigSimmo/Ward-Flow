@@ -140,7 +140,7 @@
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
 }
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .disclosureRow,
   .disclosure.disclosure > details > summary {
     min-height: 48px;
@@ -162,7 +162,7 @@
   width: 5.75rem;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .offersTable thead {
     display: none;
   }

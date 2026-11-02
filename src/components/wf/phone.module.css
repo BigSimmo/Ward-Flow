@@ -238,7 +238,7 @@
    footer in reach. The home indicator is under the keyboard then, so the footer drops that pad.
    F-21: on a phone the sheet is the solid overlay surface with no backdrop blur, which flickers on
    iPhone while the body scrolls (phone bars are solid, D-45). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .sheet {
     background-color: var(--wf-overlay);
     -webkit-backdrop-filter: none;
@@ -511,7 +511,7 @@
 }
 
 /* Phone (v10 phone row): the time word under the value is sans, ink-2. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .rowTime {
     font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
     color: var(--wf-ink-2);
@@ -859,7 +859,7 @@
 /* Phone band (v10 phone mockup): a page that opens on PhoneHero runs it square, edge to edge
  * under the lean bar, which joins it at rest, with the same 22px lip as the shared Hero. The
  * eyebrow is caps, as on the Hero band. `data-band` is only set on phone (`useWfBandBleed`). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .hero[data-band="on"],
   .hero[data-band="off"] {
     position: relative;

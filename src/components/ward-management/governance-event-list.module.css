@@ -41,7 +41,7 @@
   border-radius: var(--wf-r-ctl);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* An invisible cover gives the tap area without opening up the sentence's line spacing. */
   .accessLink {
     position: relative;

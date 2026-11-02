@@ -70,7 +70,7 @@ describe("Hero lead slot and slash stat", () => {
 
   it("pins the phone order: eyebrow and title first, then the lead, then chips", () => {
     const css = read("src/components/wf/hero.module.css");
-    const phone = css.slice(css.indexOf("@media (max-width: 48rem)"));
+    const phone = css.slice(css.indexOf("@media (max-width: 46.4375rem)"));
     expect(phone).toMatch(/\.titleBlock \{\s*order: 0;/u);
     expect(phone).toMatch(/\.lead \{\s*order: 1;/u);
     expect(phone).toMatch(/\.firstRow \{\s*order: 0;/u);

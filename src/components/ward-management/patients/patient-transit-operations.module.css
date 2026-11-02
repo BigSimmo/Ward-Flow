@@ -948,7 +948,7 @@
  * and the hero shows the stage, so the heading row is kept for screen readers only. The review
  * card loses its repeated eyebrow and its corrections become plain rows. Desktop is unchanged:
  * everything here sits under 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   [data-ward-design="v6"] .heading {
     position: absolute;
     width: 1px;

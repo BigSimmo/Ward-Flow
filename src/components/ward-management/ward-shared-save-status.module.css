@@ -130,7 +130,7 @@
 }
 
 /* On a phone the row stays one line; the full sentence stays in the accessibility tree. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .bar {
     flex-wrap: nowrap;
     padding-inline: var(--wf-s-3);

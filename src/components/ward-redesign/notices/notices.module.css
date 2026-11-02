@@ -107,7 +107,7 @@
   pointer-events: none;
 }
 
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .list[data-stack="folded"] > .live > .card:not([data-depth]) {
     background-color: var(--wf-overlay);
     -webkit-backdrop-filter: none;
@@ -270,7 +270,7 @@
    Redesign (D-91): the stack rests 24px above the dock's top (#1124 used 12px, which put the pill
    against the dock's + hump). --wf-dock-clear (72px dock plus the home indicator) is set on the
    body wherever the dock is drawn; pages without the dock use the same sum. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .region {
     --notice-rest: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 24px);
     left: 12px;
@@ -373,7 +373,7 @@
 
 /* A help corner card (the tour offer, What's new) holds the bottom right on desktop: notices stand
    to its left, as #1124 builds it. Inert until a mock-up draws a card with data-wf-corner-card. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   :global(html:has([data-wf-corner-card])) .region {
     right: calc(min(23rem, 100vw - 2rem) + 1rem);
   }

@@ -183,7 +183,7 @@
 }
 
 /* Phone: the dialog rises from the bottom edge so its actions sit under the thumb. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .scrim {
     align-items: flex-end;
     padding: var(--wf-s-2);

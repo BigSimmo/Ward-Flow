@@ -1090,7 +1090,7 @@
 /* Phone compact switch (Josh, 12 Oct 2026): the tabs take the shared phone track (`--wf-phone-*`);
  * each option's hit area reaches the 48px floor, so the face drops its own 44px floor. The switch
  * pins under the phone header through the shared `pinnedSwitch` (ward-pinned-switch.module.css). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneTabs [role="radio"] {
     min-height: 0;
   }

@@ -278,7 +278,7 @@
 }
 
 /* Phone: a 40px button with an invisible cover for a larger tap area, never 48px tall. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .lockScreen {
     padding: var(--wf-s-4);
   }

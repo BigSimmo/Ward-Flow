@@ -31,7 +31,7 @@
   outline-offset: 2px;
 }
 
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .trigger {
     height: 32px;
     padding: 0 10px 0 12px;
@@ -192,7 +192,7 @@ button.row:hover {
   color: var(--wf-ink-2);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Josh, 30 Oct: today's control sizes. The close keeps a larger, invisible touch area. */
   .head button {
     position: relative;

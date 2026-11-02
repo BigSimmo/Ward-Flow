@@ -222,7 +222,7 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* A phone's team buttons sit on their own line under the name, at the kit's 36px face with a
      48px tap area that does not show (never a 48px face). */
   .teamActions {

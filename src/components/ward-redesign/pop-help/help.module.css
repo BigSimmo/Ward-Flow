@@ -97,7 +97,7 @@ div.screenHead {
   outline-offset: 2px;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .endRow > button {
     flex: 1 1 auto;
   }
@@ -137,7 +137,7 @@ div.screenHead {
   min-width: 0;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .tabsRow {
     display: block;
     margin-block: -6px;
@@ -300,7 +300,7 @@ div.screenHead {
   height: 14px;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The kit's phone size: 32px, with a 48px invisible tap area. */
   .showMe,
   .goThere {

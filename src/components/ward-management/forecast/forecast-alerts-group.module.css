@@ -5,7 +5,7 @@
   font-weight: 600;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   li.forecastRow {
     grid-template-columns: minmax(0, 1fr);
     justify-items: start;

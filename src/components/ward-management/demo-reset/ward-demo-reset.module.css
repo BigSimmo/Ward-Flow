@@ -76,7 +76,7 @@
   font-size: var(--wf-fs-14);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .confirm button {
     min-block-size: var(--wf-row-touch);
   }

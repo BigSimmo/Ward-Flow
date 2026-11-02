@@ -373,7 +373,7 @@
 }
 
 /* Phone: the strip stacks; each document is a row of chip, title and status, with the date under. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .strip {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }

@@ -533,7 +533,7 @@
 }
 
 /* Phone (v10): the Decisions tab is one flat card, grouped by kind, with no window track. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneList {
     overflow: hidden;
     border: 1px solid var(--wf-line);
