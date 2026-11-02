@@ -1,6 +1,6 @@
 # Audit finding appraisal and bounded remediation
 
-Audience: Ward Flow engineering and Josh. Status: in progress, local work only. Owner: Codex coordinating the requested subagent swarm. Synthetic data only.
+Audience: Ward Flow engineering and Josh. Status: blocked on exact-file ownership approval; bounded config fix committed locally. Owner: Codex coordinating the requested subagent swarm. Synthetic data only.
 
 Original objective: reassess all 54 findings in the supplied master report, stress-test credible claims, fix bounded defects, and defer challenging work or significant design changes. Source baseline: `BigSimmo/Ward-Flow` main `dd81e1c327c0776a0f1afdd1366919e756c3647a`; branch `codex/audit-remediation-20261103`.
 
@@ -8,16 +8,16 @@ Original objective: reassess all 54 findings in the supplied master report, stre
 
 WF-15 narrows both TypeScript root-file sets to omit date-shaped root backup directories (`mockup-backup-????-??-??/**`). Real `mockups/`, ordinary source, MTS scripts, undated similarly named source directories and similarly named root TS files remain included. A broad prefix exclusion was rejected because TypeScript also excluded a genuine similarly named root file. The regression keeps that source-preservation assertion.
 
-Focused scope regression: four cases pass after two expected exclusion failures before the change. Local locked dependencies were freshly installed through the repository installer and attested; lifecycle scripts were disabled. Matching npm 11.17.0 was provisioned outside this checkout.
+Focused scope regression: four cases pass after two expected exclusion failures before the change. Local commit `5bdcf9941` contains the fix and its regression. Normal commit admission, selected lint/type checks and the four focused scope cases passed. Local locked dependencies were freshly installed through the repository installer and attested; lifecycle scripts were disabled. Matching npm 11.17.0 was provisioned outside this checkout.
 
 ## Reproduced defects awaiting exact-file ownership
 
 - WF-01: collection accepts an open restrictive-practice episode; four targeted cases fail before the proposed guard, and four boundary/compatibility cases pass.
 - WF-02: legal handover copy omits passed recorded times; three cases fail before the proposed correction and ten boundary/input cases pass. Keep D-93 typed-time wording and one counted row per form.
-- WF-04: both originally examined stand-down buttons dispatch immediately. Twelve real-confirm-host cases failed before repair. Independent review also identified a third reachable button and a stale local-clock callback risk; the proposal is being corrected before application.
+- WF-04: both originally examined stand-down buttons dispatch immediately. Twelve real-confirm-host cases failed against the original implementation. Independent review identified a third reachable button, stale local-clock callbacks and cross-world consent. The unapplied proposal now uses the existing styled host and command-lifetime predicate; its regression file has 34 cases covering three surfaces. That expanded regression awaits execution after source authority and application.
 - WF-05: discharge/community 12-hour literals remain. Existing string assertions need corresponding updates.
 
-These tests are diagnostic reproductions, not passing acceptance. New failing regressions remain uncommitted until their associated sources may be repaired. Existing-source overlaps on the shared claim board require the pending exact-file takeover; no peer source is edited without it.
+The four repair proposals apply cleanly in check-only mode and have independent source review with no remaining concrete blocker. They remain unapplied. These tests are diagnostic reproductions, not passing acceptance. New failing regressions remain uncommitted until their associated sources may be repaired. Existing-source overlaps on the shared claim board require the pending exact-file takeover; no peer source is edited without it.
 
 ## Deferrals
 
@@ -33,8 +33,16 @@ These tests are diagnostic reproductions, not passing acceptance. New failing re
 - Three selected dead-owner/forced-release/heartbeat lock cases passed; 43 cases were not selected.
 - Existing clearance provenance, admitted-form progression, Ready/preparation and overlapping UI-save tests: four files and twelve tests passed. These support retaining the disputed contracts, not a universal assurance.
 - Pinned Playwright Chromium is unavailable (expected revision 1248, no managed install). Browser/print/physical-device acceptance is unrun. The temporary offline local server was identity-verified as Ward Flow and stopped; no provider backend was used.
-- One broad TypeScript run found a new fixture ID typing error; that fixture was corrected. A complete passing typecheck is not yet recorded here.
+- One broad TypeScript run found a new fixture ID typing error; that fixture was corrected. The corrected working tree, including all three uncommitted regression files, subsequently passed the repository typecheck command. This does not typecheck or accept the unapplied implementation proposals.
 - No hosted CI, provider-backed test, source publication, PR, merge or deployment is authorised or claimed.
+
+## Handoff and exact remaining boundary
+
+The user approved issue 688 ownership claim/release comments only. Existing source and test overlaps require the separate pending exact-file takeover: the initial twelve paths plus the three supplemental paths. No silence or prior comment permission is treated as takeover. All peer work remains preserved.
+
+External task checkpoint and reviewable proposals: `/workspace/ward-flow-review/fix-task/`. The exact scope is in `takeover-scope.md`; `bounded-source-repairs.patch` combines the four unapplied proposals. The local checkout is `/workspace/ward-flow-fixes`. Three uncommitted tests are deliberately retained as diagnostic work: `tests/ward-restrictive-practice-collection.test.ts`, `tests/ward-legal-handover-copy.test.ts` and `tests/ward-broadcast-stand-down-confirm.dom.test.tsx`. They must accompany the repaired implementation, not be published as passing on this branch alone.
+
+Next: obtain exact-file ownership, append claims, apply the reviewed patches, run the targeted green and related checks, then inspect affected interactions when a matching browser is available. No source push or integration follows implicitly.
 
 ## Every original issue retained for traceability
 
