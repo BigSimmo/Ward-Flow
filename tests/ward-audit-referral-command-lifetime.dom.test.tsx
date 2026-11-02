@@ -120,7 +120,9 @@ it.each(["cancel and reopen", "choose another patient", "edit the registration"]
     const h = hostHarness();
     fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
     act(() => h.host().setNewPatient(draft));
-    fireEvent.click(screen.getByRole("button", { name: /^Add patient$/ }));
+    fireEvent.click(
+      within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: /^Add patient$/ }),
+    );
     expect(h.dispatch).toHaveBeenCalledTimes(1);
     if (change === "cancel and reopen") {
       fireEvent.click(screen.getByRole("button", { name: /^Cancel$/ }));
@@ -149,7 +151,9 @@ it("still selects an unchanged registration after its own accepted record arrive
   const h = hostHarness();
   fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
   act(() => h.host().setNewPatient(draft));
-  fireEvent.click(screen.getByRole("button", { name: /^Add patient$/ }));
+  fireEvent.click(
+    within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: /^Add patient$/ }),
+  );
   await act(async () =>
     h.completion.resolve({ commandId: "synthetic-registration", status: "accepted", isCurrent: () => true }),
   );
@@ -162,13 +166,17 @@ it("an old registration cannot consume a newer pending registration after Cancel
   const h = hostHarness();
   fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
   act(() => h.host().setNewPatient(draft));
-  fireEvent.click(screen.getByRole("button", { name: /^Add patient$/ }));
+  fireEvent.click(
+    within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: /^Add patient$/ }),
+  );
   fireEvent.click(screen.getByRole("button", { name: /^Cancel$/ }));
   fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
   act(() => h.host().setNewPatient({ ...draft, umrn: "UM999992" }));
   const newer = deferred<WardCommandOutcome>();
   h.dispatch.mockImplementationOnce(() => newer.promise);
-  fireEvent.click(screen.getByRole("button", { name: /^Add patient$/ }));
+  fireEvent.click(
+    within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: /^Add patient$/ }),
+  );
   expect(h.dispatch).toHaveBeenCalledTimes(2);
   act(() => h.patients([...h.baseline().patients, h.added(), { ...h.added(), id: "PT-992", umrn: "UM999992" }]));
   await act(async () =>
