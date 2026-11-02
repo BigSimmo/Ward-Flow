@@ -15,7 +15,10 @@
 .head {
   display: flex;
   align-items: center;
-  gap: var(--wf-s-3);
+  /* Q237 (2 Nov 2026): a wide aside (Grid/Rows on the Bed map at 820) drops under the title
+     instead of squeezing the title to nothing or running off the card's right edge. */
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-3);
   min-height: 56px;
   padding: var(--wf-s-3) var(--wf-s-4);
   box-sizing: border-box;
@@ -27,8 +30,10 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 2px var(--wf-s-2);
-  min-width: 0;
-  flex: 1 1 auto;
+  /* Q237: the title keeps about twelve characters beside the aside, so it never stacks one letter
+     per line; below that the aside wraps to the next line. */
+  min-width: min(12ch, 100%);
+  flex: 1 1 12ch;
 }
 
 /* KIT-01 (layout sweep, 25 Oct 2026): the title and the meta are never cut off together ("Ask a
@@ -60,7 +65,13 @@
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);
-  flex: 0 0 auto;
+  /* Q235 (2 Nov 2026): a long aside gives way before the title collapses. */
+  flex: 0 1 auto;
+  min-width: 0;
+  /* Q237: when it drops to its own line it stays at the right, and an aside still wider than the
+     card wraps its controls. */
+  flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .body {

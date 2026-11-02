@@ -89,12 +89,16 @@
   margin: 0;
   font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
   color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
 }
+/* Q283 (pre-launch check D5, 2 Nov 2026): typed text with a long unbroken string (a reference
+   number) was clipped at the card edge. It wraps now, as the bed matrix names do. */
 .body > p {
   margin: 0;
   max-width: 64ch;
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overflow-wrap: anywhere;
 }
 
 .stack {

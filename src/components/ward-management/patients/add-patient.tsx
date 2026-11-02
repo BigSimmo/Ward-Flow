@@ -760,7 +760,7 @@ export function AddPatientForm() {
             eyebrow="Patients"
             // F-08 (phone review, Oct 2026): the standard Demo pill, so a typed record reads as invented.
             chip={<LiveChip state="live" onHero />}
-            title="Add a patient"
+            title="Add patient"
             sub="Identity only"
             data-testid="ward-add-patient-phone-hero"
             // Redesign: the Identity card's head says "0 of 4 required" just below, so the hero shows
@@ -786,7 +786,7 @@ export function AddPatientForm() {
             level={1}
             className={styles.apHero}
             eyebrow="Patients · new record"
-            title="Add a patient"
+            title="Add patient"
             titleMeta={
               <span className={styles.draftPill} data-testid="ward-add-patient-draft-pill">
                 <StatusGlyph tone="neutral" size={9} />

@@ -261,7 +261,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     await clickRailLink(page, "/ward-flow/wards");
     await expect(page.getByTestId("ward-index")).toBeVisible({ timeout: 15_000 });
     await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
-    await page.getByRole("link", { name: "Stays and discharges", exact: true }).click();
+    await page.getByRole("link", { name: "Bed board", exact: true }).click();
     await page.waitForURL(`**/ward-flow/board/${UNIT_ID}`);
     await expect(
       page.locator('div[hidden][id^="S:"]'),
@@ -284,11 +284,11 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
       await expect(leavingSubmit).toBeVisible({ timeout: 2_000 });
     }).toPass({ timeout: 30_000 });
     await leavingSubmit.click();
-    const departureDialog = page.getByRole("dialog", { name: "Confirm patient departure" });
+    const departureDialog = page.getByRole("dialog", { name: "Confirm discharge" });
     await expect(departureDialog).toBeVisible();
     // Audit CS3-07: where they went starts blank and must be chosen.
     await departureDialog.getByLabel("Where are they going?").selectOption("discharged-to-the-community");
-    await departureDialog.getByRole("button", { name: "Record departure", exact: true }).click();
+    await departureDialog.getByRole("button", { name: "Record discharge", exact: true }).click();
     await expect(departureDialog).toHaveCount(0);
 
     await goBackToWard(page);
@@ -363,7 +363,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
      * every group, three columns wide, blocker folded into the third column instead of broken out
      * on its own.
      */
-    const DISCHARGE_COLUMNS = ["Patient / ward", "Timing", "Stage / blocker"];
+    const DISCHARGE_COLUMNS = ["Patient / ward", "Timing", "Stage / hold-up"];
     const table = page.getByRole("table");
     await expect(table, "the discharges board renders no table, so its column contract went unchecked").toBeVisible();
     const headers = table.locator("thead th");
@@ -442,7 +442,7 @@ test.describe("@mockup WA disposition pathways", () => {
       await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length);
       await picker.selectOption(destination.id);
       await page.getByRole("button", { name: /Record that they have left/ }).click();
-      await page.getByRole("button", { name: "Record departure", exact: true }).click();
+      await page.getByRole("button", { name: "Record discharge", exact: true }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
       await clickRailLink(page, "/ward-flow/discharges");
       await page.waitForURL((url) => url.pathname === "/ward-flow/discharges");

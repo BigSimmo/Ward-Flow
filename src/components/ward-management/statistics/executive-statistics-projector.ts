@@ -42,7 +42,7 @@ import { HEALTH_SERVICES } from "../ward-model";
 import { siteByCode } from "../ward-sites";
 import { wardStatistics } from "../ward-statistics";
 import { bedIsOccupied } from "../ward-admissions";
-import { admissionsWithNoCommunityTeam } from "../community/community-derivations";
+import { admissionsWithNoCommunityTeam, COMMUNITY_SERVICE_PAGES } from "../community/community-derivations";
 import { edJourneyWaitFigures, edWaitFigures, ED_WAIT_BANDS } from "./statistics-ed-waits";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES, LONG_WAIT_MINUTES } from "../ward-operational-defaults";
 import { isAwaitingAnswer } from "../ward-referrals";
@@ -354,6 +354,9 @@ export function projectExecutiveReportingFoundation(
       access.scope.kind === "statewide" || (access.scope.kind === "service" && service === access.scope.service),
   );
   const teams = executiveTeams(input, release);
+  // Q223 (Josh, 2 Nov 2026): every page of a ruled same-service group lists the whole service, so
+  // network totals walk one page per service and each person counts once.
+  const serviceTeams = teams.filter((team) => COMMUNITY_SERVICE_PAGES.some((page) => page.id === team.id));
   const openableCommunityTeamIds = teams
     .filter(
       (team) =>
@@ -619,27 +622,27 @@ export function projectExecutiveReportingFoundation(
     );
   const admitted = c(
     "community:admitted",
-    teams.reduce((sum, team) => sum + team.privateCounts.admitted, 0),
+    serviceTeams.reduce((sum, team) => sum + team.privateCounts.admitted, 0),
   );
   const expected = c(
     "community:expected",
-    teams.reduce((sum, team) => sum + team.privateCounts.expected, 0),
+    serviceTeams.reduce((sum, team) => sum + team.privateCounts.expected, 0),
   );
   const dueOutWeek = c(
     "community:dueOutWeek",
-    teams.reduce((sum, team) => sum + team.privateCounts.dueOutWeek, 0),
+    serviceTeams.reduce((sum, team) => sum + team.privateCounts.dueOutWeek, 0),
   );
   release.partition(
     admitted,
-    teams.flatMap((team) => (team.figures.admitted.kind === "measured" ? [team.figures.admitted.count] : [])),
+    serviceTeams.flatMap((team) => (team.figures.admitted.kind === "measured" ? [team.figures.admitted.count] : [])),
   );
   release.partition(
     expected,
-    teams.flatMap((team) => (team.figures.expected.kind === "measured" ? [team.figures.expected.count] : [])),
+    serviceTeams.flatMap((team) => (team.figures.expected.kind === "measured" ? [team.figures.expected.count] : [])),
   );
   release.partition(
     dueOutWeek,
-    teams.flatMap((team) => (team.dueOutWeek.kind === "measured" ? [team.dueOutWeek.count] : [])),
+    serviceTeams.flatMap((team) => (team.dueOutWeek.kind === "measured" ? [team.dueOutWeek.count] : [])),
   );
   const unlinkedRows = admissionsWithNoCommunityTeam(input.admissions, input.referrals);
   const unlinkedAdmissions = c("community:unlinkedAdmissions", unlinkedRows.length);
@@ -782,10 +785,11 @@ export function projectExecutiveReportingFoundation(
       noTeamInBed,
       unlinkedAdmissions,
       admissionsRecorded: recorded,
-      activeTeams: teams.filter((team) => team.privateCounts.admitted > 0).length,
-      emptyTeams: teams.filter((team) => team.figures.admitted.kind === "measured" && team.privateCounts.admitted === 0)
-        .length,
-      unknownTeams: teams.filter((team) => team.figures.admitted.kind !== "measured").length,
+      activeTeams: serviceTeams.filter((team) => team.privateCounts.admitted > 0).length,
+      emptyTeams: serviceTeams.filter(
+        (team) => team.figures.admitted.kind === "measured" && team.privateCounts.admitted === 0,
+      ).length,
+      unknownTeams: serviceTeams.filter((team) => team.figures.admitted.kind !== "measured").length,
     },
     networkDetails: {
       physicalWaiting,

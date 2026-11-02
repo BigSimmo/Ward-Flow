@@ -39,7 +39,7 @@ export function BedMeetingSheetDialog({
       sub: `${ed.overLongWait} waiting over 24 hours · ${ed.detained} detained`,
     },
     {
-      label: "Due out today",
+      label: "Discharges due today",
       value: discharges.confirmed + discharges.expected + discharges.heldUp,
       sub: `${discharges.heldUp} held up`,
     },
@@ -87,7 +87,7 @@ export function BedMeetingSheetDialog({
         </section>
         <section aria-labelledby="sheet-held">
           <h3 id="sheet-held" className={styles.sheetHead}>
-            <Kicker>Releases today</Kicker>
+            <Kicker>Discharges today</Kicker>
           </h3>
           <ul className={styles.sheetList}>
             {discharges.rows.map((row) => (

@@ -428,7 +428,7 @@ export function MovementDrawer({
           <Link
             href={`/ward-flow/board/${accepted.id}`}
             className={buttonClass({ variant: "sec", size: "sm" })}
-            title={`Open ${accepted.name} Bed Board`}
+            title={`Open ${accepted.name} Bed board`}
           >
             <BedSingle size={14} aria-hidden="true" />
             Ward board
@@ -923,7 +923,7 @@ function MovementPhoneSheet({
               <Link
                 href={`/ward-flow/board/${accepted.id}`}
                 className={buttonClass({ variant: "sec", size: "sm" })}
-                title={`Open ${accepted.name} Bed Board`}
+                title={`Open ${accepted.name} Bed board`}
               >
                 <BedSingle size={14} aria-hidden="true" />
                 Ward board

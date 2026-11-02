@@ -18,6 +18,7 @@ export {
 export { StatusGlyph, Dot, type WfTone } from "./status-glyph";
 export { Icon } from "./icon";
 export { SrOnly, Kbd, Count, CountBubble, CountCircle, Spinner, IconTile } from "./primitives";
+export { FormalName } from "./formal-name";
 export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
@@ -65,6 +66,8 @@ export { ToastView } from "./toast";
 export { Dialog } from "./dialog";
 export { OverlayPortal, OverlayScope } from "./overlay-root";
 export { useModalFocus, type UseModalFocusOptions } from "./use-modal-focus";
+export { cycleTabWithin, focusIsLost } from "./focus-return";
+export { rememberOpener, returnFocusToOpener, type FocusOpener } from "./focus-opener";
 export { StateLine, type StateKind } from "./state";
 export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";
 export { LiveChip, Timer, publishLiveClock, publishLiveRefresh, useSharedRefreshLate } from "./live";

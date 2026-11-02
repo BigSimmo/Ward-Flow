@@ -1,11 +1,13 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { hydrateRoot, type Root } from "react-dom/client";
+import { Children, isValidElement, type ReactElement } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 
 import WardFlowMockupLayout from "@/app/ward-flow/layout";
+import { WardWorkspaceHost } from "@/components/ward-management/shell/ward-workspace-host";
 import { formatSheetMoment, demoDayZero } from "@/components/ward-management/ward-clock";
 import {
   WARD_FLOW_DEMO_STORAGE_KEY,
@@ -39,8 +41,14 @@ function CalendarProbe() {
 // so this regression hydrates the real provider without duplicating the whole navigation shell.
 async function serverTree() {
   const layout = await WardFlowMockupLayout({ children: null });
+  // The workspace host is found by type: the layout also renders an early inline script beside it.
+  const host = Children.toArray(layout.props.children).find(
+    (child): child is ReactElement<{ initialDayZero: number }> =>
+      isValidElement(child) && child.type === WardWorkspaceHost,
+  );
+  if (!host) throw new Error("the ward layout no longer renders WardWorkspaceHost");
   return (
-    <WardFlowProvider {...layout.props.children.props}>
+    <WardFlowProvider {...host.props}>
       <CalendarProbe />
     </WardFlowProvider>
   );

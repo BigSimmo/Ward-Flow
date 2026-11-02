@@ -39,7 +39,7 @@ export function pendingDepartureLogRows(
       at: release.confirmedAt,
       timeLabel: formatInstantWithDay(release.confirmedAt, now),
       title: "Bed expected out",
-      detail: `${laterReleasePlans.has(release.id) ? "Current departure plan shown separately" : `Departure ${formatInstantWithDay(release.expectedAt, now)}`}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
+      detail: `${laterReleasePlans.has(release.id) ? "Current discharge plan shown separately" : `Discharge ${formatInstantWithDay(release.expectedAt, now)}`}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
       status: release.state === "confirmed" ? "Confirmed" : "Expected",
     });
   } else if (pendingBedReleases.length > 1) {
@@ -52,12 +52,12 @@ export function pendingDepartureLogRows(
       title: `${pendingBedReleases.length} beds expected out`,
       detail:
         laterReleasePlans.size > 0
-          ? "Current departure plan shown separately"
+          ? "Current discharge plan shown separately"
           : `Next at ${formatInstantWithDay(next.expectedAt, now)}`,
       status: "Expected",
       nested: ordered.map((release) => ({
         key: release.id,
-        detail: `${laterReleasePlans.has(release.id) ? "Current departure plan shown separately" : formatInstantWithDay(release.expectedAt, now)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
+        detail: `${laterReleasePlans.has(release.id) ? "Current discharge plan shown separately" : formatInstantWithDay(release.expectedAt, now)}${release.waitingOn ? ` · ${release.waitingOn}` : ""}`,
       })),
     });
   }
@@ -66,8 +66,8 @@ export function pendingDepartureLogRows(
       key: `date-${releaseId}`,
       at: stay.dischargeDateSetAt!,
       timeLabel: formatInstantWithDay(stay.dischargeDateSetAt!, now),
-      title: "Expected departure updated",
-      detail: `Departure ${formatInstantWithDay(stay.expectedDischargeAt!, now)}${stay.dischargeDateSetBy ? ` · ${stay.dischargeDateSetBy}` : ""}`,
+      title: "Expected discharge updated",
+      detail: `Discharge ${formatInstantWithDay(stay.expectedDischargeAt!, now)}${stay.dischargeDateSetBy ? ` · ${stay.dischargeDateSetBy}` : ""}`,
       status: "Updated",
     });
   }

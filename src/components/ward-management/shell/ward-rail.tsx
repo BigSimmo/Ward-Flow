@@ -26,7 +26,6 @@ import { Tooltip } from "@/components/wf/tooltip";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
-import { surnameFirst } from "@/components/ward-management/settings/settings-profile";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
@@ -89,8 +88,6 @@ import {
   type ServiceBedAlertsSummary,
 } from "./ward-service-bed-alerts";
 import { useServiceScope } from "./ward-service-store";
-
-export type { ServiceBedAlert } from "./ward-service-bed-alerts";
 
 /**
  * Ward Flow's rail, restyled to the v6 shell (boards 02, 03 and 03b of the header and sidebar
@@ -353,9 +350,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
   const deskAccess = useEffectiveWardAccess();
   const currentPersona = deskAccess.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
-  // Q58 (Josh, 31 Oct 2026): the person card names the person surname first ("Okafor, A."), as
-  // Settings does; a desk named by its role keeps its name.
-  const personaName = surnameFirst(currentPersona.name);
+  // Q226 (Josh, 2 Nov 2026, replaces Q58): the person card names the person as written
+  // ("Dr S. Chen"), the same spelling as the master and Settings.
+  const personaName = currentPersona.name;
   // The access admin is named for itself, not the executive chrome it borrows (as the phone menu does).
   const deskRoleLabel = useDeskRoleLabel(role);
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and

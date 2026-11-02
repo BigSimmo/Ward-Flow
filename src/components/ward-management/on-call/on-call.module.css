@@ -1007,7 +1007,7 @@
    "Bed flo…" and "08:00 to 20:00" stacked over three lines. When the list is narrow, the role and
    its hours take the first line and the number, state and copy button the second. Phone keeps its
    own row (below). */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   @container (max-width: 26rem) {
     .lineRow {
       grid-template-columns: minmax(0, 1fr) auto 28px;
@@ -1903,7 +1903,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Before hydration the server paints the desktop hero; keep its desktop-only parts out at phone
      width so it does not overlap until the phone hero arrives. */
   .keys,
@@ -2018,7 +2018,7 @@
 /* H-0438 (26 Oct 2026): on an iPad and a laptop the directory's narrow columns cut the role name
    ("Mental Health Emergency Telehealth…") and the line that says who answers next ("then on-call…"),
    which is the fact a caller needs. Above the phone these take a second line instead. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .roleCell b,
   .roleCell b .truncate,
   .roleCell > span,

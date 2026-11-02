@@ -5,6 +5,10 @@ import {
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
+import {
+  RATIFIED_SERVICE_ALIASES,
+  ratifiedSameServiceNames,
+} from "@/components/ward-management/community/community-ratified-aliases";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
 import type { CommunityScopedReferral } from "@/components/ward-management/ward-referral-visibility";
@@ -104,6 +108,20 @@ export const COMMUNITY_TEAM_PAGES: readonly CommunityTeam[] = communityTeamOptio
 }));
 
 /**
+ * One page per service, for figures summed across teams (Q223, Josh, 2 Nov 2026). Every page of a
+ * ruled same-service group lists the whole service's patients, so a total over every page would
+ * count each of them once per spelling. A network total walks this list instead: the group's first
+ * spelling with a page stands for it, as it does in Go to a desk (Q202).
+ */
+export const COMMUNITY_SERVICE_PAGES: readonly CommunityTeam[] = COMMUNITY_TEAM_PAGES.filter((team) =>
+  RATIFIED_SERVICE_ALIASES.every((alias) => {
+    if (!alias.members.includes(team.name)) return true;
+    const shown = alias.members.find((name) => COMMUNITY_TEAM_PAGES.some((page) => page.name === name));
+    return shown === team.name;
+  }),
+);
+
+/**
  * The team a URL segment names, or `null` — never a guess and never a fallback team, the same
  * discipline `unitById` and `siteByCode` already hold to. A community hub that silently resolved an
  * unknown id to the first team would show one team's patients under another team's name, which is
@@ -129,6 +147,17 @@ export function communityTeamById(teamId: string): CommunityTeam | null {
  * nobody out. Filtering on state here would quietly remove from a team's page the very people whose
  * referral went wrong — which is the population this hub exists to make visible.
  */
+/**
+ * Q223 (Josh, 2 Nov 2026): a referral written to any spelling the owner has ruled is the same service
+ * (`RATIFIED_SERVICE_ALIASES`) names every one of those team pages, so the clinic's page shows its
+ * patients whichever spelling the referral used. Still only what somebody wrote down, read through
+ * a ruling a person made; nothing is inferred from where anyone lives.
+ */
+export function namesTeam(teamName: string | undefined, team: CommunityTeam): boolean {
+  if (teamName === undefined) return false;
+  return teamName === team.name || ratifiedSameServiceNames(team.name).includes(teamName);
+}
+
 export function admissionBelongsToTeam(
   admission: Admission,
   team: CommunityTeam,
@@ -138,7 +167,7 @@ export function admissionBelongsToTeam(
   const referral = referrals.find((candidate) => candidate.id === admission.referralId);
   if (referral === undefined) return false;
   return communityArmsOf(referral).some(
-    (addressed) => addressed.destination.kind === "community_team" && addressed.destination.teamName === team.name,
+    (addressed) => addressed.destination.kind === "community_team" && namesTeam(addressed.destination.teamName, team),
   );
 }
 

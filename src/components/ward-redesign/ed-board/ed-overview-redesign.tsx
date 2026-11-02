@@ -115,7 +115,7 @@ export function EdOverview({
       onClick={onRaiseReferral}
     >
       <Plus size={14} aria-hidden="true" />
-      Raise referral
+      New referral
     </button>
   );
   // P142 (Josh, 27 Oct 2026, 10:12 PM AWST): Add patient sits beside the referral button.
@@ -193,7 +193,7 @@ export function EdOverview({
                 </span>
               ) : null}
               {sinceLastLook}
-              {/* Redesign: Raise referral and Add patient share one row as Home's hero pills (31 Oct
+              {/* Redesign: New referral and Add patient share one row as Home's hero pills (31 Oct
                   2026), instead of one full-width button with a small one under it. */}
               <div className={`${redesign.phoneActions} ${rows.heroPills}`}>{actions}</div>
             </>

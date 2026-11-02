@@ -87,7 +87,7 @@
 }
 
 /* Phone: each journey is one card row; the tier and Journey sit beside the name and wait. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .title {
     padding: var(--wf-s-3);
   }

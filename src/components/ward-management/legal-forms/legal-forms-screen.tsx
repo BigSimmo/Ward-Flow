@@ -363,7 +363,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const movesTitle =
     routeRole === "ward" && ownWardName
       ? `${rows.length} ${rows.length === 1 ? "form" : "forms"} on moves to ${ownWardName}`
-      : `${rows.length} forms on open moves`;
+      : `${rows.length} forms on open movements`;
   // Every count names its noun ("1 form to act on", not "1 Act now"; Josh, 30 Oct 2026).
   const forms = (count: number) => (count === 1 ? "form" : "forms");
   const closedWithForms = movements

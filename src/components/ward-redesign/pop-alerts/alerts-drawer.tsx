@@ -721,7 +721,7 @@ export function AlertsDrawer({
           {rows.map((row) => renderCallRow(row))}
         </ul>
         <div className={styles.escalationFoot}>
-          <span className={styles.escalationNote}>Mock numbers from On-call.</span>
+          <span className={styles.escalationNote}>Synthetic numbers from On-call.</span>
           <button
             type="button"
             className={`${styles.btn} ${styles.btnGhost}`}

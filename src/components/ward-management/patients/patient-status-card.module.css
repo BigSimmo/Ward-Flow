@@ -193,6 +193,8 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   min-width: 0;
+  /* Q234 (2 Nov 2026): on a narrow cell the owner drops under the title instead of hitting the edge. */
+  flex-wrap: wrap;
 }
 
 .iconChip {
@@ -259,7 +261,7 @@
 
 /* F-18: on a touch phone the value link ("Not booked") is 44px tall to a finger. The padding is
    taken back by the margin, so the line and its neighbours do not move. */
-@media (max-width: 48rem) and (pointer: coarse) {
+@media (max-width: 46.4375rem) and (pointer: coarse) {
   .valueLink {
     position: relative;
     z-index: 1;
@@ -311,7 +313,7 @@
 
 /* Device sweep R3-02: the same breakpoint as useIsPhone (48rem), so the phone rows never sit three
    abreast at 761-768px with their actions over the labels. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .cells,
   .cells[data-count="2"] {
     grid-template-columns: minmax(0, 1fr);
@@ -503,7 +505,7 @@
 
 /* v10 Movement, phone: the verdict alone heads the card; the clear count is the hero's third
  * figure, so the meter and meta leave the row. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .head {
     min-height: 40px;
     padding: var(--wf-s-2) var(--wf-s-3);
@@ -533,7 +535,7 @@
    flat edge, and its own padding keeps the button clear of the + hump. Layout sweep PT-05: the step
    also covers the scroller's own 12px gap above the dock padding, which let the card show through
    between the bar and the dock; the padding grows by the same amount, so the button stays put. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phBar {
     bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px) - var(--wf-s-3));
     padding-bottom: calc(var(--wf-s-2) + var(--wf-s-3) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px));
@@ -542,7 +544,7 @@
 
 /* Device sweep R1-02: on a short screen (320x568/640, landscape) the hero, this bar and the dock
    left one line of the card. There the bar scrolls with the pane, as the last row of the Now tab. */
-@media (max-width: 48rem) and (max-height: 40rem) {
+@media (max-width: 46.4375rem) and (max-height: 40rem) {
   .phBar {
     position: static;
     margin-bottom: 0;

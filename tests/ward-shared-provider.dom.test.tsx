@@ -31,7 +31,6 @@ import {
   EMPTY_DOCUMENTATION,
   ReferralDocumentLinks,
 } from "../src/components/ward-management/referrals/referral-flow-panels";
-import { openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 /** A stand-in for the menu a header passes the pill (the executive chrome's Demo sheet). */
 function StubDemoMenu() {
@@ -315,8 +314,8 @@ describe("shared provider boundary", () => {
       </WardFlowProvider>
     );
     const { rerender } = render(tree());
-    openAlertsBroadcast();
-    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
     fireEvent.click(screen.getByRole("radio", { name: "By group" }));
     fireEvent.click(screen.getByRole("button", { name: /Regional \(WACHS\)/ }));
     const title = screen.getByLabelText(/^Title$/i) as HTMLInputElement;

@@ -90,7 +90,7 @@ function syntheticChart(name: string) {
 }
 
 type SlideOutReferral = {
-  /** A synthetic person registered inside the slide-out ("New patient"), so the age band is the
+  /** A synthetic person registered inside the slide-out ("Add patient"), so the age band is the
    *  journey's own choice rather than the one a sample movement already carries. */
   patient: { familyName: string; givenName: string; umrn: string };
   ageBand: string;
@@ -161,7 +161,9 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   await sheet.getByLabel("Referring community service", { exact: true }).fill("Synthetic community mental health team");
   await sheet.getByLabel("Legal status", { exact: true }).selectOption("Voluntary");
   await tapChoice(
-    sheet.getByRole("group", { name: "Bed security" }).getByRole("radio", { name: referral.bedSecurity, exact: true }),
+    sheet
+      .getByRole("group", { name: "Bed security" })
+      .getByRole("radio", { name: referral.bedSecurity === "Secure" ? "Locked" : referral.bedSecurity, exact: true }),
   );
   await tapChoice(sheet.getByRole("radio", { name: urgencyTierLabel(referral.urgency), exact: true }));
   await sheet.getByLabel("Recorded sex", { exact: true }).selectOption(referral.sex);

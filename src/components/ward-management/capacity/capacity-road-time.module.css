@@ -29,7 +29,7 @@
 /* Phone: the shared select is 44px tall with 16px text, larger than every other line in the card.
    It keeps that size as the invisible tap target, and a 32px, 13px semibold copy of its value shows
    instead, the same size and weight as the ward names. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .from {
     min-height: 44px;
     padding-block: 0;
@@ -73,7 +73,7 @@
   }
 }
 
-@media (max-width: 48rem) and (forced-colors: active) {
+@media (max-width: 46.4375rem) and (forced-colors: active) {
   .pickerValue {
     border-color: CanvasText;
   }

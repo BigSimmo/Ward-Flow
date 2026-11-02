@@ -32,7 +32,7 @@ Design rules in force (31 October 2026). The full standard is
 [design-system-v9.md](../../design/v9/design-system-v9.md); section 14 lists the owner rulings.
 
 - **Control size.** No 48px controls. A phone button shows at 40px (32px small) with an invisible
-  cover that keeps the 48px tap area; phone tabs are 32px in a 40px track; desktop segmented and pill
+  cover that keeps the 48px tap area; phone tabs and chips are 40px in a 48px track (Q225); desktop segmented and pill
   tabs are 30px at 13px. The one exception (Josh, 31 Oct): Accept, Pull and Decline stay a full 48px on phones. Text never goes below 12px.
 - **No coloured side edges** or stripes on rows, cards, tiles or stat boxes. Tone goes in the
   StatusGlyph or a small tinted tag; borders stay neutral.

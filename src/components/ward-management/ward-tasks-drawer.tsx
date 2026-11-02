@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
+import { acceptedPullReferralId, isAcceptedPullRow } from "@/components/ward-management/ward-alerts-figures";
 import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -533,7 +534,10 @@ export function WardTasksDrawer({
   const facts = items.filter((item) => item.kind === "fact");
   const criticalFactsCount = facts.filter((item) => item.tone === "danger").length;
   const overdueCount = facts.filter(isOverdue).length;
-  const openCount = items.filter((item) => !isComplete(item)).length;
+  // Q260 review (#1296): as the bell counts, a running countdown (not yet late) is listed, not counted.
+  const openCount = items.filter(
+    (item) => !isComplete(item) && !(words === ALERTS_WORDS && alertGroupOf(item) === "running"),
+  ).length;
 
   const acknowledgedFactsCount = facts.filter((item) => acknowledgements[item.id]?.length).length;
   const unacknowledged = facts.filter((item) => !acknowledgements[item.id]?.length);
@@ -600,8 +604,16 @@ export function WardTasksDrawer({
   function renderGroupMember(item: InboxItem) {
     const movement = records?.movements.find((row) => row.id === item.movementId);
     const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
+    // An accepted-referral row (Q260 review) names its person through the referral.
+    const pullReferralId = acceptedPullReferralId(item.id);
     const patient = records
-      ? resolveSubjectPatient(movement ?? admission ?? item.plannedAdmission, records)
+      ? resolveSubjectPatient(
+          movement ??
+            admission ??
+            item.plannedAdmission ??
+            (pullReferralId ? { referralId: pullReferralId } : undefined),
+          records,
+        )
       : undefined;
     const timing = isComplete(item)
       ? { value: undefined, word: undefined, state: "Done", tone: "success" as WfTone, stateTone: undefined }
@@ -725,7 +737,7 @@ export function WardTasksDrawer({
           {rows.map((row) => renderCallRow(row))}
         </ul>
         <div className={styles.escalationFoot}>
-          <span className={styles.escalationNote}>Mock numbers from On-call.</span>
+          <span className={styles.escalationNote}>Synthetic numbers from On-call.</span>
           <button
             type="button"
             className={`${styles.btn} ${styles.btnGhost}`}
@@ -856,8 +868,16 @@ export function WardTasksDrawer({
     const movement = records?.movements.find((row) => row.id === item.movementId);
     const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
     // A planned admission row has no movement or stay: the booking itself names the person.
+    // An accepted-referral row (Q260 review) names its person through the referral.
+    const pullReferralId = acceptedPullReferralId(item.id);
     const patient = records
-      ? resolveSubjectPatient(movement ?? admission ?? item.plannedAdmission, records)
+      ? resolveSubjectPatient(
+          movement ??
+            admission ??
+            item.plannedAdmission ??
+            (pullReferralId ? { referralId: pullReferralId } : undefined),
+          records,
+        )
       : undefined;
     const Icon = rowIcon(item);
     const isFact = item.kind === "fact";
@@ -1021,7 +1041,7 @@ export function WardTasksDrawer({
             ) : null}
 
             <div className={styles.rowActions}>
-              {oneAction ? (
+              {oneAction || isAcceptedPullRow(item.id) ? (
                 renderOneAction(item, movement)
               ) : isFact ? (
                 <button

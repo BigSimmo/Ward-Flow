@@ -1069,7 +1069,7 @@ button.registerRow:hover {
 
 /* ---------- phone ---------- */
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Phone form (Task 8): queue first. The ED card and State bedflow leave the page; the queue and
      the registers stay, and the registers collapse behind "Today's answers".
      The doubled class outranks the shared Card's own `display: flex`: CSS-module chunk order is
@@ -1292,7 +1292,7 @@ button.registerRow:hover {
   min-width: 0;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroToggles {
     display: none;
   }
@@ -1306,7 +1306,7 @@ button.registerRow:hover {
 /* ED tiles: one row that stretches to fill the card on wide screens and scrolls sideways, never
    wraps, when the screen is too narrow for every department (both tablets). The scrollbar exposes
    overflow without obscuring the last tile or its focus indicator. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .edGrid {
     grid-auto-flow: column;
     grid-template-columns: none;
@@ -1485,7 +1485,7 @@ button.registerRow:hover {
 
 /* Tablet portrait: choosing a patient opens Placement as a side sheet over a scrim, with its action
    bar pinned to the foot. Esc, the scrim and Close all shut it. */
-@media (min-width: 48.0625rem) and (max-width: 62.5rem) {
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
   .grid[data-layout="tablet-portrait"] .shortlistBackdrop {
     display: block;
     position: fixed;
@@ -1521,7 +1521,7 @@ button.registerRow:hover {
 }
 
 /* Touch targets on both tablets: rows about 52px, controls 44px. */
-@media (min-width: 48.0625rem) and (max-width: 75rem) {
+@media (min-width: 46.5rem) and (max-width: 75rem) {
   .grid[data-layout^="tablet"] .queueRow {
     min-height: 3.25rem;
   }
@@ -1694,7 +1694,7 @@ button.registerRow:hover {
 /* ---------- phone, v10 Home direction A (11 Oct 2026) ----------
    Matches the Home mockup's phone: 16px sides, ED chips with a service dot, the ED/Referrals switch
    pinned under the header, and the queue as one list card with inset overdue markers. Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .body {
     padding: var(--wf-s-3) var(--wf-s-4);
     /* The shared phone server band (hero.module.css) takes these sides, so Home's hero paints at
@@ -1885,7 +1885,7 @@ button.registerRow:hover {
 }
 
 /* Phone Home, second pass (v10 Home phone A, measured 11 Oct 2026). Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* A row: name over its facts 2px apart; on the right the wait (14px mono on a 20px line) over
    * its quiet word, so both columns share one baseline grid. */
   .queueMain {
@@ -1968,7 +1968,7 @@ button.registerRow:hover {
 /* Phone patient sheet, second pass (v10 Home phone "Patient open"): the sheet runs nearly to the
  * top on the canvas surface with a 22px top radius, its content on the 16px gutter, and Close is a
  * round X at the top right beside the patient's name. Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .shortlistRegion.shortlistRegion {
     padding: 0 16px;
     border-radius: 22px 22px 0 0;
@@ -2125,20 +2125,19 @@ button.registerRow:hover {
   font-weight: 400;
 }
 
-@media (max-width: 48rem) {
-  .screen .queueSeg {
-    --wf-phone-seg-band: 4px;
-  }
+@media (max-width: 46.4375rem) {
+  /* Q225 (design review, 2 Nov 2026): the list tabs take the kit's 40px phone option on its 48px
+     track (they were 32px on a 40px track), so the house 40px minimum holds here too. */
   .screen .queueSeg > * {
     position: relative;
-    height: 32px;
+    height: var(--wf-phone-seg-item-h);
     padding-inline: 8px;
     font-weight: 600;
   }
   .screen .queueMore {
     height: 48px;
   }
-  /* The Form due chip stands as tall as the tab track beside it, keeping a 48px hit area. */
+  /* The Form due chip is 40px, as tall as the tab options beside it, keeping a 48px hit area. */
   .screen .queueTools > button {
     position: relative;
     height: 40px;

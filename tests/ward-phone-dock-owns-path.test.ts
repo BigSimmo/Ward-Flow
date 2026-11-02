@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 import { WARD_ALERTS_HREF, WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
-import { dockOwnsPath, type ResolvedDockSlot } from "@/components/ward-redesign/shell-next/next-phone-menu";
+import { dockOwnsPath, type ResolvedDockSlot } from "@/components/ward-management/shell-next/next-phone-menu";
 
 const entries = railEntries();
 const entry = (id: string) => {

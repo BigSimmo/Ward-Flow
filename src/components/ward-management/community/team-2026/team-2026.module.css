@@ -49,6 +49,15 @@ select.ctl {
   gap: 16px;
   min-width: 0;
 }
+
+/* Q291 (pre-launch check W4, 2 Nov 2026): on a portrait tablet (769 to about 880px) the Team list
+ * shared the row with the 360px Team flow column, leaving its titles one word a line. Below 900px
+ * the two columns stack, full width. */
+@media (max-width: 56.25rem) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .meta {
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   color: var(--wf-ink-3);
@@ -534,15 +543,20 @@ select.ctl {
 /* Summary strip, after Waiting and Capacity */
 .summary {
   padding: 0;
+  /* Q243 (2 Nov 2026): the tiles follow the card's own width, not the window's. */
+  container-type: inline-size;
 }
+/* Q243: the tracks may shrink below their content (minmax 0), so the four tiles always fit the card
+   and "Follow-up" is never cut off at its right edge. */
 .tiles {
   display: grid;
-  grid-template-columns: 1.7fr 1fr 1fr 1fr;
+  grid-template-columns: minmax(0, 1.7fr) repeat(3, minmax(0, 1fr));
 }
 .tile {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
   padding: 16px;
   border: 0;
   border-left: 1px solid var(--wf-line);
@@ -555,13 +569,46 @@ select.ctl {
 .tile:first-child {
   border-left: 0;
 }
+
+/* Q228 (design review, 2 Nov 2026): at tablet width the four summary tiles wrap two by two, so the
+ * third is not cut off. */
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tile:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .tile:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+}
+
+/* Q243: a card too narrow for four tiles side by side (under about 56rem, as at 1280 with a wide
+ * sidebar) wraps them two by two, as Q228 does at tablet width. */
+@container (max-width: 56rem) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tile:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .tile:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+}
 .tile:hover {
   background: var(--wf-hover);
 }
 .tileTop {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px;
+  gap: 2px 8px;
 }
 .tileN {
   font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
@@ -589,8 +636,9 @@ select.ctl {
 }
 .tileLines {
   display: flex;
-  gap: 12px;
-  flex-wrap: nowrap;
+  gap: 2px 12px;
+  /* Q243: in a narrow tile a figure line drops to the next line instead of running past the edge. */
+  flex-wrap: wrap;
   white-space: nowrap;
   font: 400 var(--wf-fs-13) / 18px var(--wf-font);
   color: var(--wf-ink-2);

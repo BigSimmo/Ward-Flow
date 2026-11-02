@@ -441,7 +441,7 @@ input.planInput {
   font: 13px/1.65 var(--body);
 }
 
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   input.planInput,
   .dialog textarea {
     font-size: max(1rem, 16px);
@@ -530,7 +530,7 @@ input.planInput {
 }
 
 /* Phone (≤48rem): the row's Actions menu keeps a 44px target. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .actionsTrigger {
     min-height: 2.75rem;
   }

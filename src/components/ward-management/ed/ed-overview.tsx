@@ -119,7 +119,7 @@ export function EdOverview({
       onClick={onRaiseReferral}
     >
       <Plus size={14} aria-hidden="true" />
-      Raise referral
+      New referral
     </button>
   );
   // P142 (Josh, 27 Oct 2026, 10:12 PM AWST): Add patient sits beside the referral button.
@@ -209,7 +209,11 @@ export function EdOverview({
           // the Waiting page's header figures, and the checking line is the Waiting page's slim bar.
           title={<span className={styles.titleName}>{shortName(current.name)}</span>}
           stats={
-            <div className={waiting.stats} role="group" aria-label="Highlight people on the board">
+            <div
+              className={cx(waiting.stats, styles.heroStats)}
+              role="group"
+              aria-label="Highlight people on the board"
+            >
               <div className={`${waiting.stat} ${waiting.statStatic}`}>
                 <span className={waiting.statV}>{onBoard}</span>
                 <span className={waiting.statL}>On the board</span>

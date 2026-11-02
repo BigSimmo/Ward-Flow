@@ -335,7 +335,7 @@
   display: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneScrim {
     position: fixed;
     inset: 0;

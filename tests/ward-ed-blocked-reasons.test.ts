@@ -252,7 +252,7 @@ describe("handoverBlockedReason", () => {
       "Alex Test has no transport booked — book it first, then mark the handover ready.",
     );
     expect(handoverBlockedReason(movement())).toBe(
-      "This patient is placement requested, not bed pulled — a handover can only be marked ready once a bed is pulled.",
+      "This patient has no bed pulled yet — a handover can only be marked ready once a bed is pulled.",
     );
   });
   it("says a handover already marked ready is ready, not that no bed is pulled (blocker review, 26 Oct 2026)", () => {
@@ -273,7 +273,7 @@ describe("handoverBlockedReason", () => {
 describe("bookTransportBlockedReason", () => {
   it("blocks before a bed is pulled, and a second booking, with the exact text", () => {
     expect(bookTransportBlockedReason(movement(), "Alex Test")).toBe(
-      "Alex Test is placement requested, not bed pulled — transport can only be booked once a bed is pulled, or after handover is marked ready.",
+      "Alex Test has no bed pulled yet — transport can only be booked once a bed is pulled, or after handover is marked ready.",
     );
     expect(bookTransportBlockedReason(movement({ stage: "pulled", transport: job() }))).toBe(
       "This patient already has transport booked. Cancel that job before booking a new one.",

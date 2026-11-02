@@ -59,7 +59,7 @@
 
 /* Desktop and tablet: the tabs keep their whole width and the four actions drop to their own line
  * when both do not fit. At 1440 with the rail open the actions covered Caseload and CTOs. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   :has(> * > .trackScroll) {
     flex-wrap: wrap;
     row-gap: var(--wf-s-2);
@@ -394,7 +394,7 @@ div.workspace > .side {
 
 /* Phone (≤48rem), 8 Oct 2026: a shorter hero. The figures share one row of three and the four team
  * actions sit on one row that scrolls sideways, with Intake referral first. Desktop is untouched. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroStats {
     display: grid;
     grid-column: 1 / -1;
@@ -474,7 +474,7 @@ div.workspace > .side {
   gap: var(--wf-s-2);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroStats[role="group"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--wf-s-2);
@@ -545,7 +545,7 @@ div.workspace > .side {
   color: var(--wf-ink-3);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .switchItem {
     min-height: var(--wf-touch);
   }
@@ -584,25 +584,37 @@ div.workspace > .side {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  /* Q244 (2 Nov 2026), as Q241 on Waiting: items are spaced by the gap and each divider sits in the
+     middle of the gap before its item. A divider at the start of a line falls outside the strip
+     and is clipped, so a wrapped line ("Next home") starts flush left with no stray divider. The
+     clip margin keeps the focus ring (2px offset plus 2px) visible. */
+  column-gap: 28px;
+  overflow: clip;
+  overflow-clip-margin: 4px;
 }
 
 .glanceItem {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-height: 40px;
-  padding: 0 14px;
+  padding: 0;
   border: 0;
-  border-left: 1px solid var(--wf-on-hero-line);
   background: transparent;
   color: var(--wf-hero-ink-2);
   font: 400 var(--wf-fs-13) / 1 var(--wf-font);
   cursor: pointer;
 }
 
-.glanceItem:first-child {
-  padding-left: 0;
-  border-left: 0;
+.glanceItem::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -14px;
+  border-left: 1px solid var(--wf-on-hero-line);
+  pointer-events: none;
 }
 
 .glanceItem b {
@@ -629,6 +641,33 @@ div.workspace > .side {
 /* The ward page's tab row, under the hero. */
 .tabRow {
   margin-top: var(--wf-s-2);
+}
+
+/* Q228 (design review, 2 Nov 2026): at tablet width the five team tabs take the whole row and Find,
+ * Record contact and More drop to their own line after them, so the tabs never run into the find
+ * box. The find box then takes the free width of that line. */
+@media (min-width: 46.5rem) and (max-width: 64rem) {
+  .tabRow > [role="tablist"] {
+    flex: 1 0 100%;
+  }
+
+  .tabRow > [role="toolbar"] {
+    flex: 1 1 100%;
+  }
+
+  .tabRow > [role="toolbar"] > :has(> input[type="search"]) {
+    flex: 1 1 auto;
+  }
+}
+
+/* Q244 (2 Nov 2026): at desktop, Find, Record contact and More stay on one line beside the tabs;
+ * the find box gives up width (to its 9rem floor) before anything wraps. If the row is still too
+ * narrow, the whole toolbar drops under the tabs as one line. Community team page only. */
+@media (min-width: 64.0625rem) {
+  .tabRow > [role="toolbar"] {
+    flex-wrap: nowrap;
+    min-width: min-content;
+  }
 }
 
 div.sections {

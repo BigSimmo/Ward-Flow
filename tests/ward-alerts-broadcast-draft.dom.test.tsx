@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 const DRAFT_KEY = "wf-draft:alerts-broadcast-directive";
 
@@ -18,12 +17,12 @@ function mount() {
 }
 
 function openComposer() {
-  openAlertsBroadcast();
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
 }
 
 function selectCustomTemplate() {
-  // Alerts redesign (1 Nov 2026): Blank is the last quick start under Tell areas something.
-  fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+  // Alerts redesign (1 Nov 2026): Blank is the last quick start under Tell desks something.
+  fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
   fireEvent.click(screen.getByRole("button", { name: "Blank" }));
 }
 

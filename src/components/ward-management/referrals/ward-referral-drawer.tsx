@@ -161,7 +161,7 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
           {view === "new" ? (
             <ReferralSummaryRail
               s={s}
-              alreadyOpen={alreadyOpen ?? (s.openJourney ? `Open ED journey at ${s.openJourney.edName}` : undefined)}
+              alreadyOpen={alreadyOpen ?? (s.openJourney ? `Open ED movement at ${s.openJourney.edName}` : undefined)}
             />
           ) : null}
         </div>

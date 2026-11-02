@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect } from "react";
 import { createBrowserStore } from "@/lib/client-store-factory";
+import { preloadWhenIdle } from "../preload-when-idle";
 
 type Preference = "reduced-motion" | "high-contrast";
 const CHANGE = "ward-accessibility-change";
@@ -46,14 +47,26 @@ export function useWardAccessibilityPreference(preference: Preference): [boolean
 /** Mounted above every Ward route so reload and navigation restore both preferences. */
 export function WardAccessibility() {
   useEffect(() => {
-    // The WCAG 2.4.11 check loads on the first focus, so the shell every route loads stays small.
+    // The WCAG 2.4.11 check is its own file, so the shell every route loads stays small.
+    // Q278 (pre-launch review E6, 2 Nov 2026): it used to load only on the first focus, so a device
+    // that went offline first threw "Loading chunk failed" on every focus and never got the check.
+    // It now also loads once the page is idle, and a failed load is caught and tried again later.
     let check: ((event: FocusEvent) => void) | undefined;
+    let loading: Promise<((event: FocusEvent) => void) | undefined> | undefined;
     let live = true;
+    const load = () =>
+      (loading ??= import("./keep-focus-clear").then(
+        (module) => (check = module.keepKeyboardFocusClear),
+        () => {
+          loading = undefined;
+          return undefined;
+        },
+      ));
+    preloadWhenIdle(load);
     const onFocus = (event: FocusEvent) => {
       if (check) return check(event);
-      void import("./keep-focus-clear").then((module) => {
-        check = module.keepKeyboardFocusClear;
-        if (live) check(event);
+      void load().then((loaded) => {
+        if (loaded && live) loaded(event);
       });
     };
     document.addEventListener("focusin", onFocus);

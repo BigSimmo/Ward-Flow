@@ -5,20 +5,25 @@
 .heroBar {
   display: flex;
   flex-wrap: wrap;
-  row-gap: 4px;
   align-items: center;
-  gap: 4px 0;
+  /* Q241 (2 Nov 2026): items are spaced by the gap, and each divider sits in the middle of the gap
+     before its item. A divider at the start of a line falls outside the bar and is clipped, so a
+     wrapped line starts flush left with no stray divider. The clip margin keeps focus rings. */
+  gap: 4px 28px;
   width: 100%;
   padding-top: var(--wf-s-2);
   border-top: 1px solid var(--wf-on-hero-div);
+  overflow: clip;
+  overflow-clip-margin: 4px;
 }
 .strip {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
   min-height: 28px;
-  padding: 2px 14px 2px 0;
+  padding: 2px 0;
   border: 0;
   background: none;
   color: var(--wf-hero-ink);
@@ -26,9 +31,14 @@
   font-size: var(--wf-fs-13);
   text-align: left;
 }
-.strip + .strip {
-  padding-left: 14px;
+.heroBar > .strip::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -14px;
   border-left: 1px solid var(--wf-on-hero-div);
+  pointer-events: none;
 }
 button.strip {
   border-radius: 0;
@@ -127,6 +137,20 @@ button.strip:disabled {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   white-space: nowrap;
+}
+/* Q279 (pre-launch check D1, 2 Nov 2026): on a narrow tile (a portrait tablet's four columns) the
+   "longest" time ran into the next tile. It now drops to its own line under the group name. */
+.ownGrid > .own {
+  container-type: inline-size;
+}
+@container (max-width: 12rem) {
+  .ownTop.ownTop {
+    flex-wrap: wrap;
+  }
+  .ownLongest {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
 }
 .ownLongest.ownLongest b {
   color: var(--wf-ink-2);

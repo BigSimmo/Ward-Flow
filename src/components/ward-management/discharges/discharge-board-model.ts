@@ -15,7 +15,7 @@ import { type DischargeDayKey } from "./discharge-flow-charts";
  */
 
 export const GROUP_LABELS = {
-  blocked: "Blocked",
+  blocked: "Held up",
   confirmed: "Confirmed",
   expected: "Expected",
   "discharged-today": "Discharged today",
@@ -194,10 +194,10 @@ export function healthServiceLabel(unit: Unit | undefined): string {
 export type Population = "records" | "releases";
 export type WorkStatus = "blocked" | "confirmed" | "expected" | "departed";
 export const WORK_STATUS_LABELS: Record<WorkStatus, string> = {
-  blocked: "Blocked",
+  blocked: "Held up",
   confirmed: "Confirmed",
   expected: "Expected",
-  departed: "Departed",
+  departed: "Discharged",
 };
 export const WORK_ORDER: WorkStatus[] = ["blocked", "confirmed", "expected", "departed"];
 
@@ -222,9 +222,7 @@ export function dischargeOrderLine({
   highlighted: boolean;
 }): string {
   if (view === "barriers")
-    return highlighted
-      ? "Largest barrier group first. Highlighted people first in each."
-      : "Largest barrier group first";
+    return highlighted ? "Most common reason first. Highlighted people first in each." : "Most common reason first";
   const lead = highlighted
     ? population === "records"
       ? "Highlighted people first. "
@@ -262,7 +260,7 @@ export function kpiCardLabel(status: WorkStatus, population: Population): string
   // held up" for patients with a recorded hold, so a count of releases says "Releases held up". Not
   // "today and tomorrow": this board counts a held-up release whatever its date (WT-17).
   if (status === "blocked") return population === "releases" ? BED_RELEASES_HELD_UP_ANY_DATE_LABEL : "Records held up";
-  if (status === "departed") return population === "releases" ? "Discharged · 24h" : "Departed";
+  if (status === "departed") return population === "releases" ? "Discharged · 24h" : "Discharged";
   return WORK_STATUS_LABELS[status];
 }
 
@@ -315,7 +313,7 @@ export function barrierCategory(blocker: string): string {
   return BLOCKER_CATEGORIES.find((category) => text.includes(category.id))?.id ?? "other";
 }
 export function barrierLabel(id: string): string {
-  return BLOCKER_CATEGORIES.find((category) => category.id === id)?.label ?? "Other barrier";
+  return BLOCKER_CATEGORIES.find((category) => category.id === id)?.label ?? "Other hold-up";
 }
 
 /* v10: the hero status chips highlight too ("status"); only the tabs over the table narrow. */

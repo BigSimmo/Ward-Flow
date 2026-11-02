@@ -602,7 +602,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .cardsWithRail .cardGrid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -623,7 +623,7 @@
 /* Phone (simplified): one list of EDs. The service chips and view switch stay; the
  * status and order row stays on the larger screen so the list starts within the first screen.
  * Lanes narrow their label column. Every control keeps its 48px target. Desktop is unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .main {
     padding: var(--wf-s-3);
   }
@@ -916,7 +916,7 @@
   --svc: var(--wf-svc-private);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .filters {
     gap: var(--wf-s-3);
     padding: 0;
@@ -945,7 +945,7 @@
 
 /* v10 phone second pass (11 Oct 2026): the health services are separate pill chips (label then a
  * plain mono count), the picked one edged in the accent. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneServices :global([role="radiogroup"]) {
     gap: var(--wf-s-2);
     padding: 2px;
@@ -988,7 +988,7 @@
 
 /* v10 phone ED preview: the four facts share one card on hairlines, the people waiting form one
  * joined list with the UMRN first in each meta line, and Enter takes the rest of the footer. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .previewFacts {
     gap: 0;
     overflow: hidden;
@@ -1042,7 +1042,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .previewList[data-phone="true"] .num {
     font-size: var(--wf-fs-13);
   }
@@ -1089,7 +1089,7 @@
 }
 
 /* The 44px chips reach a 48px hit area. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneServices :global([role="radio"]) {
     position: relative;
   }
@@ -1158,7 +1158,7 @@
 /* Phone compact chips (Josh, 12 Oct 2026): the By service chips take the shared phone pill
  * (`--wf-phone-*`): 32px faces, 13px 600 labels, 12px mono counts. The row carries the hit area in
  * its padding so the 48px target is not clipped by the sideways scroll. Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneServices :global([role="radiogroup"]) {
     gap: var(--wf-phone-pill-gap);
     padding: var(--wf-phone-pill-hit) 2px;

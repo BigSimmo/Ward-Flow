@@ -62,26 +62,29 @@ afterEach(() => {
 });
 
 describe("Statistics hero: Export the figures", () => {
-  it.each([false, true])("counts open ED journeys through transit on the summary and CSV (phone=%s)", async (phone) => {
-    installMatchMediaStub(phone);
-    const base = seedWardFlowStateAt(0).movements.find(isWaitingInEd)!;
-    const movements: Movement[] = [
-      { ...base, id: "WF-SYN-WAIT" },
-      { ...base, id: "WF-SYN-MOVING", stage: "moving" },
-      { ...base, id: "WF-SYN-DEPARTED", leftDepartmentAt: NOW_ANCHOR - 1 },
-      { ...base, id: "WF-SYN-TRANSFER", sourceAdmissionId: "ADM-SYN-TRANSFER" },
-    ];
-    inProvider(<StatisticsScreen movements={movements} />);
-    const hero = screen.getByRole("heading", { level: 1 }).closest("section")!;
-    const label = within(hero).getByText("Open ED journeys", { exact: true });
-    const figure = phone ? label.closest("li") : label.parentElement;
-    // The phone strip shows a short label and keeps the full words for a screen reader.
-    expect(figure?.textContent).toMatch(phone ? /^3Open journeysOpen ED journeys$/ : /^3Open ED journeys$/);
-    if (!phone) {
-      const { csv } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
-      expect(csv).toContain('"Open ED journeys","3"');
-    }
-  });
+  it.each([false, true])(
+    "counts open ED movements through transit on the summary and CSV (phone=%s)",
+    async (phone) => {
+      installMatchMediaStub(phone);
+      const base = seedWardFlowStateAt(0).movements.find(isWaitingInEd)!;
+      const movements: Movement[] = [
+        { ...base, id: "WF-SYN-WAIT" },
+        { ...base, id: "WF-SYN-MOVING", stage: "moving" },
+        { ...base, id: "WF-SYN-DEPARTED", leftDepartmentAt: NOW_ANCHOR - 1 },
+        { ...base, id: "WF-SYN-TRANSFER", sourceAdmissionId: "ADM-SYN-TRANSFER" },
+      ];
+      inProvider(<StatisticsScreen movements={movements} />);
+      const hero = screen.getByRole("heading", { level: 1 }).closest("section")!;
+      const label = within(hero).getByText("Open ED movements", { exact: true });
+      const figure = phone ? label.closest("li") : label.parentElement;
+      // The phone strip shows a short label and keeps the full words for a screen reader.
+      expect(figure?.textContent).toMatch(phone ? /^3Open movementsOpen ED movements$/ : /^3Open ED movements$/);
+      if (!phone) {
+        const { csv } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
+        expect(csv).toContain('"Open ED movements","3"');
+      }
+    },
+  );
 
   it("sits in the Summary hero and exports the band's ready count, labelled synthetic", async () => {
     inProvider(<StatisticsScreen />);

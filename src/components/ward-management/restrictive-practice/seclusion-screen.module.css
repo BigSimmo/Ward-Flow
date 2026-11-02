@@ -63,7 +63,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .main {
     padding-inline: var(--wf-s-3);
   }
@@ -168,7 +168,7 @@
 }
 
 /* On a phone the table keeps the ward, the room and what is in use; the record carries the rest. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .wide {
     display: none;
   }
@@ -276,7 +276,7 @@
 
 /* ROLE BRANCH (ward): on a wide screen the record button is sized to its words, like Mark available,
    not stretched to a field's width. Phone keeps the full-width button. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .layout[data-one-ward="ward"] .form > button {
     justify-self: start;
   }
@@ -295,7 +295,7 @@
 }
 
 /* On a phone what is in use moves under the ward name, so the ward and room keep their width. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .inUseCol {
     display: none;
   }

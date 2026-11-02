@@ -168,7 +168,7 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
       { off: 131, what: "Legal status changed to <b>involuntary inpatient</b>. Form 1A recorded." },
     ],
     late: [],
-    blockerQuote: "No secure adult bed available across the network.",
+    blockerQuote: "No locked adult bed available across the network.",
     lastSeen: 580, // 09:40
     verdict: {
       tone: "danger",
@@ -176,7 +176,7 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
       title: "Cannot be moved. Two things are missing.",
       gates: [
         {
-          label: "A secure adult bed",
+          label: "A locked adult bed",
           verdict: "None found",
           detail: "5/5 adult locked wards declined. Escalated to State bed coordination desk (awaiting response).",
         },

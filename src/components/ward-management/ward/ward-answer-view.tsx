@@ -42,7 +42,6 @@ import { WARD_GATE_LABELS, wardSafeRejectionReason } from "./ward-rejection-text
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { recordedMovementMedicalClearance } from "@/components/ward-management/ward-medical-clearance";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-
 import {
   Hero,
   HeroStat,
@@ -817,7 +816,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                     <div className={styles.sbarSection}>
                       <span className={styles.sbarTag}>Situation</span>
                       <div className={styles.sbarContent}>
-                        {activeMovement.cohort} cohort. {activeMovement.security === "Secure" ? "Secure" : "Open"} bed
+                        {activeMovement.cohort} cohort. {activeMovement.security === "Secure" ? "Locked" : "Open"} bed
                         requested. Legal status: {activeMovement.legalStatus}
                         {activeMovement.legalForm ? `, ${legalFormName(activeMovement.legalForm)}` : ""}.
                       </div>
@@ -900,7 +899,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                                 {resolvePatientIdentity(activeMovement).umrn}
                               </div>
                               <div className={styles.patientMetaLine}>
-                                Cohort: {activeMovement.cohort} &bull; Security: {activeMovement.security} &bull; Sex:{" "}
+                                Cohort: {activeMovement.cohort} &bull; Security:{" "}
+                                {activeMovement.security === "Secure" ? "Locked" : "Open"} &bull; Sex:{" "}
                                 {activeMovement.sex} &bull; {elapsedLabel(activeMovement, now)}
                               </div>
                             </div>
@@ -939,7 +939,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           </div>
                           <div>
                             <dt>Bed needed</dt>
-                            <dd>{activeMovement.security === "Secure" ? "Secure" : "Open"}</dd>
+                            <dd>{activeMovement.security === "Secure" ? "Locked" : "Open"}</dd>
                           </div>
                           <div>
                             <dt>Sex</dt>
@@ -1273,7 +1273,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             open={phoneSheet === "accept" && !blocked}
                             onClose={() => setPhoneSheet(null)}
                             title="Accept in principle"
-                            description={`This patient · ${activeMovement.cohort}, ${activeMovement.security.toLowerCase()}`}
+                            description={`This patient · ${activeMovement.cohort}, ${activeMovement.security === "Secure" ? "locked" : "open"}`}
                             secondary={{ label: "Cancel", onAction: () => setPhoneSheet(null) }}
                             primary={{
                               label: "Accept in principle",

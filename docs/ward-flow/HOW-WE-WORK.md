@@ -203,7 +203,7 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   `--wf-row-touch: 52px`, and desktop buttons `--wf-target: 28px`.
 - **Control size (Josh, 31 October 2026: "no 48px controls").** On a phone a kit button shows at
   40px (32px for a small one) and keeps a 48px tap area through an invisible cover above and below
-  it. Phone tabs are 32px inside a 40px track; desktop segmented and pill tabs are 30px at 13px.
+  it. Phone tabs and chips are 40px inside a 48px track (Q225, 2 Nov 2026); desktop segmented and pill tabs are 30px at 13px.
   Never draw a control 48px tall to meet the tap floor: give it the cover. `--ward-tap` and
   `--spacing-tap` (48px) are now the tap-area value, not a visible height. The one exception
   (Josh, 31 October 2026, 10:34): placement decisions (Accept, Pull and Decline, marked

@@ -115,7 +115,7 @@ describe("Discharges charts under the table (direction A)", () => {
     renderBoard();
     expect(screen.queryByRole("toolbar", { name: "Quick blocker filters" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Filter by discharge status")).not.toBeInTheDocument();
-    expect(screen.getAllByRole("combobox", { name: "Blocker" })).toHaveLength(1);
+    expect(screen.getAllByRole("combobox", { name: "Held up by" })).toHaveLength(1);
     // The Status chips' counts are the hero chips' counts, so the two never disagree.
     const statusChips = within(screen.getByRole("group", { name: "Status" })).getAllByRole("button");
     const chipLabels: Record<string, RegExp> = {

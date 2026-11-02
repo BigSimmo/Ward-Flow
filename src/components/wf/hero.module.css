@@ -69,14 +69,6 @@
   overflow-wrap: break-word;
 }
 
-/* Q182: one sentence under the eyebrow saying what the page is for at this desk. */
-.purpose {
-  margin: 2px 0 6px;
-  max-width: 60ch;
-  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  color: var(--wf-hero-ink-2);
-}
-
 /* Device sweep (24 Oct 2026): the title never clips mid-word ("70 open mo"). When the title and its
  * meta cannot share a line, the meta drops under the title, and a title wider than the band wraps. */
 .titleLine {
@@ -198,7 +190,7 @@
  * beside the lead ring and wraps its meta under the title. Sized to its one-line width, a long meta
  * ("62 still in ED · 8 in transit or recorded departure · Limited demo coverage") pushed the whole
  * title under the ring and the Live chip onto a row of its own. */
-@media (min-width: 48.0625rem) and (max-width: 900px) {
+@media (min-width: 46.5rem) and (max-width: 900px) {
   .titleBlock {
     flex: 1 1 16rem;
   }
@@ -222,7 +214,7 @@
  * then the title and its subtitle, then three figures split by thin hairlines (no boxes), then the
  * actions as a row of 44px pills. Figures past the third are left to the larger screen. Desktop
  * and tablet are unchanged: everything here sits under 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .hero {
     position: relative;
     gap: var(--wf-s-3);
@@ -449,7 +441,7 @@
 /* Phone audit (Josh, 1 Nov 2026, Q153): a repeated eyebrow is read but not drawn on a phone, and
  * the Live chip sits at the title's right instead of on a line of its own. A page that passes
  * phoneEyebrow="show" keeps the eyebrow line as before. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .hero[data-phone-eyebrow="hide"] .eyebrow {
     position: absolute;
     width: 1px;
@@ -596,7 +588,7 @@
   font-family: var(--wf-mono);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .foot {
     order: 4;
   }
@@ -676,7 +668,7 @@
  * measure then sets `data-band="on"` with the real insets, or `"off"` when the page does not open
  * on the hero. Desktop and tablet only: phone keeps its own measured band below.
  */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) {
     --wf-band-top: var(--wf-band-page-top, var(--wf-s-4));
     --wf-band-left: var(--wf-band-page-x, var(--wf-s-4));
@@ -719,7 +711,7 @@
  * shift about 0.03 on most phone screens). It now paints as the phone band with the usual 12px
  * phone insets (`--wf-band-phone-top`/`--wf-band-phone-x` where a page pads differently), so the
  * measure finds it already in place. Values mirror the phone `data-band="on"` rules below. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) {
     --wf-band-top: var(--wf-band-phone-top, var(--wf-s-3));
     --wf-band-left: var(--wf-band-phone-x, var(--wf-s-3));
@@ -804,7 +796,7 @@
 
 /* Phone band (v10 phone mockup, every page): the hero's text starts 6px under the lean bar, sits on
  * the 16px phone gutter, and leaves 18px above the page's 22px lip. Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .hero[data-band="on"] {
     padding-top: 6px;
     padding-right: 16px;
@@ -829,7 +821,7 @@
 }
 
 /* Phone (v10 mockup): an action foot (search, movement) has no hairline and its buttons wrap. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .foot[data-foot="actions"] {
     padding-top: var(--wf-s-1);
     border-top: 0;

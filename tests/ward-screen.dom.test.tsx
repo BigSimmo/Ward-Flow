@@ -370,7 +370,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Releases held up ${heldBefore + 1}`);
     const row = screen.getByTestId(`ward-barrier-${CONFIRMED_RELEASE!.id}`);
     expect(row).toHaveTextContent("Confirmed");
-    expect(row).toHaveTextContent("Blocked");
+    expect(row).toHaveTextContent("Held up");
     expect(row).toHaveTextContent("Awaiting clean");
   });
 });
@@ -424,11 +424,11 @@ describe("ward screen bed release controls", () => {
     const row = screen.getByTestId(`ward-today-release-${EXPECTED_RELEASE!.id}`);
     expect(row).toHaveTextContent("Expected");
 
-    fireEvent.click(within(row).getByRole("button", { name: "Confirm Ready" }));
+    fireEvent.click(within(row).getByRole("button", { name: "Confirm ready" }));
 
     const confirmed = screen.getByTestId(`ward-today-release-${EXPECTED_RELEASE!.id}`);
     expect(confirmed).toHaveTextContent("Confirmed");
-    expect(within(confirmed).queryByRole("button", { name: "Confirm Ready" })).not.toBeInTheDocument();
+    expect(within(confirmed).queryByRole("button", { name: "Confirm ready" })).not.toBeInTheDocument();
   });
 
   it("blocking asks for a reason and refuses without one", () => {

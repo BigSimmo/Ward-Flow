@@ -39,12 +39,12 @@
   padding: var(--wf-s-4);
 }
 
+/* Q297 (pre-launch A1, 2 Nov 2026): a card-head note wraps instead of ending in "…", so the colour
+   key's "Not legally checked" is never cut, at any text size. */
 .meta {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .mono {
@@ -540,6 +540,11 @@ button.taskLabel[aria-pressed="true"] {
 
 .row {
   position: relative;
+}
+
+/* Q232 (spacing review, 2 Nov 2026): the list's rows are the master's 56px. The kit's
+   `.row { min-height: var(--wf-row) }` loads later at the same weight, so this rule is scoped. */
+.rowList > .row {
   min-height: 56px;
 }
 
@@ -1104,8 +1109,9 @@ button.taskLabel[aria-pressed="true"] {
   }
 }
 
-/* iPad portrait: wrapped form names keep clear of the row borders (layout sweep 25 Oct 2026). */
-@media (min-width: 48.0625rem) and (max-width: 64rem) {
+/* Wrapped form names keep clear of the row borders: iPad portrait (layout sweep 25 Oct 2026) and,
+   from Q232 (2 Nov 2026), desktop too. */
+@media (min-width: 48.0625rem) {
   .screen .row:not(.headRow) {
     padding-block: var(--wf-s-2);
   }

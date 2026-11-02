@@ -66,6 +66,7 @@ import {
   resolveAlertSubject,
   shownAgeFrom,
   type AlertKind,
+  alertsNowFigures,
 } from "./alerts-model";
 import {
   AlertCard,
@@ -86,7 +87,7 @@ import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
 import { alertsHistory } from "./alerts-history";
-import { AlertsHero, alertsHeadline, type AlertsTab } from "./alerts-hero";
+import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
@@ -261,6 +262,7 @@ function AlertsWorkspace() {
 
   const [tab, setTab] = useState<AlertsTab>("now");
   const [arrangeBy, setArrangeBy] = useState<ArrangeBy>("urgency");
+  const [pill, setPill] = useState<HeroPill | null>(null);
   const [ownerHighlight, setOwnerHighlight] = useState<string | null>(null);
   const [watchHighlight, setWatchHighlight] = useState<AlertKind | null>(null);
   const [chosenId, setChosenId] = useState<string | undefined>(undefined);
@@ -480,11 +482,14 @@ function AlertsWorkspace() {
   );
   const isHighlighted = useCallback(
     (entry: Omit<QueueEntry, "highlighted">) =>
+      (pill === "act" && entry.group === "act") ||
+      (pill === "wait" && entry.group === "wait") ||
+      (pill === "mine" && entry.mine) ||
       (ownerHighlight !== null && entry.owner === ownerHighlight) ||
       (watchHighlight !== null && alertKindOf(entry.item.id) === watchHighlight),
-    [ownerHighlight, watchHighlight],
+    [pill, ownerHighlight, watchHighlight],
   );
-  const highlightOn = ownerHighlight !== null || watchHighlight !== null;
+  const highlightOn = pill !== null || ownerHighlight !== null || watchHighlight !== null;
   const toEntries = useCallback(
     (items: InboxItem[], snoozed: boolean): QueueEntry[] =>
       items
@@ -513,13 +518,12 @@ function AlertsWorkspace() {
   const allEntries = useMemo(() => [...activeEntries, ...snoozedEntries], [activeEntries, snoozedEntries]);
   const countedActive = useMemo(() => activeEntries.filter((entry) => entry.group !== "running"), [activeEntries]);
   const yoursCount = countedActive.filter((entry) => entry.mine).length;
-  // Q111 (Josh, 1 Nov 2026): a ward's acceptance with no bed pulled is act now here too, as on Home.
-  // Only the coordinator pulls a bed, so only the coordinator's desk lists it.
+  // Q111 (Josh, 1 Nov 2026): a ward's acceptance with no bed pulled is act now, coordinator's desk only.
   const toPull = useMemo(
     () => (coordDesk ? acceptedReferralsAwaitingPull(referrals, units, movements) : []),
     [coordDesk, referrals, units, movements],
   );
-  const actCount = actEntries.length + toPull.length;
+  const { actNow: actCount, outstanding } = alertsNowFigures(inbox, toPull.length); // Q260: as the bell and Menu
   const pull = useAcceptedPull();
   const pullRows =
     toPull.length > 0 ? (
@@ -875,7 +879,9 @@ function AlertsWorkspace() {
     );
   };
 
+  const togglePill = (next: HeroPill) => setPill((current) => (current === next ? null : next));
   const clearHighlights = () => {
+    setPill(null);
     setOwnerHighlight(null);
     setWatchHighlight(null);
   };
@@ -885,10 +891,6 @@ function AlertsWorkspace() {
   const pastBroadcasts = (broadcastAlerts ?? []).filter(
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
-
-  // Q183 (Josh, 1 Nov 2026): one headline on every desk, "3 need you now" or "Nothing needs you".
-  // It counts Act now (Home's count included) plus Waiting; Q179 keeps those two groups below.
-  const heroTitle = alertsHeadline(actCount + waitEntries.length);
 
   // ---- Queue views ----
   const rowFor = (entry: QueueEntry) =>
@@ -1120,6 +1122,7 @@ function AlertsWorkspace() {
       list,
       <GroupHead
         tone={ownerAct > 0 ? "danger" : undefined}
+        icon={ownerAct > 0 ? undefined : <span aria-hidden="true" />}
         label={yours ? `You, ${owner}` : owner}
         count={list.length + (yours ? toPull.length : 0)}
         aside={ownerAct > 0 ? `${ownerAct} act now` : undefined}
@@ -1153,7 +1156,7 @@ function AlertsWorkspace() {
   const noticesGroup = <AlertsNoticesGroup notices={unreadNotices} now={now} umrnLookup={umrnLookup} />;
   // Q181 (Josh, 1 Nov 2026): two views. Now counts what the headline counts; Earlier today has no count.
   const tabs = [
-    { id: "now" as const, label: "Now", count: actCount + waitEntries.length },
+    { id: "now" as const, label: "Now", count: outstanding },
     { id: "earlier" as const, label: "Earlier today", count: 0 },
   ];
 
@@ -1237,11 +1240,16 @@ function AlertsWorkspace() {
       <main id="main-content" className={styles.main}>
         <AlertsHero
           isPhone={isPhone}
-          heroTitle={heroTitle}
-          place={deskPlace}
+          wardName={wardName}
+          openCount={activeEntries.length}
+          runningCount={runningEntries.length}
           oldestRaised={oldestRaised}
           now={now}
           live={live}
+          actCount={actCount}
+          waitEntries={waitEntries}
+          pill={pill}
+          togglePill={togglePill}
           yoursCount={yoursCount}
           handleNext={handleNext}
           broadcastTriggerRef={broadcastTriggerRef}

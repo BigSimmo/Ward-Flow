@@ -876,7 +876,7 @@ function GovernanceSession({
               </div>
             ) : (
               <EventTable
-                label="Waiting for review"
+                label="Events waiting for review"
                 isDim={(event) => !chipMatches(event)}
                 rows={toReview}
                 selected={selected}

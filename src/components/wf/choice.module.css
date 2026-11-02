@@ -140,6 +140,8 @@
  */
 .segItem {
   height: var(--wf-target);
+  /* Q297 (pre-launch A1, 2 Nov 2026): large text makes the option taller instead of cutting it. */
+  height: calc-size(auto, max(size, var(--wf-target)));
   padding: 0 10px;
   border: 0;
   border-radius: var(--wf-r-seg-item);
@@ -186,6 +188,7 @@
 
 .md .segItem {
   height: 30px;
+  height: calc-size(auto, max(size, 30px));
   font-size: var(--wf-fs-13);
 }
 
@@ -396,10 +399,16 @@
   }
 
   /* Phone (8 Oct 2026): options keep their full label and count and the row scrolls sideways,
-   * so nothing shrinks into its neighbour. */
+   * so nothing shrinks into its neighbour.
+   * Q224 (design review, 2 Nov 2026): the anchor is written with `:where()`, so it carries no
+   * weight and a page's own `position: sticky` on the same element always wins. A plain
+   * `.seg { position: relative }` tied with the page's class and, depending on stylesheet order,
+   * turned the pinned bar into a relative one pushed down by its `top`, over the content below. */
+  :where(.seg, .trk) {
+    position: relative;
+  }
   .seg,
   .trk {
-    position: relative;
     display: flex;
     max-width: 100%;
     overflow-x: auto;
@@ -541,10 +550,12 @@
 }
 
 /* ── Phone compact size (Josh, 12 Oct 2026) ────────────────────────────────────────────────────────
- * Every phone segmented control and filter chip reads at one compact size, set once in the v6 tokens
- * (`--wf-phone-*`): a 44px track with 38px options, 40px chips, 13px 600 labels (refined buttons,
- * 15 Oct 2026). The tap target stays
- * at the 48px floor through a transparent hit area, never a bigger face.
+ * Every phone segmented control and filter chip reads at one compact size: 40px options, 40px chips,
+ * 13px 600 labels (refined buttons, 15 Oct 2026). Q225 (design review, 2 Nov 2026): the house
+ * minimum is a 40px control, so the kit's options are 40px on a 48px track (they were 32px on a 40px
+ * track, the `--wf-phone-seg-*` tokens). The kit sets its own sizes on the track with `:where()`, so
+ * a page that sizes its own track still wins and pages that copy the tokens are unchanged. The tap
+ * target stays at the 48px floor through a transparent hit area, never a bigger face.
  *
  * The phone track still scrolls sideways, and a scroller clips whatever leaves its box, so the track
  * box itself is the full 48px tall with a transparent band above and below (still shorter than the
@@ -553,6 +564,13 @@
  * A page that pins the track can give it a `background-color` to hide the list under the band.
  * Nothing here applies above 48rem. */
 @media (max-width: 48rem) {
+  :where(.seg) {
+    --wf-phone-seg-h: 48px;
+    --wf-phone-seg-item-h: 40px;
+    --wf-phone-seg-band: calc((var(--spacing-tap, 3rem) - var(--wf-phone-seg-h)) / 2);
+    --wf-phone-seg-item-hit: calc((var(--spacing-tap, 3rem) - var(--wf-phone-seg-item-h)) / 2);
+  }
+
   .seg {
     --wf-seg-r: var(--wf-r-track);
     --wf-seg-bg: var(--wf-track);
@@ -690,9 +708,10 @@
  * Kit standard (Josh, 30 October 2026; drawn and approved in the #1118 mock-ups as
  * parts/kit-standard.css): one size for each kind of control on every page.
  * - Segmented and pill tabs: 30px at 13px on a laptop or desktop.
- * - On a phone the pill tabs sit on a 40px track with 32px options and a 48px tap area (an invisible
- *   cover above and below), as Home's list tabs. The phone track sizes are the --wf-phone-seg-*
- *   tokens. Underline tabs (`.tab`) are a different control and keep their 34px.
+ * - On a phone the pill tabs sit on a 48px track with 40px options and a 48px tap area (an invisible
+ *   cover above and below), as Home's list tabs (Q225, 2 Nov 2026: the house minimum is a 40px
+ *   control; they were 32px on a 40px track). Underline tabs (`.tab`) are a different control and
+ *   keep their 34px (44px on a phone).
  * Written as `html .x.x` so it wins over the size rules above at the same weight the mock-ups used.
  */
 @media (min-width: 48.0625rem) {
@@ -710,13 +729,13 @@
   }
   :global(html) .ptItem.ptItem {
     position: relative;
-    height: 32px;
+    height: 40px;
     min-height: 0;
     font-weight: 600;
   }
   :global(html) .ptItem.ptItem::after {
     content: "";
     position: absolute;
-    inset: -8px 0;
+    inset: -4px 0;
   }
 }

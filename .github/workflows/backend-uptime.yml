@@ -8,7 +8,8 @@ name: Ward Flow backend uptime
 # schedule, which may not be the owner. Only the backend is checked: the signed-in site sleeps when
 # idle, and a check every 30 minutes would keep it awake. `/healthz` needs no sign-in; sent the
 # WARD_FLOW_UPTIME_TOKEN repo secret (audit P177), it reports `database` as "ok" or "unavailable"
-# from a check it repeats at most every 30 seconds (`/readyz`
+# from a check it repeats at most every 30 seconds. A missing or wrong token hides `database`: that
+# counts as up and shows a warning on the run, not a "database down" issue (`/readyz`
 # needs a sign-in). Run it by hand with "Send one test alert" ticked to check the email arrives: it
 # opens and at once closes one clearly labelled test issue and skips the real check.
 # Public repository: free. GitHub turns scheduled workflows off after 60 days without repository
@@ -59,11 +60,19 @@ jobs:
         run: |
           state=down
           for attempt in 1 2 3; do
-            body=$(curl --silent --show-error --max-time 20 --fail --header "x-ward-flow-uptime-token: $UPTIME_TOKEN" "$BACKEND_URL/healthz" || true)
-            if printf '%s' "$body" | grep -q '"service":"ward-flow-backend"'; then
-              # A missing `database` means the token was missing or wrong; count it as down, not up.
-              database=$(printf '%s' "$body" | jq -r '.database // "unavailable"' 2>/dev/null || echo unavailable)
+            # A failed or cut-off reply counts as down, never as a hidden database.
+            if body=$(curl --silent --show-error --max-time 20 --fail --header "x-ward-flow-uptime-token: $UPTIME_TOKEN" "$BACKEND_URL/healthz") \
+              && printf '%s' "$body" | jq -e '.service == "ward-flow-backend"' >/dev/null 2>&1; then
+              # A missing `database` means the token was missing or wrong: the public health check
+              # still passed, so warn about the token and leave any open issue alone (state unknown)
+              # instead of raising a false "database down" issue or closing a real one.
+              database=$(printf '%s' "$body" | jq -r '.database // "hidden"')
               if [ "$database" = "ok" ]; then state=up; break; fi
+              if [ "$database" = "hidden" ]; then
+                echo "::warning::Database not checked: WARD_FLOW_UPTIME_TOKEN is missing or does not match the backend's value."
+                state=unknown
+                break
+              fi
               state=database
             else
               state=down
@@ -84,6 +93,8 @@ jobs:
             fi
             exit 0
           fi
+          # Hidden database: the backend answered but its database was not checked, so neither raise nor close.
+          if [ "${{ steps.check.outputs.state }}" = "unknown" ]; then exit 0; fi
           if [ -z "$open" ]; then
             gh label create "$LABEL" --color B60205 --description "Hosted backend not answering" --force
             if [ "${{ steps.check.outputs.state }}" = "database" ]; then

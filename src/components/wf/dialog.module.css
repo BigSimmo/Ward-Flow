@@ -75,6 +75,16 @@
   color: var(--wf-ink-2);
 }
 
+/* Q225 (design review, 2 Nov 2026): the close button meets the house 40px minimum at every width
+   (the small icon button it is drawn with is 32px). Written with the extra weight so it outranks
+   the Button's own size rules, which tie with a plain `.close` here. */
+.header .close.close.close {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+}
+
 /* Kit standard (#1118 mock-ups, final round): every popup puts focus on its close button when it
    opens, so a heavy ring there is the first thing a person sees. The ring shows only for keyboard
    focus, as a calm 2px accent ring, and never for a pointer press. */
@@ -173,7 +183,7 @@
 }
 
 /* Phone: the dialog rises from the bottom edge so its actions sit under the thumb. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .scrim {
     align-items: flex-end;
     padding: var(--wf-s-2);

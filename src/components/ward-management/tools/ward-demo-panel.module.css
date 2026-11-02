@@ -250,7 +250,7 @@
    transparent cover, the house pattern (home-list's list tabs). Neighbours sit 6px or more apart, so
    no cover reaches another control. The Practise row's cover reaches up into the gap above it only,
    so it never sits over the opened section's first line. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .choice,
   .small,
   .reset,

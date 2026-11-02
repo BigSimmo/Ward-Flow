@@ -8,6 +8,9 @@
   justify-content: center;
   gap: 6px;
   height: var(--wf-h-md);
+  /* Q297 (pre-launch A1, 2 Nov 2026): with large text the button grows taller instead of cutting its
+     label; at normal sizes this is the same height as above. */
+  height: calc-size(auto, max(size, var(--wf-h-md)));
   min-width: 0;
   padding: 0 12px;
   box-sizing: border-box;
@@ -46,15 +49,22 @@
   outline-offset: 2px;
 }
 
-/* Labels never wrap: shrink, then truncate. */
+/* Q297 (pre-launch A1, 2 Nov 2026): a squeezed label wraps onto a second line at a word break
+   instead of ending in "…" ("Sh…" with large text); two lines of normal text still fit the button's
+   height, and large text grows it. Only a single word too long for the button is cut. The line box
+   is a little taller than the text, so large text is not cut top and bottom by its own clip. */
 .label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.25;
+  white-space: normal;
+  text-align: center;
 }
 
 .sm {
   height: var(--wf-h-sm);
+  height: calc-size(auto, max(size, var(--wf-h-sm)));
   padding: 0 10px;
   border-radius: var(--wf-r-ctl);
   font-size: var(--wf-fs-12);
@@ -62,6 +72,7 @@
 
 .lg {
   height: var(--wf-h-lg);
+  height: calc-size(auto, max(size, var(--wf-h-lg)));
   padding: 0 16px;
   font-size: var(--wf-fs-14);
 }
@@ -271,39 +282,27 @@
 }
 
 /* Phone (kit standard, Josh 31 October 2026: "no 48px controls"; the #1118 mock-ups' button
-   sizing): a button shows at 40px (a small one at 32px) and keeps the 48px tap floor with an
-   invisible cover above and below (and beside an icon-only one), so it is never drawn 48px tall.
-   Placement decisions keep their full-size button (above). */
+   sizing): a button, small ones included (Q295, pre-launch W8, 2 Nov 2026: the 32px small button
+   was below the 40px phone rule), shows at 40px and keeps the 48px tap floor with an invisible
+   cover above and below (and beside an icon-only one), so it is never drawn 48px tall. Large text
+   grows it (Q297). Placement decisions keep their full-size button (above). */
 @media (max-width: 48rem) {
   .b:not([data-placement-action]) {
     height: 40px;
+    height: calc-size(auto, max(size, 40px));
     min-height: 40px;
-  }
-  .sm:not([data-placement-action]) {
-    height: 32px;
-    min-height: 32px;
   }
   .iconOnly:not([data-placement-action]) {
     width: 40px;
     min-width: 40px;
-  }
-  .sm.iconOnly:not([data-placement-action]) {
-    width: 32px;
-    min-width: 32px;
   }
   .b:not([data-placement-action])::after {
     content: "";
     position: absolute;
     inset: -4px 0;
   }
-  .sm:not([data-placement-action])::after {
-    inset: -8px 0;
-  }
   .iconOnly:not([data-placement-action])::after {
     inset: -4px;
-  }
-  .sm.iconOnly:not([data-placement-action])::after {
-    inset: -8px;
   }
 }
 

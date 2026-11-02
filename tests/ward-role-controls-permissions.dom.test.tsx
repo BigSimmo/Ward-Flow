@@ -22,7 +22,6 @@ import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-m
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
-import { openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 afterEach(() => {
   cleanup();
@@ -50,14 +49,14 @@ describe("broadcast actions retain the actual permitted desk identity", () => {
           <AlertsScreen />
         </WardFlowProvider>,
       );
-      openAlertsBroadcast();
+      fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
       // Alerts redesign (1 Nov 2026): one unit on the desk's own site, so a site bed manager may send it.
-      fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+      fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
       fireEvent.click(screen.getByRole("radio", { name: "By group" }));
-      fireEvent.click(screen.getByRole("radio", { name: "Choose units" }));
+      fireEvent.click(screen.getByRole("radio", { name: "Choose desks" }));
       // A ward can sit in two groups (metro and secure); either tick chooses it.
       fireEvent.click(screen.getAllByLabelText(allUnits()[0].name)[0]);
-      fireEvent.click(screen.getByLabelText(/I'm authorised to send this to 1 unit\./i));
+      fireEvent.click(screen.getByLabelText(/I'm authorised to send this to 1 desk\./i));
       fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       expect(sent.findLast((event) => event.type === "DISPATCH_BROADCAST_ALERT")).toMatchObject({

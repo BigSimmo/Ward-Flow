@@ -73,18 +73,18 @@ describe("discharge actions stay usable and accessible across filters", () => {
       "Receiving service",
     ];
     expect(
-      within(screen.getByRole("combobox", { name: "Blocker" }))
+      within(screen.getByRole("combobox", { name: "Held up by" }))
         .getAllByRole("option")
         .map((option) => option.textContent),
     ).toEqual(labels);
-    fireEvent.change(screen.getByRole("combobox", { name: "Blocker" }), { target: { value: "pharmacy" } });
-    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Bed releases: \d+ held up/);
+    fireEvent.change(screen.getByRole("combobox", { name: "Held up by" }), { target: { value: "pharmacy" } });
+    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Discharges by bed: \d+ held up/);
     fireEvent.click(screen.getByRole("button", { name: /^History/ }));
-    expect(within(screen.getByRole("combobox", { name: "Blocker" })).getAllByRole("option")).toHaveLength(
+    expect(within(screen.getByRole("combobox", { name: "Held up by" })).getAllByRole("option")).toHaveLength(
       labels.length,
     );
-    fireEvent.change(screen.getByRole("combobox", { name: "Blocker" }), { target: { value: "pharmacy" } });
-    expect(screen.getByRole("combobox", { name: "Blocker" })).toHaveValue("pharmacy");
+    fireEvent.change(screen.getByRole("combobox", { name: "Held up by" }), { target: { value: "pharmacy" } });
+    expect(screen.getByRole("combobox", { name: "Held up by" })).toHaveValue("pharmacy");
     expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Admission records: \d+ held up/);
   });
 });
@@ -136,7 +136,7 @@ describe("bed dossier inbound bed", () => {
         />
       </WardFlowProvider>,
     );
-    expect(queryBedStep(/Record blocker/)).toBeNull();
+    expect(queryBedStep(/Record hold-up/)).toBeNull();
     expect(queryBedStep(/Mark at an ED/)).toBeNull();
   });
 
@@ -166,7 +166,7 @@ describe("bed dossier inbound bed", () => {
       </WardFlowProvider>,
     );
     // Redesign (31 Oct 2026): steps past the first two sit under More, so they are found wherever they are.
-    expect(getBedStep(/Record blocker/)).toBeInTheDocument();
+    expect(getBedStep(/Record hold-up/)).toBeInTheDocument();
     expect(getBedStep(/Mark at an ED/)).toBeInTheDocument();
   });
 });
@@ -240,12 +240,12 @@ describe("ward board departure correction uses the real admission", () => {
     const original = probe.getAttribute("data-date");
     const leaveCount = probe.getAttribute("data-leave-count");
     fireEvent.click(screen.getByRole("button", { name: "Move the date" }));
-    fireEvent.change(screen.getByLabelText("Expected departure time"), { target: { value: "16:45" } });
+    fireEvent.change(screen.getByLabelText("Expected discharge time"), { target: { value: "16:45" } });
     fireEvent.click(screen.getByRole("button", { name: "Cancel date change" }));
     expect(probe).toHaveAttribute("data-date", original);
     fireEvent.click(screen.getByRole("button", { name: "Move the date" }));
-    fireEvent.change(screen.getByRole("combobox", { name: "Departure day" }), { target: { value: "tomorrow" } });
-    fireEvent.change(screen.getByLabelText("Expected departure time"), { target: { value: "16:45" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Discharge day" }), { target: { value: "tomorrow" } });
+    fireEvent.change(screen.getByLabelText("Expected discharge time"), { target: { value: "16:45" } });
     fireEvent.click(screen.getByRole("button", { name: "Save departure date" }));
     expect(probe).toHaveAttribute(
       "data-date",

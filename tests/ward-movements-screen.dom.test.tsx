@@ -309,11 +309,13 @@ describe("the Movements screen", () => {
     for (const leg of legs) {
       const row = findTransportRow(transportPanel, leg.movement.id);
       expect(row, `state word missing for ${leg.movement.id}`).toHaveTextContent(labels[leg.state]);
-      // The group heading says it too, so the word is not left to the row's hidden text alone.
+      // The group head says it too, so the word is not left to the row's hidden text alone. It is a
+      // plain head, not an h4 (A7, accessibility check 2 Nov 2026); the section's name says it as well.
       const group = row.closest("section");
-      expect(group?.querySelector("h4"), `group heading missing for ${leg.movement.id}`).toHaveTextContent(
+      expect(group?.firstElementChild, `group head missing for ${leg.movement.id}`).toHaveTextContent(
         labels[leg.state],
       );
+      expect(group?.getAttribute("aria-label")).toMatch(new RegExp(`^${labels[leg.state]}, \\d+$`, "u"));
     }
   });
 

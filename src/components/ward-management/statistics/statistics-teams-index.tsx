@@ -8,6 +8,7 @@ import { HeroStat, PhoneListRow, Segmented, TextInput, cx, tableClasses, useIsPh
 import { communityStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { COMMUNITY_SERVICE_OPTIONS } from "@/components/ward-management/community/community-index";
 import {
+  COMMUNITY_SERVICE_PAGES,
   COMMUNITY_TEAM_PAGES,
   admissionsWithNoCommunityTeam,
   communityHubLists,
@@ -133,15 +134,18 @@ function OperationalTeamsIndex() {
     };
   });
 
+  // Q223 (Josh, 2 Nov 2026): one page per service in the totals, so a clinic with several ruled
+  // names counts each person once while every name keeps its row.
+  const serviceTeams = teams.filter((entry) => COMMUNITY_SERVICE_PAGES.some((page) => page.id === entry.team.id));
   return (
     <TeamsIndexView
       teams={teams}
-      inBedTotal={teams.reduce((total, entry) => total + (entry.inBed ?? 0), 0)}
-      withDateTotal={teams.reduce((total, entry) => total + (entry.withDate ?? 0), 0)}
-      dueOutWeekTotal={teams.reduce((total, entry) => total + entry.dueOutWeek, 0)}
-      activeCount={teams.filter((entry) => (entry.inBed ?? 0) > 0).length}
-      unknown={teams.filter((entry) => entry.inBed === null).length}
-      emptyTeams={teams.filter((entry) => entry.inBed === 0).length}
+      inBedTotal={serviceTeams.reduce((total, entry) => total + (entry.inBed ?? 0), 0)}
+      withDateTotal={serviceTeams.reduce((total, entry) => total + (entry.withDate ?? 0), 0)}
+      dueOutWeekTotal={serviceTeams.reduce((total, entry) => total + entry.dueOutWeek, 0)}
+      activeCount={serviceTeams.filter((entry) => (entry.inBed ?? 0) > 0).length}
+      unknown={serviceTeams.filter((entry) => entry.inBed === null).length}
+      emptyTeams={serviceTeams.filter((entry) => entry.inBed === 0).length}
       noTeamInBed={admissionsWithNoCommunityTeam(admissions, referrals).filter(bedIsOccupied).length}
       now={now}
       paused={live.paused}
@@ -237,7 +241,7 @@ function TeamsIndexView({
           <>
             <HeroStat value={shown(withDateTotal)} label="With a date" />
             <HeroStat value={activeCount} label="Teams with a patient in a bed" />
-            <HeroStat value={shown(dueOutWeekTotal)} label="Due out within 7 days" />
+            <HeroStat value={shown(dueOutWeekTotal)} label="Discharges due within 7 days" />
           </>
         ),
       }}
@@ -387,7 +391,7 @@ function TeamsIndexView({
                   <thead>
                     <tr>
                       <th scope="col">Team</th>
-                      {["In a bed", "With a discharge date", "Due out within 7 days"].map((label) => (
+                      {["In a bed", "With a discharge date", "Discharges due within 7 days"].map((label) => (
                         <th key={label} scope="col" className={redesign.r}>
                           {label}
                         </th>

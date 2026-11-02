@@ -59,7 +59,10 @@
 .offerLink {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  /* Q225 (design review, 2 Nov 2026): the house 40px minimum (it was 32px); the 4px margins give
+     the extra height back, so the table row keeps its height. */
+  min-height: 40px;
+  margin-block: -4px;
   color: inherit;
   text-decoration: none;
 }
@@ -137,7 +140,7 @@
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
 }
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .disclosureRow,
   .disclosure.disclosure > details > summary {
     min-height: 48px;
@@ -159,7 +162,7 @@
   width: 5.75rem;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .offersTable thead {
     display: none;
   }
@@ -201,6 +204,7 @@
   }
   .offerLink {
     min-height: 0;
+    margin-block: 0;
   }
   .offerLink::after {
     content: "";

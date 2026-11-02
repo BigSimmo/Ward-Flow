@@ -205,8 +205,19 @@
 }
 
 /* Tables */
+/* Q245 (spacing review, 2 Nov 2026): a soft edge shadow shows at a side only while more of the
+ * table is scrolled past it, so a cut-off column reads as scrollable. The surface covers scroll
+ * with the content (local) and hide each edge shadow (scroll) once that end is reached. */
 .tableWrap {
   overflow-x: auto;
+  background:
+    linear-gradient(to right, var(--wf-surface) 30%, transparent) left center / 32px 100% no-repeat local,
+    linear-gradient(to left, var(--wf-surface) 30%, transparent) right center / 32px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--wf-ink-1) 18%, transparent), transparent) left
+      center / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--wf-ink-1) 18%, transparent), transparent) right
+      center / 12px 100% no-repeat scroll,
+    var(--wf-surface);
 }
 .table {
   width: 100%;
@@ -269,6 +280,15 @@
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
   font-weight: 400;
+}
+/* Q245: Open ED journeys keeps all six columns (Median included) inside a half-width card at
+ * 1280: tighter inner gaps and a narrower ED name, which wraps. The card's 16px edges stay. */
+.tableFit th,
+.tableFit td {
+  padding-inline: 8px;
+}
+.tableFit .name {
+  min-width: 7rem;
 }
 .gv {
   display: inline-flex;

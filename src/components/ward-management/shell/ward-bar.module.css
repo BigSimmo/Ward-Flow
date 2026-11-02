@@ -601,8 +601,11 @@
   flex-shrink: 0;
 }
 
+/* Q280 (pre-launch check D2, 2 Nov 2026): with Back in front, a long ward name on a phone ran past
+ * the screen edge, uncut, and pushed Search off it. The name now gives way and ends in an ellipsis. */
 @media (max-width: 48rem) {
-  .bar:has(.pageTools:not(:empty)) .title {
+  .bar:has(.pageTools:not(:empty)) .title,
+  .deskBack + .title {
     flex-shrink: 1;
   }
 }
@@ -1541,8 +1544,14 @@
   .bar,
   :global(html.dark) .bar {
     gap: 0;
-    height: var(--wf-header-height, 3.5rem);
-    min-height: var(--wf-header-height, 3.5rem);
+    /* Q297 (pre-launch A1, 2 Nov 2026): with large text the bar grows to fit the title and scope
+       line instead of cutting the title at the top. At normal sizes it stays 56px in both states.
+       Its rest height is fixed here, not read from --wf-header-height: while the bar is taller,
+       WardBarFrame (ward-chrome-frame.tsx) sets that variable to the bar's real height so the
+       pinned rows below follow it, and reading it back would hold the bar at that height. */
+    height: 3.5rem;
+    height: calc-size(auto, max(size, 3.5rem));
+    min-height: 3.5rem;
     padding: 0 8px 0 6px;
     border-bottom-color: transparent;
     background: transparent;
@@ -1564,8 +1573,9 @@
   :global(html.dark) .bar[data-scrolled="true"] {
     /* Keep the scroll geometry stable. Animating the in-flow height moved every row and
        could repeatedly cross the scroll threshold as browser anchoring compensated. */
-    height: var(--wf-header-height, 3.5rem);
-    min-height: var(--wf-header-height, 3.5rem);
+    height: 3.5rem;
+    height: calc-size(auto, max(size, 3.5rem));
+    min-height: 3.5rem;
     border-bottom-color: var(--wf-line-2);
     background: var(--wf-surface-2);
     box-shadow: 0 6px 16px -12px color-mix(in srgb, var(--wf-ink-1) 28%, transparent);
@@ -3617,18 +3627,19 @@
     letter-spacing: -0.01em;
   }
 
-  /* WCAG 2.5.8 (overall review, 20 Oct 2026): the button's own box is at least 24px tall, not the
-   * 18px line. The 3px it gains above and below come back from its margins, so the line does not
+  /* WCAG 2.5.8 (overall review, 20 Oct 2026): the button's own box is taller than the 18px line.
+   * Q225 (design review, 2 Nov 2026): the house minimum is a 40px control, so the box is 40px (it
+   * was 24px). The 11px it gains above and below come back from its margins, so the line does not
    * move; it stays inline-flex (above) so the words sit centred in the taller box. */
   .scopeBadgeBtn {
-    min-height: 24px;
-    margin-block: calc(-0.75rem - 3px);
+    min-height: 40px;
+    margin-block: calc(-0.75rem - 11px);
     line-height: var(--wf-lh-12);
   }
 
-  /* The 24px box keeps a 48px tall hit area: 12px above and below. */
+  /* The 40px box keeps a 48px tall hit area: 4px above and below. */
   .scopeBadgeBtn::before {
-    inset: -12px -8px;
+    inset: -4px -8px;
   }
 
   /* Device audit (11 Oct 2026): the whole title block — the page title and the service line under

@@ -52,7 +52,69 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "ed-board", label: "ED board", group: "Desks", appPath: "/ward-flow/ed/peel-ed" },
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/ward-flow/people/196zcp24w5t0" },
-  { slug: "add-patient", label: "Add a patient", group: "Places and records", appPath: "/ward-flow/people/new" },
+  { slug: "add-patient", label: "Add patient", group: "Places and records", appPath: "/ward-flow/people/new" },
+  // Q218 (Josh, 2 Nov 2026): the pages with no approved redesign are drawn from main in the newest
+  // shell, so the master design no longer shows their older (BL86) content.
+  { slug: "eds", label: "All EDs", group: "Coordinator", appPath: "/ward-flow/ed" },
+  { slug: "referrals", label: "Referrals", group: "Coordinator", appPath: "/ward-flow/referrals" },
+  { slug: "stays", label: "Stays and discharges", group: "Desks", appPath: "/ward-flow/board/rph-adult-secure" },
+  // The page the Officer job panel pop-up opens over (2 Nov 2026).
+  { slug: "transport", label: "Transport", group: "Desks", appPath: "/ward-flow/transport/officer" },
+  { slug: "patients", label: "Patients", group: "Work and reports", appPath: "/ward-flow/search" },
+  { slug: "wards", label: "All wards", group: "Work and reports", appPath: "/ward-flow/wards" },
+  { slug: "alerts", label: "Alerts", group: "Reference", appPath: "/ward-flow/alerts" },
+  { slug: "out-of-area", label: "Out of area", group: "Reference", appPath: "/ward-flow/out-of-area" },
+  { slug: "on-call", label: "On-call", group: "Reference", appPath: "/ward-flow/on-call" },
+  { slug: "seclusion", label: "Seclusion", group: "Reference", appPath: "/ward-flow/seclusion" },
+  { slug: "governance", label: "Governance", group: "Reference", appPath: "/ward-flow/governance" },
+  {
+    slug: "bed-meeting-tv",
+    label: "Bed meeting TV",
+    group: "Bed meeting and reports",
+    appPath: "/ward-flow/bed-meeting",
+    bare: true,
+  },
+  {
+    slug: "agenda",
+    label: "Meeting agenda",
+    group: "Bed meeting and reports",
+    appPath: "/ward-flow/bed-meeting/agenda",
+  },
+  {
+    slug: "downtime",
+    label: "Downtime pack",
+    group: "Bed meeting and reports",
+    appPath: "/ward-flow/reports/downtime",
+  },
+  {
+    slug: "chronology",
+    label: "Patient chronology",
+    group: "Bed meeting and reports",
+    appPath: "/ward-flow/reports/chronology",
+  },
+  { slug: "places", label: "Places", group: "Places and records", appPath: "/ward-flow/hub" },
+  { slug: "community", label: "Community", group: "Places and records", appPath: "/ward-flow/community" },
+  {
+    slug: "community-team",
+    label: "Community team",
+    group: "Places and records",
+    appPath: "/ward-flow/community/midland",
+  },
+  {
+    slug: "ward-answer",
+    label: "Ward answer",
+    group: "Places and records",
+    appPath: "/ward-flow/ward/rph-adult-secure/answer",
+  },
+  { slug: "settings", label: "Settings", group: "Places and records", appPath: "/ward-flow/settings" },
+  { slug: "sign-in", label: "Sign in", group: "Places and records", appPath: "/ward-flow-sign-in", bare: true },
+  { slug: "statistics-list", label: "Ward list", group: "Statistics pages", appPath: "/ward-flow/statistics/wards" },
+  {
+    slug: "statistics-unit",
+    label: "One ward",
+    group: "Statistics pages",
+    appPath: "/ward-flow/statistics/ward/fsh-adult-secure",
+  },
 ];
 
 /** Popups drawn over their page. Each page opens its own; the viewer asks it to on load. */
@@ -113,6 +175,47 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
   { slug: "pop-state-error", label: "Error", group: "States", over: "home", pop: "state-error" },
   { slug: "pop-state-offline", label: "Offline", group: "States", over: "home", pop: "state-offline" },
   { slug: "pop-state-toast", label: "Toast", group: "States", over: "home", pop: "state-toast" },
+  // Q221 (Josh, 2 Nov 2026): the real page opens its own pop-up on load.
+  { slug: "pop-broadcast", label: "Broadcast", group: "Page popups", over: "alerts", pop: "broadcast" },
+  {
+    slug: "pop-community-note",
+    label: "Community note",
+    group: "Older popups",
+    over: "community-team",
+    pop: "community-note",
+  },
+  // Josh (2 Nov 2026): the master's other older pop-ups open on main's real pages too, as a click does.
+  { slug: "pop-desk", label: "Go to a desk", group: "Shell popups", over: "home", pop: "desk" },
+  { slug: "pop-shift-brief", label: "Shift brief", group: "Shell popups", over: "ward", pop: "shift-brief" },
+  { slug: "pop-ward-switcher", label: "Ward switcher", group: "Shell popups", over: "ward", pop: "ward-switcher" },
+  { slug: "pop-add-time", label: "Add the time", group: "Page popups", over: "legal-forms", pop: "add-time" },
+  { slug: "pop-bed-meeting-sheet", label: "Bed meeting sheet", group: "Page popups", over: "capacity", pop: "sheet" },
+  { slug: "pop-bed-record", label: "Bed record", group: "Page popups", over: "ward", pop: "bed-record" },
+  { slug: "pop-capacity-ward", label: "Capacity ward panel", group: "Page popups", over: "capacity", pop: "ward" },
+  { slug: "pop-confirm-beds", label: "Confirm beds", group: "Page popups", over: "ward", pop: "confirm-beds" },
+  { slug: "pop-ed-actions", label: "ED actions", group: "Page popups", over: "ed-board", pop: "ed-actions" },
+  { slug: "pop-forecast-sheet", label: "Phone bed forecast", group: "Page popups", over: "capacity", pop: "forecast" },
+  { slug: "pop-log-transport", label: "Log transport", group: "Page popups", over: "ed-board", pop: "log-transport" },
+  { slug: "pop-movement", label: "Movement drawer", group: "Page popups", over: "movements", pop: "movement" },
+  { slug: "pop-officer-job", label: "Officer job panel", group: "Page popups", over: "transport", pop: "officer-job" },
+  { slug: "pop-record-exam", label: "Record exam", group: "Page popups", over: "legal-forms", pop: "record-exam" },
+  { slug: "pop-record-form", label: "Record a form", group: "Page popups", over: "legal-forms", pop: "record-form" },
+  { slug: "pop-scenario", label: "Try a scenario", group: "Page popups", over: "capacity", pop: "scenario" },
+  { slug: "pop-ward-notices", label: "Ward notices", group: "Page popups", over: "ward", pop: "ward-notices" },
+  {
+    slug: "pop-board-blocker",
+    label: "Record a bed blocker",
+    group: "Older popups",
+    over: "stays",
+    pop: "board-blocker",
+  },
+  {
+    slug: "pop-ward-accept",
+    label: "Accept in principle",
+    group: "Older popups",
+    over: "ward-answer",
+    pop: "ward-accept",
+  },
 ];
 
 /** Prefix routes: any address under these opens the one example drawn for them. */

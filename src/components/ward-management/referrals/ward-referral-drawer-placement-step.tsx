@@ -1,5 +1,6 @@
 "use client";
 
+import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { FileText, Stethoscope, Truck, Users } from "lucide-react";
 import { useState } from "react";
 import {
@@ -276,7 +277,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               {/* Audit round 2 (A2-8): no closed total. No listed ward shows a closed bed,
                               so the figure matched nothing on the step. */}
               <span className={styles.legendAside}>
-                {effectiveCohort || currentPatient.cohort} · {security.toLowerCase()} ·{" "}
+                {effectiveCohort || currentPatient.cohort} · {securityWord(security).toLowerCase()} ·{" "}
                 {realTimeMatch.sortedUnits.length} {realTimeMatch.sortedUnits.length === 1 ? "ward" : "wards"}
               </span>
             </div>

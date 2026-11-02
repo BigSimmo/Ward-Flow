@@ -366,7 +366,7 @@ describe("the Capacity screen", () => {
   });
 
   /**
-   * The total half of the same property, now the hero's "Due out today" chip (the "Beds freeing"
+   * The total half of the same property, now the hero's "Discharges due today" chip (the "Beds freeing"
    * tab that used to carry it went with the redesign). Asserts the FIGURE, and the two fabrications
    * `NetworkWardRow.freeing`'s own doc comment names — the literal word "undefined", and a bare `0`
    * presented as the total when nothing is tracked.
@@ -375,7 +375,7 @@ describe("the Capacity screen", () => {
     const tracked = networkRows.map((row) => row.freeing).filter((value): value is number => value !== undefined);
     const total = tracked.reduce((sum, value) => sum + value, 0);
     renderScreen();
-    const chip = heroChips().getByText("Due out today").parentElement as HTMLElement;
+    const chip = heroChips().getByText("Discharges due today").parentElement as HTMLElement;
     const value = chip.firstElementChild?.textContent ?? "";
     if (tracked.length === 0) {
       expect(value, "nothing is tracked, so the hero must not print a bare 0 as the total").not.toMatch(/^\s*0\s*$/u);
