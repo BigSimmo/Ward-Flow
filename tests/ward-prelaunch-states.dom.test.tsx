@@ -36,52 +36,40 @@ const fetched = (name: string, startTime: number, extra: object = { responseStat
 
 describe("Q273: an offline tap opens a page the router already holds in full", () => {
   const now = 100_000;
-  it("opens a dock page fetched in full a moment ago", () => {
-    const entries = [fetched("http://localhost:3000/ward-flow/referrals?_rsc=abc", now - 5_000)];
-    expect(offlineCanOpen(link("ward-phone-dock-link"), target, entries, now)).toBe(true);
+  const both = (startTime: number, extra?: object) => [
+    fetched("http://localhost:3000/ward-flow/referrals?_rsc=tree", startTime, extra),
+    fetched("http://localhost:3000/ward-flow/referrals?_rsc=page", startTime, extra),
+  ];
+
+  it("opens a dock page whose route tree and data both came back a moment ago", () => {
+    expect(offlineCanOpen(link("ward-phone-dock-link"), target, both(now - 5_000), now)).toBe(true);
+    expect(offlineCanOpen(link("ward-phone-menu-need"), target, both(now - 5_000), now)).toBe(true);
   });
 
   it("does not open a link whose page was only part fetched", () => {
-    const entries = [fetched("http://localhost:3000/ward-flow/referrals?_rsc=abc", now - 5_000)];
-    expect(offlineCanOpen(link("ward-rail-link"), target, entries, now)).toBe(false);
-    expect(offlineCanOpen(link(), target, entries, now)).toBe(false);
+    expect(offlineCanOpen(link("ward-rail-link"), target, both(now - 5_000), now)).toBe(false);
+    expect(offlineCanOpen(link(), target, both(now - 5_000), now)).toBe(false);
+    const treeOnly = [fetched("http://localhost:3000/ward-flow/referrals?_rsc=tree", now)];
+    expect(offlineCanOpen(link("ward-phone-dock-link"), target, treeOnly, now)).toBe(false);
   });
 
-  it("does not open a page fetched too long ago, never fetched, or fetched with an error", () => {
+  it("does not open a page fetched too long ago, for another address, or with an error", () => {
     const late = now + OFFLINE_PREFETCH_FRESH_MS + 1_000;
-    const entries = [fetched("http://localhost:3000/ward-flow/referrals?_rsc=abc", now - 5_000)];
-    expect(offlineCanOpen(link("ward-phone-dock-link"), target, entries, late)).toBe(false);
-    expect(
-      offlineCanOpen(
-        link("ward-phone-dock-link"),
-        target,
-        [fetched("http://localhost:3000/ward-flow/alerts?_rsc=a", now)],
-        now,
-      ),
-    ).toBe(false);
-    expect(
-      offlineCanOpen(
-        link("ward-phone-dock-link"),
-        target,
-        [fetched("http://localhost:3000/ward-flow/referrals", now)],
-        now,
-      ),
-    ).toBe(false);
-    expect(
-      offlineCanOpen(
-        link("ward-phone-dock-link"),
-        target,
-        [fetched("http://localhost:3000/ward-flow/referrals?_rsc=a", now, { responseStatus: 500 })],
-        now,
-      ),
-    ).toBe(false);
+    expect(offlineCanOpen(link("ward-phone-dock-link"), target, both(now - 5_000), late)).toBe(false);
+    const other = [
+      fetched("http://localhost:3000/ward-flow/alerts?_rsc=tree", now),
+      fetched("http://localhost:3000/ward-flow/alerts?_rsc=page", now),
+    ];
+    expect(offlineCanOpen(link("ward-phone-dock-link"), target, other, now)).toBe(false);
+    const failed = [
+      fetched("http://localhost:3000/ward-flow/referrals?_rsc=tree", now),
+      fetched("http://localhost:3000/ward-flow/referrals?_rsc=page", now, { responseStatus: 500 }),
+    ];
+    expect(offlineCanOpen(link("ward-phone-dock-link"), target, failed, now)).toBe(false);
   });
 
-  it("reads the body size where the browser gives no status", () => {
-    const ok = [fetched("http://localhost:3000/ward-flow/referrals?_rsc=a", now, { encodedBodySize: 3000 })];
-    const empty = [fetched("http://localhost:3000/ward-flow/referrals?_rsc=a", now, { encodedBodySize: 0 })];
-    expect(offlineCanOpen(link("ward-phone-menu-need"), target, ok, now)).toBe(true);
-    expect(offlineCanOpen(link("ward-phone-menu-need"), target, empty, now)).toBe(false);
+  it("keeps the tap on the page where the browser gives no status", () => {
+    expect(offlineCanOpen(link("ward-phone-dock-link"), target, both(now, { encodedBodySize: 3000 }), now)).toBe(false);
   });
 });
 

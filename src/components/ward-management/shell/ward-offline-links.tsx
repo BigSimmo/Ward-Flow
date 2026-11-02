@@ -21,15 +21,12 @@ const FULL_PREFETCH_LINKS = [
 /** The router keeps a full prefetch for 5 minutes (Next `staleTimes.static`); stop short of that. */
 export const OFFLINE_PREFETCH_FRESH_MS = 270_000;
 
-type ResourceEntry = Pick<PerformanceEntry, "name" | "startTime" | "duration"> & {
-  responseStatus?: number;
-  encodedBodySize?: number;
-};
+type ResourceEntry = Pick<PerformanceEntry, "name" | "startTime" | "duration"> & { responseStatus?: number };
 
 /**
  * Q273 (pre-launch review E1, 2 Nov 2026): true when the page behind a full-prefetch link was
  * fetched in the last few minutes, so the router can open it from memory without the network.
- * A fetch counts when it carried the page's data (`_rsc`) for this address and came back whole.
+ * It counts when both of that page's router requests (`_rsc`) came back with a 200.
  */
 export function offlineCanOpen(
   link: Element,
@@ -40,18 +37,23 @@ export function offlineCanOpen(
 ): boolean {
   if (!link.matches(FULL_PREFETCH_LINKS)) return false;
   const want = url.origin + url.pathname + url.search;
-  return entries.some((entry) => {
-    const fetched = new URL(entry.name);
-    if (!fetched.searchParams.has("_rsc")) return false;
-    fetched.searchParams.delete("_rsc");
-    // Safari gives no status; a fetch that carried a body came back.
-    const whole = entry.responseStatus === undefined ? (entry.encodedBodySize ?? 0) > 0 : entry.responseStatus === 200;
-    return (
-      whole &&
-      fetched.origin + fetched.pathname + fetched.search === want &&
+  // The router fetches a page's route tree and its data as two `_rsc` requests to the same address,
+  // so both must have come back. Only a reported 200 counts: a browser that gives no status (Safari)
+  // keeps the tap here rather than risk leaving the app.
+  const fetched = new Set<string>();
+  for (const entry of entries) {
+    const at = new URL(entry.name);
+    const key = at.searchParams.get("_rsc");
+    at.searchParams.delete("_rsc");
+    if (
+      key !== null &&
+      entry.responseStatus === 200 &&
+      at.origin + at.pathname + at.search === want &&
       now - entry.startTime - entry.duration <= freshMs
-    );
-  });
+    )
+      fetched.add(key);
+  }
+  return fetched.size > 1;
 }
 
 /**

@@ -157,12 +157,6 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }} />
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_DESK_EARLY_SCRIPT }} />
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }} />
-        {/* Serves the slow page change's Try again button (app/ward-flow/loading.tsx). */}
-        <script
-          nonce={nonce}
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: WARD_LOADING_NOTE_EARLY_SCRIPT }}
-        />
       </WardFirstDocumentOnly>
       <WardAccessibility />
       <WardRowDensity />
@@ -175,6 +169,16 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
   );
   return (
     <WfServerPhoneProvider phone={phone} tablet={tablet}>
+      {/* Q274/Q275: the loading note's Reload and a slow page change's Try again buttons are handled
+        by this inline script (ward-loading-note-early.ts). It sits outside the workspace host so it
+        also runs on a first load that is signed out, and keeps serving Try again after sign-in. */}
+      <WardFirstDocumentOnly>
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: WARD_LOADING_NOTE_EARLY_SCRIPT }}
+        />
+      </WardFirstDocumentOnly>
       <WardWorkspaceHost initialDayZero={initialDayZero} executiveChildren={executiveShell}>
         {/* Role access plan PR 1: everything below reads the workspace scoped to the desk's role and
           place, chrome included. Does nothing while the role-access flag is off (shell/ward-access.tsx). */}
@@ -232,7 +236,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                     {/* Q274: shown after 15 s if the code has still not arrived (ward-loading-note-early.ts). */}
                     <span className={styles.loadingNoteSlow}>
                       Still loading. Check the connection.
-                      {/* Wired by the inline script below (ward-loading-note-early.ts), because the page's own
+                      {/* Wired by the inline script at the top of this layout (ward-loading-note-early.ts), because the page's own
                     code is what failed to arrive. */}
                       {/* eslint-disable-next-line local/require-button-wiring -- wired by WARD_LOADING_NOTE_EARLY_SCRIPT */}
                       <button type="button" className={styles.loadingNoteReload} data-wf-loading-reload="">
@@ -240,13 +244,6 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                       </button>
                     </span>
                   </p>
-                  <WardFirstDocumentOnly>
-                    <script
-                      nonce={nonce}
-                      suppressHydrationWarning
-                      dangerouslySetInnerHTML={{ __html: WARD_LOADING_NOTE_EARLY_SCRIPT }}
-                    />
-                  </WardFirstDocumentOnly>
                   {/* `data-wf-bar-notes`: the band counts these notes as part of the header (wf/band.ts), so a
                 page still opens on its hero band while a note is showing.
                 Minimal warnings (design audit, Josh 1 Nov 2026): at most one note shows at a time. They sit
