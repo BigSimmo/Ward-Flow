@@ -8,6 +8,9 @@ import { deriveServiceBedAlerts } from "@/components/ward-management/shell/ward-
 import { occupancyPercent, occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { activeActNowItems, activeTaskItems, taskItems } from "@/components/ward-management/ward-act-now-items";
+import { alertGroupOfId, alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
+import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
 import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -85,6 +88,36 @@ describe("the shared figures agree on the seed (hero, chip, badge and list)", ()
     const actNow = activeActNowItems(state, now);
     expect(actNow.length, "the seed has act-now rows").toBeGreaterThan(0);
     expect(actNow).toEqual(activeTaskItems(state, now).filter((item) => item.tone === "danger"));
+  });
+
+  it("act now and outstanding (Q260): Home, Alerts, the bell and the Tasks dock read one source", () => {
+    const active = activeTaskItems(state, now);
+    const awaitingPull = acceptedReferralsAwaitingPull(state.referrals, state.units, state.movements).length;
+    expect(awaitingPull, "the seed has an accepted referral with no bed pulled, so the gap is tested").toBeGreaterThan(
+      0,
+    );
+    const figures = alertsNowFigures(active, awaitingPull);
+    // The Alerts screen groups its rows with `alertGroupOf`; the shared figures group them the same way.
+    for (const item of active) expect(alertGroupOfId(item.id)).toBe(alertGroupOf(item));
+    const act = active.filter((item) => alertGroupOf(item) === "act").length;
+    const wait = active.filter((item) => alertGroupOf(item) === "wait").length;
+    // Home and Alerts: act-now rows plus accepted referrals awaiting a pull (Q111).
+    expect(figures.actNow).toBe(act + awaitingPull);
+    // The phone Menu's old figure (act-now rows only) left the pull out; that was the 3 against 4.
+    expect(figures.actNow).toBe(activeActNowItems(state, now).length + awaitingPull);
+    // The Alerts heading "N act now, M waiting" adds up to the bell and the Tasks dock.
+    expect(figures.outstanding).toBe(act + wait + awaitingPull);
+    expect(figures.waiting).toBe(wait);
+  });
+
+  it("outstanding (Q260): a running countdown is listed on Alerts but is not yet outstanding", () => {
+    const running = { id: `${INBOX_CATEGORIES.target_pending_referral_decision.idPrefix}m-1` };
+    const overdue = { id: `${INBOX_CATEGORIES.target_referral_decision.idPrefix}m-1` };
+    expect(alertGroupOfId(running.id)).toBe("running");
+    expect(alertGroupOfId(overdue.id)).not.toBe("running");
+    const figures = alertsNowFigures([running, overdue], 0);
+    expect(figures.running).toBe(1);
+    expect(figures.outstanding).toBe(1);
   });
 
   it("waiting: Home's hero, the service picker and Network read one figure, and the services add up", () => {

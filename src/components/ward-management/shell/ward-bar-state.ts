@@ -4,6 +4,8 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
+import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import {
   noticeIsForWardChrome,
   wardTasksAreActionableForRole,
@@ -132,7 +134,15 @@ export function useWardBarTasks({
     () => partitionSnoozed(tasksItems, inboxSnoozes, now).active,
     [tasksItems, inboxSnoozes, now],
   );
-  const tasksActiveCount = tasksActiveItems.length;
+  // Q260 (pre-launch review T1, 2 Nov 2026): the bell and the Tasks dock show the Alerts heading's
+  // figure, act now plus waiting, so a ward's acceptance with no bed pulled (Act now on Home and
+  // Alerts, Q111) counts here too and a running countdown (not yet late) does not.
+  const awaitingPull = useMemo(
+    () =>
+      wardTasksAreActionableForRole(shellRole) ? acceptedReferralsAwaitingPull(referrals, units, movements).length : 0,
+    [shellRole, referrals, units, movements],
+  );
+  const tasksActiveCount = alertsNowFigures(tasksActiveItems, awaitingPull).outstanding;
   return { tasksItems, tasksActiveItems, tasksActiveCount };
 }
 
