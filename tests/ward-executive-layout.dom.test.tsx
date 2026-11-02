@@ -136,7 +136,7 @@ beforeEach(() => {
   window.localStorage.clear();
   guard.connection = connection();
   vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-    matches: guard.phone && query === "(max-width: 48rem)",
+    matches: guard.phone && query === "(max-width: 46.4375rem)",
     media: query,
     onchange: null,
     addListener() {},

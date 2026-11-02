@@ -50,7 +50,7 @@ const ACTION = /accept|decline|decide|assign|take this|log a call|place|pull/i;
 
 /** Desk layout: the detail sits beside the queue. Phone: the 48rem phone layout. */
 function layout(kind: "desk" | "phone") {
-  const query = kind === "desk" ? "(min-width: 64rem)" : "(max-width: 48rem)";
+  const query = kind === "desk" ? "(min-width: 64rem)" : "(max-width: 46.4375rem)";
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,

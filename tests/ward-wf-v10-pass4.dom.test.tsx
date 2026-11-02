@@ -83,7 +83,7 @@ describe("useMediaQuery and the tablet hooks", () => {
   });
 
   it("uses the 769 to 1000px and 1001 to 1200px ranges", () => {
-    expect(WF_TABLET_PORTRAIT_QUERY).toBe("(min-width: 48.0625rem) and (max-width: 62.5rem)");
+    expect(WF_TABLET_PORTRAIT_QUERY).toBe("(min-width: 46.5rem) and (max-width: 62.5rem)");
     expect(WF_TABLET_LANDSCAPE_QUERY).toBe("(min-width: 62.5625rem) and (max-width: 75rem)");
   });
 });

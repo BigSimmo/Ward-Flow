@@ -194,7 +194,7 @@ async function atScrollTop<T>(page: Page, action: () => Promise<T>): Promise<T> 
 
 /** True on the phone release-gate project (390px wide), where the header Menu replaces the rail. */
 export function isPhoneLayout(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 1440) < 768;
+  return (page.viewportSize()?.width ?? 1440) < 744;
 }
 
 /**

@@ -15,7 +15,7 @@ const params = new URLSearchParams(location.search);
 const screen = params.get("screen");
 const themeParam = params.get("theme");
 const theme: PreviewTheme = themeParam === "dark" || themeParam === "light" ? themeParam : null;
-const phone = matchMedia("(max-width: 48rem)").matches;
+const phone = matchMedia("(max-width: 46.4375rem)").matches;
 const container = document.getElementById("root");
 
 if (container) {

@@ -753,7 +753,7 @@ button.strip:disabled {
   white-space: nowrap;
 }
 /* Laptop and tablet only; the phone sheet keeps its own fact table. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .pFacts.pFacts {
     grid-template-columns: 6.5rem minmax(0, 1fr);
     gap: 8px 12px;

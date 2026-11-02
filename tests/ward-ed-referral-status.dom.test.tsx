@@ -143,7 +143,7 @@ let phone = true;
 
 beforeEach(() => {
   window.matchMedia = ((query: string) => ({
-    matches: phone && query === "(max-width: 48rem)",
+    matches: phone && query === "(max-width: 46.4375rem)",
     media: query,
     addEventListener: () => undefined,
     removeEventListener: () => undefined,

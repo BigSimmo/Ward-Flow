@@ -615,7 +615,7 @@
 }
 
 /* Phone (v10 bed sheet): one scrolling sheet, no tabs. Only rendered on phone. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneSheet {
     top: auto;
     left: 0;
@@ -891,7 +891,7 @@
 
 /* No side edge (owner ruling, 31 Oct 2026): the glyph before the words carries the tone. */
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Redesign: the filled step takes the full width; the plain step and More share the row below. */
   .actionsPhone {
     flex-wrap: wrap;

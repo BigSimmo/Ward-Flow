@@ -1068,7 +1068,7 @@ body {
  * because this input-mode floor must win over each control's own compact height, as the keyboard
  * hint rule below does.
  */
-@media (pointer: coarse) and (max-height: 500px) and (min-width: 48.0625rem) {
+@media (pointer: coarse) and (max-height: 500px) and (min-width: 46.5rem) {
   body:has([data-wf-page-dock])
     :is(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], select, summary):not(
       [hidden],

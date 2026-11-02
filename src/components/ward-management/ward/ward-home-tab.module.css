@@ -1185,7 +1185,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 /* Phone: the board keeps its filter on its own line, tiles drop to four a row with the number,
    glyph and stay, the to do columns stack, and every control keeps a 48px target. Desktop is
    unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Named, not ".areaBeds > div:first-child": on a phone the card has no head, so that selector
      wrapped the walk round instead and laid its bed strip and list out side by side, off screen. */
   .areaBeds > .bedsHead {
@@ -1258,7 +1258,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 /* Phone: the flow tabs share the width but never shrink below their labels; a narrow screen
  * scrolls the row instead of overlapping them. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .flowSwitch > div {
     overflow-x: auto;
     scrollbar-width: none;
@@ -1286,7 +1286,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 /* Phone first screen (v10 build guide): Ward flow, which opens on Awaiting your answer, comes
    before the bed tiles. Desktop and tablet keep the beds first. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .homeTop > .flowWrap {
     order: -1;
   }
@@ -1389,7 +1389,7 @@ label.todoMain:has(.todoTick:focus-visible) {
   color: var(--wf-dim);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .viewSwitch {
     display: none;
   }
@@ -1761,7 +1761,7 @@ label.todoMain:has(.todoTick:focus-visible) {
   max-height: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .homeWrap {
     gap: var(--wf-s-4);
   }
@@ -1853,7 +1853,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 /* Audit 11 Oct 2026, iPad portrait: Act now takes the full width so its time and button do not
  * collide; Later today and Done sit side by side under it. */
-@media (min-width: 48.0625rem) and (max-width: 64rem) {
+@media (min-width: 46.5rem) and (max-width: 64rem) {
   .todoGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

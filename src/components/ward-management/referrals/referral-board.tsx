@@ -552,11 +552,12 @@ export function ReferralBoard({
   useEffect(() => {
     if (!selectedReferralId || !detailRef.current) return;
     detailRef.current.scrollTop = 0;
-    if (typeof window !== "undefined" && window.innerWidth <= 768) {
+    // Below the split layout (64rem) the detail is a slide-over over the queue, so it takes focus.
+    if (!(window.matchMedia?.(SPLIT_DETAIL_MEDIA_QUERY).matches ?? window.innerWidth > 743)) {
       if (typeof detailRef.current.scrollIntoView === "function") {
         detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
       }
-      // On a phone the detail opens over the queue, so focus moves into it with the reader.
+      // The detail opens over the queue, so focus moves into it with the reader.
       detailRef.current.focus({ preventScroll: true });
     }
   }, [selectedReferralId]);
@@ -971,8 +972,8 @@ export function ReferralBoard({
             role="region"
             aria-label="Referral queues"
             tabIndex={0}
-            // Phone: the open detail covers the queue, so the queue behind it leaves the Tab order.
-            inert={phoneLayout && selectedReferral ? true : undefined}
+            // Below 64rem the open detail covers the queue, so the queue behind it leaves the Tab order.
+            inert={!splitDetailLayout && selectedReferral ? true : undefined}
           >
             <Card className={cx(styles.v6QueueCard, a.queueCard, redesign.wrapRows)}>
               {/* Phone (Josh, 12 Oct 2026): Queue and History pin under the phone header, as Home's

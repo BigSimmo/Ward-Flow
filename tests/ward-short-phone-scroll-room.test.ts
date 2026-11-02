@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
 const css = readFileSync(join(process.cwd(), "src/app/ward-flow/ward-flow-layout.module.css"), "utf8");
 
 function shortPhoneBlock(): string {
-  const start = css.indexOf("@media screen and (max-width: 48rem) and (max-height: 32rem)");
+  const start = css.indexOf("@media screen and (max-width: 46.4375rem) and (max-height: 32rem)");
   expect(start).toBeGreaterThan(-1);
   return css.slice(start, css.indexOf("\n}\n", start));
 }
@@ -31,6 +31,6 @@ describe("P040 short phone scroll room", () => {
   it("comes after the base pinned notes rule so it wins the cascade", () => {
     const base = css.search(/\n\.bannerHolder\s*\{[^}]*position:\s*sticky/);
     expect(base).toBeGreaterThan(-1);
-    expect(css.indexOf("@media screen and (max-width: 48rem) and (max-height: 32rem)")).toBeGreaterThan(base);
+    expect(css.indexOf("@media screen and (max-width: 46.4375rem) and (max-height: 32rem)")).toBeGreaterThan(base);
   });
 });

@@ -103,7 +103,7 @@ describe("useIsPhone", () => {
       matches = true;
       act(() => listeners.forEach((cb) => cb()));
       expect(result.current).toBe(true);
-      expect(WF_PHONE_QUERY).toBe("(max-width: 48rem)");
+      expect(WF_PHONE_QUERY).toBe("(max-width: 46.4375rem)");
     } finally {
       window.matchMedia = original;
     }
