@@ -1,6 +1,7 @@
 "use client";
 
-// Fork of src/components/ward-management/shell/ward-rail-lazy.tsx: mounts the mock-ups' rail copy.
+// The app's sidebar mount (Josh, 2 Nov 2026): the rail's code loads on demand, and a phone keeps only
+// the page-wide preferences and drawer shortcuts. It replaced the old shell's lazy rail.
 
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
