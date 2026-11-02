@@ -37,7 +37,6 @@ import {
   tableClasses,
   useIsPhone,
   useModalFocus,
-  WF_TABLET_PORTRAIT_QUERY,
   type WfTone,
 } from "@/components/wf";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
@@ -367,7 +366,7 @@ export function OfficerScreen() {
   const sideRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (selectedId === undefined || typeof window.matchMedia !== "function") return;
-    if (!window.matchMedia(WF_TABLET_PORTRAIT_QUERY).matches) return;
+    if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
     sideRef.current?.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
   }, [selectedId]);
   // Phone: the panel is a modal bottom sheet (takes focus, traps Tab, isolates the page, hands focus
