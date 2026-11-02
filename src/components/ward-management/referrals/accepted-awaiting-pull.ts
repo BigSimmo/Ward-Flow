@@ -1,0 +1,62 @@
+/**
+ * The accepted-referral queries the shell reads (the bell, the phone Menu and the Alerts figures).
+ * Q260 review (#1296): split out of `accepted-ward-referral.ts`, which re-exports them, so the
+ * shell bundle carries these two queries and not the pull sheet's legal-form wording beside them.
+ */
+import type { Movement, Referral, Unit } from "../ward-model";
+import { acceptedAddressing } from "../ward-referrals";
+
+/**
+ * S-9 (audit 13 Oct 2026): accepting a referral into a ward pulls no bed and creates no movement
+ * (`ACCEPT_REFERRAL`, by design), so the referral and the patient record both read as a dead end.
+ * This names the ward that accepted, so both can show the next step: hold the bed on that ward.
+ * Callers build the link to that ward themselves.
+ */
+export function acceptedWardOf(
+  referral: Referral,
+  units: readonly Pick<Unit, "id" | "name">[],
+): { unitId: string; unitName: string } | undefined {
+  const accepted = acceptedAddressing(referral);
+  if (!accepted) return undefined;
+  const unitId =
+    accepted.acceptedUnitId ??
+    (accepted.destination.kind === "psychiatric_ward" ? accepted.destination.unitId : undefined);
+  if (unitId === undefined) return undefined;
+  const unitName = units.find((unit) => unit.id === unitId)?.name ?? "the accepting ward";
+  return { unitId, unitName };
+}
+
+/** An accepted ward referral the coordinator can pull a bed for, with the ward that accepted it. */
+export type AcceptedAwaitingPull = { referral: Referral; unitId: string; unitName: string };
+
+/**
+ * WS-02 (workflow speed audit, 26 Oct 2026): every referral a ward has accepted that still has no
+ * bed pulled, oldest decision first. Only the referrals a journey can start from directly: an ED
+ * referral or a community referral (D-76), accepted on a ward arm that its referrer has not
+ * withdrawn, with no bed held on that arm and no live journey raised from it. A journey that closed
+ * "did not proceed" does not count, as `RAISE_REFERRAL` allows a new one then.
+ */
+export function acceptedReferralsAwaitingPull(
+  referrals: readonly Referral[],
+  units: readonly Pick<Unit, "id" | "name">[],
+  movements: readonly Pick<Movement, "referralId" | "closure">[],
+): AcceptedAwaitingPull[] {
+  return referrals
+    .flatMap((referral) => {
+      if (referral.source !== "ed_medical" && referral.source !== "community") return [];
+      const accepted = acceptedAddressing(referral);
+      if (!accepted || accepted.destination.kind !== "psychiatric_ward" || accepted.withdrawnAt !== undefined)
+        return [];
+      if (accepted.heldBedNumber !== undefined) return [];
+      if (
+        movements.some(
+          (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
+        )
+      )
+        return [];
+      const ward = acceptedWardOf(referral, units);
+      return ward ? [{ referral, ...ward, decidedAt: accepted.decidedAt ?? referral.raisedAt }] : [];
+    })
+    .sort((a, b) => a.decidedAt - b.decidedAt)
+    .map(({ referral, unitId, unitName }) => ({ referral, unitId, unitName }));
+}

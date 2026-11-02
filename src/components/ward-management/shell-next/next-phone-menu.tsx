@@ -29,7 +29,7 @@ import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
-import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-awaiting-pull";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 

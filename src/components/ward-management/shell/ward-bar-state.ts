@@ -5,7 +5,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import { acceptedPullTaskRows, alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
-import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-awaiting-pull";
 import {
   noticeIsForWardChrome,
   wardTasksAreActionableForRole,

@@ -16,7 +16,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { INBOX_CATEGORIES, inboxItemIsActNow } from "@/components/ward-management/ward-inbox-reducer";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
-import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
+import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-awaiting-pull";
 
 export type AlertGroup = "act" | "wait" | "running";
 
@@ -69,6 +69,11 @@ export function isAcceptedPullRow(id: string): boolean {
   return id.startsWith(ACCEPTED_PULL_ROW_PREFIX);
 }
 
+/** The referral an accepted-referral row is about, for the patient resolver to name the person. */
+export function acceptedPullReferralId(id: string): string | undefined {
+  return isAcceptedPullRow(id) ? id.slice(ACCEPTED_PULL_ROW_PREFIX.length) || undefined : undefined;
+}
+
 /**
  * Q260 review (#1296): the bell's quick look lists what the badge counts, so a ward's acceptance
  * with no bed pulled is a row there too, in Act now. It opens Alerts, where the bed is pulled. It is
@@ -88,7 +93,6 @@ export function acceptedPullTaskRows(toPull: readonly AcceptedAwaitingPull[], no
       owner: "Bed coordinator",
       movementId: "",
       href: WARD_ALERTS_HREF,
-      ...(referral.patientId ? { personId: referral.patientId } : {}),
       since: accepted?.decidedAt ?? referral.raisedAt ?? now,
     };
   });
