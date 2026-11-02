@@ -9,14 +9,8 @@ import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 
 import { markTourSeen, readTourStep, readTourStepId, saveTourStep, useTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
-import {
-  TOUR_ROLE_LABELS,
-  tourCanDo,
-  tourGreeting,
-  tourSteps,
-  type TourDevice,
-  type TourStep,
-} from "./ward-tour-steps";
+import { TOUR_ROLE_LABELS, tourCanDo, tourGreeting, type TourDevice, type TourStep } from "./ward-tour-steps";
+import { fullTourSteps } from "./ward-tour-more-steps";
 import { openWardHelp } from "./ward-help-events";
 import { SPOT_NOT_HERE, usePlacedCard, useSpotlight } from "./ward-spotlight";
 import styles from "./ward-tour.module.css";
@@ -32,7 +26,9 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   const role = useTourRole();
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
   const { facts, home } = useTourFacts(role);
-  const steps = useMemo(() => tourSteps(role, device, facts), [role, device, facts]);
+  // The home walk plus the desk's other parts (`ward-tour-more-steps.ts`). Added steps move a saved
+  // index; the place below is found by id first and a stale index is clamped to the tour's length.
+  const steps = useMemo(() => fullTourSteps(role, device, facts), [role, device, facts]);
   const canDo = useMemo(() => tourCanDo(role), [role]);
   // The place is held by the step's id, so crossing the phone width (a different set of steps)
   // keeps the same step, or the nearest one when that device has no such step. The saved place

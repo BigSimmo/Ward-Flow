@@ -28,7 +28,8 @@ import { Button, buttonClass, foldLimit, ShowMoreRow, useIsPhone } from "@/compo
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 import { readTourStep, type WardTourRole } from "./ward-help-store";
-import { tourSteps, type TourDevice } from "./ward-tour-steps";
+import { type TourDevice } from "./ward-tour-steps";
+import { fullTourSteps } from "./ward-tour-more-steps";
 import { useTourFacts } from "./ward-tour-facts";
 import type { ScreenHelp } from "./ward-help-content";
 
@@ -310,7 +311,7 @@ function PracticeWhenLive({ role, onShowMe }: { role: WardTourRole; onShowMe: (i
 function TourRow({ role, onTour }: { role: WardTourRole; onTour: () => void }) {
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
   const { facts } = useTourFacts(role);
-  const total = useMemo(() => tourSteps(role, device, facts).length, [role, device, facts]);
+  const total = useMemo(() => fullTourSteps(role, device, facts).length, [role, device, facts]);
   // The tour's own saved place (`ward-help-store`), read once when Help opens.
   const [at] = useState(() => Math.min(readTourStep(role), Math.max(0, total - 1)));
   const minutes = Math.max(1, Math.round(((total - at) * (device === "phone" ? 12 : 15)) / 60));

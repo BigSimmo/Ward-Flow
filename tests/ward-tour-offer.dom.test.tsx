@@ -39,7 +39,10 @@ describe("P188: the tour is offered, not forced", () => {
     const onStart = vi.fn();
     render(<WardTourAutoStart onStart={onStart} />);
     const card = await screen.findByTestId("ward-tour-offer");
-    expect(card.textContent).toBe("Want a quick tour? It takes about 2 minutes.Start the tourNot now");
+    // The time follows the desk's tour length on this device (2 Nov 2026), as the first step says.
+    expect(card.textContent).toMatch(
+      /^Want a quick tour\? It takes about (a minute|\d+ minutes)\.Start the tourNot now$/,
+    );
     await settle();
     expect(onStart).not.toHaveBeenCalled();
   });
