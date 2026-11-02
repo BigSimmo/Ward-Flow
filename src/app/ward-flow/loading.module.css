@@ -43,6 +43,14 @@
   }
 }
 
+/* Ward Flow's own Reduce motion setting turns every animation off under the shell
+   (ward-flow-layout.module.css, `animation: none !important`), which would keep this line hidden
+   for ever. The reveal is a zero-length step after a wait, not motion, so it is kept here; this
+   selector outranks that rule. */
+:global(html[data-reduced-motion]) .main .slow {
+  animation: wardLoadingSlowShow 0s 10s forwards !important;
+}
+
 .retry {
   min-block-size: 30px;
   padding: 0 10px;
