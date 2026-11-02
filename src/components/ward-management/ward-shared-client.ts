@@ -1,4 +1,5 @@
 import { anySignal, onDeviceClock, sentence, untilAborted, withoutChartContent } from "./ward-shared-client-helpers";
+import { CommandDisplayHold, requireCommandCompletion, validSharedSnapshot } from "./ward-shared-command-completion";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 import { commandSheetHandles, openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
 import type { WardCommandMetadata } from "./ward-command-metadata";
@@ -87,6 +88,7 @@ const FRESH_TOKEN = new Error("Ask again with a fresh token");
 export class SharedWorkspaceClient {
   private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   private pending: PendingCommand | null = null;
+  private readonly commandDisplay = new CommandDisplayHold();
   private accessTimer: ReturnType<typeof setTimeout> | undefined;
   private recoveryPending = false;
   private recoveryWrite(commandId: string) {
@@ -525,6 +527,7 @@ export class SharedWorkspaceClient {
   private publish(update: Partial<SharedView>) {
     if (this.disposed) return;
     if (update.snapshot === null) {
+      this.commandDisplay.clear();
       // A dropped desk has no inherited access deadline. Preserve an explicit replacement.
       update = { executiveSnapshot: null, accessUntil: undefined, recovery: undefined, ...update };
       this.archive = null;
@@ -584,20 +587,7 @@ export class SharedWorkspaceClient {
   private adopt(snapshot: SharedSnapshot) {
     // Audit PS-06: content equal to the payload already held passed the shared-state check then.
     const unchanged = payloadUnchanged(this.rawPayload, snapshot?.payload);
-    if (
-      !snapshot ||
-      snapshot.dataMode !== "prototype" ||
-      !Number.isSafeInteger(snapshot.revision) ||
-      snapshot.revision < 1 ||
-      !Number.isFinite(snapshot.now) ||
-      (snapshot.accessContext !== undefined &&
-        (typeof snapshot.accessContext !== "string" || !/^[a-f0-9]{64}$/.test(snapshot.accessContext))) ||
-      snapshot.payload?.version !== 1 ||
-      !(unchanged || isValidSharedState?.(snapshot.payload.state)) ||
-      !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||
-      !Number.isFinite(Date.parse(snapshot.payload.startedAt))
-    )
-      throw new Error("Incompatible workspace data");
+    if (!validSharedSnapshot(snapshot, isValidSharedState, unchanged)) throw new Error("Incompatible workspace data");
     if (Number.isFinite(snapshot.accessUntil)) {
       if (snapshot.accessUntil! <= Date.now()) throw new Error("Access verification expired");
       if (!Number.isFinite(this.view.accessUntil) || snapshot.accessUntil! < this.view.accessUntil!)
@@ -842,6 +832,7 @@ export class SharedWorkspaceClient {
       throw gate({ status: "choose-role", choices });
     }
     if (value === null) throw new Error("Workspace unavailable");
+    if (path === "/v1/workspace/commands" && body && response.ok) requireCommandCompletion(value, isValidSharedState);
     if (this.options.authenticatedActorId && (workspaceRead || value.snapshot || path === "/v1/workspace/commands")) {
       const rebound = await verifyResponseBinding(
         {
@@ -921,6 +912,7 @@ export class SharedWorkspaceClient {
         this.adopt(value.snapshot);
         this.fullReadAt = Date.now();
       }
+      this.commandDisplay.check(this.view.snapshot);
       // Gate nested dispatches from changed() before exposing a recovered board as ready.
       try {
         this.recoveryPending =
@@ -1066,6 +1058,7 @@ export class SharedWorkspaceClient {
           this.publish({ status: "unavailable", error: boardNotRefreshed(response.ok) });
           break;
         }
+        const unavailableDisplay = this.commandDisplay.note(value);
         let reconciliationFailed = false;
         if (value.snapshot && epoch === this.roleEpoch) {
           if (grantGeneration === this.grantGeneration) this.adopt(value.snapshot);
@@ -1194,9 +1187,17 @@ export class SharedWorkspaceClient {
         this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value, partly);
         // Audit E-05: the board's message line tells the person which ward was not asked, as the
         // local board's refusal note does, on whichever screen sent it.
+        if (unavailableDisplay) {
+          this.cancelQueued(saveProblem("queuedNotRefreshed"));
+          this.needsRefresh = true;
+        }
         this.publish({
-          status: "ready",
-          error: partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null,
+          status: unavailableDisplay ? "unavailable" : "ready",
+          error: unavailableDisplay
+            ? boardNotRefreshed(true)
+            : partly
+              ? `Sent to the suitable wards only. ${sentence(partly)}`
+              : null,
         });
       }
     } catch {
