@@ -2,7 +2,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { chromium, firefox, webkit } from "playwright";
-import { playwrightBrowserRevisionCheck } from "./check-playwright-browser-revision.mjs";
+import { isLaunchableFile, playwrightBrowserRevisionCheck } from "./check-playwright-browser-revision.mjs";
 import { knownFailurePatternFromEnvironment } from "./ward-flow/known-journey-failures.mjs";
 
 const BROWSER_TYPES = {
@@ -279,7 +279,7 @@ export function playwrightBrowserPreflight(args = [], env = process.env, resolve
   for (const family of families) {
     const resolved = resolvePlaywrightBrowserExecutable(family, env, resolveOptions);
     checked.push(resolved);
-    if (!resolved.path || !existsSync(resolved.path)) missing.push(resolved);
+    if (!resolved.path || !isLaunchableFile(resolved.path)) missing.push(resolved);
   }
   if (missing.length === 0) {
     return { ok: true, projects, checked };
