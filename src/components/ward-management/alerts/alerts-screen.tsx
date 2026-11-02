@@ -86,7 +86,7 @@ import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
 import { alertsHistory } from "./alerts-history";
-import { AlertsHero, alertsHeroTitle, type AlertsTab, type HeroPill } from "./alerts-hero";
+import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
@@ -891,7 +891,6 @@ function AlertsWorkspace() {
   const pastBroadcasts = (broadcastAlerts ?? []).filter(
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
-  const heroTitle = alertsHeroTitle(actCount, waitEntries.length, wardName);
 
   // ---- Queue views ----
   const rowFor = (entry: QueueEntry) =>
@@ -1240,7 +1239,7 @@ function AlertsWorkspace() {
       <main id="main-content" className={styles.main}>
         <AlertsHero
           isPhone={isPhone}
-          heroTitle={heroTitle}
+          wardName={wardName}
           openCount={activeEntries.length}
           runningCount={runningEntries.length}
           oldestRaised={oldestRaised}

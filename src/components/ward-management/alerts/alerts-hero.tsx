@@ -31,14 +31,14 @@ export type HeroPill = "act" | "wait" | "mine";
 
 // Alerts redesign (Q112, Josh 1 Nov 2026): the title is the Act now and Waiting figures, Home's
 // count included. "New to you" is gone: nothing on the page explained it.
-export function alertsHeroTitle(actCount: number, waitCount: number, wardName: string | undefined): string {
+function alertsHeroTitle(actCount: number, waitCount: number, wardName: string | undefined): string {
   if (actCount > 0 || waitCount > 0) return `${actCount} act now, ${waitCount} waiting`;
   return wardName ? `No alert for ${wardName}` : "No alert needs you";
 }
 
 export function AlertsHero({
   isPhone,
-  heroTitle,
+  wardName,
   openCount,
   runningCount,
   oldestRaised,
@@ -68,7 +68,8 @@ export function AlertsHero({
   todayBand,
 }: {
   isPhone: boolean;
-  heroTitle: string;
+  /** The desk's own ward, for "No alert for <ward>". */
+  wardName: string | undefined;
   /** Ops-3: the one active list the Now tab and Tasks badge count, running targets included. */
   openCount: number;
   runningCount: number;
@@ -110,6 +111,7 @@ export function AlertsHero({
   const wardDesk = deskRole === "ward";
   const canBroadcast = !officerDesk && !wardDesk;
   const showNext = !(wardDesk && nextQueue.length === 0);
+  const heroTitle = alertsHeroTitle(actCount, waitEntries.length, wardName);
   const runningText = runningCount > 0 ? ` · ${runningCount} running` : "";
   return (
     <>
