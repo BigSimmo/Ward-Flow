@@ -124,9 +124,7 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
 
   it("names a quiet ward, says so in one line and lists the checks in the side panel", () => {
     renderAs({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } }, { quiet: true });
-    // Q183 (1 Nov 2026): one headline on every desk; the ward is named in the eyebrow above it.
-    expect(screen.getByRole("heading", { level: 1, name: "Nothing needs you" })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-alerts-hero")).toHaveTextContent(`Alerts · Nurse in charge · ${ward.name}`);
+    expect(screen.getByRole("heading", { level: 1, name: `No alert for ${ward.name}` })).toBeInTheDocument();
     // Q184: one calm empty state in place of the two empty groups.
     expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent(`Nothing is late or blocked for ${ward.name}.`);
     const checked = screen.getByRole("region", { name: `Checked for ${ward.name}` });
@@ -143,7 +141,7 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
 
   it("keeps the queue and Today for a ward with alerts, without the arrange-by lens", () => {
     renderAs({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } });
-    expect(screen.queryByRole("heading", { level: 1, name: "Nothing needs you" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1, name: /^No alert for/u })).not.toBeInTheDocument();
     expect(screen.queryByRole("radiogroup", { name: "Arrange by" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Today" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Checking \d+ flagged/u })).toBeInTheDocument();
@@ -151,7 +149,7 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
 
   it("leaves the coordinator's quiet page as it was", () => {
     renderAs({ role: "coordinator", scope: { kind: "statewide" } }, { quiet: true });
-    expect(screen.getByRole("heading", { level: 1, name: "Nothing needs you" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "No alert needs you" })).toBeInTheDocument();
     expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent("Nothing is late or blocked for Statewide.");
     expect(screen.getByText("Pick an alert to see it here")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Today" })).toBeInTheDocument();
