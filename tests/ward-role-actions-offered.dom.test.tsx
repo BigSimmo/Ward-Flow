@@ -26,7 +26,6 @@ import { WardSharedAccess, type WardSharedConnection } from "@/components/ward-m
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider } from "@/components/wf";
-import { alertsBroadcastItem } from "./helpers/alerts-broadcast";
 
 afterEach(() => {
   cleanup();
@@ -51,7 +50,7 @@ describe("Broadcast alert", () => {
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    return alertsBroadcastItem();
+    return screen.getAllByRole("button", { name: /^Broadcast/ })[0]!;
   }
 
   it("is disabled for an ED desk", () => {
