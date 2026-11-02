@@ -399,7 +399,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     };
     returnSave.submit(
       () => {
-        const completion = dispatch(event);
+        const completion = dispatch({ ...event, type: "RECORD_REPATRIATION" });
         if (completion && "then" in completion)
           return completion.then((outcome) => {
             remember(outcome);

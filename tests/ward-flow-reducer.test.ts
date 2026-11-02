@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { bedStates } from "../src/components/ward-management/ward-bed-states";
+import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
 import { releaseBand } from "../src/components/ward-management/ward-bed-availability";
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -1397,11 +1399,8 @@ describe("scenario selection", () => {
 
 describe("arrival capacity floor", () => {
   it("refuses a pull once no bed is Ready, and still records an arrival into a ward with no empty bed", () => {
-    // Audit 2 E-08 (Josh, 20 Oct 2026): PULL_PATIENT needs a Ready bed, min(allocatable, empty).
-    // A ward can still CONFIRM_CAPACITY an allocatable count above what is physically empty, and a
-    // pull reserves against allocatable without emptying a bed, so two holds can be taken while one
-    // bed is physically empty. The second arrival is then recorded as an arrival capacity conflict
-    // ("Arrived — Bed Turnaround"), never refused, and a further pull is refused at 0 Ready.
+    // A01: one physical empty bed permits one new reservation, even after reconfirmation.
+    // An arrival remains a fact if a restored in-flight record finds no empty bed on file.
     const pullSteps = [
       { type: "REFER_TO_UNITS", role: "coordinator", unitIds: ["rph-adult-secure"] },
       { type: "ACCEPT_IN_PRINCIPLE", role: "ward", unitId: "rph-adult-secure" },
@@ -1466,27 +1465,42 @@ describe("arrival capacity floor", () => {
       value: 5,
       expectedRevision: unitOf(state).allocatable.revision ?? 0,
     });
-    // Two holds against the one physically empty bed: Ready is min(5, 1) then min(4, 1).
     state = walk(state, "WF-017", pullSteps);
-    const third = raiseVoluntarySecure(state);
-    state = walk(third.raised, third.id, pullSteps);
     expect(movement(state, "WF-017").stage).toBe("pulled");
-    expect(movement(state, third.id).stage).toBe("pulled");
+    const counts = bedStates(unitOf(state), state.admissions, state.bedReleases, state.leaveBeds);
+    expect(counts.ready).toBe(0);
+    expect(counts.ready + counts.pulled + counts.closed + counts.occupied).toBe(unitOf(state).beds);
+    const third = raiseVoluntarySecure(state);
+    const refusedPull = walk(third.raised, third.id, pullSteps);
+    expect(movement(refusedPull, third.id).stage).toBe("accepted_awaiting_bed");
+    expect(refusedPull.rejections.at(-1)?.attempted).toBe("PULL_PATIENT");
+    expect(refusedPull.rejections.at(-1)?.reason).toMatch(/no Ready bed remains/);
+    expect(refusedPull.admissions).toEqual(third.raised.admissions);
+    expect(refusedPull.units).toEqual(third.raised.units);
 
-    state = walk(state, "WF-017", arriveSteps); // empty 1 -> 0
-    expect(unitOf(state).empty.value).toBe(0);
-    const final = walk(state, third.id, arriveSteps);
-
-    expect(movement(final, third.id).stage).toBe("arrived");
-    expect(movement(final, third.id).blocker).toBe("Arrived — Bed Turnaround");
+    // Separate loaded-state boundary: preserve the genuine pull and its identity, while the
+    // recorded physical empty count has changed in transit. This is not another allocation.
+    const heldAdmissionId = movement(state, "WF-017").admissionId;
+    const noEmptyOnFile = {
+      ...state,
+      units: state.units.map((unit) =>
+        unit.id === "rph-adult-secure" ? { ...unit, empty: { ...unit.empty, value: 0 } } : unit,
+      ),
+    };
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify({ ...noEmptyOnFile, rejections: [] })))).toBe(true);
+    const final = walk(noEmptyOnFile, "WF-017", arriveSteps);
+    expect(movement(final, "WF-017").stage).toBe("arrived");
+    expect(movement(final, "WF-017").blocker).toBe("Arrived — Bed Turnaround");
     expect(final.rejections.some((rejection) => rejection.attempted === "PATIENT_ARRIVED")).toBe(false);
     expect(unitOf(final).empty.value).toBe(0);
-    const pulledAdm = final.admissions.find((a) => a.id === movement(final, third.id).admissionId);
+    expect(movement(final, "WF-017").admissionId).toBe(heldAdmissionId);
+    expect(final.admissions).toHaveLength(noEmptyOnFile.admissions.length);
+    const pulledAdm = final.admissions.find((a) => a.id === heldAdmissionId);
     expect(pulledAdm).toBeDefined();
     expect(pulledAdm?.state).toBe("occupied");
     expect(pulledAdm?.blockReason).toBe("Awaiting clean");
 
-    // With 0 Ready (allocatable 3, empty 0) a fourth pull is refused, naming both figures.
+    // With 0 Ready and empty 0 a further pull is refused, naming both figures.
     const fourth = raiseVoluntarySecure(final);
     const refused = walk(fourth.raised, fourth.id, pullSteps);
     expect(movement(refused, fourth.id).stage).not.toBe("pulled");

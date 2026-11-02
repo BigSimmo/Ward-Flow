@@ -124,63 +124,92 @@ function archiveStore() {
   const rows: Array<{ collection: string; id: string; closedAt: number; body: unknown; revision: number }> = [];
   const asked: Array<{ after: number; sent: number }> = [];
   const plan = planSave([], liveWorld, REVISION);
+  let transactionOpen = false;
+  let workspaceLocked = false;
+  const recordRows = () =>
+    plan.upserts.map(
+      (part: {
+        collection: string;
+        recordId: string;
+        kind: string;
+        ordinal: number;
+        revision: number;
+        body: unknown;
+      }) => ({
+        collection: part.collection,
+        record_id: part.recordId,
+        kind: part.kind,
+        ordinal: part.ordinal,
+        revision: part.revision,
+        fresh: true,
+        body: structuredClone(part.body),
+      }),
+    );
+  const query = async (sql: string, params: unknown[] = []) => {
+    expect(transactionOpen, "archive content is read inside its owned transaction").toBe(true);
+    if (/FROM ward_flow\.workspaces WHERE/.test(sql)) {
+      expect(sql).toMatch(/FOR SHARE$/);
+      workspaceLocked = true;
+      return {
+        rows: [
+          {
+            data_mode: "prototype",
+            revision: String(REVISION),
+            payload: structuredClone(plan.core),
+            cache_updated_at: new Date(at),
+          },
+        ],
+      };
+    }
+    expect(workspaceLocked, "archive and record rows follow the locked workspace read").toBe(true);
+    if (/FROM ward_flow\.workspace_records WHERE/.test(sql)) return { rows: recordRows() };
+    if (/FROM ward_flow\.archived_records/.test(sql)) {
+      expect(params[1]).toBe(generation);
+      const after = params[2] as number;
+      const fresh = rows
+        .filter((row) => row.revision > after)
+        .sort((x, y) => y.closedAt - x.closedAt || (x.id < y.id ? -1 : 1));
+      const sent = fresh.slice(0, params[3] as number);
+      asked.push({ after, sent: sent.length });
+      return {
+        rows: sent.map((row) => ({
+          collection: row.collection,
+          record_id: row.id,
+          closed_at: row.closedAt,
+          body: structuredClone(row.body),
+          archived_revision: String(row.revision),
+          archived: fresh.length,
+          through: String(Math.max(...fresh.map((one) => one.revision))),
+        })),
+      };
+    }
+    throw new Error(`Unexpected transaction query: ${sql.slice(0, 80)}`);
+  };
   const pool = {
-    async query(sql: string, params: unknown[] = []) {
+    async query(sql: string) {
       if (/max\(version\)/.test(sql)) return { rows: [{ version: LATEST_MIGRATION }] };
-      if (/FROM ward_flow\.archived_records/.test(sql)) {
-        expect(params[1]).toBe(generation);
-        const after = params[2] as number;
-        const fresh = rows
-          .filter((row) => row.revision > after)
-          .sort((x, y) => y.closedAt - x.closedAt || (x.id < y.id ? -1 : 1));
-        const sent = fresh.slice(0, params[3] as number);
-        asked.push({ after, sent: sent.length });
-        return {
-          rows: sent.map((row) => ({
-            collection: row.collection,
-            record_id: row.id,
-            closed_at: row.closedAt,
-            body: structuredClone(row.body),
-            archived_revision: String(row.revision),
-            archived: fresh.length,
-            through: String(Math.max(...fresh.map((one) => one.revision))),
-          })),
-        };
-      }
-      if (/FROM ward_flow\.workspaces w/.test(sql))
-        return {
-          rows: [
-            {
-              data_mode: "prototype",
-              revision: String(REVISION),
-              payload: structuredClone(plan.core),
-              cache_revision: String(REVISION),
-              cache_updated_at: new Date(at),
-              records: plan.upserts.map(
-                (part: {
-                  collection: string;
-                  recordId: string;
-                  kind: string;
-                  ordinal: number;
-                  revision: number;
-                  body: unknown;
-                }) => ({
-                  collection: part.collection,
-                  record_id: part.recordId,
-                  kind: part.kind,
-                  ordinal: part.ordinal,
-                  revision: part.revision,
-                  fresh: true,
-                  body: structuredClone(part.body),
-                }),
-              ),
-            },
-          ],
-        };
-      throw new Error(`Unexpected query: ${sql.slice(0, 80)}`);
+      throw new Error(`Archive SQL must use its owned transaction connection: ${sql.slice(0, 80)}`);
     },
-    connect() {
-      throw new Error("The archive read must not open a transaction");
+    async connect() {
+      return {
+        async query(sql: string, params: unknown[] = []) {
+          if (sql === "BEGIN") {
+            expect(transactionOpen).toBe(false);
+            transactionOpen = true;
+            workspaceLocked = false;
+            return { rows: [] };
+          }
+          if (sql === "COMMIT" || sql === "ROLLBACK") {
+            expect(transactionOpen).toBe(true);
+            transactionOpen = false;
+            return { rows: [] };
+          }
+          return query(sql, params);
+        },
+        release() {
+          expect(transactionOpen, "release follows commit or rollback").toBe(false);
+        },
+      };
     },
   };
   const store = createWorkspaceStore(pool, {

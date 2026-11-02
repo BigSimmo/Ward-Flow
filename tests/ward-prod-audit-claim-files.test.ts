@@ -1,9 +1,29 @@
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { withClaimFiles } from "../scripts/pre-commit-checks.mjs";
+
+// Inject only the native directory-read failure for one synthetic path. chmod(000)
+// does not establish unreadability on Windows, and privileged hosts must exercise
+// the same fail-closed branch rather than silently returning from the test.
+const claimReadFault = vi.hoisted(() => ({ directory: "", hits: 0 }));
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  return {
+    ...actual,
+    readdirSync: new Proxy(actual.readdirSync, {
+      apply(target, receiver, args) {
+        if (claimReadFault.directory && String(args[0]) === claimReadFault.directory) {
+          claimReadFault.hits++;
+          throw Object.assign(new Error("Synthetic directory read denied"), { code: "EACCES" });
+        }
+        return Reflect.apply(target, receiver, args);
+      },
+    }),
+  };
+});
 
 // One file per claim beside the shared log, because simultaneous appends to the one log on the
 // sync mount overwrite each other.
@@ -57,16 +77,18 @@ describe("withClaimFiles", () => {
   });
 
   it("fails closed when the claims folder exists but cannot be read", () => {
-    if (process.getuid?.() === 0) return; // root can read any folder
     dir = mkdtempSync(path.join(tmpdir(), "ward-claim-files-"));
-    mkdirSync(path.join(dir, "claims"));
-    chmodSync(path.join(dir, "claims"), 0o000);
+    const claims = path.join(dir, "claims");
+    mkdirSync(claims);
+    claimReadFault.directory = claims;
+    claimReadFault.hits = 0;
     try {
       expect(() => withClaimFiles(path.join(dir, "sign-out.md"), "## Active sign-outs\n")).toThrow(
         /claims folder unreadable/,
       );
+      expect(claimReadFault.hits).toBe(1);
     } finally {
-      chmodSync(path.join(dir, "claims"), 0o700);
+      claimReadFault.directory = "";
     }
   });
 
