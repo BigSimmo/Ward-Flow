@@ -42,13 +42,13 @@ function Harness({
   return <WardFlowOverride value={next}>{children}</WardFlowOverride>;
 }
 
-function renderCard(options: { sharedOn?: boolean; demoOff?: boolean } = {}) {
+function renderCard(options: { sharedOn?: boolean; demoOff?: boolean; showMeOn?: boolean } = {}) {
   const seen = vi.fn();
   const onShowMe = vi.fn();
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <Harness seen={seen} {...options}>
-        <WardHelpPracticeCard role="coordinator" onShowMe={onShowMe} />
+        <WardHelpPracticeCard role="coordinator" onShowMe={onShowMe} showMeOn={options.showMeOn ?? true} />
       </Harness>
     </WardFlowProvider>,
   );
@@ -75,6 +75,12 @@ describe("practice inside Help", () => {
     expect(onShowMe).toHaveBeenCalledWith("new-referral");
     fireEvent.click(screen.getByTestId("ward-help-practice-stop"));
     expect(screen.getByTestId("ward-help-practice-start")).toBeInTheDocument();
+  });
+
+  it("offers no Show me when the Show me switch is off (PR #1299 review)", () => {
+    renderCard({ showMeOn: false });
+    fireEvent.click(screen.getByTestId("ward-help-practice-start"));
+    expect(screen.queryByTestId("ward-help-practice-show-me")).toBeNull();
   });
 
   it("asks before Reset practice, then reloads the current scenario and starts afresh", () => {

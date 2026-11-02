@@ -41,7 +41,16 @@ export const PRACTICE_SHOW_ME: Readonly<Record<PracticeStepId, string | undefine
  * that is next and Reset practice, which reloads the current demo scenario through `SET_SCENARIO`
  * after a confirm, then starts a fresh practice. Off in the shared workspace, as in Tools.
  */
-export function WardHelpPracticeCard({ role, onShowMe }: { role: WardTourRole; onShowMe: (howToId: string) => void }) {
+export function WardHelpPracticeCard({
+  role,
+  onShowMe,
+  showMeOn = true,
+}: {
+  role: WardTourRole;
+  onShowMe: (howToId: string) => void;
+  /** The help-ask switch: with Show me off, the host plays nothing, so no Show me is offered. */
+  showMeOn?: boolean;
+}) {
   const { movements, scenario, worldGeneration, shared } = useWardFlowSelect(
     "movements",
     "scenario",
@@ -110,7 +119,8 @@ export function WardHelpPracticeCard({ role, onShowMe }: { role: WardTourRole; o
 
   const nextStep = progress?.next ? PRACTICE_STEPS.find((step) => step.id === progress.next) : undefined;
   const nextHowTo = nextStep ? HOW_TOS.find((each) => each.id === PRACTICE_SHOW_ME[nextStep.id]) : undefined;
-  const nextShowMe = nextHowTo && howToFor(nextHowTo, role) && canShowMe(nextHowTo, phone) ? nextHowTo.id : undefined;
+  const nextShowMe =
+    showMeOn && nextHowTo && howToFor(nextHowTo, role) && canShowMe(nextHowTo, phone) ? nextHowTo.id : undefined;
 
   return (
     <section className={`${s.card} ${s.practice}`} aria-labelledby={titleId} data-testid="ward-help-practice">

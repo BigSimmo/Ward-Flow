@@ -136,6 +136,18 @@ describe("Help suggestions as you type", () => {
     expect(list()).toBeNull();
   });
 
+  it("reads a walk round it cannot play as a search, since How to never lists walk rounds (PR #1299 review)", () => {
+    desk.role = "coordinator";
+    const { field, onShowMe, onView } = sheet({ showMeOn: false });
+    type(field, "show me around dis");
+    const index = options().findIndex((text) => /^Show me around Discharges/u.test(text));
+    expect(index).toBeGreaterThanOrEqual(0);
+    fireEvent.click(screen.getAllByRole("option")[index]);
+    expect(onShowMe).not.toHaveBeenCalled();
+    expect(onView).not.toHaveBeenCalledWith("tasks");
+    expect((field as HTMLInputElement).value).toMatch(/^Show me around Discharges/u);
+  });
+
   it("reads another desk's job as a search, since it is not this desk's to follow", () => {
     const { field, onView } = sheet();
     type(field, "pul");

@@ -356,7 +356,9 @@ function WardHelpSheetView({
       onShowMe(id);
       return;
     }
-    if (id && howTo && (suggestion.kind === "walk" || howToLogins(howTo).includes(role))) {
+    // A walk round that cannot play here falls through to its answer in search (How to never
+    // lists walk rounds, so it could not show it there).
+    if (id && howTo && suggestion.kind !== "walk" && howToLogins(howTo).includes(role)) {
       setFocused(false);
       setQuery("");
       setTask(id);

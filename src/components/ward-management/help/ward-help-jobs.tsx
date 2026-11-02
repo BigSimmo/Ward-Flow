@@ -303,8 +303,18 @@ function HowItWorks({ actions }: { actions: readonly string[] }) {
 }
 
 /** Practice needs the live demo record, so it shows only where the Ward Flow data is mounted. */
-function PracticeWhenLive({ role, onShowMe }: { role: WardTourRole; onShowMe: (id: string) => void }) {
-  return useOptionalWardFlowSelect("scenario") ? <WardHelpPracticeCard role={role} onShowMe={onShowMe} /> : null;
+function PracticeWhenLive({
+  role,
+  onShowMe,
+  showMeOn,
+}: {
+  role: WardTourRole;
+  onShowMe: (id: string) => void;
+  showMeOn: boolean;
+}) {
+  return useOptionalWardFlowSelect("scenario") ? (
+    <WardHelpPracticeCard role={role} onShowMe={onShowMe} showMeOn={showMeOn} />
+  ) : null;
 }
 
 /** The tour as one row: where this desk stopped, and Start or Resume. */
@@ -541,7 +551,7 @@ export function HelpTasks({
       ) : null}
 
       {/* The access admin records no ward work, so there is nothing to practise. */}
-      {role === "admin" ? null : <PracticeWhenLive role={role} onShowMe={onShowMe} />}
+      {role === "admin" ? null : <PracticeWhenLive role={role} onShowMe={onShowMe} showMeOn={showMeOn} />}
 
       <section className={s.section} aria-labelledby="ward-help-jobs" data-testid="ward-help-tasks">
         <h3 id="ward-help-jobs" className={s.sectionHead}>
