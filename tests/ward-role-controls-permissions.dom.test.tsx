@@ -22,7 +22,6 @@ import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-m
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
-import { openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 afterEach(() => {
   cleanup();
@@ -50,7 +49,7 @@ describe("broadcast actions retain the actual permitted desk identity", () => {
           <AlertsScreen />
         </WardFlowProvider>,
       );
-      openAlertsBroadcast();
+      fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
       // Alerts redesign (1 Nov 2026): one unit on the desk's own site, so a site bed manager may send it.
       fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
       fireEvent.click(screen.getByRole("radio", { name: "By group" }));

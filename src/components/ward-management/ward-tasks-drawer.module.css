@@ -116,8 +116,10 @@
 
 .closeButton {
   display: inline-flex;
-  width: var(--wf-h-sm);
-  height: var(--wf-h-sm);
+  /* Q225 (design review, 2 Nov 2026): the house 40px minimum (it was 32px), and the 44px touch
+     size where the token is larger. */
+  width: max(40px, var(--wf-h-sm));
+  height: max(40px, var(--wf-h-sm));
   flex: none;
   align-items: center;
   justify-content: center;

@@ -3617,18 +3617,19 @@
     letter-spacing: -0.01em;
   }
 
-  /* WCAG 2.5.8 (overall review, 20 Oct 2026): the button's own box is at least 24px tall, not the
-   * 18px line. The 3px it gains above and below come back from its margins, so the line does not
+  /* WCAG 2.5.8 (overall review, 20 Oct 2026): the button's own box is taller than the 18px line.
+   * Q225 (design review, 2 Nov 2026): the house minimum is a 40px control, so the box is 40px (it
+   * was 24px). The 11px it gains above and below come back from its margins, so the line does not
    * move; it stays inline-flex (above) so the words sit centred in the taller box. */
   .scopeBadgeBtn {
-    min-height: 24px;
-    margin-block: calc(-0.75rem - 3px);
+    min-height: 40px;
+    margin-block: calc(-0.75rem - 11px);
     line-height: var(--wf-lh-12);
   }
 
-  /* The 24px box keeps a 48px tall hit area: 12px above and below. */
+  /* The 40px box keeps a 48px tall hit area: 4px above and below. */
   .scopeBadgeBtn::before {
-    inset: -12px -8px;
+    inset: -4px -8px;
   }
 
   /* Device audit (11 Oct 2026): the whole title block — the page title and the service line under

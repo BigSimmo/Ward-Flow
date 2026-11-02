@@ -219,6 +219,20 @@
   display: inline;
 }
 
+/* Q229 (design review, 2 Nov 2026): at 1280 the fourth figure, "Under a form", dropped to a line of
+ * its own. On desktop the four figures keep one row, with slightly tighter gutters than the Waiting
+ * page's header figures they borrow. Tablet and phone keep their own layouts. */
+@media (min-width: 64.0625rem) {
+  .overview .heroStats {
+    flex-wrap: nowrap;
+  }
+
+  .overview .heroStats > * {
+    flex: 0 0 auto;
+    padding-inline: 12px;
+  }
+}
+
 @media (max-width: 48rem) {
   .titleName {
     display: none;

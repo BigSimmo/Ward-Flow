@@ -50,8 +50,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--wf-h-md);
-  height: var(--wf-h-md);
+  /* Q225 (design review, 2 Nov 2026): at least the house 40px control (it was 36px), and still the
+     44px touch size where the token is larger. */
+  width: max(40px, var(--wf-h-md));
+  height: max(40px, var(--wf-h-md));
   border: 1px solid transparent;
   border-radius: var(--wf-r-md);
   background: transparent;

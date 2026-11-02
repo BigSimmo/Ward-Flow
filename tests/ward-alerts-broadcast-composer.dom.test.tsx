@@ -13,7 +13,6 @@ import {
 } from "@/components/ward-management/alerts/broadcast-audience";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { openAlertsBroadcast } from "./helpers/alerts-broadcast";
 
 const open = () => {
   render(
@@ -21,7 +20,7 @@ const open = () => {
       <AlertsScreen />
     </WardFlowProvider>,
   );
-  openAlertsBroadcast();
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
 };
 const radio = (group: string, name: string) =>
   within(screen.getByRole("radiogroup", { name: group })).getByRole("radio", { name });
@@ -117,7 +116,7 @@ describe("broadcast composer", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Current broadcast")).toHaveTextContent("Chosen units");
 
-    openAlertsBroadcast();
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
     expect(screen.getByText(/A bed call to Chosen units is already live/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Extend that one" })).toBeInTheDocument();
   });

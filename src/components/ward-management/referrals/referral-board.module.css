@@ -621,6 +621,22 @@
   border-radius: var(--wf-r-xs);
 }
 
+/* Q225 (design review, 2 Nov 2026): the name button is the 18px line on a laptop or desktop, under
+   the house 40px minimum. Padding takes its box to 40px and matching negative margins give the
+   space back, so the row and the line under the name do not move; it sits above that line so the
+   lower part of its box still takes the press. The phone keeps its own 48px rule below. */
+@media (min-width: 48.0625rem) {
+  .rowSelect {
+    position: relative;
+    z-index: 1;
+    padding-block: 11px;
+    margin-block: -11px;
+  }
+  .rowSelect:focus-visible {
+    outline-offset: -2px;
+  }
+}
+
 .sub {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
