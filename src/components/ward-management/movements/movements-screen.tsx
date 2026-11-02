@@ -54,7 +54,6 @@ import {
   durMinutes,
   phoneRows,
   useIsPhone,
-  FormalName,
 } from "@/components/wf";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { MovementDrawer } from "./movement-drawer";
@@ -766,9 +765,7 @@ export function MovementsScreen() {
                   title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}
                 >
                   <span className={flow.trName}>
-                    <span className={flow.trNameText}>
-                      <FormalName name={patientInfo.formalName} />
-                    </span>
+                    <span className={flow.trNameText}>{patientInfo.formalName}</span>
                     {leg.movement.transport?.escortRequired ? (
                       <ShieldCheck size={14} className={flow.lock} aria-label="Escort required" />
                     ) : null}
