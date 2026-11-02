@@ -609,7 +609,14 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 <p className={pageStyles.emptyState}>Discharge records are unavailable for this role.</p>
               ) : shown === 0 ? (
                 <p className={pageStyles.emptyState}>
-                  No {population === "releases" ? "releases" : "records"} match these filters.
+                  {/* Q277 (pre-launch review E5, 2 Nov 2026): with every filter on All, nothing is
+                      filtered out, so the line says plainly what is there. Open discharges due later
+                      than the worklist's window can leave it empty while some are still open. */}
+                  {population === "releases" && !filtersActive
+                    ? openReleases.length === 0
+                      ? "No discharges open."
+                      : "No discharges to work now."
+                    : `No ${population === "releases" ? "releases" : "records"} match these filters.`}
                 </p>
               ) : (
                 <table className={pageStyles.workTable}>

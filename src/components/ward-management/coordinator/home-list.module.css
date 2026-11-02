@@ -40,7 +40,7 @@
 /* A1K-01: iPad Safari sends a Mac user agent, so the server draws the desktop tree. On tablet
    portrait the right column only appears once the page's code says otherwise, which made Home
    jump. "desktop" at this width exists only before hydration, so hide the column until then. */
-@media (min-width: 48.0625rem) and (max-width: 62.5rem) {
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
   .grid[data-layout="desktop"] > .rightCol {
     display: none;
   }
@@ -469,7 +469,7 @@
 }
 
 /* Phone: Registers sits beside the list switch, so it keeps the touch size. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .showMore {
     min-height: var(--wf-touch);
   }
@@ -483,7 +483,7 @@
  * while My list scrolls, the same strip Everyone waiting keeps with its own filters (`.queueTools`
  * in home.module.css). Everyone waiting is left alone so the phone never stacks two strips. The
  * canvas band runs to the screen edges, so rows slide under a solid strip, not through it. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .workCol:has([data-testid="home-my-list"]) > .switchRow {
     position: sticky;
     top: var(--wf-header-height, 3.5rem);
@@ -532,7 +532,7 @@
   cursor: pointer;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .edWrap {
     margin-bottom: -18px;
   }

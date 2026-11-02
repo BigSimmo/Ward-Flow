@@ -10,7 +10,7 @@
  *   corner, a soft translucent face), in place of tall full-width hero buttons. `.heroPills` lays two
  *   or three of them side by side.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .chipRow.chipRow {
     display: flex;
     flex-wrap: nowrap;

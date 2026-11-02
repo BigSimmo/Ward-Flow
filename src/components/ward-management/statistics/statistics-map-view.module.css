@@ -233,7 +233,7 @@ a.rankRow:focus-visible {
   background: var(--wf-hover);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .key {
     margin-left: 0;
     flex-basis: 100%;

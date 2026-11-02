@@ -29,7 +29,7 @@
  * Phone (C1, 19 Oct 2026): in the stacked phone hero an empty slot left a 48px gap above the main
  * button. It leaves the flow there but stays in the page, so focus can still return to it.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .slot[data-empty="true"] {
     position: absolute;
     inline-size: 1px;

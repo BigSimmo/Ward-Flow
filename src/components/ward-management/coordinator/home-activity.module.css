@@ -336,7 +336,7 @@
 .tallyDepartments a:hover {
   text-decoration: underline;
 }
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .tallyDepartments tbody th,
   .tallyDepartments tbody td {
     height: 48px;
@@ -482,7 +482,7 @@ a.eventText:hover {
 }
 
 /* Phone: compact rows that keep 48px targets without growing taller. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .textButton {
     margin: -14px -8px;
     padding: 14px 8px;
@@ -633,7 +633,7 @@ a.eventText:hover {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
 }
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .panelTabs.panelTabs [role="tab"] {
     position: relative;
     height: 32px;

@@ -2601,7 +2601,7 @@
   padding: 0.75rem 0.875rem;
 }
 
-@media (min-width: 48.0625rem) and (max-width: 63.999rem) {
+@media (min-width: 46.5rem) and (max-width: 63.999rem) {
   .screen[data-referral-view="register"] .registerQueue {
     grid-auto-rows: max-content;
     max-height: 34rem;
@@ -2715,7 +2715,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* v10 phone: a 16px side gutter, as every phone page. */
   .screen[data-referral-view] .main {
     padding: 0.75rem 1rem 2rem;
@@ -3978,7 +3978,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .screen[data-referral-view="register"][data-ward-design="v6"] .main {
     padding: var(--wf-s-3);
   }
@@ -4580,7 +4580,7 @@
 /* Phone (8 Oct 2026): the referral board fits 390px. The two hero tracks stack, one per row, and
    each scrolls sideways on its own; the cohort chips are one sideways row; a decided row ends in an
    ellipsis instead of clipping the ward name mid-word. Desktop is untouched. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Live sits beside the title rather than on a row of its own. The shared Hero's first row is
      title, figures, aside; a grid puts the aside in the title row's right column. */
   .screen[data-ward-design="v6"] .v6HeroWrap > section > div:first-child {
@@ -4831,7 +4831,7 @@
 }
 
 /* Phone: 16px so iOS Safari does not zoom the page when the decline reason opens. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .v10AskActions .select {
     font-size: max(1rem, 16px);
   }
@@ -4955,7 +4955,7 @@
   overflow: visible;
 }
 
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .registerDetailBody .v10AskActions {
     position: sticky;
     bottom: 0;
@@ -5023,7 +5023,7 @@
 /* Placement decisions (Accept, Decline) on the not-a-bed question keep a full 48px button on phones
    and touch screens, as the kit's own `.b[data-placement-action]` does. Before this, a narrow window
    with a mouse (641-768px) took the compact 36px face (design audit, Josh 1 Nov 2026). */
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .matchPanel [data-placement-action],
   .screen[data-ward-design="v6"] .matchPanel [data-placement-action] {
     min-height: max(3rem, var(--ward-tap, var(--spacing-tap, 3rem)));

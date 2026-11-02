@@ -12,7 +12,7 @@
   list-style: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .tableScroll {
     display: none;
   }
@@ -23,7 +23,7 @@
 }
 
 /* v10 phone: the rows sit in one card on the page canvas. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .cards {
     overflow: hidden;
     border: 1px solid var(--wf-line);

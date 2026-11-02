@@ -2187,7 +2187,7 @@
 }
 
 /* Give the contained brand a full row in the tablet navigation stream. */
-@media (min-width: 769px) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 1000px) {
   .rail .brand {
     flex: 0 0 100%;
     order: 0;
@@ -2197,7 +2197,7 @@
 
 /* The phone starts with the task: one row with the brand and Menu. Shift context, Bed alerts and
  * the full navigation live in the Menu sheet (phone board). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .rail,
   .rail[data-rail="closed"] {
     display: flex;
@@ -2290,7 +2290,7 @@
 }
 
 /* Patient Now keeps tablet attention on the patient; shell context remains in Menu. */
-@media (min-width: 769px) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 1000px) {
   :global(body:has([data-ward-rebuilt-screen="patient-now"])) .rail {
     flex-direction: column;
     align-items: stretch;
@@ -2366,7 +2366,7 @@
   }
 }
 
-@media (min-width: 48.0625rem) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 1000px) {
   .rail,
   .rail[data-rail="closed"] {
     display: none;

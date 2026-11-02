@@ -322,7 +322,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       // The safe-area pins on the full-page intake form's submit bar went with that form (retired
       // 8 Oct 2026); the referral slide-out's own suite owns its sticky footer.
       const railCss = readFileSync("src/components/ward-management/shell/ward-rail.module.css", "utf8");
-      expect(railCss).toMatch(/@media\s*\(\s*max-width:\s*48rem\s*\)\s*\{/);
+      expect(railCss).toMatch(/@media\s*\(\s*max-width:\s*46\.4375rem\s*\)\s*\{/);
     });
   });
 });

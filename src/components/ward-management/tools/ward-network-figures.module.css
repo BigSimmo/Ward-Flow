@@ -122,7 +122,7 @@
 
 /* Layout sweep SHELL-18 (25 Oct 2026): on a phone the four filters do not fit one row, and the
  * wrapped track left "Waits" alone on a second line. Two even rows instead. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .filters {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
