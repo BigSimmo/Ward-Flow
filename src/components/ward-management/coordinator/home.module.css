@@ -2126,19 +2126,18 @@ button.registerRow:hover {
 }
 
 @media (max-width: 48rem) {
-  .screen .queueSeg {
-    --wf-phone-seg-band: 4px;
-  }
+  /* Q225 (design review, 2 Nov 2026): the list tabs take the kit's 40px phone option on its 48px
+     track (they were 32px on a 40px track), so the house 40px minimum holds here too. */
   .screen .queueSeg > * {
     position: relative;
-    height: 32px;
+    height: var(--wf-phone-seg-item-h);
     padding-inline: 8px;
     font-weight: 600;
   }
   .screen .queueMore {
     height: 48px;
   }
-  /* The Form due chip stands as tall as the tab track beside it, keeping a 48px hit area. */
+  /* The Form due chip is 40px, as tall as the tab options beside it, keeping a 48px hit area. */
   .screen .queueTools > button {
     position: relative;
     height: 40px;

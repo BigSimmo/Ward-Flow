@@ -229,8 +229,10 @@
 
 .drawerCloseBtn {
   display: inline-flex;
-  width: var(--wf-h-sm);
-  height: var(--wf-h-sm);
+  /* Q225 (design review, 2 Nov 2026): the house 40px minimum (it was 32px), and the 44px touch
+     size where the token is larger. */
+  width: max(40px, var(--wf-h-sm));
+  height: max(40px, var(--wf-h-sm));
   flex: none;
   align-items: center;
   justify-content: center;
@@ -2673,7 +2675,7 @@ details.refCard > summary {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    min-height: 32px;
+    min-height: 40px;
     padding: 0 10px;
     border: 1px solid var(--wf-on-hero-line);
     border-radius: var(--wf-r-ctl);
@@ -2684,7 +2686,7 @@ details.refCard > summary {
     cursor: pointer;
   }
 
-  /* 44px hit areas around the 32px chips. */
+  /* Hit areas around the 40px chips (Q225, 2 Nov 2026: the house minimum; they were 32px). */
   .phHeroChip,
   .phHeroClose {
     position: relative;
@@ -2697,18 +2699,18 @@ details.refCard > summary {
     content: "";
   }
 
-  /* Phone taps (13 Oct 2026): 48px tall; Close reaches 44px wide, and the two meet in the 8px gap
+  /* Phone taps (13 Oct 2026): 48px tall; Close reaches 52px wide, and the two meet in the 8px gap
      between them instead of overlapping. */
   .phHeroChip::after {
-    inset: -8px -4px;
+    inset: -4px;
   }
 
   .phHeroClose::after {
-    inset: -8px -8px -8px -4px;
+    inset: -4px -8px -4px -4px;
   }
 
   .phHeroClose {
-    width: 32px;
+    width: 40px;
     padding: 0;
   }
 

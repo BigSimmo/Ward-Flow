@@ -2753,6 +2753,8 @@
     flex-wrap: wrap;
     align-content: center;
     align-items: center;
+    /* Q233 (2 Nov 2026): labels sit flush left under their figure, as in the master. */
+    justify-content: flex-start;
     column-gap: 4px;
     white-space: normal;
     font-size: var(--wf-fs-12);

@@ -631,6 +631,23 @@ div.workspace > .side {
   margin-top: var(--wf-s-2);
 }
 
+/* Q228 (design review, 2 Nov 2026): at tablet width the five team tabs take the whole row and Find,
+ * Record contact and More drop to their own line after them, so the tabs never run into the find
+ * box. The find box then takes the free width of that line. */
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .tabRow > [role="tablist"] {
+    flex: 1 0 100%;
+  }
+
+  .tabRow > [role="toolbar"] {
+    flex: 1 1 100%;
+  }
+
+  .tabRow > [role="toolbar"] > :has(> input[type="search"]) {
+    flex: 1 1 auto;
+  }
+}
+
 div.sections {
   display: flex;
   flex-direction: column;
