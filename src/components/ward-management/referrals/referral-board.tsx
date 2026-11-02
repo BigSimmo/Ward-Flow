@@ -972,8 +972,8 @@ export function ReferralBoard({
             role="region"
             aria-label="Referral queues"
             tabIndex={0}
-            // Phone: the open detail covers the queue, so the queue behind it leaves the Tab order.
-            inert={phoneLayout && selectedReferral ? true : undefined}
+            // Below 64rem the open detail covers the queue, so the queue behind it leaves the Tab order.
+            inert={!splitDetailLayout && selectedReferral ? true : undefined}
           >
             <Card className={cx(styles.v6QueueCard, a.queueCard, redesign.wrapRows)}>
               {/* Phone (Josh, 12 Oct 2026): Queue and History pin under the phone header, as Home's
