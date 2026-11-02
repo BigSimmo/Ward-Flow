@@ -8,11 +8,11 @@ import { useWardCommandCompletion, wardCommandFailure, wardCommandKey } from "..
 import type { useEdRowPanels } from "./use-ed-screen-state";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
-type Kind = "urgency" | "legalStatus" | "receipt";
+type Kind = "urgency" | "legalStatus" | "receipt" | "community";
 type Panels = ReturnType<typeof useEdRowPanels>;
 type Correction = Extract<
   WardFlowEvent,
-  { type: "CHANGE_URGENCY" | "CHANGE_LEGAL_STATUS" | "CORRECT_LEGAL_FORM_RECEIPT" }
+  { type: "CHANGE_URGENCY" | "CHANGE_LEGAL_STATUS" | "CORRECT_LEGAL_FORM_RECEIPT" | "REFER_TO_COMMUNITY_TEAM" }
 >;
 type Draft = { movementId: string | undefined; values: readonly (string | number | undefined)[] };
 type Attempt = {
@@ -21,8 +21,14 @@ type Attempt = {
   world: number | undefined;
   draft: Draft;
   completion?: WardCommandOutcome;
+  lifetime: number;
 };
 function readDraft(kind: Kind, panels: Panels): Draft {
+  if (kind === "community")
+    return {
+      movementId: panels.communityReferralOpenFor,
+      values: [panels.communityTeamChoice, panels.communityPurposeChoice],
+    };
   if (kind === "urgency")
     return {
       movementId: panels.urgencyChangeOpenFor,
@@ -51,6 +57,7 @@ export function useEdRecordSave({
   const [messageFor, setMessageFor] = useState<{ kind: Kind; movementId: string }>();
   const current = useRef<Attempt | undefined>(undefined);
   const latestPanels = useRef(panels);
+  const lifetime = useRef(0);
   const latestWorld = useRef(world);
   useEffect(
     () => () => {
@@ -59,6 +66,7 @@ export function useEdRecordSave({
     [],
   );
   useLayoutEffect(() => {
+    if (latestPanels.current.communityReferralOpenFor !== panels.communityReferralOpenFor) lifetime.current += 1;
     latestPanels.current = panels;
     latestWorld.current = world;
   }, [panels, world]);
@@ -79,12 +87,17 @@ export function useEdRecordSave({
       const latest = latestPanels.current;
       const draft = readDraft(saved.kind, latest);
       if (
+        (saved.kind !== "community" || saved.lifetime === lifetime.current) &&
         draft.movementId === saved.event.movementId &&
         draft.values.every((value, index) => value === saved.draft.values[index])
       ) {
         if (saved.kind === "urgency") latest.setUrgencyChangeOpenFor(undefined);
         else if (saved.kind === "legalStatus") latest.setLegalStatusChangeOpenFor(undefined);
-        else {
+        else if (saved.kind === "community") {
+          latest.setCommunityReferralOpenFor(undefined);
+          latest.setCommunityTeamChoice("");
+          latest.setCommunityPurposeChoice("");
+        } else {
           latest.setReceiptCorrectionOpenFor(undefined);
           latest.setReceiptCorrectionReasonDraft(undefined);
         }
@@ -116,6 +129,7 @@ export function useEdRecordSave({
           event,
           world,
           draft: readDraft(kind, panels),
+          lifetime: lifetime.current,
         };
         current.current = started;
         setAttempt(started);
@@ -123,7 +137,10 @@ export function useEdRecordSave({
         setMessageFor({ kind, movementId: event.movementId });
         setMessage(undefined);
         const outcome = dispatch(event);
-        if (!outcome || !("then" in outcome)) return outcome;
+        if (!outcome || !("then" in outcome)) {
+          if (outcome?.isCurrent && !outcome.isCurrent()) finish();
+          return outcome;
+        }
         return outcome.then((answer) => {
           if (current.current === started && answer.isCurrent && !answer.isCurrent()) finish();
           return answer;
@@ -201,6 +218,17 @@ export function useEdRecordSave({
       reason: panels.receiptCorrectionReasonDraft,
     });
   }
+  function submitCommunityReferral(movementId: string) {
+    if (!panels.communityTeamChoice || !panels.communityPurposeChoice) return;
+    save("community", {
+      type: "REFER_TO_COMMUNITY_TEAM",
+      role: "ed",
+      now,
+      movementId,
+      team: panels.communityTeamChoice,
+      purpose: panels.communityPurposeChoice,
+    });
+  }
   function recordSaveState(kind: Kind, movementId: string) {
     return {
       disabled,
@@ -214,5 +242,11 @@ export function useEdRecordSave({
           : undefined,
     };
   }
-  return { submitUrgencyChange, submitLegalStatusChange, submitReceiptCorrection, recordSaveState };
+  return {
+    submitUrgencyChange,
+    submitLegalStatusChange,
+    submitReceiptCorrection,
+    submitCommunityReferral,
+    recordSaveState,
+  };
 }

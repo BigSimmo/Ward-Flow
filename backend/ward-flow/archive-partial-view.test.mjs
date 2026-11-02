@@ -128,44 +128,65 @@ function archived(world, { movementIds = [], referralIds = [] }) {
 
 function store(live, records, clock = at) {
   const plan = planSave([], live, REVISION);
+  let transactionOpen = false;
+  const recordRows = () =>
+    plan.upserts.map((part) => ({
+      collection: part.collection,
+      record_id: part.recordId,
+      kind: part.kind,
+      ordinal: part.ordinal,
+      revision: part.revision,
+      fresh: true,
+      body: structuredClone(part.body),
+    }));
   const pool = {
     async query(sql) {
       if (/max\(version\)/.test(sql)) return { rows: [{ version: LATEST_MIGRATION }] };
-      if (/FROM ward_flow\.archived_records/.test(sql))
-        return {
-          rows: records.map((record) => ({
-            collection: record.collection,
-            record_id: record.id,
-            closed_at: record.closedAt,
-            body: structuredClone(record.body),
-            archived: records.length,
-          })),
-        };
-      if (/FROM ward_flow\.workspaces w/.test(sql))
-        return {
-          rows: [
-            {
-              data_mode: "prototype",
-              revision: String(REVISION),
-              payload: structuredClone(plan.core),
-              cache_revision: String(REVISION),
-              cache_updated_at: new Date(at),
-              records: plan.upserts.map((part) => ({
-                collection: part.collection,
-                record_id: part.recordId,
-                kind: part.kind,
-                ordinal: part.ordinal,
-                revision: part.revision,
-                fresh: true,
-                body: structuredClone(part.body),
-              })),
-            },
-          ],
-        };
-      assert.fail(`Unexpected query: ${sql.slice(0, 80)}`);
+      assert.fail(`Archive SQL must use its owned transaction connection: ${sql.slice(0, 80)}`);
     },
-    connect() {
-      assert.fail("The archive read must not open a transaction");
+    async connect() {
+      return {
+        async query(sql) {
+          if (sql === "BEGIN") {
+            assert.equal(transactionOpen, false, "one archive transaction at a time in this fixture");
+            transactionOpen = true;
+            return { rows: [] };
+          }
+          assert.equal(transactionOpen, true, "archive reads occur inside the authority transaction");
+          if (sql === "COMMIT" || sql === "ROLLBACK") {
+            transactionOpen = false;
+            return { rows: [] };
+          }
+          if (/FROM ward_flow\.archived_records/.test(sql))
+            return {
+              rows: records.map((record) => ({
+                collection: record.collection,
+                record_id: record.id,
+                closed_at: record.closedAt,
+                body: structuredClone(record.body),
+                archived: records.length,
+              })),
+            };
+          if (/FROM ward_flow\.workspaces WHERE/.test(sql)) {
+            assert.match(sql, /FOR SHARE$/, "the workspace authority boundary is locked before archive reads");
+            return {
+              rows: [
+                {
+                  data_mode: "prototype",
+                  revision: String(REVISION),
+                  payload: structuredClone(plan.core),
+                  cache_updated_at: new Date(at),
+                },
+              ],
+            };
+          }
+          if (/FROM ward_flow\.workspace_records WHERE/.test(sql)) return { rows: recordRows() };
+          assert.fail(`Unexpected transaction query: ${sql.slice(0, 80)}`);
+        },
+        release() {
+          assert.equal(transactionOpen, false, "archive connection is released after commit or rollback");
+        },
+      };
     },
   };
   return createWorkspaceStore(pool, {

@@ -107,6 +107,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     submitLegalStatusChange,
     submitLegalFormExpiry,
     submitReceiptCorrection,
+    submitCommunityReferral,
     recordSaveState,
   } = ctx;
   // Audit 24-1 B-06: an accepted request is live too (acceptance empties `referredUnitIds`), and
@@ -129,7 +130,8 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
   const legalStatusSave = recordSaveState("legalStatus", movement.id);
   const receiptSave = recordSaveState("receipt", movement.id);
   // D-74: the team and what the referral is for are both required before it can be sent.
-  const cmhtReady = communityTeamChoice !== "" && communityPurposeChoice !== "";
+  const communitySave = recordSaveState("community", movement.id);
+  const cmhtReady = communityTeamChoice !== "" && communityPurposeChoice !== "" && !communitySave.disabled;
   const cmhtMissing = !communityTeamChoice
     ? "Choose a community mental health team first."
     : "Choose what the referral is for first.";
@@ -204,6 +206,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               id={`ward-ed-cmht-select-${movement.id}`}
               data-testid={`ward-ed-cmht-select-${movement.id}`}
               value={communityTeamChoice}
+              disabled={communitySave.disabled}
               onChange={(e) => setCommunityTeamChoice(e.target.value)}
               className={styles.capacityInput}
             >
@@ -224,6 +227,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
                   name={`ward-ed-cmht-purpose-${movement.id}`}
                   value={purpose}
                   checked={communityPurposeChoice === purpose}
+                  disabled={communitySave.disabled}
                   onChange={() => setCommunityPurposeChoice(purpose)}
                   data-testid={`ward-ed-cmht-purpose-${purpose}-${movement.id}`}
                 />{" "}
@@ -235,28 +239,34 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             <button
               type="button"
               aria-disabled={!cmhtReady ? "true" : undefined}
-              aria-describedby={!cmhtReady ? `ward-ed-cmht-reason-${movement.id}` : undefined}
-              title={!cmhtReady ? cmhtMissing : undefined}
+              aria-describedby={
+                communitySave.disabled
+                  ? communitySave.message
+                    ? `ward-ed-cmht-save-${movement.id}`
+                    : undefined
+                  : !cmhtReady
+                    ? `ward-ed-cmht-reason-${movement.id}`
+                    : undefined
+              }
+              title={!cmhtReady && !communitySave.disabled ? cmhtMissing : undefined}
               data-testid={`ward-ed-cmht-confirm-${movement.id}`}
               className={styles.declineButton}
               onClick={(event) => {
-                if (!communityTeamChoice || !communityPurposeChoice) {
+                if (!communityTeamChoice || !communityPurposeChoice || communitySave.disabled) {
                   ignoreUnavailableActivation(event);
                   return;
                 }
-                raise("REFER_TO_COMMUNITY_TEAM", {
-                  movementId: movement.id,
-                  team: communityTeamChoice,
-                  purpose: communityPurposeChoice,
-                });
-                setCommunityReferralOpenFor(undefined);
-                setCommunityTeamChoice("");
-                setCommunityPurposeChoice("");
+                submitCommunityReferral(movement.id);
               }}
             >
               Confirm CMHT referral
             </button>
-            {!cmhtReady ? (
+            {communitySave.message ? (
+              <p id={`ward-ed-cmht-save-${movement.id}`} role="status">
+                {communitySave.message}
+              </p>
+            ) : null}
+            {!cmhtReady && !communitySave.disabled ? (
               <DisabledReason id={`ward-ed-cmht-reason-${movement.id}`}>{cmhtMissing}</DisabledReason>
             ) : null}
             <button

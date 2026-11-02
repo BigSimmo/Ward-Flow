@@ -348,6 +348,8 @@ export function ReferralPatientStep({
                 className={styles.patientSearchInput}
                 aria-label="Find a patient"
                 aria-invalid={patientShowErrors && !patientRecord && unidentified === null ? true : undefined}
+                role="combobox"
+                aria-expanded={showResults}
                 aria-haspopup="listbox"
                 aria-autocomplete="list"
                 aria-controls={showResults ? resultsId : undefined}

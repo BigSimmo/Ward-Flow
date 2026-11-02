@@ -1,5 +1,10 @@
 "use client";
 
+import { useWardFormSave } from "../use-ward-form-save";
+import type { WardCommandOutcome } from "../ward-shared-client";
+import type { WardFlowEvent } from "../ward-flow-events";
+import type { UndoableStep } from "../use-undoable-step";
+
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 
@@ -163,11 +168,16 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
 
   const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelection] = useState<string | null>(null);
+  const returnSave = useWardFormSave("out-of-area-return");
+  const setSelectedId = (id: string | null) => {
+    if (id !== selectedId) returnSave.forget();
+    setSelection(id);
+  };
   const [drafts, setDrafts] = useState<Record<string, RepatDraft>>({});
   const [repatNotice, setRepatNotice] = useState<string | null>(null);
   // v10 pass 3: a recorded return offers Undo (`UNDO_REPATRIATION`) on the layout toast.
-  const { run: runStep } = useUndoableStep({
+  const { run: runStep, offer: offerStep } = useUndoableStep({
     dispatch,
     rejections,
     now,
@@ -373,6 +383,44 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const updateDraft = (id: string, update: Partial<RepatDraft>) =>
     setDrafts((current) => ({ ...current, [id]: { ...(current[id] ?? BLANK_REPAT_DRAFT), ...update } }));
 
+  function submitReturn(
+    event: Extract<WardFlowEvent, { type: "RECORD_REPATRIATION" }>,
+    step: UndoableStep,
+    draft: RepatDraft,
+  ) {
+    let receipt: WardCommandOutcome | void;
+    const remember = (outcome: WardCommandOutcome | void) => {
+      receipt = outcome;
+      if (outcome?.status === "failed")
+        void outcome.confirmation?.then((confirmed) => {
+          receipt = confirmed;
+        });
+      return outcome;
+    };
+    returnSave.submit(
+      () => {
+        const completion = dispatch(event);
+        if (completion && "then" in completion)
+          return completion.then((outcome) => {
+            remember(outcome);
+            return outcome;
+          });
+        remember(completion);
+        return completion;
+      },
+      () => {
+        offerStep(step, { completion: receipt });
+        setDrafts((current) => {
+          if (current[event.admissionId] !== draft) return current;
+          const next = { ...current };
+          delete next[event.admissionId];
+          return next;
+        });
+        setRepatNotice(step.success);
+      },
+    );
+  }
+
   function recordReturn(entry: OutOfAreaEntry) {
     const admissionId = entry.admission.id;
     const draft = draftFor(admissionId);
@@ -392,8 +440,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       ? " Return transfer movement queued for bed placement at home health service."
       : " Return movement pending receiving ward agreement.";
     const recorded = `Return recorded for ${patientOf(entry).formalName} to ${targetHospitalName}.`;
-    repatCheckRef.current = { prior: rejections.length, admissionId, record: recordOf(admissionId), draft };
-    runStep(
+    submitReturn(
       {
         type: "RECORD_REPATRIATION",
         role: "coordinator",
@@ -413,13 +460,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
         undone: `Return undone for ${patientOf(entry).formalName}. Nothing is recorded.`,
       },
+      draft,
     );
-    setDrafts((current) => {
-      const next = { ...current };
-      delete next[admissionId];
-      return next;
-    });
-    setRepatNotice(`${recorded}${movementFeedback}`);
   }
 
   function sendPlanToWard(entry: OutOfAreaEntry) {
@@ -443,8 +485,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         ? "Return transfer movement queued for bed placement at home health service."
         : "Return movement pending receiving ward agreement."
     }`;
-    repatCheckRef.current = { prior: rejections.length, admissionId, record: recordOf(admissionId), draft };
-    runStep(
+    submitReturn(
       {
         type: "RECORD_REPATRIATION",
         role: "coordinator",
@@ -464,13 +505,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
         undone: `Return undone for ${patientOf(entry).formalName}. Nothing is recorded.`,
       },
+      draft,
     );
-    setDrafts((current) => {
-      const next = { ...current };
-      delete next[admissionId];
-      return next;
-    });
-    setRepatNotice(sentNotice);
   }
 
   function markWardAgreed(entry: OutOfAreaEntry) {
@@ -532,12 +568,17 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       dischargeOffset={offsetOf(entry)}
       now={now}
       draft={draftFor(entry.admission.id)}
-      onDraft={(update) => updateDraft(entry.admission.id, update)}
+      onDraft={(update) => {
+        if (!returnSave.pending) updateDraft(entry.admission.id, update);
+      }}
       record={recordOf(entry.admission.id)}
       returnMovementId={returnMovementOf(entry.admission.id)}
       options={closerBedOptions(entry, units, now)}
-      notice={repatNotice}
-      onDismissNotice={() => setRepatNotice(null)}
+      notice={returnSave.error ?? repatNotice}
+      onDismissNotice={() => {
+        returnSave.clearError();
+        setRepatNotice(null);
+      }}
       onRecord={() => recordReturn(entry)}
       onSendToWard={() => sendPlanToWard(entry)}
       onMarkWardAgreed={() => markWardAgreed(entry)}

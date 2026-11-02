@@ -26,6 +26,7 @@ import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useDueSoonThresholds, useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import { useWardRaise } from "../ward-flow-raise";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
 import { bedMeetingTvHref } from "../ward-nav";
@@ -322,6 +323,7 @@ function AgendaRow({
 }) {
   const [adding, setAdding] = useState(false);
   const formId = useId();
+  const save = useWardFormSave(formId);
   const toggle = useRef<HTMLButtonElement>(null);
   const openActions = (item.record.meetingActions ?? []).filter((action) => action.doneAt === undefined);
   const urgency = urgencyOf(sectionId, item, now);
@@ -352,7 +354,10 @@ function AgendaRow({
             aria-controls={formId}
             icon={adding ? undefined : Plus}
             aria-label={adding ? `Cancel the action for ${name}` : `Add an action for ${name}`}
-            onClick={() => setAdding((value) => !value)}
+            onClick={() => {
+              save.forget();
+              setAdding((value) => !value);
+            }}
             data-testid="bed-meeting-add-action"
           >
             {adding ? "Cancel" : "Action"}
@@ -362,6 +367,7 @@ function AgendaRow({
       {chairs && adding ? (
         <ActionForm
           id={formId}
+          save={save}
           item={item}
           now={now}
           wardName={wardName}
@@ -392,12 +398,14 @@ function urgencyOf(sectionId: string, item: AgendaItem, now: Instant): { tag: st
 
 function ActionForm({
   id,
+  save,
   item,
   now,
   wardName,
   onDone,
 }: {
   id: string;
+  save: WardFormSave;
   item: AgendaItem;
   now: Instant;
   wardName: string | undefined;
@@ -415,6 +423,7 @@ function ActionForm({
       <Field label="Action">
         <Select
           value={kind}
+          disabled={save.pending}
           onChange={(event) => setKind(event.target.value as BedMeetingActionKind | "")}
           data-testid="bed-meeting-action-kind"
         >
@@ -429,6 +438,7 @@ function ActionForm({
       <Field label="Owner">
         <Select
           value={owner}
+          disabled={save.pending}
           onChange={(event) => setOwner(event.target.value as BedMeetingActionOwner)}
           data-testid="bed-meeting-action-owner"
         >
@@ -442,6 +452,7 @@ function ActionForm({
       <Field label="Due">
         <Select
           value={dueHours}
+          disabled={save.pending}
           onChange={(event) => setDueHours(event.target.value)}
           data-testid="bed-meeting-action-due"
         >
@@ -455,23 +466,27 @@ function ActionForm({
       <Button
         size="sm"
         variant="pri"
-        aria-disabled={kind === "" ? "true" : undefined}
+        aria-disabled={kind === "" || save.pending ? "true" : undefined}
         aria-describedby={kind === "" ? `${id}-reason` : undefined}
         onClick={() => {
-          if (kind === "") return;
-          raise("RECORD_BED_MEETING_ACTION", {
-            subject: item.subject,
-            action: kind,
-            owner,
-            ...(owner === "ward" && item.unitId !== undefined ? { unitId: item.unitId } : {}),
-            dueAt: now + Number(dueHours) * 60,
-          });
-          onDone();
+          if (kind === "" || save.pending) return;
+          save.submit(
+            () =>
+              raise("RECORD_BED_MEETING_ACTION", {
+                subject: item.subject,
+                action: kind,
+                owner,
+                ...(owner === "ward" && item.unitId !== undefined ? { unitId: item.unitId } : {}),
+                dueAt: now + Number(dueHours) * 60,
+              }),
+            onDone,
+          );
         }}
         data-testid="bed-meeting-action-record"
       >
         Record action
       </Button>
+      {save.error ? <p role="status">{save.error}</p> : null}
       {kind === "" ? <DisabledReason id={`${id}-reason`}>Choose an action first.</DisabledReason> : null}
     </div>
   );

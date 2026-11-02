@@ -19,7 +19,7 @@ async function setupDrawer() {
       <WardReferralDrawer onClose={vi.fn()} />
     </WardFlowProvider>,
   );
-  await waitFor(() => expect(screen.getByRole("searchbox", { name: "Find a patient" })).toHaveFocus());
+  await waitFor(() => expect(screen.getByRole("combobox", { name: "Find a patient" })).toHaveFocus());
   chooseSampleReferralPerson();
 }
 

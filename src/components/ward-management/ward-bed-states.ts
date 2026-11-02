@@ -1,6 +1,7 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { pulledBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 
 /**
@@ -52,14 +53,12 @@ export function bedStates(
   }
   // Clamped to the box each one sits in, so a malformed fixture can never push a box negative or
   // the four past the ward's beds.
-  const pulledFromEmpty = Math.min(livePulled, capacity.held);
-  const remainingLivePulled = livePulled - pulledFromEmpty;
-  const overflowFromAvailable = Math.min(remainingLivePulled, capacity.available);
+  const { ready, pulledFromEmpty, pulledFromAvailable } = pulledBedAvailability(unit, livePulled);
   const pulledFromOccupied = Math.min(seededPulled, capacity.occupied);
   const occupied = capacity.occupied - pulledFromOccupied;
   return {
-    ready: capacity.available - overflowFromAvailable,
-    pulled: pulledFromEmpty + overflowFromAvailable + pulledFromOccupied,
+    ready,
+    pulled: pulledFromEmpty + pulledFromAvailable + pulledFromOccupied,
     closed: capacity.held - pulledFromEmpty + capacity.blocked,
     occupied,
     beingMadeReady: bedsPendingPreparation(unit.id, bedReleases),
@@ -71,8 +70,8 @@ export function bedStates(
  * **BEDS READY NOW: the one figure every screen prints** (Audit 6, Josh 20 Oct 2026). Ready from
  * `bedStates`, so a bed pulled for an incoming patient is never offered twice: the rail, Home, the
  * bed board, Handover and Statistics read this, and the bed flow, Capacity and the TV read the same
- * box through `bedStates`. The reducer's own gates keep `boundedBedAvailability` (agreed with the
- * Audit 2 bed engine fixes); this is the display figure only.
+ * box through `bedStates`. New pulls use the same reservation partition through
+ * `pulledBedAvailability`; physical arrivals keep their separate recording rules.
  */
 export function readyBedsNow(unit: Unit, admissions: readonly Admission[], bedReleases: readonly BedRelease[]): number {
   return bedStates(unit, admissions, [...bedReleases], []).ready;

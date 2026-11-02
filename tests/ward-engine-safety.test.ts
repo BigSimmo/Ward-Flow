@@ -153,11 +153,18 @@ function bedInvariantViolation(state: WardFlowState): Violation | null {
     const stoppedButHeld = movement.transport?.stoppedAt !== undefined && movement.admissionId !== undefined;
     if (movement.closure && !stoppedButHeld) continue;
     if (movement.heldBedNumber === undefined || !movement.acceptedUnitId) continue;
-    const broken = hold(
-      `${movement.acceptedUnitId} bed ${movement.heldBedNumber}`,
-      movement.id,
-      (admissionId) => admissionById.get(admissionId)?.movementId === movement.id,
-    );
+    const broken = hold(`${movement.acceptedUnitId} bed ${movement.heldBedNumber}`, movement.id, (admissionId) => {
+      const admission = admissionById.get(admissionId);
+      // Authored seed stays may have only the explicit forward link. Runtime destination
+      // stays require both links; neither identity nor ward may disagree with the hold.
+      return (
+        admission !== undefined &&
+        movement.admissionId === admission.id &&
+        admission.unitId === movement.acceptedUnitId &&
+        (movement.patientId === undefined || movement.patientId === admission.patientId) &&
+        (admission.movementId === movement.id || (admission.movementId === null && !admission.id.startsWith("AD-ARR-")))
+      );
+    });
     if (broken) return broken;
   }
   for (const referral of state.referrals) {
@@ -692,6 +699,77 @@ describe("events the random run never saw accepted", () => {
   });
 });
 
+describe("seeded own bed reservations", () => {
+  it.each([
+    ["standard", "WF-011", "AD-FREO-02", "fre-older-adult", 11],
+    ["standard", "WF-325", "AD-ALBA-03", "alb-adult-open", 2],
+    ["scarce", "WF-016", "AD-SJGA-07", "sjgm-adult-open", 9],
+  ] as const)(
+    "recognises %s %s's forward-only stay after a bed move",
+    (scenario, movementId, admissionId, unitId, bedNumber) => {
+      const before = seedWardFlowState(scenario);
+      const stay = before.admissions.find((a) => a.id === admissionId)!;
+      const movement = before.movements.find((m) => m.id === movementId)!;
+      expect(stay.movementId).toBeNull();
+      expect(movement.admissionId).toBe(stay.id);
+      expect(movement.patientId).toBe(stay.patientId);
+      const event: WardFlowEvent = {
+        type: "PLACE_IN_BED",
+        role: "coordinator",
+        now: NOW_ANCHOR + 1,
+        admissionId,
+        actingUnitId: unitId,
+        bedNumber,
+      };
+      const after = wardFlowReducer(before, event);
+      expect(after.rejections).toEqual([]);
+      expect(storageViolation(before)).toBeNull();
+      expect(storageViolation(after)).toBeNull();
+      expect(replay(scenario, [event])).toBeNull();
+    },
+  );
+});
+describe("own-hold identity controls", () => {
+  it.each(["different admission", "different patient", "runtime missing backpointer"] as const)(
+    "does not treat %s as an own hold",
+    (mismatch) => {
+      const base = wardFlowReducer(seedWardFlowState(), {
+        type: "PLACE_IN_BED",
+        role: "coordinator",
+        now: NOW_ANCHOR + 1,
+        admissionId: "AD-FREO-02",
+        actingUnitId: "fre-older-adult",
+        bedNumber: 11,
+      });
+      expect(base.rejections).toEqual([]);
+      const original = base.admissions.find((a) => a.id === "AD-FREO-02")!;
+      const runtimeId = "AD-ARR-99";
+      const foreignStay = base.admissions.find(
+        (a) => a.id !== original.id && !base.movements.some((m) => !m.closure && m.admissionId === a.id),
+      )!;
+      const invalid: WardFlowState = {
+        ...base,
+        admissions:
+          mismatch === "runtime missing backpointer"
+            ? base.admissions.map((a) => (a === original ? { ...a, id: runtimeId } : a))
+            : base.admissions,
+        movements: base.movements.map((m) =>
+          m.id !== "WF-011"
+            ? m
+            : {
+                ...m,
+                ...(mismatch === "different admission" ? { admissionId: foreignStay.id } : {}),
+                ...(mismatch === "different patient"
+                  ? { patientId: base.patients.find((p) => p.id !== original.patientId)!.id }
+                  : {}),
+                ...(mismatch === "runtime missing backpointer" ? { admissionId: runtimeId } : {}),
+              },
+        ),
+      };
+      expect(bedInvariantViolation(invalid)?.rule).toBe("no bed holds two people");
+    },
+  );
+});
 describe("a bed held for another journey", () => {
   it("refuses a Bed board placement into it", () => {
     // The random run rarely aims a placement at a held bed, so this pins the refusal directly.

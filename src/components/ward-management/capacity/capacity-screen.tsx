@@ -1,5 +1,8 @@
 "use client";
 
+import { useWardFormSave } from "../use-ward-form-save";
+import { wardScrollBehavior } from "../ward-scroll";
+
 import { startTransition, useEffect, useMemo, useState } from "react";
 
 import { Drawer, Segmented, StatusGlyph, useIsPhone, useOptionalToast } from "@/components/wf";
@@ -159,6 +162,7 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const selectedRow =
     popup?.kind === "ward" ? model.networkRows.find((row) => row.unit.id === popup.unitId) : undefined;
 
+  const refreshSave = useWardFormSave(`capacity-refresh:${worldGeneration}`);
   // Asking a ward to confirm its beds is the coordinator's step (REQUEST_CAPACITY_REFRESH), as in the
   // ward drawer. A site bed manager confirms on the ward's own page instead, and every other desk,
   // the executive included, changes nothing here.
@@ -167,15 +171,23 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
       ? undefined
       : (unitId: string) => {
           const unit = units.find((candidate) => candidate.id === unitId);
-          dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId });
-          toast?.push({ tone: "success", title: `Asked ${unit?.name ?? "the ward"} to confirm its beds.` });
+          refreshSave.submit(
+            () => dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId }),
+            () => toast?.push({ tone: "success", title: `Asked ${unit?.name ?? "the ward"} to confirm its beds.` }),
+          );
         };
+  useEffect(() => {
+    if (refreshSave.error) toast?.push({ tone: "warning", title: refreshSave.error });
+  }, [refreshSave.error, toast]);
   const openWard = (unitId: string) => {
     if (siteDesk && !model.networkRows.some((row) => row.unit.id === unitId)) {
       setFocusUnitId(unitId);
       if (isPhone) startTransition(() => setPhoneTab("wards"));
       window.setTimeout(
-        () => document.getElementById(`bm-other-${unitId}`)?.scrollIntoView({ block: "center", behavior: "smooth" }),
+        () =>
+          document
+            .getElementById(`bm-other-${unitId}`)
+            ?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() }),
         50,
       );
       return;
@@ -186,7 +198,8 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
     const value = highlight === next ? null : next;
     setHighlight(value);
     if (isPhone) startTransition(() => setPhoneTab("wards"));
-    else if (value) document.getElementById("capacity-bed-map")?.scrollIntoView({ block: "start", behavior: "smooth" });
+    else if (value)
+      document.getElementById("capacity-bed-map")?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
   };
   const bedMap = (
     <>

@@ -24,6 +24,18 @@ export function boundedBedAvailability(unit: Unit): { effectiveEmpty: number; av
   return { effectiveEmpty, available, held };
 }
 
+/** The existing bed partition after runtime pulls, shared by display and new allocation.
+ * A pull already removed from the raw offered count sits in held; after a ward reconfirms
+ * that raw count, its reservation must still come off Ready. Seeded pulls sit in occupancy. */
+export function pulledBedAvailability(unit: Unit, livePulled: number) {
+  const { available, held } = boundedBedAvailability(unit);
+  // An exact closed bed cannot also stand for somebody's pull. Only the raw unoffered
+  // remainder can already contain that reservation; the rest comes off offered capacity.
+  const heldForPulls = Math.max(0, held - activeClosedBeds(unit).length);
+  const pulledFromEmpty = Math.min(livePulled, heldForPulls);
+  const pulledFromAvailable = Math.min(livePulled - pulledFromEmpty, available);
+  return { ready: available - pulledFromAvailable, pulledFromEmpty, pulledFromAvailable };
+}
 /** H-0978: the beds closed by number now. A reopened mark stays as seat history (`wardStaySeats`). */
 export function activeClosedBeds(unit: Unit): NonNullable<Unit["closedBeds"]> {
   return (unit.closedBeds ?? []).filter((mark) => mark.reopenedAt === undefined);
