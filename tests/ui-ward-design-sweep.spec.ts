@@ -311,18 +311,16 @@ async function settledSweep(page: Page): Promise<Finding[]> {
  * fixes were in. The rule is a hard failure on a phone, but these screens already had small
  * controls, so each page may not go ABOVE its count; a page not listed allows none. When a fix
  * brings a page's count down, lower its number here in the same change so it cannot creep back.
+ * Q295 (2 Nov 2026): small kit buttons are drawn at 40px on phones, so Capacity, Example ED,
+ * Transport and Discharges dropped to none and Alerts to 1.
  */
 const PHONE_TARGET_BASELINE: Readonly<Record<string, number>> = {
   "/ward-flow": 12,
   "/ward-flow/waiting": 3,
-  "/ward-flow/capacity": 1,
   "/ward-flow/movements": 5,
   "/ward-flow/ward/rph-adult-secure": 1,
-  "/ward-flow/ed/peel-ed": 1,
   "/ward-flow/board/rph-adult-secure": 2,
-  "/ward-flow/transport/officer": 1,
-  "/ward-flow/discharges": 6,
-  "/ward-flow/alerts": 3,
+  "/ward-flow/alerts": 1,
   "/ward-flow/referrals": 2,
   "/ward-flow/referrals/new": 2,
 };
