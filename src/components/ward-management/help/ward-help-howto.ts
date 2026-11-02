@@ -481,7 +481,7 @@ const JOBS: readonly HowTo[] = [
     title: "Refer a patient from the ED",
     keywords: "ed emergency raise referral board patient",
     answer:
-      "On your ED board, open the patient and use Raise referral. The ED's waiting list stays in wait order; flags highlight a row but never move it.",
+      "On your ED board, open the patient and use New referral. The ED's waiting list stays in wait order; flags highlight a row but never move it.",
     desks: ["ed"],
     acts: ["RAISE_REFERRAL"],
     go: "home",

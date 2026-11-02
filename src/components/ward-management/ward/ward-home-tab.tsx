@@ -380,7 +380,7 @@ export function WardHomeTab({
       key: `clean-${release.id}`,
       at: release.confirmedAt,
       timeLabel: formatInstantWithDay(release.confirmedAt, now),
-      title: "Departure completed",
+      title: "Discharge completed",
       detail: release.preparationNote ?? (release.preparing ? "Being made ready" : "Clean not recorded"),
       status: "Clean",
     });
@@ -482,11 +482,11 @@ export function WardHomeTab({
             : bed.pastDate
               ? "Past date"
               : bed.dischargeBarrier
-                ? "Barrier"
+                ? "Held up"
                 : leaving
                   ? bed.dischargeConfirmed
                     ? "Confirmed out"
-                    : "Due out"
+                    : "Discharge due"
                   : bed.isSpecialling && bed.observation
                     ? `Constant ${observationRatio(bed.observation.level)}`
                     : note;
@@ -701,7 +701,7 @@ export function WardHomeTab({
       return {
         key: release.id,
         group,
-        title: bed?.bedLabel ?? "Bed release",
+        title: bed?.bedLabel ?? "Discharge",
         when: formatInstantWithDay(release.expectedAt, now),
         detail: release.blocker
           ? `Held up · ${release.blocker}`
@@ -928,13 +928,12 @@ export function WardHomeTab({
   for (const admission of dueSoon) {
     const bed = bedByAdmission(admission.id);
     if (!bed || admission.expectedDischargeAt === null) continue;
+    const holdUp = admission.blockReason ?? admission.dischargeBarrier;
     laterToday.push({
       key: `prep-${admission.id}`,
-      title: `${bed.bedLabel} due out ${formatInstantWithDay(admission.expectedDischargeAt, now)}`,
-      detail: admission.dischargeBarrier
-        ? `Discharge barrier: ${admission.dischargeBarrier}`
-        : "No discharge barrier recorded",
-      tone: admission.dischargeBarrier ? "warning" : "neutral",
+      title: `${bed.bedLabel} discharge due ${formatInstantWithDay(admission.expectedDischargeAt, now)}`,
+      detail: holdUp ? `Held up: ${holdUp}` : "Hold-up not recorded",
+      tone: holdUp ? "warning" : "neutral",
       action: { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) },
     });
   }
@@ -1784,7 +1783,7 @@ export function WardHomeTab({
                     items={[
                       { id: "all", label: "All", count: bedRows.length },
                       { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
-                      { id: "leaving", label: "Due out", count: bedRows.filter((row) => row.leaving).length },
+                      { id: "leaving", label: "Discharge due", count: bedRows.filter((row) => row.leaving).length },
                       { id: "free", label: "Ready", count: bedRows.filter((row) => row.free).length },
                       // The hero's Occupied and Ready by pills set filters this group does not list,
                       // so the active one joins it while on and a radio is always checked.

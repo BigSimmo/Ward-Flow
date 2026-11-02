@@ -133,7 +133,7 @@
 }
 
 /* Phone: the strip scrolls on its own. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .list {
     grid-auto-columns: minmax(6.5rem, 1fr);
     overscroll-behavior-inline: contain;
@@ -191,7 +191,7 @@
 
 /* Phone: the highlight chips take the shared phone pill size (`--wf-phone-*`): a 32px face with a
    transparent 48px hit area, carried in the scrolling row's own padding so it is not clipped. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .chips {
     gap: var(--wf-phone-pill-gap);
     padding-block: var(--wf-phone-pill-hit);
@@ -229,11 +229,18 @@
 
   .overview .heroStats > * {
     flex: 0 0 auto;
-    padding-inline: 12px;
+    padding-inline: 10px;
+  }
+
+  /* Q290 (pre-launch check W3, 2 Nov 2026): at 1025-1060 and 1201-1260 the figures still ran under
+   * the actions and clipped "Under a form". The figures keep their full width and the title column
+   * (department name and eyebrow) wraps first. */
+  .overview :has(> .heroStats) {
+    flex: 0 0 auto;
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .titleName {
     display: none;
   }
@@ -352,7 +359,7 @@
 
 /* v10 phone hero (PhoneHero only renders on phone): the one light action runs the full width, and
  * a pressed figure's note sits on its own line above it. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneHero [data-testid="ward-ed-raise-referral-toggle"] {
     flex: 1 1 100%;
     justify-content: center;

@@ -288,7 +288,7 @@ describe("recording a departure from the ward board", () => {
     selectAnOccupiedBed();
     fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
 
-    const dialog = screen.getByRole("dialog", { name: "Confirm patient departure" });
+    const dialog = screen.getByRole("dialog", { name: "Confirm discharge" });
     const proceed = within(dialog).getByTestId("ward-board-confirm-proceed");
     expect(proceed).toBeDisabled();
     expect(departures()).toBe(before);
@@ -324,5 +324,5 @@ it("offers guarded Undo after a board departure and restores the occupied bed", 
   expect(screen.getByTestId(`model-departure-${admissionId}`)).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Undo" }));
   expect(screen.queryByTestId(`model-departure-${admissionId}`)).toBeNull();
-  expect(screen.getByText("Departure undone. This patient is back on the ward.")).toBeTruthy();
+  expect(screen.getByText("Discharge undone. This patient is back on the ward.")).toBeTruthy();
 });

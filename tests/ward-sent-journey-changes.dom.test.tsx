@@ -129,7 +129,7 @@ describe("the sending ward's own journey (D-80)", () => {
     setState([journey("WF-D80-ED", { referralId: edSent.id, patientId: stay.patientId })]);
     renderDossier();
     expect(screen.queryByTestId("sent-journey-changes")).not.toBeInTheDocument();
-    expect(screen.queryByText("Journey this ward sent")).not.toBeInTheDocument();
+    expect(screen.queryByText("Movement this ward sent")).not.toBeInTheDocument();
   });
 });
 

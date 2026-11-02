@@ -3,7 +3,7 @@ import { SAVE_NOT_CONFIRMED } from "../ward-save-failure";
 
 export const GLOSSARY_GROUPS = [
   "Beds",
-  "A patient's journey",
+  "A patient's movement",
   "Records and forms",
   "People, services and short forms",
   "Screens, figures and urgency",

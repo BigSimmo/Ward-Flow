@@ -49,6 +49,15 @@ select.ctl {
   gap: 16px;
   min-width: 0;
 }
+
+/* Q291 (pre-launch check W4, 2 Nov 2026): on a portrait tablet (769 to about 880px) the Team list
+ * shared the row with the 360px Team flow column, leaving its titles one word a line. Below 900px
+ * the two columns stack, full width. */
+@media (max-width: 56.25rem) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .meta {
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   color: var(--wf-ink-3);
@@ -563,7 +572,7 @@ select.ctl {
 
 /* Q228 (design review, 2 Nov 2026): at tablet width the four summary tiles wrap two by two, so the
  * third is not cut off. */
-@media (min-width: 48.0625rem) and (max-width: 64rem) {
+@media (min-width: 46.5rem) and (max-width: 64rem) {
   .tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1575,7 +1584,7 @@ select.ctl {
 
 /* The full referral page pushed on a phone (Midland phone page, Q155): one column, so the side
    column and the facts strip fit 390 px without sideways scroll. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .refPage .rpGrid,
   .refPage .two {
     grid-template-columns: minmax(0, 1fr);

@@ -109,7 +109,7 @@ import { ReferralPhoneCard, ReferralPhoneHero, ReferralPhoneTop } from "./referr
 import { edSingleColumn, useEdDeskReferrals } from "./referral-ed-desk";
 import { EdNextOverdue, ReferralEdRaisedSection } from "./referral-ed-raised-section";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { useIsPhone } from "@/components/wf";
+import { focusIsLost, rememberOpener, returnFocusToOpener, useIsPhone, type FocusOpener } from "@/components/wf";
 import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -266,8 +266,10 @@ export function ReferralBoard({
   defaultSelectFirst = false,
   readOnly: readOnlyProp,
   historyOpenOnLoad = false,
+  heading = "Referrals",
 }: {
   defaultSelectFirst?: boolean;
+  heading?: string;
   /** Viewing, filters and the detail only: no decision, placement, owner or call control. */
   readOnly?: boolean;
   /** Opens on History rather than the queue (the redesign preview draws it this way). */
@@ -359,7 +361,7 @@ export function ReferralBoard({
   // Held whole, not looked up: the referral leaves the awaiting list once its journey starts,
   // before the bed is pulled, and the sheet must stay open for that second step.
   const [pulling, setPulling] = useState<AcceptedAwaitingPull>();
-  const triggerRef = useRef<HTMLElement | null>(null);
+  const triggerRef = useRef<FocusOpener | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
 
   // Audit 24-1 B-03: the queued referral on screen, by id and name, so one decided at another desk
@@ -371,20 +373,21 @@ export function ReferralBoard({
   const handleSelect = useCallback((referralId: string) => {
     // Usability review, 24 Oct 2026: Safari leaves focus on <body> after a tap, so take the shared
     // opener (the last pressed control stands in) rather than the active element alone.
-    triggerRef.current = overlayOpener();
+    triggerRef.current = rememberOpener(overlayOpener());
     setLeftNotice(undefined);
     setSelectedReferralId(referralId);
     setInspectorTab("place");
   }, []);
-
   const closeDetail = useCallback(() => {
     // `null`, not `undefined`: a closed detail stays closed rather than falling back to the default.
     setSelectedReferralId(null);
-    if (triggerRef.current?.isConnected && typeof triggerRef.current.focus === "function") {
-      triggerRef.current.focus();
-    }
+    // A3 (2 Nov 2026): a phone list is inert while the detail is open, so its row is found again next frame.
+    const opener = triggerRef.current;
+    if (returnFocusToOpener(opener)) return;
+    window.requestAnimationFrame(() => {
+      if (focusIsLost(detailRef.current)) returnFocusToOpener(opener);
+    });
   }, []);
-
   const clearHighlights = useCallback(() => {
     setHighlight(null);
   }, []);
@@ -549,11 +552,12 @@ export function ReferralBoard({
   useEffect(() => {
     if (!selectedReferralId || !detailRef.current) return;
     detailRef.current.scrollTop = 0;
-    if (typeof window !== "undefined" && window.innerWidth <= 768) {
+    // Below the split layout (64rem) the detail is a slide-over over the queue, so it takes focus.
+    if (!(window.matchMedia?.(SPLIT_DETAIL_MEDIA_QUERY).matches ?? window.innerWidth > 743)) {
       if (typeof detailRef.current.scrollIntoView === "function") {
         detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
       }
-      // On a phone the detail opens over the queue, so focus moves into it with the reader.
+      // The detail opens over the queue, so focus moves into it with the reader.
       detailRef.current.focus({ preventScroll: true });
     }
   }, [selectedReferralId]);
@@ -774,7 +778,7 @@ export function ReferralBoard({
       data-referral-layout="queue-panel"
     >
       <main id="main-content" className={cx(styles.main, redesign.page)}>
-        <h1 className="sr-only">Referrals</h1>
+        <h1 className="sr-only">{heading}</h1>
         {phoneLayout ? (
           <ReferralPhoneTop>
             <ReferralPhoneHero
@@ -968,8 +972,8 @@ export function ReferralBoard({
             role="region"
             aria-label="Referral queues"
             tabIndex={0}
-            // Phone: the open detail covers the queue, so the queue behind it leaves the Tab order.
-            inert={phoneLayout && selectedReferral ? true : undefined}
+            // Below 64rem the open detail covers the queue, so the queue behind it leaves the Tab order.
+            inert={!splitDetailLayout && selectedReferral ? true : undefined}
           >
             <Card className={cx(styles.v6QueueCard, a.queueCard, redesign.wrapRows)}>
               {/* Phone (Josh, 12 Oct 2026): Queue and History pin under the phone header, as Home's

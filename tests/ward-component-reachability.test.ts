@@ -112,7 +112,8 @@ function importsOf(file: string): string[] {
  */
 function reachableFromRoutes(): Set<string> {
   const seeds = [WARD_ROUTES, ...WARD_SIBLING_ROUTES].flatMap((root) =>
-    walk(root, (path) => /(?:^|[\\/])(?:page|layout|template|default)\.tsx?$/u.test(path)),
+    // `loading.tsx` is a route file too: Next mounts it on every page change under its segment.
+    walk(root, (path) => /(?:^|[\\/])(?:page|layout|template|default|loading)\.tsx?$/u.test(path)),
   );
   const seen = new Set<string>(seeds);
   const queue = [...seeds];

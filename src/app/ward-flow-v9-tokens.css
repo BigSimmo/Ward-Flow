@@ -310,7 +310,7 @@
 }
 
 /* Phone corners (refined buttons, 15 Oct 2026): the taller phone controls take a 14px corner. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   :root,
   .day,
   .night {
@@ -702,7 +702,7 @@ tr[data-dim="true"] > :is(td, th) :is(a, b, strong, em, span, time, abbr, small,
  * between phone and desktop widths, so a desktop with a mouse and the 390px phone design are
  * unchanged. Primitives read `--wf-tablet-tap` as a min-height; `--wf-target` is the smallest
  * pointer target. */
-@media (pointer: coarse) and (min-width: 48.0625rem) and (max-width: 80rem) {
+@media (pointer: coarse) and (min-width: 46.5rem) and (max-width: 80rem) {
   :root {
     --wf-target: var(--wf-touch);
     --wf-tablet-tap: var(--wf-touch);

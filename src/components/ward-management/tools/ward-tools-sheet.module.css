@@ -606,7 +606,7 @@
   color: var(--wf-ink-3);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .resetBlock > div:first-of-type {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -702,7 +702,7 @@
   color: var(--wf-ink-3);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .row,
   .chip,
   .iconButton,
@@ -741,7 +741,7 @@
 }
 
 /* iOS zooms the page into any field set below 16px, so phone and touch fields use 16px. */
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .search input,
   .select,
   .input {
@@ -771,7 +771,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .search {
     min-height: var(--wf-touch);
   }

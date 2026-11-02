@@ -358,7 +358,7 @@ export function WardBedDossierDrawer({
     admission && bedItem?.admissionId && onSetBarrier && stayDays !== null && !quickBlockerOpen ? (
       <select
         className={styles.select}
-        aria-label="Discharge barrier"
+        aria-label="Held up by"
         data-testid="ward-drawer-barrier-select"
         value={admission.dischargeBarrier ?? "None"}
         onChange={(e) => onSetBarrier(admission.id, isDischargeBarrier(e.target.value) ? e.target.value : null)}
@@ -400,7 +400,7 @@ export function WardBedDossierDrawer({
     ) : null;
   const prepNote = dueForPrep ? (
     <p className={styles.meta} data-testid="ward-drawer-discharge-prep">
-      Due out within {prepHours} hours. Record any discharge barrier now.
+      Discharge due within {prepHours} hours. Record any hold-up now.
     </p>
   ) : null;
   // Top 25 item 9 (D-60): criteria led discharge, on the Plan to leave tab and the phone sheet.
@@ -510,7 +510,7 @@ export function WardBedDossierDrawer({
       open={confirmStep !== null && isOccupied && bedItem?.admissionId !== undefined}
       onClose={() => setConfirmStep(null)}
       size="sm"
-      title={confirmStep === "ed" ? "Confirm emergency department transfer" : "Confirm patient departure"}
+      title={confirmStep === "ed" ? "Confirm emergency department transfer" : "Confirm discharge"}
       description={
         confirmStep === "ed"
           ? `Record that ${occupantAlias} has gone to an emergency department? The bed stays held while they are away.`
@@ -518,7 +518,7 @@ export function WardBedDossierDrawer({
       }
       secondary={[{ label: "Cancel", onAction: () => setConfirmStep(null) }]}
       primary={{
-        label: confirmStep === "ed" ? "Record ED transfer" : "Record departure",
+        label: confirmStep === "ed" ? "Record ED transfer" : "Record discharge",
         onAction: () => {
           const step = confirmStep;
           setConfirmStep(null);
@@ -607,7 +607,7 @@ export function WardBedDossierDrawer({
       ? [
           {
             id: "blocker" as const,
-            label: bedItem?.blockReason ? "Update blocker" : "Record blocker",
+            label: bedItem?.blockReason ? "Update hold-up" : "Record hold-up",
             expanded: quickBlockerOpen,
             onAction: openBlockerEditor,
           },
@@ -945,7 +945,7 @@ export function WardBedDossierDrawer({
                   </Section>
                   {criteriaCard}
                   {sentJourneyControls ? (
-                    <Section title="Journey this ward sent">
+                    <Section title="Movement this ward sent">
                       <div className={styles.cardInner}>{sentJourneyControls}</div>
                     </Section>
                   ) : null}

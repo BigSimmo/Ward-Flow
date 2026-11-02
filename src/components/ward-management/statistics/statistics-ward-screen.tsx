@@ -434,7 +434,7 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
   const small = statisticsCountText;
   const parts = (counts: StatisticsCount[]) => counts.map((count) => small(count));
   const headlineTotal = ready === null ? statistics.readyToLeaveCannot : ready.total;
-  const cohortLabel = unit.cohort === "Adult" ? (unit.lockedBeds > 0 ? "Adult secure" : "Adult open") : unit.cohort;
+  const cohortLabel = unit.cohort === "Adult" ? (unit.lockedBeds > 0 ? "Adult locked" : "Adult open") : unit.cohort;
   const averageStay = statistics.averageLengthOfStayDays;
 
   // Executive desk: a count of people under the line is worded, and the parts of a breakdown whose
@@ -508,7 +508,7 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
           ["Pulled, not arrived", wardOccupancy.pulled],
           ["Ready", capacity.available],
           ["Average stay, days", averageStay ?? "none"],
-          ["Due out, 7 days", small(dueThisWeek)],
+          ["Discharges due, 7 days", small(dueThisWeek)],
         ],
       }}
       phone={{
@@ -557,12 +557,12 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
               <HeroStat value={<span data-testid="ward-stat-capacity-empty">{emptyBeds}</span>} label="Empty" />
               {/* The phone has no stay or discharge cards, so these two stay in its hero. */}
               {isPhone && averageStay !== null ? <HeroStat value={`${averageStay} days`} label="Average stay" /> : null}
-              {isPhone ? <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" /> : null}
+              {isPhone ? <HeroStat value={small(dueThisWeek)} label="Discharges due, 7 days" /> : null}
             </>
           ) : (
             <>
               {averageStay === null ? null : <HeroStat value={`${averageStay} days`} label="Average stay" />}
-              <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" />
+              <HeroStat value={small(dueThisWeek)} label="Discharges due, 7 days" />
             </>
           )}
         </>
@@ -871,12 +871,12 @@ function Barriers({
   return (
     <StatCard
       icon={ListOrdered}
-      title="Discharge barriers"
+      title="Discharges held up"
       id="ward-barriers"
       action={
         ready === null ? null : (
           <Segmented
-            label="Discharge barriers shown"
+            label="Discharges held up shown"
             value={show}
             onChange={setShow}
             items={[
@@ -896,7 +896,7 @@ function Barriers({
           <p className={styles.srOnly} data-testid="ward-stat-ready-blocked">
             <span>Clinically ready, not yet gone</span>{" "}
             {exact(headlineTotal) === 0 ? (
-              <>0. No admission on this ward that has not departed carries a blocker.</>
+              <>0. No admission on this ward is held up.</>
             ) : (
               <>
                 {total} {total === 1 ? "admission" : "admissions"} on this ward that {total === 1 ? "has" : "have"} not
@@ -942,7 +942,7 @@ function Barriers({
               ) : (
                 <div aria-hidden="true">
                   <BarList
-                    label="Discharge barriers"
+                    label="Discharges held up"
                     axis
                     max={countAxisMax(tallyShown.filter((count) => typeof count === "number"))}
                     labelWidth="12rem"
@@ -1033,7 +1033,7 @@ function Roster({
 
   function exportCsv() {
     const lines = [
-      ["Synthetic admission", "Sex", "Status", "Days in bed", "Expected discharge set", "Blocker", "Date revisions"],
+      ["Synthetic admission", "Sex", "Status", "Days in bed", "Expected discharge set", "Held up by", "Date revisions"],
       ...shown.map((row) => [
         row.admission.id,
         row.sex,
@@ -1101,7 +1101,7 @@ function Roster({
                 Length of stay
               </th>
               <th scope="col">Discharge target</th>
-              <th scope="col">Blocker</th>
+              <th scope="col">Held up by</th>
               <th scope="col" className={styles.num}>
                 Revised
               </th>

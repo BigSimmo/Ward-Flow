@@ -15,7 +15,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedDouble, House, Bell, ListChecks, Plus } from "lucide-react";
+import { Activity, BedDouble, House, Bell, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { SrOnly } from "@/components/wf";
@@ -27,7 +27,9 @@ import {
 } from "@/components/ward-management/ward-chrome-role";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
+import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
+import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-awaiting-pull";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
@@ -346,7 +348,7 @@ function PhoneDock({
   counts: CountMap;
   pathname: string;
   tasksCount: number;
-  /** One Alerts queue: the Tasks tab is the Alerts tab and opens the Alerts screen. */
+  /** One Alerts queue: the dock's Alerts tab opens the Alerts screen. */
   oneAlertsQueue: boolean;
   activityUnread: number;
   onGo: (entry: RailEntry) => void;
@@ -399,7 +401,8 @@ function PhoneDock({
         );
       }
       case "queue":
-        // Q177 (Josh, 1 Nov 2026): the coordinator's dock says Tasks again and opens the same queue.
+        // Q268 (Josh, 2 Nov 2026): the coordinator's dock says Alerts, with the bell, as the header and
+        // Menu do (one name and one icon on every desk, 31 Oct). It replaces Q177's "Tasks".
         return oneAlertsQueue ? (
           <Link
             key="tasks"
@@ -408,13 +411,13 @@ function PhoneDock({
             className={DOCK_ITEM}
             aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
             data-testid="ward-phone-menu-tasks"
-            onClick={() => announceToWardShell("Tasks.")}
+            onClick={() => announceToWardShell("Alerts.")}
           >
             <DockFace
-              icon={ListChecks}
-              label="Tasks"
+              icon={Bell}
+              label="Alerts"
               count={tasksCount}
-              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+              tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
             />
           </Link>
         ) : (
@@ -427,10 +430,10 @@ function PhoneDock({
             onClick={() => onDrawer("tasks")}
           >
             <DockFace
-              icon={ListChecks}
-              label="Tasks"
+              icon={Bell}
+              label="Alerts"
               count={tasksCount}
-              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+              tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
             />
           </button>
         );
@@ -707,24 +710,28 @@ export function NextPhoneMenu({
   const actNowCount = useMemo(
     () =>
       wardTasksAreActionableForRole(shellRole)
-        ? activeActNowItems(
-            {
-              movements,
-              units,
-              configuration,
-              inboxSnoozes,
-              leaveBeds,
-              admissions,
-              patients,
-              referrals,
-              supportNotifications,
-              plannedAdmissions,
-              // The bar's shape exactly, so this reuses the bar's task list instead of building its own
-              // on every page load (F-11). The wording setting changes no act-now row.
-              stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
-            },
-            flowNow,
-          ).length
+        ? // Q260: Act now as Home and Alerts count it, accepted referrals awaiting a bed pull included.
+          alertsNowFigures(
+            activeTaskItems(
+              {
+                movements,
+                units,
+                configuration,
+                inboxSnoozes,
+                leaveBeds,
+                admissions,
+                patients,
+                referrals,
+                supportNotifications,
+                plannedAdmissions,
+                // The bar's shape exactly, so this reuses the bar's task list instead of building its own
+                // on every page load (F-11). The wording setting changes no act-now row.
+                stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
+              },
+              flowNow,
+            ),
+            acceptedReferralsAwaitingPull(referrals, units, movements).length,
+          ).actNow
         : 0,
     [
       shellRole,

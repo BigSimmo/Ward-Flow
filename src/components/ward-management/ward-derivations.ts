@@ -164,7 +164,7 @@ export const bedReleaseStateLabels: Record<BedReleaseState, string> = {
  *  a member of `bedReleaseStateLabels` above: being stuck is not one of the three stages, it sits
  *  on top of one, and a screen renders both — "Confirmed" and "Blocked" together are the whole
  *  point of the change. Named once here so no screen types the word itself. */
-export const BED_RELEASE_BLOCKED_LABEL = "Blocked";
+export const BED_RELEASE_BLOCKED_LABEL = "Held up";
 
 /**
  * The same fact as a COUNT, and deliberately worded differently from the flag above.

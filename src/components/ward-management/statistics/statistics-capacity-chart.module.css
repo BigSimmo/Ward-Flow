@@ -452,7 +452,7 @@
 /* Phone polish (8 Oct 2026): one grouping switch in the head (the scale stays on share), search and
  * sort on one row with the service filter under it, the alert-line stepper left to the larger
  * screen, end ticks only on the axis, and rows that keep a 48px tap target. Under 48rem only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .headControls > :last-child {
     display: none;
   }

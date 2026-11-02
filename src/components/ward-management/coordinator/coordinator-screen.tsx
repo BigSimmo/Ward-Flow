@@ -27,6 +27,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
+import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
 import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { allDeclines, allOverrides, type InboxItem, isOpen } from "@/components/ward-management/ward-derivations";
@@ -172,7 +173,7 @@ const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this sessi
 /**
  * Home and Activity (design approved by Josh, 31 Oct 2026, "Yes to all"):
  *
- * - three lists, My List, Waiting and Planned (Josh's words); Planned is the rest of the shift
+ * - three lists, My List, Open and Planned (Josh's words; Open was Waiting until Q260); Planned is the rest of the shift
  *   from times the records already hold (`planned-model.ts`);
  * - the hero's "new since" count is a changes chip that opens Activity on Changes
  *   (`activity-panel.tsx`), whose review is explicit (`activity-changes.ts`); the desktop
@@ -578,7 +579,8 @@ export function CoordinatorScreen() {
     const all = acceptedReferralsAwaitingPull(referrals, units, movements);
     return isReferralInServiceScope ? all.filter((entry) => isReferralInServiceScope(entry.referral)) : all;
   }, [referrals, units, movements, isReferralInServiceScope]);
-  const actNowCount = actEntries.length + toPull.length;
+  // Q260: the Act now figure the phone Menu, the bell and Alerts read (`ward-alerts-figures.ts`).
+  const actNowCount = alertsNowFigures(actionInbox, toPull.length).actNow;
   const chosenAlert = selectedAlertId ? alertEntries.find((entry) => entry.item.id === selectedAlertId) : undefined;
   const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
@@ -657,7 +659,7 @@ export function CoordinatorScreen() {
   // The highlight chips count the queue they highlight (after the ED and service filters), P002/P003.
   const chips = homeChipFigures(queue, now, selectedEd?.siteCode);
   // Shortest clear words (Josh, 30 Oct 2026); a chosen ED is still named.
-  // The spoken name keeps the noun (P002: "Tier 1 open journeys", as Movements says it).
+  // The spoken name keeps the noun (P002: "Tier 1 open movements", as Movements says it; Q262).
   const edSuffix = selectedEd ? ` · ${selectedEd.siteCode}` : "";
   const overdueWord = (
     <>
@@ -667,7 +669,7 @@ export function CoordinatorScreen() {
   );
   const tierOneWord = (
     <>
-      Tier 1 <SrOnly>open journeys</SrOnly>
+      Tier 1 <SrOnly>open movements</SrOnly>
       {edSuffix}
     </>
   );
@@ -707,7 +709,7 @@ export function CoordinatorScreen() {
     .toLowerCase();
   const heroTitle = (
     <>
-      <span className={styles.heroNum}>{edJourneys.total}</span> open ED journeys,{" "}
+      <span className={styles.heroNum}>{edJourneys.total}</span> open ED movements,{" "}
       <span className={styles.heroNum}>{bedsReady}</span> {bedsReady === 1 ? "bed" : "beds"} ready
     </>
   );
@@ -1032,7 +1034,9 @@ export function CoordinatorScreen() {
                     showView(view);
                     if (view !== "needs") chooseNeedsFocus("all");
                   }}
-                  // Josh's words and capitalisation (30 Oct 2026): My List, Waiting, Planned.
+                  // Josh's words and capitalisation (30 Oct 2026): My List, Waiting, Planned. Q260 (pre-launch
+                  // review T1, 2 Nov 2026): the queue tab is "Open", as it counts every open movement (the
+                  // sidebar's "still open"); "Waiting" is kept for the people waiting in ED.
                   items={[
                     {
                       id: "needs",
@@ -1040,8 +1044,8 @@ export function CoordinatorScreen() {
                       tone: actNowCount > 0 ? "danger" : undefined,
                       count: actNowCount + referralQueue.length + waitEntries.length,
                     },
-                    // Today's "Everyone waiting" queue; the same number the list's Patients tab shows.
-                    { id: "queue", label: "Waiting", count: queue.length },
+                    // Today's queue of open movements; the same number the list's Patients tab shows.
+                    { id: "queue", label: "Open", count: queue.length },
                     { id: "planned", label: "Planned", count: plannedRows.length },
                   ]}
                 />

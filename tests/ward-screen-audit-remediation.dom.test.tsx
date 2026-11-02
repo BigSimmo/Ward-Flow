@@ -58,14 +58,14 @@ describe("WardScreen & WardIndex audit remediation", () => {
     fireEvent.click(within(drawer).getByRole("tab", { name: "Plan to leave" }));
     expect(drawer).toHaveTextContent(/Today:\s*None recorded/i);
 
-    fireEvent.click(getBedStep("Record blocker", drawer));
-    const select = within(drawer).getByRole("combobox", { name: "Discharge blocker" });
+    fireEvent.click(getBedStep("Record hold-up", drawer));
+    const select = within(drawer).getByRole("combobox", { name: "Held up by" });
     fireEvent.change(select, { target: { value: "Awaiting accommodation" } });
-    fireEvent.click(within(drawer).getByRole("button", { name: "Save blocker" }));
+    fireEvent.click(within(drawer).getByRole("button", { name: "Save hold-up" }));
 
     expect(drawer).toHaveTextContent(/Today:\s*Awaiting accommodation/i);
 
-    const clearBtn = within(drawer).getByRole("button", { name: "Clear blocker" });
+    const clearBtn = within(drawer).getByRole("button", { name: "Clear hold-up" });
     fireEvent.click(clearBtn);
     expect(drawer).toHaveTextContent(/Today:\s*None recorded/i);
   });

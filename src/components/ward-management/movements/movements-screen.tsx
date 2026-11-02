@@ -736,12 +736,12 @@ export function MovementsScreen() {
         if (group.length === 0) return null;
         return (
           <section key={state} className={flow.trGroup} aria-label={`${LEG_STATE_LABEL[state]}, ${group.length}`}>
-            <h4 className={flow.trGroupHead}>
+            <div className={flow.trGroupHead}>
               <StatusGlyph tone={LEG_STATE_TONE[state]} size={9} />
               {LEG_STATE_LABEL[state]}
               <span className={flow.trGroupCount}>{group.length}</span>
               <span className={flow.trGroupWord}>{LEG_GROUP_WORD[state]}</span>
-            </h4>
+            </div>
             {group.map((leg) => {
               const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
               const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
@@ -1179,7 +1179,7 @@ export function MovementsScreen() {
                 <span>Tier</span>
                 <span>Patient</span>
                 <span>Route</span>
-                <span>{boardTab === "resolved" ? "Outcome" : "Barrier"}</span>
+                <span>{boardTab === "resolved" ? "Outcome" : "Held up by"}</span>
                 <span>Legal</span>
                 <span className={flow.columnEnd}>{boardTab === "resolved" ? "Took" : "Waited"}</span>
                 <span className={flow.columnEnd}>{boardTab === "resolved" ? "Closed" : "Next step"}</span>
@@ -1477,7 +1477,7 @@ export function MovementsScreen() {
 
         <WardPrototypeFooter
           testId="ward-movements-governance"
-          note="Patient journeys, transport legs and departments are invented · Not approved for clinical use"
+          note="Patient movements, transport legs and departments are invented · Not approved for clinical use"
         />
         <MovementDrawer
           // P2 item 4 (2026-09-17 review): remounts on every patient change, so a reason chosen

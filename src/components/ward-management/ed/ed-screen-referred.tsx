@@ -132,8 +132,8 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                     </span>
                   </header>
                   <p className={styles.cardMeta}>
-                    {movement.cohort} &middot; {movement.security} &middot; {movement.sex} &middot;{" "}
-                    {movement.legalStatus}
+                    {movement.cohort} &middot; {movement.security === "Secure" ? "Locked" : movement.security} &middot;{" "}
+                    {movement.sex} &middot; {movement.legalStatus}
                   </p>
                   <div className={styles.outstandingItem}>
                     <span className={styles.outstandingLabel}>Going to</span>
@@ -222,7 +222,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                     <div className={styles.tableActionGroup}>
                       <select
                         data-testid={`ward-ed-record-gender-${movement.id}`}
-                        aria-label={`Record gender for ${patientInfo.displayName}`}
+                        aria-label={`Record gender for ${patientInfo.formalName}`}
                         value={genderRecordDraft[movement.id] ?? ""}
                         onChange={({ target: { value } }) =>
                           setGenderRecordDraft((current) => ({

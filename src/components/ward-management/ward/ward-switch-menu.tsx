@@ -14,7 +14,7 @@ import { useWardFlowSelect, useWardNetwork } from "@/components/ward-management/
 import type { Unit } from "@/components/ward-management/ward-model";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
-import { Button, OverlayPortal, ShowMoreRow } from "@/components/wf";
+import { Button, OverlayPortal, ShowMoreRow, cycleTabWithin } from "@/components/wf";
 
 import styles from "./ward-switch-menu.module.css";
 
@@ -126,6 +126,8 @@ function WardSwitchPanel({
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      // A4 (accessibility check, 2 Nov 2026): Tab stays inside the open panel, like the other pop-ups.
+      if (cycleTabWithin(event, panel.current)) return;
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopPropagation();
@@ -192,7 +194,14 @@ function WardSwitchPanel({
   return (
     <OverlayPortal layer="popover" name="ward-switcher">
       <div className={styles.scrim} aria-hidden="true" />
-      <div ref={panel} className={styles.panel} role="dialog" aria-labelledby={titleId} data-testid="ward-switch-menu">
+      <div
+        ref={panel}
+        className={styles.panel}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        data-testid="ward-switch-menu"
+      >
         <header className={styles.head}>
           <strong id={titleId}>Switch ward</strong>
           <Button

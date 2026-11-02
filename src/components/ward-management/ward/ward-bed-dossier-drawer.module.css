@@ -202,6 +202,14 @@
   text-decoration: underline;
 }
 
+/* A phone on its side opens this drawer (Q289): the link takes the phone's 40px touch height. */
+@media (max-width: 46.4375rem), (pointer: coarse) and (max-height: 500px) {
+  .headPatient {
+    min-height: 40px;
+    margin-top: 0;
+  }
+}
+
 /* Pill tabs */
 .tabsWrap {
   padding: var(--wf-s-3) var(--wf-s-4) 0;
@@ -615,7 +623,7 @@
 }
 
 /* Phone (v10 bed sheet): one scrolling sheet, no tabs. Only rendered on phone. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneSheet {
     top: auto;
     left: 0;
@@ -891,7 +899,7 @@
 
 /* No side edge (owner ruling, 31 Oct 2026): the glyph before the words carries the tone. */
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Redesign: the filled step takes the full width; the plain step and More share the row below. */
   .actionsPhone {
     flex-wrap: wrap;
@@ -912,5 +920,27 @@
 
   .phoneKv .kvDt {
     white-space: normal;
+  }
+}
+
+/* Q288 (pre-launch review, 2 Nov 2026): on a short screen (a phone on its side, 844x390) the fixed
+   head, figures, tabs and pinned foot left the body 28px to scroll. Under 500px tall, whatever the
+   width, the whole drawer scrolls as one: the head and tabs scroll away with the body and the
+   actions sit at the end of it instead of pinned. Taller screens keep the fixed head and foot. */
+@media screen and (max-height: 500px) {
+  .drawer {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .drawer > * {
+    flex-shrink: 0;
+  }
+
+  .drawerBody,
+  .phoneBody {
+    flex: 1 0 auto;
+    min-height: auto;
+    overflow: visible;
   }
 }

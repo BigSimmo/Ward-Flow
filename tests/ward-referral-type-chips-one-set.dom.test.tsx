@@ -34,7 +34,9 @@ const LABELS = ["Ward bed", "ED", "More than one", "Community", "Refused once"];
 
 function setPhone(phone: boolean) {
   const mm = (query: string) => ({
-    matches: phone ? query === "(max-width: 48rem)" || query === "(max-width: 40rem)" : query === "(min-width: 64rem)",
+    matches: phone
+      ? query === "(max-width: 46.4375rem)" || query === "(max-width: 40rem)"
+      : query === "(min-width: 64rem)",
     media: query,
     addEventListener: () => {},
     removeEventListener: () => {},

@@ -113,8 +113,8 @@ describe("Compare uses its released aggregate model", () => {
     expect(figure).not.toHaveTextContent("Mean of wards:");
     // the redesign (Josh, 1 Nov 2026) draws highest first with no sort switch; the group chips stay.
     expect(within(wardCard()).queryByRole("radio", { name: "Lowest" })).not.toBeInTheDocument();
-    fireEvent.click(within(wardCard()).getByRole("button", { name: /^Secure/ }));
-    expect(within(wardCard()).getByRole("button", { name: /^Secure/ })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(within(wardCard()).getByRole("button", { name: /^Locked/ }));
+    expect(within(wardCard()).getByRole("button", { name: /^Locked/ })).toHaveAttribute("aria-pressed", "true");
     fireEvent.change(within(wardCard()).getByRole("searchbox"), { target: { value: data.wards[0].name } });
     expect(wardCard()).toHaveTextContent("network reference are not shown");
     fireEvent.change(within(wardCard()).getByRole("searchbox"), { target: { value: "" } });

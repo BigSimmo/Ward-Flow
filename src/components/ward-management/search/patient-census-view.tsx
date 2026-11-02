@@ -1007,9 +1007,15 @@ export function CensusEmpty({
   onReset,
   addHref,
   onAdd,
+  nothingHeld = false,
 }: {
   query: string;
   onReset: () => void;
+  /**
+   * Q277 (pre-launch review E5, 2 Nov 2026): nobody is on the census and no search or filter is set,
+   * so the line says so plainly instead of blaming a search, and there is no Clear search to press.
+   */
+  nothingHeld?: boolean;
   /** Absent for a desk whose role cannot add a patient (P165): no link to a refusal page. */
   addHref?: string;
   onAdd: (event: ReactMouseEvent<HTMLAnchorElement>) => void;
@@ -1017,11 +1023,19 @@ export function CensusEmpty({
   return (
     <div className={styles.empty}>
       <Icon icon={SearchX} size={20} />
-      <span>{query ? `No patient matches “${query}”` : "No patient matches the current search"}</span>
+      <span>
+        {nothingHeld
+          ? "No patients yet."
+          : query
+            ? `No patient matches “${query}”`
+            : "No patient matches the current search"}
+      </span>
       <span className={styles.emptyActions}>
-        <Button size="sm" onClick={onReset}>
-          Clear search
-        </Button>
+        {nothingHeld ? null : (
+          <Button size="sm" onClick={onReset}>
+            Clear search
+          </Button>
+        )}
         {addHref ? (
           <Link className={buttonClass({ variant: "pri", size: "sm" })} href={addHref} onClick={onAdd}>
             <Icon icon={UserPlus} size={14} />

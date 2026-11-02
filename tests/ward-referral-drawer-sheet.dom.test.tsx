@@ -226,7 +226,7 @@ describe("referral slide-out, option B", () => {
 
   it("registers a new patient inside the sheet and selects them", async () => {
     renderDrawer();
-    fireEvent.click(screen.getByRole("button", { name: "New patient" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add patient" }));
     const form = screen.getByTestId("ward-referral-new-patient");
     fireEvent.click(within(form).getByRole("button", { name: "Add patient" }));
     expect(within(form).getByRole("alert")).toHaveTextContent("Enter the family and given names.");
@@ -245,7 +245,7 @@ describe("referral slide-out, option B", () => {
 
   it("prefills Adult for a 20 year old with the soft youth note, and the band stays editable", async () => {
     renderDrawer();
-    fireEvent.click(screen.getByRole("button", { name: "New patient" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add patient" }));
     const form = screen.getByTestId("ward-referral-new-patient");
     fireEvent.change(within(form).getByLabelText("Family name"), { target: { value: "Synthetica" } });
     fireEvent.change(within(form).getByLabelText("Given name"), { target: { value: "Young" } });

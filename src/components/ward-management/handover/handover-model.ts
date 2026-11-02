@@ -386,7 +386,7 @@ export function handoverGroups(cutoff: Instant, now: Instant) {
     {
       id: "rel",
       title: "Transport stopped, release pulled bed",
-      why: "Journey stopped after collection; the bed is still pulled",
+      why: "Movement stopped after collection; the bed is still pulled",
     },
     { id: "bed", title: "Finding a ward", why: "Placement requested or a ward is reviewing" },
     { id: "acc", title: "Accepted, bed not ready", why: "Ward accepted, bed not yet free" },

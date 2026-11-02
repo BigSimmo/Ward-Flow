@@ -315,7 +315,7 @@ describe("shared provider boundary", () => {
     );
     const { rerender } = render(tree());
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-    fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
     fireEvent.click(screen.getByRole("radio", { name: "By group" }));
     fireEvent.click(screen.getByRole("button", { name: /Regional \(WACHS\)/ }));
     const title = screen.getByLabelText(/^Title$/i) as HTMLInputElement;

@@ -96,6 +96,10 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+/* Q297 follow-up: Show list keeps its own width with large text; the sentence beside it wraps. */
+.checkRow[data-phone] > button {
+  flex: none;
+}
 
 /* The person panel's blocker title wraps rather than cutting off ("Form due soon, as typed"). */
 .wrapTitle {
@@ -105,7 +109,7 @@
 
 /* Final check (30 Oct 2026): on a phone the time column fits "no update 10h 00m" on one line
    instead of splitting the duration. Doubled class: beats the board's own phone grid. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneTimes.phoneTimes tbody > tr {
     grid-template-columns: auto minmax(0, 1fr) 7rem;
   }
@@ -116,7 +120,7 @@
 
 /* Final check (30 Oct 2026): on a desktop the referrals line under the list keeps the card's inset
    instead of starting on the card's edge. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .referralsLine {
     padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
   }
@@ -126,7 +130,7 @@
    Emergency Department", "Form 4A ends as typed · within 1h") wrap in full rather than ending in
    "…". The labels share one grid cell, so the row grows to the tallest label instead of a fixed
    34px; each keeps its place along the bar. Desktop only: the phone already stacks them. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .sxWrap.sxWrap {
     display: grid;
     height: auto;
@@ -148,7 +152,7 @@
 /* D-91 (Josh, 31 Oct 2026): the phone owner chips put the count first ("41 Waiting on you"), as
    Home's and Referrals' chips do. The shared board CSS reverses the pair on a phone; this puts it
    back in reading order. Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .countFirst.countFirst {
     flex-direction: row;
   }
@@ -157,12 +161,21 @@
 /* Owner rule (31 Oct 2026): on a phone the row's name and its place line ("FSH ED · In transit
    since 10:38 · UM100045") wrap in full rather than ending in "…", as a phone has no hover. Tripled
    class: beats the board's phone row rule. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phWrapLine.phWrapLine.phWrapLine {
     overflow: visible;
     text-overflow: clip;
     white-space: normal;
     overflow-wrap: break-word;
+  }
+
+  /* Q285: the kit's one-line FormalName reads as plain wrapping text here. */
+  .phWrapLine [data-formal-name],
+  .phWrapLine [data-formal-name] > span {
+    display: inline;
+    max-width: none;
+    overflow: visible;
+    white-space: inherit;
   }
 }
 
@@ -172,7 +185,7 @@
   width: 12.5rem;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .searchField {
     flex: 1 1 100%;
     width: auto;

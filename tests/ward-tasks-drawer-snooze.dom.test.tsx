@@ -97,7 +97,7 @@ describe("tasks drawer: ownership and snooze", () => {
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
-        matches: query === "(max-width: 48rem)",
+        matches: query === "(max-width: 46.4375rem)",
         media: query,
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
@@ -299,7 +299,7 @@ describe("phone tasks: act now, then oldest, and a Seen marker (remaining-pages 
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
-        matches: query === "(max-width: 48rem)",
+        matches: query === "(max-width: 46.4375rem)",
         media: query,
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),

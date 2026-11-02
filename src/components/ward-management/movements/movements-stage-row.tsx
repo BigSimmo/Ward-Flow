@@ -28,7 +28,17 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { type MovementLegState } from "./movements-derivations";
 import { ArrowRight, Check, ChevronRight, Lock, Scale, X } from "lucide-react";
-import { SrOnly, StatusGlyph, TierTile, Timer, buttonClass, cx, useIsPhone, type WfTone } from "@/components/wf";
+import {
+  FormalName,
+  SrOnly,
+  StatusGlyph,
+  TierTile,
+  Timer,
+  buttonClass,
+  cx,
+  useIsPhone,
+  type WfTone,
+} from "@/components/wf";
 import { movementNextStep, nextStepTarget, type MovementNextStep } from "./movement-next-step";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";
@@ -349,7 +359,7 @@ export function StageRow({
             onClick={() => onOpenDetail(movement.id)}
             aria-label={`What is recorded for ${patientInfo.formalName}`}
           >
-            {patientInfo.formalName}
+            <FormalName name={patientInfo.formalName} />
           </button>
           {movement.security === "Secure" ? (
             <Lock size={13} className={flow.lock} aria-label="Needs a locked bed" />
@@ -380,7 +390,7 @@ export function StageRow({
               <Link
                 href={`/ward-flow/board/${movement.acceptedUnitId}`}
                 className={flow.wardLink}
-                title={`Open ${destinationLabel} Bed Board`}
+                title={`Open ${destinationLabel} Bed board`}
               >
                 {destinationLabel}
               </Link>
@@ -406,7 +416,7 @@ export function StageRow({
         ) : null}
         <span className={closureState ? flow.sub : flow.barrier} title={barrierText}>
           {closureState ? null : <StatusGlyph tone={barrierTone} size={9} className={flow.barrierGlyph} />}
-          <span className="sr-only">{closure ? "Closure note: " : blocker ? "Delay barrier: " : "Stage: "}</span>
+          <span className="sr-only">{closure ? "Closure note: " : blocker ? "Held up by: " : "Stage: "}</span>
           {barrierText}
         </span>
       </span>

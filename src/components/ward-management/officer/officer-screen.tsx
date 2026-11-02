@@ -36,6 +36,7 @@ import {
   phoneRows,
   tableClasses,
   useIsPhone,
+  useIsTabletPortrait,
   useModalFocus,
   type WfTone,
 } from "@/components/wf";
@@ -361,14 +362,13 @@ export function OfficerScreen() {
   };
   const bookingMovement = bookingId === undefined ? undefined : needing.find((movement) => movement.id === bookingId);
 
-  // Between the phone sheet and the two-column layout the panel stacks above the lists, so a
-  // newly chosen job is scrolled into view rather than opening off-screen.
+  // Tablet portrait: the panel stacks above the lists, so a chosen job scrolls into view.
   const sideRef = useRef<HTMLDivElement>(null);
+  const isTabletPortrait = useIsTabletPortrait();
   useEffect(() => {
-    if (selectedId === undefined || typeof window.matchMedia !== "function") return;
-    if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
+    if (selectedId === undefined || !isTabletPortrait) return;
     sideRef.current?.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
-  }, [selectedId]);
+  }, [selectedId, isTabletPortrait]);
   // Phone: the panel is a modal bottom sheet (takes focus, traps Tab, isolates the page, hands focus
   // back); wider screens keep it non-modal. isPhone is declared above officerPatientName, which reads it.
   // The form check opens over the phone job sheet, so it joins the shared modal contract: the

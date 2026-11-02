@@ -23,7 +23,7 @@ describe("browser tab titles", () => {
   it("names the ward on its board", async () => {
     const unit = knownWardUnit("dn-rph-acute")!;
     const { title } = await boardMetadata(params("unitId", unit.id));
-    expect(title).toBe(`${unit.name} board — Ward Flow`);
+    expect(title).toBe(`${unit.name} Bed board — Ward Flow`);
   });
 
   it.each([

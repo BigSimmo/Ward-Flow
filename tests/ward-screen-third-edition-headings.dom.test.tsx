@@ -186,7 +186,7 @@ describe("the ward screen's third-edition panel names", () => {
     }
     // Polish (1 Nov 2026): every window is named once, on its step in the window track; the side
     // card lists only the other windows still to decide, so a clear window has no heading there.
-    for (const heading of ["Staffing", "Intake", "Leave", "Departures"]) {
+    for (const heading of ["Staffing", "Intake", "Leave", "Discharges"]) {
       expect(
         screen.getByRole("button", { name: new RegExp(`^${heading}, `) }),
         `the decisions queue is missing "${heading}"`,

@@ -28,6 +28,7 @@ import {
   phoneRows,
   type SinceItem,
   type WfTone,
+  FormalName,
 } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { ColumnContext } from "./handover-columns";
@@ -206,7 +207,9 @@ function PatientRow({
       <span className={styles.prowText}>
         <span className={styles.prowTop}>
           <Tier tier={row.tier} />
-          <b className={styles.prowName}>{row.name}</b>
+          <b className={styles.prowName}>
+            <FormalName name={row.name} />
+          </b>
           {highlighted ? <SrOnly>, highlighted</SrOnly> : null}
         </span>
         {/* Audit A4-28: the UMRN on every phone row, as on desktop, so two people of one name differ. */}

@@ -651,7 +651,7 @@ export function WardArrivalsCorridor({
         onClose={() => setReleaseDivertedId(null)}
         size="sm"
         title="Release pulled bed?"
-        description={`The bed pulled at ${unit.name} for ${releaseDivertedMovement ? resolvePatientIdentity(releaseDivertedMovement).displayName : "this patient"} is offered again and the diverted journey is closed. This cannot be undone.`}
+        description={`The bed pulled at ${unit.name} for ${releaseDivertedMovement ? resolvePatientIdentity(releaseDivertedMovement).displayName : "this patient"} is offered again and the diverted movement is closed. This cannot be undone.`}
         secondary={[{ label: "Cancel", onAction: () => setReleaseDivertedId(null) }]}
         primary={{
           label: "Release pulled bed",

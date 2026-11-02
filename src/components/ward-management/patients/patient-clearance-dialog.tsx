@@ -63,7 +63,7 @@ export function PatientClearanceDialog({
       : !attested
         ? "Tick the statement to save"
         : !hasJourney
-          ? "No journey is open to record against"
+          ? "No movement is open to record against"
           : undefined;
 
   return (
@@ -118,7 +118,7 @@ export function PatientClearanceDialog({
         />
 
         <p className={styles.note}>
-          No notification is sent. This records the stated outcome in the shared synthetic journey.
+          No notification is sent. This records the stated outcome in the shared synthetic movement.
         </p>
 
         <div className={styles.actions}>

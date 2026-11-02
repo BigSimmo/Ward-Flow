@@ -43,7 +43,7 @@ it("retains every existing event detail in phone print order instead of only the
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query: string) => ({
-      matches: query === "(max-width: 48rem)",
+      matches: query === "(max-width: 46.4375rem)",
       media: query,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),

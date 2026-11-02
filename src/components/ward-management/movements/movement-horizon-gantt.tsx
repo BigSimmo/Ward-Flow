@@ -641,7 +641,7 @@ export function MovementHorizonGantt({
                                   data-mid={ev.id}
                                   tabIndex={0}
                                   role="button"
-                                  aria-label={`${barPatientName(ev)}, ${ev.title}: ${ev.origin} to ${ev.dest}${ev.carrier ? `, ${ev.carrier}` : ""}${ev.bed ? `, ${ev.bed}` : ""}`}
+                                  aria-label={`${formalName(barPatientName(ev))}, ${ev.title}: ${ev.origin} to ${ev.dest}${ev.carrier ? `, ${ev.carrier}` : ""}${ev.bed ? `, ${ev.bed}` : ""}`}
                                   onClick={() => selectMovement(ev.id)}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter" || e.key === " ") {

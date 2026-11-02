@@ -60,7 +60,7 @@ describe("placement decisions keep 48px on phones", () => {
 
   it("the not-a-bed buttons keep 48px even in a narrow window with a mouse", () => {
     const css = read("referrals/referrals.module.css");
-    const rule = css.slice(css.lastIndexOf("@media (max-width: 48rem), (pointer: coarse) {"));
+    const rule = css.slice(css.lastIndexOf("@media (max-width: 46.4375rem), (pointer: coarse) {"));
     expect(rule).toMatch(/\.matchPanel \[data-placement-action\]/u);
     expect(rule).toMatch(/min-height:\s*max\(3rem,/u);
     // Last in the file, so the compact (pointer: fine) faces above cannot undercut it.

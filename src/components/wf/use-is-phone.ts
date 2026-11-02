@@ -2,10 +2,14 @@
 
 import { createContext, createElement, useCallback, useContext, useSyncExternalStore, type ReactNode } from "react";
 
-/** The phone range (v10): phone rules live under this query, desktop and tablet above it. */
-export const WF_PHONE_QUERY = "(max-width: 48rem)";
-/** Tablet portrait (v10 shell, 769 to 1000px): no rail beside the work. */
-export const WF_TABLET_PORTRAIT_QUERY = "(min-width: 48.0625rem) and (max-width: 62.5rem)";
+/**
+ * The phone range (v10): phone rules live under this query, desktop and tablet above it. Q292 (2 Nov
+ * 2026): phones end at 743px so portrait iPads (iPad mini 744, iPad 768) get the tablet layout. CSS
+ * media queries repeat these values: phone `(max-width: 46.4375rem)`, tablet and up `(min-width: 46.5rem)`.
+ */
+export const WF_PHONE_QUERY = "(max-width: 46.4375rem)";
+/** Tablet portrait (v10 shell, 744 to 1000px): no rail beside the work. */
+export const WF_TABLET_PORTRAIT_QUERY = "(min-width: 46.5rem) and (max-width: 62.5rem)";
 /** Tablet landscape (v10 shell, 1001 to 1200px): the icon rail. */
 export const WF_TABLET_LANDSCAPE_QUERY = "(min-width: 62.5625rem) and (max-width: 75rem)";
 

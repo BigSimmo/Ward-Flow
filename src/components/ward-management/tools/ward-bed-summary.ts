@@ -76,7 +76,7 @@ export function bedSummaryText(input: BedSummaryInput): string {
     `Mental health bed summary at ${formatInstant(now)} AWST`,
     `Ready beds: ${readyTotal} of ${beds}${pendingTotal > 0 ? `, ${pendingTotal} pending preparation` : ""}.`,
     byService ? `Ready by service: ${byService}.` : "Ready by service: none.",
-    `Open ED journeys: ${waiting.total}${waitingByService ? ` (${waitingByService})` : ""}.`,
+    `Open ED movements: ${waiting.total}${waitingByService ? ` (${waitingByService})` : ""}.`,
     `Still in ED: ${waiting.stillInEd}. In transit or recorded departure: ${waiting.inTransit}.`,
     `Discharges today and tomorrow: ${confirmed} confirmed${confirmedHeldUp > 0 ? ` (${confirmedHeldUp} also held up)` : ""}, ${expected} expected. Of these, ${heldUp} held up.`,
     ...(flagged.length > 0

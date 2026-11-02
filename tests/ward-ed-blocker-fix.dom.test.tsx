@@ -76,7 +76,7 @@ describe("greyed actions on the ED board", () => {
   const original = typeof window !== "undefined" ? window.matchMedia : undefined;
   beforeEach(() => {
     window.matchMedia = ((query: string) => ({
-      matches: query === "(max-width: 48rem)",
+      matches: query === "(max-width: 46.4375rem)",
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
@@ -153,7 +153,7 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
   const original = typeof window !== "undefined" ? window.matchMedia : undefined;
   function phone(matches: boolean) {
     window.matchMedia = ((query: string) => ({
-      matches: matches && query === "(max-width: 48rem)",
+      matches: matches && query === "(max-width: 46.4375rem)",
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,

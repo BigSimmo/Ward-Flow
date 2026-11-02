@@ -550,7 +550,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
             <>
               {/* F-08 (phone review, Oct 2026): the standard Demo pill on the phone hero. */}
               {isPhone ? <LiveChip state="live" onHero /> : null}
-              {/* Phone (Josh, 31 Oct 2026): Guide and Raise referral are Home's hero pills. */}
+              {/* Phone (Josh, 31 Oct 2026): Guide and New referral are Home's hero pills. */}
               <div className={`${styles.heroActions} ${phoneRows.heroPills}`}>
                 <Button
                   ref={drawerTriggerRef}
@@ -571,7 +571,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   data-testid="community-action-raise-referral"
                 >
                   <Icon icon={Plus} size={16} />
-                  Raise referral
+                  New referral
                 </Link>
               </div>
             </>
@@ -1012,7 +1012,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 <div className={guideStyles.guideActions}>
                   <Link href="/ward-flow/referrals/new" className={buttonClass({ variant: "sec" })}>
                     <Icon icon={Plus} size={16} />
-                    Raise referral
+                    New referral
                   </Link>
                   <Link href="/ward-flow/referrals" className={buttonClass({ variant: "sec" })}>
                     <Icon icon={ArrowRight} size={16} />

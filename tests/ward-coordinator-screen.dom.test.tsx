@@ -28,13 +28,13 @@ function SaveUrgentWindow() {
 }
 
 describe("CoordinatorScreen", () => {
-  it("names open ED journeys and separates physical presence from transport accountability", () => {
+  it("names open ED movements and separates physical presence from transport accountability", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("heading", { name: /open ED journeys/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /open ED movements/ })).toBeInTheDocument();
     expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/\d+ still in ED · \d+ in transit/);
   });
   it("renders the prototype footer with coordinator governance disclosure", () => {

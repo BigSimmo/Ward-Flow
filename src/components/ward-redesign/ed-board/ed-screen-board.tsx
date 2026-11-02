@@ -157,9 +157,9 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
         // WT-04 (walk-through, 26 Oct 2026): a bed request shows from Send, before any journey.
         <div className={styles.sentForBed} data-testid="ed-sent-for-bed">
           <h3 className={styles.sentForBedHeading}>
-            Asked for a ward bed, no journey yet <b>{sentForBed.length}</b>
+            Asked for a ward bed, no movement yet <b>{sentForBed.length}</b>
           </h3>
-          <ul aria-label="Asked for a ward bed, no journey yet">
+          <ul aria-label="Asked for a ward bed, no movement yet">
             {sentForBed.map((sent) => (
               <li key={sent.id}>
                 <span className={styles.sentForBedName}>{patientIdentityLine(sent.person)}</span>

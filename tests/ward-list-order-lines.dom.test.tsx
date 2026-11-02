@@ -81,9 +81,9 @@ describe("list order lines", () => {
     expect(line({ population: "records", highlighted: true, allStatuses: false })).toBe(
       "Highlighted people first. Soonest expected date first",
     );
-    expect(line({ view: "barriers" })).toBe("Largest barrier group first");
+    expect(line({ view: "barriers" })).toBe("Most common reason first");
     expect(line({ view: "barriers", highlighted: true })).toBe(
-      "Largest barrier group first. Highlighted people first in each.",
+      "Most common reason first. Highlighted people first in each.",
     );
   });
 
@@ -92,7 +92,7 @@ describe("list order lines", () => {
     const note = screen.getByTestId("delays-order-note");
     expect(screen.getByRole("button", { name: "Longest wait" })).toHaveAttribute("aria-pressed", "true");
     expect(note).toHaveTextContent(/^Longest wait first$/u);
-    fireEvent.click(screen.getByRole("button", { name: "By blocker" }));
+    fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
     expect(screen.getByTestId("delays-order-note")).toHaveTextContent(
       "Form times first, then other blockers. Longest wait first in each.",
     );
@@ -103,7 +103,7 @@ describe("list order lines", () => {
     // The order line is cut; the order itself (held up first, then by stage) stays, and the table's
     // caption still says it for screen readers.
     expect(screen.queryByTestId("ward-discharge-order-note")).not.toBeInTheDocument();
-    expect(screen.getByText(/^Bed releases, held up first\./u)).toBeInTheDocument();
+    expect(screen.getByText(/^Discharges by bed, held up first\./u)).toBeInTheDocument();
     // The Sort still offers Due first, and the Barriers view is gone (one barrier panel).
     fireEvent.change(screen.getByTestId("ward-discharges-sort"), { target: { value: "due-first" } });
     expect(screen.getByTestId("ward-discharges-sort")).toHaveValue("due-first");

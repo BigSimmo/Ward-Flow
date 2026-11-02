@@ -1696,7 +1696,7 @@
 }
 
 /* Phone: 16px so iOS Safari does not zoom the page on focus (the sign-off name and its selects). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .shortlistOverrideSelect {
     font-size: max(1rem, 16px);
   }
@@ -1769,7 +1769,7 @@
  * `.registersPanel` below), matching the mockup's own tabsPanel — which has no collapse control
  * at all — so this toggle would otherwise be a button that changes an `aria-expanded` value with
  * no visible effect, the "every button does something" rule's own failure shape. Restored inside
- * the same `@media (max-width: 48rem)` query `.diagramRegion` already uses to hide itself, so the
+ * the same `@media (max-width: 46.4375rem)` query `.diagramRegion` already uses to hide itself, so the
  * one width where the diagram disappears is exactly the one width where this toggle reappears.
  */
 .exceptionsToggle {
@@ -1909,7 +1909,7 @@
  * is what stands between a coordinator and Confirm, and selecting a row must dismiss it in the
  * same click (`onSelectMovement`, `coordinator-screen.tsx`) so the one-tap path stays one tap.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The phone-only collapse control, restored — see `.exceptionsToggle`'s own base-rule comment
      for why it is `display: none` everywhere else. */
   .exceptionsToggle {
@@ -2702,7 +2702,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .screen {
     padding-top: 0;
   }
@@ -2804,7 +2804,7 @@
 }
 
 /* After the rule above, so the phone sheet's shortlist still scrolls inside its own height. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .shortlistBody {
     overflow-y: auto;
   }

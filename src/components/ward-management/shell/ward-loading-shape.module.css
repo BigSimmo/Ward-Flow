@@ -102,7 +102,7 @@
   min-height: 14rem;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .band {
     min-height: 7.5rem;
   }

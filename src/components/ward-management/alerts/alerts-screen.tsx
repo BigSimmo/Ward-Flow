@@ -66,6 +66,7 @@ import {
   resolveAlertSubject,
   shownAgeFrom,
   type AlertKind,
+  alertsNowFigures,
 } from "./alerts-model";
 import {
   AlertCard,
@@ -517,13 +518,12 @@ function AlertsWorkspace() {
   const allEntries = useMemo(() => [...activeEntries, ...snoozedEntries], [activeEntries, snoozedEntries]);
   const countedActive = useMemo(() => activeEntries.filter((entry) => entry.group !== "running"), [activeEntries]);
   const yoursCount = countedActive.filter((entry) => entry.mine).length;
-  // Q111 (Josh, 1 Nov 2026): a ward's acceptance with no bed pulled is act now here too, as on Home.
-  // Only the coordinator pulls a bed, so only the coordinator's desk lists it.
+  // Q111 (Josh, 1 Nov 2026): a ward's acceptance with no bed pulled is act now, coordinator's desk only.
   const toPull = useMemo(
     () => (coordDesk ? acceptedReferralsAwaitingPull(referrals, units, movements) : []),
     [coordDesk, referrals, units, movements],
   );
-  const actCount = actEntries.length + toPull.length;
+  const { actNow: actCount, outstanding } = alertsNowFigures(inbox, toPull.length); // Q260: as the bell and Menu
   const pull = useAcceptedPull();
   const pullRows =
     toPull.length > 0 ? (
@@ -1156,7 +1156,7 @@ function AlertsWorkspace() {
   const noticesGroup = <AlertsNoticesGroup notices={unreadNotices} now={now} umrnLookup={umrnLookup} />;
   // Q181 (Josh, 1 Nov 2026): two views. Now counts what the headline counts; Earlier today has no count.
   const tabs = [
-    { id: "now" as const, label: "Now", count: actCount + waitEntries.length },
+    { id: "now" as const, label: "Now", count: outstanding },
     { id: "earlier" as const, label: "Earlier today", count: 0 },
   ];
 

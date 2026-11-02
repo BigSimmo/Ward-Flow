@@ -164,7 +164,7 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .grid {
     grid-template-columns: repeat(auto-fill, minmax(min(3.75rem, 100%), 1fr));
   }

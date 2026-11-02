@@ -106,7 +106,7 @@ function startReferral(umrn: string) {
   chooseSampleReferralPerson(umrn);
   fireEvent.click(screen.getByRole("button", { name: "Change" }));
   fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });
-  fireEvent.change(screen.getByLabelText("Catchment team"), { target: { value: "Inner City Clinic" } });
+  fireEvent.change(screen.getByLabelText("Community team"), { target: { value: "Inner City Clinic" } });
   fireEvent.change(screen.getByLabelText("Home region"), { target: { value: "Perth Metropolitan" } });
   fireEvent.change(screen.getByLabelText("Service area"), { target: { value: "East Metro" } });
   fireEvent.click(screen.getByRole("button", { name: "Confirm catchment" }));
@@ -130,7 +130,7 @@ async function walkToWards(umrn = ON_WARD_UMRN, notOnWardReason?: string) {
   )
     fireEvent.click(urgent);
   // The sending ward is a secure ward, so a secure bed request would list it if it were offered.
-  fireEvent.click(within(screen.getByRole("group", { name: "Bed security" })).getByLabelText("Secure"));
+  fireEvent.click(within(screen.getByRole("group", { name: "Bed security" })).getByLabelText("Locked"));
   next("Next, clearance");
   answer("Has the patient been medically cleared?", "No");
   typeDate(screen.getByLabelText("Expected clearance"), "2026-10-07T18:00");

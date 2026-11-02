@@ -130,10 +130,10 @@ describe("the Delays board's data views", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByRole("button", { name: "Longest wait" })).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(screen.getByRole("button", { name: "By blocker" }));
+    fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
     first.unmount();
     renderDelays();
-    expect(screen.getByRole("button", { name: "By blocker" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "By hold-up" })).toHaveAttribute("aria-pressed", "true");
   });
 
   // Audit 1, Josh 20 Oct (CS-04, NB-6b): a recorded form time due soon is marked, never pinned.
@@ -197,7 +197,7 @@ describe("the Delays board's data views", () => {
   it("keeps the table's column headers and cell roles, which the phone card layout relies on", () => {
     renderDelays();
     // The grouped view names its fourth column Wards; Longest wait (the default) names it Blocker.
-    fireEvent.click(screen.getByRole("button", { name: "By blocker" }));
+    fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
     const table = within(waiting()).getByRole("table");
     expect(
       within(table)
@@ -253,7 +253,7 @@ describe("the Delays board's data views", () => {
   it("a dot on the spread graph opens that person's row and panel", () => {
     renderDelays();
     // Groups fold only in the By blocker view; Longest wait (the default) is one flat list.
-    fireEvent.click(screen.getByRole("button", { name: "By blocker" }));
+    fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
     const target = ROWS.find((row) => row.cause === "awaiting_transport")!;
     expect(target, "nobody is awaiting transport").toBeDefined();
     openGraph("Wait spread");

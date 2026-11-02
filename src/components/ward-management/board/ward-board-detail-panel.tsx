@@ -203,7 +203,7 @@ export function WardBoardDetailPanel({
                                     actingUnitId: unit.id,
                                     leavingDestination,
                                   }),
-                            `Recorded departure: ${selectedTile.who || nameFor(selectedTile.key)} has left the ward.`,
+                            `Recorded discharge: ${selectedTile.who || nameFor(selectedTile.key)} has left the ward.`,
                             selectedTile.key,
                           );
                           closeDetail();
@@ -245,13 +245,13 @@ export function WardBoardDetailPanel({
                           label: selectedOccupant.confirmed ? "Confirmed discharge" : "Expected discharge",
                           tone: "warn",
                           when: "Discharge",
-                          chip: "Discharge blocker",
-                          text: `Recording what is holding up departure for ${nameFor(selectedOccupant.key)}`,
+                          chip: "Hold-up",
+                          text: `Recording what is holding up discharge for ${nameFor(selectedOccupant.key)}`,
                           acts: [],
                         });
                       }}
                     >
-                      Record a blocker
+                      Record hold-up
                     </button>
                     {dateEdit?.admissionId === selectedTile.key ? (
                       <form
@@ -279,14 +279,14 @@ export function WardBoardDetailPanel({
                                 admissionId: admission.id,
                                 expectedDischargeAt,
                               }),
-                            "Expected departure updated.",
+                            "Expected discharge updated.",
                           );
                           setDateEdit(null);
                         }}
                       >
-                        <Field label="Departure day">
+                        <Field label="Discharge day">
                           <Select
-                            aria-label="Departure day"
+                            aria-label="Discharge day"
                             value={dateEdit.day}
                             onChange={(event) =>
                               setDateEdit({
@@ -300,9 +300,9 @@ export function WardBoardDetailPanel({
                             <option value="tomorrow">Tomorrow</option>
                           </Select>
                         </Field>
-                        <Field label="Expected departure time">
+                        <Field label="Expected discharge time">
                           <TextInput
-                            aria-label="Expected departure time"
+                            aria-label="Expected discharge time"
                             type="time"
                             required
                             value={dateEdit.time}
@@ -431,7 +431,7 @@ export function WardBoardDetailPanel({
                             htmlFor="ward-board-barrier-select"
                             className={cx(styles.leavingLabel, redesign.fieldLabel)}
                           >
-                            Primary Discharge Barrier (Stay: {selectedOccupant.days} days)
+                            Main discharge hold-up (stay: {selectedOccupant.days} days)
                           </label>
                           <Select
                             id="ward-board-barrier-select"
@@ -446,11 +446,11 @@ export function WardBoardDetailPanel({
                                     admissionId: selectedOccupant.key,
                                     barrier: val === "None" ? null : (val as DischargeBarrier),
                                   }),
-                                `Discharge barrier for ${nameFor(selectedOccupant.key)}: ${val}`,
+                                `Hold-up for ${nameFor(selectedOccupant.key)}: ${val}`,
                               );
                             }}
                           >
-                            <option value="None">None / Clear barrier</option>
+                            <option value="None">None / Clear hold-up</option>
                             {DISCHARGE_BARRIERS.map((barrier) => (
                               <option key={barrier} value={barrier}>
                                 {barrier}

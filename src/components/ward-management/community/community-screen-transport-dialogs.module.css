@@ -67,7 +67,7 @@
 /* Log transport booking: on a phone the dialog sits on the bottom edge of the screen, as a sheet
    does (the kit dialog leaves an 8px gap under it). The negative margins undo the scrim's phone
    padding at the sides and bottom; the home indicator keeps its room inside the panel. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .bookPanel.bookPanel {
     align-self: flex-end;
     width: calc(100% + 2 * var(--wf-s-2));

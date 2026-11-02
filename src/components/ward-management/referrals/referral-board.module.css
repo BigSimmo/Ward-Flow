@@ -625,7 +625,7 @@
    the house 40px minimum. Padding takes its box to 40px and matching negative margins give the
    space back, so the row and the line under the name do not move; it sits above that line so the
    lower part of its box still takes the press. The phone keeps its own 48px rule below. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .rowSelect {
     position: relative;
     z-index: 1;
@@ -1037,7 +1037,7 @@
 /* U1 (review 12 Oct 2026): on desktop the facts reflow to fewer columns rather than cut the
    hospital or the legal status ("Royal Perth Ho…"). Hairlines come from the grid gap, so a cell
    that moves to a new row keeps its rules. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   /* Layout sweep (REF-11): a wrapping flex row rather than an auto-fit grid, so the cells on the
      last row stretch to fill it and no empty slot shows the grey hairline colour as a block. */
   .strip {
@@ -1482,7 +1482,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroMedian,
   .tickTier {
     display: none;
@@ -1606,7 +1606,7 @@
 /* v10 desktop toolbar: one row where it fits. Device sweep (24 Oct 2026): beside the detail panel
    at 1024 and 1280 px one row ran past the card edge ("Filter queu", "Longe…"), so the tools wrap
    to a second row there instead. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .toolbar {
     flex-wrap: wrap;
   }
@@ -1646,7 +1646,7 @@
 
 /* v10 phone: Queue and History as a full width segmented control at 44px. Refused once lives in
    the phone chip row, so the toolbar chip is desktop only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .toolbarChip.toolbarChip {
     display: none;
   }
@@ -1739,7 +1739,7 @@
 
 /* v10 phone queue (Referrals > Phone): Queue and History, then the search, sit on the page canvas;
    only the rows sit in a card. The order note moves under the list. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .queueCard.queueCard {
     overflow: visible;
     border: 0;
@@ -1841,7 +1841,7 @@
 
 /* v10 phone: a tapped referral opens as a tall sheet from the bottom edge, with a grab handle,
    rather than a full-screen slide-over. The facts read as a two by two grid. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   [data-referral-layout="queue-panel"] .layout .detail.detail.detail[data-has-selection="true"] {
     top: var(--wf-header-height, 3.5rem);
     width: 100vw;
@@ -1947,7 +1947,7 @@
 
 /* Audit 11 Oct 2026: beside the open panel the From column keeps the site code only; the
  * referral source is in the cell's title and in the panel. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .fromSource {
     display: none;
   }

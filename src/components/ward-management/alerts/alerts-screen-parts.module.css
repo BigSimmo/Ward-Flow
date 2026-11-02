@@ -127,7 +127,7 @@
   font-weight: 400;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Phone: the group row lines up with the phone rows (alerts.module.css .phoneRow), and Show each
      folds to its chevron so the names keep the width. */
   .kindHead {
@@ -161,7 +161,7 @@
   flex: 0 0 auto;
 }
 /* Beside Hand back, More actions' summary is the button's height. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .actionsRow > details > summary {
     min-height: var(--wf-h-sm);
   }

@@ -195,7 +195,7 @@ export function DischargeFilterCard({ s, bare = false }: { s: DischargeWorkspace
             </label>
           ) : null}
           <label htmlFor={`${baseId}-discharges-filter-blocker`} className={pill("blocker", blockerCategory)}>
-            <span className={pageStyles.filterLabelText}>Blocker</span>
+            <span className={pageStyles.filterLabelText}>Held up by</span>
             <Select
               id={`${baseId}-discharges-filter-blocker`}
               name="dischargesFilterBlocker"

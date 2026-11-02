@@ -412,7 +412,7 @@ export function PatientHistoryTab({
         <StatRow rows={rows} dayZero={dayZero} current={current !== undefined} admittedNow={occupiedNow} />
       ) : null}
 
-      <Card aria-label="Journey event log">
+      <Card aria-label="Movement event log">
         <CardHead
           level={2}
           icon={History}

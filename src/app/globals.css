@@ -1059,6 +1059,25 @@ body {
   }
 }
 
+/*
+ * Q289 (Ward Flow pre-launch review, 2 Nov 2026): a phone on its side (844 to 932px wide, under
+ * 500px tall) is wider than the 48rem phone range, so it got tablet sizing with many 26 to 32px
+ * controls. A touch screen under 500px tall is a phone for control size: every button, tab and
+ * select in Ward Flow (the pages that carry the phone dock) is at least the 40px phone control.
+ * Tablets (768px tall and up), desktops and phones in portrait keep their own sizes. `!important`
+ * because this input-mode floor must win over each control's own compact height, as the keyboard
+ * hint rule below does.
+ */
+@media (pointer: coarse) and (max-height: 500px) and (min-width: 46.5rem) {
+  body:has([data-wf-page-dock])
+    :is(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], select, summary):not(
+      [hidden],
+      [aria-hidden="true"]
+    ) {
+    min-height: 40px !important;
+  }
+}
+
 button,
 a,
 summary,

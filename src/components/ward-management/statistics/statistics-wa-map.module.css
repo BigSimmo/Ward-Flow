@@ -235,7 +235,7 @@
 }
 
 /* Phone: the metro area alone, at a readable size, with the country sites as chips under it. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .wide {
     display: none;
   }

@@ -273,7 +273,7 @@ describe("Alerts owner menu (remaining-pages audit ops-15, 13 Oct 2026; one menu
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
-        matches: query === "(max-width: 48rem)",
+        matches: query === "(max-width: 46.4375rem)",
         media: query,
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
@@ -303,7 +303,7 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
-        matches: query === "(max-width: 48rem)",
+        matches: query === "(max-width: 46.4375rem)",
         media: query,
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),

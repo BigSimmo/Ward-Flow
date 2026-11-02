@@ -159,16 +159,16 @@ describe("the Delays screen", () => {
     expect(screen.queryByRole("region", { name: "Why this person is waiting" })).toBeNull();
   });
 
-  it("declares the responsive slide-over drawer contract (< 768px) and print static reset in delays.module.css", () => {
+  it("declares the responsive slide-over drawer contract (743px and under) and print static reset in delays.module.css", () => {
     const css = readFileSync("src/components/ward-management/delays/delays.module.css", "utf8");
 
-    // Drawer contract on mobile/tablet viewports (< 768px)
-    expect(css).toMatch(/@media[^{]*768px[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*position:\s*fixed;/u);
-    expect(css).toMatch(/@media[^{]*768px[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*bottom:\s*0;/u);
-    expect(css).toMatch(/@media[^{]*768px[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*left:\s*0;/u);
-    expect(css).toMatch(/@media[^{]*768px[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*right:\s*0;/u);
-    expect(css).toMatch(/@media[^{]*768px[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*max-height:\s*85dvh;/u);
-    expect(css).toMatch(/@media[^{]*768px[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*z-index:\s*100;/u);
+    // Drawer contract on phone viewports (743px and under)
+    expect(css).toMatch(/@media[^{]*46\.4375rem[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*position:\s*fixed;/u);
+    expect(css).toMatch(/@media[^{]*46\.4375rem[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*bottom:\s*0;/u);
+    expect(css).toMatch(/@media[^{]*46\.4375rem[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*left:\s*0;/u);
+    expect(css).toMatch(/@media[^{]*46\.4375rem[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*right:\s*0;/u);
+    expect(css).toMatch(/@media[^{]*46\.4375rem[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*max-height:\s*85dvh;/u);
+    expect(css).toMatch(/@media[^{]*46\.4375rem[^{]*\{[\s\S]*?\.colDetail\s*\{[^}]*z-index:\s*100;/u);
 
     // Static reset in @media print
     expect(css).toMatch(/@media print\s*\{[\s\S]*?\.colDetail[^{]*\{[^}]*position:\s*static;/u);

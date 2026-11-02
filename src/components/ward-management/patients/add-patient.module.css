@@ -388,14 +388,14 @@
   gap: var(--wf-s-2);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .screen button,
   .screen a[href] {
     min-height: 3rem;
   }
 }
 
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -529,6 +529,17 @@
   font-weight: 600;
 }
 
+/* Q298 (pre-launch A2, 2 Nov 2026): the `box-shadow: none` above also took away the kit's inset focus
+   ring (wf/choice.module.css `.segItem:focus-visible`), so keyboard focus on Female, Male and the
+   other choices was invisible. This brings the kit ring back, selected or not. */
+.segmented.segmented > button:focus-visible,
+.segmented.segmented > button[aria-checked="true"]:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+
 /* Redesign: greyed, not dashed, so an unavailable button never reads as a placeholder. */
 .submitOff.submitOff {
   border: 1px solid var(--wf-line);
@@ -542,7 +553,7 @@
   color: var(--wf-ink-1);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroActions {
     flex-wrap: nowrap;
   }
@@ -584,7 +595,7 @@
 }
 
 /* v10 phone: search first, then the short identity form with the Add bar at its foot. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phLanding {
     display: flex;
     flex-direction: column;

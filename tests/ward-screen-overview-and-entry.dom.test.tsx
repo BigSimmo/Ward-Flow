@@ -179,7 +179,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     fireEvent.change(searchInput, { target: { value: "FSH" } });
 
     // FSH units are highlighted; v10 dims the others by colour and never hides them.
-    const card = (name: string) => screen.getByRole("heading", { level: 3, name }).closest("article");
+    const card = (name: string) => screen.getByRole("heading", { level: 2, name }).closest("article");
     expect(card("FSH Adult Secure")).not.toHaveAttribute("data-dim");
     expect(card("Dabakarn")).toHaveAttribute("data-dim", "true");
     expect(screen.getByTestId("ward-index-count-note")).toHaveTextContent(/of \d+ wards highlighted/);
@@ -228,7 +228,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
 
     // Top Action Bar & Live Capacity Glance Strip
     expect(screen.queryByRole("button", { name: /Enter Ward \/ Open Bed Board/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Stays and discharges" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Bed board" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Ward capacity" })).toBeInTheDocument();
 
     // Ward Hub (9 Oct 2026): the full bed list is no longer a tab; Every bed opens it from Home.

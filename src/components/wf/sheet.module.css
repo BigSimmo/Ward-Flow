@@ -98,14 +98,14 @@
 
 /* Phone (8 Oct 2026): no hardware keyboard, so the Esc hint leaves the header and the title gets
  * the room. Above 48rem the header is unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .header kbd {
     display: none;
   }
 }
 
 /* Some phone surfaces stay mounted through 48rem, while the default utility layout switches at sm. */
-@media (min-width: 40rem) and (max-width: 48rem) {
+@media (min-width: 40rem) and (max-width: 46.4375rem) {
   .phoneBreakpointBackdrop {
     align-items: flex-end !important;
     justify-content: center !important;
@@ -147,5 +147,50 @@
   :where(.close):focus-visible,
   .panel:focus-visible {
     outline-color: CanvasText;
+  }
+}
+
+/* Q288 (pre-launch review, 2 Nov 2026): a side drawer on a short screen (a phone on its side,
+ * 844x390) kept its header fixed and its footer pinned, which left the body a sliver to scroll.
+ * Under 500px tall, whatever the width, a side drawer scrolls as one: its header scrolls away with
+ * the body and its footer sits at the end instead of pinned. Centred dialogs and taller screens are
+ * unchanged. Doubled classes so a caller's own body or footer class does not put the old layout back. */
+@media screen and (max-height: 500px) {
+  .panel.panel:is(
+      [data-sheet-placement="left"],
+      [data-sheet-placement="right"],
+      [data-sheet-placement="responsive-right"]
+    ) {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .panel.panel:is(
+      [data-sheet-placement="left"],
+      [data-sheet-placement="right"],
+      [data-sheet-placement="responsive-right"]
+    )
+    > * {
+    flex-shrink: 0;
+  }
+
+  .panel.panel:is(
+      [data-sheet-placement="left"],
+      [data-sheet-placement="right"],
+      [data-sheet-placement="responsive-right"]
+    )
+    > [data-sheet-body] {
+    flex: 1 0 auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .panel.panel:is(
+      [data-sheet-placement="left"],
+      [data-sheet-placement="right"],
+      [data-sheet-placement="responsive-right"]
+    )
+    > [data-sheet-footer] {
+    position: static;
   }
 }

@@ -475,7 +475,7 @@ export function useWardReferralDrawerState({
     isDirty: !sentReferralId && !submissionAwaitingRecord && (dirty || draftKeptAt !== null),
     value: draftJson,
     skipAnchor: isOwnLeaveGuardAnchor,
-    // An unfinished New patient form is not kept, so it always counts as unsaved.
+    // An unfinished Add patient form is not kept, so it always counts as unsaved.
     unloadSafe: () =>
       JSON.stringify(newPatient) === JSON.stringify(EMPTY_NEW_PATIENT) &&
       referralDraftKeptOnScreen(draftStorageKey, draftNow, {
@@ -782,7 +782,7 @@ export function useWardReferralDrawerState({
     if (!effectiveCohort) return "Choose the age band.";
     if (!catchmentAnswered) return "Confirm the patient's catchment before continuing.";
     if (catchmentNotKnown && destType === "community")
-      return "A community team referral needs the catchment team. Choose the team, or send to a ward or ED.";
+      return "A community team referral needs a team. Choose the community team, or send to a ward or ED.";
     if (!homeRegion) return "Choose the patient's home region.";
     return null;
   }

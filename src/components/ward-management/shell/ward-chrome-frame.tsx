@@ -1,18 +1,64 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentProps, type ReactNode } from "react";
 import type { WardFlowState } from "../ward-flow-reducer";
 import type { EventLogEntry } from "../ward-event-log";
 import type { WardAccess } from "../ward-role-access";
 import { wardPlaceLookup } from "../ward-access-places";
+import { WF_PHONE_QUERY } from "@/components/wf";
 import {
   ExecutiveStatisticsLivePreviewProvider,
   type ExecutiveLivePreviewProjection,
 } from "../statistics/executive-statistics-context";
 
+/** The phone header's resting height (ward-bar.module.css), in CSS pixels. */
+const PHONE_BAR_REST_PX = 56;
+
+/**
+ * Q297 (pre-launch A1, 2 Nov 2026): with large text the phone header grows past its 56px. The pinned
+ * rows below it stick at `--wf-header-height`, so while it is taller that variable follows its real
+ * height on the scroller (`[data-wf-scroller]`); at its resting height the layout's own value
+ * stands. Desktop is never touched.
+ */
+function useHeaderHeightSync(header: HTMLElement | null) {
+  useEffect(() => {
+    if (!header || typeof ResizeObserver === "undefined" || typeof window.matchMedia !== "function") return;
+    const host = header.closest<HTMLElement>("[data-wf-scroller]") ?? header.parentElement;
+    if (!host) return;
+    const phone = window.matchMedia(WF_PHONE_QUERY);
+    const sync = () => {
+      const height = header.getBoundingClientRect().height;
+      if (phone.matches && height > PHONE_BAR_REST_PX + 0.5) {
+        host.style.setProperty("--wf-header-height", `${Math.ceil(height)}px`);
+      } else {
+        host.style.removeProperty("--wf-header-height");
+      }
+    };
+    const observer = new ResizeObserver(sync);
+    observer.observe(header);
+    phone.addEventListener?.("change", sync);
+    sync();
+    return () => {
+      observer.disconnect();
+      phone.removeEventListener?.("change", sync);
+      host.style.removeProperty("--wf-header-height");
+    };
+  }, [header]);
+}
+
 /** Shared presentational elements retain the existing chrome DOM and attributes. */
-export function WardBarFrame(props: ComponentProps<"header">) {
-  return <header {...props} />;
+export function WardBarFrame({ ref, ...props }: ComponentProps<"header">) {
+  const [header, setHeader] = useState<HTMLElement | null>(null);
+  const setRef = useCallback(
+    (node: HTMLElement | null) => {
+      setHeader(node);
+      if (typeof ref === "function") ref(node);
+      else if (ref) ref.current = node;
+    },
+    [ref],
+  );
+  useHeaderHeightSync(header);
+  return <header {...props} ref={setRef} />;
 }
 // P084: the rail is a labelled complementary region holding the one "Ward Flow views" nav, so the
 // outer landmark is an aside and no navigation landmark sits inside another.

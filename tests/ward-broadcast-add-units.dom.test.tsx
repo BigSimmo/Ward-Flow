@@ -35,9 +35,9 @@ describe("Add units dialog", () => {
     const onAdd = vi.fn();
     render(<AddUnitsDialog alert={sent("directive")} units={seed.units} onClose={() => {}} onAdd={onAdd} />);
     expect(screen.queryByRole("checkbox", { name: first.name })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add 0 units" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: "Add 0 desks" })).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(screen.getAllByRole("checkbox", { name: second.name })[0]);
-    fireEvent.click(screen.getByRole("button", { name: "Add 1 unit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add 1 desk" }));
     expect(onAdd).toHaveBeenCalledWith([second.id]);
   });
 

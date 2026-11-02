@@ -424,7 +424,7 @@ export function HandoverPage() {
         id: "opened",
         value: opened.length,
         word: "new on the sheet",
-        detail: "Referrals and moves opened",
+        detail: "Referrals and movements opened",
         tone: "info",
       },
       {

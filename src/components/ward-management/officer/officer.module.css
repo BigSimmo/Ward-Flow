@@ -1192,7 +1192,7 @@
  * is a three line card with its next step in reach, arrivals read as a timed list, and the job opens
  * as a bottom sheet with the stage actions pinned above the home indicator.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .main {
     gap: var(--wf-s-3);
     padding: var(--wf-s-3);
@@ -1693,7 +1693,7 @@
   display: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Phone review F-31: square corners, so the divider is a straight rule. The kit's figure keeps a
    * 12px radius, which bent this left border into a bracket. */
   .heroPills > .heroPill:not(.deskOnly) {
@@ -1971,7 +1971,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .formsCell::after {
     color: var(--wf-ink-2);
     font-size: var(--wf-fs-12);
@@ -1981,7 +1981,7 @@
 
 /* v10 phone job sheet (these classes render only on phone): a 2x2 fact grid, a Steps list, Inspect
  * form and Divert at the end of the body, and the four stage buttons pinned to the sheet's foot. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .detail:has(.detailFooter) {
     display: flex;
     flex-direction: column;
@@ -2152,7 +2152,7 @@
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
    with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
    tablet keep the toast above. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .toast {
     --toast-bg: light-dark(
       color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
@@ -2238,7 +2238,7 @@
 
 /* iPad portrait (device audit, 11 Oct 2026): the Route cell keeps its one place line; the provider
    line under it truncated the row. */
-@media (min-width: 48.0625rem) and (max-width: 64rem) {
+@media (min-width: 46.5rem) and (max-width: 64rem) {
   .jobMeta {
     display: none;
   }
@@ -2704,7 +2704,7 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .needRow {
     grid-template-columns: minmax(0, 1fr) auto;
     row-gap: 2px;
@@ -2741,7 +2741,7 @@
   align-items: center;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .bookingCard.bookingCard {
     display: flex;
     flex-direction: column;
@@ -2755,7 +2755,7 @@
 
 /* Transport mock-up: on a larger screen the pinned next step matches Inspect form beside it (40px);
    the 48px step stays on phone. */
-@media (min-width: 48.01rem) {
+@media (min-width: 46.5rem) {
   .detailFoot .phNextStep.phNextStep {
     height: var(--wf-h-md);
   }

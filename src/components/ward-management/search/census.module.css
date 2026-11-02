@@ -87,7 +87,7 @@
 }
 
 /* On a laptop the kit gives Clear no hit area, so its 24px face takes presses across 48px. */
-@media not all and (max-width: 48rem) {
+@media not all and (max-width: 46.4375rem) {
   .searchMain button {
     position: relative;
   }
@@ -1221,7 +1221,7 @@ tr:has(+ .moreRow) > td {
  * `.heroPill`, `.chipRow` and `.chip`, Josh 31 Oct 2026). The screen's "every control 48px" rule
  * would stretch both, so they keep Home's 40px pill and 34px chip; each keeps its own invisible
  * 48px tap area. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroPhone .heroPill.heroPill.heroPill {
     min-height: 40px;
   }

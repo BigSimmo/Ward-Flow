@@ -725,7 +725,7 @@
   font-size: var(--wf-fs-13);
 }
 
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .patientSearchInput {
     font-size: max(1rem, 16px);
     /* Layout sweep (REF-17): at 16px the placeholder ends in an ellipsis, not mid-word. */
@@ -1131,7 +1131,7 @@
 }
 
 /* Phone: fields read at 16px so iOS Safari does not zoom the page on focus. Desktop keeps 13px. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .fieldInput,
   .fieldSelect,
   .clinicalTextarea {
@@ -2416,7 +2416,7 @@ details.refCard > summary {
 
 /* Phone: the new-patient box keeps to the card's width (F-03). Without a zero minimum, the card
    body's grid track grew to the fields' own width and ran them off the right edge. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .newPatient {
     grid-template-columns: minmax(0, 1fr);
     min-width: 0;
@@ -2569,7 +2569,7 @@ details.refCard > summary {
 }
 
 /* v10 phone: 44px Refer to buttons. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .categoryTrack > button {
     min-height: var(--wf-touch, 44px);
   }
@@ -2589,7 +2589,7 @@ details.refCard > summary {
   display: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .drawerWide[data-ph-mode] {
     overflow-x: hidden;
     overflow-y: auto;
@@ -3310,7 +3310,7 @@ details.refCard > summary {
 
 /* v10 phone: the step 4 ward list reads as cards (name, hospital, fit line, ready and waitlist
    figures), not a table. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .wardTable {
     border-top: 0;
   }
@@ -3388,7 +3388,7 @@ details.refCard > summary {
 
 /* v10 phone: each clearance item is a row of its own — a status ring and the name, then a compact
    Done / To follow / Not done track under it, not a full-width bar. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .checkList.checkList {
     gap: 0;
   }
@@ -3434,7 +3434,7 @@ details.refCard > summary {
 }
 
 /* Audit 11 Oct 2026, phone: the already-open note reads as one block with Open board under it. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .suggestion {
     flex-wrap: wrap;
   }
@@ -3518,7 +3518,7 @@ details.refCard > summary {
 
 /* Layout sweep (REF-14): on a phone a card title wraps beside its tag ("Legal status and urgency"
    beside "limits not legally checked") rather than being cut to "Legal status …". */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .cardTitle {
     white-space: normal;
   }
@@ -3573,7 +3573,7 @@ details.refCard > summary {
 
 /* On a phone the pre-filled banner keeps the same side inset as the step card and checklist around
    it, instead of running edge to edge. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .fastTrackInset.fastTrackInset {
     margin-inline: var(--wf-s-4);
   }
@@ -3598,4 +3598,35 @@ details.refCard > summary {
   overflow-wrap: anywhere;
   white-space: normal;
   text-overflow: clip;
+}
+
+/* Q288 (pre-launch review, 2 Nov 2026): the composer's short-screen fix (R7-04) sat only in the
+   phone rules, so at 844x390 the tablet layout kept its head fixed and its Send bar pinned, leaving
+   the form 116px to scroll. Under 500px tall, whatever the width, the composer scrolls as one: the
+   head scrolls away with the form and the Send bar sits at its end. The phone step sheets keep
+   their own pinned Back and Next (data-ph-mode, above). */
+@media screen and (max-height: 500px) {
+  .drawerWide:not([data-ph-mode]) {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .drawerWide:not([data-ph-mode]) > * {
+    flex-shrink: 0;
+  }
+
+  .drawerWide:not([data-ph-mode]) .sheetMain {
+    flex: 1 0 auto;
+    min-height: auto;
+  }
+
+  .drawerWide:not([data-ph-mode]) .sheetMain > .drawerBody,
+  .drawerWide:not([data-ph-mode]) .rail {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .drawerWide:not([data-ph-mode]) .sendReferralFoot {
+    position: static;
+  }
 }

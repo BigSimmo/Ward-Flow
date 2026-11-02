@@ -93,7 +93,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
   );
   // This raises as the coordinator, so only the coordinator's desk may use it.
   const refusal =
-    (journeyStarted ? "The journey has started. Open it to pull the bed." : undefined) ??
+    (journeyStarted ? "The movement has started. Open it to pull the bed." : undefined) ??
     (role === "coordinator" ? undefined : "Coordinator only") ??
     gate("RAISE_REFERRAL").reason ??
     gate("PULL_PATIENT").reason ??
@@ -160,7 +160,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
           toast?.push({ tone: "success", title: `Bed pulled at ${unitName} for ${name}` });
           onDone();
         } else {
-          setMessage("The journey has started without the bed. Open it to pull the bed.");
+          setMessage("The movement has started without the bed. Open it to pull the bed.");
           setJourneyStarted(true);
         }
       },
@@ -176,7 +176,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
       aria-label={`Pull the bed for ${name}`}
     >
       <p className={styles.lead}>
-        {`${unitName} has accepted ${name}. Pulling the bed starts the journey and keeps the bed for this patient.`}
+        {`${unitName} has accepted ${name}. Pulling the bed starts the movement and keeps the bed for this patient.`}
       </p>
       <Field label="Legal status" hint={recorded.legalStatus ? (source ?? "From the referral") : undefined}>
         <Select
@@ -262,7 +262,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
         </Button>
         {pullRefused && !journeyStarted ? (
           <Button type="button" variant="sec" onClick={() => start(false)} data-testid="ward-pull-accepted-start-only">
-            Start the journey without the bed
+            Start the movement without the bed
           </Button>
         ) : null}
         {refusal ? <DisabledReason id={`${baseId}-why`}>{refusal}</DisabledReason> : null}
@@ -272,7 +272,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
         {message && journeyId ? (
           <>
             {" "}
-            <Link href={movementHref(journeyId)}>Open the journey</Link>
+            <Link href={movementHref(journeyId)}>Open the movement</Link>
           </>
         ) : null}
       </p>

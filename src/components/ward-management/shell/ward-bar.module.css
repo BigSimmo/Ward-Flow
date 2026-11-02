@@ -143,7 +143,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .deskBack {
     display: none;
   }
@@ -183,7 +183,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .dataMode {
     display: none;
   }
@@ -279,7 +279,7 @@
 /* Phone: the lean bar has no room. The time stays in the phone's page Live chips. Board time stays
  * on tablet (Josh, 30 Oct 2026): it was hidden at 1000px and below for want of room, and the dropped
  * Prototype pill gives that room back. Container queries above drop its words first. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .demoClock {
     display: none;
   }
@@ -295,7 +295,7 @@
  * notice must stay legible) and New referral keeps its label. The room comes from the search field,
  * which folds to its magnifier here and still opens the full smart search; Activity and Tools stay,
  * because the portrait Menu sheet does not hold them. */
-@media (min-width: 48.0625rem) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 1000px) {
   /* F-14: a phone on its side lands in this band, so the bar's sides clear the notch. */
   .bar {
     padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -374,7 +374,7 @@
 
 /* B7 (site review, 12 Oct 2026): below 860px wide the header's New referral shows its plus icon
  * only; the words stay for screen readers, so the button no longer runs past the edge. */
-@media (min-width: 48.0625rem) and (max-width: 860px) {
+@media (min-width: 46.5rem) and (max-width: 860px) {
   .bar .primaryPrefix,
   .bar .primaryMain {
     position: absolute;
@@ -601,8 +601,11 @@
   flex-shrink: 0;
 }
 
-@media (max-width: 48rem) {
-  .bar:has(.pageTools:not(:empty)) .title {
+/* Q280 (pre-launch check D2, 2 Nov 2026): with Back in front, a long ward name on a phone ran past
+ * the screen edge, uncut, and pushed Search off it. The name now gives way and ends in an ellipsis. */
+@media (max-width: 46.4375rem) {
+  .bar:has(.pageTools:not(:empty)) .title,
+  .deskBack + .title {
     flex-shrink: 1;
   }
 }
@@ -612,7 +615,7 @@
  * kept it rigid, and a long page name ("Emergency department statistics" at 1024 and 1280) pushed
  * New referral off the screen. The page name now ends in an ellipsis instead. Layout sweep WARD-04
  * (25 Oct 2026): the same on a tablet portrait bar, where a long ward name did it at 820px. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .deskBack + .title,
   .bar:has(.pageTools:not(:empty)) .title {
     flex-shrink: 1;
@@ -900,7 +903,7 @@
  * left side, so the words stay visible and editable while the results are open. Tablets and narrow
  * bars keep their full-width search sheet (the max-width 1000px and ward-bar 768px rules). */
 @media (min-width: 62.5625rem) {
-  @container ward-bar (min-width: 48.0625rem) {
+  @container ward-bar (min-width: 46.5rem) {
     @container ward-search (max-width: 9rem) {
       .bar .searchWrap :global([data-testid="ward-global-search"]:is(:focus-within, [data-open]) > div) {
         position: absolute;
@@ -1379,11 +1382,11 @@
   }
 }
 
-/* 768px matches the phone search sheet (`PHONE_SEARCH_QUERY`, 48rem at the initial 16px), so a 672 to
- * 768px phone or small tablet in portrait never pairs the full-screen results with an inline header
+/* 743px matches the phone search sheet (`PHONE_SEARCH_QUERY`, 46.4375rem at the initial 16px), so a 672 to
+ * 743px phone or small tablet in portrait never pairs the full-screen results with an inline header
  * field. Pixels, because a container query's rem follows the density setting's 15px or 17px root. The
  * bar is never this narrow above the phone breakpoint. */
-@container ward-bar (max-width: 768px) {
+@container ward-bar (max-width: 743px) {
   .centerGroup,
   .searchWrap {
     flex: 0 0 auto;
@@ -1523,7 +1526,7 @@
 }
 
 /* ── phone bar (Josh, 8 Oct 2026, board 00b: bar A with C's behaviour) ───────────────────────
- * PHONE ONLY. Every rule below sits inside `@media (max-width: 48rem)` or styles an element that
+ * PHONE ONLY. Every rule below sits inside `@media (max-width: 46.4375rem)` or styles an element that
  * only renders on the phone, so the desktop bar is not changed in any way.
  *
  * One bar on every page (locked lean bar, Josh 10 Oct 2026): Menu, title with scope under it,
@@ -1537,12 +1540,18 @@
   display: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .bar,
   :global(html.dark) .bar {
     gap: 0;
-    height: var(--wf-header-height, 3.5rem);
-    min-height: var(--wf-header-height, 3.5rem);
+    /* Q297 (pre-launch A1, 2 Nov 2026): with large text the bar grows to fit the title and scope
+       line instead of cutting the title at the top. At normal sizes it stays 56px in both states.
+       Its rest height is fixed here, not read from --wf-header-height: while the bar is taller,
+       WardBarFrame (ward-chrome-frame.tsx) sets that variable to the bar's real height so the
+       pinned rows below follow it, and reading it back would hold the bar at that height. */
+    height: 3.5rem;
+    height: calc-size(auto, max(size, 3.5rem));
+    min-height: 3.5rem;
     padding: 0 8px 0 6px;
     border-bottom-color: transparent;
     background: transparent;
@@ -1564,8 +1573,9 @@
   :global(html.dark) .bar[data-scrolled="true"] {
     /* Keep the scroll geometry stable. Animating the in-flow height moved every row and
        could repeatedly cross the scroll threshold as browser anchoring compensated. */
-    height: var(--wf-header-height, 3.5rem);
-    min-height: var(--wf-header-height, 3.5rem);
+    height: 3.5rem;
+    height: calc-size(auto, max(size, 3.5rem));
+    min-height: 3.5rem;
     border-bottom-color: var(--wf-line-2);
     background: var(--wf-surface-2);
     box-shadow: 0 6px 16px -12px color-mix(in srgb, var(--wf-ink-1) 28%, transparent);
@@ -1840,7 +1850,7 @@
   }
 }
 
-@media (max-width: 48rem) and (prefers-reduced-motion: reduce) {
+@media (max-width: 46.4375rem) and (prefers-reduced-motion: reduce) {
   .bar,
   .phoneOnly::before,
   .primary::before,
@@ -1879,7 +1889,7 @@
 /* R7-08 (device sweep, 24 Oct 2026): the phone's scope line sits right under the title, and its
  * forced-colours box (drawn on a hit area wider than the words) struck through the title. The
  * phone draws the scope as plain text there, as it does in normal colours. */
-@media (forced-colors: active) and (max-width: 48rem) {
+@media (forced-colors: active) and (max-width: 46.4375rem) {
   .scopeBadgeBtn::before {
     border: 0;
   }
@@ -2310,7 +2320,7 @@
 }
 
 /* Phone: 16px so iOS Safari does not zoom the page when the Activity search takes focus. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .drawerSearch input {
     font-size: var(--wf-fs-16);
   }
@@ -2835,7 +2845,7 @@
  * 56px once scrolled). Last in the file, and prefixed with `.bar`, so it outranks the phone and
  * scrolled face rules above.
  */
-@container ward-bar (max-width: 768px) {
+@container ward-bar (max-width: 743px) {
   .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
     position: fixed;
     inset: 0 0 auto;
@@ -2903,7 +2913,7 @@
  * that rule). Touch sizes here: Cancel keeps the 48px target. The band rules below still apply over
  * a Hero, so the open field restores the light face explicitly (doubled `.bar` outranks the band's
  * later focus-within rule), as the phone block does. */
-@media (min-width: 48.0625rem) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 1000px) {
   .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type,
   .bar.bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
     --wf-focus-ring: var(--wf-accent);
@@ -2989,7 +2999,7 @@
 
 /* Phone: the phone bar has no backdrop filter, so the open field is fixed to the viewport. It sits
  * where the bar is (its measured top), so nothing above the bar can stretch or misplace it. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
     top: var(--wgs-bar-top, 0px);
   }
@@ -3012,7 +3022,7 @@
  * Phone (48rem and under) gets `data-band="ink"` only at rest; once it scrolls it drops the band
  * and takes its own solid face (`data-scrolled`). Its ink rules follow this block.
  */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .bar[data-band] {
     transition:
       background-color var(--wf-t-enter) var(--wf-ease-out),
@@ -3243,7 +3253,7 @@
  * Batch 5 (13 Oct 2026): the same `:has()` arm as desktop paints the bar ink before it has its own
  * `data-band`, so a slow load never shows the light bar for a moment before the hero is measured.
  * A scrolled bar (`data-scrolled`) keeps its own solid face. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .bar.bar:is(
       [data-band="ink"],
       :where(
@@ -3412,7 +3422,7 @@
   }
 }
 
-@media (min-width: 48.0625rem) and (prefers-reduced-motion: reduce) {
+@media (min-width: 46.5rem) and (prefers-reduced-motion: reduce) {
   .bar[data-band] {
     transition-duration: var(--wf-t-enter);
   }
@@ -3442,7 +3452,7 @@
 /* Tablet portrait (v10 shell, 10 Oct 2026, 769px to 1000px): no sidebar, so the Menu button shows
  * at the left of the header and opens the full sidebar as a 280px sheet over a scrim (the rail's
  * own sheet answers above 48rem). 48px target. Desktop above 1000px and the phone are unchanged. */
-@media (min-width: 48.0625rem) and (max-width: 1000px) {
+@media (min-width: 46.5rem) and (max-width: 1000px) {
   .phoneOnly {
     display: inline-flex;
     flex: none;
@@ -3478,7 +3488,7 @@
  * title, the switch is a full-width pill track, the figures a quiet line, filter chips are pills.
  * Phone only; desktop and tablet are unchanged.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .drawerTile {
     display: none;
   }
@@ -3590,7 +3600,7 @@
  * that keeps its size and its service line when the page scrolls (the mockup never swaps it for a
  * count), an 8px service dot and a 16px caret. Controls keep their 48px hit area.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Edge to edge: the band runs to both sides, and on a phone turned on its side the controls
      keep clear of the notch. */
   .bar,
@@ -3696,7 +3706,7 @@
   display: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .tasksWide {
     display: none;
   }
@@ -3720,7 +3730,7 @@
   display: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .servicePanel {
     position: fixed;
     top: auto;
@@ -3835,7 +3845,7 @@
 
 /* v10 phone New referral: the sheet starts under the 56px bar, so the bar (title, Statewide,
    search, tasks) stays above the referral hero as in the mockup. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .drawerBackdrop:has(> .drawerSheetReferral) {
     top: var(--wf-header-height, 3.5rem);
   }
@@ -3862,12 +3872,12 @@
  * because Safari treats a fully transparent field as hidden and may not raise the keyboard for it.
  * Phone only; the tablet and desktop rules above are unchanged.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
     font-size: var(--wf-fs-16);
   }
 
-  @container ward-bar (max-width: 768px) {
+  @container ward-bar (max-width: 743px) {
     .bar .searchWrap :global([data-testid="ward-global-search-input"]) {
       opacity: 1;
       color: transparent;
@@ -3952,7 +3962,7 @@
 
 /* Q161 (Josh, 1 Nov 2026): on a page no dock tab owns, the Menu icon takes the accent the dock gives
  * the page you are on, so the phone always shows where you are. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneOnly[data-here] {
     color: var(--wf-accent);
   }
@@ -3972,13 +3982,13 @@
 
 /* Back on a phone (Josh, 20 Oct 2026): on a drill-down screen it takes the Menu button's place.
  * Above the phone the bar's own `.deskBack` leads instead, and a tablet keeps its Menu. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneOnly[data-back-replaced] {
     display: none;
   }
 }
 
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .phoneOnly.phoneBack {
     display: none;
   }
@@ -3987,14 +3997,14 @@
 /* ── New referral's even padding (Josh, 30 Oct 2026), after the width rules it adjusts ────── */
 
 /* Its blue pill was 38px tall beside 36px Activity, Alerts and Tools pills: the neighbours' 6px inset. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .primary.primaryEven::before {
     inset: 6px 0;
   }
 }
 
 /* Icon only (the bar's own narrow widths): the + sits centred in its pill. */
-@media (min-width: 48.0625rem) and (max-width: 860px) {
+@media (min-width: 46.5rem) and (max-width: 860px) {
   .bar .primary.primaryEven {
     padding-inline: 10px;
   }

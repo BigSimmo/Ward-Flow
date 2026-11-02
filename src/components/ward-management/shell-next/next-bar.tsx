@@ -11,7 +11,7 @@ import { startTransition, useCallback, useEffect, useMemo, useRef, useState, typ
 
 import { Sheet } from "@/components/wf/sheet";
 import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/wf/sheet-focus";
-import { publishLiveClock, useIsPhone, useWfBandActive } from "@/components/wf";
+import { publishLiveClock, useIsPhone, useWfBandActive, cycleTabWithin, focusIsLost } from "@/components/wf";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
@@ -881,44 +881,41 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
 
   // shell-23 (13 Oct 2026): on a phone the service sheet is a real popup like Menu and Create. It
   // joins the shared sheet stack, so the page behind is inert, and focus moves to the chosen service.
-  // Its scrim opts out of that inert so a tap on it still closes the sheet. Desktop keeps its menu.
+  // Its scrim opts out of that inert so a tap on it still closes the sheet.
+  // A3 and A5 (accessibility check, 2 Nov 2026): desktop and tablet use the same dialog pattern
+  // without the inert page: focus moves to the chosen service, the panel closes when focus leaves it,
+  // and focus comes back to the Service button however it closed.
   useEffect(() => {
-    if (!isPhone || openPanel !== "service") return;
+    if (openPanel !== "service") return;
     const sheetId = "ward-bar-service-sheet";
     const panel = servicePanelRef.current;
     const trigger = serviceTriggerRef.current;
-    pushSheet(sheetId, panel);
+    if (isPhone) pushSheet(sheetId, panel);
     panel?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
-    // Tab and Shift+Tab stay inside the sheet, as Sheet's own trap does.
+    // Phone: Tab and Shift+Tab stay inside the sheet, as Sheet's own trap does.
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Tab" || !panel || !isTopmostSheet(sheetId)) return;
-      const focusable = Array.from(
-        panel.querySelectorAll<HTMLElement>('a[href], button:not([disabled]):not([tabindex="-1"])'),
-      ).filter((element) => element.getClientRects().length > 0);
-      if (focusable.length === 0) return;
-      const index = focusable.indexOf(document.activeElement as HTMLElement);
-      const next =
-        index === -1
-          ? event.shiftKey
-            ? focusable.length - 1
-            : 0
-          : (index + (event.shiftKey ? -1 : 1) + focusable.length) % focusable.length;
-      event.preventDefault();
-      focusable[next].focus();
+      if (!isPhone || !isTopmostSheet(sheetId)) return;
+      cycleTabWithin(event, panel);
+    }
+    // Desktop: Tab out of the panel closes it, leaving focus where Tab put it.
+    function onFocusOut(event: FocusEvent) {
+      const next = event.relatedTarget;
+      if (!(next instanceof Node) || panel?.contains(next) || trigger?.contains(next)) return;
+      closePopover("service", false);
     }
     document.addEventListener("keydown", onKeyDown);
+    if (!isPhone) panel?.addEventListener("focusout", onFocusOut);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      popSheet(sheetId);
-      // Back to the Service button once the sheet is gone and the page is no longer inert, however
-      // it closed (scrim, Escape or a choice), unless focus has already moved somewhere real.
+      panel?.removeEventListener("focusout", onFocusOut);
+      if (isPhone) popSheet(sheetId);
+      // Back to the Service button once the panel is gone (and a phone page is no longer inert),
+      // however it closed (scrim, Escape or a choice), unless focus has already moved somewhere real.
       window.requestAnimationFrame(() => {
-        const active = document.activeElement;
-        const lost = active === null || active === document.body || !active.isConnected || panel?.contains(active);
-        if (lost && trigger?.isConnected && canRestoreFocusTo(trigger)) trigger.focus();
+        if (focusIsLost(panel) && trigger?.isConnected && canRestoreFocusTo(trigger)) trigger.focus();
       });
     };
-  }, [isPhone, openPanel]);
+  }, [closePopover, isPhone, openPanel]);
 
   // The one Escape order — see the file header for the full reasoning behind each branch. The
   // "New referral" popover joins the Service selector's branch rather than getting its own: both
@@ -1287,7 +1284,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
             <span>Whole network · synthetic prototype</span>
             <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("tools", from)}>
               <span className={styles.footClock}>
-                Demo time <b>{formatInstant(now)}</b>
+                Board time <b>{formatInstant(now)}</b>
               </span>
             </WardDemoClockPopover>
           </div>

@@ -83,7 +83,7 @@ export function DischargeDayChart({
         </ul>
       </header>
       {layout === "rows" ? (
-        <ul className={styles.bars} aria-label={`Bed releases, past dates and next ${ahead.length} days`}>
+        <ul className={styles.bars} aria-label={`Discharges, past dates and next ${ahead.length} days`}>
           {days.map((day, index) => {
             const total = totals[index] ?? 0;
             const pressed = selected === day.key;
@@ -122,11 +122,7 @@ export function DischargeDayChart({
         </ul>
       ) : (
         <div className={styles.scroller}>
-          <div
-            className={styles.plot}
-            role="group"
-            aria-label={`Bed releases, past dates and next ${ahead.length} days`}
-          >
+          <div className={styles.plot} role="group" aria-label={`Discharges, past dates and next ${ahead.length} days`}>
             <div className={styles.grid} aria-hidden="true">
               {Array.from({ length: GRID_LINES }, (_, index) => {
                 const value = step * (index + 1);
@@ -205,7 +201,7 @@ export function DischargeBarrierBars({
       <header className={styles.head}>
         <h2 id={headingId} className={styles.title}>
           <OctagonAlert size={16} aria-hidden="true" />
-          Held up by barrier
+          Held up by reason
         </h2>
         {/* Redesign (Josh, 30 Oct): the same held-up releases the hero chip counts, so one figure. */}
         <span className={styles.count}>
@@ -244,7 +240,7 @@ export function DischargeBarrierBars({
         </ul>
       )}
       <footer className={styles.foot}>
-        <span>Click a barrier to highlight its people.</span>
+        <span>Click a reason to highlight its people.</span>
         {selected !== null ? (
           <Button size="sm" variant="ghost" onClick={onClear}>
             Clear

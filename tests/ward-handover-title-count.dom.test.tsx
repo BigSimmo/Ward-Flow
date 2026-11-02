@@ -44,7 +44,7 @@ describe("Handover title count (NA2-01)", () => {
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
-        matches: query === "(max-width: 48rem)",
+        matches: query === "(max-width: 46.4375rem)",
         media: query,
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
