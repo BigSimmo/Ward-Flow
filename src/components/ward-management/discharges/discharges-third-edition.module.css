@@ -559,6 +559,8 @@
 .blocker {
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  /* Q283: a typed hold-up with a long unbroken string wraps instead of running out of its cell. */
+  overflow-wrap: anywhere;
 }
 
 .inlineIcon {

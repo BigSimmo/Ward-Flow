@@ -1621,6 +1621,8 @@
   font-size: var(--t-0);
   font-weight: 600;
   line-height: var(--ward-leading-body);
+  /* Q283: a typed hold-up with a long unbroken string wraps instead of running out of the entry. */
+  overflow-wrap: anywhere;
 }
 
 .footnote {

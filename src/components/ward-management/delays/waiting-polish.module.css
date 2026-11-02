@@ -138,6 +138,20 @@ button.strip:disabled {
   font-size: var(--wf-fs-12);
   white-space: nowrap;
 }
+/* Q279 (pre-launch check D1, 2 Nov 2026): on a narrow tile (a portrait tablet's four columns) the
+   "longest" time ran into the next tile. It now drops to its own line under the group name. */
+.ownGrid > .own {
+  container-type: inline-size;
+}
+@container (max-width: 12rem) {
+  .ownTop.ownTop {
+    flex-wrap: wrap;
+  }
+  .ownLongest {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+}
 .ownLongest.ownLongest b {
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
