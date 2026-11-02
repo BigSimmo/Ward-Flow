@@ -11,7 +11,7 @@ import {
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
 import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
 import { WardPwaRegistration } from "@/components/ward-management/shell/ward-pwa-registration";
-import { NextBarMount as WardBarMount } from "@/components/ward-redesign/shell-next/next-bar";
+import { NextBarMount as WardBarMount } from "@/components/ward-management/shell-next/next-bar";
 import { WARD_EARLY_TAP_SCRIPT } from "@/components/ward-management/shell/ward-early-tap";
 import { WardFirstDocumentOnly } from "@/components/ward-management/shell/ward-first-document-only";
 import { WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-rail-early";
@@ -25,7 +25,7 @@ import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-reco
 import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
-import { NextRail as WardRail } from "@/components/ward-redesign/shell-next/next-rail";
+import { NextRail as WardRail } from "@/components/ward-management/shell-next/next-rail";
 import { WardMainFocusTarget } from "@/components/ward-management/shell/ward-main-focus-target";
 import { WardSkipToActNow } from "@/components/ward-management/shell/ward-skip-to-act-now";
 import { TvLockGuard } from "@/components/ward-management/bed-meeting/tv-lock-guard";

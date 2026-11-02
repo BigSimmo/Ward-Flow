@@ -19,10 +19,10 @@ import type {
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
-import { NextPhoneMenu } from "@/components/ward-redesign/shell-next/next-phone-menu";
+import { NextPhoneMenu } from "@/components/ward-management/shell-next/next-phone-menu";
 import { hasMovedInWardFlow, markWardRouteReplace } from "@/components/ward-management/shell/ward-back";
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
-import type { WardActivityContent, WardPrimaryAction } from "@/components/ward-management/shell/ward-shell-types";
+import type { WardPrimaryAction } from "@/components/ward-management/shell/ward-shell-types";
 import {
   NOT_WIRED_SUFFIX,
   SERVICE_SCOPE_NOTE,
@@ -31,7 +31,7 @@ import {
   type WardBarPopoverId,
 } from "@/components/ward-management/shell/ward-bar-model";
 import styles from "@/components/ward-management/shell/ward-bar.module.css";
-import polish from "@/components/ward-redesign/shell-next/next-bar.module.css";
+import polish from "@/components/ward-management/shell-next/next-bar.module.css";
 
 /**
  * The header's Back control (`ward-back.ts`): the previous Ward Flow screen, else `parentHref`.
@@ -43,10 +43,14 @@ import polish from "@/components/ward-redesign/shell-next/next-bar.module.css";
  * it. With no Ward Flow history it replaces the page, and a half-typed form was dropped without the
  * question the desktop Back link asks. Ask the same mounted guards first.
  */
-function confirmLeavingForms(): boolean {
-  const confirmNavigation = (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
-    .__wardFlowConfirmNavigation;
-  return confirmNavigation ? confirmNavigation() : true;
+export function confirmLeavingShell(proceed?: () => void): boolean {
+  if (typeof window === "undefined") return true;
+  // With the kit's styled confirm mounted, the guard returns false at once, asks, and on Leave
+  // without saving runs `proceed`, which passes this check once. Without it, the browser asks.
+  const confirmNavigation = (
+    window as typeof window & { __wardFlowConfirmNavigation?: (proceed?: () => void) => boolean }
+  ).__wardFlowConfirmNavigation;
+  return confirmNavigation ? confirmNavigation(proceed) : true;
 }
 
 export function WardBarBack({
@@ -70,9 +74,11 @@ export function WardBarBack({
         aria-label="Back"
         data-testid="ward-bar-phone-back"
         data-sheet-inert-skip={liveOverSheet ? "" : undefined}
-        onClick={() =>
-          navigateContextuallyBack(router, parentHref, hasMovedInWardFlow, markWardRouteReplace, confirmLeavingForms)
-        }
+        onClick={function goBack() {
+          navigateContextuallyBack(router, parentHref, hasMovedInWardFlow, markWardRouteReplace, () =>
+            confirmLeavingShell(goBack),
+          );
+        }}
       >
         <ArrowLeft aria-hidden="true" strokeWidth={1.75} />
       </button>
@@ -331,7 +337,6 @@ export function WardBarDrawerTriggers({
   openPopover,
   activityHasUnread,
   unreadNoticeCount,
-  shownActivity,
   oneAlertsQueue,
   isPhone,
   onAlertsScreen,
@@ -345,7 +350,6 @@ export function WardBarDrawerTriggers({
   openPopover: (id: WardBarPopoverId) => void;
   activityHasUnread: boolean;
   unreadNoticeCount: number;
-  shownActivity: WardActivityContent;
   oneAlertsQueue: boolean;
   isPhone: boolean;
   onAlertsScreen: boolean;
@@ -368,7 +372,7 @@ export function WardBarDrawerTriggers({
         aria-expanded={openPanel === "activity"}
         aria-controls="ward-bar-activity-drawer"
         // One name, without the stray space the visible label and a hidden tail gave it.
-        aria-label={`Activity${activityHasUnread ? `, ${unreadNoticeCount} unread ${unreadNoticeCount === 1 ? "notice" : "notices"}` : ""}${shownActivity ? "" : ", not available for this page"}`}
+        aria-label={`Activity${activityHasUnread ? `, ${unreadNoticeCount} unread ${unreadNoticeCount === 1 ? "notice" : "notices"}` : ""}`}
         onClick={() => (openPanel === "activity" ? closePopover("activity", false) : openPopover("activity"))}
       >
         <RotateCcwClock className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />

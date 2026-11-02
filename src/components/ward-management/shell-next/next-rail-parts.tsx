@@ -20,7 +20,7 @@ import {
   type ServiceBedAlertsSummary,
 } from "@/components/ward-management/shell/ward-service-bed-alerts";
 
-import parts from "@/components/ward-redesign/shell-next/next-rail.module.css";
+import parts from "@/components/ward-management/shell-next/next-rail.module.css";
 
 /** Sent when a header action opens a sheet of its own (New referral), so the rail's More and Menu sheets close. */
 export const CLOSE_MENUS_EVENT = "wf-next:close-menus";

@@ -29,7 +29,7 @@ import { OperatorSwitcherModal } from "@/components/ward-management/settings/ope
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
-import { useNextNavCounts } from "@/components/ward-redesign/shell-next/next-nav-counts";
+import { useNextNavCounts } from "@/components/ward-management/shell-next/next-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -38,7 +38,8 @@ import { useDeskRoleLabel, useEffectiveWardAccess } from "@/components/ward-mana
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
-import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
+import { WARD_CAPACITY_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import { surnameFirst } from "@/components/ward-management/settings/settings-profile";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import { shiftAtMinute } from "@/components/ward-management/ward-board-time-features";
@@ -69,7 +70,7 @@ import {
   railEntries,
   type RoleMenuAction,
 } from "@/components/ward-management/shell/ward-rail-entries";
-import { nextRoleMenu } from "@/components/ward-redesign/shell-next/next-role-menu";
+import { nextRoleMenu } from "@/components/ward-management/shell-next/next-role-menu";
 import {
   PinButton,
   countScopeNote,
@@ -80,8 +81,8 @@ import {
   cardScopeNote,
   overLineLabel,
   usePinnedPages,
-} from "@/components/ward-redesign/shell-next/next-rail-parts";
-import railParts from "@/components/ward-redesign/shell-next/next-rail.module.css";
+} from "@/components/ward-management/shell-next/next-rail-parts";
+import railParts from "@/components/ward-management/shell-next/next-rail.module.css";
 import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlagCheck } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
@@ -207,7 +208,7 @@ const APPEARANCE_CHOICES = [
   { id: "auto", label: "Auto" },
   { id: "light", label: "Light" },
   { id: "dark", label: "Dark" },
-  { id: "glare", label: "Glare" },
+  { id: "glare", label: "Bright light" },
 ] as const;
 
 type AppearanceChoice = (typeof APPEARANCE_CHOICES)[number]["id"];
@@ -363,11 +364,15 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const entries = accessNav(railEntries(flagOn));
   // DA-09: chrome links outside the menu use the same role filter, and the brand opens this desk's home.
   const canOpen = useCanOpenHref();
+  const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const deskHome = useDeskHomeHref();
   // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
   // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
   const deskAccess = useEffectiveWardAccess();
   const currentPersona = deskAccess.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
+  // Q58 (Josh, 31 Oct 2026): the person card names the person surname first ("Okafor, A."), as
+  // Settings does; a desk named by its role keeps its name.
+  const personaName = surnameFirst(currentPersona.name);
   // The access admin is named for itself, not the executive chrome it borrows (as the phone menu does).
   const deskRoleLabel = useDeskRoleLabel(role);
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
@@ -442,7 +447,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
         return;
       }
       if (isTypingTarget(event.target)) return;
-      if (openDrawerForShortcut(event)) return;
+      if (openDrawerForShortcut(event, canRefer)) return;
 
       if (event.key !== "[" || !areCharacterShortcutsEnabled()) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -456,7 +461,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen, openOverlay, isTabletLandscape]);
+  }, [open, setOpen, openOverlay, isTabletLandscape, canRefer]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -824,7 +829,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
               </span>
               <span className={`${styles.shiftSub} ${railParts.shiftSubWrap}`}>
-                {currentPersona.name} · {currentPersona.role}
+                {personaName} · {currentPersona.role}
               </span>
               {viewing ? (
                 <span className={styles.shiftViewing} data-testid="ward-rail-viewing-desk">
@@ -1203,14 +1208,14 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             }}
             aria-expanded={deskModalOpen}
             aria-haspopup="dialog"
-            aria-label={`${currentPersona.name}, ${currentPersona.role}.${viewing ? ` ${viewing}.` : ""} Go to a desk.`}
-            title={`${currentPersona.name} · ${currentPersona.role}. Go to a desk`}
+            aria-label={`${personaName}, ${currentPersona.role}.${viewing ? ` ${viewing}.` : ""} Go to a desk.`}
+            title={`${personaName} · ${currentPersona.role}. Go to a desk`}
           >
             <span className={styles.userAvatar} aria-hidden="true">
               {currentPersona.initials}
             </span>
             <span className={styles.userMeta}>
-              <span className={styles.userName}>{currentPersona.name}</span>
+              <span className={styles.userName}>{personaName}</span>
               <span className={styles.userRole}>{currentPersona.role}</span>
             </span>
             <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
@@ -1265,14 +1270,14 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 setDeskModalOpen(true);
               }}
               aria-haspopup="dialog"
-              aria-label={`${currentPersona.name}, ${currentPersona.role}. Go to a desk.`}
-              title={`${currentPersona.name} · ${currentPersona.role}. Go to a desk`}
+              aria-label={`${personaName}, ${currentPersona.role}. Go to a desk.`}
+              title={`${personaName} · ${currentPersona.role}. Go to a desk`}
             >
               <span className={styles.userAvatar} aria-hidden="true">
                 {currentPersona.initials}
               </span>
               <span className={styles.userMeta}>
-                <span className={styles.userName}>{currentPersona.name}</span>
+                <span className={styles.userName}>{personaName}</span>
                 <span className={styles.userRole}>{currentPersona.role}</span>
               </span>
               <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
