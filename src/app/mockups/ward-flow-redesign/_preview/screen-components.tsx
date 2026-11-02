@@ -314,42 +314,10 @@ const CommunityTeamScreen = dynamic<MockupPageProps>(() =>
 );
 const COMMUNITY_POPUPS = { "community-note": ["Record contact"] } as const;
 
-// Its Accept in principle pop-up needs a request waiting on the ward and a ready bed to press, and
-// Dabakarn has no request at 10:42, so that pop-up draws the answer page of the first ward with both
-// (as the older mock-up did) and presses a ready bed in its census, which opens the page's own dialog.
+// Its Accept in principle pop-up opens over the first ward a request waits on (ward-answer-preview.tsx).
 const WardAnswerScreen = dynamic<MockupPageProps>(() =>
-  Promise.all([
-    import("@/components/ward-management/ward/ward-screen"),
-    import("@/components/ward-management/ward-flow-provider"),
-    import("@/components/ward-management/ward-derivations"),
-    import("@/components/ward-management/ward-bed-states"),
-    import("react"),
-    import("./open-on-load"),
-  ]).then(
-    ([module, provider, derivations, beds, react, open]) =>
-      function WardAnswerScreenPreview({ openOnLoad }: MockupPageProps) {
-        const world = provider.useWardFlowSelect("movements", "units", "admissions", "bedReleases", "leaveBeds");
-        // Chosen once, so accepting in the pop-up does not move the page to another ward.
-        const [unitId] = react.useState(() => {
-          if (openOnLoad !== "ward-accept") return "rph-adult-secure";
-          const answerable = world.units.find(
-            (unit) =>
-              beds.bedStates(unit, world.admissions, world.bedReleases, world.leaveBeds).ready > 0 &&
-              world.movements.some(
-                (movement) =>
-                  derivations.isOpen(movement) &&
-                  movement.stage === "destination_review" &&
-                  movement.referredUnitIds.includes(unit.id),
-              ),
-          );
-          return answerable?.id ?? "rph-adult-secure";
-        });
-        open.useOpenOnLoad(openOnLoad, WARD_ANSWER_POPUPS);
-        return <module.WardScreen unitId={unitId} presentation="answer" />;
-      },
-  ),
+  import("./ward-answer-preview").then((module) => module.WardAnswerPreview),
 );
-const WARD_ANSWER_POPUPS = { "ward-accept": ["button[aria-label$=' READY']"] } as const;
 
 // The transport officer's phone page, drawn as the page the Officer job panel opens over.
 const TransportScreen = dynamic<MockupPageProps>(() =>
