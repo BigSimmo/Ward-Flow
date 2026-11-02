@@ -37,7 +37,7 @@ function movementVerdict(
   admissions: readonly Admission[] = [],
 ): PatientNowRecord["verdict"] {
   if (departed)
-    return { tone: "warn", short: "Departed", title: "Departure recorded; no current ward stay.", gates: [] };
+    return { tone: "warn", short: "Discharged", title: "Discharge recorded; no current ward stay.", gates: [] };
   if (movement.closure?.outcome === "did_not_proceed")
     return {
       tone: "warn",
@@ -76,7 +76,7 @@ function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = f
   if (departed)
     return [
       {
-        w: "Departure recorded",
+        w: "Discharge recorded",
         d: "No current ward stay. Review recorded discharge and community follow-up separately.",
         tone: "good",
       },
@@ -134,7 +134,7 @@ function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = f
   return [
     {
       w: "Destination Review",
-      d: "Review next cohort-matching bed releases across network.",
+      d: "Review next cohort-matching discharges across network.",
       tone: "warn" as const,
     },
   ];
@@ -232,7 +232,7 @@ export function resolvePatientNowRecord(
     const dynamicRecord: PatientNowRecord = {
       id: movement.id,
       example: stageCopy[movement.stage]?.label ?? "In Transit",
-      exampleNote: `${movement.cohort} · ${movement.security === "Secure" ? "Locked adult secure" : "Open ward"}`,
+      exampleNote: `${movement.cohort} · ${movement.security === "Secure" ? "Locked ward" : "Open ward"}`,
       known: "",
       arrival: originEdName,
       early: [
@@ -443,7 +443,7 @@ export function resolvePatientNowRecord(
       const dynamicRecord: PatientNowRecord = {
         id: patient.id,
         example: stageCopy[activeMovement.stage]?.label ?? "In Transit",
-        exampleNote: `${activeMovement.cohort} · ${activeMovement.security === "Secure" ? "Locked adult secure" : "Open ward"}`,
+        exampleNote: `${activeMovement.cohort} · ${activeMovement.security === "Secure" ? "Locked ward" : "Open ward"}`,
         known: patient.preferredName ? `known as ${patient.preferredName}` : "",
         arrival: originEdName,
         early: [
@@ -568,7 +568,7 @@ export function resolvePatientNowRecord(
       const dynamicRecord: PatientNowRecord = {
         id: patient.id,
         example: "Admitted",
-        exampleNote: `${acceptedUnit?.cohort ?? "Adult"} · ${(acceptedUnit?.lockedBeds ?? 0) > 0 ? "Locked adult secure" : "Open ward"}`,
+        exampleNote: `${acceptedUnit?.cohort ?? "Adult"} · ${(acceptedUnit?.lockedBeds ?? 0) > 0 ? "Locked ward" : "Open ward"}`,
         known: patient.preferredName ? `known as ${patient.preferredName}` : "",
         arrival: unitName,
         early: [

@@ -62,7 +62,7 @@ function occupantsFor(unitId: string): Admission[] {
 
 /** The desktop filters are the kit's segmented control (redesign, 31 Oct 2026): one radio each. */
 function boardFilter(label: string): HTMLElement {
-  return within(screen.getByRole("radiogroup", { name: "Narrow stays and discharges" })).getByRole("radio", {
+  return within(screen.getByRole("radiogroup", { name: "Narrow Bed board" })).getByRole("radio", {
     name: new RegExp(`^${label}`, "u"),
   });
 }

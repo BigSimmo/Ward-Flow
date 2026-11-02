@@ -80,7 +80,9 @@ describe("discharge prep on the ward screen", () => {
   it("shows the stay due out with its barrier and sets the barrier from the bed drawer", () => {
     const admissionId = setUp();
     const dueButtons = () =>
-      screen.queryAllByRole("button").filter((button) => /^Open bed Bed \d+ due out /.test(button.textContent ?? ""));
+      screen
+        .queryAllByRole("button")
+        .filter((button) => /^Open bed Bed \d+ discharge due /.test(button.textContent ?? ""));
     const labels = dueButtons().map((button) => button.textContent);
     expect(labels.length).toBeGreaterThan(0);
     // Open each due bed until the one this test moved shows its barrier picker.
@@ -93,15 +95,15 @@ describe("discharge prep on the ward screen", () => {
       fireEvent.click(screen.getByRole("button", { name: "Close bed drawer" }));
     }
     expect(select).not.toBeNull();
-    expect(screen.getByTestId("ward-drawer-discharge-prep")).toHaveTextContent(/Due out within 24 hours/);
+    expect(screen.getByTestId("ward-drawer-discharge-prep")).toHaveTextContent(/Discharge due within 24 hours/);
     fireEvent.change(select!, { target: { value: "NDIS" } });
     expect(flow!.admissions.find((admission) => admission.id === admissionId)?.dischargeBarrier).toBe("NDIS");
 
     // H-0981 / WS-17: recording a blocker is one choice. The barrier is plain text while that form is open.
     const drawer = within(select!.closest("aside, [role='dialog']") as HTMLElement);
-    fireEvent.click(drawer.getByRole("button", { name: /^(Record|Update) blocker$/ }));
+    fireEvent.click(drawer.getByRole("button", { name: /^(Record|Update) hold-up$/ }));
     expect(screen.queryByTestId("ward-drawer-barrier-select")).toBeNull();
-    expect(drawer.getByRole("combobox", { name: /blocker/i })).toBeInTheDocument();
+    expect(drawer.getByRole("combobox", { name: /held up/i })).toBeInTheDocument();
     expect(drawer.queryByRole("combobox", { name: /barrier/i })).toBeNull();
   });
 });

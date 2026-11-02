@@ -106,7 +106,7 @@ describe("DischargeBoard guarded detail access", () => {
     fireEvent.keyDown(window, { key: "Escape" });
     expect(within(detailShell).queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
     expect(detail).toBeInTheDocument();
-    expect(detail).toHaveTextContent("Select a record to view dates, blockers and ward follow-up.");
+    expect(detail).toHaveTextContent("Select a record to view dates, hold-ups and ward follow-up.");
     access.mode = "normal";
     expect(worklist).toBeInTheDocument();
     fireEvent.click(within(worklist).getByRole("button", { name }));
@@ -123,7 +123,7 @@ describe("DischargeBoard guarded detail access", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reset scenario" }));
     // World-generation changes remount the workspace and clear selection altogether.
     const cleared = screen.getByRole("region", { name: "Selected discharge details" });
-    expect(cleared).toHaveTextContent("Select a record to view dates, blockers and ward follow-up.");
+    expect(cleared).toHaveTextContent("Select a record to view dates, hold-ups and ward follow-up.");
     expect(within(cleared).queryByRole("heading", { name })).not.toBeInTheDocument();
     expect(within(cleared).queryByTestId("ward-discharge-update-date-btn")).not.toBeInTheDocument();
   });

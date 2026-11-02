@@ -101,7 +101,7 @@ interface WindowSpec {
 const WINDOWS: readonly WindowSpec[] = [
   { id: "staffing", title: "Staffing", hours: "07:00–09:30" },
   { id: "intake", title: "Intake", hours: "09:30–13:00" },
-  { id: "departures", title: "Departures", hours: "11:00–14:00" },
+  { id: "departures", title: "Discharges", hours: "11:00–14:00" },
   { id: "leave", title: "Leave", hours: "14:00–18:00" },
 ];
 
@@ -657,7 +657,7 @@ function Queue({
     // rows and actions as the windows above it on desktop, without the window track.
     const sections: { id: WindowId; label: string }[] = [
       { id: "intake", label: "Intake" },
-      { id: "departures", label: "Departures" },
+      { id: "departures", label: "Discharges" },
       { id: "leave", label: "Leave and away" },
       { id: "staffing", label: "Staffing" },
     ];

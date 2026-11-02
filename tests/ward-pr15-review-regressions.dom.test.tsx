@@ -403,7 +403,7 @@ describe("PR15 discharge and referral provenance", () => {
     const hud = screen.getByTestId("ward-legal-hud-island");
     const row = document.querySelector(`[data-record-key="${movement.id}"]`) as HTMLElement;
     expect(within(row).getByText("Passed")).toBeInTheDocument();
-    expect(hud.textContent).toContain("forms on open moves");
+    expect(hud.textContent).toContain("forms on open movements");
     expect(hud.textContent).not.toContain("statutory deadline");
   });
 });

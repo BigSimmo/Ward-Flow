@@ -281,12 +281,12 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   {
     id: "wa-secure-bed-call",
     kind: "bed_call",
-    name: "Secure beds",
-    title: "Demo: bed call for secure beds",
+    name: "Locked beds",
+    title: "Demo: bed call for locked beds",
     severity: "critical",
     category: "capacity_gridlock",
     targetScope: "all",
-    targetScopeLabel: "Secure and forensic",
+    targetScopeLabel: "Locked and forensic",
     defaultDurationMinutes: 60,
     defaultMessage:
       "Demo alert. Not a live broadcast. Secure wards with a bed today, answer how many and when it is ready.",

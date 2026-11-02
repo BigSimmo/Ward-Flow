@@ -336,7 +336,7 @@ export function WardBoard({
     return runDeparture(record, {
       success,
       undo: (at) => ({ type: "UNDO_DEPARTURE", role: "ward", now: at, admissionId, actingUnitId: unit.id }),
-      undone: "Departure undone. This patient is back on the ward.",
+      undone: "Discharge undone. This patient is back on the ward.",
     });
   };
   const confirmBoardArrival = (movementId: string, who: string, reason?: TransportExceptionReason) => {
@@ -768,7 +768,7 @@ export function WardBoard({
         text: `${isConfirmed ? "Confirmed out" : "Expected out"} today, still here.${blockerPhrase}`,
         acts: [
           { word: "They have left", say: "would release this bed and make it ready" },
-          { word: "Record a blocker", tone: "warn", say: "would record what is holding this discharge up" },
+          { word: "Record hold-up", tone: "warn", say: "would record what is holding this discharge up" },
         ],
       });
     }
@@ -859,7 +859,7 @@ export function WardBoard({
                 actingUnitId: unit.id,
                 leavingDestination,
               }),
-        `Recorded departure: ${pendingConfirm.who} has left the ward.`,
+        `Recorded discharge: ${pendingConfirm.who} has left the ward.`,
         admissionId,
       );
       if (selectedTile && admissionId === selectedTile.key) {
@@ -895,7 +895,7 @@ export function WardBoard({
                   actingUnitId: unit.id,
                   leavingDestination,
                 }),
-          `Recorded departure: ${item.who || nameFor(item.selectableKey)} has left the ward.`,
+          `Recorded discharge: ${item.who || nameFor(item.selectableKey)} has left the ward.`,
           item.selectableKey!,
         );
       };
@@ -988,7 +988,7 @@ export function WardBoard({
       );
       return;
     }
-    if (word === "Record a blocker") {
+    if (word === "Record hold-up") {
       dialogTriggerRef.current =
         typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
       setSelectedBlocker(BED_RELEASE_BLOCKERS[0]);
@@ -1087,7 +1087,7 @@ export function WardBoard({
   return (
     <div className={styles.screen} data-testid="ward-board" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
-        <h1 className={styles.screenName}>Stays and discharges</h1>
+        <h1 className={styles.screenName}>Bed board</h1>
 
         <WardBoardHero
           available={available}
@@ -1302,9 +1302,7 @@ export function WardBoard({
             <div className={styles.confirmDialogPanel}>
               <div className={styles.modalHeader}>
                 <h3 id="confirm-dialog-title" className={styles.confirmDialogTitle}>
-                  {pendingConfirm.kind === "leaving"
-                    ? "Confirm patient departure"
-                    : "Confirm emergency department transfer"}
+                  {pendingConfirm.kind === "leaving" ? "Confirm discharge" : "Confirm emergency department transfer"}
                 </h3>
                 <button
                   ref={confirmCloseBtnRef}
@@ -1375,7 +1373,7 @@ export function WardBoard({
                   disabled={pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === ""}
                   data-tone={pendingConfirm.kind === "leaving" ? "warn" : undefined}
                 >
-                  {pendingConfirm.kind === "leaving" ? "Record departure" : "Record ED transfer"}
+                  {pendingConfirm.kind === "leaving" ? "Record discharge" : "Record ED transfer"}
                 </button>
               </div>
             </div>

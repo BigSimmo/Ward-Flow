@@ -1166,7 +1166,7 @@ function WardProfileBody({
             href={`/ward-flow/board/${unit.id}`}
             onClick={() => close?.({ restoreFocus: false })}
           >
-            Stays and discharges
+            Bed board
           </Link>
           <Link
             className={buttonClass({ variant: "pri", size: "sm" })}
@@ -1313,9 +1313,7 @@ function WardPhoneSheet({
       title={row.unit.name}
       description={`${row.service ?? "Not placed"} · ${row.siteShort} · ${cohortLabel(row.unit)}`}
       secondary={
-        countsOnly
-          ? undefined
-          : { label: "Stays and discharges", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }
+        countsOnly ? undefined : { label: "Bed board", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }
       }
       primary={
         countsOnly ? undefined : { label: "Enter ward", onAction: () => router.push(`/ward-flow/ward/${row.unit.id}`) }

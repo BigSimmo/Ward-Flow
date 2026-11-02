@@ -398,7 +398,7 @@ function OperationalCommunityScreen({ teamId }: { teamId: string }) {
             <CardBody className={styles.bodyStack}>
               <dl className={styles.tiles} aria-label="Coming back to the team">
                 {[
-                  { id: "due", label: "Due out within 7 days", value: dueOutText, flag: false },
+                  { id: "due", label: "Discharges due within 7 days", value: dueOutText, flag: false },
                   { id: "past", label: "Past discharge date", value: pastDateText, flag: pastDate > 0 },
                   {
                     id: "nodate",
@@ -611,7 +611,7 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
           ? undefined
           : figures.expected.kind === "measured"
             ? `${dueOutText} due out in the next 7 days`
-            : `Due out in the next 7 days: ${dueOutText}`,
+            : `Discharges due in the next 7 days: ${dueOutText}`,
         stats: (
           <>
             <HeroStat value={inBedCount === null ? figureText(figures.admitted) : small(inBedCount)} label="In a bed" />
@@ -824,7 +824,7 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
             id="due-out"
             className={detail.anchor}
             icon={CalendarClock}
-            title="Due out to this team"
+            title="Discharges due to this team"
             aside="With a discharge date"
           >
             {slots.dueOut}
@@ -953,7 +953,7 @@ function TeamPhone({
           <PhoneFacts
             label="Coming back to the team"
             facts={[
-              { id: "due", label: "Due out within 7 days", value: dueOutText },
+              { id: "due", label: "Discharges due within 7 days", value: dueOutText },
               {
                 id: "past",
                 label: (
@@ -1008,7 +1008,7 @@ function TeamPhone({
                 ),
                 value: "text" in followUp ? followUp.text : followUp.notArranged,
               },
-              { id: "due", label: "Due out within 7 days", value: dueOutText },
+              { id: "due", label: "Discharges due within 7 days", value: dueOutText },
               {
                 id: "past",
                 label: (

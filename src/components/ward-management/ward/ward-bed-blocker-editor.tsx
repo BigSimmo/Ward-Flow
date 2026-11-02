@@ -72,7 +72,7 @@ export function BlockerEditor({
       {blockReason ? (
         <div className={styles.editor}>
           <Button variant="ghost" className={styles.pill} aria-disabled={busy} onClick={() => submit(null)}>
-            Clear blocker
+            Clear hold-up
           </Button>
         </div>
       ) : null}
@@ -82,7 +82,7 @@ export function BlockerEditor({
             ref={selectRef}
             className={styles.select}
             value={selected}
-            aria-label="Discharge blocker"
+            aria-label="Held up by"
             onChange={(e) => setSelected(e.target.value as BedReleaseBlocker | "")}
           >
             <option value="">Choose what is holding them up</option>
@@ -102,7 +102,7 @@ export function BlockerEditor({
               if (selected) submit(selected);
             }}
           >
-            Save blocker
+            Save hold-up
           </Button>
         </div>
       ) : null}

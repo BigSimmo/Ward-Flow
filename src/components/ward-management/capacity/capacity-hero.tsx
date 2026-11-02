@@ -118,7 +118,7 @@ export function CapacityHero({
               onPress={() => onHighlight("open")}
             />
             <HeroChip value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
-            <HeroChip value={model.dueOutToday ?? "Not tracked"} label="Due out today" />
+            <HeroChip value={model.dueOutToday ?? "Not tracked"} label="Discharges due today" />
             {oldestCount ? (
               <HeroChip
                 value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}

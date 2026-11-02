@@ -300,7 +300,7 @@ function StatisticsSummaryPhoneView({
                   {
                     id: "ed",
                     value: statisticsCountText(waitingInEd),
-                    label: <ShortLabel short="Open journeys" full="Open ED journeys" />,
+                    label: <ShortLabel short="Open movements" full="Open ED movements" />,
                   },
                 ]),
             // The figure names its noun, as the desktop's "Admissions ended today" does.
@@ -467,7 +467,7 @@ function StatisticsSummaryPhoneView({
             className={styles.navRow}
             onClick={() =>
               setSheet({
-                title: "Open ED journeys",
+                title: "Open ED movements",
                 body: (
                   <ul className={styles.list}>
                     {eds.map((ed) => (
@@ -478,12 +478,12 @@ function StatisticsSummaryPhoneView({
                         meta={
                           ed.longest === null
                             ? exactStatisticsCount(ed.waiting) === 0
-                              ? "No open ED journeys"
+                              ? "No open ED movements"
                               : "Longest not recorded"
                             : `Longest ${durMinutes(ed.longest)}`
                         }
                         value={statisticsCountText(ed.waiting)}
-                        time="open ED journeys"
+                        time="open ED movements"
                         href={
                           ed.openable === false || !canOpen(edStatisticsHref(ed.id))
                             ? undefined
@@ -499,21 +499,21 @@ function StatisticsSummaryPhoneView({
             {/* The menu's ED icon; a clock is for time only. */}
             <IconTile icon={Siren} />
             <span className={styles.navText}>
-              <b>Open ED journeys</b>
+              <b>Open ED movements</b>
               <span>
                 {!edPresenceKnown ? (
-                  // Role view (executive): "not shown open ED journeys" read badly and was cut off.
+                  // Role view (executive): "not shown open ED movements" read badly and was cut off.
                   held(waitingInEd) ? (
                     "Counts not shown"
                   ) : (
-                    <>{statisticsCountText(waitingInEd)} open ED journeys · department totals protected</>
+                    <>{statisticsCountText(waitingInEd)} open ED movements · department totals protected</>
                   )
                 ) : longestEd === null ? (
-                  `${edsWaiting.length} of ${eds.length} departments with open ED journeys`
+                  `${edsWaiting.length} of ${eds.length} departments with open ED movements`
                 ) : (
                   <>
                     Longest <b className={styles.num}>{durMinutes(longestEd)}</b> · {statisticsCountText(waitingInEd)}{" "}
-                    open journeys from {edsWaiting.length} of {eds.length}
+                    open movements from {edsWaiting.length} of {eds.length}
                   </>
                 )}
               </span>

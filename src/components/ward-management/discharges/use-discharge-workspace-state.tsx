@@ -465,8 +465,8 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   const bedDaysPast = Math.round(datePassed.reduce((sum, at) => sum + (now - at), 0) / MINUTES_PER_DAY);
   const copySummary = () => {
     const text =
-      `Discharges, ${population === "records" ? "admission records" : "bed releases"}, as of ${formatSheetMoment(now, dayZero)}. ` +
-      `${openCount} open: ${counts.blocked} blocked, ${counts.confirmed} confirmed, ${counts.expected} expected. ` +
+      `Discharges, ${population === "records" ? "admission records" : "discharges by bed"}, as of ${formatSheetMoment(now, dayZero)}. ` +
+      `${openCount} open: ${counts.blocked} held up, ${counts.confirmed} confirmed, ${counts.expected} expected. ` +
       `${datePassed.length} past the ward's date, ${bedDaysPast} bed days. ${counts.departed} departed.`;
     copyTextToClipboard(text).then(
       () => setCopyNote("Summary copied."),
@@ -484,13 +484,13 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
       : null;
   const detailBadgeLabel = activeRecord
     ? recordStatus(activeRecord) === "blocked"
-      ? "Blocked"
+      ? "Held up"
       : WORK_STATUS_LABELS[recordStage(activeRecord)]
     : detailRelease
       ? detailRelease.blocker
-        ? "Blocked"
+        ? "Held up"
         : detailRelease.state === "discharged"
-          ? "Departed"
+          ? "Discharged"
           : WORK_STATUS_LABELS[detailRelease.state]
       : "";
   /* v10 phone: no tabs in the release sheet — milestones and the barrier always show, transport

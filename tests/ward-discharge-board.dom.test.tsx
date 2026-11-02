@@ -52,14 +52,14 @@ it("names identified release rows and distinguishes aggregate copying from print
     renderBoard();
     // Discharges redesign (approved 31 Oct 2026): Now names the hero's figure, and "held up" is the word.
     expect(screen.getByRole("button", { name: /^Now, \d+ to work now$/ })).toBeInTheDocument();
-    expect(screen.getByText(/Bed releases, held up first/)).toBeInTheDocument();
-    expect(screen.getByText(/Bed releases · Identifiers may be included/)).toBeInTheDocument();
+    expect(screen.getByText(/Discharges by bed, held up first/)).toBeInTheDocument();
+    expect(screen.getByText(/Discharges by bed · Identifiers may be included/)).toBeInTheDocument();
     expect(screen.getByTestId("ward-discharge-copy")).toHaveTextContent("Copy counts");
     expect(screen.getByTestId("ward-discharge-print")).toHaveAccessibleName("Print list (may include identifiers)");
     expect(screen.queryByText(/anonymous releases|Bed frees \(no name\)/i)).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-discharge-copy"));
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
-    expect(writeText.mock.calls[0][0]).toMatch(/^Synthetic prototype\.\nDischarges, bed releases, as of/);
+    expect(writeText.mock.calls[0][0]).toMatch(/^Synthetic prototype\.\nDischarges by bed, as of/);
     expect(writeText.mock.calls[0][0]).not.toMatch(/UMRN|WF-|PT-|WR-/);
   } finally {
     if (originalClipboard) Object.defineProperty(navigator, "clipboard", originalClipboard);

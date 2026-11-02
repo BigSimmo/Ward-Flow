@@ -1,4 +1,4 @@
-// The bed board's "Record a blocker" dialog, redesigned on the kit Dialog (Josh approved, 31 Oct 2026).
+// The bed board's "Record hold-up" dialog, redesigned on the kit Dialog (Josh approved, 31 Oct 2026).
 // Pins what the build notes promise: nothing starts chosen, Confirm blocker says "Choose a reason
 // first" until a reason is tapped, and every reason is offered word for word.
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
@@ -17,11 +17,11 @@ function openBlockerDialog(): HTMLElement {
       <WardBoard unitId="rph-adult-secure" requireConfirmation={false} />
     </WardFlowProvider>,
   );
-  const triggers = screen.queryAllByRole("button", { name: "Record a blocker" });
+  const triggers = screen.queryAllByRole("button", { name: "Record hold-up" });
   // Non-vacuity: the seeded ward really offers the action, or nothing below is proved.
   expect(triggers.length).toBeGreaterThan(0);
   fireEvent.click(triggers[0]);
-  return screen.getByRole("dialog", { name: "Record a blocker" });
+  return screen.getByRole("dialog", { name: "Record hold-up" });
 }
 
 describe("Record a blocker dialog", () => {
@@ -42,7 +42,7 @@ describe("Record a blocker dialog", () => {
 
     fireEvent.click(confirm);
     // Pressing it unchosen records nothing and leaves the dialog open.
-    expect(screen.getByRole("dialog", { name: "Record a blocker" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Record hold-up" })).toBeInTheDocument();
 
     fireEvent.click(within(dialog).getByRole("radio", { name: BED_RELEASE_BLOCKERS[1] }));
     expect(within(dialog).getByRole("radio", { name: BED_RELEASE_BLOCKERS[1] })).toBeChecked();
@@ -57,10 +57,10 @@ describe("Record a blocker dialog", () => {
     const dialog = openBlockerDialog();
     fireEvent.click(within(dialog).getByRole("radio", { name: BED_RELEASE_BLOCKERS[2] }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByRole("dialog", { name: "Record a blocker" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Record hold-up" })).toBeNull();
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Record a blocker" })[0]);
-    const again = screen.getByRole("dialog", { name: "Record a blocker" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Record hold-up" })[0]);
+    const again = screen.getByRole("dialog", { name: "Record hold-up" });
     for (const radio of within(again).getAllByRole("radio")) expect(radio).not.toBeChecked();
   });
 });
