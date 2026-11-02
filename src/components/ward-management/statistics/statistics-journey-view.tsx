@@ -652,8 +652,8 @@ function JourneyPresentation({
           <StatCard
             id="journey-waiting"
             icon={Clock}
-            title="Open ED journeys"
-            meta={`${statisticsCountText(totalWaiting)} open journeys from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
+            title="Open ED movements"
+            meta={`${statisticsCountText(totalWaiting)} open movements from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-journey-waiting"
           >
             <CardBody>
@@ -677,13 +677,13 @@ function JourneyPresentation({
                   </ul>
                 </>
               ) : waitingRows.length === 0 ? (
-                <p className={styles.empty}>No open ED journeys are recorded.</p>
+                <p className={styles.empty}>No open ED movements are recorded.</p>
               ) : (
                 <StatisticsEdSwarm
                   rows={waitingRows}
                   labelWidth={128}
                   testId="ward-statistics-journey-swarm"
-                  label="Each open ED journey, by originating department and time since opening"
+                  label="Each open ED movement, by originating department and time since opening"
                 />
               )}
               <SrOnly>

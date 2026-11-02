@@ -316,7 +316,7 @@ const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
   if (lens === "beds")
     return `${site.name}: ${site.ready} ready beds, ${site.pct}% occupied${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
   if (lens === "ed")
-    return `${site.name} ED: ${statisticsCountText(site.edWaiting)} open ED journeys${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${exactStatisticsCount(site.edOver24) !== 0 ? `, ${statisticsCountText(site.edOver24)} over ${LONG_WAIT_HOURS} hours` : ""}`;
+    return `${site.name} ED: ${statisticsCountText(site.edWaiting)} open ED movements${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${exactStatisticsCount(site.edOver24) !== 0 ? `, ${statisticsCountText(site.edOver24)} over ${LONG_WAIT_HOURS} hours` : ""}`;
   if (lens === "dis")
     return `${site.name}: ${statisticsCountText(site.dischargedToday)} discharged today, ${statisticsCountText(site.dueToday)} due later today${exactStatisticsCount(site.blocked) !== 0 ? `, ${statisticsCountText(site.blocked)} blocked` : ""}`;
   return `${site.name}: average stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${statisticsCountText(site.longStays)} over 3 months`;
@@ -331,9 +331,9 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key
   },
   {
     id: "ed",
-    label: "Open ED journeys",
-    rankTitle: "Most open ED journeys",
-    key: `Ring: longest time since opening, to ${VERY_LONG_WAIT_HOURS}h. Centre: open ED journeys. Amber dot: over ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
+    label: "Open ED movements",
+    rankTitle: "Most open ED movements",
+    key: `Ring: longest time since opening, to ${VERY_LONG_WAIT_HOURS}h. Centre: open ED movements. Amber dot: over ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
   },
   {
     id: "dis",
@@ -519,7 +519,7 @@ function MapPresentation({
   const lensInfo = LENSES.find((item) => item.id === lens) ?? LENSES[0]!;
   const lensItems: ChoiceItem<MapLens>[] = [
     { id: "beds", label: "Beds", count: network.ready },
-    { id: "ed", label: "Open ED journeys", count: statisticsCountText(network.edWaiting) },
+    { id: "ed", label: "Open ED movements", count: statisticsCountText(network.edWaiting) },
     {
       id: "dis",
       label: "Discharge",
@@ -544,7 +544,7 @@ function MapPresentation({
         ]
       : lens === "ed"
         ? [
-            { value: String(statisticsCountText(network.edWaiting)), label: "Open ED journeys" },
+            { value: String(statisticsCountText(network.edWaiting)), label: "Open ED movements" },
             {
               value: network.longest?.edLongest == null ? "none" : durMinutes(Math.round(network.longest.edLongest)),
               label: network.longest ? `Longest, ${network.longest.name}` : "Longest",
@@ -730,7 +730,7 @@ function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: M
   const edLinked = site.ed !== undefined && site.ed.openable !== false && canOpen(edStatisticsHref(site.ed.id));
   const edContent = (
     <>
-      <span className={styles.siteName}>{statisticsCountText(site.edWaiting)} open ED journeys</span>
+      <span className={styles.siteName}>{statisticsCountText(site.edWaiting)} open ED movements</span>
       <span className={styles.siteFig}>
         {(exactStatisticsCount(site.edOver48) ?? 0) > 0 ? (
           <StatusGlyph tone="danger" size={9} />
@@ -827,7 +827,7 @@ function BelowMap({
         <StatCard
           id="map-below"
           icon={Clock}
-          title="Open ED journeys, by ED"
+          title="Open ED movements, by ED"
           aside={`${aggregate.emergencyDepartments.length} EDs`}
           data-testid="ward-statistics-map-below"
         >
@@ -864,7 +864,7 @@ function BelowMap({
       <StatCard
         id="map-below"
         icon={Clock}
-        title="Open ED journeys, by ED"
+        title="Open ED movements, by ED"
         aside={`${rows.length} EDs`}
         data-testid="ward-statistics-map-below"
       >

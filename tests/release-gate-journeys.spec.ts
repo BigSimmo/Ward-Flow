@@ -53,13 +53,10 @@ async function openBedBoardFromWards(page: Page, unitName: string, unitId: strin
       .getByRole("button", { name: new RegExp(`^${escapeForRegExp(unitName)}`, "u") })
       .first()
       .click();
-    await page
-      .getByTestId("ward-index-phone-sheet")
-      .getByRole("button", { name: "Stays and discharges", exact: true })
-      .click();
+    await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
   } else {
     await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
-    await page.getByRole("link", { name: "Stays and discharges", exact: true }).click();
+    await page.getByRole("link", { name: "Bed board", exact: true }).click();
   }
   await page.waitForURL(`**/ward-flow/board/${unitId}`);
   await waitForScreen(page, "ward-board");
@@ -388,12 +385,12 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   await expect(shiftItem).toBeVisible();
   await expect(shiftItem).toContainText("Confirmed discharge");
   await shiftItem.getByRole("button", { name: "They have left", exact: true }).click();
-  const departure = page.getByRole("dialog", { name: "Confirm patient departure" });
+  const departure = page.getByRole("dialog", { name: "Confirm discharge" });
   await expect(departure).toBeVisible();
   await expectAccessible(page, testInfo, "confirm patient departure dialog");
   // Audit CS3-07: where they went starts blank and must be chosen.
   await departure.getByLabel("Where are they going?").selectOption("discharged-to-the-community");
-  await departure.getByRole("button", { name: "Record departure", exact: true }).click();
+  await departure.getByRole("button", { name: "Record discharge", exact: true }).click();
   await expect(departure).toHaveCount(0);
   // The person has left, so the board no longer lists their discharge.
   await expect(shiftItem).toHaveCount(0);

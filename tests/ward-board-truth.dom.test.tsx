@@ -63,9 +63,9 @@ describe("the bed board says what the reducer actually did", () => {
     const after = probeRef.current!.rejections;
     if (after.length > before) {
       expect(toast).toHaveTextContent(`Not recorded: ${after[after.length - 1].reason}`);
-      expect(toast).not.toHaveTextContent("Recorded departure");
+      expect(toast).not.toHaveTextContent("Recorded discharge");
     } else {
-      expect(toast).toHaveTextContent(/^Recorded departure: /u);
+      expect(toast).toHaveTextContent(/^Recorded discharge: /u);
     }
     // D10: the message names a person, never an admission id.
     expect(toast.textContent ?? "").not.toMatch(/\bAD-[A-Z0-9-]+/u);

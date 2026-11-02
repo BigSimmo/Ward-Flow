@@ -86,20 +86,20 @@ describe("Summary, Map view", () => {
 
   it("the ED lens ranks EDs and opens ED statistics pages", () => {
     renderView();
-    fireEvent.click(screen.getByRole("radio", { name: /^Open ED journeys/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Open ED movements/ }));
     const rank = screen.getByTestId("ward-statistics-map-rank");
-    expect(within(rank).getByRole("heading", { name: "Most open ED journeys" })).toBeTruthy();
+    expect(within(rank).getByRole("heading", { name: "Most open ED movements" })).toBeTruthy();
     const links = within(rank).getAllByRole("link");
     expect(links).toHaveLength(allEmergencyDepartments().length);
     for (const link of links) expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/statistics\/ed\//);
     const { state, sites } = figuresAtAnchor();
     const journeys = sites.reduce((sum, site) => sum + lensValue(site, "ed"), 0);
     expect(journeys).toBeGreaterThan(waitingInEds(state.movements, NOW_ANCHOR).total);
-    expect(screen.getByRole("radio", { name: /^Open ED journeys/u })).toHaveTextContent(String(journeys));
-    expect(screen.getByText(/^Ring: longest time since opening/u)).toHaveTextContent("Centre: open ED journeys.");
+    expect(screen.getByRole("radio", { name: /^Open ED movements/u })).toHaveTextContent(String(journeys));
+    expect(screen.getByText(/^Ring: longest time since opening/u)).toHaveTextContent("Centre: open ED movements.");
     expect(
       within(screen.getByTestId("ward-statistics-map-below")).getByRole("heading", {
-        name: "Open ED journeys, by ED",
+        name: "Open ED movements, by ED",
       }),
     ).toBeInTheDocument();
   });
@@ -123,7 +123,7 @@ describe("Summary, Map view", () => {
 
   it("the stay lens is measured, not a preview, and every lens names its key", () => {
     renderView();
-    for (const name of [/^Beds/, /^Open ED journeys/, /^Discharge/, /^Stay/]) {
+    for (const name of [/^Beds/, /^Open ED movements/, /^Discharge/, /^Stay/]) {
       fireEvent.click(screen.getByRole("radio", { name }));
       expect(screen.getByTestId("ward-statistics-map-view").textContent).not.toContain("Not wired in this prototype.");
       expect(screen.getByText(/^Ring: /)).toBeTruthy();

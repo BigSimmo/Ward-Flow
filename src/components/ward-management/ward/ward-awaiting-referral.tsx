@@ -1,3 +1,4 @@
+import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import dynamic from "next/dynamic";
 import { createContext, useContext, type ComponentProps } from "react";
 
@@ -92,7 +93,7 @@ export function AwaitingIdentity({
       >
         {[
           movement.cohort,
-          `${movement.security} ward`,
+          `${securityWord(movement.security)} ward`,
           `Waiting ${durMinutes(Math.max(0, now - movement.openedAt))}`,
           originName ? `Now at ${originName}` : undefined,
         ]

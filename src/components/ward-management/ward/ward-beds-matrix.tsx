@@ -36,7 +36,7 @@ function formatBedAriaLabel(bed: BedItem, eddMoved: string | null = null): strin
     parts.push(`Away at ED for ${bed.awayAtEdHours} ${bed.awayAtEdHours === 1 ? "hour" : "hours"}`);
   if (bed.legalStatusLabel) parts.push(bed.legalStatusLabel);
   if (bed.criteriaLedChip) parts.push(bed.criteriaLedChip.phrase);
-  if (bed.blockReason) parts.push(`Discharge blocker: ${bed.blockReason}`);
+  if (bed.blockReason) parts.push(`Held up: ${bed.blockReason}`);
   if (bed.tentativeDiagnosis) parts.push(`Tentative diagnosis: ${bed.tentativeDiagnosis}`);
   const expectedLeave = expectedLeaveLine(bed);
   if (expectedLeave) parts.push(expectedLeave);
@@ -486,7 +486,7 @@ export function WardBedsMatrix({
           desc: `${statusPhrase}, still here.${bed.blockReason ? ` ${bed.blockReason}.` : ""}`,
           actions: [
             { label: "They have left", primary: false },
-            { label: bed.blockReason ? "Update blocker" : "Record a blocker", primary: false },
+            { label: bed.blockReason ? "Update hold-up" : "Record hold-up", primary: false },
           ],
           borderTone: confirmed ? "warn" : "danger",
         });
@@ -553,7 +553,7 @@ export function WardBedsMatrix({
             {(
               [
                 ["all", "All", shiftItems.length],
-                ["due-out", "Due out", dueOutCount],
+                ["due-out", "Discharge due", dueOutCount],
                 ["off-ward", "Off the ward", offWardCount],
                 ["in-transit", "In transit", inTransitCount],
               ] as const

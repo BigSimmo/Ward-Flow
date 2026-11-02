@@ -91,7 +91,7 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   SET_BED_PREPARATION: "Update bed preparation",
   RELEASE_BED: "Release bed",
   SEND_RELEASE_SUPPORT_NOTICE: "Send discharge support notice",
-  RECORD_LEAVING: "Record departure",
+  RECORD_LEAVING: "Record discharge",
   RECORD_ADMISSION_CARE: "Care journey fact",
   RECORD_ADMISSION_FOLLOW_UP: "Record follow-up arrangement",
   RECORD_PATIENT_DISCHARGE: "Record patient discharge",

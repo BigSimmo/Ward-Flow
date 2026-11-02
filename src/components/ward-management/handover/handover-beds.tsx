@@ -147,7 +147,7 @@ function BedTiles({ rows, wards, held, now, waitingForBed }: Omit<HandoverBedsPr
       </div>
       <div className={styles.tile}>
         <b className={styles.tileValue}>{sum("outToday")}</b>
-        <span className={styles.tileLabel}>Due out today</span>
+        <span className={styles.tileLabel}>Discharges due today</span>
         <span className={styles.tileSub}>{sum("pastEdd")} past EDD</span>
       </div>
       <div className={styles.tile}>
@@ -217,7 +217,7 @@ function WardPanel({
     },
     { label: "Being made ready", value: String(ward.pendingPreparation) },
     { label: "Pulled for incoming", value: String(ward.held) },
-    { label: "Due out today", value: String(ward.outToday) },
+    { label: "Discharges due today", value: String(ward.outToday) },
     { label: "Past EDD", value: String(ward.pastEdd) },
     { label: "Stays over 7 days", value: String(ward.longStays) },
     { label: "Discharges held up", value: String(ward.holds) },

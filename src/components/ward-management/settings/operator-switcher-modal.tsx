@@ -820,8 +820,10 @@ function TeamGroup({ count, forceOpen, children }: { count: number; forceOpen: b
           <Icon icon={ChevronDown} size={14} className={styles.chev} />
           <Icon icon={Home} size={16} />
           <b className={styles.siteName}>Community teams</b>
+          {/* Q260 (pre-launch review T1, 2 Nov 2026): this counts desks, one per service (Q202 folds the
+              spellings a person ruled are one service), so it no longer reads as Community's team count. */}
           <span className={styles.mini}>
-            <span className={styles.mono}>{count}</span> teams
+            <span className={styles.mono}>{count}</span> {count === 1 ? "desk" : "desks"}
           </span>
         </button>
         {isOpen ? <div className={styles.siteBody}>{children}</div> : null}

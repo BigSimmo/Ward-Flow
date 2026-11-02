@@ -10,7 +10,7 @@ import { safeDecodeURIComponent } from "@/components/ward-management/ward-safe-u
 export async function generateMetadata({ params }: { params: Promise<{ unitId: string }> }): Promise<Metadata> {
   const unit = knownWardUnit(safeDecodeURIComponent((await params).unitId));
   return {
-    title: unit ? `${unit.name} board — Ward Flow` : "Ward board not found — Ward Flow",
+    title: unit ? `${unit.name} Bed board — Ward Flow` : "Bed board not found — Ward Flow",
     description:
       "Synthetic ward board for the Ward Flow prototype — one tile per bed, shaded by how long the occupant has been in it.",
   };

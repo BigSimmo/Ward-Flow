@@ -420,7 +420,7 @@ function ServiceTable({ rows }: { rows: MeetingTvExtras["services"] }) {
             Locked ready
           </th>
           <th scope="col" className={styles.num}>
-            Due out
+            Discharges due
           </th>
         </tr>
       </thead>
@@ -550,7 +550,7 @@ function BedMeetingTvView({
           },
           {
             // Audit 6 (Josh, 20 Oct 2026): these count tomorrow's discharges too, so the label says so.
-            label: "Due out today and tomorrow",
+            label: "Discharges due today and tomorrow",
             value: dischargingToday,
             detail: `${discharges.confirmed} confirmed · ${releasesHeldUpText(discharges.heldUp)}`,
             tone: discharges.heldUp > 0 ? "warning" : undefined,

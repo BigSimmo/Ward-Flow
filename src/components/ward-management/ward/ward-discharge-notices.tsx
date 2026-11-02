@@ -115,7 +115,9 @@ export function WardDischargeNoticesCard({
       <CardBody>
         <p className={styles.lead}>
           Discharge confirmed for {bedLabel}.
-          {wired && dueSoonHours !== null ? ` Due out within ${dueSoonHours} hours, so these are best sent now.` : ""}
+          {wired && dueSoonHours !== null
+            ? ` Discharge due within ${dueSoonHours} hours, so these are best sent now.`
+            : ""}
         </p>
         {wired ? (
           <ul className={styles.list}>

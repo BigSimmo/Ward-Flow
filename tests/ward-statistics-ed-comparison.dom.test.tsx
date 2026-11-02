@@ -149,8 +149,8 @@ describe("comparison across departments", () => {
         reader.onload = () => resolve(String(reader.result));
         reader.readAsText(exported!);
       });
-      expect(csv).toContain('"Open ED journeys","not shown"');
-      expect(csv).not.toContain('"Open ED journeys","10"');
+      expect(csv).toContain('"Open ED movements","not shown"');
+      expect(csv).not.toContain('"Open ED movements","10"');
       expect(csv).toContain('"Still in ED","not shown"');
       expect(csv).toContain('"In transit or recorded departure","fewer than 5"');
     } finally {
@@ -191,7 +191,7 @@ describe("comparison across departments", () => {
     ).toBeInTheDocument();
     expect(
       within(screen.getByTestId("ward-statistics-eds-swarm-card")).getByRole("heading", {
-        name: "Open ED journeys, by ED",
+        name: "Open ED movements, by ED",
       }),
     ).toBeInTheDocument();
   });
@@ -208,14 +208,14 @@ describe("comparison across departments", () => {
     ]);
     expect(screen.getByTestId("ward-stat-ed-on-the-list").textContent).toBe("2");
     expect(screen.getByTestId("ward-statistics-ed-population")).toHaveTextContent("1 still in ED · 1 in transit");
-    expect(screen.getByRole("heading", { name: "Open ED journeys" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Open ED movements" })).toBeInTheDocument();
     const bands = screen.getByTestId("ward-statistics-ed-bands");
     expect(within(bands).getByRole("heading", { name: "Time since opening" })).toBeInTheDocument();
-    expect(within(bands).getByText("Open ED journeys")).toBeInTheDocument();
-    expect(within(bands).getByText("Open ED journeys by time since opening")).toBeInTheDocument();
+    expect(within(bands).getByText("Open ED movements")).toBeInTheDocument();
+    expect(within(bands).getByText("Open ED movements by time since opening")).toBeInTheDocument();
     expect(
       within(screen.getByTestId("ward-statistics-ed-everyone")).getByRole("heading", {
-        name: "Open ED journeys, by ED",
+        name: "Open ED movements, by ED",
       }),
     ).toBeInTheDocument();
   });
@@ -238,7 +238,7 @@ describe("comparison across departments", () => {
       </WardFlowProvider>,
     );
     const comparison = screen.getByTestId("ward-stat-ed-comparison");
-    expect(within(comparison).getByRole("columnheader", { name: /^Open journeys$/u })).toBeInTheDocument();
+    expect(within(comparison).getByRole("columnheader", { name: /^Open movements$/u })).toBeInTheDocument();
     expect(within(comparison).getByTestId(`ward-stat-ed-comparison-waiting-${department.id}`)).toHaveTextContent(
       /^2$/u,
     );
