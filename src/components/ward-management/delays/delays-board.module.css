@@ -197,7 +197,7 @@
   font-size: var(--wf-fs-12);
 }
 
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .search input {
     font-size: max(1rem, 16px);
   }
@@ -616,7 +616,7 @@ button.stat:hover .statV {
 
 /* Device audit (11 Oct 2026): on a tablet the table sits inside a narrower column, so it may give
    up its minimum width rather than scroll. */
-@media (min-width: 48.0625rem) and (max-width: 73.75rem) {
+@media (min-width: 46.5rem) and (max-width: 73.75rem) {
   .tbl {
     min-width: 0;
   }
@@ -626,7 +626,7 @@ button.stat:hover .statV {
    being cut after a few words, and legal status and last update wrap inside their columns.
    Device sweep (24 Oct 2026): breakpoints match the 48rem phone styles and useIsPhone, so 641-768px
    gets the cards rather than a half-phone table. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .tbl .whoBtn > span {
     display: -webkit-box;
     overflow: hidden;
@@ -1853,7 +1853,7 @@ button.gLaneL:hover {
 
 /* ---------- phone: each row a card ---------- */
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .chead {
     padding: 10px var(--wf-s-3);
   }
@@ -2050,7 +2050,7 @@ button.gLaneL:hover {
 }
 
 /* ---------- phone hero (v10 Delays): three figures, no Checking foot ---------- */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The in-transit note (P098) sits between the figures, so counting children would hide Form due. */
   .stats > .footNote {
     display: none;
@@ -2063,7 +2063,7 @@ button.gLaneL:hover {
 
 /* Phone (v10 Delays): the owner tiles become one scrolling chip row at 44px. The same pressable
  * buttons filter the list; the band bar and sub line stay on tablet and desktop. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .owners {
     display: flex;
     gap: var(--wf-s-2);
@@ -2135,7 +2135,7 @@ button.gLaneL:hover {
  * the tier, the wait and the last update. The registers, the longest quiet list and the graphs are
  * cards that open sheets. Nothing here applies above 48rem.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .own > small {
     display: inline-flex;
     gap: 4px;
@@ -2560,7 +2560,7 @@ button.gLaneL:hover {
 }
 
 /* Phone hero figures (v10 Delays): one row of three, 15px mono, with hairline dividers. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2593,7 +2593,7 @@ button.gLaneL:hover {
 
 /* v10 phone: the second line's lead (legal time left, or escalated), and a red edge on the rows
    that are yours to act on now. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .r .whoBtn > span > svg {
     margin-right: 4px;
     vertical-align: -1px;
@@ -2760,7 +2760,7 @@ button.legalChip {
  * is not clipped. The order switch pins under the phone header while the list scrolls (the shared
  * `pinnedSwitch`, as Home's queue switch). Nothing here applies above 48rem.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .owners {
     gap: var(--wf-phone-pill-gap);
     padding-block: var(--wf-phone-pill-hit);
@@ -2879,7 +2879,7 @@ button.legalChip {
  * band takes this page's ground, so it no longer shows as a grey strip past the card edges.
  * Nothing here applies above 48rem.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Tripled with the attribute so it outranks delays.module.css's
      `.screen[data-ward-design="v6"] [data-ward-primitive="panel"]`, which drew the cards back. */
   .owners.owners.owners[data-ward-primitive],
@@ -2910,7 +2910,7 @@ button.legalChip {
  * on a phone (above); the button is the one exception. In the sheet the chips wrap rather than
  * scroll sideways, and keep their phone size and 48px hit areas.
  */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .tableCard > .chead:first-child > .phoneFold {
     display: inline-flex;
     flex: none;
@@ -2964,7 +2964,7 @@ button.legalChip {
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .footNote > .lnk {
     display: inline-flex;
     align-items: center;

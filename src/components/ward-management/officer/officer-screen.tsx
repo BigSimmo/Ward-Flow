@@ -366,7 +366,7 @@ export function OfficerScreen() {
   const sideRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (selectedId === undefined || typeof window.matchMedia !== "function") return;
-    if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
+    if (!window.matchMedia("(min-width: 46.5rem) and (max-width: 62.5rem)").matches) return;
     sideRef.current?.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
   }, [selectedId]);
   // Phone: the panel is a modal bottom sheet (takes focus, traps Tab, isolates the page, hands focus
