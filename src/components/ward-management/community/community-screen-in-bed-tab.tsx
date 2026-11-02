@@ -116,7 +116,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                     aria-pressed={inpatientFilter === "secure"}
                     onClick={() => setInpatientFilter("secure")}
                   >
-                    <span>Secure / Locked Beds</span>
+                    <span>Locked beds</span>
                     <span className={styles.badgePill}>
                       {DEMO_COMMUNITY_INPATIENTS.filter((i) => i.category === "secure").length}
                     </span>

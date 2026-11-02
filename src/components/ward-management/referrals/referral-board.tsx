@@ -109,7 +109,7 @@ import { ReferralPhoneCard, ReferralPhoneHero, ReferralPhoneTop } from "./referr
 import { edSingleColumn, useEdDeskReferrals } from "./referral-ed-desk";
 import { EdNextOverdue, ReferralEdRaisedSection } from "./referral-ed-raised-section";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { useIsPhone } from "@/components/wf";
+import { focusIsLost, rememberOpener, returnFocusToOpener, useIsPhone, type FocusOpener } from "@/components/wf";
 import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -359,7 +359,7 @@ export function ReferralBoard({
   // Held whole, not looked up: the referral leaves the awaiting list once its journey starts,
   // before the bed is pulled, and the sheet must stay open for that second step.
   const [pulling, setPulling] = useState<AcceptedAwaitingPull>();
-  const triggerRef = useRef<HTMLElement | null>(null);
+  const triggerRef = useRef<FocusOpener | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
 
   // Audit 24-1 B-03: the queued referral on screen, by id and name, so one decided at another desk
@@ -371,7 +371,7 @@ export function ReferralBoard({
   const handleSelect = useCallback((referralId: string) => {
     // Usability review, 24 Oct 2026: Safari leaves focus on <body> after a tap, so take the shared
     // opener (the last pressed control stands in) rather than the active element alone.
-    triggerRef.current = overlayOpener();
+    triggerRef.current = rememberOpener(overlayOpener());
     setLeftNotice(undefined);
     setSelectedReferralId(referralId);
     setInspectorTab("place");
@@ -380,9 +380,12 @@ export function ReferralBoard({
   const closeDetail = useCallback(() => {
     // `null`, not `undefined`: a closed detail stays closed rather than falling back to the default.
     setSelectedReferralId(null);
-    if (triggerRef.current?.isConnected && typeof triggerRef.current.focus === "function") {
-      triggerRef.current.focus();
-    }
+    // A3 (2 Nov 2026): a phone list is inert while the detail is open, so its row is found again next frame.
+    const opener = triggerRef.current;
+    if (returnFocusToOpener(opener)) return;
+    window.requestAnimationFrame(() => {
+      if (focusIsLost(detailRef.current)) returnFocusToOpener(opener);
+    });
   }, []);
 
   const clearHighlights = useCallback(() => {

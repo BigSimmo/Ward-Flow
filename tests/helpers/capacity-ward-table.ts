@@ -28,7 +28,7 @@ export function bedMapRegion(): HTMLElement {
  * skip, and they are still the map's cards.
  */
 export function bedMapGroup(service: string, region: HTMLElement = bedMapRegion()): HTMLElement | null {
-  return region.querySelector<HTMLElement>(`section[aria-label="${service}"]`);
+  return region.querySelector<HTMLElement>(`section[aria-label="${service} bed map"]`);
 }
 
 /**

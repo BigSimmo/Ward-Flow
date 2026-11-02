@@ -14,6 +14,7 @@ import {
 } from "@/components/ward-management/patients/patient-now-records";
 import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import { leavingDestinationLabel } from "@/components/ward-management/community/community-derivations";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 
 export interface ResolvedPatientNow {
@@ -30,14 +31,27 @@ export interface ResolvedPatientNow {
   currentStageIndex: number;
 }
 
+/** The recorded departure as an event: a community discharge stays "Discharge"; a transfer or death keeps its own name. */
+function departureEventLabel(destination: Admission["leavingDestination"] | null): string | undefined {
+  if (destination === "discharged-to-the-community") return "Discharge";
+  return leavingDestinationLabel(destination) ?? undefined;
+}
+
 function movementVerdict(
   movement: Movement,
   acceptedUnit?: Unit,
   departed = false,
   admissions: readonly Admission[] = [],
+  departureLabel = "Departure",
 ): PatientNowRecord["verdict"] {
+  // A departed stay is named by its recorded destination: a transfer or a death is not a discharge.
   if (departed)
-    return { tone: "warn", short: "Departed", title: "Departure recorded; no current ward stay.", gates: [] };
+    return {
+      tone: "warn",
+      short: departureLabel === "Discharge" ? "Discharged" : departureLabel,
+      title: `${departureLabel} recorded; no current ward stay.`,
+      gates: [],
+    };
   if (movement.closure?.outcome === "did_not_proceed")
     return {
       tone: "warn",
@@ -72,12 +86,17 @@ function movementVerdict(
   return { tone: "warn", short: "Seeking Bed", title: "Placement request active across network wards.", gates: [] };
 }
 
-function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = false): PatientNowRecord["next"] {
+function movementNextSteps(
+  movement: Movement,
+  acceptedUnit?: Unit,
+  departed = false,
+  departureLabel = "Departure",
+): PatientNowRecord["next"] {
   if (departed)
     return [
       {
-        w: "Departure recorded",
-        d: "No current ward stay. Review recorded discharge and community follow-up separately.",
+        w: `${departureLabel} recorded`,
+        d: "No current ward stay. Review the recorded destination and follow-up separately.",
         tone: "good",
       },
     ];
@@ -134,7 +153,7 @@ function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = f
   return [
     {
       w: "Destination Review",
-      d: "Review next cohort-matching bed releases across network.",
+      d: "Review next cohort-matching discharges across network.",
       tone: "warn" as const,
     },
   ];
@@ -226,13 +245,14 @@ export function resolvePatientNowRecord(
       .reverse()
       .find((admission) => admission.id === movement.admissionId || admission.movementId === movement.id);
     const departed = linkedAdmission?.state === "departed";
-    const verdict = movementVerdict(movement, acceptedUnit, departed, admissions);
+    const departureLabel = departureEventLabel(linkedAdmission?.leavingDestination ?? null);
+    const verdict = movementVerdict(movement, acceptedUnit, departed, admissions, departureLabel);
     const historical = departed || movement.closure?.outcome === "did_not_proceed";
 
     const dynamicRecord: PatientNowRecord = {
       id: movement.id,
       example: stageCopy[movement.stage]?.label ?? "In Transit",
-      exampleNote: `${movement.cohort} · ${movement.security === "Secure" ? "Locked adult secure" : "Open ward"}`,
+      exampleNote: `${movement.cohort} · ${movement.security === "Secure" ? "Locked ward" : "Open ward"}`,
       known: "",
       arrival: originEdName,
       early: [
@@ -267,7 +287,7 @@ export function resolvePatientNowRecord(
           : []),
       ],
       ladder: "Review the current movement for escalation and next actions",
-      next: movementNextSteps(movement, acceptedUnit, departed),
+      next: movementNextSteps(movement, acceptedUnit, departed, departureLabel),
       transport: movement.transport
         ? [
             ["Status", transportLeg(movement.transport) ?? "Booked"],
@@ -406,8 +426,11 @@ export function resolvePatientNowRecord(
         ) ?? newestMovement.find((m) => m.id === activeAdmission.movementId || m.admissionId === activeAdmission.id))
       : (newestMovement.find((m) => !m.closure) ?? newestMovement[0]);
     const linkedReferral = referrals.find((r) => r.id === (activeMovement?.referralId ?? activeAdmission?.referralId));
-    const latestDeparture =
-      !activeAdmission && patientAdmissions.some((a) => a.state === "departed" && a.movementId === activeMovement?.id);
+    const departedAdmission = activeAdmission
+      ? undefined
+      : [...patientAdmissions].reverse().find((a) => a.state === "departed" && a.movementId === activeMovement?.id);
+    const latestDeparture = departedAdmission !== undefined;
+    const departureLabel = departureEventLabel(departedAdmission?.leavingDestination ?? null);
 
     // A legal document only from the record: the active movement's own recorded form. PT-042 and
     // PT-043 used to get a Form 1A and a Form 3A "running to" three hours from whenever the page was
@@ -437,13 +460,13 @@ export function resolvePatientNowRecord(
           ? liveUnit(activeAdmission.unitId)
           : undefined;
 
-      const verdict = movementVerdict(activeMovement, acceptedUnit, latestDeparture, admissions);
+      const verdict = movementVerdict(activeMovement, acceptedUnit, latestDeparture, admissions, departureLabel);
       const historical = latestDeparture || activeMovement.closure?.outcome === "did_not_proceed";
 
       const dynamicRecord: PatientNowRecord = {
         id: patient.id,
         example: stageCopy[activeMovement.stage]?.label ?? "In Transit",
-        exampleNote: `${activeMovement.cohort} · ${activeMovement.security === "Secure" ? "Locked adult secure" : "Open ward"}`,
+        exampleNote: `${activeMovement.cohort} · ${activeMovement.security === "Secure" ? "Locked ward" : "Open ward"}`,
         known: patient.preferredName ? `known as ${patient.preferredName}` : "",
         arrival: originEdName,
         early: [
@@ -478,7 +501,7 @@ export function resolvePatientNowRecord(
             : []),
         ],
         ladder: "Review the current movement for escalation and next actions",
-        next: movementNextSteps(activeMovement, acceptedUnit, latestDeparture),
+        next: movementNextSteps(activeMovement, acceptedUnit, latestDeparture, departureLabel),
         transport: activeMovement.transport
           ? [
               ["Status", transportLeg(activeMovement.transport) ?? "Booked"],
@@ -568,7 +591,7 @@ export function resolvePatientNowRecord(
       const dynamicRecord: PatientNowRecord = {
         id: patient.id,
         example: "Admitted",
-        exampleNote: `${acceptedUnit?.cohort ?? "Adult"} · ${(acceptedUnit?.lockedBeds ?? 0) > 0 ? "Locked adult secure" : "Open ward"}`,
+        exampleNote: `${acceptedUnit?.cohort ?? "Adult"} · ${(acceptedUnit?.lockedBeds ?? 0) > 0 ? "Locked ward" : "Open ward"}`,
         known: patient.preferredName ? `known as ${patient.preferredName}` : "",
         arrival: unitName,
         early: [

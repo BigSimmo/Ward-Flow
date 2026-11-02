@@ -126,13 +126,13 @@ describe("shift log separates a release report from a later discharge plan", () 
     const departureAt = NEW_DATE + daysAhead * 1440;
     const changed = edit(state, "ward", departureAt);
     const log = show(changed);
-    const update = within(log).getByText("Expected departure updated").closest("li")!;
-    expect(update).toHaveTextContent(`Departure ${formatInstantWithDay(departureAt, EDITED_AT)}`);
+    const update = within(log).getByText("Expected discharge updated").closest("li")!;
+    expect(update).toHaveTextContent(`Discharge ${formatInstantWithDay(departureAt, EDITED_AT)}`);
     expect(update).toHaveTextContent(daysAhead === 1 ? "tomorrow" : "in 3 days");
     const report = within(log)
       .getByText(count === 1 ? "Bed expected out" : "2 beds expected out")
       .closest("li")!;
-    expect(report).toHaveTextContent("Current departure plan shown separately");
+    expect(report).toHaveTextContent("Current discharge plan shown separately");
     expect(report).not.toHaveTextContent(formatInstantWithDay(departureAt, EDITED_AT));
   });
 
@@ -151,11 +151,11 @@ describe("shift log separates a release report from a later discharge plan", () 
     const log = show(later, reportedLaterAt);
     const group = within(log).getByText("2 beds expected out").closest("li")!;
     expect(group).toHaveTextContent(formatInstantWithDay(reportedLaterAt, reportedLaterAt));
-    expect(group).toHaveTextContent("Current departure plan shown separately");
+    expect(group).toHaveTextContent("Current discharge plan shown separately");
     expect(group).not.toHaveTextContent("updated later");
-    const update = within(log).getByText("Expected departure updated").closest("li")!;
+    const update = within(log).getByText("Expected discharge updated").closest("li")!;
     expect(update).toHaveTextContent(formatInstantWithDay(EDITED_AT, reportedLaterAt));
-    expect(update).toHaveTextContent(`Departure ${formatInstant(NEW_DATE)}`);
+    expect(update).toHaveTextContent(`Discharge ${formatInstant(NEW_DATE)}`);
   });
   it.each([1, 2])("shows the date edit at its own time for %s pending releases", (count) => {
     const { state } = fixture(count);
@@ -166,10 +166,10 @@ describe("shift log separates a release report from a later discharge plan", () 
       .closest("li")!;
     expect(report).toHaveTextContent(formatInstantWithDay(REPORTED_AT, EDITED_AT));
     expect(report).not.toHaveTextContent(formatInstant(NEW_DATE));
-    expect(report).toHaveTextContent("Current departure plan shown separately");
-    const update = within(log).getByText("Expected departure updated").closest("li")!;
+    expect(report).toHaveTextContent("Current discharge plan shown separately");
+    const update = within(log).getByText("Expected discharge updated").closest("li")!;
     expect(update).toHaveTextContent(formatInstantWithDay(EDITED_AT, EDITED_AT));
-    expect(update).toHaveTextContent(`Departure ${formatInstant(NEW_DATE)}`);
+    expect(update).toHaveTextContent(`Discharge ${formatInstant(NEW_DATE)}`);
     expect(update).toHaveTextContent("Nurse in charge");
     expect(changed.bedReleases[0].confirmedAt).toBe(state.bedReleases[0].confirmedAt);
     expect(changed.bedReleases[0].confirmedBy).toBe(state.bedReleases[0].confirmedBy);
@@ -177,17 +177,17 @@ describe("shift log separates a release report from a later discharge plan", () 
 
   it("does not assign a ward manager to a coordinator's update with no recorded author label", () => {
     const log = show(edit(fixture().state, "coordinator"));
-    const update = within(log).getByText("Expected departure updated").closest("li")!;
-    expect(update).toHaveTextContent(`Departure ${formatInstant(NEW_DATE)}`);
+    const update = within(log).getByText("Expected discharge updated").closest("li")!;
+    expect(update).toHaveTextContent(`Discharge ${formatInstant(NEW_DATE)}`);
     expect(update).not.toHaveTextContent("Ward manager");
   });
 
   it.each([1, 2])("preserves the existing report when %s releases have no later edit", (count) => {
     const { state } = fixture(count);
     const log = show(state);
-    expect(within(log).queryByText("Expected departure updated")).not.toBeInTheDocument();
+    expect(within(log).queryByText("Expected discharge updated")).not.toBeInTheDocument();
     expect(log).toHaveTextContent(
-      count === 1 ? `Departure ${formatInstant(state.bedReleases[0].expectedAt)}` : "Next at",
+      count === 1 ? `Discharge ${formatInstant(state.bedReleases[0].expectedAt)}` : "Next at",
     );
   });
 
@@ -200,7 +200,7 @@ describe("shift log separates a release report from a later discharge plan", () 
       if (kind === "earlier time") state.admissions[0].dischargeDateSetAt = REPORTED_AT - 1;
       if (kind === "historical release") state.bedReleases[0].state = "discharged";
       const log = show(state);
-      expect(within(log).queryByText("Expected departure updated")).not.toBeInTheDocument();
+      expect(within(log).queryByText("Expected discharge updated")).not.toBeInTheDocument();
     },
   );
 });

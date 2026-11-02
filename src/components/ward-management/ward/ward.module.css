@@ -4053,7 +4053,9 @@
   background: var(--wf-danger);
   font: 600 var(--wf-fs-11, 11px) / 1.2 var(--wf-mono);
   text-align: center;
-  color: var(--wf-on-accent);
+  /* Q302 (pre-launch A6, 2 Nov 2026): the hero takes the night danger fill (#e27a68) in both themes,
+     and white on it was 2.9:1. The count is drawn in the hero's deep slate instead (4.7:1). */
+  color: var(--wf-hero-2);
 }
 
 /* The phone's ward name is the Switch ward button: the name and a chevron in one 44px target. */

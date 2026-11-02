@@ -5,7 +5,7 @@
 // Today card and the band's broadcast button. Six hours, the future hatched, a now line and one mark
 // per alert; marks stack in rows of 22px so none overlap.
 
-import type { ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Radio } from "lucide-react";
 
 import { StatusGlyph, type WfTone } from "@/components/wf";
@@ -23,6 +23,17 @@ const TRACK_HEIGHT = 84;
 const ROWS = 3;
 /** Marks closer than this many minutes go on the next row. */
 const MIN_GAP = 10;
+/** A mark's 24px plus the 2px gap: the least distance between two marks on one row (WCAG 2.5.8). */
+const MARK_PITCH = 26;
+
+/**
+ * A8 (accessibility check, 2 Nov 2026): the minutes two marks on one row must be apart so they do not
+ * overlap on a track this many pixels wide. At 820 wide ten minutes is about 14px, so marks overlapped.
+ */
+export function markGapMinutes(trackWidth: number): number {
+  if (!(trackWidth > 0)) return MIN_GAP;
+  return Math.max(MIN_GAP, Math.ceil((MARK_PITCH / trackWidth) * SPAN));
+}
 /** Hour labels this close to now are hidden so the now label stays readable. */
 const NEAR_NOW = 25;
 
@@ -39,13 +50,13 @@ type BandMark = { id: string; at: Instant; tone: WfTone; title: string; pick: bo
  * Rows for each mark, by where it is drawn, so marks close together stack instead of overlapping.
  * A mark before or after the six hours is drawn at that edge, so it is stacked there too.
  */
-function stackRows(marks: BandMark[], from: number, to: number): (BandMark & { row: number })[] {
+function stackRows(marks: BandMark[], from: number, to: number, minGap: number): (BandMark & { row: number })[] {
   const drawnAt = (mark: BandMark) => Math.min(to, Math.max(from, mark.at));
   const lastIn = Array.from({ length: ROWS }, () => -Infinity);
   return [...marks]
     .sort((a, b) => drawnAt(a) - drawnAt(b))
     .map((mark) => {
-      let row = lastIn.findIndex((at) => drawnAt(mark) - at >= MIN_GAP);
+      let row = lastIn.findIndex((at) => drawnAt(mark) - at >= minGap);
       // Every row is taken near this minute: open another row rather than draw over a mark.
       if (row < 0) row = lastIn.push(-Infinity) - 1;
       lastIn[row] = drawnAt(mark);
@@ -78,6 +89,17 @@ export function TodayBand({
   liveBroadcast?: { until: Instant };
   onOpenBroadcast: () => void;
 }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [trackWidth, setTrackWidth] = useState(0);
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    setTrackWidth(track.clientWidth);
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => setTrackWidth(track.clientWidth));
+    observer.observe(track);
+    return () => observer.disconnect();
+  }, []);
   // 07:00 to 13:00 at 10:42: three whole hours before now's hour, three after.
   const from = Math.floor(now / 60) * 60 - 3 * 60;
   const to = from + SPAN;
@@ -110,6 +132,7 @@ export function TodayBand({
     ],
     from,
     to,
+    markGapMinutes(trackWidth),
   );
   const extraRows = Math.max(0, ...marks.map((mark) => mark.row + 1)) - ROWS;
   const anyBroadcast = broadcasts.length > 0;
@@ -136,6 +159,7 @@ export function TodayBand({
         </span>
       </div>
       <div
+        ref={trackRef}
         className={styles.track}
         role="group"
         aria-label="Alerts raised and acted on today"

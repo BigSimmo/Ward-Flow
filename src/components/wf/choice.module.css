@@ -140,6 +140,8 @@
  */
 .segItem {
   height: var(--wf-target);
+  /* Q297 (pre-launch A1, 2 Nov 2026): large text makes the option taller instead of cutting it. */
+  height: calc-size(auto, max(size, var(--wf-target)));
   padding: 0 10px;
   border: 0;
   border-radius: var(--wf-r-seg-item);
@@ -186,6 +188,7 @@
 
 .md .segItem {
   height: 30px;
+  height: calc-size(auto, max(size, 30px));
   font-size: var(--wf-fs-13);
 }
 

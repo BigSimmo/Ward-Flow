@@ -2,7 +2,7 @@
  * Ward Flow's tap-area rule, read from a CSS Module as text (jsdom applies no real stylesheet).
  *
  * Josh, 31 October 2026: "no 48px controls". A control is drawn smaller (a phone kit button at
- * 40px, a small one at 32px) and keeps the 48px tap area through an invisible `::after` cover that
+ * 40px, small ones included since Q295) and keeps the 48px tap area through an invisible `::after` cover that
  * reaches above and below it (`src/components/wf/button.module.css`). The older shape, a control
  * whose own `min-height` is the 48px tap token, still meets the rule. Page CSS tests use this
  * helper so that a page rebuilt to the kit shape passes without the test being rewritten, while a

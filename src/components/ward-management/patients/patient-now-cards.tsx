@@ -1,3 +1,4 @@
+import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useId, useState, type ReactNode } from "react";
 import { Clock, MapPin, MessageSquare, Scale } from "lucide-react";
@@ -101,7 +102,7 @@ export function PatientWhyCard({
         <div className={styles.rows}>
           {showNeeds && movement ? (
             <Row label="Needs">
-              {movement.security} {movement.cohort.toLowerCase()} bed
+              {securityWord(movement.security)} {movement.cohort.toLowerCase()} bed
               {isConstantObservation(movement.observation) ? `, ${observationSummary(movement.observation)}` : ""}
             </Row>
           ) : null}

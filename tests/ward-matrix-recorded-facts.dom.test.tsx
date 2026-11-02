@@ -86,6 +86,6 @@ describe("ward matrices only state recorded clinical facts", () => {
     const shift = screen.getByRole("region", { name: "Shift actions and alerts" });
     expect(shift.textContent).toContain("Confirmed out today, still here.");
     expect(shift.textContent).not.toContain("Confirmed discharge, still here.");
-    expect(within(shift).getAllByRole("button", { name: /Due out/ })[0]).toHaveTextContent("1");
+    expect(within(shift).getAllByRole("button", { name: /Discharge due/ })[0]).toHaveTextContent("1");
   });
 });

@@ -241,7 +241,7 @@ function TeamsIndexView({
           <>
             <HeroStat value={shown(withDateTotal)} label="With a date" />
             <HeroStat value={activeCount} label="Teams with a patient in a bed" />
-            <HeroStat value={shown(dueOutWeekTotal)} label="Due out within 7 days" />
+            <HeroStat value={shown(dueOutWeekTotal)} label="Discharges due within 7 days" />
           </>
         ),
       }}
@@ -391,7 +391,7 @@ function TeamsIndexView({
                   <thead>
                     <tr>
                       <th scope="col">Team</th>
-                      {["In a bed", "With a discharge date", "Due out within 7 days"].map((label) => (
+                      {["In a bed", "With a discharge date", "Discharges due within 7 days"].map((label) => (
                         <th key={label} scope="col" className={redesign.r}>
                           {label}
                         </th>

@@ -268,7 +268,7 @@ export function DowntimePackScreen() {
             <Card aria-labelledby="downtime-preparing-title" className={styles.packLoading}>
               <CardHead id="downtime-preparing-title" icon={FileText} title="Preparing the downtime pack" />
               <p role="status" className={styles.cardNote}>
-                Taking a snapshot of beds, the ED queue, pending moves and legal forms.
+                Taking a snapshot of beds, the ED queue, pending movements and legal forms.
               </p>
               <div className={styles.packLoadingRows} aria-hidden="true">
                 <span />
@@ -371,7 +371,9 @@ export function DowntimePackScreen() {
   const formsReceived = pack.legalForms.some((line) => line.receivedAt !== null);
   // The ED queue counts people still in the department; All EDs counts every open journey.
   const edPopulation =
-    pack.leftEd > 0 ? `${pack.leftEd} more left their ED and are moving to a ward, listed under Pending moves.` : null;
+    pack.leftEd > 0
+      ? `${pack.leftEd} more left their ED and are moving to a ward, listed under Pending movements.`
+      : null;
   // The shell retakes the pack every hour and at each shift change (downtime-pack-schedule.ts).
   const nextPackAt = formatInstantWithDay(nextDowntimePackAt(pack.generatedAt), now);
   const takenLine = (
@@ -583,7 +585,7 @@ export function DowntimePackScreen() {
         <CardHead
           id="downtime-moves-title"
           icon={Ambulance}
-          title="Pending moves"
+          title="Pending movements"
           aside={
             <span className={styles.headMeta}>
               <b>{pack.pendingMoves.length}</b> accepted
@@ -593,12 +595,12 @@ export function DowntimePackScreen() {
         {pack.pendingMoves.length === 0 ? (
           <p className={styles.cardNote}>0 pending when the pack was taken.</p>
         ) : (
-          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Pending moves table">
+          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Pending movements table">
             <table
               className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
               data-testid="ward-downtime-moves"
             >
-              <caption className={styles.srOnly}>Pending moves, synthetic</caption>
+              <caption className={styles.srOnly}>Pending movements, synthetic</caption>
               <thead>
                 <tr>
                   <th scope="col">Patient</th>
@@ -917,7 +919,12 @@ export function DowntimePackScreen() {
               />
               {/* The chips use the tables' own names, so one thing has one word. */}
               <HeroChip value={totals.ed} label="ED queue" onPress={() => jumpTo("ed")} {...twin("ed")} />
-              <HeroChip value={totals.moves} label="Pending moves" onPress={() => jumpTo("moves")} {...twin("moves")} />
+              <HeroChip
+                value={totals.moves}
+                label="Pending movements"
+                onPress={() => jumpTo("moves")}
+                {...twin("moves")}
+              />
               <HeroChip value={totals.forms} label="Legal forms" onPress={() => jumpTo("forms")} {...twin("forms")} />
             </HeroChips>
           }
@@ -945,7 +952,7 @@ export function DowntimePackScreen() {
             items={[
               { id: "beds", label: "Beds by ward" },
               { id: "ed", label: "ED queue" },
-              { id: "moves", label: "Pending moves" },
+              { id: "moves", label: "Pending movements" },
               { id: "forms", label: "Legal forms" },
             ]}
           />

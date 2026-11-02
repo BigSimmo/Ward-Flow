@@ -179,7 +179,11 @@ export function WardScreenBedDrawer({
                                 actingUnitId: unitId,
                               });
                             }
-                            return { commandId: "", status: "refused", message: "No discharge blocker is recorded." };
+                            return {
+                              commandId: "",
+                              status: "refused",
+                              message: "Nothing is recorded holding this discharge up.",
+                            };
                           }
                           if (pendingRelease) {
                             return raiseBlocker("BLOCK_BED_RELEASE", {
@@ -194,7 +198,7 @@ export function WardScreenBedDrawer({
                             blocker: blocker as BedReleaseBlocker,
                           });
                         })()),
-                      blocker === null ? "Discharge blocker cleared." : `Discharge blocker recorded: ${blocker}`,
+                      blocker === null ? "Today's hold-up cleared." : `Hold-up recorded: ${blocker}`,
                     );
                     return completion;
                   }
@@ -295,7 +299,7 @@ export function WardScreenBedDrawer({
                           admissionId,
                           barrier,
                         }),
-                      barrier ? `Discharge barrier recorded: ${barrier}` : "Discharge barrier cleared.",
+                      barrier ? `Long-stay reason recorded: ${barrier}` : "Long-stay reason cleared.",
                     );
                   }
                 : undefined

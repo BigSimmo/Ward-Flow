@@ -1,6 +1,6 @@
 "use client";
 
-// The summary's Open ED journeys card: every ED as a sortable table, or, for a site bed manager with
+// The summary's Open ED movements card: every ED as a sortable table, or, for a site bed manager with
 // one ED, that ED's five figures as one row of tiles.
 
 import { Badge, CardBody, StatusGlyph, cx, durMinutes, tableClasses } from "@/components/wf";
@@ -63,14 +63,14 @@ export function StatisticsEdJourneysCard({
         <StatusGlyph tone="warning" size={9} />
       ) : null;
     const figures = [
-      { id: "waiting", label: "Open ED journeys", value: small(only.waiting), mark: null },
+      { id: "waiting", label: "Open ED movements", value: small(only.waiting), mark: null },
       { id: "longest", label: "Longest", value: waitText(only.longest), mark },
       { id: "median", label: "Median", value: medianText(only.median), mark: null },
       { id: "over8", label: "8h+", value: small(only.over8), mark: null },
       { id: "over24", label: "24h+", value: small(only.over24), mark: null },
     ];
     return (
-      <StatCardR id="eds" title="Open ED journeys" data-testid="ward-statistics-emergency-departments">
+      <StatCardR id="eds" title="Open ED movements" data-testid="ward-statistics-emergency-departments">
         <CardBody>
           <dl className={styles.tiles} id="edPressureTable">
             {figures.map((figure) => (
@@ -99,7 +99,7 @@ export function StatisticsEdJourneysCard({
   return (
     <StatCardR
       id="eds"
-      title="Open ED journeys"
+      title="Open ED movements"
       meta={`${small(totalEdWaiting)} open`}
       data-testid="ward-statistics-emergency-departments"
       aside={

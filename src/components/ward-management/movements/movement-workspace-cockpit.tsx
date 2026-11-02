@@ -8,6 +8,7 @@
  */
 
 "use client";
+import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
 import {
   blockerReadinessState,
@@ -549,7 +550,7 @@ export function MovementWorkspaceCockpit({
                 <div className={styles.clinicalDemographicsPill}>
                   <span>{patient.cohort}</span>
                   <span className={styles.demographicSep}>·</span>
-                  <span>{patient.security}</span>
+                  <span>{securityWord(patient.security)}</span>
                   <span className={styles.demographicSep}>·</span>
                   <span>{patient.legalStatus}</span>
                   {patient.sex ? (
@@ -999,7 +1000,7 @@ export function MovementWorkspaceCockpit({
                   <div className={styles.factRow}>
                     <dt className={styles.factLabel}>Setting</dt>
                     <dd className={styles.factValue}>
-                      {patient.cohort} · {patient.security} · {patient.sex}
+                      {patient.cohort} · {securityWord(patient.security)} · {patient.sex}
                       {` · ${observationSummary(patient.observation)}`}
                     </dd>
                   </div>

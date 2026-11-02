@@ -171,7 +171,7 @@ export function WardScreenTabSections({
             }}
           >
             <ChevronLeft size={16} aria-hidden="true" />
-            Back to Ward overview
+            Back to Ward home
           </button>
           <h2 className={styles.subViewTitle}>All arrivals</h2>
           <button
@@ -182,7 +182,7 @@ export function WardScreenTabSections({
               setActiveTab("board");
             }}
           >
-            Open visual Bed board →
+            Open Bed board →
           </button>
         </div>
         <WardArrivalsCorridor
@@ -224,7 +224,7 @@ export function WardScreenTabSections({
             }}
           >
             <ChevronLeft size={16} aria-hidden="true" />
-            Back to Ward overview
+            Back to Ward home
           </button>
           <h2 className={styles.subViewTitle}>All discharges</h2>
           <button
@@ -235,7 +235,7 @@ export function WardScreenTabSections({
               setActiveTab("board");
             }}
           >
-            Open visual Bed board →
+            Open Bed board →
           </button>
         </div>
         <WardDischargesMatrix
@@ -268,7 +268,7 @@ export function WardScreenTabSections({
             }}
           >
             <ChevronLeft size={16} aria-hidden="true" />
-            Back to Ward overview
+            Back to Ward home
           </button>
           <h2 className={styles.subViewTitle}>Full bed list</h2>
           <button
@@ -279,7 +279,7 @@ export function WardScreenTabSections({
               setActiveTab("board");
             }}
           >
-            Open visual Bed board →
+            Open Bed board →
           </button>
         </div>
         <WardBedsMatrix

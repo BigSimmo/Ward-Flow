@@ -63,7 +63,9 @@ export function MismatchBand({ model, hideEmptyTypes = false }: { model: Capacit
           {show === "short" ? "No bed type is short now." : "Every bed type is short now."}
         </p>
       ) : (
-        <ul className={styles.mmStrip} aria-label="Bed types, now and tomorrow">
+        // A8 (accessibility check, 2 Nov 2026): the strip scrolls sideways, so a keyboard can reach it.
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must take focus
+        <ul className={styles.mmStrip} aria-label="Bed types, now and tomorrow" tabIndex={0}>
           {rows.map((row) => (
             <MismatchTile
               key={row.id}

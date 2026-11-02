@@ -218,7 +218,7 @@ export function WardBarServiceSelector({
         // restyle it from the bar's data-band alone (release gate, 15 Oct 2026).
         data-band={isPhone ? bandState : undefined}
         data-locked={isFixedJurisdiction ? "true" : undefined}
-        aria-haspopup={isFixedJurisdiction ? undefined : isPhone ? "dialog" : "true"}
+        aria-haspopup={isFixedJurisdiction ? undefined : "dialog"}
         aria-expanded={isFixedJurisdiction ? undefined : openPanel === "service"}
         aria-controls={isFixedJurisdiction ? undefined : "ward-bar-service-panel"}
         aria-label={
@@ -270,7 +270,8 @@ export function WardBarServiceSelector({
           id="ward-bar-service-panel"
           ref={servicePanelRef}
           className={styles.servicePanel}
-          role={isPhone ? "dialog" : "group"}
+          // A5 (accessibility check, 2 Nov 2026): a named dialog at every size; only the phone sheet is modal.
+          role="dialog"
           aria-modal={isPhone ? true : undefined}
           aria-label="Choose a health service"
           data-testid="ward-bar-service-panel"

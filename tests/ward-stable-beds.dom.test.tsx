@@ -178,7 +178,7 @@ describe("stable bed numbers (audit A1-1)", () => {
     const card = document.querySelector(`[data-admission-id="${RELEASE.admissionId}"]`);
     fireEvent.click(card as HTMLElement);
     fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
-    const confirm = screen.getByRole("dialog", { name: "Confirm patient departure" });
+    const confirm = screen.getByRole("dialog", { name: "Confirm discharge" });
     expect(confirm).toHaveTextContent(/Going to Discharged to the community/);
     const patient = wardPatients.find(
       (candidate) => candidate.id === wardAdmissions.find((a) => a.id === RELEASE.admissionId)?.patientId,
@@ -187,7 +187,7 @@ describe("stable bed numbers (audit A1-1)", () => {
       new RegExp(`^Check: .+ · ${patient.umrn} · Bed \\d+$`),
     );
     fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByRole("dialog", { name: "Confirm patient departure" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Confirm discharge" })).toBeNull();
     expect(screen.getByTestId("named-state")).toHaveTextContent("occupied");
   });
 
@@ -200,7 +200,7 @@ describe("stable bed numbers (audit A1-1)", () => {
     expect(document.getElementById("drawer-leaving-summary")).toHaveTextContent(/Going to Discharged to the community/);
     fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
     // Audit 1 (CS-07): the drawer asks once, naming the person, before it records.
-    fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed");
     expectNobodyElseMoved(before, RELEASE.admissionId);
 

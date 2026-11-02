@@ -48,7 +48,7 @@ describe("WardBoard Patient Safety Confirmations", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog).toBeInTheDocument();
     expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(screen.getByText("Confirm patient departure")).toBeInTheDocument();
+    expect(screen.getByText("Confirm discharge")).toBeInTheDocument();
 
     // No departure toast before confirmation
     expect(screen.queryByTestId("ward-board-toast")).not.toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("WardBoard Patient Safety Confirmations", () => {
     // Re-open and confirm departure
     fireEvent.click(leaveBtn);
     const proceedBtn = screen.getByTestId("ward-board-confirm-proceed");
-    expect(proceedBtn).toHaveTextContent("Record departure");
+    expect(proceedBtn).toHaveTextContent("Record discharge");
     // Audit CS3-07: where they went starts blank and must be chosen before the departure records.
     expect(proceedBtn).toBeDisabled();
     fireEvent.change(screen.getByTestId("ward-board-confirm-destination"), {
@@ -73,7 +73,7 @@ describe("WardBoard Patient Safety Confirmations", () => {
     // Dialog closes and toast appears confirming departure
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     const toast = await screen.findByTestId("ward-board-toast");
-    expect(toast).toHaveTextContent(/^Recorded departure: /);
+    expect(toast).toHaveTextContent(/^Recorded discharge: /);
   });
 
   it("escape key dismisses the departure confirmation modal safely", () => {

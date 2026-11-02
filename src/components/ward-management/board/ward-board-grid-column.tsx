@@ -154,7 +154,7 @@ export function WardBoardGridColumn({
         // kit's select, as the other redesigned pages, in place of the board's black pills.
         <div className={redesign.boardBar}>
           <Segmented<BoardFilter>
-            label="Narrow stays and discharges"
+            label="Narrow Bed board"
             size="md"
             value={bedFilter}
             onChange={chooseFilter}

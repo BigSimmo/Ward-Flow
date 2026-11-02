@@ -130,7 +130,7 @@ async function walkToWards(umrn = ON_WARD_UMRN, notOnWardReason?: string) {
   )
     fireEvent.click(urgent);
   // The sending ward is a secure ward, so a secure bed request would list it if it were offered.
-  fireEvent.click(within(screen.getByRole("group", { name: "Bed security" })).getByLabelText("Secure"));
+  fireEvent.click(within(screen.getByRole("group", { name: "Bed security" })).getByLabelText("Locked"));
   next("Next, clearance");
   answer("Has the patient been medically cleared?", "No");
   typeDate(screen.getByLabelText("Expected clearance"), "2026-10-07T18:00");

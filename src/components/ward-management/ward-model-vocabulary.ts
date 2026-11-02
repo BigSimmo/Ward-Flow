@@ -49,6 +49,12 @@ export const COHORTS = ["Adult", "Older adult", "Youth"] as const;
 export type Cohort = (typeof COHORTS)[number];
 export type Security = "Open" | "Secure";
 
+/** Q261 (Josh, 2 Nov 2026): the screen word for a `Secure` bed is "Locked" (F-24). "Secure" stays
+ *  only inside proper ward names; the data value is unchanged. */
+export function securityWord(security: string): string {
+  return security === "Secure" ? "Locked" : security;
+}
+
 /**
  * Fix round C (Phase 7 Task 5, review finding I3 all over again): `Sex` and urgency were the
  * two remaining 2/3-value unions in this file with no runtime array of their own — see

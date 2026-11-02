@@ -22,7 +22,7 @@ const beds: WalkRoundBed[] = [
     number: "02",
     name: "Tom R.",
     note: "Accommodation",
-    stateWord: "Barrier",
+    stateWord: "Held up",
     changeKey: "occupied|barrier",
     glyph: "warning",
     days: "23d",
@@ -198,9 +198,9 @@ describe("the bed state word (C3)", () => {
     ["Held up", { ...occupied, blockReason: "Awaiting a bed elsewhere" }, none],
     ["At ED", occupied, { ...none, awayAtEd: true }],
     ["Past date", { ...occupied, pastDate: true }, none],
-    ["Barrier", { ...occupied, dischargeBarrier: "Accommodation" }, none],
+    ["Held up", { ...occupied, dischargeBarrier: "Accommodation" }, none],
     ["Pulled", { status: "incoming" }, none],
-    ["Due out", occupied, { ...none, leaving: true }],
+    ["Discharge due", occupied, { ...none, leaving: true }],
     ["Occupied", occupied, none],
   ] as const)("reads %s", (word, bed, flags) => {
     expect(bedStripWord(bed as Parameters<typeof bedStripWord>[0], flags)).toBe(word);
