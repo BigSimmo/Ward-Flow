@@ -2276,6 +2276,20 @@ button.gLaneL:hover {
     font-size: var(--wf-fs-13);
   }
 
+  /* Q287 (pre-launch check D9, 2 Nov 2026): a 3-digit count cut the group heading ("Over 24 hou…")
+     while the note kept its full width. The heading stays whole; the note wraps onto a second line. */
+  .gin .gTitle {
+    flex: none;
+  }
+
+  .gin .mut:last-of-type {
+    flex: 0 1 auto;
+    min-width: 0;
+    white-space: normal;
+    text-align: right;
+    line-height: var(--wf-lh-12);
+  }
+
   /* REF-15: one fixed time column so the wait, the update line and the status line up row to row. */
   .tbl .r {
     grid-template-columns: auto minmax(0, 1fr) 6rem;

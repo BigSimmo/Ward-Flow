@@ -1,0 +1,25 @@
+/* FormalName (formal-name.tsx): the surname gives way before the given name does. */
+.name {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.family,
+.given {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.family {
+  flex: 0 1 auto;
+}
+
+.given {
+  flex: 0 0 auto;
+  max-width: 55%;
+  /* Keeps the space after the comma at the start of this box. */
+  white-space: pre;
+}

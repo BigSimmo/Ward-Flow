@@ -601,8 +601,11 @@
   flex-shrink: 0;
 }
 
+/* Q280 (pre-launch check D2, 2 Nov 2026): with Back in front, a long ward name on a phone ran past
+ * the screen edge, uncut, and pushed Search off it. The name now gives way and ends in an ellipsis. */
 @media (max-width: 48rem) {
-  .bar:has(.pageTools:not(:empty)) .title {
+  .bar:has(.pageTools:not(:empty)) .title,
+  .deskBack + .title {
     flex-shrink: 1;
   }
 }

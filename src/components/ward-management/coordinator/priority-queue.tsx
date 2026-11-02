@@ -18,6 +18,7 @@ import {
   Timer,
   cx,
   durMinutes,
+  FormalName,
 } from "@/components/wf";
 import {
   clockState,
@@ -361,7 +362,9 @@ export function PriorityQueue({
                 </span>
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
-                    <strong>{nameFor(who.formalName, who.umrn)}</strong>
+                    <strong>
+                      <FormalName name={nameFor(who.formalName, who.umrn)} />
+                    </strong>
                   </span>
                   <span className={styles.queueSub}>
                     {/* v10 Home: "▲ Flagged · Adult open · RPH · UM827674". The word stays neutral and
@@ -530,7 +533,9 @@ export function PriorityQueue({
                 <TierTile tier={referral.urgency} className={styles.queueTier} />
                 <span className={styles.queueMain}>
                   <span className={styles.queueName}>
-                    <strong>{nameFor(patientOf(referral).formalName, patientOf(referral).umrn)}</strong>
+                    <strong>
+                      <FormalName name={nameFor(patientOf(referral).formalName, patientOf(referral).umrn)} />
+                    </strong>
                   </span>
                   <span className={styles.queueSub}>
                     <span className={styles.queueSubText}>

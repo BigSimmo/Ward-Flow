@@ -366,6 +366,15 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+/* Q282 (pre-launch check D4, 2 Nov 2026): a long ward name in "Shows on N screens" was cut at the
+   drawer edge mid-word. A name tag now stops at the column width and ends in an ellipsis. */
+.tagWrap > .tag {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .note {
   display: flex;
