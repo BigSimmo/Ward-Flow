@@ -6,26 +6,9 @@ import type { Observation } from "../ward-observation";
 import { acceptedAddressing } from "../ward-referrals";
 import { SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
 import { allEmergencyDepartments } from "../ward-sites";
+import { acceptedWardOf } from "./accepted-awaiting-pull";
 
-/**
- * S-9 (audit 13 Oct 2026): accepting a referral into a ward pulls no bed and creates no movement
- * (`ACCEPT_REFERRAL`, by design), so the referral and the patient record both read as a dead end.
- * This names the ward that accepted, so both can show the next step: hold the bed on that ward.
- * Callers build the link to that ward themselves.
- */
-export function acceptedWardOf(
-  referral: Referral,
-  units: readonly Pick<Unit, "id" | "name">[],
-): { unitId: string; unitName: string } | undefined {
-  const accepted = acceptedAddressing(referral);
-  if (!accepted) return undefined;
-  const unitId =
-    accepted.acceptedUnitId ??
-    (accepted.destination.kind === "psychiatric_ward" ? accepted.destination.unitId : undefined);
-  if (unitId === undefined) return undefined;
-  const unitName = units.find((unit) => unit.id === unitId)?.name ?? "the accepting ward";
-  return { unitId, unitName };
-}
+export { acceptedWardOf, acceptedReferralsAwaitingPull, type AcceptedAwaitingPull } from "./accepted-awaiting-pull";
 
 /**
  * The newest referral for this person that a ward has accepted and that still waits on the ward's
@@ -55,41 +38,6 @@ export function acceptedWardReferralFor(
     return placed ? undefined : { referral, ...ward };
   }
   return undefined;
-}
-
-/** An accepted ward referral the coordinator can pull a bed for, with the ward that accepted it. */
-export type AcceptedAwaitingPull = { referral: Referral; unitId: string; unitName: string };
-
-/**
- * WS-02 (workflow speed audit, 26 Oct 2026): every referral a ward has accepted that still has no
- * bed pulled, oldest decision first. Only the referrals a journey can start from directly: an ED
- * referral or a community referral (D-76), accepted on a ward arm that its referrer has not
- * withdrawn, with no bed held on that arm and no live journey raised from it. A journey that closed
- * "did not proceed" does not count, as `RAISE_REFERRAL` allows a new one then.
- */
-export function acceptedReferralsAwaitingPull(
-  referrals: readonly Referral[],
-  units: readonly Pick<Unit, "id" | "name">[],
-  movements: readonly Pick<Movement, "referralId" | "closure">[],
-): AcceptedAwaitingPull[] {
-  return referrals
-    .flatMap((referral) => {
-      if (referral.source !== "ed_medical" && referral.source !== "community") return [];
-      const accepted = acceptedAddressing(referral);
-      if (!accepted || accepted.destination.kind !== "psychiatric_ward" || accepted.withdrawnAt !== undefined)
-        return [];
-      if (accepted.heldBedNumber !== undefined) return [];
-      if (
-        movements.some(
-          (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
-        )
-      )
-        return [];
-      const ward = acceptedWardOf(referral, units);
-      return ward ? [{ referral, ...ward, decidedAt: accepted.decidedAt ?? referral.raisedAt }] : [];
-    })
-    .sort((a, b) => a.decidedAt - b.decidedAt)
-    .map(({ referral, unitId, unitName }) => ({ referral, unitId, unitName }));
 }
 
 /** What a one-step pull can reuse, and where each value came from. Absent means nothing recorded. */

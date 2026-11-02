@@ -1,4 +1,10 @@
-import { INBOX_CATEGORIES, inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
+import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer";
+import {
+  alertGroupOfId,
+  alertsNowFigures,
+  isAcceptedPullRow,
+  type AlertGroup,
+} from "@/components/ward-management/ward-alerts-figures";
 import { eligibleCandidatesAmong, isOpen, type InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
@@ -31,7 +37,9 @@ export type AlertKind =
   | "duplicate";
 
 /** The queue's three groups: act now (red), waiting (amber, counted) and running targets (listed, never counted). */
-export type AlertGroup = "act" | "wait" | "running";
+export type { AlertGroup };
+// Q260: the Alerts screen reads its Act now and Now figures from the shared module, as the bell does.
+export { alertsNowFigures };
 
 const KIND_PREFIXES: [AlertKind, string][] = [
   // Audit A3-1 (13 Oct 2026): a person on an order absent without leave. Its remainder is a stay.
@@ -115,10 +123,9 @@ export function isQueueItem(item: InboxItem): boolean {
   return alertKindOf(item.id) !== undefined;
 }
 
+/** Q260: the one grouping the badge and the phone Menu read too (`ward-alerts-figures.ts`). */
 export function alertGroupOf(item: InboxItem): AlertGroup {
-  const kind = alertKindOf(item.id);
-  if (kind === "running") return "running";
-  return inboxItemIsActNow(item.id) ? "act" : "wait";
+  return alertGroupOfId(item.id);
 }
 
 /** The movement an inbox id names, for the categories whose remainder is a movement id. */
@@ -281,6 +288,9 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
   const patientHref = subject.patientHref ?? "/ward-flow/movements";
   // H-0975 (workflow-speed audit WS-10, 26 Oct 2026): a movement row opens its own movement.
   const ownMovementHref = item.movementId ? movementHref(item.movementId) : "/ward-flow/movements";
+  // Q260 review (#1296): an accepted referral with no bed pulled is pulled on the Alerts screen.
+  if (isAcceptedPullRow(item.id))
+    return { kind: "link", label: "Pull the bed", href: item.href ?? "/ward-flow/alerts" };
   switch (alertKindOf(item.id)) {
     case "awol":
       return { kind: "link", label: "Open patient", href: item.href ?? patientHref };
