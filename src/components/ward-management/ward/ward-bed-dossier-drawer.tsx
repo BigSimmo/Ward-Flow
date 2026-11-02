@@ -945,7 +945,7 @@ export function WardBedDossierDrawer({
                   </Section>
                   {criteriaCard}
                   {sentJourneyControls ? (
-                    <Section title="Journey this ward sent">
+                    <Section title="Movement this ward sent">
                       <div className={styles.cardInner}>{sentJourneyControls}</div>
                     </Section>
                   ) : null}

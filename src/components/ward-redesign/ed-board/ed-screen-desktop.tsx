@@ -236,7 +236,7 @@ export function renderEdBoardTableRow(
                 medicalClearance === undefined ? "Clearance due" : clearedWords,
                 movement.examination ? "Reviewed" : "Review due",
               ].join(" · ")
-            : `${patientInfo.umrn} · ${movement.cohort} · ${movement.security}`}
+            : `${patientInfo.umrn} · ${movement.cohort} · ${movement.security === "Secure" ? "Locked" : movement.security}`}
         </span>
         <span className={styles.a2Facts}>
           {readmissionFact}

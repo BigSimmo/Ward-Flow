@@ -390,7 +390,7 @@ export function StageRow({
               <Link
                 href={`/ward-flow/board/${movement.acceptedUnitId}`}
                 className={flow.wardLink}
-                title={`Open ${destinationLabel} Bed Board`}
+                title={`Open ${destinationLabel} Bed board`}
               >
                 {destinationLabel}
               </Link>
@@ -416,7 +416,7 @@ export function StageRow({
         ) : null}
         <span className={closureState ? flow.sub : flow.barrier} title={barrierText}>
           {closureState ? null : <StatusGlyph tone={barrierTone} size={9} className={flow.barrierGlyph} />}
-          <span className="sr-only">{closure ? "Closure note: " : blocker ? "Delay barrier: " : "Stage: "}</span>
+          <span className="sr-only">{closure ? "Closure note: " : blocker ? "Held up by: " : "Stage: "}</span>
           {barrierText}
         </span>
       </span>
