@@ -1,52 +1,51 @@
 # Audit finding appraisal and bounded remediation
 
-Audience: Ward Flow engineering and Josh. Status: blocked on exact-file ownership approval; bounded config fix committed locally. Owner: Codex coordinating the requested subagent swarm. Synthetic data only.
+Audience: Ward Flow engineering and Josh. Status: completed for the approved local repair scope; broader items deferred. Owner: Codex coordinating the requested subagent swarm. Synthetic data only.
 
-Original objective: reassess all 54 findings in the supplied master report, stress-test credible claims, fix bounded defects, and defer challenging work or significant design changes. Source baseline: `BigSimmo/Ward-Flow` main `dd81e1c327c0776a0f1afdd1366919e756c3647a`; branch `codex/audit-remediation-20261103`.
+Original objective: reassess all 54 findings in the supplied master report, stress-test credible claims, fix bounded defects, and defer challenging work or significant design changes. Source baseline: `BigSimmo/Ward-Flow` main `dd81e1c327c0776a0f1afdd1366919e756c3647a`; branch `codex/audit-remediation-20261103`. Later main `7a6f20f6e3d2588a99f17b5d9a778a4643edd663` was inspected: its relevant changes are separate wording updates, retained upstream. This task does not merge or rewrite peer branches.
 
-## Current implementation
+## Applied work
 
-WF-15 narrows both TypeScript root-file sets to omit date-shaped root backup directories (`mockup-backup-????-??-??/**`). Real `mockups/`, ordinary source, MTS scripts, undated similarly named source directories and similarly named root TS files remain included. A broad prefix exclusion was rejected because TypeScript also excluded a genuine similarly named root file. The regression keeps that source-preservation assertion.
+- **WF-01 / REST-01:** transport collection rechecks an open restrictive-practice episode on the sending stay through the existing source resolver and refusal helper. A newly recorded episode after readiness blocks collection. Ending it permits collection; another stay’s episode does not. Already-collected physical arrival remains recordable.
+- **WF-02 / STAT-01:** legal handover copy includes passed recorded times as well as upcoming times, preserving one counted line per form and typed-clock wording. It adds no legal countdown or statutory-period calculation. The copy controls describe that population accurately.
+- **WF-04 / ALRT-03:** the live card, shell banner and Pull now card ask through the existing styled confirmation host. Cancel/Escape do nothing. Consent is bound to the alert and audience, uses the latest committed callback/clock and expires after replacement, permission withdrawal, world/access change or unmount. Repeated activation cannot dispatch twice.
+- **WF-05 / TIME-01–03:** discharge/community display literals and affected existing assertions use 24-hour notation, preserving dates, minutes and meaning.
+- **WF-15 / TOOL-03:** both TypeScript root-file sets omit date-shaped root backup directories (`mockup-backup-????-??-??/**`). Real `mockups/`, ordinary source, MTS scripts, undated similarly named directories and similarly named root TS files remain included. Local commit `5bdcf9941` contains this preventive hardening and its four-case regression.
 
-Focused scope regression: four cases pass after two expected exclusion failures before the change. Local commit `5bdcf9941` contains the fix and its regression. Normal commit admission, selected lint/type checks and the four focused scope cases passed. Local locked dependencies were freshly installed through the repository installer and attested; lifecycle scripts were disabled. Matching npm 11.17.0 was provisioned outside this checkout.
+## Appraisal corrections and deferrals
 
-## Reproduced defects awaiting exact-file ownership
+- **WF-03 / DOWN-01+03:** inpatient downtime census and admitted legal coverage remain a confirmed gap. A safe fix requires coordinated admission identity/current-form resolution, frozen output inputs and approved desktop/phone/print presentation. Deferred under the instruction to defer challenging work or significant design change.
+- **WF-06–11:** ISBAR clearance, clearance/acknowledgement history, authorisation identity, repatriation indicators, retrospective dated entry and governance discoverability extend data/UI contracts. Defer to scoped work rather than introducing unreviewed fields or duplicating shared audit. The existing shared audit was not wholly missing.
+- **WF-12–14:** broad bundle/refactor/suite optimisation requires measurements. Route ceilings are not measured payloads; worker totals are not elapsed runtime. Existing negative and offline concurrency coverage contradict the blanket missing-test claim.
+- **WF-16–18:** unknown-clearance transport policy, broadcast visibility and Ready/occupancy semantics are deliberate product rules. Retain them until the relevant policy is explicitly changed. Do not infer a home region or hide aggregate/name discrepancies.
+- **WF-19–20:** mock contacts are not emergency contacts; TV clicker/rotation/legal summaries are optional presentation modes. No landscape-print incompatibility was substantiated from source alone.
+- **WF-21–23:** Windows lock/filesystem claims and unspecified obsolete-governance assertions need actual machine/assertion evidence. Current locks deliberately protect live owners. No cleanup or test deletion was performed.
 
-- WF-01: collection accepts an open restrictive-practice episode; four targeted cases fail before the proposed guard, and four boundary/compatibility cases pass.
-- WF-02: legal handover copy omits passed recorded times; three cases fail before the proposed correction and ten boundary/input cases pass. Keep D-93 typed-time wording and one counted row per form.
-- WF-04: both originally examined stand-down buttons dispatch immediately. Twelve real-confirm-host cases failed against the original implementation. Independent review identified a third reachable button, stale local-clock callbacks and cross-world consent. The unapplied proposal now uses the existing styled host and command-lifetime predicate; its regression file has 34 cases covering three surfaces. That expanded regression awaits execution after source authority and application.
-- WF-05: discharge/community 12-hour literals remain. Existing string assertions need corresponding updates.
+## Stress evidence
 
-The four repair proposals apply cleanly in check-only mode and have independent source review with no remaining concrete blocker. They remain unapplied. These tests are diagnostic reproductions, not passing acceptance. New failing regressions remain uncommitted until their associated sources may be repaired. Existing-source overlaps on the shared claim board require the pending exact-file takeover; no peer source is edited without it.
+- Before repair, targeted collection/legal tests reproduced seven failures, with fourteen boundary/compatibility cases already passing. The original twelve confirmation cases reproduced immediate dispatch without consent.
+- After repair, 100 distinct targeted cases passed across thirteen files: eight collection cases, thirteen legal-copy cases, thirty-four confirmation cases, ten affected community/time cases, fourteen existing broadcast/role cases, twenty related restrictive-practice/legal-guard cases and one legal-screen case. The thirty-four confirmation cases include bounded epoch-predicate doubles; the actual provider lifetime capture is source-reviewed and existing provider behaviour was separately tested.
+- The existing kit intentionally moves opening focus on its deferred focus step. The regression waits for that step while retaining its safe-focus assertion; it does not change the kit or weaken the assertion.
+- The four backup-scope cases passed in the earlier coherent unit. An initially broad exclusion was rejected because it also excluded a similarly named real TS file; preservation assertions were kept and strengthened.
+- Three selected dead-owner/forced-release/heartbeat lock cases passed; forty-three cases were not selected. Earlier clearance provenance, admitted-form progression, Ready/preparation and overlapping UI-save tests passed in four files/twelve cases. Those results support retaining the disputed contracts; they are not a universal assurance.
 
-## Deferrals
+## Verification boundaries
 
-- WF-03: inpatient downtime census plus legal coverage requires coordinated admission identity/current-form resolution, frozen output inputs, approved four-tab screen and print changes. Deferred as a significant cross-layer/design extension.
-- WF-06/WF-07/WF-08/WF-09/WF-10/WF-11: clearance/acknowledgement history, attribution, ISBAR clearance, repatriation indicators, retrospective dated entry and governance views extend data/UI contracts. Defer to scoped work rather than adding unreviewed fields or duplicating shared audit.
-- WF-12/WF-13/WF-14: broad bundle/refactor/suite optimisation needs new measurements. Configured script ceilings and historical worker totals do not prove current route sizes or elapsed runtime. Existing targeted negative/concurrency tests were inspected and selected existing cases exercised.
-- WF-16/WF-17/WF-18: unknown-clearance transport policy, broadcast visibility and Ready/occupancy semantics are deliberate product rules. Preserve until the relevant policy is explicitly changed.
-- WF-19/WF-20: mock contacts are not emergency contacts; TV clicker/rotation/legal summaries are optional new presentation modes.
-- WF-21/WF-22/WF-23: Windows lock/filesystem claims and unspecified obsolete-governance assertions need concrete machine/assertion evidence. No cleanup or test deletion.
+Exact-path formatting and changed-path lint passed; the unused clock-format import left by the legal-copy change was removed and its lint rechecked. The repository source typecheck command passed. The completed repair commit must pass the normal safety/ownership/lint/type admission hook; its result and identity are recorded in the task checkpoint. Earlier maintained-document link checking passed for 523 files with zero broken links; the edited report will be rechecked at handoff. These are local results, not full-suite or hosted verdicts.
 
-## Supporting executed evidence and limits
+Pinned Playwright Chromium is unavailable (expected revision 1248, no managed install). Browser, print/PDF and physical-device acceptance are unrun. The offline local server was identity-verified as Ward Flow. Alerts and Legal forms each compiled and returned HTTP 200; this is HTTP/SSR evidence only, not a browser interaction check. The server will be stopped after verification. No provider backend, hosted CI, full unit suite or production build is claimed.
 
-- Three selected dead-owner/forced-release/heartbeat lock cases passed; 43 cases were not selected.
-- Existing clearance provenance, admitted-form progression, Ready/preparation and overlapping UI-save tests: four files and twelve tests passed. These support retaining the disputed contracts, not a universal assurance.
-- Pinned Playwright Chromium is unavailable (expected revision 1248, no managed install). Browser/print/physical-device acceptance is unrun. The temporary offline local server was identity-verified as Ward Flow and stopped; no provider backend was used.
-- One broad TypeScript run found a new fixture ID typing error; that fixture was corrected. The corrected working tree, including all three uncommitted regression files, subsequently passed the repository typecheck command. This does not typecheck or accept the unapplied implementation proposals.
-- No hosted CI, provider-backed test, source publication, PR, merge or deployment is authorised or claimed.
+Local locked dependencies were freshly installed through the repository installer and attested with lifecycle scripts disabled. Matching npm 11.17.0 was provisioned outside the checkout. No source push, PR, merge or deployment is authorised or performed.
 
-## Handoff and exact remaining boundary
+## Ownership and handoff
 
-The user approved issue 688 ownership claim/release comments only. Existing source and test overlaps require the separate pending exact-file takeover: the initial twelve paths plus the three supplemental paths. No silence or prior comment permission is treated as takeover. All peer work remains preserved.
+Josh approved the exact fifteen-file takeover in this chat. Public issue 688 was refreshed and the scoped claim posted as comment 6584733484. Native exact-file checks recognise the approval. New helper/regression paths and this report have their own task claims. No other owner’s branch or claim is released.
 
-External task checkpoint and reviewable proposals: `/workspace/ward-flow-review/fix-task/`. The exact scope is in `takeover-scope.md`; `bounded-source-repairs.patch` combines the four unapplied proposals. The local checkout is `/workspace/ward-flow-fixes`. Three uncommitted tests are deliberately retained as diagnostic work: `tests/ward-restrictive-practice-collection.test.ts`, `tests/ward-legal-handover-copy.test.ts` and `tests/ward-broadcast-stand-down-confirm.dom.test.tsx`. They must accompany the repaired implementation, not be published as passing on this branch alone.
-
-Next: obtain exact-file ownership, append claims, apply the reviewed patches, run the targeted green and related checks, then inspect affected interactions when a matching browser is available. No source push or integration follows implicitly.
+Task checkpoint and historical proposal/evidence files: `/workspace/ward-flow-review/fix-task/`. The source repairs are applied in `/workspace/ward-flow-fixes`; the external proposal bundle is historical preparation, not a second task or publication artifact. All three diagnostic regression files now accompany their repaired implementation. The earlier backup-scope commit is `5bdcf9941`; the final repair commit is recorded in the checkpoint. The final working tree and own claim releases are recorded there as well. Memory recall was performed once earlier in the session; routine test facts are not saved to memory.
 
 ## Every original issue retained for traceability
 
-These are appraisal dispositions; work-package completion is tracked above. The original summary said 49, but its body has 54 unique IDs. Eight source-confirmed observations are distinct from the proposed preventive config fix.
+These are the original appraisal dispositions; implemented fixes and deferrals are tracked above, so a row labelled Confirmed is not necessarily still open. The original summary said 49, but its body has 54 unique IDs. Eight source-confirmed observations are distinct from the proposed preventive config fix.
 
 | Original ID   | Assessment   | Proposed work / disposition                                                                                                             |
 | ------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |

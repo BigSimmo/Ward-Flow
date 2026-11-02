@@ -4,8 +4,8 @@
 // never through this file's own import graph, so the hook cannot see it register jest-dom's
 // matcher types otherwise. This import makes this file typecheck on its own.
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
@@ -36,6 +36,7 @@ function renderAlertsScreen(wardDeskId?: string) {
 describe("Ward Flow Statewide Broadcast Alerts", () => {
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     window.sessionStorage.clear();
   });
   it("renders the broadcast trigger button and opens the modal", () => {
@@ -130,7 +131,8 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     expect(banner).toHaveTextContent(/Critical Directive/i);
   });
 
-  it("does not ask the coordinator to acknowledge their own directive; a ward acknowledges, then it is stood down", () => {
+  it("does not ask the coordinator to acknowledge their own directive; a ward acknowledges, then it is stood down", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const ward = allUnits()[0];
     renderAlertsScreen(ward.id);
 
@@ -165,7 +167,8 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     fireEvent.click(standDownBtn);
 
     // Active directive card disappears and confirmation toast appears
-    expect(screen.queryByLabelText("Current broadcast")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByLabelText("Current broadcast")).not.toBeInTheDocument());
+    expect(confirm).toHaveBeenCalledOnce();
     expect(screen.getByText("Statewide broadcast directive stood down.")).toBeInTheDocument();
 
     // Global banner is no longer rendered

@@ -1,8 +1,8 @@
 // Alerts redesign (1 Nov 2026), BUILD-SPEC "Broadcast tab": the live card, its answers, its action
 // bar, Earlier today and the empty state, checked against the approved mock-up's bcPanel().
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { audienceGroups } from "@/components/ward-management/alerts/broadcast-audience";
@@ -11,6 +11,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   window.sessionStorage.clear();
 });
 
@@ -29,7 +30,8 @@ describe("Broadcasts in Now and Earlier today", () => {
     expect(screen.getByRole("dialog", { name: /New broadcast/ })).toBeInTheDocument();
   });
 
-  it("shows a sent bed call as a live card with its answers, then lists it as earlier once stood down", () => {
+  it("shows a sent bed call as a live card with its answers, then lists it as earlier once stood down", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     mount();
     const metro = audienceGroups(allUnits())[0].desks.length;
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
@@ -50,7 +52,8 @@ describe("Broadcasts in Now and Earlier today", () => {
     expect(within(card).getByRole("button", { name: /Copy answers/ })).toBeInTheDocument();
 
     fireEvent.click(within(card).getByRole("button", { name: "Stand down this alert" }));
-    expect(screen.queryByTestId("ward-alerts-live")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId("ward-alerts-live")).not.toBeInTheDocument());
+    expect(confirm).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole("tab", { name: /^Earlier today/ }));
     const earlier = screen.getByRole("region", { name: "Earlier broadcasts" });
     expect(within(earlier).getByText(/Warning · Metro adult wards · stood down/)).toBeInTheDocument();

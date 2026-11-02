@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const sent = vi.hoisted(() => [] as Record<string, unknown>[]);
@@ -25,6 +25,7 @@ import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   act(() => {
     setWardFeatureFlagOnDevice("role-access", null);
     resetWardAccessStoreForTests();
@@ -35,7 +36,8 @@ afterEach(() => {
 describe("broadcast actions retain the actual permitted desk identity", () => {
   it.each(["coordinator", "bed_manager"] as const)(
     "dispatches, extends and stands down as %s through the real Alerts page",
-    (role) => {
+    async (role) => {
+      const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
       act(() => {
         setWardFeatureFlagOnDevice("role-access", true);
         setWardAccess(
@@ -67,10 +69,13 @@ describe("broadcast actions retain the actual permitted desk identity", () => {
       fireEvent.click(screen.getByRole("button", { name: /^Extend / }));
       expect(sent.findLast((event) => event.type === "EXTEND_BROADCAST_ALERT")).toMatchObject({ role });
       fireEvent.click(screen.getByRole("button", { name: "Stand down this alert" }));
-      expect(sent.findLast((event) => event.type === "STAND_DOWN_BROADCAST_ALERT")).toMatchObject({
-        role,
-        stoodDownByRole: role,
-      });
+      await waitFor(() =>
+        expect(sent.findLast((event) => event.type === "STAND_DOWN_BROADCAST_ALERT")).toMatchObject({
+          role,
+          stoodDownByRole: role,
+        }),
+      );
+      expect(confirm).toHaveBeenCalledOnce();
     },
   );
 });
