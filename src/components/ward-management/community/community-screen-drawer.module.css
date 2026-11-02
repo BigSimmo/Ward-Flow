@@ -7,6 +7,7 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Kept at 40rem on purpose: this tracks the kit Sheet's Tailwind `sm` padding switch (sheet.tsx), not the phone layout. Move it only with the Sheet. */
 @media (min-width: 40rem) {
   .panel.panel {
     max-width: 32rem;

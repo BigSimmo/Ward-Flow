@@ -347,7 +347,7 @@
 }
 
 /* Phone: a full-screen solid sheet, one column, no Copy. Desktop structure is untouched. */
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .scrim {
     padding: 0;
   }

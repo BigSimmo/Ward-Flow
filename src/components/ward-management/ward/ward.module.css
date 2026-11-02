@@ -1718,7 +1718,7 @@
   backdrop-filter: blur(22px) saturate(1.35);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .topActionBarWrap {
     position: static;
   }
@@ -1811,7 +1811,7 @@
   backdrop-filter: blur(16px) saturate(1.2);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .noticeRow {
     flex-wrap: wrap;
   }
@@ -3501,7 +3501,7 @@
   }
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .tabBtn,
   .tabTools > :is(a, button),
   .tabTools > div > button {

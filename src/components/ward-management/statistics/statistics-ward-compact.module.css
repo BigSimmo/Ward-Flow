@@ -154,7 +154,7 @@
   border-radius: 3px;
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .bedGrid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }

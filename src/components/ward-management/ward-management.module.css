@@ -63,7 +63,7 @@
  * `prefers-reduced-motion`, `forced-colors`, and two width rules that named `.workspaceGrid`
  * and `.patientWorkspace`. Not one of them touched the rail.
  */
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .clinicalRail {
     display: none;
   }
@@ -926,7 +926,7 @@
   line-height: var(--ward-leading-relaxed);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .patientWorkspace {
     display: block;
     min-height: 100dvh;

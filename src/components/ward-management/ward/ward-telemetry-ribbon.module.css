@@ -21,7 +21,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .ribbon {
     flex-wrap: wrap;
     row-gap: var(--wf-s-2);

@@ -356,7 +356,7 @@
 }
 
 /* Phone: the plot scrolls sideways inside its card, each day keeps a 48px tap column. */
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .legend {
     margin-left: 0;
     flex-wrap: wrap;

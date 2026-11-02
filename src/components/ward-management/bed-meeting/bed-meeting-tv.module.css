@@ -896,7 +896,7 @@
 
 /* Layout sweep MEET-02: a phone (after Show anyway) gets two tiles a row and one panel a row, so
  * service codes and the Beds that fit table have the width they need. */
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

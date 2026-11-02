@@ -3914,7 +3914,7 @@
   }
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .screen {
     padding-top: 0;
     padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
@@ -4217,7 +4217,7 @@
 .detailEmpty {
   line-height: 1.6;
 }
-@media screen and (max-width: 40rem) {
+@media screen and (max-width: 46.4375rem) {
   .beds {
     grid-template-columns: 1fr;
     gap: var(--ward-space-8);
@@ -5050,7 +5050,7 @@
     }
   }
 
-  @media (max-width: 40rem) {
+  @media (max-width: 46.4375rem) {
     .triageFigures {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }

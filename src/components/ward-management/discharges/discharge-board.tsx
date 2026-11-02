@@ -142,7 +142,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     const list = base.listRef.current;
     if (list) {
       list.scrollTo?.({ top: 0 });
-      if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 40rem)").matches) {
+      if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 46.4375rem)").matches) {
         list.scrollIntoView?.({ block: "start", behavior: wardScrollBehavior() });
       }
     }
@@ -1117,7 +1117,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   return;
                 }
                 if (event.key === "Tab") {
-                  if (typeof window !== "undefined" && window.matchMedia("(min-width: 40rem)").matches) {
+                  if (typeof window !== "undefined" && window.matchMedia("(min-width: 46.5rem)").matches) {
                     return;
                   }
                   const focusable = Array.from(

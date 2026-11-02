@@ -445,7 +445,7 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     const list = listRef.current;
     if (list) {
       list.scrollTop = 0;
-      if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 40rem)").matches) {
+      if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 46.4375rem)").matches) {
         list.scrollIntoView?.({ block: "start", behavior: wardScrollBehavior() });
       }
     }

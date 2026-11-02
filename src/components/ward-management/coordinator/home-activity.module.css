@@ -158,6 +158,7 @@
 .panelTabs > * {
   width: 100%;
 }
+/* Kept at 40rem on purpose: this tracks the kit Sheet's Tailwind `sm` padding switch (sheet.tsx), not the phone layout. Move it only with the Sheet. */
 @media (min-width: 40rem) {
   .panelTabs {
     width: calc(100% + 2.5rem);
