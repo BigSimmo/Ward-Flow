@@ -575,7 +575,7 @@
     const i = SECTIONS.findIndex((x) => x.id === id);
     if (i >= 0) {
       state.s = i;
-      state.v = Math.max(0, Math.min(Number(v) || 0, SECTIONS[i].views.length - 1));
+      state.v = Math.max(0, Math.min(Math.trunc(Number(v)) || 0, SECTIONS[i].views.length - 1));
     }
   };
   fromHash();

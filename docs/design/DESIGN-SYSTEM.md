@@ -114,7 +114,7 @@ Build with `src/components/wf`. Never copy a primitive into a screen, and never 
 | Pop-ups and panels    | `Sheet`, `Dialog`, `requestConfirm`      | See section 5. Leaving with unsaved work: "Leave this page?", "Leave without saving", "Keep editing" (focus on Keep editing). Never `confirm`, `alert` or `prompt`.                               |
 | Activity lists        | `Feed`, `SinceYouLookedFold`             | One timeline per record.                                                                                                                                                                          |
 | Charts                | `Chart`                                  | To scale, from existing figures only, data tokens, Geist axes.                                                                                                                                    |
-| Names                 | `FormalName`                             | Shown as written, surname first, wrapping in full (Q226).                                                                                                                                         |
+| Names                 | `FormalName`                             | Patients surname first as recorded ("Jenkinwood, Sarah"); staff as written ("Dr S. Chen", Q226). Always in full, wrapping.                                                                        |
 | Missing facts         | `MissingValue`                           | "Not recorded" in ink-3; amber only where the gap blocks the next step.                                                                                                                           |
 | Phone folds and rows  | `PhoneFold`, `phoneRows`                 | Chip rows put the count first and slide with an edge fade.                                                                                                                                        |
 | Live changes          | `LiveAnnouncer`, `live`                  | One polite region per page, batched, act-now changes only.                                                                                                                                        |
@@ -218,7 +218,7 @@ Each page may take **one signature part**: a bespoke visual that shows its own d
 - [ ] Tokens only; kit parts only; no one-off pills.
 - [ ] No coloured side edges; no text under 12px; phone controls 40px; desktop tabs 30px.
 - [ ] One on-hero action, one filled button per panel, eight rows then Show more.
-- [ ] Words from section 6; names surname first in full; times as typed.
+- [ ] Words from section 6; patient names surname first, staff names as written, both in full; times as typed.
 - [ ] At most one signature part, inside the limits in section 8.
 - [ ] Synthetic data only; no names or typed text in URLs, screenshots or logs.
 

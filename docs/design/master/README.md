@@ -12,9 +12,13 @@ Published folders and where each came from:
 - pa/ = Patient Screen Redesign.zip; he/ = Ward Flow Redesign 1.zip (Help)
 - al/ = alerts/alerts-redesign; cm/ = community/community-team-mockup.html; pu/ = popups screenshots; ac/ = alerts-clarity/hifi (interactive clarity proposal, not approved)
 
-Rebuild (from a Ward-Flow checkout, npm ci --engine-strict=false works on Node 22):
+Rebuild (from a Ward-Flow checkout, npm ci --engine-strict=false works on Node 22), then copy kit/kit.html into `<pub>/m`:
+
+```sh
 node scripts/ward-flow/build-redesign-preview.mjs --out <pub>/m
-node <master>/kit/build-kit.mjs <master>/kit <pub>/m (then copy kit/kit.html into <pub>/m)
+node <master>/kit/build-kit.mjs <master>/kit <pub>/m
+```
+
 Frame URLs: frame.html?screen=<slug>&shell=next&theme=light|dark[&pop=<pop>]. Pop-ups use screen=<over>&pop=<pop> (see screens.ts MOCKUP_POPUPS).
 When a screen's PR merges, keep its tab on the approved mock-up: the master is the design source and main can lag it (Q209, Josh 1 Nov 2026). Point a tab at m/ only after a side-by-side check at 390, 820, 1280 and 1440, light and dark, shows main matches it.
 
