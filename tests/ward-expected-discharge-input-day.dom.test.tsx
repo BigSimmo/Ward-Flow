@@ -62,9 +62,9 @@ function openFutureDepartureEditor() {
   // The record already opens on the first bed that needs a look (redesign point 16), so press only a closed tile.
   if (tile.getAttribute("aria-pressed") !== "true") fireEvent.click(tile);
   fireEvent.click(screen.getByRole("button", { name: "Move the date" }));
-  expect(screen.getByLabelText("Expected departure time")).toHaveAttribute("type", "time");
-  expect(screen.getByLabelText("Expected departure time")).toHaveValue("14:07");
-  expect(screen.getByRole("combobox", { name: "Departure day" })).toHaveValue("recorded");
+  expect(screen.getByLabelText("Expected discharge time")).toHaveAttribute("type", "time");
+  expect(screen.getByLabelText("Expected discharge time")).toHaveValue("14:07");
+  expect(screen.getByRole("combobox", { name: "Discharge day" })).toHaveValue("recorded");
   return probe;
 }
 
@@ -81,12 +81,12 @@ describe("expected departure clock input keeps its separately recorded day", () 
   it("cancels clock edits, then saves a new HH:mm on the original future day", () => {
     const probe = openFutureDepartureEditor();
     const leaveCount = probe.getAttribute("data-leave-count");
-    fireEvent.change(screen.getByLabelText("Expected departure time"), { target: { value: "09:13" } });
+    fireEvent.change(screen.getByLabelText("Expected discharge time"), { target: { value: "09:13" } });
     fireEvent.click(screen.getByRole("button", { name: "Cancel date change" }));
     expect(probe).toHaveAttribute("data-date", String(RECORDED_DEPARTURE));
     fireEvent.click(screen.getByRole("button", { name: "Move the date" }));
-    expect(screen.getByLabelText("Expected departure time")).toHaveValue("14:07");
-    fireEvent.change(screen.getByLabelText("Expected departure time"), { target: { value: "09:13" } });
+    expect(screen.getByLabelText("Expected discharge time")).toHaveValue("14:07");
+    fireEvent.change(screen.getByLabelText("Expected discharge time"), { target: { value: "09:13" } });
     fireEvent.click(screen.getByRole("button", { name: "Save departure date" }));
     expect(probe).toHaveAttribute("data-date", String(FUTURE_DAY + 9 * 60 + 13));
     expect(probe).toHaveAttribute("data-state", "occupied");

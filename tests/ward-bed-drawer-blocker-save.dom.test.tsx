@@ -87,7 +87,7 @@ function asPhone() {
 function openEditor() {
   const tab = screen.queryByRole("tab", { name: "Plan to leave" });
   if (tab) fireEvent.click(tab);
-  fireEvent.click(getBedStep(/^(Record|Update) blocker$/));
+  fireEvent.click(getBedStep(/^(Record|Update) hold-up$/));
 }
 
 afterEach(() => {
@@ -106,14 +106,14 @@ describe.each([
   it("offers no blocker control where this desk has no handler", () => {
     setup();
     render(drawer(bed()));
-    expect(queryBedStep(/^(Record|Update) blocker$/)).toBeNull();
+    expect(queryBedStep(/^(Record|Update) hold-up$/)).toBeNull();
     cleanup();
     render(drawer(bed("Awaiting clean")));
     const tab = screen.queryByRole("tab", { name: "Plan to leave" });
     if (tab) fireEvent.click(tab);
-    expect(queryBedStep(/^(Record|Update) blocker$/)).toBeNull();
-    expect(screen.queryByRole("button", { name: "Clear blocker" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Save blocker" })).toBeNull();
+    expect(queryBedStep(/^(Record|Update) hold-up$/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Clear hold-up" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save hold-up" })).toBeNull();
   });
 
   it("opens the blocker list blank, and Save blocker says why until a choice is made", () => {
@@ -121,8 +121,8 @@ describe.each([
     const onUpdateBlocker = vi.fn(() => Promise.resolve<WardCommandOutcome>({ commandId: "c-0", status: "accepted" }));
     render(drawer(bed(), onUpdateBlocker));
     openEditor();
-    expect(screen.getByRole("combobox", { name: "Discharge blocker" })).toHaveValue("");
-    const save = screen.getByRole("button", { name: "Save blocker" });
+    expect(screen.getByRole("combobox", { name: "Held up by" })).toHaveValue("");
+    const save = screen.getByRole("button", { name: "Save hold-up" });
     expect(save).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("Choose what is holding them up first.")).toBeVisible();
     fireEvent.click(save);
@@ -135,16 +135,16 @@ describe.each([
     const onUpdateBlocker = vi.fn(() => new Promise<WardCommandOutcome>((resolve) => (finish = resolve)));
     render(drawer(bed(), onUpdateBlocker));
     openEditor();
-    fireEvent.change(screen.getByRole("combobox", { name: "Discharge blocker" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Held up by" }), {
       target: { value: "Awaiting accommodation" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Save blocker" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save hold-up" }));
     expect(onUpdateBlocker).toHaveBeenCalledWith("adm-blocker", "Awaiting accommodation");
     // Not answered yet: still open, saying so.
-    expect(screen.getByRole("button", { name: "Save blocker" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save hold-up" })).toBeInTheDocument();
     expect(screen.getByText("Saving…")).toBeInTheDocument();
     await act(async () => finish({ commandId: "c-1", status: "accepted" }));
-    expect(screen.queryByRole("button", { name: "Save blocker" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save hold-up" })).toBeNull();
     expect(screen.queryByTestId("ward-blocker-error")).toBeNull();
   });
 
@@ -155,14 +155,14 @@ describe.each([
     );
     render(drawer(bed(), onUpdateBlocker));
     openEditor();
-    fireEvent.change(screen.getByRole("combobox", { name: "Discharge blocker" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Held up by" }), {
       target: { value: "Awaiting clean" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Save blocker" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save hold-up" }));
     await act(async () => {});
     expect(onUpdateBlocker).toHaveBeenCalledWith("adm-blocker", "Awaiting clean");
-    expect(screen.getByRole("button", { name: "Save blocker" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Discharge blocker" })).toHaveValue("Awaiting clean");
+    expect(screen.getByRole("button", { name: "Save hold-up" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Held up by" })).toHaveValue("Awaiting clean");
     expect(screen.getByTestId("ward-blocker-error")).not.toBeEmptyDOMElement();
   });
 });
@@ -214,22 +214,22 @@ async function recordBlockerOnScreen(control: ReturnType<typeof commands>) {
   fireEvent.click(occupied.at(-1)!);
   const drawerEl = await screen.findByTestId("bed-telemetry-drawer");
   fireEvent.click(within(drawerEl).getByRole("tab", { name: "Plan to leave" }));
-  fireEvent.click(getBedStep("Record blocker", drawerEl));
-  fireEvent.change(within(drawerEl).getByRole("combobox", { name: "Discharge blocker" }), {
+  fireEvent.click(getBedStep("Record hold-up", drawerEl));
+  fireEvent.change(within(drawerEl).getByRole("combobox", { name: "Held up by" }), {
     target: { value: "Awaiting clean" },
   });
-  fireEvent.click(within(drawerEl).getByRole("button", { name: "Save blocker" }));
+  fireEvent.click(within(drawerEl).getByRole("button", { name: "Save hold-up" }));
   expect(control.record).toHaveBeenCalledTimes(1);
   const sent = control.record.mock.calls[0]![0];
   expect(["RECORD_STAY_DISCHARGE_BLOCKER", "BLOCK_BED_RELEASE"]).toContain(sent.type);
   // Still open until the answer comes back.
-  expect(within(drawerEl).getByRole("button", { name: "Save blocker" })).toBeInTheDocument();
+  expect(within(drawerEl).getByRole("button", { name: "Save hold-up" })).toBeInTheDocument();
   let outcome: WardCommandOutcome | void = undefined;
   await act(async () => {
     outcome = await control.accept();
   });
   expect((outcome as WardCommandOutcome | undefined)?.status).toBe("accepted");
-  expect(within(drawerEl).queryByRole("button", { name: "Save blocker" })).toBeNull();
+  expect(within(drawerEl).queryByRole("button", { name: "Save hold-up" })).toBeNull();
   expect(drawerEl).toHaveTextContent(/Today:\s*Awaiting clean/i);
   return sent;
 }

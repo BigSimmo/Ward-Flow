@@ -102,7 +102,7 @@ describe("Network views consume only the released executive report", () => {
           exportFigures={{
             stem: "network",
             scope: "Whole network",
-            figures: () => [["Open ED journeys", report.network.people.waitingInEd]],
+            figures: () => [["Open ED movements", report.network.people.waitingInEd]],
           }}
         />,
       ),
@@ -114,11 +114,11 @@ describe("Network views consume only the released executive report", () => {
       {
         stem: "network",
         scope: "Whole network",
-        figures: () => [["Open ED journeys", report.network.people.waitingInEd]],
+        figures: () => [["Open ED movements", report.network.people.waitingInEd]],
       },
       "Synthetic as-at",
     );
-    expect(lines.at(-1)).toEqual(["Open ED journeys", releasedCountText(report.network.people.waitingInEd)]);
+    expect(lines.at(-1)).toEqual(["Open ED movements", releasedCountText(report.network.people.waitingInEd)]);
     expect(csvCell({ kind: "withheld" })).toBe('"not shown"');
     expect(csvCell({ kind: "small" })).toBe('"fewer than 5"');
   });
@@ -156,7 +156,7 @@ describe("Network views consume only the released executive report", () => {
     installMatchMediaStub(false);
     render(wrap(<StatisticsMapView />));
     expect(screen.getByTestId("ward-statistics-wa-map")).toBeInTheDocument();
-    for (const lens of ["Open ED journeys", "Discharge", "Stay", "Beds"]) {
+    for (const lens of ["Open ED movements", "Discharge", "Stay", "Beds"]) {
       fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${lens}`) }));
       expect(screen.getByTestId("ward-statistics-map-below")).toBeInTheDocument();
     }
@@ -164,7 +164,7 @@ describe("Network views consume only the released executive report", () => {
     expect(node).toBeInTheDocument();
     fireEvent.click(node);
     expect(screen.getByTestId("ward-statistics-map-site")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: /^Open ED journeys/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Open ED movements/ }));
     expect(screen.queryByTestId("ward-statistics-map-ed-swarm")).not.toBeInTheDocument();
     expect(within(screen.getByTestId("ward-statistics-map-below")).getAllByRole("link").length).toBeGreaterThan(0);
   });
@@ -212,7 +212,7 @@ describe("Network views consume only the released executive report", () => {
     );
     installMatchMediaStub(false);
     const view = render(content(<StatisticsMapView />));
-    fireEvent.click(screen.getByRole("radio", { name: /^Open ED journeys/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Open ED movements/ }));
     const map = screen.getByTestId("ward-statistics-map-below");
     expect(map).toHaveTextContent(foreign.name);
     expect(map.querySelector(`a[href="${edStatisticsHref(foreign.id)}"]`)).toBeNull();

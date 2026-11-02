@@ -33,7 +33,7 @@ import { SearchPreview } from "@/components/ward-redesign/pop-search/search-prev
 import { buildCensus } from "@/components/ward-management/search/patient-census";
 import { answerQuestion } from "@/components/ward-management/search/search-answers";
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, useIsPhone, useMediaQuery } from "@/components/wf";
+import { StatusGlyph, useIsPhone, useMediaQuery, WF_PHONE_QUERY } from "@/components/wf";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -221,7 +221,7 @@ const MAX_RESULTS_PER_GROUP = 6;
 const PATIENT_SEARCH_HREF = "/ward-flow/search";
 
 /** The width where the open search is a full screen sheet (`.popup` in the module's phone block). */
-const PHONE_SEARCH_QUERY = "(max-width: 48rem)";
+const PHONE_SEARCH_QUERY = WF_PHONE_QUERY;
 
 /**
  * Mock-up (D-91, "Phone search opens full height, like Help"): at this width the open search is a

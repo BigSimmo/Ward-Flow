@@ -1,5 +1,6 @@
 "use client";
 
+import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
@@ -1385,7 +1386,7 @@ export function ShortlistPanel({
           <dl className={shortlistStyles.factLine}>
             <InlineFact label="Sex" value={movement.sex} />
             <InlineFact label="Age group" value={movement.cohort} />
-            <InlineFact label="Security" value={movement.security} />
+            <InlineFact label="Security" value={securityWord(movement.security)} />
             <InlineFact
               label="Legal"
               value={movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus}

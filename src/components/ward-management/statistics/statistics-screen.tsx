@@ -627,7 +627,7 @@ function StatisticsSummaryView({
                 id: ed.id,
                 name: ed.name,
                 code: ed.site,
-                meta: String(statisticsCountText(ed.waiting, operationalSmall)) + " open ED journeys",
+                meta: String(statisticsCountText(ed.waiting, operationalSmall)) + " open ED movements",
               })),
             service: (directory?.services ?? HEALTH_SERVICES).map((name) => {
               const count = allPressureWards.filter((ward) => siteByCode(ward.site)?.service === name).length;
@@ -955,7 +955,7 @@ function StatisticsSummaryView({
               ["Being made ready", pendingPreparation],
               // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
               ["Admissions ended today", small(dischargesCount)],
-              ["Open ED journeys", small(waitingCount)],
+              ["Open ED movements", small(waitingCount)],
               ["Still open", small(stillOpenCount)],
             ],
           }}
@@ -982,7 +982,7 @@ function StatisticsSummaryView({
                 <HeroChip
                   value={small(waitingCount)}
                   // Five chips at most; the open-journey figure rides with the waiting one it contains.
-                  label="Open ED journeys"
+                  label="Open ED movements"
                   onPress={() =>
                     document
                       .querySelector('[data-testid="ward-statistics-emergency-departments"]')

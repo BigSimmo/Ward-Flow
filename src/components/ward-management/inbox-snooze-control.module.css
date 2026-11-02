@@ -79,7 +79,7 @@
 
 /* In the phone sheet: the sheet supplies the padding, the times share one row and every row is a
    full-size touch target. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .body {
     padding: 0;
   }

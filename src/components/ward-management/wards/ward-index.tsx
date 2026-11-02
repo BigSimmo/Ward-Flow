@@ -810,7 +810,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
         <div className={styles.serviceAnchors}>
           {wardServiceOrder.map((name) => (
             <section key={name} id={`wards-${slug(name)}`} data-testid={`ward-index-service-${slug(name)}`}>
-              <h3>{name}</h3>
+              <h2>{name}</h2>
             </section>
           ))}
         </div>
@@ -856,7 +856,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 <SiteHead title={deskSite.name} meta={`${ownOrdered.length} wards, ${totalBeds} beds`} />
                 <section className={styles.cardGrid} aria-label={`${deskSite.name} ward cards`}>
                   {ownOrdered.map((row) => (
-                    <WardCard key={row.unit.id} row={row} now={now} dim={isFiltered && !isLit(row)} />
+                    <WardCard key={row.unit.id} row={row} now={now} dim={isFiltered && !isLit(row)} headingLevel={3} />
                   ))}
                 </section>
                 <SiteHead
@@ -865,7 +865,14 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 />
                 <section className={styles.cardGrid} aria-label="Other sites, bed counts">
                   {otherShown.map((row) => (
-                    <WardCard key={row.unit.id} row={row} now={now} dim={isFiltered && !isLit(row)} countsOnly />
+                    <WardCard
+                      key={row.unit.id}
+                      row={row}
+                      now={now}
+                      dim={isFiltered && !isLit(row)}
+                      countsOnly
+                      headingLevel={3}
+                    />
                   ))}
                 </section>
                 {otherMore}
@@ -1004,14 +1011,18 @@ function WardCard({
   now,
   dim = false,
   countsOnly = false,
+  headingLevel = 2,
 }: {
   row: WardRow;
   now: Instant;
   dim?: boolean;
+  /** A7 (accessibility check, 2 Nov 2026): h2 under the page title, h3 under a site bed manager's site heading. */
+  headingLevel?: 2 | 3;
   /** Site bed manager: another site's ward, drawn as bed counts with no way in. */
   countsOnly?: boolean;
 }) {
   const { unit } = row;
+  const WardTitle = headingLevel === 3 ? "h3" : "h2";
   return (
     <article
       className={styles.wardCard}
@@ -1022,9 +1033,9 @@ function WardCard({
       data-acuity={unitHasLockedBeds(unit) ? "high" : "standard"}
     >
       <div className={styles.cardHead}>
-        <h3 className={cx(styles.wardTitle, styles.wrapLine)} title={unit.name}>
+        <WardTitle className={cx(styles.wardTitle, styles.wrapLine)} title={unit.name}>
           {shortWardName(unit)}
-        </h3>
+        </WardTitle>
         <SecurityLabel unit={unit} />
       </div>
       <p className={styles.meta} title={`${row.service ?? ""} · ${row.siteName} · ${unit.cohort}`}>
@@ -1166,7 +1177,7 @@ function WardProfileBody({
             href={`/ward-flow/board/${unit.id}`}
             onClick={() => close?.({ restoreFocus: false })}
           >
-            Stays and discharges
+            Bed board
           </Link>
           <Link
             className={buttonClass({ variant: "pri", size: "sm" })}
@@ -1216,13 +1227,13 @@ function WardPhoneList({
         return (
           <div key={group.key} className={styles.phoneGroup}>
             {group.label ? (
-              <h3 className={styles.phoneGroupHead}>
+              <h2 className={styles.phoneGroupHead}>
                 <span className={styles.phoneGroupDot} data-service={group.key} aria-hidden="true" />
                 <span>{group.label}</span>
                 <span className={styles.phoneGroupShare}>
                   {beds > 0 ? `${((occupied / beds) * 100).toFixed(1)}%` : ""}
                 </span>
-              </h3>
+              </h2>
             ) : null}
             <ul className={styles.phoneRows}>
               {group.rows.map((row) => {
@@ -1313,9 +1324,7 @@ function WardPhoneSheet({
       title={row.unit.name}
       description={`${row.service ?? "Not placed"} · ${row.siteShort} · ${cohortLabel(row.unit)}`}
       secondary={
-        countsOnly
-          ? undefined
-          : { label: "Stays and discharges", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }
+        countsOnly ? undefined : { label: "Bed board", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }
       }
       primary={
         countsOnly ? undefined : { label: "Enter ward", onAction: () => router.push(`/ward-flow/ward/${row.unit.id}`) }

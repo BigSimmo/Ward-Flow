@@ -76,7 +76,7 @@
   color: inherit;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .chip {
     min-height: var(--wf-touch);
     align-items: center;
@@ -91,7 +91,7 @@
 
 /* PT-16 (layout sweep, 25 Oct 2026): above the phone the chips wrap to a second line rather than
    run off the edge cut mid-word. The phone row still scrolls sideways. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .chips {
     flex-wrap: wrap;
     row-gap: var(--wf-s-2);
@@ -324,7 +324,7 @@
   white-space: nowrap;
 }
 
-@media (pointer: coarse), (max-width: 48rem) {
+@media (pointer: coarse), (max-width: 46.4375rem) {
   .railBayMark {
     min-height: 2.75rem;
   }
@@ -474,7 +474,7 @@
 }
 
 /* Phone (v10 mockup): the facts are one bordered card with hairline dividers, not separate tiles. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .factGrid {
     gap: 1px;
     overflow: hidden;

@@ -266,13 +266,13 @@
 }
 
 /* Desktop: the list sits inside the Place tab, which supplies no padding of its own. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .sheet.sheet {
     padding: var(--wf-s-3) var(--wf-s-4) 0;
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The sheet body scrolls as one: wait clock, facts, the lists, then the extras. */
   .body.body {
     display: flex;
@@ -289,7 +289,7 @@
 }
 
 /* v10 phone referral sheet: the journey strip under the facts. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .journey {
     display: grid;
     gap: var(--wf-s-2);

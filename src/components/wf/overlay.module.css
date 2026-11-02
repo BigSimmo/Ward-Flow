@@ -41,7 +41,7 @@
   }
 }
 
-@media screen and (max-width: 48rem) and (forced-colors: none) {
+@media screen and (max-width: 46.4375rem) and (forced-colors: none) {
   :global(:root[data-mode="glare"]) .toast {
     --toast-bg: var(--wf-ink-1);
   }
@@ -272,7 +272,7 @@
    left and right 12px and 92px up, text may wrap. The tip colours are the tooltip's own recipe
    (ui/tooltip.module.css): ink on light, track in dark with the line-2 ring. Desktop and tablet
    keep the glass card above. A toast that closes itself (Undo or timed) shows no X, as drawn. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* F-15: above the dock's top (--wf-dock-clear, which counts the home indicator), not a fixed
      92px that the dock overlapped on Face ID iPhones. Pages without the dock use the same sum. The gap
      is 12px unless the shell sets --wf-toast-dock-gap (the new frame sets 24px, from the mock-ups). */

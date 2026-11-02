@@ -34,9 +34,55 @@
   outline: 2px solid var(--wf-ink-1);
   outline-offset: 2px;
 }
-/* Lifted over the phone dock wherever the dock shows (up to 48rem, the app's phone width). */
-@media (max-width: 48rem) {
+/* Lifted over the phone dock wherever the dock shows (up to 48rem, the app's phone width, and a
+   touch screen under 500px tall, as ward-phone-page-dock.module.css). */
+@media (max-width: 48rem), (pointer: coarse) and (max-height: 500px) {
   .hint {
     bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Q296 (pre-launch review, 2 Nov 2026): on a short screen (a phone on its side) the card covered
+   about 40% of the page and stayed over the rows while scrolling. Under 500px tall it is one strip
+   across the foot instead: the title and its sentence on one line (cut short if it must be; More in
+   Help has the whole of it), then More in Help and Got it. */
+@media (max-height: 500px) {
+  .hint {
+    left: max(var(--wf-s-2), env(safe-area-inset-left, 0px));
+    right: max(var(--wf-s-2), env(safe-area-inset-right, 0px));
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-3);
+    max-width: none;
+    padding: var(--wf-s-1) var(--wf-s-1) var(--wf-s-1) var(--wf-s-3);
+  }
+
+  .hint strong {
+    flex: none;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hint p {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .actions {
+    flex: none;
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-height: 500px) and (min-width: 48.0625rem) {
+  .hint {
+    left: auto;
+    width: min(36rem, calc(100vw - 2rem));
   }
 }

@@ -33,7 +33,7 @@ function confirmFirstRelease() {
       <WardScreen unitId={unit.id} />
     </WardFlowProvider>,
   );
-  const confirm = screen.getAllByRole("button", { name: "Confirm Ready", hidden: true })[0];
+  const confirm = screen.getAllByRole("button", { name: "Confirm ready", hidden: true })[0];
   fireEvent.click(confirm);
 }
 

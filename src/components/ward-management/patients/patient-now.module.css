@@ -2395,7 +2395,7 @@
 
 /* Layout sweep PT-04 (iPad portrait): the seven stages share the strip and a long label takes two
    lines, so the later stages, including the current one, are never cut at the edge. */
-@media (min-width: 48.0625rem) and (max-width: 1024px) {
+@media (min-width: 46.5rem) and (max-width: 1024px) {
   .v6Step {
     flex: 0 1 auto;
     min-width: min-content;
@@ -2417,7 +2417,7 @@
  * (the step before and the current one), the two page actions as equal buttons, then the back
  * button beside the record tabs, which scroll sideways. Desktop and tablet are unchanged:
  * everything here sits under 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .v6Page {
     padding: var(--wf-s-3);
   }
@@ -2538,7 +2538,7 @@
 /* Phone polish (8 Oct 2026, second pass): a tighter hero, the four movement facts as a two by two
  * grid, and the Now view switch as one full width control. Everything here sits under 48rem, so
  * desktop and tablet are unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .v6HeroWrap .v6Hero {
     gap: var(--wf-s-2);
   }
@@ -2711,7 +2711,7 @@
 
 /* v10 Patient, phone: the facts become three figures (value over label), the status line leaves
  * the band (it stays announced), and the tabs keep 44px targets. Desktop is untouched. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .v6HeroFacts {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2794,7 +2794,7 @@
 }
 
 /* v10 phone: the record tabs become a 44px segmented control (Now, History, Forms). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .v6HeroTabsRow {
     flex-wrap: wrap;
   }
@@ -2855,7 +2855,7 @@
 /* Device sweep R2-01 (24 Oct 2026): a two-line clamp still hid the chip on a 390px phone when the
  * words took both lines, so the eyebrow takes as many lines as it needs and the observation chip
  * always shows. A 20px line fits the chip without the double gap a 24px line left. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .v6Hero :has(> .phMoveEyebrow) {
     display: block;
     overflow: visible;
@@ -2904,7 +2904,7 @@
   color: var(--wf-ink-2);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .v6HeroTabsRow > a[data-testid="ward-patient-back-button"] {
     display: none;
   }
@@ -3002,7 +3002,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* A record with one hero fact (not active) gives it the whole row instead of a clipped third. */
   .v6HeroFacts > .v6HeroFact:only-child {
     grid-column: 1 / -1;
@@ -3017,7 +3017,7 @@
 }
 
 /* v10 phone record tabs: a full pill track, the chosen tab an outlined pill, round count badges. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .v6HeroTabsRow .v6Tabs {
     padding: 3px;
     border-radius: var(--wf-r-track);
@@ -3046,7 +3046,7 @@
 }
 
 /* v10 phone: one disclaimer line per page, the shared footer; this page-level copy hides on phone (A7). */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .pnFoot {
     display: none;
   }
@@ -3077,7 +3077,7 @@
  * layout keeps its spacing), and the track takes the shared phone segmented size (`--wf-phone-seg-*`):
  * a 48px box with a transparent band round a painted 44px track, so each 38px tab keeps a 48px hit
  * area without being clipped by the sideways scroll. Nothing here applies above 48rem. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .v6Page > .v6HeroTabsRow {
     margin-block: calc(-1 * var(--wf-s-2));
     padding-block: var(--wf-s-2);

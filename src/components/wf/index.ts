@@ -66,6 +66,8 @@ export { ToastView } from "./toast";
 export { Dialog } from "./dialog";
 export { OverlayPortal, OverlayScope } from "./overlay-root";
 export { useModalFocus, type UseModalFocusOptions } from "./use-modal-focus";
+export { cycleTabWithin, focusIsLost } from "./focus-return";
+export { rememberOpener, returnFocusToOpener, type FocusOpener } from "./focus-opener";
 export { StateLine, type StateKind } from "./state";
 export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";
 export { LiveChip, Timer, publishLiveClock, publishLiveRefresh, useSharedRefreshLate } from "./live";

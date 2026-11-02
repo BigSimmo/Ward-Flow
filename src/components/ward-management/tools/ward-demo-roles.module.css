@@ -125,7 +125,7 @@
 /* Phones: Exit role demo (40px) and the role cards (44px or taller) keep their face and reach a 48px
    tap area through a transparent cover, as the Demo panel's buttons do. The cards sit 6px apart, so
    their 2px covers never meet. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .choice,
   .exit {
     position: relative;

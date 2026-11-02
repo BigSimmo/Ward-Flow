@@ -73,7 +73,7 @@ export function WardBoardHero(props: {
       }
       title={
         <>
-          Stays and discharges
+          Bed board
           <span id="ward-board-unit-name" className="sr-only" data-testid="ward-board-unit-name">
             {`, ${unit.name}`}
           </span>
@@ -140,7 +140,7 @@ export function WardBoardScreenNav({ unit }: { unit: Unit }) {
       className={styles.screenNav}
       items={[
         { id: "home", label: "Ward home", href: unitHref(unit.id) },
-        { id: "stays", label: "Stays and discharges", href: wardBoardHref(unit.id) },
+        { id: "stays", label: "Bed board", href: wardBoardHref(unit.id) },
       ]}
     />
   );

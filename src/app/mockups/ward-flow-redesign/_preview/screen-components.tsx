@@ -190,7 +190,7 @@ const StaysScreen = dynamic<MockupPageProps>(() =>
   ),
 );
 const STAYS_POPUPS = {
-  "board-blocker": ["[data-bed-kind='occupied'] button", "Record a blocker"],
+  "board-blocker": ["[data-bed-kind='occupied'] button", "Record hold-up"],
 } as const;
 
 const PatientsScreen = dynamic<MockupPageProps>(() =>

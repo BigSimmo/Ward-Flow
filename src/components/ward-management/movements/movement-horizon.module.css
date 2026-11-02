@@ -165,7 +165,7 @@
   cursor: pointer;
 }
 
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .serviceFilterSelect {
     font-size: max(1rem, 16px);
   }

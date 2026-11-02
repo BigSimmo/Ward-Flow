@@ -81,7 +81,7 @@ export function askingForShort(referral: Referral): string {
 export function needWords(referral: Referral): string[] {
   const ward = wardArm(referral)?.destination;
   const words: string[] = [];
-  if (ward) words.push(ward.secureBedNeeded ? "Secure bed" : "Open bed");
+  if (ward) words.push(ward.secureBedNeeded ? "Locked bed" : "Open bed");
   if (ward?.involuntaryBedNeeded) words.push("involuntary");
   if (ward?.highAcuityNursingNeeded) words.push("high acuity");
   if (referral.transportNeeded) words.push("transport");

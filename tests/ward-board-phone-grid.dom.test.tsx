@@ -45,7 +45,7 @@ describe("phone bed grid", () => {
     expect(beds.compareDocumentPosition(figures) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(beds).getAllByRole("button").length).toBeGreaterThan(0);
     // One row: a Show drop-down and the order select as a sort button, not the chip group.
-    expect(screen.queryByRole("group", { name: "Narrow stays and discharges" })).toBeNull();
+    expect(screen.queryByRole("group", { name: "Narrow Bed board" })).toBeNull();
     expect(screen.getByRole("combobox", { name: "Show" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Order the beds" })).toBeInTheDocument();
     // No side panel on a phone until a bed is chosen.

@@ -113,7 +113,7 @@ tr:has(+ .moreRow) > td {
 
 /* Phone: the highlight chips are one sliding row (parts/phone-rows.module.css, Josh, 31 Oct). The row
    keeps to the content edges, so its fade sits at the panel's right edge as on Movements. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phChipRow.phChipRow {
     margin-inline: 0;
     padding-inline: 0;

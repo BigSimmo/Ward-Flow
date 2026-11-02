@@ -1,6 +1,6 @@
 // shell-23 (13 Oct 2026): on a phone the service sheet is a real popup, like Menu and Create: a
 // modal dialog, the page behind inert, focus on the chosen service. One word: Statewide. Desktop
-// keeps its menu.
+// and tablet use the same dialog pattern without the inert page (A3, A5, 2 Nov 2026).
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -85,13 +85,48 @@ describe("phone service sheet is a real popup", () => {
     expect(document.activeElement).toBe(buttons.at(-1));
   });
 
-  it("stays a menu on desktop, with the page behind left alone", () => {
+  it("is a named, non-modal dialog on desktop that takes focus to the chosen service", () => {
+    installMatchMediaStub(false);
+    renderBar();
+    const trigger = screen.getByTestId("ward-bar-service-trigger");
+    // A5 (accessibility check, 2 Nov 2026): the button says dialog, as the panel is.
+    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+    fireEvent.click(trigger);
+    const panel = screen.getByTestId("ward-bar-service-panel");
+    expect(panel).toHaveAttribute("role", "dialog");
+    expect(panel).toHaveAccessibleName("Choose a health service");
+    expect(panel).not.toHaveAttribute("aria-modal");
+    expect(screen.getByTestId("page-behind").closest("[inert]")).toBeNull();
+    expect(document.activeElement).toBe(panel.querySelector('[aria-pressed="true"]'));
+  });
+
+  it("returns focus to the Service button on Escape from inside the desktop panel", async () => {
+    installMatchMediaStub(false);
+    renderBar();
+    const trigger = screen.getByTestId("ward-bar-service-trigger");
+    fireEvent.click(trigger);
+    const panel = screen.getByTestId("ward-bar-service-panel");
+    const option = Array.from(panel.querySelectorAll<HTMLElement>("button")).at(-1)!;
+    option.focus();
+    fireEvent.keyDown(option, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("ward-bar-service-panel")).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+  });
+
+  it("closes the desktop panel when Tab leaves it, leaving focus where it went", async () => {
     installMatchMediaStub(false);
     renderBar();
     fireEvent.click(screen.getByTestId("ward-bar-service-trigger"));
     const panel = screen.getByTestId("ward-bar-service-panel");
-    expect(panel).toHaveAttribute("role", "group");
-    expect(panel).not.toHaveAttribute("aria-modal");
-    expect(screen.getByTestId("page-behind").closest("[inert]")).toBeNull();
+    const outside = document.createElement("button");
+    outside.textContent = "Outside";
+    document.body.append(outside);
+    const option = panel.querySelector<HTMLElement>('[aria-pressed="true"]')!;
+    fireEvent.focusOut(option, { relatedTarget: outside });
+    outside.focus();
+    await waitFor(() => expect(screen.queryByTestId("ward-bar-service-panel")).toBeNull());
+    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
   });
 });

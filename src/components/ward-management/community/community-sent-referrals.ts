@@ -64,7 +64,7 @@ export function sentPlaceLine(addressing: CommunitySentAddressing, units: readon
 function askedFor(destination: ReferralDestination): string {
   switch (destination.kind) {
     case "psychiatric_ward":
-      return destination.secureBedNeeded ? "Ward bed, secure" : "Ward bed";
+      return destination.secureBedNeeded ? "Ward bed, locked" : "Ward bed";
     case "emergency_department":
       return `ED, ${referralPurposeLabel(destination.purpose).toLowerCase()}`;
     case "community_team":
