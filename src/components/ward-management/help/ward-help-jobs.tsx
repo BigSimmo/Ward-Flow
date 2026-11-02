@@ -384,7 +384,7 @@ export function HelpTasks({
   const around = useMemo(() => {
     const walk = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id)) : undefined;
     return walk && canShowTask(walk, role, home, phone, showMeOn, pathname) ? walk : undefined;
-  }, [home, phone, role, screen, showMeOn]);
+  }, [home, pathname, phone, role, screen, showMeOn]);
   const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk").length : 0;
   const hereTiles = here.slice(0, 4);
 
