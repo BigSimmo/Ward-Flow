@@ -18,7 +18,10 @@ async function installer() {
 function fixture() {
   const root = mkdtempSync(path.join(os.tmpdir(), "ward-ci-install-"));
   roots.push(root);
-  writeFileSync(path.join(root, "package.json"), JSON.stringify({ name: "synthetic-install-fixture" }));
+  writeFileSync(
+    path.join(root, "package.json"),
+    JSON.stringify({ name: "synthetic-install-fixture", packageManager: "npm@11.17.0" }),
+  );
   const packages = { "node_modules/example": { version: "1.0.0" } };
   writeFileSync(path.join(root, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages }));
   return { root, packages };
@@ -39,6 +42,7 @@ describe("locked installation without lifecycle scripts", () => {
     mkdirSync(backend, { recursive: true });
     for (const file of ["package.json", "package-lock.json"])
       writeFileSync(path.join(backend, file), readFileSync(path.join(root, file)));
+    writeFileSync(path.join(backend, "package.json"), JSON.stringify({ name: "synthetic-backend-fixture" }));
     const calls: { command: string; args: string[]; cwd: string }[] = [];
     const result = installLockedDependencies({
       root: backend,
@@ -47,12 +51,16 @@ describe("locked installation without lifecycle scripts", () => {
       execute: (command: string, args: string[], options: { cwd: string }) => {
         calls.push({ command, args, cwd: options.cwd });
         expect(existsSync(path.join(backend, "node_modules", installedTreeStampName))).toBe(false);
+        if (args.includes("--version")) return { status: 0, stdout: "11.17.0\n" };
         populate(backend, packages);
         return { status: 0 };
       },
       log: () => {},
     });
-    expect(calls).toEqual([{ command: "npm", args: ["ci", "--ignore-scripts"], cwd: backend }]);
+    expect(calls).toEqual([
+      { command: "npm", args: ["--version"], cwd: backend },
+      { command: "npm", args: ["ci", "--ignore-scripts"], cwd: backend },
+    ]);
     expect(result.ok).toBe(true);
     expect(installedTreeParity(backend).ok).toBe(true);
   });
@@ -64,9 +72,15 @@ describe("locked installation without lifecycle scripts", () => {
   ])("never stamps an unsuccessful install: %j", async (runResult) => {
     const { installLockedDependencies } = await installer();
     const { root } = fixture();
-    expect(() => installLockedDependencies({ root, execute: () => runResult, env: {}, log: () => {} })).toThrow(
-      /locked install failed/i,
-    );
+    expect(() =>
+      installLockedDependencies({
+        root,
+        execute: (_command: string, args: string[]) =>
+          args.includes("--version") ? { status: 0, stdout: "11.17.0" } : runResult,
+        env: {},
+        log: () => {},
+      }),
+    ).toThrow(/locked install failed/i);
     expect(existsSync(path.join(root, "node_modules", installedTreeStampName))).toBe(false);
   });
   it("refuses a successful process whose installed metadata disagrees with the lock", async () => {
@@ -76,7 +90,8 @@ describe("locked installation without lifecycle scripts", () => {
       installLockedDependencies({
         root,
         env: {},
-        execute: () => {
+        execute: (_command: string, args: string[]) => {
+          if (args.includes("--version")) return { status: 0, stdout: "11.17.0" };
           populate(root, packages);
           writeFileSync(
             path.join(root, "node_modules", "example", "package.json"),
@@ -99,11 +114,75 @@ describe("locked installation without lifecycle scripts", () => {
       execPath: "/synthetic/node",
       execute: (command: string, args: string[]) => {
         calls.push([command, args]);
+        if (args.includes("--version")) return { status: 0, stdout: "11.17.0" };
         populate(root, packages);
         return { status: 0 };
       },
       log: () => {},
     });
-    expect(calls).toEqual([["/synthetic/node", ["/synthetic/npm-cli.js", "ci", "--ignore-scripts"]]]);
+    expect(calls).toEqual([
+      ["/synthetic/node", ["/synthetic/npm-cli.js", "--version"]],
+      ["/synthetic/node", ["/synthetic/npm-cli.js", "ci", "--ignore-scripts"]],
+    ]);
+  });
+  it("refuses the wrong npm before touching an existing dependency tree or attesting it", async () => {
+    const { installLockedDependencies } = await installer();
+    const { root, packages } = fixture();
+    populate(root, packages);
+    const original = readFileSync(path.join(root, "node_modules", "example", "index.js"), "utf8");
+    const calls: string[][] = [];
+    expect(() =>
+      installLockedDependencies({
+        root,
+        env: { npm_config_user_agent: "npm/11.17.0 node/v24.22.1" },
+        execute: (_command: string, args: string[]) => {
+          calls.push(args);
+          return { status: 0, stdout: "11.19.1\n" };
+        },
+        log: () => {},
+      }),
+    ).toThrow(/requires npm 11\.17\.0; detected 11\.19\.1/);
+    expect(calls).toEqual([["--version"]]);
+    expect(readFileSync(path.join(root, "node_modules", "example", "index.js"), "utf8")).toBe(original);
+    expect(existsSync(path.join(root, "node_modules", installedTreeStampName))).toBe(false);
+  });
+  it.each([
+    { status: 1 },
+    { status: null, signal: "SIGTERM" },
+    { status: null, error: new Error("synthetic probe failure") },
+  ])("refuses an unverifiable npm without starting install: %j", async (probeResult) => {
+    const { installLockedDependencies } = await installer();
+    const { root } = fixture();
+    const calls: string[][] = [];
+    expect(() =>
+      installLockedDependencies({
+        root,
+        env: {},
+        execute: (_command: string, args: string[]) => {
+          calls.push(args);
+          return probeResult;
+        },
+        log: () => {},
+      }),
+    ).toThrow(/Cannot verify pinned npm/);
+    expect(calls).toEqual([["--version"]]);
+    expect(existsSync(path.join(root, "node_modules"))).toBe(false);
+  });
+  it("refuses an unsupported manager before running any command", async () => {
+    const { installLockedDependencies } = await installer();
+    const { root } = fixture();
+    writeFileSync(path.join(root, "package.json"), JSON.stringify({ packageManager: "pnpm@11.17.0" }));
+    let invoked = false;
+    expect(() =>
+      installLockedDependencies({
+        root,
+        execute: () => {
+          invoked = true;
+          return { status: 0 };
+        },
+        log: () => {},
+      }),
+    ).toThrow(/exact npm@version packageManager pin/);
+    expect(invoked).toBe(false);
   });
 });

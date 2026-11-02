@@ -1,9 +1,10 @@
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { writeInstalledTreeStamp } from "../scripts/check-installed-lock-parity.mjs";
+import { installedTreeStampName, writeInstalledTreeStamp } from "../scripts/check-installed-lock-parity.mjs";
 
 import {
   findDependencyDonor,
@@ -97,6 +98,96 @@ describe("Codex Desktop worktree setup", () => {
   it("resolves npm's JavaScript entrypoint without executing a Windows command shim", () => {
     const resolved = resolveNpmCli();
     expect(resolved === null || /npm-cli\.js$/u.test(resolved)).toBe(true);
+  });
+
+  it.each([false, true])("keeps the verified npm and preserves files on backend probe failure: %s", (probeFails) => {
+    const root = fixture("16.2.12", true);
+    const environment = { ...process.env };
+    for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR"]) delete environment[key];
+    execFileSync("git", ["init", "--quiet", root], { env: environment, stdio: "pipe" });
+    const major = Number(process.versions.node.split(".")[0]);
+    writeFileSync(path.join(root, ".node-version"), process.versions.node);
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({ engines: { node: `>=${major}.0.0 <${major + 1}` }, packageManager: "npm@11.17.0" }),
+    );
+    const backend = path.join(root, "backend", "ward-flow");
+    mkdirSync(backend, { recursive: true });
+    writeFileSync(path.join(backend, "package.json"), JSON.stringify({ name: "synthetic-backend" }));
+    writeFileSync(path.join(backend, "package-lock.json"), readFileSync(path.join(root, "package-lock.json")));
+    const partialMarker = path.join(backend, "node_modules", "partial-marker");
+    mkdirSync(path.dirname(partialMarker), { recursive: true });
+    writeFileSync(partialMarker, "synthetic partial dependency");
+
+    const appData = path.join(root, "appdata");
+    const npmCli = path.join(appData, "npm", "node_modules", "npm", "bin", "npm-cli.js");
+    const events = path.join(root, "npm-calls.jsonl");
+    const staleMarker = path.join(root, "stale-npm-ran");
+    const staleCli = path.join(root, "stale-npm-cli.js");
+    const hooksMarker = path.join(root, "hooks-ran");
+    mkdirSync(path.dirname(npmCli), { recursive: true });
+    writeFileSync(
+      npmCli,
+      `const fs = require("node:fs");
+const path = require("node:path");
+const args = process.argv.slice(2);
+fs.appendFileSync(${JSON.stringify(events)}, JSON.stringify({ args, cwd: process.cwd(), cli: process.argv[1] }) + String.fromCharCode(10));
+if (args.length === 1 && args[0] === "--version") {
+  console.log(process.cwd() === ${JSON.stringify(backend)} && ${probeFails} ? "11.9.0" : "11.17.0");
+  process.exit(0);
+}
+if (args.join("|") !== "ci|--ignore-scripts") process.exit(19);
+if (fs.existsSync(${JSON.stringify(partialMarker)})) process.exit(20);
+const packages = JSON.parse(fs.readFileSync("package-lock.json", "utf8")).packages;
+for (const [location, entry] of Object.entries(packages)) {
+  if (!location) continue;
+  const directory = path.join(process.cwd(), location);
+  fs.mkdirSync(directory, { recursive: true });
+  fs.writeFileSync(path.join(directory, "package.json"), JSON.stringify({ version: entry.version }));
+}
+fs.writeFileSync(path.join("node_modules", ".package-lock.json"), JSON.stringify({ packages }));
+`,
+    );
+    writeFileSync(
+      staleCli,
+      `require("node:fs").writeFileSync(${JSON.stringify(staleMarker)}, "synthetic"); console.log("11.9.0");`,
+    );
+    mkdirSync(path.join(root, "scripts"));
+    writeFileSync(
+      path.join(root, "scripts", "install-git-hooks.mjs"),
+      `import { writeFileSync } from "node:fs"; writeFileSync(${JSON.stringify(hooksMarker)}, "synthetic");`,
+    );
+    const result = spawnSync(process.execPath, [path.resolve("scripts/setup-codex-worktree.mjs")], {
+      cwd: root,
+      encoding: "utf8",
+      timeout: 15_000,
+      env: { ...environment, APPDATA: appData, npm_execpath: staleCli },
+    });
+    expect(existsSync(staleMarker)).toBe(false);
+    const calls = readFileSync(events, "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line)) as { args: string[]; cwd: string; cli: string }[];
+    expect(calls[0]).toEqual({ args: ["--version"], cwd: root, cli: npmCli });
+    expect(calls).toContainEqual({ args: ["--version"], cwd: backend, cli: npmCli });
+    expect(installationIsComplete(root)).toBe(true);
+    if (probeFails) {
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("requires npm 11.17.0; detected 11.9.0");
+      expect(existsSync(partialMarker)).toBe(true);
+      expect(readFileSync(partialMarker, "utf8")).toBe("synthetic partial dependency");
+      expect(calls.filter((call) => call.args[0] === "ci")).toEqual([]);
+      expect(existsSync(path.join(backend, "node_modules", installedTreeStampName))).toBe(false);
+      expect(existsSync(hooksMarker)).toBe(false);
+    } else {
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      expect(calls.filter((call) => call.args[0] === "ci")).toEqual([
+        { args: ["ci", "--ignore-scripts"], cwd: backend, cli: npmCli },
+      ]);
+      expect(existsSync(partialMarker)).toBe(false);
+      expect(installationIsComplete(backend)).toBe(true);
+      expect(existsSync(hooksMarker)).toBe(true);
+    }
   });
 
   it("keeps the Windows Desktop bootstrap distinct from the Cloud Bash setup", () => {
