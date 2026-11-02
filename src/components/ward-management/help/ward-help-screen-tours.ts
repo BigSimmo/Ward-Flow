@@ -27,6 +27,12 @@ type Around = {
   /** The screen's name as Help's "On this screen" card shows it. */
   readonly name: string;
   readonly keywords?: string;
+  /**
+   * A page the rail does not list (one ward, one ED board), matched by its address in Help. Its walk
+   * round plays on the page already open, so it names no `go`, and its purpose is said here for the
+   * printed guide.
+   */
+  readonly page?: { readonly purpose: string };
   readonly steps: readonly ShowMeStep[];
 };
 
@@ -468,6 +474,83 @@ const AROUND: readonly Around[] = [
       },
     ],
   },
+  {
+    screen: "ward",
+    name: "this ward",
+    keywords: "ward beds bed board my ward round",
+    page: { purpose: "One ward's beds, who is coming and going, and the decisions due this shift." },
+    steps: [
+      {
+        target: starts("ward-unit-card-"),
+        title: "This ward",
+        body: "Beds ready now, the bed list, and what the page is still checking.",
+      },
+      {
+        target: id("ward-open-bed-board"),
+        title: "Place or move",
+        body: "Opens the bed board to place a patient in a bed or move one.",
+      },
+      {
+        target: id("ward-find-input"),
+        title: "Find on this ward",
+        body: "Find a bed or a person on this ward.",
+      },
+      {
+        device: "desk",
+        target: id("ward-open-tv"),
+        title: "The toolbar",
+        body: "On TV opens a read only screen for the ward's TV. Handover and More sit beside it.",
+      },
+      {
+        device: "desk",
+        target: id("ward-unit-beds"),
+        title: "Bed figures",
+        body: "Ready, pulled, closed and occupied beds, with when the ward last confirmed them.",
+      },
+      {
+        device: "phone",
+        target: id("ward-walk-round"),
+        title: "The round",
+        body: "Go through each patient in turn. The count shows how many are reviewed.",
+      },
+    ],
+  },
+  {
+    screen: "ed-board",
+    name: "this ED board",
+    keywords: "emergency department ed board waiting next step",
+    page: { purpose: "One emergency department's mental health patients, each row with its next step." },
+    steps: [
+      {
+        target: starts("ward-ed-card-"),
+        title: "This ED",
+        body: "Who is waiting here and who is in transit.",
+      },
+      {
+        device: "desk",
+        target: starts("ward-ed-next-"),
+        title: "Each row's next step",
+        body: "The button is the row's next step, such as Record exam or Log transport booking.",
+      },
+      {
+        device: "desk",
+        target: starts("ward-ed-form-pick-"),
+        title: "Legal form",
+        body: "The form on file. Type any expiry time from the paper form; nothing works it out.",
+      },
+      {
+        device: "desk",
+        target: id("ward-ed-inbox-group"),
+        title: "New referrals",
+        body: "Referrals waiting at this ED. Ask for a bed starts a bed request.",
+      },
+      {
+        target: [id("ward-ed-add-patient"), id("ward-phone-create")],
+        title: "Add a patient",
+        body: "Add patient registers a new synthetic person. On a phone it is under the plus button.",
+      },
+    ],
+  },
 ];
 
 /**
@@ -622,7 +705,12 @@ export const SCREEN_TOURS: readonly HowTo[] = AROUND.map((each) => ({
   keywords: `walkthrough explain screen page ${each.keywords ?? ""}`.trim(),
   answer: `A short walk round ${each.name}: Show me lights each part in turn and says what it shows. It never presses anything.`,
   desks: "all",
-  go: each.screen,
+  go: each.page ? undefined : each.screen,
   around: each.screen,
   showMe: each.steps,
 }));
+
+/** What a walked page is for, for its printed guide (rail screens take theirs from `SCREEN_HELP`). */
+export function aroundPagePurpose(screen: string): string | undefined {
+  return AROUND.find((each) => each.screen === screen)?.page?.purpose;
+}

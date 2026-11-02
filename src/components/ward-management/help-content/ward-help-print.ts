@@ -3,7 +3,7 @@ import { ROLE_REFERENCE } from "../help/ward-help-roles";
 import { COLOUR_LEGEND } from "../help/ward-help-legend";
 import { KEYBOARD_SHORTCUTS, SCREEN_HELP, shortcutsForDesk } from "../help/ward-help-content";
 import { HOW_TOS, showMeSteps } from "../help/ward-help-howto";
-import { SCREEN_TOURS } from "../help/ward-help-screen-tours";
+import { aroundPagePurpose, SCREEN_TOURS } from "../help/ward-help-screen-tours";
 
 /** Printable guides use exactly the same jobs, limits, names, legend and keys as in-app Help. */
 export function printHelpGuides() {
@@ -34,6 +34,8 @@ export function printHelpGuides() {
  * (`ward-help-screen-tours.ts`), the screen's own help, and the jobs done there. For training and for
  * the paper pack; it says the same as the app and nothing more.
  */
+const capitalised = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
 export function printScreenGuides() {
   return SCREEN_TOURS.map((tour) => {
     const screen = tour.around!;
@@ -42,8 +44,8 @@ export function printScreenGuides() {
     const phoneOnly = showMeSteps(tour, "phone").filter((step) => step.device === "phone");
     return {
       id: screen,
-      title: help?.title ?? tour.title.replace(/^Show me around /, ""),
-      purpose: help?.purpose ?? "",
+      title: help?.title ?? capitalised(tour.title.replace(/^Show me around (this )?/, "")),
+      purpose: help?.purpose ?? aroundPagePurpose(screen) ?? "",
       source: "in-app Help",
       parts: desk.map((step) => `${step.title}. ${step.body}`),
       onPhone: phoneOnly.map((step) => `${step.title}. ${step.body}`),

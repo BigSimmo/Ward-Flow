@@ -46,6 +46,8 @@ afterEach(() => {
 });
 
 const CAPACITY = { ...SCREEN_HELP.capacity, id: "capacity" };
+/** Page walk rounds: Help matches these pages by address, not by rail entry (2 Nov 2026). */
+const PAGE_WALKS = ["ward", "ed-board"];
 
 function renderCapacity(onShowMe = vi.fn(), showMeOn = true) {
   render(
@@ -70,8 +72,12 @@ describe("Show me around: the walk-rounds", () => {
     const screens = SCREEN_TOURS.map((tour) => tour.around);
     expect(new Set(screens).size).toBe(screens.length);
     for (const tour of SCREEN_TOURS) {
-      expect(SCREEN_HELP[tour.around!], tour.id).toBeDefined();
-      expect(tour.go, tour.id).toBe(tour.around);
+      // A rail screen opens first; a page walk round (one ward, one ED board) plays where it is opened.
+      if (PAGE_WALKS.includes(tour.around!)) expect(tour.go, tour.id).toBeUndefined();
+      else {
+        expect(SCREEN_HELP[tour.around!], tour.id).toBeDefined();
+        expect(tour.go, tour.id).toBe(tour.around);
+      }
       expect(showMeSteps(tour, "desk").length, `${tour.id} desk`).toBeGreaterThanOrEqual(2);
       expect(showMeSteps(tour, "phone").length, `${tour.id} phone`).toBeGreaterThanOrEqual(2);
       expect(HOW_TOS).toContain(tour);
@@ -141,5 +147,16 @@ describe("New highlighted jobs", () => {
     expect(ids("coordinator")).toEqual(expect.arrayContaining(["plan-return-home", "record-seclusion"]));
     expect(ids("ward")).not.toContain("plan-return-home");
     expect(ids("executive")).not.toContain("record-legal-form");
+  });
+});
+
+describe("Show me around a page", () => {
+  it("walks one ward and one ED board where they are open, with a printed guide each", () => {
+    for (const id of ["around-ward", "around-ed-board"]) {
+      const tour = SCREEN_TOURS.find((each) => each.id === id)!;
+      expect(tour.go, id).toBeUndefined();
+      expect(tour.title, id).toMatch(/^Show me around this /);
+    }
+    expect(askHelp("show me around this ward", "ward")[0]?.howTo.id).toBe("around-ward");
   });
 });
