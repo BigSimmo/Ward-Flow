@@ -3599,3 +3599,34 @@ details.refCard > summary {
   white-space: normal;
   text-overflow: clip;
 }
+
+/* Q288 (pre-launch review, 2 Nov 2026): the composer's short-screen fix (R7-04) sat only in the
+   phone rules, so at 844x390 the tablet layout kept its head fixed and its Send bar pinned, leaving
+   the form 116px to scroll. Under 500px tall, whatever the width, the composer scrolls as one: the
+   head scrolls away with the form and the Send bar sits at its end. The phone step sheets keep
+   their own pinned Back and Next (data-ph-mode, above). */
+@media screen and (max-height: 500px) {
+  .drawerWide:not([data-ph-mode]) {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .drawerWide:not([data-ph-mode]) > * {
+    flex-shrink: 0;
+  }
+
+  .drawerWide:not([data-ph-mode]) .sheetMain {
+    flex: 1 0 auto;
+    min-height: auto;
+  }
+
+  .drawerWide:not([data-ph-mode]) .sheetMain > .drawerBody,
+  .drawerWide:not([data-ph-mode]) .rail {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .drawerWide:not([data-ph-mode]) .sendReferralFoot {
+    position: static;
+  }
+}
