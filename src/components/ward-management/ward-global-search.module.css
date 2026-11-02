@@ -986,7 +986,7 @@ button.option {
   cursor: pointer;
 }
 
-/* Search improvements approved by Josh, 3 Nov 2026: highlights, Try asking, best match, taller tablet, phone sheet. */
+/* Search improvements approved by Josh, 3 Nov 2026: highlights, Try asking, the Go to row, taller tablet, phone sheet. */
 .hit {
   background: color-mix(in srgb, var(--wf-warning) 28%, transparent);
   color: inherit;
@@ -1024,13 +1024,13 @@ button.option {
   cursor: pointer;
 }
 
-.groupItem[data-best] .option {
+.groupItem[data-goto] .option {
   min-height: 52px;
   background: var(--wf-selected);
   box-shadow: inset 0 0 0 1px var(--wf-line-2);
 }
 
-.groupItem[data-best] .resultTitle {
+.groupItem[data-goto] .resultTitle {
   font-size: var(--wf-fs-15, 15px);
 }
 
@@ -1147,19 +1147,19 @@ a.askChip {
   text-decoration: none;
 }
 
-/* Best match: the key fact gets its own line, never cut off behind the title. */
-.groupItem[data-best] .resultContent {
+/* Go to row: the key fact gets its own line, never cut off behind the title. */
+.groupItem[data-goto] .resultContent {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
 }
 
-.groupItem[data-best] .resultMeta {
+.groupItem[data-goto] .resultMeta {
   white-space: normal;
   color: var(--wf-ink-2);
 }
 
-.groupItem[data-best] .resultTitle {
+.groupItem[data-goto] .resultTitle {
   max-width: 100%;
   white-space: normal;
 }

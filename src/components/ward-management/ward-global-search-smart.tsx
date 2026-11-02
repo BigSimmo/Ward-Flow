@@ -17,7 +17,7 @@ import type { SearchResultGroup, SearchResultItem } from "./ward-global-search-g
 
 /*
  * SEARCH IMPROVEMENTS (Josh, 3 Nov 2026, "reduce friction and improve functionality"): Try asking,
- * best match, the phone preview sheet and the quick patient action. Split from
+ * the Go to row, the phone preview sheet and the quick patient action. Split from
  * `ward-global-search.tsx`, which keeps the keyboard contract and every navigation guard.
  */
 
@@ -51,28 +51,28 @@ export function TryAsking({ census, onAsk }: { census: Census; onAsk: (phrase: s
 }
 
 /**
- * BEST MATCH: a screen or place whose name starts with what was typed (or has a word starting with
+ * GO TO: a screen or place whose name starts with what was typed (or has a word starting with
  * it, from three letters), or a record with that exact UMRN, leads the list. The caller makes it the
- * active row, so Enter opens it. Never a near spelling of a name: a person only becomes the best
- * match by their exact UMRN.
+ * active row, so Enter opens it. Never a near spelling of a name: a person only leads it
+ * by their exact UMRN.
  */
-export function withBestMatch(
+export function withGoTo(
   groups: SearchResultGroup[],
   allGroups: readonly SearchResultGroup[],
   query: string,
 ): SearchResultGroup[] {
   const q = query.toLowerCase();
-  const best = allGroups
+  const lead = allGroups
     .flatMap((group) => group.items)
     .find((item) =>
       ["view", "ward", "ed", "team"].includes(item.kind)
         ? item.title.toLowerCase().startsWith(q) || (q.length >= 3 && item.title.toLowerCase().includes(` ${q}`))
         : (item.umrn ?? item.subjectUmrn)?.toLowerCase() === q,
     );
-  if (!best) return groups;
+  if (!lead) return groups;
   return [
-    { key: "best", heading: "Best match", items: [best] },
-    ...groups.map((group) => ({ ...group, items: group.items.filter((item) => item !== best) })),
+    { key: "goto", heading: "Go to", items: [lead] },
+    ...groups.map((group) => ({ ...group, items: group.items.filter((item) => item !== lead) })),
   ].filter((group) => group.items.length > 0);
 }
 

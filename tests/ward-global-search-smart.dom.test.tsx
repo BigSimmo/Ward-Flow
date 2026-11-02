@@ -20,7 +20,7 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 
-/** Josh, 3 Nov 2026: Try asking, best match, highlights and the phone preview sheet. */
+/** Josh, 3 Nov 2026: Try asking, the Go to row, highlights and the phone preview sheet. */
 function ProvidedSearch({ onNavigate }: { onNavigate: (href: string) => void }) {
   const flow = useWardFlow();
   return (
@@ -63,17 +63,17 @@ describe("smart global search", () => {
   it("puts a place that starts with the words first, active, so Enter opens it", () => {
     const { input, onNavigate } = renderSearch();
     fireEvent.change(input, { target: { value: "bunbury" } });
-    const best = screen.getByTestId("ward-global-search-group-best");
-    expect(best).toHaveTextContent(/Best match/i);
+    const goTo = screen.getByTestId("ward-global-search-group-goto");
+    expect(goTo).toHaveTextContent(/Go to/);
     expect(input).toHaveAttribute("aria-activedescendant");
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 
-  it("never makes a person the best match from part of a name", () => {
+  it("never puts a person first from part of a name", () => {
     const { input, onNavigate } = renderSearch();
     fireEvent.change(input, { target: { value: "ridge" } });
-    expect(screen.queryByTestId("ward-global-search-group-best")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-global-search-group-goto")).not.toBeInTheDocument();
     expect(input).not.toHaveAttribute("aria-activedescendant");
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onNavigate).not.toHaveBeenCalled();

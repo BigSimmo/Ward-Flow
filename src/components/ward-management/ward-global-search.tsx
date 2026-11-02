@@ -71,7 +71,7 @@ import {
   SHEET_KINDS,
   TryAsking,
   quickPatientHref,
-  withBestMatch,
+  withGoTo,
 } from "./ward-global-search-smart";
 
 export {
@@ -619,7 +619,7 @@ export function WardGlobalSearch({
     const filter = KIND_FILTERS.find((candidate) => candidate.key === activeKind) ?? KIND_FILTERS[0];
     if (filter.key === "all") {
       const cut = allGroups.map((group) => ({ ...group, items: group.items.slice(0, MAX_RESULTS_PER_GROUP) }));
-      return withBestMatch(cut, allGroups, trimmed);
+      return withGoTo(cut, allGroups, trimmed);
     }
     return allGroups.filter((group) => filter.groups.includes(group.key));
   }, [isStart, startGroups, allGroups, activeKind, trimmed]);
@@ -648,13 +648,13 @@ export function WardGlobalSearch({
    */
   const optionsKey = useMemo(() => JSON.stringify(options.map(({ kind, id, href }) => [kind, id, href])), [options]);
   const [seenOptionsKey, setSeenOptionsKey] = useState(optionsKey);
-  // The best match is active without anyone choosing it: Enter opens it, but Home, End and Tab keep
+  // The Go to row is active without anyone choosing it: Enter opens it, but Home, End and Tab keep
   // their editing and group jobs until the arrows have moved (search audit, 3 Nov 2026).
   const [autoActive, setAutoActive] = useState(false);
   if (optionsKey !== seenOptionsKey) {
     setSeenOptionsKey(optionsKey);
-    setActiveIndex(groups[0]?.key === "best" ? 0 : -1);
-    setAutoActive(groups[0]?.key === "best");
+    setActiveIndex(groups[0]?.key === "goto" ? 0 : -1);
+    setAutoActive(groups[0]?.key === "goto");
     setHoverIndex(-1);
   }
 
@@ -1073,7 +1073,7 @@ export function WardGlobalSearch({
                   />
                 ) : null}
                 {groups.map((group) => (
-                  <div key={group.key} className={styles.groupItem} data-best={group.key === "best" || undefined}>
+                  <div key={group.key} className={styles.groupItem} data-goto={group.key === "goto" || undefined}>
                     <div>
                       <span className={styles.group} data-testid={`ward-global-search-group-${group.key}`}>
                         <span id={`${listId}-${group.key}-heading`}>
