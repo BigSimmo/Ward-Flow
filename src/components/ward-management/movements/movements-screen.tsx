@@ -97,7 +97,8 @@ type MovementsPlace = {
   order: "stands" | "cause" | "transport" | "wait";
   shapeTab: "stage" | "transport" | "waiting" | "resolved";
   sideView: "transport" | "shape";
-  phoneOpenGroups: ReadonlySet<string>;
+  /** Null until the reader opens or closes a group: then the first group with people is open (Q227). */
+  phoneOpenGroups: ReadonlySet<string> | null;
   showAll: boolean;
   highlight: string | null;
 };
@@ -205,8 +206,8 @@ export function MovementsScreen() {
   // v10 phone: Arrivals ahead reads as a list; the timeline opens under it on request.
   const [phoneArrivalsTimeline, setPhoneArrivalsTimeline] = useState(false);
   // v10 phone: each worklist group opens on its own "Show N more" row.
-  const [phoneOpenGroups, setPhoneOpenGroups] = useState<ReadonlySet<string>>(
-    () => returned?.phoneOpenGroups ?? new Set(),
+  const [phoneOpenGroups, setPhoneOpenGroups] = useState<ReadonlySet<string> | null>(
+    () => returned?.phoneOpenGroups ?? null,
   );
   // v6 worklist: a search over name, UMRN or ED, and a short list per group until Show all.
   const [search, setSearch] = useState("");
@@ -555,16 +556,23 @@ export function MovementsScreen() {
     capping
       ? rows.filter((movement, index) => index < cap || pinnedRowIds.has(movement.id) || isMarked(movement))
       : rows;
-  /* Device audit, 11 Oct 2026: on phone a group opens as its header and count; one tap shows its rows. */
+  /* Device audit, 11 Oct 2026: on phone a group opens as its header and count; one tap shows its rows.
+   * Q227 (2 Nov 2026): until the reader toggles one, the first group with people starts open. */
+  const firstPhoneGroup = (
+    order === "transport"
+      ? shownTransportGroups.map((g) => ({ id: g.id, n: g.rows.length }))
+      : shownStages.map((g) => ({ id: g.id, n: g.movements.length }))
+  ).find((g) => g.n > 0);
+  const openPhoneGroups: ReadonlySet<string> = phoneOpenGroups ?? new Set(firstPhoneGroup ? [firstPhoneGroup.id] : []);
   const groupRows = (id: string, rows: Movement[]) =>
     isPhone
-      ? phoneOpenGroups.has(id)
+      ? openPhoneGroups.has(id)
         ? rows
         : rows.filter((movement) => pinnedRowIds.has(movement.id) || isMarked(movement))
       : capRows(rows, GROUP_CAP);
   const togglePhoneGroup = (id: string) =>
     setPhoneOpenGroups((open) => {
-      const next = new Set(open);
+      const next = new Set(open ?? openPhoneGroups);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
@@ -1218,7 +1226,7 @@ export function MovementsScreen() {
                                   id={stage.id}
                                   title={stage.label}
                                   people={stage.movements.length}
-                                  open={phoneOpenGroups.has(stage.id)}
+                                  open={openPhoneGroups.has(stage.id)}
                                   onToggle={() => togglePhoneGroup(stage.id)}
                                 />
                               ) : (
@@ -1257,7 +1265,7 @@ export function MovementsScreen() {
                                   id={group.id}
                                   title={group.title}
                                   people={group.rows.length}
-                                  open={phoneOpenGroups.has(group.id)}
+                                  open={openPhoneGroups.has(group.id)}
                                   onToggle={() => togglePhoneGroup(group.id)}
                                 />
                               ) : (

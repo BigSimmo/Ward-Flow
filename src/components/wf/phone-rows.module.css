@@ -3,8 +3,9 @@
  * applies above 48rem.
  *
  * - `.chipRow` on a row of filter or highlight chips: one row that slides sideways, with Home's soft
- *   fade at the right edge to show there is more. Put `.chip` on each chip (34px tall with a 48px tap
- *   area, as Home's ED chips) and `.zero` on a chip whose count is 0 (muted, moved to the end).
+ *   fade at the right edge to show there is more. Put `.chip` on each chip (40px tall with a 48px tap
+ *   area; Q225, 2 Nov 2026: the house minimum is a 40px control, they were 34px) and `.zero` on a
+ *   chip whose count is 0 (muted, moved to the end).
  * - `.heroPill` on a button in a page's dark hero band: Home's changes pill (40px, the app's control
  *   corner, a soft translucent face), in place of tall full-width hero buttons. `.heroPills` lays two
  *   or three of them side by side.
@@ -16,8 +17,8 @@
     gap: var(--wf-s-2);
     min-width: 0;
     max-width: 100%;
-    padding-block: 7px;
-    margin-block: -7px;
+    padding-block: 4px;
+    margin-block: -4px;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
@@ -41,7 +42,7 @@
 
   .chip.chip {
     position: relative;
-    height: 34px;
+    height: 40px;
     min-height: 0;
     padding-inline: 12px;
     font-size: var(--wf-fs-13);
@@ -50,7 +51,7 @@
   .chip.chip::before {
     content: "";
     position: absolute;
-    inset: -7px 0;
+    inset: -4px 0;
   }
 
   .zero.zero {

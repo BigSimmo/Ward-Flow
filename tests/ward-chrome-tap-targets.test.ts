@@ -153,16 +153,16 @@ describe("Phone service chip tap target (overall review, 20 Oct 2026)", () => {
     return values;
   }
 
-  it("gives the service button a 24px box (WCAG 2.5.8) without moving its line", () => {
+  it("gives the service button a 40px box (Q225, 2 Nov 2026) without moving its line", () => {
     const css = read(BAR_CSS);
     const base = exactRuleBody(css, "scopeBadgeBtn");
     expect(base).toMatch(/display:\s*inline-flex/u);
-    // The last phone rule wins: at least 24px, not the 18px line it used to be.
-    expect(phoneValues(css, ".scopeBadgeBtn", "min-height").at(-1)).toBe("24px");
-    // The 3px it gains on each side come back from its margins, so nothing beside it shifts.
-    expect(phoneValues(css, ".scopeBadgeBtn", "margin-block").at(-1)).toBe("calc(-0.75rem - 3px)");
-    // And its 48px hit area stays 48px: 24px plus 12px above and below.
-    expect(phoneValues(css, ".scopeBadgeBtn::before", "inset").at(-1)).toBe("-12px -8px");
+    // The last phone rule wins: the house 40px minimum, not the 18px line or the old 24px box.
+    expect(phoneValues(css, ".scopeBadgeBtn", "min-height").at(-1)).toBe("40px");
+    // The 11px it gains on each side come back from its margins, so nothing beside it shifts.
+    expect(phoneValues(css, ".scopeBadgeBtn", "margin-block").at(-1)).toBe("calc(-0.75rem - 11px)");
+    // And its 48px hit area stays 48px: 40px plus 4px above and below.
+    expect(phoneValues(css, ".scopeBadgeBtn::before", "inset").at(-1)).toBe("-4px -8px");
   });
 });
 

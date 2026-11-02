@@ -555,6 +555,22 @@ select.ctl {
 .tile:first-child {
   border-left: 0;
 }
+
+/* Q228 (design review, 2 Nov 2026): at tablet width the four summary tiles wrap two by two, so the
+ * third is not cut off. */
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tile:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .tile:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+}
 .tile:hover {
   background: var(--wf-hover);
 }

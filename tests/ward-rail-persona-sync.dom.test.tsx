@@ -177,8 +177,8 @@ describe("a desk opened by its link (overall review, 20 Oct 2026)", () => {
     renderAt("/ward-flow/ed/rph-ed");
     expect(screen.getByTestId("ward-rail-viewing-desk")).toHaveTextContent("Viewing RPH ED as Bed coordinator");
     expect(trigger().getAttribute("aria-label")).toContain(
-      // Q58 (Josh, 31 Oct 2026): the person card names the person surname first.
-      "Chen, Dr S., Bed coordinator. Viewing RPH ED as Bed coordinator.",
+      // Q226 (Josh, 2 Nov 2026): the person card names the person as written.
+      "Dr S. Chen, Bed coordinator. Viewing RPH ED as Bed coordinator.",
     );
   });
 
