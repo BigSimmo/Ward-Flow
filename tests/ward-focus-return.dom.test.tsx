@@ -3,7 +3,8 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { cycleTabWithin, focusIsLost, rememberOpener, returnFocusToOpener } from "@/components/wf/focus-return";
+import { rememberOpener, returnFocusToOpener } from "@/components/wf/focus-opener";
+import { cycleTabWithin, focusIsLost } from "@/components/wf/focus-return";
 
 function button(testId: string, parent: HTMLElement = document.body) {
   const element = document.createElement("button");

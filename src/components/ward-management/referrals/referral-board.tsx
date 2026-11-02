@@ -26,7 +26,8 @@ import { ChevronRight, ClipboardList, ListOrdered, TriangleAlert, X } from "luci
 
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet, overlayOpener } from "@/components/wf/sheet-focus";
-import { focusIsLost, rememberOpener, returnFocusToOpener, type FocusOpener } from "@/components/wf/focus-return";
+import { focusIsLost } from "@/components/wf/focus-return";
+import { rememberOpener, returnFocusToOpener, type FocusOpener } from "@/components/wf/focus-opener";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { type Movement, type Referral } from "@/components/ward-management/ward-model";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
@@ -381,7 +382,6 @@ export function ReferralBoard({
   const closeDetail = useCallback(() => {
     // `null`, not `undefined`: a closed detail stays closed rather than falling back to the default.
     setSelectedReferralId(null);
-    // A3 (2 Nov 2026): a phone list is inert while the detail is open, so its row is found again next frame.
     const opener = triggerRef.current;
     if (returnFocusToOpener(opener)) return;
     window.requestAnimationFrame(() => {
