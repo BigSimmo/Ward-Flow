@@ -4021,3 +4021,9 @@
     padding: 0;
   }
 }
+
+/* Q311 (Josh, 2 Nov 2026): the two-pane Tools sheet, from 1280 wide. */
+.drawerSheetToolsTwoPane.drawerSheetToolsTwoPane {
+  width: min(calc(100vw - 1.5rem), 50rem);
+  max-width: min(calc(100vw - 1.5rem), 50rem);
+}

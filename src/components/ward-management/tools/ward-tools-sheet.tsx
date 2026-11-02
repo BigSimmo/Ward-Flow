@@ -1,17 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import { Children, type ReactNode, useEffect, useRef, useState, useReducer } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   ArrowUpRight,
   BarChart3,
-  BedDouble,
   BedSingle,
+  BellRing,
+  CalendarCheck,
   CalendarClock,
   ChevronDown,
   ChevronRight,
-  ClipboardCopy,
   Clock3,
   FileClock,
   FileText,
@@ -19,586 +18,728 @@ import {
   Inbox,
   Map as MapIcon,
   MapPinned,
+  MessageSquareText,
   Phone,
+  PhoneCall,
   Plus,
   Printer,
   Scale,
-  Search,
+  SearchCheck,
+  Truck,
   type LucideIcon,
 } from "lucide-react";
 
-import { useDueSoonThresholds, useWardFlowClock, useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
-import { WardRoleSwitcher } from "../ward-public-role-switcher";
-import { contactForTeam } from "../community/community-team-contact-mapping";
-import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-routes";
-import { handoverHref } from "../shell/ward-facade";
-import { useAccessNavFilter, useCanOpenHref } from "../shell/ward-access";
-import { useEffectiveWardAccess } from "../shell/ward-access-store";
-import { useRoleGate, useRouteRole } from "../ward-role-gate";
-import { seesNetworkBedFigures, type WardAccessRole } from "../ward-role-access";
-import { bedSummaryText } from "./ward-bed-summary";
-import { WardBedFinder } from "./ward-bed-finder";
-import { WardToolsContacts } from "./ward-tools-contacts";
-import { WardDemoPanel } from "./ward-demo-panel";
-import { WardFormTimes } from "./ward-form-times";
-import { NetworkFigures } from "./ward-network-figures";
-import styles from "./ward-tools-sheet.module.css";
-import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { WardRoleSwitcher } from "@/components/ward-management/ward-public-role-switcher";
+import { contactForTeam } from "@/components/ward-management/community/community-team-contact-mapping";
+import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "@/components/ward-management/reports/report-routes";
+import { handoverHref } from "@/components/ward-management/shell/ward-facade";
+import { useAccessNavFilter, useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { seesNetworkBedFigures, type WardAccessRole } from "@/components/ward-management/ward-role-access";
+import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
+import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
-import { releasedCountText } from "../statistics/statistics-small-numbers";
-import { WARD_REFERRAL_INTAKE_HREF } from "../ward-nav";
+import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import { useExecutiveStatisticsControl } from "@/components/ward-management/statistics/executive-statistics-context";
+// D-91: the one suburb lookup card, shared with Community and the ward's Discharges tab.
+import { SuburbLookupCard } from "@/components/ward-redesign/community/suburb-lookup-card";
+import { buttonClass, Count, SearchField } from "@/components/wf";
 
-const WardCatchmentResolver = dynamic(
-  withLoadRetry(
-    () => import("./ward-catchment-resolver").then((m) => m.WardCatchmentResolver),
-    "Catchment lookup did not load",
-  ),
-  { ssr: false },
-);
-
-// The synthetic hospital feed inbox (fix plan item 5) loads only when its row is opened.
-const WardFeedInbox = dynamic(() => import("./ward-feed-inbox").then((m) => m.WardFeedInbox), { ssr: false });
+import { ToolFeed, ReceiveNextFeedMessage, useFeedWaitingCount } from "./ward-tool-feed";
+import { ToolFigures } from "./ward-tool-figures";
+import { ToolFindBed } from "./ward-tool-find-bed";
+import { ToolFormTimes } from "./ward-tool-form-times";
+import { ToolLeaveDue, useLeaveDueCount } from "./ward-tool-leave-due";
+import { ToolMessages } from "./ward-tool-messages";
+import { ToolOnCall } from "./ward-tool-on-call";
+import { ToolRemindMe, useReminderCount } from "./ward-tool-remind-me";
+import styles from "./ward-tools-sheet-v3.module.css";
 
 const root = "/ward-flow";
 
 export type ToolsSheetToolId =
-  "figures" | "update-bed" | "bed-finder" | "catchment" | "contacts" | "form-times" | "bed-summary" | "demo" | "feed";
+  | "update-bed"
+  | "remind"
+  | "book-transport"
+  | "feed"
+  | "bed-finder"
+  | "figures"
+  | "leave-due"
+  | "catchment"
+  | "contacts"
+  | "form-times"
+  | "messages"
+  | "demo";
+
+type EntryKey =
+  | ToolsSheetToolId
+  | "new-referral"
+  | "log-delay"
+  | "legal-forms"
+  | "out-of-area"
+  | "handover"
+  | "downtime"
+  | "chronology";
+
+type GroupId = "do" | "look" | "share";
 
 export type WardToolsSheetProps = {
   isPhone: boolean;
+  /** Two panes (Q311): the list on the left, the open tool on the right. Wide desktops only. */
+  twoPane?: boolean;
   /** Who the screen is showing, in words ("Bed coordinator"). */
   roleLabel: string;
   /** Close the sheet; every link calls it as it navigates. */
   onNavigate: () => void;
-  /** Opens the referral slide-out; the catchment result asks for the community destination. */
+  /** Opens the referral slide-out; the suburb result asks for the community destination. */
   onNewReferral: (destination?: "ward" | "community") => void;
   /** A tool to open on arrival, and a counter so the same request can be made again. */
   openRequest?: { tool: ToolsSheetToolId; seq: number };
-  /** Called once the request is used, so the parent can clear it and a later open starts at the top. */
   onRequestHandled?: () => void;
 };
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
-  // A group the search (or the desk's role) has emptied is left out, heading and all.
-  if (Children.count(children) === 0) return null;
-  return (
-    <section className={styles.group} aria-label={title}>
-      <h3 className={styles.groupHeading}>{title}</h3>
-      <div className={styles.card}>{children}</div>
-    </section>
+/**
+ * Each desk's own order (Josh, 2 Nov 2026: "improve all the different modes"), so the tool a desk
+ * reaches for most leads its group. A desk's gates below still drop what it may not use: this list
+ * only orders, it never grants.
+ */
+const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> = {
+  coordinator: {
+    do: ["new-referral", "update-bed", "remind", "book-transport", "log-delay", "feed"],
+    look: ["bed-finder", "figures", "leave-due", "catchment", "contacts", "form-times", "legal-forms", "out-of-area"],
+    share: ["messages", "handover", "downtime", "chronology"],
+  },
+  bed_manager: {
+    do: ["update-bed", "remind", "log-delay", "book-transport", "feed"],
+    look: ["bed-finder", "leave-due", "figures", "contacts", "form-times", "catchment", "legal-forms"],
+    share: ["messages", "handover", "downtime"],
+  },
+  ward: {
+    do: ["update-bed", "remind", "log-delay", "book-transport", "feed"],
+    look: ["leave-due", "form-times", "contacts", "bed-finder", "catchment", "legal-forms"],
+    share: ["handover", "messages", "downtime"],
+  },
+  ed: {
+    do: ["new-referral", "book-transport", "remind", "log-delay"],
+    look: ["bed-finder", "form-times", "contacts", "catchment", "legal-forms"],
+    share: ["handover", "downtime"],
+  },
+  community: {
+    do: ["new-referral", "remind", "log-delay"],
+    look: ["catchment", "contacts", "form-times", "legal-forms", "bed-finder"],
+    share: ["downtime"],
+  },
+  officer: { do: ["remind"], look: ["contacts", "catchment"], share: [] },
+  executive: { do: ["remind"], look: ["figures", "bed-finder", "contacts"], share: ["messages", "downtime"] },
+  admin: { do: [], look: ["contacts", "catchment"], share: [] },
+};
+
+/** Q309: until a desk has used a tool, the row offers its three most likely ones. */
+const ROLE_SUGGESTED: Record<WardAccessRole, readonly ToolsSheetToolId[]> = {
+  coordinator: ["bed-finder", "update-bed", "messages"],
+  bed_manager: ["update-bed", "bed-finder", "leave-due"],
+  ward: ["update-bed", "leave-due", "form-times"],
+  ed: ["bed-finder", "form-times", "contacts"],
+  community: ["catchment", "contacts", "remind"],
+  officer: ["contacts", "catchment", "remind"],
+  executive: ["figures", "messages", "bed-finder"],
+  admin: ["contacts", "catchment"],
+};
+
+/** The groups, in order. Each tints its row icons (Q315). */
+const GROUPS: readonly { id: GroupId; title: string }[] = [
+  { id: "do", title: "Do now" },
+  { id: "look", title: "Look up" },
+  { id: "share", title: "Print and share" },
+];
+
+// Q309: the last four tools opened, in this browser only (a convenience, never a record).
+const RECENT_KEY = "ward-flow:tools-recent";
+const recentListeners = new Set<() => void>();
+const NO_RECENT: readonly ToolsSheetToolId[] = [];
+let recentCache: readonly ToolsSheetToolId[] | null = null;
+function readRecent(): readonly ToolsSheetToolId[] {
+  if (recentCache) return recentCache;
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
+    recentCache = Array.isArray(parsed)
+      ? (parsed.filter((item) => typeof item === "string") as ToolsSheetToolId[])
+      : NO_RECENT;
+  } catch {
+    recentCache = NO_RECENT;
+  }
+  return recentCache;
+}
+function pushRecent(id: ToolsSheetToolId) {
+  if (id === "demo") return;
+  recentCache = [id, ...readRecent().filter((item) => item !== id)].slice(0, 4);
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recentCache));
+  } catch {
+    // Blocked storage: the row still works for this visit.
+  }
+  recentListeners.forEach((listener) => listener());
+}
+function useRecent(): readonly ToolsSheetToolId[] {
+  return useSyncExternalStore(
+    (listener) => {
+      recentListeners.add(listener);
+      return () => recentListeners.delete(listener);
+    },
+    readRecent,
+    () => NO_RECENT,
   );
 }
 
-function RowText({ icon: Icon, name, detail }: { icon: LucideIcon; name: string; detail: string }) {
+type Entry = {
+  key: EntryKey;
+  icon: LucideIcon;
+  name: string;
+  /** Q313: two to four words. */
+  detail: string;
+  /** Q312: a live count, in the kit's count badge. */
+  count?: { n: number; label: string; act?: boolean };
+  /** A link row opens a page; a tool row opens here. */
+  href?: string;
+  onClick?: () => void;
+  body?: ReactNode;
+};
+
+function RowText({ entry, group }: { entry: Entry; group: GroupId }) {
+  const Icon = entry.icon;
   return (
     <>
-      <span className={styles.rowIcon} aria-hidden="true">
+      <span className={styles.rowIcon} data-group={group} aria-hidden="true">
         <Icon aria-hidden="true" strokeWidth={1.75} />
       </span>
       <span className={styles.rowText}>
-        <strong>{name}</strong>
-        <em>{detail}</em>
+        <strong>{entry.name}</strong>
+        <em>{entry.detail}</em>
       </span>
+      {entry.count && entry.count.n > 0 ? (
+        <Count
+          n={entry.count.n}
+          label={entry.count.label}
+          className={entry.count.act ? styles.countAct : styles.count}
+        />
+      ) : null}
     </>
   );
 }
 
-function LinkRow({
-  href,
-  icon,
-  name,
-  detail,
-  onNavigate,
-}: {
-  href: string;
-  icon: LucideIcon;
-  name: string;
-  detail: string;
-  onNavigate: () => void;
-}) {
-  // DA-09 (design audit, 19 Oct 2026): a row is offered only to a desk that may open its page, by
-  // the same role table the menu reads, so no Tools row ends at "Not part of your role".
-  const canOpen = useCanOpenHref();
-  if (!canOpen(href)) return null;
-  return (
-    <Link href={href} className={styles.row} onClick={onNavigate}>
-      <RowText icon={icon} name={name} detail={detail} />
-      {/* Tools redesign (approved 31 Oct 2026): a row that opens a page ends in an arrow out; a row
-          that opens here, in a caret. The spoken words say the same. */}
-      <ArrowUpRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
-      <span className="sr-only">, opens its page</span>
-    </Link>
-  );
-}
-
-/** P023: the wards a desk may open, each to its own page, under "Choose a ward". */
+/** P023: the wards a network desk may open, each to its own page. */
 function UpdateBedWards({ onNavigate }: { onNavigate: () => void }) {
   const { units } = useWardFlowSelect("units");
   const canOpen = useCanOpenHref();
-  const wards = units.filter((unit) => canOpen(`${root}/ward/${unit.id}`));
+  const [query, setQuery] = useState("");
+  const words = query.trim().toLowerCase();
+  const wards = units
+    .filter((unit) => canOpen(`${root}/ward/${unit.id}`))
+    .filter((unit) => !words || unit.name.toLowerCase().includes(words));
   return (
-    <>
-      <h3 id="ward-tools-update-bed-heading" className={styles.choiceLabel}>
-        Choose a ward
-      </h3>
-      <ul className={styles.contactList} aria-labelledby="ward-tools-update-bed-heading">
-        {wards.map((unit) => (
+    <div className={styles.toolBody}>
+      <SearchField label="Find a ward" placeholder="Find a ward" value={query} onValueChange={setQuery} />
+      <ul className={styles.wardList} aria-label="Choose a ward">
+        {wards.slice(0, 8).map((unit) => (
           <li key={unit.id}>
-            <Link href={`${root}/ward/${unit.id}`} className={styles.matchRow} onClick={onNavigate}>
+            <Link href={`${root}/ward/${unit.id}`} className={styles.wardRow} onClick={onNavigate}>
               <span>{unit.name}</span>
               <ChevronRight aria-hidden="true" strokeWidth={1.75} />
             </Link>
           </li>
         ))}
       </ul>
-    </>
-  );
-}
-
-function ToolRow({
-  id,
-  icon,
-  name,
-  detail,
-  open,
-  onToggle,
-  children,
-  rowRef,
-}: {
-  id: ToolsSheetToolId;
-  icon: LucideIcon;
-  name: string;
-  detail: string;
-  open: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-  rowRef?: (node: HTMLDivElement | null) => void;
-}) {
-  return (
-    <div className={styles.tool} data-open={open || undefined} ref={rowRef}>
-      <button
-        type="button"
-        className={styles.row}
-        aria-expanded={open}
-        aria-controls={`ward-tools-${id}`}
-        data-testid={`ward-tools-toggle-${id}`}
-        onClick={onToggle}
-      >
-        <RowText icon={icon} name={name} detail={detail} />
-        <ChevronDown className={styles.rowCaret} aria-hidden="true" strokeWidth={1.75} />
-      </button>
-      {open ? (
-        <div id={`ward-tools-${id}`} className={styles.toolPanel}>
-          {children}
-        </div>
-      ) : null}
+      {wards.length > 8 ? <p className={styles.quiet}>Type to find the other {wards.length - 8} wards.</p> : null}
     </div>
   );
 }
 
-function BedSummary() {
-  return useExecutiveStatisticsControl().executive ? <ExecutiveBedSummary /> : <OperationalBedSummary />;
+/** Q316: hands the typed words to the header's Search Ward Flow box. The words stay in the app. */
+function searchWardFlow(words: string, close: () => void) {
+  close();
+  window.requestAnimationFrame(() => {
+    const input = document.querySelector<HTMLInputElement>('input[placeholder="Search Ward Flow"]');
+    if (!input) return;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, words);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.focus();
+  });
 }
-function ExecutiveBedSummary() {
-  const report = useExecutiveStatistics();
-  const [status, setStatus] = useState("");
-  if (!report) return <p role="status">Bed summary is unavailable until this report is ready.</p>;
-  // C04, the 5 Sep 2026 ruling: a ready figure says how many of those beds are still being made
-  // ready, in the other screens' words. The figure itself is unchanged, and a zero says nothing.
-  const preparing = (beds: { beingMadeReady: number }) =>
-    beds.beingMadeReady > 0
-      ? ` (${beds.beingMadeReady} of the ready ${beds.beingMadeReady === 1 ? "bed is" : "beds are"} still being made ready)`
-      : "";
-  const text = `${report.network.scope.kind === "service" ? report.network.scope.service : "Whole network"} · synthetic prototype\n${report.network.beds.ready} beds ready${preparing(report.network.beds)}, ${report.network.beds.occupied} occupied, ${report.network.beds.pulled} pulled.\n${report.services
-    .filter((service) => report.network.scope.kind === "statewide" || service.service === report.network.scope.service)
-    .map(
-      (service) =>
-        `${service.service}: ${service.beds.ready} beds ready${preparing(service.beds)}, ${releasedCountText(service.waiting)} waiting in ED`,
-    )
-    .join("\n")}`;
-  return (
-    <div className={styles.toolBody} data-testid="ward-tools-bed-summary">
-      <pre className={styles.summaryText}>{text}</pre>
-      <button
-        type="button"
-        className={styles.primaryButton}
-        onClick={async () => {
-          try {
-            await copyTextToClipboard(text);
-            setStatus("Bed summary copied. Paste it into the email or Teams message.");
-          } catch {
-            setStatus("Copy is unavailable in this browser. Select the text instead.");
-          }
-        }}
-      >
-        Copy bed summary
-      </button>
-      <p className={styles.liveNote} role="status">
-        {status}
-      </p>
-    </div>
-  );
-}
-function OperationalBedSummary() {
-  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
-    "units",
-    "admissions",
-    "movements",
-    "bedReleases",
-    "leaveBeds",
-  );
-  const now = useWardFlowClock();
-  const thresholds = useDueSoonThresholds();
-  const network = useWardNetwork();
-  const text = bedSummaryText({ units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network });
-  const [status, setStatus] = useReducer(
-    (previous: { text: string; revision: number }, text: string) => ({ text, revision: previous.revision + 1 }),
-    { text: "", revision: 0 },
-  );
-  return (
-    <div className={styles.toolBody} data-testid="ward-tools-bed-summary">
-      <pre className={styles.summaryText}>{text}</pre>
-      <div className={styles.demoRow}>
-        <button
-          type="button"
-          className={styles.primaryButton}
-          onClick={async () => {
-            try {
-              await copyTextToClipboard(text);
-              setStatus("Bed summary copied. Paste it into the email or Teams message.");
-            } catch {
-              setStatus("Copy is unavailable in this browser. Select the text instead.");
-            }
-          }}
-        >
-          <ClipboardCopy aria-hidden="true" strokeWidth={1.75} />
-          Copy bed summary
-        </button>
-      </div>
-      <p className={styles.liveNote} role="status">
-        <span key={status.revision}>{status.text}</span>
-      </p>
-    </div>
-  );
-}
-
-/** One entry in a Tools group, with the words the search box matches. */
-type ToolsEntry = { key: string; name: string; detail: string; href?: string; show?: boolean; node: ReactNode };
 
 /**
- * The Tools sheet, rebuilt from the 15 Oct 2026 Tools review (`/mnt/project-files/reviews/
- * tools-sidebar-review-2026-10-15.md`): one scrolling sheet instead of five tabs. Do now, Look up
- * (All figures first), Print and share, More pages and Demo at the foot. The "Service now" figures
- * block left on 19 Oct 2026 (simplification A5): every page already leads with its own figures. Appearance, Settings, the Digest and the repeated shortcut grids are
- * gone because the rail already carries them. Phone uses the same sheet. Bed meeting TV left on
- * 21 Oct 2026 (change 8, D-77): it has its own place in the rail's More pages. The Tools redesign
- * (approved by Josh, 31 Oct 2026) adds a Search tools box, folds More pages and the Hospital feed
- * into the three groups, and ends each row with what it does: an arrow out opens the tool's page, a
- * caret opens the tool here.
+ * The Tools sheet, overhauled (Q308-Q326, approved by Josh 2 Nov 2026). Search and a Recent row lead;
+ * then Do now, Look up and Print and share in each desk's own order, with live counts and short lines.
+ * One tool opens at a time and scrolls into view; from 1280 wide the open tool sits in its own pane.
+ * Viewing as and the Demo controls sit together at the foot.
  */
 export function WardToolsSheet({
   isPhone,
+  twoPane = false,
   roleLabel,
   onNavigate,
   onNewReferral,
   openRequest,
   onRequestHandled,
 }: WardToolsSheetProps) {
-  // DA-09: a ward desk updates its own ward's beds; the statewide list is not part of that desk.
   const accessNav = useAccessNavFilter();
   const updateBedHref = accessNav([{ id: "wards", href: `${root}/wards`, label: "Update a bed" }])[0]?.href;
   const canOpen = useCanOpenHref();
   const executive = useExecutiveStatisticsControl().executive;
-  // The new frame (Josh, 31 Oct 2026) drops the header's Synthetic pill, so the Demo controls live
-  // here on a desktop too, where the board clock opens them. The executive chrome keeps its pill.
-  const showDemo = isPhone || !executive;
-  const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
-  // Audit 1 Nov 2026 (item 9, D-80): Log a delay records a blocker, so only a desk whose role may
-  // record one is offered it, by the same gate the phone Create sheet asks.
+  const role: WardAccessRole = useEffectiveWardAccess().role;
+  const networkFigures = seesNetworkBedFigures(role);
   const gate = useRoleGate();
   const canLogDelay = gate("RECORD_MOVEMENT_BLOCKER").allowed;
-  // Audit 1 Nov 2026 (item 10): Decision 47. The transport officer and the access admin see no
-  // network bed figures, so Find a bed, All figures and Copy bed summary are left out for them. The
-  // access admin borrows the executive chrome, so its access role is read first.
-  const routeRole = useRouteRole();
-  const accessRole: WardAccessRole = useEffectiveWardAccess().role === "admin" ? "admin" : routeRole;
-  const networkFigures = seesNetworkBedFigures(accessRole);
-  const [open, setOpen] = useState<ReadonlySet<ToolsSheetToolId>>(() => new Set());
+  const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
+  const { counts } = useWardNavCounts();
+  const feedCount = useFeedWaitingCount();
+  const reminderCount = useReminderCount();
+  const leaveCount = useLeaveDueCount();
+  const recent = useRecent();
+
+  const [open, setOpen] = useState<ToolsSheetToolId | null>(null);
   const [query, setQuery] = useState("");
-  const rows = useRef(new Map<ToolsSheetToolId, HTMLDivElement>());
-  const toggle = (id: ToolsSheetToolId) =>
-    setOpen((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  const rowRef = (id: ToolsSheetToolId) => (node: HTMLDivElement | null) => {
-    if (node) rows.current.set(id, node);
-    else rows.current.delete(id);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const rows = useRef(new Map<string, HTMLElement>());
+
+  const openTool = (id: ToolsSheetToolId) => {
+    // Q310: one tool at a time; opening another closes the first.
+    setOpen((current) => (current === id && !twoPane ? null : id));
+    pushRecent(id);
+    if (twoPane) return;
+    window.requestAnimationFrame(() =>
+      window.requestAnimationFrame(() =>
+        rows.current.get(id)?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() }),
+      ),
+    );
   };
 
   useEffect(() => {
     if (!openRequest) return;
-    let cancelled = false;
-    let frame = 0;
-    let scroll = 0;
-    // The row opens straight away (a microtask, not an animation frame), so a slow or paused page
-    // still shows the asked-for tool; only the scroll waits for the frames after it has drawn.
     queueMicrotask(() => {
-      if (cancelled) return;
-      // A requested tool must show, so any search is cleared first.
       setQuery("");
-      setOpen((current) => new Set(current).add(openRequest.tool));
-      frame = window.requestAnimationFrame(() => {
-        scroll = window.requestAnimationFrame(() => {
-          rows.current.get(openRequest.tool)?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
-          onRequestHandled?.();
-        });
-      });
+      setOpen(openRequest.tool);
+      onRequestHandled?.();
     });
-    return () => {
-      cancelled = true;
-      window.cancelAnimationFrame(frame);
-      window.cancelAnimationFrame(scroll);
-    };
   }, [openRequest, onRequestHandled]);
 
-  const tool = (
-    id: ToolsSheetToolId,
-    icon: LucideIcon,
-    name: string,
-    detail: string,
-    body: ReactNode,
-    show?: boolean,
-  ): ToolsEntry => ({
-    key: id,
-    name,
-    detail,
-    show,
-    node: (
-      <ToolRow
-        key={id}
-        id={id}
-        icon={icon}
-        name={name}
-        detail={detail}
-        open={open.has(id)}
-        onToggle={() => toggle(id)}
-        rowRef={rowRef(id)}
-      >
-        {body}
-      </ToolRow>
-    ),
-  });
-  const link = (href: string, icon: LucideIcon, name: string, detail: string, show?: boolean): ToolsEntry => ({
-    key: href,
-    name,
-    detail,
-    href,
-    show,
-    node: <LinkRow key={href} href={href} icon={icon} name={name} detail={detail} onNavigate={onNavigate} />,
-  });
+  // Q316: "/" jumps to the search box while Tools is open.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing = target?.closest("input, textarea, select, [contenteditable='true']");
+      if (event.key === "/" && !typing && !event.metaKey && !event.ctrlKey) {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
-  // Tools redesign (approved by Josh, 31 Oct 2026): three groups under a search box. Row lines are
-  // short noun phrases, the same words as the phone Create sheet. Change 8 (D-77, 21 Oct 2026)
-  // still holds: on a desktop Tools keeps working tools only; the phone keeps New referral, Handover
-  // sheet and Out of area.
-  const doNow: ToolsEntry[] = [
-    {
-      key: "new-referral",
-      name: "New referral",
-      detail: "Details and destination",
-      show: isPhone && canRefer,
-      node: (
-        <button key="new-referral" type="button" className={styles.row} onClick={() => onNewReferral()}>
-          <RowText icon={Plus} name="New referral" detail="Details and destination" />
-          <ArrowUpRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
-          <span className="sr-only">, opens the referral form</span>
-        </button>
-      ),
+  const all: Record<EntryKey, Entry | null> = {
+    "new-referral":
+      isPhone && canRefer
+        ? {
+            key: "new-referral",
+            icon: Plus,
+            name: "New referral",
+            detail: "Details and destination",
+            onClick: () => onNewReferral(),
+          }
+        : null,
+    "update-bed":
+      updateBedHref === `${root}/wards`
+        ? {
+            key: "update-bed",
+            icon: BedSingle,
+            name: "Update a bed",
+            detail: "Open, close or hold",
+            body: <UpdateBedWards onNavigate={onNavigate} />,
+          }
+        : updateBedHref
+          ? {
+              key: "update-bed",
+              icon: BedSingle,
+              name: "Update a bed",
+              detail: "Open, close or hold",
+              href: updateBedHref,
+            }
+          : null,
+    remind: {
+      key: "remind",
+      icon: BellRing,
+      name: "Remind me",
+      detail: "A nudge at a set time",
+      count: { n: reminderCount, label: "reminders set" },
+      body: <ToolRemindMe onNavigate={onNavigate} />,
     },
-    link(`${root}/waiting`, Clock3, "Log a delay", "Patient and reason", canLogDelay),
-    ...(updateBedHref === `${root}/wards`
-      ? [
-          // P023 (Josh, 9:57 PM 27 Oct 2026): a network desk chooses the ward here, not on the Wards list.
-          tool(
-            "update-bed",
-            BedSingle,
-            "Update a bed",
-            "Open, close or hold a bed",
-            <UpdateBedWards onNavigate={onNavigate} />,
-          ),
-        ]
-      : updateBedHref
-        ? [link(updateBedHref, BedSingle, "Update a bed", "Open, close or hold a bed")]
-        : []),
-    // The redesign moves the Hospital feed up from the foot: confirming the feed is work to do now.
-    tool(
-      "feed",
-      Inbox,
-      "Hospital feed",
-      "Admissions and discharges to confirm",
-      executive ? <p role="status">Individual feed records are unavailable for this desk.</p> : <WardFeedInbox />,
-    ),
-  ];
-
-  // Find a bed is a look-up, not an action, so it leads Look up. Legal forms (and Out of area on a
-  // phone) join it from the old More pages group. Simplification A5 (19 Oct 2026) still holds: the
-  // full figures stay one row away rather than repeating each page's headline figures.
-  const lookUp: ToolsEntry[] = [
-    tool(
-      "bed-finder",
-      BedDouble,
-      "Find a bed",
-      "Ready beds by ward",
-      <WardBedFinder onNavigate={onNavigate} />,
-      networkFigures,
-    ),
-    tool(
-      "figures",
-      BarChart3,
-      "All figures",
-      "Beds, flow and waits across the network",
-      <NetworkFigures onNavigate={onNavigate} />,
-      networkFigures,
-    ),
-    tool(
-      "catchment",
-      MapIcon,
-      "Catchment lookup",
-      "Suburb or postcode to service and clinic",
-      <WardCatchmentResolver
-        compact
-        renderActions={(result) => {
-          const clinic = contactForTeam(result.communityClinic);
-          return (
-            <>
-              <span className={styles.clinicPhone}>
+    // QA 2 Nov: Book transport opens the Transport desk, so it is a link row, like Log a delay.
+    "book-transport":
+      role === "officer" || role === "admin" || role === "executive"
+        ? null
+        : {
+            key: "book-transport",
+            icon: Truck,
+            name: "Book transport",
+            detail: "Log a transfer",
+            href: canOpen(`${root}/transport/officer`) ? `${root}/transport/officer` : `${root}/movements`,
+          },
+    "log-delay": canLogDelay
+      ? { key: "log-delay", icon: Clock3, name: "Log a delay", detail: "Patient and reason", href: `${root}/waiting` }
+      : null,
+    feed:
+      !executive && (role === "coordinator" || role === "bed_manager" || role === "ward")
+        ? {
+            key: "feed",
+            icon: Inbox,
+            name: "Hospital feed",
+            detail: "Messages to confirm",
+            count: { n: feedCount, label: "messages to confirm", act: true },
+            body: <ToolFeed onNavigate={onNavigate} />,
+          }
+        : null,
+    "bed-finder": networkFigures
+      ? {
+          key: "bed-finder",
+          icon: SearchCheck,
+          name: "Find a bed",
+          detail: "Ready beds by ward",
+          // The sidebar's count follows the desk's own place, so only a network-wide desk shows it here.
+          count:
+            counts.capacity && (role === "coordinator" || role === "executive")
+              ? { n: counts.capacity.value, label: "beds ready now" }
+              : undefined,
+          body: <ToolFindBed onNavigate={onNavigate} />,
+        }
+      : null,
+    figures: networkFigures
+      ? {
+          key: "figures",
+          icon: BarChart3,
+          name: "Key figures",
+          detail: "Beds, flow and waits",
+          body: <ToolFigures onNavigate={onNavigate} />,
+        }
+      : null,
+    "leave-due":
+      role === "officer" || role === "admin" || role === "community"
+        ? null
+        : {
+            key: "leave-due",
+            icon: CalendarCheck,
+            name: "Due back",
+            detail: "Leave ending today",
+            count: { n: leaveCount, label: "due back today" },
+            body: <ToolLeaveDue onNavigate={onNavigate} />,
+          },
+    catchment: {
+      key: "catchment",
+      icon: MapIcon,
+      name: "Suburb lookup",
+      detail: "Team by suburb or postcode",
+      body: (
+        <SuburbLookupCard
+          className={styles.suburbCard}
+          teamMeta={(team) => {
+            const clinic = contactForTeam(team);
+            return (
+              <span className={styles.clinicLine}>
                 <Phone aria-hidden="true" strokeWidth={1.75} />
                 {clinic?.publishedPhone
-                  ? `${result.communityClinic} clinic ${clinic.publishedPhone}, invented demo number`
-                  : `${result.communityClinic} clinic number not recorded`}
+                  ? `Clinic ${clinic.publishedPhone}, invented demo number`
+                  : "Clinic number not recorded"}
               </span>
-              {/* Opens a community referral. The slide-out has no clinic field to prefill, so the
-                  label promises only what it does. */}
-              {canRefer && (
-                <button type="button" className={styles.primaryButton} onClick={() => onNewReferral("community")}>
-                  Start a community referral
-                </button>
-              )}
-            </>
-          );
-        }}
-      />,
-    ),
-    tool(
-      "contacts",
-      Search,
-      // UX audit (21 Oct 2026): the page's own name, not a third one.
-      "On-call",
-      "Who is on now, key lines and My list",
-      <WardToolsContacts onNavigate={onNavigate} />,
-    ),
-    tool(
-      "form-times",
-      CalendarClock,
-      "Form times",
-      "Check a time written on a form",
-      <>
-        <WardFormTimes />
-        {canOpen(`${root}/legal-forms`) && (
-          <Link className={styles.moreLink} href={`${root}/legal-forms`} onClick={onNavigate}>
-            See every open form on Legal forms
-          </Link>
-        )}
-      </>,
-    ),
-    link(`${root}/legal-forms`, Scale, "Legal forms", "Every open move that carries a form"),
-    link(`${root}/out-of-area`, MapPinned, "Out of area", "Who is in a bed far from home", isPhone),
-  ];
+            );
+          }}
+          teamActions={
+            canRefer
+              ? () => (
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "sec", size: "sm" })}
+                    onClick={() => onNewReferral("community")}
+                  >
+                    Refer to this team
+                  </button>
+                )
+              : undefined
+          }
+        />
+      ),
+    },
+    contacts: {
+      key: "contacts",
+      icon: PhoneCall,
+      name: "On-call",
+      detail: "Who is on now",
+      body: <ToolOnCall onNavigate={onNavigate} />,
+    },
+    "form-times": {
+      key: "form-times",
+      icon: CalendarClock,
+      name: "Form times",
+      detail: "When a form runs out",
+      body: <ToolFormTimes onNavigate={onNavigate} />,
+    },
+    "legal-forms": {
+      key: "legal-forms",
+      icon: Scale,
+      name: "Legal forms",
+      detail: "Every open form",
+      href: `${root}/legal-forms`,
+    },
+    "out-of-area": isPhone
+      ? {
+          key: "out-of-area",
+          icon: MapPinned,
+          name: "Out of area",
+          detail: "Beds far from home",
+          href: `${root}/out-of-area`,
+        }
+      : null,
+    messages: networkFigures
+      ? {
+          key: "messages",
+          icon: MessageSquareText,
+          name: "Messages",
+          detail: "Email or Teams text",
+          body: <ToolMessages onNavigate={onNavigate} />,
+        }
+      : null,
+    handover: isPhone
+      ? { key: "handover", icon: FileText, name: "Handover sheet", detail: "Review and print", href: handoverHref() }
+      : null,
+    downtime: {
+      key: "downtime",
+      icon: Printer,
+      name: "Downtime pack",
+      detail: "Print a snapshot",
+      href: DOWNTIME_PACK_HREF,
+    },
+    chronology: {
+      key: "chronology",
+      icon: FileClock,
+      name: "Patient chronology",
+      detail: "PIR export",
+      href: PATIENT_CHRONOLOGY_HREF,
+    },
+    demo: null,
+  };
 
-  const printAndShare: ToolsEntry[] = [
-    tool(
-      "bed-summary",
-      ClipboardCopy,
-      "Copy bed summary",
-      "Text for the executive on-call email or Teams",
-      <BedSummary />,
-      networkFigures,
-    ),
-    link(handoverHref(), FileText, "Handover sheet", "Review and print the current handover", isPhone),
-    link(DOWNTIME_PACK_HREF, Printer, "Downtime pack", "Print a snapshot now"),
-    link(PATIENT_CHRONOLOGY_HREF, FileClock, "Patient chronology", "PIR export"),
-  ];
-
-  // The search matches a tool's name and its line, and keeps each match in its own group.
   const words = query.trim().toLowerCase();
-  const visible = (entries: ToolsEntry[]) =>
-    entries
-      .filter((entry) => entry.show !== false && (entry.href === undefined || canOpen(entry.href)))
-      .filter((entry) => !words || `${entry.name} ${entry.detail}`.toLowerCase().includes(words));
-  const groups = [
-    { title: "Do now", entries: visible(doNow) },
-    { title: "Look up", entries: visible(lookUp) },
-    { title: "Print and share", entries: visible(printAndShare) },
-  ];
+  const order = ROLE_ORDER[role] ?? ROLE_ORDER.coordinator;
+  const usable = (key: EntryKey): Entry | null => {
+    const entry = all[key];
+    if (!entry) return null;
+    if (entry.href && !canOpen(entry.href)) return null;
+    return entry;
+  };
+  const groups = GROUPS.map((group) => ({
+    ...group,
+    entries: order[group.id]
+      .map(usable)
+      .filter((entry): entry is Entry => entry !== null)
+      .filter((entry) => !words || `${entry.name} ${entry.detail}`.toLowerCase().includes(words)),
+  })).filter((group) => group.entries.length > 0);
+  const groupOf = (key: EntryKey): GroupId => GROUPS.find((group) => order[group.id].includes(key))?.id ?? "look";
   const matches = groups.reduce((total, group) => total + group.entries.length, 0);
 
-  return (
-    <div className={styles.sheet} data-testid="ward-tools-sheet-v2">
-      <div className={styles.viewingAs}>
-        <span className={styles.viewingText}>
-          <span>Viewing as</span>
-          <strong>{roleLabel}</strong>
-        </span>
-        <WardRoleSwitcher withWords />
-      </div>
+  // Q309: recent tools first; until there are any, the desk's likely three.
+  const toolIds = (ids: readonly ToolsSheetToolId[]) => ids.filter((id) => usable(id)?.body !== undefined);
+  const recentIds = toolIds(recent);
+  const quickIds = recentIds.length > 0 ? recentIds : toolIds(ROLE_SUGGESTED[role] ?? []);
+  const quickTitle = recentIds.length > 0 ? "Recent" : "Suggested";
 
-      <label className={`${styles.search} ${styles.toolsSearch}`}>
-        <Search aria-hidden="true" strokeWidth={1.75} />
-        <input
-          type="search"
-          aria-label="Search tools"
+  // Q311: two panes always show a tool, never an empty pane; the first quick pick opens with the sheet.
+  const shown: ToolsSheetToolId | null = twoPane ? (open ?? quickIds[0] ?? null) : open;
+  const paneEntry = shown && shown !== "demo" ? usable(shown) : null;
+
+  const demoEntry: Entry = {
+    key: "demo",
+    icon: FlaskConical,
+    name: "Scenario and clock",
+    detail: "Synthetic data only",
+    body: (
+      <div className={styles.toolBody}>
+        <WardDemoPanel oneList={!isPhone} />
+        {/* Q320: the feed's demo button moves here from Do now. */}
+        <ReceiveNextFeedMessage />
+      </div>
+    ),
+  };
+
+  const renderRow = (entry: Entry, group: GroupId) => {
+    if (entry.href) {
+      return (
+        <Link key={entry.key} href={entry.href} className={styles.row} onClick={onNavigate}>
+          <RowText entry={entry} group={group} />
+          <ArrowUpRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
+          <span className="sr-only">, opens its page</span>
+        </Link>
+      );
+    }
+    if (entry.onClick) {
+      return (
+        <button key={entry.key} type="button" className={styles.row} onClick={entry.onClick}>
+          <RowText entry={entry} group={group} />
+          <ArrowUpRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
+          <span className="sr-only">, opens the form</span>
+        </button>
+      );
+    }
+    const id = entry.key as ToolsSheetToolId;
+    const isOpen = shown === id;
+    return (
+      <div
+        key={entry.key}
+        className={styles.tool}
+        data-open={isOpen || undefined}
+        ref={(node) => {
+          if (node) rows.current.set(id, node);
+          else rows.current.delete(id);
+        }}
+      >
+        <button
+          type="button"
+          className={styles.row}
+          aria-expanded={twoPane ? undefined : isOpen}
+          aria-current={twoPane && isOpen ? "true" : undefined}
+          aria-controls={`ward-tools-${id}`}
+          data-testid={`ward-tools-toggle-${id}`}
+          onClick={() => openTool(id)}
+        >
+          <RowText entry={entry} group={group} />
+          {twoPane ? (
+            <ChevronRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
+          ) : (
+            <ChevronDown className={styles.rowCaret} aria-hidden="true" strokeWidth={1.75} />
+          )}
+        </button>
+        {isOpen && !twoPane ? (
+          <div id={`ward-tools-${id}`} className={styles.toolPanel}>
+            {entry.body}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  return (
+    <div className={styles.sheet} data-two-pane={twoPane || undefined} data-testid="ward-tools-sheet-v3">
+      <div className={styles.list}>
+        <SearchField
+          label="Search tools"
           placeholder="Search tools"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onValueChange={setQuery}
+          inputRef={searchRef}
+          shortcut={!isPhone}
         />
-      </label>
 
-      {matches === 0 ? (
-        <div className={styles.toolsNone} role="status">
-          <p>No tool matches “{query.trim()}”.</p>
-          <button type="button" className={styles.secondaryButton} onClick={() => setQuery("")}>
-            Clear search
-          </button>
-        </div>
-      ) : (
-        groups.map((group) => (
-          <Group key={group.title} title={group.title}>
-            {group.entries.map((entry) => entry.node)}
-          </Group>
-        ))
-      )}
+        {!words && quickIds.length > 0 ? (
+          <section className={styles.quick} aria-label={quickTitle}>
+            <h3 className={styles.groupHeading}>{quickTitle}</h3>
+            <div className={styles.chips}>
+              {quickIds.map((id) => {
+                const entry = usable(id);
+                if (!entry) return null;
+                const Icon = entry.icon;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    className={styles.chip}
+                    aria-pressed={shown === id}
+                    onClick={() => openTool(id)}
+                  >
+                    <Icon aria-hidden="true" strokeWidth={1.75} />
+                    {entry.name}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
-      {/* The Demo controls at the foot, while nothing is searched. The executive chrome's Demo lives
-          in its Synthetic pill's menu, so its desktop Tools has no foot. */}
-      {showDemo && !words ? (
-        <section className={`${styles.group} ${styles.demoGroup}`} aria-label="Demo">
-          <div className={styles.card}>
-            {
-              tool(
-                "demo",
-                FlaskConical,
-                "Demo",
-                "Scenario, clock and reset. Synthetic data only.",
-                // A desktop shows the one list the pill's Demo menu showed; the phone keeps its own.
-                <WardDemoPanel oneList={!isPhone} />,
-              ).node
-            }
+        {matches === 0 ? (
+          <div className={styles.none} role="status">
+            <p>No tool matches “{query.trim()}”.</p>
+            <div className={styles.noneActions}>
+              <button
+                type="button"
+                className={buttonClass({ variant: "pri", size: "sm" })}
+                onClick={() => searchWardFlow(query.trim(), onNavigate)}
+              >
+                Search Ward Flow
+              </button>
+              <button
+                type="button"
+                className={buttonClass({ variant: "sec", size: "sm" })}
+                onClick={() => setQuery("")}
+              >
+                Clear
+              </button>
+            </div>
           </div>
+        ) : (
+          groups.map((group) => (
+            <section key={group.id} className={styles.group} aria-label={group.title}>
+              <h3 className={styles.groupHeading}>{group.title}</h3>
+              <div className={styles.card}>{group.entries.map((entry) => renderRow(entry, group.id))}</div>
+            </section>
+          ))
+        )}
+
+        {/* Q308: Viewing as joins the Demo controls at the foot. */}
+        {!words ? (
+          <section className={styles.group} aria-label="Demo">
+            <h3 className={styles.groupHeading}>Demo</h3>
+            <div className={styles.card}>
+              <div className={styles.viewingAs}>
+                <span className={styles.viewingText}>
+                  <span>Viewing as</span>
+                  <strong>{roleLabel}</strong>
+                </span>
+                <WardRoleSwitcher withWords />
+              </div>
+              {renderRow(demoEntry, "look")}
+            </div>
+          </section>
+        ) : null}
+      </div>
+
+      {twoPane ? (
+        <section
+          className={styles.pane}
+          aria-label={shown === "demo" ? demoEntry.name : (paneEntry?.name ?? "Tool")}
+          id={shown ? `ward-tools-${shown}` : undefined}
+        >
+          {shown === "demo" || paneEntry ? (
+            <>
+              <header className={styles.paneHead}>
+                {(() => {
+                  const entry = shown === "demo" ? demoEntry : (paneEntry as Entry);
+                  const Icon = entry.icon;
+                  return (
+                    <>
+                      <span className={styles.rowIcon} data-group={groupOf(entry.key)} aria-hidden="true">
+                        <Icon aria-hidden="true" strokeWidth={1.75} />
+                      </span>
+                      <span className={styles.rowText}>
+                        <strong>{entry.name}</strong>
+                        <em>{entry.detail}</em>
+                      </span>
+                    </>
+                  );
+                })()}
+              </header>
+              <div className={styles.paneBody}>{shown === "demo" ? demoEntry.body : paneEntry?.body}</div>
+            </>
+          ) : (
+            <p className={styles.quiet}>Choose a tool.</p>
+          )}
         </section>
       ) : null}
     </div>

@@ -1,0 +1,100 @@
+/* Tools mock-up Q321, Figures: four headline figures in a 2 by 2 grid. */
+.body {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+}
+
+.scope {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.clock {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-line);
+}
+
+.cell {
+  display: grid;
+  gap: var(--wf-s-1);
+  align-content: start;
+  padding: var(--wf-s-3);
+  background: var(--wf-surface);
+}
+
+.label {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.value {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-28);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: var(--wf-lh-28);
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--wf-s-1);
+  min-height: var(--wf-target);
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.more:hover {
+  text-decoration: underline;
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-sm);
+}
+
+.more svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 46.4375rem) {
+  .more {
+    min-height: var(--wf-h-md, 40px);
+  }
+}
+
+/* QA 2 Nov: a 40px link on phone. */
+@media (max-width: 46.4375rem) {
+  .more {
+    min-height: 40px;
+  }
+}

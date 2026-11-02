@@ -80,7 +80,9 @@ export function PreviewScreen({ slug, pop, theme }: { slug: string; pop: string 
     return () => observer.disconnect();
   }, [theme, inBrowser]);
   const screen = screenBySlug(slug);
-  const deskReady = usePreviewDesk(screen?.role);
+  // Preview only: `as=<role>` draws a page (and its pop-up) as that role's demo desk, so one pop-up
+  // such as Tools can be judged for every desk without a page per role.
+  const deskReady = usePreviewDesk(previewDeskFromUrl() ?? screen?.role);
   const Page = MOCKUP_PAGES[slug];
   if (!inBrowser || !screen || !deskReady) return null;
   const drawnPage = Page ? <Page openOnLoad={pop ?? undefined} /> : <NotDrawnYet label={screen.label} />;
@@ -119,6 +121,23 @@ const HINT_TOPICS =
 const HINTS_SEEN = TOUR_ROLES.split(",")
   .flatMap((role) => HINT_TOPICS.split(" ").map((topic) => `${role}:${topic}`))
   .join(",");
+
+const PREVIEW_DESKS: Record<string, WardAccess> = {
+  coordinator: STATEWIDE_COORDINATOR,
+  bed_manager: { role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } },
+  ward: { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } },
+  ed: { role: "ed", scope: { kind: "ed", edId: "peel-ed" } },
+  community: { role: "community", scope: { kind: "team", teamName: "Midland" } },
+  officer: { role: "officer", scope: { kind: "jobs" } },
+  executive: { role: "executive", scope: { kind: "statewide" } },
+  admin: { role: "admin", scope: { kind: "statewide" } },
+};
+
+function previewDeskFromUrl(): WardAccess | undefined {
+  if (typeof window === "undefined") return undefined;
+  const role = new URLSearchParams(window.location.search).get("as");
+  return role && role !== "coordinator" ? PREVIEW_DESKS[role] : undefined;
+}
 
 function usePreviewDesk(role: WardAccess | undefined): boolean {
   const desk = role ?? STATEWIDE_COORDINATOR;
