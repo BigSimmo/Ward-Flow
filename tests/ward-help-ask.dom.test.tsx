@@ -57,7 +57,8 @@ describe("Ask help in the Help sheet", () => {
     renderSheet(query);
     const reply = screen.getByRole("status");
     expect(reply.textContent).toBe(CLINICAL_REPLY);
-    expect(reply.closest('[aria-live="polite"]')).toBeTruthy();
+    // The reply is the only thing announced: no answer count speaks over it.
+    expect(screen.getAllByRole("status")).toEqual([reply]);
     expect(screen.queryByRole("region", { name: "Best answer" })).toBeNull();
     expect(screen.queryByRole("region", { name: "Words" })).toBeNull();
     expect(screen.queryByText(/These are the closest/)).toBeNull();
@@ -66,7 +67,10 @@ describe("Ask help in the Help sheet", () => {
   it("offers the closest topics in the live region when nothing matches every word", () => {
     renderSheet("bed giraffe elephant");
     const note = screen.getByText("Nothing matches every word. These are the closest.");
-    expect(note.closest('[aria-live="polite"]')).toBeTruthy();
+    expect(note).toBeTruthy();
+    // A short count is announced, not every row at each key press.
+    const summary = screen.getByRole("status");
+    expect(summary.textContent).toMatch(/^[1-9]\d* answers?$/);
     expect(screen.queryByRole("region", { name: "Best answer" })).toBeNull();
     fireEvent.change(helpField(), { target: { value: "dark mode" } });
     expect(screen.queryByText(/These are the closest/)).toBeNull();

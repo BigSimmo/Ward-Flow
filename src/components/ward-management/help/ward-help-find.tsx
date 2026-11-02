@@ -273,13 +273,29 @@ export function HelpFindResults({
   canShow: (id: string) => boolean;
   onUseTyped: (words: string) => void;
 }) {
-  if (!found) return null;
-  if (found.kind === "clinical") {
+  if (found?.kind === "clinical") {
     return (
       <div className={`${s.card} ${s.clinical}`} role="status">
         <CircleHelp aria-hidden="true" strokeWidth={1.75} />
         <span>{CLINICAL_REPLY}</span>
       </div>
+    );
+  }
+  const count = foundRows(found).length;
+  // One short line for screen readers, in place of reading every answer out at each key press.
+  const summary = (
+    <span className="sr-only" role="status" data-testid="ward-help-found-summary">
+      {count === 0 ? "No answers" : count === 1 ? "1 answer" : `${count} answers`}
+    </span>
+  );
+  if (!found || count === 0) {
+    return (
+      <>
+        {summary}
+        <p className={s.emptyFind} data-testid="ward-help-found-empty">
+          No match in Help for &ldquo;{query.trim()}&rdquo;. Try fewer words, or browse How to.
+        </p>
+      </>
     );
   }
   const marks = found.readAs ?? query;
@@ -323,6 +339,7 @@ export function HelpFindResults({
   };
   return (
     <>
+      {summary}
       {found.readAs ? (
         <p className={s.readAs}>
           <Wand2 aria-hidden="true" strokeWidth={1.75} />
@@ -364,6 +381,7 @@ export function HelpFindResults({
         <span>
           <kbd>Esc</kbd>clear
         </span>
+        {/* Proved by tests/ward-help-ask.dom.test.tsx, "never writes words typed in Help's search to storage or URL history". */}
         <span className={s.keysHintEnd}>Nothing you type is saved</span>
       </div>
     </>

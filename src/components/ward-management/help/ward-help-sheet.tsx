@@ -193,6 +193,10 @@ function WardHelpSheetView({
   const [task, setTask] = useState(openTask);
   const [unread, setUnread] = useState(readUnread);
   const field = useRef<HTMLInputElement>(null);
+  // Try asking sits outside the field, so Tab from the field moves into it instead of losing focus.
+  const tryAsking = useRef<HTMLDivElement>(null);
+  const focusStays = (next: EventTarget | null) =>
+    next instanceof Node && (next === field.current || Boolean(tryAsking.current?.contains(next)));
   const found = useMemo(
     () => (query.trim() ? findInHelp(query, role, terms, !literal) : undefined),
     [query, role, terms, literal],
@@ -339,7 +343,7 @@ function WardHelpSheetView({
       descriptionContent={
         <p className={s.context}>
           <span className={s.deskTag}>
-            <UserRound aria-hidden="true" strokeWidth={2} />
+            <UserRound aria-hidden="true" strokeWidth={1.75} />
             {deskLabel(role)}
           </span>
           {screen ? (
@@ -349,7 +353,12 @@ function WardHelpSheetView({
           ) : null}
         </p>
       }
-      placement="right"
+      // A right panel on a computer; on a phone (through 48rem) a near-full bottom sheet whose header
+      // controls stay below the top safe area (Josh, 2 Nov 2026).
+      placement="responsive-right"
+      mobilePlacement="bottom"
+      mobileBreakpoint="phone"
+      mobileHeaderSafeArea="padding"
       desktopBackdropClassName={barStyles.drawerBackdrop}
       contentClassName={`${barStyles.drawerSheet} ${barStyles.drawerSheetWide} ${s.sheet}`}
       headerClassName={barStyles.drawerHeader}
@@ -402,10 +411,16 @@ function WardHelpSheetView({
             }}
             onKeyDown={onFieldKey}
             onFocus={() => setFocused(true)}
-            onBlur={() => window.setTimeout(() => setFocused(false), 150)}
+            onBlur={(event) => {
+              if (focusStays(event.relatedTarget)) return;
+              // A pointer press on a suggestion can blur first, so close only once focus has settled away.
+              window.setTimeout(() => {
+                if (!focusStays(document.activeElement)) setFocused(false);
+              }, 150);
+            }}
             placeholder="Ask a question or search Help"
             aria-label="Search Help"
-            aria-controls="ward-help-found"
+            aria-controls={searching ? "ward-help-found" : undefined}
             aria-activedescendant={searching && rows.length ? `ward-help-found-${active}` : undefined}
             autoComplete="off"
             spellCheck={false}
@@ -422,7 +437,7 @@ function WardHelpSheetView({
                   field.current?.focus();
                 }}
               >
-                <X aria-hidden="true" strokeWidth={2} />
+                <X aria-hidden="true" strokeWidth={1.75} />
               </button>
             ) : phone || pointer.touchOnly ? null : (
               <kbd className={s.slash} aria-hidden="true">
@@ -444,7 +459,7 @@ function WardHelpSheetView({
       </div>
 
       {searching ? (
-        <div id="ward-help-found" className={s.panel} aria-live="polite">
+        <div id="ward-help-found" className={s.panel}>
           <HelpFindResults
             found={found}
             query={query}
@@ -460,7 +475,13 @@ function WardHelpSheetView({
           />
         </div>
       ) : suggesting ? (
-        <div className={s.panel}>
+        <div
+          ref={tryAsking}
+          className={s.panel}
+          onBlur={(event) => {
+            if (!focusStays(event.relatedTarget)) setFocused(false);
+          }}
+        >
           <HelpTryAsking examples={examples} onPick={typed} />
         </div>
       ) : inView ? (

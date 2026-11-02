@@ -108,7 +108,9 @@ describe("Help links", () => {
   it("copies a link to the open job, through the safe clipboard", async () => {
     renderTasks();
     fireEvent.click(screen.getByTestId("ward-help-copy-link"));
-    await screen.findByText("Link copied");
+    // The button says so where it was pressed, and a polite live line announces it.
+    await screen.findByRole("button", { name: "Link copied" });
+    expect(document.querySelector('[aria-live="polite"]')?.textContent).toBe("Link copied");
     expect(copy.text).toBe(`${window.location.origin}/ward-flow/discharges#help=clear-held-up-discharge`);
   });
 
@@ -129,8 +131,14 @@ describe("Was this helpful?", () => {
 
   it("counts a yes or no by id on this device and thanks the person", () => {
     renderTasks();
+    // The status line is in the page before the vote, so its words are announced when they arrive.
+    const status = screen.getByRole("status");
+    expect(status.textContent).toBe("");
     fireEvent.click(screen.getByTestId("ward-help-helpful-no"));
-    expect(screen.getByRole("status").textContent).toMatch(/Counted on this device only/);
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.textContent).toMatch(/Counted on this device only/);
+    // Yes and No give way to the thanks, and focus moves on to Copy link rather than being lost.
+    expect(document.activeElement).toBe(screen.getByTestId("ward-help-copy-link"));
     expect(window.localStorage.getItem(HELP_FEEDBACK_STORAGE_KEY)).toBe("clear-held-up-discharge:0:1");
   });
 

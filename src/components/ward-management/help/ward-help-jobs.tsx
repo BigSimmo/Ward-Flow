@@ -3,12 +3,15 @@
 import {
   ArrowRight,
   BedDouble,
+  Check,
   ChevronDown,
   ClipboardList,
   Compass,
+  ExternalLink,
   Info,
   LayoutDashboard,
   Link2,
+  ListChecks,
   Play,
   Printer,
   SlidersHorizontal,
@@ -18,9 +21,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { Button, buttonClass, useIsPhone } from "@/components/wf";
+import { Button, buttonClass, foldLimit, ShowMoreRow, useIsPhone } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 import { readTourStep, type WardTourRole } from "./ward-help-store";
@@ -65,13 +68,20 @@ export function canShowTask(
   return showMeOn && showMeAvailable(task, role, home, phone);
 }
 
-function PlayMark() {
+/** The small play mark that says Show me can walk a job. `label` names it where no words sit beside it. */
+function PlayMark({ label }: { label?: boolean }) {
   return (
-    <span className={s.play} aria-hidden="true">
-      <Play aria-hidden="true" strokeWidth={0} />
-    </span>
+    <>
+      <span className={s.play} aria-hidden="true">
+        <Play aria-hidden="true" strokeWidth={0} />
+      </span>
+      {label ? <span className="sr-only">Show me available</span> : null}
+    </>
   );
 }
+
+/** How long Copy link reads "Link copied" before it goes back. */
+const COPIED_FOR = 2000;
 
 /**
  * The foot of an open answer: "Was this helpful?" (counted on this device, by id only) and Copy
@@ -80,17 +90,25 @@ function PlayMark() {
 function AnswerFoot({ id, path }: { id: string; path: string }) {
   const [voted, setVoted] = useState(false);
   const [copy, setCopy] = useState<"idle" | "done" | "failed">("idle");
+  const copyButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (copy !== "done") return undefined;
+    const timer = window.setTimeout(() => setCopy("idle"), COPIED_FOR);
+    return () => window.clearTimeout(timer);
+  }, [copy]);
   const vote = (helpful: boolean) => {
     recordHelpFeedback(id, helpful, HOW_TO_IDS);
     setVoted(true);
+    // Yes and No give way to the thanks, so focus moves on to Copy link instead of being lost.
+    copyButton.current?.focus();
   };
   return (
     <div className={s.answerFoot} data-testid="ward-help-task-foot">
-      {voted ? (
-        <span className={s.footStatus} role="status">
-          Thanks. Counted on this device only.
-        </span>
-      ) : (
+      {/* Always in the page, so the thanks is announced when its words arrive. */}
+      <span className={s.footStatus} role="status">
+        {voted ? "Thanks. Counted on this device only." : ""}
+      </span>
+      {voted ? null : (
         <span className={s.helpful} role="group" aria-label="Was this helpful?">
           <span aria-hidden="true">Was this helpful?</span>
           <Button
@@ -113,22 +131,26 @@ function AnswerFoot({ id, path }: { id: string; path: string }) {
           </Button>
         </span>
       )}
-      <Button
-        variant="ghost"
-        size="sm"
-        icon={Link2}
-        onClick={() => {
-          copyTextToClipboard(helpLinkHref(window.location.origin, path, id)).then(
-            () => setCopy("done"),
-            () => setCopy("failed"),
-          );
-        }}
-        data-testid="ward-help-copy-link"
-      >
-        Copy link
-      </Button>
-      <span className={s.footStatus} aria-live="polite">
-        {copy === "done" ? "Link copied" : copy === "failed" ? "Could not copy the link" : ""}
+      <span className={s.copy}>
+        <Button
+          ref={copyButton}
+          variant="ghost"
+          size="sm"
+          icon={copy === "done" ? Check : Link2}
+          onClick={() => {
+            copyTextToClipboard(helpLinkHref(window.location.origin, path, id)).then(
+              () => setCopy("done"),
+              () => setCopy("failed"),
+            );
+          }}
+          data-copied={copy === "done" ? "" : undefined}
+          data-testid="ward-help-copy-link"
+        >
+          {copy === "done" ? "Link copied" : "Copy link"}
+        </Button>
+        <span className={copy === "failed" ? s.copyFailed : "sr-only"} aria-live="polite">
+          {copy === "done" ? "Link copied" : copy === "failed" ? "Could not copy the link" : ""}
+        </span>
       </span>
     </div>
   );
@@ -181,7 +203,7 @@ function TaskRow({
       >
         <span className={s.taskName}>{task.title}</span>
         {goThere && !expanded ? <span className={s.place}>{screenName(goThere)}</span> : null}
-        {computerOnly ? <span className={s.elsewhere}>On a computer</span> : showMe ? <PlayMark /> : null}
+        {computerOnly ? <span className={s.elsewhere}>On a computer</span> : showMe ? <PlayMark label /> : null}
         <ChevronDown aria-hidden="true" className={s.caret} strokeWidth={1.75} />
       </button>
       {expanded ? (
@@ -227,7 +249,7 @@ function TaskRow({
                   data-testid="ward-help-task-go"
                 >
                   Go to {screenName(goThere)}
-                  <ArrowRight aria-hidden="true" size={14} strokeWidth={2} />
+                  <ArrowRight aria-hidden="true" size={14} strokeWidth={1.75} />
                 </Link>
               ) : null}
             </div>
@@ -261,6 +283,7 @@ function HowItWorks({ actions }: { actions: readonly string[] }) {
         aria-controls={id}
         onClick={() => setOpen(!open)}
       >
+        <ListChecks aria-hidden="true" className={s.worksIcon} strokeWidth={1.75} />
         How this screen works
         <ChevronDown aria-hidden="true" className={s.caret} strokeWidth={1.75} />
       </button>
@@ -349,12 +372,14 @@ export function HelpTasks({
     return walk && canShowTask(walk, role, home, phone, showMeOn) ? walk : undefined;
   }, [home, phone, role, screen, showMeOn]);
   const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk").length : 0;
+  const hereTiles = here.slice(0, 4);
 
   const counts = HOW_TO_TOPICS.map((name) => ({ name, n: mine.filter((task) => task.topic === name).length })).filter(
     (entry) => entry.n > 0,
   );
+  const anyShowMe = mine.some((task) => canShowTask(task, role, home, phone, showMeOn));
   const shown = topic === "all" ? mine : mine.filter((task) => task.topic === topic);
-  const limit = all || topic !== "all" ? shown.length : FIRST;
+  const limit = all || topic !== "all" ? shown.length : foldLimit(shown.length, FIRST);
   // The first `limit` tasks in topic order, still grouped by topic.
   const ordered = HOW_TO_TOPICS.flatMap((name) => shown.filter((task) => task.topic === name));
   const kept = new Set(ordered.slice(0, limit));
@@ -416,20 +441,25 @@ export function HelpTasks({
                   onClick={() => showMe(around.id)}
                   data-testid="ward-help-show-me-around"
                 >
-                  <span className={s.tileTitle}>Show me around this screen</span>
-                  <span className={s.tileAction}>
-                    <PlayMark />
-                    {aroundSteps} steps
+                  <span className={s.aroundDisc} aria-hidden="true">
+                    <Play aria-hidden="true" strokeWidth={0} />
                   </span>
+                  <span className={s.aroundText}>
+                    <span className={s.tileTitle}>Show me around this screen</span>
+                    <span className={s.aroundSub}>{aroundSteps} steps · this screen only</span>
+                  </span>
+                  <ArrowRight aria-hidden="true" className={s.aroundGo} strokeWidth={1.75} />
                 </button>
               ) : null}
-              {here.slice(0, 4).map((task) => {
+              {hereTiles.map((task, index) => {
                 const can = canShowTask(task, role, home, phone, showMeOn);
                 return (
                   <button
                     key={task.id}
                     type="button"
                     className={s.tile}
+                    // A lone tile at the end of an odd count takes the whole row.
+                    data-wide={hereTiles.length % 2 === 1 && index === hereTiles.length - 1 ? "" : undefined}
                     onClick={() => (can ? showMe(task.id) : reveal(task.id))}
                   >
                     <span className={s.tileTitle}>{task.title}</span>
@@ -459,6 +489,8 @@ export function HelpTasks({
             >
               <Printer aria-hidden="true" strokeWidth={1.75} />
               Printable screen guide (A4)
+              <span className="sr-only"> (opens in a new tab)</span>
+              <ExternalLink aria-hidden="true" className={s.printGo} strokeWidth={1.75} />
             </a>
           ) : null}
         </section>
@@ -490,6 +522,12 @@ export function HelpTasks({
             );
           })}
         </div>
+        {anyShowMe ? (
+          <p className={s.playKey}>
+            <PlayMark />
+            Show me can walk you through it on screen.
+          </p>
+        ) : null}
       </section>
 
       {groups.map((group, index) => {
@@ -506,10 +544,7 @@ export function HelpTasks({
             <div className={s.card}>
               <ul className={s.list}>{group.tasks.map(row)}</ul>
               {last && limit < shown.length ? (
-                <button type="button" className={s.more} onClick={() => setAll(true)}>
-                  Show {shown.length - limit} more
-                  <ChevronDown aria-hidden="true" strokeWidth={1.75} />
-                </button>
+                <ShowMoreRow onClick={() => setAll(true)}>Show {shown.length - limit} more</ShowMoreRow>
               ) : null}
             </div>
           </section>

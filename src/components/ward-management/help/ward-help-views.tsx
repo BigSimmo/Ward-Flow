@@ -1,10 +1,10 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, ChevronDown, Printer, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Printer, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { Button, buttonClass } from "@/components/wf";
+import { Button, buttonClass, foldLimit, ShowMoreRow } from "@/components/wf";
 
 import { SHORTCUT_GROUPS, shortcutsForDesk } from "./ward-help-content";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
@@ -51,7 +51,7 @@ export function HelpNews({
 }) {
   const [all, setAll] = useState(false);
   const newest = entries.toReversed();
-  const shown = all ? newest : newest.slice(0, FIRST_NEWS);
+  const shown = all ? newest : newest.slice(0, foldLimit(newest.length, FIRST_NEWS));
   return (
     <>
       <div className={`${s.card} ${s.newHead}`}>
@@ -98,10 +98,7 @@ export function HelpNews({
           );
         })}
         {newest.length > shown.length ? (
-          <button type="button" className={s.more} onClick={() => setAll(true)}>
-            Show {newest.length - shown.length} earlier
-            <ChevronDown aria-hidden="true" strokeWidth={1.75} />
-          </button>
+          <ShowMoreRow onClick={() => setAll(true)}>Show {newest.length - shown.length} earlier</ShowMoreRow>
         ) : null}
       </section>
       <p className={s.note}>The live site updates once a day, early in the morning.</p>
@@ -199,7 +196,7 @@ export function HelpDesk({
                   {href ? (
                     <Link href={href} onClick={onClose} className={`${buttonClass({ variant: "ghost" })} ${s.jobGo}`}>
                       Go to {screenName(href)}
-                      <ArrowRight aria-hidden="true" size={14} strokeWidth={2} />
+                      <ArrowRight aria-hidden="true" size={14} strokeWidth={1.75} />
                     </Link>
                   ) : null}
                 </div>
@@ -224,16 +221,20 @@ export function HelpDesk({
           </ul>
         </section>
       ))}
-      <a
-        href={`/help/${role}.html`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${buttonClass({ variant: "ghost" })} ${s.printLink}`}
-        data-testid="ward-help-desk-print"
-      >
-        <Printer aria-hidden="true" size={14} strokeWidth={1.75} />
-        Printable desk guide (A4)
-      </a>
+      <div className={`${s.card} ${s.printCard}`}>
+        <a
+          href={`/help/${role}.html`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={s.printRow}
+          data-testid="ward-help-desk-print"
+        >
+          <Printer aria-hidden="true" strokeWidth={1.75} />
+          Printable desk guide (A4)
+          <span className="sr-only"> (opens in a new tab)</span>
+          <ExternalLink aria-hidden="true" className={s.printGo} strokeWidth={1.75} />
+        </a>
+      </div>
     </>
   );
 }

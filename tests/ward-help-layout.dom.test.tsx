@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 
@@ -54,6 +54,37 @@ describe("search-first Help layout", () => {
     const tryAsking = screen.getByRole("region", { name: "Try asking" });
     fireEvent.click(within(tryAsking).getByRole("button", { name: "What does Held up mean?" }));
     expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("What does Held up mean?");
+  });
+
+  it("keeps Try asking open while Tab moves from the box into it, and closes it once focus leaves", () => {
+    sheet();
+    const box = screen.getByRole("searchbox");
+    fireEvent.focus(box);
+    expect(box.getAttribute("aria-controls")).toBeNull();
+    const first = within(screen.getByRole("region", { name: "Try asking" })).getAllByRole("button")[0];
+    vi.useFakeTimers();
+    try {
+      fireEvent.blur(box, { relatedTarget: first });
+      act(() => {
+        first.focus();
+        vi.advanceTimersByTime(300);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(screen.getByRole("region", { name: "Try asking" })).toBeTruthy();
+    const desk = screen.getByTestId("ward-help-desk-open");
+    fireEvent.blur(first, { relatedTarget: desk });
+    expect(screen.queryByRole("region", { name: "Try asking" })).toBeNull();
+  });
+
+  it("says plainly when nothing in Help matches, with no key hints", () => {
+    sheet({ ask: "zzqx" });
+    expect(screen.getByTestId("ward-help-found-empty").textContent).toMatch(/No match in Help for .zzqx./u);
+    expect(screen.queryByText(/These are the closest/)).toBeNull();
+    expect(screen.queryByText("Nothing you type is saved")).toBeNull();
+    expect(screen.getByRole("status").textContent).toBe("No answers");
+    expect(screen.getByRole("searchbox").getAttribute("aria-controls")).toBe("ward-help-found");
   });
 
   it("keeps the tour as one row in How do I…, and all four tabs working", () => {
