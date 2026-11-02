@@ -74,9 +74,10 @@
 }
 
 /* Phone rows (Josh, 30 Oct): three lines, not four. The name and timing share the first, the ward the
-   second, the stage line the third with the row's button at its right. The button is drawn 32px tall
-   and keeps a 48px tap area through an invisible cover. */
-@media screen and (max-width: 48rem) {
+   second, the stage line the third with the row's button at its right. The button is drawn 40px tall
+   like every phone kit button (Q295, 2 Nov 2026; it was 32px) and keeps a 48px tap area through an
+   invisible cover. */
+@media screen and (max-width: 46.4375rem) {
   .list td.timing.timing {
     grid-row: 1;
   }
@@ -89,13 +90,13 @@
     border-bottom: 0; /* the row draws its own line; the cell's left a short stray one under Chase */
   }
   .list .rowAction.rowAction {
-    min-height: 0;
-    height: 2rem;
+    min-height: 40px;
+    height: 40px;
   }
   .list .rowAction.rowAction::after {
     content: "";
     position: absolute;
-    inset: -0.5rem -0.25rem;
+    inset: -0.25rem;
   }
   .moreRow.moreRow {
     display: block;

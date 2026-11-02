@@ -754,7 +754,7 @@
  * places) stays on the larger screen, and a tap on a row opens the place's preview sheet
  * (hub-screen.tsx). Review point 21: each row is the place's two lines, with a stale count's
  * "Stale 5h" on the right of them (round 2). Desktop is unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .hubRight {
     display: none;
   }
@@ -795,7 +795,7 @@
 
 /* Phone polish (8 Oct 2026): a one-line result (a community team) centres in its 48px row, so the
  * name sits level with its pin. Desktop is unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .resultMain {
     align-content: center;
   }
@@ -938,7 +938,7 @@
   padding: 0;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .hubLeft {
     border: 0;
     background: transparent;
@@ -987,7 +987,7 @@
 }
 
 /* Phone (v10): only a pinned place shows a star, filled, beside its name. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phonePinMark {
     display: inline-block;
     flex: none;
@@ -998,14 +998,14 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* No pin button beside the row on phone, so the figures keep the card's inner edge. */
   .resultMain {
     padding-right: var(--wf-s-4);
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The field has its own clear button, so the browser's search cancel mark is not drawn twice. */
   .phoneSearchBox input::-webkit-search-cancel-button {
     appearance: none;

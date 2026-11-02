@@ -59,7 +59,7 @@ afterEach(() => {
 describe("Discharges as each desk reads it", () => {
   it("the coordinator keeps the statewide wording, every filter and Confirm date", () => {
     renderBoard();
-    expect(screen.getByText("Bed release · all services")).toBeInTheDocument();
+    expect(screen.getByText("Discharges · all services")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Service" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Ward" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Person" })).toBeInTheDocument();
@@ -69,8 +69,8 @@ describe("Discharges as each desk reads it", () => {
   it("the nurse in charge reads its own ward, without the Service and Ward filters or the ward line", () => {
     deskAs({ role: "ward", scope: { kind: "ward", unitIds: [WARD.id] } });
     renderBoard();
-    expect(screen.getByText(`Bed release · ${WARD.name}`)).toBeInTheDocument();
-    expect(screen.queryByText("Bed release · all services")).not.toBeInTheDocument();
+    expect(screen.getByText(`Discharges · ${WARD.name}`)).toBeInTheDocument();
+    expect(screen.queryByText("Discharges · all services")).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Service" })).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Ward" })).not.toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Person" })).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("Discharges as each desk reads it", () => {
   it("the site bed manager reads its site, keeps the Ward filter, and offers Open, not Confirm date", () => {
     deskAs({ role: "bed_manager", scope: { kind: "site", siteCode: WARD.siteCode } });
     renderBoard();
-    expect(screen.getByText(`Bed release · ${SITE.name}`)).toBeInTheDocument();
+    expect(screen.getByText(`Discharges · ${SITE.name}`)).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Service" })).not.toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Ward" })).toBeInTheDocument();
     // Only the ward or the coordinator can change an expected date (Josh, 30 Oct).

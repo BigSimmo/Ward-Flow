@@ -299,7 +299,7 @@ function OperationalStatisticsEdScreen({
               <StatisticsEdSwarm
                 rows={swarmRows}
                 labelWidth={176}
-                label={`Each open ED journey, by time since opening, ${department.name} first`}
+                label={`Each open ED movement, by time since opening, ${department.name} first`}
               />
               <p className={detail.note}>
                 {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h lines
@@ -438,14 +438,14 @@ function EdPresentation({
   const longHours = LONG_WAIT_MINUTES / 60;
   const veryLongHours = VERY_LONG_WAIT_MINUTES / 60;
   // Role view (as ED clinician): an ED desk reads counts only (D-80), so the cards that would list
-  // people (Open ED journeys, Next to cross, by ED) are left out and the counts lead instead.
+  // people (Open ED movements, Next to cross, by ED) are left out and the counts lead instead.
   const edCountsDesk = useEffectiveWardAccess().role === "ed" && countsOnly;
   const bandsCard = (
     <StatCard
       icon={Activity}
       title="Time since opening"
       // Role view (as ED clinician): the aside splits the chart's journeys where they are; it
-      // repeated the hero's "Open ED journeys" and the split floated above the cards.
+      // repeated the hero's "Open ED movements" and the split floated above the cards.
       aside={
         edCountsDesk ? (
           <span data-testid="ward-statistics-ed-population">
@@ -457,7 +457,7 @@ function EdPresentation({
             </SrOnly>
           </span>
         ) : (
-          "Open ED journeys"
+          "Open ED movements"
         )
       }
       id="ed-bands"
@@ -465,7 +465,7 @@ function EdPresentation({
     >
       <CardBody className={styles.bodyStack}>
         <ColumnChart
-          label="Open ED journeys by time since opening"
+          label="Open ED movements by time since opening"
           height={96}
           columns={bands.map((band, index) => ({
             id: band.label,
@@ -588,7 +588,7 @@ function EdPresentation({
         stem: department.id,
         scope: department.name,
         figures: () => [
-          ["Open ED journeys", small(onTheList)],
+          ["Open ED movements", small(onTheList)],
           ["Still in ED", stillInEdShown],
           ["In transit or recorded departure", inTransitShown],
           ["Longest wait", longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"],
@@ -608,7 +608,7 @@ function EdPresentation({
           <>
             <HeroStat
               value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>}
-              label="Open ED journeys"
+              label="Open ED movements"
             />
             <HeroStat
               value={longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"}
@@ -629,7 +629,7 @@ function EdPresentation({
         <>
           <HeroStat
             value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>}
-            label="Open ED journeys"
+            label="Open ED movements"
           />
           <HeroStat
             value={longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"}
@@ -693,7 +693,7 @@ function EdPresentation({
           <FlushRow layout="lead2">
             <Follow>
               {personWaiting ?? (
-                <StatCard icon={Clock} title="Open ED journeys" id="ed-waiting" data-testid="ward-statistics-ed-wait">
+                <StatCard icon={Clock} title="Open ED movements" id="ed-waiting" data-testid="ward-statistics-ed-wait">
                   <CardBody>
                     <PeopleNotListed testId="ward-statistics-ed-wait-not-listed" />
                   </CardBody>
@@ -713,7 +713,7 @@ function EdPresentation({
 
           <StatCard
             icon={Activity}
-            title="Open ED journeys, by ED"
+            title="Open ED movements, by ED"
             aside={countsOnly ? undefined : "One mark per person"}
             id="ed-everyone"
             data-testid="ward-statistics-ed-everyone"
@@ -734,12 +734,12 @@ function EdPresentation({
             >
               <div className={styles.tableWrap}>
                 <table className={`${tableClasses.table} ${styles.table}`}>
-                  <caption className={styles.srOnly}>Open ED journeys from every emergency department</caption>
+                  <caption className={styles.srOnly}>Open ED movements from every emergency department</caption>
                   <thead>
                     <tr>
                       <th scope="col">Department</th>
                       <th scope="col" className={styles.num}>
-                        Open journeys
+                        Open movements
                       </th>
                       <th scope="col" className={styles.num}>
                         Longest
@@ -904,7 +904,7 @@ function EdPhone({
           {shown.length === 0 ? (
             <p className={phone.note}>Nobody matches this filter</p>
           ) : (
-            <PhoneList label="Open ED journeys, longest first">
+            <PhoneList label="Open ED movements, longest first">
               {shown.map(({ movement, waitMinutes }) => {
                 const tone =
                   waitMinutes >= VERY_LONG_WAIT_MINUTES
@@ -1043,15 +1043,15 @@ function Waits({
   return (
     <StatCard
       icon={Clock}
-      title="Open ED journeys"
-      aside={onTheList === 0 ? undefined : `${waitingText} open ED journeys`}
+      title="Open ED movements"
+      aside={onTheList === 0 ? undefined : `${waitingText} open ED movements`}
       id="ed-waiting"
       data-testid="ward-statistics-ed-wait"
     >
       {onTheList === 0 ? (
         <CardBody>
           <p className={styles.muted} data-testid="ward-stat-ed-wait-empty">
-            Nobody from this department has an open ED journey
+            Nobody from this department has an open ED movement
           </p>
         </CardBody>
       ) : countsOnly ? (
@@ -1099,7 +1099,7 @@ function Waits({
           <div className={ed.waitChart} data-testid="ward-stat-ed-wait-chart" data-ward-primitive="wait-chart">
             <div className={cx(styles.tableWrap, ed.waitScroll)}>
               <table className={`${tableClasses.table} ${styles.table}`} data-testid="ward-stat-ed-wait-table">
-                <caption className={styles.srOnly}>Open ED journeys from this department, synthetic</caption>
+                <caption className={styles.srOnly}>Open ED movements from this department, synthetic</caption>
                 <thead>
                   <tr>
                     <th scope="col">Urgency</th>

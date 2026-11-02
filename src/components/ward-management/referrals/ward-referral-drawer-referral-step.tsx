@@ -1,5 +1,6 @@
 "use client";
 
+import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { Activity, Ambulance, BedDouble, HeartHandshake, MapPin, Shield, Target } from "lucide-react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import {
@@ -348,7 +349,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                           setSelectedUnitIds([]);
                         }}
                       />
-                      {level}
+                      {securityWord(level)}
                     </label>
                   ))}
                 </div>

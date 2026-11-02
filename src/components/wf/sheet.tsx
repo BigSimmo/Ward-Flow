@@ -456,6 +456,7 @@ export function Sheet({
         id={id}
         data-testid={testId}
         data-mobile-header-safe-area={resolvedMobileHeaderSafeArea}
+        data-sheet-placement={placement}
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
@@ -581,6 +582,7 @@ export function Sheet({
         ) : null}
         <div
           ref={bodyRef}
+          data-sheet-body="true"
           onScroll={onBodyScroll}
           tabIndex={bodyTabIndex}
           role={bodyLabel ? "region" : undefined}
@@ -598,6 +600,7 @@ export function Sheet({
         {footer ? (
           <div
             data-footer-variant={footerVariant}
+            data-sheet-footer="true"
             className={cn("shrink-0 border-t p-3 sm:p-4", styles.footer, footerClassName)}
           >
             {footer}

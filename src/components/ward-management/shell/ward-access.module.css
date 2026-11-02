@@ -70,7 +70,7 @@
 }
 
 /* Phone: full thumb targets for the reasons and the Other box (review on PR #330). */
-@media (max-width: 47.99rem) {
+@media (max-width: 46.4375rem) {
   .reason,
   .other {
     min-height: var(--ward-tap, 3rem);
@@ -96,7 +96,7 @@
 /* Layout sweep SHELL-06 (25 Oct 2026): on a phone the desk line keeps to one row, so it does not
  * take two or three permanent lines off every page. The whole sentence stays in the accessibility
  * tree; the row ends in an ellipsis on screen. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .banner {
     flex-wrap: nowrap;
     padding-block: 4px;

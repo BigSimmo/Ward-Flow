@@ -92,13 +92,13 @@
 
 /* On a laptop the kit's choice row is 28px; a little room keeps a wrapped reason clear of the next.
    On a phone the kit's own row is already 44px. */
-@media (min-width: 48.0625rem) {
+@media (min-width: 46.5rem) {
   .option {
     padding: 4px 0;
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .fact {
     grid-template-columns: minmax(0, 1fr);
     gap: 2px;

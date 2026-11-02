@@ -203,7 +203,7 @@
 /* Phone (Josh, 31 Oct 2026): previous, Change ward and next sit side by side as Home's 40px hero
    pills (the kit's phoneRows), in place of the stretched 48px row the stats hero gives them. The
    triple class outranks that row's rules; the arrows keep a 48px tap height with a cover. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroPillTools.heroPillTools.heroPillTools {
     flex: 0 1 auto;
   }

@@ -41,7 +41,7 @@ export function blockerReadinessState(movement: Movement, open: boolean, blocker
       return "A note was recorded before this movement closed. Nothing is holding it up now, because nothing is moving.";
     }
     if (movement.blocker === "None — cleared") {
-      return "Somebody recorded a blocker and cleared it before this movement closed.";
+      return "Somebody recorded a hold-up and cleared it before this movement closed.";
     }
     if (movement.blocker === "None — in transit") {
       return "Nothing was holding this up: the patient was in transit when it closed.";
@@ -56,7 +56,7 @@ export function blockerReadinessState(movement: Movement, open: boolean, blocker
   }
   if (blockerIsActive) return "Somebody has recorded, by hand, something that is holding this up.";
   if (movement.blocker === "None — cleared") {
-    return "Somebody recorded a blocker and then cleared it. Nothing is holding this up now.";
+    return "Somebody recorded a hold-up and then cleared it. Nothing is holding this up now.";
   }
   if (movement.blocker === "None — in transit") return "Nothing is holding this up: the patient is in transit.";
   if (movement.blocker === "None — handover complete") return "Nothing is holding this up: handover is complete.";

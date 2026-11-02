@@ -104,7 +104,7 @@ describe("Ward command feedback", () => {
       mount(control, <WardScreen unitId={UNIT} />);
       selectOccupiedBoardBed();
       fireEvent.click(screen.getByRole("button", { name: "Record that they have left" }));
-      fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
+      fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
       expect(control.record.mock.calls[0]?.[0].type).toBe("RECORD_LEAVING");
       expect(screen.queryByText(/^Recorded: .* has left the ward/)).toBeNull();
       expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
@@ -125,18 +125,18 @@ describe("Ward command feedback", () => {
     mount(control, <WardScreen unitId={UNIT} />);
     selectOccupiedBoardBed();
     const drawer = within(screen.getByTestId("bed-telemetry-drawer"));
-    fireEvent.click(getBedStep(/^(Record|Update) blocker$/, screen.getByTestId("bed-telemetry-drawer")));
-    fireEvent.change(drawer.getByRole("combobox", { name: "Discharge blocker" }), {
+    fireEvent.click(getBedStep(/^(Record|Update) hold-up$/, screen.getByTestId("bed-telemetry-drawer")));
+    fireEvent.change(drawer.getByRole("combobox", { name: "Held up by" }), {
       target: { value: "Awaiting accommodation" },
     });
-    fireEvent.click(drawer.getByRole("button", { name: "Save blocker" }));
+    fireEvent.click(drawer.getByRole("button", { name: "Save hold-up" }));
     expect(control.record).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText(/^Discharge blocker recorded:/)).toBeNull();
+    expect(screen.queryByText(/^Hold-up recorded:/)).toBeNull();
     await act(async () => control.refuse("refused"));
-    expect(screen.queryByText(/^Discharge blocker recorded:/)).toBeNull();
+    expect(screen.queryByText(/^Hold-up recorded:/)).toBeNull();
     // The refusal is said at the blocker form, which stays open with the choice, as well as in the toast.
     expect(drawer.getByTestId("ward-blocker-error")).toHaveTextContent(/Review the shared board/);
-    expect(drawer.getByRole("button", { name: "Save blocker" })).toBeInTheDocument();
+    expect(drawer.getByRole("button", { name: "Save hold-up" })).toBeInTheDocument();
     expect(screen.getAllByText(/Review the shared board/).length).toBeGreaterThanOrEqual(2);
   });
 
@@ -145,7 +145,7 @@ describe("Ward command feedback", () => {
     mount(control, <WardScreen unitId={UNIT} />);
     selectOccupiedBoardBed();
     fireEvent.click(screen.getByRole("button", { name: "Record that they have left" }));
-    fireEvent.click(screen.getByRole("button", { name: "Record departure" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     await act(() => control.accept());
     expect(screen.getByTestId("toast")).toHaveTextContent(/^Recorded: .* has left the ward/);
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));

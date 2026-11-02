@@ -21,7 +21,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* A phone has no "/" key to press. */
   .shortcut {
     display: none;

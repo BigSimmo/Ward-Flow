@@ -2965,7 +2965,7 @@
   }
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (pointer: coarse), (max-width: 46.4375rem) {
   .tableActionGroup {
     gap: 12px;
   }
@@ -3418,7 +3418,7 @@
 }
 /* Audit (Josh, 1 Nov 2026): on a phone the opened referral's buttons, Ask for a bed, the
    clearance answers and Decline among them, reach the 48px tap floor. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .referralDetails .inboxBtn,
   .inboxActionRow .inboxBtn {
     min-height: var(--spacing-tap);
@@ -3591,7 +3591,7 @@
   cursor: pointer;
 }
 
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .tableActionGroup select,
   .thinSelect {
     font-size: max(1rem, 16px);
@@ -4096,7 +4096,7 @@
 /* ─── Phone (≤48rem), 8 Oct 2026: phone board 05. The board becomes stacked rows (tier, name and
  * status line, time in ED and bay, then the next step); the filter chips scroll sideways; the
  * draft note leaves the phone view. Desktop is untouched. ─── */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .boardChips {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -4319,7 +4319,7 @@
   min-width: 0;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .main[data-phone-pane="board"] [data-pane="needs"],
   .main[data-phone-pane="board"] [data-pane="lists"],
   .main[data-phone-pane="needs"] [data-pane="board"],
@@ -4343,7 +4343,7 @@
   border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .pxDrawer .patientDialog {
     inset: auto 0 0 0;
     width: 100vw;
@@ -4376,7 +4376,7 @@
  * a sideways row of pills (pressed = a 2px accent ring on white, never a tint), search and order
  * stay below them, and the rows sit in one card. The board heading stays for screen readers. Phone
  * only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .listSection.panel {
     display: flex;
     flex-direction: column;
@@ -4444,7 +4444,7 @@
  * step at the right) in one card. A row opens the person sheet: the facts, every action the row
  * offered as a full-width list, the inline forms, then the board's own fields. These elements only
  * render on phone; the media query keeps that true for the styles as well. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneBoardList {
     margin: 0;
     padding: 0;
@@ -4694,7 +4694,7 @@
  * The desktop "Seen in the last 24 hours" and ward capacity panels stay off the phone (this rule
  * outranks the board's `.listSection.panel` display above). The board search, order and the
  * "Filters highlight" line are desktop tools; the phone board is the chips and the rows. Phone only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phonePanes {
     position: sticky;
     top: var(--wf-header-height, 3.5rem);
@@ -4826,8 +4826,11 @@
 .a2Table col[data-col="Referral"] {
   width: 17%;
 }
+/* Q242 (spacing review, 2 Nov 2026): wide enough for the longest Next button, "Log transport
+ * booking" with its More button (198px measured), plus the cell's 8px sides. At 204px it spilt
+ * past the heading's left edge on the iPad board. */
 .a2Table col[data-col="Next"] {
-  width: 204px;
+  width: 228px;
 }
 .a2Table[data-columns="priority"] col[data-col="Referral"] {
   width: 22%;
@@ -5454,7 +5457,7 @@
   border-bottom: 0;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .phoneSheetActions .unavailableFix,
   .answersLeft .unavailableFix {
     min-height: var(--spacing-tap, 3rem);

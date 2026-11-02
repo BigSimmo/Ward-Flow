@@ -98,9 +98,9 @@ describe("count labels say what they count", () => {
     ).length;
     inProvider(<StatisticsScreen />);
     const chips = screen.getByRole("group", { name: "Network at a glance" });
-    const journeys = within(chips).getByText("Open ED journeys", { exact: true }).closest("button")!;
+    const journeys = within(chips).getByText("Open ED movements", { exact: true }).closest("button")!;
     expect(openEdJourneys(state.movements, NOW_ANCHOR).total).toBe(expected);
-    expect(journeys.textContent).toBe(`${expected}Open ED journeys`);
+    expect(journeys.textContent).toBe(`${expected}Open ED movements`);
   });
 
   it("Handover's Act now is Alerts' act-now list, with flagged urgent on its own line", () => {

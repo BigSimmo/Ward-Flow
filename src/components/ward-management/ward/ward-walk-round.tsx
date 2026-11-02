@@ -55,9 +55,9 @@ export function bedStripWord(
   if (bed.blockReason) return "Held up";
   if (flags.awayAtEd) return "At ED";
   if (bed.pastDate) return "Past date";
-  if (bed.dischargeBarrier) return "Barrier";
+  if (bed.dischargeBarrier) return "Held up";
   if (bed.status === "incoming") return "Pulled";
-  if (flags.leaving) return "Due out";
+  if (flags.leaving) return "Discharge due";
   if (bed.status === "leave") return "Leave";
   return BED_STATE_LABELS.occupied;
 }

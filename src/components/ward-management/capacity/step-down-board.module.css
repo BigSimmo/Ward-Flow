@@ -64,7 +64,7 @@
 }
 
 /* Phone: the cap reason pickers keep the 48px tap-target floor the shared buttons have. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .capReason select {
     min-height: 3rem;
   }

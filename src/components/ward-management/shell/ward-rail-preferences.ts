@@ -18,7 +18,7 @@ import { RAIL_OPEN_STORAGE_KEY } from "./ward-rail-early";
  * The parts of the rail every screen size needs: the remembered rail preference, the page-wide
  * theme, glare and rail attributes, and the drawer shortcuts. Split out of `ward-rail.tsx`
  * (16 October 2026) so a phone, which never draws the rail, can keep these without loading the
- * rail itself (`ward-rail-lazy.tsx`). The behaviour is unchanged.
+ * rail itself (the sidebar mount, `shell-next/next-rail.tsx`). The behaviour is unchanged.
  */
 
 function readRailOpenPreference(storedValue: string | null | undefined): boolean {

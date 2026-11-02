@@ -145,7 +145,7 @@ describe("tablet portrait (769px to 1000px)", () => {
 
   it("drops the sidebar and shows the bar's Menu, both after the rules they override", () => {
     const rail = css("src/components/ward-management/shell/ward-rail.module.css");
-    const portrait = rail.lastIndexOf("@media (min-width: 48.0625rem) and (max-width: 1000px)");
+    const portrait = rail.lastIndexOf("@media (min-width: 46.5rem) and (max-width: 1000px)");
     expect(portrait).toBeGreaterThan(rail.lastIndexOf("@media (max-width: 1000px)"));
     expect(rail.slice(portrait)).toMatch(/\.rail,\s*\.rail\[data-rail="closed"\] \{\s*display: none;/u);
 

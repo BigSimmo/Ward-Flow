@@ -19,7 +19,7 @@ import { Activity, BedDouble, House, Bell, ListChecks, Plus } from "lucide-react
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { SrOnly } from "@/components/wf";
-import { useNextNavCounts } from "@/components/ward-redesign/shell-next/next-nav-counts";
+import { useNextNavCounts } from "@/components/ward-management/shell-next/next-nav-counts";
 import {
   CHROME_ROLE_LABELS,
   wardTasksAreActionableForRole,
@@ -27,7 +27,9 @@ import {
 } from "@/components/ward-management/ward-chrome-role";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
+import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
+import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
+import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-awaiting-pull";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
@@ -39,8 +41,7 @@ import {
   railEntries,
   type RailEntry,
 } from "@/components/ward-management/shell/ward-rail-entries";
-import { nextRoleMenu } from "@/components/ward-redesign/shell-next/next-role-menu";
-import { NextPhoneMenuTop } from "@/components/ward-redesign/shell-next/next-phone-menu-top";
+import { nextRoleMenu } from "@/components/ward-management/shell-next/next-role-menu";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { useAccessNavFilter } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlagCheck } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -50,7 +51,7 @@ import { CountChip, countIn } from "@/components/ward-management/shell/ward-phon
 import { usePhoneCreateOptions } from "@/components/ward-management/shell/ward-phone-create-options";
 import styles from "@/components/ward-management/shell/ward-phone-menu.module.css";
 import pageDock from "@/components/ward-management/shell/ward-phone-page-dock.module.css";
-import dockStyles from "@/components/ward-redesign/shell-next/next-phone-dock.module.css";
+import dockStyles from "@/components/ward-management/shell-next/next-phone-dock.module.css";
 
 /**
  * Phone menu (Josh, 10 Oct 2026, locked from the phone header and navigation mockups, set 9 with
@@ -558,9 +559,9 @@ export function usePhoneActivitySheet(
  * load carries only the dock. They load once the browser is idle, so a tap normally finds them
  * already there. A failed load (offline before the code arrived) retries each time the menu opens.
  */
-const loadMenuSheets = () => import("@/components/ward-redesign/shell-next/next-phone-menu-sheet");
+const loadMenuSheets = () => import("@/components/ward-management/shell-next/next-phone-menu-sheet");
 type PhoneMenuSheetsProps = ComponentProps<
-  (typeof import("@/components/ward-redesign/shell-next/next-phone-menu-sheet"))["PhoneMenuSheets"]
+  (typeof import("@/components/ward-management/shell-next/next-phone-menu-sheet"))["PhoneMenuSheets"]
 >;
 const PhoneMenuSheets = dynamic(
   () =>
@@ -571,6 +572,11 @@ const PhoneMenuSheets = dynamic(
   { ssr: false },
 );
 preloadWhenIdle(loadMenuSheets);
+// The Menu's top block (the desk's capacity card) shows only inside the Menu sheet, so it is its own
+// chunk too, fetched with the sheets once the browser is idle (phone script budget, 2 Nov 2026).
+const loadMenuTop = () => import("@/components/ward-management/shell-next/next-phone-menu-top");
+const NextPhoneMenuTop = dynamic(() => loadMenuTop().then((m) => m.NextPhoneMenuTop), { ssr: false });
+preloadWhenIdle(loadMenuTop);
 
 function PhoneMenuSheetsRetry(props: PhoneMenuSheetsProps) {
   const [Sheets, setSheets] = useState<ComponentType<PhoneMenuSheetsProps> | null>(null);
@@ -703,24 +709,28 @@ export function NextPhoneMenu({
   const actNowCount = useMemo(
     () =>
       wardTasksAreActionableForRole(shellRole)
-        ? activeActNowItems(
-            {
-              movements,
-              units,
-              configuration,
-              inboxSnoozes,
-              leaveBeds,
-              admissions,
-              patients,
-              referrals,
-              supportNotifications,
-              plannedAdmissions,
-              // The bar's shape exactly, so this reuses the bar's task list instead of building its own
-              // on every page load (F-11). The wording setting changes no act-now row.
-              stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
-            },
-            flowNow,
-          ).length
+        ? // Q260: Act now as Home and Alerts count it, accepted referrals awaiting a bed pull included.
+          alertsNowFigures(
+            activeTaskItems(
+              {
+                movements,
+                units,
+                configuration,
+                inboxSnoozes,
+                leaveBeds,
+                admissions,
+                patients,
+                referrals,
+                supportNotifications,
+                plannedAdmissions,
+                // The bar's shape exactly, so this reuses the bar's task list instead of building its own
+                // on every page load (F-11). The wording setting changes no act-now row.
+                stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
+              },
+              flowNow,
+            ),
+            acceptedReferralsAwaitingPull(referrals, units, movements).length,
+          ).actNow
         : 0,
     [
       shellRole,

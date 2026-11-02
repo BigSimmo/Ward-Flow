@@ -73,7 +73,7 @@ const LONG_HOURS = LONG_WAIT_MINUTES / 60;
 const VERY_LONG_HOURS = VERY_LONG_WAIT_MINUTES / 60;
 
 type EdSortKey = "name" | "waiting" | "unplaced" | "over24" | "over48" | "longest" | "median";
-/** Which open journeys the field of marks shows (the redesign's switch, Q135). */
+/** Which open movements the field of marks shows (the redesign's switch, Q135). */
 type SwarmShow = "all" | "unplaced" | "over24";
 
 /** "Under 4h", "4 to 8h" and "24h and over", from the band floors rather than typed here. */
@@ -371,7 +371,7 @@ function EdsIndexView({
         </HeroTool>
       }
       phone={{
-        title: `${shown(waiting)} open ED journeys`,
+        title: `${shown(waiting)} open ED movements`,
         sub: `Longest ${waitText(longestRow?.longest ?? null)} · median ${waitText(networkMedian)}`,
         stats: (
           <>
@@ -387,7 +387,7 @@ function EdsIndexView({
       }}
       stats={
         <>
-          <HeroStat value={shown(waiting)} label="Open ED journeys" />
+          <HeroStat value={shown(waiting)} label="Open ED movements" />
           <HeroStat
             value={waitText(longestRow?.longest ?? null)}
             label={longestRow ? `Longest, ${longestRow.code}` : "Longest"}
@@ -442,10 +442,10 @@ function EdsIndexView({
               );
             })}
           </PhoneList>
-          <PhoneGroup title="Time since opening" aside="Open ED journeys">
+          <PhoneGroup title="Time since opening" aside="Open ED movements">
             <div className={phone.chartCard}>
               <ColumnChart
-                label="Open ED journeys, by time since opening"
+                label="Open ED movements, by time since opening"
                 columns={bands.map((band) => ({
                   ...band,
                   ...withheldBar(exactStatisticsCount(band.value) ?? 0, shown(band.value)),
@@ -459,7 +459,7 @@ function EdsIndexView({
           ) : (
             <PhoneSheetRow
               icon={Users}
-              title="Open ED journeys, one mark each"
+              title="Open ED movements, one mark each"
               sub={`Axis to ${VERY_LONG_HOURS * 1.5}h, longer waits on its last line`}
               testId="ward-statistics-eds-phone-swarm"
             >
@@ -475,7 +475,7 @@ function EdsIndexView({
           <StatCard
             id="everyone-waiting"
             className={index.anchorTarget}
-            title="Open ED journeys, by ED"
+            title="Open ED movements, by ED"
             meta={`${shown(waiting)} open across ${departments.length} EDs`}
             action={
               executive ? undefined : (
@@ -499,7 +499,7 @@ function EdsIndexView({
                 executive
                   ? undefined
                   : [
-                      "Each mark is one open ED journey. Times run from when the journey opened.",
+                      "Each mark is one open ED movement. Times run from when the journey opened.",
                       `The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults, not legal limits.`,
                       "An open journey stays the ED’s until arrival.",
                     ]
@@ -527,8 +527,8 @@ function EdsIndexView({
               >
                 <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-eds-table">
                   <caption className={styles.srOnly}>
-                    Every emergency department: open ED journeys, including transit, those with no ward yet, long waits,
-                    the longest and the median wait
+                    Every emergency department: open ED movements, including transit, those with no ward yet, long
+                    waits, the longest and the median wait
                   </caption>
                   <thead>
                     <tr>
@@ -613,7 +613,7 @@ function EdsIndexView({
             >
               <div className={redesign.bars}>
                 <BarList
-                  label="Open ED journeys, by time since opening"
+                  label="Open ED movements, by time since opening"
                   track
                   rows={bands.map((band, position) => ({
                     id: band.id,

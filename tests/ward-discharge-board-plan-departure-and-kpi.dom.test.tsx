@@ -109,7 +109,7 @@ describe("the discharge board's KPI captions no longer assert what the count doe
     expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).getByText("Held up")).toBeInTheDocument();
     expect(screen.getByTestId("ward-discharge-kpi-blocked")).toHaveAccessibleName(/^\d+ Held up \(Records held up\)$/);
     expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).queryByText("Blocked releases")).toBeNull();
-    expect(within(screen.getByTestId("ward-discharge-kpi-departed")).getByText("Departed")).toBeInTheDocument();
+    expect(within(screen.getByTestId("ward-discharge-kpi-departed")).getByText("Discharged")).toBeInTheDocument();
     expect(within(screen.getByTestId("ward-discharge-kpi-departed")).queryByText("Discharged · 24h")).toBeNull();
     expect(within(screen.getByTestId("ward-discharge-kpi-confirmed")).getByText("Confirmed")).toBeInTheDocument();
     expect(within(screen.getByTestId("ward-discharge-kpi-expected")).getByText("Expected")).toBeInTheDocument();

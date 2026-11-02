@@ -75,7 +75,7 @@ export function WardBoardBlockerDialog({
             actingUnitId: unit.id,
             blocker: chosen,
           }),
-        `Blocker recorded for ${who}: ${chosen}.`,
+        `Hold-up recorded for ${who}: ${chosen}.`,
       );
     }
     closeBlockerDialog();
@@ -87,7 +87,7 @@ export function WardBoardBlockerDialog({
       onClose={closeBlockerDialog}
       // The title is the tile's own action word; the person (not the tile's label) and the
       // tile's tag move to the line under it.
-      title="Record a blocker"
+      title="Record hold-up"
       description={
         <>
           <strong className={blocker.name}>{who}</strong> · {item.label}

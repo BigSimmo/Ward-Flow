@@ -179,7 +179,7 @@ table.pinTable {
 /* Phone polish (8 Oct 2026): CSV export is left to the larger screen so the card titles keep
  * their room, the search takes its own row, and the bar charts give the bars the width.
  * Under 48rem only. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .headControls > button {
     display: none;
   }
@@ -229,7 +229,7 @@ table.pinTable {
 
 /* Josh, 30 Oct 2026: phone controls keep their real size (no 48px enlargement). Show all keeps
    a comfortable touch area that does not show. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .showRow button {
     position: relative;
   }

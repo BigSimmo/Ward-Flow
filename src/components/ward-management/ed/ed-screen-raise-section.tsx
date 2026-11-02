@@ -2,6 +2,7 @@
 
 // "Ask for a bed": the form that raises a movement from a referral in this department's
 // inbox. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
+import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { useRef, useState } from "react";
 import { DateField, DisabledReason } from "@/components/wf";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
@@ -252,7 +253,7 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               <option value={NO_SECURITY_VALUE}>Choose a security level</option>
               {SECURITY_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option}
+                  {securityWord(option)}
                 </option>
               ))}
             </select>

@@ -75,7 +75,7 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
       within(tabs)
         .getAllByRole("tab")
         .map((tab) => tab.textContent),
-    ).toEqual(["Beds by ward", "ED queue", "Pending moves", "Legal forms"]);
+    ).toEqual(["Beds by ward", "ED queue", "Pending movements", "Legal forms"]);
   });
 
   it("shows one downtime table on screen at a time and keeps the rest for the printout (Josh, 31 Oct 2026)", () => {

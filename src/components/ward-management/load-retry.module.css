@@ -42,7 +42,7 @@
   flex: 0 0 auto;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .retry > button {
     flex: 1 1 100%;
   }

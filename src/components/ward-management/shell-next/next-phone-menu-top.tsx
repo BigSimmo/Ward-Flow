@@ -18,10 +18,14 @@ import {
   isBedAlert,
 } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import railStyles from "@/components/ward-management/shell/ward-rail.module.css";
-import { useNextNavCounts } from "@/components/ward-redesign/shell-next/next-nav-counts";
-import { cardScopeNote, deskCapacityRows, overLineLabel } from "@/components/ward-redesign/shell-next/next-rail-parts";
+import { useNextNavCounts } from "@/components/ward-management/shell-next/next-nav-counts";
+import {
+  cardScopeNote,
+  deskCapacityRows,
+  overLineLabel,
+} from "@/components/ward-management/shell-next/next-rail-parts";
 
-import parts from "@/components/ward-redesign/shell-next/next-rail.module.css";
+import parts from "@/components/ward-management/shell-next/next-rail.module.css";
 
 export function NextPhoneMenuTop({
   onGo,

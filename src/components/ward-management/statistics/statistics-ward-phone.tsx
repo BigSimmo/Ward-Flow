@@ -94,7 +94,7 @@ export function WardPhone({
             items={[
               { id: "roster", label: "Roster", count: roster.length },
               { id: "discharges", label: "Discharges", count: discharges.length },
-              { id: "blockers", label: "Blockers", count: blockers.length },
+              { id: "blockers", label: "Held up", count: blockers.length },
             ]}
           />
           {shown.length === 0 ? (
@@ -103,12 +103,16 @@ export function WardPhone({
                 ? "No current admissions recorded"
                 : tab === "discharges"
                   ? "Nobody has a discharge date in the next 7 days"
-                  : "No current admission carries a blocker"}
+                  : "No current admission is held up"}
             </p>
           ) : (
             <PhoneList
               label={
-                tab === "roster" ? "Admission roster" : tab === "discharges" ? "Due out, 7 days" : "Discharges held up"
+                tab === "roster"
+                  ? "Admission roster"
+                  : tab === "discharges"
+                    ? "Discharges due, 7 days"
+                    : "Discharges held up"
               }
             >
               {(expanded ? shown : shown.slice(0, ROSTER_FIRST_ROWS)).map((admission) => {

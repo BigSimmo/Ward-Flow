@@ -284,7 +284,7 @@
 
 /* Phone sheet: the sheet's own pinned foot carries Copy and the next step, so the panel's bar keeps
  * only Open move, flat. The panel cancels the sheet body's 16px padding to run edge to edge. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .panel.panel {
     margin: calc(-1 * var(--wf-s-4));
     min-height: 0;
