@@ -26,8 +26,6 @@ import { ChevronRight, ClipboardList, ListOrdered, TriangleAlert, X } from "luci
 
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet, overlayOpener } from "@/components/wf/sheet-focus";
-import { focusIsLost } from "@/components/wf/focus-return";
-import { rememberOpener, returnFocusToOpener, type FocusOpener } from "@/components/wf/focus-opener";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { type Movement, type Referral } from "@/components/ward-management/ward-model";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
@@ -111,7 +109,7 @@ import { ReferralPhoneCard, ReferralPhoneHero, ReferralPhoneTop } from "./referr
 import { edSingleColumn, useEdDeskReferrals } from "./referral-ed-desk";
 import { EdNextOverdue, ReferralEdRaisedSection } from "./referral-ed-raised-section";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { useIsPhone } from "@/components/wf";
+import { focusIsLost, rememberOpener, returnFocusToOpener, useIsPhone, type FocusOpener } from "@/components/wf";
 import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -382,6 +380,7 @@ export function ReferralBoard({
   const closeDetail = useCallback(() => {
     // `null`, not `undefined`: a closed detail stays closed rather than falling back to the default.
     setSelectedReferralId(null);
+    // A3 (2 Nov 2026): a phone list is inert while the detail is open, so its row is found again next frame.
     const opener = triggerRef.current;
     if (returnFocusToOpener(opener)) return;
     window.requestAnimationFrame(() => {

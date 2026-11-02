@@ -11,8 +11,7 @@ import { startTransition, useCallback, useEffect, useMemo, useRef, useState, typ
 
 import { Sheet } from "@/components/wf/sheet";
 import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/wf/sheet-focus";
-import { cycleTabWithin, focusIsLost } from "@/components/wf/focus-return";
-import { publishLiveClock, useIsPhone, useWfBandActive } from "@/components/wf";
+import { publishLiveClock, useIsPhone, useWfBandActive, cycleTabWithin, focusIsLost } from "@/components/wf";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";

@@ -14,8 +14,7 @@ import { useWardFlowSelect, useWardNetwork } from "@/components/ward-management/
 import type { Unit } from "@/components/ward-management/ward-model";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
-import { Button, OverlayPortal, ShowMoreRow } from "@/components/wf";
-import { cycleTabWithin } from "@/components/wf/focus-return";
+import { Button, OverlayPortal, ShowMoreRow, cycleTabWithin } from "@/components/wf";
 
 import styles from "./ward-switch-menu.module.css";
 

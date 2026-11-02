@@ -8,8 +8,7 @@ import { startTransition, useCallback, useEffect, useMemo, useRef, useState, typ
 
 import { Sheet } from "@/components/wf/sheet";
 import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/wf/sheet-focus";
-import { cycleTabWithin, focusIsLost } from "@/components/wf/focus-return";
-import { publishLiveClock, useIsPhone, useWfBandActive } from "@/components/wf";
+import { publishLiveClock, useIsPhone, useWfBandActive, cycleTabWithin, focusIsLost } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   readStoredGlarePreference,
