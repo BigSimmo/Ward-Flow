@@ -1,4 +1,6 @@
-/* FormalName (formal-name.tsx): the surname gives way before the given name does. */
+/* FormalName (formal-name.tsx): the surname gives way before the given name does. Nothing is cut
+   while the whole name fits. Once it does not, only the surname shrinks; the given name is cut only
+   when it alone is wider than the whole space. */
 .name {
   display: inline-flex;
   max-width: 100%;
@@ -19,7 +21,7 @@
 
 .given {
   flex: 0 0 auto;
-  max-width: 55%;
+  max-width: 100%;
   /* Keeps the space after the comma at the start of this box. */
   white-space: pre;
 }
