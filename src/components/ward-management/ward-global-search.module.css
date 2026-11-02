@@ -319,6 +319,8 @@
 }
 
 .kinds {
+  /* Never shrink: a tall result list squashed the chip row on tablet and desktop (search audit, 3 Nov 2026). */
+  flex: none;
   display: flex;
   gap: 6px;
   padding: 10px 12px;

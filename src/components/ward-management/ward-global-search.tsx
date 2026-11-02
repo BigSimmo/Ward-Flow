@@ -1045,7 +1045,8 @@ export function WardGlobalSearch({
         // and a link's click still lands after the press.
         onMouseDown={(event) => event.preventDefault()}
       >
-        {isStart ? null : (
+        {/* No chips when nothing matched: a lone "All 0" chip says nothing the empty message does not. */}
+        {isStart || (kindCounts.get("all") ?? 0) === 0 ? null : (
           <div className={styles.kinds} role="group" aria-label="Show only">
             {KIND_FILTERS.map((filter) => {
               const count = kindCounts.get(filter.key) ?? 0;
