@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, configure, fireEvent, render, screen } from "@testing-library/react";
+import { ConfirmHost } from "@/components/wf/confirm-dialog";
+import { act, cleanup, configure, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useEffect, useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
@@ -216,10 +217,21 @@ describe("Broadcast own-command confirmation", () => {
           <ReceiptBoundary scoped={false}>
             <AlertsScreen />
           </ReceiptBoundary>
+          <ConfirmHost />
         </WardFlowProvider>,
       );
+      // Each stand-down now asks for confirmation first (main's confirm dialog), so confirm the first
+      // target, then try the second visible target while the first is still pending or uncertain.
+      const confirmStandDown = async () => {
+        const dialog = await screen.findByRole("alertdialog");
+        fireEvent.click(within(dialog).getByRole("button", { name: "Stand down" }));
+        await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+      };
       fireEvent.click(screen.getByRole("button", { name: "Stand down this alert" }));
+      await confirmStandDown();
+      await waitFor(() => expect(recordStandDown).toHaveBeenCalledTimes(1));
       fireEvent.click(screen.getByRole("button", { name: "Stand down" }));
+      if (screen.queryByRole("alertdialog")) await confirmStandDown();
       expect(recordStandDown).toHaveBeenCalledTimes(1);
       expect(recordStandDown).toHaveBeenCalledWith(expect.objectContaining({ alertId: "synthetic-directive-A" }));
       await act(async () => {
