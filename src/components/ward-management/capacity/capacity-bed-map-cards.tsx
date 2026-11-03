@@ -159,8 +159,7 @@ export function BedMapCards({
                   </span>
                   <span className={styles.muted}>{group.wards.length} wards</span>
                   <span className={styles.mapGroupFigures}>
-                    <b>{ready || "None"} ready</b> · {closed || "none"} closed ·{" "}
-                    {beds ? Math.round((inUse / beds) * 100) : 0}% in use
+                    <b>{ready} ready</b> · {closed} closed · {beds ? Math.round((inUse / beds) * 100) : 0}% in use
                   </span>
                 </button>
               </h3>
@@ -235,6 +234,9 @@ function WardCard({
   // look (a stale count first, then pulled, closed, on leave, being made ready). A ward with
   // nothing to note shows no line, instead of "All beds in use or ready".
   const stale = !fresh && row !== undefined;
+  // Capacity issue 7 (Josh, 3 Nov 2026): the beds this ward expects to free today, which State
+  // bedflow used to show as "+N expected", now sit on the card itself.
+  const freeing = row?.freeing ?? 0;
   return (
     <button
       type="button"
@@ -248,15 +250,19 @@ function WardCard({
         <SpelledCodes text={ward.unit.name} />
       </span>{" "}
       <span className={`${styles.wardReady}${ward.ready ? "" : ` ${styles.wardReadyNone}`}`}>
-        {/* Zero is spelt "None" (owner ruling, 6 Sep 2026); the space keeps the card's name readable. */}
-        <b className={styles.wardReadyN}>{ward.ready || "None"}</b> ready
+        {/* Zero is shown as 0 (Josh, 3 Nov 2026, Capacity issue 5), replacing the 6 Sep 2026 ruling
+            that spelt it "None". The grey figure still marks a ward with nothing ready. */}
+        <b className={styles.wardReadyN}>{ward.ready}</b> ready
       </span>{" "}
       <span className={styles.wardOccupied}>
         {ward.occupied} of {ward.unit.beds} occupied
       </span>
       <BedCells beds={ward.unit.beds} ready={ward.ready} used={inUse} />
-      {stale || notes.length ? (
+      {stale || notes.length || freeing > 0 ? (
         <span className={styles.wardNote}>
+          {freeing > 0 ? (
+            <span className={`${styles.wardNoteItem} ${styles.okInk}`}>+{freeing}&nbsp;freeing&nbsp;today</span>
+          ) : null}
           {stale ? (
             <span className={`${styles.wardNoteItem} ${styles.warnInk}`}>
               <StatusGlyph tone="warning" size={8} /> Count {durMinutes(Math.max(0, now - row.confirmedAt))} old

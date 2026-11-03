@@ -163,7 +163,7 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     for (const { ward, card } of cardsByWard()) {
       const strip = card.querySelector("i")?.parentElement;
       expect(strip, ward.unit.id).toHaveAttribute("aria-hidden", "true");
-      expect(card.textContent ?? "", ward.unit.id).toMatch(new RegExp(`${ward.ready || "None"}\\s*ready`, "u"));
+      expect(card.textContent ?? "", ward.unit.id).toMatch(new RegExp(`${ward.ready}\\s*ready`, "u"));
       expect(card, ward.unit.id).toHaveTextContent(`${ward.occupied} of ${ward.unit.beds} occupied`);
     }
   });
@@ -185,21 +185,18 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
   });
 
   /**
-   * ⚠️ ZERO READS "none", NEVER "0" — the rule this whole screen applies to Ready and Locked
-   * (`ward-capacity-zero-spelling.dom.test.tsx`, census §8). Floored on a real ward actually having
-   * a zero ready count so the word branch is exercised against real data.
-   *
-   * 🔴 Fails on the redesign as first built: `WardCard` in `capacity-bed-map-cards.tsx` draws the
-   * bare figure (`<b>{ward.ready}</b> ready`). Left failing for the owner to rule on, not retired.
+   * Capacity issue 5 (Josh, 3 Nov 2026): the bed map shows a zero ready count as the digit 0, the
+   * same way it shows every other count. This replaces the 6 Sep 2026 ruling that spelt it "None".
+   * Floored on a real ward actually having a zero ready count so the zero branch is exercised.
    */
-  it("states a ward's zero ready count as 'none', never a bare '0'", () => {
+  it("states a ward's zero ready count as the digit 0, never the word 'none'", () => {
     const zeroReady = seededWards.filter((ward) => ward.ready === 0);
     expect(zeroReady.length, "no ward has a zero ready count — this guard proves nothing").toBeGreaterThan(0);
     renderScreen();
     for (const { ward, card } of cardsByWard()) {
       if (ward.ready !== 0) continue;
-      expect(card, ward.unit.id).toHaveTextContent(/none ready/iu);
-      expect(card.textContent ?? "", `${ward.unit.id} kept a bare 0 beside "ready"`).not.toMatch(/\b0\s*ready/u);
+      expect(card, ward.unit.id).toHaveTextContent(/\b0\s*ready/u);
+      expect(card.textContent ?? "", `${ward.unit.id} still spells zero as a word`).not.toMatch(/none ready/iu);
     }
   });
 

@@ -184,18 +184,16 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     );
   });
 
-  it("the flow diagram's foot sentence is exact, and the diagram itself keeps every unit (whole-network)", () => {
+  it("Capacity draws no State bedflow foot sentence once the diagram has gone (Capacity issue 7)", () => {
     setServiceScope(SERVICE);
-    // Home v7 (Josh, 22 Oct 2026): State bedflow sits at the foot of Capacity, unchanged.
+    // Capacity issue 7 (Josh, 3 Nov 2026): State bedflow left Capacity, and its service foot with it.
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CapacityScreen />
       </WardFlowProvider>,
     );
 
-    expect(screen.getByTestId("ward-diagram-service-foot")).toHaveTextContent(
-      `Showing every ward in the network, not only ${SERVICE}.`,
-    );
+    expect(screen.queryByTestId("ward-diagram-service-foot")).not.toBeInTheDocument();
   });
 
   it("shortlist candidates are identical with and without a service chosen", () => {

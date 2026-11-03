@@ -67,6 +67,12 @@ export function ShiftChecks({
             </Link>
           ) : null}
         </div>
+        {/* Polish 3 (Josh, 3 Nov 2026): a thin bar shows how far through the round the shift is. */}
+        <span className={styles.shiftBar} data-tone={first ? "warning" : "success"} aria-hidden="true">
+          <i
+            style={{ width: `${confirmations.total ? (confirmations.confirmed / confirmations.total) * 100 : 100}%` }}
+          />
+        </span>
         <p className={styles.mutedXs}>
           {first ? (
             <>

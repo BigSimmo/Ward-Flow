@@ -154,3 +154,55 @@ export function notYetCounted(
     ).size,
   };
 }
+
+/** One stay behind a lever: the admission, its ward and the date or blocker that puts it there. */
+export type LeverRecord = { admission: Admission; unit: Unit; at: Instant | null; blocker: BedReleaseBlocker | null };
+
+/**
+ * Capacity issue 3 (Josh, 3 Nov 2026): the stays behind one lever, so its pop-up can list them.
+ * The same filters as `forecastLevers`, so the list always matches the lever's count. Soonest first.
+ */
+export function forecastLeverRecords(
+  kind: ForecastLever["kind"],
+  units: readonly Unit[],
+  releases: readonly BedRelease[],
+  admissions: readonly Admission[],
+  now: Instant,
+): LeverRecord[] {
+  const until = now + MINUTES_PER_DAY;
+  const open = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
+  const admissionsById = new Map(admissions.map((admission) => [admission.id, admission]));
+  const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionsById.get(release.admissionId));
+  const pending = releases.filter((release) => release.state !== "discharged" && open.has(release.unitId));
+  const records: LeverRecord[] = [];
+  if (kind === "confirm_dates") {
+    const flagged = new Set(pending.map((release) => release.admissionId));
+    for (const admission of admissions) {
+      if (
+        open.has(admission.unitId) &&
+        bedIsOccupied(admission) &&
+        admission.expectedDischargeAt !== null &&
+        admission.expectedDischargeAt <= until &&
+        !flagged.has(admission.id)
+      ) {
+        records.push({
+          admission,
+          unit: open.get(admission.unitId)!,
+          at: admission.expectedDischargeAt,
+          blocker: admission.blockReason ?? null,
+        });
+      }
+    }
+  } else {
+    for (const release of pending) {
+      const at = expectedAt(release);
+      if (at > until) continue;
+      const matches =
+        kind === "clear_held_up" ? release.blocker !== null : release.blocker === null && dayOf(at) < dayOf(now);
+      const admission = admissionsById.get(release.admissionId);
+      if (!matches || !admission) continue;
+      records.push({ admission, unit: open.get(release.unitId)!, at, blocker: release.blocker });
+    }
+  }
+  return records.sort((x, y) => (x.at ?? 0) - (y.at ?? 0));
+}

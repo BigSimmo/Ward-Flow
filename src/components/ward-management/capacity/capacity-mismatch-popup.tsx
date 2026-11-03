@@ -1,0 +1,183 @@
+"use client";
+
+import { useMemo } from "react";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+
+import { Drawer, buttonClass, durMinutes } from "@/components/wf";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
+import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
+import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { siteLabel } from "@/components/ward-management/ward-absence-labels";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import type { KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
+
+import { bedKindBreakdown, type BedKindGap } from "./capacity-derivations";
+import { gapWords } from "./capacity-range-line";
+import styles from "./capacity-page.module.css";
+
+const WAITING_HREF = "/ward-flow/waiting";
+
+/**
+ * Capacity issue 1 (Josh, 3 Nov 2026): a Mismatch card opens on what can be acted on. The figures
+ * across the top repeat the card, then the wards holding a ready bed of this type (each opens its
+ * ward), then the people waiting for one, longest wait first. Nothing here ranks a ward for a
+ * person: the two lists sit side by side and the coordinator matches them.
+ */
+export function MismatchPopup({
+  row,
+  title,
+  tomorrow,
+  now,
+  onClose,
+  onWard,
+}: {
+  row: BedKindGap | null;
+  title: string;
+  tomorrow: Pick<KindForecast, "low" | "likely" | "high"> | undefined;
+  now: number;
+  onClose: () => void;
+  onWard?: (unitId: string) => void;
+}) {
+  const { movements, units, admissions } = useWardFlowSelect("movements", "units", "admissions");
+  const patientOf = usePatientOf();
+  const canOpen = useCanOpenHref();
+  const detail = useMemo(
+    () => (row ? bedKindBreakdown(row.id, movements, units, admissions) : null),
+    [row, movements, units, admissions],
+  );
+  const short = (row?.gap ?? 0) < 0;
+  return (
+    <Drawer
+      open={row !== null}
+      onClose={onClose}
+      title={`${title} beds`}
+      description={row?.who}
+      ariaLabel={`${title} beds, mismatch detail`}
+      testId="capacity-mismatch-popup"
+      footer={
+        canOpen(WAITING_HREF) ? (
+          <div className={styles.popFoot}>
+            <Link href={WAITING_HREF} className={buttonClass({ variant: "sec", size: "sm" })}>
+              Open Waiting
+            </Link>
+          </div>
+        ) : undefined
+      }
+    >
+      {row && detail ? (
+        <div className={styles.popBody}>
+          <dl className={styles.popFigs}>
+            <div>
+              <dt>Now</dt>
+              <dd className={short ? styles.warnInk : styles.okInk}>{gapWords(row.gap)}</dd>
+            </div>
+            <div>
+              <dt>Waiting</dt>
+              <dd>{row.waiting}</dd>
+            </div>
+            <div>
+              <dt>Ready that fit</dt>
+              <dd>{row.bedsThatFit}</dd>
+            </div>
+            {tomorrow ? (
+              <div>
+                <dt>Tomorrow</dt>
+                <dd className={tomorrow.likely < 0 ? styles.warnInk : styles.okInk}>{gapWords(tomorrow.likely)}</dd>
+                <span className={styles.popFigSub}>
+                  {gapWords(tomorrow.low)} to {gapWords(tomorrow.high)}
+                </span>
+              </div>
+            ) : null}
+          </dl>
+
+          <section aria-labelledby="mm-pop-wards" className={styles.popSection}>
+            <h3 id="mm-pop-wards" className={styles.popHead}>
+              Ready beds that fit <span className={styles.popCount}>{detail.wards.length} wards</span>
+            </h3>
+            {detail.wards.length === 0 ? (
+              <p className={styles.popEmpty}>No ward has a ready {title.toLowerCase()} bed now.</p>
+            ) : (
+              <ul className={styles.popList}>
+                {detail.wards.map(({ unit, beds }) => {
+                  const site = siteByCode(unit.siteCode);
+                  const inner = (
+                    <>
+                      <span className={styles.popMain}>
+                        <span className={styles.popName}>
+                          <SpelledCodes text={unit.name} />
+                        </span>
+                        <span className={styles.mutedXs}>
+                          {siteLabel(unit.siteCode, site?.name)} · {site?.service ?? "Service not recorded"}
+                        </span>
+                      </span>
+                      <span className={styles.popBeds}>
+                        <b>{beds}</b> ready
+                      </span>
+                    </>
+                  );
+                  return (
+                    <li key={unit.id}>
+                      {onWard ? (
+                        <button type="button" className={styles.popRow} onClick={() => onWard(unit.id)}>
+                          {inner}
+                          <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
+                        </button>
+                      ) : (
+                        <span className={styles.popRow}>{inner}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          <section aria-labelledby="mm-pop-waiting" className={styles.popSection}>
+            <h3 id="mm-pop-waiting" className={styles.popHead}>
+              Waiting for this bed <span className={styles.popCount}>{detail.waiting.length} people</span>
+            </h3>
+            {detail.waiting.length === 0 ? (
+              <p className={styles.popEmpty}>Nobody is waiting for a {title.toLowerCase()} bed.</p>
+            ) : (
+              <ul className={styles.popList}>
+                {detail.waiting.map((movement) => {
+                  const who = patientOf(movement);
+                  const href = who.patient ? patientHref(who.patient.id) : null;
+                  const inner = (
+                    <>
+                      <span className={styles.popMain}>
+                        <span className={styles.popName}>{who.formalName}</span>
+                        <span className={styles.mutedXs}>
+                          <SpelledCodes text={movementOriginLabel(movement, edById(movement.originEdId)?.name)} /> ·{" "}
+                          {movementStatusLabel(movement)}
+                        </span>
+                      </span>
+                      <span className={styles.popWait}>{durMinutes(Math.max(0, now - movement.openedAt))}</span>
+                    </>
+                  );
+                  return (
+                    <li key={movement.id}>
+                      {href && canOpen(href) ? (
+                        <Link href={href} className={styles.popRow}>
+                          {inner}
+                          <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
+                        </Link>
+                      ) : (
+                        <span className={styles.popRow}>{inner}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
+      ) : null}
+    </Drawer>
+  );
+}

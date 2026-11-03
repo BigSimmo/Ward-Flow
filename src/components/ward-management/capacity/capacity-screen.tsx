@@ -3,13 +3,7 @@
 import { startTransition, useEffect, useMemo, useState } from "react";
 
 import { Drawer, Segmented, StatusGlyph, useIsPhone, useOptionalToast } from "@/components/wf";
-import {
-  useDueSoonThresholds,
-  useWardFlowSelect,
-  useWardNetwork,
-} from "@/components/ward-management/ward-flow-provider";
-import { HomeBedflow } from "@/components/ward-management/coordinator/home-bedflow";
-import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
+import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -37,8 +31,7 @@ import { RoadTimeCard } from "./capacity-road-time-card";
 import { ScenarioDialog } from "./capacity-scenario-dialog";
 import { ShiftChecks } from "./capacity-shift-checks";
 import { useSiteEdWaiting } from "./capacity-site-ed";
-import { CapacityWardSidebar } from "./capacity-ward-drawer";
-import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
+import { CapacityWardFoot, CapacityWardSidebar } from "./capacity-ward-drawer";
 import styles from "./capacity-page.module.css";
 
 type Popup = { kind: "scenario" } | { kind: "sheet" } | { kind: "ward"; unitId: string } | { kind: "forecast" } | null;
@@ -115,12 +108,6 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const tvOn = useWardFeatureFlag("bed-meeting-tv");
   const edWaiting = useSiteEdWaiting(model.site, model.now);
   const { now } = model;
-  const network = useWardNetwork();
-  const [bedflowUnitId, setBedflowUnitId] = useState<string | undefined>(undefined);
-  const bedflowDischargesHeldUp = useMemo(
-    () => serviceRollup(network.sites, units, [...bedReleases], [...leaveBeds], now).service.blockedToday,
-    [network.sites, units, bedReleases, leaveBeds, now],
-  );
 
   const mapModel = useMemo<CapacityModel>(() => scopeToService(model, service), [model, service]);
   const sheet = useMemo(
@@ -209,7 +196,12 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
     </>
   );
   // The executive sees planned bookings as counts only: the list names each person.
-  const planned = executive ? <PlannedCounts now={now} /> : <PlannedAdmissionsPanel key={worldGeneration} now={now} />;
+  // Capacity issue 6 (Josh, 3 Nov 2026): every other desk gets Planned moves, on the phone too.
+  const planned = executive ? (
+    <PlannedCounts now={now} />
+  ) : (
+    <ComingIn key={worldGeneration} now={now} wardRows={[...model.networkRows, ...model.otherSiteRows]} />
+  );
 
   return (
     <div className={styles.screen} data-testid="ward-capacity-screen" data-ward-design="redesign-2026-10">
@@ -254,15 +246,22 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
           </>
         ) : (
           <>
-            <MismatchBand model={model} hideEmptyTypes={siteDesk} />
+            {/* Capacity issue 2 (Josh, 3 Nov 2026): the bed map sits straight under Mismatch, the
+                forecast below it. Issue 7: State bedflow is gone; it repeated the bed map, and its one
+                extra figure (beds freeing today) is now on each bed map card. */}
+            <MismatchBand model={model} hideEmptyTypes={siteDesk} onWard={openWard} />
+            {bedMap}
             <BedForecast
               model={model}
               onTryScenario={() => setPopup({ kind: "scenario" })}
               siteName={model.site?.name}
+              onWard={openWard}
+              onAskWard={askWard}
             />
-            {bedMap}
-            <div className={styles.lowerRow}>
-              {executive ? planned : <ComingIn now={now} plannedBooked={model.plannedBooked} />}
+            {/* Capacity issue 6 (Josh, 3 Nov 2026): Planned moves, booked admissions and step downs in
+                one card, takes the full width; the nearest ready beds and this shift sit under it. */}
+            {planned}
+            <div className={styles.lowerRow} data-testid="capacity-lower-row">
               <RoadTimeCard
                 rows={siteDesk ? [...model.networkRows, ...model.otherSiteRows] : model.networkRows}
                 defaultEdId={model.roadTimeFromEdId}
@@ -271,20 +270,6 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
               />
               <ShiftChecks model={model} onAskWard={askWard} siteName={model.site?.name} />
             </div>
-            {/* Home v7 (Josh, 22 Oct 2026): State bedflow sits at the foot of Capacity, desktop only. No
-                patient is chosen here, so it reads beds only: a ward can be picked out, never offered. */}
-            <HomeBedflow
-              units={units}
-              movements={movements}
-              bedReleases={bedReleases}
-              leaveBeds={leaveBeds}
-              admissions={admissions}
-              now={now}
-              selectedUnitId={bedflowUnitId}
-              onSelectUnit={(unitId) => setBedflowUnitId((current) => (current === unitId ? undefined : unitId))}
-              dischargesHeldUp={bedflowDischargesHeldUp}
-              service={service}
-            />
           </>
         )}
         <WardPrototypeFooter
@@ -305,14 +290,22 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
           selectedRow ? (
             <span className={styles.wdHeadTag}>
               <StatusGlyph tone={selectedRow.ready > 0 ? "success" : "warning"} size={8} />
-              {selectedRow.ready > 0 ? `${selectedRow.ready} ready` : "None ready"}
+              {selectedRow.ready} ready
             </span>
           ) : undefined
         }
         testId="ward-capacity-ward-drawer"
+        footerClassName={styles.wdDrawerFoot}
+        footer={selectedRow ? <CapacityWardFoot row={selectedRow} now={now} /> : undefined}
       >
         {selectedRow ? (
-          <CapacityWardSidebar row={selectedRow} onBack={() => setPopup(null)} now={now} showPlace={false} />
+          <CapacityWardSidebar
+            row={selectedRow}
+            onBack={() => setPopup(null)}
+            now={now}
+            showPlace={false}
+            footInDrawer
+          />
         ) : null}
       </Drawer>
       <Drawer
@@ -327,6 +320,8 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
           onTryScenario={() => setPopup({ kind: "scenario" })}
           stacked
           siteName={model.site?.name}
+          onWard={openWard}
+          onAskWard={askWard}
         />
       </Drawer>
     </div>

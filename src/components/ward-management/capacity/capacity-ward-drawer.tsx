@@ -7,7 +7,7 @@ import { capacityConfirmer } from "./capacity-confirmer";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeOpenHandle, DischargeRecord } from "@/components/ward-management/ward-discharge-records";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { patientListName } from "@/components/ward-management/ward-patients";
@@ -22,7 +22,8 @@ import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { countCellText, freeingCellText, type NetworkWardRow } from "./capacity-derivations";
 import local from "./capacity-page.module.css";
 import { BedCells } from "./capacity-bed-map-cards";
-import { WardClosurePanel } from "./ward-closure-panel";
+import { WardClosuresDialog } from "./capacity-ward-closures-dialog";
+import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { bedKindsServed, isConfirmationFresh } from "./capacity-gap-words";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
 
@@ -35,15 +36,17 @@ export function CapacityWardSidebar({
   onBack,
   now,
   showPlace = true,
+  footInDrawer = false,
 }: {
   row: NetworkWardRow;
   onBack: () => void;
   now: Instant;
   /** False when the drawer's own header already names the hospital and service. */
   showPlace?: boolean;
+  /** True when the drawer pins `CapacityWardFoot` to its own foot (Capacity issue 4). */
+  footInDrawer?: boolean;
 }) {
   const canOpen = useCanOpenHref();
-  const wardHref = `/ward-flow/ward/${row.unit.id}`;
   const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
     useWardFlowSelect(
       "bedReleases",
@@ -236,15 +239,13 @@ export function CapacityWardSidebar({
               />
             </div>
 
-            <details className={local.wdClosure} open={row.unit.isClosed || undefined}>
-              <summary>
-                <ChevronRight size={14} aria-hidden="true" />
-                {row.unit.isClosed ? "Closed to admissions" : "Close to admissions"}
-              </summary>
-              <div className={local.wdClosureBody}>
-                <WardClosurePanel unit={row.unit} now={now} actor={recordActor} />
-              </div>
-            </details>
+            {/* Capacity issue 4 (Josh, 3 Nov 2026): closing is a last resort, so it moved to a quiet
+                "Closures" button in the drawer's foot. A closed ward still says so here. */}
+            {row.unit.isClosed ? (
+              <p className={`${local.wdNoticeLine} ${local.warnInk}`}>
+                <StatusGlyph tone="warning" size={9} /> Closed to admissions. Reopen from Closures below.
+              </p>
+            ) : null}
           </>
         ) : opened ? (
           <section className={local.wdRecord} aria-label="Discharge record detail">
@@ -256,7 +257,23 @@ export function CapacityWardSidebar({
                 <h3 ref={recordHeading} tabIndex={-1} className={local.wdRecordName}>
                   {dischargeRecordName(detail.value)}
                 </h3>
+                <span className={`${local.tag} ${stageTone(detail.value, now)}`}>{stageWords(detail.value, now)}</span>
                 <DischargeRecordFacts record={detail.value} now={now} />
+                {detail.value.identity.kind === "linked" && canOpen(patientHref(detail.value.identity.patient.id)) ? (
+                  <div className={local.wdRecordActions}>
+                    <Link
+                      href={patientHref(detail.value.identity.patient.id)}
+                      className={buttonClass({ variant: "sec", size: "sm" })}
+                    >
+                      Open patient
+                    </Link>
+                    {canOpen(DISCHARGES_HREF) ? (
+                      <Link href={DISCHARGES_HREF} className={buttonClass({ variant: "ghost", size: "sm" })}>
+                        Change on Discharge board
+                      </Link>
+                    ) : null}
+                  </div>
+                ) : null}
               </>
             ) : (
               <p role="status">This discharge record is unavailable. Return to the list and open it again.</p>
@@ -272,9 +289,6 @@ export function CapacityWardSidebar({
             ) : (
               <ul className={local.wdList} aria-label="Discharge records, soonest first">
                 {sortedRecords.map((record) => {
-                  const stage = dischargeRecordStage(record);
-                  const passed =
-                    record.leftAt === null && record.expectedDischargeAt !== null && record.expectedDischargeAt < now;
                   return (
                     <li key={record.id}>
                       <button
@@ -297,17 +311,7 @@ export function CapacityWardSidebar({
                             <span className={`${local.mutedXs} ${local.warnInk}`}>{record.blockReason}</span>
                           ) : null}
                         </span>
-                        <span
-                          className={`${local.tag} ${
-                            stage === "Discharge blocked"
-                              ? local.wdTagWarn
-                              : stage === "Confirmed" || stage === "Departed"
-                                ? local.tagGood
-                                : ""
-                          }`}
-                        >
-                          {stage === "Discharge blocked" ? "Blocked" : passed ? "Date passed" : stage}
-                        </span>
+                        <span className={`${local.tag} ${stageTone(record, now)}`}>{stageWords(record, now)}</span>
                         <ChevronRight size={14} aria-hidden="true" className={local.helpChevron} />
                       </button>
                     </li>
@@ -344,23 +348,80 @@ export function CapacityWardSidebar({
           </>
         )}
       </div>
-      {/* Redesign (Josh, 30 Oct): each link shows only when this desk can open its page. */}
-      {canOpen(wardHref) || canOpen(DISCHARGES_HREF) ? (
-        <div className={local.wdFoot}>
-          {canOpen(wardHref) ? (
-            <Link href={wardHref} className={buttonClass({ variant: "sec", size: "sm" })}>
-              Open ward
-            </Link>
-          ) : null}
-          {canOpen(DISCHARGES_HREF) ? (
-            <Link href={DISCHARGES_HREF} className={buttonClass({ variant: "ghost", size: "sm" })}>
-              Discharge board
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
+      {footInDrawer ? null : <CapacityWardFoot row={row} now={now} />}
     </>
   );
+}
+
+/**
+ * The ward drawer's actions, pinned to the drawer's foot so they stay in reach however far the
+ * discharge list scrolls (Capacity issue 4, Josh, 3 Nov 2026). Open ward leads; Closures is the
+ * quiet last item, a last resort.
+ */
+export function CapacityWardFoot({ row, now }: { row: NetworkWardRow; now: Instant }) {
+  const canOpen = useCanOpenHref();
+  const recordActors = useWardRecordActors();
+  const recordActor =
+    recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
+  const [closures, setClosures] = useState(false);
+  const wardHref = `/ward-flow/ward/${row.unit.id}`;
+  const mayClose =
+    recordActor.role === "coordinator" || recordActor.role === "bed_manager" || recordActor.role === "ward";
+  // Redesign (Josh, 30 Oct): each link shows only when this desk can open its page.
+  if (!canOpen(wardHref) && !canOpen(DISCHARGES_HREF) && !mayClose) return null;
+  return (
+    <div className={local.wdFoot}>
+      {canOpen(wardHref) ? (
+        <Link href={wardHref} className={buttonClass({ variant: "sec", size: "sm" })}>
+          Open ward
+        </Link>
+      ) : null}
+      {canOpen(DISCHARGES_HREF) ? (
+        <Link href={DISCHARGES_HREF} className={buttonClass({ variant: "ghost", size: "sm" })}>
+          Discharge board
+        </Link>
+      ) : null}
+      {mayClose ? (
+        <>
+          <Button
+            size="sm"
+            variant="ghost"
+            className={local.wdFootQuiet}
+            aria-haspopup="dialog"
+            onClick={() => setClosures(true)}
+          >
+            {row.unit.isClosed ? "Closures (ward closed)" : "Closures"}
+          </Button>
+          <WardClosuresDialog
+            open={closures}
+            onClose={() => setClosures(false)}
+            unit={row.unit}
+            now={now}
+            actor={recordActor}
+          />
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+/** Capacity issue 4: one colour per discharge state, the word always beside it. */
+function stageWords(record: DischargeRecord, now: Instant): string {
+  const stage = dischargeRecordStage(record);
+  if (stage === "Discharge blocked") return "Blocked";
+  if (stage !== "Expected" || record.expectedDischargeAt === null) return stage;
+  if (record.expectedDischargeAt < now) return "Date passed";
+  const days = dayOf(record.expectedDischargeAt) - dayOf(now);
+  return days === 0 ? "Due today" : days === 1 ? "Due tomorrow" : "Expected";
+}
+
+function stageTone(record: DischargeRecord, now: Instant): string {
+  const words = stageWords(record, now);
+  if (words === "Blocked") return local.wdTagWarn ?? "";
+  if (words === "Date passed") return local.wdTagDanger ?? "";
+  if (words === "Due today" || words === "Due tomorrow") return local.wdTagInfo ?? "";
+  if (words === "Confirmed" || words === "Departed") return local.wdTagGood ?? "";
+  return "";
 }
 
 function FactGroup({ title, rows }: { title: string; rows: [string, string][] }) {

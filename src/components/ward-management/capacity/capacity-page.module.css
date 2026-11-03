@@ -599,12 +599,16 @@
   padding: var(--wf-s-3);
   border-radius: var(--wf-r-md);
 }
+/* Capacity issue 5 (Josh, 3 Nov 2026): a row is the name with its notes under it, then the ready
+   figure, occupied of beds and the bed squares, in fixed columns so nothing runs together. */
 .wardRow {
-  grid-template-columns: minmax(160px, 1.5fr) 72px 120px minmax(140px, 2fr) minmax(140px, 1.4fr);
-  grid-template-areas: "name ready occupied cells note";
+  grid-template-columns: minmax(180px, 1.6fr) 84px 124px minmax(140px, 2fr);
+  grid-template-areas:
+    "name ready occupied cells"
+    "note ready occupied cells";
   align-items: center;
-  gap: var(--wf-s-3);
-  min-height: 44px;
+  gap: 2px var(--wf-s-4);
+  min-height: 52px;
   padding: var(--wf-s-2) var(--wf-s-2);
   border-width: 0 0 1px;
   border-radius: 0;
@@ -652,6 +656,7 @@
 .wardRow .wardReady {
   flex-direction: row;
   align-items: baseline;
+  justify-content: flex-end;
   gap: 4px;
 }
 .wardReadyN {
@@ -970,11 +975,7 @@
     grid-row: span 2;
   }
   .wardRow {
-    grid-template-columns: minmax(140px, 1.4fr) 72px 110px minmax(100px, 2fr);
-    grid-template-areas: "name ready occupied cells";
-  }
-  .wardRow .wardNote {
-    display: none;
+    grid-template-columns: minmax(150px, 1.4fr) 76px 112px minmax(100px, 2fr);
   }
 }
 
@@ -1766,4 +1767,1343 @@
   .screenHidden {
     display: none !important;
   }
+}
+
+/* ── Capacity issue 1 (Josh, 3 Nov 2026): Mismatch cards open a pop-up ── */
+.mmTile.mmTile {
+  padding: 0;
+}
+.mmTileButton {
+  position: relative;
+  cursor: pointer;
+  transition: background var(--wf-m-fast) var(--wf-ease);
+}
+.mmTileButton:hover {
+  background: var(--wf-surface-2);
+}
+.mmTileButton:has(.mmTileOpen:focus-visible) {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.mmTileButton p {
+  margin: 0;
+}
+.mmScale {
+  display: grid;
+  grid-template-columns: 64px minmax(48px, 1fr) auto;
+  align-items: center;
+  gap: 0 var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.mmAxis {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  line-height: 12px;
+  letter-spacing: 0.02em;
+  color: var(--wf-ink-3);
+}
+.mmTileOpen {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 2px;
+  margin-top: var(--wf-s-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+}
+
+/* Shared pop-up body for the Capacity pop-ups (Mismatch, forecast levers). */
+.popBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+}
+.popFigs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+.popFigs > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+.popFigs dt {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.popFigs dd {
+  margin: 0;
+  font-size: var(--wf-fs-16);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.popFigSub {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.popSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+}
+.popHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+}
+.popCount {
+  font-weight: 500;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.popEmpty {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+.popList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+.popList > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+.popRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--wf-ink-1);
+  text-align: start;
+  text-decoration: none;
+}
+button.popRow,
+a.popRow {
+  cursor: pointer;
+}
+button.popRow:hover,
+a.popRow:hover {
+  background: var(--wf-surface-2);
+}
+button.popRow:focus-visible,
+a.popRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.popMain {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.popName {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+}
+.popBeds {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.popBeds b {
+  font-size: var(--wf-fs-16);
+  color: var(--wf-success-ink);
+}
+.popWait {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.popFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+.popRowWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding-inline-end: var(--wf-s-3);
+}
+/* Discharge status colours (Capacity issue 4): blocked amber, date passed red, due soon blue,
+   confirmed green, each a soft fill with its own ink so the word stays the signal. */
+.wdTagWarn.wdTagWarn {
+  border-color: color-mix(in srgb, var(--wf-warning) 45%, transparent);
+}
+.wdTagDanger {
+  border-color: color-mix(in srgb, var(--wf-danger) 45%, transparent);
+  background: color-mix(in srgb, var(--wf-danger) 10%, var(--wf-surface));
+  color: var(--wf-danger-ink);
+}
+.wdTagInfo {
+  border-color: color-mix(in srgb, var(--wf-info) 45%, transparent);
+  background: color-mix(in srgb, var(--wf-info) 10%, var(--wf-surface));
+  color: var(--wf-info-ink);
+}
+.wdTagGood {
+  border-color: color-mix(in srgb, var(--wf-success) 45%, transparent);
+  background: color-mix(in srgb, var(--wf-success) 10%, var(--wf-surface));
+  color: var(--wf-success-ink);
+}
+
+/* ── Capacity issue 3 (Josh, 3 Nov 2026): the forecast's figures as one strip, two columns below ── */
+.fcStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--wf-line);
+}
+.fcStrip .fcFig {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 0;
+  border-inline-start: 1px solid var(--wf-line);
+}
+.fcStrip .fcFig:first-child {
+  border-inline-start: 0;
+}
+.fcStrip + .fcBody.fcBody {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+.fcStacked .fcStrip + .fcBody.fcBody {
+  grid-template-columns: minmax(0, 1fr);
+}
+.fcStacked .fcStrip {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.fcStacked .fcStrip .fcFig {
+  padding-inline: 0 var(--wf-s-3);
+  border-inline-start: 0;
+}
+button.helpLink {
+  width: calc(100% + 2 * var(--wf-s-2));
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: start;
+  cursor: pointer;
+}
+.hmCell:hover {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 1px;
+}
+.hmTip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 3;
+  display: none;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 150px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 400;
+  text-align: start;
+  color: var(--wf-ink-2);
+  translate: -50% 0;
+  pointer-events: none;
+}
+.hmTip b {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+.hmCell:hover .hmTip {
+  display: flex;
+}
+@container page (max-width: 1099px) {
+  .fcStrip + .fcBody.fcBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container page (max-width: 699px) {
+  .fcStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .fcStrip .fcFig:nth-child(odd) {
+    border-inline-start: 0;
+  }
+  .fcStrip .fcFig:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+}
+.wdNoticeLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.wdRecordActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+.wdFootQuiet.wdFootQuiet {
+  margin-inline-start: auto;
+  color: var(--wf-ink-3);
+}
+/* Pinned in the drawer's own foot (Capacity issue 4): no rule or top gap of its own. */
+.wdDrawerFoot .wdFoot {
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* ── Capacity issue 6 (Josh, 3 Nov 2026): Planned moves full width, then two equal cards ── */
+.lowerRow.lowerRow {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+.lowerRow.lowerRow > * {
+  grid-column: auto;
+}
+@media (max-width: 46.4375rem) {
+  .lowerRow.lowerRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Planned moves: four lanes in the Movements stage strip style, then the grouped list. */
+.pmHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pmHeadSub {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.pmBody {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--wf-s-2);
+}
+.pmLanes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  list-style: none;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+.pmLanes > li {
+  display: flex;
+  min-width: 0;
+}
+.pmLane {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name count"
+    "marks marks"
+    "note note";
+  align-items: baseline;
+  row-gap: var(--wf-s-1);
+  flex: 1;
+  min-width: 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: 0 1px 2px rgba(15, 30, 45, 0.04);
+  font: inherit;
+  color: var(--wf-ink-1);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.pmLane:hover {
+  border-color: var(--wf-line-2);
+  box-shadow: 0 4px 14px -8px rgba(15, 30, 45, 0.22);
+}
+.pmLane[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+  box-shadow: 0 0 0 1px var(--wf-accent);
+}
+.pmLane:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.pmLaneName {
+  grid-area: name;
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pmLaneCount {
+  grid-area: count;
+  font-family: var(--wf-mono);
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.pmMarks {
+  grid-area: marks;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 10px;
+}
+.pmMarks i {
+  width: 14px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--wf-line-2);
+}
+.pmMarks i[data-tone="warning"] {
+  background: var(--wf-warning);
+}
+.pmMarks i[data-tone="success"] {
+  background: var(--wf-success);
+}
+.pmMarks i[data-tone="info"] {
+  background: var(--wf-info);
+}
+.pmMarks b {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+.pmLaneNote {
+  grid-area: note;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pmLaneWarn {
+  font-weight: 600;
+  color: var(--wf-warning-ink);
+}
+.pmGroup {
+  padding: 0 var(--wf-s-4);
+}
+.pmGroupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-4) 0 var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+.pmGroupHead::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--wf-line);
+}
+.pmGroupCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  font-family: var(--wf-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--wf-ink-2);
+}
+.pmEmpty {
+  margin: 0;
+  padding: var(--wf-s-1) var(--wf-s-2) var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+.pmEmptyState.pmEmptyState {
+  margin-bottom: var(--wf-s-2);
+}
+.pmList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pmRow {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1.25fr) minmax(0, 1fr) 216px 18px;
+  align-items: center;
+  gap: var(--wf-s-4);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-2);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-md);
+  background: none;
+  font: inherit;
+  color: var(--wf-ink-1);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.pmRow:hover {
+  border-color: var(--wf-line);
+  background: var(--wf-surface);
+  box-shadow: 0 6px 18px -12px rgba(15, 30, 45, 0.28);
+}
+.pmRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 0;
+}
+.pmWhen {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 44px;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+}
+.pmWhenTime {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-14);
+  font-weight: 650;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.pmWhenDay {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--wf-ink-3);
+}
+.pmWhenLate {
+  background: color-mix(in srgb, var(--wf-warning) 16%, var(--wf-surface));
+  color: var(--wf-warning-ink);
+}
+.pmWhenLate .pmWhenDay {
+  color: var(--wf-warning-ink);
+}
+.pmWhenStep {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+.pmWho,
+.pmRoute {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--wf-fs-14);
+}
+.pmName {
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pmWard {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 550;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pmWard > svg {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+.pmSub {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pmMono {
+  font-family: var(--wf-mono);
+}
+.pmPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.pmPill::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.pmPill[data-tone="warning"] {
+  background: color-mix(in srgb, var(--wf-warning) 15%, transparent);
+  color: var(--wf-warning-ink);
+}
+.pmPill[data-tone="success"] {
+  background: color-mix(in srgb, var(--wf-success) 13%, transparent);
+  color: var(--wf-success-ink);
+}
+.pmPill[data-tone="info"] {
+  background: color-mix(in srgb, var(--wf-info) 13%, transparent);
+  color: var(--wf-info-ink);
+}
+.pmChevron {
+  color: var(--wf-ink-3);
+  transition: transform 120ms ease;
+}
+.pmRow:hover .pmChevron {
+  color: var(--wf-ink-1);
+  transform: translateX(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pmLane,
+  .pmRow,
+  .pmChevron {
+    transition: none;
+  }
+}
+@media (max-width: 64rem) {
+  .pmRow {
+    grid-template-columns: 60px minmax(0, 1fr) minmax(0, 1fr) 18px;
+    row-gap: var(--wf-s-2);
+  }
+  .pmWhen {
+    grid-row: 1 / 3;
+    align-self: start;
+  }
+  .pmPill {
+    grid-column: 2 / 4;
+    grid-row: 2;
+  }
+  .pmChevron {
+    grid-column: 4;
+    grid-row: 1 / 3;
+  }
+}
+@media (max-width: 46.4375rem) {
+  .pmLanes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: var(--wf-s-3);
+  }
+  .pmGroup {
+    padding: 0 var(--wf-s-3);
+  }
+  .pmRow {
+    grid-template-columns: 56px minmax(0, 1fr) 18px;
+    gap: var(--wf-s-1) var(--wf-s-3);
+  }
+  .pmWhen {
+    grid-row: 1 / 4;
+    width: 56px;
+  }
+  .pmRoute {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .pmPill {
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: 2px;
+  }
+  .pmChevron {
+    grid-column: 3;
+    grid-row: 1 / 4;
+  }
+}
+
+/* The planned move pop-up, framed like the Movements one. */
+.pmKind {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: 999px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+.pmDrawer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+}
+.pmHero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: linear-gradient(180deg, var(--wf-surface-2), var(--wf-surface));
+}
+.pmHeroLate {
+  border-color: color-mix(in srgb, var(--wf-warning) 40%, var(--wf-line));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface)), var(--wf-surface));
+}
+.pmHeroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+}
+.pmHeroWhen {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.pmHeroTime {
+  font-family: var(--wf-mono);
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.pmHeroWard {
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  font-weight: 650;
+}
+.pmHeroDay {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+.pmSectionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0 0 calc(-1 * var(--wf-s-2));
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.pmStops {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+.pmLegText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.pmTime {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding-bottom: var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.pmTimeTop,
+.pmTimeFoot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+}
+.pmTimeWhat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-weight: 600;
+}
+.pmTimeLeft {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+.pmTimeFoot {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.pmBar {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  overflow: hidden;
+}
+.pmBarFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--wf-accent);
+}
+.pmBarLate {
+  background: var(--wf-warning);
+}
+.pmSteps {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+  padding: 0 0 var(--wf-s-4);
+  list-style: none;
+  border-bottom: 1px solid var(--wf-line);
+}
+.pmSteps > li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+.pmSteps > li + li::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--wf-line-2);
+}
+.pmSteps > li[data-state="done"] + li::before,
+.pmSteps > li[data-state="now"]::before,
+.pmSteps > li[data-state="done"]::before {
+  background: var(--wf-accent);
+}
+.pmStepDot {
+  position: relative;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--wf-line-2);
+  border-radius: 50%;
+  background: var(--wf-surface);
+}
+.pmSteps > li[data-state="done"] .pmStepDot {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent);
+}
+.pmSteps > li[data-state="now"] .pmStepDot {
+  border-color: var(--wf-accent);
+  box-shadow:
+    inset 0 0 0 3px var(--wf-surface),
+    inset 0 0 0 8px var(--wf-accent);
+}
+.pmStepLabel {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.pmSteps > li[data-state="now"] .pmStepLabel {
+  font-weight: 650;
+  color: var(--wf-ink-1);
+}
+.pmJourney {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+.pmLeg {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding-left: 22px;
+}
+.pmLegDot {
+  position: absolute;
+  top: 5px;
+  left: 2px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--wf-ink-3);
+  border-radius: 50%;
+}
+.pmLegDot[data-kind="to"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent);
+}
+.pmLeg + .pmLeg::before {
+  content: "";
+  position: absolute;
+  top: -24px;
+  left: 6px;
+  width: 1px;
+  height: 30px;
+  background: repeating-linear-gradient(180deg, var(--wf-line-2) 0 3px, transparent 3px 6px);
+}
+.pmLegMeta {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+.pmLegReady {
+  margin-left: auto;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-success-ink);
+}
+.pmLegNone {
+  color: var(--wf-ink-3);
+}
+.pmNote {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+}
+.pmFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+.pmFacts > div {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+.pmFacts > div:nth-child(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+.pmFacts > div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+.pmFacts dt {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.pmFacts dd {
+  margin: 0;
+  font-weight: 600;
+}
+.pmStepDown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+.pmFootWrap.pmFootWrap {
+  padding: 0;
+  border-top: 0;
+}
+.pmFoot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  color: var(--wf-hero-ink);
+}
+.pmFoot :is(a, button):focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.pmFootWide.pmFootWide {
+  width: 100%;
+  min-height: 40px;
+  justify-content: center;
+}
+.pmFootNext {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-md);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  font-size: var(--wf-fs-13);
+}
+.pmFootRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+.pmFootRow > * {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+.pmFootRow :is(a, button) {
+  border-color: var(--wf-hero-edge);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  color: var(--wf-hero-ink);
+}
+.pmFootRow :is(a, button):hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+}
+.popLabel {
+  margin-top: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.mmScale > b {
+  white-space: nowrap;
+}
+.mmStrip.mmStrip {
+  grid-auto-columns: minmax(250px, 1fr);
+}
+/* The Step down board's own lists, drawn as rows inside the pop-up. */
+.pmStepDown :is(p) {
+  padding: 0;
+}
+.pmStepDown ul {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 0;
+  border-top: 1px solid var(--wf-line);
+}
+.pmStepDown li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: 40px;
+  padding: var(--wf-s-1) 0;
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+.pmStepDown [data-testid="step-down-swap-candidates"] {
+  margin-top: var(--wf-s-3);
+  padding-top: var(--wf-s-3);
+  border-top: 0;
+  gap: var(--wf-s-2);
+}
+/* The tile's one button covers the whole tile (Capacity issue 1). */
+.mmTileOpen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.mmTileOpen:focus-visible {
+  outline: none;
+}
+.pmLaneName,
+.pmLaneNote {
+  min-width: 0;
+}
+@media (max-width: 46.4375rem) {
+  .pmLaneCount {
+    font-size: 22px;
+  }
+  .pmHero .pmTimeFoot {
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+/* ── Polish 3 (Josh, 3 Nov 2026): Mismatch tiles as raised cards, in the Planned moves style ── */
+.mmStrip.mmStrip {
+  grid-auto-columns: minmax(232px, 1fr);
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  background: var(--wf-surface-2);
+  scroll-padding-inline: var(--wf-s-4);
+}
+.mmTile.mmTile {
+  gap: 0;
+  padding: var(--wf-s-3) var(--wf-s-3) 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: 0 1px 2px rgba(15, 30, 45, 0.04);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.mmTileButton.mmTileButton:hover {
+  background: var(--wf-surface);
+  border-color: var(--wf-line-2);
+  box-shadow: 0 4px 14px -8px rgba(15, 30, 45, 0.22);
+}
+.mmTile .mmTileTitle {
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.mmTile .mmTileNow {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+.mmHero {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: var(--wf-s-2) 0 0;
+  line-height: 1;
+}
+.mmHero b {
+  font-family: var(--wf-mono);
+  font-size: 30px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.mmHeroWord {
+  font-size: var(--wf-fs-15, 15px);
+  font-weight: 600;
+}
+.mmTile .mmSub {
+  margin-top: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.mmTile .mmScale {
+  margin-top: var(--wf-s-3);
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  grid-template-columns: 58px minmax(48px, 1fr) auto;
+  row-gap: 2px;
+}
+.mmTile .mmTileRange {
+  margin-top: var(--wf-s-1);
+}
+.mmTile .mmTileOpen {
+  align-self: stretch;
+  justify-content: space-between;
+  margin: var(--wf-s-3) calc(-1 * var(--wf-s-3)) 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0 0 var(--wf-r-md) var(--wf-r-md);
+}
+.mmTileButton:hover .mmTileOpen {
+  background: var(--wf-accent-tint);
+}
+
+/* ── Polish 3 (Josh, 3 Nov 2026): forecast figures as raised tiles, and the help list as clear actions ── */
+.fcStrip.fcStrip {
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  background: var(--wf-surface-2);
+  border-bottom: 1px solid var(--wf-line);
+}
+.fcStrip .fcFig {
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: 0 1px 2px rgba(15, 30, 45, 0.04);
+}
+.fcStrip .fcFigLabel {
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+.fcStrip .fcFigValue {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.fcSide > .fcFigLabel {
+  font-size: var(--wf-fs-13);
+  font-weight: 650;
+  color: var(--wf-ink-1);
+}
+.fcSide .helpList > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+.fcSide .helpLink {
+  min-height: 40px;
+  transition: background 120ms ease;
+}
+.fcSide .helpLink:hover {
+  background: var(--wf-accent-tint);
+}
+.fcSide .helpLink .tag {
+  border-radius: 999px;
+  padding-inline: 8px;
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.fcSide .helpLink .tagGood {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--wf-success) 14%, transparent);
+}
+
+/* ── Polish 3 (Josh, 3 Nov 2026): This shift reads as two calm sections with clear figures ── */
+.shiftSection .shiftFigure {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.shiftBar {
+  display: block;
+  height: 6px;
+  margin: var(--wf-s-1) 0;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  overflow: hidden;
+}
+.shiftBar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--wf-success);
+}
+.shiftBar[data-tone="warning"] > i {
+  background: var(--wf-warning);
+}
+.shiftSection .shiftTags {
+  align-items: center;
+  margin-top: var(--wf-s-2);
+}
+.shiftSection .shiftTagsLabel {
+  min-width: 88px;
+  color: var(--wf-ink-1);
+}
+.shiftSection .shiftTagList .tag {
+  border-color: transparent;
+  border-radius: 999px;
+  padding: 2px 10px;
+  background: var(--wf-surface-2);
+  font-family: inherit;
+  color: var(--wf-ink-1);
+}
+/* Tablet: the four bed types sit two by two, so none is cut off at the edge. */
+@media (min-width: 46.5rem) and (max-width: 75rem) {
+  .mmStrip.mmStrip {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow-x: visible;
+  }
+}
+.mmHero > svg {
+  align-self: center;
+}
+.mmHeroWord::first-letter {
+  text-transform: uppercase;
+}
+.mmHero b + .mmHeroWord::first-letter {
+  text-transform: none;
+}
+
+/* ── Polish 3 (Josh, 3 Nov 2026): pop-up figures as soft tiles, and status tags as quiet pills ── */
+.popFigs > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.popFigs dt {
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.popFigs dd {
+  margin: 0;
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.popRow .tag {
+  border-color: transparent;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-family: inherit;
+  font-weight: 600;
+  white-space: normal;
+  text-align: center;
+}
+.popRow .wdTagWarn {
+  background: color-mix(in srgb, var(--wf-warning) 14%, transparent);
+}
+.popRow .wdTagDanger {
+  background: color-mix(in srgb, var(--wf-danger, #b42318) 12%, transparent);
 }

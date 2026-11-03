@@ -142,6 +142,36 @@ export function bedKindGaps(
   });
 }
 
+/**
+ * Capacity issue 1 (Josh, 3 Nov 2026): the people and wards behind one Mismatch card, so the card
+ * can open on what to act on. The same filters as `bedKindGaps`, so the pop-up's lists always add up
+ * to the card's "waiting" and "ready that fit" figures. Wards are most fitting beds first.
+ */
+export function bedKindBreakdown(
+  kind: BedKindId,
+  movements: Movement[],
+  units: Unit[],
+  admissions: readonly Admission[] = [],
+): { waiting: Movement[]; wards: { unit: Unit; beds: number }[] } {
+  const waiting = movements
+    .filter(
+      (movement) =>
+        isOpen(movement) &&
+        movement.admissionId === undefined &&
+        movement.allocatedBed === undefined &&
+        (movement.stage === "placement_requested" ||
+          movement.stage === "destination_review" ||
+          movement.stage === "accepted_awaiting_bed") &&
+        bedKindOfMovement(movement.cohort, movement.security) === kind,
+    )
+    .sort((x, y) => x.openedAt - y.openedAt);
+  const wards = units
+    .map((unit) => ({ unit, beds: bedsOfKindAtUnit(unit, kind, bedStates(unit, admissions, [], []).ready) }))
+    .filter((entry) => entry.beds > 0)
+    .sort((x, y) => y.beds - x.beds || x.unit.name.localeCompare(y.unit.name));
+  return { waiting, wards };
+}
+
 /** The "All four together" row. Sums the rows — never recomputed independently, so the total can
  *  never disagree with what is sitting above it. */
 export function bedKindTotals(rows: BedKindGap[]): { waiting: number; bedsThatFit: number; gap: number } {
@@ -539,7 +569,9 @@ export function confirmedHeldUpNote(confirmed: number | undefined, alsoHeldUp: n
  * from `freeingCellText`'s absence.
  */
 export function countCellText(value: number): string {
-  return value === 0 ? "none" : String(value);
+  // Capacity issue 5 (Josh, 3 Nov 2026): a zero is the digit 0 everywhere on Capacity, replacing
+  // the 6 September ruling above. Every cell still agrees with its neighbours, now as digits.
+  return String(value);
 }
 
 /**

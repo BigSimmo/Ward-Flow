@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronRight } from "lucide-react";
 
 import { Card, CardHead, Segmented, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -9,6 +10,7 @@ import type { ForecastByKind, KindForecast } from "@/components/ward-management/
 
 import { gapWords, RangeLine } from "./capacity-range-line";
 import type { CapacityModel } from "./capacity-model";
+import { MismatchPopup } from "./capacity-mismatch-popup";
 import styles from "./capacity-page.module.css";
 
 type Range = Pick<KindForecast, "low" | "likely" | "high">;
@@ -20,9 +22,19 @@ type Show = "all" | "short" | "enough";
  * table plus a separate "Tomorrow" strip. The network total is the forecast's Now figure, so it
  * is not repeated here as a fifth card (Josh, 30 Oct 2026).
  */
-export function MismatchBand({ model, hideEmptyTypes = false }: { model: CapacityModel; hideEmptyTypes?: boolean }) {
+export function MismatchBand({
+  model,
+  hideEmptyTypes = false,
+  onWard,
+}: {
+  model: CapacityModel;
+  hideEmptyTypes?: boolean;
+  /** Opens a ward's drawer from the pop-up's ready-bed list. */
+  onWard?: (unitId: string) => void;
+}) {
   const { gapRows, tomorrowByKind, now } = model;
   const [show, setShow] = useState<Show>("all");
+  const [openKind, setOpenKind] = useState<BedKindGap["id"] | null>(null);
   const span = rangeSpan(tomorrowByKind);
   const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
   const until = formatInstantWithDay(tomorrowByKind.until, now);
@@ -74,10 +86,26 @@ export function MismatchBand({ model, hideEmptyTypes = false }: { model: Capacit
               tomorrow={byId.get(row.id)}
               span={span}
               until={until}
+              onOpen={() => setOpenKind(row.id)}
             />
           ))}
         </ul>
       )}
+      <MismatchPopup
+        row={gapRows.find((row) => row.id === openKind) ?? null}
+        title={shortNeed(gapRows.find((row) => row.id === openKind)?.need ?? "")}
+        tomorrow={openKind ? byId.get(openKind) : undefined}
+        now={now}
+        onClose={() => setOpenKind(null)}
+        onWard={
+          onWard
+            ? (unitId) => {
+                setOpenKind(null);
+                onWard(unitId);
+              }
+            : undefined
+        }
+      />
     </Card>
   );
 }
@@ -88,39 +116,64 @@ function MismatchTile({
   tomorrow,
   span,
   until,
+  onOpen,
 }: {
   title: string;
   row: Pick<BedKindGap, "waiting" | "bedsThatFit" | "gap">;
   tomorrow: Range | undefined;
   span: number;
   until: string;
+  onOpen: () => void;
 }) {
   const short = row.gap < 0;
+  // Capacity issue 1 (Josh, 3 Nov 2026): each card opens who is waiting and where the fitting beds
+  // are. The card keeps its heading and figures; its one button stretches over the whole card, so a
+  // tap anywhere opens it. Now and Tomorrow sit on the same labelled scale (short to the left of 0,
+  // spare to the right), so the two points read as a timeline rather than two separate lines.
   return (
-    <li className={styles.mmTile}>
-      <div className={styles.mmTileHead}>
-        <h3 className={styles.mmTileTitle}>{title}</h3>
-        <span className={`${styles.mmTileNow} ${short ? styles.warnInk : styles.okInk}`}>
-          <StatusGlyph tone={short ? "warning" : "success"} size={9} />
-          {gapWords(row.gap)}
-        </span>
-      </div>
+    <li className={`${styles.mmTile} ${styles.mmTileButton}`} data-tone={short ? "warning" : "success"}>
+      <h3 className={styles.mmTileTitle}>{title}</h3>
+      <p className={`${styles.mmHero} ${short ? styles.warnInk : styles.okInk}`}>
+        <StatusGlyph tone={short ? "warning" : "success"} size={10} />
+        {row.gap === 0 ? (
+          <span className={styles.mmHeroWord}>exactly enough</span>
+        ) : (
+          <>
+            <b>{Math.abs(row.gap)}</b> <span className={styles.mmHeroWord}>{short ? "short" : "spare"}</span>
+          </>
+        )}
+      </p>
       <p className={styles.mmSub}>
         {row.waiting} waiting · {row.bedsThatFit} ready that fit
       </p>
+      <div className={styles.mmScale}>
+        <span className={styles.mmTileLabel}>Now</span>
+        <RangeLine low={row.gap} likely={row.gap} high={row.gap} span={span} />
+        <b className={short ? styles.warnInk : styles.okInk}>{gapWords(row.gap)}</b>
+        {tomorrow ? (
+          <>
+            <span className={styles.mmTileLabel}>
+              Tomorrow<span className={styles.srOnly}>, likely by {until}:</span>
+            </span>
+            <RangeLine low={tomorrow.low} likely={tomorrow.likely} high={tomorrow.high} span={span} />
+            <b className={tomorrow.likely < 0 ? styles.warnInk : styles.okInk}>{gapWords(tomorrow.likely)}</b>
+          </>
+        ) : null}
+        <span className={styles.mmAxis} aria-hidden="true">
+          <span>Short</span>
+          <span>0</span>
+          <span>Spare</span>
+        </span>
+      </div>
       {tomorrow ? (
-        <div className={styles.mmTileTomorrow}>
-          <span className={styles.mmTileLabel}>
-            Tomorrow<span className={styles.srOnly}>, likely by {until}:</span>
-          </span>
-          <RangeLine low={tomorrow.low} likely={tomorrow.likely} high={tomorrow.high} span={span} />
-          <b className={tomorrow.likely < 0 ? styles.warnInk : styles.okInk}>{gapWords(tomorrow.likely)}</b>
-          <span className={styles.mmTileRange}>
-            <span className={styles.srOnly}>Range </span>
-            {gapWords(tomorrow.low)} to {gapWords(tomorrow.high)}
-          </span>
-        </div>
+        <p className={styles.mmTileRange}>
+          Tomorrow could be {gapWords(tomorrow.low)} to {gapWords(tomorrow.high)}
+        </p>
       ) : null}
+      <button type="button" className={styles.mmTileOpen} aria-haspopup="dialog" onClick={onOpen}>
+        Who is waiting and where<span className={styles.srOnly}>, {title}</span>
+        <ChevronRight size={14} aria-hidden="true" />
+      </button>
     </li>
   );
 }

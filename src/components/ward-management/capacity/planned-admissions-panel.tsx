@@ -126,16 +126,35 @@ function recordedSexOf(sex: string | undefined): RecordedSex {
  * Device audit option A (Josh, 11 Oct 2026): the bookings as a short list, without the 14-day
  * grid, and Book as a secondary button so the page keeps one primary.
  */
+/**
+ * What a caller's own list of bookings may use (Capacity issue 6, Josh 3 Nov 2026): the agenda, the
+ * names as this desk may see them, and the panel's own forms. Every write still goes through them.
+ */
+export type PlannedListApi = {
+  agenda: readonly PlannedAdmission[];
+  whoText: (planned: PlannedAdmission) => string;
+  unitName: (unitId: string) => string;
+  arrived?: (planned: PlannedAdmission) => void;
+  change?: (planned: PlannedAdmission) => void;
+  cancel?: (planned: PlannedAdmission) => void;
+};
+
 export function PlannedAdmissionsPanel({
   now,
   titleSlot,
   compactActions = false,
+  title = "Planned admissions",
+  listSlot,
 }: {
   now: Instant;
   /** Replaces the panel title and count, such as the Capacity page's Planned / Step down switch. */
   titleSlot?: ReactNode;
   /** Arrived stays a button; Change and Cancel move into a More menu, so each booking is two lines. */
   compactActions?: boolean;
+  /** The section's name, read by assistive technology when `titleSlot` replaces the visible title. */
+  title?: string;
+  /** Draws the bookings in place of the panel's own list; the forms and dialogs stay the panel's. */
+  listSlot?: (api: PlannedListApi) => ReactNode;
 }) {
   const {
     units,
@@ -490,7 +509,7 @@ export function PlannedAdmissionsPanel({
 
   return (
     <CapacityPanel
-      title="Planned admissions"
+      title={title}
       titleSlot={titleSlot}
       count={titleSlot ? undefined : `${booked} booked`}
       testId="ward-capacity-planned-admissions"
@@ -503,8 +522,17 @@ export function PlannedAdmissionsPanel({
         ) : undefined
       }
     >
-      <div className={styles.body}>
-        {agenda.length === 0 ? (
+      <div className={listSlot ? undefined : styles.body}>
+        {listSlot ? (
+          listSlot({
+            agenda,
+            whoText,
+            unitName,
+            arrived: canConvert ? (planned) => setArrivalCheck(planned) : undefined,
+            change: canChange ? openChange : undefined,
+            cancel: canCancel ? openCancel : undefined,
+          })
+        ) : agenda.length === 0 ? (
           <p className={styles.empty}>No planned admissions booked.</p>
         ) : (
           <ul className={styles.agenda} aria-label="Booked planned admissions">
