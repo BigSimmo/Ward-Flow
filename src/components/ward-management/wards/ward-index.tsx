@@ -22,6 +22,7 @@ import {
   OccupancyRing,
   PhoneSheet,
   Popover,
+  ScrollRow,
   Segmented,
   Select,
   SrOnly,
@@ -722,50 +723,59 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             id="ward-index-more-filters"
             data-open={filtersOpen ? "true" : undefined}
           >
-            <span className={styles.filterGroup}>
+            <div className={styles.filterGroup}>
               <span className={styles.filterLabel} id="ward-status-label">
                 Status
               </span>
-              <Segmented
-                label="Status"
-                items={[
-                  { id: "all" as StatusFilter, label: "All" },
-                  { id: "has-ready" as StatusFilter, label: "Has ready" },
-                  { id: "full" as StatusFilter, label: "Full" },
-                  { id: "stale" as StatusFilter, label: "Stale" },
-                ]}
-                value={status}
-                onChange={setStatus}
-              />
-            </span>
-            <span className={styles.filterGroup}>
+              <ScrollRow className={styles.phoneFilterScroll} role="group" aria-label="Status choices">
+                <Segmented
+                  className={styles.phoneFilterChoices}
+                  label="Status"
+                  items={[
+                    { id: "all" as StatusFilter, label: "All" },
+                    { id: "has-ready" as StatusFilter, label: "Has ready" },
+                    { id: "full" as StatusFilter, label: "Full" },
+                    { id: "stale" as StatusFilter, label: "Stale" },
+                  ]}
+                  value={status}
+                  onChange={setStatus}
+                />
+              </ScrollRow>
+            </div>
+            <div className={styles.filterGroup}>
               <span className={styles.filterLabel}>Cohort</span>
-              <Segmented
-                label="Cohort"
-                items={[
-                  { id: "all" as CohortFilter, label: "All" },
-                  { id: "adult" as CohortFilter, label: "Adult" },
-                  { id: "older-adult" as CohortFilter, label: "Older adult" },
-                  { id: "youth" as CohortFilter, label: "Youth" },
-                  { id: "perinatal" as CohortFilter, label: "Perinatal" },
-                ]}
-                value={cohort}
-                onChange={setCohort}
-              />
-            </span>
-            <span className={styles.filterGroup}>
+              <ScrollRow className={styles.phoneFilterScroll} role="group" aria-label="Cohort choices">
+                <Segmented
+                  className={styles.phoneFilterChoices}
+                  label="Cohort"
+                  items={[
+                    { id: "all" as CohortFilter, label: "All" },
+                    { id: "adult" as CohortFilter, label: "Adult" },
+                    { id: "older-adult" as CohortFilter, label: "Older adult" },
+                    { id: "youth" as CohortFilter, label: "Youth" },
+                    { id: "perinatal" as CohortFilter, label: "Perinatal" },
+                  ]}
+                  value={cohort}
+                  onChange={setCohort}
+                />
+              </ScrollRow>
+            </div>
+            <div className={styles.filterGroup}>
               <span className={styles.filterLabel}>Order</span>
-              <Segmented
-                label="Order"
-                items={[
-                  { id: "service" as OrderBy, label: deskSite ? "Site" : "Service" },
-                  { id: "most-ready" as OrderBy, label: "Most ready" },
-                  { id: "fullest" as OrderBy, label: "Fullest" },
-                ]}
-                value={order}
-                onChange={setOrder}
-              />
-            </span>
+              <ScrollRow className={styles.phoneFilterScroll} role="group" aria-label="Order choices">
+                <Segmented
+                  className={styles.phoneFilterChoices}
+                  label="Order"
+                  items={[
+                    { id: "service" as OrderBy, label: deskSite ? "Site" : "Service" },
+                    { id: "most-ready" as OrderBy, label: "Most ready" },
+                    { id: "fullest" as OrderBy, label: "Fullest" },
+                  ]}
+                  value={order}
+                  onChange={setOrder}
+                />
+              </ScrollRow>
+            </div>
           </div>
           {/* Audit 11 Oct 2026: the bed strip key is one line under the filters, not a rail card. */}
           {/* A site desk's phone has its own site headings, so no "Every ward"; unfiltered, the row is empty. */}
@@ -986,7 +996,7 @@ function OccupancyFigure({ row }: { row: WardRow }) {
   return (
     <span className={styles.figure}>
       {nearFull ? <StatusGlyph tone="warning" size={8} /> : null}
-      <b className={styles.num}>{pct}%</b> {nearFull ? "near full" : "occupied"}
+      <b className={styles.num}>{pct}%</b> {nearFull ? "near full" : "in use"}
     </span>
   );
 }

@@ -17,7 +17,7 @@ const SESSION_TREND_MEASURES = [
   },
   { id: "accepted", label: "Accepted", types: ["ACCEPT_IN_PRINCIPLE", "ACCEPT_REFERRAL"] },
   { id: "declined", label: "Declined", types: ["DECLINE", "DECLINE_REFERRAL"] },
-  { id: "arrivals", label: "Arrived", types: ["PATIENT_ARRIVED"] },
+  { id: "arrivals", label: "Arrived", types: ["PATIENT_ARRIVED", "CONVERT_PLANNED_ADMISSION"] },
   { id: "departures", label: "Left", types: ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE"] },
 ] as const satisfies readonly { id: string; label: string; types: readonly EventLogEntry["type"][] }[];
 

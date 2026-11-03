@@ -1343,6 +1343,7 @@ export function reduceReferralAnswerEvent(
         ...(holdsBed
           ? {
               admissionId: undefined,
+              referralSourceAdmissionId: undefined,
               allocatedBed: undefined,
               pullExpiresAt: undefined,
               transport: undefined,

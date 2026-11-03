@@ -1,6 +1,6 @@
 # Public Ward Flow PR checks
 
-_Updated 2026-10-26 - main push queue, parallel release-gate legs, four unit workers; Documentation owns._
+_Updated 2026-11-01 - pinned npm provisioning and successful release-gate JSON retention; Documentation owns._
 
 The `Ward Flow CI` workflow in `.github/workflows/ward-flow.yml` checks the public
 `BigSimmo/Ward-Flow` repository with pinned actions, locked dependencies, a read-only token and
@@ -123,6 +123,11 @@ before using it. This completed build artifact is distinct from Next's working c
 production build still runs normal typechecks; the browser build uses `WARD_GATE_BUILD=1` because
 static checks generate and verify route/source types.
 
+Each Node runner installs the exact npm version declared by the root `packageManager` before
+installing dependencies. The shared locked installer checks the actual selected npm CLI against
+that declaration, including the separately packaged backend's inherited root pin. Dependency
+lifecycle scripts remain disabled; recorded toolchain versions identify what ran.
+
 All blocking browser runs use one worker and zero retries. The release verdict requires the four
 named bed-flow journeys on **both** `release-gate-desktop` and `release-gate-phone`: eight cases with
 no skip or retry recovery. Accessibility retains the existing **serious or critical** axe WCAG failure threshold, without a recovery rescan. HTTP success,
@@ -142,6 +147,12 @@ state/preparation profiles and failed browser/release evidence are retained for 
 and shared-mode evidence, final coverage/measured unit costs, and browser execution reports/costs are retained for seven days. Browser costs are extracted only after a successful journey verdict; raw JSON is also retained after failure. `scripts/ward-flow/journey-durations.mjs --from-reports <directory>` reads existing JSON without launching browsers or rewriting the baseline.
 Report directories are unique per invocation so a later CSRF or diagnostic run cannot overwrite a
 journey failure. Local pruning keeps the newest five managed report directories only.
+
+Successful release-gate legs also retain their JSON execution reports and axe JSON attachments for
+three days, including nonblocking moderate/minor findings. This success artifact excludes screenshot,
+video and trace files; failed legs keep their existing full diagnostic artifact. Missing success
+reports fail evidence collection. These retained reports do not change accessibility thresholds or
+prove physical-device, hosted-provider or deployment acceptance.
 
 ## Main pushes and nightly runs
 

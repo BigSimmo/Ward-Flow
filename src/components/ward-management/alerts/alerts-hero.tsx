@@ -349,8 +349,6 @@ export function AlertsHero({
                   variant="onHero"
                   size="sm"
                   icon={ChevronRight}
-                  aria-label={`Next alert, ${nextQueue.length} in turn`}
-                  count={nextQueue.length}
                   disabled={nextQueue.length === 0}
                   onClick={handleNext}
                 >

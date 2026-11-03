@@ -536,6 +536,7 @@ const movement = z
     referralId: link,
     admissionId: link,
     sourceAdmissionId: link,
+    referralSourceAdmissionId: z.optional(id),
     acceptedUnitId: link,
     pullExpiresAt: z.optional(finite),
     extendedHoldAt: z.optional(finite),
@@ -1218,6 +1219,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
       !reference(movement.referralId, referralIds) ||
       !reference(movement.admissionId, admissionIds) ||
       !reference(movement.sourceAdmissionId, admissionIds) ||
+      !reference(movement.referralSourceAdmissionId, admissionIds) ||
       !reference(movement.acceptedUnitId, unitIds) ||
       !movement.referredUnitIds.every((unitId) => unitIds.has(unitId))
     )
@@ -1253,6 +1255,18 @@ function consistent(state: StoredState, value: RecordValue): boolean {
     }
     const referral = movement.referralId == null ? undefined : referralById.get(movement.referralId);
     if (!samePatient(movement, referral) || !samePatient(movement, admission)) return false;
+    const referralSource =
+      movement.referralSourceAdmissionId === undefined
+        ? undefined
+        : admissionById.get(movement.referralSourceAdmissionId);
+    if (
+      referralSource &&
+      (!samePatient(movement, referralSource) ||
+        referral?.source !== "psychiatric_ward" ||
+        referralSource.unitId !== referral.originUnitId ||
+        referralSource.id === movement.admissionId)
+    )
+      return false;
   }
   for (const admission of state.admissions) {
     const movement = admission.movementId === null ? undefined : movementById.get(admission.movementId);

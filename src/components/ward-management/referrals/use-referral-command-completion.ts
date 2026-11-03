@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { Patient, Gender } from "../ward-patients";
 import type { RecordedSex } from "../ward-model-vocabulary";
@@ -21,6 +21,14 @@ function submissionId(): string {
 }
 
 type ReferralCommand = Extract<WardFlowEvent, { type: "RECEIVE_REFERRAL" }> & { intake: ReferralIntakeDetails };
+type PendingReferralSubmission = {
+  id: string;
+  intake: ReferralIntakeDetails;
+  generation: number;
+  ownerVersion: number;
+  outcome?: WardCommandOutcome;
+  unconfirmed?: WardCommandOutcome;
+};
 /** A snapshot is confirmation only after this command accepts and its opaque identity matches. */
 export function useReferralCommandCompletion({
   dispatch,
@@ -41,12 +49,7 @@ export function useReferralCommandCompletion({
   onCommitted: (intake: ReferralIntakeDetails) => void;
   onAccepted: (referral: Referral, intake: ReferralIntakeDetails) => void;
 }) {
-  const submissionRef = useRef<{
-    id: string;
-    intake: ReferralIntakeDetails;
-    generation: number;
-    outcome?: WardCommandOutcome;
-  } | null>(null);
+  const submissionRef = useRef<PendingReferralSubmission | null>(null);
   const [completion, setCompletion] = useState(0);
   const [submissionAwaitingRecord, setSubmissionAwaitingRecord] = useState(false);
   const currentGeneration = useRef(generation);
@@ -63,14 +66,20 @@ export function useReferralCommandCompletion({
   const changedMessage = "The workspace changed. Check the Referrals board before sending again.";
   function submitReferral(event: ReferralCommand) {
     if (submissionRef.current) return;
-    const submitted = { id: submissionId(), intake: event.intake, generation };
+    const submitted: PendingReferralSubmission = {
+      id: submissionId(),
+      intake: event.intake,
+      generation,
+      ownerVersion: draftOwnerVersion,
+    };
     submissionRef.current = submitted;
     setPending(true);
     const settle = (outcome?: WardCommandOutcome) => {
       if (!mounted.current || submissionRef.current !== submitted) return;
       if (
         submitted.generation !== currentGeneration.current ||
-        draftOwnerVersion !== referralDraftSessionVersion() ||
+        submitted.ownerVersion !== referralDraftSessionVersion() ||
+        submitted.unconfirmed?.isCurrent?.() === false ||
         outcome?.isCurrent?.() === false
       ) {
         submissionRef.current = null;
@@ -84,6 +93,20 @@ export function useReferralCommandCompletion({
         setSubmissionAwaitingRecord(true);
         setPending(false);
         setCompletion((value) => value + 1);
+      } else if (outcome?.status === "failed" && (outcome.confirmation || submitted.unconfirmed)) {
+        onError(outcome.message ?? "Referral could not be confirmed. Check the Referrals board before trying again.");
+        setPending(true);
+        if (submitted.unconfirmed || !outcome.confirmation) return;
+        submitted.unconfirmed = outcome;
+        // A status-bar Retry confirms this same command; another Send must not mint a new intake.
+        void outcome.confirmation.then(
+          (confirmed) => {
+            if (confirmed.commandId === outcome.commandId) settle(confirmed);
+          },
+          () => {
+            // A rejected confirmation still does not establish whether the command committed.
+          },
+        );
       } else {
         submissionRef.current = null;
         onError(outcome?.message ?? "Referral could not be confirmed. Check the Referrals board before trying again.");
@@ -100,11 +123,11 @@ export function useReferralCommandCompletion({
   }
   useEffect(() => {
     const submitted = submissionRef.current;
-    if (!submitted?.outcome) return;
+    if (!submitted) return;
     if (
       submitted.generation !== generation ||
-      submitted.outcome.isCurrent?.() === false ||
-      draftOwnerVersion !== referralDraftSessionVersion()
+      (submitted.outcome ?? submitted.unconfirmed)?.isCurrent?.() === false ||
+      submitted.ownerVersion !== referralDraftSessionVersion()
     ) {
       submissionRef.current = null;
       setSubmissionAwaitingRecord(false);
@@ -112,6 +135,7 @@ export function useReferralCommandCompletion({
       onError(changedMessage);
       return;
     }
+    if (!submitted.outcome) return;
     const created = referrals.find((referral) => referral.submissionId === submitted.id);
     if (!created) return;
     submissionRef.current = { ...submitted, outcome: undefined };
@@ -144,6 +168,53 @@ export const EMPTY_NEW_PATIENT: NewPatientDraft = {
   suburb: "",
 };
 
+/** Each edit, opening/Cancel or patient choice retires only the old registration's UI intent. */
+export function useReferralRegistrationDraft() {
+  const intent = useRef(0);
+  const [intentVersion, setIntentVersion] = useState(0);
+  const [newPatientOpen, setOpen] = useState(false);
+  const [newPatient, setDraft] = useState(EMPTY_NEW_PATIENT);
+  const invalidateRegistration = useCallback(() => {
+    intent.current += 1;
+    setIntentVersion(intent.current);
+  }, []);
+  const setNewPatientOpen = useCallback(
+    (next: React.SetStateAction<boolean>) => {
+      invalidateRegistration();
+      setOpen(next);
+    },
+    [invalidateRegistration],
+  );
+  const setNewPatient = useCallback(
+    (next: React.SetStateAction<NewPatientDraft>) => {
+      invalidateRegistration();
+      setDraft(next);
+    },
+    [invalidateRegistration],
+  );
+  const getIntentVersion = useCallback(() => intent.current, []);
+  return {
+    newPatientOpen,
+    setNewPatientOpen,
+    newPatient,
+    setNewPatient,
+    intentVersion,
+    getIntentVersion,
+    invalidateRegistration,
+  };
+}
+
+type PendingPatientRegistration = {
+  priorIds: Set<string>;
+  umrn: string;
+  accepted: boolean;
+  outcome?: WardCommandOutcome;
+  generation: number;
+  ownerVersion: number;
+  intentVersion: number;
+  context: string;
+};
+
 /** Registers one identity and never mistakes a concurrent registration for that patient. */
 export function useReferralPatientRegistration({
   patients,
@@ -158,6 +229,8 @@ export function useReferralPatientRegistration({
   reason,
   patient,
   onSelect,
+  getIntentVersion,
+  intentVersion = 0,
 }: {
   patients: readonly Patient[];
   generation: number;
@@ -172,21 +245,22 @@ export function useReferralPatientRegistration({
   reason?: string;
   patient: NewPatientDraft;
   onSelect: (id: string) => void;
+  getIntentVersion?: () => number;
+  intentVersion?: number;
 }) {
   const [newPatientError, setNewPatientError] = useState<string | null>(null);
-  const pendingNewPatient = useRef<{
-    priorIds: Set<string>;
-    umrn: string;
-    accepted: boolean;
-    generation: number;
-    ownerVersion: number;
-  } | null>(null);
+  const pendingNewPatient = useRef<PendingPatientRegistration | null>(null);
   const [completion, setCompletion] = useState(0);
   const currentGeneration = useRef(generation);
+  const context = JSON.stringify([role, registrationScope]);
+  const currentContext = useRef(context);
   const mounted = useRef(false);
   useEffect(() => {
     currentGeneration.current = generation;
   }, [generation]);
+  useEffect(() => {
+    currentContext.current = context;
+  }, [context]);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -196,7 +270,15 @@ export function useReferralPatientRegistration({
   useEffect(() => {
     const pending = pendingNewPatient.current;
     if (!pending) return;
-    if (pending.generation !== generation || pending.ownerVersion !== referralDraftSessionVersion()) {
+    if (pending.intentVersion !== intentVersion || pending.context !== context) {
+      pendingNewPatient.current = null;
+      return;
+    }
+    if (
+      pending.generation !== generation ||
+      pending.ownerVersion !== referralDraftSessionVersion() ||
+      pending.outcome?.isCurrent?.() === false
+    ) {
       pendingNewPatient.current = null;
       setNewPatientError("The workspace changed. Review the patient before trying again.");
       return;
@@ -208,7 +290,7 @@ export function useReferralPatientRegistration({
     if (!added) return;
     pendingNewPatient.current = null;
     onSelect(added.id);
-  }, [patients, completion, generation, onSelect]);
+  }, [patients, completion, generation, onSelect, context, intentVersion]);
   function addNewPatient(event: React.FormEvent) {
     event.preventDefault();
     if (pendingNewPatient.current) return;
@@ -222,16 +304,25 @@ export function useReferralPatientRegistration({
     if (requiresRegistrationScope && !registrationScope)
       return setNewPatientError("Open the referral from a single source ward before registering the patient.");
     setNewPatientError(null);
-    const pending = {
+    const pending: PendingPatientRegistration = {
       priorIds: new Set(patients.map((record) => record.id)),
       umrn: umrn.toLowerCase(),
       accepted: false,
       generation,
       ownerVersion: referralDraftSessionVersion(),
+      intentVersion,
+      context,
     };
     pendingNewPatient.current = pending;
     const settle = (outcome?: WardCommandOutcome) => {
       if (!mounted.current || pendingNewPatient.current !== pending) return;
+      if (
+        pending.intentVersion !== (getIntentVersion?.() ?? intentVersion) ||
+        pending.context !== currentContext.current
+      ) {
+        pendingNewPatient.current = null;
+        return;
+      }
       if (
         pending.generation !== currentGeneration.current ||
         pending.ownerVersion !== referralDraftSessionVersion() ||
@@ -241,6 +332,7 @@ export function useReferralPatientRegistration({
         setNewPatientError("The workspace changed. Review the patient before trying again.");
       } else if (outcome?.status === "accepted") {
         pending.accepted = true;
+        pending.outcome = outcome;
         setCompletion((value) => value + 1);
       } else {
         pendingNewPatient.current = null;
