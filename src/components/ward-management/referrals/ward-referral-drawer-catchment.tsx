@@ -109,7 +109,7 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
                 {catchmentConfirmed
                   ? "Catchment confirmed"
                   : catchmentSuburb
-                    ? `Suggested from ${catchmentSuburb}`
+                    ? `Suggested from suburb ${catchmentSuburb}`
                     : "Check before continuing"}
               </small>
             </span>
