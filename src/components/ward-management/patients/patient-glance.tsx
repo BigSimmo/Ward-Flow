@@ -99,7 +99,7 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms }: Patie
       ...base,
       value: "No order in force",
       quiet: true,
-      sub: status ? `Last recorded: ${status}` : undefined,
+      sub: status ? `last recorded ${status}` : undefined,
     };
   }
   const form = movement?.legalForm ? `Form ${movement.legalForm.code}` : cto ? `Form ${cto.form}` : undefined;
@@ -116,37 +116,35 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms }: Patie
 function observationTile({ mode, movement, admission, stayWithheld }: PatientGlanceProps): GlanceTile | null {
   const placing = PLACING.includes(mode);
   if (!placing && !ON_STAY.includes(mode)) return null;
-  const base = { key: "obs", icon: Eye, label: "Observation" };
-  if (!placing && stayWithheld)
-    return { ...base, value: "Withheld", quiet: true, sub: "Your desk sees ward and dates" };
+  const base = { key: "obs", icon: Eye, label: "Obs" };
+  if (!placing && stayWithheld) return { ...base, value: "Withheld", quiet: true, sub: "ward and dates only" };
   const observation = placing ? movement?.observation : admission?.observation;
   return {
     ...base,
     value: observation ? observationSummary(observation) : "Not recorded",
     quiet: !observation,
-    sub: mode === "leave" ? "Level before leave" : admission?.highAcuity ? "High acuity" : undefined,
+    sub: mode === "leave" ? "before leave" : admission?.highAcuity ? "high acuity" : undefined,
     tone: admission?.highAcuity ? "warning" : undefined,
   };
 }
 
 function riskTile({ riskFlags, riskFlagsWhen, riskNotShared }: PatientGlanceProps): GlanceTile {
-  if (riskNotShared)
-    return { key: "risk", icon: Flag, label: "Risk flags", value: "Not shared with this desk", quiet: true };
+  if (riskNotShared) return { key: "risk", icon: Flag, label: "Risk", value: "Not shared with this desk", quiet: true };
   const flags = riskFlags ?? [];
-  const source = riskFlagsWhen ? `On the referral, ${riskFlagsWhen}` : "On the referral";
+  const source = riskFlagsWhen ? `referral ${riskFlagsWhen}` : "on the referral";
   if (flags.length === 0)
     return {
       key: "risk",
       icon: Flag,
-      label: "Risk flags",
-      value: riskFlags ? "None flagged" : "No referral",
+      label: "Risk",
+      value: riskFlags ? "None flagged" : "None recorded",
       quiet: true,
       sub: riskFlags ? source : undefined,
     };
   return {
     key: "risk",
     icon: Flag,
-    label: flags.length === 1 ? "Risk flag" : `Risk flags · ${flags.length}`,
+    label: "Risk",
     value: flags.map(riskFlagLabel).join(", "),
     sub: source,
     tone: "warning",
@@ -165,7 +163,7 @@ function alertsTile({ mode, patient, leaveBed, healthAlerts, onOpenDetails }: Pa
   return {
     key: "alerts",
     icon: CircleAlert,
-    label: alerts.length === 1 ? "Alert" : `Alerts · ${alerts.length}`,
+    label: "Alert",
     value: alerts.map((alert) => alert.text).join(", "),
     tone: alerts[0].tone,
     onOpen: healthAlerts && healthAlerts.length > 0 ? onOpenDetails : undefined,
@@ -194,6 +192,7 @@ export function PatientGlance(props: PatientGlanceProps) {
             data-testid={`ward-patient-glance-${tile.key}`}
             data-quiet={tile.quiet || undefined}
             data-action={tile.onOpen ? true : undefined}
+            data-flag={tile.tone === "warning" || tile.tone === "danger" || undefined}
           >
             <dt className={styles.label}>
               <Icon size={14} strokeWidth={1.75} aria-hidden="true" />

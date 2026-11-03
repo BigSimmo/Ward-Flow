@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { CalendarDays, DoorOpen, Stethoscope } from "lucide-react";
+import { CalendarDays, DoorOpen, Stethoscope, UserRoundX } from "lucide-react";
 import { Button, Card, CardHead, Sheet, StatusGlyph, useIsPhone } from "@/components/wf";
 import {
   MINUTES_PER_DAY,
@@ -65,6 +65,8 @@ export function PatientWardChangeCard({
   roleLimit,
   dischargeInBar = false,
   leaveLegal,
+  embedded = false,
+  onMarkAbsent,
 }: {
   now: Instant;
   dayZero: Date;
@@ -86,6 +88,13 @@ export function PatientWardChangeCard({
    * never a block: the ward or coordinator still records the leave.
    */
   leaveLegal?: { form: string; onOrder: boolean };
+  /**
+   * Josh's approved list (3 Nov 2026): the row sits inside the On ward card as its one action row,
+   * in place of a separate Record a change card. Same buttons, forms and test ids.
+   */
+  embedded?: boolean;
+  /** Mark absent, moved here from the old Leave cell so the On ward card has one action row. */
+  onMarkAbsent?: () => void;
 }) {
   const [time, setTime] = useState("");
   const [day, setDay] = useState(0);
@@ -117,6 +126,7 @@ export function PatientWardChangeCard({
   const leaveLimit = roleLimit("RECORD_LEAVE_BED");
   const edLimit = roleLimit("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT");
   const dischargeLimit = roleLimit("UPDATE_EXPECTED_DISCHARGE");
+  const absentLimit = roleLimit("RECORD_ABSENT_WITHOUT_LEAVE");
 
   function toggle(next: Exclude<WardChangeForm, "none">) {
     onFormChange(form === next ? "none" : next);
@@ -163,6 +173,19 @@ export function PatientWardChangeCard({
           Discharge date
         </Button>
       )}
+      {onMarkAbsent ? (
+        <Button
+          className={styles.tap}
+          size="sm"
+          variant="ghost"
+          icon={UserRoundX}
+          disabledReason={absentLimit}
+          reasonDisplay="tooltip"
+          onClick={onMarkAbsent}
+        >
+          Mark absent
+        </Button>
+      ) : null}
     </div>
   );
 
@@ -263,7 +286,16 @@ export function PatientWardChangeCard({
           </label>
           <label className={styles.changeField}>
             <span>{form === "leave" ? "Expected back time" : "Expected discharge time"}</span>
-            <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+            {/* Typed as HH:MM in a plain box, never the browser's time picker (Josh, 3 Nov 2026). */}
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="HH:MM"
+              maxLength={5}
+              value={time}
+              onChange={(event) => setTime(event.target.value)}
+            />
           </label>
           <p className={styles.changeHint} aria-live="polite">
             {parsed === undefined
@@ -284,10 +316,20 @@ export function PatientWardChangeCard({
 
   if (isPhone)
     return (
-      <section className={styles.phSection} data-testid="ward-patient-change-card" aria-labelledby="pn-ward-change">
-        <h2 id="pn-ward-change" className={styles.phHead}>
-          Record a change
-        </h2>
+      <section
+        className={embedded ? styles.embedded : styles.phSection}
+        data-testid="ward-patient-change-card"
+        aria-labelledby="pn-ward-change"
+      >
+        {embedded ? (
+          <h3 id="pn-ward-change" className={styles.embeddedHead}>
+            Record a change
+          </h3>
+        ) : (
+          <h2 id="pn-ward-change" className={styles.phHead}>
+            Record a change
+          </h2>
+        )}
         {chipRow}
         {refusal ? (
           <p className={styles.refusal} role="alert">
@@ -320,6 +362,22 @@ export function PatientWardChangeCard({
         >
           {form !== "none" ? formElement : null}
         </Sheet>
+      </section>
+    );
+
+  if (embedded)
+    return (
+      <section className={styles.embedded} data-testid="ward-patient-change-card" aria-labelledby="pn-ward-change">
+        <h3 id="pn-ward-change" className={styles.embeddedHead}>
+          Record a change
+        </h3>
+        {chipRow}
+        {form !== "none" ? formElement : null}
+        {refusal ? (
+          <p className={styles.refusal} role="alert">
+            <StatusGlyph tone="danger" size={9} /> Not recorded: {refusal}
+          </p>
+        ) : null}
       </section>
     );
 

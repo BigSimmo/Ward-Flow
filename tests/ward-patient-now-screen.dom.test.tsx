@@ -269,6 +269,8 @@ describe("the patient-now screen", () => {
     expect(movement.stageChanges).toEqual([]);
     expect(movement.stage).not.toBe("referred");
     renderScreen({ movementId: movement.id });
+    // PT1 round 3: the seven stages sit one tap away behind the journey line.
+    fireEvent.click(screen.getByTestId("ward-patient-stages-toggle"));
     const journey = screen.getByRole("list", { name: /The seven stages/ });
     expect(journey.querySelector('[data-s="done"]')).toBeNull();
     expect(journey.querySelector('[data-s="recorded"]')).toBeNull();

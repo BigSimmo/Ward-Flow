@@ -119,6 +119,7 @@ import styles from "./patient-now.module.css";
 import { PatientArchivePanel } from "./patient-archive-panel";
 import { PatientGlance, patientStateTag } from "./patient-glance";
 import { referralSafetyFacts } from "./patient-referral-safety";
+import { patientCareJourney } from "./patient-care-journey";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
@@ -1001,6 +1002,17 @@ export function PatientNowScreen({
     movement: liveMovement,
     communityActive: Boolean(ctoInForce || activeCommunityEpisode),
   });
+  // PT1 round 3 (Josh, 3 Nov 22:29Z): the patient's journey in six plain steps, from the record.
+  const careSteps = patientCareJourney({
+    mode,
+    movement: glanceMovement,
+    stay: heroStay,
+    stayCurrent,
+    stayDay,
+    communityTeam: activeCommunityEpisode?.team,
+    ctoInForce: Boolean(ctoInForce),
+    day: (at) => dayLabel(at, dayZero).replace(",", ""),
+  });
   const glance = (
     <PatientGlance
       mode={mode}
@@ -1147,6 +1159,8 @@ export function PatientNowScreen({
           where={where}
           glance={glance}
           stateTag={stateTag}
+          careSteps={careSteps}
+          onOpenHistory={() => openTab("history")}
           recordCto={
             livePatient
               ? {

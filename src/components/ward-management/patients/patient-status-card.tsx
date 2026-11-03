@@ -1,17 +1,7 @@
 import type { MouseEvent, ReactNode } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import {
-  BedSingle,
-  CalendarDays,
-  Clock,
-  DoorOpen,
-  FileBadge,
-  Stethoscope,
-  Ambulance,
-  UserRound,
-  Users,
-} from "lucide-react";
+import { BedSingle, Clock, DoorOpen, FileBadge, Stethoscope, Ambulance, UserRound, Users } from "lucide-react";
 import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -32,6 +22,8 @@ import { clock, dur } from "./patient-now-records";
 import type { PatientMode } from "./patient-mode";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { recordExtrasFor } from "./patient-record-extras";
+import { stayProgress } from "./patient-now-ward";
+import { PatientStayProgress } from "./patient-now-ward-cards";
 import styles from "./patient-status-card.module.css";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";
@@ -272,6 +264,16 @@ function legalValue(record: Movement | undefined, patient: Patient | undefined):
   if (movement?.legalForm)
     return `${movement.legalStatus ?? patient?.legalStatus ?? "Legal status not recorded"}, Form ${movement.legalForm.code}`;
   return movement?.legalStatus ?? patient?.legalStatus ?? "Not recorded";
+}
+
+/**
+ * A3-13: a voluntary patient is not on an order, so no return order is asked for. Either source
+ * reading involuntary wins, as in the reducer's guards. Shared with the Now tab's Next step.
+ */
+export function absenceVoluntary(movement: Movement | undefined, patient: Patient | undefined): boolean {
+  return (
+    /^voluntary\b/i.test(legalValue(movement, patient).trim()) && !legalStatusTextIsInvoluntary(patient?.legalStatus)
+  );
 }
 
 /** Builds the status card for a mode from the live record. Every value comes from shared state. */
@@ -547,73 +549,19 @@ function statusFor(
   }
 
   if (mode === "ward") {
-    const arrivedAt = admission?.arrivedAt ?? undefined;
+    // Josh's approved list (3 Nov 2026): the On ward card holds stay progress and the ward's one
+    // action row (Start leave, Gone to ED, Discharge date, Mark absent). The discharge date and its
+    // confirmation lead Now as the Next step and in Discharge readiness, so no cells repeat them, and
+    // observation leads the band's at a glance row (PT1).
+    // The day count shows once, in the progress line under the head.
     return {
       tone: "success",
       verdict: "On ward",
       meta:
-        arrivedAt !== undefined && arrivedAt !== null
-          ? `Day ${Math.floor(Math.max(0, now - arrivedAt) / 1440) + 1}`
+        admission?.arrivedAt != null
+          ? `Arrived ${dayLabel(admission.arrivedAt, ctx.dayZero)}${admission.arrivedAt >= 0 ? ` ${clock(admission.arrivedAt % 1440)}` : ""}`
           : "Stay recorded",
-      cells: [
-        // PT1 (Josh, 3 Nov 2026): observation leads the band's at a glance row, so it is not repeated.
-        {
-          key: "discharge",
-          icon: CalendarDays,
-          label: "Discharge plan",
-          owner: "Key clinician",
-          tone:
-            admission?.expectedDischargeAt != null
-              ? admission.dischargeConfirmedAt != null
-                ? "success"
-                : "info"
-              : "neutral",
-          value:
-            admission?.expectedDischargeAt != null
-              ? `Expected ${dayLabel(admission.expectedDischargeAt, ctx.dayZero)}`
-              : "No date set",
-          sub:
-            admission?.expectedDischargeAt != null
-              ? admission.dischargeConfirmedAt != null
-                ? "Confirmed"
-                : "Not yet confirmed"
-              : "Set on the ward",
-          action:
-            admission?.state === "occupied" && ctx.onDischargeDate
-              ? {
-                  kind: "button",
-                  label: admission.expectedDischargeAt != null ? "Change date" : "Set date",
-                  ariaLabel: admission.expectedDischargeAt != null ? "Change discharge date" : "Set discharge date",
-                  onClick: () => {
-                    ctx.onDischargeDate?.();
-                  },
-                  event: "UPDATE_EXPECTED_DISCHARGE",
-                }
-              : undefined,
-        },
-        {
-          key: "leave",
-          icon: DoorOpen,
-          label: "Leave",
-          owner: "Ward",
-          value: "None now",
-          clear: true,
-          // An absence is recorded against the stay, so it is offered only when one is linked.
-          sub:
-            admission?.state === "occupied" ? "Leave is recorded on the ward board" : "No stay linked to this record",
-          action:
-            admission?.state === "occupied"
-              ? {
-                  kind: "button",
-                  label: "Mark absent",
-                  onClick: () => {
-                    ctx.onMarkAbsent();
-                  },
-                  event: "RECORD_ABSENT_WITHOUT_LEAVE",
-                }
-              : undefined,
-        },
-      ],
+      cells: [],
     };
   }
 
@@ -718,8 +666,7 @@ function statusFor(
     // A3-13: a voluntary patient is not on an order, so no return order is asked for (A3-2's step
     // is for a person on one); the other missing person steps are the same.
     // Either source reading involuntary wins, as in the reducer's guards.
-    const voluntary =
-      /^voluntary\b/i.test(legalValue(movement, patient).trim()) && !legalStatusTextIsInvoluntary(patient?.legalStatus);
+    const voluntary = absenceVoluntary(movement, patient);
     const steps = absenceStepsFor(voluntary);
     const rows: StatusRow[] = steps.map((step) => {
       const at = absence.steps.find((done) => done.step === step)?.at;
@@ -901,9 +848,18 @@ export function PatientStatusCard({
   barLead,
   barMain,
   phoneFoot,
+  quietActions = false,
+  children,
 }: {
   mode: PatientMode;
   context: PatientStatusContext;
+  /**
+   * Josh, 3 Nov 2026: when the Next step card leads Now it holds the page's one filled button, so on
+   * desktop and tablet this card's actions are all secondary. The phone's pinned bar is unchanged.
+   */
+  quietActions?: boolean;
+  /** The ward's action row (Start leave, Gone to ED, Discharge date), shown inside the card. */
+  children?: ReactNode;
   /** v10 phone: a quiet control at the start of the pinned bar (Copy summary). Phone only. */
   barLead?: ReactNode;
   /** v10 phone: the bar's main control when no gate holds the primary (New referral). Phone only. */
@@ -932,6 +888,7 @@ export function PatientStatusCard({
   const primaryKey =
     status.rows?.find((r) => !r.done && r.action?.kind === "button")?.key ??
     status.cells.find((c) => !c.clear && c.action?.kind === "button" && !c.action.secondary)?.key;
+  const progress = mode === "ward" ? stayProgress(context.admission, context.now) : null;
   const word = status.meterWord ?? "clear";
   /*
    * v10 Patient, Phone: "Its one primary is pinned in a sticky action bar and is not repeated in
@@ -944,6 +901,7 @@ export function PatientStatusCard({
       (primaryKey === undefined ? status.next : undefined))
     : undefined;
   const inList = (key: string) => !(pinned && key === primaryKey);
+  const isPrimary = (key: string) => key === primaryKey && !(quietActions && !isPhone);
   /* v10 Patient, phone: outside a placement the card has no verdict row unless it counts steps
    * (absent without leave); the mode is already the hero's eyebrow, and the meta moves to a foot. */
   const placing = mode === "find" || mode === "held" || mode === "transit";
@@ -985,7 +943,7 @@ export function PatientStatusCard({
           ) : null}
           {/* Qodo review (13 Oct 2026): with every gate clear, the next step (Mark handover ready)
               is the card's one primary on desktop too; on a phone it is pinned in the bar. */}
-          {!isPhone && primaryKey === undefined && status.next ? (
+          {!isPhone && primaryKey === undefined && status.next && !quietActions ? (
             <span className={styles.headAction} data-testid="ward-patient-status-next">
               <CellAction action={status.next} primary />
             </span>
@@ -1006,7 +964,7 @@ export function PatientStatusCard({
                   <span className={styles.nr}>Not yet</span>
                 )}
                 {row.action && inList(row.key) ? (
-                  <CellAction action={row.action} primary={row.key === primaryKey} />
+                  <CellAction action={row.action} primary={isPrimary(row.key)} />
                 ) : (
                   <span />
                 )}
@@ -1047,7 +1005,7 @@ export function PatientStatusCard({
                   {cell.time ? <div className={styles.time}>{cell.time}</div> : null}
                   {cell.action && inList(cell.key) ? (
                     <div className={styles.action}>
-                      <CellAction action={cell.action} primary={cell.key === primaryKey} />
+                      <CellAction action={cell.action} primary={isPrimary(cell.key)} />
                     </div>
                   ) : null}
                 </>
@@ -1078,7 +1036,7 @@ export function PatientStatusCard({
                         )}
                       </div>
                       {cell.action && inList(cell.key) ? (
-                        <CellAction action={cell.action} primary={cell.key === primaryKey} />
+                        <CellAction action={cell.action} primary={isPrimary(cell.key)} />
                       ) : null}
                     </div>
                     {cell.sub || cell.time ? (
@@ -1093,6 +1051,8 @@ export function PatientStatusCard({
             </div>
           ))}
         </div>
+        {progress ? <PatientStayProgress progress={progress} /> : null}
+        {children}
         {phoneQuiet ? <p className={styles.phFoot}>{phoneFoot ?? status.meta}</p> : null}
       </section>
       {isPhone && (pinned || barLead || barMain) ? (

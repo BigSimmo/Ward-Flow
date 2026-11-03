@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { RecordFormSheet, type RecordDraft } from "@/components/ward-management/legal-forms/legal-forms-sheets";
 import { PatientDetailsTab } from "@/components/ward-management/patients/patient-details-tab";
+import { PatientLegalNowCard } from "@/components/ward-management/patients/patient-now-cards";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -101,9 +102,24 @@ describe("Legal now on the patient record", () => {
       (movement) => movement.stage === "arrived" && !movement.legalForm && movement.patientId,
     );
     if (!arrived?.patientId) throw new Error("the seed no longer carries an arrived stay without a form");
-    render(
+    // Josh's approved list (3 Nov 2026): on the ward the Now tab no longer repeats Legal now (it
+    // lives in the top band and the Forms tab), so the card itself is checked for the arrived stay.
+    const { unmount } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <PatientNowScreen patientId={arrived.patientId} />
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByTestId("ward-patient-legal-now")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Record a form" })).not.toBeInTheDocument();
+    unmount();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <PatientLegalNowCard
+          movement={arrived}
+          patient={seed.patients.find((person) => person.id === arrived.patientId)}
+          onAllForms={() => undefined}
+          now={NOW_ANCHOR}
+        />
       </WardFlowProvider>,
     );
     const card = within(screen.getByTestId("ward-patient-legal-now"));

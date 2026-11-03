@@ -1,0 +1,166 @@
+"use client";
+
+import Link from "next/link";
+import { History, ListChecks } from "lucide-react";
+import { Button, Card, CardHead, Meter, StatusGlyph, buttonClass } from "@/components/wf";
+import { formatInstant } from "@/components/ward-management/ward-clock";
+import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
+import type { NextStep, NextStepAction, ReadinessRow, RecentEvent, StayProgress } from "./patient-now-ward";
+import styles from "./patient-now-ward-cards.module.css";
+
+/**
+ * Next step first (Josh, 3 Nov 2026): one card leading Now with the single thing due and one button.
+ * On a phone the pinned bar already carries the same action as the page's one filled button, so the
+ * card's button is the quiet secondary there (`quiet`).
+ */
+export function PatientNextStepCard({
+  step,
+  quiet = false,
+  roleLimit,
+}: {
+  step: NextStep;
+  quiet?: boolean;
+  roleLimit?: (event: WardFlowEventType) => string | undefined;
+}) {
+  return (
+    <Card
+      className={styles.next}
+      data-testid="ward-patient-next-step"
+      data-in-bar={quiet || undefined}
+      aria-labelledby="pn-next-step"
+    >
+      <div className={styles.nextBody}>
+        <span className={styles.eyebrow}>Next step</span>
+        <h2 id="pn-next-step" className={styles.nextTitle}>
+          <StatusGlyph tone={step.tone} size={12} />
+          <span>{step.title}</span>
+        </h2>
+        <p className={styles.nextDetail}>{step.detail}</p>
+      </div>
+      {step.action ? (
+        <div className={styles.nextAction}>
+          <PatientNextStepButton
+            action={step.action}
+            primary={!quiet}
+            roleLimit={roleLimit}
+            testId="ward-patient-next-step-action"
+          />
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+/** The next step's one button: a link or a handler, greyed with the desk's reason when limited. */
+export function PatientNextStepButton({
+  action,
+  primary,
+  roleLimit,
+  testId,
+}: {
+  action: NextStepAction;
+  primary: boolean;
+  roleLimit?: (event: WardFlowEventType) => string | undefined;
+  testId?: string;
+}) {
+  const reason = action.event ? roleLimit?.(action.event) : undefined;
+  const variant = primary ? "pri" : "sec";
+  if (reason)
+    return (
+      <Button icon={action.icon} disabledReason={reason} reasonDisplay="tooltip" data-testid={testId}>
+        {action.label}
+      </Button>
+    );
+  if (action.href)
+    return (
+      <Link href={action.href} className={buttonClass({ variant })} aria-label={action.ariaLabel} data-testid={testId}>
+        {action.icon ? <action.icon size={16} strokeWidth={1.75} aria-hidden="true" /> : null}
+        {action.label}
+      </Link>
+    );
+  return (
+    <Button
+      variant={variant}
+      icon={action.icon}
+      aria-label={action.ariaLabel}
+      onClick={action.onClick}
+      data-testid={testId}
+    >
+      {action.label}
+    </Button>
+  );
+}
+
+/** Stay progress: "Day 7 of a planned 10" with a slim bar, and past the date said in words. */
+export function PatientStayProgress({ progress }: { progress: StayProgress }) {
+  return (
+    <div className={styles.progress} data-testid="ward-patient-stay-progress">
+      <div className={styles.progressLine}>
+        <strong className={styles.progressHead}>{progress.headline}</strong>
+        <span className={styles.progressNote} data-past={progress.past || undefined}>
+          {progress.note}
+        </span>
+      </div>
+      {progress.planned !== null ? (
+        <Meter
+          value={Math.min(progress.day, progress.planned)}
+          max={progress.planned}
+          fill={progress.past ? "warning" : "info"}
+          label={`${progress.headline}. ${progress.note}`}
+          valueText={null}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/** Discharge readiness: recorded facts as ticks, never a score. */
+export function PatientDischargeReadiness({ rows }: { rows: ReadinessRow[] }) {
+  return (
+    <Card data-testid="ward-patient-discharge-readiness">
+      <CardHead level={2} icon={ListChecks} iconPlain title="Discharge readiness" meta="As recorded" />
+      <ul className={styles.list} aria-label="Discharge readiness">
+        {rows.map((row) => (
+          <li key={row.key} className={styles.item} data-testid={`ward-patient-ready-${row.key}`} data-done={row.done}>
+            <StatusGlyph tone={row.done ? "success" : "neutral"} size={12} />
+            <span className={styles.itemText}>
+              <strong>{row.label}</strong>
+              <span>{row.detail}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+/** Last 24 hours: the newest recorded events for this stay, newest first, with Full history. */
+export function PatientLastDay({ events, onOpenHistory }: { events: RecentEvent[]; onOpenHistory: () => void }) {
+  return (
+    <Card data-testid="ward-patient-last-day">
+      <CardHead
+        level={2}
+        icon={History}
+        iconPlain
+        title="Last 24 hours"
+        action={
+          <Button size="sm" variant="ghost" onClick={onOpenHistory} data-testid="ward-patient-last-day-history">
+            Full history
+          </Button>
+        }
+      />
+      {events.length > 0 ? (
+        <ol className={styles.list} aria-label="Recorded in the last 24 hours">
+          {events.map((event) => (
+            <li key={event.key} className={styles.event}>
+              <time className={styles.time}>{formatInstant(event.at)}</time>
+              <span>{event.text}</span>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className={styles.empty}>Nothing recorded in the last 24 hours</p>
+      )}
+    </Card>
+  );
+}
