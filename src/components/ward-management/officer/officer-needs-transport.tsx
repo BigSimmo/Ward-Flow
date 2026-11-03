@@ -341,12 +341,12 @@ export function OfficerBookingPanel({
           aside={<Button variant="ghost" size="sm" iconOnly icon={X} onClick={onClose} aria-label="Close booking" />}
         />
         <div className={cxBody(styles.detailScroll, styles.bookingBody)}>
-          {callout}
-          {form}
+          {/* TR4: on a phone the officer calls first, so the numbers (which say what to do) replace the callout. */}
           <OfficerBookingContacts
             selected={answers.provider}
             onPick={(provider) => setAnswers((current) => ({ ...current, provider }))}
           />
+          {form}
         </div>
       </Card>
     </div>
