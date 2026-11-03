@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import type { TransportProvider, TravelMode } from "@/components/ward-management/ward-model";
 
 import own from "./officer-booking-contacts.module.css";
@@ -39,7 +40,7 @@ export function ProviderNumber({ provider }: { provider: string | undefined }) {
         className={styles.contactCopy}
         aria-label={`Copy the ${provider} number`}
         onClick={() =>
-          void navigator.clipboard?.writeText(number.replace(/[^\d]/g, "")).then(
+          void copyTextToClipboard(number).then(
             () => setCopied(true),
             () => setCopied(false),
           )
@@ -68,7 +69,7 @@ export function OfficerBookingContacts({
 }) {
   const [copied, setCopied] = useState<string | null>(null);
   const copy = (number: string) => {
-    void navigator.clipboard?.writeText(number.replace(/[^\d]/g, "")).then(
+    void copyTextToClipboard(number).then(
       () => setCopied(number),
       () => setCopied(null),
     );
