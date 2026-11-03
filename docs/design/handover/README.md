@@ -29,6 +29,7 @@ Port the mock-up's components and tokens as they are; don't rebuild them. Compar
 
 - Build only approved designs, mock-up first. Synthetic data only.
 - Mark a PR ready once CI is green and it matches the mock-up. Switch auto-merge on while checks are still running (GitHub refuses it on an already-green PR, Q175). Auto-merge counts as Josh's yes. Never merge by hand or turn auto-merge off.
+- To hold a PR, add the `hold` label (Q373); never write an auto-merge note. Base every PR on `main`; never stack PRs.
 - Claim files on the sign-out log and the pinned issue "Who is editing what" (#688) before editing.
 - Hosted CI is the full gate. No repeat test runs.
 - House rules: 12px minimum text, 40px controls on phones (48px Accept, Pull and Decline), desktop tabs 30px (Q231), no coloured side edges, minimal warnings, patient names surname first as recorded with UMRN (Q331), times as typed.
