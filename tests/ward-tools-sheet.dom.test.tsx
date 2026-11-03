@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
+import { ToolFormTimes } from "@/components/ward-management/tools/ward-tool-form-times";
 import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sheet";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -326,37 +326,45 @@ describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2
 describe("Form times on the Perth clock", () => {
   afterEach(() => vi.useRealTimers());
 
+  function pickForm(name: RegExp) {
+    fireEvent.click(screen.getByTestId("ward-form-times-form"));
+    fireEvent.click(screen.getByRole("menuitemradio", { name }));
+  }
+
   it("starts with no form, date or time, and shows a result only once all three are entered", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFormTimes />
+        <ToolFormTimes onNavigate={vi.fn()} />
       </WardFlowProvider>,
     );
     // Owner rule (19 Oct 2026): no MHA form type or form time is prefilled, and rule D5: the
     // result shows only what the person entered.
-    expect(screen.getByRole("combobox", { name: "Form" })).toHaveValue("");
-    expect(screen.getByLabelText("Date written on form")).toHaveValue("");
-    expect(screen.getByLabelText("Time written on form")).toHaveValue("");
-    expect(screen.getByRole("status").textContent).toBe("Not recorded");
-    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
-    typeDate(screen.getByLabelText("Date written on form"), "2026-09-26");
-    expect(screen.getByRole("status").textContent).toBe("Not recorded");
-    fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
-    expect(screen.getByRole("status").textContent).toContain("on the demo clock");
+    expect(screen.getByTestId("ward-form-times-form")).toHaveTextContent("Choose a form");
+    expect(screen.getByLabelText("Date on form")).toHaveValue("");
+    expect(screen.getByLabelText("Time on form")).toHaveValue("");
+    const result = screen.getByTestId("ward-form-times-result");
+    expect(result.textContent).toBe("Not recorded");
+    fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "09:15" } });
+    typeDate(screen.getByLabelText("Date on form"), "2026-09-26");
+    expect(result.textContent).toBe("Not recorded");
     // Any form a Legal forms record can carry, not only the ones with a clock.
-    expect(screen.getByRole("option", { name: /^Form 4A/u })).toBeTruthy();
+    fireEvent.click(screen.getByTestId("ward-form-times-form"));
+    expect(screen.getByRole("menuitemradio", { name: /^Form 4A/u })).toBeTruthy();
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /^Form 1A/u }));
+    expect(result).toHaveTextContent("09:15");
+    expect(result).toHaveTextContent("as typed");
   });
 
   it("shows nothing for a cleared time rather than reading it as midnight", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFormTimes />
+        <ToolFormTimes onNavigate={vi.fn()} />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
-    typeDate(screen.getByLabelText("Date written on form"), "2026-09-26");
-    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
-    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "" } });
-    expect(screen.getByRole("status").textContent).toBe("Not recorded");
+    pickForm(/^Form 1A/u);
+    typeDate(screen.getByLabelText("Date on form"), "2026-09-26");
+    fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "09:15" } });
+    fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "" } });
+    expect(screen.getByTestId("ward-form-times-result").textContent).toBe("Not recorded");
   });
 });

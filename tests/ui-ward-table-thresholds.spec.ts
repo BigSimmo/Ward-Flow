@@ -581,7 +581,7 @@ const TYPE_FLOOR_ROUTES = [
     route: "/ward-flow/waiting",
     expect: ["delays-cause", "delays-profile", "delays-wait", "delays-since", "banner", "badge"],
   },
-  // Home v7 (Josh, 22 Oct 2026): the queue's tier labels sit behind Everyone waiting.
+  // Home v7 (Josh, 22 Oct 2026): the queue's tier labels sit behind the Flow list (Q340).
   { route: "/ward-flow", expect: ["command-tier", "banner", "badge"], everyoneWaiting: true },
   { route: "/ward-flow/movements", expect: ["banner", "badge"] },
   { route: "/ward-flow/capacity", expect: ["banner", "badge"] },

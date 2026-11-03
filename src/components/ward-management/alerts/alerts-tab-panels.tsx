@@ -17,6 +17,8 @@ import { type BroadcastAlert, type getActiveBroadcastAlert } from "./ward-broadc
 import { isAlertLive } from "./global-alert-view";
 import { PullNowCard } from "./global-alert-panels";
 import { GroupHead } from "./alerts-queue";
+import { AlertsRemindersGroup } from "./alerts-reminders-group";
+export { useDueReminderCount } from "./alerts-reminders-group";
 import type { HistoryEntry } from "./alerts-history";
 import { AddUnitsDialog, addableGroups } from "./broadcast-add-units";
 import { BroadcastLiveCard, EarlierBroadcasts } from "./broadcast-live-card";
@@ -137,7 +139,10 @@ function NoticeRows({
   );
 }
 
-/** Now, after Act now and Waiting: the unread notices (Q181). Nothing when there are none. */
+/**
+ * Now, after Act now and Waiting: the person's due reminders from Tools, then the unread notices
+ * (Q181). Nothing when there are neither.
+ */
 export function AlertsNoticesGroup({
   notices,
   now,
@@ -147,12 +152,16 @@ export function AlertsNoticesGroup({
   now: Instant;
   umrnLookup: Parameters<typeof withUmrnInPlaceOfMovementIds>[1];
 }) {
-  if (notices.length === 0) return null;
   return (
-    <section className={styles.group} aria-label="Notices" data-testid="ward-alerts-notices">
-      <GroupHead tone="info" label="Notices" count={notices.length} aside="for information" />
-      <NoticeRows notices={notices} now={now} umrnLookup={umrnLookup} />
-    </section>
+    <>
+      <AlertsRemindersGroup now={now} />
+      {notices.length === 0 ? null : (
+        <section className={styles.group} aria-label="Notices" data-testid="ward-alerts-notices">
+          <GroupHead tone="info" label="Notices" count={notices.length} aside="for information" />
+          <NoticeRows notices={notices} now={now} umrnLookup={umrnLookup} />
+        </section>
+      )}
+    </>
   );
 }
 

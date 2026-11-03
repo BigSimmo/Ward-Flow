@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import React from "react";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
-import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
+import { ToolFormTimes } from "@/components/ward-management/tools/ward-tool-form-times";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -59,28 +59,30 @@ describe("Phase 6: Accessibility & Ergonomics Polish", () => {
   });
 
   it("gives every Form times control a visible label, so it is reachable by name from the keyboard", () => {
-    // Form times replaced the MHA form calculator's tabbed panels (Tools review, 15 Oct 2026).
+    // Form times replaced the MHA form calculator's tabbed panels (Tools review, 15 Oct 2026); the
+    // Tools overhaul (#1316) moved it to the kit Menu and fields (ward-tool-form-times.tsx).
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFormTimes />
+        <ToolFormTimes onNavigate={() => {}} />
       </WardFlowProvider>,
     );
 
-    const form = screen.getByRole("combobox", { name: "Form" });
-    expect(form).toHaveValue("");
-    fireEvent.change(form, { target: { value: "3A" } });
-    expect(form).toHaveValue("3A");
-    const dateBox = screen.getByLabelText("Date written on form");
+    // The picker's name is its visible label and its value, so it reads "Form" before a choice.
+    const form = screen.getByRole("button", { name: "Form Choose a form" });
+    fireEvent.click(form);
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /^Form 3A/u }));
+    expect(screen.getByTestId("ward-form-times-form")).toHaveAccessibleName(/^Form Form 3A/u);
+    const dateBox = screen.getByLabelText("Date on form");
     typeDate(dateBox, "2026-09-26");
     // The kit's typed date box: a DD/MM/YYYY text box whose id is tied to its visible label.
     expect(dateBox).toHaveAttribute("type", "text");
     expect(dateBox).toHaveValue("26/09/2026");
     expect(dateBox.id).not.toBe("");
     const dateLabel = Array.from(document.querySelectorAll("label")).find((label) => label.htmlFor === dateBox.id);
-    expect(dateLabel).toHaveTextContent("Date written on form");
-    expect(screen.getByLabelText("Time written on form")).toHaveAttribute("type", "time");
+    expect(dateLabel).toHaveTextContent("Date on form");
+    expect(screen.getByLabelText("Time on form")).toHaveAttribute("type", "time");
     // The result shows only a typed time (rule D5), so type one before reading it back.
-    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
-    expect(screen.getByRole("status")).toHaveTextContent(/^Form 3A/u);
+    fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "09:15" } });
+    expect(screen.getByTestId("ward-form-times-result")).toHaveTextContent(/^Form 3A/u);
   });
 });
