@@ -347,4 +347,48 @@ describe("the redesigned pop-ups (states the sample cannot reach)", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Keep booking" }));
     expect(view.closeTransportCancel).toHaveBeenCalled();
   });
+
+  it("Cancel this team's booking: with no matched patient, the booking is named by its job id, never a guessed person", () => {
+    const state = seedWardFlowState();
+    const movement = {
+      ...state.movements[0]!,
+      referralId: undefined,
+      id: "MV-T1",
+      patientId: "synthetic-unmatched-patient",
+      transport: {
+        id: "MV-T1-job",
+        provider: "Ambulance (St John)",
+        escortRequired: false,
+        cadNumber: "CAD-4567",
+      },
+    };
+    const view = {
+      transportCancelFor: movement.id,
+      cancelTransportReason: undefined,
+      setCancelTransportReason: vi.fn(),
+      cancelTransportBlocked: "Choose why the job is being cancelled.",
+      closeTransportCancel: vi.fn(),
+      transportCancelDialogRef: createRef<HTMLDivElement>(),
+      submitCancelTransport: vi.fn(),
+      movements: [movement],
+      umrnLookup: state,
+    };
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CommunityScreenTransportCancelDialog view={view as never} />
+      </WardFlowProvider>,
+    );
+    const dialog = screen.getByRole("dialog", { name: "Cancel this team's transport booking" });
+    // No person resolves for this movement, so the booking is named by its id, never guessed.
+    expect(dialog).toHaveTextContent("Name not recorded · UMRN not recorded");
+    expect(dialog).toHaveTextContent("Job MV-T1-job");
+    expect(dialog).toHaveTextContent("CAD-4567");
+    for (const patient of state.patients) {
+      expect(dialog).not.toHaveTextContent(patient.umrn);
+    }
+    const confirm = within(dialog).getByTestId("ward-community-cancel-transport-confirm-MV-T1");
+    expect(confirm).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(confirm);
+    expect(view.submitCancelTransport).not.toHaveBeenCalled();
+  });
 });
