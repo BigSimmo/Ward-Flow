@@ -263,7 +263,9 @@ function GovernanceSession({
   const [phoneSheet, setPhoneSheet] = useState(false);
   // Audit settings-4: after a phone review is confirmed, the sheet moves on to the next waiting event.
   const [phoneAdvance, setPhoneAdvance] = useState(false);
-  const [phoneMore, setPhoneMore] = useState<"registers" | "reports" | null>(null);
+  // GV1: the Forms link (`?tab=registers`) opens the Registers sheet on a phone too.
+  const askedRegisters = useSearchParams()?.get("tab") === "registers";
+  const [phoneMore, setPhoneMore] = useState<"registers" | "reports" | null>(askedRegisters ? "registers" : null);
   const isPhone = useIsPhone();
   // Discreet names on phone (audit settings-9): initials plus UMRN in the phone rows and sheet.
   const nameFor = usePatientNameDisplay();

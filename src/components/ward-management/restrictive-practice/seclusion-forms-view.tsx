@@ -29,7 +29,7 @@ import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Unit } from "../ward-model";
 import { usePatientOf } from "../ward-patient-name";
-import { unitInScope } from "../ward-role-access";
+import { ROLE_SCREENS, unitInScope } from "../ward-role-access";
 import { canDispatch } from "../ward-role-permissions";
 import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import {
@@ -39,6 +39,7 @@ import {
   recentIncidents,
   restrictivePracticeLabel,
   seclusionRoomView,
+  wardIncidentLabel,
 } from "./restrictive-practice-view";
 import {
   openEpisodes,
@@ -221,14 +222,19 @@ export function SeclusionFormsView({ startFor }: { startFor?: string } = {}) {
     })
     .sort((a, b) => ROOM_ORDER[a.state] - ROOM_ORDER[b.state] || a.index - b.index);
   const available = rooms.filter((row) => row.state === "available").length;
-  const incidentsToday = visible.reduce((sum, unit) => sum + recentIncidents(unit.restrictivePractice, now).length, 0);
 
   const startable = startFor ? admissions.find((stay) => stay.id === startFor && stay.state === "occupied") : undefined;
   const [startOpen, setStartOpen] = useState(startable !== undefined && mayRecord);
   const [ending, setEnding] = useState<LiveRow | null>(null);
   const [roomFor, setRoomFor] = useState<Unit | null>(null);
   const [incidentOpen, setIncidentOpen] = useState(false);
-  const secureUnits = rooms.map((row) => row.unit);
+  // Any ward in view can record an incident, not only wards with a seclusion room (review on #1366).
+  const incidentUnits = visible;
+  // Ward desks cannot open Governance, so the last day's incidents stay readable here.
+  const seesGovernance = ROLE_SCREENS[access.role].governance !== undefined;
+  const lastDay = visible
+    .flatMap((unit) => recentIncidents(unit.restrictivePractice, now).map((incident) => ({ unit, incident })))
+    .sort((a, b) => b.incident.at - a.incident.at);
 
   return (
     <div className={styles.view} data-testid="seclusion-forms-view">
@@ -336,10 +342,10 @@ export function SeclusionFormsView({ startFor }: { startFor?: string } = {}) {
         <Card data-testid="seclusion-incidents-card">
           <CardHead
             title="Ward incidents"
-            meta={`${incidentsToday} in the last day`}
+            meta={`${lastDay.length} in the last day`}
             level={2}
             action={
-              mayRecord && secureUnits.length > 0 ? (
+              mayRecord && incidentUnits.length > 0 ? (
                 <Button
                   variant="sec"
                   size="sm"
@@ -351,16 +357,35 @@ export function SeclusionFormsView({ startFor }: { startFor?: string } = {}) {
               ) : undefined
             }
           />
+          {lastDay.length > 0 ? (
+            <ul className={styles.rows} data-testid="seclusion-incidents">
+              {lastDay.map(({ unit, incident }) => (
+                <li key={incident.id} className={styles.row}>
+                  <span className={styles.rowMain}>
+                    <span className={styles.name}>{wardIncidentLabel(incident.category)}</span>
+                    <span className={styles.detail}>
+                      {unit.name} · Recorded by {incident.recordedBy}
+                    </span>
+                  </span>
+                  <span className={styles.detail}>{formatInstantWithDay(incident.at, now)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <CardBody>
             <p className={styles.note}>
-              Finished episodes and every recorded incident are kept in Governance, for review after the event.
+              {seesGovernance
+                ? "Finished episodes and older incidents are kept in Governance, for review after the event."
+                : "Incidents from the last day show here. Older ones are kept for review after the event."}
             </p>
-            <Link
-              href={SECLUSION_GOVERNANCE_HREF}
-              className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.link)}
-            >
-              Open the record in Governance
-            </Link>
+            {seesGovernance ? (
+              <Link
+                href={SECLUSION_GOVERNANCE_HREF}
+                className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.link)}
+              >
+                Open the record in Governance
+              </Link>
+            ) : null}
           </CardBody>
         </Card>
       </div>
@@ -395,7 +420,7 @@ export function SeclusionFormsView({ startFor }: { startFor?: string } = {}) {
       ) : null}
       {incidentOpen ? (
         <IncidentDialog
-          units={secureUnits}
+          units={incidentUnits}
           now={now}
           onClose={() => setIncidentOpen(false)}
           onRecord={(unit, category, at) => raise("RECORD_WARD_INCIDENT", { ...acting(unit), category, at })}
