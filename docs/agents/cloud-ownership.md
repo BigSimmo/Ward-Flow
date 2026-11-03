@@ -1,5 +1,7 @@
 # Ward Flow ownership on isolated Cloud hosts
 
+_Updated 2026-11-03 - autonomous exact-file document handoffs and isolated takeovers; Documentation owns._
+
 [AGENTS.md](../../AGENTS.md) governs safety and ownership. The commit hook and owned-file formatter require a readable coordination log on every host; an unset variable or absent implicit Linux/macOS log never grants clearance.
 
 ## Establish the actual boundary before editing
@@ -27,7 +29,7 @@ On a shared sync folder, where near-simultaneous appends to one file can overwri
 
 Use `./LICENSE` or `./Dockerfile` for an extensionless root filename; the checker normalises the explicit `./` prefix. Separate repository metadata with `;`, rather than appending a sentence to an extensionless filename. The legacy log format cannot express whitespace or comma/semicolon characters in exact paths. Do not invent quoting for such a path; coordinate a supported parent-directory claim where that scope is authorised, or report the exact-path limitation. A directory claim is never an exact-file takeover approval.
 
-Run `node scripts/ward-flow/sign-out-check.mjs <exact-files>` with that same `WARD_SIGNOUT_FILE` before claiming/editing files. It checks available local branch history and the supplied log; it cannot discover other hosts. An overlap requires the other owner's release or Josh's already-applicable exact-file takeover authority. Sign out new files as the task scope grows. Pass the same environment to formatting, admission and commit commands; a readable empty log does not supply your claims.
+Run `node scripts/ward-flow/sign-out-check.mjs <exact-files>` with that same `WARD_SIGNOUT_FILE` before claiming/editing files. It checks available local branch history and the supplied log; it cannot discover other hosts. An overlap requires the other owner's genuine exact-file release or applicable exact-file takeover authority, including the routine document standing permission below; a claimed document alone needs no renewed permission. Sign out new files as the task scope grows. Pass the same environment to formatting, admission and commit commands; a readable empty log does not supply your claims.
 
 At handoff, preserve the checkpoint, log path and exact outstanding ownership. A plain `RELEASED` record clears **all earlier claims for every named branch in this repository scope**, regardless of the owner field or files mentioned in its reason. Use it only when every affected claim can be released; the receiving session then validates the current branch/files and appends the complete set of claims still needed by the coordinating group. Use this format for a complete branch handoff:
 
@@ -35,10 +37,20 @@ At handoff, preserve the checkpoint, log path and exact outstanding ownership. A
 RELEASED <date> | <owner> | <task-branch> | <handoff/integration reason>; repo=BigSimmo/Ward-Flow
 ```
 
-To hand back only some files, add a `files=` field naming the exact paths. It closes those paths in the branch's earlier claims and keeps the rest active; files named only in the reason are not released. It matches claimed paths exactly, so a directory claim such as `docs/**` stays whole until a plain RELEASED line; an empty `files=` releases nothing. Obtain the existing exact-file takeover authority if ownership overlaps.
+To hand back only some files, add a `files=` field naming the exact paths. It closes those paths in the branch's earlier claims and keeps the rest active; files named only in the reason are not released. It matches claimed paths exactly, so a directory claim such as `docs/**` stays whole until a plain RELEASED line; an empty `files=` releases nothing. A partial release still clears those exact paths across every earlier claim on the named branch, regardless of the owner field. Verify every affected claim is owned by or explicitly cleared with the releasing coordinator; never manufacture another owner's release. Use applicable exact-file takeover authority for remaining overlaps.
 
 ```text
 RELEASED <date> | <owner> | <task-branch> | files=<path>, <path> | <reason>; repo=BigSimmo/Ward-Flow
 ```
 
 An ordinary task-local commit or PR does not integrate another host's changes, prove deployment or authorise provider use. Recheck overlapping work at the authorised integration boundary. Never set `SKIP_SIGNOUT_GUARD=1` for concurrent Cloud work or bare-publication admission.
+
+## Routine document handoffs
+
+Updated 3 November 2026 under Josh's standing document permission. An authorised task includes routine exact-file document handoffs and isolated takeovers within its existing project, purpose and audience: editorial corrections, task receipts, status updates and documentation of already-authorised work. Prefer a genuine owner-agreed exact-file release through an available supported task channel. If the owner cannot be reached, preserve a recoverable current version and prepare in an isolated branch/worktree. Use the existing exact-file `(approved takeover by Josh: <scope>)` record, truthfully citing the standing permission dated 3 November 2026 and original task; do not claim case-specific owner consent. Record source version and one integration owner in the existing checkpoint, retaining all unreleased claims. Missing or unreadable required logs still block admission; never create an empty replacement to evade them.
+
+Exchange only necessary task/owner IDs, safe exact paths, revision/content hashes, intended scope, status and safe evidence links. Use this metadata solely for the authorised task in its existing appropriately access-controlled checkpoint and claim store, under that store's existing retention policy; create no collector or extra copies. Paths and links can reveal sensitive information: use safe identifiers or redacted labels where needed. Public claim-board entries must remain safe public task/file metadata. This permits relevant task coordination, not unrelated messaging, new access grants, raw chat collection or forwarding private document contents.
+
+One integrator compares original, latest and proposed versions, reconciles compatible edits and runs required checks. Re-read current content and claims immediately before applying; if either changed, reconcile again. Keep shared-file writes serial using a supported lock/version precondition where available. A claim log is coordination metadata, not an atomic lock. If serial integration cannot be established, retain the reviewable patch, report that technical dependency and continue independent work; repeated takeover approval is not the remedy. Silence, age and apparent inactivity never release work or permit discarding edits.
+
+The standing permission excludes governing instructions and policy, new clinical/product/legal/security decisions, non-document claims, protected or append-only history, deletion/moving of others' work, sensitive data/access, publication, merge/deployment, provider use, credentials, permissions, billing and spending. These keep their own authority and project gates, which the current request may separately supply. Ask only when a substantive conflict or materially missing decision about scope, authority, safety, exposure or cost remains. Ward Flow's synthetic-only boundary remains binding.
