@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, MapPin } from "lucide-react";
+import { CircleCheck, MapPin } from "lucide-react";
 import {
   HEALTH_SERVICES,
   HOME_REGIONS,
@@ -99,7 +99,7 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
         </p>
         {catchmentTeam && !catchmentEditing ? (
           <div className={styles.suggestion} data-state={catchmentConfirmed ? "confirmed" : "suggested"}>
-            {catchmentConfirmed ? <CheckCircle2 aria-hidden="true" className={styles.suggestionIcon} /> : null}
+            {catchmentConfirmed ? <CircleCheck aria-hidden="true" className={styles.suggestionIcon} /> : null}
             <span className={styles.suggestionText}>
               <strong>{catchmentTeam}</strong>
               <small>
@@ -119,7 +119,7 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
                   data-testid="ward-referral-use-catchment"
                   onClick={useSuggestion}
                 >
-                  <CheckCircle2 aria-hidden="true" />
+                  <CircleCheck aria-hidden="true" />
                   Use this catchment
                 </button>
               ) : null}
@@ -286,7 +286,7 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
                         setFlowError(null);
                       }}
                     >
-                      <CheckCircle2 aria-hidden="true" />
+                      <CircleCheck aria-hidden="true" />
                       Confirm catchment
                     </button>
                     {!catchmentTeam.trim() || !homeRegion ? (

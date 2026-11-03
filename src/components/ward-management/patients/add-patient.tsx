@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  FileText,
+  FilePlusCorner,
   History,
   ListPlus,
   Lock,
@@ -1082,7 +1082,7 @@ export function AddPatientForm() {
                 <Button
                   type="submit"
                   variant="sec"
-                  icon={FileText}
+                  icon={FilePlusCorner}
                   className={answered && !isSubmitting ? undefined : styles.submitOff}
                   data-testid="ward-add-patient-register-and-refer"
                   disabledReason={registrationUnavailable}
