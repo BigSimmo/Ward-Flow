@@ -24,29 +24,29 @@ function renderBoard() {
 }
 
 describe("discharges board patient detail and navigation bridge", () => {
-  it("opens patient admission record detail when clicking anywhere on an admission row", () => {
+  it("opens a recorded discharge's detail when clicking anywhere on its row", () => {
     renderBoard();
 
-    // Switch to Admission records population
-    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
+    // Recorded (DC4, 3 Nov 2026) lists the departed admission records of the last 7 days.
+    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
 
-    // Find the first admission record row
     const tbody = document.querySelector("table tbody");
     expect(tbody).not.toBeNull();
     const rows = within(tbody as HTMLElement).getAllByRole("row");
     expect(rows.length).toBeGreaterThan(0);
     const firstRow = rows[0];
+    const name = within(firstRow).getByRole("button").textContent ?? "";
+    expect(name.length).toBeGreaterThan(0);
 
-    // Click on a non-button cell (e.g. Timing cell or Ward cell text)
-    const timingCell = within(firstRow).getByText(
-      /Sat, 26 Sept|Sun, 27 Sept|Mon, 28 Sept|Tue, 29 Sept|Wed, 30 Sept|Thu, 1 Oct|\d{1,2}:\d{2}/,
-    );
-    fireEvent.click(timingCell);
+    // Click a non-button cell: the Left time, not the patient button.
+    const leftCell = within(firstRow).getByText(/\d{1,2}:\d{2}/);
+    expect(leftCell.closest("button")).toBeNull();
+    fireEvent.click(leftCell);
 
-    // Detail drawer should now be open with the patient record
+    // Detail drawer should now be open with that patient's record
     const details = screen.getByRole("region", { name: "Selected discharge details" });
     expect(details).toBeInTheDocument();
-    expect(within(details).getByRole("heading", { level: 3 })).toHaveTextContent(/Ironbrook, Barnaby|Ferrowmoor/);
+    expect(within(details).getByRole("heading", { level: 3 })).toHaveTextContent(name);
     expect(within(details).getByText(/UMRN UM\d+/)).toBeInTheDocument();
   });
 
@@ -68,24 +68,29 @@ describe("discharges board patient detail and navigation bridge", () => {
     fireEvent.click(bridgeButton);
 
     // Population should now have switched to Admission records and rendered full record
-    expect(screen.getByRole("button", { name: /^History/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^Recorded/ })).toHaveAttribute("aria-pressed", "true");
     expect(within(details).getByText("Expected discharge")).toBeInTheDocument();
     expect(within(details).getByText("Date recorded")).toBeInTheDocument();
   });
 
-  it("supports keyboard activation on admission rows using Enter and Space", () => {
+  it("supports keyboard activation on recorded discharge rows using Enter and Space", () => {
     renderBoard();
 
-    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
 
     const tbody = document.querySelector("table tbody");
     const rows = within(tbody as HTMLElement).getAllByRole("row");
-    const secondRow = rows[1];
-
-    // Trigger keyboard Enter on row
-    fireEvent.keyDown(secondRow, { key: "Enter" });
-
+    expect(rows.length).toBeGreaterThan(1);
     const details = screen.getByRole("region", { name: "Selected discharge details" });
-    expect(within(details).getByText(/UMRN UM\d+/)).toBeInTheDocument();
+
+    for (const [row, key] of [
+      [rows[1], "Enter"],
+      [rows[0], " "],
+    ] as const) {
+      const name = within(row).getByRole("button").textContent ?? "";
+      fireEvent.keyDown(row, { key });
+      expect(within(details).getByRole("heading", { level: 3 })).toHaveTextContent(name);
+      expect(within(details).getByText(/UMRN UM\d+/)).toBeInTheDocument();
+    }
   });
 });

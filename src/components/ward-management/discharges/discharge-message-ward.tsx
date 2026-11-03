@@ -15,6 +15,10 @@ import type { BedRelease } from "@/components/ward-management/ward-model";
  * wards only (`DISPATCH_BROADCAST_ALERT` with `targetUnitIds`), so the ward sees it on its desk and
  * acknowledges it there, and Alerts keeps the record.
  *
+ * M6 (Josh, 3 Nov 2026): this and Quick actions' ask (#1339, `alerts/ask-wards.ts`) share one rule:
+ * one advisory directive to the wards not yet asked, skipping a ward named in a live alert with the
+ * same title, shown for 4 hours. Whichever lands second swaps its copy for the shared helper.
+ *
  * Round 2 (3 Nov 2026): a send waits for the store's answer and says when it was refused, an ask
  * that is still live for that ward cannot be sent twice, and one tap asks every ward with an
  * overdue date at once.
@@ -195,7 +199,7 @@ export function DischargeAskOverdueWards({
     const names = pending.map(wardName);
     const confirmed = await requestConfirm({
       title: `Ask ${pending.length} ${pending.length === 1 ? "ward" : "wards"}?`,
-      message: `${listNames(names)} will each be asked to confirm their overdue discharge dates or record new ones. It shows on their desk for 4 hours.`,
+      message: `${listNames(names)} will each be asked to confirm their overdue discharge dates or record new ones. It shows on their screen for 4 hours.`,
       confirmLabel: "Send",
       cancelLabel: "Not now",
     });
@@ -210,7 +214,8 @@ export function DischargeAskOverdueWards({
       result.ok
         ? {
             tone: "success",
-            title: `Asked ${pending.length} ${pending.length === 1 ? "ward" : "wards"}`,
+            // M6 (Josh, 3 Nov 2026): the same words as Quick actions' ask (#1339, askedLine).
+            title: `Asked ${pending.length} ${pending.length === 1 ? "ward" : "wards"}. It shows on their screen for 4 hours.`,
             body: listNames(names),
           }
         : { tone: "warning", title: "Not sent", body: result.message ?? "Try again in a moment." },

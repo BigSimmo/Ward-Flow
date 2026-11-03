@@ -603,7 +603,7 @@ export const MORE_JOBS: readonly HowTo[] = [
     title: "Find who is on call",
     keywords: "oncall phone number call roster consultant registrar switchboard",
     answer:
-      "Open On-call and search by role, hospital, ward, team or number. Use Cover at to see who answers at a later time, and star a line to keep it under Mine.",
+      "Open On-call and search by role, hospital, ward, team or number. A line opens on who answers now, with Copy number, and If no answer names who to try next. Use Cover at for a later time, and star a line to keep it under Mine.",
     desks: "all",
     go: "on-call",
     showMe: [

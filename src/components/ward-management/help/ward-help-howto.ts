@@ -221,6 +221,24 @@ const JOBS: readonly HowTo[] = [
     ],
   },
   {
+    id: "chase-discharge-dates",
+    topic: "Beds and referrals",
+    title: "Chase overdue discharge dates",
+    keywords: "discharge date passed overdue ask ward message ward confirm date edd chase",
+    answer:
+      "On Discharges, the line under the counts says how many dates have passed on how many wards. Press Ask N wards to send those wards one desk alert asking them to confirm or record a new date. To ask about one person, open them and use Message ward beside the hold-up.",
+    desks: ["coordinator"],
+    acts: ["DISPATCH_BROADCAST_ALERT"],
+    go: "discharges",
+    showMe: [
+      {
+        target: { sel: '[data-testid="ward-discharge-ask-overdue"]' },
+        title: "Ask the wards",
+        body: "Asks only the wards with a date that has passed. A ward asked in the last 4 hours is not asked again.",
+      },
+    ],
+  },
+  {
     id: "book-transport",
     topic: "Transport",
     title: "Book transport",

@@ -921,8 +921,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                       {release.state !== "discharged" && release.blocker ? (
                                         <span className={pageStyles.blockerCell}>
                                           <span className={pageStyles.blockerTag}>
-                                            {/* Icon rules (3 Nov 2026): one act-now mark per row, as on the phone. */}
-                                            {overdue ? null : <StatusGlyph tone="danger" size={9} />}
+                                            {/* Icon rules (3 Nov 2026): the tag carries no triangle (red tint only); the one act-now mark is the overdue date. */}
                                             {release.blocker.replace(/^Awaiting (\w)/, (_, first: string) =>
                                               first.toUpperCase(),
                                             )}
@@ -1014,7 +1013,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                           <span className={pageStyles.badge} data-status="blocked">
                                             {/* Phone audit (Josh, 1 Nov 2026): one warning mark per row; a
                                             row already marked past its date keeps that mark alone. */}
-                                            {overdue ? null : <StatusGlyph tone="danger" size={9} />}
                                             <span className="sr-only">Held up: </span>
                                             <span>{WORK_STATUS_LABELS[release.state]}</span>
                                           </span>

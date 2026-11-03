@@ -17,7 +17,13 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 
 /**
- * THE BLOCKER COLUMN BELONGS TO THE BLOCKED GROUP AND NOWHERE ELSE. `Stage` BELONGS EVERYWHERE.
+ * THE BLOCKER COLUMN BELONGS TO THE BLOCKED GROUP AND NOWHERE ELSE.
+ *
+ * CHANGED 3 Nov 2026 (Discharges redesign, approved by Josh): the desktop `Stage` column is gone.
+ * A held-up row states its own stage ("Confirmed" or "Expected") as the line under its hold-up tag,
+ * and a row without a hold-up carries screen-reader-only "Not held up". The E16 notes below on why
+ * `Stage` was kept are history; the structural fact they rest on (only Blocked can mix stages) is
+ * still pinned by the last test, and is why the stage line lives in the Blocked rows alone.
  *
  * Ward Lead ruling E16, 2026-09-05. `groupDischarges` routes every release with a non-null blocker
  * into `blocked`, so in the other three groups `release.blocker` is `null` BY CONSTRUCTION and the
@@ -65,9 +71,10 @@ import type { BedRelease } from "@/components/ward-management/ward-model";
  */
 // Discharges redesign (approved 31 Oct 2026): the person leads each row, and a fourth column holds the
 // row's one action (its header is read by screen readers only, and its cell carries no phone label).
-const WORKLIST_COLUMNS = ["Person", "Expected out", "Stage", "Held up by", "Next"];
+// Redesign (3 Nov 2026): no Stage column; the stage reads under the hold-up tag instead.
+const WORKLIST_COLUMNS = ["Person", "Expected out", "Held up by", "Next"];
 // Desktop cells carry no phone labels; the column classes are the per-cell contract.
-const CELL_CLASSES = ["colPerson", "colOut", "colStage", "colBlocker", "actionCell"];
+const CELL_CLASSES = ["colPerson", "colOut", "colBlocker", "actionCell"];
 const GROUPS = ["blocked", "confirmed", "expected", "discharged-today"] as const;
 
 function headersFor(groupKey: string): string[] {
@@ -102,7 +109,7 @@ describe("the discharges board's column contract", () => {
     }
   });
 
-  it.each(GROUPS)("keeps ward/service, timing and stage/blocker columns aligned in %s", (key) => {
+  it.each(GROUPS)("keeps person, timing and hold-up columns aligned in %s", (key) => {
     renderBoard();
     // The unconditional named detail region stays mounted throughout this all-row walk.
     const details = screen.getByRole("region", { name: "Selected discharge details" });
@@ -117,11 +124,17 @@ describe("the discharges board's column contract", () => {
     for (const row of rows) {
       const cells = [...row.querySelectorAll("td")];
       expect(cells.map((cell, i) => cell.className.includes(CELL_CLASSES[i]))).toEqual(CELL_CLASSES.map(() => true));
-      const stageCell = cells[2];
-      const blockerCell = cells[3];
-      expect(stageCell?.querySelector("[data-stage]")).not.toBeNull();
-      if (key === "blocked") expect(blockerCell?.textContent).toBeTruthy();
-      else expect(blockerCell?.querySelector('[class*="blockerTag"]')).toBeNull();
+      const blockerCell = cells[2];
+      if (!blockerCell) throw new Error(`${key} row has no Held up by cell`);
+      if (key === "blocked") {
+        expect(blockerCell.querySelector('[class*="blockerTag"]')?.textContent).toBeTruthy();
+        // The row's own stage is the line under its hold-up tag.
+        expect(within(blockerCell).queryByText(/(^|· )(Confirmed|Expected)$/u)).not.toBeNull();
+      } else {
+        expect(blockerCell.querySelector('[class*="blockerTag"]')).toBeNull();
+        if (key === "discharged-today") expect(blockerCell.textContent).toBe("");
+        else expect(blockerCell.textContent).toBe("Not held up");
+      }
       fireEvent.click(within(row).getAllByRole("button")[0]);
       expect(details).toBeInTheDocument();
       const reported = within(details).getByText("Last reported", { selector: "dt" }).nextElementSibling;
@@ -131,10 +144,10 @@ describe("the discharges board's column contract", () => {
     }
   });
 
-  it("renders `Stage` in every group, including the three where it restates the heading", () => {
+  it("has no `Stage` column in any group, since the group heading or the hold-up line states it", () => {
     renderBoard();
     for (const key of GROUPS) {
-      expect(headersFor(key), `${key} has lost its Stage column`).toContain("Stage");
+      expect(headersFor(key), `${key} has a Stage column again`).not.toContain("Stage");
     }
   });
 
@@ -148,9 +161,10 @@ describe("the discharges board's column contract", () => {
   });
 
   /**
-   * WHY `Stage` IS KEPT, ASSERTED STRUCTURALLY RATHER THAN AGAINST THE FIXTURE. The blocked bucket
-   * is the only one whose membership test does not fix `state` — the flag is read before the stage
-   * — so it is the only group where the Stage column can vary. Pinning "blocked shows two
+   * WHY A HELD-UP ROW STATES ITS STAGE, ASSERTED STRUCTURALLY RATHER THAN AGAINST THE FIXTURE. The
+   * blocked bucket is the only one whose membership test does not fix `state` — the flag is read
+   * before the stage — so it is the only group where the stage can vary, and the only one whose
+   * rows carry the stage line under the hold-up tag. Pinning "blocked shows two
    * different stages today" would instead go red the day the seed happens to hold one blocked row,
    * which says nothing about the design.
    */

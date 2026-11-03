@@ -17,7 +17,7 @@ Who answers each on-call line now, for hospitals, teams and state lines.
 
 ## Jobs done here
 
-- Find who is on call. Open On-call and search by role, hospital, ward, team or number. Use Cover at to see who answers at a later time, and star a line to keep it under Mine.
+- Find who is on call. Open On-call and search by role, hospital, ward, team or number. A line opens on who answers now, with Copy number, and If no answer names who to try next. Use Cover at for a later time, and star a line to keep it under Mine.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 
