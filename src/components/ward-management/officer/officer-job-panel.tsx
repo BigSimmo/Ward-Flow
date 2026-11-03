@@ -15,7 +15,6 @@ import { transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
-import { CopyProviderNumber } from "./officer-booking-contacts";
 import { PACK_SLOTS } from "./officer-forms-pack";
 import { LEG_TONE, officerLeg, transportLegalStatusLabel } from "./officer-screen-helpers";
 import styles from "./officer.module.css";
@@ -121,34 +120,33 @@ export function OfficerJobPanel({
           </>
         }
         aside={
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            icon={X}
-            onClick={onClose}
-            aria-label="Close job panel"
-            data-testid="ward-officer-detail-close"
-          />
+          <>
+            {/* TR2 (3 Nov 2026): the full record, one tap from the job, beside close. */}
+            <Link
+              className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
+              href={movementHref(job.id)}
+              aria-label="Open the movement record"
+              title="Open the movement record"
+              data-testid={`ward-officer-record-${job.id}`}
+            >
+              <Icon icon={FileText} size={16} />
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={X}
+              onClick={onClose}
+              aria-label="Close job panel"
+              data-testid="ward-officer-detail-close"
+            />
+          </>
         }
       />
       <CardBody className={cx(styles.detailBody, styles.detailScroll)}>{renderDetail(job, context)}</CardBody>
       {/* One pinned foot at every width: Inspect form and Divert, then the one next step as the primary. */}
       <CardFoot className={cx(styles.detailFooter, styles.detailFoot)}>
-        <span className={styles.footTools}>
-          {tools}
-          {/* TR2 (3 Nov 2026): the record and the provider's number, one tap from the job. */}
-          <Link
-            className={buttonClass({ variant: "sec", size: "sm", iconOnly: isPhone })}
-            href={movementHref(job.id)}
-            aria-label={isPhone ? "Open the movement record" : undefined}
-            data-testid={`ward-officer-record-${job.id}`}
-          >
-            <Icon icon={FileText} size={14} />
-            {isPhone ? null : "Record"}
-          </Link>
-          <CopyProviderNumber provider={transport.provider} iconOnly={isPhone} />
-        </span>
+        <span className={styles.footTools}>{tools}</span>
         {renderPhoneNextStep(job, context)}
       </CardFoot>
     </Card>
