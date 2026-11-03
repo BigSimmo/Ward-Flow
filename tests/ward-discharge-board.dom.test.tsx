@@ -67,6 +67,30 @@ it("names identified release rows and distinguishes aggregate copying from print
   }
 });
 
+it("copies Recorded's own seven-day figures, matching its headline (Codex review, #1374)", async () => {
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+  try {
+    renderBoard();
+    fireEvent.click(screen.getByTestId("ward-discharge-history"));
+    const recorded = Number(
+      /^(\d+) discharges? recorded$/u.exec(
+        screen.getByRole("heading", { name: /discharges? recorded$/u }).textContent ?? "",
+      )?.[1],
+    );
+    fireEvent.click(screen.getByTestId("ward-discharge-copy"));
+    await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    const copied = String(writeText.mock.calls[0][0]);
+    expect(copied).toMatch(/Recorded discharges, last 7 days, as of/u);
+    expect(copied).toContain(`${recorded} ${recorded === 1 ? "discharge" : "discharges"} recorded`);
+    expect(copied).not.toMatch(/held up|expected|UMRN|WF-|PT-|WR-/u);
+  } finally {
+    if (originalClipboard) Object.defineProperty(navigator, "clipboard", originalClipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
+  }
+});
+
 /**
  * Raises a real `FLAG_BED_RELEASE` reducer event — the same mechanism `ward-handover.dom.test.tsx`'s
  * `ClockAdvancer` uses to move shared state without reaching into the reducer directly — carrying

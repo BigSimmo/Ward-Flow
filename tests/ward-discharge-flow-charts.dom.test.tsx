@@ -73,6 +73,20 @@ describe("Discharges charts under the table (direction A)", () => {
     expect(worklistRows()).toHaveLength(before);
   });
 
+  it("opens a release the day bar added, not the resting panel (Codex review, #1374)", () => {
+    renderBoard();
+    const listed = new Set(worklistRows().map((row) => row.getAttribute("data-release-id")));
+    const bars = within(dayChart()).getAllByRole("button");
+    const day = [...bars].reverse().find((button) => /: [1-9]\d* due/u.test(button.getAttribute("aria-label") ?? ""));
+    fireEvent.click(day!);
+    const added = worklistRows().find(
+      (row) => row.getAttribute("data-highlighted") === "true" && !listed.has(row.getAttribute("data-release-id")),
+    );
+    expect(added).toBeDefined();
+    fireEvent.click(within(added!).getAllByRole("button")[0]!);
+    expect(screen.getByRole("tablist", { name: /discharge/iu })).toBeInTheDocument();
+  });
+
   it("highlights a day's bed releases within Now, never jumping to Recorded (Josh, 30 Oct)", () => {
     renderBoard();
     const day = within(dayChart())

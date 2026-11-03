@@ -333,6 +333,17 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       onCto: false,
     });
   const followUpToCheck = recorded.filter((record) => followUpOf(record).warning).length;
+  // Codex review (#1374): Recorded copies its own figures, the same ones its headline and list show.
+  const copyRecorded = () => {
+    const text =
+      `Recorded discharges, last ${RECORDED_DAYS} days, as of ${formatSheetMoment(now, dayZero)}. ` +
+      `${recorded.length} ${recorded.length === 1 ? "discharge" : "discharges"} recorded, ` +
+      `${followUpToCheck} ${followUpToCheck === 1 ? "follow-up" : "follow-ups"} to check.`;
+    copyTextToClipboard(text).then(
+      () => base.setCopyNote("Summary copied."),
+      () => base.setCopyNote("Copying is not available in this browser."),
+    );
+  };
   // Now and Recorded: in the hero on desktop and tablet, under it on a phone (v10).
   const populationSwitch = <DischargePopulationSwitch s={s} />;
   const filterCard = <DischargeFilterCard s={s} />;
@@ -407,7 +418,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             <div className={pageStyles.heroTools}>
               <LiveChip state="live" onHero />
               {isPhone ? null : (
-                <Button size="sm" variant="onHero" icon={Copy} onClick={copySummary} data-testid="ward-discharge-copy">
+                <Button
+                  size="sm"
+                  variant="onHero"
+                  icon={Copy}
+                  onClick={nowView ? copySummary : copyRecorded}
+                  data-testid="ward-discharge-copy"
+                >
                   Copy counts
                 </Button>
               )}
