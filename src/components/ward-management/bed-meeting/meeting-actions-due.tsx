@@ -1,13 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useRef, useState } from "react";
 
 import { useIsBreakGlassRecord } from "../shell/ward-access";
 import { useEffectiveWardAccess, useWardAccessSnapshot } from "../shell/ward-access-store";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import type { WardAccess } from "../ward-role-access";
+import { useRefocusAfterRowLeaves } from "../use-refocus-after-row-leaves";
 import type { BedMeetingAction, BedMeetingActionOwner, BedMeetingSubject } from "./bed-meeting-actions";
-import { useBedMeetingDone } from "./use-bed-meeting-done";
+import { useBedMeetingDone, type MarkBedMeetingActionDone } from "./use-bed-meeting-done";
+import styles from "./meeting-actions-due.module.css";
 
 const DueActions = dynamic(() => import("./meeting-actions-due-list").then((m) => m.DueActions));
 
@@ -17,7 +20,8 @@ const DueActions = dynamic(() => import("./meeting-actions-due-list").then((m) =
  * that belong to the viewer's desk, each with a Mark done button. The coordinator sees every open
  * action; a ward desk only its own wards' actions; the ED and community desks only theirs. A site
  * bed manager sees none: Q97 (Josh, 1 Nov 2026) keeps Done with the owner or the chair. Nothing
- * shows when there is none. Nothing shows either
+ * shows initially when there is none; completing the last action leaves a visible focus handover.
+ * Nothing shows either
  * while the coordinator previews another desk, or on a record this desk sees only through break
  * glass (the scope layer's own set, so a grant on a patient already in scope hides nothing). Both
  * are read only, so the button could never record anything (review on PR #511). Marking one done
@@ -43,8 +47,56 @@ export function MeetingActionsDue({ subject }: { subject: BedMeetingSubject | un
   const due = (record?.meetingActions ?? []).filter(
     (action) => action.doneAt === undefined && deskOwnsAction(access, desk, action),
   );
-  if (due.length === 0) return null;
-  return <DueActions subject={subject} desk={desk} actions={due} onMarkDone={markActionDone} />;
+  return (
+    <ActionList
+      key={`${subject.kind}:${subject.id}`}
+      subject={subject}
+      desk={desk}
+      actions={due}
+      onMarkDone={markActionDone}
+    />
+  );
+}
+
+/** The focus owner survives the last row and its lazy-loaded card being removed. */
+function ActionList({
+  subject,
+  desk,
+  actions,
+  onMarkDone,
+}: {
+  subject: BedMeetingSubject;
+  desk: BedMeetingActionOwner;
+  actions: readonly BedMeetingAction[];
+  onMarkDone: MarkBedMeetingActionDone;
+}) {
+  const region = useRef<HTMLDivElement>(null);
+  const [completionRequested, setCompletionRequested] = useState(false);
+  const markDone = useRefocusAfterRowLeaves({
+    list: region,
+    selector: '[data-testid="meeting-action-mark-done"]',
+    rowsKey: actions.map((action) => action.kind).join("|"),
+    fallback: region,
+  });
+  if (actions.length === 0 && !completionRequested) return null;
+  return (
+    <div ref={region} role="group" aria-label="Bed meeting actions" className={styles.region}>
+      {actions.length > 0 ? (
+        <DueActions
+          subject={subject}
+          desk={desk}
+          actions={actions}
+          onMarkDone={onMarkDone}
+          onBeforeDone={(index) => {
+            setCompletionRequested(true);
+            markDone(index);
+          }}
+        />
+      ) : (
+        <p className={styles.completion}>No bed meeting actions are waiting.</p>
+      )}
+    </div>
+  );
 }
 
 /** The owner role this desk acts as, or none for a desk that never owns an action. */
