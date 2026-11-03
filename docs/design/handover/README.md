@@ -145,8 +145,13 @@ Josh answered "Yes to 2 to 12" at 17:09 UTC, which is Q371 to Q381. Q370 was not
 - Q380: next feature is finishing role access (D-80 PR 5) and pilot readiness; refresh the roadmap. Yes.
 - Q381: retire `HANDOVER.md` in favour of this file. Yes, done here.
 
+### Q382 to Q389 (threads started 3 November 2026)
+
+- Q383: Josh to check the Railway `WARD_FRONT_DOOR`, `WARD_PASS_SECRET` and `WARD_DEMO_CODE` settings before #1345 can merge. Open.
+- Other numbers in this block are held for those threads.
+
 ### Q390 to Q392 (real-data go/no-go, 3 November 2026)
 
-- Q390: where "about 16 November" came from. Nothing in the database expires then. Recommend dropping the date: Josh signs in with a test account in the morning and makes one save after lunch. Open.
-- Q391: turn off the Supabase organisation's AI SQL, log and data options (on now). Recommend yes; needs Josh. Open.
-- Q392: keep referral and legal-form drafts out of browser storage unless the workspace is in prototype mode (checklist C1). Recommend yes. Open.
+- Q390: where "about 16 November" came from. Nothing in the database expires then. Recommend dropping the date: Josh signs in with a test account in the morning and makes one save after lunch. Yes (3 November, 17:17 UTC).
+- Q391: turn off the Supabase organisation's AI SQL, log and data options (on now). Recommend yes; needs Josh to do it. Yes (3 November, 17:17 UTC).
+- Q392: keep referral and legal-form drafts out of browser storage unless the workspace is in prototype mode (checklist C1). Recommend yes. Yes (3 November, 17:17 UTC); built in #1346.
