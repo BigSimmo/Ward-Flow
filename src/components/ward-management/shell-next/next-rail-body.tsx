@@ -396,6 +396,22 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // Every figure below comes from the derivation. Over-the-line words count places, never Alerts (#793).
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
+  // H2: with the services ranked above it, the foot line carries Metro as a whole and the ready beds.
+  const metroFoot =
+    bedAlerts.metroOccupancyPercent !== null && !capacityRows.some((row) => row.key === "metro" || row.key === "own")
+      ? bedAlerts.metroOccupancyPercent
+      : null;
+  const readyLine = (
+    <>
+      {metroFoot !== null ? (
+        <>
+          Metro <b>{formatOccupancyPercent(metroFoot)}</b>
+          <span aria-hidden="true"> · </span>
+        </>
+      ) : null}
+      <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
+    </>
+  );
   const handoverText = shiftProgress.handoverDue ? null : durMinutes(shiftProgress.remainingMinutes);
 
   const setOpen = useCallback((next: boolean) => {
@@ -822,9 +838,12 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               {currentPersona.initials}
             </span>
             <span className={styles.shiftMeta}>
-              <span className={styles.shiftTitle}>
-                {shiftProgress.shiftName}
-                <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
+              {/* H3 (Josh, 3 Nov 2026): the card's first line is the live time; the shift moves down
+                  beside its handover, so the card says how long is left. */}
+              <span className={`${styles.shiftTitle} ${railParts.liveClock}`} data-testid="ward-rail-live-clock">
+                <span className={railParts.liveDot} aria-hidden="true" />
+                <span className={railParts.liveTime}>{boardClock}</span>
+                <span className={styles.shiftHours}>AWST</span>
               </span>
               <span className={`${styles.shiftSub} ${railParts.shiftSubWrap}`}>
                 {personaName} · {currentPersona.role}
@@ -836,6 +855,15 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               ) : null}
             </span>
           </div>
+          <span className={railParts.shiftEnds} data-testid="ward-rail-shift-ends">
+            <span>
+              {/* The Handover button below already counts down, so this line names the shift's span once. */}
+              {shiftProgress.shiftName} <b>{shiftProgress.shiftHours}</b>
+            </span>
+            <span className={railParts.shiftBar} aria-hidden="true">
+              <span style={{ width: `${shiftProgress.percent}%` }} />
+            </span>
+          </span>
           {/* A7 (overall review, 20 Oct 2026): the demo clock shows in the top bar only
             (`ward-bar.tsx`), which opens the demo controls; the rail no longer repeats it. */}
           {!showHandover ? null : handoverCardLinks ? (
@@ -939,7 +967,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               ))}
             </span>
             <span className={railParts.capacityReady} aria-hidden="true">
-              <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
+              {readyLine}
             </span>
           </button>
 
@@ -1366,9 +1394,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 </span>
               </span>
               {renderBedAlertRows()}
-              <span className={railParts.capacityReady}>
-                <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
-              </span>
+              <span className={railParts.capacityReady}>{readyLine}</span>
             </Link>
           ) : (
             <div className={sheetAlertsClass}>
@@ -1380,9 +1406,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 </span>
               </span>
               {renderBedAlertRows()}
-              <span className={railParts.capacityReady}>
-                <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
-              </span>
+              <span className={railParts.capacityReady}>{readyLine}</span>
             </div>
           )
         ) : null}

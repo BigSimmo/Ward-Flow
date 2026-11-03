@@ -138,3 +138,51 @@
       calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
   }
 }
+
+/* Home navigation (Josh, 3 Nov 2026): More says its name beside the dots from tablet up, so the
+   registers and Alerts history are findable; a phone keeps the dots alone. */
+.moreText {
+  margin-left: var(--wf-s-1);
+}
+
+@media (max-width: 46.4375rem) {
+  .moreText {
+    display: none;
+  }
+}
+
+/* Phone (Josh, 3 Nov 2026): the list switch fills its line beside More, each list gets an equal
+   share, and the second level sits close under it so the list starts sooner. */
+@media (max-width: 46.4375rem) {
+  .nav {
+    row-gap: 2px;
+    margin-bottom: 0;
+    padding-bottom: 2px;
+  }
+
+  .nav > :first-child {
+    justify-self: stretch;
+  }
+
+  .nav > :first-child > * {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+}
+
+/* Phone Flow (Josh, 3 Nov 2026): each stage reads as one grouped list. The stage name, count and
+   next step sit on the canvas as the section's label, and the rounded card below holds only the
+   rows, so no square header band sits wider than the card's curved corners. */
+@media (max-width: 46.4375rem) {
+  .group > :first-child {
+    min-height: 0;
+    padding: var(--wf-s-1) var(--wf-s-1) var(--wf-s-2);
+    border-bottom: 0;
+    background: transparent;
+  }
+
+  .group + .group {
+    margin-top: var(--wf-s-3);
+    border-top: 0;
+  }
+}

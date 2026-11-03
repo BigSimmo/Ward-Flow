@@ -59,18 +59,15 @@ export function deskCapacityRows(
   };
   const scope = access.scope;
   if (scope.kind !== "site" && scope.kind !== "ward" && scope.kind !== "service") {
-    const hottest = byOccupancy[0];
-    return hottest
-      ? [
-          metro,
-          {
-            key: hottest.id,
-            name: hottest.shortName,
-            counts: `${hottest.shortName}, the fullest health service`,
-            percent: hottest.occupancyPercent,
-          },
-        ]
-      : [metro];
+    // H2 (Josh, 3 Nov 2026): a network desk reads the three fullest health services, fullest first,
+    // so the order is the ranking. Metro as a whole moves to the card's foot line.
+    const ranked = byOccupancy.slice(0, 3).map((row, index) => ({
+      key: row.id,
+      name: row.shortName,
+      counts: index === 0 ? `${row.shortName}, the fullest health service` : `${row.shortName}'s wards`,
+      percent: row.occupancyPercent,
+    }));
+    return ranked.length > 0 ? ranked : [metro];
   }
   const places = wardPlaceLookup(units);
   const own = units.filter((unit) => unitInScope(scope, unit.id, places));

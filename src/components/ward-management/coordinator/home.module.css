@@ -207,6 +207,62 @@
   background: var(--wf-hover);
 }
 
+/* H1 (Josh, 3 Nov 2026): a tile whose forms are due or overdue is outlined in that tone all round
+   (a full ring, never a coloured side edge, D-94). */
+.edButton[data-forms="warning"] {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wf-warning) 70%, transparent);
+}
+
+.edButton[data-forms="danger"] {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wf-danger) 75%, transparent);
+}
+
+/* G2 (Josh, 3 Nov 2026): the strip says its waits are live and when they last moved. */
+.edLive {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.edLiveNote {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.liveDot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-success);
+  animation: homeLivePulse 2.4s ease-out infinite;
+}
+
+@keyframes homeLivePulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveDot {
+    animation: none;
+  }
+}
+
 .edButton[data-selected="true"] {
   background: var(--wf-selected);
   box-shadow: inset 0 0 0 1px var(--wf-line-3);
@@ -255,6 +311,16 @@
   min-width: 0;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
+}
+
+/* The form line keeps its glyph beside the first word when the words wrap in a narrow tile. */
+.edDeadline {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.edDeadline > :first-child {
+  margin-top: 3px;
 }
 
 .edMono {
@@ -872,6 +938,69 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
+/* H6 (Josh, 3 Nov 2026): the desktop strip's own title, one line on what it holds, and a Close
+   button. Only the band (tablet and desktop) draws it; a phone keeps its "Today's answers" bar. */
+.registersHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
+}
+
+.registersHeadText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.registersHeading {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-15, 0.9375rem);
+  font-weight: 600;
+}
+
+.registersAbout {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.registersClose {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+
+.registersClose:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.registersClose:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.registersCard[data-placement="band"] .registersTabs {
+  padding-left: var(--wf-s-4);
+}
+
+.registersTabs :global([role="tab"]):focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--wf-r-sm);
+}
+
 .registerPanel {
   display: flex;
   flex-direction: column;
@@ -1124,6 +1253,22 @@ button.registerRow:hover {
     display: none;
   }
 
+  .edLive {
+    padding: 0 0 var(--wf-s-2);
+    border-bottom: 0;
+  }
+
+  /* A chip has no room for a ring as well as its border; the tone shows as its border instead. */
+  .edButton[data-forms="warning"] {
+    border-color: var(--wf-warning);
+    box-shadow: none;
+  }
+
+  .edButton[data-forms="danger"] {
+    border-color: var(--wf-danger);
+    box-shadow: none;
+  }
+
   .edWaitingValue {
     font-size: var(--wf-fs-13);
   }
@@ -1360,7 +1505,18 @@ button.registerRow:hover {
 
   .registersCard[data-placement="band"] .registersTabs {
     min-height: 2.75rem;
+    padding-left: var(--wf-s-4);
     padding-right: 6rem;
+  }
+
+  /* Declines, Overrides and Refused sit inside the same gutter as the Exceptions tiles, so their
+     empty lines and tables no longer touch the strip's edge. */
+  .registersCard[data-placement="band"] .registerPanel {
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .registersCard[data-placement="band"] .registerPanel:first-of-type {
+    padding: 0;
   }
 
   .registersCard[data-placement="band"] .registerPanel > .registerList {

@@ -212,6 +212,9 @@ function HomeListMoreMenu({ onRegisters }: { onRegisters: () => void }) {
       trigger={(props) => (
         <button type="button" {...props} className={buttonClass({ variant: "ghost", size: "sm" })}>
           <MoreHorizontal size={16} aria-hidden="true" />
+          <span className={flowStyles.moreText} aria-hidden="true">
+            More
+          </span>
           <span className="sr-only">More for this list</span>
         </button>
       )}
@@ -750,6 +753,7 @@ export function CoordinatorScreen() {
         tab={placement === "band" ? registerTab : undefined}
         onTabChange={placement === "band" ? setRegisterTab : undefined}
         onToggle={() => setExceptionsOpen((open) => !open)}
+        onClose={placement === "band" ? () => setHeroPanel(undefined) : undefined}
         // On a phone the open registers stand between a coordinator and Confirm, so choosing a
         // row closes them in the same tap.
         onSelectMovement={(movementId) => {
@@ -1070,35 +1074,60 @@ export function CoordinatorScreen() {
               ]}
             />
             <span className={flowStyles.navRule} aria-hidden="true" />
-            <div className={flowStyles.stageGroup} data-active={homeView === "queue" ? "true" : undefined}>
-              <div className={flowStyles.stageTabs}>
-                <PillTabs
-                  label="Flow stages"
-                  className={flowStyles.stagePills}
-                  value={homeView === "queue" ? (flowStage ?? "all") : "none"}
-                  onChange={(id) => {
-                    showView("queue");
-                    chooseNeedsFocus("all");
-                    setFlowStage(id === "all" ? undefined : (id as FlowStageId));
-                  }}
-                  items={[
-                    { id: "all", label: "All", count: queue.length },
-                    ...FLOW_STAGES.filter((stage) => stage.id !== "referral").map((stage) => {
-                      const inStage = queue.filter((movement) => flowStageOf(movement) === stage.id);
-                      const late = inStage.filter(
-                        (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
-                      ).length;
-                      return {
-                        id: stage.id,
-                        label: stage.label,
-                        count: inStage.length,
-                        tone: late > 0 ? ("danger" as const) : undefined,
-                      };
-                    }),
-                  ]}
-                />
+            {/* Home navigation (Josh, 3 Nov 2026): the second level always belongs to the list chosen
+                above it. Needs you narrows to Act now or To decide; Flow narrows to a stage. Later
+                today has no second level, so the row leaves it out. */}
+            {homeView === "planned" ? (
+              <span className={flowStyles.stageGroup} aria-hidden="true" />
+            ) : (
+              <div className={flowStyles.stageGroup} data-active="true" data-list={homeView}>
+                <div className={flowStyles.stageTabs}>
+                  {homeView === "needs" ? (
+                    <PillTabs
+                      label="Needs you groups"
+                      className={flowStyles.stagePills}
+                      value={needsFocus}
+                      onChange={(id) => chooseNeedsFocus(id)}
+                      items={[
+                        { id: "all" as const, label: "All", count: actNowCount + referralQueue.length },
+                        {
+                          id: "act" as const,
+                          label: "Act now",
+                          count: actNowCount,
+                          tone: actNowCount > 0 ? ("danger" as const) : undefined,
+                        },
+                        { id: "decide" as const, label: "To decide", count: referralQueue.length },
+                      ]}
+                    />
+                  ) : (
+                    <PillTabs
+                      label="Flow stages"
+                      className={flowStyles.stagePills}
+                      value={flowStage ?? "all"}
+                      onChange={(id) => {
+                        chooseNeedsFocus("all");
+                        setFlowStage(id === "all" ? undefined : (id as FlowStageId));
+                      }}
+                      items={[
+                        { id: "all", label: "All", count: queue.length },
+                        ...FLOW_STAGES.filter((stage) => stage.id !== "referral").map((stage) => {
+                          const inStage = queue.filter((movement) => flowStageOf(movement) === stage.id);
+                          const late = inStage.filter(
+                            (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
+                          ).length;
+                          return {
+                            id: stage.id,
+                            label: stage.label,
+                            count: inStage.length,
+                            tone: late > 0 ? ("danger" as const) : undefined,
+                          };
+                        }),
+                      ]}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             <HomeListMoreMenu
               onRegisters={() => (isPhone ? setPhoneSheet({ kind: "exceptions" }) : toggleRegisters("exceptions"))}
             />

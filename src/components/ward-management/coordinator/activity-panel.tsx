@@ -568,9 +568,23 @@ function NoticesBody({
 }) {
   const unread = notices.filter((notice) => !notice.read);
   const read = notices.filter((notice) => notice.read);
-  if (notices.length === 0) return <p className={styles.empty}>No notices for this desk.</p>;
+  // H4 (Josh, 3 Nov 2026): say what a notice is, so an empty tab is not a puzzle.
+  const about = (
+    <p className={styles.noticeAbout} data-testid="ward-activity-notices-about">
+      Messages sent to this desk when someone else&rsquo;s decision changes your work, such as a referral turned down, a
+      cancelled transport or a withdrawn acceptance.
+    </p>
+  );
+  if (notices.length === 0)
+    return (
+      <>
+        {about}
+        <p className={styles.empty}>Nothing has been sent to this desk today.</p>
+      </>
+    );
   return (
     <>
+      {about}
       <div className={styles.noticeHead}>
         <span>{unread.length > 0 ? `${unread.length} unread` : "All read"}</span>
         {unread.length > 0 ? (
