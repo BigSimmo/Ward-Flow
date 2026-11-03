@@ -16,6 +16,8 @@ import {
   packForm,
   packRequirement,
   type PackSlotKey,
+  collectionGaps,
+  legalNowTransportStatus,
 } from "@/components/ward-management/ward-transport-checks";
 
 import { OfficerOnly } from "./officer-crew-only";
@@ -303,5 +305,37 @@ function PackUploadDialog({
         </footer>
       </div>
     </div>
+  );
+}
+
+/**
+ * Deep audit (4 Nov 2026): the Involuntary chip read 0 beside jobs under Form 4C, because it only
+ * counted the status typed on the booking. The booked status wins; otherwise Legal now decides.
+ */
+export function jobIsInvoluntary(movement: Movement): boolean {
+  return (movement.transport?.transportLegalStatus ?? legalNowTransportStatus(movement)) === "involuntary";
+}
+
+/** The Forms cell of a job row: dots, then only the gap that blocks the next step (deep audit, 4 Nov 2026). */
+export function OfficerFormsCell({ movement }: { movement: Movement }) {
+  if (!packRequired(movement)) return <span className={styles.muted}>Not needed</span>;
+  const forms = packCount(movement);
+  const blocksCollection =
+    movement.transport?.collectedAt === undefined && collectionGaps(movement).includes("transport_order_missing");
+  return (
+    <span className={styles.formsCell} title={`${forms} of ${PACK_SLOTS.length} forms recorded`}>
+      <span className={styles.formDots} aria-hidden="true">
+        {PACK_SLOTS.map((slot) => (
+          <StatusGlyph key={slot.key} tone={packForm(movement, slot.key) ? "success" : "neutral"} size={9} />
+        ))}
+      </span>
+      {forms === PACK_SLOTS.length ? (
+        <span data-complete="true">All forms</span>
+      ) : blocksCollection ? (
+        <span className={styles.formsMissing}>Form 4A before collection</span>
+      ) : (
+        <span className={styles.formsQuiet}>{PACK_SLOTS.length - forms} to upload</span>
+      )}
+    </span>
   );
 }

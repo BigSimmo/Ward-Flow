@@ -59,7 +59,15 @@ import {
 
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
-import { PACK_SLOTS, packCount, packForm, packNeedsForms, packOutstanding, packRequired } from "./officer-forms-pack";
+import {
+  OfficerFormsCell,
+  PACK_SLOTS,
+  jobIsInvoluntary,
+  packCount,
+  packNeedsForms,
+  packOutstanding,
+  packRequired,
+} from "./officer-forms-pack";
 import styles from "./officer.module.css";
 import { OfficerFormCheckDialog } from "./officer-form-check-dialog";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
@@ -252,7 +260,7 @@ export function OfficerScreen() {
     (pill !== null && matchesPill(movement, pill)) ||
     (providerHighlight !== null && movement.transport?.provider === providerHighlight) ||
     (escortHighlight && movement.transport?.escortRequired === true) ||
-    (involuntaryHighlight && movement.transport?.transportLegalStatus === "involuntary") ||
+    (involuntaryHighlight && jobIsInvoluntary(movement)) ||
     matchesSearch(movement);
   const anyHighlight =
     pill !== null || providerHighlight !== null || escortHighlight || involuntaryHighlight || query !== "";
@@ -1054,7 +1062,7 @@ export function OfficerScreen() {
                   <FilterChip
                     pressed={involuntaryHighlight}
                     onPressedChange={setInvoluntaryHighlight}
-                    count={jobs.filter((job) => job.transport?.transportLegalStatus === "involuntary").length}
+                    count={jobs.filter(jobIsInvoluntary).length}
                   >
                     Involuntary
                   </FilterChip>
@@ -1225,33 +1233,7 @@ export function OfficerScreen() {
                                 )}
                               </td>
                               <td className={formsVary && !panelOpen ? undefined : styles.etaOff}>
-                                {!packRequired(movement) ? (
-                                  <span className={styles.muted}>Not needed</span>
-                                ) : (
-                                  <span
-                                    className={styles.formsCell}
-                                    title={`${forms} of ${PACK_SLOTS.length} forms recorded`}
-                                  >
-                                    <span className={styles.formDots} aria-hidden="true">
-                                      {PACK_SLOTS.map((slot) => (
-                                        <StatusGlyph
-                                          key={slot.key}
-                                          tone={packForm(movement, slot.key) ? "success" : "neutral"}
-                                          size={9}
-                                        />
-                                      ))}
-                                    </span>
-                                    {/* Deep audit (4 Nov 2026): name only the gap that blocks the next step. */}
-                                    {forms === PACK_SLOTS.length ? (
-                                      <span data-complete="true">All forms</span>
-                                    ) : movement.transport?.collectedAt === undefined &&
-                                      collectionGaps(movement).includes("transport_order_missing") ? (
-                                      <span className={styles.formsMissing}>Form 4A before collection</span>
-                                    ) : (
-                                      <span className={styles.formsQuiet}>{PACK_SLOTS.length - forms} to upload</span>
-                                    )}
-                                  </span>
-                                )}
+                                <OfficerFormsCell movement={movement} />
                               </td>
                               <td className={anyJobEta ? undefined : styles.etaOff}>
                                 {expected ? (
