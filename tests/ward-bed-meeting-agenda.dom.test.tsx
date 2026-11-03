@@ -83,6 +83,29 @@ describe("bed meeting agenda", () => {
     );
   });
 
+  it("narrows the agenda to people with an open action when that chip is picked", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    const waits = screen.getByTestId("bed-meeting-agenda-ed-waits");
+    fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[0]!);
+    fireEvent.click(
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+    );
+    fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
+
+    const filters = screen.getByTestId("bed-meeting-agenda-filters");
+    fireEvent.click(within(filters).getByRole("button", { name: /With an action/ }));
+
+    const narrowed = screen.getByTestId("bed-meeting-agenda-ed-waits");
+    expect(within(narrowed).getByText("Agreed: Book transport")).toBeInTheDocument();
+    expect(within(narrowed).getAllByTestId("bed-meeting-add-action")).toHaveLength(1);
+    expect(screen.queryByTestId("bed-meeting-agenda-holds")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("bed-meeting-agenda-referrals")).not.toBeInTheDocument();
+  });
+
   it("closes only the tapped action on a double click, never the next person's (Audit 7 NB-02)", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

@@ -191,13 +191,14 @@ function BedMeetingAgenda() {
       ? (unitName(action.ownerUnitId) ?? WARD_FLOW_ROLE_LABELS.ward)
       : WARD_FLOW_ROLE_LABELS[action.owner];
 
+  const hasOpenAction = (item: AgendaItem) =>
+    (item.record.meetingActions ?? []).some((action) => action.doneAt === undefined);
   // "With an action": people already carrying an open action from this or an earlier meeting.
   const actioned = sections
     .flatMap((section) => section.items)
     .filter(
       (item, index, all) =>
-        (item.record.meetingActions ?? []).some((action) => action.doneAt === undefined) &&
-        all.findIndex((other) => other.subject.id === item.subject.id) === index,
+        hasOpenAction(item) && all.findIndex((other) => other.subject.id === item.subject.id) === index,
     );
   const listCount = (id: ListChip) =>
     id === "referrals"
@@ -205,7 +206,14 @@ function BedMeetingAgenda() {
       : id === "actioned"
         ? actioned.length
         : (sections.find((section) => section.id === id)?.items.length ?? 0);
-  const shows = (id: ListChip) => chips.size === 0 || chips.has(id);
+  // "With an action" narrows the agenda lists to those people; the other chips pick which lists show.
+  const actionedOnly = chips.has("actioned");
+  const listChips: readonly ListChip[] = [...chips].filter((id) => id !== "actioned");
+  const shows = (id: ListChip) =>
+    listChips.length === 0 ? !(actionedOnly && id === "referrals") : listChips.includes(id);
+  const shownSections = sections
+    .map((section) => (actionedOnly ? { ...section, items: section.items.filter(hasOpenAction) } : section))
+    .filter((section) => !actionedOnly || section.items.length > 0);
   const toggleChip = (id: ListChip) =>
     setChips((current) => {
       const next = new Set(current);
@@ -398,7 +406,7 @@ function BedMeetingAgenda() {
       )}
 
       <div className={styles.sections}>
-        {sections.map((section) =>
+        {shownSections.map((section) =>
           shows(section.id as ListChip) ? (
             <AgendaList
               key={section.id}
