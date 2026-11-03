@@ -19,6 +19,7 @@ import {
   cx,
   durMinutes,
   FormalName,
+  GroupHead,
 } from "@/components/wf";
 import {
   clockState,
@@ -59,6 +60,7 @@ import {
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 
 import styles from "./home.module.css";
+import flowStyles from "./home-flow.module.css";
 
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { TierKey } from "../tier-key";
@@ -155,7 +157,32 @@ type PriorityQueueProps = {
   /** Movements with an active act-now task: marked `data-pinned` and an "Act now" mark. They are not
    *  moved (Audit 1, Josh 20 Oct: the queue is wait order). */
   pinnedIds?: ReadonlySet<string>;
+  /** Home flow mock-up (Q340): group the queue by stage, with referrals as the first stage. */
+  flow?: boolean;
+  /** Home flow mock-up: a waiting alert on a patient shows as a mark on their row, not a second row. */
+  waitingMarks?: ReadonlyMap<string, string>;
+  /** Home flow mock-up: the stage chosen from the stage tiles; none shows every stage (desktop). */
+  flowStage?: FlowStageId;
 };
+
+/** Home flow mock-up (Q340): the five stages, in the order a person moves through them. */
+export const FLOW_STAGES = [
+  { id: "referral", label: "Referral", next: "Decide" },
+  { id: "bed", label: "Needs a bed", next: "Find a bed" },
+  { id: "agreed", label: "Bed agreed", next: "Pull the bed" },
+  { id: "ready", label: "Ready to move", next: "Book transport" },
+  { id: "moving", label: "Moving", next: "Confirm arrival" },
+] as const;
+export type FlowStageId = (typeof FLOW_STAGES)[number]["id"];
+
+/** The stage a movement is in, read only from its recorded stage and transport. */
+export function flowStageOf(movement: Movement): Exclude<FlowStageId, "referral"> {
+  // The recorded stage decides: an arrival plan can be set before collection (SET_ARRIVAL_DETAILS).
+  if (movement.stage === "moving") return "moving";
+  if (movement.stage === "handover_ready") return "ready";
+  if (movement.stage === "accepted_awaiting_bed" || movement.stage === "pulled") return "agreed";
+  return "bed";
+}
 
 /**
  * Home's priority queue card (v6 Home mockup). Patients and Referrals switch which list is on
@@ -183,7 +210,11 @@ export function PriorityQueue({
   phone = false,
   pinnedIds,
   units = [],
+  flow = false,
+  waitingMarks,
+  flowStage,
 }: PriorityQueueProps) {
+  const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(new Set());
   const dueSoonThresholds = useDueSoonThresholds();
   const turnaroundState = useOptionalWardFlowSelect(
     "admissions",
@@ -230,6 +261,364 @@ export function PriorityQueue({
     activeTab === "referrals"
       ? `${referralQueue.length === 0 ? "none" : referralQueue.length} awaiting`
       : `${rows.length} of ${total}`;
+
+  const movementRow = (movement: Movement) => {
+    const selected = movement.id === selectedId;
+    const who = patientOf(movement);
+    const originEd = movement.originEdId === undefined ? undefined : edsById.get(movement.originEdId);
+    const factors = waitFactors(movement, now, dueSoonThresholds);
+    const legalDueAt = currentLegalDueAt(movement);
+    const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
+    const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
+    const waitedMinutes = Math.max(0, now - movement.openedAt);
+    const thresholds = queueWaitThresholds(movement.urgency);
+    const level = waitedMinutes >= thresholds.overdue ? "over" : waitedMinutes >= thresholds.dueSoon ? "soon" : null;
+    // Keep the duration neutral; the overdue label and glyph carry the status.
+    const toTarget = thresholds.overdue - waitedMinutes;
+    // Whole minutes (device audit, 11 Oct 2026: "8m 00s" is false precision).
+    const word =
+      level === "over"
+        ? "overdue"
+        : toTarget <= 60
+          ? `due in ${toTarget < 60 ? `${Math.max(1, Math.ceil(toTarget))}m` : durMinutes(toTarget)}`
+          : "waiting";
+    const arrival = movement.arrivalDetails;
+    const arrivalMode = arrival
+      ? (arrival.modeOfArrival ?? (arrival.mode ? (ARRIVAL_MODE_LABELS[arrival.mode] ?? arrival.mode) : "Transit"))
+      : undefined;
+    const dimmed = highlight !== undefined && !matchesHighlight(movement);
+    const turnaround =
+      !movement.closure && movement.stage !== "arrived" && !movement.acceptedUnitId
+        ? turnaroundLabel(movement.turnaroundPriority)
+        : null;
+    const flagDetail = movement.flaggedUrgent
+      ? movement.urgentFlag
+        ? `Flagged urgent by ${WARD_FLOW_ROLE_LABELS[movement.urgentFlag.by]} at ${formatInstantWithDay(movement.urgentFlag.at, now)}: ${changeReasonLabels[movement.urgentFlag.reason]}.`
+        : "Flag details not recorded."
+      : undefined;
+
+    return (
+      <button
+        key={movement.id}
+        type="button"
+        data-testid={`ward-queue-row-${movement.id}`}
+        data-origin-ed={movement.originEdId}
+        data-wait={waitedMinutes}
+        data-overdue={level === "over" ? "true" : undefined}
+        data-pinned={pinnedIds?.has(movement.id) ? "true" : undefined}
+        data-dim={dimmed ? "true" : undefined}
+        className={cx(styles.queueRow, selected && styles.queueRowSelected)}
+        aria-pressed={selected}
+        title={flagDetail}
+        onClick={() => onSelect(movement.id)}
+      >
+        {/* `data-tier` is what the ordering journey reads; the type-floor gate measures the
+                    12px tier digit through this wrapper (`display: contents`, so the tile stays the
+                    row's grid item). */}
+        <span className={styles.queueTierCell} data-ward-type-floor="command-tier" data-tier={movement.urgency}>
+          <TierTile tier={movement.urgency} className={styles.queueTier} />
+        </span>
+        <span className={styles.queueMain}>
+          <span className={styles.queueName}>
+            <strong>
+              <FormalName name={nameFor(who.formalName, who.umrn)} />
+            </strong>
+          </span>
+          <span className={styles.queueSub}>
+            {/* v10 Home: "▲ Flagged · Adult open · RPH · UM827674". The word stays neutral and
+                        the red triangle carries the tone. */}
+            {movement.flaggedUrgent ? (
+              <span className={styles.queueFlag} data-testid={`ward-queue-flag-${movement.id}`}>
+                <StatusGlyph tone="danger" size={9} />
+                {/* L4: the flag is not the tier, so a T3 row is never labelled "Urgent". */}
+                Flagged<SrOnly> urgent</SrOnly>
+              </span>
+            ) : null}
+            <span className={styles.queueSubText}>
+              {movement.flaggedUrgent ? "· " : ""}
+              {movement.cohort} {movement.security.toLowerCase()} ·{" "}
+              {originEd
+                ? originEd.siteCode
+                : movement.originEdId === undefined
+                  ? communityOriginLabel(movement.originCommunity)
+                  : "unknown ED"}{" "}
+              · {who.umrn}
+            </span>
+          </span>
+          {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}
+          <span className={styles.queueMarks}>
+            {pinnedIds?.has(movement.id) ? (
+              <span className={styles.queueMark} data-testid={`ward-queue-act-now-${movement.id}`}>
+                <StatusGlyph tone="danger" size={9} />
+                Act now
+              </span>
+            ) : null}
+            {waitingMarks?.has(movement.id) ? (
+              <span className={styles.queueMark} data-testid={`ward-queue-waiting-${movement.id}`}>
+                <StatusGlyph tone="warning" size={9} />
+                {waitingMarks.get(movement.id)}
+              </span>
+            ) : null}
+            {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
+            {/* The mockup drops the "ATS not recorded" filler from sight; a recorded ATS shows. */}
+            {movement.atsCategory === undefined ? (
+              <SrOnly>ATS not recorded</SrOnly>
+            ) : (
+              <span className={styles.queueMark}>{`ATS ${movement.atsCategory}`}</span>
+            )}
+            {movement.declines.length > 0 ? (
+              <span className={styles.queueMark}>
+                <StatusGlyph tone="closed" size={9} />
+                {movement.declines.length === 1 ? "1 decline" : `${movement.declines.length} declines`}
+              </span>
+            ) : null}
+            {legalBreached ? (
+              <span className={styles.queueMark}>
+                <StatusGlyph tone="danger" size={9} />
+                {legalFactor ? legalFactor.detail : "Form due time (as written) passed"}
+                <LegalLimitsNotChecked variant="tag" />
+              </span>
+            ) : null}
+            {/* A1-14 (audit 13 Oct 2026): an offer made from Home shows on the row, so the
+                        coordinator sees it is out and how long the ward has had it. */}
+            {movement.referredUnitIds.length > 0 && !movement.acceptedUnitId && movement.stage !== "pulled" ? (
+              <span className={styles.queueMark} data-testid={`ward-queue-offered-${movement.id}`}>
+                <StatusGlyph tone="info" size={9} />
+                {offeredToLabel(movement.referredUnitIds, units)}
+                {movement.referredAt === undefined
+                  ? ""
+                  : ` · waiting ${durMinutes(Math.max(0, now - movement.referredAt))}`}
+              </span>
+            ) : null}
+            {arrival ? (
+              arrival.estimatedArrivalAt !== undefined ? (
+                now > arrival.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES ? (
+                  <span className={styles.queueMark} data-testid={`ward-queue-transit-overdue-${movement.id}`}>
+                    <StatusGlyph tone="danger" size={9} />
+                    ETA passed {durMinutes(now - arrival.estimatedArrivalAt)} · {arrivalMode}
+                  </span>
+                ) : (
+                  <span className={styles.queueMark} data-testid={`ward-queue-transit-eta-${movement.id}`}>
+                    <StatusGlyph tone="info" size={9} />
+                    ETA in {durMinutes(Math.max(0, arrival.estimatedArrivalAt - now))} · {arrivalMode}
+                  </span>
+                )
+              ) : (
+                <span className={styles.queueMark} data-testid={`ward-queue-transit-eta-${movement.id}`}>
+                  <StatusGlyph tone="info" size={9} />
+                  In transit, bed pulled for {holdLabel} · {arrivalMode}
+                </span>
+              )
+            ) : movement.stage === "pulled" ? (
+              <span className={styles.queueMark} data-testid={`ward-queue-transit-hold-${movement.id}`}>
+                <StatusGlyph tone="warning" size={9} />
+                {/* F-24 (phone review, Oct 2026): plain words for a pulled bed and its hold. */}
+                Bed pulled for {holdLabel}
+              </span>
+            ) : null}
+          </span>
+          {flagDetail ? (
+            <span className="sr-only" data-testid={`ward-queue-flag-detail-${movement.id}`}>
+              {flagDetail}
+            </span>
+          ) : null}
+          {/* Audit 1, Josh 20 Oct (CS-05): no points score on the row, seen or hidden. */}
+          <SrOnly>{urgencyTierLabel(movement.urgency)}.</SrOnly>
+        </span>
+        <span className={styles.queueWait}>
+          <Timer
+            at={movement.openedAt * MS_PER_MINUTE}
+            now={now * MS_PER_MINUTE}
+            direction="waiting"
+            hideDirection
+            className={styles.queueTimer}
+          />
+          {/* One line (Home and Activity design, 31 Oct 2026): the wait, then the status glyph;
+                      the status word is spoken. */}
+          {level ? (
+            <span className={cx(styles.queueWord, level === "over" ? styles.queueWordOverdue : styles.queueWordStrong)}>
+              <StatusGlyph tone={level === "over" ? "danger" : "warning"} size={9} />
+              <SrOnly>{word}</SrOnly>
+            </span>
+          ) : null}
+        </span>
+      </button>
+    );
+  };
+  const referralRow = (referral: Referral) => {
+    const selected = referral.id === selectedReferralId;
+    const turnaround =
+      referralState(referral) === "queued" &&
+      referral.destinations.some((arm) => arm.state === "queued" && arm.withdrawnAt === undefined) &&
+      !turnaroundState?.movements.some((movement) => movement.referralId === referral.id)
+        ? turnaroundLabel(referral.turnaroundPriority)
+        : null;
+    return (
+      <button
+        key={referral.id}
+        type="button"
+        data-testid={`ward-referral-row-${referral.id}`}
+        className={cx(styles.queueRow, selected && styles.queueRowSelected)}
+        aria-pressed={selected}
+        onClick={() => onSelectReferral?.(referral.id)}
+      >
+        <TierTile tier={referral.urgency} className={styles.queueTier} />
+        <span className={styles.queueMain}>
+          <span className={styles.queueName}>
+            <strong>
+              <FormalName name={nameFor(patientOf(referral).formalName, patientOf(referral).umrn)} />
+            </strong>
+          </span>
+          <span className={styles.queueSub}>
+            <span className={styles.queueSubText}>
+              {withSendingTeam(
+                `${referral.ageBand} · ${referral.homeRegion} · from ${referral.originSiteCode}`,
+                referral,
+              )}
+            </span>
+          </span>
+          <SrOnly>{urgencyTierLabel(referral.urgency)}.</SrOnly>
+          <span className={styles.queueMarks}>
+            {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
+            {/* Overall review, 20 Oct 2026: as on a patient row, the "ATS not recorded" filler is
+                        out of sight (screen readers still hear it); a recorded ATS shows. */}
+            {referral.atsCategory === undefined ? (
+              <SrOnly>ATS not recorded</SrOnly>
+            ) : (
+              <span className={styles.queueMark}>{`ATS ${referral.atsCategory}`}</span>
+            )}
+          </span>
+        </span>
+        <span className={styles.queueWait}>
+          <Timer
+            at={referral.raisedAt * MS_PER_MINUTE}
+            now={now * MS_PER_MINUTE}
+            direction="waiting"
+            hideDirection
+            className={styles.queueTimer}
+          />
+        </span>
+      </button>
+    );
+  };
+  if (flow) {
+    const groupRows = (id: FlowStageId) =>
+      id === "referral" ? [] : rows.filter((movement) => flowStageOf(movement) === id);
+    const chosen = flowStage;
+    const shownStages = chosen
+      ? FLOW_STAGES.filter((stage) => stage.id === chosen)
+      : FLOW_STAGES.filter((stage) => stage.id !== "referral");
+    const cap = 5;
+    return (
+      <Card className={styles.queueCard} aria-label="Flow">
+        {filterEdId ? (
+          <div className={styles.queueFilter}>
+            <AppliedFilter onRemove={onClearFilter} removeLabel="Clear filter">
+              {filterEd ? `Filtered to ${filterEd.siteCode}` : "Filtered to a department that is unavailable"}
+            </AppliedFilter>
+          </div>
+        ) : null}
+        {serviceScope ? (
+          <WardServiceScopeBar
+            service={serviceScope.service}
+            shown={serviceScope.shown}
+            total={serviceScope.total}
+            noun="movements"
+            noRecordedServiceCount={serviceScope.noRecordedServiceCount}
+            urgentOutside={serviceScope.urgentOutside}
+          />
+        ) : null}
+        {shownStages.map((stage) => {
+          const isReferral = stage.id === "referral";
+          const all = isReferral ? referralQueue : groupRows(stage.id);
+          const open = openGroups.has(stage.id);
+          // A hero highlight shows every row, as the old queue did, so no highlighted row hides below the cap.
+          const uncapped = open || highlight !== undefined;
+          // Desktop keeps a chosen patient below the cap in view, in its own place (as the old queue did).
+          const shown = uncapped
+            ? all
+            : all.filter((row, index) => index < cap || (!isReferral && !phone && (row as Movement).id === selectedId));
+          return (
+            <section key={stage.id} className={flowStyles.group} aria-label={stage.label}>
+              <GroupHead
+                title={stage.label}
+                count={all.length}
+                meta={`Next: ${stage.next.toLowerCase()}`}
+                aside={(() => {
+                  const late = isReferral
+                    ? 0
+                    : (all as Movement[]).filter(
+                        (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
+                      ).length;
+                  return late > 0 ? (
+                    <span className={flowStyles.late}>
+                      <StatusGlyph tone="danger" size={9} />
+                      {late} late
+                    </span>
+                  ) : null;
+                })()}
+              />
+              <div className={styles.queueList}>
+                {isReferral && all.length > 0 ? (
+                  <p className={styles.emptyLine}>
+                    <StatusGlyph tone="info" size={9} />
+                    {all.length === 1 ? "1 referral to decide" : `${all.length} referrals to decide`}, listed once under
+                    Needs you
+                  </p>
+                ) : all.length === 0 ? (
+                  <p className={styles.emptyLine}>
+                    <StatusGlyph tone="success" size={9} />
+                    {isReferral ? "No referral waiting on a decision" : "No one at this stage"}
+                  </p>
+                ) : isReferral ? (
+                  (shown as Referral[]).map(referralRow)
+                ) : (
+                  (shown as Movement[]).map(movementRow)
+                )}
+                {all.length > cap && !isReferral && highlight === undefined ? (
+                  <button
+                    type="button"
+                    className={styles.queueMore}
+                    aria-expanded={open}
+                    onClick={() =>
+                      setOpenGroups((current) => {
+                        const next = new Set(current);
+                        if (next.has(stage.id)) next.delete(stage.id);
+                        else next.add(stage.id);
+                        return next;
+                      })
+                    }
+                  >
+                    {open ? `Show top ${cap}` : `Show all ${all.length}`}
+                  </button>
+                ) : null}
+              </div>
+            </section>
+          );
+        })}
+        <div className={styles.cardFoot}>
+          {highlight ? (
+            <span className={styles.footMeta}>
+              <span className={styles.mono}>{highlighted}</span> {HIGHLIGHT_LABEL[highlight]} highlighted, all rows stay
+            </span>
+          ) : (
+            <span className={styles.footMeta} title={TIER_TARGETS_NOTE}>
+              Oldest first in each stage
+            </span>
+          )}
+          {highlight && onClearHighlight ? (
+            <button type="button" className={styles.footButton} onClick={onClearHighlight}>
+              Clear
+            </button>
+          ) : phone ? null : (
+            <Link href={delaysHref} className={styles.footLink}>
+              Open in Waiting
+            </Link>
+          )}
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className={styles.queueCard} aria-label="Priority queue">
@@ -302,190 +691,7 @@ export function PriorityQueue({
             {soonOnly ? "Nothing due soon" : "No open movements"}
           </p>
         ) : (
-          shownRows.map((movement) => {
-            const selected = movement.id === selectedId;
-            const who = patientOf(movement);
-            const originEd = movement.originEdId === undefined ? undefined : edsById.get(movement.originEdId);
-            const factors = waitFactors(movement, now, dueSoonThresholds);
-            const legalDueAt = currentLegalDueAt(movement);
-            const legalBreached = legalDueAt !== undefined && isClockBreached(legalDueAt, now);
-            const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
-            const waitedMinutes = Math.max(0, now - movement.openedAt);
-            const thresholds = queueWaitThresholds(movement.urgency);
-            const level =
-              waitedMinutes >= thresholds.overdue ? "over" : waitedMinutes >= thresholds.dueSoon ? "soon" : null;
-            // Keep the duration neutral; the overdue label and glyph carry the status.
-            const toTarget = thresholds.overdue - waitedMinutes;
-            // Whole minutes (device audit, 11 Oct 2026: "8m 00s" is false precision).
-            const word =
-              level === "over"
-                ? "overdue"
-                : toTarget <= 60
-                  ? `due in ${toTarget < 60 ? `${Math.max(1, Math.ceil(toTarget))}m` : durMinutes(toTarget)}`
-                  : "waiting";
-            const arrival = movement.arrivalDetails;
-            const arrivalMode = arrival
-              ? (arrival.modeOfArrival ??
-                (arrival.mode ? (ARRIVAL_MODE_LABELS[arrival.mode] ?? arrival.mode) : "Transit"))
-              : undefined;
-            const dimmed = highlight !== undefined && !matchesHighlight(movement);
-            const turnaround =
-              !movement.closure && movement.stage !== "arrived" && !movement.acceptedUnitId
-                ? turnaroundLabel(movement.turnaroundPriority)
-                : null;
-            const flagDetail = movement.flaggedUrgent
-              ? movement.urgentFlag
-                ? `Flagged urgent by ${WARD_FLOW_ROLE_LABELS[movement.urgentFlag.by]} at ${formatInstantWithDay(movement.urgentFlag.at, now)}: ${changeReasonLabels[movement.urgentFlag.reason]}.`
-                : "Flag details not recorded."
-              : undefined;
-
-            return (
-              <button
-                key={movement.id}
-                type="button"
-                data-testid={`ward-queue-row-${movement.id}`}
-                data-origin-ed={movement.originEdId}
-                data-wait={waitedMinutes}
-                data-overdue={level === "over" ? "true" : undefined}
-                data-pinned={pinnedIds?.has(movement.id) ? "true" : undefined}
-                data-dim={dimmed ? "true" : undefined}
-                className={cx(styles.queueRow, selected && styles.queueRowSelected)}
-                aria-pressed={selected}
-                title={flagDetail}
-                onClick={() => onSelect(movement.id)}
-              >
-                {/* `data-tier` is what the ordering journey reads; the type-floor gate measures the
-                    12px tier digit through this wrapper (`display: contents`, so the tile stays the
-                    row's grid item). */}
-                <span className={styles.queueTierCell} data-ward-type-floor="command-tier" data-tier={movement.urgency}>
-                  <TierTile tier={movement.urgency} className={styles.queueTier} />
-                </span>
-                <span className={styles.queueMain}>
-                  <span className={styles.queueName}>
-                    <strong>
-                      <FormalName name={nameFor(who.formalName, who.umrn)} />
-                    </strong>
-                  </span>
-                  <span className={styles.queueSub}>
-                    {/* v10 Home: "▲ Flagged · Adult open · RPH · UM827674". The word stays neutral and
-                        the red triangle carries the tone. */}
-                    {movement.flaggedUrgent ? (
-                      <span className={styles.queueFlag} data-testid={`ward-queue-flag-${movement.id}`}>
-                        <StatusGlyph tone="danger" size={9} />
-                        {/* L4: the flag is not the tier, so a T3 row is never labelled "Urgent". */}
-                        Flagged<SrOnly> urgent</SrOnly>
-                      </span>
-                    ) : null}
-                    <span className={styles.queueSubText}>
-                      {movement.flaggedUrgent ? "· " : ""}
-                      {movement.cohort} {movement.security.toLowerCase()} ·{" "}
-                      {originEd
-                        ? originEd.siteCode
-                        : movement.originEdId === undefined
-                          ? communityOriginLabel(movement.originCommunity)
-                          : "unknown ED"}{" "}
-                      · {who.umrn}
-                    </span>
-                  </span>
-                  {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}
-                  <span className={styles.queueMarks}>
-                    {pinnedIds?.has(movement.id) ? (
-                      <span className={styles.queueMark} data-testid={`ward-queue-act-now-${movement.id}`}>
-                        <StatusGlyph tone="danger" size={9} />
-                        Act now
-                      </span>
-                    ) : null}
-                    {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
-                    {/* The mockup drops the "ATS not recorded" filler from sight; a recorded ATS shows. */}
-                    {movement.atsCategory === undefined ? (
-                      <SrOnly>ATS not recorded</SrOnly>
-                    ) : (
-                      <span className={styles.queueMark}>{`ATS ${movement.atsCategory}`}</span>
-                    )}
-                    {movement.declines.length > 0 ? (
-                      <span className={styles.queueMark}>
-                        <StatusGlyph tone="closed" size={9} />
-                        {movement.declines.length === 1 ? "1 decline" : `${movement.declines.length} declines`}
-                      </span>
-                    ) : null}
-                    {legalBreached ? (
-                      <span className={styles.queueMark}>
-                        <StatusGlyph tone="danger" size={9} />
-                        {legalFactor ? legalFactor.detail : "Form due time (as written) passed"}
-                        <LegalLimitsNotChecked variant="tag" />
-                      </span>
-                    ) : null}
-                    {/* A1-14 (audit 13 Oct 2026): an offer made from Home shows on the row, so the
-                        coordinator sees it is out and how long the ward has had it. */}
-                    {movement.referredUnitIds.length > 0 && !movement.acceptedUnitId && movement.stage !== "pulled" ? (
-                      <span className={styles.queueMark} data-testid={`ward-queue-offered-${movement.id}`}>
-                        <StatusGlyph tone="info" size={9} />
-                        {offeredToLabel(movement.referredUnitIds, units)}
-                        {movement.referredAt === undefined
-                          ? ""
-                          : ` · waiting ${durMinutes(Math.max(0, now - movement.referredAt))}`}
-                      </span>
-                    ) : null}
-                    {arrival ? (
-                      arrival.estimatedArrivalAt !== undefined ? (
-                        now > arrival.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES ? (
-                          <span className={styles.queueMark} data-testid={`ward-queue-transit-overdue-${movement.id}`}>
-                            <StatusGlyph tone="danger" size={9} />
-                            ETA passed {durMinutes(now - arrival.estimatedArrivalAt)} · {arrivalMode}
-                          </span>
-                        ) : (
-                          <span className={styles.queueMark} data-testid={`ward-queue-transit-eta-${movement.id}`}>
-                            <StatusGlyph tone="info" size={9} />
-                            ETA in {durMinutes(Math.max(0, arrival.estimatedArrivalAt - now))} · {arrivalMode}
-                          </span>
-                        )
-                      ) : (
-                        <span className={styles.queueMark} data-testid={`ward-queue-transit-eta-${movement.id}`}>
-                          <StatusGlyph tone="info" size={9} />
-                          In transit, bed pulled for {holdLabel} · {arrivalMode}
-                        </span>
-                      )
-                    ) : movement.stage === "pulled" ? (
-                      <span className={styles.queueMark} data-testid={`ward-queue-transit-hold-${movement.id}`}>
-                        <StatusGlyph tone="warning" size={9} />
-                        {/* F-24 (phone review, Oct 2026): plain words for a pulled bed and its hold. */}
-                        Bed pulled for {holdLabel}
-                      </span>
-                    ) : null}
-                  </span>
-                  {flagDetail ? (
-                    <span className="sr-only" data-testid={`ward-queue-flag-detail-${movement.id}`}>
-                      {flagDetail}
-                    </span>
-                  ) : null}
-                  {/* Audit 1, Josh 20 Oct (CS-05): no points score on the row, seen or hidden. */}
-                  <SrOnly>{urgencyTierLabel(movement.urgency)}.</SrOnly>
-                </span>
-                <span className={styles.queueWait}>
-                  <Timer
-                    at={movement.openedAt * MS_PER_MINUTE}
-                    now={now * MS_PER_MINUTE}
-                    direction="waiting"
-                    hideDirection
-                    className={styles.queueTimer}
-                  />
-                  {/* One line (Home and Activity design, 31 Oct 2026): the wait, then the status glyph;
-                      the status word is spoken. */}
-                  {level ? (
-                    <span
-                      className={cx(
-                        styles.queueWord,
-                        level === "over" ? styles.queueWordOverdue : styles.queueWordStrong,
-                      )}
-                    >
-                      <StatusGlyph tone={level === "over" ? "danger" : "warning"} size={9} />
-                      <SrOnly>{word}</SrOnly>
-                    </span>
-                  ) : null}
-                </span>
-              </button>
-            );
-          })
+          shownRows.map(movementRow)
         )}
         {capped ? (
           <button
@@ -513,62 +719,7 @@ export function PriorityQueue({
             No referrals awaiting a decision
           </p>
         ) : (
-          referralQueue.map((referral) => {
-            const selected = referral.id === selectedReferralId;
-            const turnaround =
-              referralState(referral) === "queued" &&
-              referral.destinations.some((arm) => arm.state === "queued" && arm.withdrawnAt === undefined) &&
-              !turnaroundState?.movements.some((movement) => movement.referralId === referral.id)
-                ? turnaroundLabel(referral.turnaroundPriority)
-                : null;
-            return (
-              <button
-                key={referral.id}
-                type="button"
-                data-testid={`ward-referral-row-${referral.id}`}
-                className={cx(styles.queueRow, selected && styles.queueRowSelected)}
-                aria-pressed={selected}
-                onClick={() => onSelectReferral?.(referral.id)}
-              >
-                <TierTile tier={referral.urgency} className={styles.queueTier} />
-                <span className={styles.queueMain}>
-                  <span className={styles.queueName}>
-                    <strong>
-                      <FormalName name={nameFor(patientOf(referral).formalName, patientOf(referral).umrn)} />
-                    </strong>
-                  </span>
-                  <span className={styles.queueSub}>
-                    <span className={styles.queueSubText}>
-                      {withSendingTeam(
-                        `${referral.ageBand} · ${referral.homeRegion} · from ${referral.originSiteCode}`,
-                        referral,
-                      )}
-                    </span>
-                  </span>
-                  <SrOnly>{urgencyTierLabel(referral.urgency)}.</SrOnly>
-                  <span className={styles.queueMarks}>
-                    {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
-                    {/* Overall review, 20 Oct 2026: as on a patient row, the "ATS not recorded" filler is
-                        out of sight (screen readers still hear it); a recorded ATS shows. */}
-                    {referral.atsCategory === undefined ? (
-                      <SrOnly>ATS not recorded</SrOnly>
-                    ) : (
-                      <span className={styles.queueMark}>{`ATS ${referral.atsCategory}`}</span>
-                    )}
-                  </span>
-                </span>
-                <span className={styles.queueWait}>
-                  <Timer
-                    at={referral.raisedAt * MS_PER_MINUTE}
-                    now={now * MS_PER_MINUTE}
-                    direction="waiting"
-                    hideDirection
-                    className={styles.queueTimer}
-                  />
-                </span>
-              </button>
-            );
-          })
+          referralQueue.map(referralRow)
         )}
       </div>
 
