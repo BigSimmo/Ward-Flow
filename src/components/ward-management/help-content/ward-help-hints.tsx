@@ -14,6 +14,7 @@ import { parseTourAutoDone, TOUR_AUTO_DONE_STORAGE_KEY } from "../help/ward-tour
 import { parseTourSeen, useTourRole, useTourSeen } from "../help/ward-help-store";
 import type { WardTourRole } from "../help/ward-help-store";
 import { ACCESSIBILITY_HELP } from "./ward-help-reference";
+import { helpTipsOff, setHelpTipsOff } from "./ward-help-tips-off";
 import styles from "./ward-help-hints.module.css";
 
 export const HELP_HINTS_KEY = "ward_flow_choice_help_hints_seen";
@@ -48,24 +49,31 @@ export function parseHelpHints(raw: string): string[] {
     ),
   ];
 }
+/**
+ * G3 (Josh, 3 Nov 2026): a page's tip shows once per device, whichever desk is signed in. Switching
+ * desks used to bring every tip back. Marks keep their `role:topic` form, so a mark written before
+ * this change still counts for every desk.
+ */
 export function markHelpHint(role: WardTourRole, topic: string): boolean {
   if (!TOPICS.has(topic)) return false;
   const key = `${role}:${topic}`;
   try {
     const seen = parseHelpHints(window.localStorage.getItem(HELP_HINTS_KEY) ?? "");
-    if (seen.includes(key)) return false;
+    if (seen.some((mark) => mark.endsWith(`:${topic}`))) return false;
     window.localStorage.setItem(HELP_HINTS_KEY, [...seen, key].join(","));
     return true;
   } catch {
     return false;
   }
 }
-function hintsAllowed(toured: boolean, role: WardTourRole, topic: string | undefined, onHome: boolean) {
+function hintsAllowed(toured: boolean, topic: string | undefined, onHome: boolean) {
+  if (helpTipsOff()) return false;
   if (toured) return true;
-  // A declined tour still permits hints on later screens, never another prompt on its home.
+  // A declined tour still permits hints on later screens, never another prompt on its home. The tour
+  // is offered once per device (G3), so any desk's offer counts.
   if (!topic || topic === "command" || onHome) return false;
   try {
-    return parseTourAutoDone(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY) ?? "").includes(role);
+    return parseTourAutoDone(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY) ?? "").length > 0;
   } catch {
     return false;
   }
@@ -76,7 +84,7 @@ function obstructed() {
     openSheetHandles().length > 0 ||
     Boolean(
       document.querySelector(
-        '[data-testid="ward-tour-offer"], [data-testid="ward-whats-new"], [data-testid="ward-tour"]',
+        '[data-testid="ward-tour-offer"], [data-testid="ward-whats-new"], [data-testid="ward-tour"], [data-wf-toast]',
       ),
     ) ||
     Boolean(document.activeElement?.closest('input, textarea, select, [contenteditable="true"]'))
@@ -124,14 +132,13 @@ function WardHelpHintForView({ pathname, role }: { pathname: string; role: WardT
     };
   }, []);
   useEffect(() => {
-    if (blocked || !topic || !screen || !ROLE_SCREENS[role][screen] || !hintsAllowed(toured, role, topic, onHome))
-      return;
+    if (blocked || !topic || !screen || !ROLE_SCREENS[role][screen] || !hintsAllowed(toured, topic, onHome)) return;
     const timer = window.setTimeout(() => {
       if (!obstructed() && markHelpHint(role, topic)) setOffered(key);
     }, 1500);
     return () => window.clearTimeout(timer);
   }, [toured, blocked, topic, screen, role, key, onHome]);
-  const showing = Boolean(help && !blocked && offered === key && hintsAllowed(toured, role, topic, onHome));
+  const showing = Boolean(help && !blocked && offered === key && hintsAllowed(toured, topic, onHome));
   // Escape is "Got it".
   useCornerCardEscape(showing, () => setOffered(null));
   if (!help || !showing) return null;
@@ -156,6 +163,16 @@ function WardHelpHintForView({ pathname, role }: { pathname: string; role: WardT
           </button>
           <button type="button" onClick={() => setOffered(null)}>
             Got it
+          </button>
+          <button
+            type="button"
+            className={styles.quiet}
+            onClick={() => {
+              setHelpTipsOff(true);
+              setOffered(null);
+            }}
+          >
+            Turn off tips
           </button>
         </div>
       </aside>

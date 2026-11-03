@@ -30,6 +30,7 @@ import {
   parseHelpHints,
   WardHelpHints,
 } from "../src/components/ward-management/help-content/ward-help-hints";
+import { HELP_TIPS_OFF_KEY } from "../src/components/ward-management/help-content/ward-help-tips-off";
 import { pushSheet, popSheet } from "../src/components/wf/sheet-focus";
 
 beforeEach(() => {
@@ -39,6 +40,7 @@ beforeEach(() => {
   route.toured = true;
   localStorage.removeItem(HELP_HINTS_KEY);
   localStorage.removeItem("ward_flow_choice_tour_auto_done");
+  localStorage.removeItem(HELP_TIPS_OFF_KEY);
 });
 afterEach(() => {
   cleanup();
@@ -125,8 +127,10 @@ describe("quiet first-visit Help hints", () => {
     expect(screen.getByTestId("ward-help-hint").textContent).toContain("Open Settings, then Display.");
     expect(screen.getByTestId("ward-help-hint").textContent).not.toContain("Change a rule");
   });
-  it.each(["coordinator", "ward", "ed", "community", "officer", "bed_manager", "executive", "admin"])(
-    "limits legacy declined-tour guidance to the coordinator (role=%s)",
+  // The access admin is left out: its only screens, Governance and Settings, are both its homes,
+  // and the declined-tour test above keeps both quiet.
+  it.each(["coordinator", "ward", "ed", "community", "officer", "bed_manager", "executive"])(
+    "a tour offered to any desk on this device permits later-screen guidance (G3, role=%s)",
     async (role) => {
       route.path = "/ward-flow/settings";
       route.role = role;
@@ -134,10 +138,30 @@ describe("quiet first-visit Help hints", () => {
       localStorage.setItem("ward_flow_choice_tour_auto_done", "yes");
       render(<WardHelpHints />);
       await settle();
-      expect(screen.queryByTestId("ward-help-hint") !== null).toBe(role === "coordinator");
-      expect(localStorage.getItem(HELP_HINTS_KEY)).toBe(role === "coordinator" ? "coordinator:settings" : null);
+      expect(screen.getByTestId("ward-help-hint")).toBeTruthy();
+      expect(localStorage.getItem(HELP_HINTS_KEY)).toBe(`${role}:settings`);
     },
   );
+  it("shows a page's tip once per device, whichever desk saw it (G3)", async () => {
+    localStorage.setItem(HELP_HINTS_KEY, "ward:capacity");
+    route.role = "coordinator";
+    render(<WardHelpHints />);
+    await settle();
+    expect(screen.queryByTestId("ward-help-hint")).toBeNull();
+    expect(markHelpHint("executive", "capacity")).toBe(false);
+    expect(localStorage.getItem(HELP_HINTS_KEY)).toBe("ward:capacity");
+  });
+  it("Turn off tips stops every later tip on this device (G3)", async () => {
+    const ui = render(<WardHelpHints />);
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Turn off tips" }));
+    expect(screen.queryByTestId("ward-help-hint")).toBeNull();
+    expect(localStorage.getItem(HELP_TIPS_OFF_KEY)).toBe("yes");
+    route.path = "/ward-flow/statistics";
+    ui.rerender(<WardHelpHints />);
+    await settle();
+    expect(screen.queryByTestId("ward-help-hint")).toBeNull();
+  });
   it("does not revive an undismissed hint after navigating away and back", async () => {
     const ui = render(<WardHelpHints />);
     await settle();
