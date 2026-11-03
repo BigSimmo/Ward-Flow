@@ -61,6 +61,14 @@ export {
 } from "./choice";
 export { DataRow, TierTile, tableClasses } from "./table";
 export { Sheet, Drawer } from "./sheet";
+export {
+  PanelDrawer,
+  DrawerFacts,
+  DrawerFootRow,
+  type PanelDrawerProps,
+  type DrawerTab,
+  type DrawerFact,
+} from "./drawer";
 export { Menu, Popover, type MenuItem } from "./menu";
 export { ToastView } from "./toast";
 export { Dialog } from "./dialog";
