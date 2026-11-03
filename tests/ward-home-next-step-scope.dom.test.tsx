@@ -42,6 +42,10 @@ describe("Home next step follows the service scope", () => {
       act(() => setServiceScope(service));
       const scoped = answer();
       expect(scoped, `the step for ${service}`).toContain(`in ${service}`);
+      // The hero title follows too: the service's movements, and the bed figure says it is network-wide.
+      const title = screen.getByRole("heading", { level: 2, name: /open ED movements/u }).textContent ?? "";
+      expect(title).toContain(`in ${service}`);
+      expect(title).toMatch(/ready network-wide$/u);
       // Only the same kind of step can be compared by count: Act now statewide stays Act now or
       // falls back to a later step under a service, which then names its own figure.
       if (/need(s)? a person now/u.test(statewide) && /need(s)? a person now/u.test(scoped)) {

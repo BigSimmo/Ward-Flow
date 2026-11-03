@@ -164,7 +164,9 @@ export function DelaysBoard({
   // Role views (nurse in charge, ED clinician): the desk's own words and lenses (`waiting-desk-words.ts`).
   const desk = useWaitingDeskWords(units);
   // Q84 (Josh, 31 Oct 2026): a desk with one place (a site, a ward) names it, not "Statewide".
-  const deskPlace = deskPlaceLabel(useEffectiveWardAccess(), units);
+  const effectiveAccess = useEffectiveWardAccess();
+  const deskPlace = deskPlaceLabel(effectiveAccess, units);
+  const accessRole = effectiveAccess.role;
   const { wardDesk, edDesk } = desk;
   // The shared act-now list, as the Handover sheet reads it, so For handover matches its Act now.
   const {
@@ -940,15 +942,21 @@ export function DelaysBoard({
   // Plan item 2i (proposal): the hero's next step is the desk's own move. A coordinator's is "yours",
   // an ED desk's is the ED's and a ward desk's is the wards'. The figures are the whose-move tile's
   // own rows, so the sentence and the tile can never disagree.
-  const ownOwner: DelayOwnerId = edDesk ? "ed" : wardDesk ? "wards" : "yours";
+  // A site bed manager reads this list with the coordinator's words, but the coordinator's move is
+  // not theirs: their step is their site's wards (a ward to answer or a bed to be ready).
+  const siteDesk = accessRole === "bed_manager";
+  const ownOwner: DelayOwnerId = edDesk ? "ed" : wardDesk || siteDesk ? "wards" : "yours";
   const ownTile = tiles.find((tile) => tile.owner === ownOwner);
   const ownCount = ownTile?.rows.length ?? 0;
   const ownPressed = filters.owner === ownOwner;
+  const moveWords = siteDesk ? "waiting on your site's wards" : "waiting on your move";
+  // A chosen service is named, so the sentence never reads as the statewide figure.
+  const inService = service === null || wardDesk || edDesk || siteDesk ? "" : ` in ${service}`;
   const heroNext: HeroNextStep = {
     answer:
       ownCount === 0
-        ? "Nobody is waiting on your move"
-        : `${ownCount} ${ownCount === 1 ? "person is" : "people are"} waiting on your move`,
+        ? `Nobody is ${moveWords}${inService}`
+        : `${ownCount} ${ownCount === 1 ? "person is" : "people are"} ${moveWords}${inService}`,
     // The tile's own sub fact, said as typed: a form due or past its time, or no suitable bed.
     owner:
       ownTile && ownCount > 0 && ownTile.sub.count > 0

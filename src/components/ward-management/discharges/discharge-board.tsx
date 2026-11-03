@@ -316,13 +316,22 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     population === "releases" ? (n === 1 ? "release" : "releases") : n === 1 ? "record" : "records";
   const nextKey: "blocked" | "confirmed" | null =
     counts.blocked > 0 ? "blocked" : counts.confirmed > 0 ? "confirmed" : null;
+  // Desk and scope (role branches, 31 Oct 2026): the counts are already the desk's own (a ward desk's
+  // ward, a site bed manager's site, or the chosen service), so the sentence names that place.
+  const nextPlace = ownWard
+    ? ` on ${ownWard.name}`
+    : siteName
+      ? ` at ${siteName}`
+      : service === "all"
+        ? ""
+        : ` in ${service}`;
   const heroNext: HeroNextStep = {
     answer:
       nextKey === "blocked"
-        ? `${counts.blocked} held-up ${noun(counts.blocked)} ${counts.blocked === 1 ? "needs" : "need"} chasing`
+        ? `${counts.blocked} held-up ${noun(counts.blocked)}${nextPlace} ${counts.blocked === 1 ? "needs" : "need"} chasing`
         : nextKey === "confirmed"
-          ? `Nothing held up · ${counts.confirmed} confirmed ${noun(counts.confirmed)} to see out`
-          : "Nothing held up",
+          ? `Nothing held up${nextPlace} · ${counts.confirmed} confirmed ${noun(counts.confirmed)} to see out`
+          : `Nothing held up${nextPlace}`,
     action:
       nextKey === null
         ? undefined

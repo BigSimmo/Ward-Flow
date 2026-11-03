@@ -589,6 +589,13 @@ export function CoordinatorScreen() {
   }, [referrals, units, movements, isReferralInServiceScope]);
   // Q260: the Act now figure the phone Menu, the bell and Alerts read (`ward-alerts-figures.ts`).
   const actNowCount = alertsNowFigures(actionInbox, toPull.length).actNow;
+  // Plan item 2i (proposal): every hero figure follows the chosen service. With a service chosen the
+  // hero's Act now is the alerts on that service's movements plus its accepted referrals awaiting a
+  // pull (`toPull`, already scoped); All services keeps the shared Act now figure (Q260).
+  const heroActNow = isInServiceScope
+    ? actEntries.filter((entry) => entry.movement !== undefined && isInServiceScope(entry.movement)).length +
+      toPull.length
+    : actNowCount;
   const chosenAlert = selectedAlertId ? alertEntries.find((entry) => entry.item.id === selectedAlertId) : undefined;
   const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
@@ -644,6 +651,9 @@ export function CoordinatorScreen() {
       : `${changeCount === 1 ? "change" : "changes"} since ${
           changes.reviewedAt !== undefined ? `your review at ${reviewClock}` : reviewClock
         } · Review`;
+  // Plan item 2i (proposal): the change feed is the whole network's, so with a service chosen the
+  // chip says so. `service` is read here directly; the shared word is defined further down.
+  const changesChipText = service === null ? changesChipLabel : `${changesChipLabel} · Network-wide`;
   const changesChipOpen = (event?: { currentTarget: EventTarget | null }) =>
     openActivity(changeCount > 0 ? "changes" : "recent", event?.currentTarget);
   const plannedRows = usePlannedRows(now);
@@ -665,7 +675,14 @@ export function CoordinatorScreen() {
     [movements, units, referrals, bedReleases, leaveBeds, admissions, now, thresholds, network],
   );
   // Journey accountability continues through transit; the ED strip keeps physical inpatient waits.
-  const edJourneys = useMemo(() => openEdJourneys(movements, now), [now, movements]);
+  // Plan item 2i (proposal): with a service chosen, the hero's journeys are that service's.
+  const edJourneys = useMemo(
+    () => openEdJourneys(isInServiceScope ? movements.filter(isInServiceScope) : movements, now),
+    [now, movements, isInServiceScope],
+  );
+  // The bed figures (beds ready, occupancy) and the bed-count checks stay network-wide on purpose
+  // (a placement may use any ward), so with a service chosen they say so beside the figure.
+  const networkWord = service === null ? "" : " network-wide";
   // The queue may also contain ward/community origins, so its population is broader than ED journeys.
   const notWaitingMeta = (
     <span data-testid="ward-home-ed-population">
@@ -726,8 +743,9 @@ export function CoordinatorScreen() {
     .toLowerCase();
   const heroTitle = (
     <>
-      <span className={styles.heroNum}>{edJourneys.total}</span> open ED movements,{" "}
-      <span className={styles.heroNum}>{bedsReady}</span> {bedsReady === 1 ? "bed" : "beds"} ready
+      <span className={styles.heroNum}>{edJourneys.total}</span> open ED movements
+      {service === null ? "" : ` in ${service}`}, <span className={styles.heroNum}>{bedsReady}</span>{" "}
+      {bedsReady === 1 ? "bed" : "beds"} ready{networkWord}
     </>
   );
   // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
@@ -798,14 +816,9 @@ export function CoordinatorScreen() {
     chooseNeedsFocus("all");
     toggleHighlight("overdue");
   };
-  // Scope: with a service chosen, the step counts only that service's work, never statewide. Act now
-  // is the alerts on that service's movements plus its accepted referrals awaiting a pull (`toPull`,
-  // already scoped); referrals to decide and past-target waits are the scoped lists Home shows.
-  // All services keeps the hero's own Act now figure, so the step and its chip agree.
-  const nextActCount = isInServiceScope
-    ? actEntries.filter((entry) => entry.movement !== undefined && isInServiceScope(entry.movement)).length +
-      toPull.length
-    : actNowCount;
+  // Scope: with a service chosen, the step counts only that service's work, never statewide: the
+  // hero's own scoped Act now (`heroActNow`), and the scoped referral queue and flow queue Home shows.
+  const nextActCount = heroActNow;
   const nextScope = service === null ? "" : ` in ${service}`;
   const heroNext: HeroNextStep =
     nextActCount > 0
@@ -863,7 +876,7 @@ export function CoordinatorScreen() {
               isPhone ? (
                 <span data-testid="ward-home-ed-population">
                   {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit
-                  {statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% beds in use` : ""}
+                  {statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% beds in use${networkWord}` : ""}
                 </span>
               ) : (
                 notWaitingMeta
@@ -873,9 +886,9 @@ export function CoordinatorScreen() {
               isPhone ? (
                 <>
                   <HeroStat
-                    value={actNowCount}
+                    value={heroActNow}
                     label="Act now"
-                    tone={actNowCount > 0 ? "danger" : undefined}
+                    tone={heroActNow > 0 ? "danger" : undefined}
                     pressed={shownView === "needs" && needsFocus === "act"}
                     onToggle={() => toggleFocus("act")}
                   />
@@ -922,16 +935,16 @@ export function CoordinatorScreen() {
                     onClick={changesChipOpen}
                     data-testid="home-changes-chip"
                   >
-                    {changeCount > 0 ? <b>{changeCount}</b> : null} {changesChipLabel}
+                    {changeCount > 0 ? <b>{changeCount}</b> : null} {changesChipText}
                   </Button>
                 </div>
               ) : (
                 <div className={styles.heroToggles}>
                   <HeroStat
                     inline
-                    value={actNowCount}
+                    value={heroActNow}
                     label="Act now"
-                    tone={actNowCount > 0 ? "danger" : undefined}
+                    tone={heroActNow > 0 ? "danger" : undefined}
                     pressed={shownView === "needs" && needsFocus === "act"}
                     onToggle={() => toggleFocus("act")}
                   />
@@ -986,7 +999,7 @@ export function CoordinatorScreen() {
                         {staleBedCounts + wardsNotReporting > 0 ? (
                           <StatusGlyph tone="warning" size={10} className={activity.dotGlyph} />
                         ) : null}
-                        to check
+                        to check{networkWord}
                       </>
                     }
                     expanded={checksOpen}
@@ -1002,7 +1015,7 @@ export function CoordinatorScreen() {
                   inline
                   command
                   value={changeCount > 0 ? changeCount : null}
-                  label={changesChipLabel}
+                  label={changesChipText}
                   // No glyph: the info glyph reads "to decide" on this page, which a change is not.
                   onToggle={changesChipOpen}
                   className={styles.changesChip}
