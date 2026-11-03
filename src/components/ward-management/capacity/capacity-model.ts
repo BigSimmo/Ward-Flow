@@ -203,6 +203,8 @@ export function useCapacityModel() {
     otherSiteRows,
     otherSiteGroups,
     plannedBooked: planned.filter((booking) => booking.state === "booked").length,
+    /** The wards the Mismatch figures count: the site's own for a site bed manager, else all. */
+    gapUnits: units,
   };
 }
 

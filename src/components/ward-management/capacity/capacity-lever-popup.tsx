@@ -157,6 +157,6 @@ function describe(item: HelpItem): string {
     case "stale_counts":
       return "These wards have not confirmed their beds within their threshold, so their ready figure may be out.";
     case "being_made_ready":
-      return "Beds being cleaned or prepared. Each one becomes a ready bed once the ward confirms it.";
+      return "Beds being cleaned or prepared. They already count as ready, so finishing them makes the count true rather than adding to it.";
   }
 }

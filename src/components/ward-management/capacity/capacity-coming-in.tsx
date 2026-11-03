@@ -32,15 +32,13 @@ type Lane = "today" | "tomorrow" | "later" | "stepDown";
 type Shown = { kind: "planned"; id: string } | { kind: "stepDown"; id: string } | null;
 type Mark = { id: string; tone: WfTone };
 
-/** Bookings later than tomorrow that the card counts in "Later this week". */
-const LATER_DAYS = 7;
 /** The most marks a lane draws before it says "+N". */
 const LANE_MARKS = 10;
 
 /**
  * Capacity issue 6 (Josh, 3 Nov 2026): "Planned moves". The people the network already knows are
  * coming, booked admissions and step downs, in one card instead of two tabs. Four lanes across the
- * top, Today, Tomorrow, Later this week and Step down, each a count, a row of marks (one per person,
+ * top, Today, Tomorrow, Later and Step down, each a count, a row of marks (one per person,
  * coloured by where they stand) and the one thing to know. Choosing a lane narrows the list; nothing
  * else is hidden. Each row opens a pop-up modelled on the Movements one. Every write still goes
  * through the planned admissions forms and the Step down board's refer step.
@@ -129,11 +127,12 @@ function PlannedMovesBody({
       ? perthDateLabel(at, dayZero, { weekday: "short", day: "numeric" })
       : formatInstantWithDay(at, now).replace(/^\d{1,2}:\d{2},?\s*/u, "");
   const today = dayOf(now);
-  const laneOf = (planned: PlannedAdmission): Lane | null => {
+  // Every booking lands in a lane: the form books up to 14 days ahead, so "Later" has no end.
+  const laneOf = (planned: PlannedAdmission): Lane => {
     const days = dayOf(planned.expectedArrivalAt) - today;
     if (days <= 0) return "today";
     if (days === 1) return "tomorrow";
-    return days <= LATER_DAYS ? "later" : null;
+    return "later";
   };
   const byLane = {
     today: api.agenda.filter((planned) => laneOf(planned) === "today"),
@@ -191,7 +190,7 @@ function PlannedMovesBody({
     },
     {
       id: "later",
-      label: "Later this week",
+      label: "Later",
       count: byLane.later.length,
       marks: marksOf(byLane.later),
       note: byLane.later[0] ? `Next on ${dayWords(byLane.later[0].expectedArrivalAt)}` : "None booked",
@@ -208,7 +207,7 @@ function PlannedMovesBody({
   const groups: { id: Lane; title: string }[] = [
     { id: "today", title: "Today" },
     { id: "tomorrow", title: "Tomorrow" },
-    { id: "later", title: "Later this week" },
+    { id: "later", title: "Later" },
     { id: "stepDown", title: "Step down" },
   ];
   const visible = groups.filter((group) => lane === null || lane === group.id);

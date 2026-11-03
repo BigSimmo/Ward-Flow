@@ -97,6 +97,7 @@ export function MismatchBand({
         tomorrow={openKind ? byId.get(openKind) : undefined}
         now={now}
         onClose={() => setOpenKind(null)}
+        units={model.gapUnits}
         onWard={
           onWard
             ? (unitId) => {

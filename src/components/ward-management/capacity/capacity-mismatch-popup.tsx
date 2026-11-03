@@ -15,6 +15,7 @@ import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import type { KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
+import type { Unit } from "@/components/ward-management/ward-model";
 
 import { bedKindBreakdown, type BedKindGap } from "./capacity-derivations";
 import { gapWords } from "./capacity-range-line";
@@ -35,6 +36,7 @@ export function MismatchPopup({
   now,
   onClose,
   onWard,
+  units,
 }: {
   row: BedKindGap | null;
   title: string;
@@ -42,12 +44,14 @@ export function MismatchPopup({
   now: number;
   onClose: () => void;
   onWard?: (unitId: string) => void;
+  /** The same wards the card's figures count, so the ready-bed list adds up to "Ready that fit". */
+  units: readonly Unit[];
 }) {
-  const { movements, units, admissions } = useWardFlowSelect("movements", "units", "admissions");
+  const { movements, admissions } = useWardFlowSelect("movements", "admissions");
   const patientOf = usePatientOf();
   const canOpen = useCanOpenHref();
   const detail = useMemo(
-    () => (row ? bedKindBreakdown(row.id, movements, units, admissions) : null),
+    () => (row ? bedKindBreakdown(row.id, movements, [...units], admissions) : null),
     [row, movements, units, admissions],
   );
   const short = (row?.gap ?? 0) < 0;

@@ -333,14 +333,15 @@ function helpItems(levers: readonly ForecastLever[], rows: readonly NetworkWardR
 
 function tagText(item: HelpItem): string {
   if (item.kind === "stale_counts") return "check";
-  if (item.kind === "being_made_ready")
-    return `up to +${item.rows.reduce((s, r) => s + (r.pendingPreparation ?? 0), 0)}`;
+  // A bed being made ready already counts as ready (owner, 1 Sep 2026), so finishing it is a task,
+  // not an uplift to tomorrow's figure.
+  if (item.kind === "being_made_ready") return "task";
   return item.uplift > 0 ? `up to +${item.uplift}` : "range only";
 }
 
 function tagTone(item: HelpItem): boolean {
   if (item.kind === "stale_counts") return false;
-  if (item.kind === "being_made_ready") return true;
+  if (item.kind === "being_made_ready") return false;
   return item.uplift > 0;
 }
 
