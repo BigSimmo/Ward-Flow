@@ -65,7 +65,10 @@ const CLIPS = /^(hidden|clip|auto|scroll)$/;
  * own scroll-padding-top, which is where its pinned top bar sits, so a panel never opens under it.
  */
 function visibleArea(element: HTMLElement) {
-  const area = { top: 0, left: 0, right: document.documentElement.clientWidth, bottom: window.innerHeight };
+  // When the window itself scrolls (no rail, tablet widths), the root's scroll padding is the
+  // pinned top bar, so the visible area starts below it.
+  const rootPad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+  const area = { top: rootPad, left: 0, right: document.documentElement.clientWidth, bottom: window.innerHeight };
   for (let node = element.parentElement; node && node !== document.body; node = node.parentElement) {
     const css = getComputedStyle(node);
     const clipsX = CLIPS.test(css.overflowX);
