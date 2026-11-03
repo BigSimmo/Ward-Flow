@@ -141,6 +141,23 @@ describe("All EDs — v10 pass 3: RowSpark, preview and service bars", () => {
     fireEvent.click(bar);
     expect(cards()).toHaveLength(total);
   });
+
+  it("steps the preview only through the EDs the filters show", async () => {
+    renderIndex();
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Waiting by" })).getByRole("radio", { name: "By service" }),
+    );
+    fireEvent.click(screen.getByTestId("ed-index-service-bar-South Metro"));
+    const shownIds = cards().map((card) => card.getAttribute("data-testid")?.replace(/^ed-index-(card|clear)-/u, ""));
+    expect(shownIds.length).toBeGreaterThan(1);
+    fireEvent.click(screen.getByTestId(`ed-index-preview-${shownIds[0]}`));
+    await screen.findByTestId("ed-index-preview-body");
+    for (let step = 0; step < shownIds.length + 1; step += 1) {
+      fireEvent.click(screen.getByRole("button", { name: "Next ED" }));
+      const href = screen.getByTestId("ed-index-preview-enter").getAttribute("href") ?? "";
+      expect(shownIds).toContain(href.replace("/ward-flow/ed/", ""));
+    }
+  });
 });
 
 describe("All EDs — design review (Josh, 31 Oct 2026): title count and the nobody-waiting line", () => {

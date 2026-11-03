@@ -281,8 +281,8 @@ export function EdIndex() {
   // ED preview (v10): one side sheet on desktop and tablet, a bottom sheet on phone, with Enter pinned.
   const previewRow = previewId ? (rows.find((row) => row.summary.ed.id === previewId) ?? null) : null;
   const stepPreview = (delta: number) => {
-    const index = ordered.findIndex((row) => row.summary.ed.id === previewId);
-    const next = ordered[(index + delta + ordered.length) % ordered.length];
+    const index = shown.findIndex((row) => row.summary.ed.id === previewId);
+    const next = shown[(index + delta + shown.length) % shown.length];
     if (next) setPreviewId(next.summary.ed.id);
   };
   const pickService = (id: HealthService) => setService(service === id ? "all" : id);
@@ -624,7 +624,7 @@ export function EdIndex() {
           onClose={() => setPreviewId(null)}
           title={previewRow ? previewRow.short : "ED preview"}
           description={previewRow ? `${previewRow.summary.siteName} · ${previewRow.summary.service}` : undefined}
-          headerActions={isPhone || ordered.length < 2 ? undefined : <EdPreviewSteps onStep={stepPreview} />}
+          headerActions={isPhone || shown.length < 2 ? undefined : <EdPreviewSteps onStep={stepPreview} />}
           footer={previewRow ? <EdPreviewFoot row={previewRow} /> : null}
           testId="ed-index-preview"
         >
