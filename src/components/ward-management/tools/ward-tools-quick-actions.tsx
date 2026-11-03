@@ -7,6 +7,7 @@ import { ArrowUpRight, type LucideIcon } from "lucide-react";
 import { Button, Meter, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
+import { ASK_CONFIRM_BEDS, askWardsFields, askedLine, splitAsk } from "../alerts/ask-wards";
 import { formatInstantWithDay } from "../ward-clock";
 import { shiftConfirmations } from "../capacity/shift-confirmations";
 import styles from "./ward-tools-quick-actions.module.css";
@@ -100,7 +101,7 @@ export function useUnconfirmedWards() {
 /** Request ward updates: the wards not confirmed since this shift began. Nothing pre-selected. */
 export function WardUpdatesRequest() {
   const status = useUnconfirmedWards();
-  const { now } = useWardFlowSelect("now");
+  const { now, broadcastAlerts } = useWardFlowSelect("now", "broadcastAlerts");
   const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
   const [all, setAll] = useState(false);
   const [sending, setSending] = useState(false);
@@ -121,29 +122,22 @@ export function WardUpdatesRequest() {
   const asking = chosen.size > 0 ? chosen.size : status.waiting.length;
   const askWards = async () => {
     if (inFlight.current) return;
-    inFlight.current = true;
-    const ids = chosen.size > 0 ? [...chosen] : status.waiting.map((unit) => unit.id);
-    const noun = ids.length === 1 ? "ward" : "wards";
-    setSending(true);
+    const picked = chosen.size > 0 ? [...chosen] : status.waiting.map((unit) => unit.id);
+    // One shared path with the Discharges chase (M6): skip wards asked in the last four hours.
+    const { send, skipped } = splitAsk(picked, broadcastAlerts, ASK_CONFIRM_BEDS, now);
     setSent(null);
+    if (send.length === 0) {
+      setSent({ ok: true, text: askedLine(0, skipped.length) });
+      return;
+    }
+    inFlight.current = true;
+    setSending(true);
     try {
-      // A directive to just these wards. Each one sees it on screen and answers on its own page.
-      const outcome = await raise("DISPATCH_BROADCAST_ALERT", {
-        title: "Please confirm your beds",
-        message: "Check your bed numbers, then tap Beds still correct or update them.",
-        severity: "advisory",
-        category: "capacity_gridlock",
-        targetScope: "all",
-        targetScopeLabel: `${ids.length} ${noun} not confirmed this shift`,
-        targetUnitIds: ids,
-        durationMinutes: 60,
-        dispatchedByName: "Bed coordinator",
-        kind: "directive",
-      });
+      const outcome = await raise("DISPATCH_BROADCAST_ALERT", askWardsFields(ASK_CONFIRM_BEDS, send));
       if (outcome && outcome.status !== "accepted") {
         setSent({ ok: false, text: outcome.message || "Not sent. Try again." });
       } else {
-        setSent({ ok: true, text: `Asked ${ids.length} ${noun} to confirm. It shows on their screen for an hour.` });
+        setSent({ ok: true, text: askedLine(send.length, skipped.length) });
         setChosen(new Set());
       }
     } catch {

@@ -81,7 +81,7 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
     expect(asks).toHaveLength(1);
     expect(asks[0].units).toHaveLength(waiting);
     expect(within(panel).getByRole("status")).toHaveTextContent(
-      new RegExp(`^Asked ${waiting} wards? to confirm\\.`, "u"),
+      new RegExp(`^Asked ${waiting} wards?\\. It shows on their screen for 4 hours\\.`, "u"),
     );
     expect(within(panel).getByRole("link", { name: "Open Alerts" })).toHaveAttribute("href", "/ward-flow/alerts");
   });
@@ -99,8 +99,28 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
     const asks = sentAsks();
     expect(asks).toHaveLength(1);
     expect(asks[0].units).toHaveLength(1);
-    expect(within(panel).getByRole("status")).toHaveTextContent(/^Asked 1 ward to confirm\./u);
+    expect(within(panel).getByRole("status")).toHaveTextContent(
+      /^Asked 1 ward\. It shows on their screen for 4 hours\./u,
+    );
     for (const box of within(panel).getAllByRole("checkbox")) expect(box).not.toBeChecked();
+  });
+
+  it("skips a ward asked in the last 4 hours, so a second press never nags it", async () => {
+    atDesk({ role: "coordinator", scope: { kind: "statewide" } });
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
+    const panel = screen.getByRole("region", { name: "Ward updates" });
+    fireEvent.click(within(panel).getAllByRole("checkbox")[0]);
+    await act(async () => {
+      fireEvent.click(within(panel).getByRole("button", { name: "Ask 1 ward to confirm" }));
+    });
+    fireEvent.click(within(panel).getAllByRole("checkbox")[0]);
+    await act(async () => {
+      fireEvent.click(within(panel).getByRole("button", { name: "Ask 1 ward to confirm" }));
+    });
+    expect(sentAsks()).toHaveLength(1);
+    expect(within(panel).getByRole("status")).toHaveTextContent(
+      "No one asked. 1 ward already asked in the last 4 hours, so skipped.",
+    );
   });
 
   it("lists every unconfirmed ward, behind Show more when there are many, so each can be picked", () => {
