@@ -764,9 +764,29 @@
     align-items: stretch;
   }
 
-  .filterRow + .filterRow[data-open="true"] > div {
-    overflow-x: auto;
-    scrollbar-width: none;
+  .filterRow + .filterRow[data-open="true"] > .filterGroup {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .phoneFilterScroll {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .phoneFilterScroll > div {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  /* ScrollRow owns scrolling and its edge cues; the segmented track must not clip inside it. */
+  .filterGroup .phoneFilterChoices {
+    width: max-content;
+    max-width: none;
+    overflow: visible;
   }
 
   /* The Filters pill takes the shared phone pill size (`--wf-phone-*`): a 32px face with a

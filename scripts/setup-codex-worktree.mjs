@@ -231,9 +231,24 @@ function ensureBackendDependencies(root, options, worktrees) {
     copyDependencies(donorRoot, backendRoot);
   } else {
     log("No complete byte-identical backend install found; running the locked backend installation.");
-    removePartialInstall(backendRoot);
     try {
-      installLockedDependencies({ root: backendRoot, log });
+      // Keep the install on the same npm CLI assertRuntime already verified. An
+      // inherited npm_execpath may name the older CLI that launched this setup.
+      const env = { ...process.env };
+      const npmCli = resolveNpmCli(env);
+      if (npmCli) env.npm_execpath = npmCli;
+      else delete env.npm_execpath;
+      installLockedDependencies({
+        root: backendRoot,
+        env,
+        log,
+        execute(command, args, options) {
+          // Verify npm before touching an incomplete tree. Unlink it before ci
+          // so npm cannot follow a shared node_modules link into a donor tree.
+          if (args.includes("ci")) removePartialInstall(backendRoot);
+          return spawnSync(command, args, options);
+        },
+      });
     } catch (error) {
       fail(error instanceof Error ? error.message : String(error));
     }

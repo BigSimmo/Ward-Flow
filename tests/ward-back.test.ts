@@ -53,6 +53,25 @@ describe("the header's Back control (Josh, 20 Oct 2026)", () => {
     expect(wardBackParent("/ward-flow/community/armadale", "/ward-flow/community/armadale")).toBeUndefined();
   });
 
+  it.each([
+    ["/ward-flow/statistics/ward/rph-adult-secure", NURSE_HOME],
+    ["/ward-flow/statistics/ed/peel-ed", "/ward-flow/ed/peel-ed"],
+    ["/ward-flow/statistics/community/armadale", "/ward-flow/community/armadale"],
+  ])("%s falls back to the own-place desk's authorised home after a reload", (pathname, home) => {
+    resetWardRouteHistory();
+    noteWardRoute(pathname);
+    expect(hasMovedInWardFlow()).toBe(false);
+    expect(wardBackParent(pathname, home)).toBe(home);
+  });
+
+  it.each([COORDINATOR_HOME, "/ward-flow/capacity"])(
+    "keeps the Statistics index fallback for the coordinator or site desk at %s",
+    (home) => {
+      expect(wardBackParent("/ward-flow/statistics/ward/rph-adult-secure", home)).toBe("/ward-flow/statistics");
+      expect(wardBackParent("/ward-flow/statistics/service/east-metro", home)).toBe("/ward-flow/statistics");
+    },
+  );
+
   describe("in-app history", () => {
     beforeEach(() => resetWardRouteHistory());
     afterEach(() => vi.unstubAllGlobals());

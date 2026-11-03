@@ -46,6 +46,25 @@ describe("sessionTrends", () => {
     expect(sessionTrends([], NOW).hours).toEqual([3, 2, 1, 0].map((back) => HOUR - back * 60));
   });
 
+  it.each([true, false])("counts a planned arrival only when its conversion is accepted=%s", (accepted) => {
+    const trends = sessionTrends([entry("CONVERT_PLANNED_ADMISSION", HOUR + 5, accepted)], NOW);
+    expect(trends.rows.find((row) => row.id === "arrivals")?.counts).toEqual([0, 0, 0, Number(accepted)]);
+    expect(trends.counted).toBe(Number(accepted));
+  });
+
+  it("counts ordinary and planned arrivals once each, leaving refused conversions out", () => {
+    const trends = sessionTrends(
+      [
+        entry("PATIENT_ARRIVED", HOUR - 60 + 5),
+        entry("CONVERT_PLANNED_ADMISSION", HOUR + 5),
+        entry("CONVERT_PLANNED_ADMISSION", HOUR + 6, false),
+      ],
+      NOW,
+    );
+    expect(trends.rows.find((row) => row.id === "arrivals")?.counts).toEqual([0, 0, 1, 1]);
+    expect(trends.counted).toBe(2);
+  });
+
   it("counts a ward's acceptance in principle beside a referral acceptance, as Declined counts both kinds", () => {
     const trends = sessionTrends([entry("ACCEPT_IN_PRINCIPLE", HOUR + 5), entry("DECLINE", HOUR + 6)], NOW);
     const counts = Object.fromEntries(trends.rows.map((row) => [row.id, row.total]));

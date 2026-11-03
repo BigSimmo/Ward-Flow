@@ -229,7 +229,7 @@ function WardCard({
     ward.onLeave ? `${ward.onLeave} on leave` : "",
     ward.pendingPreparation ? `${ward.pendingPreparation} being made ready` : "",
   ].filter(Boolean);
-  const occupied = ward.occupied + ward.pulled;
+  const inUse = ward.occupied + ward.pulled;
   // Polish (Josh, 31 Oct 2026): the ready figure leads on the right, occupied of total beds sits
   // under the name, the bed strip is always one line, and the note line shows only what needs a
   // look (a stale count first, then pulled, closed, on leave, being made ready). A ward with
@@ -252,9 +252,9 @@ function WardCard({
         <b className={styles.wardReadyN}>{ward.ready || "None"}</b> ready
       </span>{" "}
       <span className={styles.wardOccupied}>
-        {occupied} of {ward.unit.beds} occupied
+        {ward.occupied} of {ward.unit.beds} occupied
       </span>
-      <BedCells beds={ward.unit.beds} ready={ward.ready} used={occupied} />
+      <BedCells beds={ward.unit.beds} ready={ward.ready} used={inUse} />
       {stale || notes.length ? (
         <span className={styles.wardNote}>
           {stale ? (

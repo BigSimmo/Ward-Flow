@@ -1,3 +1,6 @@
+import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import {
   SharedWorkspaceClient,
@@ -103,4 +106,28 @@ describe("anySignal (H-0304)", () => {
       Object.defineProperty(AbortSignal, "any", { value: any, configurable: true, writable: true });
     }
   });
+});
+
+it("observes a late token rejection when the poll was already cancelled", () => {
+  // Run the actual helper in a child so the regression can inspect unhandled rejection delivery
+  // without installing a process-wide rejection handler in the Vitest worker.
+  const helper = pathToFileURL(resolve("src/components/ward-management/ward-shared-client-helpers.ts")).href;
+  const source = `
+    import { untilAborted } from ${JSON.stringify(helper)};
+    const unhandled = [];
+    process.on("unhandledRejection", error => unhandled.push(error.name));
+    let rejectAuth;
+    const auth = new Promise((_, reject) => { rejectAuth = reject; });
+    let cancellation;
+    await untilAborted(auth, AbortSignal.abort()).catch(error => { cancellation = error.name; });
+    rejectAuth(new Error("synthetic cancelled token failure"));
+    await new Promise(resolve => setTimeout(resolve, 20));
+    console.log(JSON.stringify({cancellation, unhandled}));
+  `;
+  const result = execFileSync(process.execPath, ["--import", "tsx", "--input-type=module", "--eval", source], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    timeout: 10_000,
+  });
+  expect(JSON.parse(result)).toEqual({ cancellation: "AbortError", unhandled: [] });
 });
