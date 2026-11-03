@@ -218,3 +218,53 @@ export function PinButton({ id, label, pinned }: { id: string; label: string; pi
     </button>
   );
 }
+
+/** H2 (Josh, 3 Nov 2026): the bed alerts foot line, Metro as a whole (when the rows above rank
+ *  services) and the beds ready now. */
+export function RailReadyLine({ metro, ready }: { metro: number | null; ready: number }) {
+  return (
+    <>
+      {metro !== null ? (
+        <>
+          Metro <b>{formatOccupancyPercent(metro)}</b>
+          <span aria-hidden="true"> · </span>
+        </>
+      ) : null}
+      <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
+    </>
+  );
+}
+
+/** H3 (Josh, 3 Nov 2026): the shift's span with a bar for how far through it is. The Handover
+ *  button below already counts down, so the span is named once. */
+export function RailShiftSpan({ name, hours, percent }: { name: string; hours: string; percent: number }) {
+  return (
+    <span className={parts.shiftEnds} data-testid="ward-rail-shift-ends">
+      <span>
+        {name} <b>{hours}</b>
+      </span>
+      <span className={parts.shiftBar} aria-hidden="true">
+        <span style={{ width: `${percent}%` }} />
+      </span>
+    </span>
+  );
+}
+
+/** H3 (Josh, 3 Nov 2026): the shift card leads with the live time; the shift span follows. */
+export function RailLiveClock({
+  clock,
+  titleClass,
+  zoneClass,
+}: {
+  clock: string;
+  titleClass: string;
+  zoneClass: string;
+}) {
+  return (
+    <span className={`${titleClass} ${parts.liveClock}`} data-testid="ward-rail-live-clock">
+      <span className={parts.liveDot} aria-hidden="true" />
+      <span className={parts.liveTime}>{clock}</span>
+      <span className={zoneClass}>AWST</span>
+    </span>
+  );
+}

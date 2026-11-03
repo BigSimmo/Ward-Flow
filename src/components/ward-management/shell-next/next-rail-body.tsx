@@ -79,6 +79,9 @@ import {
   capacityRowsSpoken,
   cardScopeNote,
   overLineLabel,
+  RailLiveClock,
+  RailReadyLine,
+  RailShiftSpan,
   usePinnedPages,
 } from "@/components/ward-management/shell-next/next-rail-parts";
 import railParts from "@/components/ward-management/shell-next/next-rail.module.css";
@@ -397,21 +400,8 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
   // H2: with the services ranked above it, the foot line carries Metro as a whole and the ready beds.
-  const metroFoot =
-    bedAlerts.metroOccupancyPercent !== null && !capacityRows.some((row) => row.key === "metro" || row.key === "own")
-      ? bedAlerts.metroOccupancyPercent
-      : null;
-  const readyLine = (
-    <>
-      {metroFoot !== null ? (
-        <>
-          Metro <b>{formatOccupancyPercent(metroFoot)}</b>
-          <span aria-hidden="true"> · </span>
-        </>
-      ) : null}
-      <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
-    </>
-  );
+  const metroShown = capacityRows.some((row) => row.key === "metro" || row.key === "own");
+  const readyLine = <RailReadyLine metro={metroShown ? null : bedAlerts.metroOccupancyPercent} ready={readyBeds} />;
   const handoverText = shiftProgress.handoverDue ? null : durMinutes(shiftProgress.remainingMinutes);
 
   const setOpen = useCallback((next: boolean) => {
@@ -838,13 +828,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               {currentPersona.initials}
             </span>
             <span className={styles.shiftMeta}>
-              {/* H3 (Josh, 3 Nov 2026): the card's first line is the live time; the shift moves down
-                  beside its handover, so the card says how long is left. */}
-              <span className={`${styles.shiftTitle} ${railParts.liveClock}`} data-testid="ward-rail-live-clock">
-                <span className={railParts.liveDot} aria-hidden="true" />
-                <span className={railParts.liveTime}>{boardClock}</span>
-                <span className={styles.shiftHours}>AWST</span>
-              </span>
+              <RailLiveClock clock={boardClock} titleClass={styles.shiftTitle} zoneClass={styles.shiftHours} />
               <span className={`${styles.shiftSub} ${railParts.shiftSubWrap}`}>
                 {personaName} · {currentPersona.role}
               </span>
@@ -855,15 +839,11 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               ) : null}
             </span>
           </div>
-          <span className={railParts.shiftEnds} data-testid="ward-rail-shift-ends">
-            <span>
-              {/* The Handover button below already counts down, so this line names the shift's span once. */}
-              {shiftProgress.shiftName} <b>{shiftProgress.shiftHours}</b>
-            </span>
-            <span className={railParts.shiftBar} aria-hidden="true">
-              <span style={{ width: `${shiftProgress.percent}%` }} />
-            </span>
-          </span>
+          <RailShiftSpan
+            name={shiftProgress.shiftName}
+            hours={shiftProgress.shiftHours}
+            percent={shiftProgress.percent}
+          />
           {/* A7 (overall review, 20 Oct 2026): the demo clock shows in the top bar only
             (`ward-bar.tsx`), which opens the demo controls; the rail no longer repeats it. */}
           {!showHandover ? null : handoverCardLinks ? (
