@@ -100,6 +100,7 @@ import { renderArrivalsCard } from "./officer-arrivals-card";
 import { OfficerOrderNote } from "./officer-order-note";
 import { type OfficerDetailTab, type OfficerJobDetailContext } from "./officer-job-detail";
 import { OfficerJobPanel, formsMissingNote } from "./officer-job-panel";
+import { OfficerDeliveredRow } from "./officer-history-row";
 import {
   NeedsTransportCard,
   OfficerBookingPanel,
@@ -1286,17 +1287,15 @@ export function OfficerScreen() {
                   {deliveredToday.length > 0 ? (
                     <ul className={styles.plainList} data-testid="ward-officer-delivered">
                       {deliveredToday.map((movement) => (
-                        <li key={movement.id} className={styles.plainItem}>
-                          <StatusGlyph tone="success" size={9} />
-                          <span>
-                            <span className={styles.mono}>
-                              {formatInstantWithDay(movement.transport!.arrivedAt!, now)}
-                            </span>{" "}
-                            <strong>{officerListPatientName(movement)}</strong>{" "}
-                            <span className={styles.mono}>{umrnFor(movement)}</span> · {destinationLabelFor(movement)}{" "}
-                            <span className={styles.muted}>({movement.transport!.provider})</span>
-                          </span>
-                        </li>
+                        <OfficerDeliveredRow
+                          key={movement.id}
+                          movementId={movement.id}
+                          time={formatInstantWithDay(movement.transport!.arrivedAt!, now)}
+                          name={officerListPatientName(movement)}
+                          umrn={umrnFor(movement)}
+                          destination={destinationLabelFor(movement)}
+                          provider={movement.transport!.provider}
+                        />
                       ))}
                     </ul>
                   ) : (
