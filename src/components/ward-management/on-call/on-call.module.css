@@ -813,9 +813,11 @@
 }
 
 /* ---------- contact card ---------- */
+/* Pins just under the top bar (at 16px it slid behind the bar between 1024 and 1200px, below the
+   shared rail's own pin; D-95, 3 Nov 2026). */
 .panel {
   position: sticky;
-  top: var(--wf-s-4);
+  top: var(--ward-sticky-top, 4.5rem);
   display: flex;
   flex-direction: column;
   min-width: 0;
