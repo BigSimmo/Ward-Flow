@@ -1,6 +1,8 @@
 # Ward Flow ownership on isolated Cloud hosts
 
-[AGENTS.md](../../AGENTS.md) governs safety and ownership. The commit hook and owned-file formatter require a readable coordination log on every host; an unset variable or absent implicit Linux/macOS log never grants clearance.
+[AGENTS.md](../../AGENTS.md) governs safety and ownership.
+
+**Since 3 Nov 2026 (Q374) the branch and its open PR are the claim.** A Cloud thread checks open PRs and branches for overlapping files before editing, then works on its own branch. It writes no claim lines, claim files or issue comments. The old cloud claims folders are archived under `/mnt/project-files/ward-flow/signout/archive/`. The rest of this page describes the optional shared log, which still blocks a file another branch holds in it; a missing log no longer blocks.
 
 ## Establish the actual boundary before editing
 
