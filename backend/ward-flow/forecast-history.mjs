@@ -9,6 +9,12 @@ import { FORECAST_HISTORY_MIGRATION } from "./migrations.mjs";
 /** The newest snapshots and reasons a desk is sent, matching the browser's own limits. */
 const FORECAST_SNAPSHOT_LIMIT = 60;
 const FORECAST_REASON_LIMIT = 200;
+/**
+ * A reason's version token: its last change to the microsecond, in UTC, as fixed text. Written
+ * out explicitly so it never depends on the connection's TimeZone or DateStyle (a plain text cast
+ * of the timestamp did), and used for both the read and the compare-and-set.
+ */
+export const FORECAST_REASON_VERSION_SQL = `to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 
 /** The closed lists the browser offers (forecast-miss-reasons.ts) and the table checks. */
 const FORECAST_MISS_REASONS = Object.freeze([
@@ -79,6 +85,7 @@ export function forecastHistoryInput(body) {
   if (reason !== undefined) {
     if (
       !(
+        expectedVersion === undefined ||
         expectedVersion === null ||
         (typeof expectedVersion === "string" && expectedVersion.length > 0 && expectedVersion.length <= 100)
       ) ||
@@ -89,7 +96,9 @@ export function forecastHistoryInput(body) {
     )
       return null;
     input.reason = { day: reason.day, reason: reason.reason, by: reason.by, at: reason.at };
-    input.expectedVersion = expectedVersion;
+    // A browser from before versioned reasons sends none. It is treated as having read no reason
+    // for that day: it may record a first reason, but it can never replace one (that is a conflict).
+    input.expectedVersion = expectedVersion ?? null;
   }
   return input;
 }
@@ -131,7 +140,7 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
         [workspaceId, generation, scopeKey],
       ),
       query(
-        `SELECT demo_day, reason, chosen_by, chosen_at, updated_at::text AS version FROM ward_flow.forecast_miss_reasons WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$3 ORDER BY demo_day DESC LIMIT ${FORECAST_REASON_LIMIT}`,
+        `SELECT demo_day, reason, chosen_by, chosen_at, ${FORECAST_REASON_VERSION_SQL} AS version FROM ward_flow.forecast_miss_reasons WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$3 ORDER BY demo_day DESC LIMIT ${FORECAST_REASON_LIMIT}`,
         [workspaceId, generation, scopeKey],
       ),
     ]);
@@ -197,14 +206,6 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
           ],
         );
       if (reason) {
-        if (input.expectedVersion === undefined)
-          return {
-            status: 428,
-            body: {
-              code: "reason-basis-required",
-              error: "Read the latest forecast record before recording a reason.",
-            },
-          };
         const values = [
           workspaceId,
           generation,
@@ -216,13 +217,14 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
           view.actorId,
         ];
         const changed =
-          input.expectedVersion === null
+          // No basis (none read, or an older browser): a first reason only, never an overwrite.
+          (input.expectedVersion ?? null) === null
             ? await query(
-                "INSERT INTO ward_flow.forecast_miss_reasons(workspace_id, world_generation, scope_key, demo_day, reason, chosen_by, chosen_at, actor_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING RETURNING updated_at::text AS version",
+                `INSERT INTO ward_flow.forecast_miss_reasons(workspace_id, world_generation, scope_key, demo_day, reason, chosen_by, chosen_at, actor_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING RETURNING ${FORECAST_REASON_VERSION_SQL} AS version`,
                 values,
               )
             : await query(
-                "UPDATE ward_flow.forecast_miss_reasons SET reason=$5, chosen_by=$6, chosen_at=$7, actor_id=$8, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$3 AND demo_day=$4 AND updated_at::text=$9 RETURNING updated_at::text AS version",
+                `UPDATE ward_flow.forecast_miss_reasons SET reason=$5, chosen_by=$6, chosen_at=$7, actor_id=$8, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$3 AND demo_day=$4 AND ${FORECAST_REASON_VERSION_SQL}=$9 RETURNING ${FORECAST_REASON_VERSION_SQL} AS version`,
                 [...values, input.expectedVersion],
               );
         if (changed.rows.length === 0)

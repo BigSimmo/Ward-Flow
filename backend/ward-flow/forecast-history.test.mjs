@@ -27,6 +27,8 @@ test("a forecast history body is checked: whole numbers, an ordered range and th
     reason,
     expectedVersion: null,
   });
+  // A browser from before versioned reasons sends no basis: read as none, so a first reason only.
+  assert.deepEqual(forecastHistoryInput({ generation: 2, reason }), { generation: 2, reason, expectedVersion: null });
   // Extra fields are dropped, never stored.
   assert.deepEqual(
     forecastHistoryInput({ generation: 1, reason: { ...reason, note: "typed text" }, expectedVersion: null }),
@@ -214,6 +216,13 @@ test(
       const conflict = await store.recordForecast(coordinator, { generation, reason, expectedVersion: firstVersion });
       assert.equal(conflict.status, 409);
       assert.equal(conflict.body.code, "reason-conflict");
+      assert.deepEqual((await store.forecastHistory(coordinator)).reasons, updated.body.reasons);
+      // The version is fixed UTC text, whatever the connection's TimeZone or DateStyle.
+      assert.match(updated.body.reasons[0].version, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/);
+      // A browser from before versioned reasons sends no basis and cannot replace the reason.
+      const legacy = await store.recordForecast(colleague, { generation, reason: { ...reason, by: "bed_manager" } });
+      assert.equal(legacy.status, 409);
+      assert.equal(legacy.body.code, "reason-conflict");
       assert.deepEqual((await store.forecastHistory(coordinator)).reasons, updated.body.reasons);
 
       // A ward desk counts only its own records, so it keeps its own history.

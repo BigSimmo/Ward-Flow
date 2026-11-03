@@ -11,7 +11,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-const { forecastHistoryInput, forecastHistoryStore } = await import(
+const { FORECAST_REASON_VERSION_SQL, forecastHistoryInput, forecastHistoryStore } = await import(
   pathToFileURL(resolve("backend/ward-flow/forecast-history.mjs")).href
 );
 
@@ -88,7 +88,7 @@ describe("audit remediation: statistics use recorded populations", () => {
 describe("audit remediation: forecast reason compare-and-set store contract", () => {
   const reason = { day: 1, reason: "other", by: "coordinator", at: 100 };
   const view = { access: { role: "coordinator", scope: { kind: "statewide" } }, actorId: "synthetic-actor" };
-  const version = "2026-11-03 01:02:03.123456+00";
+  const version = "2026-11-03T01:02:03.123456Z";
   function store(writeRows: unknown[] = []) {
     const writes: { sql: string; values: unknown[] }[] = [];
     return {
@@ -113,8 +113,10 @@ describe("audit remediation: forecast reason compare-and-set store contract", ()
     };
   }
 
-  it("requires an explicit reason basis while preserving snapshot-only input", () => {
-    expect(forecastHistoryInput({ generation: 0, reason })).toBeNull();
+  it("reads a missing reason basis as none read, while preserving snapshot-only input", () => {
+    // A browser from before versioned reasons sends no basis: it may add a first reason only.
+    expect(forecastHistoryInput({ generation: 0, reason })).toMatchObject({ expectedVersion: null });
+    expect(forecastHistoryInput({ generation: 0, reason, expectedVersion: "" })).toBeNull();
     expect(forecastHistoryInput({ generation: 0, reason, expectedVersion: null })).toMatchObject({
       expectedVersion: null,
     });
@@ -130,7 +132,7 @@ describe("audit remediation: forecast reason compare-and-set store contract", ()
     expect(result).toMatchObject({ reasonWriteVersion: 1, reasons: [{ ...reason, version }] });
   });
 
-  it.each([null, version])(
+  it.each([null, undefined, version])(
     "returns a conflict when an atomic write matches no row (basis %s)",
     async (expectedVersion) => {
       const test = store();
@@ -138,11 +140,34 @@ describe("audit remediation: forecast reason compare-and-set store contract", ()
       expect(result.status).toBe(409);
       expect(result.body).toMatchObject({ code: "reason-conflict", history: { reasonWriteVersion: 1 } });
       expect(test.writes).toHaveLength(1);
-      if (expectedVersion === null) expect(test.writes[0]!.sql).toMatch(/ON CONFLICT DO NOTHING[\s\S]*RETURNING/);
+      // Never a plain text cast: that would follow the connection's TimeZone and DateStyle.
+      expect(test.writes[0]!.sql).not.toMatch(/::text/);
+      expect(test.writes[0]!.sql).toContain(`RETURNING ${FORECAST_REASON_VERSION_SQL} AS version`);
+      if (expectedVersion !== version) expect(test.writes[0]!.sql).toMatch(/^INSERT[\s\S]*ON CONFLICT DO NOTHING/);
       else {
-        expect(test.writes[0]!.sql).toMatch(/^UPDATE[\s\S]*WHERE[\s\S]*updated_at::text[\s\S]*RETURNING/);
+        expect(test.writes[0]!.sql).toMatch(/^UPDATE[\s\S]*WHERE/);
+        expect(test.writes[0]!.sql).toContain(`AND ${FORECAST_REASON_VERSION_SQL}=$9`);
         expect(test.writes[0]!.values).toContain(version);
       }
     },
   );
+
+  it("reads reason versions with the same fixed UTC token it compares", async () => {
+    const reads: string[] = [];
+    await forecastHistoryStore({
+      pool: {
+        query: async (sql: string) => {
+          reads.push(sql);
+          return { rows: [] };
+        },
+      },
+      workspaceId: "synthetic-workspace",
+      schemaVersion: async () => 16,
+      worldGeneration: async () => 0,
+      forgetVersionOnMissing: () => {},
+    }).forecastHistory(view);
+    const reasonRead = reads.find((sql) => sql.includes("forecast_miss_reasons"))!;
+    expect(reasonRead).toContain(`${FORECAST_REASON_VERSION_SQL} AS version`);
+    expect(FORECAST_REASON_VERSION_SQL).toContain("AT TIME ZONE 'UTC'");
+  });
 });
