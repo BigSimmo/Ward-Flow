@@ -21,6 +21,9 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ReferralDrawerFoot } from "@/components/ward-management/referrals/ward-referral-drawer-rail";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
+import { ReferralPatientStep } from "@/components/ward-management/referrals/ward-referral-drawer-patient-step";
+import { ReferralConfirmation } from "@/components/ward-management/referrals/ward-referral-drawer-letter";
+import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 
 const route = vi.hoisted(() => ({ pathname: "/ward-flow/ed/rph", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -55,7 +58,7 @@ function Bridge({ children }: { children: ReactNode }) {
   return <WardFlowOverride value={{ ...base, referrals, patients, dispatch }}>{children}</WardFlowOverride>;
 }
 import * as React from "react";
-function Probe({ footer = false }: { footer?: boolean }) {
+function Probe({ footer = false, panels = false }: { footer?: boolean; panels?: boolean }) {
   const value = useWardReferralDrawerState({
     onClose: vi.fn(),
     onRestart: vi.fn(),
@@ -67,7 +70,22 @@ function Probe({ footer = false }: { footer?: boolean }) {
   React.useEffect(() => {
     state = value;
   });
-  return footer ? <ReferralDrawerFoot s={value} /> : null;
+  return <ProbeView s={value} footer={footer} panels={panels} />;
+}
+function ProbeView({ s, footer, panels }: { s: WardReferralDrawerState; footer: boolean; panels: boolean }) {
+  const { drawerRef, bodyRef, confirmationOpen } = s;
+  return (
+    <div ref={drawerRef}>
+      {panels ? (
+        <div ref={bodyRef}>
+          <ReferralPatientStep s={s} alreadyOpen={undefined} alreadyOpenHref={undefined} />
+          {confirmationOpen ? <ReferralConfirmation s={s} /> : null}
+        </div>
+      ) : null}
+      {footer ? <ReferralDrawerFoot s={s} /> : null}
+      <WardLiveRegion />
+    </div>
+  );
 }
 function setup(children = <Probe />, pathname = "/ward-flow/ed/rph") {
   dispatch.mockClear();
@@ -125,6 +143,7 @@ function record(event: Extract<WardFlowEvent, { type: "RECEIVE_REFERRAL" }>, id 
 afterEach(() => {
   cleanup();
   clearReferralDraftSession();
+  resetWardLiveRegionForTests();
   route.push.mockClear();
 });
 
@@ -142,6 +161,8 @@ describe("referral command completion across shared snapshots", () => {
     expect(state.sendPending).toBe(false);
     expect(state.submissionAwaitingRecord).toBe(true);
     expect(state.footStatus.first).toContain("Referral saved");
+    const savedAnnouncement = screen.getByTestId("ward-live-region").textContent;
+    expect(savedAnnouncement).toContain("Referral saved");
     expect(screen.getByRole("link", { name: "Open referrals board" })).toHaveAttribute("href", "/ward-flow/referrals");
     expect(screen.getByRole("button", { name: "Close" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "Confirm and send" })).not.toBeInTheDocument();
@@ -149,6 +170,7 @@ describe("referral command completion across shared snapshots", () => {
     expect(dispatch).toHaveBeenCalledTimes(1);
     act(() => snapshot([...baseline.referrals, record(event)]));
     await waitFor(() => expect(state.sentReferralId).toBe("RF-999"));
+    expect(screen.getByTestId("ward-live-region").textContent).toBe(savedAnnouncement);
     expect(state.sendPending).toBe(false);
     expect(readLastReferrerContact()).toMatchObject({ email: "synthetic@example.test" });
     act(() => state.confirmAndSend({ preventDefault() {} } as React.FormEvent));
@@ -193,7 +215,11 @@ describe("referral command completion across shared snapshots", () => {
     expect(readLastReferrerContact()).toBeNull();
   });
   it("selects only the accepted new patient, even if another registration arrives last", async () => {
-    setup();
+    setup(<Probe panels />);
+    act(() => {
+      state.setActiveSection("patient");
+      state.setNewPatientOpen(true);
+    });
     act(() =>
       state.setNewPatient({
         givenName: "Synthetic",
@@ -204,7 +230,11 @@ describe("referral command completion across shared snapshots", () => {
         suburb: "",
       }),
     );
-    act(() => state.addNewPatient({ preventDefault() {} } as React.FormEvent));
+    const add = screen
+      .getByTestId("ward-referral-new-patient")
+      .querySelector<HTMLButtonElement>("button[type=submit]")!;
+    add.focus();
+    fireEvent.click(add);
     const added = {
       ...baseline.patients[0]!,
       id: "PT-991" as const,
@@ -216,6 +246,50 @@ describe("referral command completion across shared snapshots", () => {
     expect(state.activePatientKey).not.toBe("patient:PT-991");
     await act(async () => resolve({ commandId: "registration", status: "accepted" }));
     expect(state.activePatientKey).toBe("patient:PT-991");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Patient", level: 3 })).toHaveFocus());
+    expect(screen.getByTestId("ward-live-region")).toHaveTextContent("Selected patient");
+  });
+  it("keeps registration focus and entered values after an asynchronous refusal", async () => {
+    setup(<Probe panels />);
+    act(() => {
+      state.setActiveSection("patient");
+      state.setNewPatientOpen(true);
+      state.setNewPatient({
+        givenName: "Synthetic",
+        familyName: "New",
+        umrn: "UM999991",
+        dateOfBirth: "1990-01-01",
+        gender: "",
+        suburb: "",
+      });
+    });
+    const add = screen
+      .getByTestId("ward-referral-new-patient")
+      .querySelector<HTMLButtonElement>("button[type=submit]")!;
+    add.focus();
+    fireEvent.click(add);
+    await act(async () =>
+      resolve({ commandId: "registration-refused", status: "refused", message: "Synthetic refusal" }),
+    );
+    expect(add).toHaveFocus();
+    expect(screen.getByRole("alert")).toHaveTextContent("Synthetic refusal");
+    expect(screen.getByLabelText("Given name")).toHaveValue("Synthetic");
+  });
+  it("focuses the first invalid contact field when confirmation is refused", async () => {
+    setup(<Probe panels footer />);
+    ready();
+    act(() => {
+      state.setContact((contact) => ({ ...contact, name: "", email: "" }));
+      state.handleDispatch();
+    });
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Confirm and send" })).toHaveFocus());
+    const confirm = screen.getByRole("button", { name: "Confirm and send" });
+    confirm.focus();
+    fireEvent.click(confirm);
+    await waitFor(() => expect(screen.getByLabelText("Your name")).toHaveFocus());
+    expect(screen.getByLabelText("Your name")).toHaveAttribute("aria-invalid", "true");
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(state.contact.phone).toBe("0412345678");
   });
   it.each([
     ["/ward-flow/ed/rph", "ed"],

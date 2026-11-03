@@ -9,7 +9,7 @@ import {
 } from "./use-referral-command-completion";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import { hasOpenSheet } from "@/components/wf/sheet-focus";
+import { canRestoreFocusTo, hasOpenSheet } from "@/components/wf/sheet-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -465,14 +465,13 @@ export function useWardReferralDrawerState({
       stopDraftAutosave();
       discardReferralDraft(draftDiscardOwner);
       rememberReferrerContact(intake.referrer, draftOwnerVersion);
+      announceToWardShell("Referral saved. Check the Referrals board for its record before sending again.");
     },
     onAccepted(created) {
       setSentReferralId(created.id);
       setSentAt(now);
-      announceToWardShell("Referral sent to the selected locations.");
     },
   });
-
   const { approveNextHistoryNavigation } = useDirtyStateGuard({
     isDirty: !sentReferralId && !submissionAwaitingRecord && (dirty || draftKeptAt !== null),
     value: draftJson,
@@ -492,7 +491,7 @@ export function useWardReferralDrawerState({
     if (dirty && !submissionAwaitingRecord) return setGuardOpen(true);
     approveNextHistoryNavigation();
     onClose();
-  }, [guardOpen, dirty, submissionAwaitingRecord, onClose, approveNextHistoryNavigation]);
+  }, [guardOpen, dirty, submissionAwaitingRecord, onClose, approveNextHistoryNavigation, setGuardOpen]);
   useEffect(() => {
     if (!closeRequestRef) return;
     closeRequestRef.current = requestClose;
@@ -543,8 +542,7 @@ export function useWardReferralDrawerState({
     } else {
       requestClose();
     }
-  }, [isSearchOpen, requestClose]);
-
+  }, [isSearchOpen, requestClose, setIsSearchOpen, setSearchQuery]);
   // The enclosing Sheet owns focus when embedded. Register another modal only
   // when this drawer supplies its own backdrop.
   useWardModalFocus(withBackdrop, drawerRef, handleDrawerClose);
@@ -658,8 +656,8 @@ export function useWardReferralDrawerState({
       onSelectPatient(key);
     }
     announceToWardShell(`Selected patient ${p.name} for clinical referral.`);
+    if (addedInForm) activateSection("patient");
   }
-
   function toggleRisk(key: string) {
     setRiskFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   }
@@ -939,6 +937,13 @@ export function useWardReferralDrawerState({
     if (validation) {
       setFlowError(validation);
       setAttempted((current) => ({ ...current, contact: true }));
+      requestAnimationFrame(() => {
+        const form = confirmationHeadingRef.current?.closest("form");
+        if (!form || form.closest("[hidden], [inert]") || !canRestoreFocusTo(form)) return;
+        const control = form.querySelector<HTMLElement>('input[aria-invalid="true"]');
+        control?.focus({ preventScroll: true });
+        control?.scrollIntoView?.({ block: "center" });
+      });
       return;
     }
     const needs = needsFor(destType, communityNeeds, edNeeds);
@@ -1004,7 +1009,6 @@ export function useWardReferralDrawerState({
       intake,
     });
   }
-
   // Recipient inboxes, read from the provider the ward screen already uses.
   const inboxWards = capacityRecords
     .map((unit) => {
