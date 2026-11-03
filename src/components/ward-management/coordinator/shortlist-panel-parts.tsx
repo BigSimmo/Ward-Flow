@@ -96,7 +96,6 @@ export function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: 
   return pendingPreparation > 0 ? `${line} · Being made ready ${pendingPreparation}` : line;
 }
 
-/** Phone: brings the first fit row into view and focuses it, so the person picks the ward. */
 /** The wards a referral still waits on, as Home's list names them (H9, Josh 3 Nov 2026). */
 export function referralAsked(referral: Referral, units: readonly Unit[]): string {
   const names = referral.destinations.filter(isAwaitingAnswer).map((arm) => {
@@ -114,6 +113,7 @@ export function referralFrom(referral: Referral): string {
   return withSendingTeam(referral.originSiteCode, referral);
 }
 
+/** Phone: brings the first fit row into view and focuses it, so the person picks the ward. */
 export function focusFirstCandidate(from: HTMLElement) {
   // From the parent, never the control itself: Refer and Override carry `ward-shortlist-` test ids
   // too, and `closest` matches the element it starts on, which found no ward list (24 Oct 2026).

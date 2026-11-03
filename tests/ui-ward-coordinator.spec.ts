@@ -790,18 +790,22 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Option B (13 Oct 2026): Refer is never greyed for the coordinator. It no longer offers any
     // ward: it opens the referral slide-out, so it cannot refer against a default either. Its
     // reason with nothing chosen is still stated (screen-reader text).
+    //
+    // Home drawer polish (Josh, 3 Nov 2026): in the drawer Override is never greyed. With no ward
+    // chosen a tap takes the coordinator to the ward list instead, so the reason form still never
+    // opens against the default. The reason stays as the button's screen-reader description.
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
-    await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
+    await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
     await expect(shortlist).toContainText("Choose at least one candidate ward before referring");
     await expect(shortlist).toContainText("Choose at least one candidate ward before overriding");
 
-    // A forced activation of Override must not even open the reason form — if it opened, the
-    // textarea would be addressed to the default unit and one submission would record an override
-    // against a ward nobody picked. `force` because Playwright's actionability check already
-    // refuses an `aria-disabled` control.
-    await overrideToggle.click({ force: true });
+    // Override with nothing chosen must not open the reason form. If it opened, the textarea
+    // would be addressed to the default unit and one submission would record an override against
+    // a ward nobody picked. It moves focus to the first ward row instead.
+    await overrideToggle.click();
     await expect(overrideToggle).toHaveAttribute("aria-expanded", "false");
     await expect(shortlist.getByLabel(/Reason for overriding/)).toHaveCount(0);
+    await expect(shortlist.locator('[data-testid^="ward-shortlist-candidate-"]:focus')).toHaveCount(1);
     await expect(shortlist).not.toContainText("Overridden by a human coordinator");
 
     // Refer with nothing chosen opens the slide-out and records nothing against the default.
@@ -835,8 +839,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await pickQueueRow(queue, "WF-004");
     await openShortlistSections(shortlist);
     await expect(shortlist).toContainText("Accepted destination:");
-    await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
-    await overrideToggle.click({ force: true });
+    // Not greyed in the drawer: with no ward chosen it only goes to the ward list.
+    await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
+    await overrideToggle.click();
+    await expect(shortlist.getByLabel(/Reason for overriding/)).toHaveCount(0);
     await expect(shortlist).not.toContainText("Overridden by a human coordinator");
     // Option B: Refer is not greyed and opens the slide-out; it never records a second destination.
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
@@ -966,8 +972,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Override, like Confirm, acts only on a candidate a human explicitly chose — never on the
     // panel's default (whole-branch review Critical 2, extended to the other half of the control
     // pair). Choosing Dabakarn is what a coordinator would really do before overriding into
-    // it, and it is the same unit the recorded override below must name.
-    await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
+    // it, and it is the same unit the recorded override below must name. In the drawer it is never
+    // greyed (3 Nov 2026), but with nothing chosen it opens no reason form.
+    await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
+    await expect(overrideToggle).toHaveAttribute("aria-expanded", "false");
     // Dabakarn takes WF-009 only with a recorded reason, so it is behind the override disclosure.
     await showOverrideWards(shortlist);
     await shortlist.locator('[data-testid="ward-shortlist-candidate-rph-adult-secure"]').click();
