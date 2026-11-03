@@ -44,7 +44,7 @@ describe("wired controls and audit-code hygiene across owned screens", () => {
       </WardFlowProvider>,
     );
 
-    fireEvent.click(screen.getByRole("tab", { name: /System/i }));
+    // W3 (3 Nov 2026): the old System tab is a note always shown under the follow-up lists.
 
     expect(screen.queryByRole("button", { name: /Record a service-wide or facility delay/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/Service-wide hold recorded/i)).not.toBeInTheDocument();

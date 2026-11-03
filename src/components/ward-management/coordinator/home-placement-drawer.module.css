@@ -1,0 +1,285 @@
+/*
+ * The Home placement drawer (H7 to H10, approved by Josh 3 Nov 2026). Built on the patient
+ * pop-up's own styles (`movements/movement-drawer.module.css`); these add the eyebrow, the chosen
+ * alert line (H8), the task body that holds the real placement panel, and the pinned foot slot.
+ * Neutral borders only, tone in the glyph and a light tint, no side stripes (D-94).
+ */
+
+.panel {
+  /* The same width as the patient pop-up on tablet and desktop. */
+  width: min(100%, 30rem);
+}
+
+.eyebrow {
+  margin: 0 0 2px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+/* H8: the chosen alert, one tinted block under the head, never a card of its own. */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-3) var(--wf-s-4) 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.alert[data-tone="danger"] {
+  background: color-mix(in srgb, var(--wf-danger) 7%, var(--wf-surface));
+  border-color: color-mix(in srgb, var(--wf-danger) 22%, var(--wf-line));
+}
+
+.alert[data-tone="warning"] {
+  background: color-mix(in srgb, var(--wf-warning) 8%, var(--wf-surface));
+  border-color: color-mix(in srgb, var(--wf-warning) 24%, var(--wf-line));
+}
+
+.alert > :first-child {
+  margin-top: 5px;
+}
+
+.alertText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.alertText p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.alertTitle {
+  font-weight: 650;
+  font-size: var(--wf-fs-14, 0.875rem);
+  color: var(--wf-ink-1);
+}
+
+.alertDetail {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.alertMeta {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.note > svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* The task: the real placement panel, edge to edge in the drawer, its own card chrome removed. */
+.task {
+  border-top: 1px solid var(--wf-line);
+}
+
+.task > div {
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  gap: var(--wf-s-3);
+}
+
+/* The foot: the panel's next step or Refer arrives in `.slot`. Polish (Josh, 3 Nov 2026): a light
+   surface band instead of the navy one, so the drawer ends quietly. One filled primary, its partner
+   as a plain secondary beside it, and the record links as small text links under them. */
+.foot.foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: auto;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) max(var(--wf-s-3), env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  box-shadow: 0 -10px 24px -18px color-mix(in srgb, var(--wf-ink-1) 40%, transparent);
+  color: var(--wf-ink-1);
+}
+
+.foot.foot .slot:empty {
+  display: none;
+}
+
+.foot.foot .slot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+/* In the band only the next step's buttons stay when an alert is shown, because the alert line
+   already says what to do. A patient opened from a list row keeps the words. */
+.foot.foot .slot section {
+  display: contents;
+}
+
+.foot.foot[data-has-alert] .slot section > h4,
+.foot.foot[data-has-alert] .slot section > p {
+  display: none;
+}
+
+.foot.foot .slot section > h4 {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--wf-ink-3);
+}
+
+.foot.foot .slot section > p {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+/* The Refer toolbar sits in the band as a plain column: its "To …" line, then its buttons. */
+.foot.foot .slot footer {
+  position: static;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+}
+
+/* The toolbar's own children grow to a full row; in the band's column they keep their height. */
+.foot.foot .slot footer > * {
+  flex: 0 0 auto;
+}
+
+.foot.foot .slot footer p {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.foot.foot .slot > section > div,
+.foot.foot .slot footer > div {
+  display: flex;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+}
+
+/* Secondary: a quiet outlined button on the band's surface. */
+.foot.foot .slot :is(a, button) {
+  flex: 1 1 0;
+  min-height: 44px;
+  justify-content: center;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.foot.foot .slot :is(a, button):hover:not([aria-disabled="true"]) {
+  background: var(--wf-surface-2);
+}
+
+/* The one primary in the band: Move or release, Pull the bed, Book transport, Refer, Decide. */
+.foot.foot
+  .slot
+  :is(
+    [data-testid="ward-shortlist-move-or-release"],
+    [data-testid="ward-shortlist-hold-bed"],
+    [data-testid="ward-shortlist-book-transport"],
+    [data-testid="ward-shortlist-refer"],
+    [data-testid="ward-referral-placement-decide"]
+  ) {
+  flex: 2 1 0;
+  color: var(--wf-on-accent);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  border-color: var(--wf-pri-edge);
+}
+
+.foot.foot
+  .slot
+  :is(
+    [data-testid="ward-shortlist-move-or-release"],
+    [data-testid="ward-shortlist-hold-bed"],
+    [data-testid="ward-shortlist-book-transport"],
+    [data-testid="ward-shortlist-refer"],
+    [data-testid="ward-referral-placement-decide"]
+  ):hover:not([aria-disabled="true"]) {
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-1));
+}
+
+.foot.foot .slot [aria-disabled="true"] {
+  opacity: 0.55;
+}
+
+.foot.foot :is(a, button, select):focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* The record links: small text links under the actions, never a second row of buttons. */
+.foot.foot .links.links {
+  justify-content: center;
+  gap: var(--wf-s-1) var(--wf-s-4);
+}
+
+.foot.foot .links.links :is(a, button) {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 var(--wf-s-1);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-accent-ink);
+  font-weight: 500;
+}
+
+.foot.foot .links.links :is(a, button):hover {
+  background: transparent;
+  color: var(--wf-accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* The head names the patient and the wait bar shows the wait; the placement facts stay. */
+.task > div > header > div:first-child,
+.task :global([data-testid="ward-shortlist-wait-line"]) {
+  display: none;
+}
+
+/* The drawer body's named region (tests and journeys find Placement by it). It fills the body so
+   the foot band can sit at the bottom when the content is short. */
+.region {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+}
+
+/* A service is chosen, but the shortlist still weighs every ward in the network. */
+.networkNote {
+  margin: var(--wf-s-2) var(--wf-s-4) 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
