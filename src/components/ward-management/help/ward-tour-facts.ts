@@ -73,7 +73,7 @@ export function useTourFacts(role: TourRole): {
           place: shell?.placeLabel,
           readyBeds: report?.capacity.ready,
           openMovements: exact(report?.network.people.stillOpen),
-          waitingInEd: exact(report?.network.people.waitingInEd),
+          openEdJourneys: exact(report?.network.people.waitingInEd),
         },
         home: FIXED_HOMES.executive,
         deskHome: FIXED_HOMES.executive,

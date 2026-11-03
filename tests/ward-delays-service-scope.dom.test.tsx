@@ -386,8 +386,8 @@ describe("the zero-case sentence states D-a's definition, and D-c's narrowed abs
     // is built off the already-scoped `movements`), so it names the service too. On the "Resolved
     // today" tab, since that sentence only exists in that pane. Each register tab reads its count,
     // then its name.
-    fireEvent.click(screen.getByRole("tab", { name: /Resolved$/u }));
-    expect(screen.getByRole("tabpanel", { name: /Resolved$/u }).textContent ?? "").toContain(
+    fireEvent.click(screen.getByRole("tab", { name: /Done today$/u }));
+    expect(screen.getByRole("tabpanel", { name: /Done today$/u }).textContent ?? "").toContain(
       `Nobody resolved yet today in ${SERVICE}.`,
     );
   });

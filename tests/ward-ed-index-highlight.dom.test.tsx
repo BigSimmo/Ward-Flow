@@ -6,8 +6,9 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
- * All EDs, v10 (10 Oct 2026): the hero carries at most five highlight chips, and the hero chips and
- * the service and status filters all highlight and dim. No ED is ever hidden. Since the October
+ * All EDs, v10 (10 Oct 2026): the hero carries at most five highlight chips. Diagnosed issues E1
+ * (Josh, 3 Nov 2026) replaced v10 rule 5: the hero chips and the service and status filters now hide
+ * the EDs they leave out, and a "Showing" line says what is shown and in what order. Since the October
  * 2026 design review (Josh, 31 Oct 2026) a department with nobody waiting sits on one shared line
  * (`ed-index-clear-<id>`) rather than as a card, and the keyword box is gone (D-91).
  */
@@ -21,7 +22,6 @@ function renderIndex() {
 
 /** Every department in the Cards view: a card for each with someone waiting, a clear-line entry for the rest. */
 const cards = () => screen.getAllByTestId(/^ed-index-(card|clear)-/u);
-const solidCards = () => cards().filter((card) => card.getAttribute("data-dim") !== "true");
 
 describe("All EDs — hero chips", () => {
   it("has five highlight chips at most, each a pressed toggle", () => {
@@ -32,32 +32,33 @@ describe("All EDs — hero chips", () => {
     for (const chip of chips) expect(chip).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("dims EDs and people a chip does not match, keeps every ED, and clears", () => {
+  it("hides EDs a chip does not match, says so, and clears", () => {
     renderIndex();
     const total = cards().length;
     const chip = within(screen.getByRole("group", { name: "Highlight people waiting" })).getByRole("button", {
-      name: /No bed yet/u,
+      name: /Past 24h/u,
     });
     fireEvent.click(chip);
     expect(chip).toHaveAttribute("aria-pressed", "true");
-    expect(cards()).toHaveLength(total);
-    expect(screen.getByTestId("ed-index-highlight-note")).toHaveTextContent("all EDs stay");
+    expect(cards().length).toBeLessThan(total);
+    expect(cards().length).toBeGreaterThan(0);
+    expect(screen.getByTestId("ed-index-highlight-note")).toHaveTextContent("the rest are hidden");
 
     fireEvent.click(within(screen.getByTestId("ed-index-highlight-note")).getByRole("button", { name: "Clear" }));
     expect(chip).toHaveAttribute("aria-pressed", "false");
-    expect(solidCards()).toHaveLength(total);
+    expect(cards()).toHaveLength(total);
   });
 });
 
-describe("All EDs — filters highlight and dim, they never hide", () => {
-  it("keeps every ED when the status filter is Clear, dimming the ones with people waiting", () => {
+describe("All EDs — filters hide what they leave out (E1, 3 Nov 2026)", () => {
+  it("shows only the clear EDs when the status filter is Clear, and says how many", () => {
     renderIndex();
     const total = cards().length;
     fireEvent.click(within(screen.getByRole("radiogroup", { name: "Status" })).getByRole("radio", { name: "Clear" }));
-    expect(cards()).toHaveLength(total);
-    expect(solidCards().length).toBeLessThan(total);
+    expect(cards().length).toBeLessThan(total);
+    expect(screen.queryAllByTestId(/^ed-index-card-/u)).toHaveLength(0);
     expect(screen.getByTestId("ed-index-match-count")).toHaveTextContent(
-      `${solidCards().length} of ${total} EDs match, sample data`,
+      `Showing ${cards().length} of ${total} EDs · Clear`,
     );
   });
 
@@ -70,21 +71,27 @@ describe("All EDs — filters highlight and dim, they never hide", () => {
     expect(slash.defaultPrevented).toBe(false);
   });
 
-  it("keeps every ED when the filters match nothing, and offers Reset", () => {
+  it("says No match when the filters match nothing, and Clear filters brings every ED back", () => {
     renderIndex();
     const total = cards().length;
     fireEvent.click(within(screen.getByRole("radiogroup", { name: "Status" })).getByRole("radio", { name: "Clear" }));
-    // Each service count applies the other filters, so a service at 0 leaves no ED solid.
+    // Each service count applies the other filters, so a service at 0 leaves no ED shown.
     const empty = within(screen.getByRole("radiogroup", { name: "Health service" }))
       .getAllByRole("radio")
       .find((radio) => /\D0$/u.test(radio.textContent ?? ""));
     expect(empty).toBeDefined();
     fireEvent.click(empty!);
-    expect(cards()).toHaveLength(total);
-    expect(solidCards()).toHaveLength(0);
+    expect(screen.queryAllByTestId(/^ed-index-(card|clear)-/u)).toHaveLength(0);
     expect(screen.getByText("No match")).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole("button", { name: "Reset filters" })[0]);
-    expect(solidCards()).toHaveLength(total);
+    fireEvent.click(screen.getAllByRole("button", { name: "Clear filters" })[0]);
+    expect(cards()).toHaveLength(total);
+  });
+
+  it("numbers each card by its place in the chosen order", () => {
+    renderIndex();
+    const ranks = screen.getAllByTestId(/^ed-index-card-/u).map((card) => card.querySelector("h2")?.textContent ?? "");
+    ranks.forEach((title, index) => expect(title.startsWith(String(index + 1))).toBe(true));
+    expect(screen.getByTestId("ed-index-match-count")).toHaveTextContent("Sorted longest wait first");
   });
 });
 
@@ -111,17 +118,45 @@ describe("All EDs — v10 pass 3: RowSpark, preview and service bars", () => {
     expect(screen.getByTestId("ed-index-preview-enter")).not.toHaveAttribute("href", "/ward-flow/ed/arm-ed");
   });
 
-  it("uses the Waiting by service bars as the service filter, dimming other services", () => {
+  it("opens on Waiting by ED, whose bars open that ED's preview", async () => {
+    renderIndex();
+    expect(screen.getByRole("heading", { name: "Waiting by ED" })).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("ed-index-ed-bar-arm-ed"));
+    await screen.findByTestId("ed-index-preview-body");
+    expect(screen.getByTestId("ed-index-preview-enter")).toHaveAttribute("href", "/ward-flow/ed/arm-ed");
+  });
+
+  it("switches to Waiting by service, whose bars filter to one service and clear again", () => {
     renderIndex();
     const total = cards().length;
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Waiting by" })).getByRole("radio", { name: "By service" }),
+    );
     const bar = screen.getByTestId("ed-index-service-bar-South Metro");
     fireEvent.click(bar);
     expect(bar).toHaveAttribute("aria-pressed", "true");
-    expect(cards()).toHaveLength(total);
-    expect(solidCards().length).toBeGreaterThan(0);
-    for (const card of solidCards()) expect(card).toHaveAttribute("data-service", "South Metro");
+    expect(cards().length).toBeGreaterThan(0);
+    expect(cards().length).toBeLessThan(total);
+    for (const card of cards()) expect(card).toHaveAttribute("data-service", "South Metro");
     fireEvent.click(bar);
-    expect(solidCards()).toHaveLength(total);
+    expect(cards()).toHaveLength(total);
+  });
+
+  it("steps the preview only through the EDs the filters show", async () => {
+    renderIndex();
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Waiting by" })).getByRole("radio", { name: "By service" }),
+    );
+    fireEvent.click(screen.getByTestId("ed-index-service-bar-South Metro"));
+    const shownIds = cards().map((card) => card.getAttribute("data-testid")?.replace(/^ed-index-(card|clear)-/u, ""));
+    expect(shownIds.length).toBeGreaterThan(1);
+    fireEvent.click(screen.getByTestId(`ed-index-preview-${shownIds[0]}`));
+    await screen.findByTestId("ed-index-preview-body");
+    for (let step = 0; step < shownIds.length + 1; step += 1) {
+      fireEvent.click(screen.getByRole("button", { name: "Next ED" }));
+      const href = screen.getByTestId("ed-index-preview-enter").getAttribute("href") ?? "";
+      expect(shownIds).toContain(href.replace("/ward-flow/ed/", ""));
+    }
   });
 });
 
@@ -154,13 +189,12 @@ describe("All EDs — design review (Josh, 31 Oct 2026): title count and the nob
     for (const card of cardsOnly()) expect(card).toHaveTextContent(/\d+ under a form/u);
   });
 
-  it("dims the nobody-waiting departments with the filters, never hiding them", () => {
+  it("hides the nobody-waiting departments when the filter is Has waiting (E1)", () => {
     renderIndex();
-    const clearCount = clearOnly().length;
+    expect(clearOnly().length).toBeGreaterThan(0);
     fireEvent.click(
       within(screen.getByRole("radiogroup", { name: "Status" })).getByRole("radio", { name: "Has waiting" }),
     );
-    expect(clearOnly()).toHaveLength(clearCount);
-    for (const entry of clearOnly()) expect(entry).toHaveAttribute("data-dim", "true");
+    expect(clearOnly()).toHaveLength(0);
   });
 });

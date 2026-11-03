@@ -386,6 +386,10 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await shortlist.getByRole("button", { name: "Record override" }).click();
     await expect(shortlist).toContainText(`Parallel referral:`);
     await expectNoReloadSince(page, "referring to a ward");
+    // Placement is the patient drawer over the page on every screen size (H7, Josh 3 Nov 2026);
+    // close it, as a coordinator would, before opening the tools.
+    await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+    await expect(shortlist).toHaveCount(0);
 
     // --- Step 4: the ward accepts. Reached via the role switcher's own real <Link>, which now
     // offers this exact unit because REFER_TO_UNITS just set it as one of this movement's

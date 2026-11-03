@@ -36,7 +36,10 @@ function renderHome(movementId = MOVEMENT_ID) {
 describe("Placement override needs only a reason", () => {
   it("keeps Record override inert until a reason is chosen, then asks for nothing more", () => {
     renderHome();
-    const shortlist = screen.getByLabelText("Placement");
+    // H7 (Josh, 3 Nov 2026): Placement is a drawer whose next step and Refer sit in its pinned foot,
+    // so the whole drawer is the scope, not only its body.
+    expect(screen.getByLabelText("Placement")).toBeInTheDocument();
+    const shortlist = screen.getByTestId("home-placement-drawer");
     // L3 (12 Oct 2026): an accepted patient's card leads with the next step; the bed list and the
     // override sit behind "Find another bed".
     const another = within(shortlist).queryByTestId("ward-shortlist-find-another-bed");

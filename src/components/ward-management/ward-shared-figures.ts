@@ -89,11 +89,13 @@ export function waitingText(count: number): string {
  *
  * Counting only: nothing here orders, ranks or hides anybody.
  */
-type NotWaitingReason = "in_transit" | "ward_transfer" | "for_discharge" | "for_follow_up" | "withdrawn";
+type NotWaitingReason =
+  "in_transit" | "ward_transfer" | "community_origin" | "for_discharge" | "for_follow_up" | "withdrawn";
 
 const NOT_WAITING_REASONS: readonly NotWaitingReason[] = [
   "in_transit",
   "ward_transfer",
+  "community_origin",
   "for_discharge",
   "for_follow_up",
   "withdrawn",
@@ -102,6 +104,7 @@ const NOT_WAITING_REASONS: readonly NotWaitingReason[] = [
 const NOT_WAITING_WORDS: Record<NotWaitingReason, string> = {
   in_transit: "in transit",
   ward_transfer: "moving between wards",
+  community_origin: "from community",
   for_discharge: "for discharge",
   for_follow_up: "for community follow-up or assessment",
   withdrawn: "withdrawn",
@@ -115,7 +118,8 @@ const NOT_WAITING_WORDS: Record<NotWaitingReason, string> = {
  */
 function notWaitingReason(movement: Movement): NotWaitingReason | null {
   if (isWaitingInEd(movement)) return null;
-  if (!isEdOriginJourney(movement)) return "ward_transfer";
+  if (movement.sourceAdmissionId !== undefined) return "ward_transfer";
+  if (!isEdOriginJourney(movement)) return "community_origin";
   if (movement.edOutcome === "for_discharge") return "for_discharge";
   if (movement.edOutcome === "for_community_follow_up") return "for_follow_up";
   if (movement.closure) return "withdrawn";
@@ -136,6 +140,7 @@ export function waitingSplit(listed: readonly Movement[]): WaitingSplit {
   const notWaiting: Record<NotWaitingReason, number> = {
     in_transit: 0,
     ward_transfer: 0,
+    community_origin: 0,
     for_discharge: 0,
     for_follow_up: 0,
     withdrawn: 0,

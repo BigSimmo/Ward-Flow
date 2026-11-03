@@ -2,9 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * HF-01 (help and tour audit, 26 Oct 2026). Josh chose once per desk: every device opens as the
- * coordinator first, so a once-per-device tour meant no other desk ever met its own. Each desk's
- * tour now starts by itself once, the first time that desk reaches its home on the device.
+ * HF-01 (26 Oct 2026) offered each desk's tour once. G3 (Josh, 3 Nov 2026) replaced it: desk switches
+ * in the demo kept bringing the offer back, so the tour is offered once per device.
  */
 
 vi.mock("next/navigation", () => ({
@@ -42,55 +41,48 @@ beforeEach(() => {
   window.localStorage.removeItem(TOUR_AUTO_DONE_STORAGE_KEY);
 });
 
-describe("tour auto-start once per desk", () => {
-  it("starts each desk's tour once on the same device, and never again for a desk that had it", async () => {
+describe("tour auto-start once per device (G3)", () => {
+  it("offers the tour once on a device, and a later desk does not get it again", async () => {
     const onStart = vi.fn();
     const first = render(<WardTourAutoStart onStart={onStart} />);
     await startFromOffer();
     expect(onStart).toHaveBeenCalledTimes(1);
     first.unmount();
+    expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator");
 
     desk.role = "ward";
     const second = render(<WardTourAutoStart onStart={onStart} />);
-    await startFromOffer();
-    expect(onStart).toHaveBeenCalledTimes(2);
+    await settle();
+    expect(screen.queryByRole("button", { name: "Start the tour" })).toBeNull();
     second.unmount();
-    expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator,ward");
 
     desk.role = "coordinator";
-    const third = render(<WardTourAutoStart onStart={onStart} />);
-    await settle();
-    third.unmount();
-    desk.role = "ward";
     render(<WardTourAutoStart onStart={onStart} />);
     await settle();
-    expect(onStart).toHaveBeenCalledTimes(2);
+    expect(onStart).toHaveBeenCalledTimes(1);
   });
 
-  it("starts the next desk's tour when the desk changes without a reload", async () => {
+  it("does not offer the next desk's tour when the desk changes without a reload", async () => {
     const onStart = vi.fn();
     const { rerender } = render(<WardTourAutoStart onStart={onStart} />);
     await startFromOffer();
     expect(onStart).toHaveBeenCalledTimes(1);
     desk.role = "ed";
     rerender(<WardTourAutoStart onStart={onStart} />);
-    await startFromOffer();
-    expect(onStart).toHaveBeenCalledTimes(2);
+    await settle();
+    expect(screen.queryByRole("button", { name: "Start the tour" })).toBeNull();
+    expect(onStart).toHaveBeenCalledTimes(1);
   });
 
-  it("reads the old once-per-device mark as the coordinator's, so no desk's tour comes back twice", async () => {
+  it("reads the old once-per-device mark as done for every desk", async () => {
     expect(parseTourAutoDone("yes")).toEqual(["coordinator"]);
     expect(parseTourAutoDone("ward,someone else,ed")).toEqual(["ward", "ed"]);
     window.localStorage.setItem(TOUR_AUTO_DONE_STORAGE_KEY, "yes");
     const onStart = vi.fn();
-    const first = render(<WardTourAutoStart onStart={onStart} />);
-    await settle();
-    expect(onStart).not.toHaveBeenCalled();
-    first.unmount();
     desk.role = "community";
     render(<WardTourAutoStart onStart={onStart} />);
-    await startFromOffer();
-    expect(onStart).toHaveBeenCalledTimes(1);
-    expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator,community");
+    await settle();
+    expect(screen.queryByRole("button", { name: "Start the tour" })).toBeNull();
+    expect(onStart).not.toHaveBeenCalled();
   });
 });

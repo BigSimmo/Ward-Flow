@@ -30,6 +30,49 @@
   font: inherit;
   cursor: pointer;
 }
+/* Polish: one clear primary. Got it is the filled button at the end; More in Help and Turn off tips are text. */
+.eyebrow {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--wf-accent);
+  font-size: var(--wf-fs-12, 12px);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.hint strong {
+  font-size: var(--wf-fs-15, 15px);
+}
+.actions {
+  align-items: center;
+}
+.actions .link,
+.actions .quiet {
+  padding-inline: var(--wf-s-2);
+  border-color: transparent;
+  background: transparent;
+}
+.actions .link {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
+.actions .quiet {
+  color: var(--wf-ink-3);
+}
+.actions .link:hover,
+.actions .quiet:hover {
+  background: var(--wf-hover);
+}
+.actions .primary {
+  margin-inline-start: auto;
+  padding-inline: var(--wf-s-4);
+  border-color: var(--wf-accent);
+  background: var(--wf-accent);
+  color: var(--wf-on-accent);
+  font-weight: 600;
+}
+.actions .primary:hover {
+  background: var(--wf-accent-strong);
+}
 .actions button:focus-visible {
   outline: 2px solid var(--wf-ink-1);
   outline-offset: 2px;
