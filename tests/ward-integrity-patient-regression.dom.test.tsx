@@ -160,4 +160,53 @@ describe("patient record save identity and confirmation", () => {
     }
     expect(screen.queryByLabelText(inputLabel)).toBeNull();
   });
+
+  it("keeps a pending leave save in charge when the status card's discharge date is pressed", async () => {
+    const control: { calls: WardFlowEvent[]; finish?: (outcome: WardCommandOutcome) => void } = { calls: [] };
+    function Stay() {
+      const flow = useWardFlow();
+      const person = flow.patients[0]!;
+      const stay = {
+        ...flow.admissions[0]!,
+        patientId: person.id,
+        state: "occupied" as const,
+        unitId: flow.units[0]!.id,
+        movementId: null,
+        referralId: null,
+      };
+      return (
+        <WardFlowOverride
+          value={{
+            ...flow,
+            movements: [],
+            admissions: [stay],
+            dispatch: (event) => {
+              control.calls.push(event);
+              return new Promise<WardCommandOutcome>((resolve) => {
+                control.finish = resolve;
+              });
+            },
+          }}
+        >
+          <PatientNowScreen patientId={person.id} />
+        </WardFlowOverride>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Stay />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Start leave" }));
+    fireEvent.change(screen.getByLabelText("Expected back time"), { target: { value: "23:59" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record leave" }));
+    expect(control.calls).toHaveLength(1);
+    const statusDischarge = screen.queryByRole("button", { name: /^(Set|Change) discharge date$/ });
+    expect(statusDischarge).not.toBeNull();
+    fireEvent.click(statusDischarge!);
+    expect(screen.getByLabelText("Expected back time")).toHaveValue("23:59");
+    expect(screen.queryByLabelText("Expected discharge time")).toBeNull();
+    await act(async () => control.finish!({ commandId: "synthetic-accepted", status: "accepted" }));
+    expect(screen.queryByLabelText("Expected back time")).toBeNull();
+  });
 });

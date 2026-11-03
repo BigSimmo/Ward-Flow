@@ -705,9 +705,15 @@ export function PatientNowScreen({
       );
   }
   const wardForm: WardChangeForm = wardFormFor.admissionId === resolved?.liveAdmission?.id ? wardFormFor.form : "none";
-  function setWardForm(form: WardChangeForm) {
+  function showWardForm(form: WardChangeForm) {
     wardSave.forget();
     setWardFormFor({ admissionId: resolved?.liveAdmission?.id, form });
+  }
+  // Every opening path (the change card and the status card's discharge date) waits for an
+  // in-flight or held save: forgetting it would drop its refusal or leave an accepted form open.
+  function setWardForm(form: WardChangeForm) {
+    if (wardSave.pending) return;
+    showWardForm(form);
   }
   // Leave, gone to ED and the discharge date, from the change card. Each remembers where the
   // rejection list stood, so the card can say when the engine refused.
@@ -729,7 +735,7 @@ export function PatientNowScreen({
           // #101 (Josh, 27 Oct 2026): the authority tick, asked only for a patient on an order.
           ...(psychiatristAuthorised === undefined ? {} : { psychiatristAuthorised }),
         }),
-      () => setWardForm("none"),
+      () => showWardForm("none"),
     );
   }
   function goneToEd() {
@@ -771,7 +777,7 @@ export function PatientNowScreen({
           expectedDischargeAt,
           actingUnitId: stay.unitId,
         }),
-      () => setWardForm("none"),
+      () => showWardForm("none"),
     );
   }
   const wardAttemptStart =
