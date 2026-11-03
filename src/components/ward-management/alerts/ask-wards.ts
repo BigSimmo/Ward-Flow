@@ -9,7 +9,7 @@ import type { BroadcastAlert } from "./ward-broadcast-model";
  */
 const ASK_WARDS_MINUTES = 240;
 
-type WardAsk = { title: string; message: string };
+export type WardAsk = { title: string; message: string };
 
 export const ASK_CONFIRM_BEDS: WardAsk = {
   title: "Please confirm your beds",
