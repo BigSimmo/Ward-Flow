@@ -26,8 +26,8 @@ function renderHome(movementId = MOVEMENT_ID) {
       </ToastProvider>
     </WardFlowProvider>,
   );
-  // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
-  // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
+  // Home flow (Q340/Q345, 3 Nov 2026): the rows live under Flow, each stage capped at 5 behind
+  // "Show all N"; this suite reads rows further down, so it opens every stage first.
   showWholeHomeQueue();
   fireEvent.click(screen.getByTestId(`ward-queue-row-${movementId}`));
 }

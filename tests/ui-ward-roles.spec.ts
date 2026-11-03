@@ -3,24 +3,17 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 import { clearToasts } from "./helpers/clear-toasts";
 import { openEdLists } from "./helpers/ward-ed-lists";
-import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
- * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
- * (N)" reveals the rest in place. Pick a row the way a coordinator would: open the whole queue
- * first when the row is further down.
+ * Home placement redesign (Josh, 19 Oct 2026), then Home flow (Q340, Q345, 3 Nov 2026): each Flow
+ * stage lists its oldest 5 and its own "Show all N" reveals the rest in place. Pick a row the way a
+ * coordinator would: open the stages first when the row is further down.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
   await showEveryoneWaitingOn(queue.page());
   const row = queue.getByTestId(`ward-queue-row-${movementId}`);
-  const showAll = queue.getByTestId("ward-queue-show-all");
-  if (
-    !(await row.isVisible()) &&
-    (await showAll.isVisible()) &&
-    (await showAll.getAttribute("aria-expanded")) !== "true"
-  ) {
-    await showAll.click();
-  }
+  if (!(await row.isVisible())) await showAllFlowRows(queue);
   await row.click();
   return row;
 }
@@ -1315,7 +1308,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await pickQueueRow(queue, "WF-315");
     await openShortlistSections(shortlist);
@@ -1483,9 +1476,9 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await showEveryoneWaitingOn(page);
-    await expect(page.getByRole("region", { name: "Priority queue" }).getByTestId("ward-queue-row-WF-315")).toHaveCount(
-      0,
-    );
+    // Open every Flow stage first, so a missing row means gone, not merely below a stage's top 5.
+    await showAllFlowRows(homeFlowCard(page));
+    await expect(homeFlowCard(page).getByTestId("ward-queue-row-WF-315")).toHaveCount(0);
   });
 });
 
@@ -1612,7 +1605,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
       .getByRole("link", { name: /^Home\b/u })
       .click();
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
-    await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), "WF-003");
+    await pickQueueRow(homeFlowCard(page), "WF-003");
     const placement = page.getByRole("complementary", { name: "Placement", exact: true });
     // L3 (12 Oct 2026): an accepted patient's card keeps the bed list behind "Find another bed".
     await placement.getByTestId("ward-shortlist-find-another-bed").click();

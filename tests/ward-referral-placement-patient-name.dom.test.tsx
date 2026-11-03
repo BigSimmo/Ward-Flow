@@ -8,7 +8,6 @@ import { CoordinatorScreen } from "@/components/ward-management/coordinator/coor
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { referrals } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
  * Live walkthrough, 25 September 2026: Command's "Referral placement" panel showed the raw record
@@ -22,9 +21,14 @@ function openReferral(referralId: string) {
       <CoordinatorScreen />
     </WardFlowProvider>,
   );
-  showEveryoneWaiting();
-  fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
-  fireEvent.click(screen.getByTestId(`ward-referral-row-${referralId}`));
+  // Home flow (Q340, Q345, 3 Nov 2026): referrals are listed only under the default "Needs you"
+  // list, in its "Referrals to decide" group, which shows a few rows then "Show N more".
+  const decide = screen.getByRole("region", { name: "Referrals to decide" });
+  const more = within(decide).queryByRole("button", { name: /^Show \d+ more/u });
+  if (more) fireEvent.click(more);
+  const row = decide.querySelector<HTMLElement>(`[data-referral-id="${referralId}"]`);
+  if (!row) throw new Error(`${referralId} is not listed under Referrals to decide`);
+  fireEvent.click(within(row).getByRole("button", { name: /^Open referral for / }));
   return within(screen.getByLabelText("Referral placement")).getByTestId("ward-referral-placement-patient");
 }
 
