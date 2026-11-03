@@ -2212,7 +2212,10 @@ details.refCard > summary {
   align-content: start;
   gap: var(--wf-s-3);
   overflow-y: auto;
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4) 0;
+  /* RF2: the rail scrolls, so it clips anything past its box. A few pixels of room on the left
+     (taken back with the margin) let every focus ring and card shadow inside it show in full. */
+  margin-left: calc(-1 * var(--wf-s-1));
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4) var(--wf-s-1);
   scrollbar-width: thin;
 }
 
