@@ -890,7 +890,7 @@
 .nowNumber {
   font: 600 var(--wf-fs-28) / 1.1 var(--wf-mono);
   letter-spacing: -0.01em;
-  color: var(--wf-ink);
+  color: var(--wf-ink-1);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1024,7 +1024,7 @@
   flex: 1 0 auto;
   font-size: var(--wf-fs-14);
   font-weight: 600;
-  color: var(--wf-ink);
+  color: var(--wf-ink-1);
 }
 
 .foldMeta {
