@@ -1,5 +1,6 @@
 import { devices, expect, test, type Browser, type Page } from "playwright/test";
 
+import { HELP_TIPS_OFF_KEY } from "@/components/ward-management/help-content/ward-help-tips-off";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { expectAccessible, isPhoneLayout } from "./helpers/ward-release-gate";
 
@@ -165,6 +166,10 @@ test("axe: the ED actions menu when open has no serious or critical violation", 
  * and is scanned with its first tab showing.
  */
 test("axe: a ward's bed drawer when open has no serious or critical violation", async ({ page }, testInfo) => {
+  // Ward home can offer its page tip once it settles. On a phone that corner card can sit over
+  // Place or move, and whether it appears before the click is timing (PR CI, 3 Nov 2026). Turn tips
+  // off for this device the way Settings does, as the Home phone journey does (#1358).
+  await page.addInitScript((key) => window.localStorage.setItem(key, "yes"), HELP_TIPS_OFF_KEY);
   await openShell(page, "/ward/rph-adult-secure", "ward-unit-screen");
   await page.getByTestId("ward-open-bed-board").click();
   await page.getByTestId("ward-board-bed-1").click();
