@@ -8,7 +8,7 @@
 import { useState, type RefObject } from "react";
 import { Phone, X } from "lucide-react";
 
-import { Button, Card, CardBody, CardHead, Icon } from "@/components/wf";
+import { Button, Card, CardBody, CardHead, Icon, ShowMoreRow } from "@/components/wf";
 import { bookTransportBlockedReason } from "@/components/ward-management/ed/ed-blocked-reasons";
 import { formatElapsed, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -157,7 +157,7 @@ export function NeedsTransportCard({
         }
       />
       <CardBody className={styles.needBody}>
-        <ul className={styles.needList}>
+        <ul id="ward-officer-need-list" className={styles.needList}>
           {shown.map((movement) => {
             const umrn = umrnFor(movement);
             const current = movement.id === bookingId;
@@ -206,13 +206,13 @@ export function NeedsTransportCard({
           })}
         </ul>
         {needing.length > first ? (
-          <div className={styles.needFoot}>
-            <Button variant="ghost" size="sm" onClick={() => setShowAll((open) => !open)}>
-              {showAll
-                ? "Show fewer"
-                : `${isPhone ? "See all" : `Show ${needing.length - first} more`}${isPhone ? ` ${needing.length}` : ""}`}
-            </Button>
-          </div>
+          // TR3 (4 Nov 2026): the kit's one Show more row, so it sits in the card foot under its own
+          // line rather than a pill laid across the list's last rule.
+          <ShowMoreRow onClick={() => setShowAll((open) => !open)} expanded={showAll} controls="ward-officer-need-list">
+            {showAll
+              ? "Show fewer"
+              : `${isPhone ? "See all" : `Show ${needing.length - first} more`}${isPhone ? ` ${needing.length}` : ""}`}
+          </ShowMoreRow>
         ) : null}
       </CardBody>
     </Card>

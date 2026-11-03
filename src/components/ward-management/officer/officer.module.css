@@ -2363,13 +2363,6 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
-.needFoot {
-  display: flex;
-  justify-content: center;
-  padding: var(--wf-s-1);
-  border-top: 1px solid var(--wf-line);
-}
-
 /* The job and booking panel: the screen's height, its body scrolls, its foot stays. */
 @media (min-width: 62.5625rem) {
   .layout[data-open="true"] > .side {
