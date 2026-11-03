@@ -1270,9 +1270,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
             Esc
           </kbd>
         }
-        descriptionContent={
-          <p className={styles.activityFreshness}>Quick actions and look ups for the whole network</p>
-        }
+        descriptionContent={<p className={styles.activityFreshness}>{deskRoleLabel} · whole network</p>}
         placement="right"
         testId="ward-bar-tools-sheet"
         returnFocusRef={toolsReturnTarget}
@@ -1284,7 +1282,12 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
         bodyClassName={styles.drawerBody}
         footer={
           <div className={styles.drawerFoot}>
-            <span>Whole network · synthetic prototype</span>
+            <span>Synthetic prototype</span>
+            {isPhone ? null : (
+              <span className={polish.footHint} aria-hidden="true">
+                <kbd className={styles.escKbd}>/</kbd> Search tools
+              </span>
+            )}
             <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("tools", from)}>
               <span className={styles.footClock}>
                 Board time <b>{formatInstant(now)}</b>

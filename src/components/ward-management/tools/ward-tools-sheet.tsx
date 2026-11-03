@@ -90,6 +90,9 @@ type EntryKey =
 
 type GroupId = "do" | "look" | "share";
 
+/** Kit rule: a long group shows its first rows, then Show more. */
+const GROUP_SHOWN = 5;
+
 export type WardToolsSheetProps = {
   isPhone: boolean;
   /** Two panes (Q311): the list on the left, the open tool on the right. Wide desktops only. */
@@ -341,6 +344,7 @@ function ToolsSheetView({
   const [open, setOpen] = useState<ToolsSheetToolId | null>(null);
   const [query, setQuery] = useState("");
   const [noSearch, setNoSearch] = useState(false);
+  const [expanded, setExpanded] = useState<ReadonlySet<GroupId>>(new Set());
   const searchRef = useRef<HTMLInputElement | null>(null);
 
   const openTool = (id: ToolsSheetToolId) => {
@@ -739,7 +743,8 @@ function ToolsSheetView({
           shortcut={!isPhone}
         />
 
-        {!words && quickIds.length > 0 ? (
+        {/* Polish (3 Nov): chips show only tools this person has used; the desk order already leads with the likely ones. */}
+        {!words && recentIds.length > 0 ? (
           <section className={styles.quick} aria-label={quickTitle}>
             <h3 className={styles.groupHeading}>{quickTitle}</h3>
             <div className={styles.chips}>
@@ -788,8 +793,26 @@ function ToolsSheetView({
         ) : (
           groups.map((group) => (
             <section key={group.id} className={styles.group} aria-label={group.title}>
-              <h3 className={styles.groupHeading}>{group.title}</h3>
-              <div className={styles.card}>{group.entries.map((entry) => renderRow(entry, group.id))}</div>
+              <h3 className={styles.groupHeading}>
+                {group.title}
+                <span className={styles.groupCount}>{group.entries.length}</span>
+              </h3>
+              <div className={styles.card}>
+                {(words || expanded.has(group.id) || group.entries.length <= GROUP_SHOWN + 1
+                  ? group.entries
+                  : group.entries.slice(0, GROUP_SHOWN)
+                ).map((entry) => renderRow(entry, group.id))}
+                {!words && !expanded.has(group.id) && group.entries.length > GROUP_SHOWN + 1 ? (
+                  <button
+                    type="button"
+                    className={styles.showMore}
+                    onClick={() => setExpanded((current) => new Set(current).add(group.id))}
+                  >
+                    Show {group.entries.length - GROUP_SHOWN} more
+                    <ChevronDown aria-hidden="true" strokeWidth={1.75} />
+                  </button>
+                ) : null}
+              </div>
             </section>
           ))
         )}
