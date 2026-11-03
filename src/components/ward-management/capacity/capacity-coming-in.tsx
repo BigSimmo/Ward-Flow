@@ -177,7 +177,7 @@ function PlannedMovesBody({
         overdue > 0
           ? `${overdue} not arrived`
           : byLane.today[0]
-            ? `Next at ${formatInstant(byLane.today[0].expectedArrivalAt)}`
+            ? `Next at ${formatInstantWithDay(byLane.today[0].expectedArrivalAt, now)}`
             : "None booked",
       warn: overdue > 0,
     },
@@ -321,7 +321,9 @@ function PlannedMovesBody({
                             {group.id === "later"
                               ? dayWords(planned.expectedArrivalAt)
                               : group.id === "today"
-                                ? "Today"
+                                ? dayOf(planned.expectedArrivalAt) < today
+                                  ? dayWords(planned.expectedArrivalAt)
+                                  : "Today"
                                 : "Tomorrow"}
                           </span>
                         </span>

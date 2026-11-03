@@ -314,7 +314,7 @@ export function StepDownDrawer({
             <span>
               {row.admission.expectedDischargeAt
                 ? `Discharge expected ${formatInstantWithDay(row.admission.expectedDischargeAt, now)}`
-                : "No discharge date recorded"}
+                : "No expected date set"}
             </span>
             <span>{row.fromUnitHasFreeBed ? "A ready bed on this ward" : "No ready bed on this ward"}</span>
           </div>
