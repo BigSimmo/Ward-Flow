@@ -116,8 +116,9 @@ type WardTasksDrawerProps = {
 
 type AckFilter = "all" | "open" | "unacknowledged" | "acknowledged" | "completed";
 
-/** D-61 (Josh, 16 Oct 2026): coordinator Tasks and Alerts share a queue, name and groups.
- * Red rows are act now; other rows wait, matching `inboxItemIsActNow`. */
+/** The drawer's words. For the bed coordinator's desk, Tasks and Alerts are one queue (Josh, D-61, 16 Oct 2026), so
+ * the drawer uses the Alerts screen's name and groups. Red rows are act now and every other row is waiting, the same
+ * split `inboxItemIsActNow` makes for the Alerts screen. */
 type DrawerWords = { name: string; plural: string; act: string; wait: string; running?: string };
 // The drawer is called Alerts on every desk, as its button is (Josh, 31 Oct 2026). Desks without the
 // one Alerts queue keep their own filters and row behaviour, which follow these words by identity.
@@ -147,7 +148,8 @@ const DISCARD_ESCALATION = "You have an unsaved escalation contact. Discard it?"
 // These links dismiss the drawer as well as navigating, including a link to the current page.
 const isTasksDrawerLink = (anchor: HTMLAnchorElement) => anchor.closest("[data-ward-tasks-drawer]") !== null;
 
-/** Ops-6 (13 Oct 2026): escalation picks use the service's On-call directory; every number is a mock. */
+/** Ops-6 (remaining-pages audit, 13 Oct 2026): each escalation pick with the number that answers now, from the
+ * On-call directory for the patient's service. Every number is a mock. */
 function escalationTargets(movement: Movement): CallTarget[] {
   const service = edHealthService(movement.originEdId);
   return [
@@ -163,8 +165,8 @@ function escalationTargets(movement: Movement): CallTarget[] {
   ];
 }
 
-/** Ops-5 (13 Oct 2026): On-call contacts for booked/waiting transport, sending ED liaison,
- * and the receiving ward's nurse in charge. */
+/** Ops-5 (remaining-pages audit, 13 Oct 2026): the numbers a task needs, from the On-call directory: transport when
+ * a leg is booked or waiting, the sending ED's liaison and the receiving ward's nurse in charge. */
 function contactTargets(item: InboxItem, movement: Movement, units: readonly Unit[] | undefined): CallTarget[] {
   const targets: CallTarget[] = [];
   if (movement.transport || /transport/i.test(item.title)) {
