@@ -97,15 +97,11 @@ const SHARED_COORDINATOR_CAUSE_TITLE = "Waiting on the bed coordinator";
 
 type BedMeetingDelayRow = { cause: DelayCause; title: string; count: number; longestWaitMinutes: number };
 
-type BedMeetingDelayPerson = { id: string; name: string; cause: string; waitMinutes: number };
-
 type BedMeetingDelays = {
   /** Every open movement that sits in a delay group. */
   total: number;
   /** Worst cause first — `delayGroups`' own ranking, never re-sorted here. */
   groups: BedMeetingDelayRow[];
-  longestWaits: BedMeetingDelayPerson[];
-  morePeople: number;
 };
 
 /** One person in the sheet's single "Waiting longest" list: where they are and what holds them. */
@@ -270,8 +266,6 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
       count: group.movements.length,
       longestWaitMinutes: Math.max(...group.movements.map((movement) => elapsedOpenMinutes(movement, now))),
     })),
-    longestWaits: delayPeople.slice(0, BED_MEETING_ROW_LIMIT),
-    morePeople: Math.max(0, delayPeople.length - BED_MEETING_ROW_LIMIT),
   };
 
   // Stuck referrals — a ward place counts in its own service; a non-ward place only in "All services".

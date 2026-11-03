@@ -355,8 +355,11 @@
   color: var(--wf-ink-3);
 }
 
-/* Phone: the time drops its fixed width so the name keeps its room. */
+/* Phone: the time drops its fixed width and the initials step aside, so the name keeps its room. */
 @media (max-width: 30rem) {
+  .row > .rowAvatar {
+    display: none;
+  }
   .figure {
     min-inline-size: 0;
     flex-direction: column;
