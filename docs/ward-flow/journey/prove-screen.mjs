@@ -40,7 +40,7 @@ try {
     cleanBuildSucceeds: !before.failed,
     brokenBuildRefuses: after.failed,
     namedTheAction: line.includes(TARGET),
-    namedTheDispatchingFile: line.includes("ed-screen.tsx"),
+    namedTheDispatchingFile: line.includes("ed-screen-row-menu.tsx"),
     message: line.trim(),
   };
 } finally {

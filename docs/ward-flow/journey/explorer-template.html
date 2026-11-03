@@ -4,10 +4,6 @@
     <meta charset="utf-8" />
     <title>Ward Journey Explorer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
-    />
     <style>
       :root {
         --ground: #f6f6f4;
@@ -134,6 +130,8 @@
       }
       .tabs {
         display: flex;
+        flex-wrap: wrap;
+        max-width: 100%;
         gap: 0;
         border: 1px solid var(--line);
       }
@@ -896,6 +894,24 @@
         line-height: 1.55;
         color: var(--ink-3);
       }
+      .model-flow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 12px;
+        margin: 14px 0;
+      }
+      .model-state {
+        flex: 1 1 240px;
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .model-flow > span {
+        align-self: center;
+        font-size: 24px;
+      }
       .disclaim {
         font-size: 11.5px;
         line-height: 1.5;
@@ -1126,6 +1142,7 @@
         color: var(--warn);
       }
       .gapcard {
+        overflow-wrap: anywhere;
         border: 1.5px dashed var(--muted);
         background: var(--surface);
         padding: 15px 16px;
@@ -1164,13 +1181,13 @@
         </button>
         <button role="tab" id="tab-gates" aria-selected="false">The bed decision <span class="count">13</span></button>
         <button role="tab" id="tab-acts" aria-selected="false">
-          Every action <span class="count" id="actCount"></span>
+          Current events <span class="count" id="actCount"></span>
         </button>
         <button role="tab" id="tab-vocab" aria-selected="false">
           The words it demands <span class="count" id="vocabCount"></span>
         </button>
         <button role="tab" id="tab-wrong" aria-selected="false">
-          What's wrong <span class="count" id="wrongCount"></span>
+          Historical gaps <span class="count" id="wrongCount"></span>
         </button>
         <button role="tab" id="tab-cov" aria-selected="false">Coverage</button>
       </div>
@@ -1183,6 +1200,12 @@
 
     <div class="wrap">
       <main>
+        <p class="banner" role="note">
+          <strong>Reviewed route notes and current command models.</strong> Current events covers every engine command:
+          the original route's actions and the additional before/after models. Source review explains conditions and
+          effects; it does not prove a running user journey or clinical correctness. The original route remains a
+          selective illustration. Current code and tests establish implemented behaviour.
+        </p>
         <section id="view-map">
           <div class="viewbar" id="viewbar"></div>
           <details class="legend" id="legend">
@@ -1228,8 +1251,9 @@
             <div>
               <h3>What the outlines mean</h3>
               <p>
-                A <b>heavy</b> outline is a point of no return. A <b>red</b> one is something wrong that nothing
-                prevents. A <b>broken</b> one is a stretch the system cannot record at all.
+                A <b>heavy</b> outline marks a terminal step on this route; scoped Undo has separate guards. A
+                <b>red</b> one is something wrong that nothing prevents. A <b>broken</b> one is a stretch the system
+                cannot record at all.
               </p>
             </div>
             <div>
@@ -1258,6 +1282,7 @@
       <aside class="panel" id="panel"></aside>
     </div>
 
+    <!-- prettier-ignore -->
     <script>
       const DATA = /*__DATA__*/ null;
 
@@ -1283,7 +1308,6 @@
         { id: "forced", label: "Forced past a refusal", colour: "var(--forced)", covers: ["forced"] },
         { id: "stall", label: "Stalls and undos", colour: "var(--muted)", covers: ["stall"] },
         { id: "end", label: "Endings", colour: "var(--ending)", covers: ["end"] },
-        { id: "breach", label: "Nothing stops it", colour: "var(--danger)", covers: ["breach"] },
         { id: "absent", label: "No record exists", colour: "var(--absent)", covers: ["absent"] },
         { id: "record", label: "Recorded alongside", colour: "var(--accent)", covers: ["record"] },
         { id: "note", label: "Notes", colour: "var(--annot)", covers: ["note"] },
@@ -1350,7 +1374,7 @@
       // Where the flat list of roles is not the whole truth. Shown beside the filter, not hidden.
       const ROLE_CAVEATS = {
         WITHDRAW_REFERRAL: "until it has been accepted — after that only the referrer or the coordinator",
-        ACCEPT_REFERRAL: "except a non-binary placement onto a single-gender ward, which only a coordinator may clear",
+        ACCEPT_REFERRAL: "coordinator review is required for the placement cases defined by current recorded sex and gender; a binary designation conflict cannot be overridden",
       };
       const actionsForRole = (role) =>
         role === "anyone" ? DATA.actions : DATA.actions.filter((a) => (a.roles || []).includes(role));
@@ -2029,8 +2053,8 @@
           if (a.screen.screen === "NONE") {
             w.style.color = "var(--absent)";
             w.append(
-              el("b", null, "No screen can do this. "),
-              document.createTextNode("The action entry below states what the engine does with it."),
+              el("b", null, "No literal UI caller found. "),
+              document.createTextNode(a.screen.control + " The notes below describe the engine path."),
             );
           } else {
             w.append(el("b", null, "Where: "), document.createTextNode(a.screen.control + "  ·  " + a.screen.screen));
@@ -2119,6 +2143,44 @@
         const host = $("#view-acts");
         host.textContent = "";
         const k = norm(state.q);
+        const catalogueSection = el("section", "sect");
+        catalogueSection.append(el("h2", null, `Current source catalogue — ${DATA.catalogue.length} events`));
+        catalogueSection.append(el("p", "note", "Diagram-reviewed entries have route/action notes; modelled entries have explicit before/after, payload, scope, guard and effect notes below. Source digests require another review when a cited file changes. Event roles alone do not grant place scope. Paths refer to this checkout; publication and runtime acceptance are separate."));
+        for (const event of DATA.catalogue) {
+          if (k && !norm(event.event + " " + event.reason + " " + event.roles.join(" ") + " " + JSON.stringify(event.model ?? {})).includes(k)) continue;
+          const card = el("details", "gapcard");
+          card.append(el("summary", null, event.event + " — " + event.status));
+          card.append(el("p", "note", event.reason));
+          card.append(el("p", "note", "Event roles: " + event.roles.join(", ")));
+          if (event.model) {
+            const model = event.model;
+            card.append(el("h3", null, model.subject));
+            const flow = el("div", "model-flow");
+            flow.setAttribute("role", "group");
+            flow.setAttribute("aria-label", "Command before and after");
+            const before = el("div", "model-state");
+            before.append(el("strong", null, "Before"), el("p", null, model.before));
+            const arrow = el("span", null, "→");
+            arrow.setAttribute("aria-hidden", "true");
+            const after = el("div", "model-state");
+            after.append(el("strong", null, "After"), el("p", null, model.after));
+            flow.append(before, arrow, after);
+            card.append(flow, el("p", null, "Access and scope: " + model.scope));
+            for (const [label, values] of [["Payload", model.payload], ["Guards and refusal paths", model.guards], ["Record and resource effects", model.effects], ["Existing test references (not execution evidence)", model.tests]]) {
+              card.append(el("h4", null, label));
+              const list = el("ul");
+              for (const value of values) list.append(el("li", null, value));
+              card.append(list);
+            }
+          }
+          for (const source of [event.permissionSource, ...event.sources, ...(event.model?.sources ?? [])]) {
+            const reference = el("code", null, `${source.path}:${source.line}`);
+            card.append(reference, document.createElement("br"));
+          }
+          catalogueSection.append(card);
+        }
+        host.append(catalogueSection);
+        host.append(el("h2", null, "Reviewed diagram action notes"));
         const shown = DATA.actions.filter((a) => visible(a.lane) && actionMatches(a, k));
         const groups = new Map();
         for (const a of shown) {
@@ -2127,7 +2189,7 @@
           groups.get(g).push(a);
         }
         if (!shown.length) {
-          host.append(el("div", "empty", "Nothing matches that. Try a shorter word."));
+          host.append(el("div", "empty", "No diagram action notes match. Current command models, when present, are listed above."));
           return;
         }
         for (const [g, list] of groups) {
@@ -2208,10 +2270,10 @@
             el(
               "p",
               "note",
-              "Every action listed here was read out of the engine, not written by hand. Open one to see what it needs before it is allowed, everything that refuses it, and the exact words it makes somebody choose from.",
+              "Current event identities and roles come from source. Action notes, models and the selective route have recorded source reviews. Source-file edits require another comparison; this is separate from executing the product or proving every refusal branch.",
             ),
           );
-          p.append(el("p", "note", "Search runs across all three tabs at once."));
+          p.append(el("p", "note", "Search filters the active view; switch tabs to inspect other matches."));
           return;
         }
         const n = DATA.stages.nodes.find((x) => x.id === state.node);
@@ -2225,7 +2287,7 @@
             ),
           );
           p.append(
-            el("p", "note", "Click any box to see everything that can happen there — and everything that refuses to."),
+            el("p", "note", "Click a box for its reviewed action notes. Current events also contains before/after models for commands outside this selective route."),
           );
           const t = el("p", "note");
           t.innerHTML = "<b>A broken outline</b> means there is no way to record that at all.";
@@ -2573,7 +2635,7 @@
         host.append(head);
 
         const ov = el("div", "banner warn");
-        ov.innerHTML = "<b>Eight of the thirteen can be pushed past; five cannot.</b> " + g.overridable;
+        ov.innerHTML = "<b>Suitability overrides, information rows and physical placement checks are distinct.</b> " + g.overridable;
         host.append(ov);
 
         for (const r of g.rows) {
@@ -2766,11 +2828,11 @@
         }
       });
 
-      $("#actCount").textContent = DATA.actions.length;
+      $("#actCount").textContent = DATA.catalogue.length;
       $("#vocabCount").textContent = Object.keys(DATA.vocab.vocabularies).length;
       $("#behCount").textContent = DATA.machines.machines.length;
       $("#foot").innerHTML =
-        "The word lists come from <code style='font-family:var(--mono);font-size:11px'>src/components/ward-management/</code>. Route and action wording is curated and checked against the engine; it can drift, so review the source when it changes. " +
+        "The word lists come from <code style='font-family:var(--mono);font-size:11px'>src/components/ward-management/</code>. The selective route and additional command models account for every current engine key. Reviewed source digests detect later changes; review source references and tests for implemented behaviour.  " +
         // What this map does NOT hold, said on its own face. A refusal is a pathway — it is where
         // somebody's intended route stops — and this page names a subset of them. A reader who is
         // not told that will read silence as "there is no refusal here".
@@ -2791,11 +2853,11 @@
         // Only when it has actually been measured. No run means no claim.
         (() => {
           const rc = DATA.refusalCoverage;
-          if (!rc) return "Which of those refusals a test actually reaches has not been measured for this build. ";
+          if (!rc) return "Test execution of refusal paths has not been measured for this build. ";
           const unknown = rc.refusals - rc.spokenFor;
-          return `Of those, <b>${rc.neverReached.length}</b> were never reached by any test${unknown ? `, and ${unknown} could not be measured` : ""}. `;
+          return `In the stored three-file coverage sample, <b>${rc.neverReached.length}</b> refusal sites were not reached by that run${unknown ? `, and ${unknown} were unmeasured` : ""}. This is not a current full-engine test verdict. `;
         })() +
-        `The engine refuses in <b>${DATA.coverage.refusalsInEngine}</b> places. This page names <b>${DATA.coverage.refusalsNamed}</b> of them &mdash; the ones that change where a patient ends up. The rest are largely checks on the data itself. ` +
+        `The action notes contain <b>${DATA.coverage.refusalsNamed}</b> representative refusal examples. Separately, a text scan finds <b>${DATA.coverage.refusalSitesInSelectedFiles}</b> reject sites in ${DATA.coverage.sampledSourceFiles.join(", ")}. These independent counts are not a coverage fraction or a census of the split engine. ` +
         "Every person, ward and figure named anywhere in this prototype is invented. This is a prototype, not validated clinical decision support.";
 
       /* ---------------- the symbols ----------------

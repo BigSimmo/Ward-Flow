@@ -2,6 +2,7 @@
    parsing three JSON documents. */
 import fs from "node:fs";
 import path from "node:path";
+import { readSourceContracts, checkDispositions } from "./source-contracts.mjs";
 // Beside this script, never relative to wherever it was run from.
 const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const load = (f) => JSON.parse(fs.readFileSync(path.join(here, f), "utf8"));
@@ -11,7 +12,34 @@ const mach = load("machines.json");
 const vocab = load("vocabularies.json");
 
 const L = [];
-L.push("# WHAT THE WARD JOURNEY MAP CURRENTLY SHOWS");
+L.push("# Current event catalogue, command models and route inventory");
+L.push("");
+L.push(
+  "The route is selective. Its action notes and the additional command models have source review evidence; source digests detect later edits. This does not establish runtime or clinical acceptance.",
+);
+const root = path.resolve(here, "../../..");
+const contracts = readSourceContracts(root);
+const catalogue = checkDispositions(contracts, acts, load("event-dispositions.json"), root);
+L.push("");
+L.push(`## ${catalogue.length} CURRENT ENGINE EVENTS`);
+L.push(`Source-contract SHA256: ${contracts.sha256}`);
+for (const event of catalogue) {
+  L.push(`- ${event.event} — ${event.status}; event roles: ${event.roles.join(", ")}`);
+  L.push(`  ${event.reason}`);
+  L.push(`  Permission source: ${event.permissionSource.path}:${event.permissionSource.line}`);
+  for (const source of event.sources) L.push(`  Event/dispatch reference: ${source.path}:${source.line}`);
+  if (event.model) {
+    const model = event.model;
+    L.push(`  Subject: ${model.subject}`);
+    L.push(`  Before: ${model.before}`);
+    L.push(`  After: ${model.after}`);
+    L.push(`  Scope: ${model.scope}`);
+    for (const key of ["payload", "guards", "effects", "tests"])
+      for (const value of model[key]) L.push(`  ${key}: ${value}`);
+    for (const source of model.sources)
+      L.push(`  Reviewed source: ${source.path}:${source.line}; SHA256 ${source.sha256}`);
+  }
+}
 L.push("");
 L.push(`## ${st.nodes.length} BOXES ON THE ROUTE MAP  (lane = how it is coloured)`);
 for (const n of st.nodes) L.push(`- [${n.lane}] ${n.label}${n.sub ? ` — ${n.sub}` : ""}`);
@@ -23,8 +51,8 @@ L.push(`## ${(mach.machines || []).length} STATE MACHINES`);
 for (const m of mach.machines || [])
   L.push(`- ${m.name}: states = ${(m.states || []).map((x) => x.label || x.id || "?").join(" | ")}`);
 L.push("");
-L.push(`## ${Object.keys(vocab.lists || vocab).length} WORD LISTS the map names`);
-for (const k of Object.keys(vocab.lists || vocab)) L.push(`- ${k}`);
+L.push(`## ${Object.keys(vocab.vocabularies).length} WORD LISTS the map names`);
+for (const k of Object.keys(vocab.vocabularies)) L.push(`- ${k}`);
 const text = L.join("\n");
 /*
  * 🔴 A FIELD READ BY THE WRONG KEY STILL PRINTS. The state names here were read as `x.name` when

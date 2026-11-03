@@ -28,10 +28,14 @@ the capacity, movements and on-call changes from `59ee806`.
 
 ## Read the four states separately
 
-Record **local main**, **remote main**, **live deployment** and **pending
-deployment** as full SHAs. Include a dirty-worktree count and the unfinished or
-failed exact-head CI job. A green PR head, latest deployment entry, stale
-`origin/main`, or successful health response cannot substitute for this comparison.
+Record **main candidate**, **released `live` target**, **active deployment** and **pending
+deployment** as full SHAs. `main` may be ahead of `live` while a change awaits release; that is
+an unreleased candidate, not a failed deployment. Record local branch/main state separately when
+investigating checkout drift. Include a dirty-worktree count and unfinished or failed exact-head
+CI job. A green PR head, latest deployment entry, stale `origin/main`, or successful health response
+cannot substitute for this comparison.
+
+_Source checked 3 November 2026 at `a6d8a0fd`; no provider settings or deployment inspected._
 
 On Josh's Windows desktop, these commands read state without committing, merging,
 fetching, deploying, restarting or changing settings. They need the existing
@@ -46,6 +50,8 @@ git status --short
 git rev-parse main
 $wardRemoteMain = gh api repos/BigSimmo/Ward-Flow/commits/main --jq .sha
 $wardRemoteMain
+$wardReleasedLive = gh api repos/BigSimmo/Ward-Flow/commits/live --jq .sha
+$wardReleasedLive
 gh run list --repo BigSimmo/Ward-Flow --commit $wardRemoteMain --json databaseId,headSha,status,conclusion,url
 railway deployment list --project 8d748288-549b-4614-a4c3-30d1dbf3081d --environment c52294d0-9ae8-46bc-b8cb-522d5f703f11 --service a45ea3c2-cc8d-4d4b-a76d-1c89f5a79896 --limit 10 --json
 ```
@@ -58,7 +64,14 @@ connector's `environment_status` with `includeSuccessful=true` and its active
 deployments/replicas, or the dashboard's active deployment. Report unavailable
 live revision evidence as unknown.
 
-Inspect the exact main run from the returned run ID:
+The listed main run establishes candidate eligibility only. Inspect its jobs when diagnosing why a
+candidate has not passed CI. For deployment diagnosis, inspect the checks on the released target too:
+
+```powershell
+gh run list --repo BigSimmo/Ward-Flow --commit $wardReleasedLive --json databaseId,headSha,status,conclusion,url
+```
+
+Inspect the relevant exact-head run from its returned run ID:
 
 ```powershell
 gh run view RUN_ID --repo BigSimmo/Ward-Flow --json headSha,status,conclusion,url,jobs
@@ -70,10 +83,12 @@ one workflow exists for the commit, inspect their conclusions as well; Railway
 waits on GitHub Actions workflow conclusions, not just the PR's individual jobs.
 
 For a skipped deployment, compare actual changed paths with the service's actual
-watch patterns. `git diff --name-only LIVE_SHA REMOTE_MAIN_SHA` is a local read
-when both commits are available; replace the placeholders with observed full
-SHAs. If an object is missing, obtain it through an ordinary authorised fetch
-before drawing conclusions. Do not guess the skip reason from the status alone.
+watch patterns. `git diff --name-only DEPLOYED_SHA RELEASED_LIVE_SHA` is a local read
+when both commits are available; replace the placeholders with the active deployment and released
+`live` full SHAs. Compare `RELEASED_LIVE_SHA` to `REMOTE_MAIN_SHA` separately to identify unreleased
+work; do not treat that candidate-only difference as a skipped deployment. If an object is missing,
+obtain it through an ordinary authorised fetch before drawing conclusions. Do not guess the skip
+reason from the status alone.
 
 The connector's `describe_service` reads the saved health-check path, source branch,
 CI-wait setting, watch patterns and staged changes without reading variable values.
@@ -85,12 +100,13 @@ this diagnosis. Reading configuration is different from changing it.
 | State                                                | Next useful action                                                                                                                                                                      |
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | WAITING with exact-head CI queued/running            | Report the unfinished job and its start time. Allow the existing run to finish. Observe at meaningful boundaries; do not start another deploy or disable CI wait.                       |
-| WAITING with a failed CI workflow                    | Diagnose that workflow's failed step. Fix a reproducible scoped failure through ordinary ownership and checks. A main deployment must not bypass it.                                    |
+| WAITING with a failed CI workflow                    | Diagnose that workflow's failed step. Fix a reproducible scoped failure through ordinary ownership and checks. A deployment of the released target must not bypass it.                  |
 | Exact-head CI succeeded but deployment still WAITING | Recheck all workflows for that SHA and the existing deployment. If the state persists, investigate the integration/event path. Do not assume a rebuild fixes an event-delivery problem. |
 | BUILDING or DEPLOYING                                | Read the existing deployment's build/startup/probe evidence. This is progress until a failure, timeout or reproducible stalled state is established.                                    |
 | FAILED or CRASHED                                    | Inspect logs for that exact deployment and its last failed stage. A build, startup, probe, routing and application error require different fixes.                                       |
-| SKIPPED with only unwatched documentation changes    | Expected. The app can be current while its commit SHA differs from main. Confirm paths; do not redeploy for cosmetic SHA equality.                                                      |
+| SKIPPED with only unwatched documentation changes    | Expected. The app inputs can match released `live` while deployment SHAs differ. Confirm watched paths against `live`, not unreleased main; do not redeploy for cosmetic SHA equality.  |
 | SKIPPED despite watched app changes                  | Inspect the reported skip reason, source branch, watch patterns and exact-head CI. Railway can also skip failed or timed-out CI; this is not necessarily a watch-path bug.              |
+| Main ahead of released live                          | This is an unreleased candidate. Inspect release eligibility/record separately; do not trigger a deploy merely to match main.                                                           |
 | Local main behind remote, ancestry is clean          | In an authorised clean worktree, use ordinary fetch and `git merge --ff-only origin/main`. Keep dirty owner worktrees intact.                                                           |
 | Local main diverged or owner files are dirty         | Identify exact committed candidates and owners. Use reviewed ordinary merges where authorised; do not reset, rebase or commit every dirty file to make SHAs match.                      |
 | Live commit matches expected app inputs              | Verify the public health endpoint and affected route. Deployment success and HTTP success do not certify every browser workflow.                                                        |

@@ -1,5 +1,9 @@
 "use client";
 
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { useTourRole } from "./ward-help-store";
+import { howToFor } from "./ward-help-access";
+
 import {
   ArrowRight,
   BookA,
@@ -182,20 +186,25 @@ function BestAnswer({
   onShowMe: (id: string) => void;
   onChoose: (result: HelpSearchResult) => void;
 }) {
+  const access = useEffectiveWardAccess();
+  const role = useTourRole();
   const group = groupOf(result);
   const Icon = ICON[group];
   const howToId = result.key.startsWith("howto:") ? result.key.slice("howto:".length) : undefined;
   const device = useIsPhone() ? "phone" : "desk";
-  const steps = howToId
-    ? showMeSteps(
-        HOW_TOS.find((howTo) => howTo.id === howToId),
-        device,
-      )
-    : [];
+  const howTo = HOW_TOS.find((each) => each.id === howToId);
+  const permitted = howTo ? howToFor(howTo, role, access) : true;
+  const steps =
+    howToId && permitted
+      ? showMeSteps(
+          HOW_TOS.find((howTo) => howTo.id === howToId),
+          device,
+        )
+      : [];
   const showMe = howToId && steps.length && canShow(howToId) ? howToId : undefined;
   const alike = group === "Words" ? relatedTerms(result.title) : [];
   // A guide with nowhere to go is read here; it offers no button that would do nothing.
-  const goes = group === "Shortcuts" || Boolean(howToId) || (group === "Jobs" && Boolean(result.go));
+  const goes = permitted && (group === "Shortcuts" || Boolean(howToId) || (group === "Jobs" && Boolean(result.go)));
   return (
     <section
       id="ward-help-found-0"
@@ -273,6 +282,7 @@ export function HelpFindResults({
   canShow: (id: string) => boolean;
   onUseTyped: (words: string) => void;
 }) {
+  const access = useEffectiveWardAccess();
   if (found?.kind === "clinical") {
     return (
       <div className={`${s.card} ${s.clinical}`} role="status">
@@ -307,7 +317,10 @@ export function HelpFindResults({
   const row = (result: HelpSearchResult) => {
     const index = order.get(result) ?? -1;
     const group = groupOf(result);
-    const mine = !result.desks || result.desks.includes(role);
+    const howTo = result.key.startsWith("howto:")
+      ? HOW_TOS.find((each) => each.id === result.key.slice("howto:".length))
+      : undefined;
+    const mine = howTo ? howToFor(howTo, role, access) : !result.desks || result.desks.includes(role);
     const Icon = result.group === "Settings" ? Settings : ICON[group];
     return (
       <button
@@ -331,7 +344,7 @@ export function HelpFindResults({
         </span>
         {!mine ? (
           <span className={s.otherDesk}>Another desk&rsquo;s job</span>
-        ) : result.howToId ? (
+        ) : result.howToId && canShow(result.howToId) ? (
           <span className={s.play} aria-label="Has Show me">
             <Play aria-hidden="true" strokeWidth={0} />
           </span>

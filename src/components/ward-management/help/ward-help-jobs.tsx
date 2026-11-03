@@ -1,5 +1,9 @@
 "use client";
 
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import type { WardAccess } from "../ward-role-access";
+import { howToFor } from "./ward-help-access";
+
 import {
   ArrowRight,
   BedDouble,
@@ -70,8 +74,9 @@ export function canShowTask(
   phone: boolean,
   showMeOn: boolean,
   pathname: string = typeof window === "undefined" ? "" : window.location.pathname,
+  access?: WardAccess,
 ): boolean {
-  return showMeOn && showMeAvailable(task, role, home, phone) && walkPlaysHere(task, pathname);
+  return showMeOn && showMeAvailable(task, role, home, phone, access) && walkPlaysHere(task, pathname);
 }
 
 /** The small play mark that says Show me can walk a job. `label` names it where no words sit beside it. */
@@ -192,10 +197,11 @@ function TaskRow({
 }) {
   const id = useId();
   const phone = useIsPhone();
-  const href = howToHref(task.go, role, home);
+  const access = useEffectiveWardAccess();
+  const href = howToFor(task, role, access) ? howToHref(task.go, role, home) : undefined;
   // Another Settings tab is still somewhere to go, even while Help is open on Settings.
   const goThere = href && (href.includes("#") || href !== pathname) ? href : undefined;
-  const showMe = canShowTask(task, role, home, phone, showMeOn, pathname);
+  const showMe = canShowTask(task, role, home, phone, showMeOn, pathname, access);
   const computerOnly = phone && task.computerOnly;
   const steps = showMeSteps(task, phone ? "phone" : "desk");
   return (
@@ -382,27 +388,28 @@ export function HelpTasks({
   onOpenChecklist?: (id: string) => void;
 }) {
   const phone = useIsPhone();
+  const access = useEffectiveWardAccess();
   const checklists = useMemo(() => checklistsForDesk(role), [role]);
   const [open, setOpen] = useState<string | undefined>(openTask);
   const [topic, setTopic] = useState<Topic | "all">("all");
   const [all, setAll] = useState(Boolean(openTask));
   const { here, mine } = useMemo(() => {
-    const desk = tasksForDesk(role);
+    const desk = tasksForDesk(role, access);
     const isHere = (task: HowTo) => howToHref(task.go, role, home)?.split("#")[0] === pathname;
     return { here: desk.filter(isHere), mine: desk };
-  }, [home, pathname, role]);
+  }, [access, home, pathname, role]);
   // This screen's walk round (`ward-help-screen-tours.ts`), when Show me can play it here.
   const around = useMemo(() => {
     const walk = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id)) : undefined;
-    return walk && canShowTask(walk, role, home, phone, showMeOn, pathname) ? walk : undefined;
-  }, [home, pathname, phone, role, screen, showMeOn]);
+    return walk && canShowTask(walk, role, home, phone, showMeOn, pathname, access) ? walk : undefined;
+  }, [access, home, pathname, phone, role, screen, showMeOn]);
   const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk").length : 0;
   const hereTiles = here.slice(0, 4);
 
   const counts = HOW_TO_TOPICS.map((name) => ({ name, n: mine.filter((task) => task.topic === name).length })).filter(
     (entry) => entry.n > 0,
   );
-  const anyShowMe = mine.some((task) => canShowTask(task, role, home, phone, showMeOn, pathname));
+  const anyShowMe = mine.some((task) => canShowTask(task, role, home, phone, showMeOn, pathname, access));
   const shown = topic === "all" ? mine : mine.filter((task) => task.topic === topic);
   const limit = all || topic !== "all" ? shown.length : foldLimit(shown.length, FIRST);
   // The first `limit` tasks in topic order, still grouped by topic.
@@ -477,7 +484,7 @@ export function HelpTasks({
                 </button>
               ) : null}
               {hereTiles.map((task, index) => {
-                const can = canShowTask(task, role, home, phone, showMeOn, pathname);
+                const can = canShowTask(task, role, home, phone, showMeOn, pathname, access);
                 return (
                   <button
                     key={task.id}

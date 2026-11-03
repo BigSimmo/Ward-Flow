@@ -150,6 +150,8 @@ describe("ward-docs-maintain-pipeline", () => {
 
     it("defines the complete generator and integrity gate lists", () => {
       expect(WRITE_GENERATOR_STEPS.map((s) => s.label)).toEqual([
+        "journey",
+        "printable-help",
         "owner-rulings-index",
         "screen-map",
         "mockup-manifest",
@@ -160,7 +162,17 @@ describe("ward-docs-maintain-pipeline", () => {
         "generate-site-map",
         "doc-facts",
       ]);
-      expect(CHECK_INDEX_STEPS.length).toBe(7);
+      expect(CHECK_INDEX_STEPS.map((step) => step.label)).toEqual([
+        "journey --check",
+        "printable-help --check",
+        "owner-rulings-index --check",
+        "screen-map --check",
+        "mockup-manifest --check",
+        "screen-verification --check",
+        "rules-index --check",
+        "update-docs-inventory --check",
+        "generate-site-map --check",
+      ]);
       expect(CHECK_INTEGRITY_GATE_STEPS.length).toBe(9);
     });
 

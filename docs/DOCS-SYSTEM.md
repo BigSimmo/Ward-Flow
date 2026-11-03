@@ -2,7 +2,7 @@
 
 How Documentation keeps Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
 
-_Updated 2026-10-24 - site-map write command matches `package.json`; external skills marked as not shipped in the repository; Documentation owns._
+_Updated 2026-11-03 - explicit journey/Help delivery checks, frozen evidence and semantic update responsibilities; Documentation owns._
 
 ## Principles
 
@@ -35,20 +35,22 @@ Stage **docs paths only** - never mix unrelated product WIP. A push or pull requ
 ## Generated documentation & manifests
 
 Never hand-edit generated files. In `scripts-index.md`, only the headline counts are generated;
-the descriptions and command map are curated and editable. Run `npm run docs:maintain` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --write`) to regenerate all derived Ward Flow and repository indexes, recompute `pack_manifest.json` digests, and run every documentation and organisation gate in one pass (`npm run docs:maintain:check` runs the read-only verification pass, and `node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify <path>` classifies any existing or proposed file path against `docs/ward-flow/organisation/registry.json`):
+the descriptions and command map are curated and editable. Run `npm run docs:maintain` (`node scripts/ward-flow/maintain-docs-and-organisation.mjs --write`) to regenerate the derived outputs listed below, recompute `pack_manifest.json` digests, and run the declared documentation and organisation checks in one pass (`npm run docs:maintain:check` runs the read-only verification pass, and `node scripts/ward-flow/maintain-docs-and-organisation.mjs --classify <path>` classifies any existing or proposed file path against `docs/ward-flow/organisation/registry.json`):
 
-| Generated file                                                                                          | Write / refresh command                                                                                  | Check command                                            |
-| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| [`site-map.md`](site-map.md)                                                                            | `npm run sitemap:update` (or `npm run docs:update`, which also refreshes the script counts)              | `npm run sitemap:check`                                  |
-| [`scripts-index.md`](scripts-index.md)                                                                  | `node scripts/update-docs-inventory.mjs`                                                                 | `npm run docs:check-inventory`                           |
-| [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md)                                                    | `node scripts/ward-flow/screen-map.mjs --write`                                                          | `node scripts/ward-flow/screen-map.mjs --check`          |
-| [`ward-flow/SCREEN-VERIFICATION.md`](ward-flow/SCREEN-VERIFICATION.md)                                  | `node scripts/ward-flow/screen-verification.mjs --write`                                                 | `node scripts/ward-flow/screen-verification.mjs --check` |
-| [`design/third-edition-mockups/MANIFEST.json`](../design/third-edition-mockups/MANIFEST.json)           | `node scripts/ward-flow/mockup-manifest.mjs --write`                                                     | `node scripts/ward-flow/mockup-manifest.mjs --check`     |
-| [`ward-flow/OWNER-RULINGS.md`](ward-flow/OWNER-RULINGS.md)                                              | `node scripts/ward-flow/owner-rulings-index.mjs --write`                                                 | `node scripts/ward-flow/owner-rulings-index.mjs --check` |
-| [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                              | `node scripts/ward-flow/rules-index.mjs --write`                                                         | `node scripts/ward-flow/rules-index.mjs --check`         |
-| `<git-dir>/ward-organisation/ORGANISATION.md` ([`registry.json`](ward-flow/organisation/registry.json)) | `npm run ward:organise` (`node scripts/ward-flow/organisation.mjs --write-report --source working-tree`) | `npm run ward:organise:check`                            |
+| Generated file                                                                                          | Write / refresh command                                                                                  | Check command                                                           |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [Journey reader outputs](ward-flow/journey/README.md)                                                   | `node docs/ward-flow/journey/verify.mjs --write`                                                         | `node docs/ward-flow/journey/verify.mjs --check`                        |
+| [Printable Help guides](../public/help/coordinator.md)                                                  | `node scripts/build-help-cheat-sheets.mjs --output public/help`                                          | `node scripts/build-help-cheat-sheets.mjs --output public/help --check` |
+| [`site-map.md`](site-map.md)                                                                            | `npm run sitemap:update` (or `npm run docs:update`, which also refreshes the script counts)              | `npm run sitemap:check`                                                 |
+| [`scripts-index.md`](scripts-index.md)                                                                  | `node scripts/update-docs-inventory.mjs`                                                                 | `npm run docs:check-inventory`                                          |
+| [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md)                                                    | `node scripts/ward-flow/screen-map.mjs --write`                                                          | `node scripts/ward-flow/screen-map.mjs --check`                         |
+| [`ward-flow/SCREEN-VERIFICATION.md`](ward-flow/SCREEN-VERIFICATION.md)                                  | `node scripts/ward-flow/screen-verification.mjs --write`                                                 | `node scripts/ward-flow/screen-verification.mjs --check`                |
+| [`design/third-edition-mockups/MANIFEST.json`](../design/third-edition-mockups/MANIFEST.json)           | `node scripts/ward-flow/mockup-manifest.mjs --write`                                                     | `node scripts/ward-flow/mockup-manifest.mjs --check`                    |
+| [`ward-flow/OWNER-RULINGS.md`](ward-flow/OWNER-RULINGS.md)                                              | `node scripts/ward-flow/owner-rulings-index.mjs --write`                                                 | `node scripts/ward-flow/owner-rulings-index.mjs --check`                |
+| [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                              | `node scripts/ward-flow/rules-index.mjs --write`                                                         | `node scripts/ward-flow/rules-index.mjs --check`                        |
+| `<git-dir>/ward-organisation/ORGANISATION.md` ([`registry.json`](ward-flow/organisation/registry.json)) | `npm run ward:organise` (`node scripts/ward-flow/organisation.mjs --write-report --source working-tree`) | `npm run ward:organise:check`                                           |
 
-## 8-Gate documentation verification pipeline
+## Documentation verification pipeline
 
 1. **Maintained script references (`npm run docs:check-scripts`):** executes `node scripts/check-docs-script-refs.mjs` across `MAINTAINED_ROOT_DOCS`, `docs/`, and `.github/` outside paired historical markers to verify every `npm run <script>` exists in `package.json`.
 2. **Maintained local links & anchors (`npm run docs:check-links`):** executes `node scripts/check-maintained-doc-links.mjs` across all Git-tracked Markdown files (and `MAINTAINED_ROOT_DOCS`) outside historical markers.
@@ -69,7 +71,7 @@ anyone remembering to update docs:
   and sign-in provider, latest migration, route counts, latest and next decision number, Node range,
   backend environment variables) and writes them to [`FACTS.md`](FACTS.md). Quote a fact in any
   Markdown file as `<!-- fact:database-provider -->Supabase<!-- /fact -->`. `npm run docs:facts:write`
-  (also part of `npm run docs:maintain`) rewrites every marker; CI fails while a marker or
+  (also part of `npm run docs:maintain`) rewrites live markers; CI fails while a marker or
   `FACTS.md` disagrees with the source, so a code change that moves a fact cannot merge with old
   docs. To add a fact, add an extractor to `collectFacts` in `scripts/doc-facts.mjs` and a test.
 - **Retired terms.** [`retired-terms.json`](retired-terms.json) lists words for things Ward Flow no
@@ -80,6 +82,28 @@ anyone remembering to update docs:
   deliberate historical mention elsewhere with the paired markers below.
 
 When a decision retires something, add its term to `retired-terms.json` in the same pull request.
+
+## Evidence and semantic maintenance
+
+Live fact markers do not belong in historical evidence. Fixed-revision verification lines and paired
+`docs-script-refs:historical-start/end` or `docs-facts:frozen-start/end` sections reject live markers;
+write mode leaves the entire offending file byte-identical and reports the error. Nested fences
+are tracked independently; unmatched or crossed fences refuse updates. Remove
+the marker and retain the value established at that revision. Use frozen fences for multi-line evidence paragraphs. Put current generated facts in separate
+prose. A new check gets a new dated note with its actual revision and scope.
+
+The CI documentation lane checks the journey reader in an isolated temporary tree before dependency
+installation, and checks generated Help after the locked install. Changes to `public/help/` select
+these contracts too. `verify.mjs --prove` runs journey mutation proofs locally in a disposable tree;
+it is separate from routine output parity. Neither structural parity nor a date stamp verifies the
+truth of handwritten architectural, staff or operational instructions.
+
+When behaviour changes, identify the affected handwritten sources in the existing task/PR record:
+roles and scope, Help and walkthroughs, staff history and desk steps, API/operator/recovery contracts.
+Update affected instructions and test important capability boundaries against source. Keep historical
+observations separate; record live publication only after observing the target revision and content.
+No automatic prose updater, publication smoke test or external documentation-bot delivery is proven
+by this repository's checks.
 
 ## Maintained page conventions
 
@@ -128,6 +152,8 @@ Ward Flow is in `BigSimmo/Ward-Flow`. `BigSimmo/Database` is the separate PsychS
 
 ## Related
 
-- Agent skills named **Documentation Operating System** and **Docs Freshness Audit**, and a weekday
-  freshness sweep (Documentation bot), live outside this repository. It ships no `.claude` or
-  `.agents` folder, so check that a skill is actually installed before relying on it.
+- Historical references name external **Documentation Operating System**, **Docs Freshness Audit**
+  and a Documentation bot. This repository does not establish their installation, owner, schedule or
+  successful execution. Verify those independently before relying on them. The tracked `.claude/`
+  folder contains client hook configuration; configuration alone does not prove native loading,
+  memory delivery or semantic documentation maintenance. No `.agents` skill installation is supplied.

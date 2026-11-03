@@ -105,7 +105,7 @@
    "w": 420,
    "h": 86,
    "label": "Addressed to up to three places at once",
-   "sub": "Never two of the same kind. Each answers on its own, and cannot see the others.",
+   "sub": "Up to the configured recipient cap. Distinct named psychiatric wards can be addressed together; duplicate recipients and mixing a broad ward request with named ward requests are refused.",
    "patient": "Still where they were.",
    "bed": "Nothing yet.",
    "phase": "front"
@@ -188,8 +188,8 @@
    "y": 1012,
    "w": 460,
    "h": 104,
-   "label": "No answer at all — and nothing can close it",
-   "sub": "No acceptance anywhere cancels a queued community arm, so unlike the other two it can only end by the team answering or the referrer taking this arm back. Nothing escalates, and there is no clock.",
+   "label": "No answer yet",
+   "sub": "The arm remains queued until answered or withdrawn. Other acceptances do not cancel a community arm. Displayed waiting/overdue indicators do not decide or close it.",
    "finding": "Nothing anywhere can close a queued community arm except the team answering or the referrer.",
    "phase": "front"
   },
@@ -244,9 +244,9 @@
    "w": 420,
    "h": 90,
    "label": "Accepted",
-   "sub": "The only answer anywhere that starts something.",
+   "sub": "Records the ward answer, with an optional named bed reservation on the referral. It creates no movement or admission.",
    "patient": "Still waiting.",
-   "bed": "Still nothing — accepting reserves no bed.",
+   "bed": "No movement pull yet; a named bed can be reserved on this answer.",
    "phase": "front"
   },
   {
@@ -268,7 +268,7 @@
    "w": 420,
    "h": 96,
    "label": "No answer at all",
-   "sub": "It simply stays waiting. Nothing escalates on its own, and there is no clock on it.",
+   "sub": "The destination remains waiting until answered, withdrawn or cancelled by a competing acceptance. Current target/overdue displays can flag waiting; they do not choose an answer.",
    "phase": "front"
   },
   {
@@ -440,8 +440,8 @@
    "y": 1700,
    "w": 420,
    "h": 100,
-   "label": "A movement now exists",
-   "sub": "Accepting a referral starts nothing by itself. This second record is the one that moves.",
+   "label": "A separate movement is raised",
+   "sub": "Acceptance does not create the bed-search record. RAISE_REFERRAL creates it separately and can link it to the referral.",
    "patient": "Unchanged.",
    "bed": "Still nothing.",
    "phase": "bed"
@@ -555,7 +555,7 @@
    "w": 420,
    "h": 76,
    "label": "The ward says they have arrived",
-   "sub": "The one step that can never be undone.",
+   "sub": "Ward confirmation closes the movement and records the occupied stay. An officer Delivered stamp ends only the transport leg. STEP_BACK_STAGE refuses arrival; a separate scoped, time-limited Undo can correct the latest unchanged arrival snapshot.",
    "patient": "On the ward.",
    "bed": "Occupied.",
    "phase": "ward"
@@ -615,7 +615,7 @@
    "w": 460,
    "h": 96,
    "label": "The acceptance is withdrawn",
-   "sub": "Four reasons — recorded in error · the decision changed · the patient's situation changed · the bed was lost. A stepped-back pull still holds its bed, so withdrawal is refused until the pull is restored and released.",
+   "sub": "A listed reason records why the acceptance is withdrawn. An uncollected pulled or stepped-back hold is released in the same act; cancel a live job first. Handover-ready and moving are refused.",
    "phase": "bed"
   },
   {
@@ -648,8 +648,8 @@
    "w": 460,
    "h": 96,
    "label": "Transport cancelled before collection",
-   "sub": "Four reasons. The job is deleted and nothing is rebooked. Whether the bed is still held depends on how far the record has got — and the notice works that out from the stage, not from the bed.",
-   "finding": "Two of its refusals can never run. Both describe a job already cancelled or a patient already arrived — and every way either happens also closes the movement, which a check above them catches first.",
+   "sub": "A listed reason removes the job without moving the stage or automatically rebooking. The held-bed notice checks the admission link as well as stage, including a stepped-back pull.",
+   "finding": "The role/booking-place, collected, delivered and closed checks are distinct; an officer delivery can precede ward arrival without closure.",
    "phase": "bed"
   },
   {
@@ -661,18 +661,18 @@
    "h": 96,
    "label": "The journey is stopped after collection",
    "sub": "Three reasons, and somebody must say where the patient now is. The movement closes and the bed stays held.",
-   "finding": "Two of its refusals can never run either, for the same reason. Nobody is less safe; the sentence they would have been given simply names the closure instead of what they just tried to do.",
+   "finding": "An officer delivery can precede ward arrival without closure, so delivered and closed refusal paths are distinct.",
    "phase": "bed"
   },
   {
    "id": "sAbscond",
-   "lane": "absent",
+   "lane": "record",
    "x": 60,
    "y": 3000,
    "w": 460,
    "h": 96,
-   "label": "The patient absconds",
-   "sub": "No state exists for this. They are still admitted, the bed is still theirs, and nothing anywhere can say they are missing.",
+   "label": "Absent without leave is recorded",
+   "sub": "The occupied stay and held bed remain. The ward records absence, its steps and return against the admission; the current order can also create an action-inbox fact.",
    "phase": "ward"
   },
   {
@@ -710,13 +710,13 @@
   },
   {
    "id": "dStatutory",
-   "lane": "absent",
+   "lane": "record",
    "x": 1300,
    "y": 2704,
    "w": 500,
    "h": 100,
-   "label": "Starting a new legal form from the legal forms screen",
-   "sub": "A form is issued when the emergency department raises the bed search, and the legal forms screen records when it was written or received and its expiry. Only a form started there is lost: 'Record a form' opens the whole form, and its save button is disabled, so it records nothing.",
+   "label": "Record a form from the Forms page",
+   "sub": "The form selector and checked paper time reach the supported form-writing handler. Authorised users can save; refusal keeps the draft and shows the reason. This does not issue a legal instrument or calculate its statutory expiry.",
    "phase": "bed"
   },
   {
@@ -732,14 +732,14 @@
   },
   {
    "id": "dRepull",
-   "lane": "diversion",
+   "lane": "record",
    "x": 1300,
    "y": 2984,
    "w": 500,
    "h": 100,
    "label": "Pulling again when the bed is already held",
-   "sub": "Restores the record to 'pulled' and returns before any capacity, specialling, acuity or eligibility check runs. Deliberate — the held bed is one of the things those checks count — but it means a second pull is not a second decision.",
-   "finding": "Pulling a held bed again skips every capacity and eligibility check.",
+   "sub": "Restoring an already-linked hold preserves its bed rather than consuming another. Current code rechecks the matching admission, patient placement, observation/high-acuity staffing, legal authority and gender before restoring the pulled stage.",
+   "finding": "Restoring a hold does not consume a second bed; staffing, legal, gender and matching-admission checks still run.",
    "phase": "ward"
   },
   {
@@ -749,32 +749,32 @@
    "y": 3124,
    "w": 500,
    "h": 100,
-   "label": "The bed stops suiting them, part-way",
-   "sub": "Checked again at four separate steps while the bed is held — pulling it, handover ready, the crew accepting, and collection. The refusal says to withdraw the acceptance and refer again — but withdrawing is itself refused while a bed is held, and THAT refusal names the real route: pull it again to restore it, release the pull, then withdraw. Three steps, and only the second message tells you them.",
-   "finding": "The refusal names a way out that is itself refused; only a second message names the real three steps.",
+   "label": "A held destination no longer suits",
+   "sub": "Current gender/legal facts are checked at forward steps. WITHDRAW_ACCEPTANCE can release an uncollected pulled or stepped-back hold atomically after any live job is cancelled; no obsolete three-step sequence should be assumed.",
+   "finding": "A held acceptance can now be withdrawn atomically after cancelling a live job; handover-ready/moving still require the supported earlier-stage path.",
    "phase": "ward"
   },
   {
    "id": "dCancelLie",
-   "lane": "breach",
+   "lane": "record",
    "x": 1300,
    "y": 3264,
    "w": 500,
    "h": 100,
-   "label": "The cancellation can state the wrong thing",
-   "sub": "Whether a bed is still held is worked out from how far the record has got, not from the bed. A record stepped backwards still holds its bed, and the cancellation then tells everyone no bed is held.",
-   "finding": "The cancellation notice works out whether a bed is held from the stage, not from the bed.",
+   "label": "Cancellation keeps the bed facts separate",
+   "sub": "The hold is detected from the linked admission OR the pulled-or-later stage. Cancelling removes the job and preserves the bed and current stage, including after a step back.",
+   "finding": "Cancellation checks both the admission link and stage before describing whether the bed stays held.",
    "phase": "ward"
   },
   {
    "id": "dRevoked",
-   "lane": "breach",
+   "lane": "record",
    "x": 1300,
    "y": 3404,
    "w": 500,
    "h": 100,
-   "label": "The legal authority is revoked before pick-up",
-   "sub": "Sending the crew is still allowed; collecting the patient is refused while the bed is held. A crew can be sent to a door it will be turned away from.",
+   "label": "The legal authority is revoked before collection",
+   "sub": "A revoked examination while a bed is held records the examination and flags release without refunding the bed. Acceptance, en-route and collection refuse while that hold is unresolved; physical arrival remains recordable.",
    "phase": "ward"
   },
   {
@@ -785,19 +785,19 @@
    "w": 500,
    "h": 100,
    "label": "Away at an ED, or on leave",
-   "sub": "Two unlike things in one place. Away at an emergency department is recorded against the PATIENT and paired with their return. A leave bed is recorded against the WARD and names the one stay it belongs to (owner ruling, 25 September), but it still carries no reason and no destination.",
+   "sub": "An ED trip and leave name the occupied admission. Return records clear the relevant absence. Leave also records its kind and optional psychiatrist-authorisation answer; the bed stays held while away.",
    "phase": "ward"
   },
   {
    "id": "dClosedRecord",
-   "lane": "stall",
+   "lane": "record",
    "x": 1300,
    "y": 3684,
    "w": 500,
    "h": 100,
-   "label": "Once the record closes, nothing can be added to it",
-   "sub": "Arriving closes it, and so does every other ending. More than thirty checks across the engine then refuse. Three of those matter: the Mental Health Act status, the sex or gender recorded for bed matching, and whether a legal form arrived or when it expires. If any of those is wrong at the moment the record closes, it can never be corrected there, and the refusals name no other route.",
-   "finding": "Once a record closes, the legal status, the recorded sex or gender, and the legal form can never be corrected on it.",
+   "label": "Closure limits corrections; admitted forms have a separate route",
+   "sub": "Most movement actions refuse closure. The admitting ward can still record a supported written form or typed expiry for a current occupied stay. STEP_BACK_STAGE refuses arrival, while a separate scoped Undo can reverse the latest unchanged transport/arrival snapshot within its window.",
+   "finding": "Most movement commands refuse closure, but admitted-ward form and expiry commands have explicit supported post-arrival routes.",
    "phase": "ward"
   },
   {
@@ -819,9 +819,9 @@
    "w": 440,
    "h": 96,
    "label": "Track one — the person leaves",
-   "sub": "Eight recorded ways out, and one of them frees no bed at all.",
+   "sub": "Eight recorded departure destinations. A psychiatric transfer releases the sending ward bed while taking a receiving bed.",
    "patient": "Gone.",
-   "bed": "Both counts move here: empty and allocatable, and a pending release for this person completes.",
+   "bed": "Normally empty and allocatable rise once and the live release completes; an over-capacity arrival conflict is reconciled without inventing an extra bed.",
    "phase": "leaving"
   },
   {
@@ -832,7 +832,7 @@
    "w": 440,
    "h": 96,
    "label": "Track two — the bed is released",
-   "sub": "Expected, then confirmed, then discharged — but confirming can be skipped, and expected straight to discharged is allowed on purpose. The last step happens when the named patient is recorded leaving, and moves TWO counts: the beds a ward may allocate, and the beds it has empty.",
+   "sub": "Expected can go directly to discharged or pass through confirmed. The named admission leaving completes its release in the same write; capacity reconciliation prevents counting an already-recorded release or an over-capacity arrival twice.",
    "patient": "Names the stay it belongs to, and nothing else about them.",
    "bed": "Counted as available again, at the last step only.",
    "phase": "leaving"
@@ -944,18 +944,18 @@
    "w": 420,
    "h": 104,
    "label": "Is this the same person already?",
-   "sub": "Four warnings when somebody is added — the record number already exists · same name and same date of birth · same name where the date of birth does not confirm it · a name one keystroke away from an existing one. All four are warnings. None of them refuses.",
+   "sub": "Duplicate matching warns about number and demographic similarities. A duplicate record number blocks registration in both form and reducer; name similarity alone remains a review warning.",
    "phase": "alongside"
   },
   {
    "id": "rkIntakeLost",
-   "lane": "absent",
+   "lane": "record",
    "x": 2400,
    "y": 588,
    "w": 420,
    "h": 104,
-   "label": "What the form asks for and then discards",
-   "sub": "Triage category, statutory legal status, Aboriginal and Torres Strait Islander status, address, presenting facility, health service, presenting complaint and clinical intake notes are all collected when a patient is added. Six fields are kept: record number, given name, family name, date of birth, gender, and suburb if one was typed. The model has nowhere to put the rest, so it goes on submit with nothing said. 'Save draft' and 'Print' on the same screen record nothing either.",
+   "label": "Add patient saves identity; referral saves intake",
+   "sub": "The current Add patient form asks for identity, optional gender and Aboriginal or Torres Strait Islander status. Clinical intake and location belong to the referral flow. Obsolete non-working Print/Save draft controls are hidden; the historical silent-discard finding no longer describes this screen.",
    "phase": "alongside"
   },
   {
@@ -976,8 +976,8 @@
    "y": 1832,
    "w": 420,
    "h": 104,
-   "label": "Nothing on this map expires on its own",
-   "sub": "The clock only moves when somebody advances it, and advancing it changes one number and nothing else — no hold lapses, no request is cancelled, nothing escalates. Every deadline, every countdown and every 'overdue' on any screen is worked out fresh each time the screen is read.",
+   "label": "The display follows wall-clock time",
+   "sub": "The provider updates elapsed wall-clock time at minute boundaries and catches up when the page becomes visible. A controlled test clock is separate. A display becoming overdue does not by itself prove that a domain action ran; check the event handler for that action.",
    "phase": "alongside"
   },
   {
@@ -987,8 +987,8 @@
    "y": 1960,
    "w": 420,
    "h": 104,
-   "label": "Six settings change what is allowed",
-   "sub": "How long a pulled bed is held (thirty minutes to four hours, default four). How many places one referral may be sent to at once (one to three — a coordinator can only turn this DOWN from three, never up). The department's access target (twelve to thirty-six hours). The morning count deadline, and the two 'due soon' warning times. Saving them replaces all six at once or is refused outright.",
+   "label": "Settings change current operational defaults",
+   "sub": "WardConfiguration carries twelve fields: access/decision/transfer/booking targets, parallel-recipient cap, pull hold, morning deadline, due-soon warnings and Forecast thresholds. A valid full draft is merged against its baseline or refused for conflicting fields; old optional keys take documented defaults.",
    "phase": "alongside"
   },
   {
@@ -1009,8 +1009,8 @@
    "y": 2216,
    "w": 420,
    "h": 104,
-   "label": "Two patients wanting the same bed",
-   "sub": "A function can work out which movements are competing for one bed, but no screen calls it, so no clash is shown anywhere today. If it were used it would only name the clash: it never ranks the patients and never arranges an outcome.",
+   "label": "Duplicate bed requests are surfaced",
+   "sub": "The current duplicate-bed-request derivation finds multiple active requests for one linked patient and creates a coordinator fact row. It does not rank patients or choose a winner. This is distinct from a physical double-booking check.",
    "phase": "alongside"
   },
   {
@@ -1087,7 +1087,7 @@
    "w": 420,
    "h": 104,
    "label": "The paperwork is written, continued, or attached",
-   "sub": "Written and continued forms store clinician-typed start and expiry times and clear the old legal clock. A 3C after arrival on a 3D is refused. A file can be attached by name. The country-extension event is always refused; use the typed-expiry event instead.",
+   "sub": "Written and continued forms record paper facts and clear legacy calculated clocks; same-form written-time edits preserve applicable typed facts. An admitted ward has a post-arrival route. A3C after3D is refused. A country1A extension requires a current country setting and a finite typed later paper expiry; no statutory duration is computed.",
    "phase": "alongside"
   },
   {
@@ -1109,7 +1109,7 @@
    "w": 420,
    "h": 104,
    "label": "Somebody is told",
-   "sub": "Twenty-three kinds of notice. Written once, never rewritten, never deleted, never expiring.",
+   "sub": "Twenty-four kinds of notice. Written once, never rewritten, never deleted, never expiring.",
    "phase": "alongside"
   },
   {
@@ -1130,9 +1130,9 @@
    "y": 3624,
    "w": 420,
    "h": 104,
-   "label": "After they arrive, the form's expiry cannot be recorded",
-   "sub": "Arriving closes the record that moves, and adding an expiry to a closed record is refused. So a patient on the ward under a legal form is past the point where this route can record or extend its expiry, and the refusal names no other way.",
-   "finding": "Arriving closes the record, so the legal form's expiry can no longer be recorded for exactly the people it is for.",
+   "label": "Expiry can be recorded for an admitted patient",
+   "sub": "The legal-event handler permits the ward to record a typed expiry for its admitted patient even when the movement is closed. This is a recorded time, not a computed legal limit. See ward-flow-record-legal-events.ts.",
+   "finding": "The admitted-patient expiry route is implemented for the ward. Read the current legal-event handler; the old closed-movement gap is retired.",
    "phase": "alongside"
   },
   {
@@ -1148,13 +1148,13 @@
   },
   {
    "id": "rkAwayRule",
-   "lane": "absent",
+   "lane": "record",
    "x": 2400,
    "y": 3880,
    "w": 420,
    "h": 104,
    "label": "The rule for a bed kept during a medical trip",
-   "sub": "A threshold exists for how long a general-hospital trip must be expected to last before the ward bed is given up, and a function decides from it. Nothing in the app calls that function, so the rule is neither applied nor shown anywhere. The threshold is set to 24 hours, while the note beside it still describes the owner's figure as 48.",
+   "sub": "The unwired retention helper keeps the bed by default, including above the24-hour threshold; above threshold adds requiresReview. Only an explicit override changes freesBed. The numeric constant is24 while an adjacent historical provenance comment still says48.",
    "phase": "alongside"
   },
   {
@@ -1165,8 +1165,8 @@
    "w": 420,
    "h": 104,
    "label": "A row appears in the coordinator's inbox",
-   "sub": "Five live fact categories are acknowledged rather than completed. The engine refuses completion of their real rows, but a fabricated commitment-prefixed ID can be completed because it is not checked against the inbox.",
-   "finding": "Real fact rows cannot be completed, but a fabricated commitment-prefixed ID can pass the completion guard without a matching inbox row.",
+   "sub": "The current inbox derives fact rows from movements, stays, planned bookings and bed-meeting actions. Facts are acknowledged/owned/snoozed, never ticked away. The daily check is a commitment; its day-shaped ID can be completed and reopened.",
+   "finding": "Completion applies to commitment IDs; fact rows use their source condition and bed-meeting actions have a dedicated completion event.",
    "phase": "alongside"
   },
   {
@@ -1199,7 +1199,7 @@
    "w": 420,
    "h": 104,
    "label": "The bed is being prepared",
-   "sub": "Being cleaned · awaiting maintenance or repair. Since the owner's ruling of 1 September it counts: a bed still being made ready is not open, and a pull is refused when every free bed at the ward is still being made ready.",
+   "sub": "Cleaning/repair is a separate preparation flag. It does not directly rewrite the ward count; the pull handler separately refuses when every free bed is still being made ready.",
    "phase": "alongside"
   },
   {
@@ -2578,8 +2578,7 @@
      3048
     ]
    ],
-   "lane": "absent",
-   "terminal": true
+   "lane": "record"
   },
   {
    "from": "asked",
@@ -2726,8 +2725,7 @@
      2754
     ]
    ],
-   "lane": "absent",
-   "terminal": true
+   "lane": "record"
   },
   {
    "from": "dStatutory",
@@ -2743,7 +2741,7 @@
      2754
     ]
    ],
-   "lane": "absent",
+   "lane": "record",
    "terminal": true
   },
   {
@@ -2820,7 +2818,7 @@
      3034
     ]
    ],
-   "lane": "diversion",
+   "lane": "record",
    "both": true
   },
   {
@@ -2886,7 +2884,7 @@
      3314
     ]
    ],
-   "lane": "breach"
+   "lane": "record"
   },
   {
    "from": "dCancelLie",
@@ -2902,7 +2900,7 @@
      3314
     ]
    ],
-   "lane": "breach",
+   "lane": "record",
    "terminal": true
   },
   {
@@ -2927,7 +2925,7 @@
      3454
     ]
    ],
-   "lane": "breach"
+   "lane": "record"
   },
   {
    "from": "dRevoked",
@@ -2943,7 +2941,7 @@
      3454
     ]
    ],
-   "lane": "breach",
+   "lane": "record",
    "terminal": true
   },
   {
@@ -2993,7 +2991,7 @@
      3734
     ]
    ],
-   "lane": "stall"
+   "lane": "record"
   },
   {
    "from": "dClosedRecord",
@@ -3009,7 +3007,7 @@
      3734
     ]
    ],
-   "lane": "stall",
+   "lane": "record",
    "terminal": true
   },
   {
@@ -3364,8 +3362,7 @@
      640
     ]
    ],
-   "lane": "absent",
-   "terminal": true,
+   "lane": "record",
    "dashed": true
   },
   {
@@ -3816,8 +3813,7 @@
      3932
     ]
    ],
-   "lane": "absent",
-   "terminal": true,
+   "lane": "record",
    "dashed": true
   },
   {
@@ -4311,23 +4307,6 @@
    "terminal": true
   },
   {
-   "from": "sAbscond",
-   "to": "sAbscond",
-   "d": "M 60 3048 L 22 3048",
-   "p": [
-    [
-     60,
-     3048
-    ],
-    [
-     22,
-     3048
-    ]
-   ],
-   "lane": "absent",
-   "terminal": true
-  },
-  {
    "from": "dForced",
    "to": "dForced",
    "d": "M 1300 2334 L 1262 2334",
@@ -4379,40 +4358,6 @@
    "terminal": true
   },
   {
-   "from": "dStatutory",
-   "to": "dStatutory",
-   "d": "M 1300 2754 L 1262 2754",
-   "p": [
-    [
-     1300,
-     2754
-    ],
-    [
-     1262,
-     2754
-    ]
-   ],
-   "lane": "absent",
-   "terminal": true
-  },
-  {
-   "from": "dRepull",
-   "to": "dRepull",
-   "d": "M 1300 3034 L 1262 3034",
-   "p": [
-    [
-     1300,
-     3034
-    ],
-    [
-     1262,
-     3034
-    ]
-   ],
-   "lane": "diversion",
-   "terminal": true
-  },
-  {
    "from": "dNoLongerSuits",
    "to": "dNoLongerSuits",
    "d": "M 1300 3174 L 1262 3174",
@@ -4430,40 +4375,6 @@
    "terminal": true
   },
   {
-   "from": "dCancelLie",
-   "to": "dCancelLie",
-   "d": "M 1300 3314 L 1262 3314",
-   "p": [
-    [
-     1300,
-     3314
-    ],
-    [
-     1262,
-     3314
-    ]
-   ],
-   "lane": "breach",
-   "terminal": true
-  },
-  {
-   "from": "dRevoked",
-   "to": "dRevoked",
-   "d": "M 1300 3454 L 1262 3454",
-   "p": [
-    [
-     1300,
-     3454
-    ],
-    [
-     1262,
-     3454
-    ]
-   ],
-   "lane": "breach",
-   "terminal": true
-  },
-  {
    "from": "dAway",
    "to": "dAway",
    "d": "M 1300 3594 L 1262 3594",
@@ -4478,23 +4389,6 @@
     ]
    ],
    "lane": "diversion",
-   "terminal": true
-  },
-  {
-   "from": "dClosedRecord",
-   "to": "dClosedRecord",
-   "d": "M 1300 3734 L 1262 3734",
-   "p": [
-    [
-     1300,
-     3734
-    ],
-    [
-     1262,
-     3734
-    ]
-   ],
-   "lane": "stall",
    "terminal": true
   },
   {
@@ -4668,23 +4562,6 @@
    "terminal": true
   },
   {
-   "from": "rkIntakeLost",
-   "to": "rkIntakeLost",
-   "d": "M 2400 640 L 2362 640",
-   "p": [
-    [
-     2400,
-     640
-    ],
-    [
-     2362,
-     640
-    ]
-   ],
-   "lane": "absent",
-   "terminal": true
-  },
-  {
    "from": "rkClock",
    "to": "rkClock",
    "d": "M 2400 1884 L 2362 1884",
@@ -4716,23 +4593,6 @@
     ]
    ],
    "lane": "stall",
-   "terminal": true
-  },
-  {
-   "from": "rkAwayRule",
-   "to": "rkAwayRule",
-   "d": "M 2400 3932 L 2362 3932",
-   "p": [
-    [
-     2400,
-     3932
-    ],
-    [
-     2362,
-     3932
-    ]
-   ],
-   "lane": "absent",
    "terminal": true
   }
  ]

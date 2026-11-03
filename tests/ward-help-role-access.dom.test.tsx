@@ -74,7 +74,10 @@ describe("Help offers each login only what it can use", () => {
     expect(ids("bed_manager")).not.toContain("sign-off-handover");
     expect(ids("bed_manager")).toContain("print-handover");
     expect(ids("community")).not.toContain("downtime");
-    expect(ids("coordinator")).toContain("rules");
+    expect(ids("coordinator")).not.toContain("rules");
+    expect(
+      tasksForDesk("coordinator", { role: "coordinator", scope: { kind: "statewide" } }).map((howTo) => howTo.id),
+    ).toContain("rules");
   });
 
   it("does not show a login a Help task or link for a screen it cannot open", () => {

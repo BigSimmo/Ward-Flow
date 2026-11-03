@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { howToFor } from "./ward-help-access";
+
 import { Info, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
@@ -22,11 +25,13 @@ import styles from "./ward-tour.module.css";
  */
 export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () => void; onBack: () => void }) {
   const role = useTourRole();
+  const access = useEffectiveWardAccess();
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
   const { home, deskHome } = useTourFacts(role);
   const howTo = HOW_TOS.find((candidate) => candidate.id === id);
   // Steps marked for the other device are skipped, so a phone never walks to a computer-only part.
-  const steps = useMemo(() => showMeSteps(howTo, device), [howTo, device]);
+  const permitted = Boolean(howTo && howToFor(howTo, role, access));
+  const steps = useMemo(() => (permitted ? showMeSteps(howTo, device) : []), [howTo, device, permitted]);
   const [stepIndex, setIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -41,7 +46,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
 
   // Open the screen the job is done on, once, when Show me starts somewhere else. Already on that
   // screen, a different Settings tab is opened through the hash, which Settings listens for.
-  const href = howToHref(howTo?.go, role, deskHome ?? home);
+  const href = permitted ? howToHref(howTo?.go, role, deskHome ?? home) : undefined;
   const went = useRef(false);
   useEffect(() => {
     if (went.current || !href) return;
@@ -83,6 +88,26 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     }
   }
 
+  if (howTo && !permitted)
+    return (
+      <OverlayPortal layer="modal" name="ward-show-me">
+        <div ref={rootRef} className={styles.layer} data-testid="ward-show-me-restricted">
+          <div ref={cardRef} className={styles.card} role="dialog" aria-modal="true" aria-label={howTo.title}>
+            <p>
+              {howTo.requiresWholeNetwork
+                ? "Only the statewide coordinator may change global settings."
+                : "This task is not available to your desk."}
+            </p>
+            <button ref={nextRef} type="button" onClick={onBack}>
+              Back to Help
+            </button>
+            <button type="button" onClick={onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+      </OverlayPortal>
+    );
   if (!howTo || !step) return null;
 
   return (

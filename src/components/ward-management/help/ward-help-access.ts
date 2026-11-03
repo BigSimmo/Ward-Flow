@@ -6,7 +6,14 @@
  */
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
-import { ROLE_SCREENS, WARD_ACCESS_ROLES, type WardScreenId } from "@/components/ward-management/ward-role-access";
+import {
+  accessIsWholeNetwork,
+  ROLE_SCREENS,
+  STATEWIDE_COORDINATOR,
+  WARD_ACCESS_ROLES,
+  type WardAccess,
+  type WardScreenId,
+} from "@/components/ward-management/ward-role-access";
 
 import { howToHref } from "./ward-help-href";
 import type { HowTo } from "./ward-help-howto";
@@ -35,7 +42,8 @@ export const EVERY_LOGIN: readonly WardTourRole[] = WARD_ACCESS_ROLES;
  * and it opens every screen the task needs or sends it to. Anything else is another desk's job, which
  * Help still answers when searched for, but with no Show me or Go there.
  */
-export function howToFor(howTo: HowTo, role: WardTourRole): boolean {
+export function howToFor(howTo: HowTo, role: WardTourRole, access?: WardAccess): boolean {
+  if (howTo.requiresWholeNetwork && (!access || access.role !== role || !accessIsWholeNetwork(access))) return false;
   if (howTo.desks !== "all" && !howTo.desks.includes(role)) return false;
   if (howTo.acts && !deskMayAct(role, howTo.acts)) return false;
   if (howTo.needs && !deskOpens(role, howTo.needs)) return false;
@@ -43,7 +51,12 @@ export function howToFor(howTo: HowTo, role: WardTourRole): boolean {
   return !howTo.go || howToHref(howTo.go, role, "/ward-flow") !== undefined;
 }
 
-/** The logins whose own task `howTo` is, for search results that carry their desks. */
+/**
+ * Potential roles for descriptive search labels, including a coordinator in statewide scope.
+ * This is not the current login's permission: action entry points must call howToFor with actual access.
+ */
 export function howToLogins(howTo: HowTo): readonly WardTourRole[] {
-  return EVERY_LOGIN.filter((role) => howToFor(howTo, role));
+  return EVERY_LOGIN.filter((role) =>
+    howToFor(howTo, role, role === "coordinator" ? STATEWIDE_COORDINATOR : undefined),
+  );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+
 import { GraduationCap, PlayCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -51,6 +53,7 @@ export function WardHelpPracticeCard({
   /** The help-ask switch: with Show me off, the host plays nothing, so no Show me is offered. */
   showMeOn?: boolean;
 }) {
+  const access = useEffectiveWardAccess();
   const { movements, scenario, worldGeneration, shared } = useWardFlowSelect(
     "movements",
     "scenario",
@@ -120,7 +123,9 @@ export function WardHelpPracticeCard({
   const nextStep = progress?.next ? PRACTICE_STEPS.find((step) => step.id === progress.next) : undefined;
   const nextHowTo = nextStep ? HOW_TOS.find((each) => each.id === PRACTICE_SHOW_ME[nextStep.id]) : undefined;
   const nextShowMe =
-    showMeOn && nextHowTo && howToFor(nextHowTo, role) && canShowMe(nextHowTo, phone) ? nextHowTo.id : undefined;
+    showMeOn && nextHowTo && howToFor(nextHowTo, role, access) && canShowMe(nextHowTo, phone)
+      ? nextHowTo.id
+      : undefined;
 
   return (
     <section className={`${s.card} ${s.practice}`} aria-labelledby={titleId} data-testid="ward-help-practice">
