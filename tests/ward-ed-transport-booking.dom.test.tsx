@@ -1,8 +1,9 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { ConfirmHost } from "@/components/wf";
 
 // Same reason as the sibling dom suites (ward-ed-screen.dom.test.tsx, ward-screen.dom.test.tsx):
 // `ClinicalRail` renders next/link anchors and this suite never checks routing, so a plain <a>
@@ -253,15 +254,20 @@ describe("booking transport from the sending emergency department", () => {
     expect(screen.queryByTestId(`ward-ed-book-transport-${movement.id}`)).toBeNull();
   });
 
-  it("Escape closes the popup without booking, and reopening starts blank again", () => {
+  it("Escape asks before discarding entered answers, and reopening after discard starts blank again", async () => {
     const movement = heldBedMovement();
     renderEdFor(movement);
+    render(<ConfirmHost />);
     fireEvent.click(screen.getByTestId(`ward-ed-book-transport-toggle-${movement.id}`));
     fireEvent.change(screen.getByTestId(`ward-ed-transport-cad-number-${movement.id}`), {
       target: { value: "CAD-SHOULD-NOT-SAVE" },
     });
 
     fireEvent.keyDown(screen.getByTestId(`ward-ed-book-transport-${movement.id}`), { key: "Escape" });
+    const question = await screen.findByTestId("wf-confirm-dialog");
+    expect(screen.getByTestId(`ward-ed-book-transport-${movement.id}`)).toBeInTheDocument();
+    fireEvent.click(within(question).getByRole("button", { name: "Discard answers" }));
+    await act(async () => {});
     expect(screen.queryByTestId(`ward-ed-book-transport-${movement.id}`)).toBeNull();
     expect(screen.getByTestId("transport-probe")).toHaveTextContent("no-transport|rejections=0");
 

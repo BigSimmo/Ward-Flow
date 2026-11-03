@@ -26,6 +26,7 @@ import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
@@ -227,6 +228,8 @@ export function AddPatientForm() {
   const [draft, setDraft] = useState<PatientDraft>(() =>
     initialDraft(handoff?.assignTo === "given-name" ? handoff.text : ""),
   );
+  // Keep unfinished typing in memory too: the normalised date is empty until it is a real day.
+  const [dateOfBirthText, setDateOfBirthText] = useState("");
 
   const [genderChoice, setGenderChoice] = useState<GenderChoice>(GENDER_UNCHOSEN);
   const [indigenousStatus, setIndigenousStatus] = useState<IndigenousStatusChoice>(INDIGENOUS_STATUS_UNANSWERED);
@@ -297,6 +300,8 @@ export function AddPatientForm() {
     familyName: string;
     /** The command went to the shared workspace (it settled asynchronously). */
     shared?: boolean;
+    /** Retry must finish this same command before another registration can be sent. */
+    unconfirmed?: WardCommandOutcome;
     /** The form as submitted; edits made while waiting are kept when the save finishes. */
     form: ReturnType<typeof formSnapshot>;
     generation: number;
@@ -308,7 +313,14 @@ export function AddPatientForm() {
   const [savedOutsideView, setSavedOutsideView] = useState<string | null>(null);
   /** An accepted shared save finished without its record; a late snapshot can still open it. */
   const lateSubmissionRef = useRef<typeof priorSubmissionRef.current>(null);
-  if (acceptedSubmission && acceptedSubmission.generation !== worldGeneration) {
+  useEffect(
+    () => () => {
+      priorSubmissionRef.current = null;
+    },
+    [],
+  );
+  if (priorSubmissionRef.current && priorSubmissionRef.current.generation !== worldGeneration) {
+    priorSubmissionRef.current = null;
     setAcceptedSubmission(null);
     setLastRejection(
       "The workspace changed before this patient was confirmed. Check the patient list. If they are not there, add them again.",
@@ -323,23 +335,28 @@ export function AddPatientForm() {
     draft.givenName.trim().length > 0 ||
     draft.familyName.trim().length > 0 ||
     draft.dateOfBirth.trim().length > 0 ||
+    dateOfBirthText.length > 0 ||
     genderChoice !== GENDER_UNCHOSEN ||
     indigenousStatus !== INDIGENOUS_STATUS_UNANSWERED;
   const isDirty = identityChanged;
 
-  useDirtyStateGuard({
-    isDirty: isDirty && !isSubmitting,
-    confirmMessage: "You have unsaved changes to this new admission. Are you sure you want to leave?",
-  });
-
   /** Everything Reset clears, so Undo can put every field back (v10 acceptance check). */
   const formSnapshot = () => ({
     draft,
+    dateOfBirthText,
     genderChoice,
     indigenousStatus,
   });
+  useDirtyStateGuard({
+    isDirty:
+      Boolean(priorSubmissionRef.current?.unconfirmed) ||
+      (isDirty &&
+        (!isSubmitting || JSON.stringify(formSnapshot()) !== JSON.stringify(priorSubmissionRef.current?.form))),
+    confirmMessage: "You have unsaved changes to this new admission. Are you sure you want to leave?",
+  });
   const restoreSnapshot = (snap: ReturnType<typeof formSnapshot>) => {
     setDraft(snap.draft);
+    setDateOfBirthText(snap.dateOfBirthText);
     setGenderChoice(snap.genderChoice);
     setIndigenousStatus(snap.indigenousStatus);
   };
@@ -383,6 +400,7 @@ export function AddPatientForm() {
     setSavedOutsideView(null);
     lateSubmissionRef.current = null;
     setDraft(initialDraft());
+    setDateOfBirthText("");
     setGenderChoice(GENDER_UNCHOSEN);
     setDateBoxGeneration((generation) => generation + 1);
     setIndigenousStatus(INDIGENOUS_STATUS_UNANSWERED);
@@ -441,8 +459,9 @@ export function AddPatientForm() {
     if (!added) return;
     priorSubmissionRef.current = null;
     lateSubmissionRef.current = null;
-    if (late && isDirty) {
-      // The save already finished and the form holds new typing: say where the record is, stay here.
+    if (late ? isDirty : JSON.stringify(formSnapshot()) !== JSON.stringify(prior.form)) {
+      // New typing is outside the accepted command, including edits made before its record arrived.
+      finishSubmission();
       setSavedOutsideView(`${added.familyName}, ${added.givenName} added, ${added.umrn}. It is now in Recent records.`);
       return;
     }
@@ -548,7 +567,7 @@ export function AddPatientForm() {
     };
     priorSubmissionRef.current = submission;
     setAcceptedSubmission(null);
-    const refuse = () => {
+    const refuse = (message?: string) => {
       if (priorSubmissionRef.current !== submission) return;
       priorSubmissionRef.current = null;
       // DA-12: a refusal for a record number already on file names that record's UMRN, but only a
@@ -562,7 +581,7 @@ export function AddPatientForm() {
         setLastRejection(duplicateUmrnRefusal(existing.umrn.trim()));
         document.getElementById("ward-add-patient-umrn")?.focus();
       } else {
-        setLastRejection("Patient could not be added. Check the identity details and existing records.");
+        setLastRejection(message ?? "Patient could not be added. Check the identity details and existing records.");
       }
       setIsSubmitting(false);
     };
@@ -581,12 +600,32 @@ export function AddPatientForm() {
       });
       const settle = (outcome: WardCommandOutcome | void) => {
         if (priorSubmissionRef.current !== submission) return;
-        if (outcome?.status !== "accepted" || outcome.isCurrent?.() === false) return refuse();
+        if (submission.unconfirmed?.isCurrent?.() === false || outcome?.isCurrent?.() === false) {
+          finishSubmission();
+          setLastRejection("The workspace changed. Check the patient list before trying again.");
+          return;
+        }
+        if (outcome?.status === "failed" && (outcome.confirmation || submission.unconfirmed)) {
+          setLastRejection(outcome.message ?? SAVE_NOT_CONFIRMED);
+          if (submission.unconfirmed || !outcome.confirmation) return;
+          submission.unconfirmed = outcome;
+          void outcome.confirmation.then(
+            (confirmed) => {
+              if (confirmed.commandId === outcome.commandId) settle(confirmed);
+            },
+            () => {
+              // A missing confirmation still leaves the original command's outcome uncertain.
+            },
+          );
+          return;
+        }
+        if (outcome?.status !== "accepted") return refuse(outcome?.message);
+        setLastRejection(undefined);
         setAcceptedSubmission(submission);
       };
       if (completion && "then" in completion) {
         submission.shared = true;
-        void completion.then(settle, refuse);
+        void completion.then(settle, () => refuse());
       } else settle(completion);
     } catch {
       refuse();
@@ -912,6 +951,8 @@ export function AddPatientForm() {
                     aria-required="true"
                     className={styles.mono}
                     value={draft.dateOfBirth}
+                    rawText={dateOfBirthText}
+                    onRawTextChange={setDateOfBirthText}
                     onValueChange={setDraftField("dateOfBirth")}
                   />
                 </Field>
@@ -1028,6 +1069,7 @@ export function AddPatientForm() {
                 <Button
                   variant="ghost"
                   data-testid="ward-add-patient-reset"
+                  disabled={isSubmitting}
                   onClick={() => {
                     if (isDirty) setShowResetConfirm(true);
                     else performReset();

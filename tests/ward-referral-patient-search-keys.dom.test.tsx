@@ -19,10 +19,25 @@ function open(onClose = vi.fn()) {
       <WardReferralDrawer onClose={onClose} initialCategory="ward" />
     </WardFlowProvider>,
   );
-  return screen.getByRole("searchbox", { name: "Find a patient" });
+  return screen.getByRole("combobox", { name: "Find a patient" });
 }
 
 describe("referral patient search keys (A-4)", () => {
+  it("exposes the patient suggestion popup and its expanded state as a combobox", () => {
+    open();
+    const search = screen.getByRole("combobox", { name: "Find a patient" });
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    fireEvent.change(search, { target: { value: "UM1000" } });
+    expect(search).toHaveAttribute("aria-expanded", "true");
+    const list = screen.getByRole("listbox", { name: "Matching patients" });
+    expect(search).toHaveAttribute("aria-controls", list.id);
+    fireEvent.keyDown(search, { key: "ArrowDown" });
+    expect(document.getElementById(search.getAttribute("aria-activedescendant")!)).toHaveAttribute("role", "option");
+    fireEvent.keyDown(search, { key: "Escape" });
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    expect(search).not.toHaveAttribute("aria-activedescendant");
+  });
+
   it("moves through the results with the arrow keys and picks with Enter", () => {
     const search = open();
     fireEvent.change(search, { target: { value: "UM1000" } });

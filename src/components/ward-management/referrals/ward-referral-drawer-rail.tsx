@@ -468,6 +468,8 @@ export function ReferralCloseGuard({ s }: { s: WardReferralDrawerState }) {
     discardAndClose,
     keepAndClose,
     currentPatient,
+    newPatientDirty,
+    sentReferralId,
   } = s;
   return (
     <div ref={guardRootRef} className={styles.guard}>
@@ -481,17 +483,27 @@ export function ReferralCloseGuard({ s }: { s: WardReferralDrawerState }) {
         data-testid="ward-referral-close-guard"
       >
         <h3 className={styles.cardTitle} id={`${sectionId}-guard-title`}>
-          Close without sending?
+          {sentReferralId ? "Discard unregistered patient details?" : "Close without sending?"}
         </h3>
         <p className={styles.bodyMeta} id={`${sectionId}-guard-text`}>
-          {patientRecord ? `The referral for ${currentPatient.name} is not sent. ` : "This referral is not sent. "}A
-          kept draft stays until this tab reloads.
+          {sentReferralId
+            ? "The referral has been sent. "
+            : `${patientRecord ? `The referral for ${currentPatient.name} is not sent. ` : "This referral is not sent. "}A kept draft stays until this tab reloads.`}
+          {newPatientDirty
+            ? " Unregistered patient details are not kept in a referral draft. Keep editing to finish registering the patient, or discard these details."
+            : null}
         </p>
         <div className={styles.guardActions}>
           <button type="button" className={`${styles.btn} ${styles.btnDanger}`} onClick={discardAndClose}>
             Discard
           </button>
-          <button type="button" className={styles.btn} onClick={keepAndClose}>
+          <button
+            type="button"
+            className={styles.btn}
+            aria-disabled={newPatientDirty ? "true" : undefined}
+            aria-describedby={newPatientDirty ? `${sectionId}-guard-text` : undefined}
+            onClick={keepAndClose}
+          >
             Keep draft
           </button>
           <button

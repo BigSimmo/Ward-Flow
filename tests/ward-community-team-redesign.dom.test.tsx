@@ -40,6 +40,7 @@ import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-m
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
 
 /**
@@ -303,16 +304,26 @@ describe("the redesigned pop-ups (states the sample cannot reach)", () => {
   });
 
   it("Cancel this team's booking: names the booking, shows why Confirm cancel waits, and keeps the provider wording", () => {
+    const state = seedWardFlowState();
+    const movement = {
+      ...state.movements[0]!,
+      transport: {
+        id: "synthetic-cancel-job",
+        provider: "Ambulance (St John)",
+        escortRequired: false,
+        cadNumber: "CAD-4567",
+      },
+    };
     const view = {
-      transportCancelFor: "MV-T1",
+      transportCancelFor: movement.id,
       cancelTransportReason: undefined,
       setCancelTransportReason: vi.fn(),
       cancelTransportBlocked: "Choose why the job is being cancelled.",
       closeTransportCancel: vi.fn(),
       transportCancelDialogRef: createRef<HTMLDivElement>(),
       submitCancelTransport: vi.fn(),
-      movements: [],
-      umrnLookup: new Map(),
+      movements: [movement],
+      umrnLookup: state,
     };
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -320,13 +331,14 @@ describe("the redesigned pop-ups (states the sample cannot reach)", () => {
       </WardFlowProvider>,
     );
     const dialog = screen.getByRole("dialog", { name: "Cancel this team's transport booking" });
-    // No person resolves for this movement, so the booking is named by its id, never guessed.
-    expect(dialog).toHaveTextContent("Booking MV-T1");
+    // The target is independently identifiable before the person chooses a cancellation reason.
+    expect(dialog).toHaveTextContent(state.patients.find((patient) => patient.id === movement.patientId)!.umrn);
+    expect(dialog).toHaveTextContent("CAD-4567");
     const select = within(dialog).getByLabelText("Why is the job being cancelled?");
     expect(select).toHaveValue("");
     expect(within(dialog).getByRole("option", { name: "Choose a reason…" })).toBeInTheDocument();
     expect(dialog).toHaveTextContent("Cancel the booking with the provider by phone.");
-    const confirm = within(dialog).getByTestId("ward-community-cancel-transport-confirm-MV-T1");
+    const confirm = within(dialog).getByTestId(`ward-community-cancel-transport-confirm-${movement.id}`);
     expect(confirm).toHaveAttribute("aria-disabled", "true");
     // The reason is shown, not only read to a screen reader.
     expect(dialog).toHaveTextContent("Choose why the job is being cancelled.");

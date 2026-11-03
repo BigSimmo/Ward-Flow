@@ -146,7 +146,7 @@ describe("Referral patient step: error summary", () => {
         <WardReferralDrawer onClose={vi.fn()} />
       </WardFlowProvider>,
     );
-    await screen.findByRole("searchbox", { name: "Find a patient" });
+    await screen.findByRole("combobox", { name: "Find a patient" });
     fireEvent.click(screen.getByTestId("ward-referral-unidentified"));
     fireEvent.click(screen.getByRole("button", { name: /^Next, referral/u }));
     const summary = await screen.findByRole("group", { name: /things? to fix before the next step/u });
@@ -184,7 +184,7 @@ describe("Referral later steps: error summary", () => {
         <WardReferralDrawer onClose={vi.fn()} />
       </WardFlowProvider>,
     );
-    await screen.findByRole("searchbox", { name: "Find a patient" });
+    await screen.findByRole("combobox", { name: "Find a patient" });
     chooseSampleReferralPerson();
     fireEvent.click(screen.getByRole("button", { name: "Change" }));
     fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });

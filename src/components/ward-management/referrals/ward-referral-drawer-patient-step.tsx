@@ -63,6 +63,8 @@ export function ReferralPatientStep({
     newPatientOpen,
     setNewPatientOpen,
     newPatient,
+    newPatientDateText,
+    setNewPatientDateText,
     setNewPatient,
     newPatientError,
     setNewPatientError,
@@ -250,6 +252,8 @@ export function ReferralPatientStep({
                   <DateField
                     id={`${sectionId}-np-dob`}
                     value={newPatient.dateOfBirth}
+                    rawText={newPatientDateText}
+                    onRawTextChange={setNewPatientDateText}
                     onValueChange={(dateOfBirth) => setNewPatient((p) => ({ ...p, dateOfBirth }))}
                   />
                 </Field>
@@ -344,11 +348,13 @@ export function ReferralPatientStep({
               <input
                 ref={searchInputRef}
                 type="search"
+                role="combobox"
                 id={searchId}
                 className={styles.patientSearchInput}
                 aria-label="Find a patient"
                 aria-invalid={patientShowErrors && !patientRecord && unidentified === null ? true : undefined}
                 aria-haspopup="listbox"
+                aria-expanded={showResults}
                 aria-autocomplete="list"
                 aria-controls={showResults ? resultsId : undefined}
                 aria-activedescendant={showResults && highlight >= 0 ? `${searchId}-opt-${highlight}` : undefined}

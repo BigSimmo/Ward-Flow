@@ -1,8 +1,6 @@
-import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { patientRegistrationScope } from "../ward-patient-registration";
 import {
-  EMPTY_NEW_PATIENT,
   useReferralCommandCompletion,
   useReferralPatientRegistration,
   useReferralRegistrationDraft,
@@ -65,6 +63,7 @@ import {
   useReferralDraftAutosave,
   useReferralDraftRecovery,
 } from "./referral-draft-store";
+import { useReferralPatientSelection, useReferralRegistrationWork } from "./use-referral-patient-selection";
 import { useReferralSectionNavigation } from "./use-referral-section-navigation";
 import { drawerFootStatus } from "./referral-drawer-foot-status";
 import * as fromRecord from "./referral-record-prefill";
@@ -237,6 +236,8 @@ export function useWardReferralDrawerState({
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const registrationDraft = useReferralRegistrationDraft();
   const { newPatientOpen, setNewPatientOpen, newPatient, setNewPatient } = registrationDraft;
+  const { newPatientDateText, setNewPatientDateText, newPatientDirty, resetNewPatient } =
+    useReferralRegistrationWork(registrationDraft);
   const guardKeepRef = useRef<HTMLButtonElement>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [sendPending, setSendPending] = useState(false);
@@ -436,7 +437,8 @@ export function useWardReferralDrawerState({
   };
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  const dirty = !sentReferralId && draftJson !== openingDraft;
+  const referralDirty = !sentReferralId && draftJson !== openingDraft;
+  const dirty = referralDirty || newPatientDirty;
   const [initialKept] = useState(() => (kept ? { at: readKeptReferralDraftAt(), json: draftFingerprint(kept) } : null));
   const {
     sessionSaved: draftSessionSaved,
@@ -449,7 +451,7 @@ export function useWardReferralDrawerState({
     draftJson,
     contentJson: draftFingerprint({ ...draftNow, activeSection: undefined }),
     enabled: !keepsAnotherPersonsDraft,
-    dirty,
+    dirty: referralDirty,
     initialKeptAt: initialKept?.at ?? null,
     initialKeptJson: initialKept?.json ?? null,
   });
@@ -474,12 +476,13 @@ export function useWardReferralDrawerState({
   });
 
   const { approveNextHistoryNavigation } = useDirtyStateGuard({
-    isDirty: !sentReferralId && !submissionAwaitingRecord && (dirty || draftKeptAt !== null),
-    value: draftJson,
+    isDirty:
+      newPatientDirty || (!sentReferralId && !submissionAwaitingRecord && (referralDirty || draftKeptAt !== null)),
+    value: JSON.stringify([draftJson, newPatient, newPatientDateText]),
     skipAnchor: isOwnLeaveGuardAnchor,
     // An unfinished Add patient form is not kept, so it always counts as unsaved.
     unloadSafe: () =>
-      JSON.stringify(newPatient) === JSON.stringify(EMPTY_NEW_PATIENT) &&
+      !newPatientDirty &&
       referralDraftKeptOnScreen(draftStorageKey, draftNow, {
         destType: initialDestination,
         sourceKind: openerSourceKind,
@@ -489,10 +492,10 @@ export function useWardReferralDrawerState({
   });
   const requestClose = useCallback(() => {
     if (guardOpen) return setGuardOpen(false);
-    if (dirty && !submissionAwaitingRecord) return setGuardOpen(true);
+    if (newPatientDirty || (referralDirty && !submissionAwaitingRecord)) return setGuardOpen(true);
     approveNextHistoryNavigation();
     onClose();
-  }, [guardOpen, dirty, submissionAwaitingRecord, onClose, approveNextHistoryNavigation]);
+  }, [guardOpen, newPatientDirty, referralDirty, submissionAwaitingRecord, onClose, approveNextHistoryNavigation]);
   useEffect(() => {
     if (!closeRequestRef) return;
     closeRequestRef.current = requestClose;
@@ -524,11 +527,16 @@ export function useWardReferralDrawerState({
   function discardAndClose() {
     stopDraftAutosave({ resumeOnContentEdit: true });
     discardReferralDraft(draftDiscardOwner);
+    resetNewPatient();
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
   }
   function keepAndClose() {
+    if (newPatientDirty) {
+      setGuardOpen(true);
+      return;
+    }
     const kept = keepReferralDraft(draftNow, draftOwnerVersion, draftStorageKey);
     setGuardOpen(false);
     approveNextHistoryNavigation();
@@ -536,14 +544,14 @@ export function useWardReferralDrawerState({
     announceToWardShell(kept ? "Synthetic referral draft kept for this session." : "Draft not kept: signed in again.");
   }
 
-  const handleDrawerClose = useCallback(() => {
+  function handleDrawerClose() {
     if (isSearchOpen) {
       setIsSearchOpen(false);
       setSearchQuery("");
     } else {
       requestClose();
     }
-  }, [isSearchOpen, requestClose]);
+  }
 
   // The enclosing Sheet owns focus when embedded. Register another modal only
   // when this drawer supplies its own backdrop.
@@ -587,8 +595,23 @@ export function useWardReferralDrawerState({
       ? { ...rawCurrentPatient, gender: referralSex.charAt(0).toUpperCase() }
       : rawCurrentPatient;
 
-  function handleSelectPatient(key: string, addedInForm = false) {
-    registrationDraft.invalidateRegistration();
+  const { filteredPatients, handleSelectPatient } = useReferralPatientSelection({
+    activePatientKey,
+    searchQuery,
+    profiles: sampleProfiles,
+    record: { movements, patients, referrals, dayZero },
+    now,
+    dirty,
+    revision: JSON.stringify([draftJson, worldGeneration, sendPending, sentReferralId, access]),
+    ownerVersion: draftOwnerVersion,
+    registrationDraft,
+    setSearchQuery,
+    setIsSearchOpen,
+    onSelect: selectPatient,
+  });
+
+  function selectPatient(key: string, addedInForm: boolean) {
+    resetNewPatient();
     const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
     if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
@@ -663,28 +686,6 @@ export function useWardReferralDrawerState({
   function toggleRisk(key: string) {
     setRiskFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   }
-
-  // The sample patients first, then any other registered person whose name or UMRN matches. Matched
-  // as the header search matches people: every word, folded, so "OQuinn" finds O'Quinn and
-  // "UM 100001" the UMRN (search and forms review, 31 Oct 2026). Never near spellings.
-  const filteredPatients = useMemo(() => {
-    // "Family, Given" as lists print it: the comma only separates the two names.
-    const q = searchQuery.replace(/,/g, " ").trim();
-    const profiles = Object.values(sampleProfiles).filter((p) => p.id !== NO_PATIENT_KEY);
-    if (!q) return profiles;
-    const matches = profiles.filter((p) => fieldsMatchEveryWord(q, [p.name, p.umrn, p.dob, p.origin]));
-    const shown = new Set(profiles.map((p) => p.umrn));
-    const record = { movements, patients, referrals, dayZero };
-    const more = patients
-      .filter(
-        (patient) =>
-          !shown.has(patient.umrn) &&
-          fieldsMatchEveryWord(q, [`${patient.givenName} ${patient.familyName}`, patient.umrn]),
-      )
-      .slice(0, 8)
-      .map((patient) => sampleProfile(patientKeyFor(patient.id, record) ?? "custom", record, now));
-    return [...matches, ...more];
-  }, [searchQuery, sampleProfiles, movements, patients, referrals, dayZero, now]);
 
   const { newPatientError, setNewPatientError, pendingNewPatient, addNewPatient } = useReferralPatientRegistration({
     patients,
@@ -1217,7 +1218,7 @@ export function useWardReferralDrawerState({
   const phStepIndex = sectionIds.indexOf(activeSection);
 
   return {
-    onClose,
+    onClose: requestClose,
     onSelectPatient,
     withBackdrop,
     initialCategory,
@@ -1299,6 +1300,9 @@ export function useWardReferralDrawerState({
     newPatientOpen,
     setNewPatientOpen,
     newPatient,
+    newPatientDirty,
+    newPatientDateText,
+    setNewPatientDateText,
     setNewPatient,
     newPatientError,
     setNewPatientError,
