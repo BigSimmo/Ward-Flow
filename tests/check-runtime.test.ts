@@ -61,14 +61,14 @@ describe("runtime release gate", () => {
   });
 
   it.each([
-    ["24.14.0", false],
-    ["24.19.0", true],
+    ["24.19.0", false],
+    ["24.22.0", false],
     ["24.22.1-rc.1", false],
     ["24.x.1", false],
     ["24.22.1", true],
     ["24.23.0", true],
     ["25.0.0", false],
-  ] as const)("enforces the supported release range for Node %s at install and verification", (version, ok) => {
+  ] as const)("enforces the patched release range for Node %s at install and verification", (version, ok) => {
     const verification = checkNodeRuntime(version);
     const installed = preinstallResult(version);
     expect(verification.ok).toBe(ok);
