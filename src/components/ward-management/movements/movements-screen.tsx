@@ -523,7 +523,10 @@ export function MovementsScreen() {
   const showFigure = (option: (typeof highlightOptions)[number]) =>
     setPeopleList({
       title: option.id === "tier1" ? "Urgency tier 1" : option.label,
-      caption: option.id === "tier1" ? "The most urgent referrals still open. T1 is most urgent, T3 least." : `Still in an ED, waiting ${option.label.toLowerCase()}.`,
+      caption:
+        option.id === "tier1"
+          ? "The most urgent referrals still open. T1 is most urgent, T3 least."
+          : `Still in an ED, waiting ${option.label.toLowerCase()}.`,
       tone: option.tone,
       movements: openMovements.filter(option.test),
       highlightKey: option.id,
@@ -1407,6 +1410,11 @@ export function MovementsScreen() {
           onClose={() => setPeopleList(null)}
           onOpenMovement={(id) => {
             setPeopleList(null);
+            // D-d holds here too: a patient outside the chosen service opens, and the reason is said.
+            const target = movements.find((candidate) => candidate.id === id);
+            if (service !== null && isInServiceScope !== null && target && !isInServiceScope(target)) {
+              announceToWardShell(`This patient is outside ${service}. Show all services to see it in the list.`);
+            }
             openDetail(id);
           }}
           onShowInWorklist={(key) => {

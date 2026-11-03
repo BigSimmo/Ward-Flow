@@ -70,10 +70,27 @@ export function TransportTiles({
   const of = (...states: MovementLegState[]) =>
     legs.filter((leg) => states.includes(leg.state)).map((leg) => leg.movement);
   const tiles: { id: string; label: string; caption: string; list: Movement[]; tone?: WfTone }[] = [
-    { id: "road", label: "On the road", caption: "Collected and travelling now.", list: of("Collected", "En route"), tone: "info" },
-    { id: "booked", label: "Booked, not collected", caption: "A provider has accepted the job.", list: of("Accepted"), tone: "neutral" },
+    {
+      id: "road",
+      label: "On the road",
+      caption: "Collected and travelling now.",
+      list: of("Collected", "En route"),
+      tone: "info",
+    },
+    {
+      id: "booked",
+      label: "Booked, not collected",
+      caption: "A provider has accepted the job.",
+      list: of("Accepted"),
+      tone: "neutral",
+    },
     { id: "arrived", label: "Arrived", caption: "Delivered today.", list: of("Arrived"), tone: "success" },
-    { id: "none", label: "No transport leg", caption: "Open movements with no transport booked yet.", list: withoutTransport },
+    {
+      id: "none",
+      label: "No transport leg",
+      caption: "Open movements with no transport booked yet.",
+      list: withoutTransport,
+    },
   ];
   return (
     <div className={tr.tiles} role="group" aria-label="Transport figures">
@@ -141,12 +158,12 @@ export function TransportFeed({
                 <div
                   key={leg.movement.id}
                   className={tr.row}
-                  data-transport-key={leg.movement.id}
                   data-selected={detailId === leg.movement.id ? "true" : undefined}
                 >
                   <button
                     type="button"
                     className={tr.rowMain}
+                    data-transport-key={leg.movement.id}
                     onClick={() => {
                       onPicked?.();
                       onOpen(leg.movement.id);
@@ -176,8 +193,9 @@ export function TransportFeed({
                       ))}
                     </span>
                     <span className={tr.when}>
+                      <span className="sr-only">{LEG_STATE_LABEL[leg.state]}, booked </span>
                       {durMinutes(leg.minutesSinceBooked)}
-                      <span className="sr-only"> since booked</span>
+                      <span className="sr-only"> ago</span>
                     </span>
                   </button>
                   {next ? (
@@ -300,7 +318,11 @@ function TransportCheckIn({
           : "Nothing left to record on this leg."}
       </p>
       <div className={tr.ciLinks}>
-        <button type="button" className={buttonClass({ variant: "ghost", size: "sm" })} onClick={() => onOpen(movement.id)}>
+        <button
+          type="button"
+          className={buttonClass({ variant: "ghost", size: "sm" })}
+          onClick={() => onOpen(movement.id)}
+        >
           Open patient
         </button>
         <Link href="/ward-flow/transport/officer" className={buttonClass({ variant: "ghost", size: "sm" })}>
@@ -313,7 +335,13 @@ function TransportCheckIn({
 
   if (isPhone) {
     return (
-      <PhoneSheet open onClose={onClose} title={person.formalName} description="Transport check in" data-testid="transport-check-in">
+      <PhoneSheet
+        open
+        onClose={onClose}
+        title={person.formalName}
+        description="Transport check in"
+        data-testid="transport-check-in"
+      >
         {body}
       </PhoneSheet>
     );

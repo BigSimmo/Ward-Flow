@@ -90,9 +90,14 @@ function findTransportRow(container: HTMLElement, id: string): HTMLElement {
   return rows[0];
 }
 
+// M4 (3 Nov 2026): each figure is a button that opens its patients; its count sits in the value span.
 function transportTile(container: HTMLElement, label: string): HTMLElement {
-  const term = within(container).getByText(label, { selector: "dt" });
-  return term.parentElement as HTMLElement;
+  const figures = within(container).getByRole("group", { name: "Transport figures" });
+  return within(figures).getByRole("button", { name: new RegExp(`${label}$`, "u") });
+}
+
+function tileValue(tile: HTMLElement): Element | null {
+  return tile.firstElementChild;
 }
 
 describe("the Movements screen", () => {
@@ -360,11 +365,11 @@ describe("the Movements screen", () => {
         (movement.stage === "pulled" || movement.stage === "handover_ready" || movement.stage === "moving") &&
         !legIds.has(movement.id),
     );
-    expect(transportTile(transportPanel, "No transport leg").querySelector("dd")).toHaveTextContent(
+    expect(tileValue(transportTile(transportPanel, "No transport leg"))).toHaveTextContent(
       String(shouldHaveLeg.length),
     );
     const legSum = (["On the road", "Booked, not collected", "Arrived"] as const).reduce(
-      (total, label) => total + Number(transportTile(transportPanel, label).querySelector("dd")?.textContent),
+      (total, label) => total + Number(tileValue(transportTile(transportPanel, label))?.textContent),
       0,
     );
     expect(legSum + counts.Cancelled, "the tiles do not account for every leg").toBe(legs.length);
@@ -378,7 +383,7 @@ describe("the Movements screen", () => {
   it("reports the real transport-state tally in the 'Transport right now' tiles", () => {
     renderScreen();
     const panel = openTransportSummary();
-    const value = (label: string) => transportTile(panel, label).querySelector("dd");
+    const value = (label: string) => tileValue(transportTile(panel, label));
     expect(value("On the road")).toHaveTextContent(String(counts.Collected + counts["En route"]));
     expect(value("Booked, not collected")).toHaveTextContent(String(counts.Accepted));
     expect(value("Arrived")).toHaveTextContent(String(counts.Arrived));

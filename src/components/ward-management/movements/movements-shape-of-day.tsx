@@ -88,9 +88,7 @@ export function ShapeOfTheDay({
   const cellMax = Math.max(1, ...grid.flatMap((row) => row.cells.map((cell) => cell.length)));
   // M3: the long waits as actions, longest band first, each opening its patients.
   const needsLook = [3, 2].flatMap((band) =>
-    grid
-      .filter((row) => row.cells[band].length > 0)
-      .map((row) => ({ stage: row.stage, band, list: row.cells[band] })),
+    grid.filter((row) => row.cells[band].length > 0).map((row) => ({ stage: row.stage, band, list: row.cells[band] })),
   );
   const showCell = (stageLabel: string, band: number, list: Movement[]) =>
     onShowPeople?.({
@@ -181,13 +179,14 @@ export function ShapeOfTheDay({
               <p className={sh.actHead}>
                 {bandTotals[3] > 0 ? (
                   <>
-                    <b data-tone="danger">{bandTotals[3]}</b> waited over 24h
+                    <b data-tone="danger">{bandTotals[3]}</b> waited {WAIT_BANDS[3].toLowerCase()}
                   </>
                 ) : null}
                 {bandTotals[3] > 0 && bandTotals[2] > 0 ? ", " : null}
                 {bandTotals[2] > 0 ? (
                   <>
-                    <b data-tone="warning">{bandTotals[2]}</b> {bandTotals[3] > 0 ? "more" : "have waited"} 12 to 24h
+                    <b data-tone="warning">{bandTotals[2]}</b> {bandTotals[3] > 0 ? "more" : "have waited"}{" "}
+                    {WAIT_BANDS[2]}
                   </>
                 ) : null}
                 <span className={sh.actSub}>Start with these. Each opens its patients.</span>
@@ -235,16 +234,9 @@ export function ShapeOfTheDay({
                       type="button"
                       className={sh.rowLink}
                       disabled={stage.movements.length === 0}
+                      // The stage name finds its first patient in the worklist; the squares open lists.
+                      title="Find in the worklist"
                       onClick={() => {
-                        if (onShowPeople) {
-                          onShowPeople({
-                            title: stage.label,
-                            caption: "Open movements at this stage.",
-                            movements: stage.movements,
-                            highlightKey: `stage:${stage.id}`,
-                          });
-                          return;
-                        }
                         const first = pick(stage.movements);
                         if (first) jumpToMovement(first.id, true);
                       }}
@@ -319,7 +311,8 @@ export function ShapeOfTheDay({
               <i data-band="2" />
               <i data-band="3" />
             </span>
-            Fewer to more under 12h. Amber is 12 to 24h, red over 24h. Choose a square to see who is in it.
+            Fewer to more in the first two columns. Amber is {WAIT_BANDS[2]}, red {WAIT_BANDS[3].toLowerCase()}. Choose
+            a square to see who is in it.
           </p>
         </div>
       ) : null}

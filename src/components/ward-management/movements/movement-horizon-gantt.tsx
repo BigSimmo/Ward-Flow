@@ -1,7 +1,17 @@
 "use client";
 
 import { useId, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from "react";
-import { AlarmClock, ArrowRight, BedSingle, ChartNoAxesGantt, ChevronLeft, ChevronRight, Truck, Users, X } from "lucide-react";
+import {
+  AlarmClock,
+  ArrowRight,
+  BedSingle,
+  ChartNoAxesGantt,
+  ChevronLeft,
+  ChevronRight,
+  Truck,
+  Users,
+  X,
+} from "lucide-react";
 import { IconTile, buttonClass } from "@/components/wf";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 

@@ -16,11 +16,17 @@ import { dayOf, formatInstant, splitDuration, type Instant } from "@/components/
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { stageChangeReasonLabel } from "./movement-workspace-derivations";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
-import { DECLINE_REASON_NOT_SHARED, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
+import {
+  DECLINE_REASON_NOT_SHARED,
+  type Movement,
+  type Referral,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import { STAGE_SHORT, transportRouteLabels } from "./movements-screen-helpers";
+import { OVER_24H, WAIT_BANDS, waitBand } from "@/components/ward-management/delays/delays-board-model";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { isCoordinatorStep, movementNextStep, nextStepTarget } from "./movement-next-step";
 import ps from "./movement-people-sheet.module.css";
@@ -41,9 +47,12 @@ export type MovementPeopleList = {
 };
 
 const STAGE_ORDER = Object.keys(STAGE_SHORT) as Movement["stage"][];
-/** Wait bands as the rest of the page draws them: over 24h danger, 12 to 24h warning. */
-const waitTone = (minutes: number): WfTone | undefined =>
-  minutes >= 24 * 60 ? "danger" : minutes >= 12 * 60 ? "warning" : undefined;
+/** Wait bands as the rest of the page draws them: the top band danger, the one below warning. */
+const waitTone = (minutes: number): WfTone | undefined => {
+  const band = waitBand(minutes);
+  return band === 3 ? "danger" : band === 2 ? "warning" : undefined;
+};
+const OVER_DAY_LABEL = WAIT_BANDS[3];
 
 export function MovementPeopleSheet({
   list,
@@ -78,7 +87,7 @@ export function MovementPeopleSheet({
   if (!list) return null;
   const allRows = [...list.movements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id));
   const isMine = (movement: Movement) => !movement.closure && isCoordinatorStep(movementNextStep(movement));
-  const isOverDay = (movement: Movement) => now - movement.openedAt >= 24 * 60;
+  const isOverDay = (movement: Movement) => waitBand(Math.max(now - movement.openedAt, 0)) === 3;
   const rows = allRows.filter((movement) =>
     filter === "mine" ? isMine(movement) : filter === "overDay" ? isOverDay(movement) : true,
   );
@@ -185,7 +194,7 @@ export function MovementPeopleSheet({
             {splitDuration(waited)}
           </span>
           <span className={ps.meter} data-tone={tone} aria-hidden="true">
-            <i style={{ width: `${Math.min(100, (waited / (24 * 60)) * 100).toFixed(0)}%` }} />
+            <i style={{ width: `${Math.min(100, (waited / OVER_24H) * 100).toFixed(0)}%` }} />
           </span>
           {action ? <span className={ps.action}>{action}</span> : null}
         </div>
@@ -223,7 +232,7 @@ export function MovementPeopleSheet({
         disabled={overDay === 0}
         onClick={() => toggle("overDay")}
       >
-        <span className={ps.statLabel}>Over 24h</span>
+        <span className={ps.statLabel}>{OVER_DAY_LABEL}</span>
         <span className={ps.statValue} data-tone={overDay > 0 ? "danger" : undefined}>
           {overDay}
         </span>
@@ -232,11 +241,16 @@ export function MovementPeopleSheet({
   );
 
   const body = (
-    <div className={ps.list} aria-label={`${list.title}, ${rows.length} ${rows.length === 1 ? "patient" : "patients"}`} role="region">
+    <div
+      className={ps.list}
+      aria-label={`${list.title}, ${rows.length} ${rows.length === 1 ? "patient" : "patients"}`}
+      role="region"
+    >
       {rows.length === 0 ? <p className={ps.empty}>No patient matches right now.</p> : null}
       {filter !== "all" ? (
         <p className={ps.filterNote}>
-          Showing {rows.length} of {allRows.length}, {filter === "mine" ? "waiting on your step" : "waiting over 24h"}.{" "}
+          Showing {rows.length} of {allRows.length},{" "}
+          {filter === "mine" ? "waiting on your step" : `waiting ${OVER_DAY_LABEL.toLowerCase()}`}.{" "}
           <button type="button" className={ps.clear} onClick={() => setFilter("all")}>
             Show all
           </button>
@@ -244,7 +258,11 @@ export function MovementPeopleSheet({
       ) : null}
       {grouped ? (
         groups.map((group) => (
-          <section key={group.stage} className={ps.group} aria-label={`${stageCopy[group.stage].label}, ${group.items.length}`}>
+          <section
+            key={group.stage}
+            className={ps.group}
+            aria-label={`${stageCopy[group.stage].label}, ${group.items.length}`}
+          >
             <h3 className={ps.groupHead}>
               {stageCopy[group.stage].label}
               <span>{group.items.length}</span>
