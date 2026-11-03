@@ -225,9 +225,9 @@ export function EdIndex() {
   // Diagnosed issues E1 (Josh, 3 Nov 2026): a filter or a hero chip now hides the EDs it leaves
   // out, in place of v10 rule 5's dimming, so a tap visibly changes the list. Within a shown card a
   // hero chip still lights its own people and dims the rest.
-  const matching = rows.filter(matchesFilters);
   const isShown = (row: EdRow) => matchesFilters(row) && rowHighlighted(row, highlight);
-  const isDim = (_row: EdRow) => false;
+  // Every shown ED is solid now; the views keep their dim prop for the people pips' own rule.
+  const isDim = (row: EdRow): boolean => row === null;
   const serviceRank = (row: EdRow) => ED_HOME_SERVICE_BAND_ORDER.indexOf(row.summary.service);
   const ordered = [...rows].sort((a, b) => {
     if (order === "most") return b.summary.waiting - a.summary.waiting || serviceRank(a) - serviceRank(b);

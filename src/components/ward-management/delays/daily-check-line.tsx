@@ -148,7 +148,6 @@ export function DailyCheckList({ open, listId, onClose }: { open: boolean; listI
       return counts;
     }, {}),
   ) as [keyof typeof MISSED_REQUEST_LABELS, number][];
-  const shownItems = all ? items : items.slice(0, GRID_LIMIT);
   return (
     <section className={polish.dc} aria-labelledby={`${listId}-title`}>
       <div className={polish.dcHead}>
