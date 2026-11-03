@@ -513,11 +513,11 @@
   text-transform: uppercase;
 }
 
+/* One scroll for the page (D-95, 3 Nov 2026): the list grows with the page; the detail beside it is
+   the shared side rail, pinned in view. */
 .registerBody {
   display: flex;
   flex-direction: column;
-  max-height: 23rem;
-  overflow-y: auto;
 }
 
 .eventRow {

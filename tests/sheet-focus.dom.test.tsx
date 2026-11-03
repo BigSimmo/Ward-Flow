@@ -1,5 +1,5 @@
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Sheet } from "@/components/wf/sheet";
@@ -7,8 +7,10 @@ import {
   SHEET_INERT_MARKER,
   SHEET_INERT_SKIP_ATTRIBUTE,
   SHEET_PORTAL_ATTRIBUTE,
+  SHEET_SCRIM_ATTRIBUTE,
   shouldReclaimFocus,
 } from "@/components/wf/sheet-focus";
+import { useModalFocus } from "@/components/wf/use-modal-focus";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -238,6 +240,48 @@ describe("Sheet background inerting", () => {
 
     rerender(<TwoSheets shown="a" />);
     expect(lowerBackdrop).not.toHaveAttribute("inert");
+  });
+});
+
+/** A hand-built drawer whose backdrop sits beside the panel, as the bed dossier's does. */
+function SiblingScrimDrawer({ onClose, marked = true }: { onClose: () => void; marked?: boolean }) {
+  const panelRef = useRef<HTMLElement>(null);
+  useModalFocus({ open: true, onClose, panelRef, focusOnOpen: "immediate" });
+  return (
+    <div>
+      <div
+        data-testid="scrim"
+        aria-hidden="true"
+        onClick={onClose}
+        {...(marked ? { [SHEET_SCRIM_ATTRIBUTE]: "" } : {})}
+      />
+      <aside ref={panelRef} role="dialog" aria-modal="true" aria-label="Drawer">
+        <button type="button">Inside</button>
+      </aside>
+    </div>
+  );
+}
+
+describe("Hand-built drawer backdrop", () => {
+  it("keeps the drawer's own backdrop live, so a click outside closes it (3 Nov 2026)", () => {
+    const background = document.createElement("div");
+    document.body.append(background);
+    const onClose = vi.fn();
+    const { getByTestId, unmount } = render(<SiblingScrimDrawer onClose={onClose} />);
+
+    expect(background).toHaveAttribute("inert");
+    expect(getByTestId("scrim")).not.toHaveAttribute("inert");
+    fireEvent.click(getByTestId("scrim"));
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    unmount();
+    background.remove();
+  });
+
+  it("still inerts an unmarked sibling", () => {
+    const { getByTestId, unmount } = render(<SiblingScrimDrawer onClose={() => {}} marked={false} />);
+    expect(getByTestId("scrim")).toHaveAttribute("inert");
+    unmount();
   });
 });
 
