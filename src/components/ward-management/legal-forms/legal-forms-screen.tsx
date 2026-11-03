@@ -825,7 +825,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 </>
               }
             />
-            <LegalLimitsNotChecked />
             {/* Ward role: with nothing to record or tell, the ward's phone skips the card. */}
             {routeRole === "ward" && phoneTaskCount === 0 ? null : (
               <button type="button" className={styles.phoneTasks} onClick={() => setTasksOpen(true)}>
@@ -903,6 +902,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               ) : null}
               {shownView === "clocks" ? admittedList : null}
               {shownView === "history" ? historyList : null}
+              {/* FS1: as on desktop, the full notice closes the list it qualifies, so the phone reaches
+                  the people on a form first. */}
+              <div className={styles.listFoot}>
+                <LegalLimitsNotChecked />
+              </div>
             </Card>
             <PhoneSheet open={tasksOpen} onClose={() => setTasksOpen(false)} title="Record and tell">
               {taskStrip}
@@ -998,32 +1002,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       pressed={highlight?.kind === "none"}
                       onToggle={() => toggleHighlight({ kind: "none" })}
                     />
-                    <button
-                      type="button"
-                      className={cx(styles.heroCopy, styles.heroAction, styles.firstHeroAction)}
-                      aria-disabled={handover.length === 0 ? "true" : undefined}
-                      title={
-                        handover.length === 0
-                          ? "No passed or upcoming typed expiry"
-                          : "Copy passed and upcoming typed expiries for handover"
-                      }
-                      onClick={() => {
-                        if (handover.length > 0) copyText("handover", handover.join("\n"));
-                      }}
-                    >
-                      <ClipboardCopy size={14} aria-hidden="true" />
-                      <span>{copied === "handover" ? "Copied" : "Copy for handover"}</span>
-                      <span className={styles.heroCopyCount}>{handover.length}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={cx(styles.heroCopy, styles.heroAction)}
-                      onClick={() => setTasksOpen(true)}
-                    >
-                      <ClipboardList size={14} aria-hidden="true" />
-                      <span>Record and tell</span>
-                      <span className={styles.heroCopyCount}>{phoneTaskCount}</span>
-                    </button>
                   </div>
                 }
                 barAside={
@@ -1060,11 +1038,28 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     </span>
                   }
                   action={
-                    highlight ? (
-                      <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
-                        Clear highlight
+                    // FS1 (Josh, 3 Nov 2026): the list's own tools sit on the list, so the hero keeps one
+                    // job, Record a form, and its filters.
+                    <span className={styles.listTools}>
+                      {highlight ? (
+                        <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
+                          Clear highlight
+                        </Button>
+                      ) : null}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={ClipboardCopy}
+                        disabledReason={handover.length === 0 ? "No passed or upcoming typed expiry" : undefined}
+                        reasonDisplay="tooltip"
+                        onClick={() => copyText("handover", handover.join("\n"))}
+                      >
+                        {copied === "handover" ? "Copied" : `Copy for handover (${handover.length})`}
                       </Button>
-                    ) : undefined
+                      <Button variant="sec" size="sm" icon={ClipboardList} onClick={() => setTasksOpen(true)}>
+                        {`Record and tell (${phoneTaskCount})`}
+                      </Button>
+                    </span>
                   }
                 />
 
@@ -1088,7 +1083,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                             <span className={tableClasses.th}>Form</span>
                             <span className={tableClasses.th}>Where</span>
                             <span className={tableClasses.th}>Ends, as typed</span>
-                            <span className={tableClasses.th}>To record</span>
+                            <span className={tableClasses.th}>Next step</span>
                           </DataRow>
                           <div className={styles.groupHead}>
                             <span>Expiry typed</span>

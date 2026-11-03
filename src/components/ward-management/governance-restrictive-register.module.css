@@ -19,6 +19,25 @@
   padding: 0 var(--wf-s-4) var(--wf-s-3);
 }
 
+/* One quiet label per day, then that day's rows. */
+.days {
+  display: flex;
+  flex-direction: column;
+}
+
+.day {
+  border-top: 1px solid var(--wf-line);
+}
+
+.dayHead {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--wf-ink-3);
+}
+
 .rows {
   list-style: none;
   margin: 0;
@@ -27,84 +46,84 @@
 
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4);
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+}
+
+.row + .row {
   border-top: 1px solid var(--wf-line);
+  padding-top: var(--wf-s-3);
 }
 
-@media (max-width: 46.4375rem) {
-  .row {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .row > :nth-child(2) {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .row > .times {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-  }
-}
-
-.cell {
+.lead {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
-.times {
-  align-items: flex-end;
-  font-size: var(--wf-fs-13);
-  font-variant-numeric: tabular-nums;
-  color: var(--wf-ink-2);
-  white-space: nowrap;
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
 }
 
 .name {
+  min-width: 0;
   font-size: var(--wf-fs-14);
   font-weight: 600;
+  line-height: 1.35;
   color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.tag {
+  flex: none;
 }
 
 .detail {
   font-size: var(--wf-fs-13);
+  line-height: 1.35;
   color: var(--wf-ink-3);
 }
 
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.times {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
   font-size: var(--wf-fs-13);
-  font-weight: 600;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+
+.timeLabel {
+  color: var(--wf-ink-3);
+}
+
+/* Phone: times sit under the name, left aligned, so nothing is squeezed or scrolls sideways. */
+@media (max-width: 46.4375rem) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--wf-s-1);
+  }
+
+  .times {
+    align-items: flex-start;
+    white-space: normal;
+  }
 }
 
 .empty {
   margin: 0;
   padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
   font-size: var(--wf-fs-13);
+  line-height: 1.4;
   color: var(--wf-ink-3);
-}
-
-.more {
-  display: block;
-  width: 100%;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border: 0;
-  border-top: 1px solid var(--wf-line);
-  background: transparent;
-  color: var(--wf-accent-ink);
-  font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
-  text-align: left;
-  cursor: pointer;
-}
-
-.more:focus-visible {
-  outline: 2px solid var(--wf-accent);
-  outline-offset: -2px;
 }

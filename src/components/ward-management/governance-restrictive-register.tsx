@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 
-import { buttonClass, Card, CardHead, cx, FilterChip, StatusGlyph } from "@/components/wf";
+import { Badge, buttonClass, Card, CardHead, FilterChip, foldHidden, foldLimit, ShowMoreRow } from "@/components/wf";
 
 import { useEffectiveWardAccess } from "./shell/ward-access-store";
 import { wardPlaceLookup } from "./ward-access-places";
-import { formatInstantWithDay, type Instant } from "./ward-clock";
+import { dayOf, formatInstantWithDay, perthDayLabel, type Instant } from "./ward-clock";
 import { useWardFlowSelect } from "./ward-flow-provider";
 import type { Unit } from "./ward-model";
 import { usePatientOf } from "./ward-patient-name";
@@ -21,16 +21,84 @@ const SECLUSION_IN_USE_HREF = "/ward-flow/legal-forms?view=seclusion";
 type Filter = "all" | "seclusion" | "restraint";
 const SHOWN = 8;
 
+const EMPTY_EPISODES: Record<Filter, string> = {
+  all: "No finished seclusion or restraint for these wards. Anything in use now is in Forms.",
+  seclusion: "No finished seclusion for these wards.",
+  restraint: "No finished restraint for these wards.",
+};
+
+/**
+ * Rows grouped under the calendar day they fall on, newest day first. The day is only a label for
+ * the typed instant (Today, Yesterday, or the Perth date); nothing is measured between two times.
+ */
+function byDay<T>(rows: readonly T[], instantOf: (row: T) => Instant, now: Instant, dayZero: Date) {
+  const groups: { key: number; label: string; rows: T[] }[] = [];
+  for (const row of rows) {
+    const instant = instantOf(row);
+    const key = dayOf(instant);
+    const last = groups.at(-1);
+    if (last && last.key === key) {
+      last.rows.push(row);
+      continue;
+    }
+    const offset = key - dayOf(now);
+    const label = offset === 0 ? "Today" : offset === -1 ? "Yesterday" : perthDayLabel(instant, dayZero);
+    groups.push({ key, label, rows: [row] });
+  }
+  return groups;
+}
+
+function DayGroups<T>({
+  id,
+  testId,
+  rows,
+  instantOf,
+  rowKey,
+  renderRow,
+  now,
+  dayZero,
+}: {
+  id: string;
+  testId: string;
+  rows: readonly T[];
+  instantOf: (row: T) => Instant;
+  rowKey: (row: T) => string;
+  renderRow: (row: T) => ReactNode;
+  now: Instant;
+  dayZero: Date;
+}) {
+  return (
+    <div id={id} className={styles.days} data-testid={testId}>
+      {byDay(rows, instantOf, now, dayZero).map((group) => (
+        <div key={group.key} className={styles.day}>
+          <h3 className={styles.dayHead}>{group.label}</h3>
+          <ul className={styles.rows}>
+            {group.rows.map((row) => (
+              <li key={rowKey(row)} className={styles.row}>
+                {renderRow(row)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * GV1 (Josh, 3 Nov 2026, Q29): Governance is the after-the-fact record. This register lists every
- * FINISHED seclusion and restraint episode and every ward incident in this desk's view, newest first.
- * Live episodes stay in Forms. Times are shown exactly as typed, and nothing works out a duration,
- * a review time or a legal limit (D-72, D-93). The legal register stays in the health service's system.
+ * FINISHED seclusion and restraint episode and every ward incident in this desk's view, newest first,
+ * grouped by the day it ended or happened. Live episodes stay in Forms. Times are shown exactly as
+ * typed, and nothing works out a duration, a review time or a legal limit (D-72, D-93). The legal
+ * register stays in the health service's system.
  */
 export function GovernanceRestrictiveRegister({ units, now }: { units: readonly Unit[]; now: Instant }) {
   const { admissions } = useWardFlowSelect("admissions");
+  const { dayZero } = useWardFlowSelect("dayZero");
   const access = useEffectiveWardAccess();
   const patientOf = usePatientOf();
+  const episodesId = useId();
+  const incidentsId = useId();
   const [filter, setFilter] = useState<Filter>("all");
   const [allEpisodes, setAllEpisodes] = useState(false);
   const [allIncidents, setAllIncidents] = useState(false);
@@ -39,15 +107,15 @@ export function GovernanceRestrictiveRegister({ units, now }: { units: readonly 
 
   const finished = visible
     .flatMap((unit) =>
-      (unit.restrictivePractice?.episodes ?? [])
-        .filter((episode) => episode.endedAt !== undefined)
-        .map((episode) => {
-          const stay = admissions.find((admission) => admission.id === episode.admissionId);
-          // D-83: surname first.
-          return { unit, episode, name: stay ? patientOf(stay).formalName : "Stay no longer held" };
-        }),
+      (unit.restrictivePractice?.episodes ?? []).flatMap((episode) => {
+        if (episode.endedAt === undefined) return [];
+        const stay = admissions.find((admission) => admission.id === episode.admissionId);
+        // D-83: surname first.
+        const name = stay ? patientOf(stay).formalName : "Stay no longer held";
+        return [{ unit, episode, endedAt: episode.endedAt, name }];
+      }),
     )
-    .sort((a, b) => (b.episode.endedAt ?? 0) - (a.episode.endedAt ?? 0));
+    .sort((a, b) => b.endedAt - a.endedAt);
   const seclusionCount = finished.filter((row) => row.episode.practice === "seclusion").length;
   const shownEpisodes = finished.filter(
     (row) =>
@@ -58,8 +126,10 @@ export function GovernanceRestrictiveRegister({ units, now }: { units: readonly 
     .flatMap((unit) => (unit.restrictivePractice?.incidents ?? []).map((incident) => ({ unit, incident })))
     .sort((a, b) => b.incident.at - a.incident.at);
 
-  const episodeRows = allEpisodes ? shownEpisodes : shownEpisodes.slice(0, SHOWN);
-  const incidentRows = allIncidents ? incidents : incidents.slice(0, SHOWN);
+  const episodeLimit = allEpisodes ? shownEpisodes.length : foldLimit(shownEpisodes.length, SHOWN);
+  const incidentLimit = allIncidents ? incidents.length : foldLimit(incidents.length, SHOWN);
+  const hiddenEpisodes = foldHidden(shownEpisodes.length, SHOWN);
+  const hiddenIncidents = foldHidden(incidents.length, SHOWN);
 
   return (
     <div className={styles.register} data-testid="governance-restrictive-register">
@@ -95,63 +165,87 @@ export function GovernanceRestrictiveRegister({ units, now }: { units: readonly 
         </div>
         {shownEpisodes.length === 0 ? (
           <p className={styles.empty} data-testid="governance-restrictive-empty">
-            No finished seclusion or restraint is recorded for these wards.
+            {EMPTY_EPISODES[filter]}
           </p>
         ) : (
-          <ul className={styles.rows} data-testid="governance-restrictive-episodes">
-            {episodeRows.map((row) => (
-              <li key={row.episode.id} className={styles.row}>
-                <span className={styles.cell}>
-                  <span className={styles.name}>{row.name}</span>
-                  <span className={styles.detail}>{row.unit.name}</span>
-                </span>
-                <span className={styles.cell}>
-                  <span className={styles.tag}>
-                    <StatusGlyph tone="neutral" size={8} /> {restrictivePracticeLabel(row.episode.practice)}
+          <DayGroups
+            id={episodesId}
+            testId="governance-restrictive-episodes"
+            rows={shownEpisodes.slice(0, episodeLimit)}
+            instantOf={(row) => row.endedAt}
+            rowKey={(row) => row.episode.id}
+            now={now}
+            dayZero={dayZero}
+            renderRow={(row) => (
+              <>
+                <span className={styles.lead}>
+                  <span className={styles.title}>
+                    <span className={styles.name}>{row.name}</span>
+                    <Badge size="sm" className={styles.tag}>
+                      {restrictivePracticeLabel(row.episode.practice)}
+                    </Badge>
                   </span>
-                  <span className={styles.detail}>Recorded by {row.episode.recordedBy}</span>
+                  <span className={styles.detail}>
+                    {row.unit.name} · Recorded by {row.episode.recordedBy}
+                  </span>
                 </span>
-                <span className={cx(styles.cell, styles.times)}>
-                  <span>Started {formatInstantWithDay(row.episode.startedAt, now)}</span>
-                  <span>Ended {formatInstantWithDay(row.episode.endedAt!, now)}</span>
+                <span className={styles.times}>
+                  <span>
+                    <span className={styles.timeLabel}>Started</span> {formatInstantWithDay(row.episode.startedAt, now)}
+                  </span>
+                  <span>
+                    <span className={styles.timeLabel}>Ended</span> {formatInstantWithDay(row.endedAt, now)}
+                  </span>
                 </span>
-              </li>
-            ))}
-          </ul>
+              </>
+            )}
+          />
         )}
-        {shownEpisodes.length > SHOWN ? (
-          <button type="button" className={styles.more} onClick={() => setAllEpisodes((value) => !value)}>
-            {allEpisodes ? "Show fewer" : `Show ${shownEpisodes.length - SHOWN} more`}
-          </button>
+        {hiddenEpisodes > 0 ? (
+          <ShowMoreRow onClick={() => setAllEpisodes((value) => !value)} expanded={allEpisodes} controls={episodesId}>
+            {allEpisodes ? "Show fewer" : `Show ${hiddenEpisodes} more`}
+          </ShowMoreRow>
         ) : null}
       </Card>
 
       <Card aria-label="Ward incidents">
         <CardHead title="Ward incidents" meta={`${incidents.length} recorded · names no patient`} level={2} />
         {incidents.length === 0 ? (
-          <p className={styles.empty}>No ward incident is recorded for these wards.</p>
+          <p className={styles.empty}>No ward incident recorded for these wards.</p>
         ) : (
-          <ul className={styles.rows} data-testid="governance-restrictive-incidents">
-            {incidentRows.map(({ unit, incident }) => (
-              <li key={incident.id} className={styles.row}>
-                <span className={styles.cell}>
+          <DayGroups
+            id={incidentsId}
+            testId="governance-restrictive-incidents"
+            rows={incidents.slice(0, incidentLimit)}
+            instantOf={(row) => row.incident.at}
+            rowKey={(row) => row.incident.id}
+            now={now}
+            dayZero={dayZero}
+            renderRow={({ unit, incident }) => (
+              <>
+                <span className={styles.lead}>
                   <span className={styles.name}>{wardIncidentLabel(incident.category)}</span>
-                  <span className={styles.detail}>{unit.name}</span>
+                  <span className={styles.detail}>
+                    {unit.name} · Recorded by {incident.recordedBy}
+                  </span>
                 </span>
-                <span className={styles.cell}>
-                  <span className={styles.detail}>Recorded by {incident.recordedBy}</span>
+                <span className={styles.times}>
+                  <span>
+                    <span className={styles.timeLabel}>Happened</span> {formatInstantWithDay(incident.at, now)}
+                  </span>
                 </span>
-                <span className={cx(styles.cell, styles.times)}>
-                  <span>Happened {formatInstantWithDay(incident.at, now)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+              </>
+            )}
+          />
         )}
-        {incidents.length > SHOWN ? (
-          <button type="button" className={styles.more} onClick={() => setAllIncidents((value) => !value)}>
-            {allIncidents ? "Show fewer" : `Show ${incidents.length - SHOWN} more`}
-          </button>
+        {hiddenIncidents > 0 ? (
+          <ShowMoreRow
+            onClick={() => setAllIncidents((value) => !value)}
+            expanded={allIncidents}
+            controls={incidentsId}
+          >
+            {allIncidents ? "Show fewer" : `Show ${hiddenIncidents} more`}
+          </ShowMoreRow>
         ) : null}
       </Card>
     </div>

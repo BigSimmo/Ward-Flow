@@ -1501,3 +1501,18 @@ button.taskLabel[aria-pressed="true"] {
 .listCard[hidden] {
   display: none;
 }
+
+/* FS1: the list's own tools, on the list head. */
+.listTools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}
+
+/* FS1: the phone row's one next step, in the accent ink so it reads as the thing to do. */
+.phoneStep {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
