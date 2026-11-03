@@ -110,6 +110,7 @@ import {
 } from "./officer-needs-transport";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
+import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
 export {
   acceptedBlockedReason,
   enRouteBlockedReason,
@@ -295,7 +296,15 @@ export function OfficerScreen() {
   });
 
   // The panel opens only when a patient is chosen (Josh, 9 Oct 2026); until then the table is full width.
-  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  // M3 (Josh, 3 Nov 2026): Movements' "Check in" links here with ?job=<movement id> and that job
+  // opens. The first choice made on this page clears the link, so Close and Back behave as usual.
+  const [pickedId, setPickedId] = useState<string | undefined>(undefined);
+  const linkedJob = new URLSearchParams(useLocationSearch()).get("job") ?? undefined;
+  const selectedId = pickedId ?? linkedJob;
+  const setSelectedId = (next: string | undefined) => {
+    if (linkedJob !== undefined) replaceSearchParams({ job: null });
+    setPickedId(next);
+  };
   const selectedJob = selectedId === undefined ? undefined : jobs.find((job) => job.id === selectedId);
   // ROLE BRANCH (officer): the officer's own desk (as-officer-home, Josh 31 Oct 2026). A long list opens on
   // its first rows, then "Show all"; a highlight, search or chosen job past the cut shows every row.
@@ -349,7 +358,7 @@ export function OfficerScreen() {
     resetDiversion();
     setDetailTab("details");
     setBookingId(undefined);
-    setSelectedId((current) => (current === id ? undefined : id));
+    setSelectedId(selectedId === id ? undefined : id);
   };
   const openJob = (id: string) => {
     if (id !== selectedId) {
@@ -445,7 +454,8 @@ export function OfficerScreen() {
           setFormModalJob(null);
           lastTriggerRef.current?.focus();
         } else if (selectedId !== undefined && !document.querySelector('[role="dialog"][aria-modal="true"]')) {
-          setSelectedId(undefined);
+          replaceSearchParams({ job: null });
+          setPickedId(undefined);
         }
       } else if (
         e.key === "/" &&

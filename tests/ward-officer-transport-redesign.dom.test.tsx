@@ -171,3 +171,28 @@ describe("Transport desk, the transport officer's own view (as-officer-home)", (
     expect(copies[0]!.closest("header, [data-wf-hero]")).toBeNull();
   });
 });
+
+describe("M3: check in arrives from Movements (Josh, 3 Nov 2026)", () => {
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  it("opens the job named in the address, and the first choice on the page clears it", () => {
+    installMatchMediaStub(false);
+    const job = jobs.find((movement) => movement.transport !== undefined)!;
+    window.history.replaceState(null, "", `/ward-flow/transport/officer?job=${job.id}`);
+    renderDesk();
+    const panel = screen.getByTestId("ward-officer-detail");
+    expect(panel).toHaveTextContent(resolveSubjectPatient(job, state).formalName);
+    act(() => {
+      fireEvent.keyDown(window, { key: "Escape" });
+    });
+    expect(screen.queryByTestId("ward-officer-detail")).toBeNull();
+    expect(window.location.search).toBe("");
+  });
+
+  it("ignores a job the desk does not hold", () => {
+    installMatchMediaStub(false);
+    window.history.replaceState(null, "", "/ward-flow/transport/officer?job=not-a-job");
+    renderDesk();
+    expect(screen.queryByTestId("ward-officer-detail")).toBeNull();
+  });
+});
