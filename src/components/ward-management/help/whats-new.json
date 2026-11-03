@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-redesign-records",
-    "date": "2026-10-31",
-    "line": "Waiting, Alerts, Legal forms, Patients, Movements and the patient record have a new look for each desk."
-  },
-  {
     "id": "2026-10-31-redesign-ed-transport",
     "date": "2026-10-31",
     "line": "The ED board, All EDs, Transport and Out of area have a new look, with a simpler actions menu on the ED board."
@@ -93,6 +88,11 @@
     "id": "2026-11-03-one-page-scroll",
     "date": "2026-11-03",
     "line": "Pages scroll as one, with headings pinned under the top bar, and a click outside a drawer now closes it."
+  },
+  {
+    "id": "2026-11-03-home-flow",
+    "date": "2026-11-03",
+    "line": "Home now shows Needs you and Flow, with tabs for each stage, from needing a bed to moving."
   },
   {
     "id": "2026-11-03-workflow-input-recovery",
