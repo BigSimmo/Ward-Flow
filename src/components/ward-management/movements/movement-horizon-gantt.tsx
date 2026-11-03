@@ -8,7 +8,7 @@ import {
   ChartNoAxesGantt,
   ChevronLeft,
   ChevronRight,
-  Truck,
+  Ambulance,
   Users,
   X,
 } from "lucide-react";
@@ -140,7 +140,7 @@ const PHASES: { id: CorridorPhase; label: string }[] = [
   { id: "arriving", label: "Bed pulled, arriving" },
   { id: "road", label: "On the road" },
 ];
-const EVENT_ICON = { admit: BedSingle, transit: Truck, delay: AlarmClock } as const;
+const EVENT_ICON = { admit: BedSingle, transit: Ambulance, delay: AlarmClock } as const;
 
 /** "02:42 tomorrow" as its clock face and day words, so the two can clip differently. */
 function splitClockAndDay(label: string): { clock: string; day: string } {
@@ -472,7 +472,7 @@ export function MovementHorizonGantt({
               </li>
               <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchTransit}`} aria-hidden="true">
-                  <Truck size={10} aria-hidden="true" />
+                  <Ambulance size={10} aria-hidden="true" />
                 </span>
                 On the road
               </li>

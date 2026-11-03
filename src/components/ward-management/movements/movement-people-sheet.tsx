@@ -8,7 +8,7 @@
  */
 import { useId, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronRight, Lock, Scale, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, ChevronRight, Lock, FileBadge, ShieldCheck, X } from "lucide-react";
 
 import { PhoneSheet, StatusGlyph, TierTile, buttonClass, useIsPhone, type WfTone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
@@ -173,7 +173,7 @@ export function MovementPeopleSheet({
           <span className={ps.chips}>
             {grouped ? null : <span className={ps.chip}>{STAGE_SHORT[movement.stage] ?? movement.stage}</span>}
             <span className={ps.chip}>
-              <Scale size={11} aria-hidden="true" />
+              <FileBadge size={14} strokeWidth={1.75} aria-hidden="true" />
               {legalStatusShort(movement)}
             </span>
             {note ? (

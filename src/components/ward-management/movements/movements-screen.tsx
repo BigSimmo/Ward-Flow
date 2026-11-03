@@ -37,7 +37,7 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { ArrowRightLeft, ChartColumn, Hourglass, Scale, Search, Truck, X } from "lucide-react";
+import { ArrowRightLeft, ChartColumn, Hourglass, FileBadge, Search, Ambulance, X } from "lucide-react";
 import {
   Card,
   CardHead,
@@ -913,7 +913,7 @@ export function MovementsScreen() {
                       onClick={() => openFromHero(nextExpiry.id)}
                       title="The soonest legal expiry still ahead, as typed on the form. Not legally checked."
                     >
-                      <Scale size={14} aria-hidden="true" className={strip.stripIcon} data-tone="warning" />
+                      <FileBadge size={14} aria-hidden="true" className={strip.stripIcon} data-tone="warning" />
                       <span className={strip.stripLabel}>Next expiry</span>
                       <span className={strip.stripValue}>
                         <b className={strip.heroNum}>{formatInstantWithDay(currentLegalDueAt(nextExpiry)!, now)}</b>{" "}
@@ -944,7 +944,7 @@ export function MovementsScreen() {
                       href="/ward-flow/transport/officer"
                       className={buttonClass({ variant: "onHero", size: "sm" })}
                     >
-                      <Truck size={14} aria-hidden="true" />
+                      <Ambulance size={14} aria-hidden="true" />
                       Transport
                     </Link>
                   </>
@@ -1319,7 +1319,7 @@ export function MovementsScreen() {
                       aria-label="Transport now"
                       title="Transport now"
                     >
-                      <Truck size={14} aria-hidden="true" />
+                      <Ambulance size={14} aria-hidden="true" />
                     </button>
                     <button
                       type="button"

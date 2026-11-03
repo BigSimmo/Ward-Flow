@@ -9,7 +9,7 @@
  */
 import { useId, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronRight, ShieldCheck, Truck, X } from "lucide-react";
+import { ArrowRight, ChevronRight, ShieldCheck, Ambulance, X } from "lucide-react";
 
 import { PhoneSheet, StatusGlyph, buttonClass, cx, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
@@ -326,7 +326,7 @@ function TransportCheckIn({
           Open patient
         </button>
         <Link href="/ward-flow/transport/officer" className={buttonClass({ variant: "ghost", size: "sm" })}>
-          <Truck size={14} aria-hidden="true" />
+          <Ambulance size={14} aria-hidden="true" />
           Transport desk
         </Link>
       </div>
