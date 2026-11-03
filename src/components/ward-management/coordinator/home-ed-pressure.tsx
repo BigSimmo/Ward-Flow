@@ -65,7 +65,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
   const sorted = [...scoped].sort((a, b) => b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting);
   const openFor = (edId: string) => summaries.find((summary) => summary.ed.id === edId)?.open ?? [];
   // Appraisal (Josh Q8, 3 Nov 2026): only the departments that need something get a tile, worst
-  // first. One with nobody waiting and no one on forms folds into a single quiet "N EDs clear" tile,
+  // first. One with nobody waiting and no one on forms folds into one quiet "KEMH, PCH: no wait" tile,
   // unless it is the one the queue is filtered to, so the filter can always be turned off.
   const needsSomething = (row: (typeof sorted)[number]) =>
     row.waiting > 0 ||
@@ -76,7 +76,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
     );
   const rows = sorted.filter(needsSomething);
   const clear = sorted.filter((row) => !needsSomething(row));
-  const clearCodes = clear.map((row) => row.ed.siteCode).join(" · ");
+  const clearCodes = clear.map((row) => row.ed.siteCode).join(", ");
   const clearNames = clear.map((row) => edShortName(row.ed)).join(", ");
 
   return (
@@ -210,14 +210,13 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
             data-testid="ward-home-ed-clear"
             data-ed-ids={clear.map((row) => row.ed.id).join(" ")}
           >
+            {/* Josh, 3 Nov 2026: the folded line names the clear EDs, "KEMH, PCH: no wait". */}
             <p className={styles.edClear} title={clearNames}>
-              <span className={styles.edClearCount}>
-                <strong>{clear.length}</strong> {clear.length === 1 ? "ED" : "EDs"} clear
-              </span>{" "}
               <span className={styles.edClearCodes} aria-hidden="true">
-                {clearCodes}
-              </span>
-              <span className="sr-only">{`, nobody waiting: ${clearNames}`}</span>
+                {clearCodes}:
+              </span>{" "}
+              <span aria-hidden="true">no wait</span>
+              <span className="sr-only">{`${clearNames}: nobody waiting`}</span>
             </p>
           </li>
         ) : null}

@@ -234,21 +234,10 @@
   line-height: var(--wf-lh-12);
 }
 
-.edClearCount {
-  color: var(--wf-ink-2);
-  font-weight: 600;
-}
-
-.edClearCount strong {
-  color: var(--wf-ink-1);
-  font-variant-numeric: tabular-nums;
-}
-
 .edClearCodes {
-  overflow: hidden;
+  color: var(--wf-ink-2);
   font-family: var(--wf-mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 600;
 }
 
 .edButton[data-selected="true"] {
@@ -2356,4 +2345,17 @@ button.registerRow:hover {
 /* The hero's changes chip: its count in the figures' typeface. */
 .changesChip b {
   font-family: var(--wf-mono);
+}
+
+/* Appraisal 4 (Josh, 3 Nov 2026): the occupancy figure is a quiet link to Capacity, which owns the gauge. */
+.heroOccupancyLink {
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.heroOccupancyLink:hover {
+  text-decoration-color: currentColor;
 }
