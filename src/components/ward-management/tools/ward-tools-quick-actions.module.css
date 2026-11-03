@@ -1,4 +1,4 @@
-/* MOCK-UP ONLY: coordinator Quick actions at the top of Tools (3 Nov 2026). Tokens only. */
+/* Coordinator Quick actions inside Tools (3 Nov 2026). Tokens only; no side edges; 12px floor. */
 .panel {
   display: grid;
   gap: var(--wf-s-3);
@@ -23,22 +23,6 @@
 
 .chosenTitle {
   margin: 0;
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
-}
-
-.quick {
-  display: grid;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.heading {
-  margin: 0;
-  padding: 0 var(--wf-s-1);
   font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;

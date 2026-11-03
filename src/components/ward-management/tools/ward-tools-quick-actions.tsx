@@ -11,8 +11,9 @@ import { shiftConfirmations } from "../capacity/shift-confirmations";
 import styles from "./ward-tools-quick-actions.module.css";
 
 /**
- * MOCK-UP ONLY (3 Nov 2026, "Plan quick actions for the coordinator"): the coordinator's Quick
- * actions at the top of Tools. Local preview for Josh's approval; not wired, not pushed.
+ * COORDINATOR QUICK ACTIONS (Josh locked in the mock-up, 3 Nov 2026). One Tools row opens the
+ * coordinator's most used actions. Ward updates lists the wards not confirmed since the shift
+ * began (the Capacity check); sending the request is phase 2 and is not wired yet.
  */
 export type QuickTile = {
   key: string;
