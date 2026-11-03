@@ -1,7 +1,7 @@
 name: Ward Flow daily release
 
 # Railway deploys the live site from the `live` branch, not from `main`. Once a day, before day shift,
-# this moves `live` forward to the newest main commit that passed Ward Flow CI and writes a short
+# this prepares a draft record, moves `live` to the newest main commit that passed CI, then publishes
 # "what changed" release note, so the live site changes once a day instead of on every merge. A manual
 # run is the "release now" button for an urgent fix. It only fast-forwards `live`: it never rewrites
 # history, checks out nothing and runs no repository code. Rolling back is moving `live` back to the
@@ -34,11 +34,67 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
-          target="$(gh api "repos/$REPOSITORY/actions/workflows/ward-flow.yml/runs?branch=main&event=push&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""')"
-          case "$target" in *[!0-9a-f]* | "") echo "No CI-passed main commit found" >&2; exit 1 ;; esac
+          [ "$REPOSITORY" = "BigSimmo/Ward-Flow" ] || { echo "Unexpected release repository" >&2; exit 1; }
+
+          # A per-commit draft retains the original notes if moving live or publishing loses its
+          # acknowledgement. Listing includes drafts for this job's contents-write token. An API
+          # failure must fail the run, rather than be mistaken for a missing record.
+          find_release() {
+            gh api --paginate --slurp "repos/$REPOSITORY/releases?per_page=100" | jq -c --arg sha "$1" '
+              [.[][] | select(.tag_name == ("live-" + $sha) or
+                (.draft == false and .target_commitish == $sha and (.tag_name | startswith("live-"))))]
+              | if (map(select(.tag_name == ("live-" + $sha))) | length) > 1
+                then error("Duplicate prepared release records")
+                else sort_by(.draft) | .[0] // empty end'
+          }
+          verify_tag() {
+            local tag="$1" sha="$2" allow_missing="$3" existing
+            [[ "$tag" =~ ^live-[a-zA-Z0-9._-]+$ ]] || { echo "Unexpected live release tag" >&2; return 1; }
+            if gh api "repos/$REPOSITORY/git/ref/tags/$tag" >/dev/null 2>tag-error.txt; then
+              existing="$(gh api "repos/$REPOSITORY/commits/$tag" --jq .sha)"
+              [ "$existing" = "$sha" ] || { echo "Release tag points at another commit" >&2; return 1; }
+            elif [ "$allow_missing" = true ] && grep -q '(HTTP 404)' tag-error.txt; then
+              : # Publishing a new draft creates its tag; other lookup errors are not absence.
+            else
+              cat tag-error.txt >&2
+              return 1
+            fi
+          }
+          validate_release() {
+            local record="$1" sha="$2" tag draft recorded
+            printf '%s' "$record" | jq -e '.id | type == "number" and . > 0 and floor == .' >/dev/null
+            tag="$(printf '%s' "$record" | jq -er '.tag_name')"
+            draft="$(printf '%s' "$record" | jq -r '.draft')"
+            recorded="$(printf '%s' "$record" | jq -er '.target_commitish')"
+            [ "$recorded" = "$sha" ] || { echo "Release record targets another commit" >&2; return 1; }
+            case "$draft" in true | false) ;; *) echo "Invalid release record" >&2; return 1 ;; esac
+            verify_tag "$tag" "$sha" "$draft"
+          }
+          finish_release() {
+            local record="$1" sha="$2" id live
+            validate_release "$record" "$sha"
+            id="$(printf '%s' "$record" | jq -r '.id')"
+            live="$(gh api "repos/$REPOSITORY/git/ref/heads/live" --jq .object.sha)"
+            [ "$live" = "$sha" ] || { echo "Live changed before release publication" >&2; return 1; }
+            if [ "$(printf '%s' "$record" | jq -r '.draft')" = true ]; then
+              gh api -X PATCH "repos/$REPOSITORY/releases/$id" -F draft=false >/dev/null
+              echo "Published the retained release record for $sha."
+              printf '%s\n' "$record" | jq -r '.body' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+
           current="$(gh api "repos/$REPOSITORY/git/ref/heads/live" --jq .object.sha)"
+          record="$(find_release "$current")"
+          if [ -z "$record" ]; then
+            echo "Live has no recoverable release record. Recover its original notes before releasing again." >&2
+            exit 1
+          fi
+          # Repair the current commit first, even if newer CI has passed since a failed run.
+          finish_release "$record" "$current"
+          target="$(gh api "repos/$REPOSITORY/actions/workflows/ward-flow.yml/runs?branch=main&event=push&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""')"
+          [[ "$target" =~ ^[0-9a-f]{40}$ ]] || { echo "No CI-passed main commit found" >&2; exit 1; }
           if [ "$current" = "$target" ]; then
-            echo "Live is already at $target. Nothing to release."
+            echo "Live and its published record are already at $target."
             exit 0
           fi
           status="$(gh api "repos/$REPOSITORY/compare/$current...$target" --jq .status)"
@@ -84,10 +140,23 @@ jobs:
             printf '\nLive moved from %s to %s.\n' "${current:0:7}" "${target:0:7}"
           } > notes.md
 
+          tag="live-$target"
+          record="$(find_release "$target")"
+          if [ -z "$record" ]; then
+            verify_tag "$tag" "$target" true
+            printf '\n<!-- ward-flow-release-base: %s -->\n' "$current" >> notes.md
+            stamp="$(TZ=Australia/Perth date +%Y-%m-%d-%H%M)"
+            record="$(gh api "repos/$REPOSITORY/releases" -f tag_name="$tag" -f target_commitish="$target" \
+              -f name="Live release $stamp (Perth)" -F body=@notes.md -F draft=true)"
+          elif [ "$(printf '%s' "$record" | jq -r '.draft')" = true ]; then
+            base="$(printf '%s' "$record" | jq -r '.body' | sed -nE 's/^<!-- ward-flow-release-base: ([0-9a-f]{40}) -->$/\1/p')"
+            [ "$base" = "$current" ] || { echo "Prepared notes have a different base; recover them before releasing." >&2; exit 1; }
+          fi
+          # Reject malformed retained records and conflicting tags before any live ref mutation.
+          validate_release "$record" "$target"
+          [ "$(gh api "repos/$REPOSITORY/git/ref/heads/live" --jq .object.sha)" = "$current" ] \
+            || { echo "Live changed after preparing notes; not moving it." >&2; exit 1; }
           # Fast-forward only (force=false): GitHub refuses anything that would rewrite live.
           gh api -X PATCH "repos/$REPOSITORY/git/refs/heads/live" -f sha="$target" -F force=false >/dev/null
-          stamp="$(TZ=Australia/Perth date +%Y-%m-%d-%H%M)"
-          gh api "repos/$REPOSITORY/releases" -f tag_name="live-$stamp" -f target_commitish="$target" \
-            -f name="Live release $stamp (Perth)" -F body=@notes.md >/dev/null
-          echo "Released $target as live-$stamp"
-          cat notes.md >> "$GITHUB_STEP_SUMMARY"
+          finish_release "$record" "$target"
+          echo "Released $target with its preserved release record."
