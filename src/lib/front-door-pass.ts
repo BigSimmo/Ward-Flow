@@ -174,7 +174,7 @@ function normaliseDemoCode(code: string): string {
 }
 
 /** The shortest demo code that opens anything (Q371), counted after spaces and dashes are dropped. */
-export const MIN_DEMO_CODE_LENGTH = 12;
+const MIN_DEMO_CODE_LENGTH = 12;
 
 /** Whether an entered demo code matches `WARD_DEMO_CODE`. False when no code, or too short a code, is set. */
 export async function demoCodeMatches(entered: string, env: Env = process.env): Promise<boolean> {
