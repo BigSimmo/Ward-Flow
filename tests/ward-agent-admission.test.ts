@@ -162,11 +162,14 @@ test("readiness skip still rejects checksum-valid synthetic patient identifiers"
   assert.match(result.stderr, /Medicare/);
 });
 
-test("unsigned files and peers' claims still block publication", (t) => {
+// Q374: the branch or PR is the claim. Only a peer's active hold blocks.
+test("own unclaimed files are admitted but peers' claims still block publication", (t) => {
   const f = fixture(t);
   f.stage("synthetic change\n");
   f.write("coordination/sign-out.md", "## Active sign-outs\n");
-  assert.match(f.run().stderr, /without your sign-out/);
+  const own = f.run();
+  assert.equal(own.status, 0, own.stderr);
+  assert.doesNotMatch(own.stderr, /without your sign-out/);
   f.claims([file], "Peer fixture", "ward/peer", path.join(f.dir, "peer-checkout"));
   const result = f.run();
   assert.equal(result.status, 1);
@@ -174,27 +177,47 @@ test("unsigned files and peers' claims still block publication", (t) => {
   assert.match(result.stderr, /Peer fixture/);
 });
 
-test("explicit file and directory configurations fail closed when unavailable", (t) => {
+test("a missing explicit log admits own files; an unreadable log or claims folder fails closed", (t) => {
   const f = fixture(t);
   f.stage("synthetic change\n");
   for (const overrides of [
     { WARD_SIGNOUT_FILE: path.join(f.dir, "absent.md"), WARD_FLOW_LOGS: path.dirname(f.env.WARD_SIGNOUT_FILE ?? "") },
     { WARD_SIGNOUT_FILE: "", WARD_FLOW_LOGS: path.join(f.dir, "absent-logs") },
-    { WARD_SIGNOUT_FILE: f.dir },
   ]) {
     const result = f.run(overrides);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /log unavailable|checks crashed/);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stderr, /no shared sign-out log: no logged peer holds/);
   }
+  const directory = f.run({ WARD_SIGNOUT_FILE: f.dir });
+  assert.equal(directory.status, 1);
+  assert.match(directory.stderr, /checks crashed/);
+  // A file where the claims folder should be may hide peer holds, so it never reads as empty.
+  f.write("unreadable-logs/claims", "not a folder\n");
+  const claims = f.run({ WARD_SIGNOUT_FILE: path.join(f.dir, "unreadable-logs/sign-out.md") });
+  assert.equal(claims.status, 1);
+  assert.match(claims.stderr, /claims folder unreadable/);
 });
 
-test("an implicit missing Cloud log also fails closed", { skip: process.platform === "win32" }, (t) => {
+test("a peer's claim file still blocks when the log itself is missing", (t) => {
+  const f = fixture(t);
+  f.stage("synthetic change\n");
+  f.write(
+    "peer-logs/claims/20261017T0100Z-peer.md",
+    `- 2026-10-17T01:00Z | Peer fixture | ward/peer | ${path.join(f.dir, "peer-checkout")} | ${file}\n`,
+  );
+  const result = f.run({ WARD_SIGNOUT_FILE: path.join(f.dir, "peer-logs/sign-out.md") });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /signed out by another session/);
+  assert.match(result.stderr, /Peer fixture/);
+});
+
+test("an implicit missing Cloud log admits own files", { skip: process.platform === "win32" }, (t) => {
   const f = fixture(t);
   f.stage("synthetic change\n");
   // Only this child sees a synthetic home; the host's home and logs are untouched.
   const result = f.run({ HOME: f.dir, WARD_SIGNOUT_FILE: "", WARD_FLOW_LOGS: "" });
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /sign-out log unavailable/);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /no shared sign-out log: no logged peer holds/);
 });
 
 test("bare admission rejects the single-user ownership waiver", (t) => {
@@ -205,30 +228,33 @@ test("bare admission rejects the single-user ownership waiver", (t) => {
   assert.match(result.stderr, /cannot skip ownership admission/);
 });
 
-test("bare admission checks ownership during a merge", (t) => {
+test("bare admission checks peer ownership during a merge", (t) => {
   const f = fixture(t);
   f.stage("synthetic change\n");
   f.write(".git/MERGE_HEAD", `${f.git("rev-parse", "HEAD")}\n`);
   f.write("coordination/sign-out.md", "## Active sign-outs\n");
+  const own = f.run();
+  assert.equal(own.status, 0, own.stderr);
+  f.claims([file], "Peer fixture", "ward/peer", path.join(f.dir, "peer-checkout"));
   const result = f.run();
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /without your sign-out/);
+  assert.match(result.stderr, /signed out by another session/);
 });
 
-test("merge admission exempts clean incoming paths but requires ownership for manual resolutions", (t) => {
+test("merge admission needs no own claim but checks peers on manual resolutions", (t) => {
   const f = mergeFixture(t);
   const admitted = f.run();
   assert.equal(admitted.status, 0, admitted.stderr);
-  // A committed current-side-only change needs no new claim. A manual merge
-  // resolution changes HEAD-to-index and must still have an own sign-out.
+  // A manual merge resolution changes HEAD-to-index: it needs no own sign-out,
+  // but a peer's active hold on that path still blocks.
   f.stage("synthetic manual merge resolution\n");
   f.write("coordination/sign-out.md", "## Active sign-outs\n");
   const unsigned = f.run();
-  assert.equal(unsigned.status, 1);
-  assert.match(unsigned.stderr, /without your sign-out/);
-  f.claims();
-  const resolved = f.run();
-  assert.equal(resolved.status, 0, resolved.stderr);
+  assert.equal(unsigned.status, 0, unsigned.stderr);
+  f.claims([file], "Peer fixture", "ward/peer", path.join(f.dir, "peer-checkout"));
+  const blocked = f.run();
+  assert.equal(blocked.status, 1);
+  assert.match(blocked.stderr, /signed out by another session/);
 });
 
 test("merge admission still scans upstream changes for secrets", (t) => {
@@ -246,27 +272,27 @@ test("merge ownership preserves NUL-delimited paths with whitespace and non-ASCI
       : ["space name.md", "tab\tname.md", "line\nname.md", "é.md"]
   ).map((name) => `docs/ward-flow/special/${name}`);
   for (const name of special) f.stage("synthetic task addition\n", name);
-  const unsigned = f.run();
-  assert.equal(unsigned.status, 1);
-  for (const name of special) assert.ok(unsigned.stderr.includes(name), name);
-  // The legacy log cannot quote arbitrary exact paths, but its supported
-  // directory-claim syntax covers this synthetic, expressly owned subtree.
-  f.claims([file, "docs/ward-flow/special/"]);
   const admitted = f.run();
   assert.equal(admitted.status, 0, admitted.stderr);
+  // The legacy log cannot quote arbitrary exact paths, but a peer's directory
+  // claim covers this synthetic subtree and must name every special path.
+  f.claims(["docs/ward-flow/special/"], "Peer fixture", "ward/peer", path.join(f.dir, "peer-checkout"));
+  const blocked = f.run();
+  assert.equal(blocked.status, 1);
+  for (const name of special) assert.ok(blocked.stderr.includes(name), name);
 });
 
-test("type-only changes require ownership admission", (t) => {
+test("type-only changes go through ownership admission", (t) => {
   const f = fixture(t);
   f.stageSymlink("synthetic-target");
   assert.match(f.git("diff", "--cached", "--name-status", "-z"), /^T\0/);
   f.write("coordination/sign-out.md", "## Active sign-outs\n");
-  const unsigned = f.run();
-  assert.equal(unsigned.status, 1);
-  assert.match(unsigned.stderr, /without your sign-out/);
-  f.claims();
   const admitted = f.run();
   assert.equal(admitted.status, 0, admitted.stderr);
+  f.claims([file], "Peer fixture", "ward/peer", path.join(f.dir, "peer-checkout"));
+  const blocked = f.run();
+  assert.equal(blocked.status, 1);
+  assert.match(blocked.stderr, /signed out by another session/);
 });
 
 test("type-only changes remain inside the staged secret scan", (t) => {
@@ -287,30 +313,31 @@ test("a type-only change cannot evade the main-branch guard", (t) => {
   assert.match(result.stderr, /COMMITTING WARD FLOW TO LOCAL MAIN IS BLOCKED/);
 });
 
-test("deletions require ownership admission as well", (t) => {
+test("deletions go through ownership admission as well", (t) => {
   const f = fixture(t);
   f.git("rm", "--", file);
   f.write("coordination/sign-out.md", "## Active sign-outs\n");
-  const blocked = f.run();
-  assert.equal(blocked.status, 1);
-  assert.match(blocked.stderr, /without your sign-out/);
-  f.claims();
   const admitted = f.run();
   assert.equal(admitted.status, 0, admitted.stderr);
+  f.claims([file], "Peer fixture", "ward/peer", path.join(f.dir, "peer-checkout"));
+  const blocked = f.run();
+  assert.equal(blocked.status, 1);
+  assert.match(blocked.stderr, /signed out by another session/);
 });
 
-test("renames require claims for both the source and target paths", (t) => {
+test("renames check peer claims on both the source and target paths", (t) => {
   const f = fixture(t);
   const target = "docs/ward-flow/renamed-probe.md";
   f.git("mv", "--", file, target);
-  f.claims([target]);
-  const blocked = f.run();
-  assert.equal(blocked.status, 1);
-  assert.match(blocked.stderr, /without your sign-out/);
-  assert.match(blocked.stderr, /admission-probe\.md/);
-  f.claims([file, target]);
+  f.write("coordination/sign-out.md", "## Active sign-outs\n");
   const admitted = f.run();
   assert.equal(admitted.status, 0, admitted.stderr);
+  // A peer holding only the source path still blocks the rename.
+  f.claims([file], "Peer fixture", "ward/peer", path.join(f.dir, "peer-checkout"));
+  const blocked = f.run();
+  assert.equal(blocked.status, 1);
+  assert.match(blocked.stderr, /signed out by another session/);
+  assert.match(blocked.stderr, /admission-probe\.md/);
 });
 
 test("the main-branch confirmation guard survives a readiness skip", (t) => {
@@ -367,19 +394,24 @@ test("checker modes reject unknown, mixed and duplicate flags", (t) => {
   }
 });
 
-test("missing logs have no implicit host waiver and public root claims use isolated fixture history", async (t) => {
-  assert.equal(signOutLogOptional(), false);
+test("public root files need no own claim, and a peer's public claim uses isolated fixture history", async (t) => {
+  assert.equal(signOutLogOptional(), true);
   const f = fixture(t);
   const checker = await f.makePublic();
   assert.equal(checker.isPublicWardFlowCheckout(f.dir), true);
+  // The informational helper still reports the file; admission no longer blocks on it.
   assert.deepEqual(checker.unsignedWardFiles(["AGENTS.md"], "", branch, f.dir), ["AGENTS.md"]);
   f.stage("synthetic root rule\n", "AGENTS.md");
-  const unsigned = f.run();
-  assert.equal(unsigned.status, 1);
-  assert.match(unsigned.stderr, /without your sign-out/);
-  f.claims(["AGENTS.md"]);
+  f.write("coordination/sign-out.md", "## Active sign-outs\n");
   const admitted = f.run();
   assert.equal(admitted.status, 0, admitted.stderr);
+  f.write(
+    "coordination/sign-out.md",
+    `## Active sign-outs\n- 2026-10-17 | Peer fixture | ward/peer | ${path.join(f.dir, "peer-checkout")} | AGENTS.md; repo=BigSimmo/Ward-Flow\n`,
+  );
+  const blocked = f.run();
+  assert.equal(blocked.status, 1);
+  assert.match(blocked.stderr, /signed out by another session/);
 });
 
 test("explicit relative claims support extensionless root files and branch-wide releases", async (t) => {

@@ -4,24 +4,17 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { unitById, wardSites } from "@/components/ward-management/ward-sites";
 import { clearToasts } from "./helpers/clear-toasts";
 import { openEdLists } from "./helpers/ward-ed-lists";
-import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
- * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
- * (N)" reveals the rest in place. Pick a row the way a coordinator would: open the whole queue
- * first when the row is further down.
+ * Home placement redesign (Josh, 19 Oct 2026), then Home flow (Q340, Q345, 3 Nov 2026): each Flow
+ * stage lists its oldest 5 and its own "Show all N" reveals the rest in place. Pick a row the way a
+ * coordinator would: open the stages first when the row is further down.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
   await showEveryoneWaitingOn(queue.page());
   const row = queue.getByTestId(`ward-queue-row-${movementId}`);
-  const showAll = queue.getByTestId("ward-queue-show-all");
-  if (
-    !(await row.isVisible()) &&
-    (await showAll.isVisible()) &&
-    (await showAll.getAttribute("aria-expanded")) !== "true"
-  ) {
-    await showAll.click();
-  }
+  if (!(await row.isVisible())) await showAllFlowRows(queue);
   await row.click();
   return row;
 }
@@ -366,7 +359,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await switchView(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
     await expectNoReloadSince(page, "ED -> coordinator");
 
-    await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), movementId);
+    await pickQueueRow(homeFlowCard(page), movementId);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await openShortlistSections(shortlist);
     await expect(shortlist).toHaveAttribute("data-subject-movement", movementId);
@@ -393,6 +386,10 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await shortlist.getByRole("button", { name: "Record override" }).click();
     await expect(shortlist).toContainText(`Parallel referral:`);
     await expectNoReloadSince(page, "referring to a ward");
+    // Placement is the patient drawer over the page on every screen size (H7, Josh 3 Nov 2026);
+    // close it, as a coordinator would, before opening the tools.
+    await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+    await expect(shortlist).toHaveCount(0);
 
     // --- Step 4: the ward accepts. Reached via the role switcher's own real <Link>, which now
     // offers this exact unit because REFER_TO_UNITS just set it as one of this movement's

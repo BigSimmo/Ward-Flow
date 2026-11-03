@@ -804,7 +804,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     variant="onHero"
                     icon={ClipboardCopy}
                     className={phoneRows.heroPill}
-                    disabledReason={handover.length === 0 ? "No typed expiry is coming up" : undefined}
+                    disabledReason={handover.length === 0 ? "No passed or upcoming typed expiry" : undefined}
                     reasonDisplay="tooltip"
                     onClick={() => copyText("handover", handover.join("\n"))}
                   >
@@ -989,7 +989,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       className={cx(styles.heroCopy, styles.heroAction, styles.firstHeroAction)}
                       aria-disabled={handover.length === 0 ? "true" : undefined}
                       title={
-                        handover.length === 0 ? "No typed expiry is coming up" : "Copy upcoming expiries for handover"
+                        handover.length === 0
+                          ? "No passed or upcoming typed expiry"
+                          : "Copy passed and upcoming typed expiries for handover"
                       }
                       onClick={() => {
                         if (handover.length > 0) copyText("handover", handover.join("\n"));

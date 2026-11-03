@@ -402,7 +402,7 @@ export function BedMeetingSheetLauncher({
       {open &&
         createPortal(
           <div className={styles.portal} data-testid="bed-meeting-sheet-portal">
-            <div className={styles.backdrop} aria-hidden="true" onClick={() => setOpen(false)} />
+            <div className={styles.backdrop} aria-hidden="true" data-sheet-scrim="" onClick={() => setOpen(false)} />
             <div
               ref={panel}
               className={styles.dialog}

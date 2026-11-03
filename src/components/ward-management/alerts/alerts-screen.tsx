@@ -92,7 +92,7 @@ import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
 import { AlertsSidePanelEmpty, CheckingList, ChecksCard, ChecksChip, ownWardName } from "./alerts-checking";
-import { AlertsEarlierPanel, AlertsLiveBroadcasts, AlertsNoticesGroup } from "./alerts-tab-panels";
+import { AlertsEarlierPanel, AlertsLiveBroadcasts, AlertsNoticesGroup, useDueReminderCount } from "./alerts-tab-panels";
 import { BroadcastComposer } from "./broadcast-composer";
 import { QUICK_STARTS } from "./broadcast-audience";
 import { liveBedCallFor, useBroadcastAudience } from "./use-broadcast-audience";
@@ -985,8 +985,8 @@ function AlertsWorkspace() {
     shownEarlier: urgencyLinked.shownEarlier[section] ?? 0,
     sectionLabels: urgencyLabels,
   });
-  // Q179 no: Act now and Waiting stay two groups; only when both are empty do they give way to one line.
-  const nothingNow = actListed.length === 0 && toPull.length === 0 && waitEntries.length === 0;
+  // Q179 no: two groups; one line only when both are empty and none of your reminders is due.
+  const nothingNow = actListed.length + toPull.length + waitEntries.length + useDueReminderCount(now) === 0;
   const urgencyView = quietWard ? (
     nothingNeedsYou
   ) : (

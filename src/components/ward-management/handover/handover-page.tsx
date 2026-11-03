@@ -1192,7 +1192,12 @@ export function HandoverPage() {
           ) : null}
         </div>
       )}
-      <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Handover patients">
+      <div
+        className={cx(styles.tableScroll, fitted && styles.tableScrollFitted)}
+        tabIndex={0}
+        role="region"
+        aria-label="Handover patients"
+      >
         <table
           className={cx(tableClasses.table, styles.sheetTable, compact && styles.compact, fitted && styles.fitted)}
         >

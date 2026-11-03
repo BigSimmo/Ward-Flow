@@ -1,8 +1,6 @@
 "use client";
 
-import { ChevronRight, MoreHorizontal } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { MoreHorizontal } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   admissionIdOfInboxId,
@@ -63,6 +61,7 @@ import {
   LiveChip,
   Menu,
   OccupancyRing,
+  PillTabs,
   Segmented,
   Sheet,
   SrOnly,
@@ -82,13 +81,21 @@ import {
   type ActivityPanelTab,
 } from "@/components/ward-management/shell/ward-activity-panel-store";
 import { useHomeLayout } from "./home-layout";
-import { BedsGapCard, ChosenAlertCard, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
+import { BedsGapCard, HomePlacementDrawer, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
+import flowStyles from "./home-flow.module.css";
+import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
+import type { PlacementSubject } from "./home-placement-drawer";
 import { PlacementPrompt } from "./placement-prompt";
 import { usePlannedRows } from "./planned-rows";
-import { PriorityQueue, type QueueHighlight } from "./priority-queue";
-import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel-lazy";
-import shortlistStyles from "./shortlist-panel.module.css";
+import {
+  FLOW_STAGES,
+  flowStageOf,
+  type FlowStageId,
+  PriorityQueue,
+  type QueueHighlight,
+  queueWaitThresholds,
+} from "./priority-queue";
 
 /*
  * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
@@ -132,14 +139,6 @@ const HOME_VIEWS = ["needs", "queue", "planned"] as const;
 const NEEDS_FOCI = ["all", "act", "decide"] as const;
 const DELAYS_HREF = "/ward-flow/waiting";
 
-/** Phone renders the first 20 queue rows; the rest are one tap away (v10 Home phone mockup). */
-const PHONE_QUEUE_ROWS = 20;
-/**
- * Desktop Home scrolls once, so the queue shows its top 10 and a "Show all (N)" button reveals the
- * rest in place (Home placement redesign, Josh 19 Oct 2026). A hero highlight shows every row.
- */
-const DESKTOP_QUEUE_ROWS = 10;
-
 /** Alerts whose work happens in Placement, so their row button opens it beside the list (Home v7). */
 const IN_PLACE_KINDS = new Set(["hold", "declines", "nobed", "unsuitable"]);
 
@@ -148,6 +147,17 @@ const BED_COUNT_FRESH_MINUTES = CLINICAL_VALUES.bedCountFresh.value;
 
 /** Focus target when a selection goes away: the selected queue row, else the active queue choice. */
 const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-checked="true"]';
+
+/**
+ * Hands focus back to the list: its chosen control, else (Home flow, where the list tabs sit above
+ * the columns) its first row or row button, so focus never falls to the page.
+ */
+function focusQueue(root: HTMLElement | null): void {
+  const target =
+    root?.querySelector<HTMLElement>(QUEUE_FOCUS_SELECTOR) ??
+    root?.querySelector<HTMLElement>('[data-testid^="ward-queue-row-"], [data-referral-id] button, li button');
+  target?.focus();
+}
 
 /** P124: what the footer's "N refused" count means, for a hover and for a screen reader. */
 const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this session. Details are under Refused.";
@@ -173,8 +183,10 @@ const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this sessi
 /**
  * Home and Activity (design approved by Josh, 31 Oct 2026, "Yes to all"):
  *
- * - three lists, My List, Open and Planned (Josh's words; Open was Waiting until Q260); Planned is the rest of the shift
- *   from times the records already hold (`planned-model.ts`);
+ * - Home flow (Q340, Q341, Q345, 3 Nov 2026): two lists, Needs you and Flow, then the Flow stages as
+ *   quieter tabs with counts (Needs a bed, Bed agreed, Ready to move, Moving); Later today (was Planned)
+ *   is the rest of the shift from times the records already hold (`planned-model.ts`), in the right
+ *   column on desktop and a third tab on a phone;
  * - the hero's "new since" count is a changes chip that opens Activity on Changes
  *   (`activity-panel.tsx`), whose review is explicit (`activity-changes.ts`); the desktop
  *   "Since you looked" strip and the phone sheet moved into Activity;
@@ -182,18 +194,19 @@ const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this sessi
  * - Beds that fit is a small table that folds to one line while someone is chosen;
  * - Placement still opens only for the person the coordinator chooses (Josh, Home v7, 22 Oct 2026),
  *   but its card names the oldest alert to place;
- * - on a phone, Registers and Alerts history sit under one "More" menu beside the list tabs.
+ * - Registers and Alerts history sit under one "More" menu at the end of the list tabs.
  */
-/** Phone only: Registers and Alerts history under one "More" menu beside the list tabs. */
+/** Registers and Alerts history under one "More" menu at the end of Home's list tabs. */
 function HomeListMoreMenu({ onRegisters }: { onRegisters: () => void }) {
-  const router = useRouter();
+  // Optional, so Home still renders where no app router is mounted (the preview and the screen tests).
+  const router = useOptionalRouter();
   return (
     <Menu
       label="More for this list"
       align="end"
       items={[
         { id: "registers", label: "Registers", onSelect: onRegisters },
-        { id: "alerts", label: "Alerts history", onSelect: () => router.push("/ward-flow/alerts") },
+        { id: "alerts", label: "Alerts history", onSelect: () => router?.push("/ward-flow/alerts") },
       ]}
       trigger={(props) => (
         <button type="button" {...props} className={buttonClass({ variant: "ghost", size: "sm" })}>
@@ -217,7 +230,6 @@ export function CoordinatorScreen() {
     admissions,
     rejections,
     referrals,
-    dispatch,
     focusMovementId,
     setFocusMovementId,
     configuration,
@@ -235,7 +247,6 @@ export function CoordinatorScreen() {
     "admissions",
     "rejections",
     "referrals",
-    "dispatch",
     "focusMovementId",
     "setFocusMovementId",
     "configuration",
@@ -274,6 +285,8 @@ export function CoordinatorScreen() {
   const [releaseSheetUsed, setReleaseSheetUsed] = useState(false);
   // Act now and Referrals to decide in the hero narrow My list to that group.
   const [needsFocus, chooseNeedsFocus] = useAddressTab("focus", NEEDS_FOCI, "all");
+  // Home flow mock-up (Q343): the stage the tiles opened in the Flow tab; none shows every stage.
+  const [flowStage, setFlowStage] = useState<FlowStageId | undefined>(undefined);
   // Switching lists clears Placement, so it never shows someone the new list does not highlight.
   function showView(view: (typeof HOME_VIEWS)[number]) {
     if (view !== homeView) {
@@ -319,6 +332,9 @@ export function CoordinatorScreen() {
   const isTabletPortrait = layout === "tablet-portrait";
   // Where Placement is a sheet over the page, the chosen alert travels inside it.
   const sheetPlacement = isPhone || isTabletPortrait;
+  // Later today is a tab only on a phone or tablet portrait; elsewhere it sits in the right column,
+  // so an address left on it (a reload or a rotation) falls back to Needs you.
+  const shownView = homeView === "planned" && !sheetPlacement ? "needs" : homeView;
   // Phone sheet (direction A): the registers. The patient sheet is Placement itself, opened by
   // picking a queue row. "Since you looked" moved into Activity.
   const [phoneSheet, setPhoneSheet] = useState<{ kind: "exceptions" } | undefined>(undefined);
@@ -343,7 +359,7 @@ export function CoordinatorScreen() {
   useEffect(() => {
     if (selectedMovementId === undefined || selectedMovement !== undefined) return;
     setFocusMovementId(undefined);
-    queueFocusRef.current?.querySelector<HTMLElement>(QUEUE_FOCUS_SELECTOR)?.focus();
+    focusQueue(queueFocusRef.current);
   }, [selectedMovementId, selectedMovement, setFocusMovementId]);
 
   const selectedEd = selectedEdId ? allEmergencyDepartments().find((ed) => ed.id === selectedEdId) : undefined;
@@ -437,23 +453,14 @@ export function CoordinatorScreen() {
   }
   function closeShortlist() {
     setSelectedAlertId(undefined);
-    selectMovement(undefined);
-    queueFocusRef.current?.querySelector<HTMLElement>(QUEUE_FOCUS_SELECTOR)?.focus();
+    // Closing clears the drawer's subject but keeps the patient in focus, so Change view still
+    // offers that patient's wards and ED. The drawer is modal on every width (H7), so closing it is
+    // the only way to reach Change view from Placement, as the side column used to allow.
+    setSelectedMovementId(undefined);
+    setSelectedUnitId(undefined);
+    setSelectedReferralId(undefined);
+    focusQueue(queueFocusRef.current);
   }
-
-  // Placement as a sheet (phone, tablet portrait): Esc closes it, like the scrim.
-  const sheetPlacementOpen = hasPanelSubject && sheetPlacement;
-  useEffect(() => {
-    if (!sheetPlacementOpen) return;
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      setSelectedMovementId(undefined);
-      setSelectedReferralId(undefined);
-      setFocusMovementId(undefined);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [sheetPlacementOpen, setFocusMovementId]);
 
   const patientOf = usePatientOf();
 
@@ -584,6 +591,15 @@ export function CoordinatorScreen() {
   const chosenAlert = selectedAlertId ? alertEntries.find((entry) => entry.item.id === selectedAlertId) : undefined;
   const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
+  // Home flow mock-up (Q340): a waiting alert is a mark on its patient's Flow row.
+  // Every waiting title on a patient is kept; a waiting alert with no patient stays a row in Needs you.
+  const waitingMarks = new Map<string, string>();
+  for (const entry of waitEntries) {
+    if (!entry.movement) continue;
+    const prior = waitingMarks.get(entry.movement.id);
+    waitingMarks.set(entry.movement.id, prior ? `${prior} · ${entry.item.title}` : entry.item.title);
+  }
+  const unmarkedWait = waitEntries.filter((entry) => !entry.movement);
   const alertHandlers: QueueHandlers = {
     selectedId: selectedAlertId,
     onSelect: (entry) => {
@@ -747,65 +763,27 @@ export function CoordinatorScreen() {
   // the queue selection and `data-subject-movement` name. A deferred copy could act for the previous patient.
   const deferredPanelMovement = panelMovement;
 
-  // Placement: the right column from tablet landscape up, a side sheet over a scrim on tablet
-  // portrait and the patient sheet on a phone (CSS by `data-layout`).
-  const placementNode = hasPanelSubject ? (
-    <div className={`${styles.side} ${styles.placementCol}`}>
-      <div
-        className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
-        onClick={closeShortlist}
-        aria-hidden="true"
-        data-testid="ward-coordinator-shortlist-backdrop"
-      />
-      <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>
-        <aside
-          className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
-          aria-label={selectedReferral ? "Referral placement" : "Placement"}
-          data-testid="ward-home-placement"
-          // Journeys prove which movement the panel is for by this attribute.
-          data-subject-movement={selectedReferral ? undefined : panelMovement?.id}
-        >
-          <div className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`} aria-hidden="true" />
-          <header className={styles.shortlistHeader}>
-            <h2>{selectedReferral ? "Referral placement" : "Placement"}</h2>
-            <button
-              type="button"
-              className={buttonClass({ variant: "ghost", size: "sm" })}
-              onClick={closeShortlist}
-              aria-label="Close shortlist and clear selection"
-            >
-              Close
-            </button>
-          </header>
-          {service ? (
-            <p className={styles.cardNote} data-testid="ward-shortlist-not-scoped">
-              Every ward in the network is considered.
-            </p>
-          ) : null}
-          {/* In the Placement sheet (phone, tablet portrait) the alert's reason leads, as it does on desktop. */}
-          {sheetPlacement && chosenAlert ? <ChosenAlertCard entry={chosenAlert} now={now} /> : null}
-          {selectedReferral ? (
-            <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
-          ) : (
-            <ShortlistPanel
-              movement={deferredPanelMovement}
-              now={liveNow}
-              units={units}
-              bedReleases={bedReleases}
-              leaveBeds={leaveBeds}
-              admissions={admissions}
-              referrals={referrals}
-              selectedUnitId={selectedUnitId}
-              onSelectUnit={setSelectedUnitId}
-              dispatch={dispatch}
-              parallelReferralCap={configuration.parallelReferralCap}
-              pullHoldMinutes={configuration.pullHoldMinutes}
-              onRefer={deferredPanelMovement ? (unitIds) => referFromSheet(deferredPanelMovement, unitIds) : undefined}
-            />
-          )}
-        </aside>
-      </div>
-    </div>
+  // Placement (H7 to H10, Josh 3 Nov 2026): the patient drawer on every screen size, like the
+  // Capacity pop-up, for the chosen alert, the chosen patient or the chosen referral.
+  const placementSubject: PlacementSubject | undefined = chosenAlert
+    ? { kind: "alert", entry: chosenAlert }
+    : selectedReferral
+      ? { kind: "referral", referral: selectedReferral }
+      : deferredPanelMovement
+        ? { kind: "movement", movement: deferredPanelMovement }
+        : undefined;
+  const placementNode = placementSubject ? (
+    <HomePlacementDrawer
+      // A new subject is a new drawer, so its foot slot and scroll start fresh.
+      key={chosenAlert?.item.id ?? selectedReferral?.id ?? deferredPanelMovement?.id}
+      subject={placementSubject}
+      now={liveNow}
+      onClose={closeShortlist}
+      selectedUnitId={selectedUnitId}
+      onSelectUnit={setSelectedUnitId}
+      onRefer={referFromSheet}
+      networkNote={service ? "Every ward in the network is considered." : undefined}
+    />
   ) : null;
 
   return (
@@ -843,23 +821,25 @@ export function CoordinatorScreen() {
                     value={actNowCount}
                     label="Act now"
                     tone={actNowCount > 0 ? "danger" : undefined}
-                    pressed={homeView === "needs" && needsFocus === "act"}
+                    pressed={shownView === "needs" && needsFocus === "act"}
                     onToggle={() => toggleFocus("act")}
                   />
                   <HeroStat
                     value={referralQueue.length}
                     label="To decide"
                     tone={referralQueue.length > 0 ? "info" : undefined}
-                    pressed={homeView === "needs" && needsFocus === "decide"}
+                    pressed={shownView === "needs" && needsFocus === "decide"}
                     onToggle={() => toggleFocus("decide")}
                   />
                   <HeroStat
                     value={chips.overdueInQueue}
                     label={overdueWord}
                     tone={chips.overdueInQueue > 0 ? "warning" : undefined}
-                    pressed={homeView === "queue" && highlight === "overdue"}
+                    pressed={shownView === "queue" && highlight === "overdue"}
                     onToggle={() => {
                       showView("queue");
+                      // A hero count covers the whole queue, so it clears any chosen stage.
+                      setFlowStage(undefined);
                       chooseNeedsFocus("all");
                       toggleHighlight("overdue");
                     }}
@@ -897,7 +877,7 @@ export function CoordinatorScreen() {
                     value={actNowCount}
                     label="Act now"
                     tone={actNowCount > 0 ? "danger" : undefined}
-                    pressed={homeView === "needs" && needsFocus === "act"}
+                    pressed={shownView === "needs" && needsFocus === "act"}
                     onToggle={() => toggleFocus("act")}
                   />
                   <HeroStat
@@ -905,7 +885,7 @@ export function CoordinatorScreen() {
                     value={referralQueue.length}
                     label="To decide"
                     tone={referralQueue.length > 0 ? "info" : undefined}
-                    pressed={homeView === "needs" && needsFocus === "decide"}
+                    pressed={shownView === "needs" && needsFocus === "decide"}
                     onToggle={() => toggleFocus("decide")}
                   />
                   <HeroStat
@@ -913,9 +893,11 @@ export function CoordinatorScreen() {
                     value={chips.overdueInQueue}
                     label={overdueWord}
                     tone={chips.overdueInQueue > 0 ? "warning" : undefined}
-                    pressed={homeView === "queue" && highlight === "overdue"}
+                    pressed={shownView === "queue" && highlight === "overdue"}
                     onToggle={() => {
                       showView("queue");
+                      // A hero count covers the whole queue, so it clears any chosen stage.
+                      setFlowStage(undefined);
                       chooseNeedsFocus("all");
                       toggleHighlight("overdue");
                     }}
@@ -930,9 +912,11 @@ export function CoordinatorScreen() {
                         {tierOneWord}
                       </>
                     }
-                    pressed={homeView === "queue" && highlight === "tier1"}
+                    pressed={shownView === "queue" && highlight === "tier1"}
                     onToggle={() => {
                       showView("queue");
+                      // A hero count covers the whole queue, so it clears any chosen stage.
+                      setFlowStage(undefined);
                       chooseNeedsFocus("all");
                       toggleHighlight("tier1");
                     }}
@@ -1016,6 +1000,67 @@ export function CoordinatorScreen() {
             />
           </div>
 
+          {/* Home flow (Q340, Q345, 3 Nov 2026): one row. Needs you and Flow lead as the raised switch; the
+              stages follow, after a rule, as quieter tabs with counts (always shown; one opens Flow there). */}
+          <nav className={flowStyles.nav} aria-label="Home lists">
+            <Segmented
+              className={list.viewSwitch}
+              label="Home list"
+              size="md"
+              value={shownView}
+              onChange={(view) => {
+                showView(view);
+                chooseNeedsFocus("all");
+                setFlowStage(undefined);
+              }}
+              items={[
+                {
+                  id: "needs",
+                  label: "Needs you",
+                  tone: actNowCount > 0 ? "danger" : undefined,
+                  count: actNowCount + referralQueue.length,
+                },
+                { id: "queue", label: "Flow", count: queue.length },
+                ...(isPhone || layout === "tablet-portrait"
+                  ? [{ id: "planned" as const, label: "Later today", count: plannedRows.length }]
+                  : []),
+              ]}
+            />
+            <span className={flowStyles.navRule} aria-hidden="true" />
+            <div className={flowStyles.stageGroup} data-active={shownView === "queue" ? "true" : undefined}>
+              <div className={flowStyles.stageTabs}>
+                <PillTabs
+                  label="Flow stages"
+                  className={flowStyles.stagePills}
+                  value={shownView === "queue" ? (flowStage ?? "all") : "none"}
+                  onChange={(id) => {
+                    showView("queue");
+                    chooseNeedsFocus("all");
+                    setFlowStage(id === "all" ? undefined : (id as FlowStageId));
+                  }}
+                  items={[
+                    { id: "all", label: "All", count: queue.length },
+                    ...FLOW_STAGES.filter((stage) => stage.id !== "referral").map((stage) => {
+                      const inStage = queue.filter((movement) => flowStageOf(movement) === stage.id);
+                      const late = inStage.filter(
+                        (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
+                      ).length;
+                      return {
+                        id: stage.id,
+                        label: stage.label,
+                        count: inStage.length,
+                        tone: late > 0 ? ("danger" as const) : undefined,
+                      };
+                    }),
+                  ]}
+                />
+              </div>
+            </div>
+            <HomeListMoreMenu
+              onRegisters={() => (isPhone ? setPhoneSheet({ kind: "exceptions" }) : toggleRegisters("exceptions"))}
+            />
+          </nav>
+
           <div
             className={`${styles.grid} ${list.grid}`}
             data-testid="ward-coordinator-region-grid"
@@ -1024,79 +1069,13 @@ export function CoordinatorScreen() {
             ref={queueFocusRef}
           >
             <div className={`${styles.side} ${list.workCol}`}>
-              <div className={list.switchRow}>
-                <Segmented
-                  className={list.viewSwitch}
-                  label="Home list"
-                  size="md"
-                  value={homeView}
-                  onChange={(view) => {
-                    showView(view);
-                    if (view !== "needs") chooseNeedsFocus("all");
-                  }}
-                  // Josh's words and capitalisation (30 Oct 2026): My List, Waiting, Planned. Q260 (pre-launch
-                  // review T1, 2 Nov 2026): the queue tab is "Open", as it counts every open movement (the
-                  // sidebar's "still open"); "Waiting" is kept for the people waiting in ED.
-                  items={[
-                    {
-                      id: "needs",
-                      label: "My List",
-                      tone: actNowCount > 0 ? "danger" : undefined,
-                      count: actNowCount + referralQueue.length + waitEntries.length,
-                    },
-                    // Today's queue of open movements; the same number the list's Patients tab shows.
-                    { id: "queue", label: "Open", count: queue.length },
-                    { id: "planned", label: "Planned", count: plannedRows.length },
-                  ]}
-                />
-                {isPhone ? <HomeListMoreMenu onRegisters={() => setPhoneSheet({ kind: "exceptions" })} /> : null}
-                <div className={list.headLinks} style={isPhone ? { display: "none" } : undefined}>
-                  {/* Home v7 (Josh, 22 Oct 2026): the hero's Alerts count became Act now, so the
-                      registers open from here: the strip under the hero, or a sheet on a phone. */}
-                  <button
-                    type="button"
-                    className={list.headLink}
-                    aria-expanded={isPhone ? phoneSheet?.kind === "exceptions" : heroPanel === "registers"}
-                    aria-controls={isPhone ? undefined : "ward-home-hero-panel"}
-                    onClick={() => (isPhone ? setPhoneSheet({ kind: "exceptions" }) : toggleRegisters("exceptions"))}
-                    data-testid="ward-home-registers"
-                  >
-                    Registers
-                  </button>
-                  {isPhone ? null : (
-                    <Link href="/ward-flow/alerts" className={list.headLink}>
-                      Alerts history
-                      <ChevronRight size={14} aria-hidden="true" />
-                    </Link>
-                  )}
-                </div>
-              </div>
-              {homeView === "needs" ? (
-                <MyListCard
-                  act={actEntries}
-                  toPull={toPull}
-                  wait={waitEntries}
-                  referrals={referralQueue}
-                  units={units}
-                  now={now}
-                  phone={isPhone}
-                  handlers={alertHandlers}
-                  selectedReferralId={selectedReferralId}
-                  onSelectReferral={(referralId) => {
-                    setSelectedAlertId(undefined);
-                    selectMovement(undefined);
-                    selectReferral(referralId);
-                  }}
-                  // WS-04 (workflow speed audit, 26 Oct 2026): Decide opens the decision itself, the
-                  // referral on the Referrals board with Accept and Decline, never a read-only preview.
-                  decideHref={referralBoardHref}
-                  focus={needsFocus}
-                  onShowAll={() => chooseNeedsFocus("all")}
-                />
-              ) : homeView === "planned" ? (
-                <PlannedList now={now} rows={plannedRows} />
-              ) : (
+              {shownView === "planned" ? (
+                <PlannedList now={now} rows={plannedRows} title="Later today" />
+              ) : shownView === "queue" ? (
                 <PriorityQueue
+                  flow
+                  flowStage={flowStage}
+                  waitingMarks={waitingMarks}
                   movements={queue}
                   units={units}
                   referralQueue={referralQueue}
@@ -1122,39 +1101,48 @@ export function CoordinatorScreen() {
                     setHighlight(undefined);
                     setSelectedEdId(undefined);
                   }}
-                  rowCap={isPhone ? PHONE_QUEUE_ROWS : highlight === undefined ? DESKTOP_QUEUE_ROWS : undefined}
                   phone={isPhone}
                   pinnedIds={actNowMovementIds}
+                />
+              ) : (
+                <MyListCard
+                  act={actEntries}
+                  toPull={toPull}
+                  wait={unmarkedWait}
+                  hideWait={unmarkedWait.length === 0}
+                  referralCap={Math.max(0, 8 - actEntries.length - toPull.length) || 2}
+                  referrals={referralQueue}
+                  units={units}
+                  now={now}
+                  phone={isPhone}
+                  handlers={alertHandlers}
+                  selectedReferralId={selectedReferralId}
+                  onSelectReferral={(referralId) => {
+                    setSelectedAlertId(undefined);
+                    selectMovement(undefined);
+                    selectReferral(referralId);
+                  }}
+                  decideHref={referralBoardHref}
+                  focus={needsFocus}
+                  onShowAll={() => chooseNeedsFocus("all")}
                 />
               )}
             </div>
             <div className={`${list.rightCol} ${list.stickyCol}`}>
-              {chosenAlert && !sheetPlacement ? (
-                <ChosenAlertCard entry={chosenAlert} now={now} onClear={closeShortlist} />
-              ) : null}
               {isPhone || chosenAlert ? null : (
                 <BedsGapCard now={now} bedsReady={bedsReady} condensed={hasPanelSubject} />
               )}
-              {/* An alert with no patient journey (a booking, a notification) has nothing to place. */}
-              {chosenAlert && !chosenAlert.movement ? null : placementNode}
               {!sheetPlacement && !hasPanelSubject && !chosenAlert ? (
                 <PlacementPrompt next={actEntries.find((entry) => entry.movement)} onOpen={alertHandlers.onSelect} />
+              ) : null}
+              {/* Later today steps aside while Placement is open, so Placement keeps the whole column. */}
+              {!isPhone && layout !== "tablet-portrait" && !hasPanelSubject && !chosenAlert ? (
+                <PlannedList now={now} rows={plannedRows} title="Later today" />
               ) : null}
             </div>
           </div>
 
-          {sheetPlacement && chosenAlert && !chosenAlert.movement ? (
-            // On a phone or tablet portrait an alert with no patient journey opens in its own sheet.
-            <Sheet
-              open
-              onClose={() => setSelectedAlertId(undefined)}
-              title="Chosen alert"
-              mobilePlacement="bottom"
-              testId="home-alert-sheet"
-            >
-              <ChosenAlertCard entry={chosenAlert} now={now} />
-            </Sheet>
-          ) : null}
+          {placementNode}
           {releaseSheetUsed ? (
             <HomeReleaseSheet entry={releaseAlert} onClose={() => setReleaseAlertId(undefined)} />
           ) : null}

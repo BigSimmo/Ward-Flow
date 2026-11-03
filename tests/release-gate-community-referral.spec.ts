@@ -17,7 +17,7 @@ import {
   waitForScreen,
   wardDesk,
 } from "./helpers/ward-release-gate";
-import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { showNeedsYouReferrals } from "./helpers/ward-home-page";
 import { wardChoiceName } from "./helpers/ward-choice-name";
 
 /**
@@ -97,13 +97,16 @@ async function teamWaitingCount(page: Page): Promise<number> {
   return match ? Number(match[1]) : 0;
 }
 
-/** The ids of the referrals in the coordinator Home's Referrals queue. */
+/**
+ * The ids of the referrals in the coordinator Home's Referrals to decide group. Home flow (Q340,
+ * 3 Nov 2026): referrals are listed only under Needs you, one row per referral keyed by
+ * `data-referral-id`; opening the group's "Show N more" first means none hides behind the cap.
+ */
 async function homeReferralIds(page: Page): Promise<string[]> {
-  return page
-    .locator('[data-testid^="ward-referral-row-"]')
-    .evaluateAll((rows) =>
-      rows.map((row) => (row.getAttribute("data-testid") ?? "").replace("ward-referral-row-", "")),
-    );
+  const group = await showNeedsYouReferrals(page);
+  return group
+    .locator("[data-referral-id]")
+    .evaluateAll((rows) => rows.map((row) => row.getAttribute("data-referral-id") ?? ""));
 }
 
 test("Community referral: a community team refers from its own desk, the ward it asked accepts into a held bed, and the coordinator's board and the team's desk agree", async ({
@@ -223,30 +226,29 @@ test("Community referral: a community team refers from its own desk, the ward it
 
   // --- The coordinator's Home: the referral is queued, sent by the team. ---
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  // Home v7 (Josh, 22 Oct 2026): Home opens on My list; the queue's Referrals tab is under
-  // Everyone waiting.
-  await showEveryoneWaitingOn(page);
-  await page.getByRole("radio", { name: /^Referrals/u }).click();
+  // Home flow (Q340, 3 Nov 2026): referrals to decide are listed once, under Needs you (Home's default
+  // list); the Flow card no longer has a Referrals tab.
+  await showNeedsYouReferrals(page);
   await expect
     .poll(async () => (await homeReferralIds(page)).filter((id) => !SEEDED_REFERRAL_IDS.has(id)), {
       message: "exactly one new referral must reach the coordinator's Referrals queue",
     })
     .toHaveLength(1);
   const referralId = (await homeReferralIds(page)).find((id) => !SEEDED_REFERRAL_IDS.has(id))!;
-  const homeRow = page.getByTestId(`ward-referral-row-${referralId}`);
+  const homeRow = page.getByTestId("home-my-list").locator(`[data-referral-id="${referralId}"]`);
   await expect(homeRow).toContainText(`sent by ${teamName}`);
-  await expect(homeRow).toContainText("Adult · Perth Metropolitan");
+  // The Needs you row writes the profile as "age band, region" (`my-list-card.tsx`).
+  await expect(homeRow).toContainText("Adult, Perth Metropolitan");
   await expectAccessible(page, testInfo, "coordinator Home with the team's referral queued");
-  await homeRow.click();
+  await homeRow.getByRole("button", { name: /^Open referral for /u }).click();
   const placement = page.getByTestId(`ward-referral-placement-${referralId}`);
   await expect(placement).toBeVisible();
-  await expect(placement).toContainText(PERSON.umrn);
+  // H7 (Josh, 3 Nov 2026): Referral placement is the patient drawer; its head carries the UMRN.
+  await expect(page.getByRole("complementary", { name: "Referral placement", exact: true })).toContainText(PERSON.umrn);
   await expectAccessible(page, testInfo, "coordinator referral placement");
-  // On a phone the panel is a bottom sheet over the page; close it, as a coordinator would.
-  if (isPhoneLayout(page)) {
-    await page.getByRole("button", { name: "Close shortlist and clear selection" }).click();
-    await expect(placement).toHaveCount(0);
-  }
+  // The drawer sits over the page on every screen size; close it, as a coordinator would.
+  await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+  await expect(placement).toHaveCount(0);
 
   // --- The Referral board: queued, no transport asked for, and the asked ward accepts it. ---
   await goViaNav(page, "/ward-flow/referrals", "ward-referral-board-screen");

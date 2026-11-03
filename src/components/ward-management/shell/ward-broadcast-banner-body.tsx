@@ -30,6 +30,7 @@ import {
   type BannerTone,
 } from "@/components/ward-management/alerts/global-alert-view";
 import { resolveAlertSubject } from "@/components/ward-management/alerts/alerts-model";
+import { useConfirmBroadcastStandDown } from "@/components/ward-management/alerts/confirm-broadcast-stand-down";
 import { useCanOpenHref, useDeskInScope } from "@/components/ward-management/shell/ward-access";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
@@ -92,6 +93,7 @@ export function BannerBody({
   onDispatch: WardFlowContextValue["dispatch"];
 }) {
   const { alert, tone, needsAnswer } = entry;
+  const confirmStandDown = useConfirmBroadcastStandDown(alert, lifecycle?.standDown);
   const kind = broadcastKind(alert);
   const [choosing, setChoosing] = useState<BroadcastAnswer | null>(null);
   const [changing, setChanging] = useState(false);
@@ -294,7 +296,7 @@ export function BannerBody({
             </Button>
           ) : null}
           {lifecycle?.standDown ? (
-            <Button size="sm" variant="ghost" onClick={lifecycle.standDown} data-testid="ward-broadcast-stand-down">
+            <Button size="sm" variant="ghost" onClick={confirmStandDown} data-testid="ward-broadcast-stand-down">
               Stand down
             </Button>
           ) : null}

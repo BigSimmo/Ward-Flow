@@ -1100,6 +1100,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               className={pageStyles.scrim}
               onClick={closeDrawer}
               aria-hidden="true"
+              data-sheet-scrim=""
               data-testid="ward-discharge-scrim"
             />
           )}
