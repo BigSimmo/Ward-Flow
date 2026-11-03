@@ -18,6 +18,7 @@ import { isAlertLive } from "./global-alert-view";
 import { PullNowCard } from "./global-alert-panels";
 import { GroupHead } from "./alerts-queue";
 import { AlertsRemindersGroup } from "./alerts-reminders-group";
+export { useDueReminderCount } from "./alerts-reminders-group";
 import type { HistoryEntry } from "./alerts-history";
 import { AddUnitsDialog, addableGroups } from "./broadcast-add-units";
 import { BroadcastLiveCard, EarlierBroadcasts } from "./broadcast-live-card";

@@ -14,8 +14,17 @@ import { removeReminder, useReminders } from "@/components/ward-management/tools
 import { GroupHead } from "./alerts-queue";
 import styles from "./alerts.module.css";
 
+function useDueReminders(now: Instant) {
+  return useReminders().filter((reminder) => reminder.dueAt <= now);
+}
+
+/** How many of this person's reminders are due, so Alerts does not say "Nothing needs you" above them. */
+export function useDueReminderCount(now: Instant): number {
+  return useDueReminders(now).length;
+}
+
 export function AlertsRemindersGroup({ now }: { now: Instant }) {
-  const due = useReminders().filter((reminder) => reminder.dueAt <= now);
+  const due = useDueReminders(now);
   if (due.length === 0) return null;
   return (
     <section className={styles.group} aria-label="Your reminders" data-testid="ward-alerts-reminders">

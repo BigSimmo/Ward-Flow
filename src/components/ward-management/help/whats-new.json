@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-redesign-frame",
-    "date": "2026-10-31",
-    "line": "The sidebar, header and phone dock are tidier: page name first, Alerts on every desk, and Demo from the board clock."
-  },
-  {
     "id": "2026-10-31-redesign-home",
     "date": "2026-10-31",
     "line": "Home shows what changed since your last review in Activity, and a Planned list for the rest of the shift."
@@ -98,5 +93,10 @@
     "id": "2026-11-03-tools-overhaul",
     "date": "2026-11-03",
     "line": "Tools is redesigned: recent tools first, Remind me, Due back, ready-made messages and an order for each desk."
+  },
+  {
+    "id": "2026-11-03-reminders-in-alerts",
+    "date": "2026-11-03",
+    "line": "Remind me reminders now show in Alerts when they are due. Tap Done to clear one."
   }
 ]
