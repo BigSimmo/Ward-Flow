@@ -12,7 +12,12 @@ import { ArrowRight, ChevronRight, Lock, FileBadge, ShieldCheck, X } from "lucid
 
 import { PhoneSheet, StatusGlyph, TierTile, buttonClass, useIsPhone, type WfTone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
-import { dayOf, formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  dayOf,
+  formatInstantWithDay,
+  splitDuration,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { stageChangeReasonLabel } from "./movement-workspace-derivations";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
@@ -378,7 +383,7 @@ export function corridorPeople(
       declinedToday(movement)
         .map(
           (decline) =>
-            `Declined ${formatInstant(decline.at)} · ${
+            `Declined ${formatInstantWithDay(decline.at, now)} · ${
               decline.reason ? (stageChangeReasonLabel(decline.reason) ?? decline.reason) : DECLINE_REASON_NOT_SHARED
             }`,
         )

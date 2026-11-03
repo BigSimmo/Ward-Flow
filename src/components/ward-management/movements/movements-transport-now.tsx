@@ -13,7 +13,7 @@ import { ArrowRight, ChevronRight, ShieldCheck, Ambulance, X } from "lucide-reac
 
 import { PhoneSheet, StatusGlyph, buttonClass, cx, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -53,8 +53,11 @@ function legSteps(movement: Movement, state: MovementLegState): Step[] {
 
 /** The next step a leg is waiting on, in the words the transport record uses. */
 function nextStepWord(state: MovementLegState): string | undefined {
-  if (state === "Accepted") return "Mark collected";
-  if (state === "En route" || state === "Collected") return "Confirm arrival";
+  // Codex review on #1363: the steps run accepted, en route, collected, arrived, and the record
+  // refuses collection before en route and arrival before collection.
+  if (state === "Accepted") return "Mark en route";
+  if (state === "En route") return "Mark collected";
+  if (state === "Collected") return "Confirm arrival";
   return undefined;
 }
 
@@ -188,7 +191,7 @@ export function TransportFeed({
                         <span key={step.id} className={tr.step} data-state={step.state}>
                           <i aria-hidden="true" />
                           {step.label}
-                          {step.at !== undefined ? <b>{formatInstant(step.at)}</b> : null}
+                          {step.at !== undefined ? <b>{formatInstantWithDay(step.at, now)}</b> : null}
                         </span>
                       ))}
                     </span>
