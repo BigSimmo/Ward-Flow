@@ -1,15 +1,5 @@
 [
   {
-    "id": "2026-10-31-redesign-network",
-    "date": "2026-10-31",
-    "line": "Places, All wards, Community team, On-call and Seclusion are tidier, and names wrap in full."
-  },
-  {
-    "id": "2026-10-31-redesign-add-patient",
-    "date": "2026-10-31",
-    "line": "Add a patient checks for duplicates as you type, and its Add patient button says what is still needed."
-  },
-  {
     "id": "2026-10-31-settings-by-login",
     "date": "2026-10-31",
     "line": "Settings is one page shaped by your login, with a short Rules that affect you card. Glare is now Bright light."
@@ -93,6 +83,16 @@
     "id": "2026-11-03-report-data-correctness",
     "date": "2026-11-03",
     "line": "ED journey totals, community origins and downtime departure lists now use consistent meanings."
+  },
+  {
+    "id": "2026-11-03-coordinator-quick-actions",
+    "date": "2026-11-03",
+    "line": "Tools has Quick actions for the bed coordinator, with Ward updates listing wards not confirmed this shift."
+  },
+  {
+    "id": "2026-11-03-dropdowns-tips-dots",
+    "date": "2026-11-03",
+    "line": "Neater drop-down lists, graph dots that stay put when pressed, and page tips once per device with Turn off tips."
   },
   {
     "id": "2026-11-03-workflow-input-recovery",

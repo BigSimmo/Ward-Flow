@@ -22,7 +22,43 @@ async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator
   return row;
 }
 
+/**
+ * Page tips appear 1.5 s after a screen settles, and on a phone the Home tip sits over the Flow
+ * card's "Show all N" button, so a click there could wait out the whole test (3 Nov 2026, the
+ * phone referral journey below, intermittently). These journeys are about the screens under the
+ * tips, so every tip starts out seen. The release-gate journey still proves the Home tip appears.
+ */
+const EVERY_TIP_SEEN = [
+  "command",
+  "capacity",
+  "movements",
+  "referrals",
+  "handover",
+  "ward",
+  "ed",
+  "community",
+  "officer",
+  "statistics",
+  "governance",
+  "settings",
+  "legal-forms",
+  "downtime",
+  "patient",
+  "ed-board",
+  "community-team",
+  "bed-meeting-agenda",
+]
+  .map((topic) => `coordinator:${topic}`)
+  .join(",");
+
 async function gotoCoordinator(page: Page) {
+  await page.addInitScript((seen) => {
+    try {
+      window.localStorage.setItem("ward_flow_choice_help_hints_seen", seen);
+    } catch {
+      // Storage refused: the tip then fails closed and shows nothing anyway.
+    }
+  }, EVERY_TIP_SEEN);
   await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
   // A second same-URL navigation can leave a hidden duplicate of the screen
   // in the tree. Strict getByTestId then fails even though one copy is visible
@@ -1191,6 +1227,14 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
   test("keeps the referral control reachable on a phone, in the panel's natural flow", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoCoordinator(page);
+    // Tours start out seen here, so Home offers its once-per-topic help hint 1.5s after it settles.
+    // On a phone that corner card sits over the Flow card's "Show all N" buttons, and a click issued
+    // after it appears waits on it until the test times out (main CI, 3 Nov 2026). Acknowledge it
+    // the way a coordinator would, as the release-gate journey does, before using the queue below.
+    const homeHelp = page.getByRole("complementary", { name: "Home help", exact: true });
+    await expect(homeHelp).toBeVisible();
+    await homeHelp.getByRole("button", { name: "Got it", exact: true }).click();
+    await expect(homeHelp).toHaveCount(0);
 
     const queue = homeFlowCard(page);
     // Phone Home lists each Flow stage's oldest 5 with "Show all N"; WF-002 may sit further down.
