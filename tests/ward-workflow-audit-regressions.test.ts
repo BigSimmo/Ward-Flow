@@ -131,6 +131,17 @@ describe("workflow audit regressions", () => {
     ]);
   });
 
+  it("never compares Ready counts with a picture taken on the old basis", () => {
+    const state = seedWardFlowState();
+    const after = takeLastLookSnapshot(state, now + 1, DEFAULT_DUE_SOON_THRESHOLDS);
+    const unitId = Object.keys(after.readyByUnit).find((id) => after.readyByUnit[id]! > 0)!;
+    // A picture saved before this release: no basis, and a lower Ready count for the same ward.
+    const old = takeLastLookSnapshot(state, now, DEFAULT_DUE_SOON_THRESHOLDS);
+    delete old.readyBasis;
+    old.readyByUnit = { ...old.readyByUnit, [unitId]: after.readyByUnit[unitId]! - 1 };
+    expect(changesSinceLastLook(JSON.parse(JSON.stringify(old)), after, state)?.bedsFreed ?? []).toEqual([]);
+  });
+
   it.each([undefined, ...ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES])(
     "archives unused registrations with demographic answer %s",
     (status) => {

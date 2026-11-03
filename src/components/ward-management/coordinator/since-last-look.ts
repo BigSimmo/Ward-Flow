@@ -44,6 +44,12 @@ export type LastLookSnapshot = {
   movementIds: string[];
   /** "Ready" beds per ward — the same `min(allocatable, empty)` every screen calls Ready. */
   readyByUnit: Record<string, number>;
+  /**
+   * How `readyByUnit` was counted. Absent on a picture taken before the board's own `readyBedsNow`
+   * count was used, whose Ready figures are then never compared (a stale basis would invent or
+   * hide a freed bed).
+   */
+  readyBasis?: "readyBedsNow";
   /** `movementId:cause` for every open movement sitting in a delay group. */
   delayKeys: string[];
   escalatedMovementIds: string[];
@@ -170,6 +176,7 @@ export function takeLastLookSnapshot(
     referralIds: world.referrals.map((referral) => referral.id),
     movementIds: world.movements.map((movement) => movement.id),
     readyByUnit,
+    readyBasis: "readyBedsNow",
     delayKeys,
     escalatedMovementIds: open.filter((movement) => movement.escalation !== undefined).map((movement) => movement.id),
     // Coordinator picture only: a scoped Ward/ED picture compares its own records instead.
@@ -330,6 +337,7 @@ function bedsFreedRows(
   current: LastLookSnapshot,
 ): BedsFreed[] {
   const bedsFreed: BedsFreed[] = [];
+  if (previous.readyBasis !== current.readyBasis) return bedsFreed;
   for (const unit of units) {
     const before = previous.readyByUnit[unit.id];
     const after = current.readyByUnit[unit.id];
@@ -377,7 +385,8 @@ function snapshotReadyCountsInvalid(v: Record<string, unknown>): boolean {
   return (
     countMapInvalid(v.readyByUnit) ||
     (v.acceptanceWithdrawnByMovement !== undefined && countMapInvalid(v.acceptanceWithdrawnByMovement)) ||
-    (v.dischargeMovesByAdmission !== undefined && countMapInvalid(v.dischargeMovesByAdmission))
+    (v.dischargeMovesByAdmission !== undefined && countMapInvalid(v.dischargeMovesByAdmission)) ||
+    (v.readyBasis !== undefined && v.readyBasis !== "readyBedsNow")
   );
 }
 function parsedSnapshot(value: unknown): LastLookSnapshot | undefined {
