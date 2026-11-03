@@ -11,6 +11,7 @@ import { H8, OVER_8H, WAIT_BANDS, type OwnerTile } from "./delays-board-model";
 import { BandBar, Glyph } from "./delays-board-parts";
 import type { DelayOwnerId } from "./delays-derivations";
 import { phoneRows } from "@/components/wf";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import board from "./delays-board.module.css";
 import waitingKeys from "./waiting.module.css";
 import styles from "./waiting-polish.module.css";
@@ -26,6 +27,7 @@ export function WaitingOwnerTiles({
   isPhone: boolean;
   onPress: (owner: DelayOwnerId) => void;
 }) {
+  const patientOf = usePatientOf();
   return (
     <section
       // Phone (Josh, 31 Oct 2026): one sliding row with Home's fade, in place of two by two.
@@ -36,6 +38,13 @@ export function WaitingOwnerTiles({
       <div className={isPhone ? styles.ownContents : styles.ownGrid}>
         {tiles.map((tile) => {
           const longest = tile.rows.reduce((most, row) => Math.max(most, row.waited), 0);
+          // Diagnosed issues W2 (Josh, 3 Nov 2026): each tile names who has waited longest, so the
+          // coordinator sees the first person to act on before opening the group.
+          const first = tile.rows.reduce<(typeof tile.rows)[number] | undefined>(
+            (top, row) => (top === undefined || row.waited > top.waited ? row : top),
+            undefined,
+          );
+          const pressedHere = pressed === tile.owner;
           const over8 = tile.rows.filter((row) => row.waited >= OVER_8H).length;
           return (
             <button
@@ -50,12 +59,21 @@ export function WaitingOwnerTiles({
                 <b className={board.num}>{tile.rows.length}</b>
                 <span className={board.ownName}>{tile.name}</span>
                 {isPhone || tile.rows.length === 0 ? null : (
-                  <span className={styles.ownLongest}>
-                    longest <b className={board.num}>{splitDuration(longest)}</b>
+                  <span className={styles.ownCta} aria-hidden="true">
+                    {pressedHere ? "Showing" : "Show"}
                   </span>
                 )}
               </span>
-              <BandBar bands={tile.bands} />
+              <BandBar bands={tile.bands} className={isPhone ? undefined : styles.ownBar} />
+              {isPhone || first === undefined ? null : (
+                <span className={styles.ownFirst}>
+                  <span className={styles.ownFirstName}>
+                    <span className={styles.ownFirstLabel}>Longest </span>
+                    {patientOf(first.movement).formalName}
+                  </span>
+                  <b className={board.num}>{splitDuration(longest)}</b>
+                </span>
+              )}
               {/* Audit 11 Oct 2026, phone: one count per chip; the glyph alone flags the sub fact. */}
               {isPhone ? (
                 tile.sub.count > 0 ? (
