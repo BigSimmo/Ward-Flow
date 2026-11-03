@@ -177,7 +177,8 @@ export type FlowStageId = (typeof FLOW_STAGES)[number]["id"];
 
 /** The stage a movement is in, read only from its recorded stage and transport. */
 export function flowStageOf(movement: Movement): Exclude<FlowStageId, "referral"> {
-  if (movement.stage === "moving" || movement.arrivalDetails) return "moving";
+  // The recorded stage decides: an arrival plan can be set before collection (SET_ARRIVAL_DETAILS).
+  if (movement.stage === "moving") return "moving";
   if (movement.stage === "handover_ready") return "ready";
   if (movement.stage === "accepted_awaiting_bed" || movement.stage === "pulled") return "agreed";
   return "bed";

@@ -880,6 +880,8 @@ export function CoordinatorScreen() {
                     pressed={homeView === "queue" && highlight === "overdue"}
                     onToggle={() => {
                       showView("queue");
+                      // A hero count covers the whole queue, so it clears any chosen stage.
+                      setFlowStage(undefined);
                       chooseNeedsFocus("all");
                       toggleHighlight("overdue");
                     }}
@@ -936,6 +938,8 @@ export function CoordinatorScreen() {
                     pressed={homeView === "queue" && highlight === "overdue"}
                     onToggle={() => {
                       showView("queue");
+                      // A hero count covers the whole queue, so it clears any chosen stage.
+                      setFlowStage(undefined);
                       chooseNeedsFocus("all");
                       toggleHighlight("overdue");
                     }}
@@ -953,6 +957,8 @@ export function CoordinatorScreen() {
                     pressed={homeView === "queue" && highlight === "tier1"}
                     onToggle={() => {
                       showView("queue");
+                      // A hero count covers the whole queue, so it clears any chosen stage.
+                      setFlowStage(undefined);
                       chooseNeedsFocus("all");
                       toggleHighlight("tier1");
                     }}
