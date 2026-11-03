@@ -45,54 +45,54 @@ export function useWardFormSave(scope: string) {
   // depend on this hook are not rebuilt on every render.
   const submit = useCallback(
     (record: () => ReturnType<WardCommandDispatch> | undefined, onAccepted: () => void) => {
-    if (inFlight.current || holds(held.current, scopeToken)) return;
-    inFlight.current = true;
-    setPending(true);
-    setError(undefined);
-    if (held.current) hold(null);
-    const submittedScope = scopeToken;
-    const submittedGeneration = generation.current;
-    const answer = (outcome?: WardCommandOutcome | void) => {
-      if (generation.current !== submittedGeneration) return;
-      if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
-        setError(undefined);
-        onAccepted();
-      } else
-        setError({
-          scope: submittedScope,
-          message:
-            (outcome?.status === "accepted" ? undefined : wardCommandFailure(outcome || undefined)) ??
-            SAVE_NOT_CONFIRMED,
-        });
-    };
-    const finish = (outcome?: WardCommandOutcome | void) => {
-      inFlight.current = false;
-      setPending(false);
-      if (currentScope.current !== submittedScope) return;
-      answer(outcome);
-      // Audit 24-3 SV-1..4: a later Retry from the status bar may still confirm this command.
-      if (outcome?.status !== "failed" || !outcome.confirmation) return;
-      const entry: Held = { scope: submittedScope, outcome };
-      hold(entry);
-      void outcome.confirmation.then(
-        (confirmed) => {
-          if (held.current !== entry) return;
-          hold(null);
-          if (currentScope.current === submittedScope && confirmed.commandId === outcome.commandId) answer(confirmed);
-        },
-        () => {
-          // Keep the not-confirmed message; only release the lock.
-          if (held.current === entry) hold(null);
-        },
-      );
-    };
-    try {
-      const completion = record();
-      if (completion && "then" in completion) void completion.then(finish, () => finish());
-      else finish(completion);
-    } catch {
-      finish();
-    }
+      if (inFlight.current || holds(held.current, scopeToken)) return;
+      inFlight.current = true;
+      setPending(true);
+      setError(undefined);
+      if (held.current) hold(null);
+      const submittedScope = scopeToken;
+      const submittedGeneration = generation.current;
+      const answer = (outcome?: WardCommandOutcome | void) => {
+        if (generation.current !== submittedGeneration) return;
+        if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
+          setError(undefined);
+          onAccepted();
+        } else
+          setError({
+            scope: submittedScope,
+            message:
+              (outcome?.status === "accepted" ? undefined : wardCommandFailure(outcome || undefined)) ??
+              SAVE_NOT_CONFIRMED,
+          });
+      };
+      const finish = (outcome?: WardCommandOutcome | void) => {
+        inFlight.current = false;
+        setPending(false);
+        if (currentScope.current !== submittedScope) return;
+        answer(outcome);
+        // Audit 24-3 SV-1..4: a later Retry from the status bar may still confirm this command.
+        if (outcome?.status !== "failed" || !outcome.confirmation) return;
+        const entry: Held = { scope: submittedScope, outcome };
+        hold(entry);
+        void outcome.confirmation.then(
+          (confirmed) => {
+            if (held.current !== entry) return;
+            hold(null);
+            if (currentScope.current === submittedScope && confirmed.commandId === outcome.commandId) answer(confirmed);
+          },
+          () => {
+            // Keep the not-confirmed message; only release the lock.
+            if (held.current === entry) hold(null);
+          },
+        );
+      };
+      try {
+        const completion = record();
+        if (completion && "then" in completion) void completion.then(finish, () => finish());
+        else finish(completion);
+      } catch {
+        finish();
+      }
     },
     [hold, scopeToken],
   );
