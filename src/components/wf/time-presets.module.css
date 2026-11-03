@@ -1,5 +1,5 @@
 /* Time buttons beside a typed time (time-presets.tsx, D-91; from the #1118 mock-ups). Quiet: hairline, no fill, the
-   kit standard's 30px at 13px on a laptop; 32px on a phone with a 48px invisible tap area. */
+   kit standard's 30px at 13px on a laptop; 40px on a phone with a 48px invisible tap area. */
 
 .row {
   display: flex;
@@ -41,16 +41,23 @@
   outline-offset: 2px;
 }
 
+/* Phone (Q377, 3 Nov 2026): drawn at 40px like every phone control (DESIGN-SYSTEM.md, Q295), with an
+   invisible cover above and below that keeps the 48px tap floor. Large text grows it. */
 @media (max-width: 46.4375rem) {
   .preset {
-    height: 32px;
+    height: 40px;
+    height: calc-size(auto, max(size, 40px));
+    min-height: 40px;
     padding: 0 12px;
+    /* The cover sits over the next field's label, so a press just below the face still lands. */
+    z-index: 1;
   }
 
+  /* Measured from inside the 1px border, so 5px reaches 4px past the face: 48px in all. */
   .preset::after {
     content: "";
     position: absolute;
-    inset: -8px -3px;
+    inset: -5px -3px;
   }
 }
 
