@@ -1,4 +1,5 @@
 import type { MouseEvent, ReactNode } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { BedSingle, Clock, DoorOpen, FileBadge, Stethoscope, Ambulance, UserRound, Users } from "lucide-react";
@@ -23,7 +24,8 @@ import type { PatientMode } from "./patient-mode";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { recordExtrasFor } from "./patient-record-extras";
 import { stayProgress } from "./patient-now-ward";
-import { PatientStayProgress } from "./patient-now-ward-cards";
+// Loads with the other ward cards, only for a stay (phone script budget).
+const PatientStayProgress = dynamic(() => import("./patient-now-ward-cards").then((m) => m.PatientStayProgress));
 import styles from "./patient-status-card.module.css";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";

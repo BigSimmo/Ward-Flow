@@ -4,6 +4,7 @@
 // out of `patient-now-screen.tsx`, which renders it with the values and handlers it has derived.
 import { scrollWardPageToTop } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Ambulance, BedSingle, Copy, FileText, RotateCcw } from "lucide-react";
 import { PatientRecordOverview } from "./patient-record-overview";
 import { callRows, type CallTarget } from "./patient-call-list";
@@ -30,12 +31,13 @@ import { plural } from "@/components/ward-management/ward-plural";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { dischargeReadiness, patientNextStep, recentStayEvents } from "./patient-now-ward";
-import {
-  PatientDischargeReadiness,
-  PatientLastDay,
-  PatientNextStepButton,
-  PatientNextStepCard,
-} from "./patient-now-ward-cards";
+import { PatientNextStepButton } from "./patient-now-ward-button";
+
+// The ward cards load on their own: only a stay needs them (phone script budget).
+const loadWardCards = () => import("./patient-now-ward-cards");
+const PatientDischargeReadiness = dynamic(() => loadWardCards().then((m) => m.PatientDischargeReadiness));
+const PatientLastDay = dynamic(() => loadWardCards().then((m) => m.PatientLastDay));
+const PatientNextStepCard = dynamic(() => loadWardCards().then((m) => m.PatientNextStepCard));
 
 /** The values and handlers `PatientNowScreen` passes to its Now tab. */
 export type PatientNowPanelProps = {

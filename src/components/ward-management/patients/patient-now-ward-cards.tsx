@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { History, ListChecks } from "lucide-react";
-import { Button, Card, CardHead, Meter, StatusGlyph, buttonClass } from "@/components/wf";
+import { Button, Card, CardHead, Meter, StatusGlyph } from "@/components/wf";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
-import type { NextStep, NextStepAction, ReadinessRow, RecentEvent, StayProgress } from "./patient-now-ward";
+import type { NextStep, ReadinessRow, RecentEvent, StayProgress } from "./patient-now-ward";
 import styles from "./patient-now-ward-cards.module.css";
+import { PatientNextStepButton } from "./patient-now-ward-button";
 
 /**
  * Next step first (Josh, 3 Nov 2026): one card leading Now with the single thing due and one button.
@@ -48,46 +48,6 @@ export function PatientNextStepCard({
         </div>
       ) : null}
     </Card>
-  );
-}
-
-/** The next step's one button: a link or a handler, greyed with the desk's reason when limited. */
-export function PatientNextStepButton({
-  action,
-  primary,
-  roleLimit,
-  testId,
-}: {
-  action: NextStepAction;
-  primary: boolean;
-  roleLimit?: (event: WardFlowEventType) => string | undefined;
-  testId?: string;
-}) {
-  const reason = action.event ? roleLimit?.(action.event) : undefined;
-  const variant = primary ? "pri" : "sec";
-  if (reason)
-    return (
-      <Button icon={action.icon} disabledReason={reason} reasonDisplay="tooltip" data-testid={testId}>
-        {action.label}
-      </Button>
-    );
-  if (action.href)
-    return (
-      <Link href={action.href} className={buttonClass({ variant })} aria-label={action.ariaLabel} data-testid={testId}>
-        {action.icon ? <action.icon size={16} strokeWidth={1.75} aria-hidden="true" /> : null}
-        {action.label}
-      </Link>
-    );
-  return (
-    <Button
-      variant={variant}
-      icon={action.icon}
-      aria-label={action.ariaLabel}
-      onClick={action.onClick}
-      data-testid={testId}
-    >
-      {action.label}
-    </Button>
   );
 }
 
