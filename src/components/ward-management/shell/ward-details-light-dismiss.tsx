@@ -12,14 +12,14 @@
  */
 import { useEffect } from "react";
 
-export function isFloatingDetails(details: HTMLDetailsElement) {
+function isFloatingDetails(details: HTMLDetailsElement) {
   if (details.dataset.lightDismiss === "off") return false;
   return Array.from(details.children).some(
     (child) => child.tagName !== "SUMMARY" && /^(absolute|fixed)$/.test(getComputedStyle(child).position),
   );
 }
 
-export function closeFloatingDetailsOutside(target: EventTarget | null, root: ParentNode = document) {
+function closeFloatingDetailsOutside(target: EventTarget | null, root: ParentNode = document) {
   if (!(target instanceof Node)) return;
   for (const details of Array.from(root.querySelectorAll<HTMLDetailsElement>("details[open]"))) {
     if (!details.contains(target) && isFloatingDetails(details)) details.open = false;
