@@ -4,81 +4,87 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 import { wardCommandFailure } from "./ward/use-ward-command-completion";
 import { SAVE_NOT_CONFIRMED } from "./ward-save-failure";
+import { useWardShellPublic } from "./shell/ward-shell-public-context";
 
 export type WardFormSave = ReturnType<typeof useWardFormSave>;
-type Held = { scope: object; outcome: WardCommandOutcome };
+type Flight = { key: string; scope: object; generation: number };
+type Held = Flight & { outcome: WardCommandOutcome };
 
-/**
- * Audit 24-3 (SV-1 to SV-4): a form keeps what was typed until its save is accepted, and says why
- * when it is not. The patient record's `usePatientFormSave` pattern: one save at a time, and an
- * answer for another scope (another ward, patient or referral) or after the form closed is ignored.
- */
+/** A draft clears only after its own command accepts; uncertain commands retain their identity. */
 export function useWardFormSave(scope: string) {
-  const scopeToken = useMemo(() => ({ id: scope }), [scope]);
+  const accessLifetime = useWardShellPublic()?.accessLifetime;
+  // The stable key owns a command even if its form closes and returns to this same subject.
+  // The visit token separately prevents that old command from clearing the newly opened draft.
+  const key = JSON.stringify([scope, accessLifetime]);
+  const scopeToken = useMemo(() => ({ id: scope, lifetime: accessLifetime }), [scope, accessLifetime]);
   const currentScope = useRef<object | null>(scopeToken);
+  const lastLifetime = useRef(accessLifetime);
+  const flights = useRef(new Map<string, Flight>());
+  const held = useRef(new Map<string, Held>());
+  const generation = useRef(0);
+  const [view, setView] = useState<{ flights: ReadonlyMap<string, Flight>; held: ReadonlyMap<string, Held> }>(() => ({
+    flights: new Map(),
+    held: new Map(),
+  }));
+  const [error, setError] = useState<{ scope: object; message: string }>();
   useLayoutEffect(() => {
     currentScope.current = scopeToken;
+    if (lastLifetime.current !== accessLifetime) {
+      lastLifetime.current = accessLifetime;
+      flights.current.clear();
+      held.current.clear();
+    }
     return () => {
       currentScope.current = null;
     };
-  }, [scopeToken]);
-  const inFlight = useRef(false);
-  // Each opening of a form that stays mounted (`forget` on open and Cancel): a late answer to an
-  // earlier opening's save neither closes nor clears the new one.
-  const generation = useRef(0);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<{ scope: object; message: string }>();
-  // A save that may yet be confirmed by the status bar's Retry (same command id). The form stays
-  // locked meanwhile, so the same record cannot go again under a new command id.
-  const held = useRef<Held | null>(null);
-  const [heldView, setHeldView] = useState<Held | null>(null);
-  const hold = (next: Held | null) => {
-    held.current = next;
-    setHeldView(next);
+  }, [scopeToken, accessLifetime]);
+  const publish = () => {
+    if (currentScope.current) setView({ flights: new Map(flights.current), held: new Map(held.current) });
   };
-  const holding = (entry: Held | null) =>
-    entry !== null && entry.scope === scopeToken && entry.outcome.isCurrent?.() !== false;
+  const holding = (entry: Held | undefined) => entry !== undefined && entry.outcome.isCurrent?.() !== false;
   function submit(record: () => ReturnType<WardCommandDispatch> | undefined, onAccepted: () => void) {
-    if (inFlight.current || holding(held.current)) return;
-    inFlight.current = true;
-    setPending(true);
+    if (flights.current.has(key) || holding(held.current.get(key))) return;
+    const flight: Flight = { key, scope: scopeToken, generation: generation.current };
+    flights.current.set(key, flight);
+    held.current.delete(key);
     setError(undefined);
-    if (held.current) hold(null);
-    const submittedScope = scopeToken;
-    const submittedGeneration = generation.current;
+    publish();
     const answer = (outcome?: WardCommandOutcome | void) => {
-      if (generation.current !== submittedGeneration) return;
+      if (currentScope.current !== flight.scope || generation.current !== flight.generation) return;
       if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
         setError(undefined);
         onAccepted();
       } else
         setError({
-          scope: submittedScope,
+          scope: flight.scope,
           message:
             (outcome?.status === "accepted" ? undefined : wardCommandFailure(outcome || undefined)) ??
             SAVE_NOT_CONFIRMED,
         });
     };
     const finish = (outcome?: WardCommandOutcome | void) => {
-      inFlight.current = false;
-      setPending(false);
-      if (currentScope.current !== submittedScope) return;
+      if (flights.current.get(key) !== flight) return;
+      flights.current.delete(key);
       answer(outcome);
-      // Audit 24-3 SV-1..4: a later Retry from the status bar may still confirm this command.
-      if (outcome?.status !== "failed" || !outcome.confirmation) return;
-      const entry: Held = { scope: submittedScope, outcome };
-      hold(entry);
-      void outcome.confirmation.then(
-        (confirmed) => {
-          if (held.current !== entry) return;
-          hold(null);
-          if (currentScope.current === submittedScope && confirmed.commandId === outcome.commandId) answer(confirmed);
-        },
-        () => {
-          // Keep the not-confirmed message; only release the lock.
-          if (held.current === entry) hold(null);
-        },
-      );
+      if (outcome?.status === "failed" && outcome.confirmation) {
+        const entry: Held = { ...flight, outcome };
+        held.current.set(key, entry);
+        void outcome.confirmation.then(
+          (confirmed) => {
+            if (held.current.get(key) !== entry || confirmed.commandId !== outcome.commandId) return;
+            held.current.delete(key);
+            answer(confirmed);
+            publish();
+          },
+          () => {
+            if (held.current.get(key) === entry) {
+              held.current.delete(key);
+              publish();
+            }
+          },
+        );
+      }
+      publish();
     };
     try {
       const completion = record();
@@ -88,9 +94,10 @@ export function useWardFormSave(scope: string) {
       finish();
     }
   }
+  const awaiting = view.held.get(key);
   return {
-    pending: pending || holding(heldView),
-    error: error?.scope === scopeToken ? error.message : undefined,
+    pending: view.flights.has(key) || holding(awaiting),
+    error: error?.scope === scopeToken ? error.message : holding(awaiting) ? SAVE_NOT_CONFIRMED : undefined,
     clearError: () => setError(undefined),
     forget: () => {
       generation.current += 1;

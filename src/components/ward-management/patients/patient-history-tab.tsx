@@ -170,7 +170,7 @@ function presentationRow(p: Presentation, i: number): EpisodeRow {
   const days = p.los.match(/^(\d+) days?$/u);
   return {
     key: `p-${i}-${p.date}`,
-    kind: admitted ? "admission" : "ed",
+    kind: p.kind ?? (admitted ? "admission" : "ed"),
     start,
     startText: p.date,
     year: start?.y ?? Math.floor(p.year),

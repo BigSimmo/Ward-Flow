@@ -269,29 +269,29 @@ export function useUndoableStep({
       };
     }
     const completion = requireConfirmation ? confirmedWardCommand(result) : result;
-    if (completion && "then" in completion) {
-      void completion
-        .then((outcome) => {
-          if (!mountedRef.current) return sayAfterLeaving(pending, outcome);
-          pendingRef.current.push({ ...pending, outcome });
-          setToken((value) => value + 1);
-        })
-        .catch(() => {
-          const outcome: WardCommandOutcome = {
-            commandId: "",
-            status: "failed",
-            message: SAVE_NOT_CONFIRMED,
-          };
-          if (!mountedRef.current) return sayAfterLeaving(pending, outcome);
-          pendingRef.current.push({ ...pending, outcome });
-          setToken((value) => value + 1);
-        });
-    } else if (!mountedRef.current) {
-      sayAfterLeaving(pending, completion ?? undefined);
-    } else {
-      pendingRef.current.push(completion ? { ...pending, outcome: completion } : pending);
+    const publish = (outcome: WardCommandOutcome | void) => {
+      if (!mountedRef.current) return sayAfterLeaving(pending, outcome || undefined);
+      pendingRef.current.push(outcome ? { ...pending, outcome } : pending);
       setToken((value) => value + 1);
-    }
+    };
+    const receive = (outcome: WardCommandOutcome | void) => {
+      publish(outcome);
+      // Keep immediate unconfirmed feedback, then follow the same command's eventual receipt.
+      // This offers success/Undo only after acceptance, without dispatching the action again.
+      if (outcome?.status === "failed" && outcome.confirmation) {
+        void outcome.confirmation.then(
+          (terminal) => {
+            if (terminal.commandId === outcome.commandId && terminal.status !== "failed") publish(terminal);
+          },
+          () => {
+            /* The existing unconfirmed feedback remains truthful. */
+          },
+        );
+      }
+    };
+    if (completion && "then" in completion) {
+      void completion.then(receive, () => receive({ commandId: "", status: "failed", message: SAVE_NOT_CONFIRMED }));
+    } else receive(completion);
   }
 
   /**

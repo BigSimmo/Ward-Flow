@@ -19,14 +19,16 @@ function open(onClose = vi.fn()) {
       <WardReferralDrawer onClose={onClose} initialCategory="ward" />
     </WardFlowProvider>,
   );
-  return screen.getByRole("searchbox", { name: "Find a patient" });
+  return screen.getByRole("combobox", { name: "Find a patient" });
 }
 
 describe("referral patient search keys (A-4)", () => {
   it("moves through the results with the arrow keys and picks with Enter", () => {
     const search = open();
+    expect(search).toHaveAttribute("aria-expanded", "false");
     fireEvent.change(search, { target: { value: "UM1000" } });
     const results = screen.getByRole("listbox", { name: "Matching patients" });
+    expect(search).toHaveAttribute("aria-expanded", "true");
     const options = within(results).getAllByRole("option");
     expect(options.length).toBeGreaterThan(1);
     expect(search).toHaveAttribute("aria-controls", results.id);
@@ -45,6 +47,7 @@ describe("referral patient search keys (A-4)", () => {
 
     fireEvent.keyDown(search, { key: "Enter" });
     expect(screen.queryByRole("listbox", { name: "Matching patients" })).toBeNull();
+    expect(search).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByTestId("ward-referral-no-patient")).toBeNull();
   });
 

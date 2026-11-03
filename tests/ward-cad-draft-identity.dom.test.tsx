@@ -15,7 +15,13 @@ const B = "WF-SYNTHETIC-B";
 const CAD_A = "CAD-SYN-4410";
 const CAD_B = "CAD-SYN-5520";
 const form = (movementId: string, role: WardFlowRole = "officer", actingUnitId?: string) => (
-  <TransportCadToFollow movementId={movementId} role={role} actingUnitId={actingUnitId} testId="cad-draft" />
+  <TransportCadToFollow
+    movementId={movementId}
+    transportId={`transport-${movementId}`}
+    role={role}
+    actingUnitId={actingUnitId}
+    testId="cad-draft"
+  />
 );
 const input = () => screen.getByTestId("cad-draft-input");
 const save = () => screen.getByTestId("cad-draft-save");
@@ -78,7 +84,7 @@ describe("CAD drafts belong to their movement", () => {
     expect(input()).toBeDisabled();
     view.rerender(form(B));
     expect(input()).toHaveValue("");
-    expect(input()).toBeDisabled();
+    expect(input()).not.toBeDisabled();
     fireEvent.click(save());
     expect(capture.raise).toHaveBeenCalledTimes(1);
 
@@ -137,7 +143,7 @@ describe("CAD drafts belong to their movement", () => {
     });
   });
 
-  it("ignores an earlier opening's confirmation after A to B to A and a new edit", async () => {
+  it("keeps the same-command lock when returning to A and permits a new edit only after confirmation", async () => {
     let confirm!: (outcome: WardCommandOutcome) => void;
     capture.raise.mockReturnValue({
       status: "failed",
@@ -151,9 +157,13 @@ describe("CAD drafts belong to their movement", () => {
     expect(input()).toHaveValue("");
     view.rerender(form(A));
     expect(input()).toHaveValue(CAD_A);
-    expect(input()).not.toBeDisabled();
-    type(CAD_B);
+    expect(input()).toBeDisabled();
+    fireEvent.click(save());
+    expect(capture.raise).toHaveBeenCalledTimes(1);
     await act(async () => confirm({ status: "accepted", commandId: "synthetic-earlier-opening" }));
+    expect(input()).not.toBeDisabled();
+    expect(input()).toHaveValue(CAD_A);
+    type(CAD_B);
     expect(input()).toHaveValue(CAD_B);
     expect(capture.raise).toHaveBeenCalledTimes(1);
   });

@@ -47,6 +47,8 @@ export type PhoneSheetProps = {
   description?: ReactNode;
   /** The scrolling body. It never runs under the footer. */
   children?: ReactNode;
+  /** Names a read-only scrolling body and puts it in the keyboard Tab order when needed. */
+  bodyScrollLabel?: string;
   /** The sheet's one primary action, pinned in the footer. `danger` is for a step that cannot be undone. */
   primary?: DialogAction & { tone?: "default" | "danger" };
   /** One quiet action beside the primary (Cancel, Not now). */
@@ -86,6 +88,7 @@ export function PhoneSheet({
   title,
   description,
   children,
+  bodyScrollLabel,
   primary,
   secondary,
   closeLabel = "Close",
@@ -224,7 +227,13 @@ export function PhoneSheet({
               onClick={() => onCloseRef.current()}
             />
           </div>
-          <div className={styles.sheetBody} data-phone-sheet-body="">
+          <div
+            className={styles.sheetBody}
+            data-phone-sheet-body=""
+            tabIndex={bodyScrollLabel ? 0 : undefined}
+            role={bodyScrollLabel ? "region" : undefined}
+            aria-label={bodyScrollLabel}
+          >
             {children}
           </div>
           {hasFooter ? (

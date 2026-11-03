@@ -4,7 +4,7 @@
  * The referral board's on-demand sheets (bed meeting list, ISBAR summary, keyboard shortcuts). They
  * open only from a button or a key, so the board loads them after first render.
  */
-import { useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ClipboardCopy } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -47,7 +47,23 @@ function meetingText(rows: MeetingRow[], now: Instant): string {
 
 /** Copies to the clipboard, then says so on the button and aloud; a refused copy says so too. */
 function CopyButton({ text, label }: { text: string; label: string }) {
-  const [result, setResult] = useState<"copied" | "failed" | null>(null);
+  const owner = useMemo(() => ({ text }), [text]);
+  const current = useRef<object | null>(owner);
+  const [outcome, setOutcome] = useState<{ owner: object; status: "copied" | "failed" }>();
+  useLayoutEffect(() => {
+    current.current = owner;
+    return () => {
+      current.current = null;
+    };
+  }, [owner]);
+  const result = outcome?.owner === owner ? outcome.status : null;
+  const report = (status: "copied" | "failed") => {
+    if (current.current !== owner) return;
+    setOutcome({ owner, status });
+    announceToWardShell(
+      status === "copied" ? "Copied to the clipboard." : "Could not copy. Check clipboard access and try again.",
+    );
+  };
   return (
     <Button
       variant="pri"
@@ -57,14 +73,8 @@ function CopyButton({ text, label }: { text: string; label: string }) {
         // The result is said aloud as well as shown (design audit, Josh 1 Nov 2026); a refused copy
         // shows on the button rather than looking as if nothing happened.
         void copyTextToClipboard(text).then(
-          () => {
-            setResult("copied");
-            announceToWardShell("Copied to the clipboard.");
-          },
-          () => {
-            setResult("failed");
-            announceToWardShell("Could not copy. Check clipboard access and try again.");
-          },
+          () => report("copied"),
+          () => report("failed"),
         );
       }}
     >

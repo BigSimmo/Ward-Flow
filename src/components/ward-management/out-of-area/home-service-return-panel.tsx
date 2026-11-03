@@ -8,6 +8,7 @@ import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 
 import {
   HOME_SERVICE_ANSWERS,
@@ -35,11 +36,21 @@ function dayChoiceLabel(days: number): string {
   return `In ${days} days`;
 }
 
-function ReviewDaySelect({ id, value, onChange }: { id: string; value: string; onChange: (value: string) => void }) {
+function ReviewDaySelect({
+  id,
+  value,
+  onChange,
+  disabled,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) {
   return (
     <span className={styles.field}>
       <label htmlFor={id}>Next review</label>
-      <select id={id} value={value} onChange={(event) => onChange(event.target.value)}>
+      <select id={id} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)}>
         <option value="">No date set</option>
         {RETURN_REVIEW_DAY_CHOICES.map((days) => (
           <option key={days} value={String(days)}>
@@ -72,6 +83,7 @@ export function HomeServiceReturnPanel({
   const [reviewDays, setReviewDays] = useState("");
   const [askAgain, setAskAgain] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const save = useWardFormSave(`home-service-return:${admissionId}`);
 
   const reviewAt = reviewDays === "" ? undefined : reviewDayInstant(now, Number(reviewDays));
   const by = (role: keyof typeof WARD_FLOW_ROLE_LABELS) => WARD_FLOW_ROLE_LABELS[role];
@@ -79,30 +91,42 @@ export function HomeServiceReturnPanel({
 
   const requestReturn = () => {
     if (!hospital) return;
-    raise("RECORD_HOME_SERVICE_RETURN", {
-      admissionId,
-      step: "requested",
-      homeHospital: hospital,
-      ...(reviewAt !== undefined ? { nextReviewAt: reviewAt } : {}),
-    });
-    setAnswer(undefined);
-    setPrerequisites([]);
-    setReviewDays("");
-    setAskAgain(false);
-    setStatus(`Return requested from ${shortSiteName(hospital)}.`);
+    setStatus(null);
+    save.submit(
+      () =>
+        raise("RECORD_HOME_SERVICE_RETURN", {
+          admissionId,
+          step: "requested",
+          homeHospital: hospital,
+          ...(reviewAt !== undefined ? { nextReviewAt: reviewAt } : {}),
+        }),
+      () => {
+        setAnswer(undefined);
+        setPrerequisites([]);
+        setReviewDays("");
+        setAskAgain(false);
+        setStatus(`Return requested from ${shortSiteName(hospital)}.`);
+      },
+    );
   };
 
   const recordAnswer = () => {
     if (!answer) return;
-    raise("RECORD_HOME_SERVICE_RETURN", {
-      admissionId,
-      step: "answered",
-      answer,
-      prerequisites: answer === "declined" ? [] : prerequisites,
-      ...(reviewAt !== undefined ? { nextReviewAt: reviewAt } : {}),
-    });
-    setReviewDays("");
-    setStatus(`Home service answer recorded: ${HOME_SERVICE_ANSWER_LABELS[answer]}.`);
+    setStatus(null);
+    save.submit(
+      () =>
+        raise("RECORD_HOME_SERVICE_RETURN", {
+          admissionId,
+          step: "answered",
+          answer,
+          prerequisites: answer === "declined" ? [] : prerequisites,
+          ...(reviewAt !== undefined ? { nextReviewAt: reviewAt } : {}),
+        }),
+      () => {
+        setReviewDays("");
+        setStatus(`Home service answer recorded: ${HOME_SERVICE_ANSWER_LABELS[answer]}.`);
+      },
+    );
   };
 
   return (
@@ -160,6 +184,11 @@ export function HomeServiceReturnPanel({
           {status}
         </p>
       ) : null}
+      {save.error ? (
+        <p className={styles.status} role="alert">
+          {save.error}
+        </p>
+      ) : null}
 
       {showRequestForm ? (
         <form
@@ -171,7 +200,12 @@ export function HomeServiceReturnPanel({
         >
           <span className={styles.field}>
             <label htmlFor={`${ids}-hospital`}>Home service asked</label>
-            <select id={`${ids}-hospital`} value={hospital} onChange={(event) => setHospital(event.target.value)}>
+            <select
+              id={`${ids}-hospital`}
+              value={hospital}
+              disabled={save.pending}
+              onChange={(event) => setHospital(event.target.value)}
+            >
               <option value="">Choose a hospital</option>
               {siteDirectory.map((site) => (
                 <option key={site.code} value={site.code}>
@@ -180,8 +214,17 @@ export function HomeServiceReturnPanel({
               ))}
             </select>
           </span>
-          <ReviewDaySelect id={`${ids}-review-request`} value={reviewDays} onChange={setReviewDays} />
-          <Button type="submit" size="sm" disabled={!hospital}>
+          <ReviewDaySelect
+            id={`${ids}-review-request`}
+            value={reviewDays}
+            onChange={setReviewDays}
+            disabled={save.pending}
+          />
+          <Button
+            type="submit"
+            size="sm"
+            disabledReason={save.pending ? "Saving" : !hospital ? "Choose a hospital" : undefined}
+          >
             Record return requested
           </Button>
         </form>
@@ -193,7 +236,7 @@ export function HomeServiceReturnPanel({
             recordAnswer();
           }}
         >
-          <fieldset className={styles.fieldset}>
+          <fieldset className={styles.fieldset} disabled={save.pending}>
             <legend>Home service answer</legend>
             {HOME_SERVICE_ANSWERS.map((value) => (
               <label key={value} className={styles.option}>
@@ -208,7 +251,7 @@ export function HomeServiceReturnPanel({
               </label>
             ))}
           </fieldset>
-          <fieldset className={styles.fieldset} disabled={answer === "declined"}>
+          <fieldset className={styles.fieldset} disabled={save.pending || answer === "declined"}>
             <legend>Agreed before return</legend>
             {RETURN_PREREQUISITES.map((item) => (
               <label key={item} className={styles.option}>
@@ -225,12 +268,27 @@ export function HomeServiceReturnPanel({
               </label>
             ))}
           </fieldset>
-          <ReviewDaySelect id={`${ids}-review-answer`} value={reviewDays} onChange={setReviewDays} />
+          <ReviewDaySelect
+            id={`${ids}-review-answer`}
+            value={reviewDays}
+            onChange={setReviewDays}
+            disabled={save.pending}
+          />
           <span className={styles.actions}>
-            <Button type="submit" size="sm" disabled={!answer}>
+            <Button
+              type="submit"
+              size="sm"
+              disabledReason={save.pending ? "Saving" : !answer ? "Choose an answer" : undefined}
+            >
               Record home service answer
             </Button>
-            <Button type="button" size="sm" variant="ghost" onClick={() => setAskAgain(true)}>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabledReason={save.pending ? "Saving" : undefined}
+              onClick={() => setAskAgain(true)}
+            >
               Ask another service
             </Button>
           </span>

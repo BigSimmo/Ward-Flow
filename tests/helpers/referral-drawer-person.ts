@@ -10,7 +10,7 @@ import { fireEvent, screen, within } from "@testing-library/react";
  * the sheet used to open on before either change.
  */
 export function chooseSampleReferralPerson(query = "UM100023") {
-  fireEvent.change(screen.getByRole("searchbox", { name: "Find a patient" }), { target: { value: query } });
+  fireEvent.change(screen.getByRole("combobox", { name: "Find a patient" }), { target: { value: query } });
   const results = screen.getByRole("listbox", { name: "Matching patients" });
   fireEvent.click(within(results).getAllByRole("option")[0]!);
 }

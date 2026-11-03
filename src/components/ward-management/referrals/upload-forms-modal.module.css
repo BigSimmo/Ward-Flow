@@ -21,8 +21,11 @@
 }
 
 .panel {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 32rem;
+  max-height: calc(100dvh - 2rem);
   overflow: hidden;
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
@@ -33,6 +36,7 @@
 
 .head {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
@@ -65,6 +69,9 @@
 }
 
 .form {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 1.5rem;
 }
 

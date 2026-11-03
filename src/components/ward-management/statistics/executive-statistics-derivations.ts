@@ -30,13 +30,14 @@ import { outOfAreaLedger } from "../ward-referrals";
 import { siteByCode } from "../ward-sites";
 import { BED_ALERT_THRESHOLD_PERCENT } from "../shell/ward-service-bed-alerts";
 import { blockedDischargesByReason } from "./statistics-derivations";
-import { isOpen, unitCapacity } from "../ward-derivations";
+import { isOpen } from "../ward-derivations";
 import { LONG_WAIT_MINUTES, ED_SEVERE_PRESSURE_WAIT_MINUTES } from "../ward-operational-defaults";
 import { stageCopy } from "../ward-stage-copy";
 import { sessionTrends } from "./statistics-session-trends";
 import type { EventLogEntry } from "../ward-event-log";
 import { edJourneySummaries } from "../ed/ed-home-derivations";
 import { MINIMUM_EFFECTIVENESS_SAMPLE } from "../ward-derivations-records";
+import { isEdOriginJourney } from "../ward-ed-presence";
 import { readyBedsNow } from "../ward-bed-states";
 import { lockedBedsFree, openBedsFree } from "../ward-bed-designation";
 
@@ -208,7 +209,7 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
     lockedReady: Math.min(lockedBedsFree(unit), finderReady),
     openReady: Math.min(openBedsFree(unit), finderReady),
     openNow: openBedsNow(unit, input.bedReleases),
-    capacityReady: unitCapacity(unit, input.bedReleases).available,
+    capacityReady: readyBedsNow(unit, input.admissions, input.bedReleases),
     empty: unit.empty.value,
     allocatable: unit.allocatable.value,
     pendingPreparation: bedsPendingPreparation(unit.id, input.bedReleases),
@@ -855,7 +856,7 @@ export function executiveJourney(
       rows = [breakdown(`Past ${LONG_WAIT_MINUTES / 60}h`, past), breakdown("Urgent", urgent)];
       const distinct =
         group.id === "waiting"
-          ? new Set(group.rows.map((row) => row.originEdId)).size
+          ? new Set(group.rows.filter(isEdOriginJourney).map((row) => row.originEdId)).size
           : group.id === "accepted"
             ? new Set(group.rows.map((row) => row.acceptedUnitId)).size
             : group.rows.filter((row) => row.declines.length > 0).length;

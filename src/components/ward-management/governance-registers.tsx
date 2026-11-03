@@ -942,7 +942,11 @@ function GovernanceSession({
                               <span className={thirdEdition.stack}>
                                 <strong className={thirdEdition.clip}>{entry.name}</strong>
                                 <span className={thirdEdition.quietText}>
-                                  {entry.kind === "ed" ? "Emergency department" : "Ward"}
+                                  {entry.kind === "ed"
+                                    ? "Emergency department"
+                                    : entry.kind === "community"
+                                      ? "Community team"
+                                      : "Ward"}
                                 </span>
                               </span>
                             </button>

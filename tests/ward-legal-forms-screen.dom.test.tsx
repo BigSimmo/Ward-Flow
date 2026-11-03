@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import {
+  draftSessionVersion,
+  sessionDraftKey,
+  writeSessionDraft,
+  clearSessionDrafts,
+} from "@/components/ward-management/ward-session-drafts";
 
 import { ToastProvider } from "@/components/wf";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
@@ -461,4 +467,30 @@ it("clears an unsaved paper-form region on Clear and when the movement changes",
   fireEvent.click(screen.getByRole("button", { name: "Clear" }));
   fireEvent.change(screen.getByLabelText("Form type"), { target: { value: "1A" } });
   expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("");
+});
+
+it("recovers the optional paper-form region with the rest of its permitted draft", () => {
+  clearSessionDrafts();
+  const key = sessionDraftKey("standard/0", "legal-record", "new");
+  writeSessionDraft(
+    key,
+    JSON.stringify({ movement: openMovements[0]!.id, form: "1A", timeOnForm: "10:00", region: "country" }),
+    draftSessionVersion(),
+  );
+  function RecoveryForm() {
+    const [draft, setDraft] = useState({ movement: "", form: "" });
+    return (
+      <RecordFormSheet
+        open
+        onClose={() => undefined}
+        draft={draft}
+        onDraft={setDraft}
+        openMovements={openMovements}
+        labelOf={(movement) => movement.id}
+        now={NOW_ANCHOR}
+      />
+    );
+  }
+  render(<RecoveryForm />);
+  expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("country");
 });

@@ -10,6 +10,7 @@ import { wardPlaceLookup } from "../ward-access-places";
 import { referralSentByDesk, routeSentKind } from "../ward-referral-sender";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useWardRaise } from "../ward-flow-raise";
+import { useWardFormSave } from "../use-ward-form-save";
 import type { Referral, ReferralInformationNeedEntry } from "../ward-model";
 import { useRouteRole } from "../ward-role-gate";
 import { rolesOnlyReason } from "../ward-role-permissions";
@@ -64,11 +65,15 @@ export function WardInformationNeedsPicker({
   const raise = useWardRaise(routeRole);
   const [chosen, setChosen] = useState<ReadonlySet<ReferralInformationNeed>>(() => new Set());
   const groupId = useId();
+  const save = useWardFormSave(`referral-needs:${entry.id}:${unitId}`);
   if (!enabled) return null;
   const waiting = openInformationNeeds(entry.informationNeeds);
   const waitingIds = new Set(waiting.map((need) => need.need));
   const askable = REFERRAL_INFORMATION_NEEDS.filter((need) => !waitingIds.has(need.id));
-  const askRefusal = refusal ?? (chosen.size === 0 ? "Choose at least one item" : undefined);
+  const askRefusal =
+    (save.pending ? "Waiting for save confirmation" : undefined) ??
+    refusal ??
+    (chosen.size === 0 ? "Choose at least one item" : undefined);
   return (
     <div className={styles.panel} data-testid={`ward-referral-needs-${entry.id}`}>
       {waiting.length > 0 ? (
@@ -78,7 +83,7 @@ export function WardInformationNeedsPicker({
         </>
       ) : null}
       {askable.length > 0 ? (
-        <fieldset className={styles.picker}>
+        <fieldset className={styles.picker} disabled={save.pending}>
           <legend className={styles.heading}>Need before we can decide</legend>
           {askable.map((need) => (
             <label key={need.id} className={styles.option}>
@@ -104,19 +109,27 @@ export function WardInformationNeedsPicker({
             aria-describedby={askRefusal ? `${groupId}-why` : undefined}
             onClick={() => {
               if (askRefusal) return;
-              raise("REQUEST_REFERRAL_INFORMATION", {
-                referralId: entry.id,
-                unitId,
-                ...(routeRole === "ward" && actingUnitId !== undefined ? { actingUnitId } : {}),
-                needs: [...chosen],
-              });
-              setChosen(new Set());
+              save.submit(
+                () =>
+                  raise("REQUEST_REFERRAL_INFORMATION", {
+                    referralId: entry.id,
+                    unitId,
+                    ...(routeRole === "ward" && actingUnitId !== undefined ? { actingUnitId } : {}),
+                    needs: [...chosen],
+                  }),
+                () => setChosen(new Set()),
+              );
             }}
             data-testid={`ward-referral-needs-ask-${entry.id}`}
           >
             Ask the referrer
           </Button>
           {askRefusal ? <DisabledReason id={`${groupId}-why`}>{askRefusal}</DisabledReason> : null}
+          {save.error ? (
+            <p className={styles.note} role="alert">
+              {save.error}
+            </p>
+          ) : null}
           <p className={styles.note}>The decision time keeps running.</p>
         </fieldset>
       ) : null}

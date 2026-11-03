@@ -54,6 +54,7 @@ import { resetWardAccessStoreForTests, setWardAccess } from "../src/components/w
 import { setWardFeatureFlagOnDevice } from "../src/components/ward-management/shell/ward-feature-flag-store";
 import { resetServiceScopeForTests } from "../src/components/ward-management/shell/ward-service-store";
 import { TOUR_SEEN_STORAGE_KEY } from "../src/components/ward-management/help/ward-help-store";
+import { setCharacterShortcutsEnabled } from "../src/components/ward-management/shell/ward-character-shortcuts";
 
 /** The views Help was asked to open, read from the shell's open-help event. */
 function helpViews() {
@@ -132,6 +133,20 @@ afterEach(() => {
 });
 
 describe("the executive chrome in the new frame", () => {
+  it("honours the character-shortcut preference and leaves modified and typing keys alone", () => {
+    openChrome();
+    const before = document.documentElement.getAttribute("data-rail");
+    act(() => setCharacterShortcutsEnabled(false));
+    fireEvent.keyDown(document.body, { key: "[" });
+    expect(document.documentElement.getAttribute("data-rail")).toBe(before);
+    act(() => setCharacterShortcutsEnabled(true));
+    fireEvent.keyDown(document.body, { key: "[", ctrlKey: true });
+    expect(document.documentElement.getAttribute("data-rail")).toBe(before);
+    fireEvent.keyDown(screen.getByPlaceholderText("Search Ward Flow"), { key: "[" });
+    expect(document.documentElement.getAttribute("data-rail")).toBe(before);
+    fireEvent.keyDown(document.body, { key: "[" });
+    expect(document.documentElement.getAttribute("data-rail")).not.toBe(before);
+  });
   it("drops the pill, the title's help and the shift card, and names the search and the Alerts bell", () => {
     openChrome();
     const header = screen.getByTestId("ward-bar");

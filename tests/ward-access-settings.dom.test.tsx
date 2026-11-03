@@ -497,12 +497,16 @@ describe("the Access tab", () => {
   });
 });
 
-function renderStepUpPopup(run: () => Promise<StepUpResult>, reauthenticate: (password: string) => Promise<void>) {
+function renderStepUpPopup(
+  run: () => Promise<StepUpResult>,
+  reauthenticate: (password: string) => Promise<void>,
+  onResult: (result: StepUpResult) => void = () => {},
+) {
   function Check() {
     const { guard, dialog } = useStepUp();
     return (
       <>
-        <button type="button" onClick={() => void guard(run)}>
+        <button type="button" onClick={() => void guard(run).then(onResult)}>
           Open protected action
         </button>
         {dialog}
@@ -517,6 +521,35 @@ function renderStepUpPopup(run: () => Promise<StepUpResult>, reauthenticate: (pa
     </WardFlowProvider>,
   );
 }
+
+it("keeps a submitted protected action open until its actual result, without claiming cancellation", async () => {
+  let finish!: (result: StepUpResult) => void;
+  const action = new Promise<StepUpResult>((resolve) => {
+    finish = resolve;
+  });
+  const run = vi
+    .fn<() => Promise<StepUpResult>>()
+    .mockResolvedValueOnce("step-up")
+    .mockImplementationOnce(() => action);
+  const results: StepUpResult[] = [];
+  renderStepUpPopup(
+    run,
+    async () => {},
+    (result) => results.push(result),
+  );
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open protected action" })));
+  fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-test-password" } });
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sign in and carry on" })));
+  expect(screen.getByRole("button", { name: "Cancel" })).toHaveAttribute("aria-disabled", "true");
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  fireEvent.keyDown(screen.getByTestId("ward-step-up"), { key: "Escape" });
+  expect(screen.getByTestId("ward-step-up")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
+  expect(results).toEqual([]);
+  await act(async () => finish(null));
+  expect(results).toEqual([null]);
+  expect(screen.queryByTestId("ward-step-up")).toBeNull();
+});
 
 it("distinguishes an action error after successful sign-in from a rejected password", async () => {
   const run = vi
@@ -555,7 +588,7 @@ it("keeps a rejected sign-in on the password field and does not run the protecte
   fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 });
 
-it("does not show a late action error in a newly opened sign-in dialog", async () => {
+it("blocks replacement during submission and clears the old action error before a new sign-in", async () => {
   let rejectAction!: (reason: Error) => void;
   const action = new Promise<StepUpResult>((_resolve, reject) => {
     rejectAction = reject;
@@ -570,8 +603,13 @@ it("does not show a late action error in a newly opened sign-in dialog", async (
   fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-test-password" } });
   await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sign in and carry on" })));
   fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  expect(screen.getByTestId("ward-step-up")).toBeInTheDocument();
   await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open protected action" })));
+  expect(run).toHaveBeenCalledTimes(2);
   await act(async () => rejectAction(new Error("Synthetic late action error")));
+  expect(screen.getByRole("alert")).toHaveTextContent("The action could not be confirmed");
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open protected action" })));
   expect(screen.getByTestId("ward-step-up")).toBeInTheDocument();
   expect(screen.getByLabelText("Password")).toHaveValue("");
   expect(screen.queryByRole("alert")).toBeNull();

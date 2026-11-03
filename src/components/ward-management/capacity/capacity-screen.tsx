@@ -1,5 +1,6 @@
 "use client";
 
+import { useWardFormSave } from "../use-ward-form-save";
 import { startTransition, useEffect, useMemo, useState } from "react";
 
 import { Drawer, Segmented, StatusGlyph, useIsPhone, useOptionalToast } from "@/components/wf";
@@ -112,6 +113,7 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
   const toast = useOptionalToast();
+  const refreshSave = useWardFormSave("capacity-refresh");
   const tvOn = useWardFeatureFlag("bed-meeting-tv");
   const edWaiting = useSiteEdWaiting(model.site, model.now);
   const { now } = model;
@@ -167,8 +169,10 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
       ? undefined
       : (unitId: string) => {
           const unit = units.find((candidate) => candidate.id === unitId);
-          dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId });
-          toast?.push({ tone: "success", title: `Asked ${unit?.name ?? "the ward"} to confirm its beds.` });
+          refreshSave.submit(
+            () => dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId }),
+            () => toast?.push({ tone: "success", title: `Asked ${unit?.name ?? "the ward"} to confirm its beds.` }),
+          );
         };
   const openWard = (unitId: string) => {
     if (siteDesk && !model.networkRows.some((row) => row.unit.id === unitId)) {
@@ -214,6 +218,11 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   return (
     <div className={styles.screen} data-testid="ward-capacity-screen" data-ward-design="redesign-2026-10">
       <main id="main-content" className={styles.main}>
+        {refreshSave.error ? (
+          <p role="alert" className={styles.mutedXs}>
+            {refreshSave.error}
+          </p>
+        ) : null}
         <CapacityHero
           model={model}
           isPhone={isPhone}

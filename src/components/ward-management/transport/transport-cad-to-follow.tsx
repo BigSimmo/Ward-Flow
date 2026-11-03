@@ -13,16 +13,19 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-events
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { cadNumberSentence } from "@/components/ward-management/ward-transport-checks";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
+import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 import styles from "./transport-booking-form.module.css";
 
 export function TransportCadToFollow({
   movementId,
+  transportId,
   role,
   actingUnitId,
   unavailable,
   testId,
 }: {
   movementId: string;
+  transportId: string;
   /** The desk adding the number, as it would book. */
   role: WardFlowRole;
   /** A ward names itself as the sending ward, as it does when booking. */
@@ -32,7 +35,8 @@ export function TransportCadToFollow({
   testId: string;
 }) {
   const raise = useWardRaise(role);
-  const scope = JSON.stringify([movementId, role, actingUnitId ?? null]);
+  const lifetime = useWardShellPublic()?.accessLifetime;
+  const scope = JSON.stringify([lifetime, movementId, transportId, role, actingUnitId ?? null]);
   const save = useWardFormSave(`${scope}:cad-to-follow`);
   // A panel can switch jobs or desks without unmounting. Keep each unfinished number only with
   // the movement and desk that typed it; an accepted save clears only that scope's draft.

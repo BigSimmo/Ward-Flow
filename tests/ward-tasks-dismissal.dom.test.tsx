@@ -191,6 +191,7 @@ describe("unsaved escalation dismissal", () => {
   it("records the draft directly and leaves no dirty navigation guard", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { dispatch } = renderDrawer();
+    dispatch.mockReturnValue({ commandId: "synthetic-escalation-save", status: "accepted" });
     editDraft();
     fireEvent.click(screen.getByRole("button", { name: "Record escalation" }));
     expect(dispatch).toHaveBeenCalledWith(

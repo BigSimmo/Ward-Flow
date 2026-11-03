@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Printer } from "lucide-react";
 
@@ -23,7 +23,20 @@ import type { Unit } from "../ward-model";
 import { usePatientOf } from "../ward-patient-name";
 import { useRoleGate } from "../ward-role-gate";
 
+import { useHoldOpenForm } from "../use-hold-open-form";
+import { useWardShellPublic } from "../shell/ward-shell-public-context";
+import type { WardCommandOutcome } from "../ward-shared-client";
+import { SAVE_NOT_CONFIRMED } from "../ward-save-failure";
 import styles from "./call-sheet.module.css";
+
+type CallStep = {
+  referralId: string;
+  kind: "contact" | "commitment";
+  record: () => ReturnType<ReturnType<typeof useWardRaise>>;
+  status: "ready" | "accepted" | "failed" | "uncertain" | "stale";
+  message?: string;
+};
+type CallBatch = { scope: object; referralIds: string[]; steps: CallStep[] };
 
 /**
  * COORDINATED CALL SHEET (closing-the-loop package A, 24 Oct 2026). Every referral still waiting
@@ -63,7 +76,139 @@ function WardGroup({ group, units, now }: { group: CallSheetGroup; units: readon
   const [outcome, setOutcome] = useState<ReferralContactOutcome | "">("");
   const [promise, setPromise] = useState("");
   const [callback, setCallback] = useState("");
-  const [recorded, setRecorded] = useState<string | undefined>();
+  const lifetime = useWardShellPublic()?.accessLifetime;
+  const scope = useMemo(() => ({ unitId: group.unitId, lifetime }), [group.unitId, lifetime]);
+  const currentScope = useRef<object | null>(scope);
+  useLayoutEffect(() => {
+    currentScope.current = scope;
+    return () => {
+      currentScope.current = null;
+    };
+  }, [scope]);
+  const batch = useRef<CallBatch | null>(null);
+  const [batchView, setBatchView] = useState<CallBatch | null>(null);
+  const inFlight = useRef<object | null>(null);
+  const [working, setWorking] = useState<object | null>(null);
+  const [recorded, setRecorded] = useState<{ scope: object; message: string }>();
+  const pending = working === scope;
+  useHoldOpenForm(pending);
+  const currentBatch = batchView?.scope === scope ? batchView : null;
+  const retaining = currentBatch !== null;
+  const stale = currentBatch?.steps.some((step) => step.status === "stale") === true;
+  const awaiting = currentBatch?.steps.some((step) => step.status === "uncertain") === true;
+  function describe(attempt: CallBatch) {
+    if (currentScope.current !== attempt.scope) return;
+    setBatchView({ ...attempt, steps: attempt.steps.map((step) => ({ ...step })) });
+    const completed = attempt.referralIds.filter((id) =>
+      attempt.steps.filter((step) => step.referralId === id).every((step) => step.status === "accepted"),
+    ).length;
+    const partly = attempt.referralIds.filter((id) => {
+      const steps = attempt.steps.filter((step) => step.referralId === id);
+      return steps.some((step) => step.status === "accepted") && !steps.every((step) => step.status === "accepted");
+    }).length;
+    const message =
+      completed === attempt.referralIds.length
+        ? `Recorded against ${completed} referral${completed === 1 ? "" : "s"}.`
+        : `${completed} of ${attempt.referralIds.length} referrals fully recorded. ${partly} partly recorded. ${attempt.steps.some((step) => step.status === "uncertain") ? "Waiting for confirmation; do not record it again." : (attempt.steps.find((step) => step.message)?.message ?? "Review and retry the unrecorded steps.")}`;
+    setRecorded({ scope: attempt.scope, message });
+  }
+  async function settle(step: CallStep, attempt: CallBatch) {
+    let answer: WardCommandOutcome | void;
+    try {
+      answer = await step.record();
+      while (answer?.status === "failed" && answer.confirmation) {
+        step.status = "uncertain";
+        step.message = answer.message ?? SAVE_NOT_CONFIRMED;
+        describe(attempt);
+        const commandId = answer.commandId;
+        const confirmed: WardCommandOutcome = await answer.confirmation;
+        if (confirmed.commandId !== commandId) return;
+        answer = confirmed;
+      }
+    } catch {
+      step.status = "failed";
+      step.message = SAVE_NOT_CONFIRMED;
+      return;
+    }
+    if (currentScope.current !== attempt.scope || answer?.isCurrent?.() === false) {
+      step.status = "stale";
+      step.message = "The workspace changed. Review the current call sheet.";
+    } else if (answer?.status === "accepted") {
+      step.status = "accepted";
+      step.message = undefined;
+    } else {
+      step.status = "failed";
+      step.message = answer?.message ?? SAVE_NOT_CONFIRMED;
+    }
+  }
+  async function recordOutcome() {
+    if (inFlight.current === scope || refusal || outcome === "" || stale) return;
+    const attempt = (batch.current?.scope === scope ? batch.current : null) ?? {
+      scope,
+      referralIds: group.items.map((item) => item.referral.id),
+      steps: group.items.flatMap((item): CallStep[] => [
+        {
+          referralId: item.referral.id,
+          kind: "contact",
+          status: "ready",
+          record: () =>
+            raise("LOG_REFERRAL_CONTACT", {
+              referralId: item.referral.id,
+              contact: { kind: "psychiatric_ward", unitId: group.unitId },
+              outcome,
+            }),
+        },
+        ...(promise !== "" || callback !== ""
+          ? [
+              {
+                referralId: item.referral.id,
+                kind: "commitment" as const,
+                status: "ready" as const,
+                record: () =>
+                  raise("RECORD_REFERRAL_COMMITMENT", {
+                    referralId: item.referral.id,
+                    unitId: group.unitId,
+                    ...(promise !== "" ? { step: "promised" as const, promisedFor: now + Number(promise) } : {}),
+                    ...(callback !== "" ? { nextCallbackAt: now + Number(callback) } : {}),
+                  }),
+              },
+            ]
+          : []),
+      ]),
+    };
+    batch.current = attempt;
+    inFlight.current = scope;
+    setWorking(scope);
+    setRecorded({ scope, message: "Recording call outcome. Waiting for confirmation." });
+    try {
+      for (const step of attempt.steps) {
+        if (currentScope.current !== scope || attempt.steps.some((candidate) => candidate.status === "stale")) break;
+        if (step.status === "accepted" || step.status === "uncertain") continue;
+        if (
+          step.kind === "commitment" &&
+          !attempt.steps.some(
+            (candidate) =>
+              candidate.referralId === step.referralId &&
+              candidate.kind === "contact" &&
+              candidate.status === "accepted",
+          )
+        )
+          continue;
+        await settle(step, attempt);
+        describe(attempt);
+      }
+      if (currentScope.current === scope && attempt.steps.every((step) => step.status === "accepted")) {
+        batch.current = null;
+        setBatchView(null);
+        setOutcome("");
+        setPromise("");
+        setCallback("");
+      }
+    } finally {
+      if (inFlight.current === scope) inFlight.current = null;
+      if (currentScope.current === scope) setWorking(null);
+    }
+  }
   const ward = units.find((unit) => unit.id === group.unitId)?.name ?? "Ward not recorded";
   const callGate = gate("LOG_REFERRAL_CONTACT");
   const commitGate = gate("RECORD_REFERRAL_COMMITMENT");
@@ -128,6 +273,7 @@ function WardGroup({ group, units, now }: { group: CallSheetGroup; units: readon
           <Field label="What the ward said" className={styles.field}>
             <Select
               value={outcome}
+              disabled={pending || retaining}
               onChange={(event) => setOutcome(event.target.value as ReferralContactOutcome | "")}
               data-testid={`ward-call-sheet-outcome-${group.unitId}`}
             >
@@ -143,6 +289,7 @@ function WardGroup({ group, units, now }: { group: CallSheetGroup; units: readon
             label="Answer promised by"
             value={promise}
             onChange={setPromise}
+            disabled={pending || retaining}
             now={now}
             testId={`ward-call-sheet-promise-${group.unitId}`}
           />
@@ -150,6 +297,7 @@ function WardGroup({ group, units, now }: { group: CallSheetGroup; units: readon
             label="Next callback"
             value={callback}
             onChange={setCallback}
+            disabled={pending || retaining}
             now={now}
             testId={`ward-call-sheet-callback-${group.unitId}`}
           />
@@ -160,36 +308,38 @@ function WardGroup({ group, units, now }: { group: CallSheetGroup; units: readon
             variant="sec"
             aria-disabled={refusal !== undefined ? "true" : undefined}
             aria-describedby={refusal ? `${baseId}-why` : undefined}
+            disabledReason={
+              pending
+                ? "Saving"
+                : awaiting
+                  ? "Waiting for the original confirmation"
+                  : stale
+                    ? "Review the current call sheet"
+                    : undefined
+            }
             onClick={() => {
-              if (refusal || outcome === "") return;
-              // One call, recorded against each linked referral, in the sheet's own order.
-              for (const item of group.items) {
-                raise("LOG_REFERRAL_CONTACT", {
-                  referralId: item.referral.id,
-                  contact: { kind: "psychiatric_ward", unitId: group.unitId },
-                  outcome,
-                });
-                if (promise !== "" || callback !== "") {
-                  raise("RECORD_REFERRAL_COMMITMENT", {
-                    referralId: item.referral.id,
-                    unitId: group.unitId,
-                    ...(promise !== "" ? { step: "promised" as const, promisedFor: now + Number(promise) } : {}),
-                    ...(callback !== "" ? { nextCallbackAt: now + Number(callback) } : {}),
-                  });
-                }
-              }
-              setRecorded(`Recorded against ${group.items.length} referral${group.items.length === 1 ? "" : "s"}.`);
-              setOutcome("");
-              setPromise("");
-              setCallback("");
+              void recordOutcome();
             }}
             data-testid={`ward-call-sheet-record-${group.unitId}`}
           >
-            Record call outcome
+            {retaining ? "Retry unrecorded steps" : "Record call outcome"}
           </Button>
+          {retaining && !pending && !awaiting && !stale ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                batch.current = null;
+                setBatchView(null);
+                setRecorded({ scope, message: "Previously recorded steps are kept. Choose answers for another call." });
+              }}
+            >
+              {currentBatch.steps.some((step) => step.status === "accepted") ? "Start another call" : "Change answers"}
+            </Button>
+          ) : null}
           {refusal ? <DisabledReason id={`${baseId}-why`}>{refusal}</DisabledReason> : null}
           <span role="status" className={styles.note}>
-            {recorded}
+            {recorded?.scope === scope ? recorded.message : undefined}
           </span>
         </div>
       </fieldset>

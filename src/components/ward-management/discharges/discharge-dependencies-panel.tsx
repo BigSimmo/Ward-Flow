@@ -4,7 +4,8 @@ import { useId, useState } from "react";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { MINUTES_PER_DAY, dayOf, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { confirmationAge } from "@/components/ward-management/ward-confirmation-age";
-import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import type { WardCommandDispatch } from "../ward-shared-client";
+import { useWardFormSave } from "../use-ward-form-save";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { BedRelease } from "@/components/ward-management/ward-model";
@@ -65,10 +66,11 @@ export function DischargeDependenciesPanel({
   now: Instant;
   dayZero: Date;
   role: WardFlowRole;
-  dispatch: (event: WardFlowEvent) => void;
+  dispatch: WardCommandDispatch;
 }) {
   const idPrefix = useId();
   const raise = wardRaise(dispatch, role, now);
+  const save = useWardFormSave(`discharge-arrangements:${release.id}`);
   const canChange = (role === "ward" || role === "coordinator") && release.state !== "discharged";
   const list = release.dependencies ?? [];
   const summary = dependencySummary(release);
@@ -80,26 +82,38 @@ export function DischargeDependenciesPanel({
   const [destination, setDestination] = useState<LeavingDestination | "">("");
   const kindChosen = newKind !== "" && unrecorded.includes(newKind) ? newKind : unrecorded[0];
 
-  const record = (kind: DischargeDependencyKind, owner: DischargeDependencyOwner, state: DischargeDependencyState) =>
-    raise("RECORD_DISCHARGE_DEPENDENCY", {
-      releaseId: release.id,
-      actingUnitId: release.unitId,
-      kind,
-      owner,
-      state,
-    });
+  const record = (
+    kind: DischargeDependencyKind,
+    owner: DischargeDependencyOwner,
+    state: DischargeDependencyState,
+    onAccepted: () => void = () => {},
+  ) =>
+    save.submit(
+      () =>
+        raise("RECORD_DISCHARGE_DEPENDENCY", {
+          releaseId: release.id,
+          actingUnitId: release.unitId,
+          kind,
+          owner,
+          state,
+        }),
+      onAccepted,
+    );
 
   const changeTime = () => {
     const match = /^(\d{2}):(\d{2})$/.exec(time);
     if (!match) return;
     const minutes = Number(match[1]) * 60 + Number(match[2]);
     if (minutes >= MINUTES_PER_DAY) return;
-    raise("RECORD_DISCHARGE_PLAN_CHANGE", {
-      releaseId: release.id,
-      actingUnitId: release.unitId,
-      expectedAt: (dayOf(now) + dayOffset) * MINUTES_PER_DAY + minutes,
-    });
-    setTime("");
+    save.submit(
+      () =>
+        raise("RECORD_DISCHARGE_PLAN_CHANGE", {
+          releaseId: release.id,
+          actingUnitId: release.unitId,
+          expectedAt: (dayOf(now) + dayOffset) * MINUTES_PER_DAY + minutes,
+        }),
+      () => setTime(""),
+    );
   };
 
   return (
@@ -145,6 +159,7 @@ export function DischargeDependenciesPanel({
               now={now}
               dayZero={dayZero}
               canChange={canChange}
+              pending={save.pending}
               onRecord={(state) => record(item.kind, item.owner, state)}
             />
           ))}
@@ -155,6 +170,7 @@ export function DischargeDependenciesPanel({
           <label>
             Add
             <Select
+              disabled={save.pending}
               aria-label="Arrangement to add"
               value={kindChosen}
               onChange={(event) => {
@@ -172,6 +188,7 @@ export function DischargeDependenciesPanel({
           <label>
             Owner
             <Select
+              disabled={save.pending}
               aria-label="Who owns it"
               value={newOwner || DEFAULT_DEPENDENCY_OWNER[kindChosen]}
               onChange={(event) => setNewOwner(event.target.value as DischargeDependencyOwner)}
@@ -185,16 +202,23 @@ export function DischargeDependenciesPanel({
           </label>
           <Button
             size="sm"
+            disabled={save.pending}
             data-testid="ward-discharge-dependency-add"
             onClick={() => {
-              record(kindChosen, newOwner || DEFAULT_DEPENDENCY_OWNER[kindChosen], "outstanding");
-              setNewKind("");
-              setNewOwner("");
+              record(kindChosen, newOwner || DEFAULT_DEPENDENCY_OWNER[kindChosen], "outstanding", () => {
+                setNewKind("");
+                setNewOwner("");
+              });
             }}
           >
             Add as outstanding
           </Button>
         </div>
+      ) : null}
+      {save.error ? (
+        <p className={styles.note} role="alert">
+          {save.error}
+        </p>
       ) : null}
       {canChange ? (
         <>
@@ -202,6 +226,7 @@ export function DischargeDependenciesPanel({
             <label>
               New expected out
               <Select
+                disabled={save.pending}
                 aria-label="Day"
                 value={String(dayOffset)}
                 onChange={(event) => setDayOffset(Number(event.target.value))}
@@ -216,6 +241,7 @@ export function DischargeDependenciesPanel({
             <label>
               Time
               <input
+                disabled={save.pending}
                 className={styles.time}
                 type="time"
                 aria-label="Time (hh:mm)"
@@ -223,7 +249,7 @@ export function DischargeDependenciesPanel({
                 onChange={(event) => setTime(event.target.value)}
               />
             </label>
-            <Button size="sm" disabled={!/^\d{2}:\d{2}$/.test(time)} onClick={changeTime}>
+            <Button size="sm" disabled={save.pending || !/^\d{2}:\d{2}$/.test(time)} onClick={changeTime}>
               Change expected out
             </Button>
           </div>
@@ -231,6 +257,7 @@ export function DischargeDependenciesPanel({
             <label>
               Destination
               <Select
+                disabled={save.pending}
                 aria-label="Planned destination"
                 value={destination}
                 onChange={(event) => setDestination(event.target.value as LeavingDestination | "")}
@@ -245,15 +272,18 @@ export function DischargeDependenciesPanel({
             </label>
             <Button
               size="sm"
-              disabled={destination === ""}
+              disabled={save.pending || destination === ""}
               onClick={() => {
                 if (destination === "") return;
-                raise("RECORD_DISCHARGE_PLAN_CHANGE", {
-                  releaseId: release.id,
-                  actingUnitId: release.unitId,
-                  leavingDestination: destination,
-                });
-                setDestination("");
+                save.submit(
+                  () =>
+                    raise("RECORD_DISCHARGE_PLAN_CHANGE", {
+                      releaseId: release.id,
+                      actingUnitId: release.unitId,
+                      leavingDestination: destination,
+                    }),
+                  () => setDestination(""),
+                );
               }}
             >
               Record destination
@@ -271,6 +301,7 @@ function DependencyRow({
   now,
   dayZero,
   canChange,
+  pending,
   onRecord,
 }: {
   item: DischargeDependency;
@@ -278,6 +309,7 @@ function DependencyRow({
   now: Instant;
   dayZero: Date;
   canChange: boolean;
+  pending: boolean;
   onRecord: (state: DischargeDependencyState) => void;
 }) {
   const label = DISCHARGE_DEPENDENCY_KIND_LABELS[item.kind];
@@ -307,10 +339,11 @@ function DependencyRow({
         <span className={styles.actions}>
           {item.state === "outstanding" ? (
             <>
-              <Button size="sm" onClick={() => onRecord("done")} aria-label={`Mark ${label} done`}>
+              <Button disabled={pending} size="sm" onClick={() => onRecord("done")} aria-label={`Mark ${label} done`}>
                 Mark done
               </Button>
               <Button
+                disabled={pending}
                 size="sm"
                 variant="ghost"
                 onClick={() => onRecord("not_needed")}
@@ -323,6 +356,7 @@ function DependencyRow({
             <>
               {item.state === "done" ? (
                 <Button
+                  disabled={pending}
                   size="sm"
                   variant={changes.length > 0 ? "pri" : "sec"}
                   onClick={() => onRecord("done")}
@@ -331,7 +365,13 @@ function DependencyRow({
                   Reconfirm
                 </Button>
               ) : null}
-              <Button size="sm" variant="ghost" onClick={() => onRecord("outstanding")} aria-label={`Reopen ${label}`}>
+              <Button
+                disabled={pending}
+                size="sm"
+                variant="ghost"
+                onClick={() => onRecord("outstanding")}
+                aria-label={`Reopen ${label}`}
+              >
                 Reopen
               </Button>
             </>

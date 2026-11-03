@@ -65,6 +65,7 @@ export function ReferralPatientStep({
     newPatient,
     setNewPatient,
     newPatientError,
+    newPatientPending,
     setNewPatientError,
     confirmationOpen,
     setFlowError,
@@ -327,9 +328,15 @@ export function ReferralPatientStep({
                 </p>
               ) : null}
               <div className={styles.confirmRow}>
-                <button type="submit" className={`${styles.btn} ${styles.btnTint}`} {...addPatientGate.buttonProps}>
+                <button
+                  type="submit"
+                  className={`${styles.btn} ${styles.btnTint}`}
+                  {...addPatientGate.buttonProps}
+                  disabled={newPatientPending || addPatientGate.buttonProps.disabled}
+                  aria-busy={newPatientPending || undefined}
+                >
                   <UserPlus aria-hidden="true" />
-                  Add patient
+                  {newPatientPending ? "Adding patient…" : "Add patient"}
                 </button>
                 {addPatientGate.note}
                 <button type="button" className={styles.btn} onClick={() => setNewPatientOpen(false)}>
@@ -344,6 +351,8 @@ export function ReferralPatientStep({
               <input
                 ref={searchInputRef}
                 type="search"
+                role="combobox"
+                aria-expanded={showResults}
                 id={searchId}
                 className={styles.patientSearchInput}
                 aria-label="Find a patient"

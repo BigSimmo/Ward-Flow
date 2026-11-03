@@ -43,6 +43,8 @@ export function forgetStepUp(): void {
 onWardSessionEnd(forgetStepUp);
 
 const CANCELLED = "Cancelled. Nothing was changed.";
+const ACTION_UNCONFIRMED = "The action was sent but could not be confirmed. Check its status before trying again.";
+const ACTION_SAVING = "An action is already saving. Wait for its result before starting another.";
 
 // If the code cannot be fetched (offline), the stand-in says so and its Close cancels the step.
 const StepUpDialog = dynamic(
@@ -66,6 +68,9 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
   const [pending, setPending] = useState<Pending | null>(null);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const actionSent = useRef(false);
   const [error, setError] = useState<{ kind: "sign-in" | "action"; message: string } | null>(null);
 
   // Bumped whenever the dialog closes or is replaced, so a sign-in still running then never goes
@@ -74,16 +79,19 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
 
   const guard = useCallback(
     (run: () => Promise<StepUpResult>): Promise<StepUpResult> => {
+      if (submittingRef.current) return Promise.resolve(ACTION_SAVING);
       // A second step asking while one waits replaces it, and the first is told it was cancelled,
       // so its promise always settles (review on PR #363).
       const ask = (mode: Pending["mode"]) =>
         new Promise<StepUpResult>((resolve) => {
+          const previousWasSent = actionSent.current;
+          actionSent.current = false;
           attempt.current += 1;
           setBusy(false);
           setError(null);
           setPassword("");
           setPending((previous) => {
-            previous?.resolve(CANCELLED);
+            previous?.resolve(previousWasSent ? ACTION_UNCONFIRMED : CANCELLED);
             return { mode, run, resolve };
           });
         });
@@ -94,12 +102,16 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
     [reauthenticate, desk, now],
   );
   const close = (result: StepUpResult) => {
+    if (result === CANCELLED && submittingRef.current) return;
     attempt.current += 1;
-    pending?.resolve(result);
+    pending?.resolve(result === CANCELLED && actionSent.current ? ACTION_UNCONFIRMED : result);
     setPending(null);
     setPassword("");
     setError(null);
     setBusy(false);
+    submittingRef.current = false;
+    actionSent.current = false;
+    setSubmitting(false);
   };
 
   const carryOn = async () => {
@@ -116,9 +128,15 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
         signedIn = true;
       } else confirmed = { desk, at: now };
       if (attempt.current !== mine) return;
+      actionSent.current = true;
+      submittingRef.current = true;
+      setSubmitting(true);
       const result = await pending.run();
       if (attempt.current !== mine) return;
       if (result === STEP_UP_NEEDED) {
+        actionSent.current = false;
+        submittingRef.current = false;
+        setSubmitting(false);
         setError({ kind: "sign-in", message: "The sign-in was not accepted. Try again." });
         setBusy(false);
         return;
@@ -126,6 +144,8 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
       close(result);
     } catch {
       if (attempt.current !== mine) return;
+      submittingRef.current = false;
+      setSubmitting(false);
       setError(
         signedIn
           ? { kind: "action", message: "The action could not be confirmed. Check its status before trying again." }
@@ -143,6 +163,7 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
         password={password}
         setPassword={setPassword}
         busy={busy}
+        submitting={submitting}
         error={error}
         carryOn={() => void carryOn()}
         onClose={() => close(CANCELLED)}

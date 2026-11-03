@@ -130,7 +130,7 @@ it.each(["cancel and reopen", "choose another patient", "edit the registration"]
     } else if (change === "choose another patient") {
       fireEvent.click(screen.getByRole("button", { name: /^Change patient$/ }));
       const next = h.baseline().patients.find((patient) => patient.id !== "PT-023" && patient.umrn)!;
-      fireEvent.change(screen.getByRole("searchbox", { name: "Find a patient" }), { target: { value: next.umrn } });
+      fireEvent.change(screen.getByRole("combobox", { name: "Find a patient" }), { target: { value: next.umrn } });
       fireEvent.click(within(screen.getByRole("listbox", { name: "Matching patients" })).getAllByRole("option")[0]!);
     } else fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Synthetic newer draft" } });
     const selected = h.host().activePatientKey;
@@ -160,6 +160,23 @@ it("still selects an unchanged registration after its own accepted record arrive
   expect(h.host().activePatientKey).not.toBe("patient:PT-991");
   act(() => h.patients([...h.baseline().patients, h.added()]));
   expect(h.host().activePatientKey).toBe("patient:PT-991");
+});
+
+it("shows that registration is pending and restores Add patient after its refusal", async () => {
+  const h = hostHarness();
+  fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
+  act(() => h.host().setNewPatient(draft));
+  fireEvent.click(
+    within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: /^Add patient$/ }),
+  );
+  expect(screen.getByRole("button", { name: "Adding patient…" })).toBeDisabled();
+  await act(async () =>
+    h.completion.resolve({ commandId: "synthetic-registration", status: "refused", message: "Synthetic refusal" }),
+  );
+  expect(
+    within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: /^Add patient$/ }),
+  ).not.toBeDisabled();
+  expect(h.host().newPatient).toEqual(draft);
 });
 
 it("an old registration cannot consume a newer pending registration after Cancel and reopen", async () => {

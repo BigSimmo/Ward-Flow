@@ -69,6 +69,7 @@ import {
   StatusGlyph,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { useHomeChanges } from "./activity-changes";
 import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import activity from "./home-activity.module.css";
@@ -446,7 +447,7 @@ export function CoordinatorScreen() {
   useEffect(() => {
     if (!sheetPlacementOpen) return;
     function onKey(event: KeyboardEvent) {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (event.key !== "Escape" || event.defaultPrevented || hasOpenSheet()) return;
       setSelectedMovementId(undefined);
       setSelectedReferralId(undefined);
       setFocusMovementId(undefined);

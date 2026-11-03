@@ -59,7 +59,13 @@ function fakeServer({ shared = true, failing = false } = {}) {
       if (snapshot && !snapshots.some((entry) => entry.day === snapshot.day)) snapshots.push(snapshot);
       if (body.reason) addReason(body.reason as Record<string, unknown>);
     }
-    return { shared: true, generation, snapshots: [...snapshots], reasons: [...reasons] };
+    return {
+      shared: true,
+      generation,
+      reasonWriteVersion: 1,
+      snapshots: [...snapshots],
+      reasons: reasons.map((entry, index) => ({ ...entry, version: `synthetic-version-${index}-${entry.at}` })),
+    };
   };
   function addReason(reason: Record<string, unknown>) {
     const index = reasons.findIndex((held) => held.day === reason.day);
@@ -124,19 +130,23 @@ describe("shared forecast history (proposal 013)", () => {
     }
   });
 
-  it("keeps a reason shown when its save fails, and saves it on the next read", async () => {
+  it("leaves an uncertain reason unconfirmed and never replays it automatically on a later read", async () => {
     const { api, sent, control } = fakeServer();
     const seen: Seen = { history: [], reasons: 0 };
     renderWith(api, seen);
     await waitFor(() => expect(seen.history).toHaveLength(2));
     control.failWrites = true;
-    await act(async () => seen.record?.({ day: today, reason: "other", by: "coordinator", at: NOW_ANCHOR }));
-    expect(seen.reasons).toBe(1);
+    await act(async () =>
+      expect(await seen.record?.({ day: today, reason: "other", by: "coordinator", at: NOW_ANCHOR })).toMatchObject({
+        status: "uncertain",
+      }),
+    );
+    expect(seen.reasons).toBe(0);
     control.failWrites = false;
-    // The view reads the history again when it is shown again, and the unsaved reason goes with it.
+    // Reading another device's latest history never resends an unconfirmed mutation.
     await act(async () => document.dispatchEvent(new Event("visibilitychange")));
-    await waitFor(() => expect(sent.some((body) => body.reason)).toBe(true));
-    expect(seen.reasons).toBe(1);
+    expect(sent.filter((body) => body.reason)).toHaveLength(0);
+    expect(seen.reasons).toBe(0);
   });
 
   it("picks up a reason another device recorded when the view is shown again", async () => {

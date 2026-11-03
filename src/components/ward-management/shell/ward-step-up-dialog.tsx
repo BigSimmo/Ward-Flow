@@ -12,16 +12,28 @@ export type StepUpDialogProps = {
   password: string;
   setPassword: (password: string) => void;
   busy: boolean;
+  submitting: boolean;
   error: { kind: "sign-in" | "action"; message: string } | null;
   carryOn: () => void;
   onClose: () => void;
 };
 
-export function StepUpDialog({ mode, password, setPassword, busy, error, carryOn, onClose }: StepUpDialogProps) {
+export function StepUpDialog({
+  mode,
+  password,
+  setPassword,
+  busy,
+  submitting,
+  error,
+  carryOn,
+  onClose,
+}: StepUpDialogProps) {
   return (
     <Dialog
       open
       onClose={onClose}
+      closable={!submitting}
+      closeOnScrim={!submitting}
       title="Confirm it is you"
       description={`Giving access and opening a record outside your care need a sign-in within the last ${STEP_UP_MINUTES} minutes.`}
       size="sm"
@@ -32,7 +44,13 @@ export function StepUpDialog({ mode, password, setPassword, busy, error, carryOn
         loading: busy,
         disabledReason: mode === "password" && password.length === 0 ? "Enter your password first." : undefined,
       }}
-      secondary={[{ label: "Cancel", onAction: onClose }]}
+      secondary={[
+        {
+          label: "Cancel",
+          onAction: onClose,
+          disabledReason: submitting ? "The action is saving. Wait for its result." : undefined,
+        },
+      ]}
     >
       {mode === "password" ? (
         <>
@@ -62,6 +80,7 @@ export function StepUpDialog({ mode, password, setPassword, busy, error, carryOn
           {error ? <span role="alert"> {error.message}</span> : null}
         </p>
       )}
+      {submitting ? <p role="status">The action is saving. Wait for its result.</p> : null}
     </Dialog>
   );
 }

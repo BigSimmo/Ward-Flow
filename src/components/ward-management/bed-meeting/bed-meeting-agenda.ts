@@ -5,6 +5,7 @@ import type { Instant } from "../ward-clock";
 import type { BedRelease, Movement, Unit } from "../ward-model";
 import { outOfAreaLedger } from "../ward-referrals-out-of-area";
 import { strandedFlags, strandedPromptText } from "../ward-stranded";
+import { isWaitingInEd } from "../ward-ed-presence";
 import type { BedMeetingAction, BedMeetingSubject } from "./bed-meeting-actions";
 
 /**
@@ -14,8 +15,6 @@ import type { BedMeetingAction, BedMeetingSubject } from "./bed-meeting-actions"
  */
 const AGENDA_ITEMS_PER_SECTION = 5;
 
-const STILL_IN_ED = new Set<Movement["stage"]>(["placement_requested", "destination_review", "accepted_awaiting_bed"]);
-
 export type AgendaItem = {
   subject: BedMeetingSubject;
   record: Movement | Admission;
@@ -24,7 +23,7 @@ export type AgendaItem = {
   detail: string;
 };
 
-export type AgendaSection = { id: string; title: string; items: AgendaItem[] };
+export type AgendaSection = { id: string; title: string; total: number; items: AgendaItem[] };
 
 export type MeetingActionRow = { subject: BedMeetingSubject; record: Movement | Admission; action: BedMeetingAction };
 
@@ -51,9 +50,8 @@ export function bedMeetingAgenda(
   const open = movements.filter((movement) => !movement.closure && movement.stage !== "arrived");
 
   const edWaits = open
-    .filter((movement) => STILL_IN_ED.has(movement.stage) && movement.leftDepartmentAt === undefined)
+    .filter(isWaitingInEd)
     .sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id))
-    .slice(0, AGENDA_ITEMS_PER_SECTION)
     .map((movement) => ({
       subject: movementSubject(movement),
       record: movement,
@@ -65,7 +63,6 @@ export function bedMeetingAgenda(
     // Every held bed, soonest to run out first: no invented cut-off decides which ones matter.
     .filter((movement) => movement.stage === "pulled" && movement.pullExpiresAt !== undefined)
     .sort((a, b) => a.pullExpiresAt! - b.pullExpiresAt! || a.id.localeCompare(b.id))
-    .slice(0, AGENDA_ITEMS_PER_SECTION)
     .map((movement) => {
       const left = movement.pullExpiresAt! - now;
       return {
@@ -77,24 +74,21 @@ export function bedMeetingAgenda(
     });
 
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
-  const stranded = strandedFlags(admissions, now, bedReleases)
-    .slice(0, AGENDA_ITEMS_PER_SECTION)
-    .flatMap((flag) => {
-      const admission = admissionById.get(flag.admissionId);
-      if (!admission) return [];
-      return [
-        {
-          subject: admissionSubject(admission),
-          record: admission,
-          unitId: admission.unitId,
-          detail: `${flag.days} days · ${strandedPromptText(flag)}`,
-        },
-      ];
-    });
+  const stranded = strandedFlags(admissions, now, bedReleases).flatMap((flag) => {
+    const admission = admissionById.get(flag.admissionId);
+    if (!admission) return [];
+    return [
+      {
+        subject: admissionSubject(admission),
+        record: admission,
+        unitId: admission.unitId,
+        detail: `${flag.days} days · ${strandedPromptText(flag)}`,
+      },
+    ];
+  });
 
   const outOfArea = outOfAreaLedger([...admissions], [...units], now)
     .entries.sort((a, b) => b.sinceArrival - a.sinceArrival || a.admission.id.localeCompare(b.admission.id))
-    .slice(0, AGENDA_ITEMS_PER_SECTION)
     .map((entry) => ({
       subject: admissionSubject(entry.admission),
       record: entry.admission,
@@ -107,7 +101,11 @@ export function bedMeetingAgenda(
     { id: "holds", title: "Pulled beds, soonest to expire", items: holds },
     { id: "stranded", title: "Stranded stays", items: stranded },
     { id: "out-of-area", title: "Out of area", items: outOfArea },
-  ];
+  ].map((section) => ({
+    ...section,
+    total: section.items.length,
+    items: section.items.slice(0, AGENDA_ITEMS_PER_SECTION),
+  }));
 }
 
 /** Every recorded action, where it stands now. Overdue is shown, never escalated. */

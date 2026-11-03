@@ -1094,9 +1094,10 @@ function TeamComparison({
   };
   const shownOf = (row: { figures: CountFigures }) => small(valueOf(row));
   // Protected counts sort after exact counts, alphabetically, without a hidden numeric rank.
-  const sortValue = (row: { figures: CountFigures }) => exactStatisticsCount(valueOf(row));
+  const sortValue = (row: { figures: CountFigures }) =>
+    row.figures[measure].kind === "measured" ? exactStatisticsCount(valueOf(row)) : null;
   const cellText = (figure: CountFigure) => (figure.kind === "measured" ? small(figure.value) : figureText(figure));
-  const sorted = [...measured].sort((a, b) =>
+  const ordered = [...matching].sort((a, b) =>
     sort === "name"
       ? a.team.name.localeCompare(b.team.name)
       : (() => {
@@ -1111,6 +1112,7 @@ function TeamComparison({
               : y - x || a.team.name.localeCompare(b.team.name);
         })(),
   );
+  const sorted = ordered.filter((row) => row.figures[measure].kind === "measured");
   // A team with nobody on this measure folds into the footer count until Show all (UX audit 21 Oct
   // 2026): the top twelve used to be one bar and eleven noughts.
   const withSome = sorted.filter((row) => positive(valueOf(row)));
@@ -1127,7 +1129,7 @@ function TeamComparison({
   function exportCsv() {
     const lines = [
       ["Team", "In a bed", "With a discharge date", "Discharged into the area", "Left another way"],
-      ...matching.map((row) => [
+      ...ordered.map((row) => [
         row.team.name,
         String(cellText(row.figures.admitted)),
         String(cellText(row.figures.expected)),
@@ -1264,7 +1266,7 @@ function TeamComparison({
               </tr>
             </thead>
             <tbody>
-              {matching.map((row) => (
+              {ordered.map((row) => (
                 <tr
                   key={row.team.id}
                   data-testid={`ward-statistics-community-compare-row-${row.team.id}`}

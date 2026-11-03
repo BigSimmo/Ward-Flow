@@ -38,7 +38,9 @@ import {
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
-import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { useUndoableStep, type UndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
@@ -82,7 +84,6 @@ import { instantFromEstimatedTimeInputs } from "@/components/ward-management/war
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { plural } from "@/components/ward-management/ward-plural";
-import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -167,40 +168,35 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const [drafts, setDrafts] = useState<Record<string, RepatDraft>>({});
   const [repatNotice, setRepatNotice] = useState<string | null>(null);
   // v10 pass 3: a recorded return offers Undo (`UNDO_REPATRIATION`) on the layout toast.
-  const { run: runStep } = useUndoableStep({
+  const repatSave = useWardFormSave(`return-plan:${selectedId ?? "none"}`);
+  const { offer: offerStep } = useUndoableStep({
     dispatch,
+    requireConfirmation: true,
     rejections,
     now,
     routeRole: useRouteRole(),
     onMessage: setRepatNotice,
   });
-  // The panel notice is written at once, so a refusal of that step (for example a shared workspace
-  // recording the stay as gone first) replaces it with the engine's reason and restores the draft.
-  const repatCheckRef = useRef<{
-    prior: number;
-    admissionId: string;
-    record: RepatriationRecord | undefined;
-    draft?: RepatDraft;
-  } | null>(null);
-  // Disarmed only by this step's own outcome: a refusal naming this stay, or this stay's record
-  // changing in content. Changes to other stays leave it armed, and once disarmed a later refusal is never
-  // read as this step's.
-  useEffect(() => {
-    const check = repatCheckRef.current;
-    if (!check) return;
-    const refused = rejections.slice(check.prior).find((rejection) => rejection.movementId === check.admissionId);
-    if (!refused) {
-      const record = liveRepatriations?.find((candidate) => candidate.admissionId === check.admissionId);
-      // Compared by content: a shared refresh can hand back an equal record as a new object, which is
-      // not this step's outcome.
-      if (JSON.stringify(record) !== JSON.stringify(check.record)) repatCheckRef.current = null;
-      return;
-    }
-    repatCheckRef.current = null;
-    const { admissionId, draft } = check;
-    if (draft) setDrafts((current) => ({ ...current, [admissionId]: draft }));
-    setRepatNotice(`Not recorded: ${refusalReasonText(refused.reason)}. Nothing was changed.`);
-  }, [rejections, liveRepatriations]);
+  function saveReturn(event: Extract<WardFlowEvent, { type: "RECORD_REPATRIATION" }>, step: UndoableStep) {
+    const draft = drafts[event.admissionId];
+    setRepatNotice("Saving return plan. Waiting for confirmation.");
+    repatSave.submit(
+      () => {
+        const completion = dispatch({ ...event, type: "RECORD_REPATRIATION" });
+        offerStep(step, { completion });
+        return completion;
+      },
+      () => {
+        setDrafts((current) => {
+          if (current[event.admissionId] !== draft) return current;
+          const next = { ...current };
+          delete next[event.admissionId];
+          return next;
+        });
+        setRepatNotice(step.success);
+      },
+    );
+  }
   const [toolNote, setToolNote] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<HighlightKey | null>(null);
   const [region, setRegion] = useState<string | null>(null);
@@ -392,8 +388,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       ? " Return transfer movement queued for bed placement at home health service."
       : " Return movement pending receiving ward agreement.";
     const recorded = `Return recorded for ${patientOf(entry).formalName} to ${targetHospitalName}.`;
-    repatCheckRef.current = { prior: rejections.length, admissionId, record: recordOf(admissionId), draft };
-    runStep(
+    saveReturn(
       {
         type: "RECORD_REPATRIATION",
         role: "coordinator",
@@ -414,12 +409,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         undone: `Return undone for ${patientOf(entry).formalName}. Nothing is recorded.`,
       },
     );
-    setDrafts((current) => {
-      const next = { ...current };
-      delete next[admissionId];
-      return next;
-    });
-    setRepatNotice(`${recorded}${movementFeedback}`);
   }
 
   function sendPlanToWard(entry: OutOfAreaEntry) {
@@ -443,8 +432,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         ? "Return transfer movement queued for bed placement at home health service."
         : "Return movement pending receiving ward agreement."
     }`;
-    repatCheckRef.current = { prior: rejections.length, admissionId, record: recordOf(admissionId), draft };
-    runStep(
+    saveReturn(
       {
         type: "RECORD_REPATRIATION",
         role: "coordinator",
@@ -465,12 +453,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         undone: `Return undone for ${patientOf(entry).formalName}. Nothing is recorded.`,
       },
     );
-    setDrafts((current) => {
-      const next = { ...current };
-      delete next[admissionId];
-      return next;
-    });
-    setRepatNotice(sentNotice);
   }
 
   function markWardAgreed(entry: OutOfAreaEntry) {
@@ -479,8 +461,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     if (!existing || existing.receivingWardAgreed) return;
     const targetHospitalName = siteByCode(existing.homeHospital)?.name ?? existing.homeHospital;
     const agreedNotice = `Return recorded for ${patientOf(entry).formalName} to ${targetHospitalName}. Return transfer movement queued for bed placement at home health service.`;
-    repatCheckRef.current = { prior: rejections.length, admissionId, record: existing };
-    runStep(
+    saveReturn(
       {
         type: "RECORD_REPATRIATION",
         role: "coordinator",
@@ -505,7 +486,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         undone: `Ward agreement undone for ${patientOf(entry).formalName}. The return plan is back to awaiting the receiving ward.`,
       },
     );
-    setRepatNotice(agreedNotice);
   }
 
   // Audit A3-18 (13 Oct 2026): every card and the return sheet carry the legal status or form.
@@ -532,11 +512,14 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       dischargeOffset={offsetOf(entry)}
       now={now}
       draft={draftFor(entry.admission.id)}
-      onDraft={(update) => updateDraft(entry.admission.id, update)}
+      onDraft={(update) => {
+        if (!repatSave.pending) updateDraft(entry.admission.id, update);
+      }}
+      pending={repatSave.pending}
       record={recordOf(entry.admission.id)}
       returnMovementId={returnMovementOf(entry.admission.id)}
       options={closerBedOptions(entry, units, now)}
-      notice={repatNotice}
+      notice={repatSave.error ?? repatNotice}
       onDismissNotice={() => setRepatNotice(null)}
       onRecord={() => recordReturn(entry)}
       onSendToWard={() => sendPlanToWard(entry)}

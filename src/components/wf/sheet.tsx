@@ -243,6 +243,11 @@ export function Sheet({
   function handleGripPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
     if (!dragRef.current.dragging) return;
     const delta = Math.max(0, event.clientY - dragRef.current.startY);
+    resetGripDrag();
+    if (delta > 96) onClose();
+  }
+
+  function resetGripDrag() {
     dragRef.current = { startY: 0, dragging: false };
     const panel = panelRef.current;
     if (panel) {
@@ -250,7 +255,6 @@ export function Sheet({
       panel.style.transition = "";
       panel.style.transform = "";
     }
-    if (delta > 96) onClose();
   }
 
   useEffect(() => {
@@ -518,7 +522,7 @@ export function Sheet({
           onPointerDown={handleGripPointerDown}
           onPointerMove={handleGripPointerMove}
           onPointerUp={handleGripPointerUp}
-          onPointerCancel={handleGripPointerUp}
+          onPointerCancel={resetGripDrag}
         >
           <span className={cn("h-1 w-9 rounded-full", styles.grip)} />
         </div>

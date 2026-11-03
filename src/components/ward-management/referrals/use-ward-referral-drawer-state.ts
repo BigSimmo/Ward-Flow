@@ -686,22 +686,23 @@ export function useWardReferralDrawerState({
     return [...matches, ...more];
   }, [searchQuery, sampleProfiles, movements, patients, referrals, dayZero, now]);
 
-  const { newPatientError, setNewPatientError, pendingNewPatient, addNewPatient } = useReferralPatientRegistration({
-    patients,
-    generation: worldGeneration,
-    dispatch,
-    now,
-    dayZero,
-    role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
-    registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
-    requiresRegistrationScope: access.scope.kind === "ward",
-    allowed: addPatientGate.allowed,
-    reason: addPatientGate.reason,
-    patient: newPatient,
-    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
-    intentVersion: registrationDraft.intentVersion,
-    getIntentVersion: registrationDraft.getIntentVersion,
-  });
+  const { newPatientError, setNewPatientError, pendingNewPatient, newPatientPending, addNewPatient } =
+    useReferralPatientRegistration({
+      patients,
+      generation: worldGeneration,
+      dispatch,
+      now,
+      dayZero,
+      role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
+      registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
+      requiresRegistrationScope: access.scope.kind === "ward",
+      allowed: addPatientGate.allowed,
+      reason: addPatientGate.reason,
+      patient: newPatient,
+      onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
+      intentVersion: registrationDraft.intentVersion,
+      getIntentVersion: registrationDraft.getIntentVersion,
+    });
 
   // Live capacity for the patient's cohort and the chosen bed security.
   // Cheap enough to work out on each render, and the cohort can come from the record or the age band.
@@ -1303,6 +1304,7 @@ export function useWardReferralDrawerState({
     newPatientError,
     setNewPatientError,
     pendingNewPatient,
+    newPatientPending,
     guardKeepRef,
     confirmationOpen,
     setConfirmationOpen,

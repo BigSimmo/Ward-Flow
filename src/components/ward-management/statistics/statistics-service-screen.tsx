@@ -36,6 +36,7 @@ import {
   wardStatisticsHref,
 } from "@/components/ward-management/shell/ward-facade";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { HEALTH_SERVICES, type HealthService, type Referral, type Unit } from "@/components/ward-management/ward-model";
@@ -289,10 +290,14 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
     [service, serviceSiteCodes, sites],
   );
 
-  // Ready is `unitCapacity`'s `available`, `min(allocatable, empty)`, per the owner's ruling.
+  // Display Ready follows the shared bed states, including live pulls beyond a reduced observation.
   const readyRows = useMemo(
-    () => serviceUnits.map((unit) => ({ unit, capacity: unitCapacity(unit, bedReleases) })),
-    [serviceUnits, bedReleases],
+    () =>
+      serviceUnits.map((unit) => ({
+        unit,
+        capacity: { ...unitCapacity(unit, bedReleases), available: readyBedsNow(unit, admissions, bedReleases) },
+      })),
+    [serviceUnits, admissions, bedReleases],
   );
   const totalReady = useMemo(() => readyRows.reduce((sum, row) => sum + row.capacity.available, 0), [readyRows]);
   const totalBedBase = useMemo(() => serviceUnits.reduce((sum, unit) => sum + unit.beds, 0), [serviceUnits]);

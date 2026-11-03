@@ -186,6 +186,7 @@ export type ReturnPlanProps = {
   returnMovementId: string | undefined;
   options: BedOption[];
   notice: string | null;
+  pending?: boolean;
   onDismissNotice: () => void;
   onRecord: () => void;
   onSendToWard?: () => void;
@@ -221,6 +222,7 @@ export function ReturnPlan({
   header,
   idPrefix,
   compactIdentity = false,
+  pending = false,
 }: ReturnPlanProps) {
   const site = siteByCode(entry.unit.siteCode);
   const missing = missingAnswers(draft, now);
@@ -562,7 +564,7 @@ export function ReturnPlan({
               variant="sec"
               size="sm"
               data-testid="ward-out-of-area-repat-send"
-              disabledReason={returnPlanBlockReason(draft, now)}
+              disabledReason={pending ? "Saving" : returnPlanBlockReason(draft, now)}
               title={returnPlanBlockReason(draft, now)}
               reasonDisplay="tooltip"
               onClick={onSendToWard}
@@ -573,7 +575,9 @@ export function ReturnPlan({
               variant="pri"
               size="sm"
               data-testid="ward-out-of-area-repat-submit"
-              disabledReason={missing.length ? `Answer the ${missing.length} left first.` : undefined}
+              disabledReason={
+                pending ? "Saving" : missing.length ? `Answer the ${missing.length} left first.` : undefined
+              }
               reasonDisplay="tooltip"
               onClick={onRecord}
             >

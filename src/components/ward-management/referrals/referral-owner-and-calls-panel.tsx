@@ -8,8 +8,7 @@ import { COMMUNITY_TEAM_PAGES, communityTeamById } from "../community/community-
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
-import type { WardCommandOutcome } from "../ward-shared-client";
-import { wardCommandFailure } from "../ward/use-ward-command-completion";
+import { useWardFormSave } from "../use-ward-form-save";
 import type { Referral, Unit } from "../ward-model";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import {
@@ -61,7 +60,7 @@ export function ReferralOwnerAndCalls({
 }) {
   const flow = useOptionalWardFlowSelect("units");
   if (!flow) return null;
-  return <OwnerAndCalls referral={referral} now={now} units={flow.units} readOnly={readOnly} />;
+  return <OwnerAndCalls key={referral.id} referral={referral} now={now} units={flow.units} readOnly={readOnly} />;
 }
 
 function OwnerAndCalls({
@@ -79,11 +78,13 @@ function OwnerAndCalls({
   const raise = useWardRaise(role);
   const gate = useRoleGate();
   const baseId = useId();
+  const assignSave = useWardFormSave(`referral-owner:${referral.id}`);
   const [ownerChoice, setOwnerChoice] = useState<ReferralOwnerDesk | "">("");
   const [contactChoice, setContactChoice] = useState("");
   const [outcomeChoice, setOutcomeChoice] = useState<ReferralContactOutcome | "">("");
-  const [callSaving, setCallSaving] = useState(false);
-  const [callFailure, setCallFailure] = useState<string | undefined>(undefined);
+  const callSave = useWardFormSave(`referral-call:${referral.id}`);
+  const callSaving = callSave.pending;
+  const callFailure = callSave.error;
   // Wards and teams in name order only: the list never ranks or suggests a ward (D-71).
   const wards = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
   const teams = useMemo(() => [...COMMUNITY_TEAM_PAGES].sort((a, b) => a.name.localeCompare(b.name)), []);
@@ -99,6 +100,7 @@ function OwnerAndCalls({
   const coordinator = role === "coordinator";
   const ownDesk = (REFERRAL_OWNER_DESKS as readonly string[]).includes(role) ? (role as ReferralOwnerDesk) : undefined;
   const assignRefusal =
+    (assignSave.pending ? "Waiting for save confirmation" : undefined) ??
     closed ??
     assignGate.reason ??
     (coordinator
@@ -139,6 +141,7 @@ function OwnerAndCalls({
             {coordinator ? (
               <Field label="Assign to" className={styles.field}>
                 <Select
+                  disabled={assignSave.pending}
                   value={ownerChoice}
                   onChange={(event) => setOwnerChoice(event.target.value as ReferralOwnerDesk | "")}
                   data-testid={`ward-referral-assign-choice-${referral.id}`}
@@ -161,8 +164,10 @@ function OwnerAndCalls({
                 if (assignRefusal) return;
                 const next = coordinator ? ownerChoice : ownDesk;
                 if (!next) return;
-                raise("ASSIGN_REFERRAL", { referralId: referral.id, owner: next });
-                setOwnerChoice("");
+                assignSave.submit(
+                  () => raise("ASSIGN_REFERRAL", { referralId: referral.id, owner: next }),
+                  () => setOwnerChoice(""),
+                );
               }}
               data-testid={`ward-referral-assign-${referral.id}`}
             >
@@ -171,6 +176,11 @@ function OwnerAndCalls({
             {assignRefusal ? <DisabledReason id={`${baseId}-assign-why`}>{assignRefusal}</DisabledReason> : null}
           </div>
 
+          {assignSave.error ? (
+            <p className={styles.when} role="alert">
+              {assignSave.error}
+            </p>
+          ) : null}
           <fieldset className={styles.call}>
             <legend className={styles.heading}>Log a call</legend>
             <div className={styles.row}>
@@ -221,30 +231,21 @@ function OwnerAndCalls({
                 aria-describedby={callRefusal ? `${baseId}-call-why` : undefined}
                 onClick={() => {
                   if (callRefusal || callSaving || !target || outcomeChoice === "") return;
-                  setCallFailure(undefined);
-                  // Production audit URE-05: the choices clear only once the call is recorded; a
-                  // shared answer of failed or cancelled keeps them, with the reason beside the button.
-                  // A choice changed while the save was pending is kept.
+                  // Keep a newer choice if the answers changed while this command was pending.
                   const sentContact = contactChoice;
                   const sentOutcome = outcomeChoice;
-                  const finish = (outcome?: WardCommandOutcome | void) => {
-                    setCallSaving(false);
-                    const message = wardCommandFailure(outcome ?? undefined);
-                    if (message) setCallFailure(message);
-                    else {
+                  callSave.submit(
+                    () =>
+                      raise("LOG_REFERRAL_CONTACT", {
+                        referralId: referral.id,
+                        contact: target,
+                        outcome: outcomeChoice,
+                      }),
+                    () => {
                       setContactChoice((current) => (current === sentContact ? "" : current));
                       setOutcomeChoice((current) => (current === sentOutcome ? "" : current));
-                    }
-                  };
-                  const result = raise("LOG_REFERRAL_CONTACT", {
-                    referralId: referral.id,
-                    contact: target,
-                    outcome: outcomeChoice,
-                  });
-                  if (result instanceof Promise) {
-                    setCallSaving(true);
-                    result.then(finish, () => finish({ commandId: "", status: "failed" }));
-                  } else finish(result);
+                    },
+                  );
                 }}
                 data-testid={`ward-referral-call-log-${referral.id}`}
               >

@@ -9,6 +9,7 @@ import { movementHref, unitHref } from "../shell/ward-facade";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardRecordActor } from "../ward-discharge-records";
 import { useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFormSave } from "../use-ward-form-save";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Unit } from "../ward-model";
 import {
@@ -89,13 +90,16 @@ function RestrictionReviewRow({
   const baseId = useId();
   const who = unitActor(actor, unit);
   const raise = useWardRaise(who?.role ?? "coordinator");
-  const refusal = !who
-    ? NOT_YOURS
-    : reviewer === ""
-      ? "Choose who reviews it."
-      : afterHours === ""
-        ? "Choose when it is reviewed."
-        : undefined;
+  const save = useWardFormSave(`restriction-review:${unit.id}:${restriction}`);
+  const refusal = save.pending
+    ? "Waiting for confirmation"
+    : !who
+      ? NOT_YOURS
+      : reviewer === ""
+        ? "Choose who reviews it."
+        : afterHours === ""
+          ? "Choose when it is reviewed."
+          : undefined;
 
   return (
     <li className={styles.item} data-testid={`ward-restriction-review-${restriction}`} data-held-form={heldScope}>
@@ -118,10 +122,16 @@ function RestrictionReviewRow({
           {formatInstantWithDay(review.expectedAt, now)} · set by {review.by}
         </span>
       ) : null}
+      {save.error ? (
+        <p className={styles.line} role="alert">
+          {save.error}
+        </p>
+      ) : null}
       {editing ? (
         <div className={styles.form}>
           <Field label="Reviewer">
             <Select
+              disabled={save.pending}
               value={reviewer}
               onChange={(event) => setReviewer(event.target.value as RestrictionReviewerRole | "")}
               data-testid={`ward-restriction-reviewer-${restriction}`}
@@ -136,6 +146,7 @@ function RestrictionReviewRow({
           </Field>
           <Field label="Review by">
             <Select
+              disabled={save.pending}
               value={afterHours}
               onChange={(event) => setAfterHours(event.target.value)}
               data-testid={`ward-restriction-review-after-${restriction}`}
@@ -157,21 +168,34 @@ function RestrictionReviewRow({
               data-testid={`ward-restriction-review-save-${restriction}`}
               onClick={() => {
                 if (refusal || !who || reviewer === "") return;
-                raise("RECORD_RESTRICTION_REVIEW", {
-                  unitId: unit.id,
-                  ...(who.actingUnitId ? { actingUnitId: who.actingUnitId } : {}),
-                  restriction,
-                  reviewer,
-                  expectedAt: now + Number(afterHours) * 60,
-                });
-                setEditing(false);
-                setReviewer("");
-                setAfterHours("");
+                save.submit(
+                  () =>
+                    raise("RECORD_RESTRICTION_REVIEW", {
+                      unitId: unit.id,
+                      ...(who.actingUnitId ? { actingUnitId: who.actingUnitId } : {}),
+                      restriction,
+                      reviewer,
+                      expectedAt: now + Number(afterHours) * 60,
+                    }),
+                  () => {
+                    setEditing(false);
+                    setReviewer("");
+                    setAfterHours("");
+                  },
+                );
               }}
             >
               Save review for {unit.name}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={save.pending}
+              onClick={() => {
+                save.forget();
+                setEditing(false);
+              }}
+            >
               Cancel
             </Button>
             {refusal ? <DisabledReason id={`${baseId}-save`}>{refusal}</DisabledReason> : null}

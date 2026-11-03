@@ -414,6 +414,7 @@ function OperationalStatisticsScreen({
     <StatisticsSummaryView
       model={{
         executive: false,
+        eventLog: live.state.eventLog,
         now,
         dayZero,
         paused: live.paused,
@@ -522,6 +523,7 @@ function StatisticsSummaryView({
 }) {
   const {
     executive,
+    eventLog,
     directory,
     now,
     dayZero,
@@ -919,7 +921,7 @@ function StatisticsSummaryView({
         {/* The phone summary closes the page's main landmark, so this card is its own landmark. Three
             hours and no total fit a phone's width without a sideways scroll. */}
         <aside className={trendStyles.phoneSlot} aria-label="This session">
-          <StatisticsSessionTrendsCard now={now} hours={3} showTotal={false} />
+          <StatisticsSessionTrendsCard now={now} eventLog={eventLog} hours={3} showTotal={false} />
         </aside>
       </>
     );
@@ -1060,7 +1062,7 @@ function StatisticsSummaryView({
               <Strip label="Also recorded" cols={slots.forecastTiles ? 4 : 2}>
                 {pullToArrivalTile}
                 {slots.forecastTiles}
-                <StatisticsSessionTrendsCard now={now} hours={4} showTotal={false} tile />
+                <StatisticsSessionTrendsCard now={now} eventLog={eventLog} hours={4} showTotal={false} tile />
               </Strip>
             </StatCardR>
 

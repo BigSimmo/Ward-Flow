@@ -43,22 +43,36 @@ export function useFrontDoorAuth(next: string): { phase: Phase; form: WardCreden
   const [state, setState] = useState<FormState>(READY);
   const [configured, setConfigured] = useState(true);
   const auth = useRef<WardBrowserAuthAdapter | null>(null);
+  const opening = useRef(0);
 
   const open = async (adapter: WardBrowserAuthAdapter) => {
+    if (auth.current !== adapter) return;
+    const attempt = ++opening.current;
+    const current = () => auth.current === adapter && opening.current === attempt;
     setPhase("opening");
-    const response = await requestFrontDoorPass({ token: await adapter.token() });
-    if (response?.ok) {
-      window.location.replace(next);
-      return;
+    try {
+      const token = await adapter.token();
+      if (!current()) return;
+      const response = await requestFrontDoorPass({ token });
+      if (!current()) return;
+      if (response?.ok) {
+        window.location.replace(next);
+        return;
+      }
+      const said = (await response?.json().catch(() => null)) as { error?: unknown } | null;
+      if (!current()) return;
+      setPhase("ready");
+      setState((old) => ({
+        ...old,
+        busy: false,
+        message: typeof said?.error === "string" ? said.error : "Sign-in service is unavailable. Try again.",
+        messageKind: response?.status === 401 ? "info" : "unavailable",
+      }));
+    } catch (error) {
+      if (!current()) return;
+      setPhase("ready");
+      setState((old) => ({ ...old, busy: false, ...failure(error) }));
     }
-    const said = (await response?.json().catch(() => null)) as { error?: unknown } | null;
-    setPhase("ready");
-    setState((old) => ({
-      ...old,
-      busy: false,
-      message: typeof said?.error === "string" ? said.error : "Sign-in service is unavailable. Try again.",
-      messageKind: response?.status === 401 ? "info" : "unavailable",
-    }));
   };
 
   useEffect(() => {
@@ -108,6 +122,7 @@ export function useFrontDoorAuth(next: string): { phase: Phase; form: WardCreden
     })();
     return () => {
       closed = true;
+      opening.current += 1;
       auth.current?.dispose();
       auth.current = null;
     };
@@ -122,7 +137,7 @@ export function useFrontDoorAuth(next: string): { phase: Phase; form: WardCreden
     try {
       await step(adapter);
     } catch (error) {
-      setState((old) => ({ ...old, busy: false, ...failure(error) }));
+      if (auth.current === adapter) setState((old) => ({ ...old, busy: false, ...failure(error) }));
     }
   };
   const home = () => window.location.origin + "/ward-flow";

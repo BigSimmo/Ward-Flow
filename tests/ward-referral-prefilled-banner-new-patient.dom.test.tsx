@@ -74,7 +74,7 @@ describe("the pre-filled banner only claims what was pre-filled (WT-28)", () => 
     expect(screen.queryByTestId("ward-referral-fast-track")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Seed patient" }));
-    fireEvent.change(screen.getByRole("searchbox", { name: "Find a patient" }), { target: { value: "UM999001" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Find a patient" }), { target: { value: "UM999001" } });
     fireEvent.click(within(screen.getByRole("listbox", { name: "Matching patients" })).getAllByRole("option")[0]!);
     expect(screen.getByText("Vance, Clara (35F)")).toBeInTheDocument();
     expect(screen.getByTestId("ward-referral-fast-track")).toBeInTheDocument();

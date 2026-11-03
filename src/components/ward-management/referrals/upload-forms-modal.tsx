@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Button, DisabledReason } from "@/components/wf";
@@ -10,9 +10,8 @@ import { uploadedFileTypeOf } from "@/components/ward-management/ward-uploaded-f
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { useWardModalFocus } from "../ward-modal-focus";
-import type { WardCommandOutcome } from "../ward-shared-client";
+import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./upload-forms-modal.module.css";
-import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 export interface UploadFormsModalProps {
   isOpen: boolean;
@@ -46,18 +45,11 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
   const [fileAttached, setFileAttached] = useState<boolean>(false);
   const [simulatedSize, setSimulatedSize] = useState<number>(0);
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const pending = useRef(false);
-  const mounted = useRef(false);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
+  const save = useWardFormSave(`document-metadata:${movement.id}`);
+  const saving = save.pending;
+  const saveError = save.error;
   const dismiss = () => {
-    if (!pending.current) onClose();
+    if (!save.pending) onClose();
   };
 
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -76,32 +68,20 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!formName || !fileAttached || !fileName.trim() || simulatedSize <= 0 || pending.current) return;
-    pending.current = true;
-    setSaving(true);
-    setSaveError(null);
-    const finish = (outcome?: WardCommandOutcome) => {
-      if (!mounted.current) return;
-      pending.current = false;
-      setSaving(false);
-      if (outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true)) onClose();
-      else setSaveError(outcome?.message ?? SAVE_NOT_CONFIRMED);
-    };
-    try {
-      const result = dispatch({
-        type: "UPLOAD_PATIENT_FORM",
-        role,
-        now,
-        movementId: movement.id,
-        formName,
-        fileType,
-        sizeBytes: simulatedSize,
-      });
-      if (result && "then" in result) void result.then(finish, () => finish());
-      else finish(result || undefined);
-    } catch {
-      finish();
-    }
+    if (!formName || !fileAttached || !fileName.trim() || simulatedSize <= 0 || saving) return;
+    save.submit(
+      () =>
+        dispatch({
+          type: "UPLOAD_PATIENT_FORM",
+          role,
+          now,
+          movementId: movement.id,
+          formName,
+          fileType,
+          sizeBytes: simulatedSize,
+        }),
+      onClose,
+    );
   }
 
   return (

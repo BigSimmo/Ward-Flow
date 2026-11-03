@@ -22,6 +22,7 @@ import {
 import { bedMeetingSheet } from "../capacity/bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "../capacity/bed-meeting-sheet";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { useCanOpenHref } from "../shell/ward-access";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
@@ -32,6 +33,7 @@ import { bedMeetingTvHref } from "../ward-nav";
 import { DONE_PAUSE_MS, LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "../ward-operational-defaults";
 import { usePatientOf } from "../ward-patient-name";
 import { useRefocusAfterRowLeaves } from "../use-refocus-after-row-leaves";
+import { useWardFormSave } from "../use-ward-form-save";
 import {
   BED_MEETING_ACTION_DUE_HOURS,
   BED_MEETING_ACTION_KINDS,
@@ -77,6 +79,13 @@ const SHORT_TITLES: Record<string, string> = {
   "out-of-area": "Out of area",
 };
 
+const QUEUE_HREFS: Record<string, string> = {
+  "ed-waits": "/ward-flow/waiting",
+  holds: "/ward-flow/movements",
+  stranded: "/ward-flow/discharges",
+  "out-of-area": "/ward-flow/out-of-area",
+};
+
 function BedMeetingAgenda() {
   const { movements, admissions, bedReleases, units, leaveBeds, referrals, configuration, now } = useWardFlowSelect(
     "movements",
@@ -90,6 +99,7 @@ function BedMeetingAgenda() {
   );
   const patientOf = usePatientOf();
   const thresholds = useDueSoonThresholds();
+  const canOpen = useCanOpenHref();
   // Decision 46 (Josh, 31 Oct 2026): the site bed manager reads its own site's agenda only, so the
   // chair's controls (Action and Done) are the bed coordinator's alone.
   const chairs = useEffectiveWardAccess().role === "coordinator";
@@ -149,11 +159,7 @@ function BedMeetingAgenda() {
         stats={
           <>
             {sections.map((section) => (
-              <HeroStat
-                key={section.id}
-                value={section.items.length}
-                label={SHORT_TITLES[section.id] ?? section.title}
-              />
+              <HeroStat key={section.id} value={section.total} label={SHORT_TITLES[section.id] ?? section.title} />
             ))}
             <HeroStat
               value={summary.overdue.length + summary.open.length}
@@ -229,7 +235,15 @@ function BedMeetingAgenda() {
       <div className={styles.sections}>
         {sections.map((section) => (
           <Card key={section.id} data-testid={`bed-meeting-agenda-${section.id}`}>
-            <CardHead title={CARD_TITLES[section.id] ?? section.title} meta={`${section.items.length}`} level={2} />
+            <CardHead
+              title={CARD_TITLES[section.id] ?? section.title}
+              meta={
+                section.total > section.items.length
+                  ? `${section.items.length} of ${section.total}`
+                  : `${section.total}`
+              }
+              level={2}
+            />
             <CardBody>
               {section.items.length === 0 ? (
                 <p className={styles.note}>Nobody here right now.</p>
@@ -248,6 +262,11 @@ function BedMeetingAgenda() {
                   ))}
                 </ul>
               )}
+              {section.total > section.items.length && canOpen(QUEUE_HREFS[section.id]!) ? (
+                <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={QUEUE_HREFS[section.id]!}>
+                  View full queue
+                </Link>
+              ) : null}
             </CardBody>
           </Card>
         ))}
@@ -404,6 +423,7 @@ function ActionForm({
   onDone: () => void;
 }) {
   const raise = useWardRaise("coordinator");
+  const save = useWardFormSave(`agenda:${item.subject.kind}:${item.subject.id}`);
   const [kind, setKind] = useState<BedMeetingActionKind | "">("");
   const [owner, setOwner] = useState<BedMeetingActionOwner>("coordinator");
   const [dueHours, setDueHours] = useState<string>(String(BED_MEETING_ACTION_DUE_HOURS[1]));
@@ -415,6 +435,7 @@ function ActionForm({
       <Field label="Action">
         <Select
           value={kind}
+          disabled={save.pending}
           onChange={(event) => setKind(event.target.value as BedMeetingActionKind | "")}
           data-testid="bed-meeting-action-kind"
         >
@@ -429,6 +450,7 @@ function ActionForm({
       <Field label="Owner">
         <Select
           value={owner}
+          disabled={save.pending}
           onChange={(event) => setOwner(event.target.value as BedMeetingActionOwner)}
           data-testid="bed-meeting-action-owner"
         >
@@ -442,6 +464,7 @@ function ActionForm({
       <Field label="Due">
         <Select
           value={dueHours}
+          disabled={save.pending}
           onChange={(event) => setDueHours(event.target.value)}
           data-testid="bed-meeting-action-due"
         >
@@ -455,24 +478,33 @@ function ActionForm({
       <Button
         size="sm"
         variant="pri"
+        loading={save.pending}
         aria-disabled={kind === "" ? "true" : undefined}
         aria-describedby={kind === "" ? `${id}-reason` : undefined}
         onClick={() => {
           if (kind === "") return;
-          raise("RECORD_BED_MEETING_ACTION", {
-            subject: item.subject,
-            action: kind,
-            owner,
-            ...(owner === "ward" && item.unitId !== undefined ? { unitId: item.unitId } : {}),
-            dueAt: now + Number(dueHours) * 60,
-          });
-          onDone();
+          save.submit(
+            () =>
+              raise("RECORD_BED_MEETING_ACTION", {
+                subject: item.subject,
+                action: kind,
+                owner,
+                ...(owner === "ward" && item.unitId !== undefined ? { unitId: item.unitId } : {}),
+                dueAt: now + Number(dueHours) * 60,
+              }),
+            onDone,
+          );
         }}
         data-testid="bed-meeting-action-record"
       >
         Record action
       </Button>
       {kind === "" ? <DisabledReason id={`${id}-reason`}>Choose an action first.</DisabledReason> : null}
+      {save.error ? (
+        <p className={styles.note} role="alert">
+          {save.error}
+        </p>
+      ) : null}
     </div>
   );
 }

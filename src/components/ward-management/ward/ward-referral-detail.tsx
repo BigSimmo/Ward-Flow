@@ -22,7 +22,7 @@ import {
   type DossierRow,
   type ReferralDossier,
 } from "@/components/ward-management/ward-referral-dossier-seed";
-import { edById } from "@/components/ward-management/ward-sites";
+import { originName } from "@/components/ward-management/ward-movement-origin";
 import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
 import {
   CLEARANCE_CHECK_LABELS,
@@ -134,7 +134,12 @@ export function WardReferralDetail({
   const { dayZero } = useWardFlowSelect("dayZero");
   const [openDocumentId, setOpenDocumentId] = useState<string | null>(null);
   const patient = identity.patient;
-  const ed = edById(movement.originEdId);
+  // Ward projections do not expose another ward's stay. Never turn that missing link into an ED.
+  const origin = movement.sourceAdmissionId
+    ? undefined
+    : movement.originEdId || movement.originCommunity
+      ? originName(movement)
+      : undefined;
   const openDocument = dossier?.documents.find((document) => document.id === openDocumentId);
 
   if (openDocument) return <DocumentViewer document={openDocument} onBack={() => setOpenDocumentId(null)} />;
@@ -220,9 +225,16 @@ export function WardReferralDetail({
   ];
 
   const timeline: { at: Instant; text: string }[] = [
-    { at: movement.openedAt, text: `Arrived at ${ed?.name ?? "the emergency department"}` },
+    { at: movement.openedAt, text: origin ? `Movement opened from ${origin}` : "Movement opened; origin not recorded" },
     ...(movement.referredAt === undefined ? [] : [{ at: movement.referredAt, text: "Referred to your ward" }]),
-    ...(movement.medicalClearance ? [{ at: movement.medicalClearance.at, text: "Medically cleared" }] : []),
+    ...(movement.medicalClearance
+      ? [
+          {
+            at: movement.medicalClearance.at,
+            text: movement.medicalClearance.cleared ? "Medically cleared" : "Not medically cleared",
+          },
+        ]
+      : []),
   ].sort((a, b) => a.at - b.at);
 
   const subLine = [
@@ -251,7 +263,8 @@ export function WardReferralDetail({
           ))}
         </div>
         <p className={styles.sub}>
-          Waiting {durMinutes(Math.max(0, now - movement.openedAt))} · Now at {ed?.name ?? "the emergency department"}
+          Waiting {durMinutes(Math.max(0, now - movement.openedAt))} ·{" "}
+          {origin ? `Now at ${origin}` : "Origin not recorded"}
         </p>
       </div>
 
