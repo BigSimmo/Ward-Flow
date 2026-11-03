@@ -299,6 +299,16 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-3);
 }
+/* H11: the typed expiry's full wording at the head of the Form menu, in plain sentence case. */
+.formExpiryFull {
+  display: block;
+  max-width: 18rem;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+}
 .formOption {
   display: flex;
   flex-direction: column;
