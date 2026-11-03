@@ -31,3 +31,9 @@ New regressions were run before fixes and failed on the audited behaviours. Focu
 The source checkout uses the required Node 24.22.1 and pinned npm 11.17.0 with guarded locked installs (499 root and 34 backend package locations). Dependency lifecycle scripts were disabled. No package or lockfile changes are part of the repair.
 
 Cloud-browser control remains unavailable. No screenshots, physical-device acceptance, hosted demo writes or deployed-commit assertions are supplied. The local selected PR gate is run before publication; its final result and any limitations are recorded in the PR description. Full suites, real PostgreSQL integration, production build and browser journeys are left to hosted CI by the repository's lean PR-verification policy. A PR does not establish deployment or clinical acceptance.
+
+## Bounded staff-note history
+
+The runtime retains its existing maximum of 20 staff notes. The oldest entry is preserved here when adding this repair note, rather than losing its wording:
+
+- 2026-10-31 (`2026-10-31-redesign-capacity`): Capacity has a new look: beds ready first, the bed forecast, a bed map of every ward and this shift's checks.
