@@ -210,12 +210,17 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(within(picker).getByRole("button", { name: /Standard day/u })).toBeTruthy();
   });
 
-  it("shows five rows of a long group, then Show more", () => {
+  it("shows five rows of a long group, then Show more", async () => {
     renderSheet();
     const lookUp = screen.getByRole("region", { name: "Look up" });
     const more = within(lookUp).getByRole("button", { name: /^Show \d+ more$/u });
     expect(within(lookUp).queryByRole("link", { name: /Legal forms/u })).toBeNull();
     fireEvent.click(more);
+    await act(async () => {
+      await new Promise((resolve) => window.requestAnimationFrame(() => resolve(null)));
+    });
+    // Focus moves to the first revealed row, not lost with the button.
+    expect(lookUp.contains(document.activeElement)).toBe(true);
     expect(within(lookUp).getByRole("link", { name: /Legal forms/u })).toBeTruthy();
     expect(within(lookUp).queryByRole("button", { name: /^Show \d+ more$/u })).toBeNull();
   });
@@ -229,6 +234,9 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     const recent = screen.getByRole("region", { name: "Recent" });
     fireEvent.click(within(recent).getByRole("button", { name: /Form times/u }));
     expect(screen.getByTestId("ward-form-times")).toBeTruthy();
+    // Closing it keeps the row, so focus is not lost.
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-form-times"));
+    expect(screen.getByTestId("ward-tools-toggle-form-times")).toBeTruthy();
   });
 
   it("puts the Hospital feed under Do now and Find a bed, then Legal forms, under Look up", () => {

@@ -354,6 +354,10 @@ function ToolsSheetView({
     const inline = !twoPane || id === "demo";
     setOpen((current) => (current === id && inline ? null : id));
     pushRecent(id);
+    // A tool opened from a Recent chip may sit under Show more: keep its group open, so the row
+    // (and keyboard focus on it) stays after the tool closes.
+    const home = groups.find((group) => group.entries.findIndex((entry) => entry.key === id) >= GROUP_SHOWN);
+    if (home) setExpanded((current) => new Set(current).add(home.id));
     if (!inline) return;
     window.requestAnimationFrame(() =>
       window.requestAnimationFrame(() =>
@@ -805,7 +809,7 @@ function ToolsSheetView({
                 {group.title}
                 <span className={styles.groupCount}>{group.entries.length}</span>
               </h3>
-              <div className={styles.card}>
+              <div className={styles.card} data-tool-group={group.id}>
                 {(groupShowsAll(group) ? group.entries : group.entries.slice(0, GROUP_SHOWN)).map((entry) =>
                   renderRow(entry, group.id),
                 )}
@@ -813,7 +817,15 @@ function ToolsSheetView({
                   <button
                     type="button"
                     className={styles.showMore}
-                    onClick={() => setExpanded((current) => new Set(current).add(group.id))}
+                    onClick={() => {
+                      setExpanded((current) => new Set(current).add(group.id));
+                      // The button leaves with the fold, so focus moves to the first row it revealed.
+                      window.requestAnimationFrame(() => {
+                        const row = document.querySelector(`[data-tool-group="${group.id}"]`)?.children[GROUP_SHOWN];
+                        const target = row?.matches("a, button") ? row : row?.querySelector("a, button");
+                        if (target instanceof HTMLElement) target.focus();
+                      });
+                    }}
                   >
                     Show {group.entries.length - GROUP_SHOWN} more
                     <ChevronDown aria-hidden="true" strokeWidth={1.75} />
