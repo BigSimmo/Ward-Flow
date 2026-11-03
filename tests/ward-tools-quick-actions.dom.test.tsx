@@ -45,6 +45,19 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
     expect(within(panel).getByRole("button", { name: /Send/u })).toHaveAttribute("aria-disabled", "true");
   });
 
+  it("lists every unconfirmed ward, behind Show more when there are many, so each can be picked", () => {
+    atDesk({ role: "coordinator", scope: { kind: "statewide" } });
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
+    const panel = screen.getByRole("region", { name: "Ward updates" });
+    const total = Number(/Select all (\d+)/u.exec(panel.textContent ?? "")?.[1] ?? 0);
+    const more = within(panel).queryByRole("button", { name: /^Show \d+ more$/u });
+    if (more) {
+      expect(within(panel).getAllByRole("checkbox").length).toBe(8);
+      fireEvent.click(more);
+    }
+    expect(within(panel).getAllByRole("checkbox").length).toBe(total);
+  });
+
   it("is offered only to the coordinator", () => {
     atDesk({ role: "ed", scope: { kind: "ed", edId: "peel-ed" } });
     expect(screen.queryByTestId("ward-tools-toggle-quick-actions")).toBeNull();

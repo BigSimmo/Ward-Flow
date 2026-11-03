@@ -118,7 +118,7 @@
 }
 
 .n {
-  font-family: var(--wf-font-mono, ui-monospace, monospace);
+  font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--wf-warning-ink);
