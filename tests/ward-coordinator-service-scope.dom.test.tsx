@@ -101,7 +101,7 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     }
   });
 
-  it("the Referrals tab holds only South Metro's own queued referrals", () => {
+  it("Needs you's Referrals to decide holds only South Metro's own queued referrals", () => {
     setServiceScope(SERVICE);
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -109,20 +109,19 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
       </WardFlowProvider>,
     );
 
-    showEveryoneWaiting();
-    fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
+    // Home flow (Q340, Q345, 3 Nov 2026): the old Referrals tab is gone; referrals are listed only
+    // under the default "Needs you" list, in its "Referrals to decide" group, a few rows then
+    // "Show N more", which this suite opens so every member is on screen.
+    const decide = screen.getByRole("region", { name: "Referrals to decide" });
+    const more = within(decide).queryByRole("button", { name: /^Show \d+ more/u });
+    if (more) fireEvent.click(more);
+    const listed = (referralId: string) => decide.querySelector(`[data-referral-id="${referralId}"]`);
 
     for (const referral of MEMBER_REFERRALS) {
-      expect(
-        screen.getByTestId(`ward-referral-row-${referral.id}`),
-        `${referral.id} belongs to South Metro`,
-      ).toBeInTheDocument();
+      expect(listed(referral.id), `${referral.id} belongs to South Metro`).not.toBeNull();
     }
     for (const referral of EXCLUDED_REFERRALS) {
-      expect(
-        screen.queryByTestId(`ward-referral-row-${referral.id}`),
-        `${referral.id} does not belong to South Metro`,
-      ).not.toBeInTheDocument();
+      expect(listed(referral.id), `${referral.id} does not belong to South Metro`).toBeNull();
     }
   });
 
@@ -134,7 +133,7 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
       </WardFlowProvider>,
     );
 
-    // The scope bar belongs to the priority queue, behind Home's Everyone waiting switch.
+    // The scope bar belongs to the priority queue, behind Home's Flow list.
     showEveryoneWaiting();
     const memberOfWhole = wardMovements.filter((movement) => movementBelongsToService(movement, SERVICE, UNITS));
     // The screen's own denominator is the full seeded population (seedWardFlowState().movements),
