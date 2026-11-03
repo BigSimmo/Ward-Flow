@@ -55,13 +55,26 @@ describe("ward sign-out-check", () => {
     expect(result.stdout).toContain("1 stale sign-out line(s)");
   });
 
-  it("blocks exact-file checks when the configured sign-out log is missing", () => {
+  // Q374: the branch or PR is the claim. A missing log means no logged peer holds.
+  it("checks exact files without a log, treating absence as no peer holds", () => {
     rmSync(signOut);
     const result = run("file.ts");
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain("sign-out log unavailable");
-    expect(result.stdout).not.toContain("no clash");
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("no clash for 1 file(s)");
+    expect(result.stdout).not.toContain("MISSING SELF-CLAIM");
     expect(existsSync(signOut)).toBe(false);
+  });
+
+  it("still blocks a peer's claims/ file when the log itself is missing", () => {
+    rmSync(signOut);
+    mkdirSync(path.join(gitRoot, "claims"));
+    writeFileSync(
+      path.join(gitRoot, "claims", "20261002T0100Z-other.md"),
+      `- 2026-10-02T01:00Z | Fixture owner | ward/other | ${gitRoot}/other | file.ts\n`,
+    );
+    const result = run("file.ts");
+    expect(result.status, result.stdout + result.stderr).toBe(1);
+    expect(result.stdout).toContain("SIGNED OUT  file.ts  by Fixture owner (ward/other)");
   });
 
   it("blocks exact-file checks when the configured sign-out log cannot be read as a file", () => {

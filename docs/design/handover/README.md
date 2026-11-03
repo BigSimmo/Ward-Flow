@@ -1,60 +1,159 @@
-# Ward Flow redesign: continue from here (state at 09:24 UTC, 1 Nov 2026)
+# Ward Flow handover: start here
 
-Paste this into a new chat and say: "Continue the Ward Flow redesign from /mnt/project-files/ward-flow/handover/README.md."
+_Updated 3 November 2026. This file replaces `/mnt/project-files/ward-flow/HANDOVER.md` (Q381, Josh, 3 November 2026), which now only points here._
+
+This is the one handover entry for the Ward Flow redesign and the **source of truth for owner question numbers (Q numbers)**. Record each new question and its answer in the [question log](#question-log) below, in the same PR as the work or in a small docs PR.
+
+**Next free question number: Q393.** Q382 to Q389 are reserved for the threads started on 3 November 2026.
 
 ## Read first
 
-1. This file, then each screen's handover file in this folder.
-2. /mnt/project-files/ward-flow/PLAN.md and the STATUS.md, memory and rules files in /mnt/project-files/ward-flow/.
-3. Local files on Josh's PC (get folder access to D:\Repos\Ward-Flow):
-   - D:\Repos\Ward-Flow\mockup-backup-2026-11-01\HANDOVER.md (screen states, Q log) and ARTIFACTS.md (28 mock-up links; build only from those marked current).
-   - Zips 1-5: one folder per screen with mock-up, screenshots, patch, STATUS.md. 5b: memory and rules.
-   - 6-artifacts.zip: BL86 component viewer, the source of all components and tokens. Read-only.
-   - /mnt/project-files/Ward Flow Redesign Forms.zip: latest Forms mock-ups.
-4. Repo github.com/BigSimmo/Ward-Flow: read AGENTS.md before any change.
+1. [AGENTS.md](../../../AGENTS.md), before any change.
+2. [Roadmap](../../ward-flow/roadmap.md) for what comes next, and [STATUS.md](../../ward-flow/STATUS.md) for decision state and the "Waiting on Josh" list.
+3. The design system of record, [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) (Q327), and the master design artifact (https://claude.ai/artifact/91BETDiimnJVbyeCb2sxcK, source in `/mnt/project-files/ward-flow/mockups/master/`). Copy the shell from the newest master screens, never from main.
+4. Mock-up links: `/mnt/project-files/ward-flow/mockups/LINKS.md`. The old `ARTIFACTS.md` links do not open.
+5. The screen handover file in this folder for the screen you are working on. Each one is dated history from 1 November 2026; recheck GitHub before trusting a PR state in it.
 
-## Screens (approved), all pushed, all stopped
+## State on 3 November 2026
 
-| Screen     | PR(s)                                                                      | Where it stopped                                                                    | Handover           |
-| ---------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------ |
-| Ward       | #1212                                                                      | All checks green, auto-merge on; GitHub shows blocked waiting on one required check | ward.md            |
-| Transport  | #1221 (+ follow-up to restore Needs transport on all four desks, Q127)     | Bugs fixed, review threads resolved                                                 | transport.md       |
-| Movements  | #1222                                                                      | Fix CI, update 35 tests to new wording, mark ready                                  | movements.md       |
-| ED         | #1223, draft #1231                                                         | 2 old tests still failing; hosted CI not read yet; Q128 open                        | ed.md              |
-| Alerts     | #1225 (docs), #1230 (step 1, auto-merge on), draft #1233 (step 2, stacked) | Steps 3-6 still to build                                                            | alerts.md          |
-| Forms      | #1228                                                                      | Auto-merge on, CI running                                                           | forms.md           |
-| Handover   | draft #1232                                                                | 172 tests pass locally; watch hosted CI                                             | handover-screen.md |
-| Community  | draft #1227                                                                | Frame stage underway; Q125/Q126 answered yes                                        | community.md       |
-| Discharges | draft #1229                                                                | Static-check fix in progress                                                        | discharges.md      |
-| Pop-ups    | #1226                                                                      | CI fix pushed, auto-merge on; Q122/Q123 answered yes                                | popups.md          |
-
-If a screen's handover file is missing, read its PR description and latest commits.
-
-## Local work pushed from Josh's PC (reference only; not PRs)
-
-save/movement-drawer-audit-and-actions-20261101 (Ward), codex/role-runtime-20261025 (Movements), codex/ward-review-resolution-20261023 (ED), save/p115-p116-alerts-nav-20261101 and wip/alerts-demo-menu-20261101 (Alerts, older nav work), wip/main-checkout-screens-20261101 (uncommitted edits for Movements, ED, Community, Coordinator, Delays, On-call, Reports). Format and static push guards were skipped, so run full checks before reusing any of it.
+- Every approved screen from the 1 November table is built and merged. Main was at `cd66be7a` (#1332) when this file was written.
+- Approved designs: all original screens, Help, Statistics/Weekly, Patients, the new sign-in page, the Alerts redesign (without Q179), the master sidebar on every page, the Home flow and the Tools overhaul. Not approved: Team search.
+- Codex drafts #1262 and #1269 stay open as drafts for Josh.
+- Releases: the daily 6 am Perth release, or on demand when Josh says "release now". Merging is not going live.
 
 ## How to build
 
-Reuse the mock-up's existing components and tokens and apply them straight to the site. Don't rebuild them. Compare each screen with its current mock-up.
+Port the mock-up's components and tokens as they are; don't rebuild them. Compare each screen with its mock-up and with the master's Ward and Home pages at 390, 820, 1280 and 1440, light and dark.
 
-## Rules
+## Rules in short
 
-- Build only approved designs. Auto-merge counts as Josh's yes. Never merge by hand or turn auto-merge off.
-- Merging isn't going live: release runs at 6 am Perth or by manual workflow.
-- Claim files on issue #688 (and ownership.md if it exists) before editing.
-- Hosted CI is the full gate. No duplicate test runs.
-- Design: no coloured side edges; 40px controls (48px Accept/Pull/Decline on phones); 12px minimum text; minimal warnings; surname first with UMRN; times as typed (never default a written time to now).
-- Questions: numbered, one recommendation each. Answered: Q122 to Q127 and ED's written time optional (all as recommended). Open: Q128 (ED: leave Clear out, put Decline back inside the opened referral). Next free: Q129. Record each new Q in HANDOVER.md.
-- To hold a PR, add the `hold` label (Q373); never write an auto-merge note. Base every PR on `main`; never stack PRs. (The old Q129 hold on #1230 ended when it merged on 1 Nov.)
-- Not approved, don't build: Patients #1224, Help, Team search, Statistics/Weekly.
-- Josh: plain warm English, answer first, numbered actions, ultra token-conservative, post only finished links and questions.
+- Build only approved designs, mock-up first. Synthetic data only.
+- Mark a PR ready once CI is green and it matches the mock-up. Switch auto-merge on while checks are still running (GitHub refuses it on an already-green PR, Q175). Auto-merge counts as Josh's yes. Never merge by hand or turn auto-merge off.
+- To hold a PR, add the `hold` label (Q373); never write an auto-merge note. Base every PR on `main`; never stack PRs.
+- Claim files on the sign-out log and the pinned issue "Who is editing what" (#688) before editing.
+- Hosted CI is the full gate. No repeat test runs.
+- House rules: 12px minimum text, 40px controls on phones (48px Accept, Pull and Decline), desktop tabs 30px (Q231), no coloured side edges, minimal warnings, patient names surname first as recorded with UMRN (Q331), times as typed.
+- Questions: numbered, one recommendation each, recorded below.
+- Writing to Josh: plain warm English, answer first, numbered actions, post only finished links and questions.
 
-## Josh's manual tasks
+## Screen handover files (1 November 2026, history)
 
-1. Set WARD_FLOW_UPTIME_TOKEN in Railway (backend) and GitHub.
-2. Press Discard on Railway's old staged-changes banner.
+| Screen     | File                                     | 1 November PRs      |
+| ---------- | ---------------------------------------- | ------------------- |
+| Ward       | [ward.md](ward.md)                       | #1212               |
+| Transport  | [transport.md](transport.md)             | #1221               |
+| Movements  | [movements.md](movements.md)             | #1222               |
+| ED         | [ed.md](ed.md)                           | #1223, #1231        |
+| Alerts     | [alerts.md](alerts.md)                   | #1225, #1230, #1233 |
+| Forms      | [forms.md](forms.md)                     | #1228               |
+| Handover   | [handover-screen.md](handover-screen.md) | #1232               |
+| Community  | [community.md](community.md)             | #1227               |
+| Discharges | [discharges.md](discharges.md)           | #1229               |
+| Pop-ups    | [popups.md](popups.md)                   | #1226               |
 
-## Start
+## Question log
 
-Get folder access to D:\Repos\Ward-Flow, read this file and the screen handovers, then run one thread per screen from where its handover stops.
+Carried over from `HANDOVER.md` on 3 November 2026, with the later blocks from the project notes. Early entries are short; the thread named in each block holds the detail. "Yes" means Josh answered yes to the recommendation.
+
+### Q120 to Q163 (1 November 2026)
+
+- Q120 (ED): the Form dropdown never defaults a written time to now; blank shows "Written time not entered". Yes.
+- Q122 (Pop-ups, #1226): tally time line reads "Synthetic state · demo time 10:42". Yes.
+- Q123 (Pop-ups): bar drawer search box removed, category chips stay. Yes.
+- Q124: not recorded in HANDOVER.md.
+- Q125 (Community): a team accepts its own referrals as itself on its page. Yes.
+- Q126 (Community): caseload records come from seeded synthetic demo data for now. Yes.
+- Q127 (Transport, #1221): Needs transport for ED, ward and community desks too. Yes, follow-up PR.
+- Q128 (ED, #1231): leave "Clear the form" out; put Decline back inside the opened referral. Recommended; answer not recorded in HANDOVER.md.
+- Q129: auto-merge off on #1230 until the Pull the bed sheet bug was fixed (alerts.md). Q129 and Q130 were also used for repeats of Q125 and Q126 in the #1234 handover comment.
+- Q131: hold "Find client or clinician" until Team search is approved. Replaced by Q190 (yes, shipped in #1265).
+- Q132 (Community): seed the mock-up figures for Midland only. Yes.
+- Q133 (Forms, #1228): keep main's newer no-tabs Forms panel. Yes.
+- Q134: keep outside commits that match the mock-up; revert any that don't with revert commits. Yes.
+- Q138 (Help build): delete the replaced old Help pieces under the dead-code override. Recommended yes.
+- Q139 (Statistics/Weekly): deepen the shallow clone so the push guard and dead-code check can run. Recommended yes.
+- Q140 (Statistics/Weekly): delete the old Weekly layout pieces under one owner-approved dead-code run. Recommended yes.
+- Q141 (Patients, #1244): remove the old `patient-dossier-tabs.tsx`. Yes, done in #1244.
+- Q142 (Community, #1234): rule the Midland demo folder as labelled demo data for shown times. Yes.
+- Q144 (Master design; first posted as Q142): rebuild the master from main. Yes.
+- Q145 (Master design; first posted as Q143): keep approved mock-ups for open-PR screens. Yes.
+- Q148 (Alerts, #1245): change the broadcast extension from 2h to 30 minutes everywhere. Recommended yes.
+- Q149 (Alerts, #1245): build "Add units" on a live broadcast in a follow-up PR. Recommended yes.
+- Q151 (Community): design a phone layout before the build. Yes, see Q155.
+- Q152 (Forms): Josh said yes, then reversed it: keep "within 1h" beside typed legal-form times. No change.
+- Q153 (all phone screens): drop the repeated eyebrow and keep one hero action on phones. Yes, with every fix in the phone audit (https://claude.ai/artifact/4MG7i9Tqjc7ggSzRuimxgk).
+- Q154 (Transport, #1235): merge #1235; a follow-up gives ED, ward and community the Transport page for their own journeys. Yes.
+- Q155 (Community): approve the phone layout https://claude.ai/artifact/TnE3a1JgKtBttyq7bKqehp. Recommended yes.
+- Q156 (role views): archive the 36 "As …" role views in the master. Recommended archive.
+- Q161 (dock): light the top-bar Menu button on pages with no dock tab. Recommended yes.
+- Q162 (Transport dock): keep each person's own dock everywhere; officer dock only for a signed-in transport officer. Yes, built in #1247.
+- Q163: close-check five more phone pages on main. Yes.
+
+Numbers not listed above in this block were not recorded in HANDOVER.md.
+
+### Q164 to Q306 (1 to 2 November 2026)
+
+- Q164 to Q166, Q173 to Q178 and Q190 to Q216: all yes (Q215 withdrawn). Q175: switch auto-merge on while checks are still running. Q205: #1263 uptime false alarm. Q206 and Q216: Codex drafts #1262 and #1269 held for Josh. Q208 and Q213: done (#839 closed).
+- Q179 (Alerts): no. Josh rejected the "For you / With other desks" labels; the Alerts count header stays. Q180 to Q184: yes.
+- Q217 to Q306: answered yes as recommended (2 November). Q225: phone tabs 40px on a 48px row. Q226: staff names as written. Q231: desktop tabs stay 30px. Q288: dated status kept. Q297: needs a real-phone check by Josh. Q305: keep "Releases held up". Q306: kit labels wrap at large text.
+- The per-question detail for this block is in the threads named in project memory; it was not copied into HANDOVER.md.
+
+### Q307 to Q326 (2 November 2026)
+
+- Q307: dock fix. Yes (#1310).
+- Q308 to Q326 (Tools review, `/mnt/project-files/ward-flow/reviews/tools-2-nov/SUGGESTIONS.md`): all yes, plus an overhaul of every role view. Q308 to Q316 layout and look (Q311 two panes recommended "not yet"); Q317 to Q322 tool redesigns; Q323 to Q326 new tools (Remind me, Message builder, Book transport, Due back from leave).
+
+### Q327 to Q349 (design system and Home flow, 2 to 3 November 2026)
+
+- Q327: DESIGN-SYSTEM.md is the design system of record. Yes (#1311).
+- Q328: one signature part per page inside the variation zone. Yes.
+- Q329: a part two pages want moves into the kit. Yes.
+- Q330: add 744 and 768 to the design sweep widths. Yes (#1313).
+- Q331: patient names surname first as recorded, staff names as written. Yes.
+- Q332: dated 2 November review notes stay word for word. Yes.
+- Q333 to Q340 (Home lists): Open patients only, Waiting renamed Open, waiting alerts as badges, My list rows lead with the action, mock-up first, Open renamed Queue, Open grouped by stage, and Q340 Home as a "Needs you" strip plus stage flow (replacing Q333, Q335, Q338 and Q339). Superseded by the Home flow (Q341).
+- Q341: the Home flow is the master Home tab (mock-up https://claude.ai/artifact/28i1iqpx6Le844G3rbPL5U). Yes.
+- Q342: build the Home flow as a PR. Yes, #1324 merged 3 November.
+- Q343: stage tiles always shown, Needs you | Flow tabs. Yes.
+- Q344: merge the ED strip into the stage card as one chip row (option A). Open.
+- Q345: one nav row, Needs you | Flow raised, stages as lighter trackless tabs. Yes, in #1324.
+- Q346 to Q349: reserved for the design system block; not used.
+
+### Q350 to Q369 (Tools build, 2 to 3 November 2026)
+
+- Q350 to Q352: D-93 bans countdowns on form times; On-call has no tel links; Find a bed keeps no default legal status. Asked with the Tools mock-up (https://claude.ai/artifact/TQH13yeormtfmqzPWPWbYv).
+- Q353: delete the old Tools pieces under the dead-code override. Yes (#1323).
+- Q354: deepen the shallow cloud clone so the push guard finds its anchor. Yes.
+- Q355: re-arm auto-merge. Yes.
+- Q356: one-off hand merge of #1316, because GitHub refused auto-merge on a green PR. Yes.
+- Q357 and Q358: withdrawn (merged before Josh answered).
+- Q359 to Q369: reserved for the Tools block; not used.
+
+### Q370 to Q381 (whole-repository review, 3 November 2026)
+
+Josh answered "Yes to 2 to 12" at 17:09 UTC, which is Q371 to Q381. Q370 was not answered.
+
+- Q370: move the Railway app and backend from Singapore to Sydney, next to the database, and turn sleeping off. Not answered.
+- Q371: harden the demo-code rate limit (spoofable first forwarded address, table cleared at 5,000, 4-character minimum). Yes.
+- Q372: confirm the front door is required on Railway and make production fail closed. Yes.
+- Q373: stop stacked PRs and written "auto-merge off" notes; use a hold label. Yes.
+- Q374: let the branch and PR be the claim, and archive `claims/` (protected; needs Josh's yes on the move). Yes.
+- Q375: one token layer, with DESIGN-SYSTEM.md the source of truth and a lint ratchet on raw colours and sizes. Yes.
+- Q376: repoint the PriorityQueue tests at the Home flow and delete the old path. Yes.
+- Q377: phone targets that look 28 to 32px; add a 40px hit-box test. Yes.
+- Q378: a real-data go/no-go checklist. Yes.
+- Q379: STATUS owner tasks, including the sign-in renewal test before about 16 November and migration 13. Yes.
+- Q380: next feature is finishing role access (D-80 PR 5) and pilot readiness; refresh the roadmap. Yes.
+- Q381: retire `HANDOVER.md` in favour of this file. Yes, done here.
+
+### Q382 to Q389 (threads started 3 November 2026)
+
+- Q383: Josh to check the Railway `WARD_FRONT_DOOR`, `WARD_PASS_SECRET` and `WARD_DEMO_CODE` settings before #1345 can merge. Open.
+- Q384: Josh adds `Ward Flow hold` as a required check in the main ruleset, so the `hold` label blocks merges. Open.
+- Other numbers in this block are held for those threads.
+
+### Q390 to Q392 (real-data go/no-go, 3 November 2026)
+
+- Q390: where "about 16 November" came from. Nothing in the database expires then. Recommend dropping the date: Josh signs in with a test account in the morning and makes one save after lunch. Yes (3 November, 17:17 UTC).
+- Q391: turn off the Supabase organisation's AI SQL, log and data options (on now). Recommend yes; needs Josh to do it. Yes (3 November, 17:17 UTC).
+- Q392: keep referral and legal-form drafts out of browser storage unless the workspace is in prototype mode (checklist C1). Recommend yes. Yes (3 November, 17:17 UTC); built in #1346.
