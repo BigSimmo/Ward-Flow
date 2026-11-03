@@ -103,11 +103,10 @@ describe("optional sample statistics", () => {
 });
 
 describe("example history default (owner polish, 3 Nov 2026)", () => {
-  it("is on in the demo and off in production, the signed-in shared site and local builds", () => {
-    expect(statisticsSamplesDefault("demo", undefined)).toBe(true);
-    expect(statisticsSamplesDefault("production", undefined)).toBe(false);
-    expect(statisticsSamplesDefault("development", undefined)).toBe(false);
-    expect(statisticsSamplesDefault("demo", "true")).toBe(false);
+  it("is on in the demo, which the live site runs as, and off in production and local builds", () => {
+    expect(statisticsSamplesDefault("demo")).toBe(true);
+    expect(statisticsSamplesDefault("production")).toBe(false);
+    expect(statisticsSamplesDefault("development")).toBe(false);
   });
 
   it("follows the build's default until this device makes a choice, then keeps the choice", () => {

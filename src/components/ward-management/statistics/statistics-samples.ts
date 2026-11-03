@@ -9,15 +9,12 @@ const CHANGE_EVENT = "ward-flow-statistics-samples-change";
 
 /**
  * Owner polish (3 Nov 2026): the demo shows example history until the viewer turns it off, so Weekly
- * and the unit pages show invented trends rather than dashes. Production, the signed-in shared site
- * and local builds keep it off until asked for. The environment is the one feature flags read
- * (`wardEnvironment`); a shared build is never the public demo (as the demo roles tool reads it).
+ * and the unit pages show invented trends rather than dashes. The live site runs as the demo too
+ * (as Show me does, D-92), so it is on there. Production and local builds keep it off until asked
+ * for. The environment is the one feature flags read (`wardEnvironment`).
  */
-export function statisticsSamplesDefault(
-  environment: WardEnvironment = wardEnvironment(),
-  shared: string | undefined = process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED,
-): boolean {
-  return environment === "demo" && shared?.trim().toLowerCase() !== "true";
+export function statisticsSamplesDefault(environment: WardEnvironment = wardEnvironment()): boolean {
+  return environment === "demo";
 }
 
 let fallback: boolean | null = null;
