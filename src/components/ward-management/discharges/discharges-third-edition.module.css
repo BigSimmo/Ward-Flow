@@ -2435,24 +2435,21 @@
   .workTable:has(th.colPerson) {
     table-layout: fixed;
   }
+  /* DC2 (3 Nov 2026): four columns, the Stage column gone; the action never wraps. */
   .workTable th.colPerson,
   .workTable td.colPerson {
-    width: 31%;
+    width: 34%;
   }
   .workTable th.colOut,
   .workTable td.colOut {
-    width: 19%;
-  }
-  .workTable th.colStage,
-  .workTable td.colStage {
-    width: 15%;
+    width: 20%;
   }
   .workTable th.colBlocker,
   .workTable td.colBlocker {
-    width: 20%;
+    width: 27%;
   }
   .workTable:has(th.colPerson) thead th:last-child {
-    width: 15%;
+    width: 19%;
   }
   .workTable tbody td {
     padding-top: 10px;
@@ -2595,6 +2592,8 @@
   color: var(--wf-danger-ink);
 }
 .detailTabs {
+  /* The panel body is a flex column that scrolls; the tab strip must not shrink into it (3 Nov 2026). */
+  flex: none;
   margin-top: 2px;
 }
 @media (min-width: 46.5rem) {

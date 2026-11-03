@@ -268,6 +268,10 @@ describe("the on-call screen", () => {
       "sw-gov",
     ]);
     renderOnCall();
+    // OC1: the ladder is folded under who answers now, and opens in place.
+    const fold = panel().getByText("If no answer").closest("details")!;
+    expect(fold).not.toHaveAttribute("open");
+    fold.open = true;
     expect(panel().getByText("Preview order")).toBeVisible();
     expect(panel().getByText("State bed flow coordinator")).toBeVisible();
   });

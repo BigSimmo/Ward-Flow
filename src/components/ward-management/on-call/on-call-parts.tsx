@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Copy, Mail, Star, X } from "lucide-react";
+import type { ReactNode } from "react";
+import { ArrowRight, ChevronRight, Copy, Mail, Star, X } from "lucide-react";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { Badge, Button, Icon, StatusGlyph, cx, durMinutes } from "@/components/wf";
@@ -215,7 +216,7 @@ function StatusBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
   }
   if (now.kind === "on") {
     return (
-      <div className={cx(styles.status, now.soon && styles.statusSoon)}>
+      <div className={styles.status}>
         <span className={styles.statusCap}>
           <StatusGlyph tone={now.soon ? "warning" : "success"} size={12} />
           <b>
@@ -243,7 +244,7 @@ function StatusBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
       )
     : escalationChain(entry, actions.entries).find((item) => isAnswering(item, actions.minute));
   return (
-    <div className={cx(styles.status, styles.statusOff)}>
+    <div className={styles.status}>
       <span className={styles.statusCap}>
         <StatusGlyph tone="neutral" size={12} />
         <b>
@@ -272,14 +273,8 @@ function LinesBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contac
   if (!entry.lines.length) return null;
   const now = availability(entry, actions.minute);
   return (
-    <section className={styles.section} aria-label="Numbers">
-      <div className={styles.sectionHead}>
-        <span className={styles.eyebrow}>Numbers</span>
-        <span className={styles.sectionMeta}>
-          {entry.lines.length} {entry.lines.length === 1 ? "line" : "lines"}
-        </span>
-      </div>
-      <ul className={styles.lines}>
+    <Fold label="All numbers" meta={`${entry.lines.length} ${entry.lines.length === 1 ? "line" : "lines"}`}>
+      <ul className={styles.lines} aria-label="Numbers">
         {entry.lines.map((item) => {
           const current = now.kind === "on" && now.line === item;
           const next = !current && now.kind === "off" && now.next === item;
@@ -311,7 +306,7 @@ function LinesBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contac
         })}
       </ul>
       <DayBar entry={entry} minute={actions.minute} />
-    </section>
+    </Fold>
   );
 }
 
@@ -319,25 +314,24 @@ function EmailBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contac
   if (!entry.email) return null;
   const window = entry.emailWindow;
   return (
-    <section className={styles.section} aria-label="Referral email">
-      <div className={styles.sectionHead}>
-        <span className={styles.eyebrow}>Referral email</span>
-        <span className={styles.sectionMeta}>
-          {window ? (
-            <>
-              Read <span className={styles.mono}>{windowText(window)}</span>
-            </>
-          ) : (
-            "Read daily"
-          )}
-        </span>
-      </div>
+    <Fold
+      label="Referral email"
+      meta={
+        window ? (
+          <>
+            Read <span className={styles.mono}>{windowText(window)}</span>
+          </>
+        ) : (
+          "Read daily"
+        )
+      }
+    >
       <div className={styles.emailRow}>
         <span className={styles.emailText}>{entry.email}</span>
         <button
           type="button"
           className={styles.iconButton}
-          aria-label="Copy referral email"
+          aria-label="Copy email address"
           onClick={() => actions.onCopy(entry.email!, "Email copied")}
         >
           <Icon icon={Copy} size={14} />
@@ -356,7 +350,7 @@ function EmailBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contac
           </ul>
         </div>
       ) : null}
-    </section>
+    </Fold>
   );
 }
 
@@ -370,14 +364,11 @@ function LadderBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
   const chain = escalationChain(entry, actions.entries);
   if (!chain.length) return null;
   return (
-    <section className={styles.section} aria-label="If no answer">
-      <div className={styles.sectionHead}>
-        <span className={styles.eyebrow}>If no answer</span>
-        <Badge size="sm" variant="plain">
-          Preview order
-        </Badge>
-      </div>
-      <ol className={styles.ladder}>
+    <Fold label="If no answer" meta={`${chain.length} to try`}>
+      <Badge size="sm" variant="plain" className={styles.foldBadge}>
+        Preview order
+      </Badge>
+      <ol className={styles.ladder} aria-label="Who to try next">
         {chain.map((item, index) => {
           const now = availability(item, actions.minute);
           return (
@@ -407,7 +398,7 @@ function LadderBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
           );
         })}
       </ol>
-    </section>
+    </Fold>
   );
 }
 
@@ -420,26 +411,21 @@ function SiteBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contact
     : undefined;
   if (!siblings.length && !department) return null;
   return (
-    <section
-      className={styles.section}
-      aria-label={entry.siteCode ? `Also at ${entry.siteCode}` : "Also in this group"}
+    <Fold
+      label={entry.siteCode ? `Also at ${entry.siteCode}` : "Also in this group"}
+      meta={siblings.length || undefined}
     >
-      <div className={styles.sectionHead}>
-        <span className={styles.eyebrow}>{entry.siteCode ? `Also at ${entry.siteCode}` : "Also in this group"}</span>
-        {department ? (
-          <Link
-            className={styles.edLink}
-            href={edHref(department.id)}
-            prefetch={false}
-            aria-label={`Open ${department.name} workspace`}
-          >
-            Open ED
-            <Icon icon={ArrowRight} size={14} />
-          </Link>
-        ) : (
-          <span className={styles.sectionMeta}>{siblings.length}</span>
-        )}
-      </div>
+      {department ? (
+        <Link
+          className={styles.edLink}
+          href={edHref(department.id)}
+          prefetch={false}
+          aria-label={`Open ${department.name} workspace`}
+        >
+          Open ED
+          <Icon icon={ArrowRight} size={14} />
+        </Link>
+      ) : null}
       <div className={styles.siblings}>
         {siblings.map((item) => (
           <button key={item.id} type="button" className={styles.sibling} onClick={() => actions.onPick(item.id)}>
@@ -449,49 +435,103 @@ function SiteBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contact
           </button>
         ))}
       </div>
-    </section>
+    </Fold>
   );
 }
 
 /**
- * Copy the number and email for one contact. Calling never dials, so there is no Call button
- * (overall review, 20 Oct 2026).
+ * OC1 (Josh, 3 Nov 2026): the card opens on who answers now. The answering line's name and number
+ * sit large beside the status, with the one filled action under them. Copying never dials (D-72),
+ * so the action says Copy number rather than Call.
  */
-function CallRow({ entry, actions }: { entry: DirectoryEntry; actions: ContactActions }) {
+function NowBlock({
+  entry,
+  actions,
+  showStar = false,
+}: {
+  entry: DirectoryEntry;
+  actions: ContactActions;
+  showStar?: boolean;
+}) {
   const number = numberAt(entry, actions.minute);
+  const current = entry.lines.length ? lineAt(entry, actions.minute) : null;
+  const now = availability(entry, actions.minute);
+  const starred = actions.favourites.includes(entry.id);
   return (
-    <div className={styles.callRow}>
+    <section className={styles.nowBlock} aria-label="Who answers now">
       {number ? (
-        <>
+        <div className={styles.nowLine}>
+          <span className={styles.nowLabel}>{current?.label ?? "Number"}</span>
+          <span className={styles.nowNumber}>{number}</span>
+        </div>
+      ) : now.kind === "off" && now.next?.number ? (
+        <div className={styles.nowLine}>
+          <span className={styles.nowLabel}>
+            {now.next.label}, from {hhmm(now.opens)}
+          </span>
+          <span className={cx(styles.nowNumber, styles.nowNumberOff)}>{now.next.number}</span>
+        </div>
+      ) : null}
+      <StatusBlock entry={entry} actions={actions} />
+      <div className={styles.callRow}>
+        {number ? (
+          <Button
+            variant="pri"
+            icon={Copy}
+            className={styles.callButton}
+            onClick={() => actions.onCopy(number, "Number copied")}
+          >
+            Copy number
+          </Button>
+        ) : null}
+        {entry.email ? (
+          <Button
+            variant={number ? "sec" : "pri"}
+            icon={Mail}
+            className={number ? undefined : styles.callButton}
+            aria-label="Copy referral email"
+            onClick={() => actions.onCopy(entry.email!, "Email copied")}
+          >
+            {number ? "Copy email" : "Copy referral email"}
+          </Button>
+        ) : null}
+        {showStar ? (
           <Button
             variant="sec"
-            icon={Copy}
+            icon={Star}
             iconOnly
-            aria-label="Copy number"
-            onClick={() => actions.onCopy(number, "Number copied")}
+            aria-label={starred ? "Starred" : "Star"}
+            aria-pressed={starred}
+            className={cx(starred && styles.starOn)}
+            onClick={() => actions.onToggleFavourite(entry.id)}
           />
-        </>
-      ) : null}
-      {entry.email && number ? (
-        <Button
-          variant="sec"
-          icon={Mail}
-          iconOnly
-          aria-label="Copy referral email"
-          onClick={() => actions.onCopy(entry.email!, "Email copied")}
-        />
-      ) : null}
-      {entry.email && !number ? (
-        <Button
-          variant="pri"
-          icon={Mail}
-          className={styles.callButton}
-          onClick={() => actions.onCopy(entry.email!, "Email copied")}
-        >
-          Copy referral email
-        </Button>
-      ) : null}
-    </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+/** One folded section of the card: a single row that says what is inside, opening in place. */
+function Fold({
+  label,
+  meta,
+  children,
+  defaultOpen = false,
+}: {
+  label: string;
+  meta?: ReactNode;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <details className={styles.fold} open={defaultOpen || undefined}>
+      <summary className={styles.foldHead}>
+        <span className={styles.foldLabel}>{label}</span>
+        {meta ? <span className={styles.foldMeta}>{meta}</span> : null}
+        <Icon icon={ChevronRight} size={14} className={styles.foldChevron} />
+      </summary>
+      <div className={styles.foldBody}>{children}</div>
+    </details>
   );
 }
 
@@ -505,14 +545,15 @@ export function ContactCard({
   headingId,
   onClose,
   showHead = true,
-  showCall = true,
+  showStar = false,
 }: {
   entry: DirectoryEntry;
   actions: ContactActions;
   headingId?: string;
   onClose?: () => void;
   showHead?: boolean;
-  showCall?: boolean;
+  /** The phone sheet has no head, so its star sits with the copy actions. */
+  showStar?: boolean;
 }) {
   return (
     <>
@@ -532,13 +573,14 @@ export function ContactCard({
           {onClose ? <Button variant="ghost" size="sm" icon={X} iconOnly aria-label="Close" onClick={onClose} /> : null}
         </div>
       ) : null}
-      <StatusBlock entry={entry} actions={actions} />
-      {showCall ? <CallRow entry={entry} actions={actions} /> : null}
+      <NowBlock entry={entry} actions={actions} showStar={showStar} />
       {entry.note ? <p className={styles.note}>{entry.note}</p> : null}
-      <LinesBlock entry={entry} actions={actions} />
-      <EmailBlock entry={entry} actions={actions} />
-      <LadderBlock entry={entry} actions={actions} />
-      <SiteBlock entry={entry} actions={actions} />
+      <div className={styles.folds}>
+        <LinesBlock entry={entry} actions={actions} />
+        <EmailBlock entry={entry} actions={actions} />
+        <LadderBlock entry={entry} actions={actions} />
+        <SiteBlock entry={entry} actions={actions} />
+      </div>
       <CheckFoot entry={entry} />
     </>
   );

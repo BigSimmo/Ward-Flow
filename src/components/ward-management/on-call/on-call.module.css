@@ -861,26 +861,48 @@
   color: var(--wf-ink-2);
 }
 
+/* OC1: who answers now. One grouped surface: the answering line large, its status under it, then
+   the copy actions. Tone sits in the glyph only, never in a tinted box or edge. */
+.nowBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 16px 0;
+  padding: 14px;
+  border-radius: var(--wf-r-lg);
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.nowLine {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nowLabel {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.nowNumber {
+  font: 600 var(--wf-fs-28) / 1.1 var(--wf-mono);
+  letter-spacing: -0.01em;
+  color: var(--wf-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.nowNumberOff {
+  color: var(--wf-ink-3);
+}
+
 .status {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 8px;
+  gap: 2px 8px;
   align-items: center;
-  margin: 0 16px;
-  padding: 12px 14px;
-  border-radius: var(--wf-r-lg);
-  border: 1px solid color-mix(in srgb, var(--wf-success) 28%, var(--wf-line));
-  background: color-mix(in srgb, var(--wf-success) 7%, var(--wf-surface));
-}
-
-.statusSoon {
-  border-color: color-mix(in srgb, var(--wf-warning) 35%, var(--wf-line));
-  background: color-mix(in srgb, var(--wf-warning) 8%, var(--wf-surface));
-}
-
-.statusOff {
-  border-color: var(--wf-line-2);
-  background: var(--wf-surface-2);
 }
 
 .statusCap {
@@ -925,7 +947,11 @@
 .callRow {
   display: flex;
   gap: 8px;
-  padding: 12px 16px 0;
+}
+
+.starOn svg {
+  color: var(--wf-warning);
+  fill: currentColor;
 }
 
 .callButton {
@@ -939,25 +965,99 @@
   color: var(--wf-ink-2);
 }
 
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px 16px 0;
+/* OC1: everything past who answers now folds into one grouped list, each row saying what is
+   inside, so the card never needs a long scroll. */
+.folds {
+  margin: 12px 16px 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
 }
 
-.sectionHead {
+.fold + .fold {
+  border-top: 1px solid var(--wf-line);
+}
+
+.foldHead {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  list-style: none;
+  cursor: pointer;
+  border-radius: var(--wf-r-lg);
 }
 
-.eyebrow {
+.foldHead::-webkit-details-marker {
+  display: none;
+}
+
+.foldHead:hover {
+  background: var(--wf-surface-2);
+}
+
+/* An inset ring, so the grouped list's edge never clips it (OC2, OC3). */
+.foldHead:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.fold:not(:first-child) > .foldHead,
+.fold:not(:last-child) > .foldHead {
+  border-radius: 0;
+}
+
+.fold:first-child > .foldHead {
+  border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
+}
+
+.fold:last-child:not([open]) > .foldHead {
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
+}
+
+.fold:only-child:not([open]) > .foldHead {
+  border-radius: var(--wf-r-lg);
+}
+
+.foldLabel {
   flex: 1 1 auto;
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink);
+}
+
+.foldMeta {
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.foldChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform 160ms ease;
+}
+
+.fold[open] > .foldHead .foldChevron {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foldChevron {
+    transition: none;
+  }
+}
+
+.foldBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 14px 14px;
+}
+
+.foldBadge {
+  align-self: flex-start;
 }
 
 .sectionMeta {
@@ -1849,57 +1949,6 @@
    back to line them up with the sheet title (v10). */
 .sheetBody {
   margin: -8px -16px 0;
-}
-
-/* v10 phone sheet: the status box is a neutral surface; only the glyph carries the tone. */
-.sheetBody .status,
-.sheetBody .statusSoon {
-  margin-top: 12px;
-  border-color: var(--wf-line);
-  background: var(--wf-surface);
-}
-
-.sheetBody .statusOff {
-  background: var(--wf-surface-2);
-}
-
-.actionTiles {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: 8px;
-  padding: 4px 16px 0;
-}
-
-.actionTile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  height: 64px;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  color: var(--wf-accent-ink);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-  cursor: pointer;
-}
-
-.actionTile:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-.actionTile[aria-pressed="true"] svg {
-  color: var(--wf-warning);
-  fill: currentColor;
-}
-
-.actionTilePri {
-  border-color: var(--wf-pri-edge);
-  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
-  color: var(--wf-on-accent);
 }
 
 /* ---------- responsive ---------- */

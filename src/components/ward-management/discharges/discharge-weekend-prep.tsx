@@ -22,7 +22,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { holidaysListedFor, WA_PUBLIC_HOLIDAYS_LAST_YEAR } from "@/components/ward-management/wa-public-holidays";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
-import { Badge, Button, Card, IconTile } from "@/components/wf";
+import { Button, Card, IconTile } from "@/components/wf";
 import {
   DISCHARGE_DEPENDENCY_KIND_LABELS,
   DISCHARGE_DEPENDENCY_OWNERS,
@@ -229,10 +229,10 @@ export function DischargeWeekendPrep({
                         </span>
                         <span className={styles.rowSide}>
                           <span className={styles.rowOut}>Out {shortMoment(release.expectedAt, dayZero)}</span>
+                          {/* DC3 (3 Nov 2026): the heading already counts who is due out before it
+                              reopens, so only the rare row after reopening says so. */}
                           {before ? (
-                            <Badge tone="danger" size="sm">
-                              Before reopening
-                            </Badge>
+                            <span className="sr-only">Before reopening</span>
                           ) : (
                             <span className={styles.rowAfter}>After reopening</span>
                           )}

@@ -755,8 +755,20 @@ export function OnCallScreen() {
           )}
         </div>
         {isTabletPortrait && slideEntry ? (
-          <Drawer open onClose={() => setSlideId(null)} title={slideEntry.name} testId="ward-on-call-line-sheet">
-            <ContactCard entry={slideEntry} actions={actions} headingId={`${panelHeadingId}-slide`} />
+          <Drawer
+            open
+            onClose={() => setSlideId(null)}
+            title={slideEntry.name}
+            description={[
+              SERVICE_META[slideEntry.service].name,
+              slideEntry.place === SERVICE_META[slideEntry.service].short ? null : placeOf(slideEntry),
+            ]
+              .filter(Boolean)
+              .join(", ")}
+            testId="ward-on-call-line-sheet"
+          >
+            {/* OC1: the drawer title already names the contact, so the card drops its own head. */}
+            <ContactCard entry={slideEntry} actions={actions} showHead={false} showStar />
           </Drawer>
         ) : null}
         <WardPrototypeFooter
