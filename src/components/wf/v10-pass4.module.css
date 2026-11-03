@@ -54,6 +54,12 @@
   text-align: right;
 }
 
+.deltaSpan {
+  font-family: var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
 [data-dim="true"] .delta {
   color: var(--wf-dim);
 }

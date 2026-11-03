@@ -438,10 +438,11 @@ export function EdIndex() {
                     label: waiting > 0 && longestRow ? `Longest, ${longestRow.short}` : "Longest",
                     value: waiting > 0 ? splitDuration(longest) : 0,
                   },
-                  { id: "target", label: "Access target", value: waitLine(accessTarget) },
-                  { id: "severe", label: "Severe line", value: waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES) },
+                  // Design brief (Josh, 3 Nov 2026): the lines in the words the chips above use.
+                  { id: "target", label: "Red past", value: waitLine(accessTarget) },
+                  { id: "severe", label: "Amber past", value: waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES) },
                 ]}
-                notChecked={["referrals, open movements only"]}
+                notChecked={["referrals not yet a movement"]}
               />
             )
           }
@@ -795,7 +796,7 @@ function EdCard({
         <p className={styles.meta} title={summary.siteName}>
           {summary.siteName}
         </p>
-        <RowTrend values={row.trend} name={row.short} testId="ed-row-spark" />
+        <RowTrend values={row.trend} name={row.short} testId="ed-row-spark" span="12h" />
       </div>
       <PeoplePips row={row} highlight={highlight} />
       {/* The figures wrap between figures, never mid-phrase, so none ends in "…". */}

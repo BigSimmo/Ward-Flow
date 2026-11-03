@@ -92,15 +92,15 @@ describe("Delays — the drawing's panel names (task D1)", () => {
   it("renders the drawing's panels, in the drawing's order", () => {
     renderScreen();
     // The approved Delays page mockup (October 2026): whose move, the waiting table with the
-    // registers rail beside it, then the graphs. "Delays with no named person" sits in the rail's
-    // System tab (Q-12 below).
-    expect(panelTitlesInOrder()).toEqual([
-      "Whose move",
-      "Waiting",
-      "Escalations and resolved",
-      "Delays with no named person",
-      "Delay graphs",
-    ]);
+    // registers rail beside it, then the graphs. "Delays with no named person" is one quiet line
+    // inside the rail rather than a panel of its own (design brief, Josh, 3 Nov 2026), and is
+    // never dropped (Q-12 below).
+    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Escalations and resolved", "Delay graphs"]);
+    expect(
+      within(screen.getByRole("region", { name: "Escalations and resolved" })).getByRole("region", {
+        name: "Delays with no named person",
+      }),
+    ).toBeInTheDocument();
 
     // Choosing somebody turns the rail into their panel, in the same place.
     const [firstSelectButton] = screen.getAllByTestId(/^delays-select-/u);
@@ -119,7 +119,7 @@ describe("Delays — the drawing's panel names (task D1)", () => {
    */
   it("carries the register tabs in order", () => {
     renderScreen();
-    const tabs = within(screen.getByRole("tablist", { name: "Registers" })).getAllByRole("tab");
+    const tabs = within(screen.getByRole("tablist", { name: "Today's follow-up" })).getAllByRole("tab");
     // Diagnosed issues W3 (Josh, 3 Nov 2026): Today's follow-up has three tabs, Attention first, and
     // the old System tab became a note under the lists.
     expect(tabs.length, "the register tabs did not render — this guard proves nothing").toBe(3);
