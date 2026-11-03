@@ -371,9 +371,7 @@ export function DowntimePackScreen() {
   const formsReceived = pack.legalForms.some((line) => line.receivedAt !== null);
   // The ED queue counts people still in the department; All EDs counts every open journey.
   const edPopulation =
-    pack.leftEd > 0
-      ? `${pack.leftEd} more left their ED and are moving to a ward, listed under Pending movements.`
-      : null;
+    pack.leftEd > 0 ? `${pack.leftEd} more open ED journeys are in transit or have a recorded departure.` : null;
   // The shell retakes the pack every hour and at each shift change (downtime-pack-schedule.ts).
   const nextPackAt = formatInstantWithDay(nextDowntimePackAt(pack.generatedAt), now);
   const takenLine = (
