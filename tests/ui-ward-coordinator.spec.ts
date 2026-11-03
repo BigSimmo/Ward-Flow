@@ -1227,14 +1227,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
   test("keeps the referral control reachable on a phone, in the panel's natural flow", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoCoordinator(page);
-    // Tours start out seen here, so Home offers its once-per-topic help hint 1.5s after it settles.
-    // On a phone that corner card sits over the Flow card's "Show all N" buttons, and a click issued
-    // after it appears waits on it until the test times out (main CI, 3 Nov 2026). Acknowledge it
-    // the way a coordinator would, as the release-gate journey does, before using the queue below.
-    const homeHelp = page.getByRole("complementary", { name: "Home help", exact: true });
-    await expect(homeHelp).toBeVisible();
-    await homeHelp.getByRole("button", { name: "Got it", exact: true }).click();
-    await expect(homeHelp).toHaveCount(0);
+    // Every page tip starts out seen in these journeys (EVERY_TIP_SEEN above), so the Home tip never
+    // covers the Flow card's "Show all N" buttons here.
 
     const queue = homeFlowCard(page);
     // Phone Home lists each Flow stage's oldest 5 with "Show all N"; WF-002 may sit further down.
