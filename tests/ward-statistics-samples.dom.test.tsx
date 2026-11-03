@@ -29,9 +29,22 @@ afterEach(() => {
 });
 
 describe("optional sample statistics", () => {
-  it("defaults to off, hides unavailable history, and preserves recorded figures when switched on and off", () => {
+  it("is on in the demo when nobody has chosen, and keeps a person's own off", () => {
+    // S6 example data (Josh, 3 Nov 2026): example history shows by default in the demo.
+    window.localStorage.removeItem("ward-flow-statistics-samples");
+    const view = render(<Workspace />);
+    expect(screen.getByRole("switch", { name: "Show example history" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByTestId("statistics-sample-figures")).toBeTruthy();
+    fireEvent.click(screen.getByRole("switch", { name: "Show example history" }));
+    view.unmount();
     render(<Workspace />);
-    const toggle = screen.getByRole("switch", { name: "Samples" });
+    expect(screen.getByRole("switch", { name: "Show example history" })).toHaveAttribute("aria-checked", "false");
+    expect(screen.queryByTestId("statistics-sample-figures")).toBeNull();
+  });
+
+  it("stays off once turned off, hides unavailable history, and preserves recorded figures when switched on and off", () => {
+    render(<Workspace />);
+    const toggle = screen.getByRole("switch", { name: "Show example history" });
     expect(toggle).toHaveAttribute("aria-checked", "false");
     expect(screen.queryByTestId("statistics-sample-figures")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-ward-occupancy-trajectory")).toBeNull();
@@ -59,11 +72,11 @@ describe("optional sample statistics", () => {
 
   it("persists across page mounts and switches to the appropriate metrics for the selected mode", () => {
     const view = render(<Workspace />);
-    fireEvent.click(screen.getByRole("switch", { name: "Samples" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Show example history" }));
     view.unmount();
     route.pathname = "/ward-flow/statistics/ed/rph-ed";
     render(<Workspace />);
-    expect(screen.getByRole("switch", { name: "Samples" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "Show example history" })).toHaveAttribute("aria-checked", "true");
     const samples = screen.getByTestId("statistics-sample-figures");
     expect(within(samples).getByRole("heading", { name: /Median wait/ })).toBeTruthy();
     expect(samples).toHaveTextContent("Royal Perth");

@@ -4,11 +4,15 @@ import { useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "ward-flow-statistics-samples";
 const CHANGE_EVENT = "ward-flow-statistics-samples-change";
-let fallback = false;
+// S6 example data (Josh, 3 Nov 2026): on by default in the demo. A live shared build has none.
+const DEFAULT_ON = process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED !== "true";
+let fallback = DEFAULT_ON;
 
 function snapshot(): boolean {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) === "on";
+    // A person's own choice, either way, is kept; with none saved the default applies.
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    return saved === null ? DEFAULT_ON : saved === "on";
   } catch {
     return fallback;
   }
@@ -30,7 +34,7 @@ export function setStatisticsSamples(enabled: boolean) {
   }
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
-/** Optional invented history is off by default and persists independently of clinical workflow state. */
+/** Invented example history: on by default in the demo, off once a person turns it off. Kept apart from clinical workflow state. */
 export function useStatisticsSamples() {
-  return useSyncExternalStore(subscribe, snapshot, () => false);
+  return useSyncExternalStore(subscribe, snapshot, () => DEFAULT_ON);
 }

@@ -27,7 +27,7 @@ async function withOptionalBundleAnalyzer(config: NextConfig): Promise<NextConfi
 
 /** The demo data modules a live shared build replaces (`webpack` below). */
 export const LIVE_BUILD_DEMO_DATA =
-  /^@\/components\/ward-management\/(ward-movements|ward-patients-seed|ward-admissions-seed|ward-rulings-demo|ward-demo-planned-moves)$/;
+  /^@\/components\/ward-management\/(ward-movements|ward-patients-seed|ward-admissions-seed|ward-rulings-demo|ward-demo-planned-moves|ward-demo-example-lists)$/;
 
 const nextConfig: NextConfig = {
   distDir: requestedDistDir || ".next",

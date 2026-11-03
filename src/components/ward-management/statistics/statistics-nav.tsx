@@ -104,12 +104,12 @@ function useOptionalPathname(): string {
   }
 }
 
-/** The Samples switch. Invented 30-day charts appear at the foot of the page while it is on. */
+/** The "Show example history" switch. Invented 30-day charts appear at the foot of the page while it is on. */
 export function StatisticsSamplesSwitch() {
   const samples = useStatisticsSamples();
   return (
     <span className={styles.samples}>
-      <Switch checked={samples} onCheckedChange={setStatisticsSamples} label="Samples" onHero />
+      <Switch checked={samples} onCheckedChange={setStatisticsSamples} label="Show example history" onHero />
     </span>
   );
 }

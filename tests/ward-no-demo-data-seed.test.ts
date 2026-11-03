@@ -7,6 +7,7 @@ for (const name of [
   "ward-admissions-seed",
   "ward-rulings-demo",
   "ward-demo-planned-moves",
+  "ward-demo-example-lists",
 ])
   vi.doMock(
     `@/components/ward-management/${name}`,
@@ -20,6 +21,8 @@ describe("the local world of a live shared build", () => {
     for (const field of ["movements", "patients", "admissions", "referrals", "bedReleases", "leaveBeds"] as const)
       expect(world[field], field).toEqual([]);
     expect(world.plannedAdmissions).toEqual([]);
+    // S6 example data: no invented seclusion, restraint or incident record either.
+    expect(world.units.filter((unit) => unit.restrictivePractice)).toEqual([]);
     expect(world.units.length).toBeGreaterThan(0);
     expect(world.scenario).toBe("standard");
   });
