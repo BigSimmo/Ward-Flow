@@ -48,4 +48,13 @@ describe("Patients register states (PS1)", () => {
     expect(team?.rows).toHaveLength(countPatientStates(rows).community);
     expect(off?.rows).toHaveLength(countPatientStates(rows).off);
   });
+
+  it("splits people with no bed yet by source, ED waits first (M1)", () => {
+    const rows = [row("wait", "RPH Community"), row("wait", "ARM ED"), row("ask", "ARM ED")];
+    const keys = censusSections(rows).map((section) => section.key);
+    expect(keys.indexOf("wait")).toBeLessThan(keys.indexOf("wait-list"));
+    expect(keys).not.toContain("ask-list");
+    const list = censusSections(rows).find((section) => section.key === "wait-list");
+    expect(list?.rows.map((r) => r.where)).toEqual(["RPH Community"]);
+  });
 });

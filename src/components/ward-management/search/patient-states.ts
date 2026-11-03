@@ -61,10 +61,19 @@ export function countPatientStates(rows: readonly CensusRow[]): Record<PatientSt
 }
 
 /**
- * The register's sections. They follow the census groups, except that the records with nothing open
- * split in two, so the Community and Not active counts on the switch each match one section.
+ * The register's sections. They follow the census groups, with two splits:
+ * - Records with nothing open split in two, so the Community and Not active counts on the switch
+ *   each match one section.
+ * - M1 (Josh, 3 Nov 2026): people with no bed yet split by source, ED waits first, then those
+ *   waiting from a community referral or a ward's waiting list. The list section only shows when
+ *   it has someone in it.
  */
-type CensusSectionKey = CensusGroup | "team";
+type CensusSectionKey = CensusGroup | "team" | "ask-list" | "wait-list";
+
+const LIST_LABELS: Partial<Record<CensusGroup, { key: CensusSectionKey; label: string }>> = {
+  ask: { key: "ask-list", label: "No ward asked yet, waiting list or referral" },
+  wait: { key: "wait-list", label: "Ward asked, waiting list or referral" },
+};
 
 export type CensusSection = {
   key: CensusSectionKey;
@@ -76,6 +85,13 @@ export type CensusSection = {
 export function censusSections(rows: readonly CensusRow[]): CensusSection[] {
   return CENSUS_GROUPS.flatMap((group): CensusSection[] => {
     const inGroup = rows.filter((row) => row.group === group.id);
+    const list = LIST_LABELS[group.id];
+    if (list) {
+      const fromList = inGroup.filter((row) => !inAnEd(row));
+      const sections: CensusSection[] = [{ key: group.id, group, label: group.label, rows: inGroup.filter(inAnEd) }];
+      if (fromList.length > 0) sections.push({ key: list.key, group, label: list.label, rows: fromList });
+      return sections;
+    }
     if (group.id !== "off") return [{ key: group.id, group, label: group.label, rows: inGroup }];
     return [
       {
