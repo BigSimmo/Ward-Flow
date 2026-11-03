@@ -736,6 +736,12 @@ describe("the movements board never shows a closed movement as a person still wa
  * screen has to say the refusals are not shown, and why** — an absence that is not stated reads as
  * a measured none.
  */
+/** M3 (3 Nov 2026): the timeline sits behind a switch on a tablet or laptop, so turn it on. */
+function showTimeline() {
+  const timelineSwitch = screen.getByRole("switch", { name: "Show timeline" });
+  if (timelineSwitch.getAttribute("aria-checked") !== "true") fireEvent.click(timelineSwitch);
+}
+
 describe("the Corridors strip", () => {
   it("lists corridors derived from the state, never typed, ranked by how many they carry", () => {
     const expected = [...corridorCounts(seededMovements)].sort((a, b) => b.count - a.count);
@@ -745,6 +751,7 @@ describe("the Corridors strip", () => {
     ).toBeGreaterThan(0);
 
     renderScreen();
+    showTimeline();
     const strip = screen.getByRole("region", { name: "Today’s traffic" });
 
     expect(strip, "the panel count is not the number of active corridors the derivation produces").toHaveTextContent(
@@ -770,6 +777,7 @@ describe("the Corridors strip", () => {
   it("shows only actual same-day declined corridors and does not assign them a journey stage", () => {
     const expected = refusedCorridorCounts(seededMovements, NOW);
     renderScreen();
+    showTimeline();
     const strip = screen.getByRole("region", { name: "Today’s traffic" });
     fireEvent.click(within(strip).getByRole("button", { name: new RegExp(`Declined ${expected.length}`, "u") }));
     // Movements redesign (1 Nov 2026): declines are listed by ward with their count and reasons,
@@ -1124,5 +1132,33 @@ describe("movements board tab in the address", () => {
     );
     await act(async () => {});
     expect(screen.getByRole("tab", { name: /Open and resolved/u })).toHaveAttribute("aria-selected", "true");
+  });
+});
+
+describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", () => {
+  it("keeps the timeline behind a switch until it is turned on", () => {
+    window.localStorage.removeItem("wf.movements.timeline");
+    renderScreen();
+    const panel = screen.getByRole("region", { name: "Today’s traffic" });
+    const timelineSwitch = within(panel).getByRole("switch", { name: "Show timeline" });
+    if (timelineSwitch.getAttribute("aria-checked") === "true") fireEvent.click(timelineSwitch);
+    expect(within(panel).queryByRole("heading", { name: /hour timeline$/u })).toBeNull();
+    expect(panel).toHaveTextContent(/\d+ active corridors?/u);
+    fireEvent.click(timelineSwitch);
+    expect(timelineSwitch).toHaveAttribute("aria-checked", "true");
+    expect(within(panel).getByRole("heading", { name: "48 hour timeline" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("wf.movements.timeline")).toBe("on");
+  });
+
+  it("links each leg still to be recorded to that job on the Transport page, with no pop-up here", () => {
+    renderScreen();
+    const feed = screen.getByRole("region", { name: "Active transport legs" });
+    const links = within(feed).getAllByRole("link", { name: /^Check in .+ on Transport, next: / });
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) {
+      expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/transport\/officer\?job=/u);
+    }
+    expect(within(feed).queryByRole("button", { name: /^Check in / })).toBeNull();
+    expect(screen.queryByTestId("transport-check-in")).toBeNull();
   });
 });

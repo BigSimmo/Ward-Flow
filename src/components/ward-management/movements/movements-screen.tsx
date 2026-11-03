@@ -55,6 +55,7 @@ import {
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt } from "./movement-horizon-gantt-lazy";
+import { MovementsTimelineSwitch } from "./movements-timeline-switch";
 import { rankCorridorPairs } from "./movement-corridor-pairs";
 import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
 import { useSenderPresentation } from "../ward-sender-presentation";
@@ -1005,20 +1006,23 @@ export function MovementsScreen() {
             aria-label="Today’s traffic"
             data-ward-primitive="panel"
           >
-            <span className="sr-only">{`${activeCorridorCount} active corridors`}</span>
-            <MovementHorizonGantt
-              lanes={horizonLanes}
-              corridors={corridors}
-              refusedCorridors={refusedCorridors}
-              units={units}
-              now={now}
-              selectedMovementId={detailId}
-              onSelectMovement={(id) => {
-                openDetail(id);
-                revealMovement(id);
-              }}
-              onShowCorridor={(corridor) => setPeopleList(corridorPeople(corridor, movements, units, now))}
-            />
+            <MovementsTimelineSwitch
+              summary={`${activeCorridorCount} active ${activeCorridorCount === 1 ? "corridor" : "corridors"}`}
+            >
+              <MovementHorizonGantt
+                lanes={horizonLanes}
+                corridors={corridors}
+                refusedCorridors={refusedCorridors}
+                units={units}
+                now={now}
+                selectedMovementId={detailId}
+                onSelectMovement={(id) => {
+                  openDetail(id);
+                  revealMovement(id);
+                }}
+                onShowCorridor={(corridor) => setPeopleList(corridorPeople(corridor, movements, units, now))}
+              />
+            </MovementsTimelineSwitch>
           </section>
         )}
 

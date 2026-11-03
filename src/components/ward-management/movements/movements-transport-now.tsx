@@ -2,28 +2,25 @@
 
 /**
  * Transport now (Movements M4, 3 Nov 2026). The four figures open the patients behind them, each
- * leg shows its three steps with the time each was recorded, and "Check in" opens a pop-up for that
- * one leg: the steps so far, the next step to record, and links to the patient's transport record
- * and the Transport desk. Recording a step still goes through the patient's transport record, so
- * the Form 4A, fit to travel and arrival identity checks stay exactly as they are.
+ * leg shows its three steps with the time each was recorded. M3 (3 Nov 2026) moved check in to the
+ * Transport page, so "Check in" here is a link to that job there, shown to those who can open it.
  */
-import { useId, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronRight, ShieldCheck, Ambulance, X } from "lucide-react";
+import { ArrowRight, ChevronRight, ShieldCheck } from "lucide-react";
 
-import { PhoneSheet, StatusGlyph, buttonClass, cx, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
-import { Sheet } from "@/components/wf/sheet";
+import { StatusGlyph, buttonClass, cx, durMinutes, type WfTone } from "@/components/wf";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
-import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import type { MovementLegState, TransportLegRow } from "./movements-derivations";
 import { LEG_STATE_LABEL, LEG_STATE_TONE, transportRouteLabels } from "./movements-screen-helpers";
 import type { MovementPeopleList } from "./movement-people-sheet";
 import tr from "./movements-transport-now.module.css";
+
+const TRANSPORT_HREF = "/ward-flow/transport/officer";
 
 const LEG_GROUP_ORDER: readonly MovementLegState[] = ["Collected", "En route", "Accepted", "Arrived", "Cancelled"];
 const LEG_GROUP_WORD: Record<MovementLegState, string> = {
@@ -137,8 +134,10 @@ export function TransportFeed({
   onOpen: (movementId: string) => void;
   onPicked?: () => void;
 }) {
-  const [checkIn, setCheckIn] = useState<string | null>(null);
-  const checkInLeg = legs.find((leg) => leg.movement.id === checkIn);
+  // M3 (approved 3 Nov 2026): check in lives on the Transport page only. A coordinator who can
+  // open Transport gets a direct link to that job; everyone else opens the patient as before.
+  const canOpen = useCanOpenHref();
+  const transportOpen = canOpen(TRANSPORT_HREF);
   return (
     <div className={tr.feed} role="region" aria-label="Active transport legs" tabIndex={0}>
       {LEG_GROUP_ORDER.map((state) => {
@@ -201,15 +200,15 @@ export function TransportFeed({
                       <span className="sr-only"> ago</span>
                     </span>
                   </button>
-                  {next ? (
-                    <button
-                      type="button"
+                  {next && transportOpen ? (
+                    <Link
+                      href={`${TRANSPORT_HREF}?job=${encodeURIComponent(leg.movement.id)}`}
                       className={cx(buttonClass({ variant: "sec", size: "sm" }), tr.checkIn)}
-                      onClick={() => setCheckIn(leg.movement.id)}
-                      aria-label={`Check in ${person.formalName}`}
+                      aria-label={`Check in ${person.formalName} on Transport, next: ${next}`}
                     >
                       Check in
-                    </button>
+                      <ArrowRight size={14} strokeWidth={1.75} aria-hidden="true" />
+                    </Link>
                   ) : (
                     <ChevronRight size={16} aria-hidden="true" className={tr.chev} />
                   )}
@@ -219,170 +218,6 @@ export function TransportFeed({
           </section>
         );
       })}
-      {checkInLeg ? (
-        <TransportCheckIn
-          leg={checkInLeg}
-          now={now}
-          units={units}
-          patients={patients}
-          referrals={referrals}
-          onClose={() => setCheckIn(null)}
-          onOpen={(id) => {
-            setCheckIn(null);
-            onOpen(id);
-          }}
-        />
-      ) : null}
     </div>
-  );
-}
-
-function TransportCheckIn({
-  leg,
-  now,
-  units,
-  patients,
-  referrals,
-  onClose,
-  onOpen,
-}: {
-  leg: TransportLegRow;
-  now: Instant;
-  units: Unit[];
-  patients: Patient[];
-  referrals: Referral[];
-  onClose: () => void;
-  onOpen: (movementId: string) => void;
-}) {
-  const isPhone = useIsPhone();
-  const titleId = useId();
-  const movement = leg.movement;
-  const person = resolveSubjectPatient(movement, { patients, referrals });
-  const { originLabel, destinationLabel } = transportRouteLabels(movement, units);
-  const next = nextStepWord(leg.state);
-  const steps = legSteps(movement, leg.state);
-
-  const primary = next ? (
-    <Link href={movementHref(movement.id)} className={buttonClass({ variant: "pri", size: "md" })}>
-      {next}
-      <ArrowRight size={14} aria-hidden="true" />
-    </Link>
-  ) : null;
-
-  const body = (
-    <div className={tr.ci}>
-      {/* The job first: what to record now, where, and the one button that does it. */}
-      <section className={tr.ciAction} aria-label="Next step">
-        <p className={tr.ciActionKicker}>{next ? "Next step" : "Complete"}</p>
-        <p className={tr.ciActionText}>
-          {next === "Confirm arrival"
-            ? `Confirm the patient has arrived at ${destinationLabel}.`
-            : next
-              ? `Record that the patient has left ${originLabel}.`
-              : `Arrived at ${destinationLabel}.`}
-        </p>
-        <p className={tr.ciActionMeta}>
-          {durMinutes(leg.minutesSinceBooked)} since booked · {leg.provider}
-        </p>
-        {primary ? <div className={tr.ciActionBtn}>{primary}</div> : null}
-      </section>
-      <ol className={tr.ciSteps} aria-label="Transport steps">
-        {steps.map((step) => (
-          <li key={step.id} className={tr.ciStep} data-state={step.state}>
-            <i aria-hidden="true" />
-            <span className={tr.ciStepLabel}>{step.label}</span>
-            <span className={tr.ciStepAt}>
-              {step.at !== undefined ? formatInstantWithDay(step.at, now) : step.state === "current" ? "Next" : ""}
-            </span>
-          </li>
-        ))}
-      </ol>
-      <dl className={tr.ciFacts}>
-        <div>
-          <dt>From</dt>
-          <dd>{originLabel}</dd>
-        </div>
-        <div>
-          <dt>To</dt>
-          <dd>{destinationLabel}</dd>
-        </div>
-        <div>
-          <dt>Escort</dt>
-          <dd>{movement.transport?.escortRequired ? "Required" : "Not required"}</dd>
-        </div>
-        <div>
-          <dt>Legal</dt>
-          <dd>{legalStatusShort(movement)}</dd>
-        </div>
-      </dl>
-      <p className={tr.ciNote}>
-        {next
-          ? `${next} opens the transport record, where the usual safety checks run before it saves.`
-          : "Nothing left to record on this leg."}
-      </p>
-      <div className={tr.ciLinks}>
-        <button
-          type="button"
-          className={buttonClass({ variant: "ghost", size: "sm" })}
-          onClick={() => onOpen(movement.id)}
-        >
-          Open patient
-        </button>
-        <Link href="/ward-flow/transport/officer" className={buttonClass({ variant: "ghost", size: "sm" })}>
-          <Ambulance size={14} aria-hidden="true" />
-          Transport desk
-        </Link>
-      </div>
-    </div>
-  );
-
-  if (isPhone) {
-    return (
-      <PhoneSheet
-        open
-        onClose={onClose}
-        title={person.formalName}
-        description="Transport check in"
-        data-testid="transport-check-in"
-      >
-        {body}
-      </PhoneSheet>
-    );
-  }
-  return (
-    <Sheet
-      open
-      onClose={onClose}
-      labelledBy={titleId}
-      placement="responsive-right"
-      contentClassName={tr.ciPanel}
-      bodyClassName={tr.ciBody}
-      testId="transport-check-in"
-    >
-      <div className={tr.ciHead}>
-        <div className={tr.ciHeadText}>
-          <h2 id={titleId} className={tr.ciTitle}>
-            {person.formalName}
-            {movement.transport?.escortRequired ? (
-              <ShieldCheck size={14} className={tr.icon} aria-label="Escort required" />
-            ) : null}
-          </h2>
-          <p className={tr.ciSub}>
-            <StatusGlyph tone={LEG_STATE_TONE[leg.state]} size={9} />
-            Transport check in · {LEG_STATE_LABEL[leg.state]}
-          </p>
-        </div>
-        <button
-          type="button"
-          className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
-          onClick={onClose}
-          aria-label="Close"
-          data-sheet-autofocus="true"
-        >
-          <X size={14} aria-hidden="true" />
-        </button>
-      </div>
-      {body}
-    </Sheet>
   );
 }
