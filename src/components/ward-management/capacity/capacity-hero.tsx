@@ -11,6 +11,9 @@ import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { FigureLink } from "@/components/wf/figure-link";
+import { PAGE_OWNERS } from "@/components/wf/page-owners";
+import figure from "@/components/wf/figure.module.css";
 
 import type { Highlight } from "./capacity-bed-map-cards";
 import { isConfirmationFresh } from "./capacity-gap-words";
@@ -73,13 +76,27 @@ export function CapacityHero({
         </>
       }
       titleMeta={
-        isPhone
-          ? `${gapWords(gapTotals.gap)} for ${gapTotals.waiting} needing a bed${
-              edWaiting ? ` · ${edWaiting.waiting} waiting in ${edWaiting.short}` : ""
-            }`
-          : totals.pendingPreparation
-            ? `${totals.pendingPreparation} being made ready`
-            : undefined
+        isPhone ? (
+          <>
+            {gapWords(gapTotals.gap)} for <span className={figure.wfNum}>{gapTotals.waiting}</span> needing a bed
+            {/* Kit rule a (Josh, 3 Nov 2026): Waiting owns the ED count, so it links there. */}
+            {edWaiting ? (
+              <>
+                {" · "}
+                <FigureLink
+                  value={edWaiting.waiting}
+                  label={`waiting in ${edWaiting.short}`}
+                  owner="waiting"
+                  onHero
+                  canOpen={canOpen(PAGE_OWNERS.waiting.route)}
+                  data-testid="capacity-hero-ed-waiting-link"
+                />
+              </>
+            ) : null}
+          </>
+        ) : totals.pendingPreparation ? (
+          `${totals.pendingPreparation} being made ready`
+        ) : undefined
       }
       lead={isPhone ? undefined : <OccupancyRing percent={occupancy.percent} alertAt={model.alertAt} scope={place} />}
       stats={
