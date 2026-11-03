@@ -426,7 +426,7 @@ describe("owner pins carried over from the retired full-page form", () => {
     renderDrawer({ initialPatientId: "PT-002" });
     fireEvent.click(screen.getByRole("button", { name: "Change" }));
     fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "" } });
-    expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("suburb not on the referral");
+    expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("no suburb on the record");
     fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });
     expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("Perth");
   });

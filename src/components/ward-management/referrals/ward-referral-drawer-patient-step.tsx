@@ -226,8 +226,7 @@ export function ReferralPatientStep({
             >
               <div className={styles.newPatientHead}>
                 <p className={styles.bodyMeta}>
-                  Adds a record with the details below and uses it for this referral. Check search first so the person
-                  is not added twice.
+                  Not found in search? Add them here and they are used for this referral.
                 </p>
                 <button
                   type="button"
@@ -487,8 +486,11 @@ export function ReferralPatientStep({
                 </p>
                 <p className={styles.patientSub}>
                   {isPhone ? null : "UMRN "}
-                  <span className={styles.mono}>{currentPatient.umrn}</span> · DOB {formatDob(currentPatient.dob)} ·
-                  Medicare {currentPatient.medicare}
+                  <span className={styles.mono}>{currentPatient.umrn}</span> · DOB {formatDob(currentPatient.dob)}
+                  {/* RF4: "Medicare Not recorded" was a third fact that told the referrer nothing. */}
+                  {currentPatient.medicare && currentPatient.medicare !== "Not recorded"
+                    ? ` · Medicare ${currentPatient.medicare}`
+                    : null}
                 </p>
                 <ReadmissionFlag flag={readmissionFlag} testId="ward-referral-readmission" />
               </div>

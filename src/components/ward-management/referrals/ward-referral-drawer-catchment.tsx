@@ -90,14 +90,16 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
         <p className={styles.catchmentStatus} data-testid="ward-referral-suburb-note">
           <MapPin aria-hidden="true" className={styles.catchmentStatusIcon} />
           <span>
-            {addressLine}
-            {" · "}
-            {suburbKnown ? `suburb ${catchmentSuburb} on the referral` : "suburb not on the referral"}
+            {!suburbKnown
+              ? `${addressLine} · no suburb on the record`
+              : addressLine.toLowerCase().includes(catchmentSuburb.trim().toLowerCase())
+                ? addressLine
+                : `${addressLine} · suburb ${catchmentSuburb.trim()}`}
           </span>
         </p>
         {catchmentTeam && !catchmentEditing ? (
           <div className={styles.suggestion} data-state={catchmentConfirmed ? "confirmed" : "suggested"}>
-            <StatusGlyph tone={catchmentConfirmed ? "success" : "info"} size={9} />
+            {catchmentConfirmed ? <CheckCircle2 aria-hidden="true" className={styles.suggestionIcon} /> : null}
             <span className={styles.suggestionText}>
               <strong>{catchmentTeam}</strong>
               <small>

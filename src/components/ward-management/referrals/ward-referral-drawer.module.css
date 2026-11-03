@@ -3848,3 +3848,16 @@ details.refCard > summary {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* RF1 upgrade: a confirmed catchment carries one green tick; a suggestion carries none. */
+.suggestionIcon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--wf-success);
+}
+
+/* RF6 upgrade: the close pop-up's three choices sit on one height. */
+.guardActions > button {
+  min-height: var(--spacing-tap, 3rem);
+}
