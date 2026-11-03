@@ -1,5 +1,5 @@
 /*
- * Mock-up only (D-91): the Home placement drawer (H7 to H10, 3 Nov 2026). Built on the patient
+ * The Home placement drawer (H7 to H10, approved by Josh 3 Nov 2026). Built on the patient
  * pop-up's own styles (`movements/movement-drawer.module.css`); these add the eyebrow, the chosen
  * alert line (H8), the task body that holds the real placement panel, and the pinned foot slot.
  * Neutral borders only, tone in the glyph and a light tint, no side stripes (D-94).
@@ -169,13 +169,14 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
 }
 
-/* The one primary in the band: Move or release, Pull the bed, Book transport, Open patient, Refer. */
+/* The one primary in the band: Move or release, Pull the bed, Book transport, Refer, Decide. */
 .slot
   :is(
     [data-testid="ward-shortlist-move-or-release"],
     [data-testid="ward-shortlist-hold-bed"],
     [data-testid="ward-shortlist-book-transport"],
-    [data-testid="ward-shortlist-refer"]
+    [data-testid="ward-shortlist-refer"],
+    [data-testid="ward-referral-placement-decide"]
   ) {
   flex: 2 1 auto;
   color: var(--wf-on-accent);
@@ -196,4 +197,16 @@
 .task > div > header > div:first-child,
 .task :global([data-testid="ward-shortlist-facts"]) {
   display: none;
+}
+
+/* The drawer body's named region (tests and journeys find Placement by it); it adds no box. */
+.region {
+  display: contents;
+}
+
+/* A service is chosen, but the shortlist still weighs every ward in the network. */
+.networkNote {
+  margin: var(--wf-s-2) var(--wf-s-4) 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
 }

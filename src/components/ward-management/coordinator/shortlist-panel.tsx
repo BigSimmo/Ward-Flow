@@ -106,6 +106,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
 
 import styles from "./coordinator.module.css";
+import drawer from "@/components/ward-management/movements/movement-drawer.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
@@ -259,66 +260,61 @@ function legalFormLine(movement: Movement, now: Instant) {
  * Deliberately minimal: the decision itself lives on the Referrals board, so this preview builds
  * no second copy of it. Its Decide link opens that board on this referral (WS-04, 26 Oct 2026).
  */
-export function ReferralPlacementPanel({ referral, now }: { referral: Referral; now: Instant }) {
-  // Elapsed since the referral was raised — the same `formatElapsed` helper every elapsed-time
-  // line on this screen already uses, applied directly since a referral carries no movement to
-  // derive it through.
+export function ReferralPlacementPanel({
+  referral,
+  now,
+  footerSlot,
+}: {
+  referral: Referral;
+  now: Instant;
+  /** The placement drawer's pinned foot (H9, Josh 3 Nov 2026): Decide sits there, never scrolled away. */
+  footerSlot?: HTMLElement | null;
+}) {
+  // Elapsed since the referral was raised, by the same `formatElapsed` every elapsed line here uses.
   const waitingLabel = formatElapsed(Math.max(now - referral.raisedAt, 0));
-  // The patient's name through the same resolver the Referral board uses, never the raw record id
-  // (live walkthrough, 25 Sept 2026: this panel showed "PT-RD06" where the board showed a name).
-  // A referral with no single linked patient says so plainly.
+  // The patient's name through the same resolver the Referral board uses, never the raw record id.
   const { patients, referrals, movements } = useWardFlowSelect("patients", "referrals", "movements");
   const patientInfo = resolveSubjectPatient(referral, { patients, referrals, movements });
   const patientLabel = patientInfo.patient ? patientInfo.formalName : "Not recorded";
-
-  return (
-    <div
-      className={`${styles.shortlistBody} ${shortlistStyles.body}`}
-      data-testid={`ward-referral-placement-${referral.id}`}
+  // WS-04: Decide opens the referral on the Referrals board, where Accept and Decline live.
+  const decide = (
+    <Link
+      href={referralBoardHref(referral.id)}
+      className={buttonClass({ variant: "pri", className: drawer.wide })}
+      aria-label={`Decide referral for ${patientLabel}`}
+      data-testid="ward-referral-placement-decide"
     >
-      <header className={`${styles.shortlistHeader} ${shortlistStyles.subjectHeader}`}>
-        <div className={styles.shortlistHeaderTop}>
-          <h3 className={`${styles.shortlistMovementId} ${shortlistStyles.subjectId}`}>
-            <small>Referral</small>
-            {patientInfo.umrn}
-          </h3>
-          <span className={`${styles.shortlistTierBadge} ${shortlistStyles.tierBadge}`} data-tier={referral.urgency}>
-            {urgencyTierLabel(referral.urgency)}
-          </span>
-        </div>
-        <dl className={shortlistStyles.factGrid}>
+      Decide on this referral
+    </Link>
+  );
+  return (
+    <div data-testid={`ward-referral-placement-${referral.id}`}>
+      <div className={drawer.status}>
+        <p className={drawer.statusLine}>
+          <StatusGlyph tone="info" size={9} />
+          <strong>Awaiting a decision</strong>
+          <span className={drawer.spacer} />
+          <span className={drawer.waitValue}>{waitingLabel}</span>
+        </p>
+        <span className={drawer.ticks}>
+          <span>{urgencyTierLabel(referral.urgency)}</span>
+        </span>
+      </div>
+      <div className={drawer.facts}>
+        <dl className={drawer.grid}>
           <Fact label="Patient" value={patientLabel} testId="ward-referral-placement-patient" />
           <Fact label="Profile" value={`${referral.ageBand} · ${referral.homeRegion}`} />
-          {/* Owner ruling, 2026-09-02: a coordinator may see a referred patient's suburb — a suburb
-            is a service area, never an address (`PD-3`). Same wording every other reader of a
-            referral uses (`referralSuburbLabel`), never a second copy written here. Catchment is
-            information, never a filter (Q-2): this states it and never hides or reorders a row by
-            it. */}
+          {/* Owner ruling, 2026-09-02: a coordinator may see a referred patient's suburb, a service
+              area and never an address (PD-3), in the wording every reader uses. Never a filter (Q-2). */}
           <Fact label="Suburb" value={referralSuburbLabel(referral.suburb)} testId="ward-referral-placement-suburb" />
           <Fact label="Waiting" value={waitingLabel} />
         </dl>
-        {/* WS-04 (workflow speed audit, 26 Oct 2026): this preview was a dead end with no decision.
-            Decide opens the referral on the Referrals board, where Accept and Decline live. Home
-            redesign (31 Oct 2026): the kit's shared primary button at the kit's own size (40px
-            with a 48px tap cover on a phone), in place of the old `--accent` confirm button. */}
-        <div className={styles.shortlistActionRow}>
-          <Link
-            href={referralBoardHref(referral.id)}
-            className={buttonClass({ variant: "pri", className: shortlistStyles.decide })}
-            aria-label={`Decide referral for ${patientLabel}`}
-            data-testid="ward-referral-placement-decide"
-          >
-            Decide
-          </Link>
-        </div>
-      </header>
-      <details className={shortlistStyles.infoDisclosure}>
-        <summary>About this referral</summary>
-        <p className={styles.placeholder}>
-          This is a request for a bed, not yet a movement — no ward is pointed at it, and it carries no stage and no
-          legal clock of its own.
+        <p className={shortlistStyles.listNote}>
+          This is a request for a bed, not yet a movement. No ward is pointed at it, and it has no stage and no legal
+          clock of its own.
         </p>
-      </details>
+      </div>
+      {footerSlot ? createPortal(decide, footerSlot) : <div className={drawer.actions}>{decide}</div>}
     </div>
   );
 }

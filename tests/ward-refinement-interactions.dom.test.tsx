@@ -126,7 +126,7 @@ describe("Q004 refinement interaction regressions", () => {
     expect(row).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByTestId("home-placement-prompt")).toBeNull();
     const shortlist = screen.getByRole("complementary", { name: "Placement" });
-    fireEvent.click(within(shortlist).getByRole("button", { name: "Close shortlist and clear selection" }));
+    fireEvent.click(within(shortlist).getByRole("button", { name: "Close placement and clear selection" }));
 
     expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();

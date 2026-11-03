@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, type ComponentType, type ReactNode } from "react";
 
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
-import type { HomePlacementPop } from "@/components/ward-redesign/home-placement/pop-home-placement";
 
 const PopAlerts = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-alerts/pop-alerts").then((module) => module.PopAlerts),
@@ -74,15 +73,6 @@ const PopStateError = dynamic<{ page: ReactNode }>(() =>
 const PopStateOffline = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-state-offline/pop-state-offline").then((module) => module.PopStateOffline),
 );
-const PopHomePlacement = dynamic<{ page: ReactNode; kind: HomePlacementPop }>(() =>
-  import("@/components/ward-redesign/home-placement/pop-home-placement").then((module) => module.PopHomePlacement),
-);
-/** H7 to H10 (3 Nov 2026): the Home placement drawer, one pop-up per alert type. */
-function placementPop(kind: HomePlacementPop) {
-  return function PopPlacement({ page }: { page: ReactNode }) {
-    return <PopHomePlacement page={page} kind={kind} />;
-  };
-}
 const PopStateToast = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-state-toast/pop-state-toast").then((module) => module.PopStateToast),
 );
@@ -146,10 +136,4 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   "state-error": PopStateError,
   "state-offline": PopStateOffline,
   "state-toast": PopStateToast,
-  "placement-hold": placementPop("hold"),
-  "placement-declines": placementPop("declines"),
-  "placement-nobed": placementPop("nobed"),
-  "placement-transport": placementPop("transport"),
-  "placement-referral": placementPop("referral"),
-  "placement-planned": placementPop("planned"),
 };

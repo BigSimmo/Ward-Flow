@@ -9,12 +9,12 @@ import { preloadWhenIdle } from "../preload-when-idle";
 import "@/components/ward-management/alerts/alerts.module.css";
 
 /**
- * Phone budget (22 October 2026, Home v7): the chosen alert and Beds that fit bring the Alerts
- * rows, their styles and the capacity gap derivations with them. They stay out of the first
- * load and are fetched when the browser is idle, as the shortlist panels are (see
- * shortlist-panel-lazy.tsx).
+ * Phone budget (22 October 2026, Home v7): the placement drawer (with the chosen alert, H7 to H10,
+ * 3 Nov 2026) and Beds that fit bring the Alerts rows, their styles and the capacity gap
+ * derivations with them. They stay out of the first load and are fetched when the browser is
+ * idle, as the shortlist panels are (see shortlist-panel-lazy.tsx).
  */
-const loadChosenAlertCard = () => import("./chosen-alert-card");
+const loadPlacementDrawer = () => import("./home-placement-drawer");
 const loadBedsGapCard = () => import("./beds-gap-card");
 
 /*
@@ -24,12 +24,12 @@ const loadBedsGapCard = () => import("./beds-gap-card");
  * jumped 0.35 on iPad portrait. It adds about 14 KB to the phone first load (within budget).
  */
 export { MyListCard } from "./my-list-card";
-export const ChosenAlertCard = dynamic(() => loadChosenAlertCard().then((m) => m.ChosenAlertCard), {
+export const HomePlacementDrawer = dynamic(() => loadPlacementDrawer().then((m) => m.HomePlacementDrawer), {
   loading: () => null,
 });
 export const BedsGapCard = dynamic(() => loadBedsGapCard().then((m) => m.BedsGapCard), { loading: () => null });
 
-preloadWhenIdle(loadChosenAlertCard);
+preloadWhenIdle(loadPlacementDrawer);
 preloadWhenIdle(loadBedsGapCard);
 
 // H-0977: Home's in-place "Release bed" sheet, fetched on first use so it stays off the first load.
