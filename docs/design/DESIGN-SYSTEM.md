@@ -6,6 +6,14 @@ Ward Flow is a prototype that uses synthetic data only. Nothing here is validate
 
 **What wins.** This page is the design system of record (Q327). [AGENTS.md](../../AGENTS.md) and Josh's rulings, then the master design's newest screens, then this page, then [design-system-v9.md](../../design/v9/design-system-v9.md) (kept as background). Where a merged page deliberately differs from its mock-up, follow what shipped. Values live in [`src/app/ward-flow-v9-tokens.css`](../../src/app/ward-flow-v9-tokens.css); this page names roles, never new values.
 
+**Token files.** `src/app/ward-flow-v9-tokens.css` is the only place token values are set. Three older files still load and must not gain new tokens (Q375):
+
+- `src/app/ckb-v2-tokens.css`: the v2 layer inherited from PsychSift, still read by older screens.
+- `src/app/ward-flow-shell-tokens.module.css`: the third-edition layer, composed by older screen styles as `wardShellTokens`.
+- `src/app/globals.css`: Tailwind set-up and compatibility values.
+
+Screens move to `--wf-*` as they are rebuilt, and each old file is deleted once nothing reads it.
+
 The lessons behind each rule are in [lessons/2026-11-02-design-lessons.md](lessons/2026-11-02-design-lessons.md).
 
 ## 1. Principles

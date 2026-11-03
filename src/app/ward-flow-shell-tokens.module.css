@@ -1,4 +1,9 @@
 /*
+ * NOT the source of truth (Q375, 3 Nov 2026). Ward Flow's design system of record is
+ * `docs/design/DESIGN-SYSTEM.md`, and its token values live only in `src/app/ward-flow-v9-tokens.css`.
+ * This is the older third-edition layer; the screens that compose `wardShellTokens` still read it,
+ * so it stays until they move to `--wf-*`. Add no new tokens here.
+ *
  * Ward Flow's THIRD EDITION token layer — distinct from `../components/ward-management/ward-
  * tokens.module.css` (the `--ward-*` prefixed layer the second-edition screens still use, which
  * bridges onto THIS app's existing v2 palette rather than defining new colour).

@@ -1,5 +1,8 @@
 # PsychSift design system — SPEC
 
+> [!IMPORTANT]
+> **Superseded for Ward Flow (Q375, 3 Nov 2026).** Ward Flow's design system of record is [DESIGN-SYSTEM.md](../design/DESIGN-SYSTEM.md), and token values live only in `src/app/ward-flow-v9-tokens.css`. The source-of-truth ranking below, which names `ckb-v2-tokens.css`, is PsychSift history and does not apply.
+
 > [!NOTE]
 > **Ward Flow Baseline Status (Owner Decisions: 25 Sep & 2 Oct 2026):**
 > This document describes the historical PsychSift design system and token migration layer.

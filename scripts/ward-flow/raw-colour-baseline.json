@@ -1,0 +1,15 @@
+{
+  "$comment": "Per-file ceilings for raw hex/rgb()/hsl() colours in screen stylesheets (Q375). They may only go down. Lower with `npm run check:ward-raw-colour -- --update-baseline`. Raising one needs Josh's yes and a hand edit with the reason in the commit.",
+  "files": {
+    "src/components/ward-management/community/community.module.css": 1,
+    "src/components/ward-management/coordinator/coordinator.module.css": 3,
+    "src/components/ward-management/coordinator/shortlist-panel.module.css": 1,
+    "src/components/ward-management/patients/patient-now.module.css": 2,
+    "src/components/ward-management/referrals/referrals.module.css": 2,
+    "src/components/ward-management/ward-tokens.module.css": 1,
+    "src/components/ward-redesign/parts/phone-rows.module.css": 2,
+    "src/components/ward-redesign/pop-help/help.module.css": 2,
+    "src/components/wf/hero.module.css": 9,
+    "src/components/wf/phone-rows.module.css": 2
+  }
+}

@@ -2,6 +2,9 @@
 
 > **Current scope.** This document set was inherited from PsychSift. Apply shared design rules only within the [Ward Flow repository boundary](../../AGENTS.md). PsychSift project state, hosted CI and historical measured figures are not current Ward Flow evidence.
 
+> [!IMPORTANT]
+> **Superseded for Ward Flow (Q375, 3 Nov 2026).** Ward Flow's design system of record is [DESIGN-SYSTEM.md](../design/DESIGN-SYSTEM.md), and token values live only in `src/app/ward-flow-v9-tokens.css`. The source-of-truth ranking below, which names `ckb-v2-tokens.css`, is PsychSift history and does not apply.
+
 > [!NOTE]
 > **Ward Flow Baseline Status (Owner Decisions: 25 Sep & 2 Oct 2026):**
 > This document set describes the historical PsychSift design system and token migration layer.
@@ -11,7 +14,7 @@
 
 The system of record for the v2 design system. **Rules and roles live here; values live
 only in the token files.** Source-of-truth ranking: `AGENTS.md` → `ckb-v2-tokens.css` →
-committed tests → `.design-sync/conventions.md` (no longer in this repository) → this set. For Ward Flow's current written standard see [design-system-v9.md](../../design/v9/design-system-v9.md). Where this set contradicts a
+committed tests → `.design-sync/conventions.md` (no longer in this repository) → this set. For Ward Flow's current standard see [DESIGN-SYSTEM.md](../design/DESIGN-SYSTEM.md); its values live in `src/app/ward-flow-v9-tokens.css`. Where this set contradicts a
 higher source, the higher source wins and the contradiction is a defect here.
 
 For current Ward work, start at the [Ward entry point](../ward-flow/README.md), agreed task
