@@ -277,19 +277,12 @@ function Journey({ movement }: { movement: Movement }) {
   );
 }
 
-/** H10: an alert with no journey (a booking): who, whose, from and to, in the drawer's grid. */
+/** H10: an alert with no journey (a booking): where it is and who has it, never the name again. */
 function AlertFacts({ entry }: { entry: QueueEntry }) {
+  const owner = ownerShort(entry.owner);
   return (
     <div className={d.facts}>
       <dl className={d.grid}>
-        <div>
-          <dt>Patient</dt>
-          <dd>{entry.subject.displayName}</dd>
-        </div>
-        <div>
-          <dt>Owner</dt>
-          <dd>{ownerShort(entry.owner)}</dd>
-        </div>
         <div>
           <dt>From</dt>
           <dd>{entry.subject.from}</dd>
@@ -298,6 +291,12 @@ function AlertFacts({ entry }: { entry: QueueEntry }) {
           <dt>To</dt>
           <dd>{entry.subject.to ?? "No destination yet"}</dd>
         </div>
+        {owner !== entry.subject.from ? (
+          <div>
+            <dt>Owner</dt>
+            <dd>{owner}</dd>
+          </div>
+        ) : null}
       </dl>
     </div>
   );

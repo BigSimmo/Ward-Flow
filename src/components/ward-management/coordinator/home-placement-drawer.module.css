@@ -217,8 +217,9 @@
   outline-offset: 2px;
 }
 
-/* The drawer's head already names the patient; the placement facts below it stay. */
-.task > div > header > div:first-child {
+/* The head names the patient and the wait bar shows the wait; the placement facts stay. */
+.task > div > header > div:first-child,
+.task :global([data-testid="ward-shortlist-wait-line"]) {
   display: none;
 }
 

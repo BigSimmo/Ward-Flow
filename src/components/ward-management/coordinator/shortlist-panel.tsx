@@ -122,6 +122,8 @@ import {
   InlineFact,
   LEGAL_STATUS_OPTIONS,
   PULLED_EXPLANATION,
+  referralAsked,
+  referralFrom,
   URGENCY_OPTIONS,
 } from "./shortlist-panel-parts";
 
@@ -273,7 +275,7 @@ export function ReferralPlacementPanel({
   // Elapsed since the referral was raised, by the same `formatElapsed` every elapsed line here uses.
   const waitingLabel = formatElapsed(Math.max(now - referral.raisedAt, 0));
   // The patient's name through the same resolver the Referral board uses, never the raw record id.
-  const { patients, referrals, movements } = useWardFlowSelect("patients", "referrals", "movements");
+  const { patients, referrals, movements, units } = useWardFlowSelect("patients", "referrals", "movements", "units");
   const patientInfo = resolveSubjectPatient(referral, { patients, referrals, movements });
   const patientLabel = patientInfo.patient ? patientInfo.formalName : "Not recorded";
   // WS-04: Decide opens the referral on the Referrals board, where Accept and Decline live.
@@ -302,17 +304,14 @@ export function ReferralPlacementPanel({
       </div>
       <div className={drawer.facts}>
         <dl className={drawer.grid}>
-          <Fact label="Patient" value={patientLabel} testId="ward-referral-placement-patient" />
+          <Fact label="Ward asked" value={referralAsked(referral, units)} />
+          <Fact label="Referred from" value={referralFrom(referral)} />
           <Fact label="Profile" value={`${referral.ageBand} · ${referral.homeRegion}`} />
           {/* Owner ruling, 2026-09-02: a coordinator may see a referred patient's suburb, a service
               area and never an address (PD-3), in the wording every reader uses. Never a filter (Q-2). */}
           <Fact label="Suburb" value={referralSuburbLabel(referral.suburb)} testId="ward-referral-placement-suburb" />
-          <Fact label="Waiting" value={waitingLabel} />
         </dl>
-        <p className={shortlistStyles.listNote}>
-          This is a request for a bed, not yet a movement. No ward is pointed at it, and it has no stage and no legal
-          clock of its own.
-        </p>
+        <p className={shortlistStyles.listNote}>A request for a bed. Accept or decline it on the Referrals board.</p>
       </div>
       {footerSlot ? createPortal(decide, footerSlot) : <div className={drawer.actions}>{decide}</div>}
     </div>
@@ -1857,7 +1856,7 @@ export function ShortlistPanel({
                 <button
                   type="button"
                   data-testid="ward-shortlist-override-toggle"
-                  aria-disabled={canOverride || isPhone ? undefined : "true"}
+                  aria-disabled={canOverride || isPhone || variant === "drawer" ? undefined : "true"}
                   aria-describedby={canOverride ? undefined : "ward-shortlist-override-unavailable"}
                   title={canOverride ? undefined : overrideUnavailableReason}
                   aria-expanded={overrideOpen}
@@ -1865,8 +1864,8 @@ export function ShortlistPanel({
                   onClick={
                     canOverride
                       ? () => setOverrideOpen((open) => !open)
-                      : isPhone
-                        ? // Phone: never greyed; with no ward picked it takes the person to the list.
+                      : isPhone || variant === "drawer"
+                        ? // Phone and Home's drawer: never greyed; with no ward picked it goes to the list.
                           (event) => chooseWard(event.currentTarget)
                         : ignoreUnavailableActivation
                   }
@@ -1884,7 +1883,7 @@ export function ShortlistPanel({
                   {overrideUnavailableReason}
                 </span>
               ) : null}
-              {!canOverride && !isPhone ? (
+              {!canOverride && !isPhone && variant !== "drawer" ? (
                 // Usability review, Josh approved 24 Oct 2026: a greyed action names its blocker in short
                 // visible words, with the one fix beside it when the fix is on this screen. Screen readers
                 // keep the full sentence above (the button's description); the short words are visual.
