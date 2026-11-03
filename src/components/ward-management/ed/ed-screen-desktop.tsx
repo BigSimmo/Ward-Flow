@@ -5,9 +5,13 @@
 // and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { clockState, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import {
+  clockState,
+  formatInstantWithDay,
+  isClockBreached,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
+import { typedClock, typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   examinationRevokedWhileBedHeld,
@@ -78,6 +82,11 @@ export function renderEdBoardTableRow(
   // danger mark, never the same amber dot as "close". The typed time only: nothing is computed.
   const formExpiryPassed =
     movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now, thresholds) === "breached";
+  // H11 (Josh, 3 Nov 2026): the full wording, word for word, behind the row's short expiry line.
+  const formExpiryFullWords =
+    movement.legalForm?.dueAt !== undefined
+      ? `${typedTimePhrase(movement.legalForm.dueAt, now)} (limits not legally checked)`
+      : undefined;
   const clearedWords =
     medicalClearance === undefined ? "Pending" : medicalClearance.cleared ? "Cleared" : "Not cleared";
   const destinationName = acceptedUnit && !movement.closure ? acceptedUnit.name.split(" — ")[0] : undefined;
@@ -293,17 +302,25 @@ export function renderEdBoardTableRow(
               emptyWords={noFormWords}
               now={now}
               record={ctx.recordEdStep}
+              expiryWords={formExpiryFullWords}
             >
+              {/* H11 (Josh, 3 Nov 2026): the short line on the row, the time exactly as typed and
+                  "not checked" still in view; the full wording is the button's description and
+                  heads its menu. */}
               {movement.legalForm?.dueAt !== undefined ? (
                 <span
                   className={handover.formNote}
                   aria-hidden="true"
-                  data-testid={formExpiryPassed ? `ward-ed-form-passed-${movement.id}` : undefined}
+                  title={formExpiryFullWords}
+                  data-testid={
+                    formExpiryPassed ? `ward-ed-form-passed-${movement.id}` : `ward-ed-form-ends-${movement.id}`
+                  }
                 >
                   {formExpiryWarningText !== undefined ? (
                     <StatusGlyph tone={formExpiryPassed ? "danger" : "warning"} size={8} />
                   ) : null}{" "}
-                  {typedTimePhrase(movement.legalForm.dueAt, now)} <LegalLimitsNotChecked variant="tag" />
+                  {isClockBreached(movement.legalForm.dueAt, now) ? "ended" : "ends"}{" "}
+                  {typedClock(movement.legalForm.dueAt, now)}, not checked
                 </span>
               ) : null}
             </FormCell>

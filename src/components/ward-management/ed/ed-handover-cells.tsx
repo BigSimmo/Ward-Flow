@@ -98,6 +98,7 @@ export function FormCell({
   emptyWords,
   now,
   record,
+  expiryWords,
   children,
 }: {
   movementId: string;
@@ -111,12 +112,24 @@ export function FormCell({
   emptyWords: string;
   now: Instant;
   record: (event: EdStepEvent) => void;
-  /** The record's own sub-line (typed expiry). */
+  /**
+   * H11 (Josh, 3 Nov 2026): the typed expiry's full wording, word for word. The row shows the short
+   * line (`children`); these words are the button's description and head the menu it opens.
+   */
+  expiryWords?: string;
+  /** The record's own sub-line (the short typed expiry). */
   children?: ReactNode;
 }) {
   const [pending, setPending] = useState<string | null>(null);
+  const expiryId = useId();
   const timeMissing = recordCode !== undefined && !writtenTimeEntered;
   const items: MenuItem[] = [
+    ...(expiryWords
+      ? ([
+          { kind: "heading", id: "expiry", label: <span className={handover.formExpiryFull}>{expiryWords}</span> },
+          { kind: "separator", id: "expiry-sep" },
+        ] satisfies MenuItem[])
+      : []),
     { kind: "heading", id: "head", label: "Legal form" },
     ...SELECTABLE_LEGAL_FORMS.map((form) => ({
       id: form.code,
@@ -155,11 +168,17 @@ export function FormCell({
             data-testid={`ward-ed-form-pick-${movementId}`}
             aria-label={`Form for ${patientName}: ${recordCode ? `Form ${recordCode}, ${formTitleForCode(recordCode) ?? ""}` : emptyWords}${timeMissing ? `. ${WRITTEN_TIME_NOT_ENTERED}` : ""}`}
             title={recordCode ? (formTitleForCode(recordCode) ?? undefined) : undefined}
+            aria-describedby={expiryWords ? expiryId : undefined}
           >
             <span className={handover.cellNowrap}>{recordCode ? `Form ${recordCode}` : emptyWords}</span>
           </Button>
         )}
       />
+      {expiryWords ? (
+        <span hidden id={expiryId}>
+          {expiryWords}
+        </span>
+      ) : null}
       {/* Owner polish (3 Nov 2026): one short line tucked under the chip, never a second block. */}
       {timeMissing ? (
         <span className={handover.formNote} aria-hidden="true" data-testid={`ward-ed-form-time-missing-${movementId}`}>
