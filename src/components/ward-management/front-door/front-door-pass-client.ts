@@ -19,13 +19,37 @@ function frontDoorOn(): boolean {
  * The sign-in page asks for a pass with a sign-in token or the demo code. Null when the request
  * never reached the server.
  */
-export function requestFrontDoorPass(body: { token: string } | { demoCode: string }): Promise<Response | null> {
-  return fetch("/api/session", {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  }).catch(() => null);
+export async function requestFrontDoorPass(body: { token: string } | { demoCode: string }): Promise<Response | null> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<null>((resolve) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      resolve(null);
+    }, 15_000);
+  });
+  const request = (async () => {
+    const response = await fetch("/api/session", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    // Include the body in the deadline: headers alone do not complete a refused sign-in.
+    const text = await response.text();
+    return new Response(text || null, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  })().catch(() => null);
+  try {
+    return await Promise.race([request, deadline]);
+  } finally {
+    clearTimeout(timer);
+    controller.abort();
+  }
 }
 
 /** After a sign-in in the app (after an idle sign-out, say), ask the server for a fresh pass. */

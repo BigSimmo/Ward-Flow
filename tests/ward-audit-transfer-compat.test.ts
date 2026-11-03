@@ -59,8 +59,22 @@ it("allows a recorded ward-source referral to reserve a destination and depart i
 it("accepts another transfer after restoring a legacy completed incoming transfer", () => {
   let s = seedWardFlowState();
   const a = s.admissions.find((a) => a.state === "occupied" && a.patientId)!;
+  // A transfer acceptance needs the stay's linked placement record (the arrival it came in on).
+  const placement: Movement = {
+    ...structuredClone(s.movements[0]),
+    id: "WF-AUDIT-LEGACY-PLACEMENT",
+    patientId: a.patientId!,
+    admissionId: a.id,
+    referralId: undefined,
+    sourceAdmissionId: undefined,
+    referralSourceAdmissionId: undefined,
+    stage: "arrived",
+    acceptedUnitId: a.unitId,
+    closure: { at: 640, outcome: "arrived", reason: "Synthetic fixture arrival" },
+  };
   s = {
     ...s,
+    movements: [...s.movements, placement],
     admissions: s.admissions.map((row) =>
       row.id === a.id
         ? {
