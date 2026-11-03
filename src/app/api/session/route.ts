@@ -110,7 +110,9 @@ export async function POST(request: NextRequest) {
   if (!secret) return answer(503, "Sign-in is not set up on this server yet. Tell the Ward Flow coordinator.");
   let body: { token?: unknown; demoCode?: unknown };
   try {
-    body = await request.json();
+    const parsed: unknown = await request.json();
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return answer(400, "Sign in again.");
+    body = parsed as typeof body;
   } catch {
     return answer(400, "Sign in again.");
   }

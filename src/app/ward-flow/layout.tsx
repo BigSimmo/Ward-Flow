@@ -9,6 +9,7 @@ import {
   guessTabletFromRequest,
 } from "@/components/wf";
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
+import { WardDetailsLightDismiss } from "@/components/ward-management/shell/ward-details-light-dismiss";
 import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
 import { WardPwaRegistration } from "@/components/ward-management/shell/ward-pwa-registration";
 import { NextBarMount as WardBarMount } from "@/components/ward-management/shell-next/next-bar";
@@ -159,6 +160,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }} />
       </WardFirstDocumentOnly>
       <WardAccessibility />
+      <WardDetailsLightDismiss />
       <WardRowDensity />
       <WardLiveRegion />
       <WardPwaRegistration />
@@ -205,6 +207,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               {/* Sheets, dialogs and toasts are portalled outside `.shellRow`, so they take the Ward tokens from here. */}
               <OverlayScope className={styles.overlayScope} />
               <WardAccessibility />
+              <WardDetailsLightDismiss />
               <WardRowDensity />
               <WardLiveRegion />
               <WardActNowNotifier />

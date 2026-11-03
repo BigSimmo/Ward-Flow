@@ -227,7 +227,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const patientOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals });
   const noDeadline = legalFormGroupRows(movements, now, "no-deadline");
   const rows = [...withDeadline, ...noDeadline];
-  const voluntary = openMovements.length - rows.length;
+  const withoutForm = openMovements.length - rows.length;
   const breakdown = legalFormBreakdown(rows, now);
   const reminders = legalExpiryReminderSummary(movements, now, thresholds);
   const passed = withDeadline.filter((movement) => isLegalDeadlineBreached(movement, now)).length;
@@ -754,8 +754,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             <dd>{noDeadline.length}</dd>
           </div>
           <div>
-            <dt>Voluntary, no form</dt>
-            <dd>{voluntary}</dd>
+            <dt>No form recorded</dt>
+            <dd>{withoutForm}</dd>
           </div>
         </dl>
 
@@ -770,7 +770,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               eyebrow="Mental Health Act forms"
               chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
               title={movesTitle}
-              sub={`${voluntary} voluntary, no form · warnings at ${formatReminderHours(reminders.soonHours)} and ${formatReminderHours(reminders.urgentHours)}`}
+              sub={`${withoutForm} no form recorded · warnings at ${formatReminderHours(reminders.soonHours)} and ${formatReminderHours(reminders.urgentHours)}`}
               figures={[
                 { id: "act", value: actNow, label: `${forms(actNow)} to act on`, tone: "danger" },
                 {
@@ -804,7 +804,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     variant="onHero"
                     icon={ClipboardCopy}
                     className={phoneRows.heroPill}
-                    disabledReason={handover.length === 0 ? "No typed expiry is coming up" : undefined}
+                    disabledReason={handover.length === 0 ? "No passed or upcoming typed expiry" : undefined}
                     reasonDisplay="tooltip"
                     onClick={() => copyText("handover", handover.join("\n"))}
                   >
@@ -926,7 +926,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   </>
                 }
                 titleMeta={
-                  voluntary > 0 ? <span className={styles.heroMeta}>{voluntary} voluntary, no form</span> : undefined
+                  withoutForm > 0 ? <span className={styles.heroMeta}>{withoutForm} no form recorded</span> : undefined
                 }
                 aside={
                   <div className={styles.heroAside}>
@@ -989,7 +989,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       className={cx(styles.heroCopy, styles.heroAction, styles.firstHeroAction)}
                       aria-disabled={handover.length === 0 ? "true" : undefined}
                       title={
-                        handover.length === 0 ? "No typed expiry is coming up" : "Copy upcoming expiries for handover"
+                        handover.length === 0
+                          ? "No passed or upcoming typed expiry"
+                          : "Copy passed and upcoming typed expiries for handover"
                       }
                       onClick={() => {
                         if (handover.length > 0) copyText("handover", handover.join("\n"));
