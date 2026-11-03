@@ -14,6 +14,9 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * id ("PT-RD06") where the Referral board shows the patient's name. The panel now names the patient
  * through the same resolver the board uses, and says "Not recorded" when a referral has no single
  * linked patient — never a record id, and never a guessed name.
+ *
+ * Home drawer polish (Josh, 3 Nov 2026): the name now sits in the drawer's header, not a Patient
+ * fact, so these read it from the pinned Decide button's accessible name, which uses the same label.
  */
 function openReferral(referralId: string) {
   render(
@@ -29,14 +32,14 @@ function openReferral(referralId: string) {
   const row = decide.querySelector<HTMLElement>(`[data-referral-id="${referralId}"]`);
   if (!row) throw new Error(`${referralId} is not listed under Referrals to decide`);
   fireEvent.click(within(row).getByRole("button", { name: /^Open referral for / }));
-  return within(screen.getByLabelText("Referral placement")).getByTestId("ward-referral-placement-patient");
+  return screen.getByTestId("ward-referral-placement-decide").getAttribute("aria-label") ?? "";
 }
 
 describe("Command referral placement panel names the patient", () => {
   it("shows the linked patient's name, not the record id (RF-RD06, linked to PT-RD06)", () => {
-    const fact = openReferral("RF-RD06");
-    expect(fact).toHaveTextContent(/Vallowen/);
-    expect(fact.textContent).not.toMatch(/PT-/);
+    const label = openReferral("RF-RD06");
+    expect(label).toMatch(/Vallowen/);
+    expect(label).not.toMatch(/PT-/);
   });
 
   it("says Not recorded for a referral with no linked patient (RF-001, unlinked for this test)", () => {
@@ -48,9 +51,9 @@ describe("Command referral placement panel names the patient", () => {
     const saved = live.patientId;
     live.patientId = undefined;
     try {
-      const fact = openReferral("RF-001");
-      expect(fact).toHaveTextContent("Not recorded");
-      expect(fact.textContent).not.toMatch(/PT-|Name not recorded/);
+      const label = openReferral("RF-001");
+      expect(label).toBe("Decide referral for Not recorded");
+      expect(label).not.toMatch(/PT-|Name not recorded/);
     } finally {
       live.patientId = saved;
     }
