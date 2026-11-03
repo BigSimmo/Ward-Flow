@@ -82,6 +82,15 @@
 
    A rail holding one long list marks the part under its heading `data-wf-rail-body`: that part
    fills the rest of the rail, so the card's heading stays in place above the list. */
+/* R1 (Josh, Notion "Diagnosed Issues", 3 Nov 2026): a rail that scrolls inside itself clips its
+   cards at its own edge, so a square edge cut the cards' round top corners off as they scrolled
+   under it. The rail takes the cards' radius, so a card passing its top or bottom keeps its curve.
+   A rail that is not scrolling clips nothing, so the radius changes nothing there. */
+.shell [data-wf-rail]:not([hidden]),
+.shell [data-wf-rail-body] {
+  border-radius: var(--wf-r-lg, 16px);
+}
+
 @media (min-width: 1025px) {
   .shell [data-wf-rail="true"]:not([hidden]) {
     position: sticky;
