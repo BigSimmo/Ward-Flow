@@ -107,6 +107,6 @@ describe("community demonstration queue totals", () => {
 
   it("preserves the depot room's recorded 16:30 closing time", () => {
     renderTeam();
-    expect(screen.getByText("Room 2 · Depot & Physical Health").parentElement).toHaveTextContent("9am – 4:30pm");
+    expect(screen.getByText("Room 2 · Depot & Physical Health").parentElement).toHaveTextContent("09:00 – 16:30");
   });
 });

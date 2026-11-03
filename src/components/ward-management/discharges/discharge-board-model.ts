@@ -52,7 +52,7 @@ export const GROUP_ORDER: readonly GroupKey[] = ["blocked", "confirmed", "expect
 export const BAND_LABELS: Record<ReleaseBand | "beyond-today", string> = {
   now: "Now",
   "by-midday": "By midday",
-  "by-1600": "By 4pm",
+  "by-1600": "By 16:00",
   tonight: "Tonight",
   tomorrow: "Tomorrow",
   "beyond-today": "Later",
