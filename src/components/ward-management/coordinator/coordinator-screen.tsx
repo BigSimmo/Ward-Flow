@@ -335,6 +335,9 @@ export function CoordinatorScreen() {
   const isTabletPortrait = layout === "tablet-portrait";
   // Where Placement is a sheet over the page, the chosen alert travels inside it.
   const sheetPlacement = isPhone || isTabletPortrait;
+  // Later today is a tab only on a phone or tablet portrait; elsewhere it sits in the right column,
+  // so an address left on it (a reload or a rotation) falls back to Needs you.
+  const shownView = homeView === "planned" && !sheetPlacement ? "needs" : homeView;
   // Phone sheet (direction A): the registers. The patient sheet is Placement itself, opened by
   // picking a queue row. "Since you looked" moved into Activity.
   const [phoneSheet, setPhoneSheet] = useState<{ kind: "exceptions" } | undefined>(undefined);
@@ -601,9 +604,14 @@ export function CoordinatorScreen() {
   const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
   // Home flow mock-up (Q340): a waiting alert is a mark on its patient's Flow row.
-  const waitingMarks = new Map(
-    waitEntries.flatMap((entry) => (entry.movement ? [[entry.movement.id, entry.item.title] as const] : [])),
-  );
+  // Every waiting title on a patient is kept; a waiting alert with no patient stays a row in Needs you.
+  const waitingMarks = new Map<string, string>();
+  for (const entry of waitEntries) {
+    if (!entry.movement) continue;
+    const prior = waitingMarks.get(entry.movement.id);
+    waitingMarks.set(entry.movement.id, prior ? `${prior} · ${entry.item.title}` : entry.item.title);
+  }
+  const unmarkedWait = waitEntries.filter((entry) => !entry.movement);
   const alertHandlers: QueueHandlers = {
     selectedId: selectedAlertId,
     onSelect: (entry) => {
@@ -864,21 +872,21 @@ export function CoordinatorScreen() {
                     value={actNowCount}
                     label="Act now"
                     tone={actNowCount > 0 ? "danger" : undefined}
-                    pressed={homeView === "needs" && needsFocus === "act"}
+                    pressed={shownView === "needs" && needsFocus === "act"}
                     onToggle={() => toggleFocus("act")}
                   />
                   <HeroStat
                     value={referralQueue.length}
                     label="To decide"
                     tone={referralQueue.length > 0 ? "info" : undefined}
-                    pressed={homeView === "needs" && needsFocus === "decide"}
+                    pressed={shownView === "needs" && needsFocus === "decide"}
                     onToggle={() => toggleFocus("decide")}
                   />
                   <HeroStat
                     value={chips.overdueInQueue}
                     label={overdueWord}
                     tone={chips.overdueInQueue > 0 ? "warning" : undefined}
-                    pressed={homeView === "queue" && highlight === "overdue"}
+                    pressed={shownView === "queue" && highlight === "overdue"}
                     onToggle={() => {
                       showView("queue");
                       // A hero count covers the whole queue, so it clears any chosen stage.
@@ -920,7 +928,7 @@ export function CoordinatorScreen() {
                     value={actNowCount}
                     label="Act now"
                     tone={actNowCount > 0 ? "danger" : undefined}
-                    pressed={homeView === "needs" && needsFocus === "act"}
+                    pressed={shownView === "needs" && needsFocus === "act"}
                     onToggle={() => toggleFocus("act")}
                   />
                   <HeroStat
@@ -928,7 +936,7 @@ export function CoordinatorScreen() {
                     value={referralQueue.length}
                     label="To decide"
                     tone={referralQueue.length > 0 ? "info" : undefined}
-                    pressed={homeView === "needs" && needsFocus === "decide"}
+                    pressed={shownView === "needs" && needsFocus === "decide"}
                     onToggle={() => toggleFocus("decide")}
                   />
                   <HeroStat
@@ -936,7 +944,7 @@ export function CoordinatorScreen() {
                     value={chips.overdueInQueue}
                     label={overdueWord}
                     tone={chips.overdueInQueue > 0 ? "warning" : undefined}
-                    pressed={homeView === "queue" && highlight === "overdue"}
+                    pressed={shownView === "queue" && highlight === "overdue"}
                     onToggle={() => {
                       showView("queue");
                       // A hero count covers the whole queue, so it clears any chosen stage.
@@ -955,7 +963,7 @@ export function CoordinatorScreen() {
                         {tierOneWord}
                       </>
                     }
-                    pressed={homeView === "queue" && highlight === "tier1"}
+                    pressed={shownView === "queue" && highlight === "tier1"}
                     onToggle={() => {
                       showView("queue");
                       // A hero count covers the whole queue, so it clears any chosen stage.
@@ -1050,7 +1058,7 @@ export function CoordinatorScreen() {
               className={list.viewSwitch}
               label="Home list"
               size="md"
-              value={homeView}
+              value={shownView}
               onChange={(view) => {
                 showView(view);
                 chooseNeedsFocus("all");
@@ -1070,12 +1078,12 @@ export function CoordinatorScreen() {
               ]}
             />
             <span className={flowStyles.navRule} aria-hidden="true" />
-            <div className={flowStyles.stageGroup} data-active={homeView === "queue" ? "true" : undefined}>
+            <div className={flowStyles.stageGroup} data-active={shownView === "queue" ? "true" : undefined}>
               <div className={flowStyles.stageTabs}>
                 <PillTabs
                   label="Flow stages"
                   className={flowStyles.stagePills}
-                  value={homeView === "queue" ? (flowStage ?? "all") : "none"}
+                  value={shownView === "queue" ? (flowStage ?? "all") : "none"}
                   onChange={(id) => {
                     showView("queue");
                     chooseNeedsFocus("all");
@@ -1112,9 +1120,9 @@ export function CoordinatorScreen() {
             ref={queueFocusRef}
           >
             <div className={`${styles.side} ${list.workCol}`}>
-              {homeView === "planned" ? (
+              {shownView === "planned" ? (
                 <PlannedList now={now} rows={plannedRows} title="Later today" />
-              ) : homeView === "queue" ? (
+              ) : shownView === "queue" ? (
                 <PriorityQueue
                   flow
                   flowStage={flowStage}
@@ -1151,8 +1159,8 @@ export function CoordinatorScreen() {
                 <MyListCard
                   act={actEntries}
                   toPull={toPull}
-                  wait={[]}
-                  hideWait
+                  wait={unmarkedWait}
+                  hideWait={unmarkedWait.length === 0}
                   referralCap={Math.max(0, 8 - actEntries.length - toPull.length) || 2}
                   referrals={referralQueue}
                   units={units}

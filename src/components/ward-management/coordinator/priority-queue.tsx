@@ -747,5 +747,3 @@ export function PriorityQueue({
     </Card>
   );
 }
-
-/** A phone shows one stage at a time: the first with patients in it (referrals are listed under Needs you). */
