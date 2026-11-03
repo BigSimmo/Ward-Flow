@@ -21,7 +21,7 @@ const CONTACTS: readonly { provider: TravelMode; number: string; hours: string }
 ];
 
 /** The synthetic number for a provider named on a booking, if the list has one. */
-export function providerNumber(provider: string | undefined): string | undefined {
+function providerNumber(provider: string | undefined): string | undefined {
   return CONTACTS.find((contact) => contact.provider === provider)?.number;
 }
 
