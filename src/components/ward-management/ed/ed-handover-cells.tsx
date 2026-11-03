@@ -4,10 +4,10 @@
 // mock-up in `ward-redesign/ed-board/ed-handover-preview.tsx`. The Presentation column saves the fixed
 // list (`RECORD_ED_PRESENTATION`); the Form dropdown records the form with its written time left blank
 // (`RECORD_LEGAL_FORM_CODE`). The time is typed on the Forms page and is never defaulted to now.
-import { ChevronDown } from "lucide-react";
-import { useState, type ReactNode } from "react";
-import { Dialog, Menu, type MenuItem } from "@/components/wf";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { ChevronDown, Plus } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
+import { Button, Dialog, Menu, Popover, StatusGlyph, type MenuItem, type WfTone } from "@/components/wf";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { formTitleForCode } from "@/lib/form-register";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
@@ -17,6 +17,8 @@ import handover from "./ed-handover.module.css";
 
 /** Q120: shown under a recorded form until the time written on it is typed on the Forms page. */
 const WRITTEN_TIME_NOT_ENTERED = "Written time not entered";
+/** The same note as it shows under the chip; the chip's own name carries the full words. */
+const TIME_NOT_ENTERED_SHORT = "Time not entered";
 
 export function PresentationCell({
   movementId,
@@ -60,19 +62,22 @@ export function PresentationCell({
       items={items}
       className={handover.cellMenu}
       trigger={(props) => (
-        <button
-          type="button"
+        // Owner polish (3 Nov 2026): a small kit button, not a browser-style drop-down. "Add" with a
+        // plus while nothing is chosen, the choices themselves once they are.
+        <Button
           {...props}
-          className={handover.cellPick}
+          size="sm"
+          variant={chosen.length ? "sec" : "ghost"}
+          icon={chosen.length ? undefined : Plus}
+          iconEnd={ChevronDown}
+          className={handover.cellButton}
           data-empty={chosen.length ? undefined : "true"}
           data-testid={`ward-ed-presentation-${movementId}`}
           aria-label={`Presentation for ${patientName}: ${chosen.length ? chosen.join(", ") : "none chosen"}`}
+          title={chosen.length > 1 ? chosen.join(", ") : undefined}
         >
-          <span className={handover.cellPickValue} title={chosen.length > 1 ? chosen.join(", ") : undefined}>
-            {chosen.length ? chosen.join(", ") : "Add"}
-          </span>
-          <ChevronDown size={14} aria-hidden="true" className={handover.cellPickChevron} />
-        </button>
+          <span className={handover.cellPickValue}>{chosen.length ? chosen.join(", ") : "Add"}</span>
+        </Button>
       )}
     />
   );
@@ -110,6 +115,7 @@ export function FormCell({
   children?: ReactNode;
 }) {
   const [pending, setPending] = useState<string | null>(null);
+  const timeMissing = recordCode !== undefined && !writtenTimeEntered;
   const items: MenuItem[] = [
     { kind: "heading", id: "head", label: "Legal form" },
     ...SELECTABLE_LEGAL_FORMS.map((form) => ({
@@ -139,23 +145,25 @@ export function FormCell({
         items={items}
         className={handover.cellMenu}
         trigger={(props) => (
-          <button
-            type="button"
+          <Button
             {...props}
-            className={handover.cellPick}
+            size="sm"
+            variant={recordCode ? "sec" : "ghost"}
+            iconEnd={ChevronDown}
+            className={handover.cellButton}
             data-empty={recordCode ? undefined : "true"}
             data-testid={`ward-ed-form-pick-${movementId}`}
-            aria-label={`Form for ${patientName}: ${recordCode ? `Form ${recordCode}, ${formTitleForCode(recordCode) ?? ""}` : emptyWords}`}
+            aria-label={`Form for ${patientName}: ${recordCode ? `Form ${recordCode}, ${formTitleForCode(recordCode) ?? ""}` : emptyWords}${timeMissing ? `. ${WRITTEN_TIME_NOT_ENTERED}` : ""}`}
             title={recordCode ? (formTitleForCode(recordCode) ?? undefined) : undefined}
           >
-            <span className={handover.cellPickValue}>{recordCode ? `Form ${recordCode}` : emptyWords}</span>
-            <ChevronDown size={14} aria-hidden="true" className={handover.cellPickChevron} />
-          </button>
+            <span className={handover.cellNowrap}>{recordCode ? `Form ${recordCode}` : emptyWords}</span>
+          </Button>
         )}
       />
-      {recordCode && !writtenTimeEntered ? (
-        <span className={handover.formTyped} data-testid={`ward-ed-form-time-missing-${movementId}`}>
-          {WRITTEN_TIME_NOT_ENTERED}
+      {/* Owner polish (3 Nov 2026): one short line tucked under the chip, never a second block. */}
+      {timeMissing ? (
+        <span className={handover.formNote} aria-hidden="true" data-testid={`ward-ed-form-time-missing-${movementId}`}>
+          {TIME_NOT_ENTERED_SHORT}
         </span>
       ) : null}
       {children}
@@ -183,6 +191,122 @@ export function FormCell({
         ) : null}
       </Dialog>
     </>
+  );
+}
+
+type CheckLine = { id: string; tone: WfTone; words: string; detail?: string; warning?: boolean };
+
+/**
+ * Owner polish (3 Nov 2026): the Checks column folds medical clearance and the review into one
+ * compact status, a glyph and "2 checks open" or "Checks done", that opens a small pop-over listing
+ * each check with its state. `children` carries the row's own facts for screen readers, in place.
+ */
+export function ChecksCell({
+  movementId,
+  patientName,
+  clearance,
+  reviewed,
+  revokedNotice,
+  earlierExaminations,
+  now,
+  onOpenRecord,
+  children,
+}: {
+  movementId: string;
+  patientName: string;
+  clearance: { cleared: boolean; at: Instant } | undefined;
+  reviewed: boolean;
+  /** The revoked-while-bed-held notice, word for word, when it applies. */
+  revokedNotice: string | undefined;
+  earlierExaminations: readonly string[];
+  now: Instant;
+  onOpenRecord: () => void;
+  children?: ReactNode;
+}) {
+  const lines: CheckLine[] = [
+    {
+      id: "clearance",
+      tone: clearance === undefined ? "neutral" : clearance.cleared ? "success" : "danger",
+      words: clearance === undefined ? "Clearance pending" : clearance.cleared ? "Med cleared" : "Not cleared",
+      detail: clearance ? `Recorded ${formatInstantWithDay(clearance.at, now)}` : undefined,
+    },
+    revokedNotice
+      ? { id: "review", tone: "warning", words: revokedNotice, warning: true }
+      : { id: "review", tone: reviewed ? "success" : "neutral", words: reviewed ? "Reviewed" : "Not reviewed" },
+  ];
+  const open = lines.filter((line) => line.tone !== "success").length;
+  const summaryTone: WfTone = revokedNotice
+    ? "warning"
+    : clearance?.cleared === false
+      ? "danger"
+      : open === 0
+        ? "success"
+        : "neutral";
+  const summary = revokedNotice
+    ? "Exam revoked"
+    : open === 0
+      ? "Checks done"
+      : `${open} ${open === 1 ? "check" : "checks"} open`;
+  const describedById = useId();
+  return (
+    <span className={handover.checks} data-testid={`ward-ed-row-checks-${movementId}`}>
+      <Popover
+        label={`Checks for ${patientName}`}
+        className={handover.cellMenu}
+        panelClassName={handover.checksPanel}
+        trigger={(props) => (
+          <Button
+            {...props}
+            size="sm"
+            variant="ghost"
+            className={`${handover.cellButton} ${handover.cellGhost}`}
+            data-testid={`ward-ed-checks-open-${movementId}`}
+            aria-label={`Checks for ${patientName}: ${summary}`}
+            aria-describedby={describedById}
+          >
+            <StatusGlyph tone={summaryTone} size={8} />
+            <span className={handover.cellNowrap}>{summary}</span>
+          </Button>
+        )}
+      >
+        {(close) => (
+          <div className={handover.checksBody}>
+            <p className={handover.checksTitle}>Checks</p>
+            <ul className={handover.checksList}>
+              {lines.map((line) => (
+                <li key={line.id} data-level={line.warning ? "warning" : undefined}>
+                  <StatusGlyph tone={line.tone} size={8} />
+                  <span>
+                    <b>{line.words}</b>
+                    {line.detail ? <span>{line.detail}</span> : null}
+                    {line.id === "review"
+                      ? earlierExaminations.map((earlier) => <span key={earlier}>{earlier}</span>)
+                      : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Button
+              size="sm"
+              variant="sec"
+              className={handover.checksAction}
+              onClick={() => {
+                // The person sheet takes focus and returns it to the row when it closes.
+                close(false);
+                onOpenRecord();
+              }}
+            >
+              Open record
+            </Button>
+          </div>
+        )}
+      </Popover>
+      {/* Each check, read as the trigger's description, so a screen reader hears them without opening. */}
+      <span hidden id={describedById}>
+        {lines.map((line) => `${line.words}.`).join(" ")}
+      </span>
+      {children}
+    </span>
   );
 }
 

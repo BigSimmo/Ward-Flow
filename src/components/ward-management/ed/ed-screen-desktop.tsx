@@ -5,7 +5,7 @@
 // and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
@@ -24,7 +24,7 @@ import { edWaitTone } from "./ed-screen-model";
 import type { EdRowFacts } from "./ed-screen-row-facts";
 import styles from "./ed.module.css";
 import handover from "./ed-handover.module.css";
-import { FormCell, PresentationCell, TierBars } from "./ed-handover-cells";
+import { ChecksCell, FormCell, PresentationCell, TierBars } from "./ed-handover-cells";
 
 /** One board row as a row of the board table. */
 export function renderEdBoardTableRow(
@@ -80,41 +80,30 @@ export function renderEdBoardTableRow(
     movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now, thresholds) === "breached";
   const clearedWords =
     medicalClearance === undefined ? "Pending" : medicalClearance.cleared ? "Cleared" : "Not cleared";
-  const clearedTone =
-    medicalClearance === undefined
-      ? ("neutral" as const)
-      : medicalClearance.cleared
-        ? ("success" as const)
-        : ("danger" as const);
-  const reviewWords = movement.examination ? "Reviewed" : "Not reviewed";
   const destinationName = acceptedUnit && !movement.closure ? acceptedUnit.name.split(" — ")[0] : undefined;
   const formFacts = <span className="sr-only">{formExpiryFacts}</span>;
-  // Handover mock-up (Josh, 1 Nov 2026): clearance and review share one Checks column, two lines.
+  // Handover mock-up (Josh, 1 Nov 2026): clearance and review share one Checks column. Owner polish
+  // (3 Nov 2026): one compact status that opens the list, so a row stays one or two lines tall. The
+  // row's clearance and examination facts stay in place for screen readers.
   const checksCell = (
-    <span className={handover.checks} data-testid={`ward-ed-row-checks-${movement.id}`}>
-      <span className={styles.a2Value}>
-        <StatusGlyph tone={clearedTone} size={8} />
-        <span className={medicalClearance?.cleared ? undefined : styles.a2Quiet}>
-          {medicalClearance === undefined
-            ? "Clearance pending"
-            : medicalClearance.cleared
-              ? "Med cleared"
-              : "Not cleared"}
-        </span>
-        {clearanceFact}
-      </span>
-      {examinationRevokedWhileBedHeld(movement) ? (
-        <span className={styles.a2Value} data-level="warning">
-          <StatusGlyph tone="warning" size={8} />
-          {EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE}
-        </span>
-      ) : (
-        <span className={styles.a2Value}>
-          <StatusGlyph tone={movement.examination ? "success" : "neutral"} size={8} />
-          <span className={movement.examination ? undefined : styles.a2Quiet}>{reviewWords}</span>
-        </span>
+    <ChecksCell
+      movementId={movement.id}
+      patientName={patientInfo.formalName}
+      clearance={medicalClearance}
+      reviewed={movement.examination !== undefined}
+      revokedNotice={examinationRevokedWhileBedHeld(movement) ? EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE : undefined}
+      earlierExaminations={(movement.supersededExaminations ?? []).map(
+        (record) =>
+          `Earlier examination · ${record.outcome.replace(/_/g, " ")}, ${formatInstantWithDay(record.at, now)}`,
       )}
-    </span>
+      now={now}
+      onOpenRecord={openSheet}
+    >
+      <span className="sr-only">
+        {clearanceFact}
+        {reviewFacts}
+      </span>
+    </ChecksCell>
   );
   // Change 2 (D-77): the Referral column says where the referral stands, the ward on line one and
   // one plain line under it. The bed hold's time left moved here from the chip under the name.
@@ -307,7 +296,7 @@ export function renderEdBoardTableRow(
             >
               {movement.legalForm?.dueAt !== undefined ? (
                 <span
-                  className={handover.formTyped}
+                  className={handover.formNote}
                   aria-hidden="true"
                   data-testid={formExpiryPassed ? `ward-ed-form-passed-${movement.id}` : undefined}
                 >
@@ -320,10 +309,7 @@ export function renderEdBoardTableRow(
             </FormCell>
             {formFacts}
           </td>
-          <td>
-            {checksCell}
-            <span className={styles.a2Facts}>{reviewFacts}</span>
-          </td>
+          <td className={handover.pickCell}>{checksCell}</td>
         </>
       )}
       <td>{destinationCell}</td>
