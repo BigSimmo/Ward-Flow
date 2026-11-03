@@ -62,8 +62,3 @@ tr:has(+ .moreRow) > td {
     padding-inline: 0;
   }
 }
-
-/* The danger dot on the Escalated chip keeps a small gap before the word. */
-.chipGlyph {
-  margin-right: 4px;
-}
