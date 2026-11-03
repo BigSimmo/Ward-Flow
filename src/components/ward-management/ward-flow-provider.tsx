@@ -716,8 +716,9 @@ function WardFlowWorld({
   const { enabled: sharedEnabled, dispatch: dispatchShared } = shared;
   const broadcastInstanceIdRef = useRef("");
   const lastAdoptedBroadcastWorldRef = useRef<WardFlowState | null>(null);
-  // A remote snapshot must not replace edits made locally since the last sync.
-  const localEditsSinceBroadcastRef = useRef(false);
+  // Saving is not a concurrency boundary: once this tab owns a day, peer snapshots
+  // cannot replace it. Untouched tabs may still follow another open tab.
+  const ownsLocalDayRef = useRef(false);
   // Design audit DA-01: true while this tab is on the untouched seed day (`useOpenTabsDay`).
   const freshSeedRef = useRef(true);
   // Codex P1 (PR #267): whether an action recorded now is really kept on this device, for the
@@ -749,7 +750,7 @@ function WardFlowWorld({
       // so a toast pushed straight after this dispatch does not claim the action was saved.
       if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
         savesOnDeviceRef.current = false;
-      localEditsSinceBroadcastRef.current = true;
+      ownsLocalDayRef.current = true;
       freshSeedRef.current = false;
       const commandId = `local-${++commandsRef.current.sequence}`;
       if (!container.sessionAdopted) {
@@ -927,18 +928,17 @@ function WardFlowWorld({
           if (messageEvent.data.senderId && messageEvent.data.senderId === instanceId) {
             return;
           }
-          if (!shared.enabled && !localEditsSinceBroadcastRef.current) {
+          if (!shared.enabled && !ownsLocalDayRef.current) {
             const rawPayload = typeof messageEvent.data.payload === "string" ? messageEvent.data.payload : undefined;
             const referenceAbsolute = Math.max(mountedAtAbsolute ?? 0, absoluteWallClockMinutes());
             const read = ++reads.latest;
             void readDemoStateLater(dayZero, referenceAbsolute, rawPayload).then(({ saved }) => {
-              if (!reads.live || read !== reads.latest || !saved || localEditsSinceBroadcastRef.current) return;
+              if (!reads.live || read !== reads.latest || !saved || ownsLocalDayRef.current) return;
               openRequestSequence.current = Math.max(
                 openRequestSequence.current,
                 nextOpenRequestSequence(saved.state.auditEvents),
               );
               lastAdoptedBroadcastWorldRef.current = saved.state;
-              localEditsSinceBroadcastRef.current = false;
               // Read before the updater, which may run twice and clears the ref the first time.
               const firstAdoption = freshSeedRef.current;
               dispatchContainer({
@@ -1034,7 +1034,10 @@ function WardFlowWorld({
     if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null || !demoRead) return;
     const { saved, recoveryNotice, quietRecoveryNotice } = demoRead;
-    if (saved) freshSeedRef.current = false; // a restored day is not the untouched seed (DA-01)
+    if (saved) {
+      freshSeedRef.current = false; // a restored day is not the untouched seed (DA-01)
+      ownsLocalDayRef.current = true;
+    }
     // Never move the allocator backwards: a record opened before adoption already used its number.
     if (saved)
       openRequestSequence.current = Math.max(
@@ -1101,7 +1104,6 @@ function WardFlowWorld({
     lastDeviceSaveRef.current = undefined;
     if (deviceSaveUnchanged(previousSave, saveInputs)) {
       lastDeviceSaveRef.current = previousSave;
-      localEditsSinceBroadcastRef.current = false;
       return;
     }
     // D-18, option A (Josh, 21 Oct 2026): once typed text is DISPATCHED, accepted or refused, only a
@@ -1134,7 +1136,6 @@ function WardFlowWorld({
       setStorageUnavailable(true);
     } else {
       lastDeviceSaveRef.current = saveInputs;
-      localEditsSinceBroadcastRef.current = false;
     }
   }, [
     state,
@@ -1154,7 +1155,6 @@ function WardFlowWorld({
   const resetDemoState = useCallback(() => {
     if (!shared.enabled) clearWardFlowDemoState();
     lastDeviceSaveRef.current = undefined;
-    localEditsSinceBroadcastRef.current = false;
     dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
   }, [dispatch, shared.enabled]);
 
@@ -1189,6 +1189,7 @@ function WardFlowWorld({
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
       clearReferralDraftSession();
+      ownsLocalDayRef.current = true;
       commandsRef.current.world = world;
       dispatchContainer({
         type: "LOAD_SCENARIO_FILE_INTERNAL",
