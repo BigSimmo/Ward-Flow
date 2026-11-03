@@ -55,3 +55,14 @@ describe("routine recovery news is an info toast (GEN1, 3 Nov 2026)", () => {
     expect(screen.getByTestId("ward-recovery-notice")).toBeInTheDocument();
   });
 });
+
+describe("a restore toast is read whole (Codex review, #1367)", () => {
+  beforeEach(() => window.sessionStorage.clear());
+
+  it("lets the restore notice wrap so its closing warning is never cut off", () => {
+    renderInShell(ROUTINE);
+    const card = screen.getByTestId("ward-recovery-notice");
+    expect(card).toHaveAttribute("data-wrap", "true");
+    expect(card).toHaveTextContent("Later changes may not have been saved.");
+  });
+});

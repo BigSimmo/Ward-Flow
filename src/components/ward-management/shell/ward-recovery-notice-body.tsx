@@ -69,7 +69,8 @@ export function WardRecoveryNoticeBody({ notice, fadeAfterMs }: { notice: string
       markRoutineSeen();
     }
     pushedRef.current = notice;
-    toast.push({ tone: "info", title: notice, testId: "ward-recovery-notice" });
+    // `wrap`: the restore notice ends with its warning, which an ellipsis would hide (Codex, #1367).
+    toast.push({ tone: "info", title: notice, testId: "ward-recovery-notice", wrap: true });
   }, [asToast, toast, routine, notice]);
 
   useEffect(() => {

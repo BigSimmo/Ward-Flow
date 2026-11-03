@@ -208,6 +208,14 @@
   line-height: var(--wf-lh-12);
 }
 
+/* A toast that must be read whole (`wrap`) keeps every word instead of an ellipsis. */
+.toast[data-wrap="true"] .toastTitle,
+.toast[data-wrap="true"] .toastBody {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .toastMeta {
   flex: 0 0 auto;
   font: 500 var(--wf-fs-12) / 1 var(--wf-mono);

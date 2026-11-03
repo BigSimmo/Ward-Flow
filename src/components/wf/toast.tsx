@@ -73,6 +73,8 @@ export type ToastViewProps = {
   "data-announce-key"?: number;
   /** "true" when the toast closes itself; the phone pill then hides its X. */
   "data-auto-dismiss"?: string;
+  /** "true" lets the title and body wrap instead of ending in an ellipsis. */
+  "data-wrap"?: string;
   /** Marks a card the provider renders, whatever its test id. */
   "data-wf-toast"?: string;
 };
