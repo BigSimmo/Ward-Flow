@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-redesign-home",
-    "date": "2026-10-31",
-    "line": "Home shows what changed since your last review in Activity, and a Planned list for the rest of the shift."
-  },
-  {
     "id": "2026-10-31-redesign-capacity",
     "date": "2026-10-31",
     "line": "Capacity has a new look: beds ready first, the bed forecast, a bed map of every ward and this shift's checks."
@@ -98,5 +93,10 @@
     "id": "2026-11-03-save-and-safety-fixes",
     "date": "2026-11-03",
     "line": "Unconfirmed saves retry safely, closed beds stop planned arrivals, and a missing legal form shows No form recorded."
+  },
+  {
+    "id": "2026-11-03-waiting-and-all-eds",
+    "date": "2026-11-03",
+    "line": "Waiting shows Today's follow-up and a clearer daily check. All EDs filters hide other EDs, with a By ED view."
   }
 ]
