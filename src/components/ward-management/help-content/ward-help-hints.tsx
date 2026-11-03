@@ -83,7 +83,7 @@ function obstructed() {
     openSheetHandles().length > 0 ||
     Boolean(
       document.querySelector(
-        '[data-testid="ward-tour-offer"], [data-testid="ward-whats-new"], [data-testid="ward-tour"]',
+        '[data-testid="ward-tour-offer"], [data-testid="ward-whats-new"], [data-testid="ward-tour"], [data-wf-toast]',
       ),
     ) ||
     Boolean(document.activeElement?.closest('input, textarea, select, [contenteditable="true"]'))
