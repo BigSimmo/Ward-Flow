@@ -229,9 +229,15 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
 }
 
+/* OC3 (4 Nov 2026): the ring sits inside the card. The hero foot clips anything outside it, and
+   below 1280px the strip scrolls, which clips it too, so an outside ring lost its edges. */
 .key:focus-visible {
   outline: 2px solid var(--wf-hero-ink);
-  outline-offset: 2px;
+  outline-offset: -2px;
+}
+
+.key[aria-pressed="true"]:focus-visible {
+  outline-color: var(--wf-hero-2);
 }
 
 .key[aria-pressed="true"] {
@@ -313,9 +319,14 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
+/* OC2 (4 Nov 2026): the tab strip scrolls sideways, which also clips upright, so a focus ring on a
+   tab lost its top and bottom. 6px of room inside the strip, taken back by the margin, keeps the
+   tabs exactly where they were and the whole ring and halo in view. */
 .dirHead > [role="tablist"] {
   border-bottom: 0;
   flex: 0 0 auto;
+  padding: 6px;
+  margin: -6px;
 }
 
 .dirHead .search {
