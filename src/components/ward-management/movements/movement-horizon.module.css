@@ -1307,3 +1307,66 @@
 .hcGrid dd svg {
   display: inline;
 }
+
+/* M2 (3 Nov 2026): each accepted route has a small "see these patients" button beside it, and a
+   whole declined row opens the patients that ward declined today. */
+.routeItem {
+  display: flex;
+  align-items: center;
+}
+
+.routeItem .routePick {
+  flex: 1;
+  min-width: 0;
+}
+
+.routePeople {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-right: var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-ctl);
+  background: none;
+  color: var(--wf-ink-3);
+  cursor: pointer;
+}
+
+.routePeople:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.routePeople:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.declineRow {
+  position: relative;
+}
+
+.declineOpen {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.declineOpen:hover {
+  background: var(--wf-hover);
+}
+
+.declineOpen:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.declineRow > :not(.declineOpen) {
+  position: relative;
+  pointer-events: none;
+}

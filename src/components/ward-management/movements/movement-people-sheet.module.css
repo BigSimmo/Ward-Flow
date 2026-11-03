@@ -1,0 +1,189 @@
+/*
+ * The patient list pop-up (Movements M1 to M4, 3 Nov 2026). Drawn like the patient pop-up beside
+ * it: plain head, hairline rows, tone in the glyph only (no side stripes, D-94), names wrap in full.
+ */
+
+.panel {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-3);
+  background: var(--wf-surface);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.headText {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-20);
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.count {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+.caption {
+  margin: var(--wf-s-1) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.list {
+  margin: 0;
+  padding: var(--wf-s-1) var(--wf-s-2);
+  list-style: none;
+}
+
+.empty {
+  padding: var(--wf-s-4);
+  color: var(--wf-ink-3);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.open {
+  display: grid;
+  flex: 1 1 18rem;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.open:hover {
+  background: var(--wf-hover);
+}
+
+.open:focus-visible {
+  outline: none;
+  box-shadow: var(--wf-focus-ring);
+}
+
+.tier {
+  align-self: start;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.route,
+.meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--wf-ink-3);
+}
+
+.note {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.arrow,
+.icon {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.wait {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chev {
+  color: var(--wf-ink-3);
+}
+
+.action {
+  display: inline-flex;
+  flex: none;
+  padding: 0 var(--wf-s-2) var(--wf-s-2) calc(var(--wf-s-2) + 2.75rem);
+}
+
+@media (min-width: 46.5rem) {
+  .action {
+    padding: 0 var(--wf-s-2) 0 0;
+  }
+}
+
+.footer.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.footNote {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}

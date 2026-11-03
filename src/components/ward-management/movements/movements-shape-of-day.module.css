@@ -364,3 +364,109 @@
 .heat thead th:first-child {
   text-align: left;
 }
+
+/* M3 (3 Nov 2026): hovering a square on a desktop shows who is in it. A phone has no hover, so
+   there a tap opens the same people in the list pop-up. */
+.heat td {
+  position: relative;
+}
+
+.peek {
+  position: absolute;
+  z-index: 5;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  width: max-content;
+  min-width: 13rem;
+  max-width: 18rem;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2, 0 6px 20px rgb(0 0 0 / 0.14));
+  color: var(--wf-ink-1);
+  text-align: left;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .heat td:hover .peek,
+  .heat td:focus-within .peek {
+    display: flex;
+  }
+}
+
+.peekHead {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.peekRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.peekRow b {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.peekFoot {
+  padding-top: 4px;
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.act {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.actHead {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.actList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.actChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.actChip:hover {
+  background: var(--wf-hover);
+}
+
+.actChip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.actChip b {
+  font-family: var(--wf-mono);
+}

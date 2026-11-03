@@ -1535,16 +1535,16 @@
   align-self: center;
 }
 
-/* Every route reads the same way, as the Corridors panel does: where from, then "→ ward" under it. */
+/* M2 (Josh, 3 Nov 2026): every route reads on one line, "ARM ED → Moodjar", for a more compact
+   worklist. A long ward name wraps after its arrow, never before it. */
 .route.route.route {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0 4px;
 }
 
 .routeTo .routeArrow.routeArrow {
-  align-self: flex-start;
-  margin-top: 4px;
+  align-self: center;
 }
 
 /* Tier 1 stands out by weight, not colour: a filled neutral pill. */
