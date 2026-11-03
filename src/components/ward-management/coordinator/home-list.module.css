@@ -3,6 +3,7 @@
 
 .workCol {
   gap: var(--wf-s-2);
+  min-width: 0;
 }
 
 .viewSwitch {

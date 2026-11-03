@@ -348,7 +348,7 @@ test.describe("@mockup Ward Flow command view", () => {
     await page.setViewportSize({ width: 320, height: 820 });
     await gotoWardFlow(page);
 
-    // Home v7: Home opens on My list; the priority queue is behind Everyone waiting.
+    // Home v7: Home opens on My list (Needs you since Q340); the queue is behind Flow.
     await expect(page.getByTestId("home-my-list")).toBeVisible();
     await expectNoPageOverflow(page);
     await expectNoRegionGridOverflow(page);
