@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-redesign-ed-transport",
-    "date": "2026-10-31",
-    "line": "The ED board, All EDs, Transport and Out of area have a new look, with a simpler actions menu on the ED board."
-  },
-  {
     "id": "2026-10-31-redesign-network",
     "date": "2026-10-31",
     "line": "Places, All wards, Community team, On-call and Seclusion are tidier, and names wrap in full."
@@ -93,6 +88,11 @@
     "id": "2026-11-03-home-flow",
     "date": "2026-11-03",
     "line": "Home now shows Needs you and Flow, with tabs for each stage, from needing a bed to moving."
+  },
+  {
+    "id": "2026-11-03-report-data-correctness",
+    "date": "2026-11-03",
+    "line": "ED journey totals, community origins and downtime departure lists now use consistent meanings."
   },
   {
     "id": "2026-11-03-workflow-input-recovery",
