@@ -141,8 +141,8 @@ export function FormRow({
       <span className={styles.cellStack}>
         {progression ? (
           <>
+            {/* Icon rules (3 Nov 2026): the words already say the state, so no mark beside them. */}
             <span className={styles.leftLine}>
-              <StatusGlyph tone="closed" size={9} />
               <span className={styles.sub}>Ended {progression.endedWhen}</span>
             </span>
           </>
@@ -158,7 +158,6 @@ export function FormRow({
         ) : (
           <>
             <span className={styles.leftLine}>
-              <StatusGlyph tone="closed" size={9} />
               <span className={styles.sub}>
                 {movement.formedAt === undefined ? "No time written" : "No expiry typed"}
               </span>
