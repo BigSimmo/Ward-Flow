@@ -243,10 +243,6 @@
   color: var(--wf-accent);
 }
 
-.row[aria-current="page"] .rowIcon {
-  --wf-glyph-tone: 0.3;
-}
-
 .rowIcon {
   flex: none;
   width: 16px;
@@ -434,8 +430,6 @@
 /* The page you are on: its icon in the accent, its label in full ink and bolder. */
 .dockItem[aria-current="page"] .dockIcon {
   color: var(--wf-accent);
-  /* The tab you are on: its glyph's tone layer deepens (wf/glyphs.tsx). */
-  --wf-glyph-tone: 0.3;
 }
 
 .dockItem[aria-current="page"] .dockLabel {

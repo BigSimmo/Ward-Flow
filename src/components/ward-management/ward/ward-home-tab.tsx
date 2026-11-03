@@ -37,7 +37,7 @@ import { WardAcceptDialog } from "./ward-answer-accept-dialog";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { ArrowLeftRight, BedDouble, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
+import { ArrowLeftRight, BedSingle, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
 import { WardPlaceOrMove } from "./ward-place-or-move";
 import {
   Button,
@@ -1773,7 +1773,7 @@ export function WardHomeTab({
             <CardHead
               id="ward-home-every-bed"
               className={styles.bedsHead}
-              icon={BedDouble}
+              icon={BedSingle}
               title="Every bed"
               action={
                 <span className={styles.headTools}>

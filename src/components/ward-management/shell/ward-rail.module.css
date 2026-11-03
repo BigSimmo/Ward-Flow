@@ -1017,7 +1017,7 @@
 }
 
 .railGlyph {
-  /* 18px (icon overhaul, 3 Nov 2026): the menu's own glyphs carry a tone layer that needs the room. */
+  /* 18px (icon audit, 3 Nov 2026), the size the closed icon rail already used, so the open rail matches. */
   width: 1.125rem;
   height: 1.125rem;
   flex-shrink: 0;
@@ -1026,8 +1026,6 @@
 
 .railLink[data-active="true"] .railGlyph {
   color: var(--wf-accent-ink);
-  /* The page you are on: its glyph's tone layer deepens (wf/glyphs.tsx), as a selected SF Symbol fills. */
-  --wf-glyph-tone: 0.34;
 }
 
 .railText {

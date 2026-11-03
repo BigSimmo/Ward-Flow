@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  BedDouble,
+  BedSingle,
   CalendarClock,
   Car,
   ChevronDown,
@@ -77,7 +77,7 @@ function closureFact(closure: ServiceClosure, dayZero: Date): string {
 
 /** The service's own icon, so each closed service reads at a glance. */
 const OWNER_ICONS: Record<ServiceClosure["owner"], LucideIcon> = {
-  ward: BedDouble,
+  ward: BedSingle,
   pharmacy: Pill,
   patient_transport: Car,
   social_work: HeartHandshake,

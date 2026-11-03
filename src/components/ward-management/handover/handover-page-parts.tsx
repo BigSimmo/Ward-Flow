@@ -3,7 +3,7 @@
 // Handover page pieces outside the main component: the History tab, the scope filter control and
 // the sign-off status icon. Split out of handover-page.tsx to keep that file under the line cap.
 import { useId, useMemo } from "react";
-import { Check, CheckCircle2 } from "lucide-react";
+import { Check, CircleCheck } from "lucide-react";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -19,7 +19,7 @@ import { NETWORK_SCOPE_VALUE, handoverScopeValue } from "./handover-scope";
 import { allRecordsScopeLabel } from "./handover-scope-rules";
 
 export function StatusCheckIcon(signed: boolean) {
-  return signed ? CheckCircle2 : Check;
+  return signed ? CircleCheck : Check;
 }
 
 /** History: past items only. Sign-offs come from the engine; the rest is this session only. */

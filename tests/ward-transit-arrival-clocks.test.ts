@@ -333,7 +333,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const badge = screen.getByTestId(`ward-ed-transit-badge-${movementOverdue.id}`);
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent("⚠ Overdue ETA (+2h) · RFDS");
+      expect(badge).toHaveTextContent("Overdue ETA (+2h) · RFDS");
     });
   });
 });
