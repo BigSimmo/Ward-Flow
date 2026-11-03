@@ -1591,19 +1591,18 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    // --- Step 6: the reviewer's Proof 3. Home v7 (Josh, 22 Oct 2026): State bedflow sits at the
-    // foot of Capacity, so the coordinator opens Capacity from the menu and reads Dabakarn's own
-    // node there. The node reads the unit's live capacity directly (Critical 1 also named
-    // `flow-diagram.tsx`'s `serviceGroups`/`unplacedUnits`, which used to be grouped from the
-    // frozen `allUnits()` rather than the live `units` this card receives as a prop). ---
+    // --- Step 6: the reviewer's Proof 3. The coordinator opens Capacity from the menu and reads
+    // Dabakarn's own card on the bed map, which reads the unit's live capacity rather than the
+    // frozen `allUnits()` list (Critical 1). ---
     await page
       .getByRole("navigation", { name: "Ward Flow views" })
       .getByRole("link", { name: /^Capacity\b/u })
       .click();
     await expect(page.getByTestId("ward-capacity-screen")).toBeVisible({ timeout: 15_000 });
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    const rphNode = diagram.getByTestId("ward-diagram-unit-rph-adult-secure");
-    await expect(rphNode).toContainText("Ready 0");
+    // Capacity issue 7 (Josh, 3 Nov 2026): State bedflow is gone, and each ward's card on the bed
+    // map carries its live ready count instead.
+    const rphCard = page.getByTestId("capacity-map-ward-rph-adult-secure");
+    await expect(rphCard).toContainText(/\b0 ready\b/u);
 
     // Back on Home, a patient whose Placement explains Dabakarn: WF-003, already accepted there,
     // so its eligibility checks are Dabakarn's own.
