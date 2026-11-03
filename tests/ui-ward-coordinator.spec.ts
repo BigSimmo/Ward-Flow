@@ -5,6 +5,7 @@ import { buildActionInbox, eligibleCandidatesAmong, isOpen } from "@/components/
 import type { Movement } from "@/components/ward-management/ward-model";
 import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { HELP_TIPS_OFF_KEY } from "@/components/ward-management/help-content/ward-help-tips-off";
 import { movementById } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -1217,22 +1218,14 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
    */
   test("keeps the referral control reachable on a phone, in the panel's natural flow", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    // Tours start out seen here, so Home can offer its page tip 1.5s after it settles, unless a
+    // toast holds it. On a phone that corner card sits over the Flow card's "Show all N" buttons,
+    // and a click issued after it appears waits on it until the test times out (main CI, 3 Nov
+    // 2026). Whether it appears depends on timing, so neither waiting for it nor ignoring it is
+    // reliable. Turn tips off for this device the way Settings does, so it never appears here. The
+    // release-gate journey still proves the Home tip appears and can be acknowledged.
+    await page.addInitScript((key) => window.localStorage.setItem(key, "yes"), HELP_TIPS_OFF_KEY);
     await gotoCoordinator(page);
-    // Tours start out seen here, so Home offers its once-per-topic help hint 1.5s after it settles.
-    // On a phone that corner card sits over the Flow card's "Show all N" buttons, and a click issued
-    // after it appears waits on it until the test times out (main CI, 3 Nov 2026). Acknowledge it
-    // the way a coordinator would, as the release-gate journey does, before using the queue below.
-    // The tip waits while anything obstructs Home (a sheet, a focused field), so it does not always
-    // appear: wait out its 1.5s delay, and acknowledge it only when it shows.
-    const homeHelp = page.getByRole("complementary", { name: "Home help", exact: true });
-    const offered = await homeHelp
-      .waitFor({ state: "visible", timeout: 5_000 })
-      .then(() => true)
-      .catch(() => false);
-    if (offered) {
-      await homeHelp.getByRole("button", { name: "Got it", exact: true }).click();
-      await expect(homeHelp).toHaveCount(0);
-    }
 
     const queue = homeFlowCard(page);
     // Phone Home lists each Flow stage's oldest 5 with "Show all N"; WF-002 may sit further down.
