@@ -51,6 +51,7 @@ import { useOnlineStatus } from "@/components/ward-management/use-online-status"
 
 import {
   lastDowntimePack,
+  leftEdNote,
   markDowntimePackHandled,
   subscribeDowntimePack,
   type DowntimePack,
@@ -370,8 +371,7 @@ export function DowntimePackScreen() {
   const movesEta = pack.pendingMoves.some((line) => line.transportEta !== null);
   const formsReceived = pack.legalForms.some((line) => line.receivedAt !== null);
   // The ED queue counts people still in the department; All EDs counts every open journey.
-  const edPopulation =
-    pack.leftEd > 0 ? `${pack.leftEd} more open ED journeys are in transit or have a recorded departure.` : null;
+  const edPopulation = leftEdNote(pack.leftEd);
   // The shell retakes the pack every hour and at each shift change (downtime-pack-schedule.ts).
   const nextPackAt = formatInstantWithDay(nextDowntimePackAt(pack.generatedAt), now);
   const takenLine = (

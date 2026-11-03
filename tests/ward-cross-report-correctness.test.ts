@@ -5,7 +5,7 @@ import {
   waitingInEds,
   openEdJourneys,
 } from "@/components/ward-management/ward-shared-figures";
-import { downtimePack } from "@/components/ward-management/reports/downtime-pack";
+import { downtimePack, leftEdNote } from "@/components/ward-management/reports/downtime-pack";
 import { edJourneySummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -118,5 +118,13 @@ describe("journey semantics across summaries", () => {
     expect(openEdJourneys(movements, NOW_ANCHOR)).toMatchObject({ total: 30, stillInEd: 20, inTransit: 10 });
     expect(pack(movements).edQueue).toHaveLength(20);
     expect(pack(movements).leftEd).toBe(10);
+  });
+});
+
+describe("downtime left-ED note", () => {
+  it("agrees in number with the count and is absent at zero", () => {
+    expect(leftEdNote(0)).toBeNull();
+    expect(leftEdNote(1)).toBe("1 more open ED journey is in transit or has a recorded departure.");
+    expect(leftEdNote(3)).toBe("3 more open ED journeys are in transit or have a recorded departure.");
   });
 });

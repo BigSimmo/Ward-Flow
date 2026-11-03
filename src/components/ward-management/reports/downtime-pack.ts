@@ -203,6 +203,12 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
   };
 }
 
+/** The note beside the ED queue for open ED journeys that have left the department, or null. */
+export function leftEdNote(leftEd: number): string | null {
+  if (leftEd <= 0) return null;
+  return `${leftEd} more open ED ${leftEd === 1 ? "journey is" : "journeys are"} in transit or ${leftEd === 1 ? "has" : "have"} a recorded departure.`;
+}
+
 /**
  * The last pack taken in this tab, held in memory only (D-18): it survives moving between screens
  * and is gone on reload. Nothing is written to browser storage.
