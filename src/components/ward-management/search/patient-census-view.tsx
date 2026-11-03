@@ -21,7 +21,6 @@ import {
   DateField,
   FactGrid,
   FilterChip,
-  HeroStat,
   Icon,
   PhoneSheet,
   Segmented,
