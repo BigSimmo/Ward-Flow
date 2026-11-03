@@ -1,7 +1,6 @@
 "use client";
 
-import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
-import { seededReferralDossier } from "@/components/ward-management/ward-referral-dossier-seed";
+import type { ReferralSafetyFacts } from "./patient-referral-safety";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Clipboard } from "lucide-react";
@@ -175,12 +174,16 @@ export function PatientDetailsTab({
   movement,
   displayName,
   preferredName,
-  diagnosisFrom,
+  referralSafety,
+  referralWhen,
 }: {
   patient?: Patient;
   movement?: Movement;
-  /** PT1: the movement whose referral holds the working diagnosis (the stay's, on the ward). */
-  diagnosisFrom?: Movement;
+  /** PT1 H10: what the one referral behind this placement or stay says, read in
+   *  `patient-referral-safety.ts` and only when this desk can see that referral. */
+  referralSafety?: ReferralSafetyFacts;
+  /** The referral's day in words ("Sun 1 Nov"), always shown beside what it says. */
+  referralWhen?: string;
   displayName: string;
   preferredName?: string;
 }) {
@@ -340,11 +343,8 @@ export function PatientDetailsTab({
   // ── Diagnosis (PT1, Josh 3 Nov 2026) ─────────────────────────────────────────────────────────
   // Diagnosis left the first screen and lives here. It is the referral's working diagnosis, as
   // the referrer wrote it: the record itself still holds no diagnosis (R-2026-09-04-A).
-  const diagnosisMovement = diagnosisFrom ?? movement;
-  const diagnosis = diagnosisMovement
-    ? (tentativeDiagnosisPhrase(diagnosisMovement.tentativeDiagnosis ?? null) ??
-      seededReferralDossier(diagnosisMovement.id, diagnosisMovement)?.workingDiagnosis)
-    : undefined;
+  const diagnosisNotShared = referralSafety?.kind === "not_shared";
+  const diagnosis = referralSafety?.kind === "shown" ? referralSafety.diagnosisAsWritten : undefined;
 
   // ── Record ─────────────────────────────────────────────────────────────────────────────────
   const episodes = extras?.episodes ?? [];
@@ -406,8 +406,12 @@ export function PatientDetailsTab({
             facts={[
               {
                 label: "Working diagnosis",
-                value: diagnosis,
-                aside: diagnosis ? "As written on the referral" : undefined,
+                value: diagnosisNotShared ? "Not shared with this desk" : diagnosis,
+                aside: diagnosis
+                  ? referralWhen
+                    ? `As written on the referral, ${referralWhen}`
+                    : "As written on the referral"
+                  : undefined,
                 wide: true,
               },
             ]}

@@ -72,8 +72,10 @@ export type PatientGlanceProps = {
   formTimeLeft?: FormTimeLeft;
   /** Risk flags as the referral recorded them. Undefined when no referral is on record. */
   riskFlags?: readonly string[];
-  /** When the referral holding the flags was opened, in words ("Sun 1 Nov"). */
+  /** When the referral holding the flags was raised, in words ("Sun 1 Nov"). Always shown (H10). */
   riskFlagsWhen?: string;
+  /** The movement names a referral this desk cannot see (H10): say so, show nothing from it. */
+  riskNotShared?: boolean;
   /** Health alerts the record holds (allergies and the like), in their own words. */
   healthAlerts?: readonly string[];
   onOpenForms?: () => void;
@@ -127,7 +129,9 @@ function observationTile({ mode, movement, admission, stayWithheld }: PatientGla
   };
 }
 
-function riskTile({ riskFlags, riskFlagsWhen }: PatientGlanceProps): GlanceTile {
+function riskTile({ riskFlags, riskFlagsWhen, riskNotShared }: PatientGlanceProps): GlanceTile {
+  if (riskNotShared)
+    return { key: "risk", icon: Flag, label: "Risk flags", value: "Not shared with this desk", quiet: true };
   const flags = riskFlags ?? [];
   const source = riskFlagsWhen ? `On the referral, ${riskFlagsWhen}` : "On the referral";
   if (flags.length === 0)

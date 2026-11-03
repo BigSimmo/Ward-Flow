@@ -118,7 +118,7 @@ import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patie
 import styles from "./patient-now.module.css";
 import { PatientArchivePanel } from "./patient-archive-panel";
 import { PatientGlance, patientStateTag } from "./patient-glance";
-import { seededReferralDossier } from "@/components/ward-management/ward-referral-dossier-seed";
+import { referralSafetyFacts } from "./patient-referral-safety";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
@@ -981,13 +981,18 @@ export function PatientNowScreen({
     setActiveTab(tab);
     requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
   };
-  // PT1 (Josh, 3 Nov 2026): the band leads with legal, observation, risk, community care, GP and
-  // alerts for every state. Risk flags are read from the referral that opened this placement or
-  // stay, as recorded, never inferred.
+  // PT1 (Josh, 3 Nov 2026): the band leads with legal, observation and risk for every state.
+  // H10: risk flags and the working diagnosis come from the one referral the movement in focus
+  // names, and only when this desk's scoped workspace holds it (patient-referral-safety.ts).
   const glanceMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : liveMovement;
-  const glanceRiskFlags =
-    resolved.liveReferral?.intake?.riskFlags ??
-    (glanceMovement ? seededReferralDossier(glanceMovement.id, glanceMovement)?.riskFlags : undefined);
+  const referralSafety = referralSafetyFacts(
+    glanceMovement,
+    glanceMovement?.referralId === undefined
+      ? undefined
+      : referrals.find((referral) => referral.id === glanceMovement.referralId),
+  );
+  const referralWhen =
+    referralSafety.kind === "shown" ? dayLabel(referralSafety.raisedAt, dayZero).replace(",", "") : undefined;
   const activeCommunityEpisode = recordExtrasFor(livePatient?.id)?.community?.find(
     (episode) => episode.status === "active",
   );
@@ -1005,8 +1010,9 @@ export function PatientNowScreen({
       leaveBed={stayLeaveBed}
       stayWithheld={statusContext.stayWithheld}
       formTimeLeft={movementTimeLeft}
-      riskFlags={glanceRiskFlags}
-      riskFlagsWhen={glanceMovement ? dayLabel(glanceMovement.openedAt, dayZero).replace(",", "") : undefined}
+      riskFlags={referralSafety.kind === "shown" ? referralSafety.riskFlags : undefined}
+      riskFlagsWhen={referralWhen}
+      riskNotShared={referralSafety.kind === "not_shared"}
       healthAlerts={recordExtrasFor(livePatient?.id)?.alerts}
       onOpenForms={() => openTab("documents")}
       onOpenDetails={() => openTab("details")}
@@ -1272,7 +1278,8 @@ export function PatientNowScreen({
                 <PatientDetailsTab
                   patient={livePatient}
                   movement={liveMovement}
-                  diagnosisFrom={glanceMovement}
+                  referralSafety={referralSafety}
+                  referralWhen={referralWhen}
                   displayName={displayName}
                   preferredName={preferredName}
                 />

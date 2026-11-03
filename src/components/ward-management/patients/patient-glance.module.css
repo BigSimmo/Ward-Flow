@@ -78,6 +78,12 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
 }
 
+/* Contrast check (L41): hero-ink-3 is 5.1:1 on the resting tile but 4.1:1 on the hover wash, so a
+ * hovered label steps up to hero-ink-2 (5.4:1). Every other pairing is 5:1 or better. */
+.tile[data-action]:hover .label {
+  color: var(--wf-hero-ink-2);
+}
+
 .cover:focus-visible {
   outline: 2px solid var(--wf-hero-ink);
   outline-offset: -3px;
