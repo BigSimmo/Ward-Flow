@@ -62,16 +62,15 @@
   font-family: var(--wf-mono);
 }
 
-/* Length of stay: the median and the average side by side, wrapping on a narrow card. */
-.stayFigures {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-1) var(--wf-s-4);
-  white-space: normal;
+/* Length of stay on a phone: the view switch across the card, 40px (the phone floor). */
+.phoneStaySeg {
+  width: 100%;
 }
 
-.stayFigures > span {
-  white-space: nowrap;
+.phoneStaySeg button {
+  flex: 1 1 0;
+  justify-content: center;
+  min-height: 40px;
 }
 
 .note {
