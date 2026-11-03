@@ -3,7 +3,7 @@
 // The Movements screen's Shape of the day panel and its transport and movement rows. Split out of
 // movements-screen.tsx to keep that file under the line cap.
 import { dayOf, minuteOfDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
-import { ChartColumn, CircleCheck, Grid3x3 } from "lucide-react";
+import { ChartColumn, ChevronRight, CircleCheck, Grid3x3 } from "lucide-react";
 import { StatusGlyph } from "@/components/wf";
 import { WAIT_BANDS, waitBand } from "@/components/ward-management/delays/delays-board-model";
 import sh from "./movements-shape-of-day.module.css";
@@ -175,13 +175,50 @@ export function ShapeOfTheDay({
 
       {tab === "stage" ? (
         <div className={sh.panel} role="tabpanel" id={panelId("stage")} aria-label="Where they wait">
+          {/* Act first: the long waits as a sentence and one chip each, above the grid. */}
+          {needsLook.length > 0 && onShowPeople ? (
+            <section className={sh.act} aria-label="Longest waits to act on">
+              <p className={sh.actHead}>
+                {bandTotals[3] > 0 ? (
+                  <>
+                    <b data-tone="danger">{bandTotals[3]}</b> waited over 24h
+                  </>
+                ) : null}
+                {bandTotals[3] > 0 && bandTotals[2] > 0 ? ", " : null}
+                {bandTotals[2] > 0 ? (
+                  <>
+                    <b data-tone="warning">{bandTotals[2]}</b> {bandTotals[3] > 0 ? "more" : "have waited"} 12 to 24h
+                  </>
+                ) : null}
+                <span className={sh.actSub}>Start with these. Each opens its patients.</span>
+              </p>
+              <div className={sh.actList}>
+                {needsLook.map(({ stage, band, list }) => (
+                  <button
+                    key={`${stage.id}-${band}`}
+                    type="button"
+                    className={sh.actChip}
+                    data-band={band}
+                    onClick={() => showCell(stage.label, band, list)}
+                  >
+                    <b>{list.length}</b>
+                    <span>
+                      {stage.label}
+                      <small>{WAIT_BANDS[band].toLowerCase()}</small>
+                    </span>
+                    <ChevronRight size={14} aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <table className={sh.heat}>
             <caption className="sr-only">Open movements by stage and how long they have waited</caption>
             <thead>
               <tr>
                 <th scope="col">Stage</th>
-                {WAIT_BANDS.map((band) => (
-                  <th key={band} scope="col">
+                {WAIT_BANDS.map((band, index) => (
+                  <th key={band} scope="col" data-band={index}>
                     {band}
                   </th>
                 ))}
@@ -222,6 +259,7 @@ export function ShapeOfTheDay({
                         className={sh.cell}
                         data-band={band}
                         data-empty={cell.length === 0 ? "true" : undefined}
+                        data-strong={band < 2 && cell.length / cellMax >= 0.75 ? "true" : undefined}
                         style={{ "--heat": (cell.length / cellMax).toFixed(2) } as CSSProperties}
                         disabled={cell.length === 0}
                         title={`${stage.label}, ${WAIT_BANDS[band].toLowerCase()}: ${cell.length}`}
@@ -234,7 +272,7 @@ export function ShapeOfTheDay({
                           if (first) jumpToMovement(first.id, true);
                         }}
                       >
-                        {cell.length === 0 ? <span aria-label="none">·</span> : cell.length}
+                        {cell.length === 0 ? <span className="sr-only">none</span> : cell.length}
                       </button>
                       {/* Desktop: hovering a square shows who is in it, so nobody has to click away. */}
                       {cell.length > 0 ? (
@@ -278,27 +316,11 @@ export function ShapeOfTheDay({
               <i style={{ "--heat": 0.45 } as CSSProperties} />
               <i style={{ "--heat": 0.75 } as CSSProperties} />
               <i style={{ "--heat": 1 } as CSSProperties} />
+              <i data-band="2" />
+              <i data-band="3" />
             </span>
-            Fewer to more. Choose a square to see who is in it.
+            Fewer to more under 12h. Amber is 12 to 24h, red over 24h. Choose a square to see who is in it.
           </p>
-          {needsLook.length > 0 && onShowPeople ? (
-            <div className={sh.act}>
-              <h3 className={sh.actHead}>Longest waits to act on</h3>
-              <div className={sh.actList}>
-                {needsLook.map(({ stage, band, list }) => (
-                  <button
-                    key={`${stage.id}-${band}`}
-                    type="button"
-                    className={sh.actChip}
-                    onClick={() => showCell(stage.label, band, list)}
-                  >
-                    <StatusGlyph tone={band === 3 ? "danger" : "warning"} size={9} />
-                    <b>{list.length}</b> {stage.label.toLowerCase()} · {WAIT_BANDS[band].toLowerCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
         </div>
       ) : null}
 

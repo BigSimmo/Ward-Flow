@@ -6,35 +6,39 @@
 .tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-  border-bottom: 1px solid var(--wf-line);
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
 }
 
+/* Each figure is a soft inset card that opens its patients. */
 .tile {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
-  padding: var(--wf-s-3) var(--wf-s-4);
+  padding: var(--wf-s-3);
   border: 0;
-  background: transparent;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: box-shadow 120ms ease;
 }
 
-.tile + .tile {
-  border-left: 1px solid var(--wf-line);
-}
-
-.tile:hover:not(:disabled) {
-  background: var(--wf-hover);
+@media (hover: hover) {
+  .tile:hover:not(:disabled) {
+    box-shadow:
+      0 4px 12px rgb(15 23 42 / 0.08),
+      0 0 0 0.5px var(--wf-line-3);
+  }
 }
 
 .tile:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 
 .tile:disabled {
@@ -42,7 +46,7 @@
 }
 
 .tileV {
-  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  font: 650 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -62,6 +66,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
   align-items: start;
+  gap: var(--wf-s-3);
+  padding: 0 var(--wf-s-4) var(--wf-s-4);
 }
 
 .feed:focus-visible {
@@ -73,6 +79,10 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
 }
 
 .groupHead {
@@ -80,7 +90,9 @@
   align-items: center;
   gap: 6px;
   margin: 0;
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
   color: var(--wf-ink-2);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
@@ -104,7 +116,10 @@
   align-items: center;
   gap: var(--wf-s-2);
   padding-right: var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line);
+}
+
+.row + .row {
+  border-top: 1px solid var(--wf-line);
 }
 
 .row[data-selected="true"] {
@@ -121,7 +136,7 @@
     "steps steps";
   gap: 3px var(--wf-s-3);
   min-width: 0;
-  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
   border: 0;
   background: transparent;
   color: inherit;
@@ -130,8 +145,10 @@
   cursor: pointer;
 }
 
-.rowMain:hover {
-  background: var(--wf-hover);
+@media (hover: hover) {
+  .rowMain:hover {
+    background: var(--wf-hover);
+  }
 }
 
 .rowMain:focus-visible {
@@ -194,6 +211,30 @@
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
+}
+
+.step + .step::before {
+  content: "";
+  width: 10px;
+  height: 1px;
+  margin-right: 1px;
+  background: var(--wf-line-3);
+}
+
+/* Phones: the sheet is already a card, so groups go flat and the steps drop their joins. */
+@media (max-width: 46.4375rem) {
+  .feed {
+    padding: 0;
+  }
+
+  .group {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .step + .step::before {
+    display: none;
+  }
 }
 
 .step i {
