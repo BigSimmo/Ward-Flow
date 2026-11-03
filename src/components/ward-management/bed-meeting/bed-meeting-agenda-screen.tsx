@@ -2,7 +2,7 @@
 
 import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 
 import {
   Button,
@@ -23,6 +23,9 @@ import {
   durMinutes,
   foldLimit,
   phoneRows,
+  cx,
+  Avatar,
+  SrOnly,
 } from "@/components/wf";
 
 import { bedMeetingSheet } from "../capacity/bed-meeting-derivations";
@@ -413,6 +416,7 @@ function BedMeetingAgenda() {
               id={section.id}
               title={CARD_TITLES[section.id] ?? section.title}
               count={section.items.length}
+              meta={urgentMeta(section.id, section.items, now)}
             >
               {(limit) =>
                 section.items
@@ -486,11 +490,14 @@ function AgendaList({
   id,
   title,
   count,
+  meta,
   children,
 }: {
   id: string;
   title: string;
   count: number;
+  /** The card head's count line, when it says more than the count. */
+  meta?: string;
   children: (limit: number) => ReactNode;
 }) {
   const [all, setAll] = useState(false);
@@ -498,7 +505,7 @@ function AgendaList({
   const limit = all ? count : foldLimit(count, ROWS_SHOWN);
   return (
     <Card data-testid={`bed-meeting-agenda-${id}`}>
-      <CardHead title={title} meta={`${count}`} level={2} />
+      <CardHead title={title} meta={meta ?? `${count}`} level={2} />
       <CardBody>
         {count === 0 ? (
           <p className={styles.note}>Nobody here right now.</p>
@@ -585,24 +592,36 @@ function AgendaRow({
   const formId = useId();
   const toggle = useRef<HTMLButtonElement>(null);
   const openActions = (item.record.meetingActions ?? []).filter((action) => action.doneAt === undefined);
-  const urgency = urgencyOf(sectionId, item, now);
+  const urgent = urgencyOf(sectionId, item, now) !== null;
+  // Polish (Josh, 3 Nov 2026): a pulled bed's line names the ward holding it.
+  const detail = sectionId === "holds" && wardName ? wardName : item.detail;
   return (
     <li className={styles.agendaRow}>
       <div className={styles.row}>
+        <Avatar name={name} decorative className={styles.rowAvatar} />
         <div className={styles.rowText}>
-          <span className={styles.name}>
-            {urgency ? <StatusGlyph tone="danger" size={8} /> : null}
-            {name}
-            {urgency?.tag ? <span className={styles.urgency}>{urgency.tag}</span> : null}
-          </span>
-          <span className={styles.detail}>{item.detail}</span>
+          <span className={styles.name}>{name}</span>
+          <span className={styles.detail}>{detail}</span>
           {openActions.length > 0 ? (
-            <span className={styles.detail}>
-              Agreed: {openActions.map((action) => bedMeetingActionLabel(action.kind)).join(", ")}
+            <span className={styles.agreed}>
+              <Check size={12} strokeWidth={2.5} aria-hidden="true" />
+              <SrOnly>Agreed: </SrOnly>
+              <span>{openActions.map((action) => bedMeetingActionLabel(action.kind)).join(", ")}</span>
             </span>
           ) : null}
         </div>
-        {/* A small link-weight control on every row, rather than about 20 equal buttons. */}
+        {/* Polish (Josh, 3 Nov 2026): the time is quiet inline text with its word beside it, red with
+            a small dot when it is past the mark; the colour is never the only cue, the words say it too. */}
+        {item.value ? (
+          <span className={cx(styles.figure, urgent && styles.figureUrgent)}>
+            {urgent ? <StatusGlyph tone="danger" size={6} /> : null}
+            <span className={styles.figureValue}>{item.value}</span>
+            <span className={styles.figureCaption}>
+              {item.caption}
+              {urgent && sectionId === "ed-waits" ? <SrOnly>, {LONG_WAIT_TEXT}</SrOnly> : null}
+            </span>
+          </span>
+        ) : null}
         {chairs ? (
           <Button
             size="sm"
@@ -611,18 +630,19 @@ function AgendaRow({
             className={styles.addAction}
             aria-expanded={adding}
             aria-controls={formId}
-            icon={adding ? undefined : Plus}
+            icon={Plus}
             aria-label={adding ? `Cancel the action for ${name}` : `Add an action for ${name}`}
             onClick={() => setAdding((value) => !value)}
             data-testid="bed-meeting-add-action"
           >
-            {adding ? "Cancel" : "Action"}
+            {adding ? "Close" : "Action"}
           </Button>
         ) : null}
       </div>
       {chairs && adding ? (
         <ActionForm
           id={formId}
+          sectionId={sectionId}
           item={item}
           now={now}
           wardName={wardName}
@@ -635,6 +655,15 @@ function AgendaRow({
       ) : null}
     </li>
   );
+}
+
+/** Polish (Josh, 3 Nov 2026): the urgent count is said once in the card head, not on every row. */
+function urgentMeta(sectionId: string, items: readonly AgendaItem[], now: Instant): string | undefined {
+  const urgent = items.filter((item) => urgencyOf(sectionId, item, now) !== null).length;
+  if (urgent === 0) return undefined;
+  if (sectionId === "ed-waits") return `${items.length} · ${urgent} ${LONG_WAIT_TEXT}`;
+  if (sectionId === "holds") return `${items.length} · ${urgent} expired`;
+  return undefined;
 }
 
 /**
@@ -651,14 +680,31 @@ function urgencyOf(sectionId: string, item: AgendaItem, now: Instant): { tag: st
   return null;
 }
 
+const SUGGESTED_KINDS: Readonly<Record<string, readonly BedMeetingActionKind[]>> = {
+  "ed-waits": ["seek_bed_elsewhere", "chase_ward", "review_legal_form"],
+  holds: ["chase_ward", "book_transport"],
+  stranded: ["chase_ndis", "call_guardianship", "family_meeting", "review_step_down"],
+  "out-of-area": ["seek_bed_elsewhere", "book_transport", "review_step_down"],
+};
+
+const WARD_OWNED_KINDS: ReadonlySet<BedMeetingActionKind> = new Set([
+  "chase_ward",
+  "chase_ndis",
+  "call_guardianship",
+  "family_meeting",
+  "review_step_down",
+]);
+
 function ActionForm({
   id,
+  sectionId,
   item,
   now,
   wardName,
   onDone,
 }: {
   id: string;
+  sectionId: string;
   item: AgendaItem;
   now: Instant;
   wardName: string | undefined;
@@ -671,21 +717,47 @@ function ActionForm({
   const owners = BED_MEETING_ACTION_OWNERS.filter((candidate) => candidate !== "ward" || item.unitId !== undefined);
   // One open action per kind per person, as the reducer insists: offer only the kinds still free.
   const kinds = BED_MEETING_ACTION_KINDS.filter((entry) => !openMeetingAction(item.record.meetingActions, entry.id));
+  // Polish (Josh, 3 Nov 2026): the asks this list usually needs come first, the rest after.
+  const fits: readonly string[] = SUGGESTED_KINDS[sectionId] ?? [];
+  const suggested = fits.flatMap((fit) => kinds.filter((entry) => entry.id === fit));
+  const others = kinds.filter((entry) => !fits.includes(entry.id));
+  const pick = (next: BedMeetingActionKind | "") => {
+    setKind(next);
+    // The owner follows the ask (a ward's answer is the ward's to give); the chair can still change it.
+    if (next !== "") setOwner(item.unitId !== undefined && WARD_OWNED_KINDS.has(next) ? "ward" : "coordinator");
+  };
+  const chip = (entry: (typeof BED_MEETING_ACTION_KINDS)[number]) => (
+    <FilterChip key={entry.id} pressed={kind === entry.id} onPressedChange={(on) => pick(on ? entry.id : "")}>
+      {entry.label}
+    </FilterChip>
+  );
+  const dueAt = now + Number(dueHours) * 60;
   return (
     <div id={id} className={styles.form} data-testid="bed-meeting-action-form">
       {/* B1 (Josh, 3 Nov 2026): choices as chips and segments, never the browser's drop-down (Q319). */}
-      <div data-testid="bed-meeting-action-kind">
-        <ChipGroup label="Action" className={styles.formKinds}>
-          {kinds.map((entry) => (
-            <FilterChip
-              key={entry.id}
-              pressed={kind === entry.id}
-              onPressedChange={(on) => setKind(on ? entry.id : "")}
-            >
-              {entry.label}
-            </FilterChip>
-          ))}
-        </ChipGroup>
+      <div data-testid="bed-meeting-action-kind" className={styles.formKindGroups}>
+        {suggested.length > 0 ? (
+          <div className={styles.formKindGroup}>
+            <span className={styles.formLabel} aria-hidden="true">
+              Suggested
+            </span>
+            <ChipGroup label="Suggested for this list" className={styles.formKinds}>
+              {suggested.map(chip)}
+            </ChipGroup>
+          </div>
+        ) : null}
+        {others.length > 0 ? (
+          <div className={styles.formKindGroup}>
+            {suggested.length > 0 ? (
+              <span className={styles.formLabel} aria-hidden="true">
+                More
+              </span>
+            ) : null}
+            <ChipGroup label={suggested.length > 0 ? "More actions" : "Action"} className={styles.formKinds}>
+              {others.map(chip)}
+            </ChipGroup>
+          </div>
+        ) : null}
       </div>
       <div className={styles.formLine}>
         <span className={styles.formLabel} aria-hidden="true">
@@ -724,13 +796,13 @@ function ActionForm({
             action: kind,
             owner,
             ...(owner === "ward" && item.unitId !== undefined ? { unitId: item.unitId } : {}),
-            dueAt: now + Number(dueHours) * 60,
+            dueAt,
           });
           onDone();
         }}
         data-testid="bed-meeting-action-record"
       >
-        Record action
+        {kind === "" ? "Record action" : `Record · due ${formatInstantWithDay(dueAt, now)}`}
       </Button>
       {kind === "" ? <DisabledReason id={`${id}-reason`}>Choose an action first.</DisabledReason> : null}
     </div>

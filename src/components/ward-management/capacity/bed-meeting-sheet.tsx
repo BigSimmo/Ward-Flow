@@ -73,7 +73,7 @@ function BedMeetingSheetView({
 }) {
   const flow = useOptionalWardFlowSelect("dayZero");
   const stamp = asAtStamp(now, flow?.dayZero);
-  const { capacity, discharges, ed, delays, stuckReferrals } = sheet;
+  const { capacity, discharges, ed, delays, waitingLongest, stuckReferrals } = sheet;
   const scope = sheet.service === null ? "All services" : sheet.service;
 
   return (
@@ -196,18 +196,6 @@ function BedMeetingSheetView({
                   </li>
                 ))}
               </ul>
-              <h4 className={styles.subTitle}>Longest waits</h4>
-              <ol className={styles.list}>
-                {ed.longestWaits.map((person) => (
-                  <li key={person.id} className={styles.row}>
-                    <span className={styles.rowLead}>{person.name}</span>
-                    <span className={styles.rowNote}>
-                      {shortDepartment(person.department)} · {splitDuration(person.waitMinutes)}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-              <More count={ed.morePeople} noun="people" />
             </>
           )}
           <p className={styles.note}>
@@ -241,21 +229,32 @@ function BedMeetingSheetView({
                   </li>
                 ))}
               </ul>
-              <h4 className={styles.subTitle}>Waiting longest</h4>
-              <ol className={styles.list}>
-                {delays.longestWaits.map((person) => (
-                  <li key={person.id} className={styles.row}>
-                    <span className={styles.rowLead}>{person.name}</span>
-                    <span className={styles.rowNote}>
-                      {person.cause} · {splitDuration(person.waitMinutes)}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-              <More count={delays.morePeople} noun="people" />
             </>
           )}
         </section>
+
+        {/* Polish (Josh, 3 Nov 2026): one people list, not one under each table. Each person shows
+            once, with where they wait and what holds them, in the same columns as the tables. */}
+        {waitingLongest.people.length > 0 && (
+          <section className={styles.section} aria-labelledby="bed-meeting-waiting" data-testid="bed-meeting-waiting">
+            <h3 id="bed-meeting-waiting" className={styles.sectionTitle}>
+              Waiting longest
+            </h3>
+            <ol className={styles.list}>
+              {waitingLongest.people.map((person) => (
+                <li key={person.id} className={styles.personRow}>
+                  <span className={styles.rowLead}>{person.name}</span>
+                  <span className={styles.rowNote}>
+                    {person.department ? <span>{shortDepartment(person.department)}</span> : null}
+                    {person.cause ? <span className={styles.rowCause}>{person.cause}</span> : null}
+                  </span>
+                  <span className={styles.cell}>{splitDuration(person.waitMinutes)}</span>
+                </li>
+              ))}
+            </ol>
+            <More count={waitingLongest.morePeople} noun="people" />
+          </section>
+        )}
 
         {stuckReferrals !== undefined && (
           <section

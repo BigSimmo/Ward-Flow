@@ -69,7 +69,7 @@ describe("bed meeting agenda", () => {
     expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent("0 overdue · 1 still open");
     const list = screen.getByTestId("bed-meeting-action-list");
     expect(within(list).getByText(/Book transport/)).toBeInTheDocument();
-    expect(within(waits).getByText("Agreed: Book transport")).toBeInTheDocument();
+    expect(within(waits).getByText("Book transport", { selector: "span" })).toBeInTheDocument();
 
     // The open kind is not offered again for the same person, so the reducer never has to refuse it.
     fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[0]!);
@@ -100,7 +100,7 @@ describe("bed meeting agenda", () => {
     fireEvent.click(within(filters).getByRole("button", { name: /With an action/ }));
 
     const narrowed = screen.getByTestId("bed-meeting-agenda-ed-waits");
-    expect(within(narrowed).getByText("Agreed: Book transport")).toBeInTheDocument();
+    expect(within(narrowed).getByText("Book transport", { selector: "span" })).toBeInTheDocument();
     expect(within(narrowed).getAllByTestId("bed-meeting-add-action")).toHaveLength(1);
     expect(screen.queryByTestId("bed-meeting-agenda-holds")).not.toBeInTheDocument();
     expect(screen.queryByTestId("bed-meeting-agenda-referrals")).not.toBeInTheDocument();

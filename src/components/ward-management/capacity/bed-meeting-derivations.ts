@@ -108,12 +108,17 @@ type BedMeetingDelays = {
   morePeople: number;
 };
 
+/** One person in the sheet's single "Waiting longest" list: where they are and what holds them. */
+type BedMeetingWaitingPerson = { id: string; name: string; department?: string; cause?: string; waitMinutes: number };
+
 export type BedMeetingSheet = {
   service: HealthService | null;
   capacity: BedMeetingCapacity;
   discharges: BedMeetingDischarges;
   ed: BedMeetingEd;
   delays: BedMeetingDelays;
+  /** Polish (Josh, 3 Nov 2026): the ED and delay people lists as one, each person once. */
+  waitingLongest: { people: BedMeetingWaitingPerson[]; morePeople: number };
   /**
    * Referrals with no reply recorded past the Settings time limit, one line per ward or service
    * (item 17). Counts and times only. `undefined` when the caller passed no referrals.
@@ -287,5 +292,17 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     };
   }
 
-  return { service, capacity, discharges, ed, delays, ...(stuckReferrals ? { stuckReferrals } : {}) };
+  const waitingById = new Map<string, BedMeetingWaitingPerson>();
+  for (const person of edPeople) waitingById.set(person.id, { ...person });
+  for (const person of delayPeople) {
+    const known = waitingById.get(person.id);
+    waitingById.set(person.id, known ? { ...known, cause: person.cause } : { ...person });
+  }
+  const waitingPeople = [...waitingById.values()].sort(byWaitThenId);
+  const waitingLongest = {
+    people: waitingPeople.slice(0, BED_MEETING_ROW_LIMIT),
+    morePeople: Math.max(0, waitingPeople.length - BED_MEETING_ROW_LIMIT),
+  };
+
+  return { service, capacity, discharges, ed, delays, waitingLongest, ...(stuckReferrals ? { stuckReferrals } : {}) };
 }

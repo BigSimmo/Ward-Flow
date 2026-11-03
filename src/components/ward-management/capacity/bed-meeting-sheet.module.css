@@ -41,7 +41,8 @@
    right, so Print stays in reach on a long sheet and the title no longer sits under the buttons. */
 .toolbar {
   position: sticky;
-  top: 0;
+  /* Polish: pin to the overlay's true top edge, past its padding, so no sheet text shows above it. */
+  top: calc(-1 * var(--wf-s-4));
   z-index: 1;
   display: flex;
   align-items: center;
@@ -375,4 +376,44 @@
 /* Author button classes set display; keep the hidden launcher out of every screen layout. */
 .launcherHidden {
   display: none !important;
+}
+
+/* Polish (Josh, 3 Nov 2026): a person, where or why, then the wait, in columns that line up. */
+.personRow {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) 5rem;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+/* Where they wait over what holds them, so neither is cut off on paper. */
+.personRow > .rowNote {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rowCause {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Phone: the name and wait share the first line, where and why sit beneath. */
+@media (max-width: 30rem) {
+  .personRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name wait"
+      "note note";
+    row-gap: 2px;
+  }
+  .personRow > .rowLead {
+    grid-area: name;
+  }
+  .personRow > .rowNote {
+    grid-area: note;
+  }
+  .personRow > .cell {
+    grid-area: wait;
+  }
 }

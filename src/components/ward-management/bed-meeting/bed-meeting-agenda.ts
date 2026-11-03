@@ -3,6 +3,7 @@ import { durMinutes } from "@/components/wf";
 import type { Admission } from "../ward-admissions";
 import type { Instant } from "../ward-clock";
 import type { BedRelease, Movement, Unit } from "../ward-model";
+import { edById } from "../ward-sites";
 import { outOfAreaLedger } from "../ward-referrals-out-of-area";
 import { strandedFlags, strandedPromptText } from "../ward-stranded";
 import type { BedMeetingAction, BedMeetingSubject } from "./bed-meeting-actions";
@@ -22,6 +23,10 @@ export type AgendaItem = {
   /** The ward a ward-owned action would go to, if one is known. */
   unitId?: string;
   detail: string;
+  /** The one figure the meeting reads first (the wait, the time left), shown at the row's end. */
+  value?: string;
+  /** A word under the figure saying what it counts ("waiting", "left"). */
+  caption?: string;
 };
 
 export type AgendaSection = { id: string; title: string; items: AgendaItem[] };
@@ -34,6 +39,11 @@ export type MeetingActionSummary = {
   overdue: MeetingActionRow[];
   open: MeetingActionRow[];
 };
+
+function edLine(edId: string | undefined): string {
+  const name = edById(edId)?.name;
+  return name ? `In ${name.replace(/ Emergency Department$/, " ED")}` : "In ED";
+}
 
 const movementSubject = (movement: Movement): BedMeetingSubject => ({ kind: "movement", id: movement.id });
 const admissionSubject = (admission: Admission): BedMeetingSubject => ({ kind: "admission", id: admission.id });
@@ -60,7 +70,10 @@ export function bedMeetingAgenda(
       subject: movementSubject(movement),
       record: movement,
       ...(movement.acceptedUnitId !== undefined ? { unitId: movement.acceptedUnitId } : {}),
-      detail: `Waiting ${durMinutes(now - movement.openedAt)} in ED`,
+      // Polish (Josh, 3 Nov 2026): the wait is the row's figure, so the line names where they wait.
+      detail: edLine(movement.originEdId),
+      value: durMinutes(now - movement.openedAt),
+      caption: "waiting",
     }));
 
   const holds = open
@@ -74,7 +87,9 @@ export function bedMeetingAgenda(
         subject: movementSubject(movement),
         record: movement,
         ...(movement.acceptedUnitId !== undefined ? { unitId: movement.acceptedUnitId } : {}),
-        detail: left > 0 ? `Pull ${durMinutes(left)} left` : `Pull expired ${durMinutes(-left)} ago`,
+        detail: left > 0 ? "Pulled bed" : `Pull expired ${durMinutes(-left)} ago`,
+        value: left > 0 ? durMinutes(left) : "Expired",
+        caption: left > 0 ? "left" : `${durMinutes(-left)} ago`,
       };
     });
 
@@ -89,7 +104,9 @@ export function bedMeetingAgenda(
           subject: admissionSubject(admission),
           record: admission,
           unitId: admission.unitId,
-          detail: `${flag.days} days · ${strandedPromptText(flag)}`,
+          detail: strandedPromptText(flag),
+          value: `${flag.days}d`,
+          caption: "in hospital",
         },
       ];
     });
@@ -101,7 +118,9 @@ export function bedMeetingAgenda(
       subject: admissionSubject(entry.admission),
       record: entry.admission,
       unitId: entry.admission.unitId,
-      detail: `${entry.unit.name} · in for ${durMinutes(entry.sinceArrival)}`,
+      detail: entry.unit.name,
+      value: durMinutes(entry.sinceArrival),
+      caption: "away",
     }));
 
   return [

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { useId, useMemo } from "react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -11,7 +12,7 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import { wardOffersOutsideQueue } from "./home-ward-offers";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { Button, Count, StatusGlyph, buttonClass, cx, durMinutes } from "@/components/wf";
+import { Button, Count, StatusGlyph, cx, durMinutes } from "@/components/wf";
 import { openMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -59,6 +60,8 @@ export function WardOffersTable({
   // R4 (Josh, 3 Nov 2026): the coordinator can act on each offer from here. Chase puts a "Chase ward
   // answer" action, due in 2 hours, on the first ward still to answer; Manage opens the movement,
   // where an offer is withdrawn or sent to another ward.
+  // Polish (Josh, 3 Nov 2026): the whole row opens the movement (the name is the link), so Chase is
+  // the row's one button.
   const coordinatorDesk = role === "coordinator";
   const raise = useWardRaise("coordinator");
   if (offers.length === 0) return null;
@@ -142,13 +145,7 @@ export function WardOffersTable({
                           Chase
                         </Button>
                       )}
-                      <Link
-                        href={movementHref(movement.id)}
-                        className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.offerAction)}
-                        aria-label={`Manage the offer for ${nameFor(who.formalName, who.umrn)}`}
-                      >
-                        Manage
-                      </Link>
+                      <ChevronRight className={styles.offerChevron} size={16} aria-hidden="true" />
                     </div>
                   </td>
                 ) : null}

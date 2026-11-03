@@ -35,17 +35,93 @@
   color: var(--wf-danger-ink);
 }
 
-/* "Action": link weight at today's small button size, with an invisible touch area around it
-   rather than a taller-looking button (Josh, 30 Oct 2026). */
+/* Polish 3 (Josh, 3 Nov 2026): a quiet, balanced row. Initials lead, the time is small inline text
+   with its word beside it, and the add control is the subtle text "Action" whose plus turns into a
+   close mark when the form is open. */
+.rowAvatar {
+  flex: none;
+}
+
+.figure {
+  flex: none;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  min-inline-size: 6.5rem;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.figure > :first-child:not(.figureValue) {
+  align-self: center;
+}
+
+.figureValue {
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}
+
+.figureCaption {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.figureUrgent .figureValue,
+.figureUrgent .figureCaption {
+  color: var(--wf-danger-ink);
+}
+
 .addAction {
   position: relative;
   flex: none;
+  padding-inline: 8px 10px;
+  border-radius: 999px;
+  font-weight: 500;
   color: var(--wf-accent-strong);
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
 }
+/* The 40px house touch target, without a bigger-looking button. */
 .addAction::after {
   content: "";
   position: absolute;
-  inset: -6px;
+  inset: -6px 0;
+}
+.addAction:hover {
+  background: var(--wf-accent-tint);
+}
+.addAction svg {
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.addAction[aria-expanded="true"] {
+  color: var(--wf-ink-2);
+  background: var(--wf-surface-2);
+}
+.addAction[aria-expanded="true"] svg {
+  transform: rotate(45deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .addAction,
+  .addAction svg {
+    transition: none;
+  }
+}
+
+.agreed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 1px 8px 1px 6px;
+  border-radius: 999px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-accent-strong);
+  background: var(--wf-accent-tint);
 }
 
 /* No actions waiting: one quiet line, not an empty card. */
@@ -103,7 +179,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-3);
-  padding: var(--wf-s-2) 0;
+  padding: 10px 0;
 }
 
 /* Layout sweep MEET-07: the detail text wraps; the button keeps its whole label. */
@@ -123,8 +199,9 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  font-size: var(--wf-fs-14);
+  font-size: var(--wf-fs-15);
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--wf-ink-1);
 }
 
@@ -257,4 +334,39 @@
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+/* Polish (Josh, 3 Nov 2026): suggested asks first, the rest under them, each with a quiet caption. */
+.formKindGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.formKindGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.formKindGroup > .formLabel {
+  font-size: var(--wf-fs-12);
+  letter-spacing: 0.02em;
+  color: var(--wf-ink-3);
+}
+
+/* Phone: the time drops its fixed width so the name keeps its room. */
+@media (max-width: 30rem) {
+  .figure {
+    min-inline-size: 0;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+  }
+  .figure > :first-child:not(.figureValue) {
+    display: none;
+  }
+  .row {
+    gap: var(--wf-s-2);
+  }
 }
