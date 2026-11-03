@@ -816,7 +816,9 @@ export function MovementHorizonGantt({
                                           })
                                         }
                                       >
-                                        <Users size={13} aria-hidden="true" />
+                                        <Users size={12} aria-hidden="true" />
+                                        <span aria-hidden="true">{dots.length}</span>
+                                        <ChevronRight size={12} aria-hidden="true" className={styles.routePeopleChev} />
                                       </button>
                                     ) : null}
                                   </li>
@@ -859,7 +861,10 @@ export function MovementHorizonGantt({
                             />
                           ) : null}
                           <span className={styles.declineWard}>{wardLabel(group.unitId, unit?.name)}</span>
-                          <strong>{group.total}</strong>
+                          <strong className={styles.declineCount}>{group.total}</strong>
+                          {onShowCorridor ? (
+                            <ChevronRight size={14} aria-hidden="true" className={styles.declineChev} />
+                          ) : null}
                           <span className={styles.declineFrom}>
                             from{" "}
                             {group.from

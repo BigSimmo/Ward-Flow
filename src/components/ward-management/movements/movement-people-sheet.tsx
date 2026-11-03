@@ -21,6 +21,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import { STAGE_SHORT, transportRouteLabels } from "./movements-screen-helpers";
+import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { isCoordinatorStep, movementNextStep, nextStepTarget } from "./movement-next-step";
 import ps from "./movement-people-sheet.module.css";
 
@@ -38,6 +39,11 @@ export type MovementPeopleList = {
   /** One small action on a row, such as "Pull the bed". */
   rowAction?: (movement: Movement) => ReactNode;
 };
+
+const STAGE_ORDER = Object.keys(STAGE_SHORT) as Movement["stage"][];
+/** Wait bands as the rest of the page draws them: over 24h danger, 12 to 24h warning. */
+const waitTone = (minutes: number): WfTone | undefined =>
+  minutes >= 24 * 60 ? "danger" : minutes >= 12 * 60 ? "warning" : undefined;
 
 export function MovementPeopleSheet({
   list,
@@ -69,82 +75,145 @@ export function MovementPeopleSheet({
           onClose();
         }
       : undefined;
+  const mineCount = rows.filter((movement) => !movement.closure && isCoordinatorStep(movementNextStep(movement))).length;
+  const longest = rows[0] ? Math.max(now - rows[0].openedAt, 0) : undefined;
+  const overDay = rows.filter((movement) => now - movement.openedAt >= 24 * 60).length;
+  // Grouped by stage when the list spans more than one, so the reader sees where each patient stands.
+  const groups = STAGE_ORDER.map((stage) => ({
+    stage,
+    items: rows.filter((movement) => movement.stage === stage),
+  })).filter((group) => group.items.length > 0);
+  const grouped = groups.length > 1;
+
+  const row = (movement: Movement) => {
+    const person = resolveSubjectPatient(movement, { patients, referrals });
+    const originEd = edById(movement.originEdId);
+    const { originLabel, destinationLabel } = transportRouteLabels(movement, units);
+    const from = originEd ? `${originEd.siteCode} ED` : originLabel;
+    const waited = Math.max(now - movement.openedAt, 0);
+    const tone = waitTone(waited);
+    const note = list.rowNote?.(movement);
+    // Every list is actionable: the coordinator's own next step is a button on the row, and
+    // anyone else's next step is named, so the reader knows who the patient is waiting on.
+    const step = movementNextStep(movement);
+    const mine: boolean = isCoordinatorStep(step);
+    const otherStep = mine ? null : step;
+    const action =
+      list.rowAction?.(movement) ??
+      (isCoordinatorStep(step) && !movement.closure ? (
+        <Link
+          href={nextStepTarget(step, movement.id).href}
+          className={buttonClass({ variant: "sec", size: "sm" })}
+          aria-label={`${step.label}, ${person.formalName}`}
+        >
+          {step.label}
+          <ArrowRight size={13} aria-hidden="true" />
+        </Link>
+      ) : undefined);
+    return (
+      <li key={movement.id} className={ps.row} data-tier={movement.urgency}>
+        <TierTile tier={movement.urgency} label="Urgency tier" className={ps.tier} />
+        <div className={ps.who}>
+          <button
+            type="button"
+            className={ps.open}
+            onClick={() => onOpenMovement(movement.id)}
+            aria-label={`Open ${person.formalName}`}
+          >
+            <span className={ps.name}>{person.formalName}</span>
+          </button>
+          <span className={ps.flags}>
+            {movement.security === "Secure" ? <Lock size={12} aria-label="Needs a locked bed" /> : null}
+            {movement.transport?.escortRequired ? <ShieldCheck size={12} aria-label="Escort required" /> : null}
+          </span>
+          <span className={ps.sub}>
+            <span className={ps.mono}>{person.umrn}</span> · {movement.cohort}
+          </span>
+          <span className={ps.route}>
+            <span>{from}</span>
+            {movement.acceptedUnitId ? (
+              <span className={ps.to}>
+                <ArrowRight size={12} aria-hidden="true" className={ps.arrow} />
+                <span className="sr-only"> to </span>
+                {destinationLabel}
+              </span>
+            ) : (
+              <span className={ps.noWard}>No ward yet</span>
+            )}
+          </span>
+          <span className={ps.chips}>
+            {grouped ? null : <span className={ps.chip}>{STAGE_SHORT[movement.stage] ?? movement.stage}</span>}
+            <span className={ps.chip}>
+              <Scale size={11} aria-hidden="true" />
+              {legalStatusShort(movement)}
+            </span>
+            {note ? (
+              <span className={ps.chip} data-tone="warning">
+                {note}
+              </span>
+            ) : null}
+            {otherStep && !movement.closure ? (
+              <span className={ps.chip} data-tone="quiet">
+                Waiting on {otherStep.owner.toLowerCase() === "transport" ? "transport" : otherStep.owner}
+              </span>
+            ) : null}
+          </span>
+        </div>
+        <div className={ps.side}>
+          <span className={ps.wait} data-tone={tone}>
+            {tone ? <StatusGlyph tone={tone} size={8} /> : null}
+            {splitDuration(waited)}
+          </span>
+          <span className={ps.meter} data-tone={tone} aria-hidden="true">
+            <i style={{ width: `${Math.min(100, (waited / (24 * 60)) * 100).toFixed(0)}%` }} />
+          </span>
+          {action ? <span className={ps.action}>{action}</span> : null}
+        </div>
+        <ChevronRight size={16} aria-hidden="true" className={ps.chev} />
+      </li>
+    );
+  };
+
+  const summary = (
+    <dl className={ps.summary}>
+      <div>
+        <dt>Patients</dt>
+        <dd>{rows.length}</dd>
+      </div>
+      <div>
+        <dt>Longest</dt>
+        <dd data-tone={longest !== undefined ? waitTone(longest) : undefined}>
+          {longest !== undefined ? splitDuration(longest) : "None"}
+        </dd>
+      </div>
+      <div>
+        <dt>Your step</dt>
+        <dd>{mineCount}</dd>
+      </div>
+      <div>
+        <dt>Over 24h</dt>
+        <dd data-tone={overDay > 0 ? "danger" : undefined}>{overDay}</dd>
+      </div>
+    </dl>
+  );
 
   const body = (
-    <ul className={ps.list} aria-label={`${list.title}, ${rows.length} ${rows.length === 1 ? "patient" : "patients"}`}>
-      {rows.length === 0 ? <li className={ps.empty}>No patient matches right now.</li> : null}
-      {rows.map((movement) => {
-        const person = resolveSubjectPatient(movement, { patients, referrals });
-        const originEd = edById(movement.originEdId);
-        const { destinationLabel } = transportRouteLabels(movement, units);
-        const from = originEd ? `${originEd.siteCode} ED` : transportRouteLabels(movement, units).originLabel;
-        const waited = Math.max(now - movement.openedAt, 0);
-        const note = list.rowNote?.(movement);
-        // Every list is actionable: the coordinator's own next step is a button on the row, and
-        // anyone else's next step is named, so the reader knows who the patient is waiting on.
-        const step = movementNextStep(movement);
-        const mine: boolean = isCoordinatorStep(step);
-        const otherStep = mine ? null : step;
-        const action =
-          list.rowAction?.(movement) ??
-          (isCoordinatorStep(step) && !movement.closure ? (
-            <Link
-              href={nextStepTarget(step, movement.id).href}
-              className={buttonClass({ variant: "sec", size: "sm" })}
-              aria-label={`${step.label}, ${person.formalName}`}
-            >
-              {step.label}
-            </Link>
-          ) : undefined);
-        return (
-          <li key={movement.id} className={ps.row}>
-            <button
-              type="button"
-              className={ps.open}
-              onClick={() => onOpenMovement(movement.id)}
-              aria-label={`Open ${person.formalName}`}
-            >
-              <TierTile tier={movement.urgency} label="Urgency tier" className={ps.tier} />
-              <span className={ps.who}>
-                <span className={ps.name}>
-                  {person.formalName}
-                  {movement.security === "Secure" ? (
-                    <Lock size={12} className={ps.icon} aria-label="Needs a locked bed" />
-                  ) : null}
-                  {movement.transport?.escortRequired ? (
-                    <ShieldCheck size={12} className={ps.icon} aria-label="Escort required" />
-                  ) : null}
-                </span>
-                <span className={ps.route}>
-                  {from}
-                  {movement.acceptedUnitId ? (
-                    <>
-                      <ArrowRight size={11} aria-hidden="true" className={ps.arrow} />
-                      {destinationLabel}
-                    </>
-                  ) : null}
-                </span>
-                <span className={ps.meta}>
-                  {STAGE_SHORT[movement.stage] ?? movement.stage}
-                  <span aria-hidden="true"> · </span>
-                  <Scale size={11} aria-hidden="true" className={ps.icon} />
-                  {legalStatusShort(movement)}
-                </span>
-                {note ? <span className={ps.note}>{note}</span> : null}
-                {otherStep && !movement.closure ? (
-                  <span className={ps.note}>
-                    Next: {otherStep.label} · {otherStep.owner}
-                  </span>
-                ) : null}
-              </span>
-              <span className={ps.wait}>{splitDuration(waited)}</span>
-              <ChevronRight size={16} aria-hidden="true" className={ps.chev} />
-            </button>
-            {action ? <span className={ps.action}>{action}</span> : null}
-          </li>
-        );
-      })}
-    </ul>
+    <div className={ps.list} aria-label={`${list.title}, ${rows.length} ${rows.length === 1 ? "patient" : "patients"}`} role="region">
+      {rows.length === 0 ? <p className={ps.empty}>No patient matches right now.</p> : null}
+      {grouped ? (
+        groups.map((group) => (
+          <section key={group.stage} className={ps.group} aria-label={`${stageCopy[group.stage].label}, ${group.items.length}`}>
+            <h3 className={ps.groupHead}>
+              {stageCopy[group.stage].label}
+              <span>{group.items.length}</span>
+            </h3>
+            <ul className={ps.rows}>{group.items.map(row)}</ul>
+          </section>
+        ))
+      ) : (
+        <ul className={ps.rows}>{rows.map(row)}</ul>
+      )}
+    </div>
   );
 
   if (isPhone) {
@@ -152,12 +221,14 @@ export function MovementPeopleSheet({
       <PhoneSheet
         open
         onClose={onClose}
-        title={list.title}
+        title={`${list.title} · ${rows.length}`}
         height="tall"
         description={list.caption}
         secondary={showInWorklist ? { label: "Show in worklist", onAction: showInWorklist } : undefined}
         data-testid="movement-people-sheet"
+        className={ps.phone}
       >
+        {summary}
         {body}
       </PhoneSheet>
     );
@@ -175,7 +246,7 @@ export function MovementPeopleSheet({
       testId="movement-people-sheet"
       footer={
         <>
-          <span className={ps.footNote}>Longest wait first. Choose a patient to open them.</span>
+          <span className={ps.footNote}>Longest wait first. Choose a name to open the patient.</span>
           {showInWorklist ? (
             <button type="button" className={buttonClass({ variant: "sec", size: "sm" })} onClick={showInWorklist}>
               Show in worklist
@@ -186,10 +257,10 @@ export function MovementPeopleSheet({
     >
       <div className={ps.head}>
         <div className={ps.headText}>
+          <p className={ps.eyebrow}>Movements</p>
           <h2 id={titleId} className={ps.title}>
             {list.tone ? <StatusGlyph tone={list.tone} size={10} /> : null}
             {list.title}
-            <span className={ps.count}>{rows.length}</span>
           </h2>
           <p className={ps.caption}>{list.caption}</p>
         </div>
@@ -203,6 +274,7 @@ export function MovementPeopleSheet({
           <X size={14} aria-hidden="true" />
         </button>
       </div>
+      {summary}
       {body}
     </Sheet>
   );
