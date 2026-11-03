@@ -11,7 +11,7 @@ Base: `1579bf8942705358feefcf5e08ab56a369ed480b` on Ward Flow main. Repairs addr
 
 The app keeps its existing maximum of 20 announcements. The oldest displaced entry is retained here without changing its wording:
 
-- 2026-10-31 (`2026-10-31-redesign-referrals`): Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot.
+- 2026-10-31 (`2026-10-31-help-tabs`): Help has one search box and three tabs, shows each login only what it can use, and the tour starts when you choose.
 
 ## Verification
 
