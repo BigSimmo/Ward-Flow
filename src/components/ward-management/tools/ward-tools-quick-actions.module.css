@@ -282,3 +282,19 @@
     padding: 0 10px 0 8px;
   }
 }
+
+.sent,
+.sentBad {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.sent:empty,
+.sentBad:empty {
+  display: none;
+}
+
+.sentBad {
+  color: var(--wf-danger-ink);
+}

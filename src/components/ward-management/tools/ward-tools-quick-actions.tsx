@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { ArrowUpRight, type LucideIcon } from "lucide-react";
 
 import { Button, Meter, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 import { useWardFlowSelect } from "../ward-flow-provider";
+import { useWardRaise } from "../ward-flow-raise";
 import { formatInstantWithDay } from "../ward-clock";
 import { shiftConfirmations } from "../capacity/shift-confirmations";
 import styles from "./ward-tools-quick-actions.module.css";
@@ -102,6 +103,11 @@ export function WardUpdatesRequest() {
   const { now } = useWardFlowSelect("now");
   const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
   const [all, setAll] = useState(false);
+  const [sending, setSending] = useState(false);
+  // A second tap while the first is in flight must not send twice.
+  const inFlight = useRef(false);
+  const [sent, setSent] = useState<{ ok: boolean; text: string } | null>(null);
+  const raise = useWardRaise("coordinator");
   const toggle = (id: string) =>
     setChosen((current) => {
       const next = new Set(current);
@@ -113,6 +119,40 @@ export function WardUpdatesRequest() {
     return <p className={styles.quiet}>Every ward has confirmed its beds this shift.</p>;
   }
   const asking = chosen.size > 0 ? chosen.size : status.waiting.length;
+  const askWards = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    const ids = chosen.size > 0 ? [...chosen] : status.waiting.map((unit) => unit.id);
+    const noun = ids.length === 1 ? "ward" : "wards";
+    setSending(true);
+    setSent(null);
+    try {
+      // A directive to just these wards. Each one sees it on screen and answers on its own page.
+      const outcome = await raise("DISPATCH_BROADCAST_ALERT", {
+        title: "Please confirm your beds",
+        message: "Check your bed numbers, then tap Beds still correct or update them.",
+        severity: "advisory",
+        category: "capacity_gridlock",
+        targetScope: "all",
+        targetScopeLabel: `${ids.length} ${noun} not confirmed this shift`,
+        targetUnitIds: ids,
+        durationMinutes: 60,
+        dispatchedByName: "Bed coordinator",
+        kind: "directive",
+      });
+      if (outcome && outcome.status !== "accepted") {
+        setSent({ ok: false, text: outcome.message || "Not sent. Try again." });
+      } else {
+        setSent({ ok: true, text: `Asked ${ids.length} ${noun} to confirm. It shows on their screen for an hour.` });
+        setChosen(new Set());
+      }
+    } catch {
+      setSent({ ok: false, text: "Not sent. Check the connection and try again." });
+    } finally {
+      inFlight.current = false;
+      setSending(false);
+    }
+  };
   return (
     <div className={styles.request}>
       <div className={styles.progress}>
@@ -161,13 +201,25 @@ export function WardUpdatesRequest() {
         </ShowMoreRow>
       ) : null}
       <div className={styles.actions}>
-        <p className={styles.quiet}>They answer with Beds still correct.</p>
-        <Button variant="pri" disabledReason="Not wired in this prototype.">
+        <p className={styles.quiet}>Each ward sees it on screen and answers with Beds still correct.</p>
+        <Button variant="pri" onClick={askWards} disabledReason={sending ? "Sending…" : undefined}>
           {chosen.size === 0 && asking > 1
             ? `Ask all ${asking} wards to confirm`
             : `Ask ${asking} ${asking === 1 ? "ward" : "wards"} to confirm`}
         </Button>
       </div>
+      <p role="status" className={sent && !sent.ok ? styles.sentBad : styles.sent}>
+        {sent ? (
+          <>
+            {sent.text}{" "}
+            {sent.ok ? (
+              <Link href="/ward-flow/alerts" className={styles.link}>
+                Open Alerts
+              </Link>
+            ) : null}
+          </>
+        ) : null}
+      </p>
     </div>
   );
 }
