@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  rmSync(fixtureRoot, { recursive: true, force: true });
+  rmSync(fixtureRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 function sourceFiles(configuration: string): string[] {

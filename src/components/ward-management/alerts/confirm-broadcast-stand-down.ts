@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useRef } from "react";
-import { requestConfirm } from "@/components/wf/confirm-dialog";
+import { requestConfirm } from "@/components/wf";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 
 import type { BroadcastAlert } from "./ward-broadcast-model";

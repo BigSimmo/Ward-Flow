@@ -150,8 +150,12 @@ describe.each<Surface>(["live card", "shell banner", "Pull now card"])(
       const { trigger, onStandDown } = setup(surface);
       fireEvent.click(trigger);
       const dialog = await screen.findByRole("alertdialog");
-      fireEvent.keyDown(dialog, { key: "Escape" });
-      await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+      // The lazily loaded dialog attaches its Escape listener in an effect that can land after the
+      // node appears on a loaded runner, so repeat the key until the question is dismissed.
+      await waitFor(() => {
+        fireEvent.keyDown(dialog, { key: "Escape" });
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      });
       expect(onStandDown).not.toHaveBeenCalled();
     });
 
