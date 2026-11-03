@@ -15,7 +15,7 @@ import styles from "./ward-tools-quick-actions.module.css";
 /**
  * COORDINATOR QUICK ACTIONS (Josh locked in the mock-up, 3 Nov 2026). One Tools row opens the
  * coordinator's most used actions. Ward updates lists the wards not confirmed since the shift
- * began (the Capacity check); sending the request is phase 2 and is not wired yet.
+ * began (the Capacity check). Ask sends one alert through the shared path in alerts/ask-wards.ts.
  */
 export type QuickTile = {
   key: string;
@@ -119,12 +119,12 @@ export function WardUpdatesRequest() {
   if (status.waiting.length === 0) {
     return <p className={styles.quiet}>Every ward has confirmed its beds this shift.</p>;
   }
-  const asking = chosen.size > 0 ? chosen.size : status.waiting.length;
+  const picked = chosen.size > 0 ? [...chosen] : status.waiting.map((unit) => unit.id);
+  // One shared path with the Discharges chase (M6): skip wards asked in the last four hours.
+  const { send, skipped } = splitAsk(picked, broadcastAlerts, ASK_CONFIRM_BEDS, now);
+  const asking = send.length;
   const askWards = async () => {
     if (inFlight.current) return;
-    const picked = chosen.size > 0 ? [...chosen] : status.waiting.map((unit) => unit.id);
-    // One shared path with the Discharges chase (M6): skip wards asked in the last four hours.
-    const { send, skipped } = splitAsk(picked, broadcastAlerts, ASK_CONFIRM_BEDS, now);
     setSent(null);
     if (send.length === 0) {
       setSent({ ok: true, text: askedLine(0, skipped.length) });
@@ -196,10 +196,16 @@ export function WardUpdatesRequest() {
       ) : null}
       <div className={styles.actions}>
         <p className={styles.quiet}>Each ward sees it on screen and answers with Beds still correct.</p>
-        <Button variant="pri" onClick={askWards} disabledReason={sending ? "Sending…" : undefined}>
-          {chosen.size === 0 && asking > 1
-            ? `Ask all ${asking} wards to confirm`
-            : `Ask ${asking} ${asking === 1 ? "ward" : "wards"} to confirm`}
+        <Button
+          variant="pri"
+          onClick={askWards}
+          disabledReason={sending ? "Sending…" : asking === 0 ? "Already asked in the last 4 hours." : undefined}
+        >
+          {asking === 0
+            ? "Ask wards to confirm"
+            : chosen.size === 0 && asking > 1 && skipped.length === 0
+              ? `Ask all ${asking} wards to confirm`
+              : `Ask ${asking} ${asking === 1 ? "ward" : "wards"} to confirm`}
         </Button>
       </div>
       <p role="status" className={sent && !sent.ok ? styles.sentBad : styles.sent}>

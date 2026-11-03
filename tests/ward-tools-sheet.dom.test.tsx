@@ -280,6 +280,41 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
   });
 
+  it("clears the search on Escape, and empties the side pane when nothing matches", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardToolsSheet
+          isPhone={false}
+          twoPane
+          roleLabel="Bed coordinator"
+          onNavigate={vi.fn()}
+          onNewReferral={vi.fn()}
+        />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-figures"));
+    expect(screen.getByRole("region", { name: "Key figures" })).toBeTruthy();
+    const search = screen.getByRole("searchbox", { name: "Search tools" });
+    fireEvent.change(search, { target: { value: "zzz" } });
+    // No match: the old tool leaves the pane rather than sitting beside "No tool matches".
+    expect(screen.queryByRole("region", { name: "Key figures" })).toBeNull();
+    expect(screen.getByText("Choose a tool.")).toBeTruthy();
+    // Escape with words typed clears the box and is marked handled, so the sheet stays open.
+    const escape = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    act(() => {
+      search.dispatchEvent(escape);
+    });
+    expect(escape.defaultPrevented).toBe(true);
+    expect(search).toHaveValue("");
+    expect(screen.getByRole("region", { name: "Key figures" })).toBeTruthy();
+    // An empty box leaves Escape alone, for the sheet to close.
+    const again = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    act(() => {
+      search.dispatchEvent(again);
+    });
+    expect(again.defaultPrevented).toBe(false);
+  });
+
   it("opens every figure in place without repeating the headline figures (simplification A2)", () => {
     renderSheet();
     expect(screen.queryByTestId("ward-tools-service-now")).toBeNull();

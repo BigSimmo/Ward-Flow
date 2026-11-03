@@ -673,7 +673,8 @@ function ToolsSheetView({
   // The demo controls are setup, not a tool to work in, so they open in place under their row
   // and the pane keeps showing a tool.
   const shown: ToolsSheetToolId | null = twoPane ? (open && open !== "demo" ? open : (quickIds[0] ?? null)) : open;
-  const paneEntry = shown ? usable(shown) : null;
+  // A search with no match empties the pane too, so an old tool never sits beside "No tool matches".
+  const paneEntry = shown && matches > 0 ? usable(shown) : null;
 
   const demoEntry: Entry = {
     key: "demo",
@@ -753,6 +754,15 @@ function ToolsSheetView({
           }}
           inputRef={searchRef}
           shortcut={!isPhone}
+          onKeyDown={(event) => {
+            // Escape with words typed clears the box; only an empty box lets Escape close the sheet.
+            if (event.key === "Escape" && query) {
+              // The shared Sheet leaves an Escape a field has already handled (defaultPrevented).
+              event.preventDefault();
+              setQuery("");
+              setNoSearch(false);
+            }
+          }}
         />
 
         {/* Polish (3 Nov): chips show only tools this person has used; the desk order already leads with the likely ones. */}

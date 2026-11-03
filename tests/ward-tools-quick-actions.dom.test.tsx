@@ -109,18 +109,28 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
     atDesk({ role: "coordinator", scope: { kind: "statewide" } });
     fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
     const panel = screen.getByRole("region", { name: "Ward updates" });
+    const before = within(panel).getByRole("button", { name: /^Ask (all )?\d+ wards? to confirm$/u }).textContent;
     fireEvent.click(within(panel).getAllByRole("checkbox")[0]);
     await act(async () => {
       fireEvent.click(within(panel).getByRole("button", { name: "Ask 1 ward to confirm" }));
     });
+    // The same ward again: the button is off and says why, and a press sends nothing.
     fireEvent.click(within(panel).getAllByRole("checkbox")[0]);
+    const again = within(panel).getByRole("button", { name: "Ask wards to confirm" });
+    expect(again).toHaveAttribute("aria-disabled", "true");
+    expect(panel).toHaveTextContent("Already asked in the last 4 hours.");
     await act(async () => {
-      fireEvent.click(within(panel).getByRole("button", { name: "Ask 1 ward to confirm" }));
+      fireEvent.click(again);
     });
     expect(sentAsks()).toHaveLength(1);
-    expect(within(panel).getByRole("status")).toHaveTextContent(
-      "No one asked. 1 ward already asked in the last 4 hours, so skipped.",
-    );
+    // With nothing ticked, the count leaves out the ward already asked.
+    fireEvent.click(within(panel).getAllByRole("checkbox")[0]);
+    const n = Number(/\d+/u.exec(before ?? "")?.[0] ?? 0);
+    if (n > 1) {
+      expect(
+        within(panel).getByRole("button", { name: `Ask ${n - 1} ${n - 1 === 1 ? "ward" : "wards"} to confirm` }),
+      ).toBeInTheDocument();
+    }
   });
 
   it("lists every unconfirmed ward, behind Show more when there are many, so each can be picked", () => {
