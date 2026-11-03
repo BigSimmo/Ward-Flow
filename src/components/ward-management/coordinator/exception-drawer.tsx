@@ -5,7 +5,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 
-import { Badge, Card, EmptyState, ShowMoreRow, StatusGlyph, Tabs, foldHidden, foldLimit } from "@/components/wf";
+import { Badge, Card, EmptyState, StatusGlyph, Tabs } from "@/components/wf";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { DeclineRegister } from "@/components/ward-management/decline-register";
 import { OverrideRegister } from "@/components/ward-management/override-register";
@@ -76,9 +76,6 @@ type ExceptionDrawerProps = {
  * - Refusals are their own tab, separate from exceptions: a refusal and an inbox item are
  *   different facts a coordinator answers differently.
  */
-/** Three rows of two tiles in the strip under the hero. */
-const REGISTER_FOLD = 6;
-
 function commandInboxTitle(item: InboxItem): string {
   if (item.id.startsWith("bed-pull-") || item.title === "Bed pull expired") {
     return "Pull expired, bed still pulled";
@@ -114,13 +111,6 @@ export function ExceptionDrawer({
 
   // Newest first: a coordinator wants to see what just got refused.
   const refusalsNewestFirst = [...rejections].reverse();
-  // D-95 (3 Nov 2026): the first rows, then Show more, never a small box that scrolls inside.
-  const [showAllExceptions, setShowAllExceptions] = useState(false);
-  const [showAllRefusals, setShowAllRefusals] = useState(false);
-  const shownItems = showAllExceptions ? items : items.slice(0, foldLimit(items.length, REGISTER_FOLD));
-  const shownRefusals = showAllRefusals
-    ? refusalsNewestFirst
-    : refusalsNewestFirst.slice(0, foldLimit(refusalsNewestFirst.length, REGISTER_FOLD));
 
   // Escape closes the phone bar.
   useEffect(() => {
@@ -220,8 +210,8 @@ export function ExceptionDrawer({
           {items.length === 0 ? (
             <EmptyState title="No exceptions right now" meta={`Checked at ${checkedAt}`} />
           ) : (
-            <ul className={styles.registerList} id={`${baseId}-exceptions-list`}>
-              {shownItems.map((item) => {
+            <ul className={styles.registerList}>
+              {items.map((item) => {
                 const silenceCopy = silenceReminders?.get(item.movementId);
                 // Audit A1-15: name plus UMRN, the same identifier the Tasks list uses for this row.
                 const who = resolvePatientIdentity(
@@ -299,15 +289,6 @@ export function ExceptionDrawer({
               })}
             </ul>
           )}
-          {foldHidden(items.length, REGISTER_FOLD) > 0 ? (
-            <ShowMoreRow
-              expanded={showAllExceptions}
-              controls={`${baseId}-exceptions-list`}
-              onClick={() => setShowAllExceptions((open) => !open)}
-            >
-              {showAllExceptions ? "Show fewer" : `Show ${foldHidden(items.length, REGISTER_FOLD)} more`}
-            </ShowMoreRow>
-          ) : null}
           {unmatchedSilence.length > 0 ? (
             <ul className={styles.registerList} data-testid="ward-silence-reminders">
               {unmatchedSilence.map(([movementId, copy]) => (
@@ -378,12 +359,8 @@ export function ExceptionDrawer({
               <p className={styles.registerLead} id={`${baseId}-refusals-lead`}>
                 Refused actions, newest first
               </p>
-              <ul
-                className={styles.registerList}
-                id={`${baseId}-refusals-list`}
-                aria-labelledby={`${baseId}-refusals-lead`}
-              >
-                {shownRefusals.map((rejection) => (
+              <ul className={styles.registerList} aria-labelledby={`${baseId}-refusals-lead`}>
+                {refusalsNewestFirst.map((rejection) => (
                   <li key={rejection.id} data-testid={`ward-refusal-${rejection.id}`} className={styles.registerRow}>
                     <span className={styles.registerMain}>
                       <span className={styles.registerTitle}>{refusedActionText(rejection.attempted)}</span>
@@ -395,17 +372,6 @@ export function ExceptionDrawer({
                   </li>
                 ))}
               </ul>
-              {foldHidden(refusalsNewestFirst.length, REGISTER_FOLD) > 0 ? (
-                <ShowMoreRow
-                  expanded={showAllRefusals}
-                  controls={`${baseId}-refusals-list`}
-                  onClick={() => setShowAllRefusals((open) => !open)}
-                >
-                  {showAllRefusals
-                    ? "Show fewer"
-                    : `Show ${foldHidden(refusalsNewestFirst.length, REGISTER_FOLD)} more`}
-                </ShowMoreRow>
-              ) : null}
             </>
           )}
         </section>
