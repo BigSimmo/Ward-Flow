@@ -97,10 +97,7 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
-import {
-  REFERENCE_DISTANCE_CAVEAT,
-  referenceDistance,
-} from "@/components/ward-management/reference/ward-reference-distances";
+import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
@@ -122,6 +119,7 @@ import {
   InlineFact,
   LEGAL_STATUS_OPTIONS,
   PULLED_EXPLANATION,
+  ROAD_DISTANCE_SHORT_CAVEAT,
   referralAsked,
   referralFrom,
   URGENCY_OPTIONS,
@@ -1773,7 +1771,7 @@ export function ShortlistPanel({
                 data-testid="ward-shortlist-pulled-note"
               >
                 {originEd?.referenceEdId !== undefined ? (
-                  <span data-testid="ward-shortlist-route-caveat">{REFERENCE_DISTANCE_CAVEAT} </span>
+                  <span data-testid="ward-shortlist-route-caveat">{ROAD_DISTANCE_SHORT_CAVEAT} </span>
                 ) : null}
                 {PULLED_EXPLANATION}{" "}
                 <button type="button" className={shortlistStyles.inlineLink} onClick={() => openWardHelp("glossary")}>

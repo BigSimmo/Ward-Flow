@@ -7,6 +7,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
+import { GLOSSARY } from "@/components/ward-management/help/ward-help-content";
+import { REFERENCE_DISTANCE_CAVEAT } from "@/components/ward-management/reference/ward-reference-distances";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { MovementId } from "@/components/ward-management/ward-model";
 import { movementById } from "@/components/ward-management/ward-movements";
@@ -80,6 +82,16 @@ describe("road distance on the shortlist", () => {
     for (const route of screen.queryAllByTestId(/^ward-shortlist-route-[a-z]/)) {
       expect(route.getAttribute("title"), "the caveat has gone back to being a tooltip").toBeNull();
     }
+  });
+
+  it("keeps the short caveat beside the glossary link, and the full wording in the glossary", () => {
+    // Josh, 3 Nov 2026: one short visible line on the shortlist, the full caveat in Help.
+    renderPanel(FROM_AN_ED);
+    expect(screen.getByTestId("ward-shortlist-route-caveat").textContent?.trim()).toBe(
+      "Road distance only, not a clinical travel time.",
+    );
+    const entry = GLOSSARY.find((term) => term.term === "Road distance");
+    expect(entry?.meaning).toContain(REFERENCE_DISTANCE_CAVEAT);
   });
 
   it("does not use a route testid inside the candidate namespace", () => {
