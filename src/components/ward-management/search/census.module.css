@@ -318,7 +318,7 @@
 }
 
 .registerCount b {
-  color: var(--wf-ink);
+  color: var(--wf-ink-1);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }

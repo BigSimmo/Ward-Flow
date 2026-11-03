@@ -1223,10 +1223,12 @@ describe("census counts agree (device audit 11 Oct 2026)", () => {
     const group = document.getElementById("ward-patient-search-group-found");
     expect(group).not.toBeNull();
     const listed = Number(group!.querySelector("[class*=groupCount]")?.textContent);
-    const hero = within(screen.getByRole("group", { name: "Where patients are now" }))
-      .getAllByRole("button")
-      .find((button) => /Accepted/u.test(button.textContent ?? ""));
-    expect(hero?.textContent).toContain(String(listed));
+    // PS1 (3 Nov 2026): the band's state switch replaced the group pills. Accepted people sit in
+    // In placement, so that state counts at least as many as the Accepted group lists.
+    const placement = within(screen.getByRole("radiogroup", { name: "Where people are now" }))
+      .getAllByRole("radio")
+      .find((radio) => /In placement/u.test(radio.textContent ?? ""));
+    expect(Number((placement?.textContent ?? "").replace(/\D/gu, ""))).toBeGreaterThanOrEqual(listed);
     expect(listed).toBeGreaterThan(10);
     expect(within(group!).getByRole("button", { name: `Show all ${listed}` })).toBeTruthy();
   });
@@ -1252,7 +1254,8 @@ describe("the highlight chips follow the search (shell-16)", () => {
 
     expect(chipCount("Tier 1")).toBeLessThanOrEqual(1);
     expect(chipCount("Over 24 hours")).toBeLessThanOrEqual(1);
-    expect(screen.getByRole("tab", { name: /^History/u }).textContent).toBe("History");
+    // PS1: there is no History tab to carry a count; History opens from the hero's Today chip.
+    expect(screen.queryByRole("tab", { name: /^History/u })).toBeNull();
   });
 });
 

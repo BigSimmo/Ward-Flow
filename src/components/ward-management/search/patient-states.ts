@@ -64,7 +64,7 @@ export function countPatientStates(rows: readonly CensusRow[]): Record<PatientSt
  * The register's sections. They follow the census groups, except that the records with nothing open
  * split in two, so the Community and Not active counts on the switch each match one section.
  */
-export type CensusSectionKey = CensusGroup | "team";
+type CensusSectionKey = CensusGroup | "team";
 
 export type CensusSection = {
   key: CensusSectionKey;

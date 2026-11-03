@@ -216,7 +216,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     title: "Places",
     purpose: "Every ward, ED and community team in the network, with each one's beds and when they were confirmed.",
     actions: [
-      "Use the search box at the top of the list, or narrow the list to wards, EDs or teams.",
+      "Use the search box above the list, or narrow the list to wards, EDs or teams.",
       "Choose a place to preview it, then open it or view its statistics. Pin the places you use most.",
       "Choose Catchments on the band to find which community team covers a suburb.",
     ],

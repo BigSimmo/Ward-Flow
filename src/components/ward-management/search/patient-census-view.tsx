@@ -272,7 +272,7 @@ export function CensusTable(props: CensusTableProps) {
             many it lists instead of a second Now or History switch. History opens from the hero's
             Today chip, and comes back here. */}
         {tab === "now" ? (
-          <p className={styles.registerCount} aria-live="polite">
+          <p className={styles.registerCount}>
             <b>{rows.length}</b> {rows.length === 1 ? "person" : "people"}
           </p>
         ) : (
