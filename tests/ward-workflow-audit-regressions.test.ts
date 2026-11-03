@@ -86,6 +86,21 @@ describe("workflow audit regressions", () => {
     expect(currentInboxOwner(state.inboxOwnership[row], item.since)).toBeDefined();
   });
 
+  it("adds no inbox metadata when a cancelled booking had no snooze or owner", () => {
+    let state = seedWardFlowState();
+    const movementId = "WF-005";
+    const before = { snoozes: state.inboxSnoozes, ownership: state.inboxOwnership };
+    state = send(state, {
+      type: "CANCEL_TRANSPORT",
+      role: "coordinator",
+      now,
+      movementId,
+      reason: "provider_unavailable",
+    });
+    expect(state.inboxSnoozes).toEqual(before.snoozes);
+    expect(state.inboxOwnership).toEqual(before.ownership);
+  });
+
   it("uses the board's Ready count in the change summary when a bed is already pulled", () => {
     let state = send(seedWardFlowState(), {
       type: "PULL_PATIENT",
