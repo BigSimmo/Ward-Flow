@@ -495,7 +495,7 @@ export const REFERRAL_SHORTCUTS: readonly (readonly [string, string])[] = [
   ["O", "Next overdue referral"],
   ["A", "Accept (at the chosen ward)"],
   ["D", "Decline (choose a reason)"],
-  ["S", "Referral summary"],
+  ["S", "Referral"],
   ["M", "Bed meeting list"],
   ["Esc", "Close the referral"],
   ["?", "These shortcuts"],
@@ -667,8 +667,8 @@ export function ReferralTimeline({
 
 export function SummaryButton({ onClick }: { onClick: () => void }) {
   return (
-    <Button variant="ghost" size="sm" icon={FileText} onClick={onClick} title="Referral summary (S)">
-      Summary
+    <Button variant="ghost" size="sm" icon={FileText} onClick={onClick} title="Referral (S)">
+      Referral
     </Button>
   );
 }

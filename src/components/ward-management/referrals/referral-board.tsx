@@ -394,6 +394,10 @@ export function ReferralBoard({
 
   // One state object, so the resolver's identity-keyed index is built once per render, not per row.
   const resolverState = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
+  const umrnOf = useCallback(
+    (referral: Referral) => resolveSubjectPatient(referral, resolverState).umrn,
+    [resolverState],
+  );
   const nameOf = useCallback(
     (referral: Referral) => resolveSubjectPatient(referral, resolverState).formalName,
     [resolverState],
@@ -853,6 +857,7 @@ export function ReferralBoard({
                     selectedId={selectedReferralId}
                     isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
                     nameOf={nameOf}
+                    umrnOf={umrnOf}
                     onSelect={(id) => {
                       setPhoneSheet(null);
                       setView("queue");
@@ -931,6 +936,7 @@ export function ReferralBoard({
                         selectedId={selectedReferralId}
                         isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
                         nameOf={nameOf}
+                        umrnOf={umrnOf}
                         onSelect={(id) => {
                           setView("queue");
                           handleSelect(id);
@@ -1069,9 +1075,11 @@ export function ReferralBoard({
                   now={now}
                   selectedId={selectedReferralId}
                   onSelect={handleSelect}
+                  undoRole={readOnly ? undefined : routeRole}
+                  onPull={!readOnly && routeRole === "coordinator" ? setPulling : undefined}
                 />
-                {/* Community desk: no chart of eight empty hours. */}
-                {decisionsByHour.length > 0 && !(community && decidedToday.length === 0) ? (
+                {/* No chart of empty hours (RQ7, 3 Nov 2026: it read as all zeros on every desk). */}
+                {decisionsByHour.length > 0 && decidedToday.length > 0 ? (
                   <div className={styles.v6Chart}>
                     <h3 className={styles.v6Eyebrow}>Decisions by hour</h3>
                     <ColumnChart

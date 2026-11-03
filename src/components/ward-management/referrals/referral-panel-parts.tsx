@@ -180,10 +180,10 @@ export function PanelNav({
         type="button"
         className={buttonClass({ variant: "ghost", size: "sm" })}
         onClick={onSummary}
-        title="Referral summary (S)"
+        title="Referral (S)"
       >
         <FileText size={14} aria-hidden="true" />
-        Summary
+        Referral
       </button>
       {patientHref ? (
         <Link
