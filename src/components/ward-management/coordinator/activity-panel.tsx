@@ -571,7 +571,7 @@ function NoticesBody({
   // H4 (Josh, 3 Nov 2026): say what a notice is, so an empty tab is not a puzzle.
   const about = (
     <p className={styles.noticeAbout} data-testid="ward-activity-notices-about">
-      Messages sent to this desk when someone else&rsquo;s decision changes your work, such as a referral turned down, a
+      Messages sent to this desk about decisions and events that change your work, such as a referral turned down, a
       cancelled transport or a withdrawn acceptance.
     </p>
   );

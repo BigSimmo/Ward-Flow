@@ -2313,6 +2313,13 @@ button.registerRow:hover {
     border-color: var(--wf-accent);
     background: var(--wf-accent-tint);
   }
+  /* Forms due or overdue keep their tone on a phone chip, selected or not (the deadline line is hidden). */
+  .screen .edButton[data-forms="warning"] {
+    border-color: var(--wf-warning);
+  }
+  .screen .edButton[data-forms="danger"] {
+    border-color: var(--wf-danger);
+  }
   .screen .edButton .edWaitingValue,
   .screen .edButton .edMono {
     line-height: 16px;
