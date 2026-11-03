@@ -40,7 +40,7 @@ Reuse the mock-up's existing components and tokens and apply them straight to th
 
 ## Rules
 
-- Build only approved designs. Auto-merge counts as Josh's yes. Never merge by hand or turn auto-merge off.
+- Build only approved designs. Auto-merge counts as Josh's yes. Each thread arms auto-merge on its own PRs, re-arms it after a switch-off, fixes their merge conflicts and merges its own green PR by hand if GitHub won't arm it (Josh, 3 Nov). Never turn auto-merge off or merge another thread's PR.
 - Merging isn't going live: release runs at 6 am Perth or by manual workflow.
 - Claim files on issue #688 (and ownership.md if it exists) before editing.
 - Hosted CI is the full gate. No duplicate test runs.
