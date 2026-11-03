@@ -36,7 +36,9 @@
   text-align: left;
   text-decoration: none;
   cursor: pointer;
-  transition: background var(--wf-m-fast, 120ms) var(--wf-ease, ease), border-color var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+  transition:
+    background var(--wf-m-fast, 120ms) var(--wf-ease, ease),
+    border-color var(--wf-m-fast, 120ms) var(--wf-ease, ease);
 }
 
 .tile:hover {
