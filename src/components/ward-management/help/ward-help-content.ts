@@ -303,11 +303,12 @@ const PAGE_HELP: readonly PageHelp[] = [
     id: "add-patient",
     path: /^\/ward-flow\/people\/new$/u,
     title: "Add patient",
-    purpose: "Adds a new invented patient record with identity only. The referral or movement holds the rest.",
+    purpose:
+      "Adds a new invented patient record. Core details sit at the top; contact, care links, culture and language are optional, folded below. The referral or movement holds legal status.",
     actions: [
-      "Fill in UMRN, date of birth, given name and family name.",
+      "Fill in family name, given name, date of birth and UMRN. Everything else is optional.",
       "Read the Duplicate check first, so one person does not get two records.",
-      "Choose Add patient to open the new record, or Register & start referral to go straight to a referral.",
+      "Choose Add patient to open the new record, or Add and start referral to go straight to a referral.",
     ],
   },
   {
