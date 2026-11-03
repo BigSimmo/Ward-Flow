@@ -21,6 +21,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   BOOKABLE_TRANSPORT_PROVIDERS,
   TRANSPORT_LEGAL_STATUSES,
@@ -229,6 +230,9 @@ export function ReturnPlan({
   const cadProblem = draft.cadNumber.trim() ? cadNumberProblem(draft.cadNumber) : undefined;
   const cadError = cadProblem ? `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}.` : undefined;
   const move = whoseMove(draft, record);
+  const returnMovement = useOptionalWardFlowSelect("movements")?.movements.find(
+    (movement) => movement.id === returnMovementId,
+  );
   const isAir = entry.band === "air_transport_only";
   const optionCodes = new Set(options.map((option) => option.siteCode));
   const groups = hospitalGroups();
@@ -238,7 +242,7 @@ export function ReturnPlan({
     <>
       {header}
       <ReturnTracker
-        done={returnStepsDone(draft, record, returnMovementId)}
+        done={returnStepsDone(draft, record, returnMovement)}
         who={move.who}
         what={move.what}
         testId="ward-out-of-area-subject-caveat"

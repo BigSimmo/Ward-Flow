@@ -8,22 +8,32 @@
 import { Check } from "lucide-react";
 
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
+import type { Movement } from "@/components/ward-management/ward-model";
 
 import type { RepatDraft } from "./out-of-area-model";
 import own from "./out-of-area-return-tracker.module.css";
 
 const STEPS = ["Receiving bed", "Ward agreed", "Transport booked", "Placed home"] as const;
 
-/** How many of the four steps are done, read only from what has been recorded or drafted. */
+/**
+ * How many of the four steps are done, read only from what has been recorded or drafted. The steps
+ * run in order, so the count stops at the first step not yet done. Codex review on #1371: recording
+ * the return creates a movement still waiting for its bed, so Transport booked reads the movement's
+ * transport booking and Placed home waits for the movement to close as arrived.
+ */
 export function returnStepsDone(
   draft: RepatDraft,
   record: RepatriationRecord | undefined,
-  returnMovementId: string | undefined,
+  returnMovement: Pick<Movement, "transport" | "closure"> | undefined,
 ): number {
-  if (returnMovementId !== undefined && record?.receivingWardAgreed) return 4;
-  if (record) return record.receivingWardAgreed ? 3 : 1;
-  if (draft.receivingWardAgreed === true && draft.homeHospital) return 2;
-  return draft.homeHospital ? 1 : 0;
+  const steps = [
+    record !== undefined || Boolean(draft.homeHospital),
+    record ? Boolean(record.receivingWardAgreed) : draft.receivingWardAgreed === true && Boolean(draft.homeHospital),
+    returnMovement?.transport !== undefined,
+    returnMovement?.closure?.outcome === "arrived",
+  ];
+  const firstOpen = steps.indexOf(false);
+  return firstOpen === -1 ? steps.length : firstOpen;
 }
 
 export function ReturnTracker({
