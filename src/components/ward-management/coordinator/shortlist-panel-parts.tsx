@@ -92,9 +92,10 @@ export function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: 
 export function focusFirstCandidate(from: HTMLElement) {
   // From the parent, never the control itself: Refer and Override carry `ward-shortlist-` test ids
   // too, and `closest` matches the element it starts on, which found no ward list (24 Oct 2026).
-  const first = from.parentElement
-    ?.closest("[data-testid^='ward-shortlist-']")
-    ?.querySelector<HTMLElement>("[data-testid^='ward-shortlist-candidate-'][data-fit]");
+  // On Home the drawer draws Refer into its pinned foot, outside the panel, so the drawer itself is
+  // the scope there (H7, 3 Nov 2026).
+  const scope = from.parentElement?.closest("[data-testid^='ward-shortlist-']") ?? from.closest("[role='dialog']");
+  const first = scope?.querySelector<HTMLElement>("[data-testid^='ward-shortlist-candidate-'][data-fit]");
   first?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
   first?.focus({ preventScroll: true });
 }
