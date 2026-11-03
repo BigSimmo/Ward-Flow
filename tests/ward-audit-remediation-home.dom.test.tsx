@@ -4,6 +4,7 @@ import { CoordinatorScreen } from "@/components/ward-management/coordinator/coor
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { pushSheet, popSheet } from "@/components/wf/sheet-focus";
+import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 vi.mock("@/components/ward-management/coordinator/home-layout", () => ({ useHomeLayout: () => "phone" }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow",
@@ -21,7 +22,8 @@ it("leaves the Home selected work open when an overlay owns Escape", async () =>
       <CoordinatorScreen />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("radio", { name: /^Open/ }));
+  // Home flow (Q340/Q345, main 3 Nov 2026): the rows are under Flow, which replaced the Open filter.
+  showEveryoneWaiting();
   const rows = screen.getAllByTestId(/^ward-queue-row-/);
   expect(rows.length).toBeGreaterThan(0);
   fireEvent.click(rows[0]!);
