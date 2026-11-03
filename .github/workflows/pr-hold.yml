@@ -1,0 +1,51 @@
+name: Ward Flow hold
+
+# Fails while a pull request carries the `hold` label (Q373), so a held PR cannot merge even
+# with auto-merge armed. Auto-merge itself is left alone (AGENTS.md hard rule 6). It blocks only
+# once "Ward Flow hold" is a required status check. pull_request_target runs in the base
+# repository's context, so this workflow never checks out or runs pull-request code: it reads
+# labels from the event or the GitHub API. merge_group re-checks the queued PR's labels.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: ward-hold-${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  hold:
+    name: Ward Flow hold
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Block while labelled hold
+        if: ${{ github.event_name == 'pull_request_target' }}
+        env:
+          HELD: ${{ contains(github.event.pull_request.labels.*.name, 'hold') }}
+        run: |
+          if [ "$HELD" = "true" ]; then
+            echo "::error::This PR is labelled hold. Remove the label to let it merge."
+            exit 1
+          fi
+          echo "Not held."
+      - name: Block a queued PR that is labelled hold
+        if: ${{ github.event_name == 'merge_group' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GROUP_REF: ${{ github.event.merge_group.head_ref }}
+        run: |
+          set -euo pipefail
+          pr=$(printf '%s\n' "$GROUP_REF" | sed -nE 's#^refs/heads/gh-readonly-queue/[^ ]+/pr-([0-9]+)-[0-9a-f]+$#\1#p')
+          test -n "$pr" || { echo "::error::no pull request found in merge group ref; failing closed."; exit 1; }
+          if gh api "repos/$GITHUB_REPOSITORY/issues/$pr/labels" --jq '.[].name' | grep -qx hold; then
+            echo "::error::PR #$pr is labelled hold."
+            exit 1
+          fi
+          echo "PR #$pr not held."
