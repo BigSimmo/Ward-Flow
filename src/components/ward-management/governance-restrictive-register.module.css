@@ -1,0 +1,110 @@
+/* GV1: finished seclusion and restraint, and ward incidents, as the after-the-fact record. Tokens only. */
+.register {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--wf-s-4);
+}
+
+@media (max-width: 1099px) {
+  .register {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+@media (max-width: 46.4375rem) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .row > :nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .row > .times {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.times {
+  align-items: flex-end;
+  font-size: var(--wf-fs-13);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.name {
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.detail {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.more {
+  display: block;
+  width: 100%;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}

@@ -1495,3 +1495,9 @@ button.taskLabel[aria-pressed="true"] {
   color: var(--wf-ink-3);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
+
+/* FS3: the forms list steps aside while the seclusion and restraint view is open. */
+.work[hidden],
+.listCard[hidden] {
+  display: none;
+}

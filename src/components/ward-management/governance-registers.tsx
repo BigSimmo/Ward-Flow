@@ -2,6 +2,7 @@
 
 import { ClipboardList, FileText, Fingerprint, History, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useContext, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { OverrideRegister } from "@/components/ward-management/override-register";
@@ -47,6 +48,7 @@ import {
   useIsTabletPortrait,
 } from "@/components/wf";
 
+import { GovernanceRestrictiveRegister } from "./governance-restrictive-register";
 import thirdEdition from "./governance-third-edition.module.css";
 import { EventDetail, EventTable } from "./governance-event-detail";
 import { GovernancePhone } from "./governance-phone";
@@ -192,8 +194,11 @@ export function GovernanceWorkbench(props: WorkbenchProps) {
   const adminDesk = useEffectiveWardAccess().role === "admin";
   // The open tab survives a demo reset; everything else in the session starts again. It opens on
   // Review when something waits (v10 mockup), and on Gaps by site when the session holds nothing.
+  // GV1: Forms' seclusion view links here with `?tab=registers`.
+  const askedTab = useSearchParams()?.get("tab");
   const [tab, setTab] = useState<GovernanceTab>(() => {
     if (adminDesk) return "review";
+    if (askedTab === "registers") return "registers";
     const read = readGovernanceEvents(props.api);
     const waiting = read?.status === "allowed" && read.value.some((event) => event.category !== "review");
     return waiting ? "review" : "gaps";
@@ -1176,16 +1181,10 @@ function GovernanceSession({
 
       {tab === "registers" ? (
         <div className={thirdEdition.stackGap}>
+          {/* GV1 (Josh, 3 Nov 2026): the after-the-fact record. Live episodes are in Forms. */}
+          <GovernanceRestrictiveRegister units={units} now={now} />
           <div className={thirdEdition.previewGrid}>
             {[
-              {
-                title: "Seclusion",
-                text: "Start, reviews, release and duration by ward.",
-              },
-              {
-                title: "Bodily restraint",
-                text: "Start, reviews, release and duration by ward.",
-              },
               {
                 title: "Notifiable incidents",
                 text: "Absent without leave, death and serious harm, with the time the Chief Psychiatrist was told.",

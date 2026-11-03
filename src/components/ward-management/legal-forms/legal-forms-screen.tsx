@@ -2,6 +2,7 @@
 
 import { useWardRaise } from "../ward-flow-raise";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useLegalFormsCopy } from "./use-legal-forms-copy";
 import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
@@ -40,6 +41,8 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { ROLE_SCREENS } from "@/components/ward-management/ward-role-access";
+import { SeclusionFormsView } from "@/components/ward-management/restrictive-practice/seclusion-forms-view-lazy";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
@@ -115,7 +118,8 @@ import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failu
 
 const CHART_WINDOW_MINUTES = 8 * 60;
 
-type View = "clocks" | "checklist" | "history";
+// FS3 (Josh, 3 Nov 2026): seclusion and restraint in use now is a view of Forms.
+type View = "clocks" | "checklist" | "history" | "seclusion";
 type Highlight =
   | { kind: "act" }
   | { kind: "soon" }
@@ -191,7 +195,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     routeRole,
   });
 
-  const [view, setView] = useState<View>("clocks");
+  // FS3: `?view=seclusion` opens the seclusion and restraint view (the old Seclusion page sends
+  // people here), and `&admission=` (a synthetic stay id, never a name) opens Start for that patient.
+  const params = useSearchParams();
+  const startFor = params?.get("admission") ?? undefined;
+  const [view, setView] = useState<View>(() => (params?.get("view") === "seclusion" ? "seclusion" : "clocks"));
   const [highlight, setHighlight] = useState<Highlight>(null);
   // Governance links a gap here with ?movement=, so that patient opens selected.
   const [selectedId, setSelectedId] = useState<string | null>(initialMovementId ?? null);
@@ -307,6 +315,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // or team holds it only on a journey it sent (D-80), the same rule the server checks.
   const receivedGate = gate("RECORD_LEGAL_FORM_RECEIVED");
   const access = useEffectiveWardAccess();
+  // FS3: only the desks that may open seclusion (D-72: ward, site bed manager, coordinator) see the view.
+  const seesSeclusion = ROLE_SCREENS[access.role].seclusion !== undefined;
+  const shownView: View = view === "seclusion" && !seesSeclusion ? "clocks" : view;
+  const seclusionItem = seesSeclusion ? [{ id: "seclusion" as const, label: "Seclusion and restraint" }] : [];
   const receivedUnavailable = (movement: Movement): string | undefined =>
     receivedGate.reason ??
     ((routeRole === "ward" || routeRole === "community") &&
@@ -831,23 +843,25 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             <Segmented<View>
               className={`${styles.phoneViews} ${wardPin.pinnedSwitch}`}
               label="View"
-              value={view}
+              value={shownView}
               onChange={setView}
               items={[
                 { id: "clocks", label: "Clocks" },
                 { id: "checklist", label: "Checklist" },
                 { id: "history", label: "History", count: closedWithForms.length },
+                ...seclusionItem.map((item) => ({ ...item, label: "Seclusion" })),
               ]}
             />
-            <Card className={styles.listCard} aria-label="Everyone on a form">
+            {shownView === "seclusion" ? <SeclusionFormsView startFor={startFor} /> : null}
+            <Card className={styles.listCard} aria-label="Everyone on a form" hidden={shownView === "seclusion"}>
               {highlight ? (
                 <p className={styles.phoneNote}>
                   {highlightCount} of {rows.length} highlighted, all rows stay
                 </p>
               ) : null}
               {/* The one colour key, near the list (Josh, 30 Oct 2026). */}
-              {view === "clocks" && !highlight ? <p className={styles.phoneNote}>{TYPED_TIME_KEY}</p> : null}
-              {view === "clocks" ? (
+              {shownView === "clocks" && !highlight ? <p className={styles.phoneNote}>{TYPED_TIME_KEY}</p> : null}
+              {shownView === "clocks" ? (
                 <section aria-label="Legal forms and deadlines" data-testid="ward-legal-forms-groups">
                   {rows.length === 0 ? (
                     <p className={styles.absent}>No open movement carries a legal form.</p>
@@ -877,7 +891,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   )}
                 </section>
               ) : null}
-              {view === "checklist" ? (
+              {shownView === "checklist" ? (
                 <PhoneChecklist
                   rows={rows}
                   nameOf={nameOf}
@@ -887,8 +901,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   onSelect={select}
                 />
               ) : null}
-              {view === "clocks" ? admittedList : null}
-              {view === "history" ? historyList : null}
+              {shownView === "clocks" ? admittedList : null}
+              {shownView === "history" ? historyList : null}
             </Card>
             <PhoneSheet open={tasksOpen} onClose={() => setTasksOpen(false)} title="Record and tell">
               {taskStrip}
@@ -1015,30 +1029,31 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 barAside={
                   <HeroTrack<View>
                     label="View"
-                    value={view}
+                    value={shownView}
                     onChange={setView}
                     items={[
                       { id: "clocks", label: "Clocks", count: rows.length },
                       { id: "checklist", label: "Checklist" },
                       { id: "history", label: "History", count: closedWithForms.length },
+                      ...seclusionItem,
                     ]}
                   />
                 }
               />
             </div>
 
-            {breakdownNote}
+            {shownView === "seclusion" ? <SeclusionFormsView startFor={startFor} /> : breakdownNote}
 
-            <div className={styles.work}>
+            <div className={styles.work} hidden={shownView === "seclusion"}>
               <Card className={styles.listCard} aria-label="Everyone on a form">
                 <CardHead
-                  title={view === "history" ? "Closed moves with a form" : "Everyone on a form"}
+                  title={shownView === "history" ? "Closed moves with a form" : "Everyone on a form"}
                   level={2}
                   aside={
                     <span className={styles.meta}>
                       {highlight
                         ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
-                        : view === "clocks"
+                        : shownView === "clocks"
                           ? // The one colour key, near the list (Josh, 30 Oct 2026). The group heads say the order.
                             TYPED_TIME_KEY
                           : null}
@@ -1053,7 +1068,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   }
                 />
 
-                {view === "clocks" ? (
+                {shownView === "clocks" ? (
                   <section
                     className={styles.groups}
                     aria-label="Legal forms and deadlines"
@@ -1117,7 +1132,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   </section>
                 ) : null}
 
-                {view === "checklist" ? (
+                {shownView === "checklist" ? (
                   <ChecklistView
                     rows={rows}
                     now={now}
@@ -1130,8 +1145,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   />
                 ) : null}
 
-                {view === "clocks" ? admittedList : null}
-                {view === "history" ? historyList : null}
+                {shownView === "clocks" ? admittedList : null}
+                {shownView === "history" ? historyList : null}
                 {/* The full notice closes the list it qualifies, not a loose line under the hero. */}
                 <div className={styles.listFoot}>
                   <LegalLimitsNotChecked />
