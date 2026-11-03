@@ -54,6 +54,7 @@ import {
   useActNowNotificationPreference,
   type NotificationSupport,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
+import { phonePushRow } from "@/components/ward-management/shell/ward-phone-push";
 import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push-switch";
 import {
   Avatar,
@@ -825,38 +826,36 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       phoneQuick={phoneQuick}
       notifications={actNowNotifications}
       permission={notificationPermission}
-      onNotificationsChange={(next) => {
+      phonePush={phonePush}
+      onAlertsChange={(next) => {
+        // S7 notifications (3 Nov 2026): one switch for browser and phone alerts on this device.
+        const phone = phonePushRow(phonePush);
         if (!next) {
           setActNowNotificationPreference(false);
-          showToast("Browser notifications off.");
+          if (!phone.checked) {
+            showToast("Alerts off on this device.");
+            return;
+          }
+          void setPhonePush(false).then((answer) => {
+            showToast(
+              answer === "off" ? "Alerts off on this device." : "Phone alerts could not be changed. Try again.",
+            );
+          });
           return;
         }
-        void enableActNowNotifications().then((answer) => {
+        // Browser first, while the tap still counts as a user action; the phone then reuses its answer.
+        void enableActNowNotifications().then(async (answer) => {
           setNotificationPermission(answer);
+          const phoneAnswer =
+            answer === "granted" && !phone.unavailable && !phone.checked ? await setPhonePush(true) : null;
           showToast(
-            answer === "granted"
-              ? "Browser notifications on for act-now alerts."
-              : answer === "unsupported"
-                ? "This browser cannot show notifications."
-                : "Notifications are blocked for this site in the browser.",
-          );
-        });
-      }}
-      phonePush={phonePush}
-      onPhonePushChange={(next) => {
-        void setPhonePush(next).then((answer) => {
-          showToast(
-            answer === "on"
-              ? "Phone alerts on for this device."
-              : answer === "off"
-                ? "Phone alerts off for this device."
-                : answer === "denied"
-                  ? "Notifications are blocked for this site in the browser."
-                  : answer === "server-off"
-                    ? "Phone alerts are not set up on the server yet."
-                    : answer === "role"
-                      ? "Phone alerts are not part of your role."
-                      : "Phone alerts could not be changed. Try again.",
+            phoneAnswer === "on"
+              ? "Alerts on, even with Ward Flow closed."
+              : answer === "granted"
+                ? "Alerts on while Ward Flow is open."
+                : answer === "unsupported"
+                  ? "This browser cannot show notifications."
+                  : "Notifications are blocked for this site in the browser.",
           );
         });
       }}
