@@ -35,6 +35,14 @@ describe("Live chip, one clock (M8)", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
   });
 
+  it("keeps one status region mounted when a hidden chip turns stale (Codex, #1375)", () => {
+    const { rerender } = render(<LiveChip state="live" onHero />);
+    const region = screen.getByRole("status");
+    rerender(<LiveChip state="stale" asAt={new Date("2026-10-07T10:26:00+08:00")} onHero />);
+    expect(screen.getByRole("status")).toBe(region);
+    expect(region).toHaveTextContent(/^Not updating since 10:26$/);
+  });
+
   it("keeps the pause pill on tablet and desktop, without an age", () => {
     render(<LiveChip state="live" age="1s" onTogglePause={() => undefined} />);
     expect(screen.getByRole("button", { name: /pause demo updates$/ })).toHaveAccessibleName(

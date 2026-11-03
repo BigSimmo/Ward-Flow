@@ -221,15 +221,10 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
   // Tablet and desktop chips never show an age or a clock.
   const phoneClock = isPhone && age !== null && clock ? clock : undefined;
   const shownAge = isPhone ? (phoneClock ?? age) : null;
-  // M8: on tablet and desktop a plain Live chip would only repeat the top bar, so nothing shows.
-  // Its status line stays for screen readers, so a later Stale or Offline is still announced.
-  if (!isPhone && state === "live" && !onTogglePause) {
-    return (
-      <span className={cx(primitiveStyles.srOnly, className)} data-wf-live="" role="status">
-        {word}
-      </span>
-    );
-  }
+  // M8: on tablet and desktop a plain Live chip would only repeat the top bar, so no pill shows.
+  // The same status line stays mounted in every state, so a later Stale or Offline updates its
+  // text and is announced, rather than arriving in a new region a screen reader can miss (#1375).
+  const hidden = !isPhone && state === "live" && !onTogglePause;
   // The pill's own words for the toggle's name: the state, and the phone's clock or age when text.
   const spokenAge =
     state === "live" && (typeof shownAge === "string" || typeof shownAge === "number") ? shownAge : null;
@@ -255,10 +250,10 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
     </span>
   );
   return (
-    <span className={cx(styles.group, className)} data-wf-live="">
+    <span className={cx(hidden ? primitiveStyles.srOnly : styles.group, className)} data-wf-live="">
       {/* Device audit (11 Oct 2026): the pause is folded into the Live pill — one control, not a pill
           and a separate 32 x 48 tile. The whole pill is the button; its glyph shows pause or play. */}
-      {onTogglePause ? (
+      {hidden ? null : onTogglePause ? (
         <button
           type="button"
           className={styles.toggle}
