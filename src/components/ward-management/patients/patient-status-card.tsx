@@ -134,6 +134,10 @@ export interface PatientStatusContext {
   onReturnFromEd?: () => void;
   /** The engine's reason when it refused the last Record return from ED, shown on the At ED card. */
   edReturnRefusal?: string;
+  /** A Record return from ED save is in flight or awaiting Retry: the action waits for it. */
+  edReturnPending?: boolean;
+  /** Why the last Record return from ED save was not confirmed, said as the shared save sentence. */
+  edReturnSaveError?: string;
   onAbsenceStep: (step: AbsenceStep) => void;
   onRecordCto: () => void;
   onEndCto: () => void;
@@ -709,18 +713,20 @@ function statusFor(
           label: "Return",
           owner: "Ward",
           value: "Not back yet",
-          sub: ctx.edReturnRefusal
-            ? `Not recorded: ${ctx.edReturnRefusal}`
-            : "Record it when they are back on the ward",
-          action: {
-            kind: "button",
-            label: "Record return",
-            ariaLabel: "Record return from ED",
-            onClick: () => {
-              ctx.onReturnFromEd?.();
-            },
-            event: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
-          },
+          sub:
+            ctx.edReturnSaveError ??
+            (ctx.edReturnRefusal ? `Not recorded: ${ctx.edReturnRefusal}` : "Record it when they are back on the ward"),
+          action: ctx.edReturnPending
+            ? { kind: "unavailable", label: "Record return", reason: "Saving change…" }
+            : {
+                kind: "button",
+                label: "Record return",
+                ariaLabel: "Record return from ED",
+                onClick: () => {
+                  ctx.onReturnFromEd?.();
+                },
+                event: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+              },
         },
       ],
     };

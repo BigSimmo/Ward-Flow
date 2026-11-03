@@ -209,4 +209,112 @@ describe("patient record save identity and confirmation", () => {
     await act(async () => control.finish!({ commandId: "synthetic-accepted", status: "accepted" }));
     expect(screen.queryByLabelText("Expected back time")).toBeNull();
   });
+
+  it("keeps the ward-change form open and locked while a Gone to ED save is pending", async () => {
+    const control: { calls: WardFlowEvent[]; finish?: (outcome: WardCommandOutcome) => void } = { calls: [] };
+    function Stay() {
+      const flow = useWardFlow();
+      const person = flow.patients[0]!;
+      const stay = {
+        ...flow.admissions[0]!,
+        patientId: person.id,
+        state: "occupied" as const,
+        unitId: flow.units[0]!.id,
+        movementId: null,
+        referralId: null,
+      };
+      return (
+        <WardFlowOverride
+          value={{
+            ...flow,
+            movements: [],
+            admissions: [stay],
+            dispatch: (event) => {
+              control.calls.push(event);
+              return new Promise<WardCommandOutcome>((resolve) => {
+                control.finish = resolve;
+              });
+            },
+          }}
+        >
+          <PatientNowScreen patientId={person.id} />
+        </WardFlowOverride>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Stay />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Start leave" }));
+    fireEvent.change(screen.getByLabelText("Expected back time"), { target: { value: "23:59" } });
+    fireEvent.click(screen.getByRole("button", { name: "Gone to ED" }));
+    expect(control.calls.map((event) => event.type)).toEqual(["RECORD_AWAY_AT_EMERGENCY_DEPARTMENT"]);
+    expect(screen.getByLabelText("Expected back time")).toHaveValue("23:59");
+    expect(screen.getByLabelText("Expected back time")).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Gone to ED" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record leave" }));
+    expect(control.calls).toHaveLength(1);
+    await act(async () =>
+      control.finish!({ commandId: "synthetic-failed", status: "failed", message: "Synthetic interrupted save" }),
+    );
+    expect(screen.getByLabelText("Expected back time")).toHaveValue("23:59");
+    expect(screen.getAllByRole("alert").some((node) => node.textContent?.includes("Synthetic interrupted save"))).toBe(
+      true,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Gone to ED" }));
+    expect(control.calls).toHaveLength(2);
+    await act(async () => control.finish!({ commandId: "synthetic-accepted", status: "accepted" }));
+    expect(screen.queryByLabelText("Expected back time")).toBeNull();
+  });
+
+  it("waits for a pending Record return from ED and says why it was not confirmed", async () => {
+    const control: { calls: WardFlowEvent[]; finish?: (outcome: WardCommandOutcome) => void } = { calls: [] };
+    function AtEd() {
+      const flow = useWardFlow();
+      const person = flow.patients[0]!;
+      const stay = {
+        ...flow.admissions[0]!,
+        patientId: person.id,
+        state: "occupied" as const,
+        unitId: flow.units[0]!.id,
+        movementId: null,
+        referralId: null,
+        awayAtEmergencyDepartmentSince: NOW_ANCHOR - 60,
+      };
+      return (
+        <WardFlowOverride
+          value={{
+            ...flow,
+            movements: [],
+            admissions: [stay],
+            dispatch: (event) => {
+              control.calls.push(event);
+              return new Promise<WardCommandOutcome>((resolve) => {
+                control.finish = resolve;
+              });
+            },
+          }}
+        >
+          <PatientNowScreen patientId={person.id} />
+        </WardFlowOverride>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AtEd />
+      </WardFlowProvider>,
+    );
+    const returnCell = () => screen.getByTestId("ward-patient-gate-return");
+    fireEvent.click(within(returnCell()).getByRole("button", { name: "Record return from ED" }));
+    expect(control.calls.map((event) => event.type)).toEqual(["RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT"]);
+    fireEvent.click(within(returnCell()).getByRole("button", { name: "Record return" }));
+    expect(control.calls).toHaveLength(1);
+    await act(async () =>
+      control.finish!({ commandId: "synthetic-failed", status: "failed", message: "Synthetic interrupted save" }),
+    );
+    expect(returnCell()).toHaveTextContent("Synthetic interrupted save");
+    fireEvent.click(within(returnCell()).getByRole("button", { name: "Record return from ED" }));
+    expect(control.calls).toHaveLength(2);
+  });
 });

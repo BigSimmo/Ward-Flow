@@ -742,26 +742,34 @@ export function PatientNowScreen({
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT").allowed) return;
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
-    dispatch({
-      type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
-      role: routeRole,
-      now,
-      admissionId: stay.id,
-      actingUnitId: stay.unitId,
-    });
-    setWardForm("none");
+    wardSave.submit(
+      () =>
+        dispatch({
+          type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+          role: routeRole,
+          now,
+          admissionId: stay.id,
+          actingUnitId: stay.unitId,
+        }),
+      () => showWardForm("none"),
+    );
   }
   function returnFromEd() {
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT").allowed) return;
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
-    dispatch({
-      type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
-      role: routeRole,
-      now,
-      admissionId: stay.id,
-      actingUnitId: stay.unitId,
-    });
+    // No form to close: the At ED card shows the save in flight and any failure on its Return cell.
+    wardSave.submit(
+      () =>
+        dispatch({
+          type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+          role: routeRole,
+          now,
+          admissionId: stay.id,
+          actingUnitId: stay.unitId,
+        }),
+      () => {},
+    );
   }
   function saveDischarge(expectedDischargeAt: number) {
     const stay = resolved?.liveAdmission;
@@ -854,6 +862,8 @@ export function PatientNowScreen({
     },
     onReturnFromEd: returnFromEd,
     edReturnRefusal,
+    edReturnPending: mode === "ed" && wardSave.pending,
+    edReturnSaveError: mode === "ed" ? wardSave.error : undefined,
     onAbsenceStep: (step) => {
       const stay = resolved.liveAdmission;
       if (!stay || !gate("RECORD_ABSENCE_STEP").allowed) return;

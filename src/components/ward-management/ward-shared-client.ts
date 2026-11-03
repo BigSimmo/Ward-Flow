@@ -312,6 +312,7 @@ export class SharedWorkspaceClient {
   private pollAbort: AbortController | null = null;
   /** Requests stay with the desk that started them, even while waiting for a token. */
   private viewGeneration = 0;
+  /** Polls started before a grant must not replace the newly opened view. */
   private grantGeneration = 0;
   private needsRefresh = false;
   /** Bumped when the working role ends, so a reply to a request sent under it is not adopted. */
@@ -326,6 +327,7 @@ export class SharedWorkspaceClient {
    * while the person was looking, rather than letting an edit made from an older view through.
    */
   private sheetSeen = new WeakMap<object, SheetSeen>();
+  /** The popups the command in flight was asked for from, while it is in flight. */
   private pendingSheets: readonly object[] | undefined;
   private readonly stopWatchingSheets = subscribeToSheetStack(() => this.noteOpenSheets());
   private worldEpoch = 0;
@@ -375,11 +377,13 @@ export class SharedWorkspaceClient {
     for (const sheet of openSheetHandles())
       if (!this.sheetSeen.has(sheet)) this.sheetSeen.set(sheet, { revision: this.held(), records: new Map() });
   }
+  /** The popups open now, each noted, for a command asked for now; `undefined` when none is. */
   private openSheetsNoted() {
     this.noteOpenSheets();
     const sheets = commandSheetHandles().filter((sheet) => this.sheetSeen.has(sheet));
     return sheets.length ? sheets : undefined;
   }
+  /** What a command from these popups is checked against (`sheetBasis`). */
   private basis(sheets: readonly object[] | undefined) {
     return sheetBasis(this.sheetSeen, sheets);
   }
