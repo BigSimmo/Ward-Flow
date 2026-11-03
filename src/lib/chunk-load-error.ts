@@ -31,7 +31,8 @@ export function isChunkLoadError(error: unknown): boolean {
 /**
  * While `active`, reports whether the browser is online and reloads the page once when the
  * connection comes back. It never reloads on mount, only on an `online` event, and the listener is
- * removed before the reload, so a reload cannot loop: another needs the connection to drop again.
+ * removed before the reload, so a reload cannot loop. Existing leave guards can veto it while a
+ * save or unfinished form needs attention; a later online event may try again after that clears.
  */
 export function useReloadWhenOnline(active: boolean): boolean {
   const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
@@ -40,6 +41,7 @@ export function useReloadWhenOnline(active: boolean): boolean {
     if (!active) return;
     const handleOnline = () => {
       setOnline(true);
+      if (!window.dispatchEvent(new Event("beforeunload", { cancelable: true }))) return;
       window.removeEventListener("online", handleOnline);
       window.location.reload();
     };
