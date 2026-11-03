@@ -16,6 +16,7 @@ export function useTransportBookingClose({
   scope: string | undefined;
   answers: TransportBookingAnswers;
   legalReason: string;
+  /** True while a save is in flight and has not yet shown an error (a held command may then close). */
   pending: boolean;
   onClose: () => void;
 }) {

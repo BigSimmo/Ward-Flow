@@ -204,11 +204,44 @@ describe.each(["ed", "community"] as const)("%s transport answers survive close 
     fireEvent.click(field(prefix, "book-transport-confirm"));
     expect(screen.getByTestId(dialogId())).toHaveTextContent("Synthetic save not confirmed");
     fireEvent.keyDown(screen.getByTestId(dialogId()), { key: "Escape" });
+    // Once the held save's error shows, closing asks first; keeping the answers keeps the attempt.
+    fireEvent.click(
+      within(await screen.findByTestId("wf-confirm-dialog")).getByRole("button", { name: "Keep editing" }),
+    );
+    await act(async () => {});
     expect(screen.getByTestId(dialogId())).toBeInTheDocument();
     expect(field(prefix, cadPart)).toHaveValue("CAD-48213");
     expect(dispatch).toHaveBeenCalledTimes(1);
     await act(async () => confirmation.resolve({ commandId: "synthetic-booking", status: "accepted" }));
     expect(screen.queryByTestId(dialogId())).toBeNull();
+  });
+
+  it("lets a booking held offline close after its error shows, still asking before discarding answers", async () => {
+    const confirmation = deferred();
+    const dispatch = vi.fn<WardCommandDispatch>(() => ({
+      commandId: "synthetic-booking",
+      status: "failed",
+      message: "Synthetic save not confirmed",
+      confirmation: confirmation.promise,
+    }));
+    render(<Harness dispatch={dispatch} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open booking" }));
+    answerBooking(prefix);
+    fireEvent.click(field(prefix, "book-transport-confirm"));
+    expect(screen.getByTestId(dialogId())).toHaveTextContent("Synthetic save not confirmed");
+    // Submission stays locked to the held command.
+    fireEvent.click(field(prefix, "book-transport-confirm"));
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(
+      within(screen.getByTestId(dialogId())).getByRole("button", { name: prefix === "ed" ? "Close" : "Close dialog" }),
+    ).toBeInTheDocument();
+    fireEvent.keyDown(field(prefix, cadPart), { key: "Escape" });
+    const question = await screen.findByTestId("wf-confirm-dialog");
+    expect(screen.getByTestId(dialogId())).toBeInTheDocument();
+    fireEvent.click(within(question).getByRole("button", { name: "Discard answers" }));
+    await act(async () => {});
+    expect(screen.queryByTestId(dialogId())).toBeNull();
+    expect(dispatch).toHaveBeenCalledTimes(1);
   });
 
   it("does not apply an older discard answer to another booking", async () => {

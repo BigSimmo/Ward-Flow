@@ -62,11 +62,14 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
     setReasonFor(transportBookFor);
     setLegalReason("");
   }
+  // A command held offline stays pending. Once its error shows, the booking may close again (the
+  // discard question still guards unsaved answers); submission stays locked to that command.
+  const saving = save.pending && !save.error;
   const requestClose = useTransportBookingClose({
     scope: transportBookFor,
     answers: transportDraft,
     legalReason,
-    pending: save.pending,
+    pending: saving,
     onClose: closeTransportBook,
   });
   // Keep the page's panel ref aligned; the kit Dialog owns the booking's focus lifecycle.
@@ -84,7 +87,7 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
     <Dialog
       open
       onClose={requestClose}
-      closable={!save.pending}
+      closable={!saving}
       // A stray tap on the backdrop does not close the booking, because closing clears every answer
       // typed in (form friction audit, 27 Oct 2026). Close, Cancel and Escape ask before discard.
       closeOnScrim={false}

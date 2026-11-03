@@ -614,7 +614,13 @@ export function AddPatientForm() {
               if (confirmed.commandId === outcome.commandId) settle(confirmed);
             },
             () => {
-              // A missing confirmation still leaves the original command's outcome uncertain.
+              // A lost confirmation leaves the original command's outcome uncertain. Unlock the form
+              // (answers kept) and say so, rather than leaving it submitting with Reset disabled.
+              if (priorSubmissionRef.current !== submission) return;
+              finishSubmission();
+              setLastRejection(
+                "This patient could not be confirmed as added. Check the patient list. If they are not there, add them again.",
+              );
             },
           );
           return;

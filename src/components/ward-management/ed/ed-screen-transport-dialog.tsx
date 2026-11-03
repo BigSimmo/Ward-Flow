@@ -36,11 +36,14 @@ function EdTransportDialog({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenCo
   const { now, closeTransportDialog, transportDraft, setTransportDraft, submitBookTransport } = ctx;
   const [legalReason, setLegalReason] = useState<TransportExceptionReason | "">("");
   const save = useWardFormSave(movement.id);
+  // A command held offline stays pending. Once its error shows, the popup may close again (the
+  // discard question still guards unsaved answers); submission stays locked to that command.
+  const saving = save.pending && !save.error;
   const requestClose = useTransportBookingClose({
     scope: movement.id,
     answers: transportDraft,
     legalReason,
-    pending: save.pending,
+    pending: saving,
     onClose: closeTransportDialog,
   });
   // Focus starts on the first question (who is collecting), as the popup did before the kit dialog.
@@ -56,7 +59,7 @@ function EdTransportDialog({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenCo
     <Dialog
       open
       onClose={requestClose}
-      closable={!save.pending}
+      closable={!saving}
       closeOnScrim={false}
       title="Log transport booking"
       // Surname first (D-83), named once under the one-line title.

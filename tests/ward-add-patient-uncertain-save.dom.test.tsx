@@ -128,6 +128,35 @@ describe("Add patient uncertain shared save", () => {
     expect(router.push).not.toHaveBeenCalled();
   });
 
+  it("unlocks the form with its answers kept when the Retry confirmation itself fails", async () => {
+    let lose!: (reason: unknown) => void;
+    const confirmation = new Promise<WardCommandOutcome>((_, no) => {
+      lose = no;
+    });
+    const dispatch = vi.fn(() =>
+      Promise.resolve({
+        commandId: "original",
+        status: "failed" as const,
+        message: UNCERTAIN,
+        confirmation,
+      }),
+    );
+    open(dispatch);
+    await screen.findByTestId("ward-add-patient-rejection");
+    expect(screen.getByTestId("ward-add-patient-reset")).toBeDisabled();
+    await act(async () => {
+      lose(new Error("confirmation lost"));
+      await confirmation.catch(() => undefined);
+    });
+    expectDraft();
+    expect(screen.getByTestId("ward-add-patient-reset")).not.toBeDisabled();
+    expect(screen.getByTestId("ward-add-patient-submit")).not.toHaveAttribute("aria-disabled");
+    expect(screen.getByTestId("ward-add-patient-rejection")).toHaveTextContent(
+      "This patient could not be confirmed as added. Check the patient list.",
+    );
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
   it("does not let Reset discard ownership of the command still awaiting Retry", async () => {
     const retry = deferred();
     const dispatch = vi.fn(() =>
