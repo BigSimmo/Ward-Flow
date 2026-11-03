@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -119,5 +119,22 @@ describe("the average-stay sentence names the population the figure measures", (
     // nobody arrived, so the length-of-stay panel is absent rather than worded.
     renderWith([]);
     expect(screen.queryByTestId("ward-stat-length-of-stay")).toBeNull();
+  });
+});
+
+describe("the Length of stay card covers the ward page's stay chart (owner polish, 3 Nov 2026)", () => {
+  const THREE = [...ARRIVED_ONLY, arrivedNotLeft(SEEDED, "AD-STAY-3", 30)];
+
+  it("says how many are in beds, the median beside the average, and the day buckets, at its anchor", () => {
+    renderWith(THREE);
+    const card = screen.getByTestId("statistics-ward-stays-chart");
+    expect(card).toHaveAttribute("id", "ward-stay");
+    expect(within(card).getByTestId("ward-stat-stay-in-beds")).toHaveTextContent("3 in beds now");
+    expect(within(card).getByTestId("ward-stat-stay-median")).toHaveTextContent("4 days");
+    expect(within(card).getByTestId("ward-stat-length-of-stay")).toBeInTheDocument();
+    fireEvent.click(within(card).getByRole("radio", { name: "Days" }));
+    const days = card;
+    expect(days).toHaveTextContent("0 to 3 days");
+    expect(days).toHaveTextContent("29 days or more");
   });
 });

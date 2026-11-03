@@ -2,15 +2,36 @@
 
 import { useSyncExternalStore } from "react";
 
+import { wardEnvironment, type WardEnvironment } from "../ward-feature-flags";
+
 const STORAGE_KEY = "ward-flow-statistics-samples";
 const CHANGE_EVENT = "ward-flow-statistics-samples-change";
-let fallback = false;
 
+/**
+ * Owner polish (3 Nov 2026): the demo shows example history until the viewer turns it off, so Weekly
+ * and the unit pages show invented trends rather than dashes. Production, the signed-in shared site
+ * and local builds keep it off until asked for. The environment is the one feature flags read
+ * (`wardEnvironment`); a shared build is never the public demo (as the demo roles tool reads it).
+ */
+export function statisticsSamplesDefault(
+  environment: WardEnvironment = wardEnvironment(),
+  shared: string | undefined = process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED,
+): boolean {
+  return environment === "demo" && shared?.trim().toLowerCase() !== "true";
+}
+
+let fallback: boolean | null = null;
+
+/** This device's own choice wins; with none, the build's default. */
 function snapshot(): boolean {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) === "on";
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored === "on") return true;
+    if (stored === "off") return false;
+    return statisticsSamplesDefault();
   } catch {
-    return fallback;
+    // Storage unavailable: the choice made on this page, else the default.
+    return fallback ?? statisticsSamplesDefault();
   }
 }
 function subscribe(listener: () => void) {
@@ -30,7 +51,10 @@ export function setStatisticsSamples(enabled: boolean) {
   }
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
-/** Optional invented history is off by default and persists independently of clinical workflow state. */
+/**
+ * Optional invented history: on by default in the demo, off elsewhere. The viewer's choice is kept on
+ * this device, apart from clinical workflow state.
+ */
 export function useStatisticsSamples() {
-  return useSyncExternalStore(subscribe, snapshot, () => false);
+  return useSyncExternalStore(subscribe, snapshot, () => statisticsSamplesDefault());
 }
