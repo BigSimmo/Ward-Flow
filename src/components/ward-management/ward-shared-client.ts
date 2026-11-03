@@ -1,4 +1,11 @@
-import { anySignal, onDeviceClock, sentence, untilAborted, withoutChartContent } from "./ward-shared-client-helpers";
+import {
+  anySignal,
+  checkSharedSnapshot,
+  onDeviceClock,
+  sentence,
+  untilAborted,
+  withoutChartContent,
+} from "./ward-shared-client-helpers";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 import { commandSheetHandles, openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
 import type { WardCommandMetadata } from "./ward-command-metadata";
@@ -16,7 +23,7 @@ import {
   type ArchivedCollection,
   type HeldArchive,
 } from "./ward-shared-archive-delta";
-import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
+import { reuseUnchangedPayload } from "./ward-shared-client-reuse";
 import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import { RecordDetailHold } from "./ward-shared-record-detail";
 import {
@@ -582,24 +589,8 @@ export class SharedWorkspaceClient {
     this.options.changed(this.view);
   }
   private adopt(snapshot: SharedSnapshot) {
-    // Audit PS-06: content equal to the payload already held passed the shared-state check then.
-    const unchanged = payloadUnchanged(this.rawPayload, snapshot?.payload);
-    if (
-      !snapshot ||
-      snapshot.dataMode !== "prototype" ||
-      !Number.isSafeInteger(snapshot.revision) ||
-      snapshot.revision < 1 ||
-      !Number.isFinite(snapshot.now) ||
-      (snapshot.accessContext !== undefined &&
-        (typeof snapshot.accessContext !== "string" || !/^[a-f0-9]{64}$/.test(snapshot.accessContext))) ||
-      snapshot.payload?.version !== 1 ||
-      !(unchanged || isValidSharedState?.(snapshot.payload.state)) ||
-      !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||
-      !Number.isFinite(Date.parse(snapshot.payload.startedAt))
-    )
-      throw new Error("Incompatible workspace data");
+    const unchanged = checkSharedSnapshot(snapshot, this.rawPayload, isValidSharedState);
     if (Number.isFinite(snapshot.accessUntil)) {
-      if (snapshot.accessUntil! <= Date.now()) throw new Error("Access verification expired");
       if (!Number.isFinite(this.view.accessUntil) || snapshot.accessUntil! < this.view.accessUntil!)
         this.publish({ accessUntil: snapshot.accessUntil });
     }
@@ -844,6 +835,15 @@ export class SharedWorkspaceClient {
       throw gate({ status: "choose-role", choices });
     }
     if (value === null) throw new Error("Workspace unavailable");
+    // HTTP success alone is not a command receipt. Modern replies name the committed revision;
+    // older servers answer with a full board, which must validate before recovery is discarded.
+    if (
+      path === "/v1/workspace/commands" &&
+      body &&
+      response.ok &&
+      (!Number.isSafeInteger(value.commandRevision) || value.commandRevision < 1)
+    )
+      checkSharedSnapshot(value.snapshot, this.rawPayload, isValidSharedState);
     if (this.options.authenticatedActorId && (workspaceRead || value.snapshot || path === "/v1/workspace/commands")) {
       const rebound = await verifyResponseBinding(
         {
@@ -1059,9 +1059,9 @@ export class SharedWorkspaceClient {
         // An ended role is this command's own definitive answer, though it also bumps the generation.
         if (generation !== this.viewGeneration && value?.code !== "role-ended") return;
         if (response.status >= 500) throw new Error("Save not confirmed");
-        this.sentCommandId = null;
-        this.clearRecovery();
         if (value.responseBindingChanged) {
+          this.sentCommandId = null;
+          this.clearRecovery();
           this.pending = null;
           this.settle(command.commandId, response.ok ? "accepted" : "refused");
           this.needsRefresh = true;
@@ -1116,6 +1116,9 @@ export class SharedWorkspaceClient {
             this.headRevision = Math.max(this.headRevision, value.commandRevision);
           else this.needsRefresh = true;
         }
+        // Keep the uncertain-save marker until the returned board has passed adoption checks.
+        this.sentCommandId = null;
+        this.clearRecovery();
         if (response.ok)
           this.ownSaveLanded(
             command.expectedRevision,
