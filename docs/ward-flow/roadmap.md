@@ -19,7 +19,7 @@ D-80 PRs 1 to 4 are merged. Reading the source on 3 November found PR 5 and the 
 | 13        | ED sees the wards asked and the accepting ward, not other wards' decline reasons        | Built: `edMovementCopy` in `ward-access-scope.ts`                                              |
 | 14        | Record view and break glass review; Access log in Settings                              | Built: `governance-record-views.tsx`, `settings/access-log.tsx`                                |
 | 15        | Opening a record logged as a record view                                                | Built (#667 and later): referral, patient, movement, list and TV reads; migrations 013 and 015 |
-| 17        | Coordinator gives an "on behalf of the ward" reason when opening a clinical ward record | Not built; pilot item. D-86 dropped the second approver.                                       |
+| 17        | Coordinator gives an "on behalf of the ward" reason when opening a clinical ward record | Not built; pilot item. D-86 dropped the two-person approval for role grants.                   |
 
 Next steps:
 
