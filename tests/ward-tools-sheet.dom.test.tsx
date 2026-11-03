@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -218,6 +218,17 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     fireEvent.click(more);
     expect(within(lookUp).getByRole("link", { name: /Legal forms/u })).toBeTruthy();
     expect(within(lookUp).queryByRole("button", { name: /^Show \d+ more$/u })).toBeNull();
+  });
+
+  it("opens a Recent tool even when its row sits under Show more", () => {
+    renderSheet(true);
+    showAllRows();
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-form-times"));
+    cleanup();
+    renderSheet(true);
+    const recent = screen.getByRole("region", { name: "Recent" });
+    fireEvent.click(within(recent).getByRole("button", { name: /Form times/u }));
+    expect(screen.getByTestId("ward-form-times")).toBeTruthy();
   });
 
   it("puts the Hospital feed under Do now and Find a bed, then Legal forms, under Look up", () => {

@@ -646,6 +646,13 @@ function ToolsSheetView({
       .filter((entry): entry is Entry => entry !== null)
       .filter((entry) => !words || `${entry.name} ${entry.detail}`.toLowerCase().includes(words)),
   })).filter((group) => group.entries.length > 0);
+  // A group folds after five rows unless searching, opened, short, or holding the open tool
+  // (a Recent chip can open a tool whose row sits under Show more).
+  const groupShowsAll = (group: (typeof groups)[number]) =>
+    Boolean(words) ||
+    expanded.has(group.id) ||
+    group.entries.length <= GROUP_SHOWN + 1 ||
+    group.entries.findIndex((entry) => entry.key === open) >= GROUP_SHOWN;
   const groupOf = (key: EntryKey): GroupId => GROUPS.find((group) => order[group.id].includes(key))?.id ?? "look";
   const matches = groups.reduce((total, group) => total + group.entries.length, 0);
 
@@ -799,11 +806,10 @@ function ToolsSheetView({
                 <span className={styles.groupCount}>{group.entries.length}</span>
               </h3>
               <div className={styles.card}>
-                {(words || expanded.has(group.id) || group.entries.length <= GROUP_SHOWN + 1
-                  ? group.entries
-                  : group.entries.slice(0, GROUP_SHOWN)
-                ).map((entry) => renderRow(entry, group.id))}
-                {!words && !expanded.has(group.id) && group.entries.length > GROUP_SHOWN + 1 ? (
+                {(groupShowsAll(group) ? group.entries : group.entries.slice(0, GROUP_SHOWN)).map((entry) =>
+                  renderRow(entry, group.id),
+                )}
+                {!groupShowsAll(group) ? (
                   <button
                     type="button"
                     className={styles.showMore}
