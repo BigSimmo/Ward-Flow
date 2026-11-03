@@ -167,6 +167,9 @@ export function ReferralSummaryRail({
             type="button"
             className={styles.btn}
             data-testid="ward-referral-preview-letter"
+            // RF2: the rail scrolls, so it clips anything outside it; the focus ring sits inside the
+            // full width button instead of 2px outside it, and is drawn whole.
+            style={{ outlineOffset: -2 }}
             aria-pressed={previewOpen}
             onClick={() => {
               setPreviewOpen((open) => !open);

@@ -268,6 +268,15 @@ export function DeclineLadder({ steps, now }: { steps: LadderStep[]; now: Instan
 
 export type TrackPoint = { at: Instant; label: string; shape: MarkShape };
 
+/** About half a 12px label's width, from its length: wide enough for the track's own labels. */
+const halfLabelWidth = (label: string) => Math.ceil(label.length * 3.5) + 2;
+
+/** The x for a label centred on its mark, moved in just far enough that neither end is cut off. */
+function labelCentre(markX: number, label: string, width: number) {
+  const half = halfLabelWidth(label);
+  return Math.min(Math.max(half, width - half), Math.max(half, markX));
+}
+
 /** One line from the first recorded time to now, with what happened on it. */
 export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant }) {
   const [frameRef, width] = useFrameWidth(366);
@@ -297,7 +306,9 @@ export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant 
               title={`${point.label}, ${formatInstantWithDay(point.at, now)}`}
             />
             <text
-              x={Math.min(width - 60, Math.max(36, x(point.at)))}
+              // Keep the whole label on the track: a long first label ("Transport accepted", about
+              // 120px) centred on a mark near the start used to run off the card's left edge.
+              x={labelCentre(x(point.at), point.label, width)}
               y={10}
               className={styles.pointLabel}
               textAnchor="middle"
