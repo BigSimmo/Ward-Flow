@@ -169,9 +169,9 @@ const AROUND: readonly Around[] = [
         body: "Use Show to filter the sheet to a service, then use Print handover for the paper copy.",
       },
       {
-        target: [id("ward-handover-sign-bar"), id("ward-handover-phone-sign-off")],
+        target: [id("ward-handover-hero-sign-off"), id("ward-handover-phone-sign-off")],
         title: "Sign off",
-        body: "Work through the Before you sign checks, then choose Sign off.",
+        body: "Sign off shows how many checks are clear. Open it, work through the Before you sign checks, then choose Sign off.",
       },
     ],
   },

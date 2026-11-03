@@ -1424,7 +1424,7 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* iPad portrait: the bottom bar opens sign-off, so the rail's own trigger stays hidden. */
+/* iPad portrait: the hero's Sign off opens sign-off, so the rail's own trigger stays hidden. */
 .portraitRailHost {
   display: contents;
 }
@@ -1583,4 +1583,13 @@ button.gl:hover .glValue {
   text-overflow: ellipsis;
   vertical-align: bottom;
   white-space: nowrap;
+}
+
+/* The hero Sign off carries its check count ("1/5") as quiet meta behind a hairline. */
+.heroSignCount {
+  margin-inline-start: 2px;
+  background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
+  color: var(--wf-hero-2);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }

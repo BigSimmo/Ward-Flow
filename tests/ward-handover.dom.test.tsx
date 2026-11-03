@@ -66,19 +66,27 @@ describe("Handover page", () => {
     // 1 Nov 2026 redesign: Print handover is the sheet bar's primary; Present sits in More.
     expect(screen.getByTestId("ward-handover-print")).toHaveTextContent("Print handover");
     expect(screen.getByRole("button", { name: "More handover actions" })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-handover-sign-bar")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-handover-hero-sign-off")).toBeInTheDocument();
   });
 
-  it("links the hero's checks count to the sign-off block at the foot of the page", () => {
+  it("keeps Sign off in the hero on every tab, carrying the same check count as the checklist", () => {
     renderHandover();
-    const bar = screen.getByTestId("ward-handover-sign-bar");
-    const link = screen.getByTestId("ward-handover-checks-link");
-    // 3 Nov 2026: the block sits in the page flow, so the hero names the same count and goes to it.
-    const count = /(\d+) of (\d+) checks clear/.exec(bar.textContent ?? "");
-    expect(count, "the sign-off block lost its checks count").not.toBeNull();
-    expect(link).toHaveTextContent(count![0]);
-    fireEvent.click(link);
-    expect(bar).toHaveFocus();
+    // 3 Nov 2026: sign-off has one fixed place, the hero; nothing floats over or trails the rows.
+    expect(screen.queryByTestId("ward-handover-sign-bar")).toBeNull();
+    for (const tab of [/Patients/, /Beds/, /History/]) {
+      fireEvent.click(screen.getByRole("tab", { name: tab }));
+      expect(screen.getByRole("button", { name: /^Sign off, \d+ of \d+ checks clear$/ })).toBeInTheDocument();
+    }
+    const hero = screen.getByTestId("ward-handover-hero-sign-off");
+    const [, done, total] = /^Sign off, (\d+) of (\d+) checks clear$/.exec(hero.getAttribute("aria-label") ?? "")!;
+    expect(hero).toHaveTextContent(`${done}/${total}`);
+    fireEvent.click(hero);
+    expect(screen.getByRole("tab", { name: /Patients/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByTestId("ward-handover-sign-off")).toHaveTextContent(`${done} of ${total} clear`);
+    expect(screen.getAllByTestId("ward-handover-sign-off-checks")[0]!.querySelectorAll("li")).toHaveLength(
+      Number(total),
+    );
+    expect(screen.getByTestId("ward-handover-sign-off-button")).toBeInTheDocument();
   });
 
   it("groups every open patient in meeting order", () => {
@@ -124,8 +132,8 @@ describe("Handover page", () => {
   it("shows the sign-off sheet until a patient is picked, then that patient's flow", async () => {
     const user = userEvent.setup();
     renderHandover();
-    // 1 Nov 2026 redesign: sign-off is the bar at the foot of the sheet; its checklist is a drawer.
-    expect(screen.getByTestId("ward-handover-sign-bar")).toBeInTheDocument();
+    // 3 Nov 2026: sign-off is the hero's Sign off; its checklist is a drawer.
+    expect(screen.getByTestId("ward-handover-hero-sign-off")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
 
     await user.click(firstPatientRow());
@@ -137,9 +145,7 @@ describe("Handover page", () => {
 
     await user.click(within(panel).getByRole("button", { name: "Close patient" }));
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
-    await user.click(
-      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
-    );
+    await user.click(screen.getByTestId("ward-handover-hero-sign-off"));
     expect(screen.getByTestId("ward-handover-sign-off")).toBeInTheDocument();
   });
 
@@ -243,15 +249,13 @@ describe("Handover page", () => {
   it("records the sign-off with role and time and lists it in History", async () => {
     const user = userEvent.setup();
     renderHandover();
-    await user.click(
-      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
-    );
+    await user.click(screen.getByTestId("ward-handover-hero-sign-off"));
     await user.click(screen.getByTestId("ward-handover-sign-off-button"));
     expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent(
       "Signed off at 10:42 as bed coordinator",
     );
-    // Approved redesign (31 Oct 2026): on the Patients tab the sign-off bar, not the hero, carries Sign off.
-    expect(screen.getByTestId("ward-handover-sign-bar")).toHaveTextContent("Signed 10:42");
+    // 3 Nov 2026: the hero's Sign off reads the signed time.
+    expect(screen.getByTestId("ward-handover-hero-sign-off")).toHaveTextContent("Signed 10:42");
     // A4-27 (audit round 2): once signed there is no second sign-off primary, only Undo.
     expect(screen.queryByTestId("ward-handover-sign-off-button")).toBeNull();
     expect(screen.getByTestId("ward-handover-sign-off-undo")).toHaveTextContent("Undo sign-off");
@@ -261,9 +265,7 @@ describe("Handover page", () => {
 
   it("offers no Handing to choice, because the engine records role and time only (D-72)", () => {
     renderHandover();
-    fireEvent.click(
-      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
-    );
+    fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
     const signOff = screen.getByTestId("ward-handover-sign-off");
     expect(signOff).toHaveTextContent("Handed over by");
     expect(signOff).not.toHaveTextContent("Handing to");

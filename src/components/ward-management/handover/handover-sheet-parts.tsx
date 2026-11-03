@@ -1,78 +1,10 @@
 "use client";
 
-import type { SignOffCheck } from "./handover-panels";
-import { useEffect, useState, type Ref } from "react";
-import { Button, Checkbox, ShowMoreRow as OneShowMoreRow, StatusGlyph } from "@/components/wf";
+import { useEffect, useState } from "react";
+import { Checkbox, ShowMoreRow as OneShowMoreRow } from "@/components/wf";
 
 import styles from "./handover-sheet-parts.module.css";
 import refined from "./handover-refined.module.css";
-
-/**
- * The sign-off block at the foot of the page content (Josh, 3 Nov 2026: it no longer floats over
- * the rows; the hero's "checks clear" link scrolls here and focuses it). It shows how many are
- * clear, names the ones still open, and either signs off (the same command the panel sends) or
- * opens the panel when a check needs a look first.
- */
-export function SignOffBar({
-  ref,
-  checks,
-  title,
-  signedLine,
-  cannotSignReason,
-  onSignOff,
-  onOpenPanel,
-}: {
-  checks: SignOffCheck[];
-  title: string;
-  signedLine: string | null;
-  /** Why Sign off is unavailable now, as the panel says it; undefined when it can be pressed. */
-  cannotSignReason?: string;
-  onSignOff: () => void;
-  onOpenPanel: () => void;
-  /** Takes focus when the hero's checks link is pressed. */
-  ref?: Ref<HTMLElement>;
-}) {
-  const done = checks.filter((check) => check.done).length;
-  const open = checks.filter((check) => !check.done);
-  return (
-    <section
-      ref={ref}
-      tabIndex={-1}
-      className={styles.signBar}
-      aria-label="Sign off"
-      data-testid="ward-handover-sign-bar"
-    >
-      <div className={styles.signLead}>
-        <b>{title}</b>
-        <span className={styles.signCount}>
-          <StatusGlyph tone={open.length === 0 ? "success" : "warning"} size={9} /> {done} of {checks.length} checks
-          clear
-        </span>
-      </div>
-      {signedLine ? (
-        <span className={styles.signOpen}>{signedLine}</span>
-      ) : open.length > 0 ? (
-        <ul className={styles.signOpen} aria-label="Still open">
-          {open.map((check) => (
-            <li key={check.id}>{check.text}</li>
-          ))}
-        </ul>
-      ) : (
-        <span className={styles.signOpen}>Every check is clear</span>
-      )}
-      <div className={styles.signActions}>
-        <Button variant="ghost" size="sm" onClick={onOpenPanel}>
-          Open checklist
-        </Button>
-        {signedLine ? null : (
-          <Button variant="pri" size="sm" onClick={onSignOff} disabledReason={cannotSignReason}>
-            Sign off
-          </Button>
-        )}
-      </div>
-    </section>
-  );
-}
 
 /** The row under a long group that shows the rest of it. Nothing when nothing is hidden. */
 export function ShowMoreRow({

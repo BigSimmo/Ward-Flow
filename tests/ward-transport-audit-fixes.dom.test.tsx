@@ -251,10 +251,12 @@ describe("Handover (A4-28, A4-26, S-31)", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    const checks = screen.getByTestId("ward-handover-sign-bar");
+    // 3 Nov 2026: the hero's Sign off opens the checklist drawer, where Sign off is pressed.
+    fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
+    const checks = screen.getByTestId("ward-handover-sign-off-checks");
     expect(checks).not.toHaveTextContent("Every ward feed is current");
     expect(checks).toHaveTextContent(/counts are stale|wards with stale counts/);
-    fireEvent.click(within(checks).getByRole("button", { name: "Sign off" }));
+    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
     expect(screen.getAllByText("Handover signed off.")).toHaveLength(1);
   });
 });
