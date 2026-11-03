@@ -37,3 +37,5 @@ Cloud-browser control remains unavailable. No screenshots, physical-device accep
 The runtime retains its existing maximum of 20 staff notes. The oldest entry is preserved here when adding this repair note, rather than losing its wording:
 
 - 2026-10-31 (`2026-10-31-redesign-capacity`): Capacity has a new look: beds ready first, the bed forecast, a bed map of every ward and this shift's checks.
+
+- 2026-10-31 (`2026-10-31-redesign-referrals`): Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot.
