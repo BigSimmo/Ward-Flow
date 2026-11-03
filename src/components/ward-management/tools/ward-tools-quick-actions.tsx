@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import type { LucideIcon } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowUpRight, type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/wf/button";
 import { useWardFlowSelect } from "../ward-flow-provider";
@@ -20,16 +20,22 @@ export type QuickTile = {
   name: string;
   detail: string;
   count?: number;
-  pressed?: boolean;
+  /** A tile either opens its tool under the grid (`body`) or goes to a page (`href`). */
+  title?: string;
+  body?: ReactNode;
   href?: string;
-  onClick?: () => void;
 };
 
-export function QuickActions({ tiles, onNavigate }: { tiles: readonly QuickTile[]; onNavigate: () => void }) {
+/**
+ * Quick actions opens from one Tools row (Josh, 3 Nov: room to grow without cluttering Tools).
+ * The grid sits on top; the chosen action opens beneath it, so the coordinator never leaves Tools.
+ */
+export function QuickActionsPanel({ tiles, onNavigate }: { tiles: readonly QuickTile[]; onNavigate: () => void }) {
+  const [chosen, setChosen] = useState<string | null>(tiles.find((tile) => tile.body)?.key ?? null);
+  const active = tiles.find((tile) => tile.key === chosen && tile.body);
   return (
-    <section className={styles.quick} aria-label="Quick actions">
-      <h3 className={styles.heading}>Quick actions</h3>
-      <div className={styles.grid}>
+    <div className={styles.panel}>
+      <div className={styles.grid} role="group" aria-label="Quick actions">
         {tiles.map((tile) => {
           const Icon = tile.icon;
           const inner = (
@@ -50,21 +56,29 @@ export function QuickActions({ tiles, onNavigate }: { tiles: readonly QuickTile[
           return tile.href ? (
             <Link key={tile.key} href={tile.href} className={styles.tile} onClick={onNavigate}>
               {inner}
+              <ArrowUpRight className={styles.end} aria-hidden="true" strokeWidth={1.75} />
+              <span className="sr-only">, opens its page</span>
             </Link>
           ) : (
             <button
               key={tile.key}
               type="button"
               className={styles.tile}
-              aria-pressed={tile.pressed}
-              onClick={tile.onClick}
+              aria-pressed={chosen === tile.key}
+              onClick={() => setChosen(tile.key)}
             >
               {inner}
             </button>
           );
         })}
       </div>
-    </section>
+      {active ? (
+        <section className={styles.chosen} aria-label={active.title ?? active.name}>
+          <h4 className={styles.chosenTitle}>{active.title ?? active.name}</h4>
+          {active.body}
+        </section>
+      ) : null}
+    </div>
   );
 }
 

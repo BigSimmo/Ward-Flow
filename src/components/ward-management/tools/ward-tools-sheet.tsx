@@ -28,9 +28,10 @@ import {
   Truck,
   Megaphone,
   Send,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
-import { QuickActions, useUnconfirmedWards, WardUpdatesRequest } from "./ward-tools-quick-actions";
+import { QuickActionsPanel, useUnconfirmedWards, WardUpdatesRequest } from "./ward-tools-quick-actions";
 
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardRoleSwitcher } from "@/components/ward-management/ward-public-role-switcher";
@@ -74,7 +75,7 @@ export type ToolsSheetToolId =
   | "contacts"
   | "form-times"
   | "messages"
-  | "ward-updates"
+  | "quick-actions"
   | "demo";
 
 type EntryKey =
@@ -111,7 +112,7 @@ export type WardToolsSheetProps = {
  */
 const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> = {
   coordinator: {
-    do: ["ward-updates", "new-referral", "update-bed", "remind", "book-transport", "log-delay", "feed"],
+    do: ["quick-actions", "new-referral", "update-bed", "remind", "book-transport", "log-delay", "feed"],
     look: ["bed-finder", "figures", "leave-due", "catchment", "contacts", "form-times", "legal-forms", "out-of-area"],
     share: ["messages", "handover", "downtime", "chronology"],
   },
@@ -145,12 +146,9 @@ const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> =
   admin: { do: [], look: ["contacts", "catchment"], share: [] },
 };
 
-/** Tools the coordinator's Quick actions open in place; their rows return only while searching. */
-const COORDINATOR_QUICK: readonly EntryKey[] = ["ward-updates", "bed-finder", "messages"];
-
 /** Q309: until a desk has used a tool, the row offers its three most likely ones. */
 const ROLE_SUGGESTED: Record<WardAccessRole, readonly ToolsSheetToolId[]> = {
-  coordinator: ["bed-finder", "update-bed", "messages"],
+  coordinator: ["quick-actions", "bed-finder", "update-bed"],
   bed_manager: ["update-bed", "bed-finder", "leave-due"],
   ward: ["update-bed", "leave-due", "form-times"],
   ed: ["bed-finder", "form-times", "contacts"],
@@ -385,15 +383,56 @@ function ToolsSheetView({
   }, []);
 
   const all: Record<EntryKey, Entry | null> = {
-    "ward-updates":
+    "quick-actions":
       role === "coordinator"
         ? {
-            key: "ward-updates",
-            icon: BellRing,
-            name: "Ward updates",
-            detail: "Confirm beds this shift",
-            count: { n: unconfirmed.waiting.length, label: "not confirmed this shift", act: true },
-            body: <WardUpdatesRequest />,
+            key: "quick-actions",
+            icon: Zap,
+            name: "Quick actions",
+            detail: "Ward updates, beds and more",
+            count: { n: unconfirmed.waiting.length, label: "wards not confirmed this shift", act: true },
+            body: (
+              <QuickActionsPanel
+                onNavigate={onNavigate}
+                tiles={[
+                  {
+                    key: "ward-updates",
+                    icon: BellRing,
+                    name: "Ward updates",
+                    detail: "not confirmed",
+                    count: unconfirmed.waiting.length,
+                    title: "Ward updates",
+                    body: <WardUpdatesRequest />,
+                  },
+                  {
+                    key: "bed-finder",
+                    icon: SearchCheck,
+                    name: "Find a bed",
+                    detail: "ready now",
+                    count: counts.bedsReady,
+                    title: "Find a bed",
+                    body: <ToolFindBed onNavigate={onNavigate} />,
+                  },
+                  {
+                    key: "messages",
+                    icon: MessageSquareText,
+                    name: "Bed summary",
+                    detail: "Copy for email",
+                    title: "Bed summary",
+                    body: <ToolMessages onNavigate={onNavigate} />,
+                  },
+                  { key: "chase", icon: PhoneCall, name: "Chase wards", detail: "Call sheet", href: root },
+                  { key: "ask", icon: Send, name: "Ask wards", detail: "For a patient", href: `${root}/waiting` },
+                  {
+                    key: "broadcast",
+                    icon: Megaphone,
+                    name: "Broadcast",
+                    detail: "To chosen units",
+                    href: `${root}/alerts`,
+                  },
+                ]}
+              />
+            ),
           }
         : null,
     "new-referral":
@@ -600,8 +639,7 @@ function ToolsSheetView({
     entries: order[group.id]
       .map(usable)
       .filter((entry): entry is Entry => entry !== null)
-      .filter((entry) => !words || `${entry.name} ${entry.detail}`.toLowerCase().includes(words))
-      .filter((entry) => Boolean(words) || role !== "coordinator" || !COORDINATOR_QUICK.includes(entry.key)),
+      .filter((entry) => !words || `${entry.name} ${entry.detail}`.toLowerCase().includes(words)),
   })).filter((group) => group.entries.length > 0);
   const groupOf = (key: EntryKey): GroupId => GROUPS.find((group) => order[group.id].includes(key))?.id ?? "look";
   const matches = groups.reduce((total, group) => total + group.entries.length, 0);
@@ -612,12 +650,7 @@ function ToolsSheetView({
   const toolIds = (ids: readonly ToolsSheetToolId[]) =>
     ids.filter((id) => listed(id) && usable(id)?.body !== undefined);
   const recentIds = toolIds(recent);
-  const coordinatorQuick = role === "coordinator";
-  const quickIds = coordinatorQuick
-    ? toolIds(["ward-updates", "bed-finder", "messages"])
-    : recentIds.length > 0
-      ? recentIds
-      : toolIds(ROLE_SUGGESTED[role] ?? []);
+  const quickIds = recentIds.length > 0 ? recentIds : toolIds(ROLE_SUGGESTED[role] ?? []);
   const quickTitle = recentIds.length > 0 ? "Recent" : "Suggested";
 
   // Q311: two panes always show a tool, never an empty pane; the first quick pick opens with the sheet.
@@ -706,64 +739,7 @@ function ToolsSheetView({
           shortcut={!isPhone}
         />
 
-        {!words && coordinatorQuick ? (
-          <QuickActions
-            onNavigate={onNavigate}
-            tiles={[
-              {
-                key: "ward-updates",
-                icon: BellRing,
-                name: "Ward updates",
-                detail: "not confirmed",
-                count: unconfirmed.waiting.length,
-                pressed: shown === "ward-updates",
-                onClick: () => openTool("ward-updates"),
-              },
-              {
-                key: "bed-finder",
-                icon: SearchCheck,
-                name: "Find a bed",
-                detail: "ready now",
-                count: counts.bedsReady,
-                pressed: shown === "bed-finder",
-                onClick: () => openTool("bed-finder"),
-              },
-              {
-                key: "messages",
-                icon: MessageSquareText,
-                name: "Bed summary",
-                detail: "Copy for email",
-                pressed: shown === "messages",
-                onClick: () => openTool("messages"),
-              },
-              { key: "chase", icon: PhoneCall, name: "Chase wards", detail: "Call sheet", href: root },
-              {
-                key: "ask",
-                icon: Send,
-                name: "Ask wards",
-                detail: "For a patient",
-                href: `${root}/waiting`,
-              },
-              {
-                key: "broadcast",
-                icon: Megaphone,
-                name: "Broadcast",
-                detail: "To chosen units",
-                href: `${root}/alerts`,
-              },
-            ]}
-          />
-        ) : null}
-
-        {!words && coordinatorQuick && !twoPane && open && COORDINATOR_QUICK.includes(open) ? (
-          <div className={styles.card}>
-            <div id={`ward-tools-${open}`} className={styles.toolPanel}>
-              {usable(open)?.body}
-            </div>
-          </div>
-        ) : null}
-
-        {!words && !coordinatorQuick && quickIds.length > 0 ? (
+        {!words && quickIds.length > 0 ? (
           <section className={styles.quick} aria-label={quickTitle}>
             <h3 className={styles.groupHeading}>{quickTitle}</h3>
             <div className={styles.chips}>
