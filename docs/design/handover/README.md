@@ -4,7 +4,7 @@ _Updated 3 November 2026. This file replaces `/mnt/project-files/ward-flow/HANDO
 
 This is the one handover entry for the Ward Flow redesign and the **source of truth for owner question numbers (Q numbers)**. Record each new question and its answer in the [question log](#question-log) below, in the same PR as the work or in a small docs PR.
 
-**Next free question number: Q382.**
+**Next free question number: Q393.** Q382 to Q389 are reserved for the threads started on 3 November 2026.
 
 ## Read first
 
@@ -144,3 +144,9 @@ Josh answered "Yes to 2 to 12" at 17:09 UTC, which is Q371 to Q381. Q370 was not
 - Q379: STATUS owner tasks, including the sign-in renewal test before about 16 November and migration 13. Yes.
 - Q380: next feature is finishing role access (D-80 PR 5) and pilot readiness; refresh the roadmap. Yes.
 - Q381: retire `HANDOVER.md` in favour of this file. Yes, done here.
+
+### Q390 to Q392 (real-data go/no-go, 3 November 2026)
+
+- Q390: where "about 16 November" came from. Nothing in the database expires then. Recommend dropping the date: Josh signs in with a test account in the morning and makes one save after lunch. Open.
+- Q391: turn off the Supabase organisation's AI SQL, log and data options (on now). Recommend yes; needs Josh. Open.
+- Q392: keep referral and legal-form drafts out of browser storage unless the workspace is in prototype mode (checklist C1). Recommend yes. Open.
