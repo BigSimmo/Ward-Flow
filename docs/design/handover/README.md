@@ -46,7 +46,7 @@ Reuse the mock-up's existing components and tokens and apply them straight to th
 - Hosted CI is the full gate. No duplicate test runs.
 - Design: no coloured side edges; 40px controls (48px Accept/Pull/Decline on phones); 12px minimum text; minimal warnings; surname first with UMRN; times as typed (never default a written time to now).
 - Questions: numbered, one recommendation each. Answered: Q122 to Q127 and ED's written time optional (all as recommended). Open: Q128 (ED: leave Clear out, put Decline back inside the opened referral). Next free: Q129. Record each new Q in HANDOVER.md.
-- Q129 answered: auto-merge OFF on #1230 until the Pull the bed sheet bug is fixed (see alerts.md); turn it back on only when Josh says so.
+- To hold a PR, add the `hold` label (Q373); never write an auto-merge note. Base every PR on `main`; never stack PRs. (The old Q129 hold on #1230 ended when it merged on 1 Nov.) Q384 (open, 3 Nov): Josh adds `Ward Flow hold` as a required check in the main ruleset so the label blocks merges.
 - Not approved, don't build: Patients #1224, Help, Team search, Statistics/Weekly.
 - Josh: plain warm English, answer first, numbered actions, ultra token-conservative, post only finished links and questions.
 

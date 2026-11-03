@@ -194,7 +194,7 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
   });
 
   describe("sign-out clash check is on by default and bypassed only by explicit opt-in", () => {
-    function signOutFixture() {
+    function signOutFixture(log = "Open sign-outs only\n") {
       const root = repoFixture("ward/signout-fixture");
       mkdirSync(join(root, "scripts"), { recursive: true });
       copyFileSync(
@@ -202,8 +202,8 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
         join(root, "scripts", "pre-commit-checks.mjs"),
       );
       stageWardFile(root);
-      // An empty log makes an unsigned file a block; missing logs also fail closed.
-      writeFileSync(join(root, "sign-out.md"), "Open sign-outs only\n");
+      // Q374: the branch is the claim, so only another branch's active hold in the log blocks.
+      writeFileSync(join(root, "sign-out.md"), log);
       return {
         root,
         env: {
@@ -222,15 +222,24 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
       expect(source).not.toContain("PRECOMMIT_SIGNOUT_STRICT");
     });
 
-    it("blocks an unsigned Ward file by default", { timeout: 90_000 }, () => {
+    const PEER_LOG = `Open sign-outs only\n- 2026-10-17 | Peer | ward/peer | /elsewhere/peer | ${WARD_FILE_RELATIVE}\n`;
+
+    it("allows an own Ward file with no sign-out line by default", { timeout: 90_000 }, () => {
       const { root, env } = signOutFixture();
       const result = runFullHook(root, env);
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stderr).not.toContain("without your sign-out");
+    });
+
+    it("blocks a Ward file another branch holds by default", { timeout: 90_000 }, () => {
+      const { root, env } = signOutFixture(PEER_LOG);
+      const result = runFullHook(root, env);
       expect(result.status).not.toBe(0);
-      expect(result.stderr).toContain("without your sign-out");
+      expect(result.stderr).toContain("files signed out by another session");
     });
 
     it("allows the commit only when SKIP_SIGNOUT_GUARD=1 is set explicitly", { timeout: 90_000 }, () => {
-      const { root, env } = signOutFixture();
+      const { root, env } = signOutFixture(PEER_LOG);
       const result = runFullHook(root, { ...env, SKIP_SIGNOUT_GUARD: "1" });
       expect(result.status, result.stderr).toBe(0);
     });

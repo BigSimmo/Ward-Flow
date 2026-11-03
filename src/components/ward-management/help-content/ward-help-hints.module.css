@@ -30,6 +30,16 @@
   font: inherit;
   cursor: pointer;
 }
+/* G3: "Turn off tips" is the quiet third choice, text only, at the end of the row. */
+.actions .quiet {
+  margin-inline-start: auto;
+  border-color: transparent;
+  background: transparent;
+  color: var(--wf-ink-3);
+}
+.actions .quiet:hover {
+  color: var(--wf-ink-1);
+}
 .actions button:focus-visible {
   outline: 2px solid var(--wf-ink-1);
   outline-offset: 2px;
