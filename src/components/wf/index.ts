@@ -70,7 +70,15 @@ export { cycleTabWithin, focusIsLost } from "./focus-return";
 export { rememberOpener, returnFocusToOpener, type FocusOpener } from "./focus-opener";
 export { StateLine, type StateKind } from "./state";
 export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";
-export { LiveChip, Timer, publishLiveClock, publishLiveRefresh, useSharedRefreshLate } from "./live";
+export {
+  LiveChip,
+  Timer,
+  notUpdatingWords,
+  publishLiveClock,
+  publishLiveRefresh,
+  useLiveFreshness,
+  useSharedRefreshLate,
+} from "./live";
 export {
   Field,
   TextInput,

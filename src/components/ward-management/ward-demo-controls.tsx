@@ -6,7 +6,7 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useWardShellPublic } from "./shell/ward-shell-public-context";
 import { requestDemoMenu } from "@/components/ward-management/tools/ward-demo-menu-open";
-import { notUpdatingWords, useLiveFreshness } from "@/components/wf/live";
+import { notUpdatingWords, useLiveFreshness } from "@/components/wf";
 import barStyles from "@/components/ward-management/shell/ward-bar.module.css";
 
 export type WardDemoClockPopoverProps = {
