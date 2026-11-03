@@ -117,6 +117,8 @@ import { movementHasBedHold } from "@/components/ward-management/ward-movement-b
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { PatientArchivePanel } from "./patient-archive-panel";
+import { PatientGlance, patientStateTag } from "./patient-glance";
+import { seededReferralDossier } from "@/components/ward-management/ward-referral-dossier-seed";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
@@ -978,6 +980,37 @@ export function PatientNowScreen({
     setActiveTab(tab);
     requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
   };
+  // PT1 (Josh, 3 Nov 2026): the band leads with legal, observation, risk, community care, GP and
+  // alerts for every state. Risk flags are read from the referral that opened this placement or
+  // stay, as recorded, never inferred.
+  const glanceMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : liveMovement;
+  const glanceRiskFlags =
+    resolved.liveReferral?.intake?.riskFlags ??
+    (glanceMovement ? seededReferralDossier(glanceMovement.id, glanceMovement)?.riskFlags : undefined);
+  const activeCommunityEpisode = recordExtrasFor(livePatient?.id)?.community?.find(
+    (episode) => episode.status === "active",
+  );
+  const stateTag = patientStateTag({
+    mode,
+    movement: liveMovement,
+    communityActive: Boolean(ctoInForce || activeCommunityEpisode),
+  });
+  const glance = (
+    <PatientGlance
+      mode={mode}
+      patient={livePatient}
+      movement={glanceMovement}
+      admission={stayCurrent ? resolved.liveAdmission : undefined}
+      leaveBed={stayLeaveBed}
+      stayWithheld={statusContext.stayWithheld}
+      formTimeLeft={movementTimeLeft}
+      riskFlags={glanceRiskFlags}
+      community={activeCommunityEpisode}
+      healthAlerts={recordExtrasFor(livePatient?.id)?.alerts}
+      onOpenForms={() => openTab("documents")}
+      onOpenDetails={() => openTab("details")}
+    />
+  );
   const nowPanel = (
     <PatientNowPanel
       acceptingUnit={acceptingUnit}
@@ -1105,6 +1138,8 @@ export function PatientNowScreen({
           voluntaryNow={voluntaryNow}
           waitedStr={waitedStr}
           where={where}
+          glance={glance}
+          stateTag={stateTag}
         />
         {/* Restricted record (27 Oct 2026): the notice sits under the hero, so the hero stays the first
             thing under the header and keeps its band join (wf/band.ts). */}
@@ -1228,6 +1263,7 @@ export function PatientNowScreen({
                 <PatientDetailsTab
                   patient={livePatient}
                   movement={liveMovement}
+                  diagnosisFrom={glanceMovement}
                   displayName={displayName}
                   preferredName={preferredName}
                 />

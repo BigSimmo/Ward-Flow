@@ -227,13 +227,17 @@ export function PatientLegalNowCard({
           </button>
         </div>
         <ul className={styles.phList}>
-          <li className={styles.phItem}>
-            <StatusGlyph tone={status ? "info" : "neutral"} size={10} />
-            <span className={styles.phItemText}>
-              <strong>{status ?? "Legal status not recorded"}</strong>
-              <span>{statusNote}</span>
-            </span>
-          </li>
+          {/* PT1 (Josh, 3 Nov 2026): the status leads the band's at a glance row, so this list holds
+              the forms. The status stays here only when absence changes what it means. */}
+          {absent && onOrder ? (
+            <li className={styles.phItem}>
+              <StatusGlyph tone="info" size={10} />
+              <span className={styles.phItemText}>
+                <strong>{status}</strong>
+                <span>{statusNote}</span>
+              </span>
+            </li>
+          ) : null}
           {rows.map((row) => (
             <li key={row.code} className={styles.phItem}>
               <StatusGlyph tone={row.tone} size={10} />
@@ -284,13 +288,16 @@ export function PatientLegalNowCard({
         }
       />
       <div className={styles.list}>
-        <div className={styles.item}>
-          <StatusGlyph tone={status ? "info" : "neutral"} size={10} />
-          <span className={styles.itemText}>
-            <strong>{status ?? "Legal status not recorded"}</strong>
-            <span>{absent && onOrder ? statusNote : "Legal status as recorded"}</span>
-          </span>
-        </div>
+        {/* PT1: the status leads the band; it stays here only when absence changes what it means. */}
+        {absent && onOrder ? (
+          <div className={styles.item}>
+            <StatusGlyph tone="info" size={10} />
+            <span className={styles.itemText}>
+              <strong>{status}</strong>
+              <span>{statusNote}</span>
+            </span>
+          </div>
+        ) : null}
         {rows.map((row) => (
           <div key={row.code} className={styles.item}>
             <StatusGlyph tone={row.tone} size={10} />

@@ -102,6 +102,10 @@ export type PatientNowSummaryProps = {
   voluntaryNow: boolean;
   waitedStr: string;
   where: string | undefined;
+  /** PT1: the band's first-screen facts (legal, observation, risk, community, GP, alerts). */
+  glance?: JSX.Element;
+  /** PT1: one of the five state tags, with the glyph tone. */
+  stateTag?: { tag: string; tone: WfTone };
 };
 
 export function PatientNowSummary(props: PatientNowSummaryProps) {
@@ -152,7 +156,17 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     voluntaryNow,
     waitedStr,
     where,
+    glance,
+    stateTag,
   } = props;
+  // PT1: the state tag leads ("Inpatient"); the mode's own words follow when they say more
+  // ("Inpatient · On leave"). One dark band for every state, Not active included.
+  const tagText = stateTag
+    ? stateTag.tag === "Inpatient" && modeMeta.pill !== "On ward"
+      ? `${stateTag.tag} · ${modeMeta.pill}`
+      : stateTag.tag
+    : modeMeta.pill;
+  const tagTone = stateTag?.tone ?? modeMeta.tone;
   const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
   return (
     <section className={styles.v6Summary} id="pnSubject" aria-label="Patient summary">
@@ -162,11 +176,11 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         patient={livePatient}
         displayToday={displayToday}
         isLiveBedflow={isLiveBedflow}
-        quiet={modeMeta.quiet && !isPhone}
+        glance={glance}
         statePill={
           <span className={styles.gbPill} data-testid="ward-patient-mode-pill">
-            <StatusGlyph tone={modeMeta.tone} size={10} />
-            {modeMeta.pill}
+            <StatusGlyph tone={tagTone} size={10} />
+            {tagText}
           </span>
         }
         phoneEyebrow={
@@ -182,8 +196,8 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             </span>
           ) : (
             <span className={styles.phEyebrow}>
-              <StatusGlyph tone={modeMeta.tone} size={10} />
-              {modeMeta.pill}
+              <StatusGlyph tone={tagTone} size={10} />
+              {tagText}
             </span>
           )
         }
@@ -555,7 +569,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             {(mode === "idle" || mode === "cto") && !isPhone && canOpenHref(newReferralHref) ? (
               <Link
                 href={newReferralHref}
-                className={buttonClass({ variant: modeMeta.quiet ? "pri" : "light", size: "sm" })}
+                className={buttonClass({ variant: "light", size: "sm" })}
                 data-testid="ward-person-refer-outpatient"
               >
                 <FileText size={14} aria-hidden="true" />

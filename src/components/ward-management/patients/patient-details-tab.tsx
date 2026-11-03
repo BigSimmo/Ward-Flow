@@ -1,5 +1,7 @@
 "use client";
 
+import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
+import { seededReferralDossier } from "@/components/ward-management/ward-referral-dossier-seed";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Clipboard } from "lucide-react";
@@ -173,9 +175,12 @@ export function PatientDetailsTab({
   movement,
   displayName,
   preferredName,
+  diagnosisFrom,
 }: {
   patient?: Patient;
   movement?: Movement;
+  /** PT1: the movement whose referral holds the working diagnosis (the stay's, on the ward). */
+  diagnosisFrom?: Movement;
   displayName: string;
   preferredName?: string;
 }) {
@@ -332,6 +337,15 @@ export function PatientDetailsTab({
     ...(placement ? [{ label: "Owner", value: placement.owner?.trim() || undefined }] : []),
   ];
 
+  // ── Diagnosis (PT1, Josh 3 Nov 2026) ─────────────────────────────────────────────────────────
+  // Diagnosis left the first screen and lives here. It is the referral's working diagnosis, as
+  // the referrer wrote it: the record itself still holds no diagnosis (R-2026-09-04-A).
+  const diagnosisMovement = diagnosisFrom ?? movement;
+  const diagnosis = diagnosisMovement
+    ? (tentativeDiagnosisPhrase(diagnosisMovement.tentativeDiagnosis ?? null) ??
+      seededReferralDossier(diagnosisMovement.id, diagnosisMovement)?.workingDiagnosis)
+    : undefined;
+
   // ── Record ─────────────────────────────────────────────────────────────────────────────────
   const episodes = extras?.episodes ?? [];
   const lastDischarge = episodes.find((episode) => episode.kind === "admission" && episode.end);
@@ -385,6 +399,19 @@ export function PatientDetailsTab({
 
         <Section title="Care links" action={careCopy ? <CopyCareLinks value={careCopy} /> : undefined}>
           <FactGrid facts={care} />
+        </Section>
+
+        <Section title="Diagnosis">
+          <FactGrid
+            facts={[
+              {
+                label: "Working diagnosis",
+                value: diagnosis,
+                aside: diagnosis ? "As written on the referral" : undefined,
+                wide: true,
+              },
+            ]}
+          />
         </Section>
 
         <Section title={placement ? "Legal and placement" : "Legal"}>

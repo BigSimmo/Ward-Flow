@@ -1,18 +1,7 @@
 import type { MouseEvent, ReactNode } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import {
-  BedDouble,
-  CalendarDays,
-  Clock,
-  DoorOpen,
-  Eye,
-  Scale,
-  Stethoscope,
-  Truck,
-  UserRound,
-  Users,
-} from "lucide-react";
+import { BedDouble, CalendarDays, Clock, DoorOpen, Scale, Stethoscope, Truck, UserRound, Users } from "lucide-react";
 import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -34,7 +23,6 @@ import type { PatientMode } from "./patient-mode";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { recordExtrasFor } from "./patient-record-extras";
 import styles from "./patient-status-card.module.css";
-import { observationSummary } from "@/components/ward-management/ward-observation";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";
 import type { SenderMovementPartialView } from "../ward-partial-view-contract";
@@ -558,18 +546,7 @@ function statusFor(
           ? `Day ${Math.floor(Math.max(0, now - arrivedAt) / 1440) + 1}`
           : "Stay recorded",
       cells: [
-        {
-          key: "observation",
-          icon: Eye,
-          label: "Observation",
-          owner: "Nurse in charge",
-          value: ctx.stayWithheld ? "Withheld" : admission ? observationSummary(admission.observation) : "Not recorded",
-          sub: ctx.stayWithheld
-            ? "Your team sees the ward and dates only"
-            : admission?.highAcuity
-              ? "High acuity recorded"
-              : "No high acuity recorded",
-        },
+        // PT1 (Josh, 3 Nov 2026): observation leads the band's at a glance row, so it is not repeated.
         {
           key: "discharge",
           icon: CalendarDays,
@@ -835,22 +812,7 @@ function statusFor(
             event: "END_COMMUNITY_TREATMENT_ORDER",
           },
         },
-        {
-          key: "catchment",
-          icon: Users,
-          label: "Community team",
-          owner: "Community",
-          value: patient.catchmentCommunityTeam ?? "Not recorded",
-          sub: "Recorded catchment",
-        },
-        {
-          key: "gp",
-          icon: Stethoscope,
-          label: "GP",
-          owner: "Primary care",
-          value: patient.generalPractitioner ?? "Not recorded",
-          sub: patient.suburb ? `Lives in ${patient.suburb}` : "Suburb not recorded",
-        },
+        // PT1 (Josh, 3 Nov 2026): community team and GP sit in the band's at a glance row, once.
       ],
     };
   }
@@ -862,45 +824,35 @@ function statusFor(
     tone: "neutral",
     // Redesign (Josh, 1 Nov 2026): Now is for a current presentation only, so a record with nothing
     // open says so plainly and points to the tabs that still hold the record.
-    verdict: "Not currently active",
-    meta: "No open referral, placement or ward stay. The record is in the tabs above.",
+    // PT1 (Josh, 3 Nov 2026): a community team caring for the person makes the record Community
+    // active. Team, care coordinator and GP sit in the band's at a glance row, so this card keeps
+    // only what it adds: the next contact and the CTO action.
+    verdict: activeEngagement ? "Community active" : "Not currently active",
+    meta: activeEngagement
+      ? "No open referral, placement or ward stay. A community team is caring for this person."
+      : "No open referral, placement or ward stay. The record is in the tabs above.",
     cells: [
-      // Round 2 (1 Nov 2026): when a community team is actively caring for the person, the tile says
-      // so and names the case manager; otherwise it stays the recorded catchment, care not confirmed.
-      activeEngagement
-        ? {
-            key: "catchment",
-            icon: Users,
-            label: "Community team",
-            owner: "Community",
-            tone: "success",
-            value: activeEngagement.team,
-            sub: `${activeEngagement.caseManager.name}, case manager${activeEngagement.nextContact ? ` · next ${activeEngagement.nextContact.split(",")[0]}` : ""}`,
-          }
-        : {
-            key: "catchment",
-            icon: Users,
-            label: "Community team",
-            owner: "Community",
-            value: patient?.catchmentCommunityTeam ?? "Not recorded",
-            sub: "Recorded catchment, care not confirmed",
-          },
-      {
-        key: "gp",
-        icon: Stethoscope,
-        label: "GP",
-        owner: "Primary care",
-        value: patient?.generalPractitioner ?? "Not recorded",
-        sub: patient?.suburb ? `Lives in ${patient.suburb}` : "Suburb not recorded",
-      },
+      ...(activeEngagement
+        ? [
+            {
+              key: "catchment",
+              icon: Users,
+              label: "Next community contact",
+              owner: "Community",
+              tone: "success" as const,
+              value: activeEngagement.nextContact?.split(",")[0] ?? "Not booked",
+              sub: `${activeEngagement.program}, ${activeEngagement.team}`,
+            },
+          ]
+        : []),
       {
         key: "legal",
         icon: Scale,
-        // Q118 (Josh, 1 Nov 2026): with nothing open, the status is the last one recorded, never current.
-        label: "Last legal status",
+        // PT1: the last legal status is in the band (Q118 words kept there). This cell holds the order.
+        label: "Community treatment order",
         owner: "Treating team",
-        value: patient?.legalStatus ?? "Not recorded",
-        sub: patient?.legalStatus ? "Last recorded · no open stay" : "As recorded",
+        value: "None in force",
+        sub: "An ended order stays in History",
         clear: true,
         // An order here can only be an ended one (an active order shows the CTO mode). A new order
         // keeps the ended one as Closed in `earlier` (D-40), so Record CTO stays available.
