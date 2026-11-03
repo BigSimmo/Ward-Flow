@@ -11,7 +11,7 @@ import styles from "./ward-referral-drawer.module.css";
 import { cx, StatusGlyph } from "@/components/wf";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
-import { suggestCatchment } from "./referral-catchment-suggestion";
+import { catchmentForSuburb } from "./referral-catchment-suggestion";
 import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
@@ -46,7 +46,7 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
     patientShowErrors,
     suburbKnown,
   } = s;
-  const suggestion = catchmentTeam && !catchmentEditing ? suggestCatchment(catchmentSuburb, catchmentTeam) : null;
+  const suggestion = catchmentTeam && !catchmentEditing ? catchmentForSuburb(catchmentSuburb, catchmentTeam) : null;
   // A confirmed team with no stored region is not finished: the region field shows for it rather
   // than the suggestion's region reading as confirmed.
   const region = homeRegion || (catchmentConfirmed ? "" : suggestion?.region) || "";

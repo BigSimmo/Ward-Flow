@@ -25,7 +25,7 @@ import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-f
 import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
 import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
 import { ReferralCatchmentCard } from "./ward-referral-drawer-catchment";
-import { suggestCatchment } from "./referral-catchment-suggestion";
+import { catchmentForSuburb } from "./referral-catchment-suggestion";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
@@ -170,7 +170,7 @@ export function ReferralPatientStep({
     !catchmentConfirmed &&
     !s.catchmentEditing &&
     !!catchmentTeam.trim() &&
-    !!(homeRegion || suggestCatchment(s.catchmentSuburb, catchmentTeam)?.region);
+    !!(homeRegion || catchmentForSuburb(s.catchmentSuburb, catchmentTeam)?.region);
   // The step's faults in field order, worded as the fields word them, for the error summary.
   const problems: ErrorSummaryItem[] = patientShowErrors
     ? [

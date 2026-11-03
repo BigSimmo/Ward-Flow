@@ -44,7 +44,7 @@ function serviceFromTeam(team: string): HealthService | undefined {
 }
 
 /** The service area and region that go with a suburb and its community team, when the sources say. */
-export function suggestCatchment(suburb: string, team: string): CatchmentSuggestion | null {
+export function catchmentForSuburb(suburb: string, team: string): CatchmentSuggestion | null {
   const trimmedTeam = team.trim();
   if (!trimmedTeam) return null;
   const lookup = suburb.trim() ? lookupCatchment(suburb) : null;
