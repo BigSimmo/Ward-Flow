@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-redesign-frame",
-    "date": "2026-10-31",
-    "line": "The sidebar, header and phone dock are tidier: page name first, Alerts on every desk, and Demo from the board clock."
-  },
-  {
     "id": "2026-10-31-redesign-home",
     "date": "2026-10-31",
     "line": "Home shows what changed since your last review in Activity, and a Planned list for the rest of the shift."
