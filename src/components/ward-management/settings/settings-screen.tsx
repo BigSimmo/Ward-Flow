@@ -1025,7 +1025,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           : "Read only"
         : "Set by the bed coordinator",
       device: alertsHere
-        ? `Alerts ${actNowNotifications ? "on" : "off"} · motion ${reducedMotion ? "reduced" : "on"}`
+        ? `Alerts ${actNowNotifications || phonePushRow(phonePush).checked ? "on" : "off"} · motion ${reducedMotion ? "reduced" : "on"}`
         : `Sidebar, motion ${reducedMotion ? "reduced" : "on"}, contrast ${highContrast ? "high" : "standard"}`,
       access: role === "admin" ? "Roles, approvals and requests" : "Cover for a second ward or ED",
       you: `${deskProfile.role} · ${deskProfile.location}`,
@@ -1199,7 +1199,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                 : sheetTab === "access"
                   ? "Each change asks for your password again"
                   : sheetTab === "device"
-                    ? "Saves at once · this browser only"
+                    ? "Saves at once · this device only"
                     : undefined
             }
             primary={
