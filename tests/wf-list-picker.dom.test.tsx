@@ -4,7 +4,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ListPicker, WF_PHONE_QUERY, type ListPickerOption } from "@/components/wf";
+import { ListPicker, WF_PHONE_QUERY, type ListPickerOption, type ListPickerProps } from "@/components/wf";
 import { OverlayRoot } from "@/components/wf/overlay-root";
 
 // Synthetic sites only.
@@ -31,9 +31,9 @@ function Harness({
   initial = null,
   required,
 }: {
-  options?: ListPickerOption[];
+  options?: ListPickerProps["options"];
   initial?: string | null;
-  required?: boolean;
+  required?: ListPickerProps["required"];
 }) {
   const [value, setValue] = useState<string | null>(initial);
   return (

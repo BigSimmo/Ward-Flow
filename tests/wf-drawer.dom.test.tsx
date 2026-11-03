@@ -5,7 +5,14 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
-import { DrawerFacts, DrawerFootRow, PanelDrawer } from "@/components/wf";
+import {
+  DrawerFacts,
+  DrawerFootRow,
+  PanelDrawer,
+  type DrawerFact,
+  type DrawerTab,
+  type PanelDrawerProps,
+} from "@/components/wf";
 import { OverlayRoot } from "@/components/wf/overlay-root";
 
 /**
@@ -13,6 +20,17 @@ import { OverlayRoot } from "@/components/wf/overlay-root";
  * focus on open, Escape and an outside click close it, focus goes back to the opener, the status tag
  * sits in the head, tabs sit inside, and the foot is pinned outside the one scroll area.
  */
+
+// Typed with the kit's public types, so a page can build its tabs, facts and region the same way.
+const TABS: DrawerTab<"summary" | "history">[] = [
+  { id: "summary", label: "Summary" },
+  { id: "history", label: "History", count: 3 },
+];
+const FACTS: DrawerFact[] = [
+  { label: "From", value: "Synthetic ED" },
+  { label: "To", value: "No destination yet" },
+];
+const REGION: PanelDrawerProps["region"] = { label: "Placement", testId: "kit-drawer-region", "data-subject": "m-1" };
 
 function Harness({ withTabs = false }: { withTabs?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -32,15 +50,8 @@ function Harness({ withTabs = false }: { withTabs?: boolean }) {
         tag={<span data-testid="drawer-tag">T2</span>}
         closeLabel="Close the drawer"
         testId="kit-drawer"
-        region={{ label: "Placement", testId: "kit-drawer-region", "data-subject": "m-1" }}
-        tabs={
-          withTabs
-            ? [
-                { id: "summary", label: "Summary" },
-                { id: "history", label: "History", count: 3 },
-              ]
-            : undefined
-        }
+        region={REGION}
+        tabs={withTabs ? TABS : undefined}
         tab={tab}
         onTabChange={setTab}
         foot={
@@ -49,16 +60,7 @@ function Harness({ withTabs = false }: { withTabs?: boolean }) {
           </DrawerFootRow>
         }
       >
-        {tab === "summary" ? (
-          <DrawerFacts
-            items={[
-              { label: "From", value: "Synthetic ED" },
-              { label: "To", value: "No destination yet" },
-            ]}
-          />
-        ) : (
-          <p>Three synthetic events</p>
-        )}
+        {tab === "summary" ? <DrawerFacts items={FACTS} /> : <p>Three synthetic events</p>}
       </PanelDrawer>
     </>
   );
