@@ -1170,7 +1170,7 @@ export function CoordinatorScreen() {
                 />
               )}
             </div>
-            <div className={`${list.rightCol} ${list.stickyCol}`} style={{ position: "static" }}>
+            <div className={`${list.rightCol} ${list.stickyCol}`}>
               {chosenAlert && !sheetPlacement ? (
                 <ChosenAlertCard entry={chosenAlert} now={now} onClear={closeShortlist} />
               ) : null}
@@ -1182,7 +1182,8 @@ export function CoordinatorScreen() {
               {!sheetPlacement && !hasPanelSubject && !chosenAlert ? (
                 <PlacementPrompt next={actEntries.find((entry) => entry.movement)} onOpen={alertHandlers.onSelect} />
               ) : null}
-              {!isPhone && layout !== "tablet-portrait" ? (
+              {/* Later today steps aside while Placement is open, so Placement keeps the whole column. */}
+              {!isPhone && layout !== "tablet-portrait" && !hasPanelSubject && !chosenAlert ? (
                 <PlannedList now={now} rows={plannedRows} title="Later today" />
               ) : null}
             </div>

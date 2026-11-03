@@ -119,17 +119,17 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // The exceptions drawer's default tab ("Exceptions") carries no `<h2>`, and its other three
     // tabs are `hidden` (not merely visually hidden — the native `hidden` attribute, which
     // Testing Library's accessibility-tree-aware `getByRole` already excludes) until a coordinator
-    // switches tabs. So a plain, unfiltered level-2-heading query is exactly the hero and the four
+    // switches tabs. So a plain, unfiltered level-2-heading query is exactly the hero and the three
     // headed panels this test is about, in DOM order — nothing here reaches into an inactive
     // tabpanel to manufacture that count.
     const headings = screen.getAllByRole("heading", { level: 2 });
-    expect(headings.length, "expected the hero and the four headed top-level panels, found a different count").toBe(5);
+    // Later today steps aside while Placement is open, so Placement keeps the whole right column.
+    expect(headings.length, "expected the hero and the three headed top-level panels, found a different count").toBe(4);
     expect(headings.map((heading) => heading.textContent)).toEqual([
       atRest[0],
       "ED pressure",
       "Beds that fit",
       "Placement",
-      "Later today",
     ]);
     expect(screen.queryByTestId("home-placement-prompt")).not.toBeInTheDocument();
   });
