@@ -55,7 +55,6 @@
 }
 
 .alertMeta {
-  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 
@@ -247,4 +246,54 @@
   margin: var(--wf-s-2) var(--wf-s-4) 0;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
+}
+
+/* Appraisal, 3 Nov 2026: the six-dot stepper becomes a slim stage meter in the wait block, so the
+   decision (the ward list) starts higher. Six segments, done and current filled, and the stage named. */
+.stage {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: var(--wf-s-2) 0 0;
+}
+
+.stageBars {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stageBars li {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wf-line-2);
+}
+
+.stageBars li[data-state="done"] {
+  background: color-mix(in srgb, var(--wf-accent) 55%, var(--wf-line-2));
+}
+
+.stageBars li[data-state="current"] {
+  background: var(--wf-accent);
+}
+
+.stageLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.stageLine strong {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+/* In the drawer the destination line only restated the alert and the ward groups below it. */
+.task.task :global([data-testid="ward-shortlist-no-destination"]) {
+  display: none;
 }

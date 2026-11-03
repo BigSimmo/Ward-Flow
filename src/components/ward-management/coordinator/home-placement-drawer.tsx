@@ -113,13 +113,13 @@ export function HomePlacementDrawer({
       {entry && !movement && entry.action.kind === "link" ? (
         <Link href={entry.action.href} className={buttonClass({ variant: "pri", className: d.wide })}>
           {entry.action.label}
-          <ChevronRight size={14} aria-hidden="true" />
+          <ChevronRight size={14} strokeWidth={1.75} aria-hidden="true" />
         </Link>
       ) : null}
       <DrawerFootRow className={p.links}>
         {recordHref ? (
           <Link className={buttonClass({ variant: "sec", size: "sm" })} href={recordHref}>
-            <FileText size={14} aria-hidden="true" />
+            <FileText size={14} strokeWidth={1.75} aria-hidden="true" />
             Patient record
           </Link>
         ) : null}
@@ -129,13 +129,13 @@ export function HomePlacementDrawer({
             href={wardBoardHref(accepted.id)}
             title={`Open the ${accepted.name} bed board`}
           >
-            <BedSingle size={14} aria-hidden="true" />
+            <BedSingle size={14} strokeWidth={1.75} aria-hidden="true" />
             Ward board
           </Link>
         ) : null}
         {referral ? (
           <Link className={buttonClass({ variant: "sec", size: "sm" })} href="/ward-flow/referrals">
-            <Inbox size={14} aria-hidden="true" />
+            <Inbox size={14} strokeWidth={1.75} aria-hidden="true" />
             All referrals
           </Link>
         ) : null}
@@ -183,7 +183,6 @@ export function HomePlacementDrawer({
       {movement ? (
         <>
           <WaitStatus movement={movement} now={now} />
-          <Journey movement={movement} />
           <div className={p.task}>
             <ShortlistPanel
               variant="drawer"
@@ -234,26 +233,37 @@ function WaitStatus({ movement, now }: { movement: Movement; now: Instant }) {
           T{movement.urgency} target {splitDuration(overdue)}
         </span>
       </span>
+      <Journey movement={movement} />
     </div>
   );
 }
 
 function Journey({ movement }: { movement: Movement }) {
   const current = STEPS.findIndex((step) => step.stage === movement.stage);
+  const next = current >= 0 ? STEPS[current + 1] : undefined;
   return (
-    <ol className={d.journeySteps} aria-label="Journey stage">
-      {STEPS.map((step, index) => (
-        <li
-          key={step.stage}
-          className={d.journeyStep}
-          data-state={index < current ? "done" : index === current ? "current" : undefined}
-          aria-current={index === current ? "step" : undefined}
-        >
-          <span className={d.dot} aria-hidden="true" />
-          <span className={d.stepLabel}>{step.label}</span>
-        </li>
-      ))}
-    </ol>
+    <div className={p.stage}>
+      <ol className={p.stageBars} aria-label="Journey stage">
+        {STEPS.map((step, index) => (
+          <li
+            key={step.stage}
+            data-state={index < current ? "done" : index === current ? "current" : undefined}
+            aria-current={index === current ? "step" : undefined}
+          >
+            <span className="sr-only">{step.label}</span>
+          </li>
+        ))}
+      </ol>
+      <p className={p.stageLine} aria-hidden="true">
+        <strong>{current >= 0 ? STEPS[current]!.label : "Stage not recorded"}</strong>
+        {current >= 0 ? (
+          <span>
+            Step {current + 1} of {STEPS.length}
+          </span>
+        ) : null}
+        {next ? <span>Next: {next.label}</span> : null}
+      </p>
+    </div>
   );
 }
 
