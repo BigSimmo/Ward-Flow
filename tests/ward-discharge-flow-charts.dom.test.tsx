@@ -98,7 +98,7 @@ describe("Discharges charts under the table (direction A)", () => {
     renderBoard();
     fireEvent.click(screen.getByRole("button", { name: /^History/u }));
     const confirmedChip = () =>
-      within(screen.getByRole("group", { name: "Status" })).getByRole("button", { name: /^Confirmed/u });
+      within(screen.getByRole("group", { name: "Status" })).getByRole("button", { name: /^\d+ Confirmed/u });
     fireEvent.click(confirmedChip());
     expect(confirmedChip()).toHaveAttribute("aria-pressed", "true");
     const first = within(barrierBars()).getAllByRole("button")[0]!;
@@ -116,21 +116,16 @@ describe("Discharges charts under the table (direction A)", () => {
     expect(screen.queryByRole("toolbar", { name: "Quick blocker filters" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Filter by discharge status")).not.toBeInTheDocument();
     expect(screen.getAllByRole("combobox", { name: "Held up by" })).toHaveLength(1);
-    // The Status chips' counts are the hero chips' counts, so the two never disagree.
-    const statusChips = within(screen.getByRole("group", { name: "Status" })).getAllByRole("button");
-    const chipLabels: Record<string, RegExp> = {
-      blocked: /^Held up/u,
-      confirmed: /^Confirmed/u,
-      expected: /^Expected/u,
-      departed: /^Discharged/u,
-    };
-    for (const key of ["blocked", "confirmed", "expected", "departed"]) {
-      const chip = screen.getByTestId(`ward-discharge-kpi-${key}`);
-      // P082: the chip's name starts with the count it shows.
-      const count = /^(\d+) /u.exec(chip.getAttribute("aria-label") ?? "")?.[1];
-      const statusChip = statusChips.find((candidate) => chipLabels[key]!.test(candidate.textContent ?? ""))!;
-      expect(statusChip.textContent).toMatch(new RegExp(`${count}$`, "u"));
-    }
+    // Plan item 2i (proposal): one set of status counts. The hero chips are the Status filter, so
+    // the list's filter card carries no second row of status chips.
+    const statusGroups = screen.getAllByRole("group", { name: "Status" });
+    expect(statusGroups).toHaveLength(1);
+    expect(statusGroups[0]).toHaveAttribute("data-testid", "ward-discharge-kpi-strip");
+    const blocked = screen.getByTestId("ward-discharge-kpi-blocked");
+    fireEvent.click(blocked);
+    expect(blocked).toHaveAttribute("aria-pressed", "true");
+    // A status filter is applied (not a highlight), so it shows as an applied filter to remove.
+    expect(screen.getByRole("button", { name: "Remove status filter" })).toBeInTheDocument();
   });
 
   it("keeps the table full width until a row is opened", () => {

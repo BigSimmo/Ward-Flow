@@ -50,8 +50,10 @@ describe("discharge actions stay usable and accessible across filters", () => {
   it("does not offer release shortcuts in incompatible status or record views", () => {
     wrap(<DischargeBoard />);
     expect(shortcut()).not.toBeNull();
-    // The hero chips highlight; the Status filter chips are what narrow the list.
-    fireEvent.click(within(screen.getByRole("group", { name: "Status" })).getByRole("button", { name: /^Confirmed/u }));
+    // Plan item 2i (proposal): the hero chips are the Status filter, so they narrow the list.
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Status" })).getByRole("button", { name: /^\d+ Confirmed/u }),
+    );
     expect(shortcut()).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /^History/ }));
     expect(shortcut()).toBeNull();

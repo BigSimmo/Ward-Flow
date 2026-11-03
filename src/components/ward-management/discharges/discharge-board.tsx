@@ -34,6 +34,7 @@ import {
   SrOnly,
   StatusGlyph,
   buttonClass,
+  type HeroNextStep,
 } from "@/components/wf";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -218,7 +219,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     recordLit,
     releaseLit,
     dimmed,
-    statusHighlight,
     litFirst,
     visibleRecords,
     visibleReleaseGroups,
@@ -310,6 +310,45 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   // Now and History: in the hero on desktop and tablet, under it on a phone (v10).
   const populationSwitch = <DischargePopulationSwitch s={s} />;
   const filterCard = <DischargeFilterCard s={s} />;
+  // Plan item 2i (proposal): the hero's next step, from the same status counts as the chips. Held up
+  // first, as the list is ordered; with nothing held up, the confirmed ones are next to see out.
+  const noun = (n: number) =>
+    population === "releases" ? (n === 1 ? "release" : "releases") : n === 1 ? "record" : "records";
+  const nextKey: "blocked" | "confirmed" | null =
+    counts.blocked > 0 ? "blocked" : counts.confirmed > 0 ? "confirmed" : null;
+  const heroNext: HeroNextStep = {
+    answer:
+      nextKey === "blocked"
+        ? `${counts.blocked} held-up ${noun(counts.blocked)} ${counts.blocked === 1 ? "needs" : "need"} chasing`
+        : nextKey === "confirmed"
+          ? `Nothing held up · ${counts.confirmed} confirmed ${noun(counts.confirmed)} to see out`
+          : "Nothing held up",
+    action:
+      nextKey === null
+        ? undefined
+        : {
+            label:
+              status === nextKey
+                ? "Show all"
+                : nextKey === "blocked"
+                  ? `Show ${HELD_UP.toLowerCase()}`
+                  : "Show confirmed",
+            pressed: status === nextKey,
+            testId: "ward-discharge-next-action",
+            onClick: () => {
+              setStatus(status === nextKey ? "all" : nextKey);
+              s.clearSelection();
+            },
+          },
+    // Desktop and tablet: the bed days past sit here, once, instead of in the title line.
+    facts: [
+      {
+        id: "bed-days-past",
+        label: "Bed days past the ward’s date",
+        value: <span data-testid="ward-discharge-bed-days-past-fact">{bedDaysPast}</span>,
+      },
+    ],
+  };
 
   return (
     <div className={`${styles.screen} ${pageStyles.screen}`} data-testid="ward-discharge-board" data-ward-design="v6">
@@ -364,10 +403,17 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             >
               {/* Josh, 30 Oct: "59 to work now · of 207 open". Open is every release not yet discharged;
                   the 148 due in 2+ days are said once, in the list's footer. */}
-              {population === "releases" ? `${isPhone ? "" : "· "}of ${openReleases.length} open · ` : null}
-              <strong>{bedDaysPast}</strong> bed {bedDaysPast === 1 ? "day" : "days"} past the ward&rsquo;s date
+              {/* Plan item 2i (proposal): on desktop and tablet the bed days past are a next-step fact. */}
+              {population === "releases" ? `${isPhone ? "" : "· "}of ${openReleases.length} open` : null}
+              {isPhone ? (
+                <>
+                  {population === "releases" ? " · " : null}
+                  <strong>{bedDaysPast}</strong> bed {bedDaysPast === 1 ? "day" : "days"} past the ward&rsquo;s date
+                </>
+              ) : null}
             </span>
           }
+          next={heroNext}
           aside={
             <div className={pageStyles.heroTools}>
               <LiveChip state="live" onHero />
@@ -397,8 +443,10 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               <div
                 className={pageStyles.kpiStrip}
                 data-testid="ward-discharge-kpi-strip"
-                role="region"
-                aria-label="Discharge pipeline highlights"
+                role="group"
+                // Plan item 2i (proposal): the hero counts are the Status filter, so the page holds
+                // one set of status counts. The phone keeps its chips in the Filters sheet.
+                aria-label="Status"
               >
                 {WORK_ORDER.map((key) => (
                   <button
@@ -406,12 +454,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     type="button"
                     data-testid={`ward-discharge-kpi-${key}`}
                     className={pageStyles.kpi}
-                    aria-pressed={statusHighlight === key}
+                    aria-pressed={status === key}
                     // P082: the name starts with what the button shows (count, then label).
                     aria-label={`${counts[key]} ${key === "blocked" ? `${HELD_UP} (${kpiCardLabel(key, population)})` : kpiCardLabel(key, population)}`}
                     onClick={() => {
-                      setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
-                      setStatus("all");
+                      setStatus(status === key ? "all" : key);
+                      s.clearSelection();
                     }}
                   >
                     <strong className={pageStyles.kpiValue}>{counts[key]}</strong>
@@ -597,7 +645,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     : `${shown} shown`}
               </span>
             </header>
-            {isPhone ? null : <DischargeFilterCard s={s} bare />}
+            {isPhone ? null : <DischargeFilterCard s={s} bare statusChips={false} />}
             <div
               ref={listRef}
               className={pageStyles.listBody}

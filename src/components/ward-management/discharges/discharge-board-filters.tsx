@@ -83,7 +83,19 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
 }
 
 /** The filters: service, ward, status, blocker, link, destination and sort. */
-export function DischargeFilterCard({ s, bare = false }: { s: DischargeWorkspaceState; bare?: boolean }) {
+export function DischargeFilterCard({
+  s,
+  bare = false,
+  statusChips = true,
+}: {
+  s: DischargeWorkspaceState;
+  bare?: boolean;
+  /**
+   * Plan item 2i (proposal): `false` where the hero's counts already are the Status filter (desktop
+   * and tablet), so the page shows one set of status counts. The phone sheet keeps the chips.
+   */
+  statusChips?: boolean;
+}) {
   const {
     population,
     status,
@@ -129,27 +141,31 @@ export function DischargeFilterCard({ s, bare = false }: { s: DischargeWorkspace
       <div className={pageStyles.filters}>
         {/* Mock-up (1 Nov 2026): Status is one row of chips with their counts, so a status is one
             press, not a dropdown. Pressing the chip that is on goes back to every status. */}
-        <ChipGroup label="Status" className={pageStyles.statusChips}>
-          {WORK_ORDER.map((key) => (
-            <FilterChip
-              key={key}
-              pressed={status === key}
-              tone={key === "departed" ? undefined : stageTone(key)}
-              count={counts[key]}
-              onPressedChange={(on) => {
-                setStatus(on ? key : "all");
-                clearSelection();
-              }}
-            >
-              {key === "blocked"
-                ? HELD_UP
-                : population === "releases" && key === "departed"
-                  ? "Discharged · 24h"
-                  : WORK_STATUS_LABELS[key]}
-            </FilterChip>
-          ))}
-        </ChipGroup>
-        <span className={pageStyles.filterDivider} aria-hidden="true" />
+        {statusChips ? (
+          <>
+            <ChipGroup label="Status" className={pageStyles.statusChips}>
+              {WORK_ORDER.map((key) => (
+                <FilterChip
+                  key={key}
+                  pressed={status === key}
+                  tone={key === "departed" ? undefined : stageTone(key)}
+                  count={counts[key]}
+                  onPressedChange={(on) => {
+                    setStatus(on ? key : "all");
+                    clearSelection();
+                  }}
+                >
+                  {key === "blocked"
+                    ? HELD_UP
+                    : population === "releases" && key === "departed"
+                      ? "Discharged · 24h"
+                      : WORK_STATUS_LABELS[key]}
+                </FilterChip>
+              ))}
+            </ChipGroup>
+            <span className={pageStyles.filterDivider} aria-hidden="true" />
+          </>
+        ) : null}
         <div className={pageStyles.filterPills}>
           {showService ? (
             <label htmlFor={`${baseId}-discharges-filter-service`} className={pill("service", service)}>

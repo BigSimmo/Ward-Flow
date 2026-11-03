@@ -66,6 +66,7 @@ import {
   Sheet,
   SrOnly,
   StatusGlyph,
+  type HeroNextStep,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { useHomeChanges } from "./activity-changes";
@@ -786,6 +787,59 @@ export function CoordinatorScreen() {
     />
   ) : null;
 
+  // Plan item 2i (proposal): the hero's next step, from the same figures as the hero's toggles.
+  // Act now first, then referrals to decide, then past-target waits in the flow; one at a time.
+  const actPressed = shownView === "needs" && needsFocus === "act";
+  const decidePressed = shownView === "needs" && needsFocus === "decide";
+  const overduePressed = shownView === "queue" && highlight === "overdue";
+  const showOverdue = () => {
+    showView("queue");
+    setFlowStage(undefined);
+    chooseNeedsFocus("all");
+    toggleHighlight("overdue");
+  };
+  // Scope: with a service chosen, the step counts only that service's work, never statewide. Act now
+  // is the alerts on that service's movements plus its accepted referrals awaiting a pull (`toPull`,
+  // already scoped); referrals to decide and past-target waits are the scoped lists Home shows.
+  // All services keeps the hero's own Act now figure, so the step and its chip agree.
+  const nextActCount = isInServiceScope
+    ? actEntries.filter((entry) => entry.movement !== undefined && isInServiceScope(entry.movement)).length +
+      toPull.length
+    : actNowCount;
+  const nextScope = service === null ? "" : ` in ${service}`;
+  const heroNext: HeroNextStep =
+    nextActCount > 0
+      ? {
+          answer: `${nextActCount} ${nextActCount === 1 ? "needs" : "need"} a person now${nextScope}`,
+          action: {
+            label: actPressed ? "Show all" : "Show act now",
+            pressed: actPressed,
+            testId: "home-next-action",
+            onClick: () => toggleFocus("act"),
+          },
+        }
+      : referralQueue.length > 0
+        ? {
+            answer: `${referralQueue.length} ${referralQueue.length === 1 ? "referral" : "referrals"} to decide${nextScope}`,
+            action: {
+              label: decidePressed ? "Show all" : "Show to decide",
+              pressed: decidePressed,
+              testId: "home-next-action",
+              onClick: () => toggleFocus("decide"),
+            },
+          }
+        : chips.overdueInQueue > 0
+          ? {
+              answer: `Nothing to act on now${nextScope} · ${chips.overdueInQueue} past target in the flow`,
+              action: {
+                label: overduePressed ? "Show all" : "Show past target",
+                pressed: overduePressed,
+                testId: "home-next-action",
+                onClick: showOverdue,
+              },
+            }
+          : { answer: `Nothing needs you now${nextScope}` };
+
   return (
     <div className={`${styles.screen} ${activity.glyphScope}`} data-testid="ward-coordinator" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
@@ -802,6 +856,7 @@ export function CoordinatorScreen() {
               isPhone ? `Modelled network · ${shiftWord}` : `Modelled network · mental health beds · ${shiftWord}`
             }
             title={heroTitle}
+            next={heroNext}
             // Redesign (Josh, 30 Oct 2026): the synthetic disclosure lives in the app bar and the footer, so
             // the hero keeps only its facts; on a phone they fold to one line.
             titleMeta={
