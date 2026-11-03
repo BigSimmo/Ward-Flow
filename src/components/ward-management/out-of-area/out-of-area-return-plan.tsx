@@ -40,6 +40,7 @@ import {
   type BedOption,
   type RepatDraft,
 } from "./out-of-area-model";
+import { ReturnTracker, returnStepsDone } from "./out-of-area-return-tracker";
 import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
@@ -236,11 +237,12 @@ export function ReturnPlan({
   return (
     <>
       {header}
-      <p className={styles.whoStrip} data-testid="ward-out-of-area-subject-caveat">
-        <StatusGlyph tone={record?.receivingWardAgreed || draft.homeHospital ? "neutral" : "closed"} size={9} />
-        <b>{move.who}</b>
-        <span>{move.what}</span>
-      </p>
+      <ReturnTracker
+        done={returnStepsDone(draft, record, returnMovementId)}
+        who={move.who}
+        what={move.what}
+        testId="ward-out-of-area-subject-caveat"
+      />
       <div data-testid="ward-out-of-area-subject-facts" className={styles.planFacts}>
         <p className={cx(styles.planIdentity, compactIdentity ? undefined : "sr-only")}>
           <b>{patient.displayName}</b>
