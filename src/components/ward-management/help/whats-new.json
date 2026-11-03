@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-legal-time-24-hour",
-    "date": "2026-10-31",
-    "line": "Legal forms: Record the time written now takes a typed 24-hour time, as Record a form does."
-  },
-  {
     "id": "2026-10-31-redesign-frame",
     "date": "2026-10-31",
     "line": "The sidebar, header and phone dock are tidier: page name first, Alerts on every desk, and Demo from the board clock."
@@ -98,5 +93,10 @@
     "id": "2026-11-02-help-show-me-around",
     "date": "2026-11-02",
     "line": "Help: Show me around walks you through each screen. Each answer can be rated helpful and has Copy link."
+  },
+  {
+    "id": "2026-11-03-tools-overhaul",
+    "date": "2026-11-03",
+    "line": "Tools is redesigned: recent tools first, Remind me, Due back, ready-made messages and an order for each desk."
   }
 ]

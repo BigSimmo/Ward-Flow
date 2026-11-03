@@ -36,17 +36,21 @@ import { useExecutiveStatistics } from "../statistics/executive-statistics-conte
  * Practise a placement folds into a closed row with a chevron, and Save to file, Load from file and
  * Reset demo sit in a footer pinned to the foot of the scroll. The safety lines stay word for word.
  */
-export function WardDemoPanel({ oneList = false }: { oneList?: boolean } = {}) {
+/**
+ * `grow` lets the panel take its full height inside a scroller that already scrolls (the Tools
+ * sheet), so it never becomes a second scroller and its footer flows after the content.
+ */
+export function WardDemoPanel({ oneList = false, grow = false }: { oneList?: boolean; grow?: boolean } = {}) {
   return useWardShellAuthority()?.role === "executive" ? (
-    <ExecutiveDemoPanel />
+    <ExecutiveDemoPanel grow={grow} />
   ) : (
-    <OperationalDemoPanel oneList={oneList} />
+    <OperationalDemoPanel oneList={oneList} grow={grow} />
   );
 }
-function ExecutiveDemoPanel() {
+function ExecutiveDemoPanel({ grow = false }: { grow?: boolean }) {
   const report = useExecutiveStatistics();
   return (
-    <div className={demo.body} data-testid="ward-tools-demo-panel">
+    <div className={demo.body} data-grow={grow || undefined} data-testid="ward-tools-demo-panel">
       <div className={demo.scroll}>
         <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
         <p className={styles.note} data-testid="ward-tools-demo-off">
@@ -89,7 +93,7 @@ function ExecutiveDemoPanel() {
     </div>
   );
 }
-function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
+function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boolean; grow?: boolean }) {
   const { scenario, saveScenarioFile, loadScenarioFile, savingOnDevice, worldGeneration, shared } = useWardFlowSelect(
     "scenario",
     "saveScenarioFile",
@@ -193,7 +197,7 @@ function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
   }
 
   return (
-    <div className={demo.body} data-testid="ward-tools-demo-panel">
+    <div className={demo.body} data-grow={grow || undefined} data-testid="ward-tools-demo-panel">
       <div className={demo.scroll}>
         <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
         {demoOn ? null : (

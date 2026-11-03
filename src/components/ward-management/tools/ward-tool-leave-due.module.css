@@ -1,0 +1,84 @@
+/* Q326 Leave due: beds due back from leave today, grouped by ward. */
+.tool {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.ward {
+  display: grid;
+  gap: var(--wf-s-1);
+}
+
+.wardName {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.count {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  list-style: none;
+}
+
+.list > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-row-default, 40px);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.bed {
+  font-weight: 600;
+}
+
+.due {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  text-align: right;
+}
+
+.back,
+.overdue {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.overdue {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.time {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}

@@ -1,0 +1,163 @@
+/* Tools mock-up Q322, On-call: search, one list choice, then lines each with a call button. */
+.body {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+/* The list Menu's trigger: a quiet control with the list's name and how many it shows. */
+.picker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-target);
+  padding: 0 var(--wf-s-2) 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.picker:focus-visible,
+.more:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.picker svg {
+  flex: none;
+  color: var(--wf-ink-2);
+}
+
+.pickerCount {
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.row + .row {
+  border-top: 1px solid var(--wf-line);
+}
+
+.who {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.place,
+.status {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  overflow-wrap: anywhere;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+
+.number {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.demo {
+  padding: 0 var(--wf-s-1);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-family: inherit;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.actions {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+
+.starOn svg {
+  fill: currentColor;
+  color: var(--wf-warning);
+}
+
+.note,
+.live {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--wf-s-1);
+  min-height: var(--wf-target);
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.more:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 46.4375rem) {
+  .picker,
+  .more {
+    min-height: 40px;
+  }
+}

@@ -1,0 +1,409 @@
+/* Tools overhaul (Q308-Q326, Josh 2 Nov 2026). Tokens only; no side edges; 12px floor. */
+
+.sheet {
+  display: grid;
+  gap: var(--wf-s-4, 16px);
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+/* Q311: from 1280 wide, the list and the open tool side by side. */
+.sheet[data-two-pane] {
+  grid-template-columns: minmax(17rem, 19rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--wf-s-4, 16px);
+}
+
+.list {
+  display: grid;
+  gap: var(--wf-s-4, 16px);
+  min-width: 0;
+}
+
+.group,
+.quick {
+  display: grid;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.groupHeading {
+  margin: 0;
+  padding: 0 var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.card {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.card > * + * {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Q309: Recent (or Suggested) as chips. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: 999px;
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chip svg {
+  width: 14px;
+  height: 14px;
+  color: var(--wf-accent);
+}
+
+.chip:hover {
+  background: var(--wf-hover);
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--wf-selected);
+  border-color: var(--wf-line-3);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 52px;
+  padding: 6px var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--wf-hover);
+}
+
+.row:focus-visible,
+.chip:focus-visible,
+.wardRow:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+
+/* Q315: the icon tile carries its group's tint. Do now is the action blue; the rest stay neutral. */
+.rowIcon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: var(--wf-r-md, 8px);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+
+.rowIcon[data-group="do"] {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.rowIcon svg,
+.rowEnd,
+.rowCaret {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.rowText {
+  display: grid;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.rowText strong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.rowText em {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  font-style: normal;
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Q312: the live count, neutral unless it asks for action. */
+.count {
+  flex: none;
+}
+
+.countAct {
+  flex: none;
+  background: var(--wf-act-tint, var(--wf-selected));
+  color: var(--wf-danger-ink);
+}
+
+.rowEnd,
+.rowCaret {
+  color: var(--wf-ink-3);
+}
+
+.rowCaret {
+  transition: transform var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+
+.tool[data-open] .rowCaret {
+  transform: rotate(180deg);
+}
+
+.tool[data-open] > .row {
+  background: var(--wf-selected);
+}
+
+.toolPanel {
+  padding: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  scroll-margin-top: var(--wf-s-3);
+}
+
+.tool {
+  scroll-margin-top: var(--wf-s-2);
+}
+
+.toolBody {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* Q311: the open tool's pane. It stays in view while the list scrolls. */
+.pane {
+  position: sticky;
+  top: 0;
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  max-height: calc(100dvh - 9rem);
+  overflow: auto;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.paneHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding-bottom: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.paneHead strong {
+  font-size: var(--wf-fs-15, 15px);
+}
+
+.paneBody {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.sheet[data-two-pane] .tool[aria-current="true"] > .row,
+.sheet[data-two-pane] .tool[data-open] > .row {
+  background: var(--wf-selected);
+}
+
+.viewingAs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.viewingText {
+  display: grid;
+  gap: 1px;
+}
+
+.viewingText > span {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.viewingText strong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.none {
+  display: grid;
+  justify-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4) var(--wf-s-3);
+  border: 1px dashed var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  color: var(--wf-ink-2);
+  text-align: center;
+}
+
+.none p {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+}
+
+.noneActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--wf-s-2);
+}
+
+.quiet {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.wardList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md, 8px);
+  overflow: hidden;
+}
+
+.wardList > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.wardRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-1);
+  text-decoration: none;
+}
+
+.wardRow:hover {
+  background: var(--wf-hover);
+}
+
+.wardRow svg {
+  width: 16px;
+  height: 16px;
+  color: var(--wf-ink-3);
+}
+
+/* D-91: the shared suburb lookup card inside its row. The row is the frame, so the card draws no
+   second border, padding or heading here (its heading stays for screen readers). */
+.suburbCard.suburbCard {
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.suburbCard > :first-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.suburbCard > :last-child {
+  padding: 0;
+}
+
+.clinicLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clinicLine svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+/* Phone: rows and chips at touch size (40px drawn). The quick picks stay on one line and scroll
+   sideways, so the first tool row sits higher on a small screen. */
+@media (max-width: 46.4375rem) {
+  .chips {
+    flex-wrap: nowrap;
+    margin-inline: -4px;
+    padding: 2px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chip {
+    flex: none;
+    min-height: 40px;
+    white-space: nowrap;
+  }
+
+  .row {
+    min-height: 56px;
+  }
+}
+
+/* QA 2 Nov: the open tool reads apart from a hovered row: a neutral ring, never a side edge. */
+.tool[data-open] > .row,
+.tool[data-open] > .row:hover {
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-line-3);
+}
+
+.tool[data-open] .rowText strong {
+  color: var(--wf-accent-ink);
+}

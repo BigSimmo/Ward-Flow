@@ -12,6 +12,7 @@ import { raiseReferralHref } from "@/components/ward-management/shell/ward-facad
 import barStyles from "@/components/ward-management/shell/ward-bar.module.css";
 
 import { ToolsSheet } from "./tools-sheet";
+import { useToolsTwoPane } from "@/components/ward-management/tools/ward-tools-two-pane";
 
 /**
  * The Tools mock-up, drawn over its page. `page` is the page it opens over.
@@ -24,6 +25,8 @@ export function PopTools({ page }: { page: ReactNode }) {
   const { role } = useWardNavCounts();
   const deskRoleLabel = useDeskRoleLabel(role);
   const [open, setOpen] = useState(true);
+  // Q311: two panes from 1280 wide, in a wider sheet.
+  const twoPane = useToolsTwoPane(isPhone);
 
   return (
     <>
@@ -46,20 +49,21 @@ export function PopTools({ page }: { page: ReactNode }) {
         placement="right"
         testId="pop-tools-sheet"
         desktopBackdropClassName={barStyles.drawerBackdrop}
-        contentClassName={`${barStyles.drawerSheet} ${barStyles.drawerSheetWide}`}
+        contentClassName={`${barStyles.drawerSheet} ${barStyles.drawerSheetWide} ${twoPane ? barStyles.drawerSheetToolsTwoPane : ""}`}
         headerClassName={barStyles.drawerHeader}
         titleClassName={barStyles.drawerTitle}
         closeButtonClassName={barStyles.drawerClose}
         bodyClassName={barStyles.drawerBody}
         footer={
           <div className={barStyles.drawerFoot}>
-            <span>Whole network · synthetic prototype</span>
+            <span>{deskRoleLabel} · synthetic prototype</span>
           </div>
         }
         footerClassName={barStyles.drawerFooter}
       >
         <ToolsSheet
           isPhone={isPhone}
+          twoPane={twoPane}
           roleLabel={deskRoleLabel}
           onNavigate={() => setOpen(false)}
           onNewReferral={(destination = "ward") => {

@@ -14,6 +14,15 @@
   max-height: max(18rem, calc(100dvh - 12rem));
 }
 
+/* Inside a sheet that already scrolls, the panel grows instead of scrolling a second time. */
+.body[data-grow] {
+  max-height: none;
+}
+
+.body[data-grow] .scroll {
+  overflow: visible;
+}
+
 .body svg {
   width: 16px;
   height: 16px;
