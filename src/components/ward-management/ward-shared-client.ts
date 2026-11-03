@@ -187,9 +187,10 @@ export class SharedWorkspaceClient {
     current();
     if (!response.ok) throw new Error("Receipt unavailable");
     const outcome = value.receipt?.outcome;
-    if (outcome !== "accepted" && outcome !== "refused" && value.receipt !== null) throw new Error("Invalid receipt");
+    if (outcome !== "accepted" && outcome !== "partly" && outcome !== "refused" && value.receipt !== null)
+      throw new Error("Invalid receipt");
     if (
-      outcome === "accepted" &&
+      (outcome === "accepted" || outcome === "partly") &&
       Number.isSafeInteger(value.receipt.commandRevision) &&
       value.receipt.commandRevision > (this.view.snapshot?.revision ?? 0)
     ) {
@@ -208,11 +209,13 @@ export class SharedWorkspaceClient {
       status: "ready",
       recovering: false,
       recovery:
-        outcome === "accepted"
-          ? "The previous uncertain save was accepted. Review the refreshed board before acting again."
-          : outcome === "refused"
-            ? `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`
-            : "No retained receipt was found for the previous uncertain save. Its outcome is unknown. Review the board before repeating any action.",
+        outcome === "partly"
+          ? "The previous uncertain save was only partly applied. Review the refreshed board before acting again."
+          : outcome === "accepted"
+            ? "The previous uncertain save was accepted. Review the refreshed board before acting again."
+            : outcome === "refused"
+              ? `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`
+              : "No retained receipt was found for the previous uncertain save. Its outcome is unknown. Review the board before repeating any action.",
     });
   }
 
@@ -309,7 +312,6 @@ export class SharedWorkspaceClient {
   private pollAbort: AbortController | null = null;
   /** Requests stay with the desk that started them, even while waiting for a token. */
   private viewGeneration = 0;
-  /** Polls started before a grant must not replace the newly opened view. */
   private grantGeneration = 0;
   private needsRefresh = false;
   /** Bumped when the working role ends, so a reply to a request sent under it is not adopted. */
@@ -324,7 +326,6 @@ export class SharedWorkspaceClient {
    * while the person was looking, rather than letting an edit made from an older view through.
    */
   private sheetSeen = new WeakMap<object, SheetSeen>();
-  /** The popups the command in flight was asked for from, while it is in flight. */
   private pendingSheets: readonly object[] | undefined;
   private readonly stopWatchingSheets = subscribeToSheetStack(() => this.noteOpenSheets());
   private worldEpoch = 0;
@@ -374,13 +375,11 @@ export class SharedWorkspaceClient {
     for (const sheet of openSheetHandles())
       if (!this.sheetSeen.has(sheet)) this.sheetSeen.set(sheet, { revision: this.held(), records: new Map() });
   }
-  /** The popups open now, each noted, for a command asked for now; `undefined` when none is. */
   private openSheetsNoted() {
     this.noteOpenSheets();
     const sheets = commandSheetHandles().filter((sheet) => this.sheetSeen.has(sheet));
     return sheets.length ? sheets : undefined;
   }
-  /** What a command from these popups is checked against (`sheetBasis`). */
   private basis(sheets: readonly object[] | undefined) {
     return sheetBasis(this.sheetSeen, sheets);
   }
