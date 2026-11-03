@@ -686,13 +686,15 @@ export class SharedWorkspaceClient {
       if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
         throw new Error("The working view changed; try again.");
     };
-    await loadSharedStateCheck();
     let token: string;
     // #817: a queued save stops the poll even while the poll still waits for its token.
     const pollSignal = workspaceRead ? this.pollAbort?.signal : undefined;
     try {
       // Audit 24-3 SM-2: the retry after a 401 forces one refresh, so it never re-sends the same token.
-      token = await untilAborted(retried ? this.options.token({ refresh: true }) : this.options.token(), pollSignal);
+      const auth = Promise.resolve().then(() =>
+        retried ? this.options.token({ refresh: true }) : this.options.token(),
+      );
+      [, token] = await Promise.all([loadSharedStateCheck(), untilAborted(auth, pollSignal)]);
     } catch (error) {
       if (this.disposed || roleSignal.aborted || pollSignal?.aborted) throw error;
       if (

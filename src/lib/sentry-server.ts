@@ -97,6 +97,9 @@ function fetchTransport(options: BaseTransportOptions): Transport {
       method: "POST",
       body: request.body as BodyInit,
       headers: options.headers,
+      // Match the backend reporter: an unavailable collector must release its
+      // transport slot promptly rather than retaining sockets and queued events during an outage.
+      signal: AbortSignal.timeout(5_000),
     });
     return {
       statusCode: response.status,

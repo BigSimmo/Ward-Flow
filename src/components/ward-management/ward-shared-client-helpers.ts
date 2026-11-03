@@ -29,7 +29,11 @@ export function anySignal(signals: readonly AbortSignal[]): AbortSignal {
 /** Settles with `promise`, or rejects with an AbortError as soon as `signal` aborts. */
 export function untilAborted<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
   if (!signal) return promise;
-  if (signal.aborted) return Promise.reject(new DOMException("The poll was stopped", "AbortError"));
+  if (signal.aborted) {
+    // Cancellation settles the caller, but the token request can still reject later.
+    void promise.catch(() => {});
+    return Promise.reject(new DOMException("The poll was stopped", "AbortError"));
+  }
   return new Promise<T>((resolve, reject) => {
     const stop = () => reject(new DOMException("The poll was stopped", "AbortError"));
     signal.addEventListener("abort", stop, { once: true });
