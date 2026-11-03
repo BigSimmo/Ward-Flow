@@ -2749,7 +2749,8 @@ export function ShortlistPanel({
               className={`${styles.shortlistEscalationRecord} ${shortlistStyles.tabularNum}`}
               data-testid="ward-shortlist-escalation-record"
             >
-              {`Escalated at ${formatInstantWithDay(movement.escalation.at, now)} — tried ${movement.escalation.triedUnitIds.length} unit${movement.escalation.triedUnitIds.length === 1 ? "" : "s"} — contact: "${movement.escalation.contact}".`}
+              {/* Appraisal, 3 Nov 2026: plain sentences, no dashes or quotes. */}
+              {`Escalated at ${formatInstantWithDay(movement.escalation.at, now)}, tried ${movement.escalation.triedUnitIds.length} unit${movement.escalation.triedUnitIds.length === 1 ? "" : "s"}. Contact: ${movement.escalation.contact}.`}
             </p>
           ) : null}
           {!hasEligible && !movement.acceptedUnitId ? (
