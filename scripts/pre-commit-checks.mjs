@@ -27,18 +27,19 @@
  * worktree has no node_modules; the scan needs only node and always runs.
  *
  * During a merge (MERGE_HEAD present), staged scan and ownership admission still
- * run. Only unchanged-on-HEAD paths that exactly match one incoming tree may
- * omit a new own sign-out. Active overlaps block, except on those clean paths
- * when the incoming commit is already in origin/main: the merge then records
- * main's own copy and authors nothing in a peer's claimed file. The normal hook
- * skips lint and typecheck during a merge.
+ * run. Active overlaps block, except on unchanged-on-HEAD paths that exactly
+ * match one incoming tree when the incoming commit is already in origin/main:
+ * the merge then records main's own copy and authors nothing in a peer's
+ * claimed file. The normal hook skips lint and typecheck during a merge.
  *
- * Also: a clash guard. Staged files that another branch has signed out in the
- * shared sign-out file (D:/Repos/ward-flow-logs/sign-out.md,
- * "## Active sign-outs" lines `- date | who | branch | worktree | files`) block
- * the commit and name the owner. A missing/unreadable log fails closed on every
- * host. Isolated Cloud tasks configure their actual environment's coordination
- * log with WARD_SIGNOUT_FILE; it does not prove other hosts' ownership state.
+ * Ownership (Q374): the branch or PR is the claim. A commit needs no sign-out
+ * line of its own. An optional shared log only records peer holds: staged
+ * files that another branch has signed out in the shared sign-out file
+ * (D:/Repos/ward-flow-logs/sign-out.md, "## Active sign-outs" lines
+ * `- date | who | branch | worktree | files`, plus claim files in claims/
+ * beside it) block the commit and name the owner. A missing log means no
+ * peer holds to check; an unreadable claims folder still fails closed.
+ * Isolated Cloud tasks point at their environment's log with WARD_SIGNOUT_FILE.
  *
  * Escapes, in order of preference:
  *   - a line containing `precommit-scan: allow` is skipped by the scan
@@ -133,11 +134,11 @@ export function withClaimFiles(logFile, logText) {
 }
 
 /**
- * @deprecated Missing sign-out logs never grant ownership clearance.
+ * @deprecated Q374: the branch or PR is the claim, so a missing log only means no peer holds.
  * Retained for consumers that imported the old helper.
  */
 export function signOutLogOptional() {
-  return false;
+  return true;
 }
 
 /** Parse NUL-delimited status records, retaining deletions and both rename paths. */
@@ -264,20 +265,21 @@ export function filterAdmissionMergePaths(paths, incomingHeads, run = git) {
   }
 }
 
+/**
+ * Q374: the branch or PR is the claim. Only another branch's active hold blocks: your own files
+ * need no sign-out line, and a missing log means no peer holds. Older callers may still pass
+ * `requiredClaims`, `logAvailable` or `taskBranch`; they no longer change the result.
+ */
 export function ownershipAdmission({
   ownershipPaths,
-  requiredClaims = ownershipPaths,
   mainlineIncoming = /** @type {string[]} */ ([]),
-  logAvailable,
   signOutText = "",
   branch,
   root,
-  taskBranch,
   merging = false,
   skip = false,
 }) {
-  if (skip) return { blocked: false, skipped: true, clashes: [], unsigned: [] };
-  if (!logAvailable) return { blocked: true, missingLog: true, clashes: [], unsigned: [] };
+  if (skip) return { blocked: false, skipped: true, clashes: [] };
   // Main's exact copy of a file, brought in unchanged by a merge, edits nothing a peer has claimed.
   const mainline = new Set(merging ? mainlineIncoming : []);
   const clashes = signOutConflicts(
@@ -286,8 +288,7 @@ export function ownershipAdmission({
     branch,
     root,
   );
-  const unsigned = taskBranch || merging ? unsignedWardFiles(requiredClaims, signOutText, branch, root) : [];
-  return { blocked: clashes.length > 0 || unsigned.length > 0, clashes, unsigned };
+  return { blocked: clashes.length > 0, clashes };
 }
 
 /** Read both the headed legacy log and the current rebuilt, headingless active log. */
@@ -597,7 +598,10 @@ export function signOutConflicts(staged, signOutText, currentBranch, currentWork
 const WARD_SIGNOUT_PATH =
   /^(?:src\/components\/ward-management\/|src\/app\/ward-flow\/|docs\/ward-flow\/|scripts\/ward-flow\/|scripts\/run-ward-tests\.mjs$|tests\/(?:helpers\/|ui-)?ward-[^/]+$)/;
 
-/** Ward files staged without an active sign-out owned by this branch or worktree. */
+/**
+ * Ward files staged without an active sign-out owned by this branch or worktree.
+ * Informational only since Q374 (the branch or PR is the claim): no admission blocks on it.
+ */
 export function unsignedWardFiles(staged, signOutText, currentBranch, currentWorktree = "") {
   const owned = signOutEntriesForCheckout(signOutText, currentWorktree).filter((entry) =>
     isOwnSignOut(entry, currentBranch, currentWorktree),
@@ -1052,9 +1056,9 @@ async function main() {
     console.error(`  Remove it (use made-up data), or if it is deliberately fake add "${ALLOW_MARKER}" on that line.`);
   }
 
-  // 1b. Admission covers every staged path, including deletions and rename sources.
-  // Exact incoming tree identity can waive a new claim. It waives the active-overlap check only
-  // when the incoming commit is already in origin/main.
+  // 1b. Admission covers every staged path, including deletions and rename sources. The branch is
+  // the claim (Q374): only another branch's active hold blocks. Exact incoming tree identity waives
+  // the overlap check only when the incoming commit is already in origin/main.
   const signOutLogPresent = existsSync(SIGN_OUT_FILE);
   if (admissionOnly && process.env.SKIP_SIGNOUT_GUARD === "1") {
     failed = true;
@@ -1062,35 +1066,28 @@ async function main() {
   }
   if (process.env.SKIP_SIGNOUT_GUARD !== "1") {
     const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
-    const signOutText = signOutLogPresent ? withClaimFiles(SIGN_OUT_FILE, readFileSync(SIGN_OUT_FILE, "utf8")) : "";
-    const taskBranch = isPublicWardFlowCheckout(root)
-      ? branch !== "main" && branch !== "HEAD"
-      : branch.startsWith("ward/");
+    // No log means no logged peer holds. Claim files beside where it would be still count, and an
+    // unreadable claims folder still throws (fails closed).
+    const signOutText = withClaimFiles(
+      SIGN_OUT_FILE,
+      signOutLogPresent ? readFileSync(SIGN_OUT_FILE, "utf8") : "## Active sign-outs\n",
+    );
     const mergeScope = merging
       ? mergeOwnershipScope(scope.changes, incomingHeads)
       : { cleanIncoming: [], mainlineIncoming: [], requiredClaims: scope.ownershipPaths };
     const admission = ownershipAdmission({
       ownershipPaths: [...new Set([...scope.ownershipPaths, ...admissionMergePaths])],
-      requiredClaims: [...new Set([...mergeScope.requiredClaims, ...admissionMergePaths])],
       mainlineIncoming: (mergeScope.mainlineIncoming ?? []).filter((file) => !admissionMergePaths.includes(file)),
-      logAvailable: signOutLogPresent,
       signOutText,
       branch,
       root,
-      taskBranch,
       merging,
     });
-    const { clashes, unsigned } = admission;
-    if (admission.missingLog) {
-      failed = true;
-      console.error(`[pre-commit] BLOCKED: shared sign-out log unavailable at ${SIGN_OUT_FILE}.`);
-      console.error("  Configure the actual coordination log with WARD_SIGNOUT_FILE; absence is never clearance.");
-    }
-    if (mergeScope.cleanIncoming.length > 0 && !admission.missingLog)
+    const { clashes } = admission;
+    if (!signOutLogPresent) report.push("no shared sign-out log: no logged peer holds (the branch is the claim)");
+    if ((mergeScope.mainlineIncoming ?? []).length > 0)
       report.push(
-        `${mergeScope.cleanIncoming.length} clean incoming path(s): no new own sign-out required; ${
-          (mergeScope.mainlineIncoming ?? []).length
-        } from origin/main skip the overlap check`,
+        `${mergeScope.mainlineIncoming.length} clean incoming path(s) from origin/main skip the overlap check`,
       );
     if (clashes.length > 0) {
       failed = true;
@@ -1099,12 +1096,6 @@ async function main() {
       console.error(
         "  Ask the coordinator before editing these. A Josh-approved scoped takeover must name each exact file in your sign-out.",
       );
-    }
-    if (unsigned.length > 0) {
-      failed = true;
-      console.error(`[pre-commit] BLOCKED: Ward files without your sign-out in ${SIGN_OUT_FILE}:`);
-      for (const file of unsigned) console.error(`  ${file}`);
-      console.error("  Run sign-out-check before editing, then sign out these files in the shared log.");
     }
   } else if (!admissionOnly) {
     report.push(

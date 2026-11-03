@@ -149,6 +149,7 @@ Josh answered "Yes to 2 to 12" at 17:09 UTC, which is Q371 to Q381. Q370 was not
 ### Q382 to Q389 (threads started 3 November 2026)
 
 - Q383: Josh to check the Railway `WARD_FRONT_DOOR`, `WARD_PASS_SECRET` and `WARD_DEMO_CODE` settings before #1345 can merge. Open.
+- Q384: Josh adds `Ward Flow hold` as a required check in the main ruleset, so the `hold` label blocks merges. Open.
 - Other numbers in this block are held for those threads.
 
 ### Q390 to Q392 (real-data go/no-go, 3 November 2026)
