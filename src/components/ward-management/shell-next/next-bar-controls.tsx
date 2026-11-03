@@ -5,7 +5,8 @@
 // The bar's own controls, moved out of `ward-bar.tsx` to keep it under the line cap: the phone
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bell, Plus, Check, ChevronDown, Menu as MenuIcon, RotateCcwClock, Wrench } from "lucide-react";
+import { ArrowLeft, Plus, Check, ChevronDown, Menu as MenuIcon, RotateCcwClock, Wrench } from "lucide-react";
+import { GlyphAlerts } from "@/components/wf/glyphs";
 import { useState, type RefObject } from "react";
 
 import { ContextualBackLink, navigateContextuallyBack } from "@/components/contextual-back-link";
@@ -395,7 +396,7 @@ export function WardBarDrawerTriggers({
       >
         {/* Josh, 31 Oct 2026: one name and one icon on every desk, the bell and "Alerts". A desk whose
             list is the bed coordinator's opens the same panel, under the same name. */}
-        <Bell className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+        <GlyphAlerts className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
         <span className={styles.triggerLabel}>Alerts</span>
         <span className={styles.badge} data-zero={tasksActiveCount === 0 || undefined}>
           {tasksActiveCount}

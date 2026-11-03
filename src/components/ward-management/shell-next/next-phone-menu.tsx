@@ -15,7 +15,8 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedDouble, House, Bell, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
+import { GlyphActivity, GlyphAlerts, GlyphBed, GlyphHome } from "@/components/wf/glyphs";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { useFitDockLabels } from "@/components/ward-management/shell/use-fit-dock-labels";
@@ -266,7 +267,7 @@ function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
           meta: "red rows in Alerts",
           count: actNow,
           href: WARD_ALERTS_HREF,
-          icon: Bell,
+          icon: GlyphAlerts,
           actNow: true,
         },
       ]
@@ -276,7 +277,7 @@ function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
           label: "Act-now alerts",
           meta: "red rows in Alerts",
           count: actNow,
-          icon: Bell,
+          icon: GlyphAlerts,
           actNow: true,
         },
       ];
@@ -371,7 +372,7 @@ function PhoneDock({
       onClick={() => announceToWardShell("Alerts.")}
     >
       <DockFace
-        icon={Bell}
+        icon={GlyphAlerts}
         label="Alerts"
         count={count}
         tail={count === undefined ? "" : dockTail("Alerts", count, "outstanding", `Alerts, ${count} outstanding`)}
@@ -395,7 +396,7 @@ function PhoneDock({
           >
             {/* Home is the house in the dock (v10 phone mockup); the rail keeps its own icon. */}
             <DockFace
-              icon={entry.id === "command" ? House : entry.icon}
+              icon={entry.id === "command" ? GlyphHome : entry.icon}
               label={label}
               count={count?.value}
               tail={dockTail(label, count?.value, count?.noun ?? "", wardNavCountLabel(label, count))}
@@ -417,7 +418,7 @@ function PhoneDock({
             onClick={() => announceToWardShell("Alerts.")}
           >
             <DockFace
-              icon={Bell}
+              icon={GlyphAlerts}
               label="Alerts"
               count={tasksCount}
               tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
@@ -433,7 +434,7 @@ function PhoneDock({
             onClick={() => onDrawer("tasks")}
           >
             <DockFace
-              icon={Bell}
+              icon={GlyphAlerts}
               label="Alerts"
               count={tasksCount}
               tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
@@ -454,7 +455,7 @@ function PhoneDock({
             onClick={(event) => onDrawer("activity", event.currentTarget)}
           >
             <DockFace
-              icon={Activity}
+              icon={GlyphActivity}
               label="Activity"
               count={activityUnread}
               tail={dockTail("Activity", activityUnread, "unread", "Activity")}
@@ -474,7 +475,7 @@ function PhoneDock({
               announceToWardShell(`${item.label}.`);
             }}
           >
-            <DockFace icon={BedDouble} label={item.label} count={undefined} tail="" />
+            <DockFace icon={GlyphBed} label={item.label} count={undefined} tail="" />
           </button>
         );
     }
