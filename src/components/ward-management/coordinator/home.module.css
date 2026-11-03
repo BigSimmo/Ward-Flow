@@ -245,6 +245,11 @@
   animation: homeLivePulse 2.4s ease-out infinite;
 }
 
+.edLive[data-paused] .liveDot {
+  background: var(--wf-ink-3);
+  animation: none;
+}
+
 @keyframes homeLivePulse {
   0% {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 45%, transparent);

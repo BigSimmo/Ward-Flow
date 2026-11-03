@@ -1044,6 +1044,7 @@ export function CoordinatorScreen() {
               selectedEdId={selectedEdId}
               onSelectEd={setSelectedEdId}
               service={service}
+              paused={paused}
             />
           </div>
 

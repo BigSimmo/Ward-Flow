@@ -4,7 +4,7 @@ import { useMemo } from "react";
 
 import { Card, StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { edOpenSummaries, isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
-import { clockState, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, formatInstant, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
 import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward-pressure";
@@ -28,6 +28,8 @@ type HomeEdPressureProps = {
   onSelectEd: (edId: string | undefined) => void;
   /** The chosen health service (`null` is All services). An ED with no resolvable service stays shown. */
   service: HealthService | null;
+  /** Home's clock is paused, so the waits are frozen and the strip must not say Live. */
+  paused?: boolean;
 };
 
 /**
@@ -44,7 +46,14 @@ type HomeEdPressureProps = {
  *
  * These tiles measure physical inpatient-bed waits; Home's hero separately retains open journeys through transit.
  */
-export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, service }: HomeEdPressureProps) {
+export function HomeEdPressure({
+  now,
+  movements,
+  selectedEdId,
+  onSelectEd,
+  service,
+  paused = false,
+}: HomeEdPressureProps) {
   // A longest wait past the configured ED access target is red; past the severe line it is amber.
   const thresholds = useDueSoonThresholds();
   const { configuration } = useWardFlowSelect("configuration");
@@ -72,10 +81,12 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
     >
       <h2 className="sr-only">ED pressure</h2>
       {/* G2 (Josh, 3 Nov 2026): the waits are live, so the strip says so once; the board time is already in the header. */}
-      <p className={styles.edLive} data-testid="ward-home-ed-live">
+      <p className={styles.edLive} data-testid="ward-home-ed-live" data-paused={paused ? "true" : undefined}>
         <span className={styles.liveDot} aria-hidden="true" />
-        <span>Live</span>
-        <span className={styles.edLiveNote}>Waits update every minute</span>
+        <span>{paused ? "Paused" : "Live"}</span>
+        <span className={styles.edLiveNote}>
+          {paused ? `Waits held at ${formatInstant(now)}` : "Waits update every minute"}
+        </span>
       </p>
       <ul className={styles.edGrid}>
         {rows.map((row) => {
