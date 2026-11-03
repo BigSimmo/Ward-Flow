@@ -22,6 +22,8 @@ const TOUR_AUTO_STARTED_EVENT = "ward-flow-tour-auto-started";
  * not keep appearing. Josh, 26 Oct 2026 (HF-01): every device opens as the coordinator first, so a
  * once-per-device tour meant no other desk ever met its own. Each desk's tour now starts by itself
  * once, the first time that desk reaches its home, and after that only from Help or Settings.
+ * Josh, 3 Nov 2026 (G3) replaced that: in the demo every desk switch brought the offer back, so the
+ * offer now shows once per device (`readTourAutoDone`). Each desk is still marked as it is offered.
  *
  * Stored as desk role ids only. The old value "yes" was written before this change, when the
  * device's first desk was nearly always the coordinator, so it reads as the coordinator's mark.
@@ -33,10 +35,15 @@ export function parseTourAutoDone(raw: string): readonly WardTourRole[] {
   return parseTourSeen(raw.replace(/^yes$/u, "coordinator"));
 }
 
-function readTourAutoDone(role: WardTourRole): boolean {
+/**
+ * G3 (Josh, Notion "Diagnosed Issues", 3 Nov 2026, "yes to all recommendations"): the tour is now
+ * offered once per device, whichever desk reaches its home first. Switching desks in the demo kept
+ * bringing the offer back. Each desk's mark is still recorded, and Help keeps every desk's tour.
+ */
+function readTourAutoDone(): boolean {
   try {
     const raw = window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY);
-    return raw !== null && parseTourAutoDone(raw).includes(role);
+    return raw !== null && parseTourAutoDone(raw).length > 0;
   } catch {
     return true;
   }
@@ -70,7 +77,7 @@ const TOUR_SETTLE_MS = 500;
  * the tour" starts it and "Not now" closes the card. Mounted only while role access is on (a desk is
  * signed in), so the shared demo never shows it. The desk is marked the moment the card shows, so a
  * reload or a role that settles late never shows it again; a switch to another desk whose tour has
- * not been offered yet does offer that desk's. After that, Help (with its "New" marker for a desk
+ * not been offered yet does not (G3, once per device). After that, Help (with its "New" marker for a desk
  * whose tour is unseen) and Settings are the way in.
  */
 export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
@@ -89,7 +96,7 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
     if (started.current === role || seen || !home || (pathname !== home && pathname !== deskHome)) return;
     const timer = window.setTimeout(() => {
       started.current = role;
-      if (readTourAutoDone(role) || !markTourAutoDone(role)) return;
+      if (readTourAutoDone() || !markTourAutoDone(role)) return;
       // A first visit gets the tour offer, not the what's new note as well.
       window.dispatchEvent(new Event(TOUR_AUTO_STARTED_EVENT));
       setOffered({ role, pathname });

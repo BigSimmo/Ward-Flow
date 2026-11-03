@@ -33,7 +33,7 @@ export const SECTION_ICONS = {
 } as const;
 
 /** Rows of the old "Help and data" tab that belong to the Help section; the rest are Demo tools. */
-const HELP_ROWS: ReadonlySet<string> = new Set(["help", "help-screen", "tour", "shortcuts"]);
+const HELP_ROWS: ReadonlySet<string> = new Set(["help", "help-screen", "tour", "help-tips", "shortcuts"]);
 
 /** Which section a Find a setting row lives in. */
 export function sectionForEntry(entry: SettingsSearchEntry): SettingsSection {
