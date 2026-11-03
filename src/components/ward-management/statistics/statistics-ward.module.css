@@ -62,6 +62,18 @@
   font-family: var(--wf-mono);
 }
 
+/* Length of stay: the median and the average side by side, wrapping on a narrow card. */
+.stayFigures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  white-space: normal;
+}
+
+.stayFigures > span {
+  white-space: nowrap;
+}
+
 .note {
   margin: 0;
   color: var(--wf-ink-3);

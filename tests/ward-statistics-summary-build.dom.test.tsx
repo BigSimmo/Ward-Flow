@@ -104,6 +104,17 @@ describe("the summary view switch", () => {
     expect(radios[0]).toHaveAttribute("aria-checked", "true");
   });
 
+  it("sits in the head of the first card it switches, once, not on a row of its own", () => {
+    summary();
+    expect(screen.getAllByTestId("ward-statistics-view-bar")).toHaveLength(1);
+    const cards = screen.getByTestId("ward-statistics-network-cards");
+    expect(cards).toContainElement(screen.getByTestId("ward-statistics-view-bar"));
+    fireEvent.click(within(screen.getByTestId("ward-statistics-view-bar")).getByRole("radio", { name: "Journey" }));
+    const ribbon = screen.getByTestId("ward-statistics-journey-ribbon");
+    expect(screen.getAllByTestId("ward-statistics-view-bar")).toHaveLength(1);
+    expect(ribbon).toContainElement(screen.getByTestId("ward-statistics-view-bar"));
+  });
+
   it("puts the summary cards first and lists every ward with no typed filter", () => {
     summary();
     expect(screen.queryByRole("searchbox", { name: "Filter wards or hospitals" })).toBeNull();
