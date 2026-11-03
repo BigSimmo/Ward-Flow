@@ -10,7 +10,6 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 /**
  * Task C1: the Command screen's third-edition restyle carries no structural change (no panel
@@ -53,15 +52,34 @@ import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 const NOW = NOW_ANCHOR;
 
-function renderCoordinator() {
-  const result = render(
+/** Home opens on Needs you (Home flow, Q340/Q341/Q345, 3 Nov 2026). */
+function renderHome() {
+  return render(
     <WardFlowProvider initialNow={NOW}>
       <CoordinatorScreen />
     </WardFlowProvider>,
   );
-  // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
-  // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
-  showWholeHomeQueue();
+}
+
+/** The Flow list: one Card, one section per stage, each stage capped at 5 rows behind "Show all N". */
+function flowCard(): HTMLElement {
+  return screen.getByRole("region", { name: "Flow" });
+}
+
+/** Switches Home to Flow and opens every stage's "Show all N", as a coordinator would. */
+function showWholeFlow(): void {
+  const flow = within(screen.getByRole("radiogroup", { name: "Home list" })).getByRole("radio", { name: /^Flow/u });
+  if (flow.getAttribute("aria-checked") !== "true") fireEvent.click(flow);
+  for (const showAll of within(flowCard()).queryAllByRole("button", { name: /^Show all \d+$/u })) {
+    if (showAll.getAttribute("aria-expanded") !== "true") fireEvent.click(showAll);
+  }
+}
+
+function renderCoordinator() {
+  const result = renderHome();
+  // Home flow (Josh, 3 Nov 2026): the queue is the Flow list, grouped by stage with 5 rows per
+  // stage behind "Show all N"; this suite reads rows further down, so it opens every stage first.
+  showWholeFlow();
   return result;
 }
 
@@ -79,25 +97,41 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(
       /^\d+ still in ED · \d+ in transit( · \d+\.\d% beds in use)?$/u,
     );
-    expect(atRest.slice(1)).toEqual(["ED pressure", "Priority queue", "Beds that fit", "Placement"]);
+    // Home flow (Josh, 3 Nov 2026): the queue is the Flow card, a named region with one section per
+    // stage and no heading of its own; Later today sits at the foot of the right column on desktop.
+    expect(atRest.slice(1)).toEqual(["ED pressure", "Beds that fit", "Placement", "Later today"]);
+    // The queue panel itself, pinned by its accessible name and DOM place: after ED pressure and
+    // before Beds that fit, with its stages in the order a person moves through them.
+    const flow = flowCard();
+    const edPressure = screen.getByRole("heading", { level: 2, name: "ED pressure" });
+    const bedsThatFit = screen.getByRole("heading", { level: 2, name: "Beds that fit" });
+    expect(edPressure.compareDocumentPosition(flow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(flow.compareDocumentPosition(bedsThatFit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      within(flow)
+        .getAllByRole("region")
+        .map((section) => section.getAttribute("aria-label")),
+    ).toEqual(["Needs a bed", "Bed agreed", "Ready to move", "Moving"]);
+    expect(within(flow).getByText("Oldest first in each stage")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-placement-top-of-queue")).not.toBeInTheDocument();
     expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     // The exceptions drawer's default tab ("Exceptions") carries no `<h2>`, and its other three
     // tabs are `hidden` (not merely visually hidden — the native `hidden` attribute, which
     // Testing Library's accessibility-tree-aware `getByRole` already excludes) until a coordinator
-    // switches tabs. So a plain, unfiltered level-2-heading query is exactly the four panels this
-    // test is about, in DOM order — nothing here reaches into an inactive tabpanel to manufacture
-    // that count.
+    // switches tabs. So a plain, unfiltered level-2-heading query is exactly the hero and the three
+    // headed panels this test is about, in DOM order — nothing here reaches into an inactive
+    // tabpanel to manufacture that count.
     const headings = screen.getAllByRole("heading", { level: 2 });
-    expect(headings.length, "expected the hero and the four headed top-level panels, found a different count").toBe(5);
+    // Later today steps aside while Placement is open, so Placement keeps the whole right column.
+    expect(headings.length, "expected the hero and the three headed top-level panels, found a different count").toBe(4);
     expect(headings.map((heading) => heading.textContent)).toEqual([
       atRest[0],
       "ED pressure",
-      "Priority queue",
       "Beds that fit",
       "Placement",
     ]);
+    expect(screen.queryByTestId("home-placement-prompt")).not.toBeInTheDocument();
   });
 
   it("reads the queue, then the shortlist on the far right once a patient is selected", () => {
@@ -118,16 +152,23 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
 
   it("keeps the registers closed until Registers opens them, above the columns", () => {
     // Home v7 (Josh, 22 Oct 2026): the hero's Alerts count became Act now, so the registers open
-    // from Registers above the list, still as the strip under the hero.
+    // from Registers above the list, still as the strip under the hero. Home flow (Josh, 3 Nov
+    // 2026): Registers moved into the "More for this list" menu at the end of the Home lists row.
     renderCoordinator();
     const body = screen.getByTestId("ward-coordinator-body");
     expect(within(body).queryByTestId("ward-coordinator-registers")).toBeNull();
 
-    const toggle = within(body).getByRole("button", { name: "Registers" });
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    const lists = within(body).getByRole("navigation", { name: "Home lists" });
+    const more = within(lists).getByRole("button", { name: "More for this list" });
+    const chooseRegisters = () => {
+      expect(more).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(more);
+      expect(more).toHaveAttribute("aria-expanded", "true");
+      fireEvent.click(screen.getByRole("menuitem", { name: "Registers" }));
+      expect(more, "choosing Registers closes the menu").toHaveAttribute("aria-expanded", "false");
+    };
 
+    chooseRegisters();
     const registers = within(body).getByTestId("ward-coordinator-registers");
     const columns = within(body).getByTestId("ward-coordinator-region-grid");
     expect(
@@ -135,7 +176,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
       "the registers strip must sit above the columns",
     ).toBeTruthy();
 
-    fireEvent.click(toggle);
+    chooseRegisters();
     expect(within(body).queryByTestId("ward-coordinator-registers")).toBeNull();
   });
 
@@ -217,32 +258,48 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
  * Task C2. The priority queue's own two tabs — `Patients` and `Referrals` — and the shortlist's
  * independent subject state, once a referral is selected.
  *
+ * Home flow (Josh, Q340/Q341/Q345, 3 Nov 2026): the queue's Patients/Referrals tablist is gone.
+ * Its successor is the Home list switch — `Needs you` (act now, beds to pull and referrals to
+ * decide) and `Flow` (every open movement, by stage) — with the Flow stages as tabs beside it.
+ * Referrals live only under Needs you. These tests pin the same three things on the new controls:
+ * real counts, keyboard selection, and that a list or stage switch never changes the shortlist's
+ * subject on its own.
+ *
  * The population is the established derivation, cross-checked here against the real fixture
  * rather than trusted: `referralQueueOrder` (`ward-referrals.ts`) is `referralState(referral) ===
  * "queued"`, sorted `urgency` then `raisedAt`, and nothing here re-derives that filter or that
  * sort a second time.
  */
-describe("Command's priority queue carries a Patients/Referrals tablist (Task C2)", () => {
-  it("renders a Queues tablist with two tabs, each carrying the real count of its own rows", () => {
-    renderCoordinator();
+function homeListRadio(name: RegExp): HTMLElement {
+  return within(screen.getByRole("radiogroup", { name: "Home list" })).getByRole("radio", { name });
+}
 
-    // v6 Home (7 Oct 2026): the Queues choice is a segmented radiogroup, not a tablist.
-    const tablist = screen.getByRole("radiogroup", { name: "Queues" });
-    const patientsTab = within(tablist).getByRole("radio", { name: /Patients/ });
-    const referralsTab = within(tablist).getByRole("radio", { name: /Referrals/ });
+/** Needs you's "Referrals to decide" group, with every referral row shown (it caps, then "Show N more"). */
+function allReferralRows(): HTMLElement[] {
+  const group = screen.getByRole("region", { name: "Referrals to decide" });
+  const more = within(group).queryByRole("button", { name: /^Show \d+ more$/u });
+  if (more) fireEvent.click(more);
+  return Array.from(group.querySelectorAll<HTMLElement>("[data-referral-id]"));
+}
+
+describe("Command's Home lists carry Needs you and Flow, the successor to the Patients/Referrals tablist (Task C2)", () => {
+  it("renders a Home list radiogroup and Flow stage tabs, each carrying the real count of its own rows", () => {
+    renderHome();
+
+    // v6 Home (7 Oct 2026): the list choice is a segmented radiogroup, not a tablist.
+    const needsTab = homeListRadio(/^Needs you/u);
+    const flowTab = homeListRadio(/^Flow/u);
+    expect(needsTab).toHaveAttribute("aria-checked", "true");
 
     // Anti-vacuity floor — a selector matching nothing would let every assertion below pass on an
-    // empty queue and prove nothing about the real tab wiring.
-    const patientRows = screen.getAllByTestId(/^ward-queue-row-/);
-    const referralRows = screen.getAllByTestId(/^ward-referral-row-/);
-    expect(patientRows.length, "expected at least one open movement in the Patients tab").toBeGreaterThan(0);
-    expect(referralRows.length, "expected at least one queued referral in the Referrals tab").toBeGreaterThan(0);
-
-    expect(patientsTab, "the Patients tab must carry the real row count, not an invented figure").toHaveTextContent(
-      String(patientRows.length),
-    );
-    expect(referralsTab, "the Referrals tab must carry the real row count, not an invented figure").toHaveTextContent(
-      String(referralRows.length),
+    // empty list and prove nothing about the real wiring.
+    const referralRows = allReferralRows();
+    const actGroup = screen.getByRole("region", { name: "Act now" });
+    const actRows = within(actGroup).queryAllByRole("listitem");
+    expect(referralRows.length, "expected at least one queued referral under Needs you").toBeGreaterThan(0);
+    expect(actRows.length, "expected at least one act-now row under Needs you").toBeGreaterThan(0);
+    expect(needsTab, "Needs you must carry the real row count, not an invented figure").toHaveTextContent(
+      String(actRows.length + referralRows.length),
     );
 
     // The population and its order are `referralQueueOrder`'s own — never a second filter or sort
@@ -250,37 +307,60 @@ describe("Command's priority queue carries a Patients/Referrals tablist (Task C2
     // raw ward-movements.ts fixture: seedWardFlowState() additively overlays demonstration referrals
     // (ward-rulings-demo.ts), which include RF-RD06, added 2026-09-25 and queued — the same
     // population CoordinatorScreen itself renders from.
-    const expectedIds = referralQueueOrder(seedWardFlowState().referrals).map(
-      (referral) => `ward-referral-row-${referral.id}`,
+    const expectedIds = referralQueueOrder(seedWardFlowState().referrals).map((referral) => referral.id);
+    expect(referralRows.map((row) => row.getAttribute("data-referral-id"))).toEqual(expectedIds);
+
+    showWholeFlow();
+    const patientRows = within(flowCard()).getAllByTestId(/^ward-queue-row-/);
+    expect(patientRows.length, "expected at least one open movement in Flow").toBeGreaterThan(0);
+    expect(flowTab, "Flow must carry the real row count, not an invented figure").toHaveTextContent(
+      String(patientRows.length),
     );
-    expect(referralRows.map((row) => row.getAttribute("data-testid"))).toEqual(expectedIds);
+    // Referrals are listed once, under Needs you, never as Flow rows.
+    expect(within(flowCard()).queryAllByTestId(/^ward-referral-row-/)).toHaveLength(0);
+
+    // Every stage tab carries the real count of its own section's rows, and All carries them all.
+    const stages = screen.getByRole("tablist", { name: "Flow stages" });
+    expect(within(stages).getByRole("tab", { name: /^All/u })).toHaveTextContent(String(patientRows.length));
+    let sum = 0;
+    for (const label of ["Needs a bed", "Bed agreed", "Ready to move", "Moving"]) {
+      const section = within(flowCard()).getByRole("region", { name: label });
+      const rows = within(section).queryAllByTestId(/^ward-queue-row-/).length;
+      sum += rows;
+      expect(
+        within(stages).getByRole("tab", { name: new RegExp(`^${label}`, "u") }),
+        `the ${label} tab must carry its own section's row count`,
+      ).toHaveTextContent(String(rows));
+    }
+    expect(sum, "the stage sections must between them hold every Flow row").toBe(patientRows.length);
   });
 
-  it("moves focus and selection between the two tabs with the arrow keys, and marks the active one", () => {
-    renderCoordinator();
+  it("moves focus and selection between the two lists with the arrow keys, and marks the active one", () => {
+    renderHome();
 
-    const patientsTab = screen.getByRole("radio", { name: /Patients/ });
-    const referralsTab = screen.getByRole("radio", { name: /Referrals/ });
-    expect(patientsTab).toHaveAttribute("aria-checked", "true");
-    expect(referralsTab).toHaveAttribute("aria-checked", "false");
+    const needsTab = homeListRadio(/^Needs you/u);
+    const flowTab = homeListRadio(/^Flow/u);
+    expect(needsTab).toHaveAttribute("aria-checked", "true");
+    expect(flowTab).toHaveAttribute("aria-checked", "false");
 
-    patientsTab.focus();
-    fireEvent.keyDown(patientsTab, { key: "ArrowRight" });
+    needsTab.focus();
+    fireEvent.keyDown(needsTab, { key: "ArrowRight" });
 
-    expect(referralsTab).toHaveAttribute("aria-checked", "true");
-    expect(patientsTab).toHaveAttribute("aria-checked", "false");
-    expect(referralsTab, "focus follows selection, the same convention the registers tabs use").toHaveFocus();
+    expect(flowTab).toHaveAttribute("aria-checked", "true");
+    expect(needsTab).toHaveAttribute("aria-checked", "false");
+    expect(flowTab, "focus follows selection, the same convention the registers tabs use").toHaveFocus();
+    expect(flowCard()).toBeInTheDocument();
 
-    fireEvent.keyDown(referralsTab, { key: "ArrowLeft" });
-    expect(patientsTab).toHaveAttribute("aria-checked", "true");
-    expect(patientsTab).toHaveFocus();
+    fireEvent.keyDown(flowTab, { key: "ArrowLeft" });
+    expect(needsTab).toHaveAttribute("aria-checked", "true");
+    expect(needsTab).toHaveFocus();
+    expect(screen.queryByRole("region", { name: "Flow" })).not.toBeInTheDocument();
   });
 
   it("keeps a selected referral's fields off the destination it never carries — no ward, no 'referred to'", () => {
-    renderCoordinator();
-    fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
-    const referralRows = screen.getAllByTestId(/^ward-referral-row-/);
-    fireEvent.click(referralRows[0]!);
+    renderHome();
+    const referralRows = allReferralRows();
+    fireEvent.click(within(referralRows[0]!).getByRole("button", { name: /^Open referral for / }));
 
     const placement = screen.getByLabelText("Referral placement");
     expect(placement.textContent, "a referral names no ward — this must never render one").not.toMatch(
@@ -288,49 +368,73 @@ describe("Command's priority queue carries a Patients/Referrals tablist (Task C2
     );
   });
 
-  it("switching queue tabs never changes the shortlist's subject — tab state and subject state are independent", () => {
+  it("switching stages never changes the shortlist's subject, and a list switch closes it rather than swapping in another", () => {
     renderCoordinator();
 
     // Select a movement first: the shortlist explains it under "Placement".
-    const movementRows = screen.getAllByTestId(/^ward-queue-row-/);
-    fireEvent.click(movementRows[0]!);
-    const movementId = movementRows[0]!.getAttribute("data-testid")!.replace("ward-queue-row-", "");
+    const movementRow = within(flowCard()).getAllByTestId(/^ward-queue-row-/)[0]!;
+    fireEvent.click(movementRow);
+    const movementId = movementRow.getAttribute("data-testid")!.replace("ward-queue-row-", "");
 
     let shortlist = screen.getByLabelText("Placement");
     expect(within(shortlist).getByRole("heading", { level: 2 })).toHaveTextContent("Placement");
     expect(within(shortlist).getByTestId(`ward-shortlist-${movementId}`)).toBeInTheDocument();
 
-    // Switching to the Referrals tab decides which LIST is on screen — it must not touch which
-    // record the shortlist is explaining.
-    fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
+    // Choosing a Flow stage decides which rows are on screen — it must not touch which record the
+    // shortlist is explaining, even when the chosen stage does not list that movement.
+    const stages = screen.getByRole("tablist", { name: "Flow stages" });
+    const otherStage = ["Needs a bed", "Bed agreed", "Ready to move", "Moving"].find(
+      (label) =>
+        !within(within(flowCard()).getByRole("region", { name: label })).queryByTestId(
+          movementRow.getAttribute("data-testid")!,
+        ),
+    )!;
+    fireEvent.click(within(stages).getByRole("tab", { name: new RegExp(`^${otherStage}`, "u") }));
+    expect(
+      within(flowCard())
+        .getAllByRole("region")
+        .map((section) => section.getAttribute("aria-label")),
+    ).toEqual([otherStage]);
     shortlist = screen.getByLabelText("Placement");
     expect(
       within(shortlist).getByTestId(`ward-shortlist-${movementId}`),
-      "the shortlist must still explain the same movement after a tab switch",
+      "the shortlist must still explain the same movement after a stage switch",
     ).toBeInTheDocument();
 
-    // Selecting a referral row sets the shortlist's subject to that referral and retitles the
-    // panel — the second half of this task, closing the gap this file used to document.
-    const referralRows = screen.getAllByTestId(/^ward-referral-row-/);
-    fireEvent.click(referralRows[0]!);
-    const referralId = referralRows[0]!.getAttribute("data-testid")!.replace("ward-referral-row-", "");
+    // Switching LIST (unlike switching stage) closes Placement by design — `showView` in
+    // coordinator-screen.tsx: "Switching lists clears Placement, so it never shows someone the new
+    // list does not highlight". It closes; it never swaps in a different subject.
+    // (At rest the Placement card is the prompt, so the shortlist itself is checked by its test id.)
+    fireEvent.click(homeListRadio(/^Needs you/u));
+    expect(screen.queryByTestId(`ward-shortlist-${movementId}`)).not.toBeInTheDocument();
+    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Referral placement")).not.toBeInTheDocument();
+
+    // Selecting a referral (under Needs you) sets the shortlist's subject to that referral and
+    // retitles the panel — the second half of this task, closing the gap this file used to document.
+    const referralRow = allReferralRows()[0]!;
+    const referralId = referralRow.getAttribute("data-referral-id")!;
+    fireEvent.click(within(referralRow).getByRole("button", { name: /^Open referral for / }));
 
     shortlist = screen.getByLabelText("Referral placement");
     expect(within(shortlist).getByRole("heading", { level: 2 })).toHaveTextContent("Referral placement");
     expect(within(shortlist).getByTestId(`ward-referral-placement-${referralId}`)).toBeInTheDocument();
 
-    // Switching back to Patients must not silently hand the shortlist back to the movement either
-    // — the referral stays the subject until a movement (or another referral) is explicitly
-    // selected, exactly the independence the drawing's own comment describes.
-    fireEvent.click(screen.getByRole("radio", { name: /Patients/ }));
-    shortlist = screen.getByLabelText("Referral placement");
+    // Switching back to Flow must not silently hand the shortlist back to the movement either:
+    // the list switch closes Placement, so neither the referral nor the earlier movement is shown
+    // until a coordinator explicitly selects one.
+    fireEvent.click(homeListRadio(/^Flow/u));
     expect(
-      within(shortlist).getByTestId(`ward-referral-placement-${referralId}`),
-      "a tab switch must never hand the shortlist back to the movement on its own",
-    ).toBeInTheDocument();
+      screen.queryByTestId(`ward-shortlist-${movementId}`),
+      "a list switch must never hand the shortlist back to the movement on its own",
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Referral placement")).not.toBeInTheDocument();
+    expect(screen.queryByTestId(`ward-referral-placement-${referralId}`)).not.toBeInTheDocument();
+    expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
 
     // Selecting a movement is what hands the shortlist back — proven, not assumed.
-    fireEvent.click(movementRows[0]!);
+    showWholeFlow();
+    fireEvent.click(within(flowCard()).getByTestId(`ward-queue-row-${movementId}`));
     shortlist = screen.getByLabelText("Placement");
     expect(within(shortlist).getByRole("heading", { level: 2 })).toHaveTextContent("Placement");
     expect(within(shortlist).getByTestId(`ward-shortlist-${movementId}`)).toBeInTheDocument();

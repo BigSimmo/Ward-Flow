@@ -1,5 +1,6 @@
 "use client";
 
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import Link from "next/link";
 import { Fragment, useState } from "react";
 
@@ -27,7 +28,15 @@ const KIND_TONE: Record<PlannedKind, WfTone> = {
 };
 
 /** Home's Planned list: the rest of the shift in time order, from times the records already hold. */
-export function PlannedList({ now, rows }: { now: Instant; rows: readonly PlannedRow[] }) {
+export function PlannedList({
+  now,
+  rows,
+  title = "Planned",
+}: {
+  now: Instant;
+  rows: readonly PlannedRow[];
+  title?: string;
+}) {
   const until = shiftEndInstant(now);
   const [showAll, setShowAll] = useState(false);
   const shown = showAll ? rows : rows.slice(0, FIRST_ROWS);
@@ -36,7 +45,7 @@ export function PlannedList({ now, rows }: { now: Instant; rows: readonly Planne
     <Card aria-labelledby="home-planned-title" data-testid="home-planned">
       <CardHead
         id="home-planned-title"
-        title="Planned"
+        title={title}
         // Said once here; target rows carry an amber glyph and a spoken label (no side edge).
         meta={`${formatInstant(now)}–${formatInstantWithDay(until, now)} · your default targets`}
       />
@@ -64,7 +73,7 @@ export function PlannedList({ now, rows }: { now: Instant; rows: readonly Planne
                 <time className={styles.rowTimeStrong}>{formatInstantWithDay(row.at, now)}</time>
                 <span className={styles.rowWhat}>
                   {row.kind === "target" ? <SrOnly>Your target, not a clinical standard: </SrOnly> : null}
-                  <span className={styles.rowKind}>{row.what}</span> · {row.where}
+                  <span className={styles.rowKind}>{row.what}</span> · <SpelledCodes text={row.where} />
                 </span>
               </li>
             </Fragment>
