@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
-import { NetworkFigures } from "@/components/ward-management/tools/ward-network-figures";
+import { ToolFigures } from "@/components/ward-management/tools/ward-tool-figures";
 import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -72,19 +72,20 @@ function ReadyProbe({ events }: { events: WardFlowEvent[] }) {
 }
 
 /**
- * Audit 24-4 NA2-06 (Tools half): Tools' Network figures "Ready" is `totalReadyBedsNow`, the figure
- * Home and Capacity print, including after a ward confirms fewer beds than it has pulled.
+ * Audit 24-4 NA2-06 (Tools half): Tools' Key figures "Beds ready" is `totalReadyBedsNow`, the figure
+ * Home and Capacity print, including after a ward confirms fewer beds than it has pulled. Re-pointed
+ * from the old Network figures view when the Tools overhaul (#1316) replaced it.
  */
-describe("audit 24-4: Tools Network figures Ready reads readyBedsNow", () => {
+describe("audit 24-4: Tools Key figures Beds ready reads readyBedsNow", () => {
   it("matches readyBedsNow at the seed and after the old formula would have split", () => {
     const events = eventsToSplit();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ReadyProbe events={events} />
-        <NetworkFigures />
+        <ToolFigures onNavigate={() => {}} />
       </WardFlowProvider>,
     );
-    const readyFigure = () => screen.getByText("Ready", { selector: "dt" }).parentElement?.querySelector("dd > span");
+    const readyFigure = () => screen.getByText("Beds ready", { selector: "dt" }).parentElement?.querySelector("dd");
     expect(readyFigure()?.textContent).toBe(screen.getByTestId("ready-probe").textContent);
 
     act(() => {

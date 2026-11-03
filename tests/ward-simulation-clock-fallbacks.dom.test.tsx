@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { GlobalSearchPreview } from "@/components/ward-management/search/global-search-preview";
 import { RecordPreview } from "@/components/ward-management/search/record-preview";
-import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
+import { ToolFormTimes } from "@/components/ward-management/tools/ward-tool-form-times";
 import { perthMidnight } from "@/components/ward-management/ward-clock";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -124,7 +124,7 @@ describe("M-TIME-01: simulation clock resolution instead of browser wall-clock n
     },
   );
 
-  it("WardFormTimes resolves simulation dayZero and demoNow cleanly without wall-clock drift", () => {
+  it("Form times resolves simulation dayZero and demoNow cleanly without wall-clock drift", () => {
     const scenarioDayZero = perthMidnight(2026, 7, 15); // 15 Aug 2026
     function OverrideDayZero({ children }: { children: ReactNode }) {
       const value = useWardFlow();
@@ -133,20 +133,24 @@ describe("M-TIME-01: simulation clock resolution instead of browser wall-clock n
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR + 1440}>
         <OverrideDayZero>
-          <WardFormTimes />
+          <ToolFormTimes onNavigate={vi.fn()} />
         </OverrideDayZero>
       </WardFlowProvider>,
     );
     // The date no longer starts on the demo day (no form time is prefilled, 19 Oct 2026), so type
-    // the demo clock's own Perth date and time and read the gap: zero means the scenario day was used.
-    expect(screen.getByLabelText("Date written on form")).toHaveValue("");
-    expect(screen.getByLabelText("Time written on form")).toHaveValue("");
+    // the demo clock's own Perth date and time: read on the scenario day it is the clock time with
+    // no day beside it ("yesterday", "tomorrow"), which a wall-clock day would add (D-93: no countdown).
+    expect(screen.getByLabelText("Date on form")).toHaveValue("");
+    expect(screen.getByLabelText("Time on form")).toHaveValue("");
     const minutes = NOW_ANCHOR + 1440;
     const day = 15 + Math.floor(minutes / 1440);
     const clock = `${String(Math.floor((minutes % 1440) / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-    fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
-    typeDate(screen.getByLabelText("Date written on form"), `2026-08-${day}`);
-    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: clock } });
-    expect(screen.getByRole("status")).toHaveTextContent("0h 00m");
+    fireEvent.click(screen.getByTestId("ward-form-times-form"));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /^Form 1A/u }));
+    typeDate(screen.getByLabelText("Date on form"), `2026-08-${day}`);
+    fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: clock } });
+    expect(screen.getByTestId("ward-form-times-result").textContent).toMatch(new RegExp(`${clock}\\s*as typed`, "u"));
+    // Read on the scenario day, a form typed at the demo clock time has not ended yet.
+    expect(screen.getByTestId("ward-form-times-result").textContent).toMatch(new RegExp(`\\)Ends\\s*${clock}`, "u"));
   });
 });
