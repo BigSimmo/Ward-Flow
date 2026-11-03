@@ -230,7 +230,7 @@ export function HandoverScopeControl({
 
   return (
     <HandoverChoiceMenu
-      label="Filter the sheet"
+      label="Show"
       context="Show"
       value={value}
       choices={choices}

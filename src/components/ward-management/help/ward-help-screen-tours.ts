@@ -166,7 +166,7 @@ const AROUND: readonly Around[] = [
         device: "desk",
         target: id("ward-handover-sheet"),
         title: "The handover sheet",
-        body: "Filter the sheet to a service, then use Print handover for the paper copy.",
+        body: "Use Show to filter the sheet to a service, then use Print handover for the paper copy.",
       },
       {
         target: [id("ward-handover-sign-bar"), id("ward-handover-phone-sign-off")],

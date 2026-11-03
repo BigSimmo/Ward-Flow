@@ -15,8 +15,8 @@ it("refreshes ED options on a mounted handover control when the network changes"
   const onChange = vi.fn();
   const { rerender } = render(<HandoverScopeControl value="network" onChange={onChange} units={units} />);
   // 3 Nov 2026: the control is the Show menu; it stays open across the rerenders below.
-  fireEvent.click(screen.getByRole("button", { name: /^Filter the sheet:/ }));
-  const options = () => within(screen.getByRole("menu", { name: "Filter the sheet" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Show:/ }));
+  const options = () => within(screen.getByRole("menu", { name: "Show" }));
   expect(
     options().getByRole("menuitemradio", { name: "Royal Perth Hospital Emergency Department" }),
   ).toBeInTheDocument();

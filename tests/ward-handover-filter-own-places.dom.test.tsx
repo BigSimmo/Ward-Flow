@@ -35,8 +35,8 @@ function renderAtDesk(access: WardAccess) {
 
 /** Opens the Show menu and reads its groups: each heading and the choices listed under it. */
 function openScopeMenu(): Map<string, string[]> {
-  fireEvent.click(screen.getByRole("button", { name: /^Filter the sheet:/ }));
-  const menu = screen.getByRole("menu", { name: "Filter the sheet" });
+  fireEvent.click(screen.getByRole("button", { name: /^Show:/ }));
+  const menu = screen.getByRole("menu", { name: "Show" });
   const groups = new Map<string, string[]>();
   let heading = "";
   for (const node of Array.from(menu.children)) {
@@ -73,7 +73,7 @@ describe("handover filter offers only the desk's own places (issues #802, #815)"
         </WardAccessScope>
       </WardFlowProvider>,
     );
-    expect(screen.queryByRole("button", { name: /^Filter the sheet:/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Show:/ })).toBeNull();
   });
 
   it("a statewide coordinator keeps every ward", () => {

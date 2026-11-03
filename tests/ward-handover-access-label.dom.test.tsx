@@ -56,7 +56,7 @@ describe("handover labels describe the records the desk can access", () => {
   it("names a one-ward desk's own ward on screen, in copy and on the print sheet, with no scope picker", async () => {
     const label = "Mabu Liyan / Broome Mental Health Unit";
     const writeText = renderAtDesk({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
-    expect(screen.queryByRole("button", { name: /^Filter the sheet:/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Show:/ })).toBeNull();
     expect(screen.getByTestId("ward-handover-page")).toHaveTextContent(label);
     copySummary();
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
@@ -74,7 +74,7 @@ describe("handover labels describe the records the desk can access", () => {
     "uses the same all-records label on screen, in copy and on the print sheet for %j",
     async (access, label) => {
       const writeText = renderAtDesk(access);
-      expect(screen.getByRole("button", { name: `Filter the sheet: ${label}` })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: `Show: ${label}` })).toBeInTheDocument();
       expect(screen.getByTestId("ward-handover-page")).toHaveTextContent(label);
       copySummary();
       await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
@@ -89,9 +89,9 @@ describe("handover labels describe the records the desk can access", () => {
   it("keeps the explicit ward and service selection labels", async () => {
     const writeText = renderAtDesk(TWO_WARD_DESK);
     for (const optionName of ["Mabu Liyan / Broome Mental Health Unit", "WACHS"]) {
-      fireEvent.click(screen.getByRole("button", { name: /^Filter the sheet:/ }));
+      fireEvent.click(screen.getByRole("button", { name: /^Show:/ }));
       fireEvent.click(
-        within(screen.getByRole("menu", { name: "Filter the sheet" })).getByRole("menuitemradio", { name: optionName }),
+        within(screen.getByRole("menu", { name: "Show" })).getByRole("menuitemradio", { name: optionName }),
       );
       copySummary();
       await waitFor(() => expect(writeText.mock.calls.at(-1)?.[0]).toContain(optionName));

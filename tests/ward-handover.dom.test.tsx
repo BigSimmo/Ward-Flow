@@ -216,8 +216,8 @@ describe("Handover page", () => {
   it("keeps letter shortcuts inactive while choosing a handover filter", () => {
     renderHandover();
     // 3 Nov 2026: the filter is the Show menu; a letter typed in it jumps to a choice, never a shortcut.
-    fireEvent.click(screen.getByRole("button", { name: /^Filter the sheet:/ }));
-    const choice = within(screen.getByRole("menu", { name: "Filter the sheet" })).getAllByRole("menuitemradio")[0]!;
+    fireEvent.click(screen.getByRole("button", { name: /^Show:/ }));
+    const choice = within(screen.getByRole("menu", { name: "Show" })).getAllByRole("menuitemradio")[0]!;
     fireEvent.keyDown(choice, { key: "j" });
     fireEvent.keyDown(choice, { key: "p" });
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
