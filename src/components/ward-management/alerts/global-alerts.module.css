@@ -66,8 +66,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  max-height: 14rem;
-  overflow-y: auto;
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
 }

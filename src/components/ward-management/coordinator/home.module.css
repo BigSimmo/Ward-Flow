@@ -1351,8 +1351,8 @@ button.registerRow:hover {
   }
 
   /* The strip under the hero, opened from Exceptions, Declines or New events. Rows run two across
-     as separate tiles with room for a two-line detail, about three rows in view and the rest a
-     scroll away. */
+     as separate tiles with room for a two-line detail. Three rows show, then Show more (D-95,
+     3 Nov 2026), rather than a box that scrolls inside the strip. */
   .registersCard[data-placement="band"] .registersPanel {
     position: relative;
   }
@@ -1366,10 +1366,7 @@ button.registerRow:hover {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--wf-s-2);
-    max-height: 15rem;
     padding: var(--wf-s-3);
-    overflow-y: auto;
-    overscroll-behavior: contain;
     box-sizing: border-box;
   }
 
