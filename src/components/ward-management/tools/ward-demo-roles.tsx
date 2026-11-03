@@ -10,7 +10,7 @@ import { accessPlaceLabel } from "../shell/ward-access-labels";
 import { useWardFeatureFlags } from "../shell/ward-feature-flag-store";
 import { SharedAccessContext } from "../shell/ward-shared-access-context";
 import { SharedSessionContext } from "../shell/ward-shared-session-context";
-import { confirmLeavingShell } from "../shell/ward-bar-controls";
+import { confirmLeavingShell } from "../shell/ward-leave-guard";
 import { dispatchPersonaSyncForRole, usePersonaDeskId, useShellPersonaRole } from "../settings/persona-sync";
 import { useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
 import {

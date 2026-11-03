@@ -49,7 +49,7 @@ import {
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
-import { confirmLeavingShell } from "@/components/ward-management/shell/ward-bar-controls";
+import { confirmLeavingShell } from "@/components/ward-management/shell/ward-leave-guard";
 import {
   ACCESS_ROLE_LABELS,
   STATEWIDE_COORDINATOR,
