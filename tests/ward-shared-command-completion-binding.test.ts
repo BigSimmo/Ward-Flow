@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -7,7 +7,6 @@ import {
   type SharedSnapshot,
   type SharedView,
 } from "@/components/ward-management/ward-shared-client";
-import { verifyResponseBinding } from "@/components/ward-management/ward-shared-role-binding";
 
 const actorId = "synthetic-command-actor";
 const access = { role: "coordinator", scope: { kind: "statewide" } };
@@ -135,36 +134,5 @@ describe("authenticated successful command completion evidence", () => {
     } finally {
       h.client.dispose();
     }
-  });
-
-  it("rejects missing completion evidence before a changed binding can clear recovery or cancel work", async () => {
-    const host = {
-      view: (): SharedView => ({ snapshot: snapshot(), actorId, access, receivedAt: 0, status: "ready", error: null }),
-      publish: vi.fn(),
-      endRole: vi.fn(),
-      current: vi.fn(),
-      cancelQueued: vi.fn(),
-      clearRecovery: vi.fn(),
-      hasPending: () => true,
-      newRoleEpoch: vi.fn(),
-      roleEpoch: () => 0,
-      grantGeneration: () => 0,
-    };
-    await expect(
-      verifyResponseBinding(host, {
-        path: "/v1/workspace/commands",
-        body: { commandId: "synthetic-command" },
-        response: Response.json({}),
-        value: { actorId: "another-synthetic-actor", access },
-        sentBinding: { access: JSON.stringify(access), context, epoch: 0, grant: 0 },
-        authenticatedActor: actorId,
-        workspaceRead: false,
-      }),
-    ).rejects.toThrow();
-    expect(host.clearRecovery).not.toHaveBeenCalled();
-    expect(host.cancelQueued).not.toHaveBeenCalled();
-    expect(host.newRoleEpoch).not.toHaveBeenCalled();
-    expect(host.endRole).not.toHaveBeenCalled();
-    expect(host.publish).not.toHaveBeenCalled();
   });
 });

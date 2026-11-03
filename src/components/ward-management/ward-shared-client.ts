@@ -835,8 +835,7 @@ export class SharedWorkspaceClient {
       throw gate({ status: "choose-role", choices });
     }
     if (value === null) throw new Error("Workspace unavailable");
-    // HTTP success alone is not a command receipt. Modern replies name the committed revision;
-    // older servers answer with a full board, which must validate before recovery is discarded.
+    // HTTP success is no receipt: a reply names its committed revision or carries a valid full board.
     if (
       path === "/v1/workspace/commands" &&
       body &&

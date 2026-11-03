@@ -521,7 +521,7 @@ function closeReferences(
       withoutLinks(
         withoutLinks(
           withoutLinks(movement, ["admissionId"], has(fullAdmissions)),
-          ["sourceAdmissionId"],
+          ["sourceAdmissionId", "referralSourceAdmissionId"],
           has(admissions),
         ),
         ["referralId"],

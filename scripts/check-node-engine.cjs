@@ -2,7 +2,7 @@
 // `npm ci`, so it stays import-free and restates the range as a literal;
 // tests/check-runtime.test.ts pins this string to package.json engines.node,
 // which remains the single source of truth.
-const nodeRange = ">=24.22.1 <25";
+const nodeRange = ">=24.15.0 <25";
 const minimum = nodeRange.match(/>=\s*(\d+)\.(\d+)\.(\d+)/);
 const exclusiveMajor = nodeRange.match(/<\s*(\d+)/);
 

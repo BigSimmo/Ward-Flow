@@ -129,7 +129,7 @@ function harness(overrides: Partial<State> = {}) {
     change(update: Partial<State>) {
       writeFileSync(statePath, JSON.stringify({ ...read(), ...update }));
     },
-    run(repository = "BigSimmo/Ward-Flow") {
+    run(repository = "BigSimmo/Ward-Flow", extra: Record<string, string> = {}) {
       return spawnSync("bash", [join(directory, "release.sh")], {
         cwd: directory,
         encoding: "utf8",
@@ -141,6 +141,7 @@ function harness(overrides: Partial<State> = {}) {
           RELEASE_TEST_STATE: statePath,
           GITHUB_STEP_SUMMARY: join(directory, "summary.md"),
           GH_TOKEN: "synthetic-offline-only",
+          ...extra,
         },
       });
     },
@@ -203,6 +204,15 @@ describe("daily release record and live-ref recovery", () => {
     expect(result.status).not.toBe(0);
     expect(result.stderr).toMatch(/record|notes|recover/i);
     expect(h.read().records).toHaveLength(1);
+  });
+
+  it("releases from an unrecorded live commit only when a person asks for it", () => {
+    const h = harness({ current: previous, records: [], tags: {} });
+    expect(h.run().status).not.toBe(0);
+    expect(h.read().current).toBe(previous);
+    expect(h.run("BigSimmo/Ward-Flow", { ACCEPT_UNRECORDED_LIVE: "true" }).status).toBe(0);
+    expect(h.read().current).toBe(target);
+    expect(h.read().records.filter((record) => record.target_commitish === target && !record.draft)).toHaveLength(1);
   });
 
   it("does not treat an API listing failure as an absent record", () => {

@@ -45,7 +45,7 @@ function runtimeResult(runtimeName: string, version: string, expectedMajor: numb
 
 // Must stay equal to the floor declared by package.json engines.node, which is
 // the single source of truth. tests/check-runtime.test.ts pins the two together.
-export const NODE_MINIMUM_VERSION = "24.22.1";
+export const NODE_MINIMUM_VERSION = "24.15.0";
 
 function isBelow(version: string, minimum: string): boolean {
   const actual = version.split(".").map(Number);

@@ -35,7 +35,7 @@ export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClos
   const tightest = [...result.kinds].sort((a, b) => a.after - b.after)[0];
   const options: { key: Toggle; label: string; beds: number }[] = [
     { key: "clearHeldUp", label: "Held-up releases go ahead", beds: tomorrow.total.heldUp },
-    { key: "confirmDates", label: "Planned dates are confirmed", beds: tomorrow.total.plannedNotFlagged },
+    { key: "confirmDates", label: "Planned dates are confirmed", beds: tomorrow.total.confirmationEligible ?? 0 },
     { key: "overdueGoAhead", label: "Overdue releases go ahead", beds: tomorrow.total.overdue },
   ];
   const close = () => {
@@ -85,10 +85,15 @@ export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClos
         {scenario.bedChanges.map((change, index) => {
           const unit = units.find((candidate) => candidate.id === change.unitId);
           const beds = Math.abs(change.delta) === 1 ? "bed" : "beds";
+          const noLongerApplies = !unit
+            ? "Ward unavailable; this change no longer applies."
+            : unit.isClosed
+              ? "Ward closed; this change no longer applies."
+              : "";
           return (
             <Checkbox
               key={`${change.unitId}-${index}`}
-              label={`${unit?.name ?? "Ward"} ${change.delta < 0 ? `closes ${-change.delta}` : `opens ${change.delta}`} ${beds}`}
+              label={`${unit?.name ?? "Ward"} ${change.delta < 0 ? `closes ${-change.delta}` : `opens ${change.delta}`} ${beds}${noLongerApplies ? ` · ${noLongerApplies}` : ""}`}
               checked
               onChange={() =>
                 setScenario((current) => ({
