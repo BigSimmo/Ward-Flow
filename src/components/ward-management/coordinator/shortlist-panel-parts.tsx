@@ -1,7 +1,15 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { EligibilityGate } from "@/components/ward-management/ward-eligibility";
-import { URGENCY_LEVELS, type BedRelease, type LegalStatus, type Unit } from "@/components/ward-management/ward-model";
+import {
+  URGENCY_LEVELS,
+  type BedRelease,
+  type LegalStatus,
+  type Referral,
+  type Unit,
+} from "@/components/ward-management/ward-model";
+import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
+import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { StatusGlyph } from "@/components/wf";
 
@@ -88,13 +96,31 @@ export function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: 
   return pendingPreparation > 0 ? `${line} · Being made ready ${pendingPreparation}` : line;
 }
 
+/** The wards a referral still waits on, as Home's list names them (H9, Josh 3 Nov 2026). */
+export function referralAsked(referral: Referral, units: readonly Unit[]): string {
+  const names = referral.destinations.filter(isAwaitingAnswer).map((arm) => {
+    const destination = arm.destination;
+    if (destination.kind !== "psychiatric_ward" || !destination.unitId) return "Any suitable ward";
+    const unitId = destination.unitId;
+    return units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
+  });
+  if (names.length === 0) return "No ward asked";
+  return names.length === 1 ? names[0]! : `${names[0]} and ${names.length - 1} more`;
+}
+
+/** Where a referral came from: the sending site, and its team when one is named. */
+export function referralFrom(referral: Referral): string {
+  return withSendingTeam(referral.originSiteCode, referral);
+}
+
 /** Phone: brings the first fit row into view and focuses it, so the person picks the ward. */
 export function focusFirstCandidate(from: HTMLElement) {
   // From the parent, never the control itself: Refer and Override carry `ward-shortlist-` test ids
   // too, and `closest` matches the element it starts on, which found no ward list (24 Oct 2026).
-  const first = from.parentElement
-    ?.closest("[data-testid^='ward-shortlist-']")
-    ?.querySelector<HTMLElement>("[data-testid^='ward-shortlist-candidate-'][data-fit]");
+  // On Home the drawer draws Refer into its pinned foot, outside the panel, so the drawer itself is
+  // the scope there (H7, 3 Nov 2026).
+  const scope = from.parentElement?.closest("[data-testid^='ward-shortlist-']") ?? from.closest("[role='dialog']");
+  const first = scope?.querySelector<HTMLElement>("[data-testid^='ward-shortlist-candidate-'][data-fit]");
   first?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
   first?.focus({ preventScroll: true });
 }

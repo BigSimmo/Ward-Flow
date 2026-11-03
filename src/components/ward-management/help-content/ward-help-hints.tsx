@@ -142,6 +142,7 @@ function WardHelpHintForView({ pathname, role }: { pathname: string; role: WardT
   return (
     <OverlayPortal layer="overlay" name="ward-help-hint">
       <aside className={styles.hint} aria-label={`${help.title} help`} data-testid="ward-help-hint">
+        <span className={styles.eyebrow}>Tip</span>
         <strong>{help.title}</strong>
         <p>
           {topic === "settings" && role !== "admin"
@@ -151,15 +152,13 @@ function WardHelpHintForView({ pathname, role }: { pathname: string; role: WardT
         <div className={styles.actions}>
           <button
             type="button"
+            className={styles.link}
             onClick={() => {
               setOffered(null);
               openWardHelp("screen");
             }}
           >
             More in Help
-          </button>
-          <button type="button" onClick={() => setOffered(null)}>
-            Got it
           </button>
           <button
             type="button"
@@ -170,6 +169,9 @@ function WardHelpHintForView({ pathname, role }: { pathname: string; role: WardT
             }}
           >
             Turn off tips
+          </button>
+          <button type="button" className={styles.primary} onClick={() => setOffered(null)}>
+            Got it
           </button>
         </div>
       </aside>
