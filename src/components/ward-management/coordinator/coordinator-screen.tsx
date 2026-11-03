@@ -775,6 +775,7 @@ export function CoordinatorScreen() {
         className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
         onClick={closeShortlist}
         aria-hidden="true"
+        data-sheet-scrim=""
         data-testid="ward-coordinator-shortlist-backdrop"
       />
       <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>

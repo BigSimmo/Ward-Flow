@@ -211,7 +211,9 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow: hidden;
+  /* clip, not hidden: it keeps the rounded corners without becoming a scroll box, so the table's
+     head row can pin to the page. */
+  overflow: clip;
 }
 
 .bar {
@@ -280,17 +282,27 @@
   color: var(--wf-danger-ink);
 }
 
-/* The table stops at a set height and scrolls inside its card (Josh, 9 Oct). */
+/* One scroll for the page (Josh, 3 Nov 2026, replacing the 9 Oct set-height box): the table grows
+   with the page and never sits in a fixed-height box (design system v9 section 7). It scrolls only
+   sideways, when its columns are wider than the card. */
 .tableScroll {
-  overflow: auto;
-  max-height: min(560px, calc(100dvh - 330px));
-  min-height: 240px;
+  overflow-x: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--wf-line-3) transparent;
 }
 
-.present .tableScroll {
-  max-height: none;
+/* When the columns fit the card nothing scrolls inside it, so the head row and the group rows pin
+   under the top bar while the page scrolls. */
+.tableScrollFitted {
+  overflow: visible;
+}
+
+.tableScrollFitted .sheetTable th {
+  top: var(--wf-header-height, 3.75rem);
+}
+
+.tableScrollFitted .sheetTable tr.groupRow > td {
+  top: calc(var(--wf-header-height, 3.75rem) + 36px);
 }
 
 .sheetTable {

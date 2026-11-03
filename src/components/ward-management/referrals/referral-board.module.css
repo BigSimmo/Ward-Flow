@@ -342,9 +342,11 @@
   min-height: 100%;
 }
 
+/* The queue scrolls with the page (3 Nov 2026), so the toolbar pins just under the top bar rather
+   than behind it. Phones reset it to static. */
 .toolbar {
   position: sticky;
-  top: 0;
+  top: var(--wf-header-height, 3.75rem);
   z-index: 2;
   display: flex;
   flex-wrap: wrap;

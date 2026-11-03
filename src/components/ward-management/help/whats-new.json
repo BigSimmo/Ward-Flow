@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-redesign-capacity",
-    "date": "2026-10-31",
-    "line": "Capacity has a new look: beds ready first, the bed forecast, a bed map of every ward and this shift's checks."
-  },
-  {
     "id": "2026-10-31-redesign-referrals",
     "date": "2026-10-31",
     "line": "Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot."
@@ -98,5 +93,10 @@
     "id": "2026-11-03-home-flow",
     "date": "2026-11-03",
     "line": "Home now shows Needs you and Flow, with tabs for each stage, from needing a bed to moving."
+  },
+  {
+    "id": "2026-11-03-one-page-scroll",
+    "date": "2026-11-03",
+    "line": "Pages scroll as one, with headings pinned under the top bar, and a click outside a drawer now closes it."
   }
 ]

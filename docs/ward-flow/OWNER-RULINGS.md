@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**612 rulings/items extracted, across 38 of 44 files.**
+**613 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 355 distinct IDs
+## ID index — 356 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -263,6 +263,7 @@ safe global key across 30 files.
 | `D-92` | `decisions.md`:1062 | D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026) |
 | `D-93` | `decisions.md`:1072 | D-93. Legal form times show only as typed, never as a countdown (31 October 2026) |
 | `D-94` | `decisions.md`:1080 | D-94. Design rulings of 31 October 2026 |
+| `D-95` | `decisions.md`:1093 | D-95. One page scroll, and a click outside closes a drawer (3 November 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -546,13 +547,13 @@ safe global key across 30 files.
 
 ## By file, newest first — 38 files
 
-### `decisions.md` (2026-09-01 – 2026-11-02 (mixed, see file))
+### `decisions.md` (2026-09-01 – 2026-11-03 (mixed, see file))
 
 **Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
 
 **Title:** Ward Flow — decision log
 
-94 item(s):
+95 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -648,6 +649,7 @@ safe global key across 30 files.
 - `D-92` — line 1062, heading: "D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026)"
 - `D-93` — line 1072, heading: "D-93. Legal form times show only as typed, never as a countdown (31 October 2026)"
 - `D-94` — line 1080, heading: "D-94. Design rulings of 31 October 2026"
+- `D-95` — line 1093, heading: "D-95. One page scroll, and a click outside closes a drawer (3 November 2026)"
 
 ### `archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
