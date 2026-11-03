@@ -14,7 +14,7 @@ An operational view of seclusion rooms, seclusion and restraint in use, and inci
 
 ## Jobs done here
 
-- Record seclusion, restraint or an incident. Open Seclusion and choose the ward. Record start when seclusion or restraint begins and Record end when it finishes, or Record incident for an incident. Times are as typed, and nothing works out a legal limit.
+- Record seclusion, restraint or an incident. Open Forms, then Seclusion and restraint. Start seclusion or restraint when it begins and Record end when it finishes, or Record incident for an incident. Times are as typed, and nothing works out a legal limit.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 

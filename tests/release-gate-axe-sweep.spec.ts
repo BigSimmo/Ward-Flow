@@ -45,7 +45,8 @@ const ROUTES = [
   ["/reports/chronology", "ward-patient-chronology"],
   ["/reports/downtime", "ward-downtime-pack"],
   ["/search", "ward-patient-search"],
-  ["/seclusion", "seclusion-screen"],
+  // FS3 (3 Nov 2026): Seclusion opens as a view in Forms for every desk that has Forms.
+  ["/seclusion", "seclusion-forms-view", "/legal-forms?view=seclusion"],
   ["/settings", "ward-settings-screen"],
   ["/statistics", "ward-statistics-screen"],
   ["/statistics/community/bentley", "ward-statistics-community-screen"],
