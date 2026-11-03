@@ -338,8 +338,8 @@
             <li>Each page build removes its page's remaining coloured edges and lowers the side-stripe baseline.</li>
             <li>New events go in EVENT_ROLE and its permissions test.</li>
             <li>
-              Phone script limits: a PR may raise one by up to 5 KB per screen after diagnosing the growth and trying a
-              trim. More than that needs Josh's yes (D-82).
+              Phone script limits: a normal PR leaves them alone while every screen is under its ceiling (baseline plus
+              10 KB). Over a ceiling, trim or run a size tidy; never raise it. A higher ceiling needs Josh's yes (D-96).
             </li>
           </ul>
         </section>

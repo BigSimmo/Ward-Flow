@@ -3,8 +3,13 @@ import { gzipSync } from "node:zlib";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  budgetTable,
+  budgetWarnings,
+  GROWTH_WARNING_KB,
   LEGACY_MOVEMENT_REDIRECT,
+  NEAR_CEILING_WARNING_KB,
   overBudget,
+  reportBudgets,
   routeKb,
   scriptSources,
   validateBudgets,
@@ -157,6 +162,19 @@ describe("phone script budget", () => {
     { "": 5 },
     { "/\\example.test/a": 5 },
     { "/ward-flow/movements/../../ward-flow": 5 },
+    { "/a": null },
+    { "/a": [5, 15] },
+    { "/a": {} },
+    { "/a": { baseline: 5 } },
+    { "/a": { ceiling: 15 } },
+    { "/a": { baseline: 5, ceiling: 15, limit: 15 } },
+    { "/a": { baseline: 0, ceiling: 15 } },
+    { "/a": { baseline: -1, ceiling: 15 } },
+    { "/a": { baseline: 5, ceiling: "15" } },
+    { "/a": { baseline: NaN, ceiling: 15 } },
+    { "/a": { baseline: 5, ceiling: Infinity } },
+    { "/a": { baseline: 16, ceiling: 15 } },
+    { "//elsewhere/a": { baseline: 5, ceiling: 15 } },
   ])("rejects invalid budgets: %j", (budgets) => {
     expect(() => validateBudgets(budgets)).toThrow();
   });
@@ -177,6 +195,89 @@ describe("phone script budget", () => {
 
   it("accepts a measurement exactly at its budget", () => {
     expect(overBudget({ "/a": 5 }, { "/a": 5 })).toEqual([]);
+  });
+
+  describe("baseline and ceiling (D-96)", () => {
+    const budgets = { "/a": { baseline: 500, ceiling: 510 }, "/b": { baseline: 600, ceiling: 610 } };
+
+    it("reads both shapes into a baseline and ceiling per route", () => {
+      expect(validateBudgets({ "/a": { baseline: 500, ceiling: 510 }, "/b": 600 })).toEqual({
+        "/a": { baseline: 500, ceiling: 510 },
+        "/b": { baseline: 600, ceiling: 600 },
+      });
+      expect(validateBudgets({ "/a": { baseline: 510, ceiling: 510 } })).toEqual({
+        "/a": { baseline: 510, ceiling: 510 },
+      });
+    });
+
+    it("fails only the route over its ceiling, not one merely above its baseline", () => {
+      expect(overBudget({ "/a": 509, "/b": 610.1 }, budgets)).toEqual([{ route: "/b", kb: 610.1, limit: 610 }]);
+      expect(overBudget({ "/a": 510, "/b": 600 }, budgets)).toEqual([]);
+    });
+
+    it("warns when a route has grown more than 3 KB since its baseline", () => {
+      expect(GROWTH_WARNING_KB).toBe(3);
+      expect(budgetWarnings({ "/a": 503, "/b": 600 }, budgets)).toEqual([]);
+      const warnings = budgetWarnings({ "/a": 503.1, "/b": 600 }, budgets);
+      expect(warnings).toEqual([expect.objectContaining({ route: "/a", kind: "grown", kb: 503.1 })]);
+      expect(warnings[0]!.message).toMatch(/grown 3\.1 KB since the last tidy/);
+    });
+
+    it("warns when a route is within 2 KB of its ceiling", () => {
+      expect(NEAR_CEILING_WARNING_KB).toBe(2);
+      const tight = { "/a": { baseline: 507, ceiling: 510 } };
+      expect(budgetWarnings({ "/a": 507.9 }, tight)).toEqual([]);
+      expect(budgetWarnings({ "/a": 508 }, tight)).toEqual([
+        expect.objectContaining({ route: "/a", kind: "near-ceiling", ceiling: 510 }),
+      ]);
+    });
+
+    it("gives both warnings when a route has grown and is near its ceiling, and none once over it", () => {
+      expect(budgetWarnings({ "/a": 509, "/b": 600 }, budgets).map(({ kind }) => kind)).toEqual([
+        "grown",
+        "near-ceiling",
+      ]);
+      expect(budgetWarnings({ "/a": 511, "/b": 600 }, budgets)).toEqual([]);
+    });
+
+    it("prints a table for every route and passes quietly while each route is near its baseline", () => {
+      const log = vi.fn();
+      const error = vi.fn();
+      expect(reportBudgets({ "/a": 501.25, "/b": 599 }, budgets, { log, error, annotate: true })).toBe(0);
+      const output = log.mock.calls.map(([line]) => String(line)).join("\n");
+      expect(output).toContain(budgetTable({ "/a": 501.25, "/b": 599 }, budgets));
+      expect(output).toMatch(/\/a\s+501\.3\s+500\.0\s+510\.0\s+8\.8/);
+      expect(output).toMatch(/\/b\s+599\.0\s+600\.0\s+610\.0\s+11\.0/);
+      expect(output).not.toMatch(/warning/i);
+      expect(error).not.toHaveBeenCalled();
+    });
+
+    it("warns with a GitHub annotation and a plain line, without failing", () => {
+      const log = vi.fn();
+      const error = vi.fn();
+      expect(reportBudgets({ "/a": 504, "/b": 600 }, budgets, { log, error, annotate: true })).toBe(0);
+      const lines = log.mock.calls.map(([line]) => String(line));
+      expect(lines.filter((line) => line.startsWith("::warning "))).toHaveLength(1);
+      expect(lines.filter((line) => line.startsWith("Warning: /a has grown 4.0 KB"))).toHaveLength(1);
+      expect(error).not.toHaveBeenCalled();
+      const plain = vi.fn();
+      reportBudgets({ "/a": 504, "/b": 600 }, budgets, { log: plain, error });
+      expect(plain.mock.calls.some(([line]) => String(line).startsWith("::"))).toBe(false);
+    });
+
+    it("fails over a ceiling and says not to raise it", () => {
+      const log = vi.fn();
+      const error = vi.fn();
+      expect(reportBudgets({ "/a": 500, "/b": 612 }, budgets, { log, error, annotate: true })).toBe(1);
+      const lines = error.mock.calls.map(([line]) => String(line));
+      expect(lines[0]).toMatch(/^::error /);
+      expect(lines[1]).toMatch(/^Over ceiling: \/b is 612\.0 KB, over its 610 KB ceiling\. Do not raise the ceiling/);
+    });
+
+    it("keeps every configured ceiling at or above its baseline", () => {
+      const normalised = validateBudgets(scriptBudget.budgets);
+      for (const { baseline, ceiling } of Object.values(normalised)) expect(ceiling).toBeGreaterThanOrEqual(baseline);
+    });
   });
 
   it("counts the queried script once and retains fractional KB when comparing budgets", async () => {

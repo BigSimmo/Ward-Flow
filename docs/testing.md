@@ -113,7 +113,9 @@ empty. A diagnostic rerun cannot erase an initial shard failure. Browser preflig
 mobile WebKit projects. The release accessibility sweep checks HTTP success, the intended final
 URL and screen identity before axe, including the bed-meeting phone fallback. The complete release gate requires all four named journeys on desktop Chromium and phone WebKit: eight passed cases, no skips and no retry recovery. Any serious or critical axe WCAG violation fails it; the runner does not rescan to turn an initial failure green.
 
-The script-budget check requires positive finite limits and complete measurements, counts queried
+The script-budget check requires each route's baseline and ceiling to be positive finite numbers with
+the baseline at or below the ceiling, and complete measurements. It fails only above a ceiling, and
+warns (GitHub annotation, exit 0) more than 3 KB above a baseline or within 2 KB of a ceiling. It counts queried
 Next script assets, and rejects missing/empty assets or unexpected redirects. The existing WF-001
 legacy redirect is accepted only at its exact coded destination. `check:client-bundle-secrets` scans
 tracked source for known credential patterns, fails on unreadable eligible files, and retains its

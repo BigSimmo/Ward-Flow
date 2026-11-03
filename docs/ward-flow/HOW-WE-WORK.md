@@ -5,7 +5,7 @@ hands back Ward Flow work.** Written 17 September 2026; repository and integrati
 updated 2 October 2026. The current repository's `AGENTS.md` governs operational safeguards;
 this guide supersedes older process notes within that boundary. Start at [`README.md`](README.md).
 
-_Updated 2026-10-31 - section 6 brings the design rules up to date: 40px phone controls with a 48px tap area, no coloured side edges, visual changes start as an approved mock-up (Josh, 31 Oct); 2026-10-26 - a line-cap fix never changes on-screen words (Josh, 26 Oct, decision list item 36); phone size limits may rise up to 5 KB per screen per PR without asking (D-82); 2026-10-23 - align saving guidance and mockup navigation with D-72, D-74 and D-75, checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
+_Updated 2026-11-03 - section 6 phone size limits now use a baseline and a ceiling with 10 KB of headroom, and a normal PR never edits `script-budget.json` (D-96, replaces D-82); 2026-10-31 - section 6 brings the design rules up to date: 40px phone controls with a 48px tap area, no coloured side edges, visual changes start as an approved mock-up (Josh, 31 Oct); 2026-10-26 - a line-cap fix never changes on-screen words (Josh, 26 Oct, decision list item 36); phone size limits may rise up to 5 KB per screen per PR without asking (D-82); 2026-10-23 - align saving guidance and mockup navigation with D-72, D-74 and D-75, checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
 
 > **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
 > standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
@@ -226,19 +226,22 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   about code size; staff wording is a product decision. One squeeze turned "beds still pulled" into
   "beds pulled" (commit `0f38d544`), and it has been put back. Split at-cap files first (F-17).
 - New events go in EVENT_ROLE (`ward-flow-event-roles.ts`) and `tests/ward-event-permissions.test.ts`.
-- **Phone size limits (owner rule [D-82](decisions.md#d-82-a-pr-may-raise-a-phone-size-limit-by-up-to-5-kb-per-screen-without-asking-26-october-2026), 26 October 2026).**
+- **Phone size limits (owner rule [D-96](decisions.md#d-96-phone-size-limits-get-headroom-a-baseline-and-a-ceiling-and-a-normal-pr-never-raises-them-3-november-2026), 3 November 2026; replaces D-82).**
   The five phone first-load script limits live in `script-budget.json` and are checked by
-  `scripts/check-script-budget.mjs`. A PR may raise a screen's limit by up to **5 KB in total per
-  screen** (added up across the whole PR) without asking Josh. Above 5 KB on any screen, ask first,
-  as before. There is no once-per-PR restriction.
-  1. Diagnose first. Find out why the page grew. Never raise a limit to hide a jump you have not
-     explained, such as a regression.
-  2. Try an easy, safe trim first (load the code lazily, move a helper out of the shared shell).
-  3. Raise only by what the PR needs, plus a small margin (about 0.2 KB).
-  4. The PR body states, for each route raised: the old limit, the new limit, the measured size and
-     why it grew. Append the same dated reason to `docs/script-budget-history.md` (not to the
-     `$comment` in `script-budget.json`, which now points there).
-  5. Lower a limit again when a page shrinks.
+  `scripts/check-script-budget.mjs` after the production build. Each screen has a **baseline** (its
+  size after the last size tidy) and a **ceiling** (the hard limit, normally baseline + 10 KB). Every
+  run prints each screen's measured size, baseline, ceiling and headroom.
+  1. **Under the ceiling, leave it alone.** A normal PR never edits `script-budget.json` and needs no
+     trim and no history entry.
+  2. **A warning is one line in the PR body.** The check warns, without failing, when a screen has
+     grown more than 3 KB since its baseline or is within 2 KB of its ceiling. Say which screen grew
+     and why, in one line.
+  3. **Over the ceiling, do not raise it.** Either trim in that PR, or ask for a dedicated size tidy
+     PR. A size tidy batches safe trims (load code lazily, move helpers out of the shared shell; never
+     shorten text staff read), then resets each touched screen's baseline to the new measurement and
+     its ceiling to baseline + 10 KB, with one dated entry in `docs/script-budget-history.md`.
+  4. Raising a ceiling more than 10 KB above its baseline needs Josh's yes. Lowering is always
+     allowed.
 
 ## 7. Model tiers for helpers and reviews
 

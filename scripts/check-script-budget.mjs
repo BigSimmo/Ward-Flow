@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 // Phone script budget. Run after `next build`: it starts the built app on a spare local port, loads
-// each route in script-budget.json with a phone user agent, adds up the gzipped size of every
-// `<script src>` the page names, and fails when a route is over its budget. Nothing leaves the
-// machine. On 16 October 2026 Home had crept from 500 KB (after #334) to 588 KB unnoticed, which is
-// why this exists. Raise a budget only with a reason in the PR.
+// each route in script-budget.json with a phone user agent and adds up the gzipped size of every
+// `<script src>` the page names. Nothing leaves the machine. On 16 October 2026 Home had crept from
+// 500 KB (after #334) to 588 KB unnoticed, which is why this exists.
+// Each route has a baseline (its size after the last size tidy) and a ceiling (the hard limit,
+// normally baseline + 10 KB). The check fails only above a ceiling, and warns without failing when a
+// route has grown more than 3 KB since its baseline or is within 2 KB of its ceiling (D-96). A
+// normal PR never edits script-budget.json; rules: docs/ward-flow/HOW-WE-WORK.md section 6.
 import { spawn } from "node:child_process";
 import { readFileSync, realpathSync } from "node:fs";
 import { createServer } from "node:net";
@@ -66,42 +69,143 @@ export function scriptSources(html) {
   return [...new Set(sources)];
 }
 
+// Warn when a route has grown more than this many KB since its baseline (the last size tidy).
+export const GROWTH_WARNING_KB = 3;
+// Warn when a route is within this many KB of its ceiling.
+export const NEAR_CEILING_WARNING_KB = 2;
+
+function positiveFinite(value) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+// Returns { route: { baseline, ceiling } }. A bare number is the older single-limit shape, read as a
+// route whose baseline and ceiling are both that limit, so a branch cut before D-96 still checks.
 export function validateBudgets(budgets) {
   if (!budgets || typeof budgets !== "object" || Array.isArray(budgets) || Object.keys(budgets).length === 0) {
     throw new Error("Script budgets must be a non-empty route map");
   }
-  for (const [route, limit] of Object.entries(budgets)) {
+  const normalised = {};
+  for (const [route, entry] of Object.entries(budgets)) {
     const url = new URL(route, "http://local.invalid");
     if (!route.startsWith("/") || url.origin !== "http://local.invalid" || url.pathname !== route) {
       throw new Error(`Invalid script budget route: ${route}`);
     }
-    if (typeof limit !== "number" || !Number.isFinite(limit) || limit <= 0) {
-      throw new Error(`Invalid script budget for ${route}: expected a positive finite number`);
+    if (typeof entry === "number") {
+      if (!positiveFinite(entry)) {
+        throw new Error(`Invalid script budget for ${route}: expected a positive finite number`);
+      }
+      normalised[route] = { baseline: entry, ceiling: entry };
+      continue;
     }
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      throw new Error(`Invalid script budget for ${route}: expected { baseline, ceiling }`);
+    }
+    const keys = Object.keys(entry).sort().join(",");
+    if (keys !== "baseline,ceiling") {
+      throw new Error(`Invalid script budget for ${route}: expected exactly baseline and ceiling`);
+    }
+    const { baseline, ceiling } = entry;
+    if (!positiveFinite(baseline) || !positiveFinite(ceiling)) {
+      throw new Error(`Invalid script budget for ${route}: baseline and ceiling must be positive finite numbers`);
+    }
+    if (baseline > ceiling) {
+      throw new Error(`Invalid script budget for ${route}: baseline ${baseline} KB is above ceiling ${ceiling} KB`);
+    }
+    normalised[route] = { baseline, ceiling };
   }
+  return normalised;
 }
 
-export function overBudget(measured, budgets) {
-  validateBudgets(budgets);
+function checkedMeasurements(measured, budgets) {
+  const normalised = validateBudgets(budgets);
   if (!measured || typeof measured !== "object" || Array.isArray(measured)) {
     throw new Error("Script measurements must be a route map");
   }
-  for (const route of Object.keys(budgets)) {
-    if (
-      !Object.hasOwn(measured, route) ||
-      typeof measured[route] !== "number" ||
-      !Number.isFinite(measured[route]) ||
-      measured[route] <= 0
-    ) {
+  for (const route of Object.keys(normalised)) {
+    if (!Object.hasOwn(measured, route) || !positiveFinite(measured[route])) {
       throw new Error(`Invalid or missing script measurement for ${route}`);
     }
   }
-  if (Object.keys(measured).some((route) => !Object.hasOwn(budgets, route))) {
+  if (Object.keys(measured).some((route) => !Object.hasOwn(normalised, route))) {
     throw new Error("Script measurements include an unconfigured route");
   }
-  return Object.entries(budgets)
-    .filter(([route, limit]) => measured[route] > limit)
-    .map(([route, limit]) => ({ route, kb: measured[route], limit }));
+  return normalised;
+}
+
+// Routes over their ceiling. These fail the check.
+export function overBudget(measured, budgets) {
+  const normalised = checkedMeasurements(measured, budgets);
+  return Object.entries(normalised)
+    .filter(([route, { ceiling }]) => measured[route] > ceiling)
+    .map(([route, { ceiling }]) => ({ route, kb: measured[route], limit: ceiling }));
+}
+
+// Routes under their ceiling that have grown since the last tidy or are close to the ceiling. These
+// warn but never fail. A route over its ceiling is reported by overBudget instead.
+export function budgetWarnings(measured, budgets) {
+  const normalised = checkedMeasurements(measured, budgets);
+  const warnings = [];
+  for (const [route, { baseline, ceiling }] of Object.entries(normalised)) {
+    const kb = measured[route];
+    if (kb > ceiling) continue;
+    const grown = kb - baseline;
+    const headroom = ceiling - kb;
+    if (grown > GROWTH_WARNING_KB) {
+      warnings.push({
+        route,
+        kind: "grown",
+        kb,
+        baseline,
+        ceiling,
+        message: `${route} has grown ${grown.toFixed(1)} KB since the last tidy (${kb.toFixed(1)} KB, baseline ${baseline} KB). Say in the PR body why, in one line.`,
+      });
+    }
+    if (headroom <= NEAR_CEILING_WARNING_KB) {
+      warnings.push({
+        route,
+        kind: "near-ceiling",
+        kb,
+        baseline,
+        ceiling,
+        message: `${route} is ${headroom.toFixed(1)} KB under its ceiling (${kb.toFixed(1)} KB, ceiling ${ceiling} KB). A size tidy is due soon.`,
+      });
+    }
+  }
+  return warnings;
+}
+
+// One line per route: measured, baseline, ceiling and headroom, so every run shows where each stands.
+export function budgetTable(measured, budgets) {
+  const normalised = checkedMeasurements(measured, budgets);
+  const width = Math.max(5, ...Object.keys(normalised).map((route) => route.length));
+  const cell = (value) => String(value).padStart(9);
+  const lines = [
+    `${"Route".padEnd(width)} ${cell("Measured")} ${cell("Baseline")} ${cell("Ceiling")} ${cell("Headroom")}`,
+  ];
+  for (const [route, { baseline, ceiling }] of Object.entries(normalised)) {
+    const kb = measured[route];
+    lines.push(
+      `${route.padEnd(width)} ${cell(kb.toFixed(1))} ${cell(baseline.toFixed(1))} ${cell(ceiling.toFixed(1))} ${cell((ceiling - kb).toFixed(1))}`,
+    );
+  }
+  return lines.join("\n");
+}
+
+// Prints the table, warnings and failures, and returns the exit code (1 only when over a ceiling).
+export function reportBudgets(measured, budgets, { log = console.log, error = console.error, annotate = false } = {}) {
+  log("Phone first-load scripts, KB gzipped:");
+  log(budgetTable(measured, budgets));
+  for (const { message } of budgetWarnings(measured, budgets)) {
+    if (annotate) log(`::warning title=Phone script size::${message}`);
+    log(`Warning: ${message}`);
+  }
+  const over = overBudget(measured, budgets);
+  for (const { route, kb, limit } of over) {
+    const message = `${route} is ${kb.toFixed(1)} KB, over its ${limit} KB ceiling. Do not raise the ceiling: trim in this PR, run a size tidy, or ask Josh.`;
+    if (annotate) error(`::error title=Phone script size::${message}`);
+    error(`Over ceiling: ${message}`);
+  }
+  return over.length ? 1 : 0;
 }
 
 // Asks the operating system for a free port, so a busy local port cannot make the check fail.
@@ -171,7 +275,7 @@ export async function routeKb(base, route) {
 
 async function main() {
   const { budgets } = JSON.parse(readFileSync(join(process.cwd(), "script-budget.json"), "utf8"));
-  validateBudgets(budgets);
+  const routes = Object.keys(validateBudgets(budgets));
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
   const server = spawn(
@@ -185,14 +289,8 @@ async function main() {
   try {
     await waitForServer(base);
     const measured = {};
-    for (const route of Object.keys(budgets)) {
-      measured[route] = await routeKb(base, route);
-      console.log(`${route}: ${measured[route].toFixed(1)} KB gzipped (budget ${budgets[route]} KB)`);
-    }
-    const over = overBudget(measured, budgets);
-    for (const { route, kb, limit } of over)
-      console.error(`Over budget: ${route} is ${kb.toFixed(1)} KB, budget ${limit} KB`);
-    if (over.length) process.exitCode = 1;
+    for (const route of routes) measured[route] = await routeKb(base, route);
+    process.exitCode = reportBudgets(measured, budgets, { annotate: process.env.GITHUB_ACTIONS === "true" });
   } finally {
     server.kill();
   }

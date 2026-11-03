@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**613 rulings/items extracted, across 38 of 44 files.**
+**614 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 356 distinct IDs
+## ID index — 357 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -250,20 +250,21 @@ safe global key across 30 files.
 | `D-79` | `decisions.md`:917 | D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026) |
 | `D-80` | `decisions.md`:928 | D-80. Role access plan version 2: all 17 recommendations (23 October 2026) |
 | `D-81` | `decisions.md`:943 | D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026) |
-| `D-82` | `decisions.md`:950 | D-82. A PR may raise a phone size limit by up to 5 KB per screen without asking (26 October 2026) |
-| `D-83` | `decisions.md`:958 | D-83. Patient names stay in full on every screen, copy and TV; privacy work must not make the app less useful (26 October 2026) |
-| `D-84` | `decisions.md`:968 | D-84. The live app stays on Railway Singapore for now, and there is no server-side TV account yet (26 October 2026) |
-| `D-85` | `decisions.md`:976 | D-85. "Held" only for a bed kept for its own patient; "pulled" for an incoming bed; "held up" for a delay (26 October 2026) |
-| `D-86` | `decisions.md`:983 | D-86. No second approver for role grants, at pilot or otherwise (27 October 2026) |
-| `D-87` | `decisions.md`:990 | D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026) |
-| `D-88` | `decisions.md`:1002 | D-88. The public demo opens with a demo code once the front door is on (27 October 2026) |
-| `D-89` | `decisions.md`:1009 | D-89. Redesign mock-up copies of large screens may pass the 1,500-line cap (30 October 2026) |
-| `D-90` | `decisions.md`:1017 | D-90. Help gets How do I…, Show me runs everywhere, and Help is built without a separate mock-up step (30 October 2026) |
-| `D-91` | `decisions.md`:1028 | D-91. One design home for the redesign, and Josh's answers on Help, Settings, search and notifications (31 October 2026) |
-| `D-92` | `decisions.md`:1062 | D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026) |
-| `D-93` | `decisions.md`:1072 | D-93. Legal form times show only as typed, never as a countdown (31 October 2026) |
-| `D-94` | `decisions.md`:1080 | D-94. Design rulings of 31 October 2026 |
-| `D-95` | `decisions.md`:1093 | D-95. One page scroll, and a click outside closes a drawer (3 November 2026) |
+| `D-82` | `decisions.md`:950 | D-82. A PR may raise a phone size limit by up to 5 KB per screen without asking (26 October 2026) (Replaced by D-96) |
+| `D-83` | `decisions.md`:959 | D-83. Patient names stay in full on every screen, copy and TV; privacy work must not make the app less useful (26 October 2026) |
+| `D-84` | `decisions.md`:969 | D-84. The live app stays on Railway Singapore for now, and there is no server-side TV account yet (26 October 2026) |
+| `D-85` | `decisions.md`:977 | D-85. "Held" only for a bed kept for its own patient; "pulled" for an incoming bed; "held up" for a delay (26 October 2026) |
+| `D-86` | `decisions.md`:984 | D-86. No second approver for role grants, at pilot or otherwise (27 October 2026) |
+| `D-87` | `decisions.md`:991 | D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026) |
+| `D-88` | `decisions.md`:1003 | D-88. The public demo opens with a demo code once the front door is on (27 October 2026) |
+| `D-89` | `decisions.md`:1010 | D-89. Redesign mock-up copies of large screens may pass the 1,500-line cap (30 October 2026) |
+| `D-90` | `decisions.md`:1018 | D-90. Help gets How do I…, Show me runs everywhere, and Help is built without a separate mock-up step (30 October 2026) |
+| `D-91` | `decisions.md`:1029 | D-91. One design home for the redesign, and Josh's answers on Help, Settings, search and notifications (31 October 2026) |
+| `D-92` | `decisions.md`:1063 | D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026) |
+| `D-93` | `decisions.md`:1073 | D-93. Legal form times show only as typed, never as a countdown (31 October 2026) |
+| `D-94` | `decisions.md`:1081 | D-94. Design rulings of 31 October 2026 |
+| `D-95` | `decisions.md`:1094 | D-95. One page scroll, and a click outside closes a drawer (3 November 2026) |
+| `D-96` | `decisions.md`:1104 | D-96. Phone size limits get headroom: a baseline and a ceiling, and a normal PR never raises them (3 November 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -553,7 +554,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-95 item(s):
+96 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -636,20 +637,21 @@ safe global key across 30 files.
 - `D-79` — line 917, heading: "D-79. Wards see the full referral, with name and UMRN, before they answer (23 October 2026)"
 - `D-80` — line 928, heading: "D-80. Role access plan version 2: all 17 recommendations (23 October 2026)"
 - `D-81` — line 943, heading: "D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026)"
-- `D-82` — line 950, heading: "D-82. A PR may raise a phone size limit by up to 5 KB per screen without asking (26 October 2026)"
-- `D-83` — line 958, heading: "D-83. Patient names stay in full on every screen, copy and TV; privacy work must not make the app less useful (26 October 2026)"
-- `D-84` — line 968, heading: "D-84. The live app stays on Railway Singapore for now, and there is no server-side TV account yet (26 October 2026)"
-- `D-85` — line 976, heading: "D-85. "Held" only for a bed kept for its own patient; "pulled" for an incoming bed; "held up" for a delay (26 October 2026)"
-- `D-86` — line 983, heading: "D-86. No second approver for role grants, at pilot or otherwise (27 October 2026)"
-- `D-87` — line 990, heading: "D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026)"
-- `D-88` — line 1002, heading: "D-88. The public demo opens with a demo code once the front door is on (27 October 2026)"
-- `D-89` — line 1009, heading: "D-89. Redesign mock-up copies of large screens may pass the 1,500-line cap (30 October 2026)"
-- `D-90` — line 1017, heading: "D-90. Help gets How do I…, Show me runs everywhere, and Help is built without a separate mock-up step (30 October 2026)"
-- `D-91` — line 1028, heading: "D-91. One design home for the redesign, and Josh's answers on Help, Settings, search and notifications (31 October 2026)"
-- `D-92` — line 1062, heading: "D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026)"
-- `D-93` — line 1072, heading: "D-93. Legal form times show only as typed, never as a countdown (31 October 2026)"
-- `D-94` — line 1080, heading: "D-94. Design rulings of 31 October 2026"
-- `D-95` — line 1093, heading: "D-95. One page scroll, and a click outside closes a drawer (3 November 2026)"
+- `D-82` — line 950, heading: "D-82. A PR may raise a phone size limit by up to 5 KB per screen without asking (26 October 2026) (Replaced by D-96)"
+- `D-83` — line 959, heading: "D-83. Patient names stay in full on every screen, copy and TV; privacy work must not make the app less useful (26 October 2026)"
+- `D-84` — line 969, heading: "D-84. The live app stays on Railway Singapore for now, and there is no server-side TV account yet (26 October 2026)"
+- `D-85` — line 977, heading: "D-85. "Held" only for a bed kept for its own patient; "pulled" for an incoming bed; "held up" for a delay (26 October 2026)"
+- `D-86` — line 984, heading: "D-86. No second approver for role grants, at pilot or otherwise (27 October 2026)"
+- `D-87` — line 991, heading: "D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026)"
+- `D-88` — line 1003, heading: "D-88. The public demo opens with a demo code once the front door is on (27 October 2026)"
+- `D-89` — line 1010, heading: "D-89. Redesign mock-up copies of large screens may pass the 1,500-line cap (30 October 2026)"
+- `D-90` — line 1018, heading: "D-90. Help gets How do I…, Show me runs everywhere, and Help is built without a separate mock-up step (30 October 2026)"
+- `D-91` — line 1029, heading: "D-91. One design home for the redesign, and Josh's answers on Help, Settings, search and notifications (31 October 2026)"
+- `D-92` — line 1063, heading: "D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026)"
+- `D-93` — line 1073, heading: "D-93. Legal form times show only as typed, never as a countdown (31 October 2026)"
+- `D-94` — line 1081, heading: "D-94. Design rulings of 31 October 2026"
+- `D-95` — line 1094, heading: "D-95. One page scroll, and a click outside closes a drawer (3 November 2026)"
+- `D-96` — line 1104, heading: "D-96. Phone size limits get headroom: a baseline and a ceiling, and a normal PR never raises them (3 November 2026)"
 
 ### `archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

@@ -108,5 +108,5 @@ One PR each, from verified `main`, each with its own claim, screenshots against 
 - Matches the screenshots in light and dark at 1440px, and has a designed phone layout (the mock-up is desktop only; the phone layout is designed in PR 1 and shown to Josh).
 - Josh's rules: no coloured side edges; 40px controls (Accept and Decline 48px on phones); text 12px or larger; surname first with UMRN; minimal warnings; at most one 6% danger-tinted item.
 - Keyboard: tabs move with arrow keys; `/` focuses search; Esc closes dialogs and returns focus; every button has an accessible name.
-- Phone script size within `script-budget.json` (a raise up to 5 KB per screen after trying a trim; more needs Josh's yes).
+- Phone script size under each screen's ceiling in `script-budget.json` (D-96: never raise a ceiling in a normal PR; trim or run a size tidy).
 - Focused tests for changed behaviour; hosted CI is the full gate.
