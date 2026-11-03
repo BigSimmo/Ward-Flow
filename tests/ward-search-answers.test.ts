@@ -49,6 +49,10 @@ describe("common questions", () => {
   it.each([
     ["over 24 hours", "long"],
     ["Who is waiting over 24 hours?", "long"],
+    ["24 hours", "long"],
+    ["24h", "long"],
+    ["24+ hours", "long"],
+    ["waiting 24 hrs", "long"],
     ["long waits", "long"],
     ["no bed yet", "wait"],
     ["unplaced", "wait"],

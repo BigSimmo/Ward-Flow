@@ -172,7 +172,9 @@ function Journey({ stage }: { stage: MovementStage }) {
                 index + 1
               )}
             </span>
-            <span className={styles.stepLabel}>{stageCopy[step].shortLabel}</span>
+            <span className={styles.stepLabel} title={stageCopy[step].shortLabel}>
+              {stageCopy[step].shortLabel}
+            </span>
           </li>
         );
       })}
