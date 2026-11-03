@@ -1,12 +1,17 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 import { wardCommandFailure } from "./ward/use-ward-command-completion";
 import { SAVE_NOT_CONFIRMED } from "./ward-save-failure";
 
 export type WardFormSave = ReturnType<typeof useWardFormSave>;
 type Held = { scope: object; outcome: WardCommandOutcome };
+
+/** Whether `entry` still locks the form opened for `scope`: same scope, and its command still current. */
+function holds(entry: Held | null, scope: object) {
+  return entry !== null && entry.scope === scope && entry.outcome.isCurrent?.() !== false;
+}
 
 /**
  * Audit 24-3 (SV-1 to SV-4): a form keeps what was typed until its save is accepted, and says why
@@ -32,14 +37,15 @@ export function useWardFormSave(scope: string) {
   // locked meanwhile, so the same record cannot go again under a new command id.
   const held = useRef<Held | null>(null);
   const [heldView, setHeldView] = useState<Held | null>(null);
-  const hold = (next: Held | null) => {
+  const hold = useCallback((next: Held | null) => {
     held.current = next;
     setHeldView(next);
-  };
-  const holding = (entry: Held | null) =>
-    entry !== null && entry.scope === scopeToken && entry.outcome.isCurrent?.() !== false;
-  function submit(record: () => ReturnType<WardCommandDispatch> | undefined, onAccepted: () => void) {
-    if (inFlight.current || holding(held.current)) return;
+  }, []);
+  // Stable for one scope (it reads only refs, setters and the scope), so a caller's callbacks that
+  // depend on this hook are not rebuilt on every render.
+  const submit = useCallback(
+    (record: () => ReturnType<WardCommandDispatch> | undefined, onAccepted: () => void) => {
+    if (inFlight.current || holds(held.current, scopeToken)) return;
     inFlight.current = true;
     setPending(true);
     setError(undefined);
@@ -87,15 +93,20 @@ export function useWardFormSave(scope: string) {
     } catch {
       finish();
     }
-  }
-  return {
-    pending: pending || holding(heldView),
-    error: error?.scope === scopeToken ? error.message : undefined,
-    clearError: () => setError(undefined),
-    forget: () => {
-      generation.current += 1;
-      setError(undefined);
     },
-    submit,
-  };
+    [hold, scopeToken],
+  );
+  const clearError = useCallback(() => setError(undefined), []);
+  const forget = useCallback(() => {
+    generation.current += 1;
+    setError(undefined);
+  }, []);
+  const isPending = pending || holds(heldView, scopeToken);
+  const shownError = error?.scope === scopeToken ? error.message : undefined;
+  // One object per change of what a form shows, not per render (review of PR #1326): callers such
+  // as the tasks drawer's escalation guard list this hook's result as a callback dependency.
+  return useMemo(
+    () => ({ pending: isPending, error: shownError, clearError, forget, submit }),
+    [isPending, shownError, clearError, forget, submit],
+  );
 }
