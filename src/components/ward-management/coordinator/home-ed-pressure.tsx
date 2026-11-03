@@ -4,7 +4,7 @@ import { useMemo } from "react";
 
 import { Card, StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { edOpenSummaries, isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
-import { clockState, formatInstant, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
+import { clockState, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
 import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward-pressure";
@@ -28,8 +28,6 @@ type HomeEdPressureProps = {
   onSelectEd: (edId: string | undefined) => void;
   /** The chosen health service (`null` is All services). An ED with no resolvable service stays shown. */
   service: HealthService | null;
-  /** Home's clock is paused, so the waits are frozen and the strip must not say Live. */
-  paused?: boolean;
 };
 
 /**
@@ -46,14 +44,7 @@ type HomeEdPressureProps = {
  *
  * These tiles measure physical inpatient-bed waits; Home's hero separately retains open journeys through transit.
  */
-export function HomeEdPressure({
-  now,
-  movements,
-  selectedEdId,
-  onSelectEd,
-  service,
-  paused = false,
-}: HomeEdPressureProps) {
+export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, service }: HomeEdPressureProps) {
   // A longest wait past the configured ED access target is red; past the severe line it is amber.
   const thresholds = useDueSoonThresholds();
   const { configuration } = useWardFlowSelect("configuration");
@@ -71,7 +62,22 @@ export function HomeEdPressure({
       })
     : pressure;
   const hiddenByService = pressure.length - scoped.length;
-  const rows = [...scoped].sort((a, b) => b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting);
+  const sorted = [...scoped].sort((a, b) => b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting);
+  const openFor = (edId: string) => summaries.find((summary) => summary.ed.id === edId)?.open ?? [];
+  // Appraisal (Josh Q8, 3 Nov 2026): only the departments that need something get a tile, worst
+  // first. One with nobody waiting and no one on forms folds into a single quiet "N EDs clear" tile,
+  // unless it is the one the queue is filtered to, so the filter can always be turned off.
+  const needsSomething = (row: (typeof sorted)[number]) =>
+    row.waiting > 0 ||
+    row.breaching > 0 ||
+    row.ed.id === selectedEdId ||
+    openFor(row.ed.id).some(
+      (movement) => movement.legalForm !== undefined || isDetainedUnderTheAct(movement.legalStatus),
+    );
+  const rows = sorted.filter(needsSomething);
+  const clear = sorted.filter((row) => !needsSomething(row));
+  const clearCodes = clear.map((row) => row.ed.siteCode).join(" · ");
+  const clearNames = clear.map((row) => edShortName(row.ed)).join(", ");
 
   return (
     <Card
@@ -80,20 +86,12 @@ export function HomeEdPressure({
       data-testid="ward-home-ed-pressure"
     >
       <h2 className="sr-only">ED pressure</h2>
-      {/* G2 (Josh, 3 Nov 2026): the waits are live, so the strip says so once; the board time is already in the header. */}
-      <p className={styles.edLive} data-testid="ward-home-ed-live" data-paused={paused ? "true" : undefined}>
-        <span className={styles.liveDot} aria-hidden="true" />
-        <span>{paused ? "Paused" : "Live"}</span>
-        <span className={styles.edLiveNote}>
-          {paused ? `Waits held at ${formatInstant(now)}` : "Waits update every minute"}
-        </span>
-      </p>
       <ul className={styles.edGrid}>
         {rows.map((row) => {
           const selected = row.ed.id === selectedEdId;
           const rawService = siteByCode(row.ed.siteCode)?.service ?? edHealthService(row.ed.id);
           const serviceAcronym = healthServiceAcronym(rawService);
-          const open = summaries.find((summary) => summary.ed.id === row.ed.id)?.open ?? [];
+          const open = openFor(row.ed.id);
           // H1 (Josh, 3 Nov 2026): the tile counts the people on forms, not a missing due time.
           const onForms = open.filter(
             (movement) => movement.legalForm !== undefined || isDetainedUnderTheAct(movement.legalStatus),
@@ -206,6 +204,23 @@ export function HomeEdPressure({
             </li>
           );
         })}
+        {clear.length > 0 ? (
+          <li
+            className={`${styles.edCell} ${styles.edClearCell}`}
+            data-testid="ward-home-ed-clear"
+            data-ed-ids={clear.map((row) => row.ed.id).join(" ")}
+          >
+            <p className={styles.edClear} title={clearNames}>
+              <span className={styles.edClearCount}>
+                <strong>{clear.length}</strong> {clear.length === 1 ? "ED" : "EDs"} clear
+              </span>{" "}
+              <span className={styles.edClearCodes} aria-hidden="true">
+                {clearCodes}
+              </span>
+              <span className="sr-only">{`, nobody waiting: ${clearNames}`}</span>
+            </p>
+          </li>
+        ) : null}
       </ul>
       {/* The ED access forecast heads Planned now (Home and Activity design, 31 Oct 2026). */}
       {service ? (

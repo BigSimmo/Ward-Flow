@@ -235,36 +235,21 @@ export function RailReadyLine({ metro, ready }: { metro: number | null; ready: n
   );
 }
 
-/** H3 (Josh, 3 Nov 2026): the shift's span with a bar for how far through it is. The Handover
- *  button below already counts down, so the span is named once. */
-export function RailShiftSpan({ name, hours, percent }: { name: string; hours: string; percent: number }) {
-  return (
-    <span className={parts.shiftEnds} data-testid="ward-rail-shift-ends">
-      <span>
-        {name} <b>{hours}</b>
-      </span>
-      <span className={parts.shiftBar} aria-hidden="true">
-        <span style={{ width: `${percent}%` }} />
-      </span>
-    </span>
-  );
-}
-
-/** H3 (Josh, 3 Nov 2026): the shift card leads with the live time; the shift span follows. */
 export function RailLiveClock({
   clock,
-  titleClass,
-  zoneClass,
+  shift,
+  classes,
 }: {
   clock: string;
-  titleClass: string;
-  zoneClass: string;
+  shift: string;
+  /** The rail sheet's own classes: its title line and the quieter word beside the time. */
+  classes: Readonly<Record<string, string>>;
 }) {
   return (
-    <span className={`${titleClass} ${parts.liveClock}`} data-testid="ward-rail-live-clock">
+    <span className={`${classes.shiftTitle} ${parts.liveClock}`} data-testid="ward-rail-live-clock">
       <span className={parts.liveDot} aria-hidden="true" />
       <span className={parts.liveTime}>{clock}</span>
-      <span className={zoneClass}>AWST</span>
+      <span className={classes.shiftHours}>{shift}</span>
     </span>
   );
 }

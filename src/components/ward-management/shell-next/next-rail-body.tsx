@@ -81,7 +81,6 @@ import {
   overLineLabel,
   RailLiveClock,
   RailReadyLine,
-  RailShiftSpan,
   usePinnedPages,
 } from "@/components/ward-management/shell-next/next-rail-parts";
 import railParts from "@/components/ward-management/shell-next/next-rail.module.css";
@@ -828,7 +827,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               {currentPersona.initials}
             </span>
             <span className={styles.shiftMeta}>
-              <RailLiveClock clock={boardClock} titleClass={styles.shiftTitle} zoneClass={styles.shiftHours} />
+              <RailLiveClock clock={boardClock} shift={shiftProgress.shiftName} classes={styles} />
               <span className={`${styles.shiftSub} ${railParts.shiftSubWrap}`}>
                 {personaName} · {currentPersona.role}
               </span>
@@ -839,11 +838,6 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               ) : null}
             </span>
           </div>
-          <RailShiftSpan
-            name={shiftProgress.shiftName}
-            hours={shiftProgress.shiftHours}
-            percent={shiftProgress.percent}
-          />
           {/* A7 (overall review, 20 Oct 2026): the demo clock shows in the top bar only
             (`ward-bar.tsx`), which opens the demo controls; the rail no longer repeats it. */}
           {!showHandover ? null : handoverCardLinks ? (

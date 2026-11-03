@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   admissionIdOfInboxId,
@@ -88,14 +88,7 @@ import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen
 import type { PlacementSubject } from "./home-placement-drawer";
 import { PlacementPrompt } from "./placement-prompt";
 import { usePlannedRows } from "./planned-rows";
-import {
-  FLOW_STAGES,
-  flowStageOf,
-  type FlowStageId,
-  PriorityQueue,
-  type QueueHighlight,
-  queueWaitThresholds,
-} from "./priority-queue";
+import { FLOW_STAGES, flowStageOf, type FlowStageId, PriorityQueue, type QueueHighlight } from "./priority-queue";
 
 /*
  * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
@@ -210,7 +203,7 @@ function HomeListMoreMenu({ onRegisters }: { onRegisters: () => void }) {
       ]}
       trigger={(props) => (
         <button type="button" {...props} className={buttonClass({ variant: "ghost", size: "sm" })}>
-          <MoreHorizontal size={16} aria-hidden="true" />
+          <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
           <span className={flowStyles.moreText} aria-hidden="true">
             More
           </span>
@@ -1001,7 +994,6 @@ export function CoordinatorScreen() {
               selectedEdId={selectedEdId}
               onSelectEd={setSelectedEdId}
               service={service}
-              paused={paused}
             />
           </div>
 
@@ -1022,7 +1014,6 @@ export function CoordinatorScreen() {
                 {
                   id: "needs",
                   label: "Needs you",
-                  tone: actNowCount > 0 ? "danger" : undefined,
                   count: actNowCount + referralQueue.length,
                 },
                 { id: "queue", label: "Flow", count: queue.length },
@@ -1032,60 +1023,29 @@ export function CoordinatorScreen() {
               ]}
             />
             <span className={flowStyles.navRule} aria-hidden="true" />
-            {/* Home navigation (Josh, 3 Nov 2026): the second level always belongs to the list chosen
-                above it. Needs you narrows to Act now or To decide; Flow narrows to a stage. Later
-                today has no second level, so the row leaves it out. */}
-            {shownView === "planned" ? (
-              <span className={flowStyles.stageGroup} aria-hidden="true" />
-            ) : (
-              <div className={flowStyles.stageGroup} data-active="true" data-list={shownView}>
-                <div className={flowStyles.stageTabs}>
-                  {shownView === "needs" ? (
-                    <PillTabs
-                      label="Needs you groups"
-                      className={flowStyles.stagePills}
-                      value={needsFocus}
-                      onChange={(id) => chooseNeedsFocus(id)}
-                      items={[
-                        { id: "all" as const, label: "All", count: actNowCount + referralQueue.length },
-                        {
-                          id: "act" as const,
-                          label: "Act now",
-                          count: actNowCount,
-                          tone: actNowCount > 0 ? ("danger" as const) : undefined,
-                        },
-                        { id: "decide" as const, label: "To decide", count: referralQueue.length },
-                      ]}
-                    />
-                  ) : (
-                    <PillTabs
-                      label="Flow stages"
-                      className={flowStyles.stagePills}
-                      value={flowStage ?? "all"}
-                      onChange={(id) => {
-                        chooseNeedsFocus("all");
-                        setFlowStage(id === "all" ? undefined : (id as FlowStageId));
-                      }}
-                      items={[
-                        { id: "all", label: "All", count: queue.length },
-                        ...FLOW_STAGES.filter((stage) => stage.id !== "referral").map((stage) => {
-                          const inStage = queue.filter((movement) => flowStageOf(movement) === stage.id);
-                          const late = inStage.filter(
-                            (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
-                          ).length;
-                          return {
-                            id: stage.id,
-                            label: stage.label,
-                            count: inStage.length,
-                            tone: late > 0 ? ("danger" as const) : undefined,
-                          };
-                        }),
-                      ]}
-                    />
-                  )}
-                </div>
+            <div className={flowStyles.stageGroup} data-active={shownView === "queue" ? "true" : undefined}>
+              <div className={flowStyles.stageTabs}>
+                <PillTabs
+                  label="Flow stages"
+                  className={flowStyles.stagePills}
+                  value={shownView === "queue" ? (flowStage ?? "all") : "none"}
+                  onChange={(id) => {
+                    showView("queue");
+                    chooseNeedsFocus("all");
+                    setFlowStage(id === "all" ? undefined : (id as FlowStageId));
+                  }}
+                  items={[
+                    { id: "all", label: "All", count: queue.length },
+                    // Icon design (Josh, 3 Nov 2026): no act-now triangle on the tabs; the late rows carry it.
+                    ...FLOW_STAGES.filter((stage) => stage.id !== "referral").map((stage) => ({
+                      id: stage.id,
+                      label: stage.label,
+                      count: queue.filter((movement) => flowStageOf(movement) === stage.id).length,
+                    })),
+                  ]}
+                />
               </div>
-            )}
+            </div>
             <HomeListMoreMenu
               onRegisters={() => (isPhone ? setPhoneSheet({ kind: "exceptions" }) : toggleRegisters("exceptions"))}
             />
