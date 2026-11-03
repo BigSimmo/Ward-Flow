@@ -603,7 +603,8 @@ export function Registers({
   const tabs = [
     {
       id: "attention",
-      label: "Urgent",
+      // Q-12 (owner ruling): the "Attention" tab is never dropped or renamed.
+      label: "Attention",
       count: attention.length,
       tone: "danger",
       Icon: TriangleAlert,
@@ -623,7 +624,7 @@ export function Registers({
       count: closedToday.length,
       tone: "success",
       Icon: CircleCheck,
-      note: "Placed or not proceeding today. Kept until midnight for handover.",
+      note: "Placed or not proceeding today.",
     },
   ] as const;
   // Device audit (11 Oct 2026): the "Waiting on you" group already lists its own people beside this
@@ -785,7 +786,8 @@ export function Registers({
                     : null,
                 ]
                   .filter((sentence) => sentence !== null)
-                  .join(" ")}
+                  .join(" ")}{" "}
+                Kept until midnight for handover.
               </p>
               {closedToday.map((movement) => {
                 const closure = movement.closure;

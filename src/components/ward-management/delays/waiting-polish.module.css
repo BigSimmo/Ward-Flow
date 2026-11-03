@@ -132,14 +132,7 @@ button.strip:disabled {
 .ownTop.ownTop {
   align-items: baseline;
 }
-.ownLongest {
-  margin-left: auto;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
-/* Q279 (pre-launch check D1, 2 Nov 2026): on a narrow tile (a portrait tablet's four columns) the
-   "longest" time ran into the next tile. It now drops to its own line under the group name. */
+/* Q279 (pre-launch check D1, 2 Nov 2026): narrow tiles (a portrait tablet's four columns) wrap. */
 .ownGrid > .own {
   container-type: inline-size;
 }
@@ -151,16 +144,6 @@ button.strip:disabled {
   .ownCta {
     display: none;
   }
-  .ownLongest {
-    flex-basis: 100%;
-    margin-left: 0;
-  }
-}
-.ownLongest.ownLongest b {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-13);
-  line-height: inherit;
-  font-weight: 600;
 }
 .ownFacts.ownFacts {
   flex-wrap: wrap;

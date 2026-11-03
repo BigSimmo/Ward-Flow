@@ -226,8 +226,8 @@ export function EdIndex() {
   // out, in place of v10 rule 5's dimming, so a tap visibly changes the list. Within a shown card a
   // hero chip still lights its own people and dims the rest.
   const isShown = (row: EdRow) => matchesFilters(row) && rowHighlighted(row, highlight);
-  // Every shown ED is solid now; the views keep their dim prop for the people pips' own rule.
-  const isDim = (row: EdRow): boolean => row === null;
+  // Every ED that is drawn is shown solid; the views keep their dim prop for any later use.
+  const isDim = (row: EdRow): boolean => !isShown(row);
   const serviceRank = (row: EdRow) => ED_HOME_SERVICE_BAND_ORDER.indexOf(row.summary.service);
   const ordered = [...rows].sort((a, b) => {
     if (order === "most") return b.summary.waiting - a.summary.waiting || serviceRank(a) - serviceRank(b);
@@ -421,7 +421,7 @@ export function EdIndex() {
               <span className={styles.heroNote} aria-live="polite" data-testid="ed-index-highlight-note">
                 <span>
                   <b className={styles.heroNum}>{highlightedEds}</b> of {withWaiting.length} EDs
-                  <SrOnly> (synthetic records)</SrOnly> have someone {activeChip.word}, all EDs stay
+                  <SrOnly> (synthetic records)</SrOnly> have someone {activeChip.word}, the rest are hidden
                 </span>
                 <Button variant="onHero" size="sm" onClick={() => setHighlight(null)}>
                   Clear

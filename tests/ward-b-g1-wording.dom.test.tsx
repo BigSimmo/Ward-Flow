@@ -43,6 +43,7 @@ describe("B-G1 wording", () => {
       </WardFlowProvider>,
     );
     const count = screen.getByTestId("ed-index-match-count");
-    expect(count.textContent).toMatch(/^\d+ of \d+ EDs match, sample data$/u);
+    // E1 (Josh, 3 Nov 2026): the line says what is showing and in what order.
+    expect(count.textContent).toMatch(/^Showing \d+ of \d+ EDs, sample dataSorted longest wait first$/u);
   });
 });

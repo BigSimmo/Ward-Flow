@@ -37,7 +37,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  */
 function openResolvedTab() {
   // Round 8 (31 Oct 2026): the registers are 2x2 icon tabs whose name reads count first ("2 Resolved").
-  fireEvent.click(screen.getByRole("tab", { name: /^\d+\s*Resolved$/u }));
+  fireEvent.click(screen.getByRole("tab", { name: /^\d+\s*Done today$/u }));
 }
 
 /** The fixture's own answer, so the expectation cannot drift from the world the screen renders. */
