@@ -11,7 +11,10 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import { wardOffersOutsideQueue } from "./home-ward-offers";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { Count, StatusGlyph, cx, durMinutes } from "@/components/wf";
+import { Button, Count, StatusGlyph, buttonClass, cx, durMinutes } from "@/components/wf";
+import { openMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 
 import styles from "./referral-page.module.css";
 
@@ -51,7 +54,13 @@ export function WardOffersTable({
   const nameFor = usePatientNameDisplay();
   const titleId = useId();
   // ROLE BRANCH (ward): an offer on this desk is to this ward, so it is the ward's own to answer.
-  const wardDesk = useEffectiveWardAccess().role === "ward";
+  const role = useEffectiveWardAccess().role;
+  const wardDesk = role === "ward";
+  // R4 (Josh, 3 Nov 2026): the coordinator can act on each offer from here. Chase puts a "Chase ward
+  // answer" action, due in 2 hours, on the first ward still to answer; Manage opens the movement,
+  // where an offer is withdrawn or sent to another ward.
+  const coordinatorDesk = role === "coordinator";
+  const raise = useWardRaise("coordinator");
   if (offers.length === 0) return null;
   const wardName = (unitId: string) => (units.find((unit) => unit.id === unitId)?.name ?? unitId).split(" — ")[0];
   return (
@@ -67,6 +76,11 @@ export function WardOffersTable({
             <th scope="col">Offered to</th>
             <th scope="col">Waiting</th>
             <th scope="col">Answer</th>
+            {coordinatorDesk ? (
+              <th scope="col" className={styles.offerActionsHead}>
+                <span className="sr-only">Actions</span>
+              </th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -74,6 +88,9 @@ export function WardOffersTable({
             const who = resolveSubjectPatient(movement, resolverState);
             const status = offerStatus(movement);
             const wards = movement.referredUnitIds.map(wardName);
+            const declined = new Set(movement.declines.map((decline) => decline.unitId));
+            const toAnswer = movement.referredUnitIds.find((unitId) => !declined.has(unitId));
+            const chased = openMeetingAction(movement.meetingActions, "chase_ward");
             return (
               <tr key={movement.id} data-testid={`ward-referral-board-ward-offer-${movement.id}`}>
                 <th scope="row" className={styles.offerName}>
@@ -96,6 +113,45 @@ export function WardOffersTable({
                 <td className={styles.offerAnswer}>
                   <StatusGlyph tone={status.tone} size={8} /> {status.text}
                 </td>
+                {coordinatorDesk ? (
+                  <td className={styles.offerActions}>
+                    <div className={styles.offerActionRow}>
+                      {chased ? (
+                        <span className={styles.offerChased} data-testid={`ward-offer-chased-${movement.id}`}>
+                          Chased · due {formatInstantWithDay(chased.dueAt, now)}
+                        </span>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={styles.offerAction}
+                          aria-disabled={toAnswer === undefined ? "true" : undefined}
+                          aria-label={`Chase ${toAnswer ? wardName(toAnswer) : "the ward"} for ${nameFor(who.formalName, who.umrn)}`}
+                          onClick={() => {
+                            if (toAnswer === undefined) return;
+                            raise("RECORD_BED_MEETING_ACTION", {
+                              subject: { kind: "movement", id: movement.id },
+                              action: "chase_ward",
+                              owner: "ward",
+                              unitId: toAnswer,
+                              dueAt: now + 120,
+                            });
+                          }}
+                          data-testid={`ward-offer-chase-${movement.id}`}
+                        >
+                          Chase
+                        </Button>
+                      )}
+                      <Link
+                        href={movementHref(movement.id)}
+                        className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.offerAction)}
+                        aria-label={`Manage the offer for ${nameFor(who.formalName, who.umrn)}`}
+                      >
+                        Manage
+                      </Link>
+                    </div>
+                  </td>
+                ) : null}
               </tr>
             );
           })}

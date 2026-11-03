@@ -61,7 +61,9 @@ describe("bed meeting agenda", () => {
 
     const recordButton = screen.getByTestId("bed-meeting-action-record");
     expect(recordButton).toHaveAttribute("aria-disabled", "true");
-    fireEvent.change(screen.getByTestId("bed-meeting-action-kind"), { target: { value: "book_transport" } });
+    fireEvent.click(
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+    );
     fireEvent.click(recordButton);
 
     expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent("0 overdue · 1 still open");
@@ -71,8 +73,8 @@ describe("bed meeting agenda", () => {
 
     // The open kind is not offered again for the same person, so the reducer never has to refuse it.
     fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[0]!);
-    const kinds = within(screen.getByTestId("bed-meeting-action-kind")).getAllByRole("option");
-    expect(kinds.map((option) => option.getAttribute("value"))).not.toContain("book_transport");
+    const kinds = within(screen.getByTestId("bed-meeting-action-kind")).getAllByRole("button");
+    expect(kinds.map((chip) => chip.textContent)).not.toContain("Book transport");
     expect(kinds.length).toBeGreaterThan(1);
 
     fireEvent.click(within(list).getByTestId("bed-meeting-action-done"));
@@ -90,7 +92,9 @@ describe("bed meeting agenda", () => {
     const waits = screen.getByTestId("bed-meeting-agenda-ed-waits");
     for (const index of [0, 1]) {
       fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[index]!);
-      fireEvent.change(screen.getByTestId("bed-meeting-action-kind"), { target: { value: "book_transport" } });
+      fireEvent.click(
+        within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+      );
       fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
     }
     expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent("0 overdue · 2 still open");

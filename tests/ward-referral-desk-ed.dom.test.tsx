@@ -103,7 +103,7 @@ describe("Referrals, ED desk", () => {
     // Josh, 31 Oct 2026 (answer 35).
     renderBoard(oneQueued);
     fireEvent.keyDown(window, { key: "m" });
-    expect(screen.queryByRole("dialog", { name: "Bed meeting list" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Referrals for the bed meeting" })).toBeNull();
     fireEvent.keyDown(window, { key: "?" });
     const keys = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
     expect(within(keys).queryByText("Bed meeting list")).toBeNull();
@@ -134,6 +134,6 @@ describe("Referrals, coordinator desk is unchanged by the ED branches", () => {
     expect(screen.getByTestId("ward-referral-meeting")).toBeTruthy();
     expect(screen.queryByTestId("ward-referral-ed-raised")).toBeNull();
     fireEvent.keyDown(window, { key: "m" });
-    expect(screen.getByRole("dialog", { name: "Bed meeting list" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Referrals for the bed meeting" })).toBeTruthy();
   });
 });

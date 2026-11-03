@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { Printer } from "lucide-react";
+
+import { Button } from "@/components/wf";
 
 import { WardPrintFooter } from "@/components/ward-management/shell/ward-access";
 import { asAtStamp } from "@/components/ward-management/board/ward-daily-sheet";
@@ -43,7 +46,31 @@ function More({ count, noun }: { count: number; noun: string }) {
   );
 }
 
-function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Instant }) {
+/** "Armadale Hospital Emergency Department" reads "Armadale Hospital ED" on the sheet. */
+function shortDepartment(name: string): string {
+  return name.replace(/ Emergency Department$/, " ED");
+}
+
+/** One open action from the agenda, already in words, for the sheet's own section. */
+type BedMeetingSheetAction = {
+  id: string;
+  name: string;
+  action: string;
+  owner: string;
+  due: string;
+  overdue: boolean;
+};
+
+function BedMeetingSheetView({
+  sheet,
+  now,
+  actions,
+}: {
+  sheet: BedMeetingSheet;
+  now: Instant;
+  /** The agenda's open actions. Left out (Capacity), the sheet has no actions section. */
+  actions?: readonly BedMeetingSheetAction[];
+}) {
   const flow = useOptionalWardFlowSelect("dayZero");
   const stamp = asAtStamp(now, flow?.dayZero);
   const { capacity, discharges, ed, delays, stuckReferrals } = sheet;
@@ -155,12 +182,17 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
           ) : (
             <>
               <ul className={styles.list}>
+                {/* B1 (Josh, 3 Nov 2026): one line per ED, short name, the two figures in columns. */}
+                <li className={styles.tableHead} aria-hidden="true">
+                  <span>Emergency department</span>
+                  <span>Waiting</span>
+                  <span>Longest</span>
+                </li>
                 {ed.departments.map((row) => (
-                  <li key={row.id} className={styles.row}>
-                    <span className={styles.rowLead}>{row.department}</span>
-                    <span className={styles.rowNote}>
-                      {row.waiting} waiting · longest {splitDuration(row.longestWaitMinutes)}
-                    </span>
+                  <li key={row.id} className={styles.tableRow}>
+                    <span className={styles.rowLead}>{shortDepartment(row.department)}</span>
+                    <span className={styles.cell}>{row.waiting}</span>
+                    <span className={styles.cell}>{splitDuration(row.longestWaitMinutes)}</span>
                   </li>
                 ))}
               </ul>
@@ -170,7 +202,7 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
                   <li key={person.id} className={styles.row}>
                     <span className={styles.rowLead}>{person.name}</span>
                     <span className={styles.rowNote}>
-                      {person.department} · {splitDuration(person.waitMinutes)}
+                      {shortDepartment(person.department)} · {splitDuration(person.waitMinutes)}
                     </span>
                   </li>
                 ))}
@@ -196,12 +228,16 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
           ) : (
             <>
               <ul className={styles.list}>
+                <li className={styles.tableHead} aria-hidden="true">
+                  <span>Cause</span>
+                  <span>People</span>
+                  <span>Longest</span>
+                </li>
                 {delays.groups.map((group) => (
-                  <li key={group.cause} className={styles.row}>
+                  <li key={group.cause} className={styles.tableRow}>
                     <span className={styles.rowLead}>{group.title}</span>
-                    <span className={styles.rowNote}>
-                      {group.count} · longest {splitDuration(group.longestWaitMinutes)}
-                    </span>
+                    <span className={styles.cell}>{group.count}</span>
+                    <span className={styles.cell}>{splitDuration(group.longestWaitMinutes)}</span>
                   </li>
                 ))}
               </ul>
@@ -251,6 +287,30 @@ function BedMeetingSheetView({ sheet, now }: { sheet: BedMeetingSheet; now: Inst
             <p className={styles.note}>
               No reply within {splitDuration(stuckReferrals.limitMinutes)}, the limit set in Settings.
             </p>
+          </section>
+        )}
+        {actions !== undefined && (
+          <section className={styles.section} aria-labelledby="bed-meeting-actions" data-testid="bed-meeting-actions">
+            <h3 id="bed-meeting-actions" className={styles.sectionTitle}>
+              Actions agreed at earlier meetings
+            </h3>
+            {actions.length === 0 ? (
+              <p className={styles.empty}>No actions waiting.</p>
+            ) : (
+              <ul className={styles.list}>
+                {actions.map((row) => (
+                  <li key={row.id} className={styles.row}>
+                    <span className={styles.rowLead}>{row.name}</span>
+                    <span className={row.overdue ? styles.tagStrong : styles.tag}>
+                      {row.overdue ? "Overdue" : "Open"}
+                    </span>
+                    <span className={styles.rowNote}>
+                      {row.action} · {row.owner} · {row.due}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         )}
       </div>
@@ -304,8 +364,11 @@ export function BedMeetingSheetLauncher({
   buttonClassName,
   hidden = false,
   icon,
+  actions,
 }: {
   buildSheet: () => BedMeetingSheet;
+  /** The agenda's open actions, printed in their own section. */
+  actions?: readonly BedMeetingSheetAction[];
   now: Instant;
   buttonClassName?: string;
   /** Hide only the launcher so an open sheet survives responsive print transitions. */
@@ -349,20 +412,23 @@ export function BedMeetingSheetLauncher({
               aria-labelledby="bed-meeting-sheet-title"
               tabIndex={-1}
             >
+              {/* B1 (Josh, 3 Nov 2026): a pinned head with the kit's buttons, so Print stays in reach. */}
               <div className={styles.toolbar} data-print-hide>
-                <button
-                  type="button"
-                  className={styles.primaryButton}
+                <span className={styles.toolbarTitle}>Bed meeting sheet</span>
+                <Button
+                  variant="pri"
+                  size="sm"
+                  icon={Printer}
                   onClick={() => window.print()}
                   data-testid="bed-meeting-sheet-print"
                 >
                   Print sheet
-                </button>
-                <button type="button" className={styles.secondaryButton} onClick={() => setOpen(false)}>
+                </Button>
+                <Button variant="sec" size="sm" onClick={() => setOpen(false)}>
                   Close
-                </button>
+                </Button>
               </div>
-              <BedMeetingSheetView sheet={buildSheet()} now={now} />
+              <BedMeetingSheetView sheet={buildSheet()} now={now} {...(actions ? { actions } : {})} />
             </div>
           </div>,
           document.body,

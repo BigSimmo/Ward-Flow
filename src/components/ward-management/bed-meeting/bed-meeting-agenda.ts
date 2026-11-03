@@ -12,7 +12,7 @@ import type { BedMeetingAction, BedMeetingSubject } from "./bed-meeting-actions"
  * already recorded, never typed: the longest ED waits, held beds soonest to run out, stranded
  * stays, people out of area, and the actions agreed last time. Read only.
  */
-const AGENDA_ITEMS_PER_SECTION = 5;
+const DEFAULT_ITEMS_PER_SECTION = 5;
 
 const STILL_IN_ED = new Set<Movement["stage"]>(["placement_requested", "destination_review", "accepted_awaiting_bed"]);
 
@@ -46,6 +46,8 @@ export function bedMeetingAgenda(
     units: readonly Unit[];
   },
   now: Instant,
+  /** How many people each list keeps. The agenda page keeps everyone and folds with Show more. */
+  limit: number = DEFAULT_ITEMS_PER_SECTION,
 ): AgendaSection[] {
   const { movements, admissions, bedReleases, units } = input;
   const open = movements.filter((movement) => !movement.closure && movement.stage !== "arrived");
@@ -53,7 +55,7 @@ export function bedMeetingAgenda(
   const edWaits = open
     .filter((movement) => STILL_IN_ED.has(movement.stage) && movement.leftDepartmentAt === undefined)
     .sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id))
-    .slice(0, AGENDA_ITEMS_PER_SECTION)
+    .slice(0, limit)
     .map((movement) => ({
       subject: movementSubject(movement),
       record: movement,
@@ -65,7 +67,7 @@ export function bedMeetingAgenda(
     // Every held bed, soonest to run out first: no invented cut-off decides which ones matter.
     .filter((movement) => movement.stage === "pulled" && movement.pullExpiresAt !== undefined)
     .sort((a, b) => a.pullExpiresAt! - b.pullExpiresAt! || a.id.localeCompare(b.id))
-    .slice(0, AGENDA_ITEMS_PER_SECTION)
+    .slice(0, limit)
     .map((movement) => {
       const left = movement.pullExpiresAt! - now;
       return {
@@ -78,7 +80,7 @@ export function bedMeetingAgenda(
 
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
   const stranded = strandedFlags(admissions, now, bedReleases)
-    .slice(0, AGENDA_ITEMS_PER_SECTION)
+    .slice(0, limit)
     .flatMap((flag) => {
       const admission = admissionById.get(flag.admissionId);
       if (!admission) return [];
@@ -94,7 +96,7 @@ export function bedMeetingAgenda(
 
   const outOfArea = outOfAreaLedger([...admissions], [...units], now)
     .entries.sort((a, b) => b.sinceArrival - a.sinceArrival || a.admission.id.localeCompare(b.admission.id))
-    .slice(0, AGENDA_ITEMS_PER_SECTION)
+    .slice(0, limit)
     .map((entry) => ({
       subject: admissionSubject(entry.admission),
       record: entry.admission,

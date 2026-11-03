@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
@@ -10,12 +10,18 @@ import {
   Card,
   CardBody,
   CardHead,
+  ChipGroup,
   DisabledReason,
-  Field,
+  FilterChip,
   Hero,
   HeroStat,
-  Select,
+  SearchField,
+  Segmented,
+  ShowMoreRow,
   StatusGlyph,
+  TierTile,
+  durMinutes,
+  foldLimit,
   phoneRows,
 } from "@/components/wf";
 
@@ -23,6 +29,15 @@ import { bedMeetingSheet } from "../capacity/bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "../capacity/bed-meeting-sheet";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
+import { setServiceScope, useServiceScope } from "../shell/ward-service-store";
+import type { Admission } from "../ward-admissions";
+import type { Movement } from "../ward-model";
+import { HEALTH_SERVICES, type HealthService } from "../ward-model-vocabulary";
+import { referralQueueOrder } from "../ward-referrals";
+import { healthServiceAcronym, movementBelongsToService, unitHealthService } from "../ward-service-scope";
+import { siteByCode } from "../ward-sites";
+import { referralBoardHref } from "../ed/ed-bed-search-step";
+import { askingForShort, waitWords } from "../referrals/referral-board-parts";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useDueSoonThresholds, useWardFlowSelect } from "../ward-flow-provider";
@@ -77,6 +92,15 @@ const SHORT_TITLES: Record<string, string> = {
   "out-of-area": "Out of area",
 };
 
+/** The chips that narrow the agenda to one or more lists. None pressed shows every list. */
+type ListChip = "ed-waits" | "holds" | "stranded" | "out-of-area" | "referrals" | "actioned";
+
+/** Each list shows this many people, then "Show N more" (DESIGN-SYSTEM section 4 folds at about eight). */
+const ROWS_SHOWN = 5;
+
+/** A search needs this many letters before it lists anyone, so one keystroke does not flood the page. */
+const SEARCH_MIN = 2;
+
 function BedMeetingAgenda() {
   const { movements, admissions, bedReleases, units, leaveBeds, referrals, configuration, now } = useWardFlowSelect(
     "movements",
@@ -94,7 +118,31 @@ function BedMeetingAgenda() {
   // chair's controls (Action and Done) are the bed coordinator's alone.
   const chairs = useEffectiveWardAccess().role === "coordinator";
   const bedMeetingTvOn = useWardFeatureFlag("bed-meeting-tv");
-  // The same printed sheet Capacity opens, built only while it is open, for every service.
+  // Diagnosed issues B1 (Josh, 3 Nov 2026): the agenda follows the header's service, and a chip row
+  // under the hero changes it in one tap, so the meeting can go service by service.
+  const service = useServiceScope();
+  const [chips, setChips] = useState<ReadonlySet<ListChip>>(new Set());
+  const [query, setQuery] = useState("");
+
+  const scopedMovements = useMemo(
+    () =>
+      service === null ? movements : movements.filter((movement) => movementBelongsToService(movement, service, units)),
+    [movements, service, units],
+  );
+  const scopedAdmissions = useMemo(() => {
+    if (service === null) return admissions;
+    const inService = new Set(units.filter((unit) => unitHealthService(unit) === service).map((unit) => unit.id));
+    return admissions.filter((admission) => inService.has(admission.unitId));
+  }, [admissions, service, units]);
+  const queue = useMemo(
+    () =>
+      referralQueueOrder([...referrals]).filter(
+        (referral) => service === null || siteByCode(referral.originSiteCode)?.service === service,
+      ),
+    [referrals, service],
+  );
+
+  // The same printed sheet Capacity opens, built only while it is open, for the chosen service.
   const buildSheet = () =>
     bedMeetingSheet({
       units,
@@ -104,14 +152,18 @@ function BedMeetingAgenda() {
       leaveBeds,
       now,
       thresholds,
-      service: null,
+      service,
       nameOf: (movement) => patientOf(movement).formalName,
       referrals,
       referralLimitMinutes: configuration.referralDecisionTargetMinutes,
     });
 
-  const sections = bedMeetingAgenda({ movements, admissions, bedReleases, units }, now);
-  const summary = meetingActionSummary(movements, admissions, now);
+  const sections = bedMeetingAgenda(
+    { movements: scopedMovements, admissions: scopedAdmissions, bedReleases, units },
+    now,
+    Number.POSITIVE_INFINITY,
+  );
+  const summary = meetingActionSummary(scopedMovements, scopedAdmissions, now);
   const unitName = (unitId: string | undefined) => units.find((unit) => unit.id === unitId)?.name;
   // A double click must close one action only. The list shifts up as an action closes, so a second
   // click lands on the next row, often another person's (Audit 7 NB-02). One Done per short pause.
@@ -139,13 +191,65 @@ function BedMeetingAgenda() {
       ? (unitName(action.ownerUnitId) ?? WARD_FLOW_ROLE_LABELS.ward)
       : WARD_FLOW_ROLE_LABELS[action.owner];
 
+  // "With an action": people already carrying an open action from this or an earlier meeting.
+  const actioned = sections
+    .flatMap((section) => section.items)
+    .filter(
+      (item, index, all) =>
+        (item.record.meetingActions ?? []).some((action) => action.doneAt === undefined) &&
+        all.findIndex((other) => other.subject.id === item.subject.id) === index,
+    );
+  const listCount = (id: ListChip) =>
+    id === "referrals"
+      ? queue.length
+      : id === "actioned"
+        ? actioned.length
+        : (sections.find((section) => section.id === id)?.items.length ?? 0);
+  const shows = (id: ListChip) => chips.size === 0 || chips.has(id);
+  const toggleChip = (id: ListChip) =>
+    setChips((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  // B1 "any patient": the chair can find anyone open on the board and record an action against them.
+  const needle = query.trim().toLowerCase();
+  const found: AgendaItem[] =
+    needle.length < SEARCH_MIN
+      ? []
+      : [
+          ...scopedMovements
+            .filter((movement) => !movement.closure && movement.stage !== "arrived")
+            .map((movement) => ({
+              subject: { kind: "movement" as const, id: movement.id },
+              record: movement as Movement | Admission,
+              ...(movement.acceptedUnitId !== undefined ? { unitId: movement.acceptedUnitId } : {}),
+              detail: `Open movement · ${durMinutes(now - movement.openedAt)}`,
+            })),
+          ...scopedAdmissions
+            .filter((admission) => admission.leftAt === null)
+            .map((admission) => ({
+              subject: { kind: "admission" as const, id: admission.id },
+              record: admission as Movement | Admission,
+              unitId: admission.unitId,
+              detail: `${unitName(admission.unitId) ?? "Ward not recorded"} · in for ${admission.arrivedAt === null ? "not recorded" : durMinutes(now - admission.arrivedAt)}`,
+            })),
+        ]
+          .filter((item) => {
+            const who = patientOf(item.record);
+            return who.formalName.toLowerCase().includes(needle) || who.umrn.toLowerCase().includes(needle);
+          })
+          .slice(0, 8);
+
   return (
     <main id="main-content" className={styles.main} data-testid="bed-meeting-agenda">
       <Hero
         level={1}
         eyebrow="Bed meeting"
         title="Agenda"
-        titleMeta={`as at ${formatInstantWithDay(now, now)}`}
+        titleMeta={`${service ?? "Statewide"} · as at ${formatInstantWithDay(now, now)}`}
         stats={
           <>
             {sections.map((section) => (
@@ -155,6 +259,7 @@ function BedMeetingAgenda() {
                 label={SHORT_TITLES[section.id] ?? section.title}
               />
             ))}
+            <HeroStat value={queue.length} label="Referrals" />
             <HeroStat
               value={summary.overdue.length + summary.open.length}
               label={summary.overdue.length > 0 ? `Actions, ${summary.overdue.length} overdue` : "Actions"}
@@ -169,6 +274,14 @@ function BedMeetingAgenda() {
               now={now}
               buttonClassName={`${buttonClass({ variant: "onHero", size: "sm" })} ${phoneRows.heroPill}`}
               buildSheet={buildSheet}
+              actions={actionRows.map((row) => ({
+                id: `${row.subject.id}-${row.action.kind}`,
+                name: patientOf(row.record).formalName,
+                action: bedMeetingActionLabel(row.action.kind),
+                owner: ownerText(row.action),
+                due: `${row.action.dueAt < now ? "was due" : "due"} ${formatInstantWithDay(row.action.dueAt, now)}`,
+                overdue: row.action.dueAt < now,
+              }))}
             />
             {/* The meeting room screen, behind the `bed-meeting-tv` flag as on Capacity. */}
             {bedMeetingTvOn ? (
@@ -187,6 +300,64 @@ function BedMeetingAgenda() {
       <p className={styles.printMark} data-testid="agenda-print-mark">
         Synthetic prototype, not for clinical use
       </p>
+
+      {/* B1 (Josh, 3 Nov 2026): one filter bar. Service first, then the lists, then find anyone. */}
+      <div className={styles.filters} data-testid="bed-meeting-agenda-filters">
+        <div className={styles.filterLine}>
+          <Segmented
+            label="Service"
+            className={styles.serviceTrack}
+            value={service ?? "statewide"}
+            onChange={(next) => setServiceScope(next === "statewide" ? null : (next as HealthService))}
+            items={[
+              { id: "statewide", label: "Statewide" },
+              ...HEALTH_SERVICES.map((candidate) => ({ id: candidate, label: healthServiceAcronym(candidate) })),
+            ]}
+          />
+          <SearchField
+            className={styles.search}
+            value={query}
+            onValueChange={setQuery}
+            label="Find anyone to discuss"
+            placeholder="Find anyone by name or UMRN"
+            data-testid="bed-meeting-agenda-search"
+          />
+        </div>
+        <ChipGroup label="Lists" className={styles.chipRow}>
+          {LIST_CHIPS.map(([id, label]) =>
+            listCount(id) === 0 && !chips.has(id) ? null : (
+              <FilterChip key={id} pressed={chips.has(id)} count={listCount(id)} onPressedChange={() => toggleChip(id)}>
+                {label}
+              </FilterChip>
+            ),
+          )}
+        </ChipGroup>
+      </div>
+
+      {needle.length >= SEARCH_MIN ? (
+        <Card data-testid="bed-meeting-agenda-found">
+          <CardHead title="Found" meta={`${found.length}`} level={2} />
+          <CardBody>
+            {found.length === 0 ? (
+              <p className={styles.note}>Nobody open matches. Check the spelling or the service.</p>
+            ) : (
+              <ul className={styles.list}>
+                {found.map((item) => (
+                  <AgendaRow
+                    key={`found-${item.subject.id}`}
+                    sectionId="found"
+                    item={item}
+                    now={now}
+                    name={patientOf(item.record).formalName}
+                    wardName={unitName(item.unitId)}
+                    chairs={chairs}
+                  />
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+      ) : null}
 
       {/* With nothing waiting, the actions are one quiet line under the hero, not an
           empty card (no empty panels). The line stays where focus lands when the last one closes. */}
@@ -227,15 +398,18 @@ function BedMeetingAgenda() {
       )}
 
       <div className={styles.sections}>
-        {sections.map((section) => (
-          <Card key={section.id} data-testid={`bed-meeting-agenda-${section.id}`}>
-            <CardHead title={CARD_TITLES[section.id] ?? section.title} meta={`${section.items.length}`} level={2} />
-            <CardBody>
-              {section.items.length === 0 ? (
-                <p className={styles.note}>Nobody here right now.</p>
-              ) : (
-                <ul className={styles.list}>
-                  {section.items.map((item) => (
+        {sections.map((section) =>
+          shows(section.id as ListChip) ? (
+            <AgendaList
+              key={section.id}
+              id={section.id}
+              title={CARD_TITLES[section.id] ?? section.title}
+              count={section.items.length}
+            >
+              {(limit) =>
+                section.items
+                  .slice(0, limit)
+                  .map((item) => (
                     <AgendaRow
                       key={`${section.id}-${item.subject.id}`}
                       sectionId={section.id}
@@ -245,16 +419,95 @@ function BedMeetingAgenda() {
                       wardName={unitName(item.unitId)}
                       chairs={chairs}
                     />
-                  ))}
-                </ul>
-              )}
-            </CardBody>
-          </Card>
-        ))}
+                  ))
+              }
+            </AgendaList>
+          ) : null,
+        )}
+        {shows("referrals") ? (
+          <AgendaList id="referrals" title="Referrals awaiting decision" count={queue.length}>
+            {(limit) =>
+              queue.slice(0, limit).map((referral) => {
+                const { waited, due, overdue } = waitWords(referral, now);
+                return (
+                  <li key={`referral-${referral.id}`} className={styles.agendaRow}>
+                    <div className={styles.row}>
+                      <div className={styles.rowText}>
+                        <span className={styles.name}>
+                          <TierTile tier={referral.urgency} />
+                          {overdue ? <StatusGlyph tone="danger" size={8} /> : null}
+                          {patientOf(referral).formalName}
+                          {overdue ? <span className={styles.urgency}>Overdue</span> : null}
+                        </span>
+                        <span className={styles.detail}>
+                          {waited} · {due} · {referral.originSiteCode} · {askingForShort(referral)}
+                        </span>
+                      </div>
+                      <Link
+                        href={referralBoardHref(referral.id)}
+                        className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.addAction}`}
+                        aria-label={`Decide the referral for ${patientOf(referral).formalName}`}
+                      >
+                        Decide
+                      </Link>
+                    </div>
+                  </li>
+                );
+              })
+            }
+          </AgendaList>
+        ) : null}
       </div>
       {chairs ? null : <p className={styles.note}>Read only. The bed coordinator records and completes actions.</p>}
       <WardPrototypeFooter testId="ward-bed-meeting-agenda-governance" />
     </main>
+  );
+}
+
+const LIST_CHIPS: readonly (readonly [ListChip, string])[] = [
+  ["ed-waits", "ED waits"],
+  ["holds", "Pulled beds"],
+  ["stranded", "Stranded"],
+  ["out-of-area", "Out of area"],
+  ["referrals", "Referrals"],
+  ["actioned", "With an action"],
+];
+
+/** One agenda list: its card, the first five people, then the kit's Show more row. */
+function AgendaList({
+  id,
+  title,
+  count,
+  children,
+}: {
+  id: string;
+  title: string;
+  count: number;
+  children: (limit: number) => ReactNode;
+}) {
+  const [all, setAll] = useState(false);
+  const listId = useId();
+  const limit = all ? count : foldLimit(count, ROWS_SHOWN);
+  return (
+    <Card data-testid={`bed-meeting-agenda-${id}`}>
+      <CardHead title={title} meta={`${count}`} level={2} />
+      <CardBody>
+        {count === 0 ? (
+          <p className={styles.note}>Nobody here right now.</p>
+        ) : (
+          <>
+            <ul className={styles.list} id={listId}>
+              {children(limit)}
+            </ul>
+            {limit < count || all ? (
+              <ShowMoreRow onClick={() => setAll((value) => !value)} expanded={all} controls={listId}>
+                {all ? "Show fewer" : `Show ${count - limit} more`}
+              </ShowMoreRow>
+            ) : null}
+          </>
+        )}
+      </CardBody>
+    </Card>
   );
 }
 
@@ -412,46 +665,45 @@ function ActionForm({
   const kinds = BED_MEETING_ACTION_KINDS.filter((entry) => !openMeetingAction(item.record.meetingActions, entry.id));
   return (
     <div id={id} className={styles.form} data-testid="bed-meeting-action-form">
-      <Field label="Action">
-        <Select
-          value={kind}
-          onChange={(event) => setKind(event.target.value as BedMeetingActionKind | "")}
-          data-testid="bed-meeting-action-kind"
-        >
-          <option value="">Choose an action</option>
+      {/* B1 (Josh, 3 Nov 2026): choices as chips and segments, never the browser's drop-down (Q319). */}
+      <div data-testid="bed-meeting-action-kind">
+        <ChipGroup label="Action" className={styles.formKinds}>
           {kinds.map((entry) => (
-            <option key={entry.id} value={entry.id}>
+            <FilterChip
+              key={entry.id}
+              pressed={kind === entry.id}
+              onPressedChange={(on) => setKind(on ? entry.id : "")}
+            >
               {entry.label}
-            </option>
+            </FilterChip>
           ))}
-        </Select>
-      </Field>
-      <Field label="Owner">
-        <Select
+        </ChipGroup>
+      </div>
+      <div className={styles.formLine}>
+        <span className={styles.formLabel} aria-hidden="true">
+          Owner
+        </span>
+        <Segmented
+          label="Owner"
           value={owner}
-          onChange={(event) => setOwner(event.target.value as BedMeetingActionOwner)}
-          data-testid="bed-meeting-action-owner"
-        >
-          {owners.map((candidate) => (
-            <option key={candidate} value={candidate}>
-              {candidate === "ward" ? (wardName ?? WARD_FLOW_ROLE_LABELS.ward) : WARD_FLOW_ROLE_LABELS[candidate]}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field label="Due">
-        <Select
+          onChange={(next) => setOwner(next as BedMeetingActionOwner)}
+          items={owners.map((candidate) => ({
+            id: candidate,
+            label: candidate === "ward" ? (wardName ?? WARD_FLOW_ROLE_LABELS.ward) : WARD_FLOW_ROLE_LABELS[candidate],
+          }))}
+        />
+      </div>
+      <div className={styles.formLine}>
+        <span className={styles.formLabel} aria-hidden="true">
+          Due in
+        </span>
+        <Segmented
+          label="Due in"
           value={dueHours}
-          onChange={(event) => setDueHours(event.target.value)}
-          data-testid="bed-meeting-action-due"
-        >
-          {BED_MEETING_ACTION_DUE_HOURS.map((hours) => (
-            <option key={hours} value={String(hours)}>
-              In {hours} hours
-            </option>
-          ))}
-        </Select>
-      </Field>
+          onChange={(next) => setDueHours(next)}
+          items={BED_MEETING_ACTION_DUE_HOURS.map((hours) => ({ id: String(hours), label: `${hours}h` }))}
+        />
+      </div>
       <Button
         size="sm"
         variant="pri"

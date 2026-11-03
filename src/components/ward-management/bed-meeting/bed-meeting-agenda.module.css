@@ -167,3 +167,94 @@
 .heroPillGroup {
   display: contents;
 }
+
+/* Diagnosed issues B1 (Josh, 3 Nov 2026): one filter bar under the hero. Service chips, list chips
+   and Find anyone on one line where they fit; on phone each chip row slides with an edge fade. */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.filterLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+}
+
+.serviceTrack {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chipRow {
+  flex-wrap: wrap;
+}
+
+.search {
+  flex: 1 1 16rem;
+  max-width: 22rem;
+  margin-inline-start: auto;
+}
+
+@media (max-width: 46.4375rem) {
+  .chipRow {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
+  }
+
+  .search {
+    flex-basis: 100%;
+    max-width: none;
+    margin-inline-start: 0;
+  }
+}
+
+/* The action form: chips for what, segments for who and when, then Record. */
+.form {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  padding: var(--wf-s-3);
+  margin-block-end: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.form > button {
+  justify-self: start;
+}
+
+.formKinds {
+  flex-wrap: wrap;
+}
+
+.formLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+.formLabel {
+  min-width: 4rem;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.form .formKinds {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.formLine > [role="radiogroup"],
+.formLine > [role="group"] {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
