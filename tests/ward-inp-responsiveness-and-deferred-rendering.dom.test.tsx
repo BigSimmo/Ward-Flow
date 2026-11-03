@@ -29,7 +29,6 @@ import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { HubScreen } from "@/components/ward-management/hub/hub-screen";
-import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 describe("INP responsiveness, deferred rendering, and font fallback contract", () => {
   beforeEach(() => {
@@ -78,7 +77,8 @@ describe("INP responsiveness, deferred rendering, and font fallback contract", (
       </WardFlowProvider>,
     );
 
-    showEveryoneWaiting();
+    // Home flow (Q340, 3 Nov 2026): the queue rows live in the Flow list, beside Needs you.
+    fireEvent.click(screen.getByRole("radio", { name: /^Flow/u }));
     const grid = screen.getByTestId("ward-coordinator-region-grid");
     const queueButtons = Array.from(grid.querySelectorAll<HTMLElement>('[data-testid^="ward-queue-row-"]'));
     expect(queueButtons.length).toBeGreaterThan(1);
