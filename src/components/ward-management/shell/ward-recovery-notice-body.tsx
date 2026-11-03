@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { OPEN_ITEMS_CLOSED_NOTICE, RESTORED_NOTICE_PREFIX } from "../ward-flow-demo-storage-constants";
+import { useOptionalToast } from "@/components/wf";
+import {
+  BROUGHT_UP_TO_DATE_NOTICE,
+  OPEN_ITEMS_CLOSED_NOTICE,
+  RESTORED_NOTICE_PREFIX,
+} from "../ward-flow-demo-storage-constants";
 import styles from "./ward-offline-banner.module.css";
 
 /** Holds no record content: only that this tab has already seen a routine restore notice. */
@@ -44,13 +49,31 @@ export function WardRecoveryNoticeBody({ notice, fadeAfterMs }: { notice: string
   const restored = notice.startsWith(RESTORED_NOTICE_PREFIX);
   const closedOpenItems = restored && notice.endsWith(OPEN_ITEMS_CLOSED_NOTICE);
   const routine = restored && !closedOpenItems;
+  // GEN1 (Josh, 3 Nov 2026): routine news ("Restored the last successful save", "Brought up to
+  // date from another open tab") is an info toast like every other outcome, not a strip that
+  // pushes the page down. A failed or unavailable save, and a restore that closed something,
+  // stay in the strip because they need reading. Without a toast host the strip is kept.
+  const toast = useOptionalToast();
+  const asToast = toast !== null && (routine || notice === BROUGHT_UP_TO_DATE_NOTICE);
+  const pushedRef = useRef<string | null>(null);
   const [hidden, setHidden] = useState(false);
   // True once this notice has claimed the tab's one showing. StrictMode re-runs the effect on the
   // same instance, and this ref survives that, so the re-run keeps the notice it already claimed.
   const claimed = useRef(false);
 
   useEffect(() => {
-    if (!routine) return;
+    if (!asToast || !toast || pushedRef.current === notice) return;
+    if (routine) {
+      if (!claimed.current && routineAlreadySeen()) return;
+      claimed.current = true;
+      markRoutineSeen();
+    }
+    pushedRef.current = notice;
+    toast.push({ tone: "info", title: notice, testId: "ward-recovery-notice" });
+  }, [asToast, toast, routine, notice]);
+
+  useEffect(() => {
+    if (!routine || asToast) return;
     if (!claimed.current) {
       if (routineAlreadySeen()) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- reads tab storage after mount, which the server render cannot
@@ -62,8 +85,9 @@ export function WardRecoveryNoticeBody({ notice, fadeAfterMs }: { notice: string
     }
     const timer = window.setTimeout(() => setHidden(true), fadeAfterMs);
     return () => window.clearTimeout(timer);
-  }, [routine, notice, fadeAfterMs]);
+  }, [routine, asToast, notice, fadeAfterMs]);
 
+  if (asToast) return null;
   if ((routine || closedOpenItems) && hidden) return null;
   return (
     <p

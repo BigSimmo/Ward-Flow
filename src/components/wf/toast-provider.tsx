@@ -97,7 +97,8 @@ type ToastContextValue = {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 /** A short timed outcome's time; a longer one gets a little more (`timedToastMs`). */
-const DEFAULT_DURATION = 6000;
+/** GEN1 (Josh, 3 Nov 2026): an info or success toast hides after five seconds, longer for many words. */
+const DEFAULT_DURATION = 5000;
 const MAX_VISIBLE_TOASTS = 5;
 
 /** A warning or danger stays until it is closed (Audit 24-7, CT-09), so a full stack never drops one. */
