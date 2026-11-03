@@ -101,7 +101,9 @@ export function WardHelpHints() {
 function WardHelpHintForView({ pathname, role }: { pathname: string; role: WardTourRole }) {
   const toured = useTourSeen(role);
   const { home, deskHome } = useTourFacts(role);
-  const onHome = pathname === home || pathname === deskHome;
+  // The access admin's tour walks Governance but the desk lands on Settings: only the landing screen
+  // stays quiet, so a declined tour still leaves tips on its other screen (Josh, 3 Nov 2026).
+  const onHome = role === "admin" ? pathname === deskHome : pathname === home || pathname === deskHome;
   const phone = useIsPhone();
   const [blocked, setBlocked] = useState(true);
   const [offered, setOffered] = useState<string | null>(null);

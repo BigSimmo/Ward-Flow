@@ -67,8 +67,8 @@ describe("quiet first-visit Help hints", () => {
       route.path = role === "admin" ? "/ward-flow/governance" : "/ward-flow/settings";
       ui.rerender(<WardHelpHints />);
       await settle();
-      // Access admin's separate tour home also remains quiet; other desks get later-screen help.
-      expect(screen.queryByTestId("ward-help-hint") !== null).toBe(role !== "admin");
+      // Every desk, the access admin included, gets help on a screen that is not its landing screen.
+      expect(screen.getByTestId("ward-help-hint")).toBeTruthy();
     },
   );
   it("stores only known role and topic ids and refuses raw paths or text", () => {
@@ -127,19 +127,19 @@ describe("quiet first-visit Help hints", () => {
     expect(screen.getByTestId("ward-help-hint").textContent).toContain("Open Settings, then Display.");
     expect(screen.getByTestId("ward-help-hint").textContent).not.toContain("Change a rule");
   });
-  // The access admin is left out: its only screens, Governance and Settings, are both its homes,
-  // and the declined-tour test above keeps both quiet.
-  it.each(["coordinator", "ward", "ed", "community", "officer", "bed_manager", "executive"])(
+  // The access admin lands on Settings, so its later screen is Governance.
+  it.each(["coordinator", "ward", "ed", "community", "officer", "bed_manager", "executive", "admin"])(
     "a tour offered to any desk on this device permits later-screen guidance (G3, role=%s)",
     async (role) => {
-      route.path = "/ward-flow/settings";
+      const later = role === "admin" ? "governance" : "settings";
+      route.path = `/ward-flow/${later}`;
       route.role = role;
       route.toured = false;
       localStorage.setItem("ward_flow_choice_tour_auto_done", "yes");
       render(<WardHelpHints />);
       await settle();
       expect(screen.getByTestId("ward-help-hint")).toBeTruthy();
-      expect(localStorage.getItem(HELP_HINTS_KEY)).toBe(`${role}:settings`);
+      expect(localStorage.getItem(HELP_HINTS_KEY)).toBe(`${role}:${later}`);
     },
   );
   it("shows a page's tip once per device, whichever desk saw it (G3)", async () => {
