@@ -44,7 +44,6 @@ import { askingForShort, waitWords } from "../referrals/referral-board-parts";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useDueSoonThresholds, useWardFlowSelect } from "../ward-flow-provider";
-import { useWardRaise } from "../ward-flow-raise";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
 import { bedMeetingTvHref } from "../ward-nav";
 import { DONE_PAUSE_MS, LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "../ward-operational-defaults";
@@ -62,7 +61,12 @@ import {
 } from "./bed-meeting-actions";
 import { bedMeetingAgenda, meetingActionSummary, type AgendaItem, type MeetingActionRow } from "./bed-meeting-agenda";
 import styles from "./bed-meeting-agenda.module.css";
-import { useBedMeetingDone, type MarkBedMeetingActionDone } from "./use-bed-meeting-done";
+import {
+  useBedMeetingDone,
+  useBedMeetingRecord,
+  type MarkBedMeetingActionDone,
+  type RecordBedMeetingAction,
+} from "./use-bed-meeting-done";
 
 /**
  * Smart features idea 5 (19 Oct 2026): the bed meeting's agenda, built from fixed rules, and its
@@ -179,6 +183,8 @@ function BedMeetingAgenda() {
   }, []);
   // H-0150: held here, not in the row, so the toast's Undo outlives the row it closes.
   const markActionDone = useBedMeetingDone("coordinator");
+  // Chase Undo (Josh, 3 Nov 2026): held here too, as a recorded row can move to another list.
+  const recordAction = useBedMeetingRecord("coordinator");
   // NB-02 / RB-N01: the closed action's row leaves with it; focus goes to the row now in its place.
   const actionList = useRef<HTMLUListElement>(null);
   const actionSummary = useRef<HTMLParagraphElement>(null);
@@ -362,6 +368,7 @@ function BedMeetingAgenda() {
                     name={patientOf(item.record).formalName}
                     wardName={unitName(item.unitId)}
                     chairs={chairs}
+                    onRecord={recordAction}
                   />
                 ))}
               </ul>
@@ -430,6 +437,7 @@ function BedMeetingAgenda() {
                       name={patientOf(item.record).formalName}
                       wardName={unitName(item.unitId)}
                       chairs={chairs}
+                      onRecord={recordAction}
                     />
                   ))
               }
@@ -579,6 +587,7 @@ function AgendaRow({
   name,
   wardName,
   chairs,
+  onRecord,
 }: {
   sectionId: string;
   item: AgendaItem;
@@ -587,6 +596,7 @@ function AgendaRow({
   wardName: string | undefined;
   /** Whether this desk chairs the meeting and so may add an action. */
   chairs: boolean;
+  onRecord: RecordBedMeetingAction;
 }) {
   const [adding, setAdding] = useState(false);
   const formId = useId();
@@ -646,6 +656,7 @@ function AgendaRow({
           item={item}
           now={now}
           wardName={wardName}
+          onRecord={onRecord}
           onDone={() => {
             // RB-N01: the form and its Record button close, so focus goes back to Add action.
             setAdding(false);
@@ -701,6 +712,7 @@ function ActionForm({
   item,
   now,
   wardName,
+  onRecord,
   onDone,
 }: {
   id: string;
@@ -708,9 +720,9 @@ function ActionForm({
   item: AgendaItem;
   now: Instant;
   wardName: string | undefined;
+  onRecord: RecordBedMeetingAction;
   onDone: () => void;
 }) {
-  const raise = useWardRaise("coordinator");
   const [kind, setKind] = useState<BedMeetingActionKind | "">("");
   const [owner, setOwner] = useState<BedMeetingActionOwner>("coordinator");
   const [dueHours, setDueHours] = useState<string>(String(BED_MEETING_ACTION_DUE_HOURS[1]));
@@ -791,7 +803,7 @@ function ActionForm({
         aria-describedby={kind === "" ? `${id}-reason` : undefined}
         onClick={() => {
           if (kind === "") return;
-          raise("RECORD_BED_MEETING_ACTION", {
+          onRecord({
             subject: item.subject,
             action: kind,
             owner,
