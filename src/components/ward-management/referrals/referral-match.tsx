@@ -8,7 +8,7 @@ import {
   readyBedsPromisedSentence,
 } from "@/components/ward-management/ward-ready-bed-promises";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
@@ -148,6 +148,7 @@ export function ReferralMatchView({
   // Decline, because they record the answer as the coordinator's. Its own team page is unchanged.
   const communityDeskView = useEffectiveWardAccess().role === "community";
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
+  const localBedFocus = useRef(false);
   // Fix plan item 16 (D-76): asking more wards about an open community referral.
   const askMore = useAskMoreWards({ referral, units, now, dispatch, rejections });
   const turnaroundState = useOptionalWardFlowSelect(
@@ -412,6 +413,7 @@ export function ReferralMatchView({
    */
   function handleLocalBedSought() {
     priorRejectionCountRef.current = rejections.length;
+    localBedFocus.current = true;
     dispatch({ type: "RECORD_LOCAL_BED_SOUGHT", role: "coordinator", now, referralId: referral.id });
     setCheckToken((token) => token + 1);
   }
@@ -1147,7 +1149,18 @@ export function ReferralMatchView({
                 as one small control; once recorded it becomes a quiet line with its time. */}
             <div className={notes.localBed} data-testid="ward-referral-match-local-bed">
               {referral.localBedSought ? (
-                <p className={notes.localBedRecord} data-testid="ward-referral-match-local-bed-sought-record">
+                <p
+                  className={notes.localBedRecord}
+                  data-testid="ward-referral-match-local-bed-sought-record"
+                  // Stress test (3 Nov 2026): the button goes away, so focus lands on the line that replaced it.
+                  tabIndex={-1}
+                  ref={(node) => {
+                    if (node && localBedFocus.current) {
+                      localBedFocus.current = false;
+                      node.focus();
+                    }
+                  }}
+                >
                   Local bed sought, none suitable · {formatInstant(referral.localBedSought.at)}
                 </p>
               ) : (

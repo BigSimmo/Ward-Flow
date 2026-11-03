@@ -763,15 +763,15 @@ function ActionForm({
         <span className={styles.formLabel} aria-hidden="true">
           Owner
         </span>
-        <Segmented
-          label="Owner"
-          value={owner}
-          onChange={(next) => setOwner(next as BedMeetingActionOwner)}
-          items={owners.map((candidate) => ({
-            id: candidate,
-            label: candidate === "ward" ? (wardName ?? WARD_FLOW_ROLE_LABELS.ward) : WARD_FLOW_ROLE_LABELS[candidate],
-          }))}
-        />
+        {/* Stress test (3 Nov 2026): chips that wrap, as the asks above do, so a long ward name never
+            clips the owners on phone. One is always chosen. */}
+        <ChipGroup label="Owner" className={styles.formKinds}>
+          {owners.map((candidate) => (
+            <FilterChip key={candidate} pressed={owner === candidate} onPressedChange={() => setOwner(candidate)}>
+              {candidate === "ward" ? (wardName ?? WARD_FLOW_ROLE_LABELS.ward) : WARD_FLOW_ROLE_LABELS[candidate]}
+            </FilterChip>
+          ))}
+        </ChipGroup>
       </div>
       <div className={styles.formLine}>
         <span className={styles.formLabel} aria-hidden="true">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { useId, useMemo } from "react";
+import { useId, useMemo, useRef } from "react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -64,6 +64,7 @@ export function WardOffersTable({
   // the row's one button.
   const coordinatorDesk = role === "coordinator";
   const raise = useWardRaise("coordinator");
+  const chasedFocus = useRef<string | null>(null);
   if (offers.length === 0) return null;
   const wardName = (unitId: string) => (units.find((unit) => unit.id === unitId)?.name ?? unitId).split(" — ")[0];
   return (
@@ -120,7 +121,18 @@ export function WardOffersTable({
                   <td className={styles.offerActions}>
                     <div className={styles.offerActionRow}>
                       {chased ? (
-                        <span className={styles.offerChased} data-testid={`ward-offer-chased-${movement.id}`}>
+                        <span
+                          className={styles.offerChased}
+                          data-testid={`ward-offer-chased-${movement.id}`}
+                          // Stress test (3 Nov 2026): the Chase button goes away, so focus lands on what replaced it.
+                          tabIndex={-1}
+                          ref={(node) => {
+                            if (node && chasedFocus.current === movement.id) {
+                              chasedFocus.current = null;
+                              node.focus();
+                            }
+                          }}
+                        >
                           Chased · due {formatInstantWithDay(chased.dueAt, now)}
                         </span>
                       ) : (
@@ -132,6 +144,7 @@ export function WardOffersTable({
                           aria-label={`Chase ${toAnswer ? wardName(toAnswer) : "the ward"} for ${nameFor(who.formalName, who.umrn)}`}
                           onClick={() => {
                             if (toAnswer === undefined) return;
+                            chasedFocus.current = movement.id;
                             raise("RECORD_BED_MEETING_ACTION", {
                               subject: { kind: "movement", id: movement.id },
                               action: "chase_ward",

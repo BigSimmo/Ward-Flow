@@ -213,7 +213,7 @@ export function BedMeetingSheet({
             {shown.map((row, index) => (
               <tr key={row.referral.id} data-overdue={isOverdue(row.referral, now) ? "true" : undefined}>
                 <td className={cx(styles.mono, styles.deskOnly)}>{index + 1}</td>
-                <td>
+                <td className={s.tier}>
                   <TierTile tier={row.referral.urgency} />
                 </td>
                 <td>

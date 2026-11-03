@@ -224,6 +224,13 @@
     display: flex !important;
   }
 
+  /* Stress test (3 Nov 2026): paper carries the lists only, never the controls that act on them. */
+  .heroPillGroup,
+  .filters,
+  .addAction {
+    display: none !important;
+  }
+
   .main > section {
     break-inside: avoid;
     box-shadow: none;
