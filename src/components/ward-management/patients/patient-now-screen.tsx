@@ -884,7 +884,8 @@ export function PatientNowScreen({
   if (activeCommunity)
     contacts.push({
       name: activeCommunity.caseManager.name,
-      role: `Case manager, ${activeCommunity.team}`,
+      // PT1: the title WA community teams use for the person who holds the care.
+      role: `Care coordinator, ${activeCommunity.team}`,
       phone: activeCommunity.caseManager.phone,
     });
   if (livePatient?.catchmentCommunityTeam)
@@ -1005,7 +1006,7 @@ export function PatientNowScreen({
       stayWithheld={statusContext.stayWithheld}
       formTimeLeft={movementTimeLeft}
       riskFlags={glanceRiskFlags}
-      community={activeCommunityEpisode}
+      riskFlagsWhen={glanceMovement ? dayLabel(glanceMovement.openedAt, dayZero).replace(",", "") : undefined}
       healthAlerts={recordExtrasFor(livePatient?.id)?.alerts}
       onOpenForms={() => openTab("documents")}
       onOpenDetails={() => openTab("details")}
@@ -1140,6 +1141,14 @@ export function PatientNowScreen({
           where={where}
           glance={glance}
           stateTag={stateTag}
+          recordCto={
+            livePatient
+              ? {
+                  onClick: statusContext.onRecordCto,
+                  reason: gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason,
+                }
+              : undefined
+          }
         />
         {/* Restricted record (27 Oct 2026): the notice sits under the hero, so the hero stays the first
             thing under the header and keeps its band join (wf/band.ts). */}

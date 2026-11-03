@@ -162,10 +162,13 @@ describe("the patient-now screen", () => {
       "href",
       raiseReferralHref({ patientId: "PT-005" }),
     );
-    // Quiet hero: nothing is open, so no stepper and no Live chip. Redesign (1 Nov 2026): the tab stays
-    // Now, and the record row under the status card opens each tab.
-    expect(screen.getByTestId("ward-person-identity")).toHaveAttribute("data-quiet", "true");
-    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("Not active");
+    // Nothing is open, so no stepper and no Live chip. Redesign (1 Nov 2026): the tab stays Now, and
+    // the record row under the status card opens each tab. PT1 (3 Nov 2026): Not active uses the same
+    // dark band as every state, with the at a glance row, and Record CTO sits beside New referral.
+    expect(screen.getByTestId("ward-person-identity")).not.toHaveAttribute("data-quiet", "true");
+    expect(within(root).getByTestId("ward-patient-glance")).toBeInTheDocument();
+    expect(within(root).getByTestId("ward-person-record-cto")).toHaveTextContent("Record CTO");
+    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent(/^Not active$/);
     expect(root).toHaveAttribute("data-bedflow", "inactive");
     expect(within(root).queryByRole("list", { name: /The seven stages/ })).not.toBeInTheDocument();
     expect(within(root).getByRole("tab", { name: "Now" })).toBeInTheDocument();

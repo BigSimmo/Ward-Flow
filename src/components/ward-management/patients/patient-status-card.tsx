@@ -1,7 +1,17 @@
 import type { MouseEvent, ReactNode } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { BedDouble, CalendarDays, Clock, DoorOpen, Scale, Stethoscope, Truck, UserRound, Users } from "lucide-react";
+import {
+  BedSingle,
+  CalendarDays,
+  Clock,
+  DoorOpen,
+  FileBadge,
+  Stethoscope,
+  Ambulance,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { Button, StatusGlyph, useIsPhone, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -194,7 +204,7 @@ function transportCell(
   if (job)
     return {
       key: "transport",
-      icon: Truck,
+      icon: Ambulance,
       label: "Transport",
       owner: "ED nurse in charge",
       tone: "success",
@@ -208,7 +218,7 @@ function transportCell(
             kind: "button",
             label: "Update booking",
             secondary: true,
-            icon: Truck,
+            icon: Ambulance,
             onClick: () => {
               onBook();
             },
@@ -219,7 +229,7 @@ function transportCell(
   if (movement.transportNeed?.needed === false)
     return {
       key: "transport",
-      icon: Truck,
+      icon: Ambulance,
       label: "Transport",
       owner: "ED nurse in charge",
       tone: "success",
@@ -229,7 +239,7 @@ function transportCell(
     };
   return {
     key: "transport",
-    icon: Truck,
+    icon: Ambulance,
     label: "Transport",
     owner: "ED nurse in charge",
     tone: "neutral",
@@ -239,7 +249,7 @@ function transportCell(
       ? {
           kind: "button",
           label: "Log booking",
-          icon: Truck,
+          icon: Ambulance,
           onClick: () => {
             onBook();
           },
@@ -312,7 +322,7 @@ function statusFor(
       cells: [
         {
           key: "bed",
-          icon: BedDouble,
+          icon: BedSingle,
           label: "Bed",
           owner: "Bed coordinator",
           tone: "warning",
@@ -344,7 +354,7 @@ function statusFor(
         cells: [
           {
             key: "bed",
-            icon: BedDouble,
+            icon: BedSingle,
             label: `${movement.security} ${movement.cohort.toLowerCase()} bed`,
             owner: "Bed coordinator",
             tone: "warning",
@@ -363,7 +373,7 @@ function statusFor(
     const noneAsked = pending === 0 && declined === 0;
     const bed: StatusCell = {
       key: "bed",
-      icon: BedDouble,
+      icon: BedSingle,
       label: `${movement.security} ${movement.cohort.toLowerCase()} bed`,
       owner: "Bed coordinator",
       tone: pending === 0 ? "danger" : "warning",
@@ -391,7 +401,7 @@ function statusFor(
     const lapsed = hold?.state === "lapsed";
     const bed: StatusCell = {
       key: "bed",
-      icon: BedDouble,
+      icon: BedSingle,
       label: "Bed",
       owner: "Bed coordinator",
       tone: !ctx.hasBedHold || hold?.state === "at-risk" ? "warning" : lapsed ? "danger" : "success",
@@ -466,7 +476,7 @@ function statusFor(
       cells: [
         {
           key: "collected",
-          icon: Truck,
+          icon: Ambulance,
           href: ctx.transportHref,
           label: "Collected",
           owner: "ED nurse in charge",
@@ -482,7 +492,7 @@ function statusFor(
                   kind: "button",
                   label: "Update booking",
                   secondary: true,
-                  icon: Truck,
+                  icon: Ambulance,
                   onClick: () => {
                     ctx.onBookTransport();
                   },
@@ -493,7 +503,7 @@ function statusFor(
               ? {
                   kind: "button",
                   label: "Log booking",
-                  icon: Truck,
+                  icon: Ambulance,
                   onClick: () => {
                     ctx.onBookTransport();
                   },
@@ -523,7 +533,7 @@ function statusFor(
         },
         {
           key: "receiving",
-          icon: BedDouble,
+          icon: BedSingle,
           label: "Receiving ward",
           owner: "Ward nurse in charge",
           tone: ctx.hasBedHold ? "success" : "warning",
@@ -645,7 +655,7 @@ function statusFor(
         },
         {
           key: "legal",
-          icon: Scale,
+          icon: FileBadge,
           label: "Legal status",
           owner: "Treating team",
           value: legalValue(movement, patient),
@@ -673,7 +683,7 @@ function statusFor(
         },
         {
           key: "bed",
-          icon: BedDouble,
+          icon: BedSingle,
           label: "Bed",
           owner: "Nurse in charge",
           value: ctx.stayUnitName ? `Held on ${ctx.stayUnitName}` : "Held",
@@ -751,7 +761,7 @@ function statusFor(
   const acceptedBedCell: StatusCell | undefined = ctx.acceptedReferral
     ? {
         key: "bed",
-        icon: BedDouble,
+        icon: BedSingle,
         label: "Bed",
         owner: "Ward",
         value: `Accepted on ${ctx.acceptedReferral.unitName}`,
@@ -794,7 +804,7 @@ function statusFor(
         ...(acceptedBedCell ? [acceptedBedCell] : []),
         {
           key: "cto",
-          icon: Scale,
+          icon: FileBadge,
           label: "Community treatment order",
           owner: "Community team",
           tone: "success",
@@ -845,28 +855,8 @@ function statusFor(
             },
           ]
         : []),
-      {
-        key: "legal",
-        icon: Scale,
-        // PT1: the last legal status is in the band (Q118 words kept there). This cell holds the order.
-        label: "Community treatment order",
-        owner: "Treating team",
-        value: "None in force",
-        sub: "An ended order stays in History",
-        clear: true,
-        // An order here can only be an ended one (an active order shows the CTO mode). A new order
-        // keeps the ended one as Closed in `earlier` (D-40), so Record CTO stays available.
-        action: patient
-          ? {
-              kind: "button",
-              label: "Record CTO",
-              onClick: () => {
-                ctx.onRecordCto();
-              },
-              event: "RECORD_COMMUNITY_TREATMENT_ORDER",
-            }
-          : undefined,
-      },
+      // PT1 round 2: the band's Legal tile says no order is in force, and Record CTO sits beside New
+      // referral in the band, so a record with nothing open carries no repeated cells.
     ],
   };
 }

@@ -19,7 +19,7 @@ function bedTypeChipText(security: Security | undefined): string {
   return security === undefined ? "Bed type not recorded" : `${securityWord(security)} bed`;
 }
 import Link from "next/link";
-import { BedDouble, Check, Clock, Copy, Eye, FileText, Scale } from "lucide-react";
+import { BedSingle, Check, Clock, Copy, Eye, FileBadge, FileText } from "lucide-react";
 import { PatientFlightHeader } from "./patient-flight-header";
 import { absenceStepsFor } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
@@ -106,6 +106,8 @@ export type PatientNowSummaryProps = {
   glance?: JSX.Element;
   /** PT1: one of the five state tags, with the glyph tone. */
   stateTag?: { tag: string; tone: WfTone };
+  /** PT1 round 2: Record CTO beside New referral on a record with nothing open. */
+  recordCto?: { onClick: () => void; reason?: string };
 };
 
 export function PatientNowSummary(props: PatientNowSummaryProps) {
@@ -158,6 +160,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     where,
     glance,
     stateTag,
+    recordCto,
   } = props;
   // PT1: the state tag leads ("Inpatient"); the mode's own words follow when they say more
   // ("Inpatient · On leave"). One dark band for every state, Not active included.
@@ -381,12 +384,12 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               </span>
               {isConstantObservation(liveMovement.observation) ? (
                 <span className={styles.v6HeroFact}>
-                  <Eye size={14} aria-hidden="true" />
+                  <Eye size={14} strokeWidth={1.75} aria-hidden="true" />
                   {observationSummary(liveMovement.observation)}
                 </span>
               ) : null}
               <span className={styles.v6HeroFact}>
-                <BedDouble size={14} aria-hidden="true" />
+                <BedSingle size={14} strokeWidth={1.75} aria-hidden="true" />
                 {bedTypeChipText(liveMovement.security)}
               </span>
               {movementTimeLeft ? (
@@ -394,7 +397,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                   {movementTimeLeft.standing !== "later" ? (
                     <StatusGlyph tone={movementTimeLeft.tone} size={9} />
                   ) : (
-                    <Scale size={14} aria-hidden="true" />
+                    <FileBadge size={14} strokeWidth={1.75} aria-hidden="true" />
                   )}
                   {movementTimeLeft.code} · <strong className={styles.v6HeroWait}>{movementTimeLeft.text}</strong>
                 </span>
@@ -404,13 +407,13 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             <span className={styles.v6HeroFacts}>
               {(mode === "leave" || mode === "awol" || mode === "ed") && (
                 <span className={styles.v6HeroFact}>
-                  <BedDouble size={14} aria-hidden="true" />
+                  <BedSingle size={14} strokeWidth={1.75} aria-hidden="true" />
                   Bed held
                 </span>
               )}
               {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
                 <span className={styles.v6HeroFact}>
-                  <Clock size={14} aria-hidden="true" />
+                  <Clock size={14} strokeWidth={1.75} aria-hidden="true" />
                   <strong className={styles.v6HeroWait}>
                     {dur(Math.max(0, now - stayLeaveBed.absentWithoutLeave.since))}
                   </strong>
@@ -572,9 +575,22 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 className={buttonClass({ variant: "light", size: "sm" })}
                 data-testid="ward-person-refer-outpatient"
               >
-                <FileText size={14} aria-hidden="true" />
+                <FileText size={14} strokeWidth={1.75} aria-hidden="true" />
                 New referral
               </Link>
+            ) : null}
+            {mode === "idle" && recordCto ? (
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={FileBadge}
+                onClick={recordCto.onClick}
+                disabledReason={recordCto.reason}
+                reasonDisplay="tooltip"
+                data-testid="ward-person-record-cto"
+              >
+                Record CTO
+              </Button>
             ) : null}
           </>
         }
