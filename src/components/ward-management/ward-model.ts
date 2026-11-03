@@ -910,6 +910,13 @@ export type Movement = MovementBase & {
    * deadlock destination pulls or cause accidental deletion of active stays on referral withdrawal.
    */
   sourceAdmissionId?: string;
+  /**
+   * The occupied sending stay resolved from a ward-source referral when its destination bed was
+   * pulled. A stable care link only: unlike `sourceAdmissionId`, this does not change an ED-raised
+   * journey's origin or sender permissions. Released active pulls may resolve their source again;
+   * a closed movement retains the link as history.
+   */
+  referralSourceAdmissionId?: string;
   /** The CURRENT psychiatric examination a Form 1A refers the person for. Until it happens you
    *  often do not know whether an authorised bed is needed at all. Superseded by a later
    *  examination only when this one's outcome is `"further_examination_ordered"` — see

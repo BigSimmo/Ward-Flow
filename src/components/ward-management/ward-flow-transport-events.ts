@@ -406,7 +406,7 @@ export function reduceTransportEvent(
         (movement.admissionId ? findAdmission(state, movement.admissionId)?.patientId : undefined);
       const source = movementSourceAdmission(state, movement);
       if (
-        (movement.sourceAdmissionId && !source) ||
+        ((movement.sourceAdmissionId != null || movement.referralSourceAdmissionId !== undefined) && !source) ||
         (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === unit.id))
       ) {
         return reject(

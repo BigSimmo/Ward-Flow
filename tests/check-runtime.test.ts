@@ -1,13 +1,37 @@
 import { existsSync, readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
 
 import { describe, expect, it } from "vitest";
 
 import packageJson from "../package.json";
 import { NODE_MINIMUM_VERSION, checkNodeRuntime, checkNpmRuntime } from "../scripts/check-runtime";
 
+function preinstallResult(version: string) {
+  const source = readFileSync(new URL("../scripts/check-node-engine.cjs", import.meta.url), "utf8");
+  const diagnostics: string[] = [];
+  const stopped = new Error("preinstall exited");
+  let status = 0;
+  try {
+    runInNewContext(source, {
+      process: {
+        versions: { node: version },
+        env: { npm_config_user_agent: "npm/11.17.0" },
+        exit(code: number) {
+          status = code;
+          throw stopped;
+        },
+      },
+      console: { error: (message: string) => diagnostics.push(message) },
+    });
+  } catch (error) {
+    if (error !== stopped) throw error;
+  }
+  return { status, diagnostics };
+}
+
 describe("runtime release gate", () => {
   it("accepts the Node 24 release target", () => {
-    expect(checkNodeRuntime("24.15.0")).toMatchObject({
+    expect(checkNodeRuntime("24.22.1")).toMatchObject({
       ok: true,
       expectedMajor: 24,
     });
@@ -24,14 +48,45 @@ describe("runtime release gate", () => {
     const result = checkNodeRuntime("24.13.0");
     expect(result.ok).toBe(false);
     expect(result.message).toContain(NODE_MINIMUM_VERSION);
-    expect(result.message).toContain("Claude Code remote");
-    expect(result.message).toContain("export PATH=");
+    expect(result.message).toContain(".nvmrc");
+    expect(result.message).toContain(".node-version");
+    expect(result.message).toContain("version manager");
+    expect(result.message).toContain("node --version");
     expect(result.message).toContain("current shell");
   });
 
   it("accepts runtimes at or above the floor", () => {
     expect(checkNodeRuntime(NODE_MINIMUM_VERSION)).toMatchObject({ ok: true });
-    expect(checkNodeRuntime("24.19.0")).toMatchObject({ ok: true });
+    expect(checkNodeRuntime("24.23.0")).toMatchObject({ ok: true });
+  });
+
+  it.each([
+    ["24.19.0", false],
+    ["24.22.0", false],
+    ["24.22.1-rc.1", false],
+    ["24.x.1", false],
+    ["24.22.1", true],
+    ["24.23.0", true],
+    ["25.0.0", false],
+  ] as const)("enforces the patched release range for Node %s at install and verification", (version, ok) => {
+    const verification = checkNodeRuntime(version);
+    const installed = preinstallResult(version);
+    expect(verification.ok).toBe(ok);
+    expect(installed.status).toBe(ok ? 0 : 1);
+    if (ok) expect(installed.diagnostics).toEqual([]);
+    else expect(installed.diagnostics.join("\n")).toContain(packageJson.engines.node);
+  });
+
+  it("keeps locked root runtime metadata equal to the package declaration", () => {
+    const lockfile = JSON.parse(readFileSync(new URL("../package-lock.json", import.meta.url), "utf8"));
+    expect(lockfile.packages[""].engines).toEqual(packageJson.engines);
+  });
+
+  it("keeps both local runtime selectors within the patched release range", () => {
+    for (const relative of [".nvmrc", ".node-version"]) {
+      const version = readFileSync(new URL(`../${relative}`, import.meta.url), "utf8").trim();
+      expect(checkNodeRuntime(version).ok, relative).toBe(true);
+    }
   });
 
   it("keeps the floor equal to the package.json engines.node declaration", () => {

@@ -10,17 +10,53 @@ import { createServer } from "node:net";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
+import { parse } from "parse5";
 
 const PHONE_UA =
   "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36";
+const JAVASCRIPT_TYPES = new Set([
+  "application/ecmascript",
+  "application/javascript",
+  "application/x-ecmascript",
+  "application/x-javascript",
+  "text/ecmascript",
+  "text/javascript",
+  "text/javascript1.0",
+  "text/javascript1.1",
+  "text/javascript1.2",
+  "text/javascript1.3",
+  "text/javascript1.4",
+  "text/javascript1.5",
+  "text/jscript",
+  "text/livescript",
+  "text/x-ecmascript",
+  "text/x-javascript",
+]);
+
+function fetchWithDeadline(url, options, startupSignal) {
+  const deadline = AbortSignal.timeout(10_000);
+  return fetch(url, { ...options, signal: startupSignal ? AbortSignal.any([deadline, startupSignal]) : deadline });
+}
 
 export function scriptSources(html) {
   const sources = [];
-  for (const match of html.matchAll(/<script\b[^>]*?\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>/gi)) {
+  const pending = [parse(html)];
+  while (pending.length) {
+    const node = pending.pop();
+    const children = node.childNodes ?? [];
+    for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]);
+    if (node.tagName !== "script" || node.namespaceURI !== "http://www.w3.org/1999/xhtml") continue;
+    const attributes = new Map(node.attrs.map(({ name, value }) => [name, value]));
+    const type = attributes.has("type")
+      ? attributes.get("type").trim().toLowerCase()
+      : attributes.get("language")?.trim()
+        ? `text/${attributes.get("language").trim().toLowerCase()}`
+        : "";
+    if (type !== "module" && type !== "" && !JAVASCRIPT_TYPES.has(type)) continue;
     // A `nomodule` script runs only in browsers without ES modules (Next's polyfills). Modern phones
     // never download it, so counting it overstated every route by about 39 KB until 24 October 2026.
-    if (/\snomodule(?:[\s=>]|$)/i.test(match[0])) continue;
-    const src = (match[1] ?? match[2] ?? match[3]).replace(/&amp;|&#38;|&#x26;/gi, "&");
+    if (type !== "module" && attributes.has("nomodule")) continue;
+    const src = attributes.get("src") ?? "";
     if (!src.startsWith("/_next/static/")) continue;
     const url = new URL(src, "http://local.invalid");
     // Fragments do not change the fetched resource; count and deduplicate its actual request URL.
@@ -81,9 +117,10 @@ function freePort() {
 }
 
 async function waitForServer(base, attempts = 60) {
-  for (let i = 0; i < attempts; i += 1) {
+  const startupSignal = AbortSignal.timeout(30_000);
+  for (let i = 0; i < attempts && !startupSignal.aborted; i += 1) {
     try {
-      const response = await fetch(base, { redirect: "manual" });
+      const response = await fetchWithDeadline(base, { redirect: "manual" }, startupSignal);
       if (response.status > 0) return;
     } catch {
       // not listening yet
@@ -103,14 +140,14 @@ export const LEGACY_MOVEMENT_REDIRECT = Object.freeze({
 
 export async function routeKb(base, route) {
   const options = { headers: { "user-agent": PHONE_UA }, redirect: "manual" };
-  let response = await fetch(base + route, options);
+  let response = await fetchWithDeadline(base + route, options);
   if ((response.status === 307 || response.status === 308) && route === LEGACY_MOVEMENT_REDIRECT.route) {
     const location = response.headers.get("location");
     const destination = location && new URL(location, base + route);
     if (!destination || destination.href !== `${base}${LEGACY_MOVEMENT_REDIRECT.destination}`) {
       throw new Error(`${route}: unexpected redirect destination`);
     }
-    response = await fetch(destination, options);
+    response = await fetchWithDeadline(destination, options);
   }
   if (!response.ok) throw new Error(`${route} answered ${response.status}`);
   if (!/^text\/html(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "")) {
@@ -120,7 +157,7 @@ export async function routeKb(base, route) {
   if (sources.length === 0) throw new Error(`${route}: no Next static scripts found`);
   let bytes = 0;
   for (const src of sources) {
-    const script = await fetch(base + src, { redirect: "manual" });
+    const script = await fetchWithDeadline(base + src, { redirect: "manual" });
     if (!script.ok) throw new Error(`${route}: ${src} answered ${script.status}, so its size cannot be counted`);
     if (!/^(?:text|application)\/(?:javascript|ecmascript)(?:\s*;|$)/i.test(script.headers.get("content-type") ?? "")) {
       throw new Error(`${route}: ${src} did not return JavaScript`);

@@ -1249,6 +1249,7 @@ export function reduceRecordedFactEvent(
         acceptedAt: undefined,
         heldBedNumber: undefined,
         admissionId: undefined,
+        referralSourceAdmissionId: undefined,
         pullExpiresAt: undefined,
         referredUnitIds: [],
         waitlistedUnitIds: undefined,
