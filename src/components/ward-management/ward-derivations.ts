@@ -1337,7 +1337,7 @@ export function deriveNextWardsAfterRefusal(
       !(WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(decline.reason),
   );
   if (refusals.length === 0 || movement.acceptedUnitId !== undefined) return undefined;
-  const latestDecline = refusals.reduce((latest, decline) => (decline.at > latest.at ? decline : latest));
+  const latestDecline = refusals.reduce((latest, decline) => (decline.at >= latest.at ? decline : latest));
   const asked = new Set([...movement.declines.map((decline) => decline.unitId), ...movement.referredUnitIds]);
   const notAsked = units.filter((unit) => !asked.has(unit.id));
   return { latestDecline, candidates: eligibleWardsInFixedOrder(movement, notAsked, now) };

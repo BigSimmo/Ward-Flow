@@ -70,4 +70,5 @@ const REGISTRATION_FIELDS: ReadonlySet<string> = new Set([
   "suburb",
   "addedAt",
   "registrationScope",
+  "aboriginalOrTorresStraitIslanderStatus",
 ]);

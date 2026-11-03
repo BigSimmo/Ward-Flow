@@ -1,12 +1,13 @@
 import { DELAY_CAUSE_COPY, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
-import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
   MOVEMENT_STAGES,
   REFERRAL_ADDRESSING_STATES,
   BED_RELEASE_STATES,
 } from "@/components/ward-management/ward-model";
 import type { BedRelease, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import { readyBedsNow } from "../ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 
 /**
@@ -62,8 +63,8 @@ export type LastLookWorld = {
   movements: readonly Movement[];
   units: readonly Unit[];
   bedReleases: readonly BedRelease[];
-  /** Read for "discharge date moved" only. Optional so hand-built worlds need not supply it. */
-  admissions?: readonly LastLookAdmission[];
+  /** Live bed counts and discharge-date changes. Optional for worlds without admissions. */
+  admissions?: readonly Admission[];
 };
 
 type LastLookAdmission = Pick<Admission, "id" | "unitId" | "state" | "dischargeDateMoves" | "dischargeDateSetAt">;
@@ -153,7 +154,7 @@ export function takeLastLookSnapshot(
   const open = world.movements.filter(isOpen);
   const readyByUnit: Record<string, number> = {};
   for (const unit of world.units) {
-    readyByUnit[unit.id] = unitCapacity(unit, [...world.bedReleases]).available;
+    readyByUnit[unit.id] = readyBedsNow(unit, world.admissions ?? [], world.bedReleases);
   }
   const delayKeys: string[] = [];
   for (const group of delayGroups(open, [...world.units], now, thresholds)) {
