@@ -84,11 +84,13 @@ describe("Transport desk redesign", () => {
     expect(route.textContent).not.toMatch(/ from /);
   });
 
-  it("says one thing in the Forms cell: 'N forms missing' or 'All forms'", () => {
+  // Deep audit (4 Nov 2026): the cell names the gap that blocks the next step, or a quiet count.
+  it("says one thing in the Forms cell: the blocking form, 'N to upload' or 'All forms'", () => {
     renderDesk();
     const list = screen.getByTestId("ward-officer-joblist");
     const text = list.textContent ?? "";
-    expect(text).toMatch(/\d forms? missing|All forms/);
+    expect(text).toMatch(/Form 4A before collection|\d to upload|All forms/);
+    expect(text).not.toMatch(/forms? missing/);
     expect(text).not.toMatch(/\d of 3(?! forms recorded)/);
   });
 

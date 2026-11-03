@@ -834,7 +834,7 @@ export function OfficerScreen() {
     </div>
   );
 
-  const panelOpen = (selectedJob !== undefined && selectedJob.transport !== undefined) || bookingMovement !== undefined;
+  const panelOpen = selectedJob?.transport !== undefined || (isPhone && bookingMovement !== undefined);
   const anyJobEta = jobs.some((movement) => expectedArrival(movement) !== undefined);
   // Site review 12 Oct 2026: a column that says the same thing on every row ("0 of 3" thirteen
   // times) says nothing; the hero's "Jobs need forms" and the job sheet still carry the count.
@@ -1241,14 +1241,14 @@ export function OfficerScreen() {
                                         />
                                       ))}
                                     </span>
-                                    {/* Redesign: one text beside the dots, naming its noun; "of 4" is in the title. */}
+                                    {/* Deep audit (4 Nov 2026): name only the gap that blocks the next step. */}
                                     {forms === PACK_SLOTS.length ? (
                                       <span data-complete="true">All forms</span>
+                                    ) : movement.transport?.collectedAt === undefined &&
+                                      collectionGaps(movement).includes("transport_order_missing") ? (
+                                      <span className={styles.formsMissing}>Form 4A before collection</span>
                                     ) : (
-                                      <span className={styles.formsMissing}>
-                                        {PACK_SLOTS.length - forms} {PACK_SLOTS.length - forms === 1 ? "form" : "forms"}{" "}
-                                        missing
-                                      </span>
+                                      <span className={styles.formsQuiet}>{PACK_SLOTS.length - forms} to upload</span>
                                     )}
                                   </span>
                                 )}
