@@ -9,6 +9,7 @@ _Ward Flow is a prototype on synthetic data. Not for real patients._
 
 ## Earlier announcements retained on 3 November 2026
 
+- 2026-10-31 (2026-10-31-redesign-records): Waiting, Alerts, Legal forms, Patients, Movements and the patient record have a new look for each desk.
 - 2026-10-31 (2026-10-31-redesign-referrals): Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot.
 
 ## 21 to 24 October 2026
