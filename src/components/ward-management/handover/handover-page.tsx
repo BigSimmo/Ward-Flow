@@ -47,6 +47,7 @@ import {
   PortraitList,
   PortraitRail,
   Segmented,
+  Count,
   StatusGlyph,
   TabPanel,
   Tabs,
@@ -103,13 +104,7 @@ import {
 } from "./handover-model";
 import { HandoverFlowPanel, HandoverSignOffPanel, HandoverSiteSignOffSlot } from "./handover-panels";
 import { handoverSignOffChecks, sheetSignOff } from "./handover-sign-off-checks";
-import {
-  HandoverKeysHelp,
-  HandoverMeetingTimer,
-  ShowMoreRow,
-  SignOffBar,
-  signOffWaitReason,
-} from "./handover-sheet-parts";
+import { HandoverKeysHelp, HandoverMeetingTimer, ShowMoreRow, signOffWaitReason } from "./handover-sheet-parts";
 import * as desk from "./handover-desk";
 import { HandoverBeds } from "./handover-beds";
 import { LongStaySummary } from "./long-stay-summary";
@@ -282,7 +277,6 @@ export function HandoverPage() {
   const [singleKeyShortcutsEnabled, setSingleKeyShortcutsEnabled] = useCharacterShortcutsPreference();
   const shortcutScopeRef = useRef<HTMLElement | null>(null);
   const keysTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const signBarRef = useRef<HTMLElement | null>(null);
   const signOffRef = useRef<HTMLDivElement | null>(null);
 
   useDirtyStateGuard({ isDirty: meetingStartedAt !== null });
@@ -938,17 +932,29 @@ export function HandoverPage() {
   );
 
   const shiftClock = formatInstantWithDay(shiftAt, now);
-  // The sign-off block at the foot of the Patients tab; an ED desk does not sign off.
-  const signBarShown = tab === "pts" && !sheetOpen && !edDesk;
+  /*
+   * Sign off lives in one fixed place, the hero, on every tab (Josh, 3 Nov 2026: the bar over the
+   * list and then the block at its foot were replaced). It carries the check count and opens the
+   * checklist drawer, where the checks are reviewed and Sign off is the one filled button.
+   */
+  const checksDone = signChecks.filter((check) => check.done).length;
   const signOffButton = (
     <Button
       variant="light"
       size="sm"
       icon={StatusCheckIcon(signedAt !== null)}
       onClick={showSignOff}
+      aria-label={signedAt !== null ? undefined : `Sign off, ${checksDone} of ${signChecks.length} checks clear`}
       data-testid="ward-handover-hero-sign-off"
     >
-      {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
+      {signedAt !== null ? (
+        `Signed ${formatInstantWithDay(signedAt, now)}`
+      ) : (
+        <>
+          Sign off
+          <Count n={`${checksDone}/${signChecks.length}`} className={styles.heroSignCount} />
+        </>
+      )}
     </Button>
   );
   /*
@@ -1010,7 +1016,7 @@ export function HandoverPage() {
           >
             {meetingStartedAt !== null ? <HandoverMeetingTimer startedAt={meetingStartedAt} /> : "Start meeting"}
           </Button>
-          {tab === "pts" || edDesk ? null : signOffButton}
+          {edDesk ? null : signOffButton}
         </>
       }
       foot={
@@ -1028,19 +1034,6 @@ export function HandoverPage() {
           }}
           sinceAt={newSince}
           sinceLine={sinceLine}
-          checks={
-            signBarShown
-              ? {
-                  done: signChecks.filter((check) => check.done).length,
-                  total: signChecks.length,
-                  onJump: () => {
-                    const block = signBarRef.current;
-                    block?.scrollIntoView?.({ block: "nearest" });
-                    block?.focus({ preventScroll: true });
-                  },
-                }
-              : null
-          }
           signOffNote={
             edDesk
               ? signedAt !== null
@@ -1389,7 +1382,6 @@ export function HandoverPage() {
     );
   } else if (portrait) {
     const signedLine = signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : null;
-    const checksDone = signChecks.filter((check) => check.done).length;
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
         <div className={styles.portraitTools}>
@@ -1445,19 +1437,6 @@ export function HandoverPage() {
     );
   }
 
-  // One Sign off on screen: the bar shows only when the rail's own panel is not beside the table.
-  const signBar = signBarShown ? (
-    <SignOffBar
-      ref={signBarRef}
-      title={`${shiftClock} handover`}
-      checks={signChecks}
-      signedLine={signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : null}
-      cannotSignReason={canSignOff ? undefined : cannotSignReason}
-      onSignOff={handleSignOff}
-      onOpenPanel={showSignOff}
-    />
-  ) : null;
-
   return (
     <main
       ref={shortcutScopeRef}
@@ -1472,7 +1451,6 @@ export function HandoverPage() {
       {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} layout="page" />}
       {sheetOpen ? null : toolbar}
       {body}
-      {signBar}
       {!portrait ? (
         <Drawer
           open={drawerOpen && (wide ? (flowPanel ?? signOffPanel) : signOffPanel) !== null}

@@ -184,9 +184,7 @@ describe("handover output evidence boundaries", () => {
     fireEvent.click(screen.getByRole("button", { name: "Print or save PDF" }));
     expect(print).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole("button", { name: "Back to handover" }));
-    fireEvent.click(
-      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
-    );
+    fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
 
     expect(screen.getByTestId("ward-handover-sign-off-checks")).toHaveTextContent("Copy prepared for printing");
     expect(screen.getByTestId("ward-handover-sign-off-checks")).not.toHaveTextContent("Printed copy taken");
