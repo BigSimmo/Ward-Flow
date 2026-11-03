@@ -243,13 +243,12 @@ test("Community referral: a community team refers from its own desk, the ward it
   await homeRow.getByRole("button", { name: /^Open referral for /u }).click();
   const placement = page.getByTestId(`ward-referral-placement-${referralId}`);
   await expect(placement).toBeVisible();
-  await expect(placement).toContainText(PERSON.umrn);
+  // H7 (Josh, 3 Nov 2026): Referral placement is the patient drawer; its head carries the UMRN.
+  await expect(page.getByRole("complementary", { name: "Referral placement", exact: true })).toContainText(PERSON.umrn);
   await expectAccessible(page, testInfo, "coordinator referral placement");
-  // On a phone the panel is a bottom sheet over the page; close it, as a coordinator would.
-  if (isPhoneLayout(page)) {
-    await page.getByRole("button", { name: "Close shortlist and clear selection" }).click();
-    await expect(placement).toHaveCount(0);
-  }
+  // The drawer sits over the page on every screen size; close it, as a coordinator would.
+  await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+  await expect(placement).toHaveCount(0);
 
   // --- The Referral board: queued, no transport asked for, and the asked ward accepts it. ---
   await goViaNav(page, "/ward-flow/referrals", "ward-referral-board-screen");

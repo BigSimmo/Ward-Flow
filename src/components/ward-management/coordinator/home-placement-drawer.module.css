@@ -100,34 +100,50 @@
 }
 
 /* The foot: the panel's next step or Refer arrives in `.slot`, drawn for the navy band. */
+/* Pinned to the drawer's foot while the body scrolls above it. */
 .foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: auto;
   gap: var(--wf-s-2);
+  padding-bottom: max(var(--wf-s-4), env(safe-area-inset-bottom, 0px));
 }
 
-.slot:empty {
+.foot .slot:empty {
   display: none;
 }
 
-.slot {
+.foot .slot {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-2);
 }
 
-/* The next step's words are already the alert line; in the band only its buttons stay. */
-.slot section {
+/* In the band only the next step's buttons stay when an alert is shown, because the alert line
+   already says what to do. A patient opened from a list row keeps the words. */
+.foot .slot section {
   display: contents;
 }
 
-.slot section > h4,
-.slot section > p {
+.foot[data-has-alert] .slot section > h4,
+.foot[data-has-alert] .slot section > p {
   display: none;
 }
 
+.foot .slot section > h4,
+.foot .slot section > p {
+  margin: 0;
+  color: var(--wf-hero-ink);
+}
+
 /* The Refer toolbar's "To …" summary reads on the band in hero ink. */
-.slot footer {
+.foot .slot footer {
+  position: static;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
+  flex-wrap: nowrap;
   gap: var(--wf-s-2);
   margin: 0;
   padding: 0;
@@ -136,25 +152,32 @@
   color: var(--wf-hero-ink);
 }
 
-.slot footer p,
-.slot footer span {
+/* The toolbar's own children grow to a full row; in the band's column they keep their height. */
+.foot .slot footer > * {
+  flex: 0 0 auto;
+}
+
+.foot .slot footer p,
+.foot .slot footer span,
+.foot .slot footer label,
+.foot .slot footer legend {
   color: var(--wf-hero-ink);
 }
 
-.slot footer p {
+.foot .slot footer p {
   margin: 0;
   font-size: var(--wf-fs-12);
 }
 
-.slot > section > div,
-.slot footer > div {
+.foot .slot > section > div,
+.foot .slot footer > div {
   display: flex;
   gap: var(--wf-s-2);
   margin: 0;
   padding: 0;
 }
 
-.slot :is(a, button) {
+.foot .slot :is(a, button) {
   flex: 1 1 auto;
   min-height: 40px;
   justify-content: center;
@@ -165,12 +188,13 @@
   box-shadow: none;
 }
 
-.slot :is(a, button):hover:not([aria-disabled="true"]) {
+.foot .slot :is(a, button):hover:not([aria-disabled="true"]) {
   background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
 }
 
 /* The one primary in the band: Move or release, Pull the bed, Book transport, Refer, Decide. */
-.slot
+.foot
+  .slot
   :is(
     [data-testid="ward-shortlist-move-or-release"],
     [data-testid="ward-shortlist-hold-bed"],
@@ -184,24 +208,26 @@
   border-color: var(--wf-pri-edge);
 }
 
-.slot [aria-disabled="true"] {
+.foot .slot [aria-disabled="true"] {
   opacity: 0.6;
 }
 
-.slot :is(a, button):focus-visible {
+.foot .slot :is(a, button):focus-visible {
   outline: 2px solid var(--wf-hero-ink);
   outline-offset: 2px;
 }
 
-/* The drawer's head already names the patient and states the facts and legal line. */
-.task > div > header > div:first-child,
-.task :global([data-testid="ward-shortlist-facts"]) {
+/* The drawer's head already names the patient; the placement facts below it stay. */
+.task > div > header > div:first-child {
   display: none;
 }
 
-/* The drawer body's named region (tests and journeys find Placement by it); it adds no box. */
+/* The drawer body's named region (tests and journeys find Placement by it). It fills the body so
+   the foot band can sit at the bottom when the content is short. */
 .region {
-  display: contents;
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
 }
 
 /* A service is chosen, but the shortlist still weighs every ward in the network. */

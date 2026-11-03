@@ -300,7 +300,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // covers the Registers toggle. A coordinator closes it first; so does this journey. Closing
     // clears the selection, so the last step below — selecting WF-005 again from the phone drawer
     // — now proves the drawer itself selects, rather than leaning on the leftover selection.
-    await page.getByRole("button", { name: "Close shortlist and clear selection" }).click();
+    await page.getByRole("button", { name: "Close placement and clear selection" }).click();
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
     await expect(homeFlowCard(page)).toBeVisible();
     // Task A: the toggle only exists below 48rem now — restored exactly at the width the diagram

@@ -106,7 +106,7 @@ export function HomePlacementDrawer({
   const title = referral ? "Referral placement" : movement ? "Placement" : "Alert";
 
   const footer = (
-    <div className={`${d.footBand} ${p.foot}`}>
+    <div className={`${d.footBand} ${p.foot}`} data-has-alert={entry ? "" : undefined}>
       <div ref={setSlot} className={p.slot} data-testid="home-placement-foot" />
       {/* An alert with no patient journey acts on its own page, its one primary in the band. */}
       {entry && !movement && entry.action.kind === "link" ? (
@@ -150,8 +150,6 @@ export function HomePlacementDrawer({
       placement="responsive-right"
       contentClassName={`${d.panel} ${p.panel}`}
       bodyClassName={d.body}
-      footer={footer}
-      footerClassName={d.footer}
       testId="home-placement-drawer"
     >
       <aside
@@ -223,6 +221,9 @@ export function HomePlacementDrawer({
             </div>
           </>
         ) : null}
+        {/* The foot band sits inside the region and sticks to the drawer's foot, so Placement (and
+            every journey that reads it) holds its actions as well as its body. */}
+        {footer}
       </aside>
     </Sheet>
   );

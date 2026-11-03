@@ -161,12 +161,10 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await shortlist.getByRole("button", { name: "Record override" }).click();
   await expect(shortlist).toContainText("Parallel referral:");
   await expectNoReloadSince(page, "offering the ward");
-  // On a phone Placement is a bottom sheet over the page and its header; close it, as a
-  // coordinator would, before going to the ward.
-  if (isPhoneLayout(page)) {
-    await page.getByRole("button", { name: "Close shortlist and clear selection" }).click();
-    await expect(shortlist).toHaveCount(0);
-  }
+  // Placement is the patient drawer over the page on every screen size (H7, Josh 3 Nov 2026);
+  // close it, as a coordinator would, before going to the ward.
+  await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+  await expect(shortlist).toHaveCount(0);
 
   // The ward accepts and pulls the patient into a bed.
   const unitName = unitById(unitId)?.name;
