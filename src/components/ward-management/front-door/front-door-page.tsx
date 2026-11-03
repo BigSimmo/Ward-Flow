@@ -149,7 +149,8 @@ function DemoCodeDoor({ next }: { next: string }) {
             )}
           </button>
           <SessionNote>
-            A code opens the demo in this browser for {DEMO_PASS_HOURS} hours. Changes reset when you reload.
+            A code opens the demo in this browser for {DEMO_PASS_HOURS} hours. Changes are kept in this tab when you
+            reload. Typed text is not kept.
           </SessionNote>
         </form>
       </div>

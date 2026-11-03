@@ -516,6 +516,15 @@ describe("D-30 coordinator-only transfer acceptance", () => {
     expect(wardAttempt.auditEvents.at(-1)).toMatchObject({ outcome: "denied", reasonCode: "role" });
     expect(wardAttempt.admissions.find((a) => a.id === admission.id)?.careJourney?.transfer).toBeUndefined();
 
+    // Acceptance now preflights linkage; keep this role test on a valid placement.
+    const movement = state.movements.find(
+      (m) => m.cohort === state.units.find((u) => u.id === admission.unitId)?.cohort,
+    )!;
+    movement.admissionId = admission.id;
+    movement.patientId = admission.patientId!;
+    movement.stage = "arrived";
+    movement.acceptedUnitId = admission.unitId;
+    admission.movementId = movement.id;
     const coordinatorAttempt = wardFlowReducer(state, command(state, admission.id, accept));
     expect(coordinatorAttempt.rejections).toEqual([]);
     expect(coordinatorAttempt.admissions.find((a) => a.id === admission.id)?.careJourney?.transfer?.step).toBe(

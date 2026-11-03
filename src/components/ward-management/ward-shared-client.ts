@@ -187,9 +187,9 @@ export class SharedWorkspaceClient {
     current();
     if (!response.ok) throw new Error("Receipt unavailable");
     const outcome = value.receipt?.outcome;
-    if (outcome !== "accepted" && outcome !== "refused" && value.receipt !== null) throw new Error("Invalid receipt");
+    if (value.receipt !== null && !["accepted", "partly", "refused"].includes(outcome)) throw new Error("Bad receipt");
     if (
-      outcome === "accepted" &&
+      (outcome === "accepted" || outcome === "partly") &&
       Number.isSafeInteger(value.receipt.commandRevision) &&
       value.receipt.commandRevision > (this.view.snapshot?.revision ?? 0)
     ) {
@@ -208,8 +208,8 @@ export class SharedWorkspaceClient {
       status: "ready",
       recovering: false,
       recovery:
-        outcome === "accepted"
-          ? "The previous uncertain save was accepted. Review the refreshed board before acting again."
+        outcome === "accepted" || outcome === "partly"
+          ? `The previous uncertain save was ${outcome === "partly" ? "partially applied" : "accepted"}. Review the refreshed board before acting again.`
           : outcome === "refused"
             ? `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`
             : "No retained receipt was found for the previous uncertain save. Its outcome is unknown. Review the board before repeating any action.",

@@ -37,6 +37,7 @@ const CHOICE_LABELS: Readonly<Record<string, string>> = {
   accepted: "Accepted",
   handover: "Handed over",
   arrived: "Arrived",
+  cancelled: "Cancelled",
   revocation: "Revocation",
 };
 const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
@@ -453,11 +454,15 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                   </label>
                   <Choice
                     label="Transfer step"
-                    values={actor.role === "coordinator" ? ["accepted", "handover", "arrived"] : ["handover"]}
+                    values={
+                      actor.role === "coordinator" ? ["accepted", "handover", "arrived", "cancelled"] : ["handover"]
+                    }
                   />
                   <p>
                     Acceptance and handover precede arrival. Only the central bed coordinator accepts a transfer and
-                    records arrival, checking suitability and moving both wards’ occupancy in one transaction.
+                    records arrival, checking suitability and moving both wards’ occupancy in one transaction. To change
+                    destination before arrival, record Cancelled for the current receiving ward, then record a new
+                    acceptance. A linked placement record is required before acceptance or handover.
                   </p>
                 </>,
                 (d) => save({ kind: "transfer", receivingUnitId: d.get("ward"), step: d.get("Transfer step") }),

@@ -238,8 +238,22 @@ export function reduceProtectedRecordEvent(
     )
       return deny("scope");
     // D-30: only the central bed coordinator accepts an inter-ward transfer.
-    if (event.change.kind === "transfer" && event.change.step === "accepted" && event.role !== "coordinator")
+    if (
+      event.change.kind === "transfer" &&
+      ["accepted", "cancelled"].includes(event.change.step) &&
+      event.role !== "coordinator"
+    )
       return deny("role");
+    if (
+      event.change.kind === "transfer" &&
+      ["accepted", "handover"].includes(event.change.step) &&
+      !dischargeMovement(state, admission)
+    )
+      return deny(
+        "transition",
+        "denied",
+        "Create a linked placement record through a ward referral or agreed repatriation before recording this transfer.",
+      );
     const refusal = careChangeRefusal(admission, event.change, event.now);
     if (refusal) return deny("transition", "denied", refusal);
     if (event.change.kind === "transfer" && !uniqueRecord(state.units, event.change.receivingUnitId))

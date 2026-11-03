@@ -139,9 +139,9 @@ describe("D-30 transfer acceptance controls", () => {
       .getAllByRole("option")
       .map((o) => o.getAttribute("value"))
       .filter(Boolean);
-  it("offers the coordinator acceptance, handover and arrival", () => {
+  it("offers the coordinator acceptance, handover, arrival and cancellation", () => {
     start("coordinator");
-    expect(stepOptions()).toEqual(["accepted", "handover", "arrived"]);
+    expect(stepOptions()).toEqual(["accepted", "handover", "arrived", "cancelled"]);
   });
   it("does not offer a ward user transfer acceptance", () => {
     start("ward");
