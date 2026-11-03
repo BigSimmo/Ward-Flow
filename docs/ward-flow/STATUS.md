@@ -174,7 +174,8 @@ As recorded in project notes on 24 October 2026; not re-verified against provide
 - In Supabase, turn off "Allow new users to sign up", so only invited test accounts can register.
 - Choose the Sentry organisation for server error reporting (PR #686).
 - Turn on Remote Control on his computer for the backup-restore drill and the hosted two-person run.
-- Test sign-ins: new test passwords, and a hosted sign-in renewal check. Checked 3 Nov 2026: nothing in the database expires near 16 November (test roles run to 31 January 2027, sign-in sessions have no time limit), and the hosted database already has migrations 1 to 16 (13 applied 25 October).
+- Test sign-ins: new test passwords, and a hosted sign-in renewal check (Q390, 3 Nov 2026: no deadline; sign in with a test account in the morning and make one save after lunch without signing in again). Checked 3 Nov 2026: test roles run to 31 January 2027, sign-in sessions have no time limit, and the hosted database already has migrations 1 to 16 (13 applied 25 October).
+- In Supabase, turn off the Ward Flow organisation's AI SQL, log and data options (Q391, yes 3 Nov 2026).
 - Set limits on who can grant administrator access.
 - Name the privacy officer and the clinical safety owner.
 - Decide the D-71 names question.
