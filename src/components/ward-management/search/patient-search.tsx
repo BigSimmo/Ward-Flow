@@ -610,6 +610,7 @@ export function PatientSearchPage() {
     setActiveKpiFacet("all");
     setDob("");
     setDobOn(false);
+    setPatientState("all");
   };
 
   // The counts beside each stage and department match the same way the table does, name included.
@@ -851,9 +852,13 @@ export function PatientSearchPage() {
   const copyRow = (row: CensusRow) => copyText(`${censusLine(row)} (synthetic)`, "Summary copied");
   const copyList = () => {
     const chip = CENSUS_HIGHLIGHTS.find((entry) => entry.id === highlight);
+    // PS1: copy what the state switch shows. Everyone keeps the old open-flow list (no ward or
+    // Not active rows); a chosen state copies its own rows.
     const list = chip
-      ? visibleRows.filter(chip.test)
-      : visibleRows.filter((row) => row.group !== "ward" && row.group !== "off");
+      ? stateRows.filter(chip.test)
+      : patientState === "all"
+        ? stateRows.filter((row) => row.group !== "ward" && row.group !== "off")
+        : stateRows;
     copyText(
       [`Patients at ${formatInstant(now)} (synthetic)`, ...list.map((row) => `- ${censusLine(row)}`)].join("\n"),
       `${list.length} ${list.length === 1 ? "row" : "rows"} copied`,
