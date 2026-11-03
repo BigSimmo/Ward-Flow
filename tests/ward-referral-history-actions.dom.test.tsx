@@ -102,6 +102,17 @@ describe("Recently decided row actions (RQ7)", () => {
     expect(pullControl(pullId, "-card")).toBeNull();
   });
 
+  it("offers Pull bed again, not the old journey, after a journey that did not proceed", () => {
+    const closed = {
+      id: "MV-SYNTH-RQ7-DNP",
+      referralId: pullId,
+      closure: { outcome: "did_not_proceed" },
+    } as unknown as Movement;
+    renderDecided({ onPull: vi.fn(), movements: [closed] });
+    expect(screen.queryByTestId(`ward-referral-board-decided-movement-${pullId}`)).toBeNull();
+    expect(pullControl(pullId)).toHaveTextContent("Pull bed");
+  });
+
   it("narrows the list to beds still to pull with the Bed to pull filter", () => {
     renderDecided({ onPull: vi.fn() });
     const cards = screen.getByTestId("ward-referral-board-decided-cards");

@@ -55,6 +55,15 @@ describe("Referral sheet tabs (RQ9)", () => {
     expect(referralSentToVisible({ role: "community", scope: { kind: "team", teamName: "Team B" } }, fromTeam)).toBe(
       false,
     );
+    // The sender rule's team normalisation applies, so a short desk spelling still counts as the sender.
+    const fromLongName = {
+      source: "community" as const,
+      originSiteCode: "X",
+      sendingTeamName: "Midland Community Team",
+    };
+    expect(
+      referralSentToVisible({ role: "community", scope: { kind: "team", teamName: "Midland" } }, fromLongName),
+    ).toBe(true);
     const fromWard = { source: "psychiatric_ward" as const, originSiteCode: "X", originUnitId: "u1" };
     expect(referralSentToVisible({ role: "ward", scope: { kind: "ward", unitIds: ["u1"] } }, fromWard)).toBe(true);
   });

@@ -56,10 +56,11 @@ function closeWaits() {
   return [5, 6, 7, 8].map((minutes, index) => fake(`RF-GROUP-${index}`, NOW_ANCHOR - minutes));
 }
 
-function renderRunway(onSelect = vi.fn()) {
+function renderRunway(onSelect = vi.fn(), compact = false) {
   vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(600);
   render(
     <WaitRunway
+      compact={compact}
       queued={closeWaits()}
       now={NOW_ANCHOR}
       selectedId={undefined}
@@ -96,6 +97,15 @@ describe("WaitRunway group marker", () => {
     }
     fireEvent.click(within(card).getByRole("button", { name: /Name RF-GROUP-2/u }));
     expect(onSelect).toHaveBeenCalledWith("RF-GROUP-2");
+  });
+
+  it("keeps the card inside the chart in the phone sheet, so the sheet's focus trap and inert scope include it", () => {
+    const onSelect = renderRunway(vi.fn(), true);
+    fireEvent.click(screen.getByTestId("ward-referral-runway-group-RF-GROUP-0"));
+    const card = screen.getByTestId("ward-referral-runway-card");
+    expect(screen.getByTestId("ward-referral-runway")).toContainElement(card);
+    fireEvent.click(within(card).getByRole("button", { name: /Name RF-GROUP-1/u }));
+    expect(onSelect).toHaveBeenCalledWith("RF-GROUP-1");
   });
 
   it("closes the card on Escape", () => {

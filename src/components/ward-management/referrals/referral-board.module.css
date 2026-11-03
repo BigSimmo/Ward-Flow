@@ -2137,3 +2137,16 @@ button.runwayCardRow:focus-visible {
   text-align: right;
   white-space: nowrap;
 }
+
+/* RQ6 phone sheet: the card sits in the chart's own track, under the marker, inside the sheet. */
+.runwayCardInline {
+  position: absolute;
+  top: calc(100% + var(--wf-s-2));
+  right: 0;
+  left: 0;
+  z-index: 2;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  transform: none;
+}

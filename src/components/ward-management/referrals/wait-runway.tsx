@@ -168,6 +168,75 @@ export function WaitRunway({
     const overdue = isOverdue(entry.referral, now);
     return `${nameOf(entry.referral)}, tier ${entry.referral.urgency}, waiting ${durMinutes(entry.minutes)}${overdue ? ", overdue" : ""}`;
   };
+  const card =
+    shown && anchor ? (
+      <div
+        ref={cardRef}
+        id={cardId}
+        role={shown.entries.length > 1 ? "region" : "tooltip"}
+        aria-label={shown.entries.length > 1 ? `${shown.entries.length} referrals at this wait` : undefined}
+        className={cx(
+          styles.runwayCard,
+          compact && styles.runwayCardInline,
+          !compact && anchor.left < 190 && styles.runwayCardStart,
+          !compact && typeof window !== "undefined" && anchor.left > window.innerWidth - 190 && styles.runwayCardEnd,
+        )}
+        style={compact ? undefined : { left: anchor.left, top: anchor.top }}
+        data-testid="ward-referral-runway-card"
+        onMouseEnter={() => window.clearTimeout(leaveTimer.current)}
+        onMouseLeave={hideSoon}
+      >
+        {shown.entries.length > 1 ? (
+          <p className={styles.runwayCardHead}>
+            <b>{shown.entries.length} referrals</b> at about this wait
+          </p>
+        ) : null}
+        <ul>
+          {[...shown.entries]
+            .sort((a, b) => b.minutes - a.minutes)
+            .map((entry) => {
+              const f = facts(entry.referral);
+              const umrn = umrnOf?.(entry.referral);
+              const body = (
+                <>
+                  <span className={styles.runwayCardTier}>T{entry.referral.urgency}</span>
+                  <span className={styles.runwayCardMain}>
+                    <b>{nameOf(entry.referral)}</b>
+                    {umrn ? <span className={styles.runwayCardMono}>{umrn}</span> : null}
+                    <span>
+                      {f.site} · {f.asking}
+                    </span>
+                  </span>
+                  <span className={cx(styles.runwayCardWait, f.overdue && styles.runwayCardOver)}>
+                    <b className={styles.runwayCardMono}>{f.waited}</b>
+                    <span>{f.due}</span>
+                  </span>
+                </>
+              );
+              return (
+                <li key={entry.referral.id}>
+                  {shown.entries.length > 1 ? (
+                    <button
+                      type="button"
+                      className={styles.runwayCardRow}
+                      aria-pressed={selectedId === entry.referral.id}
+                      onClick={() => {
+                        setPinned(null);
+                        setPeek(null);
+                        onSelect(entry.referral.id);
+                      }}
+                    >
+                      {body}
+                    </button>
+                  ) : (
+                    <div className={styles.runwayCardRow}>{body}</div>
+                  )}
+                </li>
+              );
+            })}
+        </ul>
+      </div>
+    ) : null;
   return (
     <div
       ref={rootRef}
@@ -250,73 +319,15 @@ export function WaitRunway({
           );
         })}
         {shown && anchor ? (
-          <OverlayPortal layer="popover" name="referral-runway-card">
-            <div
-              ref={cardRef}
-              id={cardId}
-              role={shown.entries.length > 1 ? "region" : "tooltip"}
-              aria-label={shown.entries.length > 1 ? `${shown.entries.length} referrals at this wait` : undefined}
-              className={cx(
-                styles.runwayCard,
-                anchor.left < 190 && styles.runwayCardStart,
-                typeof window !== "undefined" && anchor.left > window.innerWidth - 190 && styles.runwayCardEnd,
-              )}
-              style={{ left: anchor.left, top: anchor.top }}
-              data-testid="ward-referral-runway-card"
-              onMouseEnter={() => window.clearTimeout(leaveTimer.current)}
-              onMouseLeave={hideSoon}
-            >
-              {shown.entries.length > 1 ? (
-                <p className={styles.runwayCardHead}>
-                  <b>{shown.entries.length} referrals</b> at about this wait
-                </p>
-              ) : null}
-              <ul>
-                {[...shown.entries]
-                  .sort((a, b) => b.minutes - a.minutes)
-                  .map((entry) => {
-                    const f = facts(entry.referral);
-                    const umrn = umrnOf?.(entry.referral);
-                    const body = (
-                      <>
-                        <span className={styles.runwayCardTier}>T{entry.referral.urgency}</span>
-                        <span className={styles.runwayCardMain}>
-                          <b>{nameOf(entry.referral)}</b>
-                          {umrn ? <span className={styles.runwayCardMono}>{umrn}</span> : null}
-                          <span>
-                            {f.site} · {f.asking}
-                          </span>
-                        </span>
-                        <span className={cx(styles.runwayCardWait, f.overdue && styles.runwayCardOver)}>
-                          <b className={styles.runwayCardMono}>{f.waited}</b>
-                          <span>{f.due}</span>
-                        </span>
-                      </>
-                    );
-                    return (
-                      <li key={entry.referral.id}>
-                        {shown.entries.length > 1 ? (
-                          <button
-                            type="button"
-                            className={styles.runwayCardRow}
-                            aria-pressed={selectedId === entry.referral.id}
-                            onClick={() => {
-                              setPinned(null);
-                              setPeek(null);
-                              onSelect(entry.referral.id);
-                            }}
-                          >
-                            {body}
-                          </button>
-                        ) : (
-                          <div className={styles.runwayCardRow}>{body}</div>
-                        )}
-                      </li>
-                    );
-                  })}
-              </ul>
-            </div>
-          </OverlayPortal>
+          // In the phone sheet the card stays inside the sheet, so its rows are live and in the
+          // sheet's Tab cycle; a portal there would land under the modal layer and be inerted.
+          compact ? (
+            card
+          ) : (
+            <OverlayPortal layer="popover" name="referral-runway-card">
+              {card}
+            </OverlayPortal>
+          )
         ) : null}
       </div>
       <div className={styles.runwayAxis} aria-hidden="true">

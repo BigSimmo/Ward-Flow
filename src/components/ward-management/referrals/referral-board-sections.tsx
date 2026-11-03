@@ -866,7 +866,8 @@ function DecidedRowActions({
     undoRoleRefusal(record, undoRole, actingUnitId) === null;
   const movement =
     movements.find((item) => item.referralId === referral.id && item.closure === undefined) ??
-    movements.find((item) => item.referralId === referral.id);
+    // A journey that did not proceed is no next step; the referral is back on the pull list instead.
+    movements.find((item) => item.referralId === referral.id && item.closure?.outcome !== "did_not_proceed");
   // Any other accepted ward bed with no bed held yet: the same link the decide panel gives, to the
   // accepting ward's bed board, where the bed is held.
   const accepted = acceptedAddressing(referral);

@@ -91,7 +91,7 @@ export function ReferralSummarySheet({
 }) {
   const { dayZero, units } = useWardFlowSelect("dayZero", "units");
   const access = useEffectiveWardAccess();
-  const sentVisible = referralSentToVisible(access, referral);
+  const sentVisible = referralSentToVisible(access, referral, units);
   const [chosen, setChosen] = useState<ReferralSheetTab>(initialTab);
   // A tab the desk may not see is never shown, even if asked for.
   const tab: ReferralSheetTab = chosen === "sent" && !sentVisible ? "summary" : chosen;
