@@ -114,14 +114,28 @@ describe("the settings screen", () => {
   });
 
   // Audit settings-27: "workstation" finds the desk switcher, and choosing it opens the desk drawer.
-  // Settings by login (31 Oct 2026): the row reads "Switch login (demo)"; the drawer keeps its name.
-  it("finds Switch login (demo) by the old word and opens the desk drawer", () => {
+  // Settings by role (3 Nov 2026): the row reads "Try another desk (demo)"; the drawer keeps its name.
+  // The profile card no longer has a Switch login button: desk switching lives in the account menu.
+  it("finds Try another desk (demo) by the old word and opens the desk drawer", () => {
     renderSettings();
     fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
       target: { value: "workstation" },
     });
-    fireEvent.click(screen.getByRole("option", { name: /Switch login \(demo\)/ }));
+    expect(screen.queryByTestId("ward-settings-switch-login")).toBeNull();
+    fireEvent.click(screen.getByRole("option", { name: /Try another desk \(demo\)/ }));
     expect(screen.getByRole("dialog", { name: "Go to a desk" })).toBeInTheDocument();
+  });
+
+  // Settings by role (3 Nov 2026, stress test): Help, the tour and the glossary left Settings, so Find
+  // answers those words with Open Help rather than "No setting matches".
+  it("answers help, tour and glossary in Find a setting with Open Help", () => {
+    for (const query of ["help", "tour", "glossary"]) {
+      const ids = findRedesignSettings(query, ["rules", "alerts", "display", "you", "demo"], 7, true).map((e) => e.id);
+      expect(ids, query).toContain("open-help");
+    }
+    expect(findRedesignSettings("diagnostics", ["display", "you", "demo"]).map((e) => e.label)).toContain(
+      "Copy details for a bug report",
+    );
   });
 
   // Settings by login (31 Oct 2026): a Find a setting result that lands on no row highlights and
@@ -132,15 +146,20 @@ describe("the settings screen", () => {
     const targets = new Set(
       Array.from(main.querySelectorAll<HTMLElement>("[data-setting]")).map((el) => el.dataset.setting),
     );
-    const sections = ["rules", "device", "you", "help", "demo"] as const;
+    // Settings by role (Josh, 3 Nov 2026, ST1): the coordinator's sections on the demo site.
+    const sections = ["rules", "alerts", "display", "you", "demo"] as const;
     const offered = new Map<string, string>();
     // Today's names, and the names the rows had before (Find still knows them as keywords or labels).
     const queries = [...SETTINGS_SEARCH_ENTRIES.map((entry) => entry.label), "you", "warning", "rules", "demo"];
     for (const query of queries) {
-      for (const found of findRedesignSettings(query, sections, 99)) offered.set(found.id, found.label);
+      for (const found of findRedesignSettings(query, sections, 99, true)) offered.set(found.id, found.label);
     }
     for (const id of ["early-warning", "final-warning", "role"]) expect(offered.has(id), id).toBe(true);
-    expect([...offered].filter(([id]) => !targets.has(id))).toEqual([]);
+    // Try another desk (demo) is an action, not a row: choosing it opens the desk drawer (the case above).
+    // Open Help is one too: Help moved out of Settings, and Find sends someone who looks for it there.
+    expect(offered.has("go-to-desk")).toBe(true);
+    const actions = new Set(["go-to-desk", "open-help"]);
+    expect([...offered].filter(([id]) => !actions.has(id) && !targets.has(id))).toEqual([]);
   });
 
   it("finding Fixed defaults opens the Data tab with that reference panel showing", () => {

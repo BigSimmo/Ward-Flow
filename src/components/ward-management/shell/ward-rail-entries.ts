@@ -7,7 +7,7 @@ import {
   type WardNavItem,
   type WardViewItem,
 } from "@/components/ward-management/ward-nav";
-import { BedDouble, type LucideIcon } from "lucide-react";
+import { BedSingle, type LucideIcon } from "lucide-react";
 
 import { wardTasksAreActionableForRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "@/components/ward-management/ward-nav-icons";
@@ -49,7 +49,6 @@ export const RAIL_GROUPS = [
       // shell-18 (Josh, 13 Oct 2026): one name per page, the same in Menu, header and h1.
       ["ed", "All EDs"],
       ["wards", "All wards"],
-      ["community", "Community"],
       ["officer", "Transport"],
     ],
   },
@@ -57,7 +56,6 @@ export const RAIL_GROUPS = [
     label: "Work",
     entries: [
       ["search", "Patients"],
-      ["referral-intake", "New referral"],
       ["referrals", "Referrals"],
       ["handover", "Handover"],
       ["discharges", "Discharges"],
@@ -72,11 +70,27 @@ export const RAIL_GROUPS = [
       ["out-of-area", "Out of area"],
       ["alerts", "Alerts"],
       ["on-call", "On-call"],
-      // D-72 (21 Oct 2026): seclusion, restraint and incidents, operational only.
-      ["seclusion", "Seclusion"],
     ],
   },
 ] as const;
+
+/**
+ * Pages that keep a rail entry for the rest of the app (Help's links, a desk's own menu) but sit in
+ * no sidebar group, so no desk's More lists them (Josh, 3 Nov 2026, "yes to all"):
+ * - Community: Places' Catchments tab holds the suburb lookup and the team list (PL1). Each team
+ *   page stays as the community desk's own "My team".
+ * - New referral: the top bar button, the phone + sheet and Tools open it (RF8). "Referrals" stays
+ *   the decision queue.
+ * - Seclusion: live episodes sit in Forms, Seclusion and restraint; finished ones in Governance (FS3).
+ */
+const OUT_OF_GROUPS = [
+  ["community", "Community"],
+  ["referral-intake", "New referral"],
+  ["seclusion", "Seclusion"],
+] as const;
+
+/** The ids of the pages above, which no desk's More lists. */
+export const OUT_OF_SIDEBAR_IDS: ReadonlySet<string> = new Set(OUT_OF_GROUPS.map(([id]) => id));
 
 /**
  * B1 (Josh, 19 Oct 2026): each role's own short menu, in order. Everything else stays one tap away
@@ -145,11 +159,9 @@ const ROLE_MENU_DEFINITIONS: Record<WardChromeRole, RoleMenuDefinition> = {
       "command",
       "ed",
       "hub",
-      "community",
       "officer",
       "discharges",
       "search",
-      "referral-intake",
       "governance",
       "statistics",
       "out-of-area",
@@ -159,7 +171,6 @@ const ROLE_MENU_DEFINITIONS: Record<WardChromeRole, RoleMenuDefinition> = {
     main: [
       ["ed", "My ED board"],
       ["referrals", "My referrals"],
-      ["referral-intake", "New referral"],
       [BED_FINDER_MENU_ID, "Find a bed"],
     ],
     // An ED is waiting on other people: where its patients have got to and what holds them up come
@@ -171,7 +182,6 @@ const ROLE_MENU_DEFINITIONS: Record<WardChromeRole, RoleMenuDefinition> = {
       "command",
       "wards",
       "hub",
-      "community",
       "officer",
       "search",
       "handover",
@@ -193,7 +203,6 @@ const ROLE_MENU_DEFINITIONS: Record<WardChromeRole, RoleMenuDefinition> = {
     main: [
       ["community", "My team"],
       ["referrals", "Referrals"],
-      ["referral-intake", "New referral"],
     ],
     moreFirst: [],
   },
@@ -269,7 +278,7 @@ function deskRoleMenu(entries: readonly RailEntry[], role: WardChromeRole): Role
   const { main: mainItems, moreFirst } = ROLE_MENU_DEFINITIONS[role];
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const main: RoleMenuItemEntry[] = mainItems.flatMap(([id, label]): RoleMenuItemEntry[] => {
-    if (id === BED_FINDER_MENU_ID) return [{ kind: "bed-finder", id: BED_FINDER_MENU_ID, label, icon: BedDouble }];
+    if (id === BED_FINDER_MENU_ID) return [{ kind: "bed-finder", id: BED_FINDER_MENU_ID, label, icon: BedSingle }];
     const entry = byId.get(id);
     return entry ? [{ ...entry, label }] : [];
   });
@@ -310,12 +319,14 @@ export function railEntries(flagOn: (flag: WardFeatureFlag | undefined) => boole
   // The rail's Emergency entry opens the statewide ED index rather than the `ed` nav entry's one
   // example department, the same way Wards opens All wards rather than one ward.
   const hrefOverride: Record<string, string> = { ed: WARD_ED_HREF };
-  return RAIL_GROUPS.flatMap((group) =>
-    group.entries.flatMap(([id, label]) => {
-      const entry = registry.get(id)!;
-      return flagOn(entry.flag) ? [{ ...entry, label, href: hrefOverride[id] ?? entry.href }] : [];
-    }),
-  );
+  const listed: readonly (readonly [id: string, label: string])[] = [
+    ...RAIL_GROUPS.flatMap((group): readonly (readonly [string, string])[] => group.entries),
+    ...OUT_OF_GROUPS,
+  ];
+  return listed.flatMap(([id, label]) => {
+    const entry = registry.get(id)!;
+    return flagOn(entry.flag) ? [{ ...entry, label, href: hrefOverride[id] ?? entry.href }] : [];
+  });
 }
 
 function normalizePath(p: string): string {
@@ -328,6 +339,13 @@ const ACTIVE_BEYOND_HREF: Record<string, (norm: string, entryHref: string) => bo
   wards: (norm) => new RegExp(`^${WARD_HOME_HREF}/(ward|board)/`).test(norm),
   ed: (norm) => norm === WARD_ED_HREF || norm.startsWith(edHref("")),
   community: (norm, entryHref) => norm.startsWith(`${entryHref}/`),
+  // PL1 (Josh, 3 Nov 2026): Community left the sidebar for Places' Catchments tab, so its index and
+  // team pages light Places. The community desk's own "My team" lights them too; Places sits under
+  // its More, so the desk's own item is the one it sees.
+  hub: (norm, entryHref) =>
+    norm.startsWith(`${entryHref}/`) ||
+    norm === `${WARD_HOME_HREF}/community` ||
+    norm.startsWith(`${WARD_HOME_HREF}/community/`),
   movements: (norm, entryHref) => norm.startsWith(`${entryHref}/`),
   statistics: (norm, entryHref) => norm.startsWith(`${entryHref}/`),
   search: (norm) => norm.startsWith(patientHref("")),

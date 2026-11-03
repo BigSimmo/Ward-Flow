@@ -3,7 +3,7 @@
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
-import { AlarmClock, ChevronRight, Clock, X } from "lucide-react";
+import { AlarmClock } from "lucide-react";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import {
@@ -60,7 +60,6 @@ import {
   escalationAppliesTo,
   effectiveOwner,
   isQueueItem,
-  copiedAge,
   admissionIdOfInboxId,
   raisedAt,
   resolveAlertSubject,
@@ -86,13 +85,33 @@ import { todayMarks } from "./alerts-today-marks";
 import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
-import { alertsHistory } from "./alerts-history";
-import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
+import { useAlertsHistory } from "./alerts-history";
+import { AlertsHero, type HeroPill } from "./alerts-hero";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
 import { AlertsSidePanelEmpty, CheckingList, ChecksCard, ChecksChip, ownWardName } from "./alerts-checking";
-import { AlertsEarlierPanel, AlertsLiveBroadcasts, AlertsNoticesGroup, useDueReminderCount } from "./alerts-tab-panels";
+import {
+  AlertsBroadcastsPanel,
+  AlertsClearedPanel,
+  AlertsLiveBroadcasts,
+  AlertsNoticesGroup,
+  useDueReminderCount,
+} from "./alerts-tab-panels";
+import {
+  AlertsViewTabs,
+  FeedbackLine,
+  FilteredEmpty,
+  HighlightNote,
+  OpenFilters,
+  TodayPhoneCard,
+  handoverText,
+  useAlertsHashTab,
+  useOpenFilter,
+  type AlertsTab,
+} from "./alerts-log-filters";
+import { useForecastAlerts } from "@/components/ward-management/forecast/use-forecast-model";
+import log from "./alerts-log.module.css";
 import { BroadcastComposer } from "./broadcast-composer";
 import { QUICK_STARTS } from "./broadcast-audience";
 import { liveBedCallFor, useBroadcastAudience } from "./use-broadcast-audience";
@@ -101,16 +120,11 @@ import { ForecastAlertsGroup } from "@/components/ward-management/forecast/forec
 import styles from "./alerts.module.css";
 import parts from "./alerts-screen-parts.module.css";
 import {
-  Button,
-  Count,
   Card,
   Drawer,
   PhoneSheet,
-  PillTabs,
-  SrOnly,
   StatusGlyph,
   TabPanel,
-  Tabs,
   useIsPhone,
   type WfTone,
   useIsTabletPortrait,
@@ -247,20 +261,21 @@ function AlertsWorkspace() {
     [allInbox, inboxSnoozes, now],
   );
   const feedNotices = useMemo(() => [...notices].sort((a, b) => b.raisedAt - a.raisedAt), [notices]);
-  // Q181: unread notices sit in Now; read ones in Earlier today.
+  // Q181, AL2: unread notices sit in Open; read ones in Cleared.
   const unreadNotices = feedNotices.filter((notice) => notice.readAt === undefined);
   const readNotices = feedNotices.filter((notice) => notice.readAt !== undefined);
   // Where this desk is, in words, for the hero eyebrow and the empty state.
   const deskPlace = accessPlaceLabel(access, units);
-  // Q181: the live broadcast sits at the top of Now; the hero's broadcast line and Today open it.
+  // AL2: the live broadcast sits at the top of Broadcasts; the hero's broadcast line and Today open it.
   function openLiveBroadcast() {
-    setTab("now");
+    setTab("broadcasts");
     window.requestAnimationFrame(() =>
       document.getElementById("alerts-live-broadcast")?.scrollIntoView({ block: "nearest" }),
     );
   }
 
   const [tab, setTab] = useState<AlertsTab>("now");
+  useAlertsHashTab(setTab);
   const [arrangeBy, setArrangeBy] = useState<ArrangeBy>("urgency");
   const [pill, setPill] = useState<HeroPill | null>(null);
   const [ownerHighlight, setOwnerHighlight] = useState<string | null>(null);
@@ -364,7 +379,7 @@ function AlertsWorkspace() {
       if (draft.audience) setBroadcastAudience(draft.audience);
       setBroadcastModalOpen(true);
     },
-    [setBroadcastAudience],
+    [setBroadcastAudience, setBroadcastTitle, setBroadcastMessage, setBroadcastSeverity, setBroadcastDurationMinutes],
   );
   const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({
     key: "alerts-broadcast-directive",
@@ -554,6 +569,19 @@ function AlertsWorkspace() {
   const namedOwners = access.role === "officer" ? [] : owners.filter(Boolean);
   // Nurse in charge: a quiet ward gets one line, not two empty groups and a sort rule over nothing.
   const quietWard = wardName !== undefined && allEntries.length === 0;
+  // AL2: the Open view's filters, each counted as its group's heading counts it.
+  const forecastDesk = access.role === "coordinator" || access.role === "bed_manager";
+  const forecastCount = useForecastAlerts(now).length;
+  const dueReminders = useDueReminderCount(now);
+  const lens = useOpenFilter(quietWard, {
+    act: actCount,
+    wait: waitEntries.length,
+    forecast: forecastDesk ? forecastCount : undefined,
+    reminders: dueReminders,
+    notices: unreadNotices.length,
+    snoozed: snoozedEntries.length,
+    yours: coordDesk ? yoursCount : undefined,
+  });
 
   // "Next alert": act now before waiting, yours first, unacknowledged only, oldest first.
   const nextQueue = useMemo(() => {
@@ -577,7 +605,7 @@ function AlertsWorkspace() {
       if (slideOver) setSheetOpen(true);
       if (options.release) setReleaseRequest((count) => count + 1);
     },
-    [slideOver],
+    [slideOver, setSheetOpen],
   );
 
   // Change 7 (D-77): `?alert=<id>&release=1` chooses the alert and focuses its release reason. Read
@@ -605,6 +633,7 @@ function AlertsWorkspace() {
     const index = selected ? nextQueue.findIndex((entry) => entry.item.id === selected.item.id) : -1;
     const next = nextQueue[(index + 1) % nextQueue.length]!;
     setTab("now");
+    lens.setFilter("all");
     select(next);
     const row = document.querySelector<HTMLElement>(`[data-alert-id="${CSS.escape(next.item.id)}"]`);
     row?.scrollIntoView?.({ block: "nearest" });
@@ -714,35 +743,19 @@ function AlertsWorkspace() {
   const checks = alertChecks({ allInbox, openMovements, referrals, movements, now });
 
   // ---- History: what this session recorded, newest first ----
-  const history = useMemo(
-    () =>
-      alertsHistory({
-        inboxAcknowledgements,
-        inboxOwnership,
-        inboxSnoozes,
-        eventLog: state.eventLog,
-        broadcastAlerts,
-        movements,
-        umrnLookup,
-        units,
-        plannedAdmissions,
-        admissions,
-        now,
-      }),
-    [
-      inboxAcknowledgements,
-      inboxOwnership,
-      inboxSnoozes,
-      state.eventLog,
-      broadcastAlerts,
-      movements,
-      umrnLookup,
-      units,
-      plannedAdmissions,
-      admissions,
-      now,
-    ],
-  );
+  const history = useAlertsHistory({
+    inboxAcknowledgements,
+    inboxOwnership,
+    inboxSnoozes,
+    eventLog: state.eventLog,
+    broadcastAlerts,
+    movements,
+    umrnLookup,
+    units,
+    plannedAdmissions,
+    admissions,
+    now,
+  });
 
   // ---- Broadcast ----
   const handleSelectTemplate = (tmplId: string) => {
@@ -788,7 +801,7 @@ function AlertsWorkspace() {
       scope: targetScope,
       scopeLabel: targetScopeLabel,
     });
-    // The new directive shows at the top of Now, where it can be stood down (Q181).
+    // The new directive shows at the top of Broadcasts, where it can be stood down (Q181, AL2).
     openLiveBroadcast();
     dispatch({
       type: "DISPATCH_BROADCAST_ALERT",
@@ -857,22 +870,15 @@ function AlertsWorkspace() {
   const handleCopy = () => {
     setBroadcastRequest(null);
     setActionRequest(null);
-    const line = (entry: QueueEntry) =>
-      `- ${entry.item.title}. ${entry.subject.displayName}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${copiedAge(entry.item, entry.raised, now)}`;
-    const sections: [string, QueueEntry[]][] = [
-      ["Act now", actEntries],
-      ["Waiting", waitEntries],
-      ["Snoozed", snoozedEntries],
-    ];
-    const text = [
-      `Alerts at ${formatInstantWithDay(now, now)} (synthetic data)`,
-      ...sections.flatMap(([label, list]) => (list.length > 0 ? [`${label} ${list.length}`, ...list.map(line)] : [])),
-      activeBroadcast
-        ? `Broadcast live: ${activeBroadcast.title}, ends ${formatInstantWithDay(activeBroadcast.expiresAt, now)}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    const text = handoverText(
+      [
+        ["Act now", actEntries],
+        ["Waiting", waitEntries],
+        ["Snoozed", snoozedEntries],
+      ],
+      activeBroadcast,
+      now,
+    );
     copyTextToClipboard(text).then(
       () => setBroadcastSuccessNotice(`Copied ${allEntries.length} alerts for handover.`),
       () => setBroadcastSuccessNotice("Copy was blocked by the browser."),
@@ -978,31 +984,46 @@ function AlertsWorkspace() {
   const urgencyLabels = ["Act now", "Waiting", "Targets running"] as const;
   // Safety rule 4: a snoozed act-now alert stays listed in Act now, with its return time.
   const snoozedAct = snoozedEntries.filter((entry) => entry.group === "act");
-  const actListed = [...actEntries, ...snoozedAct];
-  const urgencyLinked = groupLinkedAlerts([actListed, waitEntries, runningEntries]);
+  // AL2: under a filter each group keeps only its matching rows, and a group left empty is not drawn.
+  const filtered = lens.filter !== "all";
+  const actListed = lens.pick([...actEntries, ...snoozedAct]);
+  const [waitShown, runningShown, snoozedShown] = [waitEntries, runningEntries, snoozedEntries].map(lens.pick);
+  const pullShown = lens.shows("act") ? toPull.length : 0;
+  const actHead = lens.filter === "yours" ? actListed.filter((entry) => !entry.snooze).length + pullShown : actCount;
+  const showsGroup = (key: string, count: number) => lens.shows(key) && (!filtered || count > 0);
+  const filteredNothing =
+    filtered &&
+    actListed.length + pullShown + waitShown.length + runningShown.length + snoozedShown.length === 0 &&
+    (!lens.shows("forecast") || forecastCount === 0) &&
+    (!lens.shows("reminders") || dueReminders === 0) &&
+    (!lens.shows("notices") || unreadNotices.length === 0);
+  const urgencyLinked = groupLinkedAlerts([actListed, waitShown, runningShown]);
   const urgencyLink = (section: number) => ({
     items: urgencyLinked.sections[section] ?? [],
     shownEarlier: urgencyLinked.shownEarlier[section] ?? 0,
     sectionLabels: urgencyLabels,
   });
   // Q179 no: two groups; one line only when both are empty and none of your reminders is due.
-  const nothingNow = actListed.length + toPull.length + waitEntries.length + useDueReminderCount(now) === 0;
+  const nothingNow =
+    !filtered && actEntries.length + snoozedAct.length + toPull.length + waitEntries.length + dueReminders === 0;
   const urgencyView = quietWard ? (
     nothingNeedsYou
   ) : (
     <>
       {nothingNow
         ? nothingNeedsYou
-        : groupSection(
-            "act",
-            "Act now",
-            actListed,
-            <GroupHead tone="danger" label="Act now" count={actCount} aside="needs a person now" />,
-            "Nothing to act on now.",
-            urgencyLink(0),
-            pullRows,
-          )}
-      {access.role === "coordinator" || access.role === "bed_manager" ? (
+        : showsGroup("act", actListed.length + pullShown)
+          ? groupSection(
+              "act",
+              "Act now",
+              actListed,
+              <GroupHead tone="danger" label="Act now" count={actHead} aside="needs a person now" />,
+              "Nothing to act on now.",
+              urgencyLink(0),
+              pullRows,
+            )
+          : null}
+      {forecastDesk && lens.shows("forecast") ? (
         <ForecastAlertsGroup
           now={now}
           className={styles.group}
@@ -1010,40 +1031,40 @@ function AlertsWorkspace() {
           head={(count) => <GroupHead tone="warning" label="Forecast" count={count} />}
         />
       ) : null}
-      {nothingNow
+      {nothingNow || !showsGroup("wait", waitShown.length)
         ? null
         : groupSection(
             "wait",
             "Waiting",
-            waitEntries,
-            <GroupHead tone="warning" label="Waiting" count={waitEntries.length} aside="oldest first" />,
+            waitShown,
+            <GroupHead tone="warning" label="Waiting" count={waitShown.length} aside="oldest first" />,
             "Nothing is waiting on a transport leg or a planned arrival.",
             urgencyLink(1),
           )}
-      {runningEntries.length > 0
+      {runningShown.length > 0 && lens.shows("running")
         ? groupSection(
             "running",
             "Targets running",
-            runningEntries,
+            runningShown,
             <GroupHead
               tone="neutral"
               label="Targets running"
-              count={runningEntries.length}
+              count={runningShown.length}
               aside="listed, not counted"
             />,
             undefined,
             urgencyLink(2),
           )
         : null}
-      {snoozedEntries.length > 0
+      {snoozedShown.length > 0 && lens.shows("snoozed")
         ? groupSection(
             "snoozed",
             "Snoozed",
-            snoozedEntries,
+            snoozedShown,
             <GroupHead
               icon={<AlarmClock size={14} aria-hidden="true" />}
               label="Snoozed"
-              count={snoozedEntries.length}
+              count={snoozedShown.length}
               aside="back when due"
             />,
           )
@@ -1052,17 +1073,17 @@ function AlertsWorkspace() {
   );
   const laneLists: [string, string, WfTone, QueueEntry[]][] = [
     ["act", "Act now", "danger", actListed],
-    ["wait", "Waiting", "warning", [...waitEntries, ...runningEntries]],
-    ["snoozed", "Snoozed", "neutral", snoozedEntries],
+    ["wait", "Waiting", "warning", [...waitShown, ...runningShown]],
+    ["snoozed", "Snoozed", "neutral", snoozedShown],
   ];
   // Snoozed alerts are set aside on purpose, so only Act now and Waiting are grouped.
-  const laneLinked = groupLinkedAlerts([actListed, [...waitEntries, ...runningEntries]]);
+  const laneLinked = groupLinkedAlerts([actListed, [...waitShown, ...runningShown]]);
   const cardFor = (entry: QueueEntry) => (
     <AlertCard key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
   );
   // Lanes (Alerts redesign): the third lane holds Forecast, then Snoozed under it.
   const forecastLane =
-    access.role === "coordinator" || access.role === "bed_manager" ? (
+    forecastDesk && !filtered ? (
       <ForecastAlertsGroup
         now={now}
         readOnly={access.role === "bed_manager"}
@@ -1070,52 +1091,56 @@ function AlertsWorkspace() {
       />
     ) : null;
   const lanesView = (
-    <div className={styles.lanes}>
-      {laneLists.map(([key, label, tone, list], lane) => (
-        // Forecast sits above Snoozed in the third lane as its own region, never inside Snoozed.
-        <div key={key} className={styles.lane}>
-          {key === "snoozed" ? forecastLane : null}
-          <section
-            className={parts.laneSection}
-            aria-label={label}
-            data-testid={key === "snoozed" && list.length > 0 ? "ward-alerts-snoozed" : undefined}
-          >
-            <GroupHead
-              tone={tone}
-              label={label}
-              count={key === "act" ? actCount : list.length}
-              aside={key === "act" ? "most urgent first" : key === "wait" ? "oldest first" : undefined}
-            />
-            {key === "act" ? pullRows : null}
-            {list.length > 0 ? (
-              <>
-                <ul className={styles.cards}>
-                  {lane < 2
-                    ? linkedItems(laneLinked.sections[lane] ?? [], styles.cards, ["Act now", "Waiting"], cardFor)
-                    : list.map(cardFor)}
-                </ul>
-                {lane < 2 ? linkedNote(laneLinked.shownEarlier[lane] ?? 0) : null}
-              </>
-            ) : key === "act" && pullRows ? null : (
-              <p className={styles.groupEmpty}>
-                {key === "snoozed"
-                  ? "A snoozed alert waits here and returns at its time. A snoozed act-now alert also stays listed in Act now."
-                  : "None now"}
-              </p>
-            )}
-          </section>
-        </div>
-      ))}
+    <div className={filtered ? `${styles.lanes} ${log.lanesFiltered}` : styles.lanes}>
+      {laneLists.map(([key, label, tone, list], lane) =>
+        filtered && !showsGroup(key, list.length + (key === "act" ? pullShown : 0)) ? null : (
+          // Forecast sits above Snoozed in the third lane as its own region, never inside Snoozed.
+          <div key={key} className={styles.lane}>
+            {key === "snoozed" ? forecastLane : null}
+            <section
+              className={parts.laneSection}
+              aria-label={label}
+              data-testid={key === "snoozed" && list.length > 0 ? "ward-alerts-snoozed" : undefined}
+            >
+              <GroupHead
+                tone={tone}
+                label={label}
+                count={key === "act" ? actHead : list.length}
+                aside={key === "act" ? "most urgent first" : key === "wait" ? "oldest first" : undefined}
+              />
+              {key === "act" && pullShown > 0 ? pullRows : null}
+              {list.length > 0 ? (
+                <>
+                  <ul className={styles.cards}>
+                    {lane < 2
+                      ? linkedItems(laneLinked.sections[lane] ?? [], styles.cards, ["Act now", "Waiting"], cardFor)
+                      : list.map(cardFor)}
+                  </ul>
+                  {lane < 2 ? linkedNote(laneLinked.shownEarlier[lane] ?? 0) : null}
+                </>
+              ) : key === "act" && pullRows ? null : (
+                <p className={styles.groupEmpty}>
+                  {key === "snoozed"
+                    ? "A snoozed alert waits here and returns at its time. A snoozed act-now alert also stays listed in Act now."
+                    : "None now"}
+                </p>
+              )}
+            </section>
+          </div>
+        ),
+      )}
     </div>
   );
   const ownerView = owners.map((owner) => {
     // Safety rule 3: act now first inside each owner, then the rest in their recorded order.
-    const list = allEntries
-      .filter((entry) => entry.owner === owner)
+    const list = lens
+      .pick(allEntries.filter((entry) => entry.owner === owner))
       .sort((a, b) => (a.group === "act" ? 0 : 1) - (b.group === "act" ? 0 : 1));
     const yours = ownerShort(owner, coordDesk) === "You";
+    const pulls = yours ? pullShown : 0;
+    if (filtered && list.length + pulls === 0) return null;
     // A snoozed act-now alert stays listed but is not counted as act now (review on #1238).
-    const ownerAct = list.filter((e) => e.group === "act" && !e.snooze).length + (yours ? toPull.length : 0);
+    const ownerAct = list.filter((e) => e.group === "act" && !e.snooze).length + pulls;
     return groupSection(
       `owner-${owner}`,
       owner,
@@ -1124,15 +1149,16 @@ function AlertsWorkspace() {
         tone={ownerAct > 0 ? "danger" : undefined}
         icon={ownerAct > 0 ? undefined : <span aria-hidden="true" />}
         label={yours ? `You, ${owner}` : owner}
-        count={list.length + (yours ? toPull.length : 0)}
+        count={list.length + pulls}
         aside={ownerAct > 0 ? `${ownerAct} act now` : undefined}
       />,
       undefined,
       { items: groupLinkedAlerts([list]).sections[0] ?? [], shownEarlier: 0, sectionLabels: [owner] },
-      yours ? pullRows : undefined,
+      pulls > 0 ? pullRows : undefined,
     );
   });
-  const view: ArrangeBy = isPhone ? "urgency" : arrangeBy;
+  // Forecast, reminders and notices are not in Lanes or Owner, so their filters show the Urgency list.
+  const view: ArrangeBy = isPhone || ["forecast", "reminders", "notices"].includes(lens.filter) ? "urgency" : arrangeBy;
 
   const liveBroadcasts = (
     <AlertsLiveBroadcasts
@@ -1153,12 +1179,25 @@ function AlertsWorkspace() {
       }
     />
   );
-  const noticesGroup = <AlertsNoticesGroup notices={unreadNotices} now={now} umrnLookup={umrnLookup} />;
-  // Q181 (Josh, 1 Nov 2026): two views. Now counts what the headline counts; Earlier today has no count.
+  const noticesGroup = (
+    <AlertsNoticesGroup
+      notices={unreadNotices}
+      now={now}
+      umrnLookup={umrnLookup}
+      showReminders={lens.shows("reminders")}
+      showNotices={lens.shows("notices")}
+    />
+  );
+  // AL2 (Josh, 3 Nov 2026): Open counts what the headline counts; Cleared has no count; Broadcasts
+  // counts what is live, and shows only on a desk that has a broadcast or can send one.
+  const liveCount = livePullNows.length + (activeBroadcast ? 1 : 0);
+  const showBroadcasts = !broadcastDisabledReason || (broadcastAlerts ?? []).length > 0;
   const tabs = [
-    { id: "now" as const, label: "Now", count: outstanding },
-    { id: "earlier" as const, label: "Earlier today", count: 0 },
+    { id: "now" as const, label: "Open", count: outstanding },
+    { id: "earlier" as const, label: "Cleared", count: 0 },
+    ...(showBroadcasts ? [{ id: "broadcasts" as const, label: "Broadcasts", count: liveCount }] : []),
   ];
+  const shownTab: AlertsTab = tab === "broadcasts" && !showBroadcasts ? "now" : tab;
 
   // Audit 1 (CS-15, Josh 20 Oct): an alert shown because it is first in line, not because somebody
   // chose it, says so above its actions.
@@ -1271,88 +1310,40 @@ function AlertsWorkspace() {
         />
 
         {/* Feedback after a broadcast or an act on a row */}
-        {broadcastFeedback && (!broadcastRefused || !isBroadcastModalOpen) && (
-          <div
-            className={styles.feedbackLine}
-            role={feedbackRefused ? "alert" : "status"}
-            aria-label="Broadcast feedback"
-          >
-            <StatusGlyph tone={feedbackRefused ? "danger" : "success"} />
-            <span className={styles.feedbackText}>{broadcastFeedback}</span>
-            <Button
-              iconOnly
-              icon={X}
-              size="sm"
-              variant="ghost"
-              className={styles.btnSm}
-              onClick={() => {
-                if (broadcastAccepted) setBroadcastModalOpen(false);
-                setBroadcastRequest(null);
-                setActionRequest(null);
-                setBroadcastSuccessNotice(null);
-              }}
-              aria-label="Dismiss notice"
-            />
-          </div>
-        )}
+        {broadcastFeedback && (!broadcastRefused || !isBroadcastModalOpen) ? (
+          <FeedbackLine
+            refused={Boolean(feedbackRefused)}
+            text={broadcastFeedback}
+            onDismiss={() => {
+              if (broadcastAccepted) setBroadcastModalOpen(false);
+              setBroadcastRequest(null);
+              setActionRequest(null);
+              setBroadcastSuccessNotice(null);
+            }}
+          />
+        ) : null}
 
         <div className={styles.grid}>
           <div className={styles.column}>
             <Card as="section" className={styles.queueCard} aria-label="Alerts">
-              <div className={isPhone ? styles.tabsBar : `${styles.tabsBar} ${parts.tabsRow}`}>
-                {isPhone ? (
-                  // Phone (v10): the four views as pill tabs that stay under the header; a count shows when it is not zero.
-                  <PillTabs<AlertsTab>
-                    items={tabs.map((item) => (item.count ? item : { ...item, count: undefined }))}
-                    value={tab}
-                    onChange={setTab}
-                    label="Alerts views"
-                    idPrefix="alerts"
-                    fill
-                  />
-                ) : (
-                  <>
-                    {/* Alerts redesign: counts show only above zero, and the view switch shares the tab row. */}
-                    <Tabs
-                      items={tabs.map((item) => (item.count ? item : { ...item, count: undefined }))}
-                      value={tab}
-                      onChange={setTab}
-                      label="Alerts views"
-                      idPrefix="alerts"
-                    />
-                    {tab === "now" && wardName === undefined ? (
-                      <ArrangeSwitch value={arrangeBy} onChange={setArrangeBy} withOwner={namedOwners.length > 0} />
-                    ) : null}
-                  </>
-                )}
-              </div>
+              <AlertsViewTabs
+                isPhone={isPhone}
+                tabs={tabs}
+                value={shownTab}
+                onChange={setTab}
+                arrange={
+                  shownTab === "now" && wardName === undefined ? (
+                    <ArrangeSwitch value={arrangeBy} onChange={setArrangeBy} withOwner={namedOwners.length > 0} />
+                  ) : null
+                }
+              />
 
-              {tab === "now" ? (
+              {shownTab === "now" ? (
                 <TabPanel idPrefix="alerts" id="now">
-                  {liveBroadcasts}
-                  {/* Nurse in charge: one ward needs no arrange-by or owner lens. */}
+                  {quietWard ? null : <OpenFilters lens={lens} />}
+                  {/* Nurse in charge: one ward needs no arrange-by or owner lens (Josh, 31 Oct 2026, answer 17). */}
                   {wardName !== undefined || !anyHighlight ? null : (
-                    <div className={styles.toolbar}>
-                      {/* Josh, 31 Oct 2026 (answer 17): the desktop keeps Owner as an Arrange by view and
-                          drops the owner menu that repeated it. Phones, with no Arrange by, keep the menu. */}
-                      {anyHighlight ? (
-                        <span className={styles.highlightNote} role="status">
-                          {highlightedCount} of {allEntries.length} <SrOnly>synthetic rows</SrOnly> highlighted, all
-                          rows stay
-                        </span>
-                      ) : null}
-                      {anyHighlight ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className={styles.btnSm}
-                          aria-label={`Clear highlights, ${highlightedCount} highlighted`}
-                          onClick={clearHighlights}
-                        >
-                          Clear <Count n={highlightedCount} />
-                        </Button>
-                      ) : null}
-                    </div>
+                    <HighlightNote count={highlightedCount} of={allEntries.length} onClear={clearHighlights} />
                   )}
                   {isPhone ? (
                     <>
@@ -1369,14 +1360,24 @@ function AlertsWorkspace() {
                           />
                         </div>
                       ) : null}
-                      <div className={styles.phoneList}>{urgencyView}</div>
-                      {noticesGroup}
+                      <div className={styles.phoneList}>
+                        {filteredNothing ? <FilteredEmpty lens={lens} /> : urgencyView}
+                      </div>
+                      {filteredNothing ? null : noticesGroup}
                       {quietWard ? null : <p className={styles.phoneNote}>{alertsOrderLine("urgency")}</p>}
                     </>
                   ) : (
                     <>
-                      {view === "lanes" ? lanesView : view === "owner" ? ownerView : urgencyView}
-                      {noticesGroup}
+                      {filteredNothing ? (
+                        <FilteredEmpty lens={lens} />
+                      ) : view === "lanes" ? (
+                        lanesView
+                      ) : view === "owner" ? (
+                        ownerView
+                      ) : (
+                        urgencyView
+                      )}
+                      {filteredNothing ? null : noticesGroup}
                       {quietWard && view === "urgency" ? null : (
                         <p className={styles.orderNote} data-testid="ward-alerts-order-note">
                           {alertsOrderLine(view)}
@@ -1387,15 +1388,17 @@ function AlertsWorkspace() {
                 </TabPanel>
               ) : null}
 
-              {tab === "earlier" ? (
-                <AlertsEarlierPanel
-                  history={history}
-                  readNotices={readNotices}
+              {shownTab === "earlier" ? (
+                <AlertsClearedPanel history={history} readNotices={readNotices} now={now} umrnLookup={umrnLookup} />
+              ) : null}
+              {shownTab === "broadcasts" ? (
+                <AlertsBroadcastsPanel
+                  live={liveBroadcasts}
+                  anyLive={liveCount > 0}
                   pastBroadcasts={pastBroadcasts}
                   units={units}
                   movements={movements}
                   now={now}
-                  umrnLookup={umrnLookup}
                 />
               ) : null}
             </Card>
@@ -1403,18 +1406,12 @@ function AlertsWorkspace() {
             {isPhone ? (
               <>
                 {quietWard ? null : (
-                  <button type="button" className={styles.phoneCard} onClick={() => setPhoneToday(true)}>
-                    <Clock size={18} aria-hidden="true" />
-                    <span className={styles.phoneCardText}>
-                      <span className={styles.phoneCardTitle}>Today</span>
-                      <span className={styles.phoneCardMeta}>
-                        <b className={styles.mono}>{allEntries.filter((entry) => entry.raised !== undefined).length}</b>{" "}
-                        raised · <b className={styles.mono}>{history.filter((entry) => entry.action).length}</b> acted
-                        on · <b className={styles.mono}>{(broadcastAlerts ?? []).length}</b> broadcast
-                      </span>
-                    </span>
-                    <ChevronRight size={16} aria-hidden="true" />
-                  </button>
+                  <TodayPhoneCard
+                    raised={allEntries.filter((entry) => entry.raised !== undefined).length}
+                    acted={history.filter((entry) => entry.action).length}
+                    broadcast={(broadcastAlerts ?? []).length}
+                    onOpen={() => setPhoneToday(true)}
+                  />
                 )}
                 <ChecksCard checks={checks} onOpen={() => setPhoneChecks(true)} />
               </>

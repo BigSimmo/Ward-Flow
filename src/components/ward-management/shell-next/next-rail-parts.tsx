@@ -221,3 +221,6 @@ export function PinButton({ id, label, pinned }: { id: string; label: string; pi
     </button>
   );
 }
+
+// DK1: the account menu lives in its own file so the executive chrome can share it without the rest.
+export { RailAccountMenu } from "@/components/ward-management/shell-next/next-account-menu";

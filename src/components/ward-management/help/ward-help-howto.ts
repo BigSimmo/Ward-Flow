@@ -525,13 +525,13 @@ const JOBS: readonly HowTo[] = [
     title: "Go to another desk",
     keywords: "switch role desk change view ward ed workstation",
     answer:
-      "Open the person menu at the foot of the side menu (the menu button on a phone) and choose Go to a desk. Each desk shows the screens its role uses.",
+      "Open your account menu. It is your name at the foot of the side menu, or the menu button on a phone. Choose Switch desk if your account has more than one desk. In the demo, choose Try another desk (demo). Each desk shows the screens its role uses.",
     desks: EVERY_DESK,
     showMe: [
       {
         target: DESK_SWITCH,
-        title: "Go to a desk",
-        body: "Opens the list of desks.",
+        title: "Your account menu",
+        body: "Switch desk is here when your account has more than one desk. In the demo, it is Try another desk (demo).",
       },
     ],
   },
@@ -567,6 +567,16 @@ const JOBS: readonly HowTo[] = [
         body: "Everything addressed to this desk, newest first.",
       },
     ],
+  },
+  {
+    id: "alerts-log",
+    topic: "Finding your way",
+    title: "Find an alert I already cleared",
+    keywords: "alerts log history cleared earlier past broadcast filter acknowledged",
+    answer:
+      "Open the Alerts page. Open is what still needs someone, with chips to show one kind at a time. Cleared lists what this desk acted on, newest first. Broadcasts holds bed calls, live and past.",
+    desks: EVERY_DESK,
+    needs: "alerts",
   },
   {
     id: "search-patient",

@@ -20,6 +20,7 @@ vi.mock("next/navigation", () => ({
 
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { findSettings, SETTINGS_SEARCH_ENTRIES } from "@/components/ward-management/settings/settings-search-index";
+import { findRedesignSettings } from "@/components/ward-management/settings/settings-tabs";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 
@@ -49,9 +50,9 @@ const NOT_WIRED = "Not wired in this prototype.";
 // false operational claim the retired controls carried before D4/D5.
 const FORBIDDEN_CLAIM = /dispatch|escalat|enforc|block|statutory|section \d/i;
 
-// Settings by login (Josh, 31 Oct 2026): one page of sections, each a [data-pane]. The coordinator's
-// page has these five; Demo tools is a closed fold, and its controls are checked as they stand.
-const SECTIONS = ["rules", "device", "you", "help", "demo"] as const;
+// Settings by role (Josh, 3 Nov 2026, ST1): one page of sections, each a [data-pane]. The coordinator's
+// page on the demo site has these five; Demo tools is a plain section, checked as it stands.
+const SECTIONS = ["rules", "alerts", "display", "you", "demo"] as const;
 
 function sectionPane(name: (typeof SECTIONS)[number]): HTMLElement {
   const pane = screen.getByRole("main").querySelector<HTMLElement>(`[data-pane="${name}"]`);
@@ -247,10 +248,21 @@ describe("settings screen: deleted Preview controls stay out of every build", ()
 
     renderSettings();
     const targets = settingTargets();
-    const offered = SETTINGS_SEARCH_ENTRIES.filter(
-      (entry) => entry.tab !== "access" && findSettings(entry.label, SETTINGS_SEARCH_ENTRIES.length).includes(entry),
+    // Settings by role (Josh, 3 Nov 2026, ST1): Find a setting offers only the rows in this desk's
+    // sections (the coordinator on the demo site), and never the ones Help now owns.
+    const sections = ["rules", "alerts", "display", "you", "demo"] as const;
+    const offered = SETTINGS_SEARCH_ENTRIES.flatMap((entry) =>
+      findRedesignSettings(entry.label, sections, SETTINGS_SEARCH_ENTRIES.length * 2, true).filter(
+        (found) => found.id === entry.id,
+      ),
     );
     expect(offered.length).toBeGreaterThan(0);
+    for (const helpRow of ["help", "help-screen", "tour", "shortcuts"]) {
+      expect(
+        offered.some((entry) => entry.id === helpRow),
+        helpRow,
+      ).toBe(false);
+    }
     // D-91: Go to a desk is an action, not a row. Choosing it opens the desk drawer (the case below).
     const rows = offered.filter((entry) => entry.id !== "go-to-desk");
     expect(rows.filter((entry) => !targets.has(entry.id)).map((entry) => entry.id)).toEqual([]);
@@ -265,8 +277,8 @@ describe("settings screen: deleted Preview controls stay out of every build", ()
       fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
         target: { value: "workstation" },
       });
-      // Settings by login (31 Oct 2026): the row reads "Switch login (demo)"; the drawer keeps its name.
-      fireEvent.click(screen.getByRole("option", { name: /Switch login \(demo\)/ }));
+      // Settings by role (3 Nov 2026): the row reads "Try another desk (demo)"; the drawer keeps its name.
+      fireEvent.click(screen.getByRole("option", { name: /Try another desk \(demo\)/ }));
       const drawer = screen.getByRole("dialog", { name: "Go to a desk" });
       expect(within(drawer).queryByRole("button", { name: /Bed manager/ })).toBeNull();
       expect(within(drawer).queryByRole("button", { name: /Executive/ })).toBeNull();

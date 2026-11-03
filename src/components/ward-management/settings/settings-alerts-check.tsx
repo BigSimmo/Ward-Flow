@@ -6,7 +6,7 @@
 // notification. "Applies now" is plain words, as on the other tabs. Nothing here is stored.
 
 import { useEffect, useState } from "react";
-import { BellRing, Play, Radar } from "lucide-react";
+import { Bell, Play, Radar } from "lucide-react";
 
 import type { NotificationSupport } from "@/components/ward-management/shell/ward-act-now-notifications";
 import { phonePushRow, standaloneApp, type PhonePushState } from "@/components/ward-management/shell/ward-phone-push";
@@ -78,7 +78,7 @@ export function SettingsAlertsPane({
   return (
     <>
       <Card aria-labelledby="alerts-title">
-        <CardHead iconPlain id="alerts-title" icon={BellRing} title="Alerts" />
+        <CardHead iconPlain id="alerts-title" icon={Bell} title="Alerts" />
         <SettingRow
           setting="browser-notifications"
           title="Browser notifications"

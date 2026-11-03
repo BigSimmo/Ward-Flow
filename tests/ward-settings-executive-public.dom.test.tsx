@@ -121,8 +121,8 @@ describe("executive Settings from public authority only", () => {
     expect(hook.result.current.location).toBe("North Metro");
     expect(raw).not.toHaveBeenCalled();
   });
-  // Settings by login (Josh, 31 Oct 2026): "Switch login (demo)" is the demo's desk switcher and is
-  // hidden once real sign-in is on, so a signed-in executive is not offered it, here or in Find.
+  // Settings by login (Josh, 31 Oct 2026): the demo's desk switcher ("Try another desk (demo)" in Find)
+  // is hidden once real sign-in is on, so a signed-in executive is not offered it, here or in Find.
   it("keeps desktop sections and appearance controls, with no demo login switch once signed in", () => {
     render(
       <PublicExecutive>
@@ -134,9 +134,10 @@ describe("executive Settings from public authority only", () => {
     const appearance = renderHook(() => useAppearanceStore());
     expect(appearance.result.current).toBe("dark");
     expect(screen.queryByRole("button", { name: "Go to a desk" })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Switch login/ })).toBeNull();
-    fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), { target: { value: "workstation" } });
-    expect(screen.queryByRole("option", { name: /Switch login|Go to a desk/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Switch login|Try another desk/ })).toBeNull();
+    expect(screen.queryByTestId("ward-settings-switch-login")).toBeNull();
+    fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), { target: { value: "desk" } });
+    expect(screen.queryByRole("option", { name: /Switch login|Try another desk|Go to a desk/ })).toBeNull();
     expect(switchRole).not.toHaveBeenCalled();
     expect(raw).not.toHaveBeenCalled();
   });
@@ -148,21 +149,24 @@ describe("executive Settings from public authority only", () => {
       </PublicExecutive>,
     );
     expect(screen.getByTestId("ward-settings-phone-theme")).toBeInTheDocument();
-    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-device")).getByRole("button"));
+    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-display")).getByRole("button"));
     expect(screen.getByTestId("ward-settings-phone-sheet")).toBeInTheDocument();
     expect(raw).not.toHaveBeenCalled();
   });
-  it("shows supplied public rules and explicit unavailable history rather than inferred empty records", () => {
+  it("shows the executive only Display and You, with no rules and no inferred empty records", () => {
     render(
       <PublicExecutive>
         <SettingsScreen />
       </PublicExecutive>,
     );
-    // Settings by login (31 Oct 2026): the executive reads "How the figures are worked out", the rules
-    // behind its figures, read only, from the supplied report (20h, not the 24h default).
-    const summary = screen.getByTestId("ward-settings-rules-summary");
-    expect(summary).toHaveTextContent("How the figures are worked out");
-    expect(screen.getByTestId("ward-settings-rule-ed-target")).toHaveTextContent("20h");
+    // Settings by role (Josh, 3 Nov 2026, ST1): the executive has Display and You only. The rules
+    // summary ("How the figures are worked out") is no longer shown, and no default figure stands in.
+    expect(screen.getAllByTestId(/^ward-settings-jump-/).map((jump) => jump.getAttribute("data-testid"))).toEqual([
+      "ward-settings-jump-display",
+      "ward-settings-jump-you",
+    ]);
+    expect(screen.queryByTestId("ward-settings-rules-summary")).toBeNull();
+    expect(screen.queryByText("24h")).toBeNull();
     expect(screen.queryAllByRole("spinbutton")).toHaveLength(0);
     expect(screen.queryByText("No rule saves this session.")).toBeNull();
     expect(screen.queryByText("None over now")).toBeNull();
