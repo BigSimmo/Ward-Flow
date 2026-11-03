@@ -66,36 +66,105 @@
   background: var(--wf-surface-2);
 }
 
-.summary > div {
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   min-width: 0;
   padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
 }
 
-.summary > div + div {
+.stat + .stat {
   border-left: 1px solid var(--wf-line);
 }
 
-.summary dt {
+button.stat {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+button.stat:first-child {
+  border-radius: var(--wf-r-md) 0 0 var(--wf-r-md);
+}
+
+button.stat:last-child {
+  border-radius: 0 var(--wf-r-md) var(--wf-r-md) 0;
+}
+
+@media (hover: hover) {
+  button.stat:hover:not(:disabled) {
+    background: var(--wf-hover);
+  }
+}
+
+button.stat:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+button.stat:disabled {
+  cursor: default;
+}
+
+/* The active filter reads as selected; "Patients" is the default and stays plain. */
+button.stat[aria-pressed="true"]:not(:first-child) {
+  background: var(--wf-accent-tint);
+  box-shadow: inset 0 0 0 1.5px var(--wf-accent);
+}
+
+button.stat[aria-pressed="true"]:not(:first-child) .statLabel {
+  color: var(--wf-accent-ink);
+}
+
+.statLabel {
+  max-width: 100%;
+  overflow: hidden;
   color: var(--wf-ink-3);
   font-size: 11px;
   line-height: 1.3;
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.summary dd {
-  margin: 2px 0 0;
+.statValue {
   font: 650 var(--wf-fs-14) / 1.2 var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 
-.summary dd[data-tone="danger"] {
+.statValue[data-tone="danger"] {
   color: var(--wf-danger-ink);
 }
 
-.summary dd[data-tone="warning"] {
+.statValue[data-tone="warning"] {
   color: var(--wf-warning-ink);
+}
+
+.filterNote {
+  margin: 0;
+  padding: 0 var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.clear {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clear:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .phone .summary {

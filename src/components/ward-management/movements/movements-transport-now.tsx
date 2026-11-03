@@ -241,8 +241,30 @@ function TransportCheckIn({
   const next = nextStepWord(leg.state);
   const steps = legSteps(movement, leg.state);
 
+  const primary = next ? (
+    <Link href={movementHref(movement.id)} className={buttonClass({ variant: "pri", size: "md" })}>
+      {next}
+      <ArrowRight size={14} aria-hidden="true" />
+    </Link>
+  ) : null;
+
   const body = (
     <div className={tr.ci}>
+      {/* The job first: what to record now, where, and the one button that does it. */}
+      <section className={tr.ciAction} aria-label="Next step">
+        <p className={tr.ciActionKicker}>{next ? "Next step" : "Complete"}</p>
+        <p className={tr.ciActionText}>
+          {next === "Confirm arrival"
+            ? `Confirm the patient has arrived at ${destinationLabel}.`
+            : next
+              ? `Record that the patient has left ${originLabel}.`
+              : `Arrived at ${destinationLabel}.`}
+        </p>
+        <p className={tr.ciActionMeta}>
+          {durMinutes(leg.minutesSinceBooked)} since booked · {leg.provider}
+        </p>
+        {primary ? <div className={tr.ciActionBtn}>{primary}</div> : null}
+      </section>
       <ol className={tr.ciSteps} aria-label="Transport steps">
         {steps.map((step) => (
           <li key={step.id} className={tr.ciStep} data-state={step.state}>
@@ -264,10 +286,6 @@ function TransportCheckIn({
           <dd>{destinationLabel}</dd>
         </div>
         <div>
-          <dt>Provider</dt>
-          <dd>{leg.provider}</dd>
-        </div>
-        <div>
           <dt>Escort</dt>
           <dd>{movement.transport?.escortRequired ? "Required" : "Not required"}</dd>
         </div>
@@ -275,14 +293,10 @@ function TransportCheckIn({
           <dt>Legal</dt>
           <dd>{legalStatusShort(movement)}</dd>
         </div>
-        <div>
-          <dt>Since booked</dt>
-          <dd>{durMinutes(leg.minutesSinceBooked)}</dd>
-        </div>
       </dl>
       <p className={tr.ciNote}>
         {next
-          ? `${next} opens the transport record, where the usual checks run before it saves.`
+          ? `${next} opens the transport record, where the usual safety checks run before it saves.`
           : "Nothing left to record on this leg."}
       </p>
       <div className={tr.ciLinks}>
@@ -297,17 +311,10 @@ function TransportCheckIn({
     </div>
   );
 
-  const primary = next ? (
-    <Link href={movementHref(movement.id)} className={buttonClass({ variant: "pri", size: "sm" })}>
-      {next}
-    </Link>
-  ) : null;
-
   if (isPhone) {
     return (
       <PhoneSheet open onClose={onClose} title={person.formalName} description="Transport check in" data-testid="transport-check-in">
         {body}
-        {primary ? <div className={tr.ciPhoneFoot}>{primary}</div> : null}
       </PhoneSheet>
     );
   }
@@ -319,9 +326,7 @@ function TransportCheckIn({
       placement="responsive-right"
       contentClassName={tr.ciPanel}
       bodyClassName={tr.ciBody}
-      footerClassName={tr.ciFoot}
       testId="transport-check-in"
-      footer={primary}
     >
       <div className={tr.ciHead}>
         <div className={tr.ciHeadText}>

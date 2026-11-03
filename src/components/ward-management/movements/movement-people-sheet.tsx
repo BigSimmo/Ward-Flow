@@ -6,7 +6,7 @@
  * longest wait first, rather than marking rows somewhere down the worklist. A row opens that
  * patient's usual movement pop-up; "Show in worklist" keeps the old highlight for anyone who wants it.
  */
-import { useId, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronRight, Lock, Scale, ShieldCheck, X } from "lucide-react";
 
@@ -66,8 +66,22 @@ export function MovementPeopleSheet({
 }) {
   const isPhone = useIsPhone();
   const titleId = useId();
+  // The summary doubles as a filter: "Your step" and "Over 24h" narrow the list to what to act on.
+  // Held against the list it was set on, so a newly opened list always starts unfiltered.
+  type Filter = "all" | "mine" | "overDay";
+  const [filterFor, setFilterFor] = useState<{ list: MovementPeopleList | null; filter: Filter }>({
+    list: null,
+    filter: "all",
+  });
+  const filter: Filter = filterFor.list === list ? filterFor.filter : "all";
+  const setFilter = (next: Filter) => setFilterFor({ list, filter: next });
   if (!list) return null;
-  const rows = [...list.movements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id));
+  const allRows = [...list.movements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id));
+  const isMine = (movement: Movement) => !movement.closure && isCoordinatorStep(movementNextStep(movement));
+  const isOverDay = (movement: Movement) => now - movement.openedAt >= 24 * 60;
+  const rows = allRows.filter((movement) =>
+    filter === "mine" ? isMine(movement) : filter === "overDay" ? isOverDay(movement) : true,
+  );
   const showInWorklist =
     list.highlightKey && onShowInWorklist
       ? () => {
@@ -75,9 +89,10 @@ export function MovementPeopleSheet({
           onClose();
         }
       : undefined;
-  const mineCount = rows.filter((movement) => !movement.closure && isCoordinatorStep(movementNextStep(movement))).length;
-  const longest = rows[0] ? Math.max(now - rows[0].openedAt, 0) : undefined;
-  const overDay = rows.filter((movement) => now - movement.openedAt >= 24 * 60).length;
+  const mineCount = allRows.filter(isMine).length;
+  const longest = allRows[0] ? Math.max(now - allRows[0].openedAt, 0) : undefined;
+  const overDay = allRows.filter(isOverDay).length;
+  const toggle = (next: "mine" | "overDay") => setFilter(filter === next ? "all" : next);
   // Grouped by stage when the list spans more than one, so the reader sees where each patient stands.
   const groups = STAGE_ORDER.map((stage) => ({
     stage,
@@ -180,31 +195,53 @@ export function MovementPeopleSheet({
   };
 
   const summary = (
-    <dl className={ps.summary}>
-      <div>
-        <dt>Patients</dt>
-        <dd>{rows.length}</dd>
-      </div>
-      <div>
-        <dt>Longest</dt>
-        <dd data-tone={longest !== undefined ? waitTone(longest) : undefined}>
+    <div className={ps.summary} role="group" aria-label="Summary and filters">
+      <button type="button" className={ps.stat} aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
+        <span className={ps.statLabel}>Patients</span>
+        <span className={ps.statValue}>{allRows.length}</span>
+      </button>
+      <div className={ps.stat} data-static="true">
+        <span className={ps.statLabel}>Longest</span>
+        <span className={ps.statValue} data-tone={longest !== undefined ? waitTone(longest) : undefined}>
           {longest !== undefined ? splitDuration(longest) : "None"}
-        </dd>
+        </span>
       </div>
-      <div>
-        <dt>Your step</dt>
-        <dd>{mineCount}</dd>
-      </div>
-      <div>
-        <dt>Over 24h</dt>
-        <dd data-tone={overDay > 0 ? "danger" : undefined}>{overDay}</dd>
-      </div>
-    </dl>
+      <button
+        type="button"
+        className={ps.stat}
+        aria-pressed={filter === "mine"}
+        disabled={mineCount === 0}
+        onClick={() => toggle("mine")}
+      >
+        <span className={ps.statLabel}>Your step</span>
+        <span className={ps.statValue}>{mineCount}</span>
+      </button>
+      <button
+        type="button"
+        className={ps.stat}
+        aria-pressed={filter === "overDay"}
+        disabled={overDay === 0}
+        onClick={() => toggle("overDay")}
+      >
+        <span className={ps.statLabel}>Over 24h</span>
+        <span className={ps.statValue} data-tone={overDay > 0 ? "danger" : undefined}>
+          {overDay}
+        </span>
+      </button>
+    </div>
   );
 
   const body = (
     <div className={ps.list} aria-label={`${list.title}, ${rows.length} ${rows.length === 1 ? "patient" : "patients"}`} role="region">
       {rows.length === 0 ? <p className={ps.empty}>No patient matches right now.</p> : null}
+      {filter !== "all" ? (
+        <p className={ps.filterNote}>
+          Showing {rows.length} of {allRows.length}, {filter === "mine" ? "waiting on your step" : "waiting over 24h"}.{" "}
+          <button type="button" className={ps.clear} onClick={() => setFilter("all")}>
+            Show all
+          </button>
+        </p>
+      ) : null}
       {grouped ? (
         groups.map((group) => (
           <section key={group.stage} className={ps.group} aria-label={`${stageCopy[group.stage].label}, ${group.items.length}`}>
@@ -226,7 +263,7 @@ export function MovementPeopleSheet({
       <PhoneSheet
         open
         onClose={onClose}
-        title={`${list.title} · ${rows.length}`}
+        title={`${list.title} · ${allRows.length}`}
         height="tall"
         description={list.caption}
         secondary={showInWorklist ? { label: "Show in worklist", onAction: showInWorklist } : undefined}

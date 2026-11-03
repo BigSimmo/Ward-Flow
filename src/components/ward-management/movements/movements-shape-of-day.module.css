@@ -116,6 +116,17 @@
   cursor: pointer;
 }
 
+/* Waits that need acting on carry their tone: 12 to 24h amber, over 24h red. */
+.cell[data-band="2"]:not([data-empty="true"]) {
+  background: color-mix(in srgb, var(--wf-warning) calc(12% + var(--heat, 0) * 30%), var(--wf-surface-2));
+  color: var(--wf-warning-ink);
+}
+
+.cell[data-band="3"]:not([data-empty="true"]) {
+  background: color-mix(in srgb, var(--wf-danger) calc(12% + var(--heat, 0) * 30%), var(--wf-surface-2));
+  color: var(--wf-danger-ink);
+}
+
 .cell:hover:not(:disabled) {
   box-shadow: inset 0 0 0 2px var(--wf-accent);
 }
