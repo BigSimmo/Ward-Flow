@@ -6,7 +6,7 @@ import { ArrowUpRight, type LucideIcon } from "lucide-react";
 
 import { Button, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 import { useWardFlowSelect } from "../ward-flow-provider";
-import { formatInstant } from "../ward-clock";
+import { formatInstantWithDay } from "../ward-clock";
 import { shiftConfirmations } from "../capacity/shift-confirmations";
 import styles from "./ward-tools-quick-actions.module.css";
 
@@ -91,6 +91,7 @@ export function useUnconfirmedWards() {
 /** Request ward updates: the wards not confirmed since this shift began. Nothing pre-selected. */
 export function WardUpdatesRequest() {
   const status = useUnconfirmedWards();
+  const { now } = useWardFlowSelect("now");
   const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
   const [all, setAll] = useState(false);
   const toggle = (id: string) =>
@@ -106,8 +107,8 @@ export function WardUpdatesRequest() {
   return (
     <div className={styles.request}>
       <p className={styles.lead}>
-        {status.confirmed} of {status.total} wards confirmed since {formatInstant(status.since)}. Ask the rest to
-        confirm their beds.
+        {status.confirmed} of {status.total} wards confirmed since {formatInstantWithDay(status.since, now)}. Ask the
+        rest to confirm their beds.
       </p>
       <div className={styles.listHead}>
         <span>Not confirmed this shift</span>
@@ -125,7 +126,7 @@ export function WardUpdatesRequest() {
             <label className={styles.ward}>
               <input type="checkbox" checked={chosen.has(unit.id)} onChange={() => toggle(unit.id)} />
               <span className={styles.wardName}>{unit.name}</span>
-              <span className={styles.when}>Last {formatInstant(unit.allocatable.confirmedAt)}</span>
+              <span className={styles.when}>Last {formatInstantWithDay(unit.allocatable.confirmedAt, now)}</span>
             </label>
           </li>
         ))}
