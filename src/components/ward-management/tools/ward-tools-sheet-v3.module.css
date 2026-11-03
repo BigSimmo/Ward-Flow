@@ -19,7 +19,7 @@
 
 .list {
   display: grid;
-  gap: var(--wf-s-4, 16px);
+  gap: var(--wf-s-3, 12px);
   min-width: 0;
 }
 
@@ -97,8 +97,8 @@
   align-items: center;
   gap: var(--wf-s-3);
   width: 100%;
-  min-height: 52px;
-  padding: 6px var(--wf-s-3);
+  min-height: 44px;
+  padding: 4px var(--wf-s-3);
   border: 0;
   background: transparent;
   color: var(--wf-ink-1);
@@ -123,10 +123,10 @@
 .rowIcon {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   flex: none;
-  border-radius: var(--wf-r-md, 8px);
+  border-radius: var(--wf-r-xs);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
 }
@@ -136,7 +136,12 @@
   color: var(--wf-accent-ink);
 }
 
-.rowIcon svg,
+.rowIcon svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
 .rowEnd,
 .rowCaret {
   width: 16px;
@@ -393,7 +398,7 @@
   }
 
   .row {
-    min-height: 56px;
+    min-height: 48px;
   }
 }
 
