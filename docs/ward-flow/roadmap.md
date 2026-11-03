@@ -32,7 +32,7 @@ Next steps:
 
 No real patient data until the real-data gate in [D-87](decisions.md#d-87-d-36-and-d-37-are-replaced-by-the-real-data-gate-27-october-2026) is fully signed. The repository can prepare; the sign-offs belong to people outside it.
 
-1. **Go/no-go checklist (Q378).** One list of every real-data blocker, including session drafts kept in the browser, a Secure session cookie, the privacy impact assessment, a breach plan and the list of subprocessors.
+1. **Go/no-go checklist (Q378).** [REAL-DATA-GO-NO-GO.md](governance/REAL-DATA-GO-NO-GO.md) is the one list of every real-data blocker, including session drafts kept in the browser, a Secure session cookie, the privacy impact assessment, a breach plan and the list of subprocessors.
 2. **Sign-in and front door (Q371, Q372).** Harden the demo-code rate limit and make production fail closed when the front door is off.
 3. **Hosting (D-84, Q370).** The app and backend are on Railway Singapore and the database in Sydney. Q370 (move to Sydney) is not answered; D-84 says to revisit with the health service's IT before real data.
 4. **Owner tasks (Q379).** Sign-in renewal test before about 16 November, database migration 13, invite-only sign-up, and naming the privacy officer and clinical safety owner. The list is in STATUS.md.
