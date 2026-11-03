@@ -26,8 +26,12 @@ import {
   Scale,
   SearchCheck,
   Truck,
+  Megaphone,
+  Send,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
+import { QuickActionsPanel, useUnconfirmedWards, WardUpdatesRequest } from "./ward-tools-quick-actions";
 
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardRoleSwitcher } from "@/components/ward-management/ward-public-role-switcher";
@@ -71,6 +75,7 @@ export type ToolsSheetToolId =
   | "contacts"
   | "form-times"
   | "messages"
+  | "quick-actions"
   | "demo";
 
 type EntryKey =
@@ -107,7 +112,7 @@ export type WardToolsSheetProps = {
  */
 const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> = {
   coordinator: {
-    do: ["new-referral", "update-bed", "remind", "book-transport", "log-delay", "feed"],
+    do: ["quick-actions", "new-referral", "update-bed", "remind", "book-transport", "log-delay", "feed"],
     look: ["bed-finder", "figures", "leave-due", "catchment", "contacts", "form-times", "legal-forms", "out-of-area"],
     share: ["messages", "handover", "downtime", "chronology"],
   },
@@ -143,7 +148,7 @@ const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> =
 
 /** Q309: until a desk has used a tool, the row offers its three most likely ones. */
 const ROLE_SUGGESTED: Record<WardAccessRole, readonly ToolsSheetToolId[]> = {
-  coordinator: ["bed-finder", "update-bed", "messages"],
+  coordinator: ["quick-actions", "bed-finder", "update-bed"],
   bed_manager: ["update-bed", "bed-finder", "leave-due"],
   ward: ["update-bed", "leave-due", "form-times"],
   ed: ["bed-finder", "form-times", "contacts"],
@@ -287,7 +292,7 @@ function searchWardFlow(words: string, close: () => void): boolean {
  * Viewing as and the Demo controls sit together at the foot.
  */
 /** Live counts on the rows. The executive desk has none: it never reads the operational World. */
-type SheetCounts = { bedsReady?: number; feed?: number; reminders?: number; leave?: number };
+type SheetCounts = { bedsReady?: number; feed?: number; reminders?: number; leave?: number; unconfirmed?: number };
 
 export function WardToolsSheet(props: WardToolsSheetProps) {
   return useExecutiveStatisticsControl().executive ? (
@@ -302,11 +307,12 @@ function OperationalToolsSheet(props: WardToolsSheetProps) {
   const feed = useFeedWaitingCount();
   const reminders = useReminderCount();
   const leave = useLeaveDueCount();
+  const unconfirmed = useUnconfirmedWards().waiting.length;
   return (
     <ToolsSheetView
       {...props}
       executive={false}
-      counts={{ bedsReady: counts.capacity?.value, feed, reminders, leave }}
+      counts={{ bedsReady: counts.capacity?.value, feed, reminders, leave, unconfirmed }}
     />
   );
 }
@@ -331,6 +337,7 @@ function ToolsSheetView({
   const canLogDelay = gate("RECORD_MOVEMENT_BLOCKER").allowed;
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const recent = useRecent();
+  const unconfirmed = counts.unconfirmed ?? 0;
 
   const [open, setOpen] = useState<ToolsSheetToolId | null>(null);
   const [query, setQuery] = useState("");
@@ -377,6 +384,58 @@ function ToolsSheetView({
   }, []);
 
   const all: Record<EntryKey, Entry | null> = {
+    "quick-actions":
+      role === "coordinator"
+        ? {
+            key: "quick-actions",
+            icon: Zap,
+            name: "Quick actions",
+            detail: "Ward updates, beds and more",
+            count: { n: unconfirmed, label: "wards not confirmed this shift", act: true },
+            body: (
+              <QuickActionsPanel
+                onNavigate={onNavigate}
+                tiles={[
+                  {
+                    key: "ward-updates",
+                    icon: BellRing,
+                    name: "Ward updates",
+                    detail: "not confirmed",
+                    count: unconfirmed,
+                    title: "Ward updates",
+                    body: <WardUpdatesRequest />,
+                  },
+                  {
+                    key: "bed-finder",
+                    icon: SearchCheck,
+                    name: "Find a bed",
+                    detail: "ready now",
+                    count: counts.bedsReady,
+                    title: "Find a bed",
+                    body: <ToolFindBed onNavigate={onNavigate} />,
+                  },
+                  {
+                    key: "messages",
+                    icon: MessageSquareText,
+                    name: "Bed summary",
+                    detail: "Copy for email",
+                    title: "Bed summary",
+                    body: <ToolMessages onNavigate={onNavigate} />,
+                  },
+                  { key: "chase", icon: PhoneCall, name: "Chase wards", detail: "Call sheet", href: root },
+                  { key: "ask", icon: Send, name: "Ask wards", detail: "For a patient", href: `${root}/waiting` },
+                  {
+                    key: "broadcast",
+                    icon: Megaphone,
+                    name: "Broadcast",
+                    detail: "To chosen units",
+                    href: `${root}/alerts`,
+                  },
+                ]}
+              />
+            ),
+          }
+        : null,
     "new-referral":
       isPhone && canRefer
         ? {
