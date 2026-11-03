@@ -123,12 +123,17 @@ import {
   WARD_BED_DRAWER_ENTRY,
   wardHandoverHref,
 } from "./ward-screen-helpers";
-import { WardAnswerFromLink, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
+import {
+  WardAnswerFromLink,
+  WardConfirmBedsDialog,
+  WardDailySheetDialog,
+  WardDischargeNotices,
+  WardReferralInbox,
+} from "./ward-screen-lazy";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
-import { WardConfirmBedsDialog } from "./ward-confirm-beds-dialog";
 import { WardAcceptDialog } from "./ward-answer-accept-dialog";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
