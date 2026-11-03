@@ -1,5 +1,5 @@
 /**
- * Typed form times in Perth wall time, for Form times (`ward-form-times.tsx`). Moved here from the
+ * Typed form times in Perth wall time, for Form times (`ward-tool-form-times.tsx`). Moved here from the
  * retired MHA form calculator (Tools review, 15 Oct 2026) with no change in behaviour. These only
  * read and show a time a person typed. Nothing here computes a legal limit (rule D5).
  */

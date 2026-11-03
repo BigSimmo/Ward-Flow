@@ -17,10 +17,7 @@ import {
   entrySearchFields,
   type DirectoryEntry,
 } from "@/components/ward-management/on-call/on-call-directory";
-import {
-  resolveCatchmentQuery,
-  type ResolvedCatchment,
-} from "@/components/ward-management/tools/ward-catchment-resolver";
+import { resolveCatchmentQuery, type ResolvedCatchment } from "@/components/ward-management/tools/ward-catchment-query";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
 
 import { filterBySearchText } from "@/components/ward-redesign/pop-search/search-text";

@@ -796,6 +796,26 @@ button.check[aria-pressed="true"] {
   border-top: 0;
 }
 
+.reminderList {
+  margin: 0;
+  padding: var(--wf-s-1) 0;
+  list-style: none;
+}
+
+.reminderList > li {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.reminderList > li:first-child {
+  border-top: 0;
+}
+
 .historyText {
   display: flex;
   flex-direction: column;
@@ -1429,6 +1449,10 @@ button.check[aria-pressed="true"] {
 
   .historyList > li {
     grid-template-columns: 2.75rem 0.75rem minmax(0, 1fr);
+    padding: var(--wf-s-2) var(--wf-s-1);
+  }
+
+  .reminderList > li {
     padding: var(--wf-s-2) var(--wf-s-1);
   }
 

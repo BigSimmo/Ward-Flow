@@ -144,22 +144,6 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
-    module: "src/components/ward-management/tools/ward-form-times.tsx",
-    why: "the Tools overhaul (Q308-Q326, Josh 2 Nov 2026, #1316) replaced it with the new tool in ward-management/tools/ward-tool-*.tsx. Josh approved deleting the replaced pieces (Q353); kept with its tests until a follow-up removes both together",
-  },
-  {
-    module: "src/components/ward-management/tools/ward-network-figures.tsx",
-    why: "the Tools overhaul (Q308-Q326, Josh 2 Nov 2026, #1316) replaced it with the new tool in ward-management/tools/ward-tool-*.tsx. Josh approved deleting the replaced pieces (Q353); kept with its tests until a follow-up removes both together",
-  },
-  {
-    module: "src/components/ward-management/tools/ward-catchment-resolver.tsx",
-    why: "the Tools overhaul (Q308-Q326, Josh 2 Nov 2026, #1316) replaced it with the new tool in ward-management/tools/ward-tool-*.tsx. Josh approved deleting the replaced pieces (Q353); kept with its tests until a follow-up removes both together",
-  },
-  {
-    module: "src/components/ward-management/tools/ward-feed-inbox.tsx",
-    why: "the Tools overhaul (Q308-Q326, Josh 2 Nov 2026, #1316) replaced it with the new tool in ward-management/tools/ward-tool-*.tsx. Josh approved deleting the replaced pieces (Q353); kept with its tests until a follow-up removes both together",
-  },
-  {
     module: "src/components/ward-management/shell/ward-rail.tsx",
     why: "the master design's sidebar (ward-management/shell-next/next-rail-body.tsx, a fork of this rail with Josh's 30 Oct fixes) now mounts in the Ward Flow layout (Josh, 2 Nov 2026). Kept with its tests until Josh decides whether to delete it",
   },
