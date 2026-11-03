@@ -294,9 +294,10 @@
 
 /* table */
 
+/* One scroll for the page (D-95, 3 Nov 2026): the table grows with the page, as the Patients tab
+   does, instead of a 560px box. Below 1024px it scrolls only sideways. */
 .tableWrap {
-  overflow: auto;
-  max-height: 560px;
+  overflow-x: auto;
 }
 
 .caption {
@@ -327,6 +328,18 @@
   letter-spacing: 0.04em;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* From 1024px the columns fit the card, so nothing scrolls inside it and the head row pins under
+   the top bar while the page scrolls. */
+@media (min-width: 64rem) {
+  .tableWrap {
+    overflow: visible;
+  }
+
+  .bedsTable thead th {
+    top: var(--wf-header-height, 3.75rem);
+  }
 }
 
 .bedsTable td {
