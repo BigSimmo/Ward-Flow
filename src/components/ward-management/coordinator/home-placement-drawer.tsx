@@ -115,7 +115,7 @@ export function HomePlacementDrawer({
           <ChevronRight size={14} aria-hidden="true" />
         </Link>
       ) : null}
-      <div className={d.footRow}>
+      <div className={`${d.footRow} ${p.links}`}>
         {recordHref ? (
           <Link className={buttonClass({ variant: "sec", size: "sm" })} href={recordHref}>
             <FileText size={14} aria-hidden="true" />
