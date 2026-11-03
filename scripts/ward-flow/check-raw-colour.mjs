@@ -70,7 +70,11 @@ const ceilings = baseline.files ?? {};
 
 if (process.argv.includes("--update-baseline")) {
   const next = {};
-  for (const [file, count] of Object.entries(current)) next[file] = Math.min(count, ceilings[file] ?? count);
+  // A file with no ceiling has a ceiling of zero, so updating can never legitimise a new colour.
+  for (const [file, count] of Object.entries(current)) {
+    const ceiling = Math.min(count, ceilings[file] ?? 0);
+    if (ceiling > 0) next[file] = ceiling;
+  }
   writeFileSync(baselinePath, `${JSON.stringify({ ...baseline, files: next }, null, 2)}\n`);
   console.log(`[raw-colour] baseline written: ${Object.keys(next).length} files.`);
   process.exit(0);
