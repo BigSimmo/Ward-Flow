@@ -516,12 +516,14 @@ test.describe("@mockup Movements — transport panel", () => {
    * is the reference" ruling this re-points to where the same facts now render.
    */
   function transportLegRows(page: Page) {
-    return page
-      .getByRole("region", { name: "Transport right now" })
-      .getByRole("region", { name: "Active transport legs" })
-      // Movements M4 (3 Nov 2026): each leg row now has a Check in button beside it, so count the
-      // rows by their own name ("Inspect …"), not every button in the feed.
-      .getByRole("button", { name: /^Inspect / });
+    return (
+      page
+        .getByRole("region", { name: "Transport right now" })
+        .getByRole("region", { name: "Active transport legs" })
+        // Movements M4 (3 Nov 2026): each leg row now has a Check in button beside it, so count the
+        // rows by their own name ("Inspect …"), not every button in the feed.
+        .getByRole("button", { name: /^Inspect / })
+    );
   }
 
   /**
