@@ -112,7 +112,12 @@ export function MovementPeopleSheet({
       ) : undefined);
     return (
       <li key={movement.id} className={ps.row} data-tier={movement.urgency}>
-        <TierTile tier={movement.urgency} label="Urgency tier" className={ps.tier} />
+        <TierTile
+          tier={movement.urgency}
+          label="Urgency tier"
+          title={`Urgency tier ${movement.urgency}${movement.urgency === 1 ? ", most urgent" : ""}`}
+          className={ps.tier}
+        />
         <div className={ps.who}>
           <button
             type="button"

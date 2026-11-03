@@ -522,8 +522,8 @@ export function MovementsScreen() {
   const highlightOptions = heroHighlights(now, accessTarget);
   const showFigure = (option: (typeof highlightOptions)[number]) =>
     setPeopleList({
-      title: option.label,
-      caption: option.id === "tier1" ? "Open movements at urgency tier 1." : `Still in an ED, waiting ${option.label.toLowerCase()}.`,
+      title: option.id === "tier1" ? "Urgency tier 1" : option.label,
+      caption: option.id === "tier1" ? "The most urgent referrals still open. T1 is most urgent, T3 least." : `Still in an ED, waiting ${option.label.toLowerCase()}.`,
       tone: option.tone,
       movements: openMovements.filter(option.test),
       highlightKey: option.id,
