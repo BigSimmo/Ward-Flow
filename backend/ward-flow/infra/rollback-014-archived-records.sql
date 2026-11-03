@@ -19,6 +19,7 @@ END $$;
 -- before the restore statement takes its snapshot, then keep writers out until commit/drop.
 -- Plain SELECT readers remain allowed; scoped locking reads also wait. A lock timeout/deadlock
 -- rolls this whole transaction back.
+SET LOCAL lock_timeout = '15s';
 LOCK TABLE ward_flow.workspaces IN EXCLUSIVE MODE;
 -- Restoring records changes the shared world. Advance its cache stamp and revision under the
 -- same row lock/transaction, and give restored rows that revision so warm readers fetch their

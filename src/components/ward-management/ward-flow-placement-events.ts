@@ -108,7 +108,7 @@ export function reducePlacementEvent(
         movement.patientId ?? state.referrals.find((r) => r.id === movement.referralId)?.patientId ?? event.patientId;
       const source = movementSourceAdmission(state, movement);
       if (
-        ((movement.sourceAdmissionId !== undefined || movement.referralSourceAdmissionId !== undefined) && !source) ||
+        ((movement.sourceAdmissionId != null || movement.referralSourceAdmissionId !== undefined) && !source) ||
         (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === event.unitId))
       ) {
         return reject(state, event, "Repatriation needs the patient's occupied source stay at a different ward.");

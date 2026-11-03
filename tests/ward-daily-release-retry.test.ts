@@ -243,6 +243,28 @@ describe("daily release record and live-ref recovery", () => {
     expect(h.read().calls).not.toContain("PATCH repos/BigSimmo/Ward-Flow/git/refs/heads/live");
   });
 
+  it("refuses a retained draft prepared from another live base", () => {
+    const h = harness();
+    const state = h.read();
+    h.change({
+      records: [
+        ...state.records,
+        {
+          id: 2,
+          tag_name: `live-${target}`,
+          target_commitish: target,
+          draft: true,
+          body: `Saved notes\n<!-- ward-flow-release-base: ${newer} -->`,
+        },
+      ],
+    });
+    const result = h.run();
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toMatch(/different base/);
+    expect(h.read().current).toBe(previous);
+    expect(h.read().calls).not.toContain("PATCH repos/BigSimmo/Ward-Flow/git/refs/heads/live");
+  });
+
   it("fails closed on a tag lookup error instead of treating it as a new tag", () => {
     const h = harness({ tagLookupFailures: 1 });
     expect(h.run().status).not.toBe(0);

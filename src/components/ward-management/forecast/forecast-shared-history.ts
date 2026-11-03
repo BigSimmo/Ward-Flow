@@ -98,8 +98,9 @@ export function useSharedForecastHistory(generation: number) {
     document.addEventListener("visibilitychange", onShown);
     // Another view recorded something: take the history it was answered with.
     const onShared = (event: Event) => {
-      const detail = (event as CustomEvent<{ call: ForecastHistoryCall; reply: unknown }>).detail;
-      if (detail?.call === call) {
+      const detail = (event as CustomEvent<{ call: ForecastHistoryCall; generation: number; reply: unknown }>).detail;
+      // A reply from an earlier world generation is not this history.
+      if (detail?.call === call && detail.generation === generation) {
         mutationVersion++;
         read = true;
         reads.delete(call);
@@ -120,7 +121,7 @@ export function useSharedForecastHistory(generation: number) {
       if (!call) return false;
       try {
         const reply = await call({ generation, ...body });
-        window.dispatchEvent(new CustomEvent(SHARED_EVENT, { detail: { call, reply } }));
+        window.dispatchEvent(new CustomEvent(SHARED_EVENT, { detail: { call, generation, reply } }));
         return sharedForecastReply(reply, generation).status === "shared";
       } catch {
         return false;
