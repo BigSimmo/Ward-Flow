@@ -143,6 +143,10 @@ Build with `src/components/wf`. Never copy a primitive into a screen, and never 
 
 **Graphs, grids and beds.** Heat-map cells show the number alone, shade deepening, empty days a faint dot, days after tomorrow hatched, two-line day heads with today in accent. Bed pictures read "1 ready of 20 beds", a bed-type tag, squares on one line, a note line only when needed. One timeline per record with a live Now point.
 
+**Home: Needs you and Flow (Q340-Q345, #1324, 3 Nov).** One navigation row: **Needs you | Flow** as the raised switch, a rule, then the Flow stages as lighter trackless tabs with counts (All, Needs a bed, Bed agreed, Ready to move, Moving), red when someone in that stage is late. A stage tab opens Flow at that stage. Flow groups open movements by stage, oldest first, five rows per stage then "Show all N". Needs you holds act now, beds to pull and referrals to decide; a waiting alert is a mark on the patient's Flow row, not a second row. Later today sits in the right column on desktop and is a third tab on a phone. On a phone the row pins under the header. Use this one-row pattern for any page that pairs an action list with a staged list.
+
+**Tools sheet (Q308-Q326, Q350-Q353, #1316, 3 Nov).** Search and a Recent row (Suggested until a tool is used) lead, then Do now, Look up and Print and share, ordered per desk. Rows show live counts and short second lines. One tool open at a time, scrolled into view; from 1280 wide it opens in a second pane. "/" jumps to search; no match offers Search Ward Flow. Viewing as and the demo controls sit together at the foot. Pickers come from the kit, picks come from lists only, and On-call Call copies the number (no tel links).
+
 **Long data.** People and place names wrap in full and never lose the first name (Q285). Other long text takes two lines and an ellipsis, with the full text on hover and focus (Q284, Q286). Typed text breaks anywhere so it never runs out of its box (Q283). Hidden text stays inside its scroll area (Q281).
 
 ## 6. Words
@@ -158,21 +162,22 @@ Short labels win. Josh rejected "For you / With other desks" as too wordy (Q179)
 
 One word for each thing:
 
-| Say                   | Not                                                     |
-| --------------------- | ------------------------------------------------------- |
-| Alerts                | Tasks                                                   |
-| movement              | journey                                                 |
-| held up (a state)     | barrier, blocker (Releases held up stays on Ward, Q305) |
-| discharge (the event) | release, departure, due out                             |
-| Bed board             | Stays and discharges, Bed Board, board                  |
-| New referral          | Raise referral                                          |
-| Add patient           | Add a patient, New patient                              |
-| desks                 | units, areas, screens (in Broadcast)                    |
-| Locked                | Secure (except inside ward names)                       |
-| Board time            | Demo time                                               |
-| Synthetic numbers     | Mock numbers                                            |
-| Community team        | team, Community teams (as a page)                       |
-| Open (Home tab)       | Waiting (Waiting is the ED count)                       |
+| Say                    | Not                                                     |
+| ---------------------- | ------------------------------------------------------- |
+| Alerts                 | Tasks                                                   |
+| movement               | journey                                                 |
+| held up (a state)      | barrier, blocker (Releases held up stays on Ward, Q305) |
+| discharge (the event)  | release, departure, due out                             |
+| Bed board              | Stays and discharges, Bed Board, board                  |
+| New referral           | Raise referral                                          |
+| Add patient            | Add a patient, New patient                              |
+| desks                  | units, areas, screens (in Broadcast)                    |
+| Locked                 | Secure (except inside ward names)                       |
+| Board time             | Demo time                                               |
+| Synthetic numbers      | Mock numbers                                            |
+| Community team         | team, Community teams (as a page)                       |
+| Needs you, Flow (Home) | Open, Waiting, Queue (Waiting is the ED count)          |
+| Later today            | Planned                                                 |
 
 States: empty pages say what is empty without a Clear button ("No patients yet."). Offline: "You're offline. Tap again once you're back online." Slow: "Still loading. Check the connection." with Reload after about 15 seconds.
 
