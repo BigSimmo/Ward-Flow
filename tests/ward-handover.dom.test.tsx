@@ -83,7 +83,8 @@ describe("Handover page", () => {
     expect(rows).toHaveLength(openCount);
   });
 
-  it("holds the table to a set height so it scrolls inside its card", () => {
+  // Josh, 3 Nov 2026: one scroll for the page, replacing the 9 Oct set-height box.
+  it("lets the table grow with the page and scroll only sideways", () => {
     renderHandover();
     expect(screen.getByRole("region", { name: "Handover patients" })).toBeInTheDocument();
     const css = readFileSync(
@@ -91,8 +92,9 @@ describe("Handover page", () => {
       "utf8",
     );
     const block = css.slice(css.indexOf(".tableScroll {"), css.indexOf("}", css.indexOf(".tableScroll {")));
-    expect(block).toMatch(/max-height:/);
-    expect(block).toMatch(/overflow: auto/);
+    expect(block).not.toMatch(/max-height:/);
+    expect(block).toMatch(/overflow-x: auto/);
+    expect(block).not.toMatch(/overflow(-y)?: (auto|scroll)/);
   });
 
   it("names patients by name and UMRN and never shows a journey number", () => {

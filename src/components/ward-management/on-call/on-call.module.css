@@ -408,11 +408,19 @@
 }
 
 /* ---------- directory table ---------- */
+/* One scroll for the page (Josh, 3 Nov 2026): the directory grows with the page rather than sitting
+   in a 47rem box with its own scrollbar (design system v9 section 7). Below 1024px it scrolls only
+   sideways; from 1024px its columns fit, so nothing scrolls inside it and the head row and service
+   rows pin under the top bar. */
 .tableScroll {
-  max-height: 47rem;
-  overflow: auto;
+  overflow-x: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--wf-line-2) transparent;
+}
+
+/* A service jump lands its heading just under the pinned head row. */
+.serviceRow {
+  scroll-margin-top: 36px;
 }
 
 /* Device sweep (24 Oct 2026): 40rem was 24px wider than the directory beside the detail panel at
@@ -466,6 +474,25 @@
   letter-spacing: 0;
   font: inherit;
   color: inherit;
+}
+
+/* From 1024px (see .tableScroll): the head row and service rows pin under the top bar. */
+@media (min-width: 64rem) {
+  .directory {
+    overflow: clip;
+  }
+
+  .tableScroll {
+    overflow: visible;
+  }
+
+  .dirTable thead th {
+    top: var(--wf-header-height, 3.75rem);
+  }
+
+  .serviceRow th {
+    top: calc(var(--wf-header-height, 3.75rem) + 36px);
+  }
 }
 
 .serviceHead {

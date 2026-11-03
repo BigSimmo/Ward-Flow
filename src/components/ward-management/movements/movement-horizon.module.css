@@ -224,7 +224,10 @@
   grid-template-columns: minmax(0, 1fr) minmax(15rem, 18.5rem);
   align-items: stretch;
   position: relative;
-  /* P194: fit the rows on a desktop monitor, capped where the fixed height used to be. */
+  /* P194: fit the rows on a desktop monitor, capped where the fixed height used to be. The row is
+     held to that cap too (3 Nov 2026): an auto row grew to the full timeline, so the card cut off
+     the last wards and the corridor list instead of letting each scroll inside it. */
+  grid-template-rows: minmax(0, 1fr);
   max-height: clamp(24.5rem, 57dvh, 36rem);
 }
 
