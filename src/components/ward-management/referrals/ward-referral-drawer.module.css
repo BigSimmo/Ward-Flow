@@ -2960,6 +2960,11 @@ details.refCard > summary {
     -webkit-appearance: none;
   }
 
+  /* The app's own caret (the ::after above) stands in for the built-in one (H5). */
+  .drawerWide[data-ph-mode] .inboxPicker > select::picker-icon {
+    display: none;
+  }
+
   .drawerWide[data-ph-mode] .inboxPane article.refCard {
     gap: var(--wf-s-3);
     padding: var(--wf-s-4);

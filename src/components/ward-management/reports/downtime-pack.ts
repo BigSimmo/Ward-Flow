@@ -2,6 +2,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates, type BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
+import { isEdOriginJourney, recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
@@ -76,8 +77,8 @@ export type DowntimePack = {
   /** The shift change this pack was retaken for, when it is the handover copy (downtime-pack-schedule.ts). */
   shiftChangeAt?: Instant;
   /**
-   * Open movements that have left their ED (moving to a ward). The ED queue counts only people still
-   * in the department, so All EDs' open count is `edQueue.length + leftEd`; the pack says so.
+   * Open ED-origin journeys in transit or with a recorded departure. Together with the ED queue,
+   * these partition open ED journeys. Community journeys and ward transfers are excluded.
    */
   leftEd: number;
   /**
@@ -146,10 +147,10 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
   );
 
   const open = movements.filter(isOpen);
-  // D-76: a journey from a community team was never in an ED.
-  const stillInEd = open.filter(
-    (movement) =>
-      movement.originEdId !== undefined && movement.stage !== "moving" && movement.leftDepartmentAt === undefined,
+  const edJourneys = open.filter(isEdOriginJourney);
+  // Physical presence includes recorded ED outcomes, unlike inpatient-bed waiting.
+  const stillInEd = edJourneys.filter(
+    (movement) => movement.stage !== "moving" && recordedEdDeparture(movement) === undefined,
   );
 
   const edQueue = stillInEd
@@ -198,8 +199,14 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     edQueue,
     pendingMoves,
     legalForms,
-    leftEd: open.length - stillInEd.length,
+    leftEd: edJourneys.length - stillInEd.length,
   };
+}
+
+/** The note beside the ED queue for open ED journeys that have left the department, or null. */
+export function leftEdNote(leftEd: number): string | null {
+  if (leftEd <= 0) return null;
+  return `${leftEd} more open ED ${leftEd === 1 ? "journey is" : "journeys are"} in transit or ${leftEd === 1 ? "has" : "have"} a recorded departure.`;
 }
 
 /**

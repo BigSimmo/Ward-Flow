@@ -187,14 +187,14 @@ Historical questions from 24 October 2026, except the source-verified resolution
 - Approve or change the access log mock-up (D-80 item 14).
 - In Supabase, turn off "Allow new users to sign up", so only invited test accounts can register.
 - Choose the Sentry organisation for server error reporting (PR #686).
-- Say when the hosted backend last deployed, so database migration 13 can be applied.
 - Turn on Remote Control on his computer for the backup-restore drill and the hosted two-person run.
-- Test sign-ins: new test passwords, and renewal before the current logins expire (about 16 November).
+- Test sign-ins: new test passwords, and a hosted sign-in renewal check (Q390, 3 Nov 2026: no deadline; sign in with a test account in the morning and make one save after lunch without signing in again). Checked 3 Nov 2026: test roles run to 31 January 2027, sign-in sessions have no time limit, and the hosted database already has migrations 1 to 16 (13 applied 25 October).
+- In Supabase, turn off the Ward Flow organisation's AI SQL, log and data options (Q391, yes 3 Nov 2026).
 - Set limits on who can grant administrator access.
 - Name the privacy officer and the clinical safety owner.
 - Turn on Dependabot security updates in GitHub settings.
 - Arrange the clinician trial.
-- Before any real data (deferred by Josh): point-in-time backup, paid Supabase plan, invite-only sign-up and a TV privacy review.
+- Before any real data (deferred by Josh): work through the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md), including point-in-time backup, paid Supabase plan, invite-only sign-up and a TV privacy review.
 
 ## What is built
 
