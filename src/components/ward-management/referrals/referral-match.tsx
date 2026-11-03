@@ -1207,10 +1207,13 @@ export function ReferralMatchView({
               </summary>
               <p>
                 This view places nobody: a coordinator decides each placement, one at a time. Wards are in fixed network
-                order in each group.{" "}
-                <span data-testid="ward-referral-match-synthetic-notice">{SYNTHETIC_TRAVEL_TIMES_NOTICE}</span>
+                order in each group.
               </p>
             </details>
+            {/* The invented-travel-times sentence stays visible wherever a band is shown, never folded. */}
+            <p className={notes.travelNote} data-testid="ward-referral-match-synthetic-notice">
+              {SYNTHETIC_TRAVEL_TIMES_NOTICE}
+            </p>
             {phone}
           </DecidedBy>
           {communityDeskView ? null : (
