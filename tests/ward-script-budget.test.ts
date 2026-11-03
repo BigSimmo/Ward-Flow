@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { gzipSync } from "node:zlib";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   LEGACY_MOVEMENT_REDIRECT,
@@ -13,7 +13,7 @@ import scriptBudget from "../script-budget.json";
 import { movementHref } from "../src/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "../src/components/ward-management/shell/ward-record-address";
 
-type Fixture = { status?: number; type?: string; body?: string; location?: string };
+type Fixture = { status?: number; type?: string; body?: string; location?: string; stall?: boolean };
 
 async function withPages(
   fixtures: Record<string, Fixture>,
@@ -28,6 +28,11 @@ async function withPages(
       "content-type": fixture?.type ?? "text/html",
       ...(fixture?.location ? { location: fixture.location } : {}),
     });
+    if (fixture?.stall) {
+      response.flushHeaders();
+      response.write("/* synthetic stalled asset */");
+      return;
+    }
     response.end(fixture?.body ?? "");
   });
   await new Promise<void>((resolve, reject) => {
@@ -61,6 +66,64 @@ describe("phone script budget", () => {
       '<script src="/_next/static/chunks/polyfills.js" noModule=""></script>' +
       '<script nomodule src="/_next/static/chunks/legacy.js"></script><script src="/_next/static/chunks/main.js"></script>';
     expect(scriptSources(html)).toEqual(["/_next/static/chunks/main.js"]);
+  });
+
+  it("counts parsed script elements rather than HTML examples or attribute text", () => {
+    expect(
+      scriptSources(
+        '<!-- <script src="/_next/static/comment.js"></script> -->' +
+          "<script>const example = '<script src=\"/_next/static/example.js\">';</script>" +
+          '<script data-note=" nomodule " src="/_next/static/real.js"></script>' +
+          '<script data-note=">" src="/_next/static/quoted.js"></script>',
+      ),
+    ).toEqual(["/_next/static/real.js", "/_next/static/quoted.js"]);
+  });
+
+  it("counts executable HTML scripts, including modules with nomodule, rather than data blocks", () => {
+    expect(
+      scriptSources(
+        '<script type="application/json" src="/_next/static/data.js"></script>' +
+          '<script type="importmap" src="/_next/static/map.js"></script>' +
+          '<script type="text/javascript; charset=utf-8" src="/_next/static/parameters.js"></script>' +
+          '<script language="vbscript" src="/_next/static/legacy-data.js"></script>' +
+          '<script type="MODULE" nomodule src="/_next/static/module.js"></script>' +
+          '<script type="text/javascript" src="/_next/static/classic.js"></script>' +
+          '<script type="" language="vbscript" src="/_next/static/empty-type.js"></script>' +
+          '<svg><script src="/_next/static/svg.js"></script></svg>' +
+          '<template><script src="/_next/static/template.js"></script></template>',
+      ),
+    ).toEqual(["/_next/static/module.js", "/_next/static/classic.js", "/_next/static/empty-type.js"]);
+  });
+
+  it("aborts a stalled asset body using a fresh request deadline", async () => {
+    const controllers: AbortController[] = [];
+    const deadline = vi.spyOn(AbortSignal, "timeout").mockImplementation(() => {
+      const controller = new AbortController();
+      controllers.push(controller);
+      return controller.signal;
+    });
+    try {
+      await withPages(
+        {
+          "/a": { body: page },
+          "/_next/static/chunks/a.js?dpl=test&v=1": { type: "application/javascript", stall: true },
+        },
+        async (base, requests) => {
+          const measured = routeKb(base, "/a").then(
+            (value) => ({ value, error: undefined }),
+            (error) => ({ value: undefined, error }),
+          );
+          await vi.waitFor(() => expect(requests).toContain("/_next/static/chunks/a.js?dpl=test&v=1"));
+          expect(deadline).toHaveBeenCalledWith(10_000);
+          expect(controllers).toHaveLength(2);
+          controllers[1]!.abort(new DOMException("synthetic request deadline", "TimeoutError"));
+          const result = await measured;
+          expect(result.error).toMatchObject({ name: "TimeoutError" });
+        },
+      );
+    } finally {
+      deadline.mockRestore();
+    }
   });
 
   it("reports only the routes over their budget", () => {

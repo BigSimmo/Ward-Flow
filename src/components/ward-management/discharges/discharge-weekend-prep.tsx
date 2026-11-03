@@ -13,7 +13,13 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { calendarDateOf, formatInstant, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstant,
+  MINUTES_PER_DAY,
+  perthDayLabel,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { holidaysListedFor, WA_PUBLIC_HOLIDAYS_LAST_YEAR } from "@/components/ward-management/wa-public-holidays";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { Badge, Button, Card, IconTile } from "@/components/wf";
@@ -57,11 +63,7 @@ function weekendPrepGroups(releases: readonly BedRelease[], now: Instant, dayZer
 }
 
 function shortMoment(instant: Instant, dayZero: Date): string {
-  const day = calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", {
-    weekday: "short",
-    timeZone: "Australia/Perth",
-  });
-  return `${day} ${formatInstant(instant)}`;
+  return `${perthDayLabel(instant, dayZero)} ${formatInstant(instant)}`;
 }
 
 function closureFact(closure: ServiceClosure, dayZero: Date): string {
