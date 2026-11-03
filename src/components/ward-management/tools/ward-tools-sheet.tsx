@@ -292,7 +292,7 @@ function searchWardFlow(words: string, close: () => void): boolean {
  * Viewing as and the Demo controls sit together at the foot.
  */
 /** Live counts on the rows. The executive desk has none: it never reads the operational World. */
-type SheetCounts = { bedsReady?: number; feed?: number; reminders?: number; leave?: number };
+type SheetCounts = { bedsReady?: number; feed?: number; reminders?: number; leave?: number; unconfirmed?: number };
 
 export function WardToolsSheet(props: WardToolsSheetProps) {
   return useExecutiveStatisticsControl().executive ? (
@@ -307,11 +307,12 @@ function OperationalToolsSheet(props: WardToolsSheetProps) {
   const feed = useFeedWaitingCount();
   const reminders = useReminderCount();
   const leave = useLeaveDueCount();
+  const unconfirmed = useUnconfirmedWards().waiting.length;
   return (
     <ToolsSheetView
       {...props}
       executive={false}
-      counts={{ bedsReady: counts.capacity?.value, feed, reminders, leave }}
+      counts={{ bedsReady: counts.capacity?.value, feed, reminders, leave, unconfirmed }}
     />
   );
 }
@@ -336,7 +337,7 @@ function ToolsSheetView({
   const canLogDelay = gate("RECORD_MOVEMENT_BLOCKER").allowed;
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const recent = useRecent();
-  const unconfirmed = useUnconfirmedWards();
+  const unconfirmed = counts.unconfirmed ?? 0;
 
   const [open, setOpen] = useState<ToolsSheetToolId | null>(null);
   const [query, setQuery] = useState("");
@@ -390,7 +391,7 @@ function ToolsSheetView({
             icon: Zap,
             name: "Quick actions",
             detail: "Ward updates, beds and more",
-            count: { n: unconfirmed.waiting.length, label: "wards not confirmed this shift", act: true },
+            count: { n: unconfirmed, label: "wards not confirmed this shift", act: true },
             body: (
               <QuickActionsPanel
                 onNavigate={onNavigate}
@@ -400,7 +401,7 @@ function ToolsSheetView({
                     icon: BellRing,
                     name: "Ward updates",
                     detail: "not confirmed",
-                    count: unconfirmed.waiting.length,
+                    count: unconfirmed,
                     title: "Ward updates",
                     body: <WardUpdatesRequest />,
                   },

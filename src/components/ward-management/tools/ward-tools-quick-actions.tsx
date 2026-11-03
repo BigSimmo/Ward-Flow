@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { ArrowUpRight, type LucideIcon } from "lucide-react";
 
-import { Button } from "@/components/wf/button";
+import { Button, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { formatInstant } from "../ward-clock";
 import { shiftConfirmations } from "../capacity/shift-confirmations";
@@ -92,6 +92,7 @@ export function useUnconfirmedWards() {
 export function WardUpdatesRequest() {
   const status = useUnconfirmedWards();
   const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
+  const [all, setAll] = useState(false);
   const toggle = (id: string) =>
     setChosen((current) => {
       const next = new Set(current);
@@ -118,8 +119,8 @@ export function WardUpdatesRequest() {
           Select all {status.waiting.length}
         </button>
       </div>
-      <ul className={styles.list}>
-        {status.waiting.slice(0, 8).map((unit) => (
+      <ul className={styles.list} id="ward-updates-list">
+        {status.waiting.slice(0, all ? undefined : foldLimit(status.waiting.length, 8)).map((unit) => (
           <li key={unit.id}>
             <label className={styles.ward}>
               <input type="checkbox" checked={chosen.has(unit.id)} onChange={() => toggle(unit.id)} />
@@ -129,7 +130,11 @@ export function WardUpdatesRequest() {
           </li>
         ))}
       </ul>
-      {status.waiting.length > 8 ? <p className={styles.quiet}>Show {status.waiting.length - 8} more</p> : null}
+      {foldHidden(status.waiting.length, 8) > 0 ? (
+        <ShowMoreRow onClick={() => setAll((open) => !open)} expanded={all} controls="ward-updates-list">
+          {all ? "Show fewer" : `Show ${foldHidden(status.waiting.length, 8)} more`}
+        </ShowMoreRow>
+      ) : null}
       <p className={styles.quiet}>Wards answer with Beds still correct on their home page. Replies show here.</p>
       <div className={styles.actions}>
         <Button variant="pri" disabledReason="Not wired in this prototype.">
