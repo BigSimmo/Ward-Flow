@@ -160,7 +160,10 @@ export function ReferralPatientStep({
     if (!isSearchOpen) return;
     const onPointerDown = (event: PointerEvent) => {
       const wrap = searchWrapRef.current;
-      if (wrap && event.target instanceof Node && !wrap.contains(event.target)) setIsSearchOpen(false);
+      if (wrap && event.target instanceof Node && !wrap.contains(event.target)) {
+        setIsSearchOpen(false);
+        setHighlight(-1);
+      }
     };
     document.addEventListener("pointerdown", onPointerDown, true);
     return () => document.removeEventListener("pointerdown", onPointerDown, true);
