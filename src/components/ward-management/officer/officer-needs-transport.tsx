@@ -301,7 +301,10 @@ export function OfficerBookingPanel({
             {callout}
             {form}
           </div>
-          <OfficerBookingContacts />
+          <OfficerBookingContacts
+            selected={answers.provider}
+            onPick={(provider) => setAnswers((current) => ({ ...current, provider }))}
+          />
         </div>
       </Sheet>
     );
@@ -340,7 +343,10 @@ export function OfficerBookingPanel({
         <div className={cxBody(styles.detailScroll, styles.bookingBody)}>
           {callout}
           {form}
-          <OfficerBookingContacts />
+          <OfficerBookingContacts
+            selected={answers.provider}
+            onPick={(provider) => setAnswers((current) => ({ ...current, provider }))}
+          />
         </div>
       </Card>
     </div>
