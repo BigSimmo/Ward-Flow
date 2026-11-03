@@ -562,10 +562,11 @@
   vertical-align: middle;
 }
 
-/* The table scrolls inside its card; its head and each day row stay in view while it does. */
+/* One scroll for the page (D-95, 3 Nov 2026): the table grows with the page instead of a box that
+   scrolled inside its card. Below 1024px it scrolls only sideways; from 1024px its head and each day
+   row pin under the top bar while the page scrolls. */
 .chronoScroll {
-  max-height: min(72vh, 900px);
-  overflow: auto;
+  overflow-x: auto;
   min-width: 0;
 }
 
@@ -603,6 +604,20 @@
   padding-top: var(--wf-s-1);
   padding-bottom: var(--wf-s-1);
   text-align: left;
+}
+
+@media (min-width: 64rem) {
+  .chronoScroll {
+    overflow: visible;
+  }
+
+  .page .chronoTable thead th {
+    top: var(--wf-header-height, 3.75rem);
+  }
+
+  .page .dayRow > th {
+    top: calc(var(--wf-header-height, 3.75rem) + 32px);
+  }
 }
 
 .dayRowInner {
