@@ -279,6 +279,7 @@
 /* Redesign (Josh, 31 Oct 2026): the hero's two actions read as buttons, pushed to the end of the
    figures' row, at the app's 40px control height. */
 .heroCopy.heroAction {
+  border-radius: var(--wf-r-ctl);
   height: auto;
   min-height: 40px;
   border-color: var(--wf-hero-edge);
@@ -660,6 +661,8 @@ button.taskLabel[aria-pressed="true"] {
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   pointer-events: auto;
   cursor: pointer;
+  /* FS2 handoff: the focus ring follows the kit's control corners, not square ones. */
+  border-radius: var(--wf-r-ctl);
 }
 
 .rowLink:hover {
