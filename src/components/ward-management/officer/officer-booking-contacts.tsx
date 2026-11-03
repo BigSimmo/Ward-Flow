@@ -45,7 +45,11 @@ export function ProviderNumber({ provider }: { provider: string | undefined }) {
           )
         }
       >
-        {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+        {copied ? (
+          <Check size={14} strokeWidth={1.75} aria-hidden="true" />
+        ) : (
+          <Copy size={14} strokeWidth={1.75} aria-hidden="true" />
+        )}
       </button>
     </span>
   );
@@ -93,7 +97,7 @@ export function OfficerBookingContacts({
               >
                 <span className={styles.contactText}>
                   <b>
-                    {chosen ? <Check size={13} aria-hidden="true" /> : null}
+                    {chosen ? <Check size={14} strokeWidth={1.75} aria-hidden="true" /> : null}
                     {contact.provider}
                   </b>
                   <span>
@@ -108,9 +112,9 @@ export function OfficerBookingContacts({
                 aria-label={`Copy the ${contact.provider} number`}
               >
                 {copied === contact.number ? (
-                  <Check size={14} aria-hidden="true" />
+                  <Check size={14} strokeWidth={1.75} aria-hidden="true" />
                 ) : (
-                  <Copy size={14} aria-hidden="true" />
+                  <Copy size={14} strokeWidth={1.75} aria-hidden="true" />
                 )}
               </button>
             </li>

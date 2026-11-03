@@ -35,7 +35,7 @@ export function OfficerDeliveredRow(props: {
           {umrn ? <span className={styles.mono}>{umrn}</span> : null} · {destination}{" "}
           <span className={styles.muted}>({provider})</span>
         </span>
-        <ChevronRight size={16} aria-hidden="true" />
+        <ChevronRight size={16} strokeWidth={1.75} aria-hidden="true" />
       </Link>
     </li>
   );

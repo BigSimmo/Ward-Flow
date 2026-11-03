@@ -3,7 +3,7 @@
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BedDouble, Car, Check, Clock, House, Plane } from "lucide-react";
+import { BedSingle, Car, Check, Clock, House, Plane } from "lucide-react";
 
 import {
   Button,
@@ -281,7 +281,7 @@ export function ReturnPlan({
         </dl>
         <dl className={styles.placeLine}>
           <dt>
-            <Icon icon={BedDouble} size={14} />
+            <Icon icon={BedSingle} size={14} />
             <SrOnly>Current placement</SrOnly>
           </dt>
           <dd className={styles.placeUnit} title={`${entry.unit.name}, ${site?.name ?? "site not recorded"}`}>
