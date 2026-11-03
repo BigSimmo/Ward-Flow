@@ -12,7 +12,7 @@ import { ChartGantt } from "lucide-react";
 import { Switch } from "@/components/wf";
 import s from "./movements-timeline-switch.module.css";
 
-const KEY = "wf.movements.timeline";
+const KEY = "ward-flow-movements-timeline";
 
 function readPref(): boolean {
   try {

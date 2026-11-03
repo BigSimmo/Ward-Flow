@@ -1137,7 +1137,7 @@ describe("movements board tab in the address", () => {
 
 describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", () => {
   it("keeps the timeline behind a switch until it is turned on", () => {
-    window.localStorage.removeItem("wf.movements.timeline");
+    window.localStorage.removeItem("ward-flow-movements-timeline");
     renderScreen();
     const panel = screen.getByRole("region", { name: "Today’s traffic" });
     const timelineSwitch = within(panel).getByRole("switch", { name: "Show timeline" });
@@ -1147,7 +1147,7 @@ describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", 
     fireEvent.click(timelineSwitch);
     expect(timelineSwitch).toHaveAttribute("aria-checked", "true");
     expect(within(panel).getByRole("heading", { name: "48 hour timeline" })).toBeInTheDocument();
-    expect(window.localStorage.getItem("wf.movements.timeline")).toBe("on");
+    expect(window.localStorage.getItem("ward-flow-movements-timeline")).toBe("on");
   });
 
   it("links each leg still to be recorded to that job on the Transport page, with no pop-up here", () => {
