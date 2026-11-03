@@ -574,9 +574,12 @@ export function Registers({
   onSilent,
   onPick,
   part = "all",
+  titled = true,
 }: {
   /** v10 phone: the registers and the longest quiet list each open in their own sheet. */
   part?: "all" | "registers" | "quiet";
+  /** Design brief (Josh, 3 Nov 2026): a sheet that already names "Today's follow-up" drops the inner title. */
+  titled?: boolean;
   escalated: Movement[];
   attention: { movement: Movement; title: string | undefined }[];
   closedToday: Movement[];
@@ -663,9 +666,9 @@ export function Registers({
       data-part={part === "all" ? undefined : part}
     >
       <div className={`${styles.sideB} ${polish.regBody}`} hidden={part === "quiet"}>
-        <h3 className={polish.regTitle}>Today&apos;s follow-up</h3>
+        {titled ? <h3 className={polish.regTitle}>Today&apos;s follow-up</h3> : null}
         {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
-        <div className={polish.regTabs} role="tablist" aria-label="Registers" onKeyDown={onTabKey}>
+        <div className={polish.regTabs} role="tablist" aria-label="Today's follow-up" onKeyDown={onTabKey}>
           {tabs.map((entry) => (
             <button
               key={entry.id}
@@ -814,7 +817,7 @@ export function Registers({
           )}
         </div>
         {/* W3: the old System tab was nearly always 0, so it is one quiet line under the lists. */}
-        <section aria-label="Delays with no named person" className={polish.regSystem} data-ward-primitive="panel">
+        <section aria-label="Delays with no named person" className={polish.regSystem}>
           <NoStatewideDelays />
         </section>
       </div>
