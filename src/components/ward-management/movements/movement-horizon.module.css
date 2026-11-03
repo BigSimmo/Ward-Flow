@@ -736,9 +736,12 @@
 /* Layout sweep PT-20 (iPad): the chart takes the full width with Corridors stacked below it, so no
    bar is cut under the rail, and each column head puts the day word under its time. */
 @media (min-width: 761px) and (max-width: 68.75rem) {
+  /* One scroll for the page (3 Nov 2026): stacked under the chart, Corridors grows with the page
+     instead of a 14rem box that left about 110px for its list. Full screen keeps its 14rem row,
+     because that view is held to the window. */
   .diagSplit {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: clamp(24.5rem, 57dvh, 36rem) 14rem;
+    grid-template-rows: clamp(24.5rem, 57dvh, 36rem) auto;
     height: auto;
     max-height: none;
   }
@@ -748,8 +751,23 @@
   }
 
   .corridorRail {
+    contain: none;
+    height: auto;
     border-left: 0;
     border-top: 1px solid var(--wf-line);
+  }
+
+  .corridorRail .edGroups {
+    overflow-y: visible;
+  }
+
+  .fullscreen .corridorRail {
+    contain: size;
+    height: 100%;
+  }
+
+  .fullscreen .corridorRail .edGroups {
+    overflow-y: auto;
   }
 }
 

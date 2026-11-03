@@ -98,5 +98,10 @@
     "id": "2026-11-03-tools-overhaul",
     "date": "2026-11-03",
     "line": "Tools is redesigned: recent tools first, Remind me, Due back, ready-made messages and an order for each desk."
+  },
+  {
+    "id": "2026-11-03-one-page-scroll",
+    "date": "2026-11-03",
+    "line": "Pages scroll as one, with headings pinned under the top bar, and a click outside a drawer now closes it."
   }
 ]
