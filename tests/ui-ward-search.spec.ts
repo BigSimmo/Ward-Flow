@@ -116,8 +116,9 @@ test.describe("@mockup Ward patient search", () => {
   });
 
   /**
-   * 1. WIDTH SWEEP. Five widths: 375 (phone), 641/700/760 (the band just past the phone breakpoint
-   * at 40rem, where the layout hands over from the phone census to the table) and 820.
+   * 1. WIDTH SWEEP. Seven widths: 375, 641, 700 and 743 (phone; the 641 to 743 band moved onto the
+   * one phone breakpoint on 2 Nov 2026), 744 (where the layout hands over from the phone census to
+   * the table), 760 and 820.
    *
    * Two properties, both geometric and both impossible in jsdom:
    *   - every column of the census table lies within its scroll wrapper's own SCROLLABLE extent, so
@@ -131,7 +132,7 @@ test.describe("@mockup Ward patient search", () => {
    * to the Patients census (PR #194). The second property once caught a live defect: a `.sr-only`
    * header label with no positioned ancestor put 324px of horizontal scroll on `<html>`.
    */
-  test("no column of the census table escapes its scroll container, and the page never scrolls sideways, at 375/641/700/760/820px", async ({
+  test("no column of the census table escapes its scroll container, and the page never scrolls sideways, at 375/641/700/743/744/760/820px", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 900 });
@@ -143,9 +144,9 @@ test.describe("@mockup Ward patient search", () => {
     await typeaheadInput(page).fill("pallow");
 
     const console_ = page.getByTestId("ward-patient-search-results-console");
-    for (const width of [375, 641, 700, 760, 820]) {
+    for (const width of [375, 641, 700, 743, 744, 760, 820]) {
       await page.setViewportSize({ width, height: 900 });
-      const phone = width <= 640;
+      const phone = width <= 743;
       if (phone) {
         await expect(console_.locator("table"), `${width}px should show the phone census`).toHaveCount(0);
         const rows = censusRows(page);

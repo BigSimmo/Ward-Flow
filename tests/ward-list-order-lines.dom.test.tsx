@@ -92,7 +92,7 @@ describe("list order lines", () => {
     const note = screen.getByTestId("delays-order-note");
     expect(screen.getByRole("button", { name: "Longest wait" })).toHaveAttribute("aria-pressed", "true");
     expect(note).toHaveTextContent(/^Longest wait first$/u);
-    fireEvent.click(screen.getByRole("button", { name: "By blocker" }));
+    fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
     expect(screen.getByTestId("delays-order-note")).toHaveTextContent(
       "Form times first, then other blockers. Longest wait first in each.",
     );

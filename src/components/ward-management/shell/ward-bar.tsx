@@ -53,6 +53,7 @@ const loadToolsSheet = () =>
 const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"));
 preloadWhenIdle(loadToolsSheet);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import { useToolsTwoPane } from "@/components/ward-management/tools/ward-tools-two-pane";
 import { useDemoMenuFromSheet } from "@/components/ward-management/tools/ward-demo-menu-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
@@ -266,6 +267,8 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   const router = useRouter();
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
   const isPhone = useIsPhone();
+  // Q311 (Josh, 2 Nov 2026): from 1280 wide, Tools shows the list and the open tool side by side.
+  const toolsTwoPane = useToolsTwoPane(isPhone);
   const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
   const {
     movements,
@@ -1283,7 +1286,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         testId="ward-bar-tools-sheet"
         returnFocusRef={toolsReturnTarget}
         desktopBackdropClassName={styles.drawerBackdrop}
-        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
+        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide} ${toolsTwoPane ? styles.drawerSheetToolsTwoPane : ""}`}
         headerClassName={styles.drawerHeader}
         titleClassName={styles.drawerTitle}
         closeButtonClassName={styles.drawerClose}
@@ -1302,6 +1305,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
       >
         <WardToolsSheet
           isPhone={isPhone}
+          twoPane={toolsTwoPane}
           roleLabel={deskRoleLabel}
           onNavigate={() => closePopover("tools", false)}
           onNewReferral={(destination = "ward") =>

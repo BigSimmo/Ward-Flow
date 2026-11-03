@@ -5,6 +5,7 @@ import type { WardFlowState } from "../ward-flow-reducer";
 import type { EventLogEntry } from "../ward-event-log";
 import type { WardAccess } from "../ward-role-access";
 import { wardPlaceLookup } from "../ward-access-places";
+import { WF_PHONE_QUERY } from "@/components/wf";
 import {
   ExecutiveStatisticsLivePreviewProvider,
   type ExecutiveLivePreviewProjection,
@@ -24,7 +25,7 @@ function useHeaderHeightSync(header: HTMLElement | null) {
     if (!header || typeof ResizeObserver === "undefined" || typeof window.matchMedia !== "function") return;
     const host = header.closest<HTMLElement>("[data-wf-scroller]") ?? header.parentElement;
     if (!host) return;
-    const phone = window.matchMedia("(max-width: 48rem)");
+    const phone = window.matchMedia(WF_PHONE_QUERY);
     const sync = () => {
       const height = header.getBoundingClientRect().height;
       if (phone.matches && height > PHONE_BAR_REST_PX + 0.5) {

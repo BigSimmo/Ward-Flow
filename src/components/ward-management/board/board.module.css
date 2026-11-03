@@ -1621,6 +1621,8 @@
   font-size: var(--t-0);
   font-weight: 600;
   line-height: var(--ward-leading-body);
+  /* Q283: a typed hold-up with a long unbroken string wraps instead of running out of the entry. */
+  overflow-wrap: anywhere;
 }
 
 .footnote {
@@ -3912,7 +3914,7 @@
   }
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .screen {
     padding-top: 0;
     padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
@@ -4215,7 +4217,7 @@
 .detailEmpty {
   line-height: 1.6;
 }
-@media screen and (max-width: 40rem) {
+@media screen and (max-width: 46.4375rem) {
   .beds {
     grid-template-columns: 1fr;
     gap: var(--ward-space-8);
@@ -5048,7 +5050,7 @@
     }
   }
 
-  @media (max-width: 40rem) {
+  @media (max-width: 46.4375rem) {
     .triageFigures {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -5560,7 +5562,7 @@
   }
 }
 
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .screen .shiftGrid {
     grid-template-columns: minmax(0, 1fr) max-content;
   }
@@ -5608,7 +5610,7 @@
  * who is going out and coming in. The bed grid with its filters, order and legend, the bed
  * dossier and the duplicate shift brief button at the top stay on the larger screen (the shift
  * brief stays at the foot of the page). Desktop is unchanged. */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .screen .header {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     row-gap: var(--wf-s-1);
@@ -5675,7 +5677,7 @@
  * columns, the Going out toggle is a two-button row, and the destinations list loses its nested
  * boxes. The synthetic day note stays on the larger screen (the page foot carries the synthetic
  * notice). Desktop is unchanged. */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .screen .main {
     padding: var(--wf-s-3);
   }
@@ -5936,7 +5938,7 @@
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
    with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
    tablet keep the toast above. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .toast {
     --toast-bg: light-dark(
       color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
@@ -5987,7 +5989,7 @@
 
 /* iPad portrait (device audit, 11 Oct 2026): Ready sits beside the four band figures on one row,
    not stacked above them. */
-@media screen and (min-width: 48.0625rem) and (max-width: 70rem) {
+@media screen and (min-width: 46.5rem) and (max-width: 70rem) {
   .screen .header {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -6026,7 +6028,7 @@
    hero instead of sitting as a rounded card; the region list stays on tablet and desktop; the
    repeated "1h ago" under each Needs-you row is dropped (the tag already says how long); and
    Needs you opens on its first three items. */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .screen .header {
     margin: -12px -12px 0;
     border-radius: 0;
@@ -6049,7 +6051,7 @@
   display: none;
 }
 
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .shiftMore {
     display: flex;
     align-items: center;
@@ -6308,7 +6310,7 @@
 /* Change 10 (D-77, 21 Oct 2026): every bed on the phone, above the day figures, two to a row.
  * The colour legend is left off, because the day count on each tile carries the meaning. A tapped
  * bed opens its record in a sheet (`.detailSheetBody`). */
-@media screen and (max-width: 48rem) {
+@media screen and (max-width: 46.4375rem) {
   .screen .phoneBeds {
     min-width: 0;
     margin: 0 0 var(--wf-s-3);

@@ -1,64 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, win32 } from "node:path";
+import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
-
-// Match the supported Windows shell route in scripts/ward-ci-public/check-contracts.mjs.
-// Never let Windows' bare bash select the WSL launcher for a native Node fixture.
-function resolveBash() {
-  if (process.platform !== "win32") return "bash";
-  const candidates = [
-    process.env.ProgramFiles && win32.join(process.env.ProgramFiles, "Git", "bin", "bash.exe"),
-    process.env["ProgramFiles(x86)"] && win32.join(process.env["ProgramFiles(x86)"]!, "Git", "bin", "bash.exe"),
-    process.env.LOCALAPPDATA && win32.join(process.env.LOCALAPPDATA, "Programs", "Git", "bin", "bash.exe"),
-  ];
-  const git = spawnSync("git", ["--exec-path"], {
-    encoding: "utf8",
-    timeout: 5_000,
-  });
-  if (git.status === 0 && git.stdout.trim())
-    candidates.push(win32.resolve(git.stdout.trim(), "..", "..", "..", "bin", "bash.exe"));
-  const system32 = win32.join(process.env.SystemRoot || "C:\\Windows", "System32").toLowerCase();
-  const bash = candidates.find(
-    (candidate) => candidate && existsSync(candidate) && !win32.resolve(candidate).toLowerCase().startsWith(system32),
-  );
-  if (!bash)
-    throw new Error(
-      "Release retry prerequisite missing: install Git Bash for native Windows; WSL bash is not supported",
-    );
-  return bash;
-}
-function shellPath(value: string) {
-  if (process.platform !== "win32") return value;
-  const path = win32.resolve(value).replaceAll("\\", "/");
-  if (!/^[A-Za-z]:\//.test(path)) throw new Error("Release retry fixture requires a local Windows drive path");
-  return `/${path[0].toLowerCase()}${path.slice(2)}`;
-}
-const bash = resolveBash();
-const shellEnvironment = { ...process.env };
-// Use the platform's PATH key once; Git Bash converts the inherited native Windows list.
-for (const key of Object.keys(shellEnvironment)) if (key.toUpperCase() === "PATH") delete shellEnvironment[key];
-shellEnvironment.PATH = process.env.PATH ?? process.env.Path ?? "";
-const prerequisites = spawnSync(bash, ["--noprofile", "--norc", "-c", "command -v jq >/dev/null"], {
-  encoding: "utf8",
-  timeout: 5_000,
-  env: shellEnvironment,
-});
-if (prerequisites.error || prerequisites.status !== 0)
-  throw new Error("Release retry prerequisite missing: selected Bash must provide jq (no recovery scenario ran)");
 
 const previous = "a".repeat(40);
 const target = "b".repeat(40);
 const newer = "c".repeat(40);
-type Release = {
-  id: number;
-  tag_name: string;
-  target_commitish: string;
-  draft: boolean;
-  body: string;
-};
+type Release = { id: number; tag_name: string; target_commitish: string; draft: boolean; body: string };
 type State = {
   current: string;
   target: string;
@@ -161,10 +111,7 @@ function harness(overrides: Partial<State> = {}) {
     ...overrides,
   };
   writeFileSync(statePath, JSON.stringify(initial));
-  writeFileSync(join(directory, "gh-mock.cjs"), github);
-  writeFileSync(join(directory, "gh"), '#!/bin/bash\nexec "$RELEASE_TEST_NODE" "$RELEASE_TEST_CLI" "$@"\n', {
-    mode: 0o700,
-  });
+  writeFileSync(join(directory, "gh"), github, { mode: 0o700 });
   const workflow = readFileSync(".github/workflows/daily-release.yml", "utf8");
   const script = workflow.split("        run: |\n")[1];
   if (!script) throw new Error("Release run block not found");
@@ -182,38 +129,21 @@ function harness(overrides: Partial<State> = {}) {
     change(update: Partial<State>) {
       writeFileSync(statePath, JSON.stringify({ ...read(), ...update }));
     },
-    run(repository = "BigSimmo/Ward-Flow") {
-      const result = spawnSync(
-        bash,
-        [
-          "--noprofile",
-          "--norc",
-          "-c",
-          [
-            'export PATH="$RELEASE_TEST_BIN:$PATH"',
-            'test "$(command -v gh)" = "$RELEASE_TEST_BIN/gh" || { echo "Release retry mock not selected" >&2; exit 97; }',
-            'exec "$BASH" "$RELEASE_TEST_SCRIPT"',
-          ].join("\n"),
-        ],
-        {
-          cwd: directory,
-          encoding: "utf8",
-          timeout: 10_000,
-          env: {
-            ...shellEnvironment,
-            RELEASE_TEST_BIN: shellPath(directory),
-            RELEASE_TEST_NODE: shellPath(process.execPath),
-            RELEASE_TEST_CLI: join(directory, "gh-mock.cjs"),
-            RELEASE_TEST_SCRIPT: shellPath(join(directory, "release.sh")),
-            REPOSITORY: repository,
-            RELEASE_TEST_STATE: statePath,
-            GITHUB_STEP_SUMMARY: shellPath(join(directory, "summary.md")),
-            GH_TOKEN: "synthetic-offline-only",
-          },
+    run(repository = "BigSimmo/Ward-Flow", extra: Record<string, string> = {}) {
+      return spawnSync("bash", [join(directory, "release.sh")], {
+        cwd: directory,
+        encoding: "utf8",
+        timeout: 10_000,
+        env: {
+          ...process.env,
+          PATH: `${directory}:${process.env.PATH}`,
+          REPOSITORY: repository,
+          RELEASE_TEST_STATE: statePath,
+          GITHUB_STEP_SUMMARY: join(directory, "summary.md"),
+          GH_TOKEN: "synthetic-offline-only",
+          ...extra,
         },
-      );
-      if (result.error) throw new Error(`Release retry shell failed to start: ${result.error.message}`);
-      return result;
+      });
     },
   };
 }
@@ -276,6 +206,15 @@ describe("daily release record and live-ref recovery", () => {
     expect(h.read().records).toHaveLength(1);
   });
 
+  it("releases from an unrecorded live commit only when a person asks for it", () => {
+    const h = harness({ current: previous, records: [], tags: {} });
+    expect(h.run().status).not.toBe(0);
+    expect(h.read().current).toBe(previous);
+    expect(h.run("BigSimmo/Ward-Flow", { ACCEPT_UNRECORDED_LIVE: "true" }).status).toBe(0);
+    expect(h.read().current).toBe(target);
+    expect(h.read().records.filter((record) => record.target_commitish === target && !record.draft)).toHaveLength(1);
+  });
+
   it("does not treat an API listing failure as an absent record", () => {
     const h = harness({ listFailures: 1 });
     expect(h.run().status).not.toBe(0);
@@ -300,6 +239,28 @@ describe("daily release record and live-ref recovery", () => {
       tags: kind === "wrong-tag" ? { ...state.tags, [`live-${target}`]: previous } : state.tags,
     });
     expect(h.run().status).not.toBe(0);
+    expect(h.read().current).toBe(previous);
+    expect(h.read().calls).not.toContain("PATCH repos/BigSimmo/Ward-Flow/git/refs/heads/live");
+  });
+
+  it("refuses a retained draft prepared from another live base", () => {
+    const h = harness();
+    const state = h.read();
+    h.change({
+      records: [
+        ...state.records,
+        {
+          id: 2,
+          tag_name: `live-${target}`,
+          target_commitish: target,
+          draft: true,
+          body: `Saved notes\n<!-- ward-flow-release-base: ${newer} -->`,
+        },
+      ],
+    });
+    const result = h.run();
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toMatch(/different base/);
     expect(h.read().current).toBe(previous);
     expect(h.read().calls).not.toContain("PATCH repos/BigSimmo/Ward-Flow/git/refs/heads/live");
   });

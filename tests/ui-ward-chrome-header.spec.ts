@@ -203,11 +203,11 @@ const OPENERS: ReadonlyArray<readonly [string, string, string]> = [
 ];
 
 /**
- * Phone (8 Oct 2026, locked lean bar 10 Oct 2026; device audit option A, 11 Oct 2026): at 48rem
- * (768px) and below the bar drops Activity, Tasks and Tools. Activity and Tasks open from the dock
+ * Phone (8 Oct 2026, locked lean bar 10 Oct 2026; device audit option A, 11 Oct 2026; Q292 2 Nov 2026): at 46.4375rem
+ * (743px) and below the bar drops Activity, Tasks and Tools. Activity and Tasks open from the dock
  * on every phone page, and Tools is a row in the phone menu that the bar's Menu button opens.
  */
-const PHONE_BAR_MAX_WIDTH = 768;
+const PHONE_BAR_MAX_WIDTH = 743;
 const PHONE_DOCK_BUTTONS: Readonly<Record<string, string>> = {
   "ward-bar-activity-trigger": "ward-phone-menu-activity",
 };

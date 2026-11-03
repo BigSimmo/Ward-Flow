@@ -227,7 +227,7 @@ describe("Ward page on a phone — the round (Option B, 20 Oct 2026)", () => {
   it("lists every bed once in bed order, with what needs the ward above it and no chip row", () => {
     const original = window.matchMedia;
     window.matchMedia = ((query: string) => ({
-      matches: query === "(max-width: 48rem)",
+      matches: query === "(max-width: 46.4375rem)",
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,

@@ -11,7 +11,14 @@ beforeEach(() => {
   vi.mocked(copyTextToClipboard).mockReset();
 });
 
-describe.each(["bed-summary", "contacts"])("repeat copy feedback (%s)", (tool) => {
+// Tools overhaul (2 Nov 2026): Copy bed summary became Messages, with one Copy button; On-call's
+// Call button copies the number (calling is not wired), so both still renew their status.
+const COPY_BUTTON = {
+  messages: (panel: HTMLElement) => within(panel).getByRole("button", { name: "Copy" }),
+  contacts: (panel: HTMLElement) => within(panel).getAllByRole("button", { name: /^Call / })[0]!,
+} as const;
+
+describe.each(["messages", "contacts"] as const)("repeat copy feedback (%s)", (tool) => {
   it.each([true, false])("renews the status content for repeated outcomes (success: %s)", async (success) => {
     if (success) vi.mocked(copyTextToClipboard).mockResolvedValue(undefined);
     else vi.mocked(copyTextToClipboard).mockRejectedValue(new Error("Clipboard unavailable"));
@@ -27,7 +34,7 @@ describe.each(["bed-summary", "contacts"])("repeat copy feedback (%s)", (tool) =
     );
     fireEvent.click(screen.getByTestId(`ward-tools-toggle-${tool}`));
     const panel = screen.getByTestId(`ward-tools-${tool}`);
-    const copy = within(panel).getAllByRole("button", { name: /^Copy / })[0]!;
+    const copy = COPY_BUTTON[tool](panel);
     const status = within(panel).getByRole("status");
     fireEvent.click(copy);
     await waitFor(() => expect(status.textContent?.length).toBeGreaterThan(0));

@@ -5,6 +5,7 @@ import {
   EMPTY_NEW_PATIENT,
   useReferralCommandCompletion,
   useReferralPatientRegistration,
+  useReferralRegistrationDraft,
 } from "./use-referral-command-completion";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
@@ -234,8 +235,8 @@ export function useWardReferralDrawerState({
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [guardOpen, setGuardOpen] = useState(false);
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
-  const [newPatientOpen, setNewPatientOpen] = useState(false);
-  const [newPatient, setNewPatient] = useState(EMPTY_NEW_PATIENT);
+  const registrationDraft = useReferralRegistrationDraft();
+  const { newPatientOpen, setNewPatientOpen, newPatient, setNewPatient } = registrationDraft;
   const guardKeepRef = useRef<HTMLButtonElement>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [sendPending, setSendPending] = useState(false);
@@ -460,6 +461,7 @@ export function useWardReferralDrawerState({
     setPending: setSendPending,
     onError: setFlowError,
     onCommitted(intake) {
+      setFlowError(null);
       stopDraftAutosave();
       discardReferralDraft(draftDiscardOwner);
       rememberReferrerContact(intake.referrer, draftOwnerVersion);
@@ -475,7 +477,7 @@ export function useWardReferralDrawerState({
     isDirty: !sentReferralId && !submissionAwaitingRecord && (dirty || draftKeptAt !== null),
     value: draftJson,
     skipAnchor: isOwnLeaveGuardAnchor,
-    // An unfinished New patient form is not kept, so it always counts as unsaved.
+    // An unfinished Add patient form is not kept, so it always counts as unsaved.
     unloadSafe: () =>
       JSON.stringify(newPatient) === JSON.stringify(EMPTY_NEW_PATIENT) &&
       referralDraftKeptOnScreen(draftStorageKey, draftNow, {
@@ -586,6 +588,7 @@ export function useWardReferralDrawerState({
       : rawCurrentPatient;
 
   function handleSelectPatient(key: string, addedInForm = false) {
+    registrationDraft.invalidateRegistration();
     const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
     if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
@@ -696,6 +699,8 @@ export function useWardReferralDrawerState({
     reason: addPatientGate.reason,
     patient: newPatient,
     onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
+    intentVersion: registrationDraft.intentVersion,
+    getIntentVersion: registrationDraft.getIntentVersion,
   });
 
   // Live capacity for the patient's cohort and the chosen bed security.
@@ -782,7 +787,7 @@ export function useWardReferralDrawerState({
     if (!effectiveCohort) return "Choose the age band.";
     if (!catchmentAnswered) return "Confirm the patient's catchment before continuing.";
     if (catchmentNotKnown && destType === "community")
-      return "A community team referral needs the catchment team. Choose the team, or send to a ward or ED.";
+      return "A community team referral needs a team. Choose the community team, or send to a ward or ED.";
     if (!homeRegion) return "Choose the patient's home region.";
     return null;
   }

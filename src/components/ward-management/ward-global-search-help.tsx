@@ -14,6 +14,7 @@
 import { useCallback, useMemo } from "react";
 
 import { HOW_TOS } from "./help/ward-help-howto";
+import { walkPlaysHere } from "./help/ward-help-screen-tours";
 import { howToHref } from "./help/ward-help-href";
 import { askWardHelp, openWardHelp, showWardHowTo } from "./help/ward-help-events";
 import { CLINICAL_REPLY, searchHelp, type HelpSearchResult } from "./help/ward-help-search-index";
@@ -90,7 +91,9 @@ export function helpPreviewAnswer(id: string, role: WardTourRole, showMeOn: bool
   if (!result) return undefined;
   const howTo = result.howToId ? HOW_TOS.find((candidate) => candidate.id === result.howToId) : undefined;
   const steps = howTo?.showMe ?? [];
-  return { steps, showMe: Boolean(showMeOn && steps.length && isDeskJob(result, role)) };
+  // A page walk round (one ward, one ED board) plays only on its own page.
+  const here = !howTo || typeof window === "undefined" || walkPlaysHere(howTo, window.location.pathname);
+  return { steps, showMe: Boolean(showMeOn && steps.length && here && isDeskJob(result, role)) };
 }
 
 /** Opens a listed Help answer in Help itself ("Open in Help"). */

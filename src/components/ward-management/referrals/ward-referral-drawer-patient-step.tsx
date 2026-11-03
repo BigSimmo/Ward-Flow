@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { CheckCircle2, MapPin, Search, User, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -154,6 +154,20 @@ export function ReferralPatientStep({
   // Change patient opens the full list before anything is typed; "No patient matches" needs a search.
   const searching = isSearchOpen && searchQuery.trim().length > 0;
   const showResults = isSearchOpen && filteredPatients.length > 0;
+  // D-95 (3 Nov 2026): a press outside the search closes its results, as Escape does.
+  const searchWrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const wrap = searchWrapRef.current;
+      if (wrap && event.target instanceof Node && !wrap.contains(event.target)) {
+        setIsSearchOpen(false);
+        setHighlight(-1);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [isSearchOpen, setIsSearchOpen]);
   const resultsId = `${searchId}-results`;
   useEffect(() => {
     if (showResults && highlight >= 0) revealWardOption(document.getElementById(`${searchId}-opt-${highlight}`));
@@ -203,7 +217,7 @@ export function ReferralPatientStep({
             }}
           >
             <UserPlus aria-hidden="true" />
-            New patient
+            Add patient
           </button>
         </CardHead>
         <div className={styles.cardBody}>
@@ -339,7 +353,7 @@ export function ReferralPatientStep({
             </form>
           ) : null}
           {fromEntryPoint && patientRecord && !isSearchOpen && !searchQuery ? null : (
-            <div className={styles.patientSearchWrap}>
+            <div ref={searchWrapRef} className={styles.patientSearchWrap}>
               <Search className={styles.patientSearchIcon} aria-hidden="true" />
               <input
                 ref={searchInputRef}
@@ -497,7 +511,7 @@ export function ReferralPatientStep({
           ) : unidentified === null ? (
             <div className={styles.confirmRow}>
               {noPatientChosen ? (
-                // The search, New patient and Not yet identified already say how, so the
+                // The search, Add patient and Not yet identified already say how, so the
                 // line says only what is true.
                 <p className={`${styles.patientSub} ${styles.patientSubWrap}`} data-testid="ward-referral-no-patient">
                   No patient chosen
@@ -824,7 +838,7 @@ export function ReferralPatientStep({
                 />
               </Field>
               <Field
-                label="Catchment team"
+                label="Community team"
                 htmlFor={`${sectionId}-team`}
                 error={patientShowErrors && !catchmentTeam.trim() ? "Choose the catchment" : null}
               >

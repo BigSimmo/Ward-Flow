@@ -626,7 +626,7 @@ export function renderEdRowNextGroup(
           <div
             className={styles.phoneSheetActions}
             role="group"
-            aria-label={`Actions for ${patientInfo.displayName}`}
+            aria-label={`Actions for ${patientInfo.formalName}`}
             data-testid={`ward-ed-phone-actions-${movement.id}`}
             onClickCapture={(event) => {
               const button = event.target instanceof Element ? event.target.closest("button") : null;

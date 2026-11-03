@@ -37,7 +37,7 @@ describe("site review shell fixes", () => {
 
   it("makes the phone Tasks row title a 44px target that keeps the row's layout", () => {
     const css = read("src/components/ward-management/ward-tasks-drawer.module.css");
-    const phone = css.slice(css.lastIndexOf("@media (max-width: 46.4375rem)"));
+    const phone = css.slice(css.lastIndexOf("@media (max-width: 46.4375rem) {"));
     const title = /\.rowTitle\s*\{([^}]*justify-self:\s*stretch[^}]*)\}/u.exec(phone)?.[1] ?? "";
     expect(title).toMatch(/margin-block:\s*-12px/u);
     expect(title).toMatch(/padding-block:\s*12px/u);

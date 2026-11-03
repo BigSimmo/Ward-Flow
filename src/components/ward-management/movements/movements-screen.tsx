@@ -1179,7 +1179,7 @@ export function MovementsScreen() {
                 <span>Tier</span>
                 <span>Patient</span>
                 <span>Route</span>
-                <span>{boardTab === "resolved" ? "Outcome" : "Barrier"}</span>
+                <span>{boardTab === "resolved" ? "Outcome" : "Held up by"}</span>
                 <span>Legal</span>
                 <span className={flow.columnEnd}>{boardTab === "resolved" ? "Took" : "Waited"}</span>
                 <span className={flow.columnEnd}>{boardTab === "resolved" ? "Closed" : "Next step"}</span>
@@ -1477,7 +1477,7 @@ export function MovementsScreen() {
 
         <WardPrototypeFooter
           testId="ward-movements-governance"
-          note="Patient journeys, transport legs and departments are invented · Not approved for clinical use"
+          note="Patient movements, transport legs and departments are invented · Not approved for clinical use"
         />
         <MovementDrawer
           // P2 item 4 (2026-09-17 review): remounts on every patient change, so a reason chosen

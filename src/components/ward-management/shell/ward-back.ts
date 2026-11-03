@@ -55,6 +55,13 @@ function placeKey(pathname: string): string | undefined {
  * is the desk's own home, so a ward nurse's own ward (and its bed board) stays a starting point.
  */
 export function wardBackParent(pathname: string, deskHomeHref: string): string | undefined {
+  // Own-place desks cannot open the Statistics index. A first entry or reload still needs an
+  // authorised parent, while coordinator, service and site desks keep the index fallback.
+  if (
+    /^\/ward-flow\/statistics\/(?:ward|ed|community)\/[^/]+\/?$/u.test(pathname) &&
+    /^\/ward-flow\/(?:ward|ed|community)\/[^/]+\/?$/u.test(deskHomeHref)
+  )
+    return deskHomeHref;
   for (const drill of DRILL_DOWNS) {
     const match = drill.pattern.exec(pathname);
     if (match) return drill.parent(match);

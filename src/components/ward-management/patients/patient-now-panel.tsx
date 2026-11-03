@@ -346,7 +346,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
                         : // A4-20, S-27: Who to call lists the catchment team from the patient record, so
                           // this row reads the same field rather than denying a team that list shows.
                           livePatient?.catchmentCommunityTeam
-                          ? "Catchment team, care not confirmed"
+                          ? "Community team, care not confirmed"
                           : "No community team on record"
                       : "UMRN, date of birth, where they live"
                   }

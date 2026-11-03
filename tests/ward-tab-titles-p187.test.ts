@@ -4,16 +4,16 @@ import { metadata as homeMetadata } from "@/app/ward-flow/page";
 import { generateMetadata as wardMetadata } from "@/app/ward-flow/ward/[unitId]/page";
 import { knownWardUnit } from "@/components/ward-management/ward-known-places";
 
-/** P187 (Josh, 27 Oct 2026): tab titles name the page first, then "· Ward Flow". */
+/** P187 (Josh, 27 Oct 2026): tab titles name the page first. Q272 (2 Nov 2026): then " — Ward Flow", as every page does. */
 describe("P187: tab titles", () => {
   it("names Home", () => {
-    expect(homeMetadata.title).toBe("Home · Ward Flow");
+    expect(homeMetadata.title).toBe("Home — Ward Flow");
   });
 
   it("names the ward first", async () => {
     const unit = knownWardUnit("dn-rph-acute")!;
     const { title } = await wardMetadata({ params: Promise.resolve({ unitId: unit.id }) });
-    expect(title).toBe(`${unit.name} · Ward Flow`);
+    expect(title).toBe(`${unit.name} — Ward Flow`);
   });
 
   it("keeps the not-found title", async () => {

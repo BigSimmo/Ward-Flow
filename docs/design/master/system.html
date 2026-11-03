@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow design system</title>
+    <style>
+      @font-face {
+        font-family: "Geist";
+        src: url("m/geist-latin.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      /* Same look as the Rules and lessons tab: master surfaces, one action blue, a slate band for the variation zone. */
+      :root {
+        --bg: #e8ecf0;
+        --panel: #fdfdfe;
+        --fg: #161e28;
+        --muted: #414953;
+        --line: #d5dbe2;
+        --accent: #245a8c;
+        --tint: #e6eef6;
+        --hero: #22384d;
+        --hero-ink: #fff;
+        --hero-ink-2: #c3d1de;
+        --hero-line: rgba(255, 255, 255, 0.2);
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0d141b;
+          --panel: #141d26;
+          --fg: #e8edf2;
+          --muted: #bcc8d4;
+          --line: #2c3540;
+          --accent: #7fb6e6;
+          --tint: #1b2a38;
+          --hero: #1a2b3b;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #0d141b;
+        --panel: #141d26;
+        --fg: #e8edf2;
+        --muted: #bcc8d4;
+        --line: #2c3540;
+        --accent: #7fb6e6;
+        --tint: #1b2a38;
+        --hero: #1a2b3b;
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.55 "Geist",
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding-block: 20px 40px;
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+        text-wrap: balance;
+      }
+      .lead {
+        color: var(--muted);
+        margin: 0 0 10px;
+        max-width: 80ch;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 14px 0 18px;
+      }
+      nav a {
+        font-size: 13px;
+        color: var(--accent);
+        text-decoration: none;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 4px 10px;
+        background: var(--panel);
+      }
+      nav a:focus-visible,
+      a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+        gap: 16px;
+      }
+      .sec {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        min-width: 0;
+      }
+      .sec.wide {
+        grid-column: 1 / -1;
+      }
+      .sec.vz {
+        background: var(--hero);
+        color: var(--hero-ink);
+        border-color: var(--hero);
+      }
+      .sec.vz h3,
+      .sec.vz p,
+      .sec.vz li {
+        color: var(--hero-ink-2);
+      }
+      .sec.vz h2,
+      .sec.vz b {
+        color: var(--hero-ink);
+      }
+      .sec.vz th,
+      .sec.vz td {
+        border-color: var(--hero-line);
+        color: var(--hero-ink-2);
+      }
+      .sec.vz th {
+        color: var(--hero-ink);
+      }
+      .sec.vz code {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--hero-ink);
+      }
+      h2 {
+        font-size: 15px;
+        margin: 0 0 8px;
+      }
+      h3 {
+        font-size: 13px;
+        margin: 14px 0 6px;
+        color: var(--muted);
+      }
+      p {
+        margin: 0 0 8px;
+        max-width: 80ch;
+      }
+      ul,
+      ol {
+        margin: 0 0 8px;
+        padding-left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      li {
+        overflow-wrap: anywhere;
+      }
+      li.chk {
+        list-style: none;
+        margin-left: -20px;
+        padding-left: 24px;
+        position: relative;
+      }
+      li.chk::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 3px;
+        width: 12px;
+        height: 12px;
+        border: 1.5px solid var(--muted);
+        border-radius: 3px;
+      }
+      code {
+        font-family: ui-monospace, "Geist Mono", monospace;
+        font-size: 12px;
+        background: var(--tint);
+        border-radius: 4px;
+        padding: 0 4px;
+      }
+      a {
+        color: var(--accent);
+      }
+      .sec.vz a {
+        color: var(--hero-ink);
+      }
+      .ref {
+        font-weight: 600;
+      }
+      .tw {
+        overflow-x: auto;
+        margin: 0 0 8px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13px;
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--line);
+      }
+      th {
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      td:first-child {
+        font-weight: 500;
+        min-width: 120px;
+      }
+      .src {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Ward Flow design system</h1>
+      <p class="lead">
+        The one design standard for every Ward Flow screen, mock-up and build, written on 2 Nov 2026 from everything the
+        screen builds and reviews taught us. It is drawn from the
+        <a href="https://claude.ai/artifact/91BETDiimnJVbyeCb2sxcK" target="_blank" rel="noopener">master design</a>,
+        not from the running app on <code>main</code>. The master also shows this page as its <b>Design system</b> tab.
+      </p>
+      <p class="lead">
+        Ward Flow is a prototype that uses synthetic data only. Nothing here is validated clinical decision support.
+      </p>
+      <p class="lead">
+        <b>What wins.</b> This page is the design system of record (Q327). <span class="ref">AGENTS.md</span> and Josh's
+        rulings, then the master design's newest screens, then this page, then
+        <span class="ref">design-system-v9.md</span> (kept as background). Where a merged page deliberately differs from
+        its mock-up, follow what shipped. Values live in
+        <span class="ref"><code>src/app/ward-flow-v9-tokens.css</code></span
+        >; this page names roles, never new values.
+      </p>
+      <p class="lead">
+        The lessons behind each rule are in <span class="ref">lessons/2026-11-02-design-lessons.md</span>.
+      </p>
+      <nav>
+        <a href="#1-principles">Principles</a><a href="#2-tokens">Tokens</a
+        ><a href="#3-breakpoints-and-the-shell">Breakpoints and the shell</a
+        ><a href="#4-components-the-kit">Components (the kit)</a><a href="#5-layout-and-patterns">Layout and patterns</a
+        ><a href="#6-words">Words</a><a href="#7-accessibility-and-resilience">Accessibility and resilience</a
+        ><a href="#8-the-variation-zone">The variation zone</a
+        ><a href="#9-before-posting-a-mockup-or-marking-a-pr-ready">Before posting a mock-up or marking a PR ready</a
+        ><a href="#10-decisions">Decisions</a>
+      </nav>
+      <div class="grid">
+        <section id="1-principles" class="sec">
+          <h2>1. Principles</h2>
+          <ol>
+            <li>
+              <b>Answer first.</b> Each page answers one question in five seconds. The answer is the hero title ("Short
+              26 beds", "2 need you now") and the focal part sits in the first screen.
+            </li>
+            <li><b>Calm and dense.</b> A 4px rhythm, a compact type scale, flush columns, no empty rails.</li>
+            <li>
+              <b>Colour means state.</b> Tone lives in glyphs, small tags and the hero. Red means act now and nothing
+              else. Words stay neutral ink.
+            </li>
+            <li>
+              <b>No coloured side edges.</b> No stripe, inset bar or tone-coloured border on any row, card, tile or stat
+              box (Josh, 31 Oct: "it feels tacky").
+            </li>
+            <li>
+              <b>One system, many pages.</b> Every page shares the shell, tokens and kit. Each page may then take one
+              signature idea of its own inside the <a href="#8-the-variation-zone">variation zone</a>.
+            </li>
+            <li><b>Short, warm words.</b> Labels of one to three words. Plain Australian English. Sentence case.</li>
+            <li>
+              <b>Honest and live.</b> Values show their age, counts agree everywhere, nothing claims more than it shows.
+            </li>
+            <li>
+              <b>Everyone can use it.</b> Keyboard first, a visible ring, text that grows to 200% without cutting, and
+              motion that follows the user's settings.
+            </li>
+          </ol>
+        </section>
+        <section id="2-tokens" class="sec wide">
+          <h2>2. Tokens</h2>
+          <p>
+            Use tokens only. A raw hex value, pixel size or radius in a screen is a defect. Click a token in the
+            master's Tokens tab to copy it.
+          </p>
+          <h3>Colour roles</h3>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Tokens</th>
+                  <th>Use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Ground and surfaces</td>
+                  <td>
+                    <code>--wf-canvas</code>, <code>--wf-surface</code>, <code>--wf-surface-2</code>,
+                    <code>--wf-raised</code>, <code>--wf-overlay</code>, <code>--wf-track</code>
+                  </td>
+                  <td>Canvas behind the sheet; solid surfaces carry data.</td>
+                </tr>
+                <tr>
+                  <td>States of a surface</td>
+                  <td><code>--wf-hover</code>, <code>--wf-selected</code>, <code>--wf-e-sel</code></td>
+                  <td>A selected item takes the selected tint with a neutral border, never a coloured edge.</td>
+                </tr>
+                <tr>
+                  <td>Lines</td>
+                  <td>
+                    <code>--wf-line</code>, <code>--wf-line-2</code>, <code>--wf-line-3</code>,
+                    <code>--wf-line-ctl</code>
+                  </td>
+                  <td>Hairlines, dividers and control outlines.</td>
+                </tr>
+                <tr>
+                  <td>Ink</td>
+                  <td>
+                    <code>--wf-ink-1</code>, <code>--wf-ink-2</code>, <code>--wf-ink-3</code>,
+                    <code>--wf-ink-off</code>, <code>--wf-dim</code>
+                  </td>
+                  <td>Text. "Not recorded" is ink-3.</td>
+                </tr>
+                <tr>
+                  <td>Action blue</td>
+                  <td>
+                    <code>--wf-accent</code> (+ <code>-strong</code>, <code>-tint</code>, <code>-ink</code>,
+                    <code>-hover</code>, <code>-press</code>), <code>--wf-pri-1</code>, <code>--wf-pri-2</code> (+
+                    hover, press)
+                  </td>
+                  <td>One action blue. Filled buttons, links, the focus ring, today, Now.</td>
+                </tr>
+                <tr>
+                  <td>Hero</td>
+                  <td>
+                    <code>--wf-hero-1</code>, <code>--wf-hero-2</code>, <code>--wf-hero-glow</code>,
+                    <code>--wf-hero-ink</code> (2, 3), <code>--wf-on-hero-*</code>
+                  </td>
+                  <td>The lit slate band only.</td>
+                </tr>
+                <tr>
+                  <td>Tones</td>
+                  <td>
+                    <code>--wf-danger</code>, <code>--wf-warning</code>, <code>--wf-success</code>,
+                    <code>--wf-info</code>, <code>--wf-neutral</code> and their <code>-ink</code>;
+                    <code>--wf-hero-*</code> tones on hero
+                  </td>
+                  <td>Glyphs and tags. Danger is act now.</td>
+                </tr>
+                <tr>
+                  <td>Tints</td>
+                  <td>
+                    <code>--wf-act-tint</code>, <code>--wf-hold-tint</code>, <code>--wf-fit-tint</code> (and
+                    <code>-edge</code> for glyph rings only)
+                  </td>
+                  <td>
+                    Row and tag backgrounds for act now, held and fits. The <code>-edge</code> tokens never draw a side
+                    edge.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Data</td>
+                  <td>
+                    <code>--wf-data-1</code> to <code>--wf-data-3</code>, <code>--wf-data-ready</code>,
+                    <code>--wf-data-closed</code>, <code>--wf-data-rest</code>, <code>--wf-hatch</code>,
+                    <code>--wf-now</code>
+                  </td>
+                  <td>Charts, bed squares, heat maps. The hatch means "may move" everywhere.</td>
+                </tr>
+                <tr>
+                  <td>Health services</td>
+                  <td>
+                    <code>--wf-svc-north</code>, <code>-south</code>, <code>-east</code>, <code>-wachs</code>,
+                    <code>-cahs</code>, <code>-private</code>, <code>-statewide</code>
+                  </td>
+                  <td>Service identity on maps and legends only.</td>
+                </tr>
+                <tr>
+                  <td>Materials</td>
+                  <td>
+                    <code>--wf-glass-bar</code>, <code>--wf-glass-pop</code>, <code>--wf-glass-sheet</code>,
+                    <code>--wf-sheen</code>, <code>--wf-scrim</code>, <code>--wf-scrim-strong</code>
+                  </td>
+                  <td>Glass about 80% opaque, with the sheen, for chrome and overlays. Never glass on data.</td>
+                </tr>
+                <tr>
+                  <td>Elevation</td>
+                  <td><code>--wf-e1</code>, <code>--wf-e2</code>, <code>--wf-e3</code>, <code>--wf-e-bar</code></td>
+                  <td>One raise per role. Cards that are not separate objects take no shadow.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Dark mode and the Bright light setting come from the same tokens. Check every screen in both light and dark.
+            In dark, a red badge on the phone bar needs the deeper red fill to pass 4.5:1 (Q302).
+          </p>
+          <h3>Type</h3>
+          <ul>
+            <li>
+              Faces: <code>--wf-font</code> (Geist) for words and chart axes; <code>--wf-mono</code> (Geist Mono,
+              tabular digits) for figures, times and counts.
+            </li>
+            <li>
+              Scale: 12, 13, 14, 15, 16, 20 and 28px (<code>--wf-fs-*</code> with <code>--wf-lh-*</code>).
+              <b>12px is the floor</b>, with no exception for capitals, column heads, chart labels or
+              <code>&lt;small&gt;</code>.
+            </li>
+            <li>
+              Strip figures are 15px. 20px figures appear in one focal strip per page only. The kit hero title is 20px
+              (<code>--wf-fs-20</code>); 28px is for a page's one display figure, such as the TV and Statistics heroes.
+            </li>
+            <li>
+              Tracking: <code>--wf-tr-20</code>, <code>--wf-tr-15</code>, <code>--wf-tr-caps</code> for the few capital
+              labels.
+            </li>
+          </ul>
+          <h3>Space, shape and size</h3>
+          <ul>
+            <li>
+              Space: <code>--wf-s-1</code> 4, <code>--wf-s-2</code> 8, <code>--wf-s-3</code> 12,
+              <code>--wf-s-4</code> 16, <code>--wf-s-6</code> 24, <code>--wf-s-8</code> 32. Page sections sit 24px
+              apart. Grid gutters are 16px.
+            </li>
+            <li>
+              Radius: <code>--wf-r-xs</code> 6 to <code>--wf-r-xl</code> 22, <code>--wf-r-pill</code>,
+              <code>--wf-r-ctl</code>, <code>--wf-r-track</code>, <code>--wf-r-tag</code>. The hero takes
+              <code>--wf-r-xl</code>.
+            </li>
+            <li>Rows: 44px default (<code>--wf-row-default</code>), 36px dense, 52px touch, 40px group heads.</li>
+            <li>Controls, by device:</li>
+          </ul>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>Control</th>
+                  <th>Phone</th>
+                  <th>Tablet and desktop</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Button</td>
+                  <td>40px drawn, 48px tap cover</td>
+                  <td>36px (<code>--wf-h-md</code>); 28px is the smallest target (<code>--wf-target</code>)</td>
+                </tr>
+                <tr>
+                  <td>Small button</td>
+                  <td>40px on phone (Q295)</td>
+                  <td>32px (<code>--wf-h-sm</code>)</td>
+                </tr>
+                <tr>
+                  <td>Tabs and segments</td>
+                  <td>
+                    40px items on a 48px track (Q225; the kit overrides the older <code>--wf-phone-seg-*</code> 32/40)
+                  </td>
+                  <td>30px at 13px (Q231)</td>
+                </tr>
+                <tr>
+                  <td>Chips and filter pills</td>
+                  <td>40px (<code>--wf-phone-pill-h</code>)</td>
+                  <td>22 to 30px</td>
+                </tr>
+                <tr>
+                  <td>Accept, Pull, Decline</td>
+                  <td>Full 48px (the one exception)</td>
+                  <td>Kit size</td>
+                </tr>
+                <tr>
+                  <td>Controls at 200% text</td>
+                  <td>Grow with the text: min-height, never a fixed height (Q306)</td>
+                  <td>Same</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>Motion</h3>
+          <p>
+            <code>--wf-t-press</code> 80ms, <code>--wf-t-micro</code> 100ms, <code>--wf-t-enter</code> 220ms,
+            <code>--wf-t-exit</code> 160ms, <code>--wf-t-sheet</code> 340ms, <code>--wf-t-live</code> 1400ms, with
+            <code>--wf-ease-out</code>, <code>--wf-ease-in</code> and <code>--wf-ease-sheet</code>. A press answers
+            within 100ms. Reduced motion turns movement into a fade or nothing.
+          </p>
+          <h3>Focus</h3>
+          <p>
+            A 2px <code>--wf-focus-ring</code> with a 2px gap, never clipped, light on the hero. Escape closes the top
+            layer only and returns focus to what opened it.
+          </p>
+        </section>
+        <section id="3-breakpoints-and-the-shell" class="sec">
+          <h2>3. Breakpoints and the shell</h2>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>Range</th>
+                  <th>Width</th>
+                  <th>Shell</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Phone</td>
+                  <td>up to 743px</td>
+                  <td>Top bar, phone dock, sheets. Its own design.</td>
+                </tr>
+                <tr>
+                  <td>Short touch screens</td>
+                  <td>under about 500px tall</td>
+                  <td>
+                    Treated as phone for control size and dock (Q289). Drawer headers scroll with the body (Q288).
+                  </td>
+                </tr>
+                <tr>
+                  <td>Tablet portrait</td>
+                  <td>744 to 1000px</td>
+                  <td>No rail beside the work. iPads at 744 and 768 get this layout (Q292).</td>
+                </tr>
+                <tr>
+                  <td>Tablet landscape</td>
+                  <td>1001 to 1200px</td>
+                  <td>Icon rail.</td>
+                </tr>
+                <tr>
+                  <td>Desktop</td>
+                  <td>1201px and up</td>
+                  <td>Full master sidebar.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            The queries live in <code>src/components/wf/use-is-phone.ts</code>; CSS repeats them as
+            <code>(max-width: 46.4375rem)</code> and <code>(min-width: 46.5rem)</code>. Use one breakpoint value
+            everywhere.
+          </p>
+          <p>
+            <b>Check every page at 390, 744, 768, 820, 1280 and 1440, in light and dark, and at 200% text on phone.</b>
+          </p>
+          <p>
+            The shell is the same on every page. Copy it from the master's newest screens (the redesign preview with
+            <code>?shell=next</code>), never from a page on <code>main</code>.
+          </p>
+          <ul>
+            <li>
+              <b>Sidebar.</b> The master sidebar on every page (#1280). Pinned pages last for the open browser tab only.
+            </li>
+            <li>
+              <b>App bar.</b> Dark, joined to the band hero. On phone a long page name shrinks with an ellipsis so
+              Search always shows (Q280). No "Synthetic prototype" pill; the footer keeps its synthetic-data notice, and
+              the TV view and printouts keep a small mark.
+            </li>
+            <li>
+              <b>Band hero.</b> The kit <code>Hero</code> with <code>data-wf-hero="band"</code>, full width, joined to
+              the bar, with the light sheet below. Phone uses the same Hero. One per page.
+            </li>
+            <li>
+              <b>Phone dock.</b> Each person keeps their own dock everywhere (Q162). On a page no dock tab owns, the
+              Menu icon lights in accent (Q161). The tab is "Alerts" (Q268). Labels shrink to fit at large text and
+              never split a word (Q307, #1310).
+            </li>
+            <li><b>Toasts</b> sit <code>--wf-toast-dock-gap</code> above the dock (24px in the new frame).</li>
+            <li>
+              <b>Loading and offline notes</b> rest at the foot of the window, above the dock, never over the page title
+              (Q276).
+            </li>
+          </ul>
+        </section>
+        <section id="4-components-the-kit" class="sec wide">
+          <h2>4. Components (the kit)</h2>
+          <p>
+            Build with <code>src/components/wf</code>. Never copy a primitive into a screen, and never write one-off
+            <code>.tag</code>, <code>.chip</code> or <code>.pill</code> CSS. The master's Components tab shows each part
+            in each state.
+          </p>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>Need</th>
+                  <th>Use</th>
+                  <th>Rules</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Page header</td>
+                  <td><code>Hero</code> (band), <code>CheckingFoot</code></td>
+                  <td>
+                    Title is the answer, five words at most. One strip of figures. At most one on-hero action; on phone
+                    the rest go in "…" (Q153). Eyebrow hidden on phone unless it adds facts.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Figures</td>
+                  <td><code>Stat</code> strip</td>
+                  <td>
+                    Mono, tabular. Keep a strip on one row where it fits; let a title column shrink first (Q290, Q293).
+                  </td>
+                </tr>
+                <tr>
+                  <td>A labelled state</td>
+                  <td><code>Badge</code>, <code>StatusGlyph</code></td>
+                  <td>Small tinted tag or glyph. Counts use the count badge.</td>
+                </tr>
+                <tr>
+                  <td>A group of content</td>
+                  <td><code>Card</code></td>
+                  <td>Only where it is a separate object. Kit card heads keep their title whole (Q237).</td>
+                </tr>
+                <tr>
+                  <td>Actions</td>
+                  <td><code>Button</code></td>
+                  <td>
+                    One filled button per row or panel; the rest are quiet. Unavailable for now:
+                    <code>aria-disabled</code> with <code>disabledReason</code>. Never usable by this desk: not shown.
+                    Unwired: "Not wired in this prototype."
+                  </td>
+                </tr>
+                <tr>
+                  <td>Choosing one of a few</td>
+                  <td><code>choice</code> (segments, radio group)</td>
+                  <td>Never the browser's own drop-down for a kit choice (Q319).</td>
+                </tr>
+                <tr>
+                  <td>Search</td>
+                  <td><code>SearchField</code></td>
+                  <td>"/" jumps to it where a page has one search.</td>
+                </tr>
+                <tr>
+                  <td>Dates and times</td>
+                  <td><code>DateField</code> (DD/MM/YYYY), <code>TimePresets</code></td>
+                  <td>Never the browser's date picker. Never default a written time to now (Q120).</td>
+                </tr>
+                <tr>
+                  <td>Long lists</td>
+                  <td><code>ShowMoreRow</code></td>
+                  <td>About eight rows, then "Show 8 more" / "Show fewer". Never a small scrolling box.</td>
+                </tr>
+                <tr>
+                  <td>Pop-ups and panels</td>
+                  <td><code>Sheet</code>, <code>Dialog</code>, <code>requestConfirm</code></td>
+                  <td>
+                    See section 5. Leaving with unsaved work: "Leave this page?", "Leave without saving", "Keep editing"
+                    (focus on Keep editing). Never <code>confirm</code>, <code>alert</code> or <code>prompt</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Activity lists</td>
+                  <td><code>Feed</code>, <code>SinceYouLookedFold</code></td>
+                  <td>One timeline per record.</td>
+                </tr>
+                <tr>
+                  <td>Charts</td>
+                  <td><code>Chart</code></td>
+                  <td>To scale, from existing figures only, data tokens, Geist axes.</td>
+                </tr>
+                <tr>
+                  <td>Names</td>
+                  <td><code>FormalName</code></td>
+                  <td>
+                    Patients surname first as recorded ("Jenkinwood, Sarah"); staff as written ("Dr S. Chen", Q226).
+                    Always in full, wrapping.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Missing facts</td>
+                  <td><code>MissingValue</code></td>
+                  <td>"Not recorded" in ink-3; amber only where the gap blocks the next step.</td>
+                </tr>
+                <tr>
+                  <td>Phone folds and rows</td>
+                  <td><code>PhoneFold</code>, <code>phoneRows</code></td>
+                  <td>Chip rows put the count first and slide with an edge fade.</td>
+                </tr>
+                <tr>
+                  <td>Live changes</td>
+                  <td><code>LiveAnnouncer</code>, <code>live</code></td>
+                  <td>One polite region per page, batched, act-now changes only.</td>
+                </tr>
+                <tr>
+                  <td>Formatting</td>
+                  <td><code>format.ts</code> (<code>clk</code>, <code>dur</code>, <code>durMinutes</code>)</td>
+                  <td>Never re-implement a formatter.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section id="5-layout-and-patterns" class="sec">
+          <h2>5. Layout and patterns</h2>
+          <p>
+            <b>Page anatomy.</b> Every page has the band hero, a focal part that answers the page's question and gets
+            the most space, and a part of its own (the page's signature, see section 8). Restructure, don't restyle:
+            each fact lives in one right place.
+          </p>
+          <p>
+            <b>Grid.</b> 12 columns on desktop, 16px gutters. Main and rail at 2:1 or 3:1; a rail is never empty and
+            opens on the most urgent item. Side-by-side cards are flush and level. Below about 900px, two crowded cards
+            stack (Q291).
+          </p>
+          <p>
+            <b>Lists and panels.</b> A list-and-panel page opens on the first useful item (Home's Placement panel is the
+            exception). Group repeats into one row with one action ("Chase all"). Checklists: one head line with counts,
+            a bulk action and Hide, then one-line cards three across, first nine shown.
+          </p>
+          <p><b>Chips.</b> Filter and highlight chips sit in one row. A chip with nobody in it is hidden.</p>
+          <p>
+            <b>Pop-ups and side panels.</b> The name, a small status tag beside it, one quiet context line. Close takes
+            focus; no second Back link. Open on a short Summary; long lists go behind tabs with counts. Facts are label
+            and value pairs, three to five per titled group. Notes are one compact list with icons. Actions pinned at
+            the foot, one filled. Documents are chips that open a marked synthetic preview. Forms open blank. Tab stays
+            inside an open panel (Q300). On short screens the header scrolls and the footer unpins (Q288).
+          </p>
+          <p>
+            <b>Graphs, grids and beds.</b> Heat-map cells show the number alone, shade deepening, empty days a faint
+            dot, days after tomorrow hatched, two-line day heads with today in accent. Bed pictures read "1 ready of 20
+            beds", a bed-type tag, squares on one line, a note line only when needed. One timeline per record with a
+            live Now point.
+          </p>
+          <p>
+            <b>Long data.</b> People and place names wrap in full and never lose the first name (Q285). Other long text
+            takes two lines and an ellipsis, with the full text on hover and focus (Q284, Q286). Typed text breaks
+            anywhere so it never runs out of its box (Q283). Hidden text stays inside its scroll area (Q281).
+          </p>
+        </section>
+        <section id="6-words" class="sec wide">
+          <h2>6. Words</h2>
+          <p>
+            Short labels win. Josh rejected "For you / With other desks" as too wordy (Q179); keep the Alerts count
+            header ("4 act now · 9 waiting").
+          </p>
+          <ul>
+            <li>Sentence case, verbs first, 24-hour times, digits, short durations ("2d 14h"), dates as "2 Nov".</li>
+            <li>Titles five words at most, actions six. A row's second line is two to four words (Q313).</li>
+            <li>
+              Say a time once: "Sent 3 days ago · Due 2 days ago". Legal-form times are only as typed, never a countdown
+              (D-93); "within 1h" stays on Forms (Q152).
+            </li>
+            <li>
+              Fewer warnings: say it once, quietly. Safeguard wording stays word for word ("Not legally checked.").
+            </li>
+            <li>Screen-reader labels say what the screen shows (Q271).</li>
+            <li>Browser tab: the sidebar name + " — Ward Flow" (Q272).</li>
+          </ul>
+          <p>One word for each thing:</p>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>Say</th>
+                  <th>Not</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Alerts</td>
+                  <td>Tasks</td>
+                </tr>
+                <tr>
+                  <td>movement</td>
+                  <td>journey</td>
+                </tr>
+                <tr>
+                  <td>held up (a state)</td>
+                  <td>barrier, blocker (Releases held up stays on Ward, Q305)</td>
+                </tr>
+                <tr>
+                  <td>discharge (the event)</td>
+                  <td>release, departure, due out</td>
+                </tr>
+                <tr>
+                  <td>Bed board</td>
+                  <td>Stays and discharges, Bed Board, board</td>
+                </tr>
+                <tr>
+                  <td>New referral</td>
+                  <td>Raise referral</td>
+                </tr>
+                <tr>
+                  <td>Add patient</td>
+                  <td>Add a patient, New patient</td>
+                </tr>
+                <tr>
+                  <td>desks</td>
+                  <td>units, areas, screens (in Broadcast)</td>
+                </tr>
+                <tr>
+                  <td>Locked</td>
+                  <td>Secure (except inside ward names)</td>
+                </tr>
+                <tr>
+                  <td>Board time</td>
+                  <td>Demo time</td>
+                </tr>
+                <tr>
+                  <td>Synthetic numbers</td>
+                  <td>Mock numbers</td>
+                </tr>
+                <tr>
+                  <td>Community team</td>
+                  <td>team, Community teams (as a page)</td>
+                </tr>
+                <tr>
+                  <td>Open (Home tab)</td>
+                  <td>Waiting (Waiting is the ED count)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            States: empty pages say what is empty without a Clear button ("No patients yet."). Offline: "You're offline.
+            Tap again once you're back online." Slow: "Still loading. Check the connection." with Reload after about 15
+            seconds.
+          </p>
+        </section>
+        <section id="7-accessibility-and-resilience" class="sec">
+          <h2>7. Accessibility and resilience</h2>
+          <ul>
+            <li>
+              <b>200% text.</b> Kit controls grow (min-height, not height); labels wrap at word boundaries; safety lines
+              never end in "…".
+            </li>
+            <li>
+              <b>Focus.</b> The kit ring everywhere, including custom choice buttons (Q298). Escape returns focus to the
+              opener (Q299). Dialog pattern for pickers, not "menu" (Q301).
+            </li>
+            <li><b>Headings and landmarks.</b> No skipped levels; each landmark has a unique name (Q303, Q304).</li>
+            <li><b>Keyboard.</b> Scrollable strips are focusable. Arrow keys move through rows and tiles.</li>
+            <li><b>Contrast.</b> 4.5:1 for text and badges in both themes.</li>
+            <li>
+              <b>Stickies.</b> A sticky bar never covers content or a tab row (Q224). The design sweep test fails text
+              under 12px and covering sticky bars, and phone controls under 40px above each page's baseline
+              (<code>tests/ui-ward-design-sweep.spec.ts</code>).
+            </li>
+          </ul>
+        </section>
+        <section id="8-the-variation-zone" class="sec wide vz">
+          <h2>8. The variation zone</h2>
+          <p>
+            The shell, tokens and kit keep Ward Flow feeling like one product. The variation zone lets each page have
+            one memorable idea of its own, so screens are not all the same list.
+          </p>
+          <h3>Fixed everywhere (never varied)</h3>
+          <ul>
+            <li>The shell: sidebar, app bar, band hero frame, phone dock, toasts, footer.</li>
+            <li>Tokens: no new colours, sizes, radii or fonts. Tone semantics (red is act now).</li>
+            <li>Kit primitives: buttons, badges, choices, fields, sheets, dialogs, Show more.</li>
+            <li>
+              House rules: 12px floor, 40px phone controls with a 48px cover, 30px desktop tabs, no coloured side edges,
+              one filled button per panel, one on-hero action.
+            </li>
+            <li>Words, names, times, safety wording and synthetic data.</li>
+            <li>The five-second answer in the hero title.</li>
+          </ul>
+          <h3>Free to vary (one signature per page)</h3>
+          <p>
+            Each page may take <b>one signature part</b>: a bespoke visual that shows its own data in its own way. It
+            lives in the focal part or in the hero's own-part slot under the figure strip.
+          </p>
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>Dial</th>
+                  <th>Allowed range</th>
+                  <th>Examples</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Data picture</td>
+                  <td>
+                    Any honest, to-scale form drawn with the data, tone and service tokens and the hatch: bed squares,
+                    rails, heat maps, flows, maps
+                  </td>
+                  <td>Ward bed picture, Capacity bed map, Movements stage rail, Statistics charts</td>
+                </tr>
+                <tr>
+                  <td>Hero own part</td>
+                  <td>One strip under the hero figures: a timeline, a mini chart, a checking foot or a route line</td>
+                  <td>Shift timeline, Transport route line, Waiting check foot</td>
+                </tr>
+                <tr>
+                  <td>Composition</td>
+                  <td>Any layout on the 12-column grid: 2:1, 3:1, three across, a full-width board</td>
+                  <td>ED board full width, Discharges list and panel</td>
+                </tr>
+                <tr>
+                  <td>Density</td>
+                  <td>Dense 36px, default 44px or touch 52px rows, chosen per page and kept for the whole page</td>
+                  <td>TV board at touch, Statistics tables dense</td>
+                </tr>
+                <tr>
+                  <td>Scale</td>
+                  <td>A display scale for shared screens only (TV and meeting views) using the 20 and 28 steps</td>
+                  <td>Bed meeting TV</td>
+                </tr>
+                <tr>
+                  <td>Motion</td>
+                  <td>One signature motion per page from the motion tokens, off under reduced motion</td>
+                  <td>A live Now point sliding on a rail; a bed square filling</td>
+                </tr>
+                <tr>
+                  <td>Empty state</td>
+                  <td>A quiet glyph or a faded copy of the signature part, plus one plain sentence</td>
+                  <td>Faint bed squares with "No beds open"</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>Limits on any variation</h3>
+          <ol>
+            <li>It answers a question the page can't already answer (less is more).</li>
+            <li>
+              It uses tokens only and passes every fixed rule above, in light and dark, at every check width and at 200%
+              text.
+            </li>
+            <li>
+              Its phone form is designed, not squashed: it may simplify to a list or strip, never shrink below the
+              floor.
+            </li>
+            <li>
+              It is drawn in the page's mock-up, marked "Signature part" in the master, and built only after Josh
+              approves that mock-up.
+            </li>
+            <li>When a second page wants the same part, it moves into the kit and stops being a variation.</li>
+          </ol>
+        </section>
+        <section id="9-before-posting-a-mockup-or-marking-a-pr-ready" class="sec">
+          <h2>9. Before posting a mock-up or marking a PR ready</h2>
+          <ul>
+            <li class="chk">
+              Shell copied from the master's newest screens, compared side by side with the master's Home and Ward.
+            </li>
+            <li class="chk">
+              Checked at 390, 744, 768, 820, 1280 and 1440, light and dark, and at 200% text on phone.
+            </li>
+            <li class="chk">Tokens only; kit parts only; no one-off pills.</li>
+            <li class="chk">No coloured side edges; no text under 12px; phone controls 40px; desktop tabs 30px.</li>
+            <li class="chk">One on-hero action, one filled button per panel, eight rows then Show more.</li>
+            <li class="chk">
+              Words from section 6; patient names surname first, staff names as written, both in full; times as typed.
+            </li>
+            <li class="chk">At most one signature part, inside the limits in section 8.</li>
+            <li class="chk">Synthetic data only; no names or typed text in URLs, screenshots or logs.</li>
+          </ul>
+        </section>
+        <section id="10-decisions" class="sec">
+          <h2>10. Decisions</h2>
+          <p>
+            Josh said yes to all four on 2 Nov 2026 (21:00 UTC). Q308 to Q326 belong to the Tools review; this page's
+            block is Q327 to Q349.
+          </p>
+          <ol>
+            <li>
+              <b>Q327.</b> This page is the design system of record. design-system-v9.md is background only. <i>Yes.</i>
+            </li>
+            <li>
+              <b>Q328.</b> Each page may take one signature part inside the limits in section 8, approved in that page's
+              mock-up. <i>Yes.</i>
+            </li>
+            <li><b>Q329.</b> When a second page wants the same signature part, it moves into the kit. <i>Yes.</i></li>
+            <li>
+              <b>Q330.</b> The design sweep test checks 744 and 768 too, so the iPad layout is checked on every PR.
+              <i>Yes, built in its own small PR.</i>
+            </li>
+          </ol>
+        </section>
+      </div>
+      <p class="src">
+        Source: docs/design/DESIGN-SYSTEM.md in the Ward Flow repository, kept in step with this tab
+        (mockups/master/system.html). Written 2 Nov 2026.
+      </p>
+    </main>
+  </body>
+</html>

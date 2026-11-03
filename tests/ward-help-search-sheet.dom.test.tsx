@@ -40,7 +40,7 @@ function sheet(props: Partial<Parameters<typeof WardHelpSheet>[0]> = {}) {
 }
 
 function type(words: string) {
-  const field = screen.getByRole("searchbox", { name: "Search Help" });
+  const field = screen.getByRole("combobox", { name: "Search Help" });
   fireEvent.change(field, { target: { value: words } });
   return field;
 }

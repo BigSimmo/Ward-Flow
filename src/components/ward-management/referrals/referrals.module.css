@@ -9,11 +9,11 @@
  *
  * ⚠️ `--ri-two-col-breakpoint` HAS ZERO CONSUMERS TOO AND IS DELIBERATELY KEPT. It could never have
  * had one: a CSS custom property cannot appear in an `@media` condition, so the token named for
- * this file's breakpoint never drove it and never could. The 40rem in the media query below is a
- * literal and always was. The token survives as the written record of what that literal means —
+ * this file's breakpoint never drove it and never could. The 46.5rem in the media query below is a
+ * literal and always was (40rem until 2 Nov 2026, when it moved onto the app's one phone breakpoint). The token survives as the written record of what that literal means —
  * owner ruling 2026-09-04, on the standing rule that "nothing uses it" is never sufficient grounds
  * for deletion in this repository. Do not tidy it away; if it goes, the comment above referring to
- * it goes with it and the 40rem becomes an unexplained number.
+ * it goes with it and the 46.5rem becomes an unexplained number.
  *
  * This screen's audience is a police or ambulance officer standing in someone's living room, or
  * a community mental health nurse between visits — not someone at a desk. Every field below is a
@@ -28,8 +28,8 @@
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
 
   /* Consumed by nothing, and cannot be — see the header. It is the written record of what the
-     literal `40rem` in this file's media query means, kept deliberately. */
-  --ri-two-col-breakpoint: 40rem;
+     literal `46.5rem` in this file's media query means, kept deliberately. */
+  --ri-two-col-breakpoint: 46.5rem;
 
   display: flex;
   flex-direction: column;
@@ -344,7 +344,7 @@
   cursor: not-allowed;
 }
 
-@media (min-width: 40rem) {
+@media (min-width: 46.5rem) {
   .rejection,
   .submit {
     grid-column: 1 / -1;
@@ -477,7 +477,7 @@
    on the value `discharges` and `out-of-area` already use, which out-of-area chose for the same
    reason against the same 499px box, rather than inventing a third number. */
 /* ⚠️ THIS CLASS EXISTS TO BE PASSED TO `WardTable` AS `wrapperClassName`, AND THAT IS THE WHOLE
-   POINT OF IT. The `@media (max-width: 40rem)` block near the end of this file hides the table and
+   POINT OF IT. The `@media (max-width: 46.4375rem)` block near the end of this file hides the table and
    shows the card list by setting `display: none` HERE — so if the rendered scroll wrapper does not
    carry this local class, the swap silently stops happening and both the table and the cards
    render on a phone. That is exactly what shipped: `d136656ba` moved this board onto `WardTable`,
@@ -1363,13 +1363,13 @@
 
 /*
  * The table-to-cards swap for the board's two sections, at the same 40rem breakpoint the file's
- * earlier `@media (max-width: 40rem)` block already reserves phone-bar padding at. Kept as its
+ * earlier `@media (max-width: 46.4375rem)` block already reserves phone-bar padding at. Kept as its
  * own block, appearing AFTER every base `.tableScroll`/`.cardList` rule above (never before —
  * two unconditional rules of equal specificity resolve by source order, so a base rule appearing
  * after a media query would silently win at every width and undo the swap), matching
  * `discharges.module.css`'s own structure exactly.
  */
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .tableScroll {
     display: none;
   }
@@ -2601,13 +2601,11 @@
   padding: 0.75rem 0.875rem;
 }
 
+/* One scroll for the page (Josh, 3 Nov 2026): the queue grows with the page rather than sitting in
+   a box with its own scrollbar. */
 @media (min-width: 46.5rem) and (max-width: 63.999rem) {
   .screen[data-referral-view="register"] .registerQueue {
     grid-auto-rows: max-content;
-    max-height: 34rem;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-    scrollbar-color: var(--wf-line-2) transparent;
   }
 
   .screen[data-referral-view="register"] .registerQueue::-webkit-scrollbar {
@@ -2631,17 +2629,6 @@
 
   .screen[data-referral-view="register"] .registerLayout {
     grid-template-columns: minmax(26rem, 1.15fr) minmax(32rem, 1.45fr);
-  }
-
-  .screen[data-referral-view="register"] .registerQueue {
-    max-height: calc(100dvh - 7rem);
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-  }
-
-  .screen[data-referral-view="register"] .registerDetail {
-    max-height: calc(100dvh - 7rem);
-    overflow: hidden;
   }
 
   .screen[data-referral-view="register"][data-dense-view="true"] .tableScroll {
@@ -2739,31 +2726,23 @@
    remain boxed below. */
 
 /* Q003: the referral register becomes one matched wide workspace once both minimum columns fit.
- * Each queue section and the selected detail own their scrolling so the section heading remains visible.
- * Fixed structure: container height is fixed and only the longer side scrolls down, eliminating trailing gray areas. */
+ * One scroll for the page (Josh, 3 Nov 2026, replacing the fixed 52rem workspace that scrolled inside
+ * itself): the queue grows with the page and the selected referral is the side rail, pinned just
+ * under the top bar and capped at the window, so its actions stay in view. Only its body scrolls,
+ * and only when the referral is taller than the window. */
 @media (min-width: 62.5625rem) {
   .screen[data-referral-view="register"] .registerLayout {
     display: grid;
     grid-template-columns: minmax(26rem, 1.15fr) minmax(32rem, 1.45fr);
-    grid-template-rows: minmax(0, 1fr);
-    min-height: 48rem;
-    height: 52rem;
-    max-height: 56rem;
     gap: var(--ward-space-16);
-    align-items: stretch;
+    align-items: start;
   }
 
   .screen[data-referral-view="register"] .registerQueue {
     min-height: 0;
-    height: 100%;
-    max-height: 100%;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-gutter: stable;
+    overflow: clip;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r1, 10px);
@@ -2771,9 +2750,10 @@
   }
 
   .screen[data-referral-view="register"] .registerDetail {
+    position: sticky;
+    top: var(--ward-sticky-top, 4.5rem);
     min-height: 0;
-    height: 100%;
-    max-height: 100%;
+    max-height: var(--ward-rail-height, calc(100dvh - 6rem));
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -2828,14 +2808,10 @@
   }
 
   .screen[data-referral-view="register"] .registerDetail[data-has-selection="false"] {
-    height: 100%;
-    max-height: 100%;
     overflow-y: auto;
   }
 
   .screen[data-referral-view="register"] .registerDetail > .registerEmpty {
-    height: 100%;
-    min-height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2844,7 +2820,6 @@
     padding: var(--ward-space-24);
   }
 
-  .screen[data-referral-view="register"] .sectionHeading,
   .screen[data-referral-view="register"] .matchHeading {
     position: sticky;
     z-index: 2;
@@ -2992,7 +2967,7 @@
   border-radius: 0;
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .screen[data-referral-view="register"] .registerDetail[data-has-selection="true"] {
     left: 0;
     width: auto;

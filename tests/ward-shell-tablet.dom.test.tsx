@@ -150,7 +150,7 @@ describe("tablet portrait (769px to 1000px)", () => {
     expect(rail.slice(portrait)).toMatch(/\.rail,\s*\.rail\[data-rail="closed"\] \{\s*display: none;/u);
 
     const bar = css("src/components/ward-management/shell/ward-bar.module.css");
-    const barPortrait = bar.lastIndexOf("@media (min-width: 48.0625rem) and (max-width: 1000px)");
+    const barPortrait = bar.lastIndexOf("@media (min-width: 46.5rem) and (max-width: 1000px)");
     expect(barPortrait).toBeGreaterThan(bar.indexOf(".phoneOnly {\n  display: none;"));
     expect(bar.slice(barPortrait)).toMatch(
       /\.phoneOnly \{\s*display: inline-flex;[^}]*width: var\(--ward-tap, var\(--spacing-tap, 3rem\)\);/u,

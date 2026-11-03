@@ -1172,6 +1172,9 @@ function WardFlowWorld({
       if (!read.ok) return read;
       if (read.now < NOW_ANCHOR + read.state.clockOffsetMinutes)
         return { ok: false, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };
+      const generation = Math.max(commandsRef.current.world.worldGeneration, read.state.worldGeneration);
+      if (!safeCounter(generation) || generation >= Number.MAX_SAFE_INTEGER)
+        return { ok: false, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };
       // The clock resumes at the file's own scenario time: `now` is rebuilt from the same parts the
       // render uses, so the elapsed term is read fresh rather than from the last 30s tick.
       const elapsedNow =
@@ -1181,7 +1184,7 @@ function WardFlowWorld({
       // selections that belonged to the world being replaced.
       const world: WardFlowState = {
         ...read.state,
-        worldGeneration: Math.max(commandsRef.current.world.worldGeneration, read.state.worldGeneration) + 1,
+        worldGeneration: generation + 1,
       };
       // Continue past every record-request id either world has used (`nextOpenRequestSequence`).
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));

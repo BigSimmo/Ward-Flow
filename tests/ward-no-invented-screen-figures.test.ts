@@ -170,6 +170,18 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^ACCEPT_SECOND_TAP_GUARD_MS$/,
   },
   {
+    id: "loading-note-slow-pause",
+    why: "How long the first load waits for the page code before the loading note offers Reload (pre-launch review E2, Q274, 2 Nov 2026); a UI pause, not a limit.",
+    file: /^shell\/ward-loading-note-early\.ts$/,
+    name: /^WARD_LOADING_SLOW_MS$/,
+  },
+  {
+    id: "offline-prefetch-fresh",
+    why: "How long a page the router fetched in full may open offline, kept under Next's 5-minute client cache (pre-launch review E1, Q273, 2 Nov 2026); a cache window, not a limit.",
+    file: /^shell\/ward-offline-links\.tsx$/,
+    name: /^OFFLINE_PREFETCH_FRESH_MS$/,
+  },
+  {
     id: "restore-notice-pause",
     why: "How long the routine restored-save notice stays before it hides itself (simplification A3, 19 Oct 2026); a UI pause, not a limit.",
     file: /^shell\/ward-recovery-notice\.tsx$/,

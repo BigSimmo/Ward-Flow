@@ -13,12 +13,16 @@ import type { TourDevice, TourTarget } from "./ward-tour-steps";
 /** Said on a step whose control is not on screen, so the card never just floats with no reason. */
 export const SPOT_NOT_HERE = "This is not on the screen right now, for example when there is nothing to act on yet.";
 
-export type SpotBox = { top: number; left: number; width: number; height: number };
+/** The lit window, with `radius` following the control's own corners so the ring sits evenly round it. */
+export type SpotBox = { top: number; left: number; width: number; height: number; radius: number };
 
 /** How long a step waits for its control to appear (a page still loading) before it says so. */
 const FIND_TIMEOUT_MS = 2500;
 /** How often the spotlight re-measures, so a notice that shifts the page cannot leave it behind. */
 const REMEASURE_MS = 400;
+/** How many looks (one at once, then one each tenth of a second: about 0.3s) the light stays on the
+ *  last control while the next is found, so it slides there rather than blinking off. */
+const HOLD_LOOKS = 4;
 const GAP = 12;
 const EDGE = 8;
 /** A control taller than this share of the window is shown from its top, at this share. */
@@ -30,10 +34,13 @@ function tall(rect: DOMRect): boolean {
   return rect.height > window.innerHeight * TALL_SHARE;
 }
 
-/** Brings the control into view: centred, or a tall one to just under the header. */
-function bringIntoView(element: HTMLElement): void {
+/**
+ * Brings the control into view: centred, or a tall one to just under the header. On a phone every
+ * control goes to just under the header, so the card has room to dock underneath it.
+ */
+function bringIntoView(element: HTMLElement, device: TourDevice): void {
   const behavior: ScrollBehavior = "instant";
-  if (!tall(element.getBoundingClientRect())) {
+  if (device !== "phone" && !tall(element.getBoundingClientRect())) {
     element.scrollIntoView({ block: "center", inline: "nearest", behavior });
     return;
   }
@@ -64,22 +71,49 @@ function findFirst(targets: readonly TourTarget[]): HTMLElement | null {
   return targets.reduce<HTMLElement | null>((found, each) => found ?? findTourTarget(each), null);
 }
 
+/** The control's own top-left corner radius in px (a percentage read against its shorter side). */
+function cornerRadius(element: HTMLElement, rect: DOMRect): number {
+  const raw = window.getComputedStyle(element).borderTopLeftRadius ?? "";
+  const value = Number.parseFloat(raw);
+  if (!Number.isFinite(value)) return 0;
+  return raw.trim().endsWith("%") ? (Math.min(rect.width, rect.height) * value) / 100 : value;
+}
+
 /** The spotlight's box: the control with a little room, kept inside the window. */
 function spotBox(element: HTMLElement): SpotBox {
   const rect = element.getBoundingClientRect();
-  const pad = rect.width < 120 || rect.height < 40 ? 6 : 4;
+  const pad = rect.width < 120 || rect.height < 40 ? 8 : 6;
+  // The ring's corners follow the control's, grown by the room round it, within sensible bounds.
+  const radius = Math.min(22, Math.max(6, Math.round(cornerRadius(element, rect) + pad)));
   const top = Math.max(EDGE / 2, rect.top - pad);
   const left = Math.max(EDGE / 2, rect.left - pad);
   // A tall control is lit from its top only, leaving room under it for the card.
   const tallest = tall(rect) ? window.innerHeight * TALL_SHARE : Infinity;
   const bottom = Math.min(window.innerHeight - EDGE / 2, rect.bottom + pad, top + tallest);
   const right = Math.min(window.innerWidth - EDGE / 2, rect.right + pad);
-  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top), radius };
+}
+
+/** The phone's home-indicator inset, which the CSS hands over as the card's bottom scroll margin. */
+function safeBottom(card: HTMLElement): number {
+  return Number.parseFloat(window.getComputedStyle(card).scrollMarginBottom) || 0;
+}
+
+/** Turns on the card's glide between steps once it has been placed, so it never flies in. */
+function markReady(card: HTMLElement): void {
+  if (card.dataset.ready) return;
+  card.dataset.ready = "pending";
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      card.dataset.ready = "true";
+    }),
+  );
 }
 
 /**
  * Where the card goes. On a desktop it sits beside the control (right, left, below, then above),
- * kept inside the window. On a phone it spans the width, docked to whichever end has more room.
+ * kept inside the window. On a phone it spans the width, docked to the foot whenever it fits under
+ * the control (else whichever end has more room), lifted clear of the home indicator.
  * With no control it sits in the middle (a phone docks it to the foot).
  *
  * H-0376 / H-0890 (L1 re-measure, 26 Oct 2026): the card stays at the window's top left and moves
@@ -91,13 +125,15 @@ function placeCard(card: HTMLElement, box: SpotBox | null, device: TourDevice): 
   style.maxHeight = "";
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  const safe = device === "phone" ? safeBottom(card) : 0;
+  markReady(card);
   const moveTo = (left: number, top: number) => {
     style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
   };
   // A phone card spans the width from its CSS insets, so it only ever moves down.
   const dock = (end: "top" | "bottom") => {
     card.dataset.place = end;
-    moveTo(0, end === "top" ? EDGE : Math.max(EDGE, vh - EDGE - card.offsetHeight));
+    moveTo(0, end === "top" ? EDGE : Math.max(EDGE, vh - EDGE - safe - card.offsetHeight));
   };
   if (!box) {
     // B6-20 (device sweep, 24 Oct 2026): on a phone a step with no control still docks to the foot
@@ -112,12 +148,14 @@ function placeCard(card: HTMLElement, box: SpotBox | null, device: TourDevice): 
   }
   if (device === "phone") {
     const above = box.top;
-    const below = vh - (box.top + box.height);
-    const room = Math.max(above, below) - GAP - EDGE;
+    const below = vh - safe - (box.top + box.height);
+    // The foot first, so the card stays put from step to step; the top only when it would not fit.
+    const end = below - GAP - EDGE >= card.offsetHeight || below >= above ? "bottom" : "top";
+    const room = (end === "bottom" ? below : above) - GAP - EDGE;
     // Never cover the control when there is room for a readable card, else take just over half,
     // and on a short screen (a phone on its side) at least 260px, so a step reads with Next in view.
     style.maxHeight = `${room >= 200 ? room : Math.round(Math.max(vh * 0.56, Math.min(vh - EDGE * 2, 260)))}px`;
-    dock(above > below ? "top" : "bottom");
+    dock(end);
     return;
   }
   card.dataset.place = "beside";
@@ -148,16 +186,25 @@ function placeCard(card: HTMLElement, box: SpotBox | null, device: TourDevice): 
  * Finds the first of `targets` on screen (waiting a moment for a page still drawing), brings it into
  * view and follows it while the window scrolls or resizes. A control the page draws again (React
  * replacing it) or that turns up late (a page that opened after the step began) is looked for again
- * on every re-measure, so the light never stays lost. `key` names the step: a new key starts dark.
- * `missing` turns true once the wait is over with nothing found, so the card can say so.
+ * on every re-measure, so the light never stays lost. `key` names the step: a new key keeps the last
+ * step's light for a moment while its control is found, so the light slides there rather than
+ * blinking off, then goes dark. `missing` turns true once the wait is over with nothing found, so the
+ * card can say so. `device` sets where the control is scrolled to (see `bringIntoView`).
  */
 export function useSpotlight(
   targets: readonly TourTarget[] | undefined,
   key: string,
-): { box: SpotBox | null; missing: boolean } {
+  device: TourDevice = "desk",
+): { box: SpotBox | null; missing: boolean; held: boolean } {
   const [spot, setSpot] = useState<{ key: string; box: SpotBox | null; missing: boolean } | null>(null);
   useEffect(() => {
-    if (!targets?.length) return;
+    // The last step's light is let go when this step has none, or its control is not found in time.
+    const letGo = () => setSpot((last) => (last && last.key !== key ? null : last));
+    if (!targets?.length) {
+      const soon = window.setTimeout(letGo);
+      return () => window.clearTimeout(soon);
+    }
+    let looks = 0;
     let element: HTMLElement | null = null;
     let frame = 0;
     let follow = 0;
@@ -167,33 +214,46 @@ export function useSpotlight(
       frame = requestAnimationFrame(() => {
         if (!element || !element.isConnected) {
           const found = findFirst(targets);
-          if (found && found !== element) bringIntoView(found);
+          if (found && found !== element) bringIntoView(found, device);
           element = found;
         }
         setSpot({ key, box: element ? spotBox(element) : null, missing: !element && gaveUp });
       });
     };
     const started = Date.now();
-    const poll = window.setInterval(() => {
+    let poll = 0;
+    let looking = true;
+    const look = () => {
+      if (!looking) return;
       element = findFirst(targets);
+      if (!element && ++looks === HOLD_LOOKS) letGo();
       if (!element && Date.now() - started < FIND_TIMEOUT_MS) return;
+      looking = false;
       window.clearInterval(poll);
       gaveUp = !element;
-      if (element) bringIntoView(element);
+      if (element) bringIntoView(element, device);
       measure();
       follow = window.setInterval(measure, REMEASURE_MS);
-    }, 100);
+    };
+    poll = window.setInterval(look, 100);
+    // Looked for straight away too, so a control already on screen is lit within a frame.
+    look();
     window.addEventListener("scroll", measure, true);
     window.addEventListener("resize", measure);
     return () => {
+      looking = false;
       window.clearInterval(poll);
       window.clearInterval(follow);
       cancelAnimationFrame(frame);
       window.removeEventListener("scroll", measure, true);
       window.removeEventListener("resize", measure);
     };
-  }, [targets, key]);
-  return spot && spot.key === key ? { box: spot.box, missing: spot.missing } : { box: null, missing: false };
+  }, [targets, key, device]);
+  if (spot && spot.key === key) return { box: spot.box, missing: spot.missing, held: false };
+  // Still looking: the last step's light stays put until this step's control is found. It says so
+  // (`held`), so a check that this step lit its control never counts the last step's light.
+  if (spot?.box && targets?.length) return { box: spot.box, missing: false, held: true };
+  return { box: null, missing: false, held: false };
 }
 
 /**

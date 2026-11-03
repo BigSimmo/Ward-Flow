@@ -46,7 +46,7 @@ it("keeps a historical selected week and its honest occupied-time label when the
   const listeners = new Set<() => void>();
   let phone = false;
   vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-    matches: query === "(max-width: 48rem)" && phone,
+    matches: query === "(max-width: 46.4375rem)" && phone,
     media: query,
     onchange: null,
     addEventListener: (_event: string, notify: EventListenerOrEventListenerObject) =>

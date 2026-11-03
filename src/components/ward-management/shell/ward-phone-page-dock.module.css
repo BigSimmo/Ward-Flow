@@ -10,7 +10,7 @@
   display: none;
 }
 
-@media (max-width: 48rem), (pointer: coarse) and (max-height: 500px) {
+@media (max-width: 46.4375rem), (pointer: coarse) and (max-height: 500px) {
   /* Doubled so it outranks the composed foot's own position: relative. */
   .pageDock.pageDock {
     position: fixed;

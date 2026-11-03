@@ -298,7 +298,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
             {/* Layout sweep MEET-15: the design-system field and select, as every other control here. */}
             <Field label="Community follow-up filter" className={styles.followUpFilter}>
               <Select value={followUpFilter} onChange={(e) => setFollowUpFilter(e.target.value)}>
-                <option value="all">All community departures</option>
+                <option value="all">All community discharges</option>
                 <option value="missing_arrangement">Missing arrangements</option>
                 <option value="missing_contact">No completed contact recorded</option>
               </Select>
@@ -306,7 +306,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
             {filteredDepartures.length === 0 ? (
               <p className={styles.emptyNote} data-testid="ward-community-discharged-empty">
                 {lists.dischargedIntoTheArea.length > 0 ? (
-                  <>No community departures match this follow-up filter.</>
+                  <>No community discharges match this follow-up filter.</>
                 ) : cannotResolve ? (
                   <>
                     A bed carries no link back to the referral that named this team, so this list cannot be built for{" "}

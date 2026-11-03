@@ -546,7 +546,7 @@
 /* The shared WardRail stays visible and reachable down to 320px. The WardBar above this route is
  * sticky in normal flow, so the local sticky header keeps its offset without adding a second
  * page-top reserve. */
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .modeIdentity .modeBrand {
     display: none;
   }
@@ -731,7 +731,7 @@
   background: var(--ground);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .thirdEditionModeShell {
     padding-top: 0;
   }

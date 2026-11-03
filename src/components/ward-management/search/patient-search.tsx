@@ -914,6 +914,13 @@ export function PatientSearchPage() {
     <CensusEmpty
       query={`${text} ${dobOn ? dob : ""}`.trim()}
       onReset={resetAllFilters}
+      nothingHeld={
+        census.rows.length === 0 &&
+        !searching &&
+        !legacyNarrowing &&
+        settingFilter === "all" &&
+        presenceFilter === "all"
+      }
       addHref={canAddPatient ? WARD_ADD_PERSON_HREF : undefined}
       onAdd={addPatientClick}
     />
@@ -1349,7 +1356,7 @@ export function PatientSearchPage() {
   );
 }
 
-const PHONE_QUERY = "(max-width: 40rem)";
+const PHONE_QUERY = "(max-width: 46.4375rem)";
 
 /** Phone is its own design (Josh, 9 Oct 2026): below 40rem the census renders its phone layout. */
 function usePhoneLayout(): boolean {

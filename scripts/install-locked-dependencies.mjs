@@ -2,18 +2,36 @@
 // The CI install boundary owns the locked install and its attestation. Dependency
 // lifecycle scripts stay disabled; stamping an arbitrary existing tree is not a CLI operation.
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { installedTreeParity, writeInstalledTreeStamp } from "./check-installed-lock-parity.mjs";
 import { childProcessFailureSummary } from "./child-process-result.mjs";
+
+// The separately packaged backend inherits the owning project's toolchain pin.
+/** @param {string} root */
+function expectedNpmVersion(root) {
+  for (let directory = root; ; directory = path.dirname(directory)) {
+    const manifest = path.join(directory, "package.json");
+    if (existsSync(manifest)) {
+      const declared = JSON.parse(readFileSync(manifest, "utf8")).packageManager;
+      if (declared !== undefined) {
+        const version = /^npm@(\d+\.\d+\.\d+)$/u.exec(declared)?.[1];
+        if (!version) throw new Error("Locked install requires an exact npm@version packageManager pin.");
+        return version;
+      }
+    }
+    if (path.dirname(directory) === directory)
+      throw new Error("Locked install requires an owning package.json with an exact npm@version packageManager pin.");
+  }
+}
 
 /** @param {{
  * root?:string,
  * env?:NodeJS.ProcessEnv,
  * platform?:NodeJS.Platform,
  * execPath?:string,
- * execute?:(command:string,args:string[],options:{cwd:string,env:NodeJS.ProcessEnv,stdio:"inherit",timeout:number,killSignal:"SIGKILL"})=>{status:number|null,signal?:string|null,error?:Error},
+ * execute?:(command:string,args:string[],options:{cwd:string,env:NodeJS.ProcessEnv,stdio:"inherit"|"pipe",encoding?:"utf8",timeout:number,killSignal:"SIGKILL"})=>{status:number|null,signal?:string|null,error?:Error,stdout?:unknown},
  * log?:(message:string)=>void,
  * }} [options]
  */
@@ -30,6 +48,7 @@ export function installLockedDependencies({
     if (!existsSync(path.join(projectRoot, file)))
       throw new Error(`Locked install requires ${file} in ${projectRoot}.`);
   }
+  const expectedNpm = expectedNpmVersion(projectRoot);
   let command = "npm";
   const args = ["ci", "--ignore-scripts"];
   if (env.npm_execpath) {
@@ -41,6 +60,24 @@ export function installLockedDependencies({
     command = execPath;
     args.unshift(npmCli);
   }
+  const probe = execute(command, [...args.slice(0, -2), "--version"], {
+    cwd: projectRoot,
+    env,
+    stdio: "pipe",
+    encoding: "utf8",
+    timeout: 30_000,
+    killSignal: "SIGKILL",
+  });
+  if (probe.error || probe.signal || probe.status !== 0)
+    throw new Error(
+      `Cannot verify pinned npm ${expectedNpm} (${childProcessFailureSummary(probe)}); install not started.`,
+    );
+  const actualNpm = String(probe.stdout ?? "").trim();
+  if (actualNpm !== expectedNpm)
+    throw new Error(
+      `Locked install requires npm ${expectedNpm}; detected ${actualNpm || "unavailable"}. Install not started.`,
+    );
+  log(`[locked-install] npm ${actualNpm} matches packageManager.`);
   const result = execute(command, args, {
     cwd: projectRoot,
     env,

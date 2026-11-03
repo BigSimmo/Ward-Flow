@@ -297,10 +297,14 @@
 
 /* Redesign: the whole name shows, wrapping to a second line, with the stay length on its own row.
    Polish (1 Nov 2026): a balanced wrap keeps "Surname," and the given name in even lines. */
+/* Q284 (pre-launch check D6, 2 Nov 2026): at most two lines, ending in an ellipsis, so one very long
+   name no longer stretches every tile in its row. The tile's hover title and the bed drawer carry
+   the whole name. */
 .bedTileName {
-  display: block;
+  display: -webkit-box;
   min-width: 0;
   margin-top: 4px;
+  overflow: hidden;
   font-size: var(--wf-fs-14);
   line-height: var(--wf-lh-14);
   font-weight: 600;
@@ -308,6 +312,9 @@
   white-space: normal;
   overflow-wrap: anywhere;
   text-wrap: balance;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .bedTileState {
@@ -1025,10 +1032,8 @@ label.todoMain:has(.todoTick:focus-visible) {
   color: var(--wf-ink-1);
 }
 
-/* Shift log */
+/* Shift log: no box of its own (D-95, 3 Nov 2026); the card's pane holds the height. */
 .logBody {
-  max-height: 20rem;
-  overflow: auto;
   padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
 }
 
@@ -1175,10 +1180,19 @@ label.todoMain:has(.todoTick:focus-visible) {
   }
 }
 
+/* Stacked full width (tablet and narrow desktop) there is no neighbouring card to match, so the
+   pane grows with the page instead of scrolling inside a 28rem box (D-95, 3 Nov 2026). */
+@media (min-width: 46.5rem) and (max-width: 70rem) {
+  .flowBody {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
 /* Phone: the board keeps its filter on its own line, tiles drop to four a row with the number,
    glyph and stay, the to do columns stack, and every control keeps a 48px target. Desktop is
    unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* Named, not ".areaBeds > div:first-child": on a phone the card has no head, so that selector
      wrapped the walk round instead and laid its bed strip and list out side by side, off screen. */
   .areaBeds > .bedsHead {
@@ -1251,7 +1265,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 /* Phone: the flow tabs share the width but never shrink below their labels; a narrow screen
  * scrolls the row instead of overlapping them. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .flowSwitch > div {
     overflow-x: auto;
     scrollbar-width: none;
@@ -1279,7 +1293,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 /* Phone first screen (v10 build guide): Ward flow, which opens on Awaiting your answer, comes
    before the bed tiles. Desktop and tablet keep the beds first. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .homeTop > .flowWrap {
     order: -1;
   }
@@ -1382,7 +1396,7 @@ label.todoMain:has(.todoTick:focus-visible) {
   color: var(--wf-dim);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .viewSwitch {
     display: none;
   }
@@ -1754,7 +1768,7 @@ label.todoMain:has(.todoTick:focus-visible) {
   max-height: none;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .homeWrap {
     gap: var(--wf-s-4);
   }
@@ -1846,7 +1860,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 /* Audit 11 Oct 2026, iPad portrait: Act now takes the full width so its time and button do not
  * collide; Later today and Done sit side by side under it. */
-@media (min-width: 48.0625rem) and (max-width: 64rem) {
+@media (min-width: 46.5rem) and (max-width: 64rem) {
   .todoGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

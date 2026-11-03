@@ -86,6 +86,8 @@ describe("resolveWardFeatureFlags", () => {
     const production = resolveWardFeatureFlags({ environment: "production", server: {}, device: {} });
     // Ask help (26 Oct 2026) is held back on deployed builds until Josh approves its screenshots.
     expect(production.filter((entry) => !entry.on).map((entry) => entry.name)).toEqual(["demo-reset", "help-ask"]);
+    // Show me is on for the demo site, which the live site runs as (Josh, 2 Nov 2026).
+    expect(flag(resolveWardFeatureFlags({ environment: "demo", server: {}, device: {} }), "help-ask").on).toBe(true);
   });
 
   it("keeps demo reset off on the live site, which runs as demo, and on for a local build (Josh, 20 Oct 2026)", () => {

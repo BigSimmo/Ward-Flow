@@ -214,7 +214,7 @@ export function BroadcastLiveCard({
           Extend {durMinutes(DEFAULT_BROADCAST_EXTENSION_MINUTES)}
         </Button>
         <Button icon={Users} onClick={onAddUnits} disabledReason={addUnitsDisabledReason} reasonDisplay="tooltip">
-          Add units
+          Add desks
         </Button>
         {board ? (
           <Button variant="ghost" icon={Copy} onClick={() => onCopyAnswers(copyText)}>

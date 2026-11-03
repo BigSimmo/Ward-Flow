@@ -395,6 +395,6 @@ export function groupedResults(results: HubEntry[]): {
   return [
     { key: "ward" as const, label: "Wards", entries: wards, subgroups: wardSubgroups },
     { key: "ed" as const, label: "Emergency departments", entries: of("ed"), subgroups: [] },
-    { key: "community" as const, label: "Community mental health teams", entries: of("community"), subgroups: [] },
+    { key: "community" as const, label: "Community teams", entries: of("community"), subgroups: [] },
   ].filter((section) => section.entries.length > 0);
 }

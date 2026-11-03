@@ -50,3 +50,16 @@ export function nearestWord(word: string, vocabulary: readonly string[], known: 
   }
   return best;
 }
+
+/**
+ * Whether `prefix` is how `word` starts, allowing one slip from four letters (as-you-type, P9): the
+ * prefix is compared with the word's start one letter shorter, as long and one longer, so "trasn"
+ * still starts "transport". Under four letters only an exact start counts.
+ */
+export function startsWithin(prefix: string, word: string): boolean {
+  if (word.startsWith(prefix)) return true;
+  if (prefix.length < 4 || word.length < prefix.length - 1) return false;
+  for (let length = prefix.length - 1; length <= prefix.length + 1; length += 1)
+    if (length <= word.length && editDistance(prefix, word.slice(0, length), 1) <= 1) return true;
+  return false;
+}

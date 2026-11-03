@@ -126,7 +126,7 @@ export function DischargeDependenciesPanel({
               )}`
             : "Destination: not recorded"}
         </li>
-        {release.blocker ? <li className={styles.meta}>Recorded blocker: {release.blocker}</li> : null}
+        {release.blocker ? <li className={styles.meta}>Held up by: {release.blocker}</li> : null}
       </ul>
       <p className={styles.note} data-testid="ward-discharge-dependency-summary">
         {list.length === 0

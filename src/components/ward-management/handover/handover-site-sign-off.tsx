@@ -74,7 +74,7 @@ function checkRows(checks: readonly SiteSignOffCheck[], blockedStays: number): C
       case "discharge_blockers":
         return {
           id: check.id,
-          title: "Discharge blockers reviewed",
+          title: "Discharge hold-ups reviewed",
           detail: open
             ? `${check.open} not reviewed today`
             : blockedStays > 0

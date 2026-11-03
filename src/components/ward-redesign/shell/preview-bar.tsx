@@ -41,6 +41,7 @@ const loadToolsSheet = () =>
 const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"));
 preloadWhenIdle(loadToolsSheet);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+import { useToolsTwoPane } from "@/components/ward-management/tools/ward-tools-two-pane";
 import { useDemoMenuFromSheet } from "@/components/ward-management/tools/ward-demo-menu-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
 
@@ -250,6 +251,8 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
   const router = useRouter();
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
   const isPhone = useIsPhone();
+  // Q311 (Josh, 2 Nov 2026): from 1280 wide, Tools shows the list and the open tool side by side.
+  const toolsTwoPane = useToolsTwoPane(isPhone);
   const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
   const {
     movements,
@@ -1178,7 +1181,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
               <span>Synthetic events · newest first</span>
               <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("activity", from)}>
                 <span className={styles.footClock}>
-                  Demo time <b>{formatInstant(now)}</b>
+                  Board time <b>{formatInstant(now)}</b>
                 </span>
               </WardDemoClockPopover>
             </div>
@@ -1276,7 +1279,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
         testId="ward-bar-tools-sheet"
         returnFocusRef={toolsReturnTarget}
         desktopBackdropClassName={styles.drawerBackdrop}
-        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
+        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide} ${toolsTwoPane ? styles.drawerSheetToolsTwoPane : ""}`}
         headerClassName={styles.drawerHeader}
         titleClassName={styles.drawerTitle}
         closeButtonClassName={styles.drawerClose}
@@ -1286,7 +1289,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
             <span>Whole network · synthetic prototype</span>
             <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("tools", from)}>
               <span className={styles.footClock}>
-                Demo time <b>{formatInstant(now)}</b>
+                Board time <b>{formatInstant(now)}</b>
               </span>
             </WardDemoClockPopover>
           </div>
@@ -1295,6 +1298,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
       >
         <WardToolsSheet
           isPhone={isPhone}
+          twoPane={toolsTwoPane}
           roleLabel={deskRoleLabel}
           onNavigate={() => closePopover("tools", false)}
           onNewReferral={(destination = "ward") =>

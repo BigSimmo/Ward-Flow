@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useContext, useEffect, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -49,6 +49,7 @@ import {
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
+import { confirmLeavingShell } from "@/components/ward-management/shell/ward-leave-guard";
 import {
   ACCESS_ROLE_LABELS,
   STATEWIDE_COORDINATOR,
@@ -157,6 +158,15 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
   const toast = useOptionalToast();
   const pathname = useSafePathname();
   const searchRef = useRef<HTMLInputElement>(null);
+  // A guarded desk change belongs to the drawer opening that started it. Closing or unmounting the
+  // drawer while its Leave confirmation is still showing retires that change.
+  const openLifetime = useRef(0);
+  useEffect(
+    () => () => {
+      openLifetime.current += 1;
+    },
+    [isOpen],
+  );
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [hereOpen, setHereOpen] = useState(false);
@@ -266,13 +276,18 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
   /** Desks the old drawer only previewed: bed manager per hospital, executive, service coordinator, admin. */
   function openAccessDesk(access: WardAccess, href: string) {
     if (!reachable(href)) return;
-    takeAccess(access, href);
-    // PR #489 review: a service coordinator is a coordinator, so the rail's person resets as it does
-    // for the statewide coordinator tile, rather than keeping the last desk's persona.
-    if (access.role === "coordinator" && !keepsSignedInRole) dispatchPersonaSyncForRole("coordinator");
-    onClose();
-    confirmSwitch(accessPlaceLabel(access, units), ACCESS_ROLE_LABELS[access.role]);
-    router.push(href);
+    const lifetime = openLifetime.current;
+    const proceed = () => {
+      if (lifetime !== openLifetime.current || !reachable(href)) return;
+      takeAccess(access, href);
+      // PR #489 review: a service coordinator is a coordinator, so the rail's person resets as it does
+      // for the statewide coordinator tile, rather than keeping the last desk's persona.
+      if (access.role === "coordinator" && !keepsSignedInRole) dispatchPersonaSyncForRole("coordinator");
+      onClose();
+      confirmSwitch(accessPlaceLabel(access, units), ACCESS_ROLE_LABELS[access.role]);
+      router.push(href);
+    };
+    if (confirmLeavingShell(proceed)) proceed();
   }
 
   function open(desk: Desk): boolean {
@@ -312,7 +327,11 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
 
   function go(desk: Desk) {
     if (atHome(desk)) return;
-    if (open(desk)) router.push(desk.href);
+    const lifetime = openLifetime.current;
+    const proceed = () => {
+      if (lifetime === openLifetime.current && !atHome(desk) && open(desk)) router.push(desk.href);
+    };
+    if (confirmLeavingShell(proceed)) proceed();
   }
 
   function toggleSite(site: string) {
@@ -708,6 +727,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
         {visibleTeams.length ? (
           <TeamGroup
             count={visibleTeams.length}
+            teams={visibleTeams.reduce((sum, desk) => sum + (desk.teamPages ?? 1), 0)}
             forceOpen={searching || visibleTeams.some((desk) => desk.id === hereId)}
           >
             {visibleTeams.map((desk) => row(desk))}
@@ -804,7 +824,17 @@ function DeskGroup({ label, service, children }: { label: string; service: strin
   );
 }
 
-function TeamGroup({ count, forceOpen, children }: { count: number; forceOpen: boolean; children: ReactNode }) {
+function TeamGroup({
+  count,
+  teams,
+  forceOpen,
+  children,
+}: {
+  count: number;
+  teams: number;
+  forceOpen: boolean;
+  children: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const isOpen = forceOpen || open;
   return (
@@ -820,10 +850,16 @@ function TeamGroup({ count, forceOpen, children }: { count: number; forceOpen: b
           <Icon icon={ChevronDown} size={14} className={styles.chev} />
           <Icon icon={Home} size={16} />
           <b className={styles.siteName}>Community teams</b>
-          {/* Q260 (pre-launch review T1, 2 Nov 2026): this counts desks, one per service (Q202 folds the
-              spellings a person ruled are one service), so it no longer reads as Community's team count. */}
+          {/* Q260 (pre-launch review T1, 2 Nov 2026): the team count comes from Community's own team
+              pages, as the Community screen's does; the desks follow when Q202 folds spellings into one. */}
           <span className={styles.mini}>
-            <span className={styles.mono}>{count}</span> {count === 1 ? "desk" : "desks"}
+            <span className={styles.mono}>{teams}</span> {teams === 1 ? "team" : "teams"}
+            {count === teams ? null : (
+              <>
+                {" · "}
+                <span className={styles.mono}>{count}</span> {count === 1 ? "desk" : "desks"}
+              </>
+            )}
           </span>
         </button>
         {isOpen ? <div className={styles.siteBody}>{children}</div> : null}

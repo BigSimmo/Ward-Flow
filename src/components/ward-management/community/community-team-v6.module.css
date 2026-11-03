@@ -141,7 +141,7 @@
   }
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .heroStats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -378,7 +378,7 @@ div.workspace > .side {
   padding: var(--wf-s-1) 0;
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   /* Q-B8 (Josh, 31 Oct 2026): controls on this page are 44px (--wf-touch), never 48px. */
   .sampleMore > summary {
     min-height: var(--wf-touch);

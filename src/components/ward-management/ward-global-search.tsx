@@ -15,7 +15,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
   type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
@@ -25,7 +24,6 @@ import {
 
 import { handOffPatientSearchText, isNewTabClick } from "@/components/ward-management/search/patient-query-handoff";
 import { refusalFor } from "@/components/ward-management/search/search-refusals";
-import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import {
   CORE_SEARCH_VIEWS,
   searchIntentLabel,
@@ -40,12 +38,7 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
-import {
-  movementHref,
-  wardStatisticsHref,
-  edStatisticsHref,
-  communityStatisticsHref,
-} from "@/components/ward-management/shell/ward-facade";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { DEMO_CONTROLS_OFF } from "@/components/ward-management/ward-flow-raise";
@@ -69,6 +62,17 @@ import { SearchOptionBody } from "./ward-global-search-option-body";
 import { WardSearchCommands } from "./ward-global-search-commands";
 import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
+import { recentsLifetimeNow, rememberRecent, useSessionRecents } from "./ward-global-search-recents";
+import {
+  EmptyTry,
+  PhoneSheet,
+  permittedSearchResult,
+  QuickPatient,
+  SHEET_KINDS,
+  TryAsking,
+  quickPatientHref,
+  withGoTo,
+} from "./ward-global-search-smart";
 
 export {
   patientResultTitle,
@@ -77,6 +81,8 @@ export {
   type SearchResultItem,
 } from "./ward-global-search-groups";
 export { SearchResultIcon } from "./ward-global-search-icon";
+export { clearGlobalSearchRecents } from "./ward-global-search-recents";
+export { permittedSearchResult } from "./ward-global-search-smart";
 
 /**
  * WARD FLOW'S GLOBAL SEARCH — one control, mounted once in the header of every ward route.
@@ -202,28 +208,6 @@ const NO_HELP: HelpSearchRows = { items: [] };
 
 const allowSearchChoice = () => true;
 
-/** Navigation permission never changes the catalogue or supplies a record entitlement. */
-export function permittedSearchResult(
-  item: SearchResultItem,
-  canOpenHref: (href: string) => boolean,
-  canRunAction: NonNullable<WardGlobalSearchProps["canRunAction"]> = allowSearchChoice,
-): SearchResultItem[] {
-  const href = canOpenHref(item.href)
-    ? item.href
-    : item.kind === "ward"
-      ? wardStatisticsHref(item.id)
-      : item.kind === "ed"
-        ? edStatisticsHref(item.id)
-        : item.kind === "team"
-          ? communityStatisticsHref(item.id)
-          : null;
-  // A Help answer with nowhere to go opens Help itself, which every desk may open.
-  if (item.kind === "help" && item.href === "") return [item];
-  if (!href || !canOpenHref(href)) return [];
-  if (item.kind === "action" && !canRunAction(item.id as "new-referral" | "add-patient")) return [];
-  return [href === item.href ? item : { ...item, href }];
-}
-
 /**
  * A SHORT LIST, NOT A CATALOGUE. This is chrome that sits above every screen's own content, not a
  * replacement for the dedicated search console — a coordinator wanting the full result set already
@@ -294,70 +278,6 @@ const START_ACTIONS: readonly SearchResultItem[] = [
 ];
 
 const NEEDS_YOU_LIMIT = 3;
-const RECENT_LIMIT = 4;
-
-/*
- * ⚠️ RECENT RECORDS LIVE IN THIS MODULE'S MEMORY ONLY, NEVER IN BROWSER STORAGE. They last as long
- * as the current access lifetime does. Only kind and id are retained: every displayed row is
- * rebuilt from the current authorised collections, so a retained row never carries old details.
- */
-type RecentRecord = Pick<SearchResultItem, "kind" | "id">;
-let sessionRecents: readonly RecentRecord[] = [];
-const NO_RECENTS: readonly RecentRecord[] = [];
-let recentsLifetime: string | null = null;
-const recentsListeners = new Set<() => void>();
-
-/** A small store, so the React Compiler sees the list change as an input rather than a module read. */
-function setSessionRecents(next: readonly RecentRecord[]) {
-  sessionRecents = next;
-  recentsListeners.forEach((listener) => listener());
-}
-
-function subscribeRecents(listener: () => void) {
-  recentsListeners.add(listener);
-  return () => {
-    recentsListeners.delete(listener);
-  };
-}
-
-// Recent records name patients, so a session ending forgets them (Codex review on PR #487).
-onWardSessionEnd(clearGlobalSearchRecents);
-
-const serverRecentsSnapshot = () => NO_RECENTS;
-
-function useSessionRecents(lifetime: string | null) {
-  // The getter fails closed on the very first render; an effect alone would paint the old desk.
-  const recents = useSyncExternalStore(
-    subscribeRecents,
-    () => (lifetime !== null && recentsLifetime === lifetime ? sessionRecents : NO_RECENTS),
-    serverRecentsSnapshot,
-  );
-  useLayoutEffect(() => {
-    if (recentsLifetime === lifetime) return;
-    recentsLifetime = lifetime;
-    setSessionRecents(NO_RECENTS);
-  }, [lifetime]);
-  return recents;
-}
-
-/** Kinds that are not records, so they never join Recent. */
-const NOT_RECENT = new Set(["action", "help", "contact", "suburb"]);
-
-function rememberRecent(item: SearchResultItem, lifetime: string | null) {
-  if (NOT_RECENT.has(item.kind) || lifetime === null || recentsLifetime !== lifetime) return;
-  const { kind, id } = item;
-  setSessionRecents(
-    [{ kind, id }, ...sessionRecents.filter((recent) => recent.kind !== kind || recent.id !== id)].slice(
-      0,
-      RECENT_LIMIT,
-    ),
-  );
-}
-
-/** Test seam: recents are module memory, so a suite that asserts the start screen clears them first. */
-export function clearGlobalSearchRecents() {
-  setSessionRecents(NO_RECENTS);
-}
 
 /** The header's bottom edge, so the scrim and palette start under the bar rather than covering it. */
 /** The width where the open search is a full screen sheet (`.popup` in the module's phone block). */
@@ -627,6 +547,15 @@ export function WardGlobalSearch({
     return counts;
   }, [allGroups]);
 
+  /** The four common screens: the start screen's Go to, and the empty state's Try. */
+  const startViews = useMemo(() => {
+    const usual = START_VIEW_KEYS.flatMap((key) => {
+      const view = CORE_SEARCH_VIEWS.find((candidate) => candidate.key === key);
+      return view && canOpenHref(view.href) ? [view] : [];
+    });
+    return usual.length ? usual : CORE_SEARCH_VIEWS.filter((view) => canOpenHref(view.href)).slice(0, 4);
+  }, [canOpenHref]);
+
   /** What someone sees before typing: live work, recent records, common screens and actions. */
   const startGroups = useMemo(() => {
     const g: SearchResultGroup[] = [];
@@ -656,11 +585,7 @@ export function WardGlobalSearch({
     if (recents.length > 0) {
       g.push({ key: "recent", heading: "Recent", items: [...recents] });
     }
-    const usual = START_VIEW_KEYS.flatMap((key) => {
-      const view = CORE_SEARCH_VIEWS.find((candidate) => candidate.key === key);
-      return view && canOpenHref(view.href) ? [view] : [];
-    });
-    const startingViews = usual.length ? usual : CORE_SEARCH_VIEWS.filter((view) => canOpenHref(view.href)).slice(0, 4);
+    const startingViews = startViews;
     g.push({
       key: "goto",
       heading: "Go to",
@@ -683,7 +608,7 @@ export function WardGlobalSearch({
     return g
       .map((group) => ({ ...group, items: group.items.flatMap(permittedResult) }))
       .filter((group) => group.items.length > 0);
-  }, [tasks, recents, lookup, nameFor, tasksWord, canOpenHref, canRunAction, permittedResult]);
+  }, [tasks, recents, lookup, nameFor, tasksWord, startViews, canOpenHref, canRunAction, permittedResult]);
 
   // A chosen kind with nothing for the current query falls back to All, so a new query never shows
   // a false "No matches" while the chips beside it count real results.
@@ -693,10 +618,11 @@ export function WardGlobalSearch({
     if (isStart) return startGroups;
     const filter = KIND_FILTERS.find((candidate) => candidate.key === activeKind) ?? KIND_FILTERS[0];
     if (filter.key === "all") {
-      return allGroups.map((group) => ({ ...group, items: group.items.slice(0, MAX_RESULTS_PER_GROUP) }));
+      const cut = allGroups.map((group) => ({ ...group, items: group.items.slice(0, MAX_RESULTS_PER_GROUP) }));
+      return withGoTo(cut, allGroups, trimmed);
     }
     return allGroups.filter((group) => filter.groups.includes(group.key));
-  }, [isStart, startGroups, allGroups, activeKind]);
+  }, [isStart, startGroups, allGroups, activeKind, trimmed]);
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
   /** Returned counts; truncated groups explicitly say that more matches exist. */
@@ -722,9 +648,13 @@ export function WardGlobalSearch({
    */
   const optionsKey = useMemo(() => JSON.stringify(options.map(({ kind, id, href }) => [kind, id, href])), [options]);
   const [seenOptionsKey, setSeenOptionsKey] = useState(optionsKey);
+  // The Go to row is active without anyone choosing it: Enter opens it, but Home, End and Tab keep
+  // their editing and group jobs until the arrows have moved (search audit, 3 Nov 2026).
+  const [autoActive, setAutoActive] = useState(false);
   if (optionsKey !== seenOptionsKey) {
     setSeenOptionsKey(optionsKey);
-    setActiveIndex(-1);
+    setActiveIndex(groups[0]?.key === "goto" ? 0 : -1);
+    setAutoActive(groups[0]?.key === "goto");
     setHoverIndex(-1);
   }
 
@@ -732,6 +662,13 @@ export function WardGlobalSearch({
   const previewIndex = hoverIndex >= 0 ? hoverIndex : activeIndex >= 0 ? activeIndex : 0;
   const isPhone = useIsPhoneSearch();
   const previewItem = refusal || isPhone ? undefined : options[previewIndex];
+  /*
+   * PHONE PREVIEW SHEET (Josh, 3 Nov 2026). The phone has no preview pane, so a tap on a person,
+   * movement, referral or task first shows the same preview as a sheet over the results, with its
+   * own Open buttons. Screens, places and actions still open straight away.
+   */
+  const [sheetItem, setSheetItem] = useState<SearchResultItem | undefined>(undefined);
+  const phoneSheetItem = isPhone && sheetItem && options.includes(sheetItem) ? sheetItem : undefined;
 
   /*
    * D1-style fix, same reason `PatientTypeahead` carries it: the list clips with its own scrollbar,
@@ -821,6 +758,7 @@ export function WardGlobalSearch({
   const skipOpenOnFocusRef = useRef(false);
 
   function close() {
+    setSheetItem(undefined);
     setOpen(false);
     setActiveIndex(-1);
     setHoverIndex(-1);
@@ -894,9 +832,9 @@ export function WardGlobalSearch({
   }
 
   function select(href: string, confirmed = false) {
-    if (accessLifetime === null || recentsLifetime !== accessLifetime) return;
+    if (accessLifetime === null || recentsLifetimeNow() !== accessLifetime) return;
     if (!confirmed && !confirmLeave()) return;
-    if (recentsLifetime !== accessLifetime) return;
+    if (recentsLifetimeNow() !== accessLifetime) return;
     remember(href);
     clearAfterOpen();
     if (onNavigate) onNavigate(href);
@@ -927,13 +865,14 @@ export function WardGlobalSearch({
   function onPreviewOpen(event: MouseEvent<HTMLAnchorElement>, href: string) {
     // Preview actions use real links too, so apply the stale-result guard before remembering or
     // allowing plain, modified, or assistive-technology activation to leave this page.
-    if (!resultsCurrent || accessLifetime === null || recentsLifetime !== accessLifetime) {
+    if (!resultsCurrent || accessLifetime === null || recentsLifetimeNow() !== accessLifetime) {
       event.preventDefault();
       event.stopPropagation();
       return;
     }
-    if (previewItem) {
-      rememberRecent(previewItem, accessLifetime);
+    const opened = phoneSheetItem ?? previewItem;
+    if (opened) {
+      rememberRecent(opened, accessLifetime);
     }
     if (event.defaultPrevented || event.button !== 0) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -972,16 +911,18 @@ export function WardGlobalSearch({
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setHoverIndex(-1);
+      setAutoActive(false);
       setActiveIndex((current) => (current + 1) % options.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setHoverIndex(-1);
+      setAutoActive(false);
       setActiveIndex((current) => (current <= 0 ? options.length - 1 : current - 1));
-    } else if (event.key === "Home" && activeIndex >= 0) {
+    } else if (event.key === "Home" && activeIndex >= 0 && !autoActive) {
       event.preventDefault();
       setHoverIndex(-1);
       setActiveIndex(0);
-    } else if (event.key === "End" && activeIndex >= 0) {
+    } else if (event.key === "End" && activeIndex >= 0 && !autoActive) {
       event.preventDefault();
       setHoverIndex(-1);
       setActiveIndex(options.length - 1);
@@ -997,11 +938,12 @@ export function WardGlobalSearch({
     } else if (event.key === "Tab" && !event.shiftKey && !isStart && groups.length > 1) {
       // Tab jumps to the next group's first row, the way the palette's footer says it does. From the
       // last group it is an ordinary Tab, so focus moves on and onBlur closes the palette.
-      const current = activeIndex >= 0 ? options[activeIndex] : undefined;
+      const current = activeIndex >= 0 && !autoActive ? options[activeIndex] : undefined;
       const groupAt = current ? groups.findIndex((group) => group.items.includes(current)) : -1;
       if (groupAt === groups.length - 1) return;
       const next = groups[groupAt + 1];
       event.preventDefault();
+      setAutoActive(false);
       setHoverIndex(-1);
       setActiveIndex(options.indexOf(next.items[0]));
     }
@@ -1045,7 +987,8 @@ export function WardGlobalSearch({
         // and a link's click still lands after the press.
         onMouseDown={(event) => event.preventDefault()}
       >
-        {isStart ? null : (
+        {/* No chips when nothing matched: a lone "All 0" chip says nothing the empty message does not. */}
+        {isStart || (kindCounts.get("all") ?? 0) === 0 ? null : (
           <div className={styles.kinds} role="group" aria-label="Show only">
             {KIND_FILTERS.map((filter) => {
               const count = kindCounts.get(filter.key) ?? 0;
@@ -1098,8 +1041,9 @@ export function WardGlobalSearch({
                 <p className={styles.emptyDescription}>
                   {answer
                     ? "Nobody on the Patients page matches this right now."
-                    : `No matches for “${trimmed}”. This does not say whether the person or movement exists, only that this search did not find one.`}
+                    : `Nothing found for “${trimmed}”. That does not mean the person or movement does not exist.`}
                 </p>
+                {answer ? null : <EmptyTry views={startViews} onClick={onOptionClick} />}
                 {askHelpOn && !answer && looksLikeHelpQuestion(trimmed) ? (
                   <button
                     type="button"
@@ -1119,8 +1063,17 @@ export function WardGlobalSearch({
                  named by its heading, and the group's "See all" and "Show all" buttons sit beside it
                  rather than inside it. The field's aria-controls follows the group being browsed. */
               <div id={listId} className={styles.list}>
+                {isStart && census ? (
+                  <TryAsking
+                    census={census}
+                    onAsk={(phrase) => {
+                      setQuery(phrase);
+                      inputRef.current?.focus();
+                    }}
+                  />
+                ) : null}
                 {groups.map((group) => (
-                  <div key={group.key} className={styles.groupItem}>
+                  <div key={group.key} className={styles.groupItem} data-goto={group.key === "goto" || undefined}>
                     <div>
                       <span className={styles.group} data-testid={`ward-global-search-group-${group.key}`}>
                         <span id={`${listId}-${group.key}-heading`}>
@@ -1177,7 +1130,14 @@ export function WardGlobalSearch({
                     >
                       {group.items.map((item) => {
                         const index = options.indexOf(item);
-                        const optionBody = <SearchOptionBody item={item} nameFor={nameFor} taskWord={tasksWord.one} />;
+                        const optionBody = (
+                          <SearchOptionBody
+                            item={item}
+                            nameFor={nameFor}
+                            taskWord={tasksWord.one}
+                            highlight={isStart ? "" : trimmed}
+                          />
+                        );
                         return (
                           <li
                             key={`${group.key}-${item.kind}-${item.id}`}
@@ -1195,7 +1155,11 @@ export function WardGlobalSearch({
                                 aria-disabled={!resultsCurrent || undefined}
                                 tabIndex={-1}
                                 onClick={() => {
-                                  if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
+                                  if (
+                                    resultsCurrent &&
+                                    accessLifetime !== null &&
+                                    recentsLifetimeNow() === accessLifetime
+                                  ) {
                                     openedAsHelp(item);
                                   }
                                 }}
@@ -1219,10 +1183,19 @@ export function WardGlobalSearch({
                                 // result for text that is no longer in the field. The footer link is
                                 // not a result, so it keeps working.
                                 onClick={(event) => {
-                                  if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
+                                  if (
+                                    resultsCurrent &&
+                                    accessLifetime !== null &&
+                                    recentsLifetimeNow() === accessLifetime
+                                  ) {
                                     const plain = !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
                                     if (event.button === 0 && plain && openedAsHelp(item)) {
                                       event.preventDefault();
+                                      return;
+                                    }
+                                    if (event.button === 0 && plain && isPhone && SHEET_KINDS.has(item.kind)) {
+                                      event.preventDefault();
+                                      setSheetItem(item);
                                       return;
                                     }
                                     onOptionClick(event, item.href);
@@ -1235,7 +1208,7 @@ export function WardGlobalSearch({
                                   if (
                                     !resultsCurrent ||
                                     accessLifetime === null ||
-                                    recentsLifetime !== accessLifetime
+                                    recentsLifetimeNow() !== accessLifetime
                                   ) {
                                     event.preventDefault();
                                     event.stopPropagation();
@@ -1249,6 +1222,13 @@ export function WardGlobalSearch({
                               >
                                 {optionBody}
                               </Link>
+                            )}
+                            {isPhone || previewIndex !== index || !resultsCurrent ? null : (
+                              <QuickPatient
+                                href={quickPatientHref(item, patients)}
+                                canOpenHref={canOpenHref}
+                                onClick={onOptionClick}
+                              />
                             )}
                           </li>
                         );
@@ -1307,6 +1287,23 @@ export function WardGlobalSearch({
             </div>
           ) : null}
         </div>
+
+        {phoneSheetItem ? (
+          <PhoneSheet title={phoneSheetItem.title} inert={!resultsCurrent} onClose={() => setSheetItem(undefined)}>
+            <GlobalSearchPreview
+              canOpenHref={canOpenHref}
+              item={phoneSheetItem}
+              patients={patients}
+              referrals={referrals}
+              movements={movements}
+              units={units}
+              now={now}
+              dayZero={wardFlow?.dayZero}
+              census={census}
+              onOpen={onPreviewOpen}
+            />
+          </PhoneSheet>
+        ) : null}
 
         <div className={styles.resultsFooter} data-testid="ward-global-search-footer">
           <div className={styles.footerHints} aria-hidden="true" data-kbd-hint="">

@@ -261,7 +261,7 @@ export function CommunityTeamPhone({
           />
           <div role="region" aria-label={current.label} data-testid={`ward-community-phone-list-${current.id}`}>
             {current.groups.map((group) => (
-              <section key={group.id} className={css.group} aria-label={group.title ?? current.label}>
+              <section key={group.id} className={css.group} aria-label={group.title}>
                 {group.title ? <GroupHead title={group.title} count={group.count} tone={group.tone} /> : null}
                 {group.before}
                 {group.rows.length === 0 ? (

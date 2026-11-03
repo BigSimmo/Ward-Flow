@@ -1769,7 +1769,7 @@
  * `.registersPanel` below), matching the mockup's own tabsPanel — which has no collapse control
  * at all — so this toggle would otherwise be a button that changes an `aria-expanded` value with
  * no visible effect, the "every button does something" rule's own failure shape. Restored inside
- * the same `@media (max-width: 48rem)` query `.diagramRegion` already uses to hide itself, so the
+ * the same `@media (max-width: 46.4375rem)` query `.diagramRegion` already uses to hide itself, so the
  * one width where the diagram disappears is exactly the one width where this toggle reappears.
  */
 .exceptionsToggle {

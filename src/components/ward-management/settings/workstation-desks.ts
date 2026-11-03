@@ -54,6 +54,9 @@ export type Desk = {
   pastTarget?: number;
   /** Community only: the other spellings of this ratified service, hidden as desks but searchable (Q202). */
   alsoKnownAs?: readonly string[];
+  /** Community only: how many of Community's own team pages this desk stands for (itself plus the
+      folded spellings on offer), so Go to a desk counts teams as the Community screen does (Q260). */
+  teamPages?: number;
   /** Officer figure: jobs still on the road. */
   activeJobs?: number;
 };
@@ -127,6 +130,7 @@ export function workstationDesks(input: {
   const offeredTeams = new Set(communityEntries.map((entry) => entry.name));
   const keptAliases = new Map<string, string[]>();
   const sameServiceSpellings = new Set<string>();
+  const keptPages = new Map<string, number>();
   for (const alias of RATIFIED_SERVICE_ALIASES) {
     const offered = alias.members.filter((name) => offeredTeams.has(name));
     const shown = ownTeam && offered.includes(ownTeam) ? ownTeam : offered[0];
@@ -134,6 +138,7 @@ export function workstationDesks(input: {
     const others = alias.members.filter((name) => name !== shown);
     keptAliases.set(shown, [...(keptAliases.get(shown) ?? []), ...others]);
     for (const name of others) sameServiceSpellings.add(name);
+    keptPages.set(shown, (keptPages.get(shown) ?? 1) + offered.length - 1);
   }
   const teams: Desk[] = communityEntries
     .filter((entry) => !sameServiceSpellings.has(entry.name))
@@ -145,6 +150,7 @@ export function workstationDesks(input: {
         name: entry.name,
         href: entry.href,
         ...(alsoKnownAs ? { alsoKnownAs } : {}),
+        teamPages: keptPages.get(entry.name) ?? 1,
       };
     });
 

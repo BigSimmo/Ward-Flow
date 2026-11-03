@@ -91,8 +91,10 @@
 .handoverTable[data-columns="handover"] col[data-col="Next"] {
   width: 204px;
 }
+/* Pins under the top bar while the page scrolls; it pinned behind the bar at 0 (3 Nov 2026).
+   Enlarge sets its own offset under its own head below. */
 .handoverTable th {
-  top: 0;
+  top: var(--wf-header-height, 3.75rem);
   height: 36px;
   background: var(--wf-surface);
   border-bottom-color: var(--wf-line);
@@ -106,9 +108,18 @@
 .handoverTable td:has(> [class*="a2Referral"]) {
   white-space: normal;
 }
-.handoverTable [class*="a2Patient"],
-.handoverTable [class*="a2Name"] {
+.handoverTable [class*="a2Patient"] {
   white-space: normal;
+}
+/* Q286 (pre-launch check D8, 2 Nov 2026): a long name was cut mid-word on one line and then kept
+   wrapping. It now takes at most two lines and ends in an ellipsis, as the other tables do. */
+.handoverTable [class*="a2Name"] {
+  display: -webkit-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .handoverTable [class*="a2Patient"] [class*="a2Sub"] {
   display: block;

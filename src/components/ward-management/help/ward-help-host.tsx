@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
-import { subscribeWardHelp, type HelpRequest, type HelpView } from "./ward-help-events";
+import { helpLinkTask, subscribeWardHelp, type HelpRequest, type HelpView } from "./ward-help-events";
 import { subscribeShortcutsKey } from "./ward-shortcuts-key";
 
 // The sheet, the tour and their content load only when first needed, so every page's first load
@@ -37,6 +37,18 @@ export function WardHelpHost() {
       }),
     [],
   );
+  // A Help link ("#help=<id>") opens How to at that job, then the address is put back without it.
+  useEffect(() => {
+    const openFromLink = () => {
+      const task = helpLinkTask(window.location.hash);
+      if (!task) return;
+      window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}`);
+      setOpen({ view: "tasks", task });
+    };
+    openFromLink();
+    window.addEventListener("hashchange", openFromLink);
+    return () => window.removeEventListener("hashchange", openFromLink);
+  }, []);
   // "?" anywhere opens the keyboard shortcuts (P120), now a view inside Help with Back to Help
   // (redesign, 1 Nov 2026), unless Help or the tour is already open.
   useEffect(() => subscribeShortcutsKey(() => setOpen((now) => now ?? { view: "keys" })), []);

@@ -84,6 +84,31 @@ describe("searchHelp", () => {
     expect(searchHelp(typed, "coordinator").kind).toBe("results");
   });
 
+  it("reads a last word still being typed as the start of a Help word", () => {
+    expect(results(searchHelp("pull a be", "coordinator"))[0].key).toBe("howto:pull-bed");
+    expect(results(searchHelp("transp", "coordinator")).some((r) => r.key === "howto:book-transport")).toBe(true);
+    expect(results(searchHelp("seclu", "ward")).some((r) => r.key === "howto:record-seclusion")).toBe(true);
+    // A finished word (space after it) is never read as a start.
+    expect(searchHelp("transp ", "coordinator").kind).toBe("none");
+  });
+
+  it("never reads a word being typed as a clinical word", () => {
+    const answer = searchHelp("should i tra", "coordinator");
+    expect(answer.kind).toBe("results");
+    if (answer.kind === "results")
+      for (const item of answer.results) expect(isClinicalQuestion(item.title)).toBe(false);
+    expect(searchHelp("should i transfer", "coordinator").kind).toBe("clinical");
+  });
+
+  it.each([
+    ["obs", "term:Constant observation"],
+    ["nok", "term:PSP"],
+    ["absconded", "term:AWOL"],
+    ["repat", "howto:plan-return-home"],
+  ])("finds %s through its everyday word", (query, key) => {
+    expect(results(searchHelp(query, "coordinator")).some((item) => item.key === key)).toBe(true);
+  });
+
   it("offers closest topics when nothing matches fully", () => {
     const answer = searchHelp("transport zzzqqq xxyyzz", "coordinator");
     expect(answer.kind).toBe("none");

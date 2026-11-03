@@ -256,7 +256,7 @@ function OperationalStatisticsBedMap({ map, wardName }: { map: BedMap; wardName:
     <div className={styles.map} data-testid="ward-statistics-bed-map">
       <SrOnly>
         {`${wardName} has ${cells.length} ${cells.length === 1 ? "bed" : "beds"}: ${said || "none recorded"}.`}
-        {blocked > 0 ? ` ${blocked} of the people in a bed ${blocked === 1 ? "has" : "have"} a discharge blocker.` : ""}
+        {blocked > 0 ? ` ${blocked} of the people in a bed ${blocked === 1 ? "has" : "have"} a discharge held up.` : ""}
       </SrOnly>
       <ol className={styles.grid} aria-label={`${wardName} beds, one item per bed`}>
         {cells.map((entry, index) => (

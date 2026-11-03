@@ -81,7 +81,7 @@ describe("Referrals, ED desk", () => {
     const raised = screen.getByTestId("ward-referral-ed-raised");
     expect(within(raised).getByRole("heading", { name: /Open referrals/ })).toBeTruthy();
     // Long lists open on their first eight rows.
-    expect(within(raised).getAllByRole("link", { name: /^Journey, / })).toHaveLength(Math.min(peelOpen.length, 8));
+    expect(within(raised).getAllByRole("link", { name: /^Movement, / })).toHaveLength(Math.min(peelOpen.length, 8));
     if (peelOpen.length > 8) expect(within(raised).getByRole("button", { name: /^Show \d+ more$/ })).toBeTruthy();
 
     // No ED review asked and nothing chosen: the decision pane is left out.

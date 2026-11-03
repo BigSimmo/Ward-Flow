@@ -14,7 +14,7 @@ import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { ChevronRight, PhoneCall } from "lucide-react";
-import { Icon, StatusGlyph } from "@/components/wf";
+import { FormalName, Icon, StatusGlyph } from "@/components/wf";
 
 import styles from "./handover-open-promises.module.css";
 
@@ -141,7 +141,9 @@ export function HandoverOpenPromises({
                   </span>
                 </span>
                 <span className={styles.who}>
-                  <span className={styles.name}>{nameFor(who.formalName, who.umrn)}</span>
+                  <span className={styles.name}>
+                    <FormalName name={nameFor(who.formalName, who.umrn)} />
+                  </span>
                   {who.umrn ? <span className={styles.umrn}>{who.umrn}</span> : null}
                 </span>
                 <span className={styles.what}>

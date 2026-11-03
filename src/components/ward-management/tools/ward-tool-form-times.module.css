@@ -1,0 +1,181 @@
+/* Tools mock-up Q319, Form times: the kit Menu for the form, the typed time large in mono. */
+.body {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.field {
+  display: grid;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+.label {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.menu {
+  display: block;
+  min-width: 0;
+}
+
+/* The Menu's trigger, drawn as a kit control box (same height, edge and radius as TextInput). */
+.picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--wf-h-md);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: start;
+  cursor: pointer;
+}
+
+.picker:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.picker svg {
+  flex: none;
+  color: var(--wf-ink-2);
+}
+
+.pickerValue,
+.pickerEmpty {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pickerEmpty {
+  color: var(--wf-ink-3);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.result {
+  display: grid;
+  justify-items: start;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}
+
+.resultForm {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.resultLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
+  min-width: 0;
+}
+
+.resultWord,
+.day {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+.day {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.clock {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-28);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+/* Tone as a small tinted tag with its glyph and word (no side edges). */
+.tagAct {
+  border-color: transparent;
+  background: var(--wf-act-tint);
+}
+
+.tagSoon {
+  border-color: transparent;
+  background: var(--wf-hold-tint);
+}
+
+.later {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.empty {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: 1.4;
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--wf-s-1);
+  min-height: var(--wf-target);
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.more:hover {
+  text-decoration: underline;
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 46.4375rem) {
+  .more {
+    min-height: 40px;
+  }
+}
+
+/* QA 2 Nov: the picker matches the date and time fields, and meets the 40px phone size. */
+@media (max-width: 46.4375rem) {
+  .picker {
+    min-height: 44px;
+  }
+}

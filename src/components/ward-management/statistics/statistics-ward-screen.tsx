@@ -434,7 +434,7 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
   const small = statisticsCountText;
   const parts = (counts: StatisticsCount[]) => counts.map((count) => small(count));
   const headlineTotal = ready === null ? statistics.readyToLeaveCannot : ready.total;
-  const cohortLabel = unit.cohort === "Adult" ? (unit.lockedBeds > 0 ? "Adult secure" : "Adult open") : unit.cohort;
+  const cohortLabel = unit.cohort === "Adult" ? (unit.lockedBeds > 0 ? "Adult locked" : "Adult open") : unit.cohort;
   const averageStay = statistics.averageLengthOfStayDays;
 
   // Executive desk: a count of people under the line is worded, and the parts of a breakdown whose

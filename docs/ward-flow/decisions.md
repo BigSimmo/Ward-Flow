@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-30 - added D-89 (redesign mock-up copies of large screens may pass the 1,500-line cap through the line-cap list); 2026-10-27 - added D-87 (D-36 and D-37 replaced by the real-data gate; they overstated governance readiness) and D-86 (no second approver for role grants; overrides D-80 item 17); 2026-10-26 - added D-84 (the live app stays on Railway Singapore for now; no server-side TV account yet; both revisited before real data), D-83 (patient names shown in full on every screen and TV; privacy work must not make the app less useful; the locking read-only TV login still goes ahead) and D-82 (phone size limits may rise up to 5 KB per screen per PR without asking); 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-11-03 - added D-95 (one page scroll on desktop; outside clicks close hand-built drawers; replaces the 9 October set-height Handover table); 2026-11-02 - D-80 later-change note: the site bed manager no longer marks bed meeting actions done (PR #1214, Q97); 2026-10-30 - added D-89 (redesign mock-up copies of large screens may pass the 1,500-line cap through the line-cap list); 2026-10-27 - added D-87 (D-36 and D-37 replaced by the real-data gate; they overstated governance readiness) and D-86 (no second approver for role grants; overrides D-80 item 17); 2026-10-26 - added D-84 (the live app stays on Railway Singapore for now; no server-side TV account yet; both revisited before real data), D-83 (patient names shown in full on every screen and TV; privacy work must not make the app less useful; the locking read-only TV login still goes ahead) and D-82 (phone size limits may rise up to 5 KB per screen per PR without asking); 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -938,6 +938,7 @@ is inferred.
 - **Pre-pilot only (item 17):** before any real data, a second approver comes back for role grants, and a coordinator opening a clinical ward record gives an "on behalf of the ward" reason. This is recorded now and built at pilot. Until then D-66 stands. _Subsequent note (27 October 2026): D-86 drops the second approver part of this item; the "on behalf of the ward" reason is unchanged._
 - **Boundary:** Synthetic data only. No Supabase change beyond reading tables that already exist. No new roles, and nothing a coordinator, ward or ED needs is taken away. This authorises no deployment, provider configuration change or spending.
 - **Why:** the review found the FD-23 leak, a broken bed manager Discharges screen, cover that could go to any account, break glass review with no screen, and gaps in daily work for sending wards, community teams and transport officers.
+- **Later change (2 November 2026):** the site bed manager no longer marks a bed meeting action done, which narrows item 3 above and the 31 October Q61 ruling. The bed meeting agenda is read only for that desk (Decision 46). Ward, ED and community desks still mark their own agreed actions done. Built in PR #1214 (Q97, 1 November 2026); Josh approved recording it here on 2 November 2026 ("Yes to all recommendations").
 
 ## D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026)
 
@@ -1022,7 +1023,7 @@ is inferred.
   3. Help opens on a new first tab, **How do I…**, from the side menu and the phone Menu: the desk's own tasks, those on the current screen first, then in fixed groups, each with Show me. The header's ? still opens This screen (Josh, 24 October 2026).
 - **Why:** staff should be able to browse the common jobs and be walked through each one on the real screen, not only find them by typing a question.
 - **Safeguards kept:** Show me only lights controls; it never presses anything. Tasks are grouped, never ranked. Nothing typed in Help is stored or sent. Mental Health Act times stay as typed (D-70), so that how-to has no Show me.
-- **Later change:** D-91 (31 October 2026, recorded with the redesign mock-ups) overrides item 2: Show me stays off on the demo and live sites until Josh has seen it in the mock-ups, so `help-ask` is on in development only. Items 1 and 3 stand.
+- **Later change:** D-91 (31 October 2026, recorded with the redesign mock-ups) overrides item 2: Show me stays off on the demo and live sites until Josh has seen it in the mock-ups, so `help-ask` is on in development only. Items 1 and 3 stand. On 2 November 2026, after seeing the Help showcase, Josh switched Show me on for the demo site (which the live site also runs as); a production build keeps it off.
 
 ## D-91. One design home for the redesign, and Josh's answers on Help, Settings, search and notifications (31 October 2026)
 
@@ -1088,3 +1089,13 @@ is inferred.
   6. The drawer is headed "Alerts". Sidebar pins last for the open tab only.
 - **Boundary:** approves no page build, merge or release.
 - **Written rules:** `design/v9/design-system-v9.md` section 14 and HOW-WE-WORK section 6.
+
+## D-95. One page scroll, and a click outside closes a drawer (3 November 2026)
+
+- **Date:** 3 November 2026 (`2026-11-03`), 10:09 AM AWST (02:09 UTC). **Decided by:** Josh, in the Ward Flow project, asking for the most intuitive scrolling and for a click outside a drawer to close it, then answering "Yes to both" to publishing and to dropping the set-height Handover table.
+- **Decision:**
+  1. A page has one scrollbar. Tables and lists grow with the page and only their head row pins, just under the top bar (design system v9 section 7). A shorter side column pins in view as the shared side rail does. A box that scrolls inside the page is kept only for a chart with its own axes, such as the Movements timeline, and for a view held to the window, such as Enlarge.
+  2. This replaces the 9 October ruling that the Handover table "stops at a set height and scrolls inside its card". On-call, Referrals and Movements follow the same rule.
+  3. A click or tap outside a drawer, sheet or pop-up closes it. Inline panels beside a list (Waiting, Delays, Referrals) stay open until closed or switched, and a confirmation that needs a choice ("Close without sending?") and the idle lock stay until answered.
+- **How:** a hand-built drawer whose backdrop sits beside its panel marks it `data-sheet-scrim` (`src/components/wf/sheet-focus.ts`), so the shared focus trap leaves that backdrop live.
+- **Boundary:** approves no merge or release.

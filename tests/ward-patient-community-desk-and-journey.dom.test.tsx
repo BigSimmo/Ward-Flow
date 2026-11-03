@@ -62,7 +62,7 @@ describe("patient record, community clinician's desk", () => {
   });
 });
 
-describe("Journey so far", () => {
+describe("Movement so far", () => {
   it("lists the movement's recorded events newest first, with a link to the full history", () => {
     renderPatient(undefined, { movementId: "WF-012" });
     const timeline = screen.getByTestId("pn-journey-timeline");

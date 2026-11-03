@@ -1,40 +1,5 @@
 [
   {
-    "id": "2026-10-27-stay-tile-day-number",
-    "date": "2026-10-27",
-    "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
-  },
-  {
-    "id": "2026-10-31-capacity-panel-links",
-    "date": "2026-10-31",
-    "line": "Capacity's ward panel only offers pages your desk can open."
-  },
-  {
-    "id": "2026-10-31-legal-time-24-hour",
-    "date": "2026-10-31",
-    "line": "Legal forms: Record the time written now takes a typed 24-hour time, as Record a form does."
-  },
-  {
-    "id": "2026-10-31-redesign-frame",
-    "date": "2026-10-31",
-    "line": "The sidebar, header and phone dock are tidier: page name first, Alerts on every desk, and Demo from the board clock."
-  },
-  {
-    "id": "2026-10-31-redesign-home",
-    "date": "2026-10-31",
-    "line": "Home shows what changed since your last review in Activity, and a Planned list for the rest of the shift."
-  },
-  {
-    "id": "2026-10-31-redesign-capacity",
-    "date": "2026-10-31",
-    "line": "Capacity has a new look: beds ready first, the bed forecast, a bed map of every ward and this shift's checks."
-  },
-  {
-    "id": "2026-10-31-redesign-referrals",
-    "date": "2026-10-31",
-    "line": "Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot."
-  },
-  {
     "id": "2026-10-31-redesign-records",
     "date": "2026-10-31",
     "line": "Waiting, Alerts, Legal forms, Patients, Movements and the patient record have a new look for each desk."
@@ -98,5 +63,40 @@
     "id": "2026-11-02-downtime-one-table",
     "date": "2026-11-02",
     "line": "Downtime pack: on a tablet or computer, each tab shows just its own table. Printing still includes all four."
+  },
+  {
+    "id": "2026-11-02-prelaunch-wording",
+    "date": "2026-11-02",
+    "line": "Same words everywhere (Locked, movements, held up, Bed board), and long names and iPads behave better."
+  },
+  {
+    "id": "2026-11-02-help-show-me-around",
+    "date": "2026-11-02",
+    "line": "Help: Show me around walks you through each screen. Each answer can be rated helpful and has Copy link."
+  },
+  {
+    "id": "2026-11-03-tools-overhaul",
+    "date": "2026-11-03",
+    "line": "Tools is redesigned: recent tools first, Remind me, Due back, ready-made messages and an order for each desk."
+  },
+  {
+    "id": "2026-11-03-save-and-safety-fixes",
+    "date": "2026-11-03",
+    "line": "Unconfirmed saves retry safely, closed beds stop planned arrivals, and a missing legal form shows No form recorded."
+  },
+  {
+    "id": "2026-11-03-reminders-in-alerts",
+    "date": "2026-11-03",
+    "line": "Remind me reminders now show in Alerts when they are due. Tap Done to clear one."
+  },
+  {
+    "id": "2026-11-03-one-page-scroll",
+    "date": "2026-11-03",
+    "line": "Pages scroll as one, with headings pinned under the top bar, and a click outside a drawer now closes it."
+  },
+  {
+    "id": "2026-11-03-home-flow",
+    "date": "2026-11-03",
+    "line": "Home now shows Needs you and Flow, with tabs for each stage, from needing a bed to moving."
   }
 ]

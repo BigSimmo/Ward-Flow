@@ -136,7 +136,7 @@ beforeEach(() => {
   window.localStorage.clear();
   guard.connection = connection();
   vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-    matches: guard.phone && query === "(max-width: 48rem)",
+    matches: guard.phone && query === "(max-width: 46.4375rem)",
     media: query,
     onchange: null,
     addListener() {},
@@ -228,22 +228,34 @@ describe("the real layout's authenticated executive branch", () => {
     const tools = screen.getByTestId("ward-bar-tools-sheet");
     fireEvent.click(within(tools).getByRole("button", { name: /^Change view$/ }));
     expect((guard.connection as WardSharedConnection).switchRole).toHaveBeenCalledOnce();
-    fireEvent.click(within(tools).getByRole("button", { name: /Find a bed/ }));
+    // Tools overhaul (2 Nov 2026): the executive desk's rows are Key figures, Find a bed, On-call,
+    // Suburb lookup, Form times and Messages (link rows follow the desk's page access). Suggested chips repeat some
+    // names, so each row is opened by its own toggle.
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-bed-finder"));
     const finder = screen.getByTestId("ward-tools-bed-finder");
-    fireEvent.click(within(finder).getByRole("button", { name: "Voluntary" }));
+    fireEvent.click(
+      within(within(finder).getByRole("radiogroup", { name: "Legal status" })).getByRole("radio", {
+        name: "Voluntary",
+      }),
+    );
     expect(within(finder).getByRole("list", { name: "Ready beds by ward" })).toBeInTheDocument();
-    fireEvent.click(within(tools).getByRole("button", { name: /All figures/ }));
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-figures"));
     expect(screen.getByTestId("ward-stats-drawer-content")).toBeInTheDocument();
-    fireEvent.click(within(tools).getByRole("button", { name: /Catchment lookup/ }));
-    await waitFor(() => expect(within(tools).getByPlaceholderText(/suburb|postcode/i)).toBeInTheDocument());
-    fireEvent.click(within(tools).getByRole("button", { name: /^On-call/ }));
-    expect(within(tools).getByRole("button", { name: "Key lines" })).toBeInTheDocument();
-    fireEvent.click(within(tools).getByRole("button", { name: /Form times/ }));
-    expect(screen.getByTestId("ward-form-times")).toBeInTheDocument();
-    fireEvent.click(within(tools).getByRole("button", { name: /Copy bed summary/ }));
-    expect(screen.getByTestId("ward-tools-bed-summary")).toHaveTextContent("synthetic prototype");
-    fireEvent.click(within(tools).getByRole("button", { name: /Hospital feed/ }));
-    expect(tools).toHaveTextContent("Individual feed records are unavailable for this desk.");
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-contacts"));
+    expect(within(tools).getByRole("button", { name: "Contact list: Key lines" })).toBeInTheDocument();
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-messages"));
+    expect(screen.getByTestId("ward-tools-messages")).toHaveTextContent("synthetic prototype");
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-catchment"));
+    expect(await within(tools).findByTestId("suburb-lookup-card")).toBeInTheDocument();
+    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-form-times"));
+    expect(within(tools).getByTestId("ward-tools-toggle-form-times")).toHaveAttribute("aria-expanded", "true");
+    // Remind me, Due back and the demo row read the live World, so the executive desktop has none.
+    expect(within(tools).queryByTestId("ward-tools-toggle-remind")).toBeNull();
+    expect(within(tools).queryByTestId("ward-tools-toggle-leave-due")).toBeNull();
+    expect(within(tools).queryByTestId("ward-tools-toggle-demo")).toBeNull();
+    // The Hospital feed holds individual records, so the executive desk is not offered it at all.
+    expect(within(tools).queryByTestId("ward-tools-toggle-feed")).toBeNull();
+    expect(within(tools).queryByRole("button", { name: /Hospital feed/ })).toBeNull();
     expect(within(tools).queryByRole("button", { name: "New referral" })).toBeNull();
     expect(guard.raw).not.toHaveBeenCalled();
     expect(guard.seed).not.toHaveBeenCalled();

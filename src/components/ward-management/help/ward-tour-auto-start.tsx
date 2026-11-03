@@ -1,12 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Button, OverlayPortal } from "@/components/wf";
+import { Button, OverlayPortal, useIsPhone } from "@/components/wf";
 
 import { parseTourSeen, useTourRole, useTourSeen, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
+import { fullTourSteps } from "./ward-tour-more-steps";
+import { tourMinutes, type TourDevice } from "./ward-tour-steps";
 import { useCornerCardEscape } from "./use-corner-card-escape";
 import styles from "./ward-tour-offer.module.css";
 
@@ -74,7 +76,10 @@ const TOUR_SETTLE_MS = 500;
 export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
   const role = useTourRole();
   const seen = useTourSeen(role);
-  const { home, deskHome } = useTourFacts(role);
+  const { home, deskHome, facts } = useTourFacts(role);
+  const device: TourDevice = useIsPhone() ? "phone" : "desk";
+  // The offer says how long this desk's tour takes on this device, as its first step does.
+  const minutes = useMemo(() => tourMinutes(fullTourSteps(role, device, facts).length, device), [role, device, facts]);
   const pathname = usePathname() ?? "";
   const started = useRef<WardTourRole | null>(null);
   // The offer remembers the desk and page it was raised on, so a desk switch cannot leave a card
@@ -98,7 +103,7 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
   return (
     <OverlayPortal layer="overlay" name="ward-tour-offer">
       <section className={styles.offer} aria-label="Tour" data-testid="ward-tour-offer">
-        <p className={styles.text}>Want a quick tour? It takes about 2 minutes.</p>
+        <p className={styles.text}>Want a quick tour? It takes {minutes}.</p>
         <div className={styles.actions}>
           <Button
             variant="pri"

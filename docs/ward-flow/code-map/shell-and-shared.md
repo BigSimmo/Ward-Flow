@@ -115,7 +115,7 @@ The compact footer still identifies synthetic data. Bed, admission, decline and 
 continue to use the existing derivations, including unavailable values rather than invented history.
 
 `tools/ward-tools-sheet.tsx` is the shared Tools drawer (Tools review, 15 Oct 2026): one scrolling
-sheet with Change view at the top, then Do now, Look up (All figures from `ward-network-figures.tsx`
+sheet with Change view at the top, then Do now, Look up (All figures from `ward-tool-figures.tsx`
 first, then catchment, contacts from the On-call directory, Form times), Print and share, More pages,
 and one Demo panel (`ward-demo-panel.tsx`) at the foot. The header's Board time pill opens that Demo panel through
 `ward-tools-open.ts`. Appearance, Settings and the Digest are not in Tools: the rail and Settings carry
@@ -560,14 +560,26 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   reply instead of transport how-tos.
   The index also covers Roles, colour meanings and shapes, saved-state guidance and downtime
   guidance, reusing their approved source content. Exact indexed words survive typo correction.
-  `ward-help-ask.tsx` applies the same clinical-question guard and fixed reply as main search,
+  `ward-help-screen-tours.ts` (2 Nov 2026) adds a Show me walk round for 15 main screens, offered
+  from the "On this screen" card and search only, never as marks on the screens. Walk-rounds are
+  how-tos with `around` set, kept out of the desk's job list and closest suggestions, and ranked after
+  a job sharing their words. A Show me step may carry `device` ("desk" or "phone"); `showMeSteps`
+  skips the other device's steps in the player, the step lists and the step count.
+  Also from 2 Nov 2026: `#help=<id>` (fixed how-to id, `helpLinkTask` in `ward-help-events.ts`)
+  opens Help at that job and is then removed from the address; each open answer has Copy link
+  (through `ward-clipboard.ts`) and Was this helpful? (`ward-help-feedback.ts`, ids and counts only
+  in `ward_flow_choice_help_helpful`, shown and cleared with the usage card). Questions to try put
+  the desk's most-used jobs and the screen's walk round first. Shortcuts show on a phone-sized
+  screen with a fine pointer; keyboard hints hide on touch-only screens. Help links the desk's A4
+  guide (Your desk) and the screen's A4 guide (`public/help/screens/`, built by
+  `scripts/build-help-cheat-sheets.mjs` from `printScreenGuides`).
+  The Help sheet's search (`ward-help-find.tsx`) applies the clinical-question guard and fixed reply,
   suppressing ordinary results for those questions. With no matching answer, glossary term or setting,
-  it offers up to three closest how-tos; another desk's topics retain their read-only presentation.
-  Ask results, fallback suggestions and the clinical reply share a polite live region.
-  Ask accepts an explicit public `termsSource` without reading the operational network hook,
-  retaining PR #997's aggregate-host interface; its default host still uses the current site's glossary.
-  Search listbox options have one action each, shared by pointer and Enter; Open/Show me labels
-  are plain text within the option rather than nested interactive controls.
+  it offers the closest how-tos; another desk's topics keep their read-only presentation. Results,
+  fallback suggestions and the clinical reply share a polite live region. The stand-alone Ask box
+  (`ward-help-ask.tsx`) and the variant-A search box (`ward-help-search.tsx`) were retired on
+  2 Nov 2026, unused since the 1 Nov redesign; `ward-help-task-list.ts` keeps only `showMeAvailable`
+  and `tasksForDesk`.
   `help-content/` supplies the compact Reference group, accessible grouped glossary and quiet
   first-visit hints. Definitions remain in the existing Help sources; related-term links and group
   filters never save typed words. Hints are lazy, wait for the tour and other overlays, and retain

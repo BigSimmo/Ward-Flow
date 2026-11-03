@@ -2546,14 +2546,20 @@ details[open] > summary > .phoneFoldChevron {
     padding-bottom: 5rem;
   }
 
+  /* A short touch screen also shows the phone dock (#1293): seat the row on it, as the phone bar does. */
   .decisionArea {
     position: fixed;
     right: 0;
-    bottom: 0;
+    bottom: var(--wf-dock-top, 0px);
     left: 0;
     z-index: 20;
     margin: 0;
-    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+    padding: var(--wf-s-3) var(--wf-s-4)
+      max(
+        var(--wf-s-3),
+        calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px) - var(--wf-dock-top, 0px)),
+        calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px))
+      );
     border-top: 1px solid var(--wf-line);
     background: var(--wf-surface);
     box-shadow: var(--wf-e2);

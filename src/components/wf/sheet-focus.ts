@@ -25,6 +25,13 @@ export const SHEET_INERT_MARKER = "data-sheet-inert";
 export const SHEET_PORTAL_ATTRIBUTE = "data-sheet-portal";
 /** Opt-out marker for background elements that must stay interactive. */
 export const SHEET_INERT_SKIP_ATTRIBUTE = "data-sheet-inert-skip";
+/**
+ * Marks a hand-built modal's own backdrop when it sits beside the panel rather than around it.
+ * The top-most sheet's backdrop stays live, so a click outside the panel lands on it and closes
+ * the panel (Josh, 3 Nov 2026). Inerting it made the browser skip it, so outside clicks did nothing.
+ * Use it only on an empty, `aria-hidden` backdrop: it holds nothing to focus.
+ */
+export const SHEET_SCRIM_ATTRIBUTE = "data-sheet-scrim";
 
 /**
  * The child a sheet or dialog focuses first: any `data-sheet-autofocus` except an explicit
@@ -405,12 +412,16 @@ function pushBackgroundAround(element: Element, background: HTMLElement[]) {
  */
 function collectBackgroundElements(root: HTMLElement) {
   const background: HTMLElement[] = [];
+  const lowerRoots = openSheets.slice(0, -1).map((entry) => entry.root);
   let node: HTMLElement = root;
   while (node !== document.body) {
     const parent: HTMLElement | null = node.parentElement;
     if (parent == null) break;
+    // A backdrop beside the top sheet stays live, unless it could belong to a sheet below it.
+    const ownScrimLevel = !lowerRoots.some((lower) => lower !== null && parent.contains(lower));
     for (const sibling of Array.from(parent.children)) {
       if (sibling === node) continue;
+      if (ownScrimLevel && sibling.hasAttribute(SHEET_SCRIM_ATTRIBUTE)) continue;
       pushBackgroundAround(sibling, background);
       // OverlayPortal carries a meaningful layer/name on a display:contents
       // wrapper. Inert that logical wrapper and its direct surface so both the

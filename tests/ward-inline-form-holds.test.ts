@@ -83,6 +83,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   },
   "referrals/upload-forms-modal.tsx": { cover: "popup" },
   "referrals/use-referral-match-state.tsx": { cover: "held" },
+  "referrals/use-referral-command-completion.ts": {
+    cover: "popup",
+    why: "Keeps the new-patient draft, which opens only inside the ward referral drawer.",
+  },
   "referrals/use-ward-referral-drawer-state.ts": { cover: "popup" },
   "settings/settings-screen.tsx": { cover: "popup" },
   "use-hold-open-form.ts": { cover: "held", why: "The hook itself." },

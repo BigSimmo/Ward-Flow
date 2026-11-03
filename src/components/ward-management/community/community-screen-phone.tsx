@@ -330,7 +330,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                 <label className={phoneCss.filter}>
                   Community follow-up filter
                   <select value={followUpFilter} onChange={(e) => setFollowUpFilter(e.target.value)}>
-                    <option value="all">All community departures</option>
+                    <option value="all">All community discharges</option>
                     <option value="missing_arrangement">Missing arrangements</option>
                     <option value="missing_contact">No completed contact recorded</option>
                   </select>
@@ -349,7 +349,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
               }),
               empty:
                 lists.dischargedIntoTheArea.length > 0
-                  ? "No community departures match this follow-up filter."
+                  ? "No community discharges match this follow-up filter."
                   : "No admission referred to this team is recorded as discharged to the community.",
             },
           ],

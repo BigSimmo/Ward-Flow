@@ -542,7 +542,12 @@ export function WardBedDossierDrawer({
     const bedWords = `bed ${String(selectedBed).padStart(2, "0")}`;
     return (
       <>
-        <div className={`${styles.drawerScrim} ${styles.show}`} onClick={onClose} aria-hidden="true" />
+        <div
+          className={`${styles.drawerScrim} ${styles.show}`}
+          onClick={onClose}
+          aria-hidden="true"
+          data-sheet-scrim=""
+        />
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape bubbling up from the Close button */}
         <aside
           ref={bedDrawerRef}
@@ -716,7 +721,12 @@ export function WardBedDossierDrawer({
 
   return (
     <>
-      <div className={`${styles.drawerScrim} ${styles.show}`} onClick={onClose} aria-hidden="true" />
+      <div
+        className={`${styles.drawerScrim} ${styles.show}`}
+        onClick={onClose}
+        aria-hidden="true"
+        data-sheet-scrim=""
+      />
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <aside
         ref={bedDrawerRef}
@@ -945,7 +955,7 @@ export function WardBedDossierDrawer({
                   </Section>
                   {criteriaCard}
                   {sentJourneyControls ? (
-                    <Section title="Journey this ward sent">
+                    <Section title="Movement this ward sent">
                       <div className={styles.cardInner}>{sentJourneyControls}</div>
                     </Section>
                   ) : null}

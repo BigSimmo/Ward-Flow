@@ -18,7 +18,7 @@ import { OnCallScreen } from "@/components/ward-management/on-call/on-call-scree
 export const metadata: Metadata = {
   title: "On-call — Ward Flow",
   description:
-    "Synthetic prototype contacts directory: who answers now and until when. Mock numbers and emails only, no names.",
+    "Synthetic prototype contacts directory: who answers now and until when. Synthetic numbers and emails only, no names.",
 };
 
 export default function WardOnCallPage() {

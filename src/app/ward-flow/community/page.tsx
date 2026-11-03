@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { CommunityIndex } from "@/components/ward-management/community/community-index";
 
 export const metadata: Metadata = {
-  title: "All community teams — Ward Flow",
+  title: "Community — Ward Flow",
   description:
     "Synthetic community team index for the Ward Flow prototype — every team a referral can name, listed alphabetically, each linking to its own team page.",
 };

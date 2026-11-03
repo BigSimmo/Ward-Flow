@@ -1373,7 +1373,7 @@
 
 /* A-5 (fresh audit, 26 Oct 2026): these class rules outrank the global 16px floor for phone form
    controls (globals.css), so iOS Safari zoomed in on focus. The same floor, at the same widths. */
-@media (max-width: 40rem), (pointer: coarse) and (max-height: 500px) {
+@media (max-width: 46.4375rem), (pointer: coarse) and (max-height: 500px) {
   .selectWrap select,
   .escalationInput input {
     font-size: var(--wf-fs-16);

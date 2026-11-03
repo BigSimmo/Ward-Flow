@@ -67,7 +67,7 @@
 
 /* v10 band: desktop and tablet keep no clip between the page and the hero, or the band's bleed to
    the column edges is cut off. Phone never bands, so it keeps the sideways clip. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .main {
     overflow-x: clip;
   }
@@ -1246,7 +1246,7 @@
   text-transform: uppercase;
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .main {
     gap: 0.75rem;
     padding: 0.75rem 0.5rem 1.5rem;
@@ -1718,7 +1718,7 @@
   backdrop-filter: blur(22px) saturate(1.35);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .topActionBarWrap {
     position: static;
   }
@@ -1811,7 +1811,7 @@
   backdrop-filter: blur(16px) saturate(1.2);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .noticeRow {
     flex-wrap: wrap;
   }
@@ -3355,7 +3355,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 46.4375rem) {
   .breakdownStatsGrid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -3501,7 +3501,7 @@
   }
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .tabBtn,
   .tabTools > :is(a, button),
   .tabTools > div > button {
@@ -3673,7 +3673,7 @@
 /* Phone: the five ward tabs scroll sideways on one line with a soft edge, and the tab tools
  * (answer requests, tasks, shift brief, print, raise referral) sit on one scrolling line under
  * them instead of wrapping into a tall block. Desktop is unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .tabBarWrap {
     flex-direction: column;
     flex-wrap: nowrap;
@@ -3709,7 +3709,7 @@
 }
 
 /* Phone polish (8 Oct 2026): the ward page keeps a little more width on phone. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .screen .main {
     padding-inline: var(--wf-s-3);
   }
@@ -3891,7 +3891,7 @@
   display: none;
 }
 
-@media (min-width: 48.0625rem) and (max-width: 64rem) {
+@media (min-width: 46.5rem) and (max-width: 64rem) {
   .toolSolo {
     display: none;
   }
@@ -3910,7 +3910,7 @@
 /* Phone: Home and Decisions take the first row. The tool row wraps below them with Find on its
  * own full-width line first and the actions after it, so none is hidden off screen. Desktop is
  * unchanged. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .tabBarWrap {
     flex-direction: row;
     flex-wrap: wrap;
@@ -3966,7 +3966,7 @@
 
 /* An open ward switch or More menu lifts the ward card over the pinned view tabs below it. Only
    while a menu is open, so the tabs still pin over the card as the page scrolls. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .topActionBarWrap:has([role="menu"]) {
     position: relative;
     top: auto;
@@ -4128,7 +4128,7 @@
   border-radius: var(--wf-r-ctl);
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .topActionBarWrap {
     gap: var(--wf-s-3);
   }
@@ -4160,7 +4160,7 @@
 }
 
 /* The phone ward name is the Switch ward button (Option B, 20 Oct 2026). */
-@media (max-width: 48rem) and (pointer: coarse) {
+@media (max-width: 46.4375rem) and (pointer: coarse) {
   /* The hero title clips its overflow, which would clip the button's focus ring. The ward name
      keeps its own ellipsis inside the button. */
   .wardHero :has(> .phoneHeroTitle) {
@@ -4192,7 +4192,7 @@
 /* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
    with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
    tablet keep the toast above. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .actionToast {
     --toast-bg: light-dark(
       color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
@@ -4241,7 +4241,7 @@
   }
 }
 
-@media (max-width: 48rem), (pointer: coarse) {
+@media (max-width: 46.4375rem), (pointer: coarse) {
   .capacityInput,
   .suburbSearchInput {
     font-size: max(1rem, 16px);
@@ -4321,7 +4321,7 @@
 }
 
 /* Phone: the hero foot line wraps, so the bed list link and the roster note are never cut off. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .heroMeta {
     white-space: normal;
   }
@@ -4336,7 +4336,7 @@
   min-block-size: calc(var(--inbox-head) + var(--inbox-entries, 1) * var(--inbox-entry));
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .inboxPlaceholder {
     --inbox-head: 3.875rem;
     --inbox-entry: clamp(10.875rem, calc(26.85rem - 51vw), 16rem);

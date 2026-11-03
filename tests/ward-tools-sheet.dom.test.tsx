@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { WardFormTimes } from "@/components/ward-management/tools/ward-form-times";
+import { ToolFormTimes } from "@/components/ward-management/tools/ward-tool-form-times";
 import { WardToolsSheet } from "@/components/ward-management/tools/ward-tools-sheet";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -84,11 +84,16 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(onNewReferral).toHaveBeenCalledWith();
   });
 
-  it("starts a community referral from a catchment result", () => {
+  it("starts a community referral from a Suburb lookup result", () => {
     const { onNewReferral } = renderSheet();
+    // Tools overhaul (2 Nov 2026): Catchment lookup is now Suburb lookup, drawn by the shared card (D-91).
     fireEvent.click(screen.getByTestId("ward-tools-toggle-catchment"));
-    fireEvent.change(screen.getByLabelText("Search by suburb or postcode"), { target: { value: "Morley" } });
-    fireEvent.click(screen.getByRole("button", { name: "Start a community referral" }));
+    const card = screen.getByTestId("suburb-lookup-card");
+    fireEvent.change(within(card).getByRole("searchbox", { name: "Suburb or postcode" }), {
+      target: { value: "Morley" },
+    });
+    fireEvent.click(within(card).getAllByRole("button", { name: "Refer to this team" })[0]!);
+    expect(onNewReferral).toHaveBeenCalledTimes(1);
     expect(onNewReferral).toHaveBeenCalledWith("community");
   });
 
@@ -100,9 +105,23 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
     // Audit 24-1 decision 1: no legal status is assumed, so the tool opens asking for one.
     expect(within(screen.getByTestId("ward-tools-bed-finder")).getByRole("status").textContent).toMatch(
-      /Choose Voluntary or Involuntary under Legal status/u,
+      /Choose a legal status to list wards/u,
     );
     fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByTestId("ward-tools-bed-finder")).toBeNull();
+  });
+
+  it("keeps one tool open at a time, so opening another closes the first (Q310)", () => {
+    renderSheet();
+    const finder = screen.getByTestId("ward-tools-toggle-bed-finder");
+    const formTimes = screen.getByTestId("ward-tools-toggle-form-times");
+    fireEvent.click(finder);
+    expect(screen.getByTestId("ward-tools-bed-finder")).toBeTruthy();
+    fireEvent.click(formTimes);
+    expect(formTimes.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByTestId("ward-form-times")).toBeTruthy();
+    expect(finder.getAttribute("aria-expanded")).toBe("false");
     expect(screen.queryByTestId("ward-tools-bed-finder")).toBeNull();
   });
 
@@ -200,9 +219,12 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     renderSheet();
     const search = screen.getByRole("searchbox", { name: "Search tools" });
     fireEvent.change(search, { target: { value: "bed" } });
+    // By name (Find a bed) and by its short line (Key figures: "Beds, flow and waits").
     expect(screen.getByTestId("ward-tools-toggle-bed-finder")).toBeTruthy();
-    expect(screen.getByTestId("ward-tools-toggle-bed-summary")).toBeTruthy();
+    expect(screen.getByTestId("ward-tools-toggle-figures")).toBeTruthy();
     expect(screen.queryByTestId("ward-tools-toggle-form-times")).toBeNull();
+    // The Recent or Suggested row steps aside too, so a match is never listed twice.
+    expect(screen.queryByRole("region", { name: /^(Recent|Suggested)$/u })).toBeNull();
     // The Demo foot steps aside while a search is typed.
     expect(screen.queryByRole("region", { name: "Demo" })).toBeNull();
     fireEvent.change(search, { target: { value: "postcode" } });
@@ -210,7 +232,11 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(screen.queryByRole("region", { name: "Do now" })).toBeNull();
     fireEvent.change(search, { target: { value: "zzz" } });
     expect(screen.getByRole("status")).toHaveTextContent("No tool matches “zzz”.");
-    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(within(screen.getByRole("status")).getByRole("button", { name: "Search Ward Flow" })).toBeTruthy();
+    // With no header search on the page (Patients is the search), the sheet stays open and says so.
+    fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Search Ward Flow" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Search is not on this page. Open Patients to search.");
+    fireEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Clear" }));
     expect(search).toHaveValue("");
     expect(screen.getByRole("region", { name: "Do now" })).toBeTruthy();
     expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
@@ -220,13 +246,21 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     renderSheet();
     expect(screen.queryByTestId("ward-tools-service-now")).toBeNull();
     fireEvent.click(screen.getByTestId("ward-tools-toggle-figures"));
-    expect(screen.getByTestId("ward-stats-drawer-content")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Open statistics/u }).getAttribute("href")).toBe("/ward-flow/statistics");
+    const figures = screen.getByTestId("ward-stats-drawer-content");
+    // Key figures (Q321): four headline figures, everything else one link away on Statistics.
+    for (const label of ["Beds ready", "Occupancy", "Open ED movements", "Waiting in ED"]) {
+      expect(within(figures).getByText(label)).toBeTruthy();
+    }
+    expect(
+      within(figures)
+        .getByRole("link", { name: /See all on Statistics/u })
+        .getAttribute("href"),
+    ).toBe("/ward-flow/statistics");
   });
 });
 
 describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2026)", () => {
-  const NETWORK_FIGURE_TOOLS = ["bed-finder", "figures", "bed-summary"] as const;
+  const NETWORK_FIGURE_TOOLS = ["bed-finder", "figures", "messages"] as const;
 
   function atDesk(access: WardAccess) {
     act(() => setWardFeatureFlagOnDevice("role-access", true));
@@ -238,7 +272,7 @@ describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2
     resetWardAccessStoreForTests();
   });
 
-  it("gives the coordinator Find a bed, All figures, Copy bed summary and Log a delay", () => {
+  it("gives the coordinator Find a bed, Key figures, Messages and Log a delay", () => {
     renderSheet();
     for (const id of NETWORK_FIGURE_TOOLS) expect(screen.getByTestId(`ward-tools-toggle-${id}`)).toBeTruthy();
     expect(screen.getByRole("link", { name: /Log a delay/u })).toBeTruthy();
@@ -251,12 +285,15 @@ describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2
     atDesk(access as WardAccess);
     renderSheet();
     for (const id of NETWORK_FIGURE_TOOLS) expect(screen.queryByTestId(`ward-tools-toggle-${id}`)).toBeNull();
-    for (const name of [/Find a bed/u, /All figures/u, /Copy bed summary/u]) {
+    // Exact names, so the Hospital feed's "Messages to confirm" line cannot stand in for them.
+    for (const name of ["Find a bed", "Key figures", "Messages"]) {
       expect(screen.queryByText(name)).toBeNull();
     }
     // A search cannot bring them back.
     fireEvent.change(screen.getByRole("searchbox", { name: "Search tools" }), { target: { value: "bed" } });
-    expect(screen.queryByTestId("ward-tools-toggle-bed-finder")).toBeNull();
+    for (const id of NETWORK_FIGURE_TOOLS) expect(screen.queryByTestId(`ward-tools-toggle-${id}`)).toBeNull();
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search tools" }), { target: { value: "messages" } });
+    expect(screen.queryByTestId("ward-tools-toggle-messages")).toBeNull();
   });
 
   it("offers Log a delay only to a desk whose role may record a delay", () => {
@@ -289,37 +326,45 @@ describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2
 describe("Form times on the Perth clock", () => {
   afterEach(() => vi.useRealTimers());
 
+  function pickForm(name: RegExp) {
+    fireEvent.click(screen.getByTestId("ward-form-times-form"));
+    fireEvent.click(screen.getByRole("menuitemradio", { name }));
+  }
+
   it("starts with no form, date or time, and shows a result only once all three are entered", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFormTimes />
+        <ToolFormTimes onNavigate={vi.fn()} />
       </WardFlowProvider>,
     );
     // Owner rule (19 Oct 2026): no MHA form type or form time is prefilled, and rule D5: the
     // result shows only what the person entered.
-    expect(screen.getByRole("combobox", { name: "Form" })).toHaveValue("");
-    expect(screen.getByLabelText("Date written on form")).toHaveValue("");
-    expect(screen.getByLabelText("Time written on form")).toHaveValue("");
-    expect(screen.getByRole("status").textContent).toBe("Not recorded");
-    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
-    typeDate(screen.getByLabelText("Date written on form"), "2026-09-26");
-    expect(screen.getByRole("status").textContent).toBe("Not recorded");
-    fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
-    expect(screen.getByRole("status").textContent).toContain("on the demo clock");
+    expect(screen.getByTestId("ward-form-times-form")).toHaveTextContent("Choose a form");
+    expect(screen.getByLabelText("Date on form")).toHaveValue("");
+    expect(screen.getByLabelText("Time on form")).toHaveValue("");
+    const result = screen.getByTestId("ward-form-times-result");
+    expect(result.textContent).toBe("Not recorded");
+    fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "09:15" } });
+    typeDate(screen.getByLabelText("Date on form"), "2026-09-26");
+    expect(result.textContent).toBe("Not recorded");
     // Any form a Legal forms record can carry, not only the ones with a clock.
-    expect(screen.getByRole("option", { name: /^Form 4A/u })).toBeTruthy();
+    fireEvent.click(screen.getByTestId("ward-form-times-form"));
+    expect(screen.getByRole("menuitemradio", { name: /^Form 4A/u })).toBeTruthy();
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /^Form 1A/u }));
+    expect(result).toHaveTextContent("09:15");
+    expect(result).toHaveTextContent("as typed");
   });
 
   it("shows nothing for a cleared time rather than reading it as midnight", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFormTimes />
+        <ToolFormTimes onNavigate={vi.fn()} />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByRole("combobox", { name: "Form" }), { target: { value: "1A" } });
-    typeDate(screen.getByLabelText("Date written on form"), "2026-09-26");
-    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "09:15" } });
-    fireEvent.change(screen.getByLabelText("Time written on form"), { target: { value: "" } });
-    expect(screen.getByRole("status").textContent).toBe("Not recorded");
+    pickForm(/^Form 1A/u);
+    typeDate(screen.getByLabelText("Date on form"), "2026-09-26");
+    fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "09:15" } });
+    fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "" } });
+    expect(screen.getByTestId("ward-form-times-result").textContent).toBe("Not recorded");
   });
 });

@@ -90,7 +90,7 @@ function syntheticChart(name: string) {
 }
 
 type SlideOutReferral = {
-  /** A synthetic person registered inside the slide-out ("New patient"), so the age band is the
+  /** A synthetic person registered inside the slide-out ("Add patient"), so the age band is the
    *  journey's own choice rather than the one a sample movement already carries. */
   patient: { familyName: string; givenName: string; umrn: string };
   ageBand: string;
@@ -1406,7 +1406,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
   test("the referral board's tables may overflow only together with the scroll-sideways affordance", async ({
     page,
   }) => {
-    for (const width of [641, 700, 760, 820]) {
+    for (const width of [744, 760, 820, 1000]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/ward-flow/referrals", { waitUntil: "load" });
       // The same staging-copy wait the two journey tests above already use (see the comment before

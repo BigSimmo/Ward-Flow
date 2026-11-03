@@ -159,7 +159,12 @@ export function PhoneBedSheet({
   const admissionId = bedItem?.admissionId;
   return (
     <>
-      <div className={`${styles.drawerScrim} ${styles.show}`} onClick={onClose} aria-hidden="true" />
+      <div
+        className={`${styles.drawerScrim} ${styles.show}`}
+        onClick={onClose}
+        aria-hidden="true"
+        data-sheet-scrim=""
+      />
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <aside
         ref={bedDrawerRef}
@@ -288,7 +293,7 @@ export function PhoneBedSheet({
               {planCriteria}
               {sentJourney ? (
                 <>
-                  <h3 className={styles.phoneSec}>Journey this ward sent</h3>
+                  <h3 className={styles.phoneSec}>Movement this ward sent</h3>
                   {sentJourney}
                 </>
               ) : null}

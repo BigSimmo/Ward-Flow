@@ -1,7 +1,7 @@
 /**
- * The suburb or postcode to catchment lookup, without any screen: the Tools sheet's resolver, the
- * Community and ward suburb lookups and the header search all read it (search and forms review,
- * 31 October 2026). Split out of `ward-catchment-resolver.tsx` so the header search loads no React.
+ * The suburb or postcode to catchment lookup, without any screen: the header search reads it
+ * (search and forms review, 31 October 2026). Split out of the old Tools resolver, retired with the
+ * Tools overhaul (#1316), so the header search loads no React.
  */
 import {
   S2015_CATCHMENT_ROWS,
@@ -11,9 +11,9 @@ import {
 } from "@/components/ward-management/ward-catchment";
 import { mapClinicToServiceAndHospital, type HealthServiceInfo } from "./ward-catchment-mapping";
 
-export type CatchmentStatus = "Reviewed clinic match" | "Contested / split" | "Unreviewed" | "Not found";
+type CatchmentStatus = "Reviewed clinic match" | "Contested / split" | "Unreviewed" | "Not found";
 
-export interface ContestedAnswerDetail {
+interface ContestedAnswerDetail {
   readonly clinics: readonly string[];
   readonly documentId: string;
   readonly documentLabel: string;
@@ -35,7 +35,7 @@ export interface ResolvedCatchment {
   readonly rawLookup?: CatchmentLookup;
 }
 
-export type QueryResolutionType = "suburb" | "postcode" | "not-found" | "empty";
+type QueryResolutionType = "suburb" | "postcode" | "not-found" | "empty";
 
 export interface CatchmentQueryResult {
   readonly query: string;
@@ -43,8 +43,6 @@ export interface CatchmentQueryResult {
   readonly results: readonly ResolvedCatchment[];
   readonly notFoundMessage?: string;
 }
-
-export const QUICK_PICK_SUBURBS = ["Perth", "Morley", "Fremantle", "Armadale", "Joondalup", "Rockingham"] as const;
 
 /** Pre-indexed lookup sets for postcodes and suburbs */
 const ROWS_BY_POSTCODE: ReadonlyMap<string, readonly (typeof S2015_CATCHMENT_ROWS)[number][]> = (() => {
@@ -194,7 +192,7 @@ export function resolveSuburb(suburbQuery: string): ResolvedCatchment | null {
 /**
  * Searches for all suburbs located within a specified 4-digit WA postcode.
  */
-export function findSuburbsByPostcode(postcodeQuery: string): readonly ResolvedCatchment[] {
+function findSuburbsByPostcode(postcodeQuery: string): readonly ResolvedCatchment[] {
   const cleanPostcode = postcodeQuery.trim();
   const rows = ROWS_BY_POSTCODE.get(cleanPostcode);
   if (!rows || rows.length === 0) {

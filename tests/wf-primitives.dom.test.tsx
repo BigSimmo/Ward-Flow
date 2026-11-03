@@ -572,7 +572,7 @@ describe("Kit CSS", () => {
     expect(start, `${selector} block`).toBeGreaterThanOrEqual(0);
     return source.slice(start, source.indexOf("}", start));
   };
-  const phone = (source: string) => source.slice(source.indexOf("@media (max-width: 48rem)"));
+  const phone = (source: string) => source.slice(source.indexOf("@media (max-width: 46.4375rem)"));
 
   it("anchors the Timer's absolutely positioned screen-reader words on its root", () => {
     expect(block(css("live.module.css"), ".timer")).toMatch(/position:\s*relative/);
@@ -581,8 +581,8 @@ describe("Kit CSS", () => {
   it("keeps the 48px tap floor on a phone: segmented options lift, buttons use an invisible cover", () => {
     const button = css("button.module.css");
     const choice = css("choice.module.css");
-    expect(button).toContain("@media (max-width: 48rem)");
-    expect(choice).toContain("@media (max-width: 48rem)");
+    expect(button).toContain("@media (max-width: 46.4375rem)");
+    expect(choice).toContain("@media (max-width: 46.4375rem)");
     // Kit standard (Josh, 31 Oct 2026: no 48px controls): a phone button shows at 40px and its
     // invisible cover reaches 48px (4px above and below). Q295 (2 Nov 2026): a small one is drawn at
     // 40px too, so it has no phone rule of its own that would draw it smaller.
