@@ -453,7 +453,12 @@ export function CoordinatorScreen() {
   }
   function closeShortlist() {
     setSelectedAlertId(undefined);
-    selectMovement(undefined);
+    // Closing clears the drawer's subject but keeps the patient in focus, so Change view still
+    // offers that patient's wards and ED. The drawer is modal on every width (H7), so closing it is
+    // the only way to reach Change view from Placement, as the side column used to allow.
+    setSelectedMovementId(undefined);
+    setSelectedUnitId(undefined);
+    setSelectedReferralId(undefined);
     focusQueue(queueFocusRef.current);
   }
 

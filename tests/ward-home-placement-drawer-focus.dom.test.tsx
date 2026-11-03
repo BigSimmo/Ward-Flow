@@ -13,10 +13,10 @@ describe("Choose a ward from the drawer's pinned foot", () => {
     render(
       <div role="dialog">
         <div data-testid="ward-shortlist-panel">
-          <button type="button" data-testid="ward-shortlist-candidate-a" data-fit="no">
+          <button type="button" data-testid="ward-shortlist-candidate-a" data-fit="bed">
             Ward A
           </button>
-          <button type="button" data-testid="ward-shortlist-candidate-b">
+          <button type="button" data-testid="ward-shortlist-candidate-b" data-fit="review">
             Ward B
           </button>
         </div>
@@ -36,11 +36,11 @@ describe("Choose a ward from the drawer's pinned foot", () => {
   it("keeps to its own panel when the panel holds the control", () => {
     render(
       <div role="dialog">
-        <button type="button" data-testid="ward-shortlist-candidate-other" data-fit="yes">
+        <button type="button" data-testid="ward-shortlist-candidate-other" data-fit="bed">
           Other ward
         </button>
         <div data-testid="ward-shortlist-panel">
-          <button type="button" data-testid="ward-shortlist-candidate-own" data-fit="yes">
+          <button type="button" data-testid="ward-shortlist-candidate-own" data-fit="bed">
             Own ward
           </button>
           <footer>

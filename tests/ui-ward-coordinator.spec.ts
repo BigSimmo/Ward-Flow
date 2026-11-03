@@ -16,10 +16,22 @@ import { homeFlowCard, openHomeRegisters, showAllFlowRows, showEveryoneWaitingOn
  * coordinator would: open the stages first when the row is further down.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
+  await closePlacement(queue.page());
   const row = queue.getByTestId(`ward-queue-row-${movementId}`);
   if (!(await row.isVisible())) await showAllFlowRows(queue);
   await row.click();
   return row;
+}
+
+/**
+ * Placement is the patient drawer over Home on every screen size (H7, Josh 3 Nov 2026), so an open
+ * drawer covers the queue and the list menu. Close it, as a coordinator would, before reaching them.
+ */
+async function closePlacement(page: Page) {
+  const close = page.getByRole("button", { name: "Close placement and clear selection" });
+  if ((await close.count()) === 0) return;
+  await close.click();
+  await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
 }
 
 async function gotoCoordinator(page: Page) {
@@ -160,6 +172,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // incidental step.
     await page.locator('[data-testid^="ward-queue-row-"]').first().click();
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toBeVisible();
+    await closePlacement(page);
     // Owner, 8 Oct 2026: the four registers start closed and open as a strip under the hero. Home
     // v7 (Josh, 22 Oct 2026): Registers opens them, under "More for this list" since Q340. Scrolled into
     // view before the visibility check, as Playwright's `toBeVisible()` needs it in the viewport.
@@ -200,9 +213,11 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(firstRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).toHaveAttribute("data-subject-movement", String(firstId));
 
-    // A second selection replaces the first rather than accumulating.
+    // A second selection replaces the first rather than accumulating. The drawer covers the queue,
+    // so the coordinator closes it first.
     const secondRow = rows.nth(1);
     const secondId = (await secondRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
+    await closePlacement(page);
     await secondRow.click();
     await expect(secondRow).toHaveAttribute("aria-pressed", "true");
     await expect(firstRow).toHaveAttribute("aria-pressed", "false");
@@ -324,10 +339,12 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const phoneDrawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await expect(phoneDrawer).toBeVisible();
     await phoneDrawer.locator('[data-testid*="-WF-005"]').first().click();
-    // L3: an accepted movement leads with its next step instead of Refer.
-    await expect(
-      page.getByTestId("ward-shortlist-refer").or(page.getByTestId("ward-shortlist-next-step")).first(),
-    ).toBeInViewport();
+    // L3: an accepted movement leads with its next step instead of Refer. In the drawer (H7) the
+    // next step is drawn into the pinned foot band, which lays it out (the section itself takes no
+    // box there), so the band is what must be on screen.
+    const foot = page.getByTestId("home-placement-foot");
+    await expect(foot.getByTestId("ward-shortlist-next-step")).toHaveCount(1);
+    await expect(foot).toBeInViewport();
   });
 
   test("orders by longest wait only and shows no score", async ({ page }) => {
@@ -1131,7 +1148,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Task 5: refusals moved out of the Exceptions panel into their own "Refused actions" tab —
     // see `exception-drawer.tsx`'s own file comment on why the two were split. On desktop the
     // registers open from the hero's Exceptions count (owner, 8 Oct 2026), so open them first.
-    // Home flow (Q340, 3 Nov 2026): Registers, under "More for this list", opens them.
+    // Home flow (Q340, 3 Nov 2026): Registers, under "More for this list", opens them, once the
+    // placement drawer over the page is closed (H7).
+    await closePlacement(page);
     await openHomeRegisters(page);
     const refusedTab = page.getByRole("tab", { name: /Refused/ });
     await refusedTab.scrollIntoViewIfNeeded();
