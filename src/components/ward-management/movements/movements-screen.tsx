@@ -199,7 +199,7 @@ export function MovementsScreen() {
   const [sideView, setSideView] = useState<"transport" | "shape">(returned?.sideView ?? "transport");
   // Phone (v10): the timeline, corridors and transport panels open as sheets from nav cards.
   const isPhone = useIsPhone();
-  const [phoneSheet, setPhoneSheet] = useState<"arrivals" | "corridors" | "transport" | null>(null);
+  const [phoneSheet, setPhoneSheet] = useState<"arrivals" | "corridors" | "transport" | "shape" | null>(null);
   // v10 phone: Arrivals ahead reads as a list; the timeline opens under it on request.
   const [phoneArrivalsTimeline, setPhoneArrivalsTimeline] = useState(false);
   // v10 phone: each worklist group opens on its own "Show N more" row.
@@ -763,6 +763,30 @@ export function MovementsScreen() {
           </button>
         ))}
     </div>
+  );
+  // Stress test (3 Nov 2026): one Shape of the day, in the desk aside and in a phone sheet.
+  const shapeOfDay = (
+    <ShapeOfTheDay
+      arrivedMovements={arrivedMovements}
+      closedToday={closedToday}
+      didNotProceedMovements={didNotProceedMovements}
+      isInServiceScope={isInServiceScope}
+      jumpToMovement={jumpToMovement}
+      legs={legs}
+      noTransportRecord={noTransportRecord}
+      now={now}
+      openDetail={openDetail}
+      openMovements={openMovements}
+      openStages={openStages}
+      patients={patients}
+      referrals={referrals}
+      setShapeTab={setShapeTab}
+      onShowPeople={setPeopleList}
+      shapeTab={shapeTab}
+      unacceptedTransport={unacceptedTransport}
+      units={units}
+      waitingMovements={waitingMovements}
+    />
   );
   function openFromHero(id: string) {
     const target = movements.find((candidate) => candidate.id === id);
@@ -1349,27 +1373,7 @@ export function MovementsScreen() {
                   )}
                 </>
               ) : (
-                <ShapeOfTheDay
-                  arrivedMovements={arrivedMovements}
-                  closedToday={closedToday}
-                  didNotProceedMovements={didNotProceedMovements}
-                  isInServiceScope={isInServiceScope}
-                  jumpToMovement={jumpToMovement}
-                  legs={legs}
-                  noTransportRecord={noTransportRecord}
-                  now={now}
-                  openDetail={openDetail}
-                  openMovements={openMovements}
-                  openStages={openStages}
-                  patients={patients}
-                  referrals={referrals}
-                  setShapeTab={setShapeTab}
-                  onShowPeople={setPeopleList}
-                  shapeTab={shapeTab}
-                  unacceptedTransport={unacceptedTransport}
-                  units={units}
-                  waitingMovements={waitingMovements}
-                />
+                shapeOfDay
               )}
             </Card>
           </aside>
@@ -1396,6 +1400,8 @@ export function MovementsScreen() {
             setPhoneArrivalsTimeline={setPhoneArrivalsTimeline}
             setPhoneSheet={setPhoneSheet}
             transportFeed={transportFeed}
+            shapeOfDay={shapeOfDay}
+            closedTodayCount={closedToday.length}
             units={units}
             withoutTransport={withoutTransport}
           />
