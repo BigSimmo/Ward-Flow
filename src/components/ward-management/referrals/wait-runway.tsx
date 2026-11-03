@@ -51,7 +51,9 @@ type RunwayEntry = { referral: Referral; minutes: number; x: number };
 type RunwayGroup = { key: string; x: number; entries: RunwayEntry[] };
 
 /** Groups positions (sorted left to right) so no two marks sit closer than `gapPercent`. A group
- *  sits at the mean of its members, so it stays inside the stretch of wait it stands for. */
+ *  sits at the mean of its members, so it stays inside the stretch of wait it stands for. A new
+ *  group only starts a full gap past the last group's mean, and that mean only moves right as the
+ *  group grows, so no two groups end up within the gap. */
 export function runwayGroups(entries: readonly RunwayEntry[], gapPercent: number): RunwayGroup[] {
   const sorted = [...entries].sort((a, b) => a.x - b.x || b.referral.raisedAt - a.referral.raisedAt);
   const groups: RunwayGroup[] = [];
@@ -63,17 +65,6 @@ export function runwayGroups(entries: readonly RunwayEntry[], gapPercent: number
       continue;
     }
     groups.push({ key: entry.referral.id, x: entry.x, entries: [entry] });
-  }
-  // Re-centring can pull two groups back within the gap; merge until none touch.
-  for (let index = 1; index < groups.length; index += 1) {
-    const previous = groups[index - 1]!;
-    const current = groups[index]!;
-    if (current.x - previous.x < gapPercent) {
-      previous.entries.push(...current.entries);
-      previous.x = previous.entries.reduce((sum, item) => sum + item.x, 0) / previous.entries.length;
-      groups.splice(index, 1);
-      index = Math.max(0, index - 2);
-    }
   }
   return groups;
 }
