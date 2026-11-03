@@ -13,6 +13,18 @@ let activeAccessContext: string | null = null;
 let renewSession = false;
 let fallbackSession = "memory-only";
 let fallbackStartedAt: number | null = null;
+// Q392: drafts hold names and free text, so they reach browser storage only in the prototype data
+// mode. Any other mode keeps them in memory, so a refresh loses them.
+let dataMode = process.env.NEXT_PUBLIC_WARD_DATA_MODE?.trim() || "prototype";
+
+/** Whether drafts may be copied to sessionStorage in the current data mode. */
+export const draftStorageAllowed = () => dataMode === "prototype";
+
+/** Sets the data mode; leaving prototype clears every stored draft at once. */
+export function setDraftDataMode(next: string): void {
+  dataMode = next;
+  if (!draftStorageAllowed()) clearSessionDrafts();
+}
 
 function fallbackDetails(): { id: string; startedAt: number } {
   fallbackStartedAt ??= Date.now();
@@ -33,7 +45,7 @@ export const draftSessionVersion = () => generation;
 
 function sessionDetails(): { id: string; startedAt: number } {
   const fresh = () => ({ id: sessionId(), startedAt: Date.now() });
-  if (typeof window === "undefined") return fallbackDetails();
+  if (typeof window === "undefined" || !draftStorageAllowed()) return fallbackDetails();
   try {
     const existing = renewSession ? null : window.sessionStorage.getItem(SESSION_KEY);
     if (existing) {
@@ -166,6 +178,7 @@ export function clearLegacySessionDrafts(): void {
 export function readSessionDraft(key: string): string | null {
   if (
     typeof window === "undefined" ||
+    !draftStorageAllowed() ||
     !key.startsWith(PREFIX + [account, sessionScope(sessionDetails().id)].map(encodeURIComponent).join(":") + ":")
   )
     return null;
@@ -204,7 +217,7 @@ export function readSessionDraft(key: string): string | null {
 }
 
 export function writeSessionDraft(key: string, value: string, owner: number): boolean {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined" || !draftStorageAllowed()) return false;
   const session = sessionDetails();
   if (
     owner !== generation ||

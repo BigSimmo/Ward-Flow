@@ -14,6 +14,7 @@ import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { Movement, Rejection } from "@/components/ward-management/ward-model";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { resolveAlertSubject } from "./alerts-model";
+import { useConfirmBroadcastStandDown } from "./confirm-broadcast-stand-down";
 import { isAlertLive, replyBoard } from "./global-alert-view";
 import {
   BROADCAST_ANSWER_LABELS,
@@ -75,6 +76,7 @@ export function ReplyBoardList({
 
 /** One live Pull now on the Alerts page: who, which ward, answer time, replies, stand down. */
 export function PullNowCard({ alert, onStandDown }: { alert: BroadcastAlert; onStandDown: (id: string) => void }) {
+  const confirmStandDown = useConfirmBroadcastStandDown(alert, () => onStandDown(alert.id));
   const { units, movements, patients, referrals } = useWardFlowSelect("units", "movements", "patients", "referrals");
   const now = useWardFlowClock();
   const movement = movements.find((m) => m.id === alert.movementId);
@@ -91,7 +93,7 @@ export function PullNowCard({ alert, onStandDown }: { alert: BroadcastAlert; onS
         <strong className={styles.cardTitle}>{subject.displayName}</strong>
         <span className={styles.mono}>{subject.umrn}</span>
         <span className={styles.quiet}>at {subject.from}</span>
-        <Button size="sm" icon={X} className={styles.push} onClick={() => onStandDown(alert.id)}>
+        <Button size="sm" icon={X} className={styles.push} onClick={confirmStandDown}>
           Stand down
         </Button>
       </div>
