@@ -99,7 +99,7 @@ export function HomePlacementDrawer({
   const tier = movement?.urgency ?? referral?.urgency;
   const recordHref =
     entry?.subject.patientHref ??
-    (referral?.patientId ? patientHref(referral.patientId) : movement ? movementHref(movement.id) : undefined);
+    (person?.patient ? patientHref(person.patient.id) : movement ? movementHref(movement.id) : undefined);
   const accepted = movement?.acceptedUnitId
     ? flow.units.find((unit) => unit.id === movement.acceptedUnitId)
     : undefined;
