@@ -364,7 +364,11 @@ function LadderBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
   const chain = escalationChain(entry, actions.entries);
   if (!chain.length) return null;
   return (
-    <Fold label="If no answer" meta={`${chain.length} to try`}>
+    // Round 2 (3 Nov 2026): the fold names who to try first, so an unanswered call needs one tap less.
+    <Fold
+      label="If no answer"
+      meta={chain[0] ? `Try ${chain[0].name}${chain.length > 1 ? ` +${chain.length - 1}` : ""}` : undefined}
+    >
       <Badge size="sm" variant="plain" className={styles.foldBadge}>
         Preview order
       </Badge>

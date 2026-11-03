@@ -184,3 +184,35 @@
 .followUp[data-warning] {
   color: var(--wf-ink-1);
 }
+
+/* DC1 round 2 (3 Nov 2026): the coordinator's one-tap chase, a quiet line under the hero. */
+.chase {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
+  font-size: 0.875rem;
+  color: var(--wf-ink-2);
+}
+
+.chaseText {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--wf-warning-ink);
+}
+
+.chaseText strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+.chase :global(button) {
+  flex: none;
+  white-space: nowrap;
+}

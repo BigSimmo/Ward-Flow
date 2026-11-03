@@ -12,7 +12,7 @@ import {
   OctagonAlert,
   Printer,
   TrendingUp,
-  Truck,
+  Ambulance,
   X,
 } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
@@ -35,9 +35,6 @@ import {
   StatusGlyph,
   buttonClass,
 } from "@/components/wf";
-import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
-import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { CriteriaLedTag } from "@/components/ward-management/ward/ward-criteria-led-tag";
 import { DischargeBarrierBars, DischargeDayChart, type DischargeDay } from "./discharge-flow-charts";
 import styles from "./discharges.module.css";
 import releaseList from "./discharge-release-list.module.css";
@@ -74,7 +71,6 @@ import {
   perthDay,
   stageTone,
 } from "./discharge-board-model";
-import { badge } from "./discharge-board-parts";
 import { DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
 import { DischargeRecordDetail, DischargeReleaseDetail, DischargeRestingDetail } from "./discharge-detail-panes";
 import { useDischargeDeskView } from "./discharge-desk-view";
@@ -84,6 +80,7 @@ import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
 // server's copy vanished on hydration and came back, and the whole list jumped (layout shift 0.21).
 import { DischargeWeekendPrep } from "./discharge-weekend-prep";
 import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
+import { DischargeAskOverdueWards } from "./discharge-message-ward";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
@@ -135,6 +132,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const { releaseGroups: groups } = base;
   const toWorkCount = groups.blocked.length + groups.confirmed.length + groups.expected.length;
   const openReleases = base.scopedReleases.filter((release) => release.state !== "discharged");
+  const overdueOpen = openReleases.filter((release) => release.expectedAt < base.now);
+  const overdueWards = new Set(overdueOpen.map((release) => release.unitId)).size;
   const highlightWithinView: typeof base.highlightOn = (next) => {
     if (!nowView) {
       base.highlightOn(next);
@@ -182,7 +181,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     base.setDrawerTab(part === "date" ? "barriers" : part);
   };
   // D-64: rows show where criteria led discharge stands, behind its flag (off in production).
-  const criteriaLedOn = useWardFeatureFlag("top25-criteria-led-discharge");
   const {
     units,
     dayZero,
@@ -217,9 +215,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     guarded,
     records,
     releaseGroups,
-    scopedRecords,
     counts,
-    recordLit,
     releaseLit,
     dimmed,
     statusHighlight,
@@ -472,6 +468,25 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           }
           barAside={isPhone ? undefined : populationSwitch}
         />
+        {nowView && s.releaseActor.role === "coordinator" && overdueOpen.length > 0 ? (
+          /* DC1 round 2 (3 Nov 2026): the coordinator's most common chase is one tap. The line says
+             how many dates have passed on how many wards, and the button asks just those wards. */
+          <div className={releaseList.chase} data-testid="ward-discharge-chase">
+            <span className={releaseList.chaseText}>
+              <StatusGlyph tone="warning" size={9} />
+              <span>
+                <strong>{overdueOpen.length}</strong> overdue {overdueOpen.length === 1 ? "date" : "dates"} on{" "}
+                <strong>{overdueWards}</strong> {overdueWards === 1 ? "ward" : "wards"}
+              </span>
+            </span>
+            <DischargeAskOverdueWards
+              overdue={overdueOpen}
+              wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Ward"}
+              now={now}
+              dispatch={dispatch}
+            />
+          </div>
+        ) : null}
         {isPhone ? (
           <div className={`${pageStyles.phToolbar} ${wardPin.pinnedSwitch}`}>
             {populationSwitch}
@@ -512,13 +527,14 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               <span className={pageStyles.phChartText}>
                 <span className={pageStyles.phChartTitle}>Per day</span>
                 <span className={pageStyles.phChartMeta}>
+                  <b>{chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0}</b> overdue ·{" "}
                   <b>
                     {(() => {
                       const day = chartDays.find((candidate) => candidate.key === 0);
                       return day ? day.expected + day.blocked : 0;
                     })()}
                   </b>{" "}
-                  today · <b>{chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0}</b> overdue
+                  today
                 </span>
               </span>
               <ChevronRight size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
@@ -905,7 +921,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                       {release.state !== "discharged" && release.blocker ? (
                                         <span className={pageStyles.blockerCell}>
                                           <span className={pageStyles.blockerTag}>
-                                            <StatusGlyph tone="danger" size={9} />
+                                            {/* Icon rules (3 Nov 2026): one act-now mark per row, as on the phone. */}
+                                            {overdue ? null : <StatusGlyph tone="danger" size={9} />}
                                             {release.blocker.replace(/^Awaiting (\w)/, (_, first: string) =>
                                               first.toUpperCase(),
                                             )}
@@ -913,7 +930,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                           <span className={pageStyles.personMeta}>
                                             {release.waitingOn ? (
                                               <>
-                                                <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
+                                                <Ambulance
+                                                  size={14}
+                                                  className={pageStyles.inlineIcon}
+                                                  aria-hidden="true"
+                                                />{" "}
                                                 {release.waitingOn}
                                                 {" · "}
                                               </>
@@ -984,7 +1005,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                         </>
                                       )}
                                     </td>
-                                    <td data-label="Stage / hold-up">
+                                    <td data-label="Hold-up">
                                       <div className={pageStyles.stageCluster}>
                                         {/* A stuck release keeps its own stage word, so a blocked confirmation
                                         still reads apart from a blocked prediction, but never with the
@@ -998,7 +1019,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                             <span>{WORK_STATUS_LABELS[release.state]}</span>
                                           </span>
                                         ) : (
-                                          badge(release.state === "discharged" ? "departed" : release.state)
+                                          /* DC2 round 2 (3 Nov 2026): the group heading already says
+                                          Confirmed, Expected or Discharged, so a row without a hold-up
+                                          no longer repeats it as a badge. Screen readers still hear it. */
+                                          <SrOnly>
+                                            {
+                                              WORK_STATUS_LABELS[
+                                                release.state === "discharged" ? "departed" : release.state
+                                              ]
+                                            }
+                                          </SrOnly>
                                         )}
                                         {release.blocker && (
                                           <>
@@ -1011,7 +1041,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                           <>
                                             <SrOnly>, </SrOnly>
                                             <span className={pageStyles.secondary}>
-                                              <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
+                                              <Ambulance
+                                                size={14}
+                                                className={pageStyles.inlineIcon}
+                                                aria-hidden="true"
+                                              />{" "}
                                               {release.waitingOn}
                                             </span>
                                           </>

@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import {
-  BedDouble,
+  BedSingle,
   CalendarClock,
   Car,
   ChevronDown,
   ChevronRight,
-  ChevronUp,
   HeartHandshake,
   Pill,
   Users,
@@ -22,7 +21,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { holidaysListedFor, WA_PUBLIC_HOLIDAYS_LAST_YEAR } from "@/components/ward-management/wa-public-holidays";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
-import { Button, Card, IconTile } from "@/components/wf";
+import { Card, IconTile, Popover } from "@/components/wf";
 import {
   DISCHARGE_DEPENDENCY_KIND_LABELS,
   DISCHARGE_DEPENDENCY_OWNERS,
@@ -77,7 +76,7 @@ function closureFact(closure: ServiceClosure, dayZero: Date): string {
 
 /** The service's own icon, so each closed service reads at a glance. */
 const OWNER_ICONS: Record<ServiceClosure["owner"], LucideIcon> = {
-  ward: BedDouble,
+  ward: BedSingle,
   pharmacy: Pill,
   patient_transport: Car,
   social_work: HeartHandshake,
@@ -121,7 +120,6 @@ export function DischargeWeekendPrep({
   foldable?: boolean;
 }) {
   const [phoneOpen, setPhoneOpen] = useState(false);
-  const [deskOpen, setDeskOpen] = useState(true);
   const groups = weekendPrepGroups(releases, now, dayZero);
   if (groups.length === 0) return null;
   // H-0766: the look-ahead runs past the WA holiday list, so a holiday there would read as a working day.
@@ -135,15 +133,65 @@ export function DischargeWeekendPrep({
   const holidays = [...new Set(groups.flatMap((group) => group.closure.closedFor))].filter((day) => day !== "Weekend");
   const title = holidays.length > 0 ? `Closed for ${holidays.join(" and ")}` : "Closed this weekend";
   const summary = `${groups.length} ${groups.length === 1 ? "service" : "services"} closed · ${beforeReopen} due out before ${groups.length === 1 ? "it reopens" : "they reopen"}`;
-  const open = foldable ? phoneOpen : deskOpen;
-  const toggle = () => (foldable ? setPhoneOpen((was) => !was) : setDeskOpen((was) => !was));
+  const open = foldable ? phoneOpen : true;
+  const toggle = () => setPhoneOpen((was) => !was);
+  const rowsFor = (group: WeekendPrepGroup, close?: () => void) => (
+    <ul className={styles.rows}>
+      {group.rows.map(({ release, item }) => {
+        const unit = units.find((candidate) => candidate.id === release.unitId);
+        const ward = unit?.name ?? "Ward not recorded";
+        const name = nameFor(release);
+        const umrn = umrnFor?.(release) ?? null;
+        const before = release.expectedAt < group.closure.reopensAt;
+        return (
+          <li key={`${release.id}-${item.kind}`}>
+            <button
+              type="button"
+              className={styles.row}
+              onClick={(event) => {
+                const opener = event.currentTarget;
+                close?.();
+                onOpen(release.id, opener);
+              }}
+            >
+              <span className={styles.rowMain}>
+                <span className={styles.rowName}>{name ?? ward}</span>
+                <span className={styles.rowMeta}>
+                  {DISCHARGE_DEPENDENCY_KIND_LABELS[item.kind]}
+                  {name ? ` · ${ward}` : null}
+                  {umrn ? (
+                    <>
+                      {" · "}
+                      <span className={styles.rowUmrn}>{umrn}</span>
+                    </>
+                  ) : null}
+                </span>
+              </span>
+              <span className={styles.rowSide}>
+                <span className={styles.rowOut}>Out {shortMoment(release.expectedAt, dayZero)}</span>
+                {/* DC3 (3 Nov 2026): the heading already counts who is due out before it
+                    reopens, so only the rare row after reopening says so. */}
+                {before ? (
+                  <span className="sr-only">Before reopening</span>
+                ) : (
+                  <span className={styles.rowAfter}>After reopening</span>
+                )}
+              </span>
+              <ChevronRight size={16} aria-hidden="true" className={styles.rowChevron} />
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
   return (
     <Card
       as="section"
       className={styles.weekend}
       aria-labelledby="discharge-weekend-prep-heading"
       data-testid="ward-discharge-weekend-prep"
-      data-open={open || undefined}
+      data-open={(foldable && open) || undefined}
+      data-strip={foldable ? undefined : ""}
     >
       <header className={styles.head}>
         {foldable ? (
@@ -166,87 +214,76 @@ export function DischargeWeekendPrep({
               </h2>
               <p className={styles.summary}>{summary}</p>
             </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              iconEnd={open ? ChevronUp : ChevronDown}
-              aria-expanded={open}
-              aria-controls="discharge-weekend-prep-services"
-              onClick={toggle}
-            >
-              {open ? "Hide" : "Show"}
-            </Button>
+            {/* DC3 round 2 (3 Nov 2026): on a desk the services sit in one line as pills, each
+                opening its people in a popover, so the card stays one row tall and the list below
+                stays in view. */}
+            <ul className={styles.pills} aria-label="Closed services">
+              {groups.map((group) => {
+                const OwnerIcon = OWNER_ICONS[group.closure.owner];
+                const service = DISCHARGE_DEPENDENCY_OWNER_LABELS[group.closure.owner];
+                return (
+                  <li key={group.closure.owner}>
+                    <Popover
+                      label={`${service}, ${group.rows.length} waiting`}
+                      align="end"
+                      panelClassName={styles.pillPanel}
+                      trigger={(props) => (
+                        <button
+                          type="button"
+                          {...props}
+                          className={styles.pill}
+                          aria-label={`${closureFact(group.closure, dayZero)}. ${group.rows.length} waiting`}
+                          data-testid={`ward-discharge-weekend-${group.closure.owner}`}
+                        >
+                          <OwnerIcon size={14} strokeWidth={1.75} aria-hidden="true" className={styles.pillIcon} />
+                          <span className={styles.pillName}>{service}</span>
+                          <span className={styles.pillCount}>{group.rows.length}</span>
+                          <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" className={styles.pillChevron} />
+                        </button>
+                      )}
+                    >
+                      {(close) => (
+                        <div className={styles.pillBody}>
+                          <p className={styles.pillWhen}>{closureWhen(group.closure, dayZero)}</p>
+                          {rowsFor(group, () => close(false))}
+                        </div>
+                      )}
+                    </Popover>
+                  </li>
+                );
+              })}
+            </ul>
           </>
         )}
       </header>
-      <div id="discharge-weekend-prep-services" className={styles.services} hidden={!open}>
-        {groups.map((group) => {
-          const OwnerIcon = OWNER_ICONS[group.closure.owner];
-          return (
-            <section
-              key={group.closure.owner}
-              className={styles.service}
-              aria-label={closureFact(group.closure, dayZero)}
-            >
-              <header className={styles.serviceHead}>
-                <span className={styles.serviceIcon} aria-hidden="true">
-                  <OwnerIcon size={16} aria-hidden="true" />
-                </span>
-                <span className={styles.serviceText}>
-                  <h3 className={styles.serviceName}>{DISCHARGE_DEPENDENCY_OWNER_LABELS[group.closure.owner]}</h3>
-                  <span className={styles.serviceWhen}>{closureWhen(group.closure, dayZero)}</span>
-                </span>
-                <span className={styles.serviceCount} aria-label={`${group.rows.length} waiting`}>
-                  {group.rows.length}
-                </span>
-              </header>
-              <ul className={styles.rows}>
-                {group.rows.map(({ release, item }) => {
-                  const unit = units.find((candidate) => candidate.id === release.unitId);
-                  const ward = unit?.name ?? "Ward not recorded";
-                  const name = nameFor(release);
-                  const umrn = umrnFor?.(release) ?? null;
-                  const before = release.expectedAt < group.closure.reopensAt;
-                  return (
-                    <li key={`${release.id}-${item.kind}`}>
-                      <button
-                        type="button"
-                        className={styles.row}
-                        onClick={(event) => onOpen(release.id, event.currentTarget)}
-                      >
-                        <span className={styles.rowMain}>
-                          <span className={styles.rowName}>{name ?? ward}</span>
-                          <span className={styles.rowMeta}>
-                            {DISCHARGE_DEPENDENCY_KIND_LABELS[item.kind]}
-                            {name ? ` · ${ward}` : null}
-                            {umrn ? (
-                              <>
-                                {" · "}
-                                <span className={styles.rowUmrn}>{umrn}</span>
-                              </>
-                            ) : null}
-                          </span>
-                        </span>
-                        <span className={styles.rowSide}>
-                          <span className={styles.rowOut}>Out {shortMoment(release.expectedAt, dayZero)}</span>
-                          {/* DC3 (3 Nov 2026): the heading already counts who is due out before it
-                              reopens, so only the rare row after reopening says so. */}
-                          {before ? (
-                            <span className="sr-only">Before reopening</span>
-                          ) : (
-                            <span className={styles.rowAfter}>After reopening</span>
-                          )}
-                        </span>
-                        <ChevronRight size={16} aria-hidden="true" className={styles.rowChevron} />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          );
-        })}
-      </div>
+      {foldable ? (
+        <div id="discharge-weekend-prep-services" className={styles.services} hidden={!open}>
+          {groups.map((group) => {
+            const OwnerIcon = OWNER_ICONS[group.closure.owner];
+            return (
+              <section
+                key={group.closure.owner}
+                className={styles.service}
+                aria-label={closureFact(group.closure, dayZero)}
+              >
+                <header className={styles.serviceHead}>
+                  <span className={styles.serviceIcon} aria-hidden="true">
+                    <OwnerIcon size={16} aria-hidden="true" />
+                  </span>
+                  <span className={styles.serviceText}>
+                    <h3 className={styles.serviceName}>{DISCHARGE_DEPENDENCY_OWNER_LABELS[group.closure.owner]}</h3>
+                    <span className={styles.serviceWhen}>{closureWhen(group.closure, dayZero)}</span>
+                  </span>
+                  <span className={styles.serviceCount} aria-label={`${group.rows.length} waiting`}>
+                    {group.rows.length}
+                  </span>
+                </header>
+                {rowsFor(group)}
+              </section>
+            );
+          })}
+        </div>
+      ) : null}
       {open && pastHolidayList ? (
         <p className={styles.note}>
           WA public holidays after {WA_PUBLIC_HOLIDAYS_LAST_YEAR} are not listed yet, so they are not marked.

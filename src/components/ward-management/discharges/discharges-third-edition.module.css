@@ -1873,12 +1873,15 @@
     font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   }
 
+  /* DC5 round 2: two short lines rather than one cut off at 390. */
   .phChartMeta {
+    display: -webkit-box;
     overflow: hidden;
     color: var(--wf-ink-2);
     font-size: var(--wf-fs-12);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.3;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .phChartMeta b {
