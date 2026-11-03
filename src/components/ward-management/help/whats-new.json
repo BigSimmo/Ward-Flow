@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-settings-by-login",
-    "date": "2026-10-31",
-    "line": "Settings is one page shaped by your login, with a short Rules that affect you card. Glare is now Bright light."
-  },
-  {
     "id": "2026-10-31-help-tabs",
     "date": "2026-10-31",
     "line": "Help has one search box and three tabs, shows each login only what it can use, and the tour starts when you choose."
@@ -98,5 +93,10 @@
     "id": "2026-11-03-waiting-and-all-eds",
     "date": "2026-11-03",
     "line": "Waiting shows Today's follow-up and a clearer daily check. All EDs filters hide other EDs, with a By ED view."
+  },
+  {
+    "id": "2026-11-03-one-clock",
+    "date": "2026-11-03",
+    "line": "One clock in the top bar. When the board stops updating it says so in words, such as Not updating since 10:42."
   }
 ]
