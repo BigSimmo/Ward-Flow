@@ -202,7 +202,12 @@ function HomeListMoreMenu({ onRegisters }: { onRegisters: () => void }) {
         { id: "alerts", label: "Alerts history", onSelect: () => router?.push("/ward-flow/alerts") },
       ]}
       trigger={(props) => (
-        <button type="button" {...props} className={buttonClass({ variant: "ghost", size: "sm" })}>
+        <button
+          type="button"
+          {...props}
+          className={buttonClass({ variant: "ghost", size: "sm" })}
+          data-testid="ward-home-more"
+        >
           <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
           <span className={flowStyles.moreText} aria-hidden="true">
             More
@@ -742,7 +747,17 @@ export function CoordinatorScreen() {
         tab={placement === "band" ? registerTab : undefined}
         onTabChange={placement === "band" ? setRegisterTab : undefined}
         onToggle={() => setExceptionsOpen((open) => !open)}
-        onClose={placement === "band" ? () => setHeroPanel(undefined) : undefined}
+        onClose={
+          placement === "band"
+            ? () => {
+                setHeroPanel(undefined);
+                // The band opened from More, so closing it hands focus back there, not to the page.
+                requestAnimationFrame(() =>
+                  document.querySelector<HTMLButtonElement>('[data-testid="ward-home-more"]')?.focus(),
+                );
+              }
+            : undefined
+        }
         // On a phone the open registers stand between a coordinator and Confirm, so choosing a
         // row closes them in the same tap.
         onSelectMovement={(movementId) => {

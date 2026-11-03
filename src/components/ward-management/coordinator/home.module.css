@@ -219,6 +219,8 @@
 
 /* Appraisal (Josh Q8, 3 Nov 2026): the departments with nobody waiting fold into one quiet tile. */
 .edClear {
+  /* Holds its screen-reader text, so that text cannot widen the page past the strip's scroller. */
+  position: relative;
   display: flex;
   margin: 0;
   flex-direction: column;
