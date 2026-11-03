@@ -319,14 +319,18 @@ export function AddPatientForm() {
     },
     [],
   );
-  if (priorSubmissionRef.current && priorSubmissionRef.current.generation !== worldGeneration) {
+  // Retire a submission from an earlier workspace in a committed effect, never during render: an
+  // abandoned render would keep the ref change but drop the state updates, leaving the form locked.
+  useEffect(() => {
+    const prior = priorSubmissionRef.current;
+    if (!prior || prior.generation === worldGeneration) return;
     priorSubmissionRef.current = null;
     setAcceptedSubmission(null);
     setLastRejection(
       "The workspace changed before this patient was confirmed. Check the patient list. If they are not there, add them again.",
     );
     setIsSubmitting(false);
-  }
+  }, [worldGeneration]);
   const submitIntentRef = useRef<"profile" | "refer">("profile");
   const [submitIntent, setSubmitIntent] = useState<"profile" | "refer">("profile");
 
