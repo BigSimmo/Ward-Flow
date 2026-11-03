@@ -166,9 +166,10 @@ test("axe: the ED actions menu when open has no serious or critical violation", 
  * and is scanned with its first tab showing.
  */
 test("axe: a ward's bed drawer when open has no serious or critical violation", async ({ page }, testInfo) => {
-  // Ward home can offer its page tip once it settles. On a phone that corner card can sit over
-  // Place or move, and whether it appears before the click is timing (PR CI, 3 Nov 2026). Turn tips
-  // off for this device the way Settings does, as the Home phone journey does (#1358).
+  // The Ward page can offer its page tip 1.5s after it settles. On a phone that corner card can sit
+  // over Place or move, and the click then waits on it until the test times out (main CI, 3 Nov
+  // 2026). Whether it shows depends on timing, so turn tips off for this device as Settings does
+  // (same as the phone referral test, #1358). The sweeps above still scan the tip where it shows.
   await page.addInitScript((key) => window.localStorage.setItem(key, "yes"), HELP_TIPS_OFF_KEY);
   await openShell(page, "/ward/rph-adult-secure", "ward-unit-screen");
   await page.getByTestId("ward-open-bed-board").click();
