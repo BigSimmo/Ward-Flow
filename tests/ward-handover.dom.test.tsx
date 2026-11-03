@@ -69,6 +69,18 @@ describe("Handover page", () => {
     expect(screen.getByTestId("ward-handover-sign-bar")).toBeInTheDocument();
   });
 
+  it("links the hero's checks count to the sign-off block at the foot of the page", () => {
+    renderHandover();
+    const bar = screen.getByTestId("ward-handover-sign-bar");
+    const link = screen.getByTestId("ward-handover-checks-link");
+    // 3 Nov 2026: the block sits in the page flow, so the hero names the same count and goes to it.
+    const count = /(\d+) of (\d+) checks clear/.exec(bar.textContent ?? "");
+    expect(count, "the sign-off block lost its checks count").not.toBeNull();
+    expect(link).toHaveTextContent(count![0]);
+    fireEvent.click(link);
+    expect(bar).toHaveFocus();
+  });
+
   it("groups every open patient in meeting order", () => {
     renderHandover();
     // Approved redesign (31 Oct 2026): Due by shows its first 4 rows, the rest behind Show more.
@@ -203,10 +215,13 @@ describe("Handover page", () => {
 
   it("keeps letter shortcuts inactive while choosing a handover filter", () => {
     renderHandover();
-    const filter = screen.getByRole("combobox", { name: "Filter the sheet" });
-    filter.focus();
-    fireEvent.keyDown(filter, { key: "j" });
+    // 3 Nov 2026: the filter is the Show menu; a letter typed in it jumps to a choice, never a shortcut.
+    fireEvent.click(screen.getByRole("button", { name: /^Filter the sheet:/ }));
+    const choice = within(screen.getByRole("menu", { name: "Filter the sheet" })).getAllByRole("menuitemradio")[0]!;
+    fireEvent.keyDown(choice, { key: "j" });
+    fireEvent.keyDown(choice, { key: "p" });
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-handover-print-sheet")).not.toBeInTheDocument();
   });
 
   it("opens the patient drawer in presentation mode without revealing the background table row", () => {

@@ -1,18 +1,20 @@
 "use client";
 
 import type { SignOffCheck } from "./handover-panels";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type Ref } from "react";
 import { Button, Checkbox, ShowMoreRow as OneShowMoreRow, StatusGlyph } from "@/components/wf";
 
 import styles from "./handover-sheet-parts.module.css";
 import refined from "./handover-refined.module.css";
 
 /**
- * The sign-off bar: stays at the foot of the screen while the 70-row table scrolls, so the checks
- * are never 70 rows away. It shows how many are clear, names the ones still open, and either signs
- * off (the same command the panel sends) or opens the panel when a check needs a look first.
+ * The sign-off block at the foot of the page content (Josh, 3 Nov 2026: it no longer floats over
+ * the rows; the hero's "checks clear" link scrolls here and focuses it). It shows how many are
+ * clear, names the ones still open, and either signs off (the same command the panel sends) or
+ * opens the panel when a check needs a look first.
  */
 export function SignOffBar({
+  ref,
   checks,
   title,
   signedLine,
@@ -27,11 +29,19 @@ export function SignOffBar({
   cannotSignReason?: string;
   onSignOff: () => void;
   onOpenPanel: () => void;
+  /** Takes focus when the hero's checks link is pressed. */
+  ref?: Ref<HTMLElement>;
 }) {
   const done = checks.filter((check) => check.done).length;
   const open = checks.filter((check) => !check.done);
   return (
-    <div className={styles.signBar} role="region" aria-label="Sign off" data-testid="ward-handover-sign-bar">
+    <section
+      ref={ref}
+      tabIndex={-1}
+      className={styles.signBar}
+      aria-label="Sign off"
+      data-testid="ward-handover-sign-bar"
+    >
       <div className={styles.signLead}>
         <b>{title}</b>
         <span className={styles.signCount}>
@@ -60,7 +70,7 @@ export function SignOffBar({
           </Button>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 

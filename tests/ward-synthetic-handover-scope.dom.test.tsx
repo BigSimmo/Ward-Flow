@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { HandoverScopeControl } from "@/components/ward-management/handover/handover-page-parts";
 import { activateScenarioNetwork } from "@/components/ward-management/ward-scenarios";
@@ -14,15 +14,21 @@ it("refreshes ED options on a mounted handover control when the network changes"
   const units: Unit[] = [];
   const onChange = vi.fn();
   const { rerender } = render(<HandoverScopeControl value="network" onChange={onChange} units={units} />);
-  const options = () => within(screen.getByRole("group", { name: "Emergency department" }));
-  expect(options().getByRole("option", { name: "Royal Perth Hospital Emergency Department" })).toBeInTheDocument();
+  // 3 Nov 2026: the control is the Show menu; it stays open across the rerenders below.
+  fireEvent.click(screen.getByRole("button", { name: /^Filter the sheet:/ }));
+  const options = () => within(screen.getByRole("menu", { name: "Filter the sheet" }));
+  expect(
+    options().getByRole("menuitemradio", { name: "Royal Perth Hospital Emergency Department" }),
+  ).toBeInTheDocument();
   activateScenarioNetwork("wa-synthetic");
   rerender(<HandoverScopeControl value="network" onChange={onChange} units={units} />);
-  expect(options().getByRole("option", { name: "Fictional Quartz Emergency Department" })).toBeInTheDocument();
-  expect(options().queryByRole("option", { name: "Royal Perth Hospital Emergency Department" })).toBeNull();
+  expect(options().getByRole("menuitemradio", { name: "Fictional Quartz Emergency Department" })).toBeInTheDocument();
+  expect(options().queryByRole("menuitemradio", { name: "Royal Perth Hospital Emergency Department" })).toBeNull();
   activateScenarioNetwork("standard");
   rerender(<HandoverScopeControl value="network" onChange={onChange} units={units} />);
-  expect(options().getByRole("option", { name: "Royal Perth Hospital Emergency Department" })).toBeInTheDocument();
-  expect(options().queryByRole("option", { name: "Fictional Quartz Emergency Department" })).toBeNull();
+  expect(
+    options().getByRole("menuitemradio", { name: "Royal Perth Hospital Emergency Department" }),
+  ).toBeInTheDocument();
+  expect(options().queryByRole("menuitemradio", { name: "Fictional Quartz Emergency Department" })).toBeNull();
   expect(onChange).not.toHaveBeenCalled();
 });

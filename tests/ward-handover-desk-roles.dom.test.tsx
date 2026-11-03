@@ -61,7 +61,7 @@ describe("Handover role branches", () => {
 
   it("the coordinator keeps the scope picker, the bed meter and the sign-off", () => {
     renderAtDesk({ role: "coordinator", scope: { kind: "statewide" } });
-    expect(screen.getByRole("combobox", { name: "Filter the sheet" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Filter the sheet:/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Beds/ })).toBeInTheDocument();
     expect(screen.getByTestId("ward-handover-sign-bar")).toBeInTheDocument();
     fireEvent.click(

@@ -1,6 +1,6 @@
 "use client";
 
-import { BedDouble, ChevronDown, ChevronRight, Clock, Hourglass, Lock, Sparkles } from "lucide-react";
+import { BedDouble, ChevronDown, ChevronRight, Clock, Hourglass, ListChecks, Lock, Sparkles } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { Button, Icon, Menu, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
@@ -17,7 +17,8 @@ import styles from "./handover-refined.module.css";
 /**
  * Handover redesign (Josh, 1 Nov 2026): the header's one slim at-a-glance line, Waiting's pattern.
  * When the handover starts, beds ready against people finding a ward (coordinator only), the
- * longest wait (opens that person) and what changed since the previous handover.
+ * longest wait (opens that person) and what changed since the previous handover. `checks` is the
+ * quiet link to the sign-off block at the foot of the page (Josh, 3 Nov 2026).
  */
 export function HandoverGlance({
   now,
@@ -29,6 +30,7 @@ export function HandoverGlance({
   sinceAt,
   sinceLine,
   signOffNote,
+  checks,
 }: {
   now: Instant;
   passed: boolean;
@@ -41,6 +43,8 @@ export function HandoverGlance({
   sinceLine: string;
   /** ED desk only: who signs off. */
   signOffNote: string | null;
+  /** How many sign-off checks are clear, and the jump to the sign-off block; null when it is not shown. */
+  checks?: { done: number; total: number; onJump: () => void } | null;
 }) {
   return (
     <div className={styles.glance} role="group" aria-label="At a glance">
@@ -89,6 +93,25 @@ export function HandoverGlance({
         <span className={styles.glLabel}>Since {formatInstantWithDay(sinceAt, now)}</span>
         <span className={styles.glValue}>{sinceLine || "No changes"}</span>
       </span>
+      {checks ? (
+        <button
+          type="button"
+          className={styles.gl}
+          onClick={checks.onJump}
+          aria-label={`${checks.done} of ${checks.total} checks clear, go to sign off`}
+          data-testid="ward-handover-checks-link"
+        >
+          <Icon
+            icon={ListChecks}
+            size={14}
+            className={styles.glIcon}
+            data-tone={checks.done === checks.total ? "success" : undefined}
+          />
+          <span className={styles.glValue}>
+            {checks.done} of {checks.total} checks clear
+          </span>
+        </button>
+      ) : null}
       {signOffNote ? (
         <span className={styles.gl} data-testid="ward-handover-sign-off-note">
           <Icon icon={Lock} size={14} className={styles.glIcon} />

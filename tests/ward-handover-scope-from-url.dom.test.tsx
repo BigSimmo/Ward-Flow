@@ -68,12 +68,12 @@ function renderAt(search: string) {
 }
 
 // 1 Nov 2026 redesign: a scoped sheet states "n of N open in <scope>" above the table; the whole
-// network needs no such line, so the scope control's chosen option names it instead.
+// network needs no such line, so the scope menu's button names the chosen place instead (3 Nov 2026:
+// the Show menu replaced the browser drop-down).
 function scopeSummary(): string {
   const line = screen.queryByTestId("ward-handover-scope-summary");
   if (line) return line.textContent ?? "";
-  const select = screen.getByTestId("ward-handover-scope-select") as HTMLSelectElement;
-  return select.selectedOptions[0]?.textContent ?? "";
+  return screen.getByTestId("ward-handover-scope-select").textContent ?? "";
 }
 
 describe("the handover sheet takes its scope from the URL", () => {
@@ -106,13 +106,13 @@ describe("the handover sheet takes its scope from the URL", () => {
     );
   });
 
-  it("round-trips through the page's own select value, not a second format", () => {
+  it("round-trips through the page's own scope value, not a second format", () => {
     // 🔴 The URL carries `handoverScopeValue`'s output and nothing else. A second encoding would be
     // a second source of truth for what a scope is, and the two would drift.
     const value = handoverScopeValue({ kind: "ward", id: WARD.id });
     renderAt(`?scope=${encodeURIComponent(value)}`);
     expect(
-      (screen.getByTestId("ward-handover-scope-select") as HTMLSelectElement).value,
+      screen.getByTestId("ward-handover-scope-select").getAttribute("data-value"),
       "the control and the URL disagree about the scope — they are not the same wire value",
     ).toBe(value);
   });
