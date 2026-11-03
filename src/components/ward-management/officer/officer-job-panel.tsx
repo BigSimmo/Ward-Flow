@@ -5,13 +5,17 @@
 // scrolls away.
 
 import { useEffect, type ReactNode } from "react";
-import { X } from "lucide-react";
+import Link from "next/link";
+import { FileText, X } from "lucide-react";
 
-import { Button, Card, CardBody, CardFoot, CardHead, StatusGlyph, cx } from "@/components/wf";
+import { Button, Card, CardBody, CardFoot, CardHead, Icon, StatusGlyph, buttonClass, cx } from "@/components/wf";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { legalNowText } from "@/components/ward-management/ward-transport-checks";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
+import { CopyProviderNumber } from "./officer-booking-contacts";
 import { PACK_SLOTS } from "./officer-forms-pack";
 import { LEG_TONE, officerLeg, transportLegalStatusLabel } from "./officer-screen-helpers";
 import styles from "./officer.module.css";
@@ -109,8 +113,8 @@ export function OfficerJobPanel({
             ) : (
               <>
                 {umrn ? " · " : null}
-                {/* Redesign: a bare "Not recorded" names no noun. */}
-                {legal === "Not recorded" ? "Legal status not recorded" : legal}
+                {/* TR2 (3 Nov 2026): when the booking has no legal status, show Legal now, not a blank. */}
+                {legal === "Not recorded" ? legalNowText(job) : legal}
                 {transport.escortRequired ? " · Escort" : ""}
               </>
             )}
@@ -131,7 +135,20 @@ export function OfficerJobPanel({
       <CardBody className={cx(styles.detailBody, styles.detailScroll)}>{renderDetail(job, context)}</CardBody>
       {/* One pinned foot at every width: Inspect form and Divert, then the one next step as the primary. */}
       <CardFoot className={cx(styles.detailFooter, styles.detailFoot)}>
-        <span className={styles.footTools}>{tools}</span>
+        <span className={styles.footTools}>
+          {tools}
+          {/* TR2 (3 Nov 2026): the record and the provider's number, one tap from the job. */}
+          <Link
+            className={buttonClass({ variant: "sec", size: "sm", iconOnly: isPhone })}
+            href={movementHref(job.id)}
+            aria-label={isPhone ? "Open the movement record" : undefined}
+            data-testid={`ward-officer-record-${job.id}`}
+          >
+            <Icon icon={FileText} size={14} />
+            {isPhone ? null : "Record"}
+          </Link>
+          <CopyProviderNumber provider={transport.provider} iconOnly={isPhone} />
+        </span>
         {renderPhoneNextStep(job, context)}
       </CardFoot>
     </Card>

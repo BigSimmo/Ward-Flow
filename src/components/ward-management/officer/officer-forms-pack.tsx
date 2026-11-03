@@ -332,7 +332,7 @@ export function OfficerFormsCell({ movement }: { movement: Movement }) {
       {forms === PACK_SLOTS.length ? (
         <span data-complete="true">All forms</span>
       ) : blocksCollection ? (
-        <span className={styles.formsMissing}>Form 4A before collection</span>
+        <span className={styles.formsMissing}>Form 4A needed</span>
       ) : (
         <span className={styles.formsQuiet}>{PACK_SLOTS.length - forms} to upload</span>
       )}

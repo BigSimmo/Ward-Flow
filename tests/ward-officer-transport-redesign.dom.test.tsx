@@ -9,6 +9,7 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { legalNowText } from "@/components/ward-management/ward-transport-checks";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -89,18 +90,19 @@ describe("Transport desk redesign", () => {
     renderDesk();
     const list = screen.getByTestId("ward-officer-joblist");
     const text = list.textContent ?? "";
-    expect(text).toMatch(/Form 4A before collection|\d to upload|All forms/);
+    expect(text).toMatch(/Form 4A needed|\d to upload|All forms/);
     expect(text).not.toMatch(/forms? missing/);
     expect(text).not.toMatch(/\d of 3(?! forms recorded)/);
   });
 
-  it("names the legal status in the job panel header and keeps 'Legal status not recorded' visible", () => {
+  it("names Legal now in the job panel header when the booking has no legal status", () => {
     renderDesk();
     const unrecorded = jobs.find((movement) => movement.transport?.transportLegalStatus === undefined);
     if (!unrecorded) throw new Error("the seed has no job with the transport's legal status unrecorded");
     fireEvent.click(screen.getByTestId(`ward-officer-select-${unrecorded.id}`));
     const panel = screen.getByTestId("ward-officer-detail");
-    expect(within(panel).getAllByText(/Legal status not recorded/).length).toBeGreaterThan(0);
+    // TR2 (3 Nov 2026): the header falls back to Legal now rather than a blank.
+    expect(panel).toHaveTextContent(legalNowText(unrecorded));
     // Transport redesign (Josh, 1 Nov 2026): a gap says "Not recorded" in place in the booking facts.
     expect(within(panel).getByTestId(`ward-officer-transport-legal-status-${unrecorded.id}`)).toHaveTextContent(
       /Transport logged as\s*Not recorded/,
