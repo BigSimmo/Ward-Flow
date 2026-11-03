@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCheck, ChevronDown, ChevronUp, ListChecks } from "lucide-react";
+import { CheckCheck, ChevronDown, ChevronRight, ChevronUp, ListChecks } from "lucide-react";
 
 import { Button, StatusGlyph, useIsPhone } from "@/components/wf";
 import { ShowMoreRow } from "@/components/wf";
@@ -42,8 +42,20 @@ export function markAllLabel(count: number): string {
 }
 
 const CHECK_LIMIT = 8;
-/** Round 8: the laptop grid shows three rows of three before Show more. */
-const GRID_LIMIT = 9;
+
+/**
+ * Diagnosed issues W4 (Josh, 3 Nov 2026): each rule says in one line what it found and what to do,
+ * so the list explains itself. The links only open the records; nothing here changes them.
+ */
+const KIND_HELP: Record<keyof typeof MISSED_REQUEST_LABELS, string> = {
+  no_ward_asked: "Bed requests still open with no ward asked. Open each one and ask a ward.",
+  no_bed_request: "An ED accepted the referral for a bed, but no bed request was raised. Open it and raise one.",
+  two_requests: "One recorded person has two open requests. Open both and keep the right one.",
+  bed_held_twice: "One numbered bed is pulled for two people. Open both and release one.",
+};
+const KIND_ORDER = ["bed_held_twice", "two_requests", "no_bed_request", "no_ward_asked"] as const;
+/** Round 8: the laptop grid shows three rows of three before Show more; W4: per reason. */
+const GRID_LIMIT = 6;
 
 /** The daily check's items and record, shared by the header tile and the list under it. */
 function useDailyCheck() {
@@ -136,7 +148,6 @@ export function DailyCheckList({ open, listId, onClose }: { open: boolean; listI
       return counts;
     }, {}),
   ) as [keyof typeof MISSED_REQUEST_LABELS, number][];
-  const shownItems = all ? items : items.slice(0, GRID_LIMIT);
   return (
     <section className={polish.dc} aria-labelledby={`${listId}-title`}>
       <div className={polish.dcHead}>
@@ -172,40 +183,60 @@ export function DailyCheckList({ open, listId, onClose }: { open: boolean; listI
           Hide
         </Button>
       </div>
-      <ul id={listId} className={polish.dcGrid}>
-        {shownItems.map((item) => {
-          const referralId = item.referralIds[0];
-          const movementId = item.movementIds[0];
-          const referral = referralId ? referrals.find((candidate) => candidate.id === referralId) : undefined;
-          const person = movementId ? patientOf({ movementId }) : referral ? patientOf(referral) : undefined;
-          const href = movementId ? movementHref(movementId) : referralId ? referralBoardHref(referralId) : undefined;
-          const extra = item.referralIds.length + item.movementIds.length - 1;
+      <p className={polish.dcAbout}>
+        Bed requests across the network that may have been missed or sent twice. Work through each reason, then mark the
+        list checked. Coordinator only.
+      </p>
+      <div id={listId} className={polish.dcGroups}>
+        {KIND_ORDER.filter((kind) => items.some((item) => item.kind === kind)).map((kind) => {
+          const ofKind = items.filter((item) => item.kind === kind);
+          const visible = all ? ofKind : ofKind.slice(0, GRID_LIMIT);
           return (
-            <li key={item.key} data-kind={item.kind}>
-              {href ? (
-                <Link href={href} className={polish.dcCard}>
-                  <span className={polish.dcWho}>
-                    <b>{person?.formalName ?? "Referral"}</b>
-                    <small>{person?.umrn}</small>
-                  </span>
-                  {/* One kind only: the head line already names it, so each card is one line. */}
-                  {kinds.length > 1 || extra > 0 ? (
-                    <span className={polish.dcWhat}>
-                      <StatusGlyph tone="warning" size={8} />
-                      {MISSED_REQUEST_LABELS[item.kind]}
-                      {extra > 0 ? ` · +${extra} more` : ""}
-                    </span>
-                  ) : null}
-                  <span className={polish.dcFor}>{splitDuration(Math.max(0, now - item.since))}</span>
-                </Link>
-              ) : null}
-            </li>
+            <section key={kind} className={polish.dcGroup} aria-labelledby={`${listId}-${kind}`}>
+              <h3 id={`${listId}-${kind}`} className={polish.dcGroupHead}>
+                <StatusGlyph tone="warning" size={8} />
+                <span className={polish.dcGroupName}>{MISSED_REQUEST_LABELS[kind]}</span>
+                <b className={polish.dcGroupCount}>{ofKind.length}</b>
+              </h3>
+              <p className={polish.dcGroupHelp}>{KIND_HELP[kind]}</p>
+              <ul className={polish.dcGrid}>
+                {visible.map((item) => {
+                  const referralId = item.referralIds[0];
+                  const movementId = item.movementIds[0];
+                  const referral = referralId ? referrals.find((candidate) => candidate.id === referralId) : undefined;
+                  const person = movementId ? patientOf({ movementId }) : referral ? patientOf(referral) : undefined;
+                  const href = movementId
+                    ? movementHref(movementId)
+                    : referralId
+                      ? referralBoardHref(referralId)
+                      : undefined;
+                  const extra = item.referralIds.length + item.movementIds.length - 1;
+                  return (
+                    <li key={item.key} data-kind={item.kind}>
+                      {href ? (
+                        <Link href={href} className={polish.dcCard}>
+                          <span className={polish.dcWho}>
+                            <b>{person?.formalName ?? "Referral"}</b>
+                            <small>{person?.umrn}</small>
+                          </span>
+                          {extra > 0 ? <span className={polish.dcWhat}>{`+${extra} more record`}</span> : null}
+                          <span className={polish.dcFor}>{splitDuration(Math.max(0, now - item.since))}</span>
+                          <ChevronRight size={14} aria-hidden="true" className={polish.dcGo} />
+                        </Link>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
           );
         })}
-      </ul>
-      {items.length > GRID_LIMIT ? (
+      </div>
+      {kinds.some(([, count]) => count > GRID_LIMIT) ? (
         <ShowMoreRow onClick={() => setAll((current) => !current)} expanded={all} controls={listId}>
-          {all ? "Show fewer" : `Show ${items.length - GRID_LIMIT} more`}
+          {all
+            ? "Show fewer"
+            : `Show ${kinds.reduce((sum, [, count]) => sum + Math.max(0, count - GRID_LIMIT), 0)} more`}
         </ShowMoreRow>
       ) : null}
     </section>
@@ -281,6 +312,11 @@ export function DailyCheckLine() {
       </div>
       {open ? (
         <div className={styles.checkList}>
+          {/* W4: the phone list says what it is before the people. */}
+          <p className={polish.dcAbout}>
+            Bed requests across the network that may have been missed or sent twice. Open each one, then mark the list
+            checked.
+          </p>
           <ul id={listId} className={panel.list}>
             {shownItems.map((item) => (
               <li key={item.key} className={panel.item} data-kind={item.kind}>
