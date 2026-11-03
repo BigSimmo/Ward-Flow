@@ -62,6 +62,7 @@ export function ReferralPatientStep({
     setGuardOpen,
     newPatientOpen,
     setNewPatientOpen,
+    resetNewPatient,
     newPatient,
     newPatientDateText,
     setNewPatientDateText,
@@ -350,7 +351,15 @@ export function ReferralPatientStep({
                   Add patient
                 </button>
                 {addPatientGate.note}
-                <button type="button" className={styles.btn} onClick={() => setNewPatientOpen(false)}>
+                <button
+                  type="button"
+                  className={styles.btn}
+                  onClick={() => {
+                    // Cancel discards what was typed, so no guard later asks about details already given up.
+                    resetNewPatient();
+                    setNewPatientOpen(false);
+                  }}
+                >
                   Cancel
                 </button>
               </div>

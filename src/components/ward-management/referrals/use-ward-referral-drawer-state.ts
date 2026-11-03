@@ -1299,6 +1299,7 @@ export function useWardReferralDrawerState({
     setCopyNotice,
     newPatientOpen,
     setNewPatientOpen,
+    resetNewPatient,
     newPatient,
     newPatientDirty,
     newPatientDateText,

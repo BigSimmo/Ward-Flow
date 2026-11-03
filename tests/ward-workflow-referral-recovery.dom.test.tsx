@@ -131,6 +131,23 @@ describe("referral work survives patient selection and interrupted registration"
     },
   );
 
+  it("Cancel on Add patient discards its typed details, so closing asks nothing", () => {
+    const onClose = vi.fn();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardReferralDrawer onClose={onClose} />
+      </WardFlowProvider>,
+    );
+    enterUnregisteredIdentity();
+    fireEvent.click(within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
+    expect(within(screen.getByTestId("ward-referral-new-patient")).getByLabelText(/Family name/)).toHaveValue("");
+    fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    expect(screen.queryByRole("alertdialog", { name: "Close without sending?" })).toBeNull();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("warns on reload and internal navigation with only inline registration work", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const followed = vi.fn();
@@ -195,7 +212,8 @@ describe("referral work survives patient selection and interrupted registration"
       fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
       expect(onClose).not.toHaveBeenCalled();
       fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Keep editing" }));
-      fireEvent.click(within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: "Cancel" }));
+      // Hiding the form with its toggle keeps the typed text; Cancel discards it (tested below).
+      fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
       fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
       expect(within(screen.getByTestId("ward-referral-new-patient")).getByLabelText(/Date of birth/)).toHaveValue(
         dateText,
