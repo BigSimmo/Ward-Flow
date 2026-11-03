@@ -2826,13 +2826,6 @@
     top: 0;
   }
 
-  /* The queue now scrolls with the page, so its section headings pin under the top bar. */
-  .screen[data-referral-view="register"] .sectionHeading {
-    position: sticky;
-    z-index: 2;
-    top: var(--wf-header-height, 3.75rem);
-  }
-
   .screen[data-referral-view="register"] .matchHeading {
     margin: -0.875rem -1rem 0;
     border-bottom: 1px solid var(--line);
