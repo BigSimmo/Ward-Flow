@@ -1238,6 +1238,7 @@ export function DelaysBoard({
                   className={styles.backdrop}
                   onClick={close}
                   aria-hidden="true"
+                  data-sheet-scrim=""
                   data-testid="delays-detail-backdrop"
                 />
                 <PersonPanel
