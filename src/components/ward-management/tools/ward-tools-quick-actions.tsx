@@ -8,6 +8,7 @@ import { Button, Meter, ShowMoreRow, foldHidden, foldLimit } from "@/components/
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { ASK_CONFIRM_BEDS, askWardsFields, askedLine, splitAsk } from "../alerts/ask-wards";
+import { ASK_WARDS_WINDOW_TEXT } from "../ward-operational-defaults";
 import { formatInstantWithDay } from "../ward-clock";
 import { shiftConfirmations } from "../capacity/shift-confirmations";
 import styles from "./ward-tools-quick-actions.module.css";
@@ -199,7 +200,9 @@ export function WardUpdatesRequest() {
         <Button
           variant="pri"
           onClick={askWards}
-          disabledReason={sending ? "Sending…" : asking === 0 ? "Already asked in the last 4 hours." : undefined}
+          disabledReason={
+            sending ? "Sending…" : asking === 0 ? `Already asked in the last ${ASK_WARDS_WINDOW_TEXT}.` : undefined
+          }
         >
           {asking === 0
             ? "Ask wards to confirm"

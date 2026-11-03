@@ -225,7 +225,7 @@ function typedThresholdsIn(file: string, source: string): string[] {
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
   {
-    file: "alerts/ask-wards.ts",
+    file: "ward-operational-defaults.ts",
     name: "ASK_WARDS_MINUTES",
     why: "how long an Ask wards alert stays on a ward's screen, and the window that skips a ward asked twice; an alert time, never a clinical limit",
   },
