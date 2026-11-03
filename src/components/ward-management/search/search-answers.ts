@@ -37,7 +37,7 @@ const QUESTIONS: readonly QuestionDefinition[] = [
     id: "long",
     heading: "Waiting over 24 hours",
     phrases:
-      /^(?:(?:waiting|waits?)\s+)?(?:over|more than|longer than|>)\s*(?:24|twenty four)\s*(?:h|hrs?|hours?)?$|^(?:over\s*24|over24|long waits?|long waiters?|waiting (?:over|more than) a day)$/,
+      /^(?:(?:waiting|waits?)\s+)?(?:over|more than|longer than|>)\s*(?:24|twenty four)\s*(?:h|hrs?|hours?)?$|^(?:(?:waiting|waits?)\s+)?(?:24|twenty four)\s*\+?\s*(?:h|hrs?|hours?)\+?(?:\s+waits?)?$|^(?:over\s*24|over24|24\s*\+|long waits?|long waiters?|waiting (?:over|more than) a day)$/,
     test: (row) => row.longWait,
   },
   {

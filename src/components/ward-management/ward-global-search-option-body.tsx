@@ -13,7 +13,9 @@ export function SearchOptionBody({
   item,
   nameFor,
   taskWord,
+  highlight = "",
 }: {
+  highlight?: string;
   item: SearchResultItem;
   nameFor: (name: string, umrn: string | undefined | null) => string;
   taskWord: string;
@@ -24,7 +26,7 @@ export function SearchOptionBody({
         {item.tone ? <StatusGlyph tone={item.tone} /> : <SearchResultIcon kind={item.kind} id={item.id} />}
       </span>
       <span className={styles.resultContent}>
-        <span className={styles.resultTitle}>{patientResultTitle(item, nameFor)}</span>
+        <span className={styles.resultTitle}>{marked(patientResultTitle(item, nameFor), highlight)}</span>
         <span className={styles.resultMeta}>
           {item.umrn ? (
             <>
@@ -36,7 +38,7 @@ export function SearchOptionBody({
               {item.siteName} · {item.readyBeds} ready
             </span>
           ) : item.meta ? (
-            <span>{item.meta}</span>
+            <span>{marked(item.meta, highlight)}</span>
           ) : null}
         </span>
       </span>
@@ -46,4 +48,34 @@ export function SearchOptionBody({
       </span>
     </>
   );
+}
+
+/** Marks where each typed word first appears, so a row shows why it matched (Josh, 3 Nov 2026). */
+function marked(text: string, query: string) {
+  const words = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
+  if (words.length === 0) return text;
+  const lower = text.toLowerCase();
+  const hits: [number, number][] = [];
+  for (const w of words) {
+    const at = lower.indexOf(w);
+    if (at >= 0) hits.push([at, at + w.length]);
+  }
+  if (hits.length === 0) return text;
+  hits.sort((a, b) => a[0] - b[0]);
+  const out: (string | ReturnType<typeof Mark>)[] = [];
+  let pos = 0;
+  hits.forEach(([a, b], i) => {
+    if (a < pos) return;
+    out.push(text.slice(pos, a), <Mark key={i} text={text.slice(a, b)} />);
+    pos = b;
+  });
+  out.push(text.slice(pos));
+  return out;
+}
+
+function Mark({ text }: { text: string }) {
+  return <mark className={styles.hit}>{text}</mark>;
 }
