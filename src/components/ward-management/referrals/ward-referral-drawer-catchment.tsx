@@ -47,12 +47,14 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
     suburbKnown,
   } = s;
   const suggestion = catchmentTeam && !catchmentEditing ? suggestCatchment(catchmentSuburb, catchmentTeam) : null;
-  const region = homeRegion || suggestion?.region || "";
+  // A confirmed team with no stored region is not finished: the region field shows for it rather
+  // than the suggestion's region reading as confirmed.
+  const region = homeRegion || (catchmentConfirmed ? "" : suggestion?.region) || "";
   const service = catchmentService || suggestion?.service || "";
   const offering = !!suggestion && !catchmentConfirmed && !catchmentNotKnown;
   // The fields show when there is no team yet, when Change is pressed, or when the region is still
   // to choose because the sources could not suggest one.
-  const showFields = !catchmentTeam || catchmentEditing || (!catchmentConfirmed && !region);
+  const showFields = !catchmentTeam || catchmentEditing || !region;
   const facts = [region, service].filter(Boolean).join(" · ");
 
   const useSuggestion = () => {
@@ -116,7 +118,9 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
                 <button
                   type="button"
                   className={cx(styles.btn, styles.btnTint)}
+                  id={`${sectionId}-use-catchment`}
                   data-testid="ward-referral-use-catchment"
+                  data-referral-invalid={patientShowErrors ? "" : undefined}
                   onClick={useSuggestion}
                 >
                   <CircleCheck aria-hidden="true" />

@@ -112,6 +112,23 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Record the legal status and the tentative diagnosis block, if known.",
       "Send it. Each destination answers on its own.",
     ],
+    questions: [
+      {
+        question: "How do I use the suggested catchment?",
+        answer:
+          "When the suburb on the record points to one community team, the Catchment card suggests it with its service area and home region. Choose Use this catchment to accept it in one tap, or Change to pick another team or region.",
+      },
+      {
+        question: "How do I keep or discard a referral I have not sent?",
+        answer:
+          "Closing an unsent referral asks what to do. Choose Keep draft and close to keep it, Discard to throw it away or Keep editing to go back. A kept draft reopens in this tab the next time you start a referral.",
+      },
+      {
+        question: "How do I add a new patient while making a referral?",
+        answer:
+          "In the Patient step choose Add patient, then fill in family name, given name, date of birth and UMRN. Recorded sex and gender are optional. Choose Add and use for this referral, or Back to search to find someone instead.",
+      },
+    ],
   },
   handover: {
     title: "Handover",
