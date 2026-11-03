@@ -56,6 +56,7 @@ import {
 } from "@/components/ward-management/shell/ward-act-now-notifications";
 import { phonePushRow } from "@/components/ward-management/shell/ward-phone-push";
 import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push-switch";
+import { changeDeviceAlerts } from "@/components/ward-management/settings/settings-device-alerts";
 import {
   Avatar,
   Badge,
@@ -236,6 +237,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const [actNowNotifications] = useActNowNotificationPreference();
   const [notificationPermission, setNotificationPermission] = useState<NotificationSupport>("default");
   const [phonePush, setPhonePush] = usePhonePush();
+  // The latest on or off asked of the one Alerts switch (`changeDeviceAlerts`).
+  const alertsWanted = useRef<boolean | null>(null);
   useEffect(() => {
     const refresh = () => {
       setNotificationPermission(notificationSupport());
@@ -828,35 +831,14 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       permission={notificationPermission}
       phonePush={phonePush}
       onAlertsChange={(next) => {
-        // S7 notifications (3 Nov 2026): one switch for browser and phone alerts on this device.
-        const phone = phonePushRow(phonePush);
-        if (!next) {
-          setActNowNotificationPreference(false);
-          if (!phone.checked) {
-            showToast("Alerts off on this device.");
-            return;
-          }
-          void setPhonePush(false).then((answer) => {
-            showToast(
-              answer === "off" ? "Alerts off on this device." : "Phone alerts could not be changed. Try again.",
-            );
-          });
-          return;
-        }
-        // Browser first, while the tap still counts as a user action; the phone then reuses its answer.
-        void enableActNowNotifications().then(async (answer) => {
-          setNotificationPermission(answer);
-          const phoneAnswer =
-            answer === "granted" && !phone.unavailable && !phone.checked ? await setPhonePush(true) : null;
-          showToast(
-            phoneAnswer === "on"
-              ? "Alerts on, even with Ward Flow closed."
-              : answer === "granted"
-                ? "Alerts on while Ward Flow is open."
-                : answer === "unsupported"
-                  ? "This browser cannot show notifications."
-                  : "Notifications are blocked for this site in the browser.",
-          );
+        void changeDeviceAlerts(next, {
+          phone: phonePushRow(phonePush),
+          wanted: alertsWanted,
+          setBrowserPreference: setActNowNotificationPreference,
+          enableBrowser: enableActNowNotifications,
+          onPermission: setNotificationPermission,
+          setPhone: setPhonePush,
+          toast: showToast,
         });
       }}
       buzz={audioBuzz}
