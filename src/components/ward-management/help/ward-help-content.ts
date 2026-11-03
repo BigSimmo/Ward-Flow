@@ -211,7 +211,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     purpose: "Every open movement with a legal form, and the expiry time a person typed from that form.",
     actions: [
       "Times are as typed from the paper form. Ward Flow does not work out legal periods, and the times are not legally checked.",
-      "Switch between Clocks, Checklist and History. Choose a patient to see their form.",
+      "Switch between On a form, Checklist and History. Each row names its next step. Choose a patient to see their form.",
       "Use Record next form when a new form is written. Record and tell lists who to let know.",
     ],
   },

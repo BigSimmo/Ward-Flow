@@ -845,7 +845,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               value={shownView}
               onChange={setView}
               items={[
-                { id: "clocks", label: "Clocks" },
+                { id: "clocks", label: "On a form" },
                 { id: "checklist", label: "Checklist" },
                 { id: "history", label: "History", count: closedWithForms.length },
                 ...seclusionItem.map((item) => ({ ...item, label: "Seclusion" })),
@@ -1010,7 +1010,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     value={shownView}
                     onChange={setView}
                     items={[
-                      { id: "clocks", label: "Clocks", count: rows.length },
+                      { id: "clocks", label: "On a form", count: rows.length },
                       { id: "checklist", label: "Checklist" },
                       { id: "history", label: "History", count: closedWithForms.length },
                       ...seclusionItem,
