@@ -245,6 +245,13 @@
         >; this page names roles, never new values.
       </p>
       <p class="lead">
+        <b>Token files (Q375).</b> <span class="ref"><code>src/app/ward-flow-v9-tokens.css</code></span> is the only
+        place token values are set. Three older files still load and gain no new tokens:
+        <code>ckb-v2-tokens.css</code> (the PsychSift v2 layer), <code>ward-flow-shell-tokens.module.css</code> (the
+        third edition) and <code>globals.css</code> (Tailwind set-up). A check fails the build if a screen stylesheet
+        gains a raw colour.
+      </p>
+      <p class="lead">
         The lessons behind each rule are in <span class="ref">lessons/2026-11-02-design-lessons.md</span>.
       </p>
       <nav>
@@ -732,6 +739,24 @@
             live Now point.
           </p>
           <p>
+            <b>Home: Needs you and Flow (Q340-Q345, #1324, 3 Nov).</b> One navigation row: <b>Needs you | Flow</b> as
+            the raised switch, a rule, then the Flow stages as lighter trackless tabs with counts (All, Needs a bed, Bed
+            agreed, Ready to move, Moving), red when someone in that stage is late. A stage tab opens Flow at that
+            stage. Flow groups open movements by stage, oldest first, five rows per stage then "Show all N". Needs you
+            holds act now, beds to pull and referrals to decide; a waiting alert is a mark on the patient's Flow row,
+            not a second row. Later today sits in the right column on desktop and is a third tab on a phone. On a phone
+            the row pins under the header. Use this one-row pattern for any page that pairs an action list with a staged
+            list.
+          </p>
+          <p>
+            <b>Tools sheet (Q308-Q326, Q350-Q353, #1316, 3 Nov).</b> Search and a Recent row (Suggested until a tool is
+            used) lead, then Do now, Look up and Print and share, ordered per desk. Rows show live counts and short
+            second lines. One tool open at a time, scrolled into view; from 1280 wide it opens in a second pane. "/"
+            jumps to search; no match offers Search Ward Flow. Viewing as and the demo controls sit together at the
+            foot. Pickers come from the kit, picks come from lists only, and On-call Call copies the number (no tel
+            links).
+          </p>
+          <p>
             <b>Long data.</b> People and place names wrap in full and never lose the first name (Q285). Other long text
             takes two lines and an ellipsis, with the full text on hover and focus (Q284, Q286). Typed text breaks
             anywhere so it never runs out of its box (Q283). Hidden text stays inside its scroll area (Q281).
@@ -815,8 +840,12 @@
                   <td>team, Community teams (as a page)</td>
                 </tr>
                 <tr>
-                  <td>Open (Home tab)</td>
-                  <td>Waiting (Waiting is the ED count)</td>
+                  <td>Needs you, Flow (Home)</td>
+                  <td>Open, Waiting, Queue (Waiting is the ED count)</td>
+                </tr>
+                <tr>
+                  <td>Later today</td>
+                  <td>Planned</td>
                 </tr>
               </tbody>
             </table>
