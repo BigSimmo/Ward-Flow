@@ -87,6 +87,7 @@ export function reduceProtectedRecordEvent(
     admissionLegalStatus,
     departAdmission,
     dischargeBlockingTransit,
+    movementSourceAdmission,
     patientRecordIsInvoluntary,
     replaceAdmission,
     replaceUnit,
@@ -316,7 +317,9 @@ export function reduceProtectedRecordEvent(
         return deny("transition", "denied", "The patient already has another occupied or pulled bed.");
       const restrictiveRefusal = openRestrictivePracticeRefusal(unit.restrictivePractice, admission.id);
       if (restrictiveRefusal) return deny("transition", "denied", restrictiveRefusal);
-      const returnRefusal = openReturnMovementRefusal(state.movements, admission.id);
+      const returnRefusal = openReturnMovementRefusal(state.movements, admission.id, (movement) =>
+        movementSourceAdmission(state, movement),
+      );
       if (returnRefusal) return deny("transition", "denied", returnRefusal);
       if (
         lacksObservationStaff(admission.observation, receiving, state.admissions) ||
@@ -443,7 +446,9 @@ export function reduceProtectedRecordEvent(
   }
   const restrictiveRefusal = openRestrictivePracticeRefusal(unit.restrictivePractice, admission.id);
   if (restrictiveRefusal) return deny("transition", "denied", restrictiveRefusal);
-  const returnRefusal = openReturnMovementRefusal(state.movements, admission.id);
+  const returnRefusal = openReturnMovementRefusal(state.movements, admission.id, (movement) =>
+    movementSourceAdmission(state, movement),
+  );
   if (returnRefusal) return deny("transition", "denied", returnRefusal);
   return appendAudit(
     state,

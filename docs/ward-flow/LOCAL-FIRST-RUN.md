@@ -10,8 +10,8 @@ _Updated 2026-10-26 - signed-in desks and the first-run tour need the role acces
 ## Preconditions
 
 - A checkout of `BigSimmo/Ward-Flow` on a task branch (see [`AGENTS.md`](../../AGENTS.md) for the worktree rules).
-- Node `24.19.0` (`.nvmrc` and `.node-version`) and npm `11`. With nvm, fnm or Volta, run `nvm use`
-  (or the equivalent) in the repository root.
+- The Node.js release pinned in [`.nvmrc`](../../.nvmrc) and [`.node-version`](../../.node-version),
+  and npm `11`. With nvm, fnm or Volta, run `nvm use` (or the equivalent) in the repository root.
 - Dependencies once: `npm ci`. This also installs the Git hooks.
 
 ## Boot

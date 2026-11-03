@@ -253,5 +253,7 @@ current provider state.
 From the repository root, `npm run test:backend` builds the engine and runs backend tests offline.
 From `backend/ward-flow/`, run `npm run build:engine && npm test`. The real-PostgreSQL tests run only
 when `WARD_TEST_DATABASE_URL` points at a disposable database (CI provides one). The backend
-accepts Node `>=22`; the root toolchain requires Node `>=24.15.0 <25` and npm `11.x`. Copy
+accepts the Node.js range declared in its [package manifest](package.json). The root toolchain's
+supported Node.js range and npm version are declared in the [root package manifest](../../package.json).
+Use the release pinned in [root `.nvmrc`](../../.nvmrc) for these checks. Copy
 `.env.example` to an ignored `.env` for local use only and never add passwords or tokens to Git.

@@ -238,7 +238,7 @@ export function MovementDrawer({
   const waitWord = closure
     ? "in journey before it ended"
     : waitTone === "danger"
-      ? `past the ${splitDuration(edAccessTargetMinutes)} target`
+      ? `waited · over the ${splitDuration(edAccessTargetMinutes)} target`
       : waitTone === "warning"
         ? `over ${splitDuration(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`
         : "waited";

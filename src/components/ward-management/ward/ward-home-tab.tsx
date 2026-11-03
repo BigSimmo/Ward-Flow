@@ -1779,7 +1779,7 @@ export function WardHomeTab({
                 <span className={styles.headTools}>
                   <WardPlaceOrMove variant="head" waiting={boardWaitingCount} onOpen={onOpenBoard} />
                   <Segmented
-                    label="Show beds"
+                    label="Highlight beds"
                     items={[
                       { id: "all", label: "All", count: bedRows.length },
                       { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },

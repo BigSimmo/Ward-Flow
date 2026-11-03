@@ -5,7 +5,7 @@
   "license": "UNLICENSED",
   "packageManager": "npm@11.17.0",
   "engines": {
-    "node": ">=24.15.0 <25",
+    "node": ">=24.22.1 <25",
     "npm": "11.x"
   },
   "browserslist": [
@@ -22,6 +22,7 @@
     "guard:push": "node scripts/guard-push.mjs",
     "guard:push:self-test": "node scripts/guard-push.mjs --self-test",
     "check:ward-expected-reds": "node scripts/check-ward-expected-reds.mjs",
+    "check:ward-raw-colour": "node scripts/ward-flow/check-raw-colour.mjs",
     "check:ward-text-size": "node scripts/ward-flow/check-text-size-floor.mjs",
     "check:explanatory-buttons": "node scripts/ward-flow/check-explanatory-buttons.mjs",
     "check:ward-source-control-chars": "node scripts/ward-flow/check-source-control-chars.mjs",

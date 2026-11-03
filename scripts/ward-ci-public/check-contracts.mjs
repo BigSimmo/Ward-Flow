@@ -304,6 +304,23 @@ function requireWorkflow(source) {
         `ward-release-gate-failures-${expression("github.run_id")}-${expression("matrix.project")}-${expression("matrix.part")}`,
       ),
   );
+  const successfulReports = step("release-gate", "Upload successful release-gate reports");
+  assert.equal(successfulReports.fields.get("if"), expression("!cancelled() && steps.gate.outcome == 'success'"));
+  assert.equal(
+    successfulReports.fields.get("uses"),
+    "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+  );
+  assert.ok(
+    successfulReports.text.includes(
+      `ward-release-gate-reports-${expression("github.run_id")}-${expression("matrix.project")}-${expression("matrix.part")}`,
+    ),
+  );
+  assert.match(successfulReports.text, /^ {10}path: test-results\/\*\*\/\*\.json$/mu);
+  assert.match(successfulReports.text, /^ {10}if-no-files-found: error$/mu);
+  assert.match(successfulReports.text, /^ {10}retention-days: 3$/mu);
+  const failedEvidence = step("release-gate", "Upload failed release-gate evidence");
+  assert.equal(failedEvidence.fields.get("if"), expression("!cancelled() && steps.gate.outcome == 'failure'"));
+  assert.match(failedEvidence.text, /^ {10}path: test-results\/$/mu);
   exact(
     "build",
     "Build for production (Railway build command)",
@@ -413,7 +430,19 @@ function requireWorkflow(source) {
     }
     if (body.includes("actions/setup-node@")) {
       assert.match(body, /node-version-file: \.nvmrc/u);
-      exact(job, "Record the Node and npm toolchain", "node --version && npm --version");
+      exact(
+        job,
+        "Install and record the pinned npm toolchain",
+        'npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require(\'./package.json\').packageManager")" && node --version && npm --version',
+      );
+      const entries = steps(job);
+      const provision = entries.findIndex(
+        (entry) => entry.fields.get("name") === "Install and record the pinned npm toolchain",
+      );
+      const runtime = entries.findIndex((entry) => entry.fields.get("uses")?.startsWith("actions/setup-node@"));
+      const install = entries.findIndex((entry) => entry.fields.get("name") === "Install locked dependencies");
+      assert.ok(provision > runtime, `${job}: provision npm after selecting Node`);
+      if (install !== -1) assert.ok(install > provision, `${job}: provision pinned npm before installing dependencies`);
     }
   }
   for (const job of ["browser", "release-gate"]) {
@@ -599,6 +628,12 @@ for (const [before, after] of [
   ["run: node tests/support/ward-shared-mode-run.mjs", "run: echo omitted"],
   ["run: npm run check:coverage-inventory", "run: echo omitted"],
   ["run: npm run test:e2e:release-gate", "run: echo omitted"],
+  ["          path: test-results/**/*.json", "          path: test-results/"],
+  [
+    "name: Upload successful release-gate reports\n        if: ${{ !cancelled() && steps.gate.outcome == 'success' }}",
+    "name: Upload successful release-gate reports\n        if: ${{ false }}",
+  ],
+  ["run: npm install --global --ignore-scripts --no-audit --no-fund", "run: echo npm installation omitted"],
   ["        id: plan\n", "        id: unused-plan\n"],
   ["        id: install\n", "        id: unused-install\n"],
   ["        id: browsers\n", "        id: unused-browsers\n"],

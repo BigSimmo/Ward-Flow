@@ -10,6 +10,7 @@ import {
   frontDoorSecret,
   issuePass,
 } from "@/lib/front-door-pass";
+import { countWrongTry, edgeAddress, tooManyTries } from "@/lib/demo-code-tries";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,23 +26,6 @@ export const runtime = "nodejs";
 const NO_STORE = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const answer = (status: number, error?: string) =>
   error ? Response.json({ error }, { status, headers: NO_STORE }) : new Response(null, { status, headers: NO_STORE });
-
-/** A few wrong tries per address, then a pause, so a demo code cannot be guessed by brute force. */
-const WRONG_TRY_LIMIT = 10;
-const WRONG_TRY_WINDOW_MS = 10 * 60_000;
-const wrongTries = new Map<string, { count: number; since: number }>();
-function tooManyTries(address: string, now: number): boolean {
-  const entry = wrongTries.get(address);
-  if (!entry || now - entry.since > WRONG_TRY_WINDOW_MS) return false;
-  return entry.count >= WRONG_TRY_LIMIT;
-}
-function countWrongTry(address: string, now: number) {
-  const entry = wrongTries.get(address);
-  if (!entry || now - entry.since > WRONG_TRY_WINDOW_MS) wrongTries.set(address, { count: 1, since: now });
-  else entry.count += 1;
-  // Keep the table small on a long-running server.
-  if (wrongTries.size > 5_000) wrongTries.clear();
-}
 
 /** When the sign-in's 12-hour limit ends, from the token's first sign-in time, as the backend counts it. */
 function signInEndsAt(token: string): number | null {
@@ -87,8 +71,13 @@ async function checkedAccount(token: string): Promise<{ id: string } | "refused"
   }
 }
 
+/** Secure on any https request, and always in production, where Railway's edge ends https before the app. */
+function secureCookie(request: NextRequest): boolean {
+  return process.env.NODE_ENV === "production" || request.nextUrl.protocol === "https:";
+}
+
 function withPass(request: NextRequest, value: string, maxAge: number) {
-  const secure = request.nextUrl.protocol === "https:";
+  const secure = secureCookie(request);
   const response = new Response(null, { status: 204, headers: NO_STORE });
   const cookie = (name: string, content: string, age: number, httpOnly: boolean) =>
     [
@@ -110,7 +99,9 @@ export async function POST(request: NextRequest) {
   if (!secret) return answer(503, "Sign-in is not set up on this server yet. Tell the Ward Flow coordinator.");
   let body: { token?: unknown; demoCode?: unknown };
   try {
-    body = await request.json();
+    const parsed: unknown = await request.json();
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return answer(400, "Sign in again.");
+    body = parsed as typeof body;
   } catch {
     return answer(400, "Sign in again.");
   }
@@ -119,7 +110,7 @@ export async function POST(request: NextRequest) {
   if (typeof body.demoCode === "string") {
     // The signed-in site never opens with a demo code: only an account opens it.
     if (process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true") return answer(400, "Sign in with your account.");
-    const address = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const address = edgeAddress(request.headers);
     if (tooManyTries(address, now)) return answer(429, "Too many tries. Wait 10 minutes, then try again.");
     if (!(await demoCodeMatches(body.demoCode))) {
       countWrongTry(address, now);
@@ -146,7 +137,7 @@ export async function POST(request: NextRequest) {
 
 export function DELETE(request: NextRequest) {
   const response = answer(204);
-  const secure = request.nextUrl.protocol === "https:" ? "; Secure" : "";
+  const secure = secureCookie(request) ? "; Secure" : "";
   response.headers.append(
     "Set-Cookie",
     `${FRONT_DOOR_PASS_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly${secure}`,

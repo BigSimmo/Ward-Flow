@@ -62,11 +62,24 @@ type RecordedStayEvent = Extract<
  * recorded.
  */
 export function openReturnMovementRefusal(
-  movements: readonly Pick<Movement, "sourceAdmissionId" | "closure">[],
+  movements: readonly Movement[],
   admissionId: string,
+  sourceOf?: (movement: Movement) => { id: string } | undefined,
 ): string | undefined {
-  return movements.some((movement) => movement.sourceAdmissionId === admissionId && !movement.closure)
-    ? "A return to the home hospital is still open for this patient. Release or withdraw it before they leave the ward"
+  if (movements.some((movement) => movement.sourceAdmissionId === admissionId && !movement.closure))
+    return "A return to the home hospital is still open for this patient. Release or withdraw it before they leave the ward";
+  // Older saved ordinary transfers have no pin. Resolve them while the source is still occupied,
+  // and protect only a destination hold: a referral being considered does not prevent discharge.
+  return movements.some(
+    (movement) =>
+      !movement.closure &&
+      (movement.admissionId !== undefined ||
+        movement.stage === "pulled" ||
+        movement.stage === "handover_ready" ||
+        movement.stage === "moving") &&
+      (movement.referralSourceAdmissionId ?? sourceOf?.(movement)?.id) === admissionId,
+  )
+    ? "A transfer still has a bed pulled for this patient. Release or withdraw it before they leave the ward"
     : undefined;
 }
 
@@ -83,6 +96,7 @@ export function reduceRecordedStayEvent(
     findAdmission,
     findMovement,
     findUnit,
+    movementSourceAdmission,
     nextLeaveBedId,
     nextReferralId,
     patientRecordIsInvoluntary,
@@ -178,7 +192,9 @@ export function reduceRecordedStayEvent(
       if (!unit) return reject(state, event, `no unit found for id ${admission.unitId}`);
       const restrictiveRefusal = openRestrictivePracticeRefusal(unit.restrictivePractice, admission.id);
       if (restrictiveRefusal) return reject(state, event, restrictiveRefusal);
-      const returnRefusal = openReturnMovementRefusal(state.movements, admission.id);
+      const returnRefusal = openReturnMovementRefusal(state.movements, admission.id, (movement) =>
+        movementSourceAdmission(state, movement),
+      );
       if (returnRefusal) return reject(state, event, returnRefusal);
 
       decision.outcome = "accepted";

@@ -338,7 +338,7 @@ export function deriveEdScreen({
   const foldedQuery = foldPatientSearchText(patientQuery);
   const matchesPatientQuery = (movement: Movement) => {
     if (!foldedQuery) return true;
-    const person = resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements });
+    const person = resolveSubjectPatient(movement, resolveState);
     return foldPatientSearchText(`${person.displayName} ${person.umrn}`).includes(foldedQuery);
   };
   const heroHighlightMatch: Record<string, (m: Movement) => boolean> = {
@@ -356,20 +356,14 @@ export function deriveEdScreen({
   const visiblePatients = [...patients].sort((a, b) => {
     if (patientSort === "longest") return a.openedAt - b.openedAt;
     if (patientSort === "name")
-      return resolveSubjectPatient(a, { patients: registryPatients, referrals, movements }).displayName.localeCompare(
-        resolveSubjectPatient(b, { patients: registryPatients, referrals, movements }).displayName,
+      return resolveSubjectPatient(a, resolveState).displayName.localeCompare(
+        resolveSubjectPatient(b, resolveState).displayName,
       );
     return 0;
   });
 
   const selectedPatient = selectedPatientId ? patients.find((p) => p.id === selectedPatientId) : null;
-  const selectedPatientInfo = selectedPatient
-    ? resolveSubjectPatient(selectedPatient, {
-        patients: registryPatients,
-        referrals,
-        movements,
-      })
-    : null;
+  const selectedPatientInfo = selectedPatient ? resolveSubjectPatient(selectedPatient, resolveState) : null;
 
   const awaitingReviewPatients = patients.filter((m) => !m.examination && !m.edOutcome && !isEdInitiatedWithdrawal(m));
   const clearedPatients = patients.filter((m) => movementMedicalClearance(m, referrals)?.cleared === true);
@@ -385,11 +379,7 @@ export function deriveEdScreen({
       : ` ${count} other eligible ${count === 1 ? "ward" : "wards"} could be asked.`;
   };
   for (const m of patients) {
-    const flagPatientInfo = resolveSubjectPatient(m, {
-      patients: registryPatients,
-      referrals,
-      movements,
-    });
+    const flagPatientInfo = resolveSubjectPatient(m, resolveState);
     if (m.legalForm?.dueAt !== undefined && m.legalForm.dueAt < now) {
       priorityFlags.push({
         tone: "danger",
@@ -709,7 +699,7 @@ export function deriveEdScreen({
       key: `task-${item.id}`,
       actNow: item.tone === "danger",
       kind: item.title,
-      person: resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements }).formalName,
+      person: resolveSubjectPatient(movement, resolveState).formalName,
       when: item.owner,
       onOpen: patients.some((patient) => patient.id === movement.id) ? () => setPhoneSheetFor(movement.id) : undefined,
     });

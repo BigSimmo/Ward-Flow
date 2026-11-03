@@ -10,7 +10,7 @@ import { bedKindOfBed, type ForecastByKind } from "./forecast-by-kind";
 export type ForecastScenario = {
   /** Every held-up release due tomorrow goes ahead. */
   clearHeldUp: boolean;
-  /** Every planned discharge date not yet flagged is confirmed by its ward. */
+  /** Confirm unflagged occupied stays with an on-time date and no blocker; other plans stay in the range. */
   confirmDates: boolean;
   /** Every overdue release goes ahead after all. */
   overdueGoAhead: boolean;
@@ -57,12 +57,14 @@ export function applyScenario(
   const kinds = forecast.kinds.map((kind) => {
     const change = scenario.bedChanges.reduce((total, entry) => {
       const unit = units.find((candidate) => candidate.id === entry.unitId);
-      return unit && scenarioKindOfUnit(unit) === kind.id ? total + entry.delta : total;
+      return unit && !unit.isClosed && scenarioKindOfUnit(unit) === kind.id ? total + entry.delta : total;
     }, 0);
+    // Confirmation does not clear an unflagged stay's blocker or renew its overdue date. The
+    // other choices concern already flagged releases, counted separately from these plans.
     const after =
       kind.likely +
       (scenario.clearHeldUp ? kind.heldUp : 0) +
-      (scenario.confirmDates ? kind.plannedNotFlagged : 0) +
+      (scenario.confirmDates ? (kind.confirmationEligible ?? 0) : 0) +
       (scenario.overdueGoAhead ? kind.overdue : 0) +
       change;
     return { id: kind.id, before: kind.likely, after };

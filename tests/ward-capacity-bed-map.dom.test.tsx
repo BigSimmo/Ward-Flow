@@ -164,8 +164,24 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
       const strip = card.querySelector("i")?.parentElement;
       expect(strip, ward.unit.id).toHaveAttribute("aria-hidden", "true");
       expect(card.textContent ?? "", ward.unit.id).toMatch(new RegExp(`${ward.ready || "None"}\\s*ready`, "u"));
-      expect(card, ward.unit.id).toHaveTextContent(`${ward.occupied + ward.pulled} of ${ward.unit.beds} occupied`);
+      expect(card, ward.unit.id).toHaveTextContent(`${ward.occupied} of ${ward.unit.beds} occupied`);
     }
+  });
+
+  it.each(["Grid", "Rows"])("keeps occupied separate from pulled on the %s card and ward drawer", (layout) => {
+    const ward = seededWards.find((entry) => entry.pulled > 0)!;
+    expect(ward, "a pulled bed is needed to distinguish occupied from beds in use").toBeDefined();
+    renderScreen();
+    fireEvent.click(screen.getByRole("radio", { name: layout }));
+    const card = bedMapRegion().querySelector<HTMLButtonElement>(`button[data-unit-id="${ward.unit.id}"]`)!;
+    expect(card).toHaveTextContent(`${ward.occupied} of ${ward.unit.beds} occupied`);
+    expect(card).toHaveTextContent(`${ward.pulled} pulled`);
+    expect(bedSquaresOf(card, "used")).toHaveLength(ward.occupied + ward.pulled);
+    fireEvent.click(card);
+    const beds = within(screen.getByTestId("ward-capacity-ward-drawer")).getByRole("region", { name: "Beds now" });
+    expect(beds).toHaveTextContent(`${ward.occupied} occupied`);
+    expect(beds).toHaveTextContent(`${ward.pulled} pulled`);
+    expect(bedSquaresOf(beds, "used")).toHaveLength(ward.occupied + ward.pulled);
   });
 
   /**

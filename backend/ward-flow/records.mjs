@@ -154,7 +154,9 @@ function canonical(value) {
     );
   return value;
 }
-const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+// Engine records are immutable JSON values: a shared body is already equal. Distinct bodies
+// still use canonical JSON equality, including its existing handling of primitive values.
+const same = (a, b) => a === b || JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
 /** The fields of `core.state` still kept as a whole (not yet as rows). */
 function wholeFields(core) {

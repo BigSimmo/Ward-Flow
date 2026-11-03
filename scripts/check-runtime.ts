@@ -45,7 +45,7 @@ function runtimeResult(runtimeName: string, version: string, expectedMajor: numb
 
 // Must stay equal to the floor declared by package.json engines.node, which is
 // the single source of truth. tests/check-runtime.test.ts pins the two together.
-export const NODE_MINIMUM_VERSION = "24.15.0";
+export const NODE_MINIMUM_VERSION = "24.22.1";
 
 function isBelow(version: string, minimum: string): boolean {
   const actual = version.split(".").map(Number);
@@ -63,26 +63,29 @@ export function checkNodeRuntime(
   expectedMajor = 24,
   minimumVersion = NODE_MINIMUM_VERSION,
 ): RuntimeCheckResult {
+  if (!/^\d+\.\d+\.\d+$/u.test(version)) {
+    return {
+      ok: false,
+      expectedMajor,
+      actualVersion: version,
+      message: `Could not parse Node runtime version "${version}". Use a stable Node ${expectedMajor}.x version from .nvmrc or .node-version.`,
+    };
+  }
   const result = runtimeResult("Node", version, expectedMajor);
   if (!result.ok) return result;
 
-  // A matching major is not sufficient: dev dependencies (jsdom) carry a
-  // minor-level floor, and a too-old 24.x otherwise passes every gate and then
-  // fails at install with an opaque EBADENGINE for a transitive package.
+  // A matching major is not sufficient: installs and verification must meet
+  // the stable version selected by .nvmrc and .node-version.
   if (isBelow(version, minimumVersion)) {
     return {
       ok: false,
       expectedMajor,
       actualVersion: version,
-      // Name the remedy the repo already ships. This check is the first step of
-      // verify:pr-local, so it is where a stale-runtime session lands for every
-      // diff — and "install Node yourself" sends the reader off to do by hand
-      // what `.claude/hooks/session-start.sh` does correctly, including the
-      // exclusive major ceiling that a manual install of "latest" would miss.
+      // Name the existing pins and require activation in the invoking shell.
       message:
         `Node ${version} is below the ${minimumVersion} floor this project requires (package.json engines.node). ` +
-        `In a Claude Code remote session, run \`bash .claude/hooks/session-start.sh\`, then run the printed ` +
-        `\`export PATH=...\` command in your current shell before retrying. Otherwise install ${minimumVersion} or newer yourself.`,
+        `Use your Node version manager to select the version pinned in .nvmrc or .node-version, ` +
+        `then run \`node --version\` in the current shell before retrying.`,
     };
   }
 

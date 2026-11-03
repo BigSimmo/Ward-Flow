@@ -927,21 +927,20 @@
   gap: 1rem;
 }
 
+/* Pins just under the top bar, as the shared side rail does, rather than sliding beneath it. */
 .secondary {
   position: sticky;
-  top: 1rem;
+  top: var(--ward-sticky-top, 4.5rem);
   align-self: start;
-  max-height: calc(100dvh - 2rem);
+  max-height: var(--ward-rail-height, calc(100dvh - 6rem));
   overflow-y: auto;
 }
 
-/* Layout sweep PT-01: position: relative keeps each row's screen reader text inside this scroller,
-   so it cannot stretch the page below the footer. */
+/* Layout sweep PT-01: position: relative keeps each row's screen reader text inside the list, so it
+   cannot stretch the page below the footer. One scroll for the page (Josh, 3 Nov 2026): the list
+   grows with the page at every width, as it already did above 1360px, instead of a 56rem box. */
 .movementListBody {
   position: relative;
-  max-height: 56rem;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   padding: 0 var(--wf-s-4);
 }
 
@@ -1416,10 +1415,6 @@
     display: grid;
     position: static;
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .movementListBody {
-    max-height: 38rem;
   }
 }
 

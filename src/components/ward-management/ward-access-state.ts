@@ -521,7 +521,7 @@ function closeReferences(
       withoutLinks(
         withoutLinks(
           withoutLinks(movement, ["admissionId"], has(fullAdmissions)),
-          ["sourceAdmissionId"],
+          ["sourceAdmissionId", "referralSourceAdmissionId"],
           has(admissions),
         ),
         ["referralId"],
@@ -873,6 +873,17 @@ export function commandScopeRefusal(
   )
     return outside;
   if (typeof command.originUnitId === "string" && !unitInScope(scope, command.originUnitId, places)) return outside;
+  // A scoped coordinator may approve or complete a transfer only inside its service.
+  // The sending ward may still record handover to the already approved receiving ward.
+  const transfer = command.change as { kind?: unknown; receivingUnitId?: unknown } | undefined;
+  if (
+    access.role === "coordinator" &&
+    command.type === "RECORD_ADMISSION_CARE" &&
+    transfer?.kind === "transfer" &&
+    typeof transfer.receivingUnitId === "string" &&
+    !placeIn(transfer.receivingUnitId)
+  )
+    return outside;
   const targets = [command.unitId, command.acceptedUnitId, ...(Array.isArray(command.unitIds) ? command.unitIds : [])];
   for (const target of targets)
     if (

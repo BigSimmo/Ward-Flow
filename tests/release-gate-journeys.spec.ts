@@ -21,7 +21,7 @@ import {
 import { clearToasts } from "./helpers/clear-toasts";
 import { escapeForRegExp } from "./helpers/ward-place-names";
 import { openEdLists } from "./helpers/ward-ed-lists";
-import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * The release gate: four core bed-flow journeys that must pass before a change ships.
@@ -141,11 +141,10 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await expect(homeHelp).toBeVisible();
   await homeHelp.getByRole("button", { name: "Got it", exact: true }).click();
   await expect(homeHelp).toHaveCount(0);
-  // The phone queue shows the first twenty; a new tier 3 movement can sit below them.
+  // Each Flow stage shows its oldest five (Home flow, Q345); a new movement can sit below them.
   await showEveryoneWaitingOn(page);
   const queueRow = page.getByTestId(`ward-queue-row-${movementId}`);
-  const showAll = page.getByRole("region", { name: "Priority queue" }).getByRole("button", { name: /^Show all/u });
-  if (!(await queueRow.isVisible()) && (await showAll.isVisible())) await showAll.click();
+  if (!(await queueRow.isVisible())) await showAllFlowRows(homeFlowCard(page));
   await queueRow.click();
   const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
   await expect(shortlist).toHaveAttribute("data-subject-movement", movementId);
@@ -162,12 +161,10 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await shortlist.getByRole("button", { name: "Record override" }).click();
   await expect(shortlist).toContainText("Parallel referral:");
   await expectNoReloadSince(page, "offering the ward");
-  // On a phone Placement is a bottom sheet over the page and its header; close it, as a
-  // coordinator would, before going to the ward.
-  if (isPhoneLayout(page)) {
-    await page.getByRole("button", { name: "Close shortlist and clear selection" }).click();
-    await expect(shortlist).toHaveCount(0);
-  }
+  // Placement is the patient drawer over the page on every screen size (H7, Josh 3 Nov 2026);
+  // close it, as a coordinator would, before going to the ward.
+  await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+  await expect(shortlist).toHaveCount(0);
 
   // The ward accepts and pulls the patient into a bed.
   const unitName = unitById(unitId)?.name;

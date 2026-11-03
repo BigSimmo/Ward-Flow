@@ -53,7 +53,9 @@ const reads = new WeakMap<ForecastHistoryCall, Promise<unknown>>();
 function readOnce(call: ForecastHistoryCall): Promise<unknown> {
   const held = reads.get(call);
   if (held) return held;
-  const read = call().finally(() => reads.delete(call));
+  const read = call().finally(() => {
+    if (reads.get(call) === read) reads.delete(call);
+  });
   reads.set(call, read);
   return read;
 }
@@ -74,16 +76,20 @@ export function useSharedForecastHistory(generation: number) {
     const take = (value: SharedForecastHistory) => live && setHeld({ call, generation, value });
     // A failed first read falls back to the browser's copy; a failed later read keeps what is held.
     let read = false;
-    const load = () =>
-      readOnce(call).then(
+    let mutationVersion = 0;
+    const load = () => {
+      const startedVersion = mutationVersion;
+      return readOnce(call).then(
         (reply) => {
+          if (startedVersion !== mutationVersion) return;
           read = true;
           take(sharedForecastReply(reply, generation));
         },
         () => {
-          if (!read) take(LOCAL);
+          if (!read && startedVersion === mutationVersion) take(LOCAL);
         },
       );
+    };
     void load();
     const timer = window.setInterval(load, READ_EVERY_MS);
     const onShown = () => {
@@ -92,8 +98,14 @@ export function useSharedForecastHistory(generation: number) {
     document.addEventListener("visibilitychange", onShown);
     // Another view recorded something: take the history it was answered with.
     const onShared = (event: Event) => {
-      const detail = (event as CustomEvent<{ call: ForecastHistoryCall; reply: unknown }>).detail;
-      if (detail?.call === call) take(sharedForecastReply(detail.reply, generation));
+      const detail = (event as CustomEvent<{ call: ForecastHistoryCall; generation: number; reply: unknown }>).detail;
+      // A reply from an earlier world generation is not this history.
+      if (detail?.call === call && detail.generation === generation) {
+        mutationVersion++;
+        read = true;
+        reads.delete(call);
+        take(sharedForecastReply(detail.reply, generation));
+      }
     };
     window.addEventListener(SHARED_EVENT, onShared);
     return () => {
@@ -109,7 +121,7 @@ export function useSharedForecastHistory(generation: number) {
       if (!call) return false;
       try {
         const reply = await call({ generation, ...body });
-        window.dispatchEvent(new CustomEvent(SHARED_EVENT, { detail: { call, reply } }));
+        window.dispatchEvent(new CustomEvent(SHARED_EVENT, { detail: { call, generation, reply } }));
         return sharedForecastReply(reply, generation).status === "shared";
       } catch {
         return false;

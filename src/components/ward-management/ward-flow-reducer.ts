@@ -906,7 +906,8 @@ function referralAcceptanceRefusal(
 
 /** A recorded sending ward is the only exception to the one-current-stay placement rule. */
 export function movementSourceAdmission(state: WardFlowState, movement: Movement): Admission | undefined {
-  if (movement.sourceAdmissionId) return findAdmission(state, movement.sourceAdmissionId);
+  const pinnedSource = movement.sourceAdmissionId ?? movement.referralSourceAdmissionId;
+  if (pinnedSource !== undefined) return findAdmission(state, pinnedSource);
   const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
   if (referral?.source !== "psychiatric_ward" || !referral.originUnitId) return undefined;
   const patientId = movement.patientId ?? referral.patientId;
@@ -2485,6 +2486,7 @@ const PROTECTED_RECORD_EVENT_HELPERS = {
   admissionLegalStatus,
   departAdmission,
   dischargeBlockingTransit,
+  movementSourceAdmission,
   patientRecordIsInvoluntary,
   replaceAdmission,
   replaceUnit,

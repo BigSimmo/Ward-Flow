@@ -199,14 +199,14 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(screen.getAllByText(/Profile/i).length).toBeGreaterThan(0);
   });
 
-  it("keeps a checked Show beds option when a hero pill sets a filter the group does not list", () => {
+  it("keeps a checked Highlight beds option when a hero pill sets a filter the group does not list", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="rph-adult-secure" />
       </WardFlowProvider>,
     );
     const hero = screen.getByRole("region", { name: "Ward capacity" });
-    const showBeds = screen.getByRole("radiogroup", { name: "Show beds" });
+    const showBeds = screen.getByRole("radiogroup", { name: "Highlight beds" });
 
     fireEvent.click(within(hero).getByRole("button", { name: /Occupied/ }));
     expect(within(hero).getByRole("button", { name: /Occupied/ })).toHaveAttribute("aria-pressed", "true");
@@ -217,6 +217,29 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
 
     fireEvent.click(within(showBeds).getByRole("radio", { name: /^All/ }));
     expect(within(showBeds).queryByRole("radio", { name: /Ready by shift end|Occupied/ })).toBeNull();
+  });
+
+  it("highlights Ready beds while keeping every bed available", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId="rph-adult-secure" />
+      </WardFlowProvider>,
+    );
+    const beds = screen.getByRole("list", { name: /Beds at/ });
+    const before = within(beds).getAllByRole("button");
+    const choices = screen.getByRole("radiogroup", { name: "Highlight beds" });
+    const ready = within(choices).getByRole("radio", { name: /^Ready/ });
+    fireEvent.click(ready);
+    expect(ready).toHaveAttribute("aria-checked", "true");
+    expect(within(beds).getAllByRole("button")).toHaveLength(before.length);
+    const lit = before.filter((bed) => bed.dataset.lit === "true");
+    expect(lit.length).toBeGreaterThan(0);
+    expect(lit.length).toBeLessThan(before.length);
+    expect(screen.getByTestId("ward-bed-highlight-note")).toHaveTextContent(
+      `${lit.length} of ${before.length} beds highlighted.`,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Clear highlight" }));
+    expect(before.every((bed) => bed.dataset.dim === undefined && bed.dataset.lit === undefined)).toBe(true);
   });
 
   it("renders the Ward Console third edition action bar, tab navigation, and interactive telemetry drawer", () => {

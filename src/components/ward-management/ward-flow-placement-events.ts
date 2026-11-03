@@ -108,7 +108,7 @@ export function reducePlacementEvent(
         movement.patientId ?? state.referrals.find((r) => r.id === movement.referralId)?.patientId ?? event.patientId;
       const source = movementSourceAdmission(state, movement);
       if (
-        (movement.sourceAdmissionId && !source) ||
+        ((movement.sourceAdmissionId != null || movement.referralSourceAdmissionId !== undefined) && !source) ||
         (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === event.unitId))
       ) {
         return reject(state, event, "Repatriation needs the patient's occupied source stay at a different ward.");
@@ -174,6 +174,7 @@ export function reducePlacementEvent(
         if (restoreLegalRefusal) return reject(state, event, restoreLegalRefusal);
         const restored: Movement = {
           ...movement,
+          ...(source && movement.sourceAdmissionId === undefined ? { referralSourceAdmissionId: source.id } : {}),
           overrides: pullOverrides(movement, restoreUnit, admissionsExcludingOwn, event, false),
           stage: "pulled",
           waitlistedUnitIds: undefined,
@@ -411,6 +412,7 @@ export function reducePlacementEvent(
 
       const updatedMovement: Movement = {
         ...movement,
+        ...(source && movement.sourceAdmissionId === undefined ? { referralSourceAdmissionId: source.id } : {}),
         stage: "pulled",
         waitlistedUnitIds: undefined,
         pullExpiresAt: event.now + pullHoldMinutesFor(state, movement, event.unitId),
@@ -518,6 +520,7 @@ export function reducePlacementEvent(
       const updatedMovement: Movement = {
         ...movement,
         stage: "accepted_awaiting_bed",
+        referralSourceAdmissionId: undefined,
         // Restate the blocker as at first acceptance: once the bed is given back, a
         // transport-provider sentence is false. A standing job is flagged by `orphanedTransport`,
         // not here.
@@ -785,6 +788,7 @@ export function reducePlacementEvent(
       const updatedMovement: Movement = {
         ...movement,
         stage: "placement_requested",
+        referralSourceAdmissionId: undefined,
         acceptedUnitId: undefined,
         acceptedAt: undefined,
         heldBedNumber: undefined,

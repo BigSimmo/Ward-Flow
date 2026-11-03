@@ -268,6 +268,12 @@ export function reduceTransportEvent(
       // Audit 2 E-03: the same re-check for a legal status change since the bed was held.
       const collectedLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
       if (collectedLegalRefusal) return reject(state, event, collectedLegalRefusal);
+      // The sending ward ends its recorded restriction before collection; once moving, arrival stays recordable.
+      const source = movementSourceAdmission(state, movement);
+      const sourceRestrictiveRefusal = source
+        ? openRestrictivePracticeRefusal(findUnit(state, source.unitId)?.restrictivePractice, source.id)
+        : undefined;
+      if (sourceRestrictiveRefusal) return reject(state, event, sourceRestrictiveRefusal);
       // Audit fix (13 Oct 2026): collected with a check open (no Form 4A, no clearance) records why.
       const collectedException =
         event.exception === undefined
@@ -406,7 +412,7 @@ export function reduceTransportEvent(
         (movement.admissionId ? findAdmission(state, movement.admissionId)?.patientId : undefined);
       const source = movementSourceAdmission(state, movement);
       if (
-        (movement.sourceAdmissionId && !source) ||
+        ((movement.sourceAdmissionId != null || movement.referralSourceAdmissionId !== undefined) && !source) ||
         (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === unit.id))
       ) {
         return reject(

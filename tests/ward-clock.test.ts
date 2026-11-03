@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   MINUTES_PER_DAY,
@@ -16,6 +16,7 @@ import {
   formatSheetMoment,
   perthCalendarDay,
   perthDateTimeLocal,
+  perthDayLabel,
   perthMidnight,
   minuteOfDay,
   minutesUntil,
@@ -217,6 +218,28 @@ describe("the clock knows what day it is, not only what time it is", () => {
     expect(formatSheetMoment(0, zero)).toBe("Thu, 31 Dec, 00:00");
   });
 
+  it("keeps patient day labels in the session's Perth year across midnight", () => {
+    const zero = perthMidnight(2026, 11, 31);
+    expect(perthDayLabel(0, zero)).toBe("Thu 31 Dec");
+    expect(perthDayLabel(MINUTES_PER_DAY - 1, zero)).toBe("Thu 31 Dec");
+    expect(perthDayLabel(MINUTES_PER_DAY, zero)).toBe("1 Jan 2027");
+    expect(perthDayLabel(-MINUTES_PER_DAY * 365, zero)).toBe("31 Dec 2025");
+    expect(perthDayLabel(0, perthMidnight(2027, 0, 1))).toBe("Fri 1 Jan");
+  });
+
+  it("reuses calendar formatters across rows instead of constructing them for every label", () => {
+    const formatter = vi.spyOn(Intl, "DateTimeFormat");
+    try {
+      const zero = perthMidnight(2026, 11, 31);
+      const labels = Array.from({ length: 20 }, (_, day) => perthDayLabel(day * MINUTES_PER_DAY, zero));
+      expect(labels[0]).toBe("Thu 31 Dec");
+      expect(labels[1]).toBe("1 Jan 2027");
+      expect(formatter.mock.calls.length).toBeLessThanOrEqual(2);
+    } finally {
+      formatter.mockRestore();
+    }
+  });
+
   it("reads a typed date and time as Perth wall time, and refuses one that is not real", () => {
     expect(perthDateTimeLocal("2026-08-30T14:30")?.toISOString()).toBe("2026-08-30T06:30:00.000Z");
     expect(perthDateTimeLocal("2026-02-31T10:00")).toBeUndefined();
@@ -246,4 +269,74 @@ describe("the clock knows what day it is, not only what time it is", () => {
       "23:50 yesterday",
     );
   });
+});
+
+it("does not initialise date-label formatters on routes that only import the clock", async () => {
+  vi.resetModules();
+  const formatter = vi.spyOn(Intl, "DateTimeFormat");
+  try {
+    const clock = await import("../src/components/ward-management/ward-clock");
+    expect(formatter).not.toHaveBeenCalled();
+    const zero = clock.perthMidnight(2026, 9, 29);
+    expect(clock.perthDayLabel(0, zero)).toBe("Thu 29 Oct");
+    expect(clock.perthDayLabel(1440, zero)).toBe("Fri 30 Oct");
+    expect(formatter).toHaveBeenCalledTimes(2);
+  } finally {
+    formatter.mockRestore();
+  }
+});
+
+it("keeps Perth labels correct through leap day and mixed session years without new formatters", async () => {
+  vi.resetModules();
+  const clock = await import("../src/components/ward-management/ward-clock");
+  const formatter = vi.spyOn(Intl, "DateTimeFormat");
+  try {
+    const zero = clock.perthMidnight(2028, 1, 28);
+    const nextYear = clock.perthMidnight(2029, 0, 1);
+    for (let iteration = 0; iteration < 20; iteration += 1) {
+      expect(clock.perthDayLabel(1440, zero)).toBe("Tue 29 Feb");
+      expect(clock.perthDayLabel(2880, zero)).toBe("Wed 1 Mar");
+      expect(clock.perthDayLabel(-1440, nextYear)).toBe("31 Dec 2028");
+      expect(clock.perthDayLabel(1440, nextYear)).toBe("Tue 2 Jan");
+    }
+    expect(formatter).toHaveBeenCalledTimes(2);
+  } finally {
+    formatter.mockRestore();
+  }
+});
+
+it("recovers if the year formatter's first construction fails", async () => {
+  vi.resetModules();
+  const clock = await import("../src/components/ward-management/ward-clock");
+  const OriginalFormatter = Intl.DateTimeFormat;
+  let constructions = 0;
+  const formatter = vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function (locales, options) {
+    constructions += 1;
+    if (constructions === 2) throw new Error("synthetic formatter startup failure");
+    return new OriginalFormatter(locales, options);
+  });
+  try {
+    const zero = clock.perthMidnight(2026, 11, 31);
+    expect(() => clock.perthDayLabel(0, zero)).toThrow("synthetic formatter startup failure");
+    expect(clock.perthDayLabel(0, zero)).toBe("Thu 31 Dec");
+    expect(clock.perthDayLabel(1440, zero)).toBe("1 Jan 2027");
+    expect(formatter).toHaveBeenCalledTimes(3);
+  } finally {
+    formatter.mockRestore();
+  }
+});
+
+it("does not poison the cached formatters after an invalid instant", async () => {
+  vi.resetModules();
+  const clock = await import("../src/components/ward-management/ward-clock");
+  const formatter = vi.spyOn(Intl, "DateTimeFormat");
+  try {
+    const zero = clock.perthMidnight(2026, 11, 31);
+    expect(() => clock.perthDayLabel(Number.NaN, zero)).toThrow(RangeError);
+    expect(clock.perthDayLabel(0, zero)).toBe("Thu 31 Dec");
+    expect(clock.perthDayLabel(1440, zero)).toBe("1 Jan 2027");
+    expect(formatter).toHaveBeenCalledTimes(2);
+  } finally {
+    formatter.mockRestore();
+  }
 });

@@ -1,5 +1,6 @@
 import { devices, expect, test, type Browser, type Page } from "playwright/test";
 
+import { HELP_TIPS_OFF_KEY } from "@/components/ward-management/help-content/ward-help-tips-off";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { expectAccessible, isPhoneLayout } from "./helpers/ward-release-gate";
 
@@ -21,6 +22,7 @@ const ROUTES = [
   ["", "ward-coordinator"],
   ["/alerts", "ward-alerts-page"],
   ["/bed-meeting", "bed-meeting-tv-off"],
+  ["/bed-meeting/agenda", "bed-meeting-agenda"],
   ["/board/rph-adult-secure", "ward-board"],
   ["/capacity", "ward-capacity-screen"],
   ["/community", "community-index"],
@@ -44,6 +46,7 @@ const ROUTES = [
   ["/reports/chronology", "ward-patient-chronology"],
   ["/reports/downtime", "ward-downtime-pack"],
   ["/search", "ward-patient-search"],
+  ["/seclusion", "seclusion-screen"],
   ["/settings", "ward-settings-screen"],
   ["/statistics", "ward-statistics-screen"],
   ["/statistics/community/bentley", "ward-statistics-community-screen"],
@@ -163,6 +166,11 @@ test("axe: the ED actions menu when open has no serious or critical violation", 
  * and is scanned with its first tab showing.
  */
 test("axe: a ward's bed drawer when open has no serious or critical violation", async ({ page }, testInfo) => {
+  // The Ward page can offer its page tip 1.5s after it settles. On a phone that corner card can sit
+  // over Place or move, and the click then waits on it until the test times out (main CI, 3 Nov
+  // 2026). Whether it shows depends on timing, so turn tips off for this device as Settings does
+  // (same as the phone referral test, #1358). The sweeps above still scan the tip where it shows.
+  await page.addInitScript((key) => window.localStorage.setItem(key, "yes"), HELP_TIPS_OFF_KEY);
   await openShell(page, "/ward/rph-adult-secure", "ward-unit-screen");
   await page.getByTestId("ward-open-bed-board").click();
   await page.getByTestId("ward-board-bed-1").click();

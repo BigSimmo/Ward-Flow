@@ -202,11 +202,14 @@ describe("ckb-v2 command colour (#1, #12)", () => {
 });
 
 describe("ckb-v2 source-of-truth header", () => {
-  it("claims this repo file as canonical, not a design-project export", () => {
+  // Q375 (3 Nov 2026): DESIGN-SYSTEM.md is the system of record and v9 holds the values, so this
+  // older layer must say it is not the source of truth and point there.
+  it("says it is not the source of truth and points to the design system of record", () => {
     const header = stylesheet.slice(0, stylesheet.indexOf("\n.ckb-v2"));
-    expect(header).not.toMatch(/Source of truth:\s*the design project's/i);
-    expect(header).toMatch(/Source of truth:\s*THIS FILE/i);
-    expect(header).toMatch(/AGENTS\.md/);
+    expect(header).not.toMatch(/Source of truth:\s*THIS FILE/i);
+    expect(header).toMatch(/NOT the source of truth/);
+    expect(header).toMatch(/docs\/design\/DESIGN-SYSTEM\.md/);
+    expect(header).toMatch(/src\/app\/ward-flow-v9-tokens\.css/);
   });
 });
 

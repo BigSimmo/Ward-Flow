@@ -1929,7 +1929,9 @@ export function createWorkspaceStore(
         return { record, hash };
       });
       const partial = typeof since === "number" && Number.isSafeInteger(since) && since >= 0 && since <= held.through;
-      const last = held.total > records.length ? records.at(-1) : undefined;
+      // A retention marker must not disclose a record outside this desk.
+      // Checksum mismatch already forces a full reread when no authorised floor remains.
+      const last = held.total > records.length ? shown.at(-1) : undefined;
       // The sender progress for the archived records shown, worked out here from the full stored
       // records (never from the masked copies sent below) and bound to this desk's access view and
       // the revision it was worked out at, as the live snapshot's is. Ward and bed manager desks only.

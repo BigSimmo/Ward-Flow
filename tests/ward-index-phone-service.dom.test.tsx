@@ -1,7 +1,7 @@
 // shell-15 (Josh, 13 Oct 2026): on a phone All wards draws no region chips; it follows the header's
 // service, and shows no "22 of 22" while nothing is filtered. Desktop keeps its own chips.
 import "@testing-library/jest-dom/vitest";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -52,5 +52,32 @@ describe("All wards service control on a phone (shell-15)", () => {
   it("keeps the desktop chips", () => {
     renderIndex(false);
     expect(screen.getByLabelText("Health service")).toBeInTheDocument();
+  });
+
+  it("names desktop card percentages as beds in use", () => {
+    const { container } = renderIndex(false);
+    const figures = Array.from(container.querySelectorAll("article")).map(
+      (card) => within(card).getByText(/^\d+%$/u).parentElement!,
+    );
+    expect(figures.some((figure) => /% in use$/u.test(figure.textContent ?? ""))).toBe(true);
+    for (const figure of figures) expect(figure).toHaveTextContent(/^\d+% (in use|near full)$/u);
+  });
+
+  it("keeps each phone filter in its own scroll row and preserves the choices", () => {
+    renderIndex(true);
+    const toggle = screen.getByRole("button", { name: "Filters" });
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    for (const label of ["Status", "Cohort", "Order"]) {
+      const row = screen.getByRole("group", { name: `${label} choices` });
+      expect(within(row).getByRole("radiogroup", { name: label })).toBeVisible();
+    }
+    const cohort = screen.getByRole("radiogroup", { name: "Cohort" });
+    const last = within(cohort).getByRole("radio", { name: "Perinatal" });
+    fireEvent.click(last);
+    expect(last).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByTestId("ward-index-count-note")).toHaveTextContent(/wards highlighted/u);
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 });

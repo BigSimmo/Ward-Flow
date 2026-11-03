@@ -21,6 +21,7 @@ import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
 import { hasMovedInWardFlow, markWardRouteReplace } from "./ward-back";
 import { openWardMenu } from "./ward-drawer-bus";
+import { confirmLeavingShell } from "./ward-leave-guard";
 import type { WardPrimaryAction } from "./ward-shell-types";
 import {
   NOT_WIRED_SUFFIX,
@@ -31,26 +32,13 @@ import {
 } from "./ward-bar-model";
 import styles from "./ward-bar.module.css";
 
+export { confirmLeavingShell };
+
 /**
  * The header's Back control (`ward-back.ts`): the previous Ward Flow screen, else `parentHref`.
  * `phone` draws it as a button in the Menu button's place on a phone, where `buttonRef` makes it the
  * phone sheets' focus return; otherwise it is a link leading the tablet and desktop bar.
  */
-/**
- * Audit 7 NB-06: the phone Back is a button, so the unsaved-changes guard's link listener never sees
- * it. With no Ward Flow history it replaces the page, and a half-typed form was dropped without the
- * question the desktop Back link asks. Ask the same mounted guards first.
- */
-export function confirmLeavingShell(proceed?: () => void): boolean {
-  if (typeof window === "undefined") return true;
-  // With the kit's styled confirm mounted, the guard returns false at once, asks, and on Leave
-  // without saving runs `proceed`, which passes this check once. Without it, the browser asks.
-  const confirmNavigation = (
-    window as typeof window & { __wardFlowConfirmNavigation?: (proceed?: () => void) => boolean }
-  ).__wardFlowConfirmNavigation;
-  return confirmNavigation ? confirmNavigation(proceed) : true;
-}
-
 export function WardBarBack({
   parentHref,
   phone,

@@ -1,9 +1,10 @@
 /* Ward Flow v2 token layer — globally active, class-scoped for rollback.
  *
- * Source of truth: THIS FILE (`src/app/ckb-v2-tokens.css`), ranked #2 under
- * AGENTS.md per docs/design-system/SPEC.md. Committed tests are #3. The design
- * project (08d6f126…) mirrors this reconciled copy — a divergent design export
- * is not authoritative (DECISIONS C1 / TOKENS.md).
+ * NOT the source of truth (Q375, 3 Nov 2026). Ward Flow's design system of
+ * record is `docs/design/DESIGN-SYSTEM.md` (drawn from the master design), and
+ * its token values live only in `src/app/ward-flow-v9-tokens.css`. This file is
+ * the older v2 layer inherited from PsychSift; older screens still read its
+ * names, so it stays until they move to `--wf-*`. Add no new tokens here.
  *
  * Structural half (space, type, radius, elevation, density, icons, motion) and
  * shell colours are both class-scoped here. Production mounts `ckb-v2` on the

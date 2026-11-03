@@ -1,0 +1,148 @@
+/* Home flow (Q340, Q345, 3 Nov 2026): the stage navigation above Home's two columns. Tokens only. */
+
+/* Q345: the stage tabs under Home's two tabs. */
+.stageTabs {
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.late {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+/* Q345: Home's navigation, one row above the two columns. Needs you and Flow are the raised
+ * switch; a short rule, then the stages as quieter tabs that read as Flow's sub-level. */
+.nav {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-areas: "switch rule stages more";
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin-bottom: var(--wf-s-3);
+}
+
+.nav > :first-child {
+  grid-area: switch;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.navRule {
+  grid-area: rule;
+  width: 1px;
+  height: 20px;
+  background: var(--wf-line-2, var(--wf-line));
+}
+
+.stageGroup {
+  grid-area: stages;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.stageGroup > .stageTabs {
+  flex: 1 1 0;
+  width: auto;
+}
+
+.nav > :last-child {
+  grid-area: more;
+}
+
+/* Narrower than a desktop: the switch and More share the top line, the stages sit under the switch. */
+@media (max-width: 63.99rem) {
+  .nav {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "switch more"
+      "stages stages";
+  }
+  .nav > :first-child {
+    justify-self: start;
+  }
+  .navRule {
+    display: none;
+  }
+}
+
+/* The stage tabs drop the track and run a size smaller, so they read as part of Flow, not a
+ * second switch. Their counts stay. */
+.stagePills.stagePills {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  padding-inline: 0;
+}
+
+.stagePills.stagePills [role="tab"] {
+  color: var(--wf-ink-2);
+}
+
+.stagePills.stagePills [role="tab"]:hover {
+  color: var(--wf-ink-1);
+  background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+}
+
+/* The kit's pill track lets items overflow on a phone (for their hit areas), so this box scrolls. */
+.stageTabs {
+  scrollbar-width: none;
+  padding-block: 4px;
+  margin-block: -4px;
+}
+
+.stageTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.stagePills.stagePills {
+  max-width: none;
+}
+
+/* The chosen stage is marked with a soft fill, lighter than the raised primary tab above it. */
+.stagePills.stagePills [aria-selected="true"] {
+  background: var(--wf-track);
+  box-shadow: none;
+  outline: 1px solid var(--wf-line);
+  outline-offset: -1px;
+}
+
+/* Keyboard focus keeps the kit's 2px ring on the chosen stage too. */
+.stagePills.stagePills [aria-selected="true"]:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+
+/* One section per stage inside the Flow card. */
+.group + .group {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Phone: the list and stage tabs pin under the header while the list scrolls, as the old list
+ * switch did. The canvas band runs to the screen edges, so rows slide under a solid strip. */
+@media (max-width: 46.4375rem) {
+  .nav {
+    position: sticky;
+    top: var(--wf-header-height, 3.5rem);
+    z-index: 6;
+    margin-bottom: var(--wf-s-2);
+    padding-block: var(--wf-s-2);
+    background: var(--wf-canvas);
+    box-shadow:
+      var(--wf-s-4) 0 0 var(--wf-canvas),
+      calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
+  }
+}

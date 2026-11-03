@@ -9,6 +9,7 @@
 import { closedToAdmissionsRefusal } from "./ward-closure";
 import { bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
 import { lockedBedsFree, openBedsFree } from "../ward-bed-designation";
+import { boundedBedAvailability } from "../ward-ready-beds";
 import {
   isPlannedAdmissionCancelReason,
   isPlannedAdmissionLegalStatus,
@@ -502,7 +503,7 @@ export function reducePlannedAdmissionEvent(
           "This patient is on an open movement. Record the arrival on that movement, or close it first.",
         );
       // Same order as `PULL_PATIENT`: the physical bed facts first, then the eligibility gates.
-      if (unit.empty.value <= 0 || unit.allocatable.value <= 0)
+      if (boundedBedAvailability(unit).available <= 0)
         return reject(state, event, `${unit.name} has no empty bed to admit this planned arrival`);
       const pending = bedsPendingPreparation(unit.id, state.bedReleases);
       if (pending > 0 && openBedsNow(unit, state.bedReleases) <= 0)

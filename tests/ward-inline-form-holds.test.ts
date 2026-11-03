@@ -29,7 +29,6 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "community/community-screen.tsx": { cover: "held" },
   "community/use-community-screen-overlays.ts": { cover: "popup", why: "Transport booking is a modal sheet." },
   "coordinator/activity-panel.tsx": { cover: "popup", why: "Mark read is one tap inside the Activity drawer." },
-  "coordinator/coordinator-screen.tsx": { cover: "popup", why: "Exceptions open in a sheet." },
   "coordinator/shortlist-panel.tsx": { cover: "held" },
   "delays/daily-check-line.tsx": {
     cover: "no form",
@@ -83,6 +82,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   },
   "referrals/upload-forms-modal.tsx": { cover: "popup" },
   "referrals/use-referral-match-state.tsx": { cover: "held" },
+  "referrals/use-referral-command-completion.ts": {
+    cover: "popup",
+    why: "Keeps the new-patient draft, which opens only inside the ward referral drawer.",
+  },
   "referrals/use-ward-referral-drawer-state.ts": { cover: "popup" },
   "settings/settings-screen.tsx": { cover: "popup" },
   "use-hold-open-form.ts": { cover: "held", why: "The hook itself." },
