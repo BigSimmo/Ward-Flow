@@ -183,7 +183,7 @@ describe("public repository ownership boundary", () => {
     expect(signOutConflicts(["AGENTS.md"], `${log}\n${publicRelease}`, "ward/mine", root)).toEqual([]);
   });
 
-  it("requires a sign-out for a codex branch's backend file", (ctx) => {
+  it("admits a codex branch's own backend file unclaimed but blocks a peer's public claim", (ctx) => {
     ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const root = publicRepo();
     git(root, "checkout", "--quiet", "-b", "codex/backend");
@@ -198,17 +198,20 @@ describe("public repository ownership boundary", () => {
         encoding: "utf8",
         env: { ...process.env, WARD_SIGNOUT_FILE: signOutFile },
       });
-    // An empty log blocks an unsigned file; a missing log only warns (see pre-commit-checks.test.ts).
+    // Q374: the branch or PR is the claim. An empty or missing log admits your own file.
     writeFileSync(signOutFile, "Open sign-outs only\n");
-    const blocked = run();
-    expect(blocked.status).toBe(1);
-    expect(blocked.stderr).toContain("without your sign-out");
+    const allowed = run();
+    expect(allowed.status, allowed.stderr).toBe(0);
+    expect(allowed.stderr).not.toContain("without your sign-out");
+    rmSync(signOutFile);
+    expect(run().status).toBe(0);
     writeFileSync(
       signOutFile,
-      `Open sign-outs only\n- 2026-09-28 | Owner | codex/backend | ${root} | ${file}, repo=BigSimmo/Ward-Flow\n`,
+      `Open sign-outs only\n- 2026-09-28 | Peer | codex/peer | /elsewhere/peer | ${file}, repo=BigSimmo/Ward-Flow\n`,
     );
-    const allowed = run();
-    expect(allowed.status).toBe(0);
+    const blocked = run();
+    expect(blocked.status).toBe(1);
+    expect(blocked.stderr).toContain("files signed out by another session");
   });
 
   it("finds a same-file change on another codex branch", (ctx) => {

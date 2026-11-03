@@ -227,7 +227,8 @@ describe("signOutConflicts (clash guard)", () => {
     expect(signOutConflicts(["AGENTS.md", "docs/ward-flow/README.md"], log, "ward/fold", "D:/w/fold")).toEqual([]);
   });
 
-  it("requires an own sign-out for changed Ward files but not unrelated files", () => {
+  // Informational helper since Q374 (the branch or PR is the claim): no admission blocks on it.
+  it("reports changed Ward files without an own sign-out, but not unrelated files", () => {
     const staged = ["src/components/ward-management/a.tsx", "tests/ward-engine.test.ts", "notes.md"];
     const own = "- 2026-09-27 | Me | ward/mine | D:/w/mine | src/components/ward-management/a.tsx";
     const rebuilt = ["Open sign-outs only", own].join("\n");
@@ -261,8 +262,8 @@ function added(file: string, ...lines: string[]) {
 }
 
 describe("signOutLogOptional", () => {
-  it("never infers ownership from a missing log on any host", () => {
-    expect(signOutLogOptional()).toBe(false);
+  it("treats a missing log as no peer holds (Q374: the branch or PR is the claim)", () => {
+    expect(signOutLogOptional()).toBe(true);
   });
 });
 
@@ -274,19 +275,22 @@ describe("complete staged ownership admission", () => {
     expect(stagedPathsFromStatus("D\0only.md\0").contentPaths).toEqual([]);
   });
 
-  it("blocks an unavailable log on main and during merges", () => {
-    const input = {
-      ownershipPaths: ["docs/ward-flow/a.md"],
-      branch: "main",
-      root: "",
-      taskBranch: false,
-      merging: true,
-      logAvailable: false,
-    };
-    expect(ownershipAdmission(input)).toMatchObject({ blocked: true, missingLog: true });
+  it("admits own unclaimed files with no log but still blocks a peer's active claim", () => {
+    const file = "docs/ward-flow/a.md";
+    const input = { ownershipPaths: [file], branch: "ward/mine", root: "", merging: false };
+    // No log text at all: nothing to clash with, and the branch itself is the claim.
+    expect(ownershipAdmission(input)).toEqual({ blocked: false, clashes: [] });
+    expect(ownershipAdmission({ ...input, merging: true }).blocked).toBe(false);
+    expect(ownershipAdmission({ ...input, branch: "main" }).blocked).toBe(false);
+    expect(
+      ownershipAdmission({
+        ...input,
+        signOutText: `Open sign-outs only\n- 2026-10-17 | Peer | ward/peer | | ${file}\n`,
+      }),
+    ).toMatchObject({ blocked: true, clashes: [{ file, owner: "Peer", branch: "ward/peer" }] });
   });
 
-  it("requires own claims for manual or both-side merge changes", () => {
+  it("partitions manual or both-side merge changes from clean incoming paths", () => {
     const changes = [
       { status: "M", paths: ["clean.md"] },
       { status: "M", paths: ["manual.md"] },
@@ -312,9 +316,6 @@ describe("complete staged ownership admission", () => {
     const file = "docs/ward-flow/a.md";
     const input = {
       ownershipPaths: [file],
-      requiredClaims: [],
-      logAvailable: true,
-      taskBranch: true,
       branch: "ward/mine",
       root: "",
       merging: true,
@@ -333,10 +334,7 @@ describe("complete staged ownership admission", () => {
     const file = "docs/ward-flow/a.md";
     const input = {
       ownershipPaths: [file, "docs/ward-flow/b.md"],
-      requiredClaims: [],
       mainlineIncoming: [file],
-      logAvailable: true,
-      taskBranch: true,
       branch: "ward/mine",
       root: "",
       merging: true,
@@ -499,34 +497,59 @@ describe("the hook script end to end", () => {
     expect(passed.stderr).toContain("[pre-commit] ok");
   });
 
-  it("blocks a Ward commit without its own sign-out and accepts it once signed out", () => {
+  // Q374: the branch or PR is the claim; the log only records peer holds.
+  it("accepts a Ward commit with no own sign-out and blocks a peer's active claim", () => {
     const root = repo();
     execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
     const file = "docs/ward-flow/probe.md";
     const signOutFile = join(root, "sign-out.md");
     writeFileSync(signOutFile, "Open sign-outs only\n");
+    const passed = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
+    expect(passed.status, passed.stderr).toBe(0);
+    expect(passed.stderr).toContain("[pre-commit] ok");
+    expect(passed.stderr).not.toContain("without your sign-out");
+
+    writeFileSync(signOutFile, `Open sign-outs only\n- 2026-09-27 | Peer | ward/peer | /elsewhere/peer | ${file}\n`);
     const blocked = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
     expect(blocked.status).toBe(1);
-    expect(blocked.stderr).toContain(`Ward files without your sign-out in ${signOutFile}`);
-
-    writeFileSync(signOutFile, `Open sign-outs only\n- 2026-09-27 | Me | ward/probe | ${root} | ${file}\n`);
-    const passed = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
-    expect(passed.status).toBe(0);
-    expect(passed.stderr).toContain("[pre-commit] ok");
+    expect(blocked.stderr).toContain(`files signed out by another session in ${signOutFile}`);
+    expect(blocked.stderr).toContain(`${file}  (Peer, ward/peer)`);
   });
 
-  it("still blocks when an explicitly named sign-out log is missing", () => {
+  it("accepts own unclaimed files when the named log is missing, but a peer's claims/ file still blocks", () => {
     const root = repo();
     execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
+    const file = "docs/ward-flow/probe.md";
     const signOutFile = join(root, "absent", "sign-out.md");
-    const blocked = stageAndRun(root, "docs/ward-flow/probe.md", "synthetic probe\n", {
-      WARD_SIGNOUT_FILE: signOutFile,
-    });
+    const passed = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
+    expect(passed.status, passed.stderr).toBe(0);
+    expect(passed.stderr).toContain("no shared sign-out log: no logged peer holds");
+    expect(passed.stderr).not.toContain("sign-out log unavailable");
+
+    mkdirSync(join(root, "absent", "claims"), { recursive: true });
+    writeFileSync(
+      join(root, "absent", "claims", "20260927T0100Z-peer.md"),
+      `- 2026-09-27T01:00Z | Peer | ward/peer | /elsewhere/peer | ${file}\n`,
+    );
+    const blocked = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
     expect(blocked.status).toBe(1);
-    expect(blocked.stderr).toContain(`shared sign-out log unavailable at ${signOutFile}`);
+    expect(blocked.stderr).toContain(`${file}  (Peer, ward/peer)`);
   });
 
-  it("requires claims for staged deletion and both sides of a rename", () => {
+  it("blocks when the claims folder beside a missing log is unreadable", () => {
+    const root = repo();
+    execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
+    mkdirSync(join(root, "absent"), { recursive: true });
+    // A file where the claims folder should be cannot be listed, so it may hide peer holds.
+    writeFileSync(join(root, "absent", "claims"), "not a folder\n");
+    const blocked = stageAndRun(root, "docs/ward-flow/probe.md", "synthetic probe\n", {
+      WARD_SIGNOUT_FILE: join(root, "absent", "sign-out.md"),
+    });
+    expect(blocked.status).toBe(1);
+    expect(blocked.stderr).toContain("claims folder unreadable");
+  });
+
+  it("checks peer claims on staged deletion and both sides of a rename without needing own claims", () => {
     const root = repo();
     execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
     const oldFile = "docs/ward-flow/old.md";
@@ -547,22 +570,23 @@ describe("the hook script end to end", () => {
         encoding: "utf8",
         env: { ...process.env, WARD_SIGNOUT_FILE: signOutFile },
       });
-    writeFileSync(signOutFile, `Open sign-outs only\n- 2026-10-17 | Me | ward/probe | ${root} | ${newFile}\n`);
+    writeFileSync(signOutFile, "Open sign-outs only\n");
+    const passed = run();
+    expect(passed.status, passed.stderr).toBe(0);
+    expect(passed.stderr).toContain("admission ok");
+    writeFileSync(
+      signOutFile,
+      `Open sign-outs only\n- 2026-10-17 | Peer | ward/peer | /elsewhere/peer | ${oldFile}, ${deletedFile}\n`,
+    );
     const blocked = run();
     expect(blocked.status).toBe(1);
     expect(blocked.stderr).toContain(oldFile);
     expect(blocked.stderr).toContain(deletedFile);
-    writeFileSync(
-      signOutFile,
-      `Open sign-outs only\n- 2026-10-17 | Me | ward/probe | ${root} | ${oldFile}, ${newFile}, ${deletedFile}\n`,
-    );
-    const passed = run();
-    expect(passed.status).toBe(0);
-    expect(passed.stderr).toContain("admission ok");
+    expect(blocked.stderr).not.toContain(`${newFile}  (`);
   });
 
   // Skipped on Windows: the default sign-out log is fixed at D:/Repos/ward-flow-logs, so HOME cannot redirect it.
-  it.skipIf(process.platform === "win32")("blocks when the default log is absent off Windows", () => {
+  it.skipIf(process.platform === "win32")("admits own files when the default log is absent off Windows", () => {
     const root = repo();
     execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
     // Off Windows the default log is ~/ward-flow-logs/sign-out.md, so point HOME at the fixture.
@@ -577,8 +601,8 @@ describe("the hook script end to end", () => {
       encoding: "utf8",
       env,
     });
-    expect(passed.status).toBe(1);
-    expect(passed.stderr).toContain(`sign-out log unavailable at ${root}/ward-flow-logs/sign-out.md`);
+    expect(passed.status, passed.stderr).toBe(0);
+    expect(passed.stderr).toContain("no shared sign-out log: no logged peer holds");
   });
 });
 
@@ -691,9 +715,10 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
 
   it("checks incoming-only paths for missing log, active overlap, own claim and skip refusal", async (ctx) => {
     ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
+    // Q374: the branch or PR is the claim, so a missing log means no logged peer holds.
     const missing = await run({ logPresent: false });
-    expect(missing.code).toBe(1);
-    expect(missing.errors).toContain("shared sign-out log unavailable");
+    expect(missing.code).toBe(0);
+    expect(missing.errors).toContain("no shared sign-out log: no logged peer holds");
 
     const other = `Open sign-outs only\n- 2026-10-17 | Other | ward/other | /other | ${incomingFile} | repo=BigSimmo/Ward-Flow\n`;
     const clash = await run({ log: other });
@@ -702,8 +727,9 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
     expect(clash.errors).toContain(incomingFile);
 
     const unsigned = await run();
-    expect(unsigned.code).toBe(1);
-    expect(unsigned.errors).toContain("Ward files without your sign-out");
+    expect(unsigned.code).toBe(0);
+    expect(unsigned.errors).toContain("admission ok");
+    expect(unsigned.errors).not.toContain("without your sign-out");
 
     const own = `Open sign-outs only\n- 2026-10-17 | Me | ward/probe | ${fixtureRoot} | ${incomingFile} | repo=BigSimmo/Ward-Flow\n`;
     const allowed = await run({ log: own });
@@ -731,9 +757,12 @@ describe("admission-only merge with no HEAD-to-index changes", () => {
 
   it("keeps ownership admission mandatory when merge bases are ambiguous", async (ctx) => {
     ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
-    const result = await run({ mergeBases: `${"b".repeat(40)}\n${"c".repeat(40)}`, logPresent: false });
-    expect(result).toMatchObject({ code: 1, admissions: 1 });
-    expect(result.errors).toContain("shared sign-out log unavailable");
+    const mergeBases = `${"b".repeat(40)}\n${"c".repeat(40)}`;
+    expect(await run({ mergeBases, logPresent: false })).toMatchObject({ code: 0, admissions: 1 });
+    const other = `Open sign-outs only\n- 2026-10-17 | Other | ward/other | /other | ${incomingFile} | repo=BigSimmo/Ward-Flow\n`;
+    const clash = await run({ mergeBases, log: other });
+    expect(clash).toMatchObject({ code: 1, admissions: 1 });
+    expect(clash.errors).toContain("files signed out by another session");
   });
 });
 

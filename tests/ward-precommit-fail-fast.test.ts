@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 // Exercise the real CLI on synthetic staged content, with sentinels for costly tool startup.
 const checker = path.resolve(__dirname, "../scripts/pre-commit-checks.mjs");
-function runHook(block: "secret" | "overlap" | "unsigned" | "none" | "lint") {
+function runHook(block: "secret" | "overlap" | "own-ward" | "no-log" | "none" | "lint") {
   const root = mkdtempSync(path.join(tmpdir(), "ward-precommit-fast-"));
   const write = (file: string, content: string) => {
     mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
@@ -29,18 +29,19 @@ function runHook(block: "secret" | "overlap" | "unsigned" | "none" | "lint") {
   );
   write("package.json", '{"type":"module"}');
   copyFileSync(checker, path.join(root, "checker.mjs"));
-  const blocked = !["none", "lint"].includes(block);
-  const source = block === "unsigned" ? "tests/ward-fixture.ts" : blocked ? "source.ts" : "source.js";
+  const blocked = ["secret", "overlap"].includes(block);
+  const source = block === "own-ward" ? "tests/ward-fixture.js" : blocked ? "source.ts" : "source.js";
   write(source, block === "lint" ? "// lint rejection\n" : "export const fixture = 1;\n");
   if (block === "secret") write(".env", ""); // No real credential is needed to exercise the path guard.
   git("add", "--", source, ...(block === "secret" ? [".env"] : []));
   // A clean working copy must not hide the error in the staged snapshot.
   if (block === "lint") write(source, "export const fixture = 1;\n");
-  write(
-    "sign-out.md",
-    "## Active sign-outs\n" +
-      (block === "overlap" ? `- 2026-09-27 | Other owner | ward/other | D:/fixture-other | ${source}\n` : ""),
-  );
+  if (block !== "no-log")
+    write(
+      "sign-out.md",
+      "## Active sign-outs\n" +
+        (block === "overlap" ? `- 2026-09-27 | Other owner | ward/other | D:/fixture-other | ${source}\n` : ""),
+    );
   write("node_modules/eslint/package.json", '{"main":"index.cjs"}');
   write(
     "node_modules/eslint/index.cjs",
@@ -83,13 +84,20 @@ function runHook(block: "secret" | "overlap" | "unsigned" | "none" | "lint") {
 }
 
 describe("pre-commit fail-fast admission", () => {
-  it.each(["secret", "overlap", "unsigned"] as const)("stops before costly checks after %s rejection", (reason) => {
+  it.each(["secret", "overlap"] as const)("stops before costly checks after %s rejection", (reason) => {
     const result = runHook(reason);
     expect(result.code).toBe(1);
     expect(result.output).toContain("BLOCKED:");
     expect(result.lintStarted).toBe(false);
     expect(result.typesStarted).toBe(false);
     expect(result.output).toContain("lint and typecheck not run");
+  });
+  // Q374: the branch or PR is the claim, so neither case is an ownership rejection.
+  it.each(["own-ward", "no-log"] as const)("admits an own unclaimed file (%s) and runs lint", (reason) => {
+    const result = runHook(reason);
+    expect(result.output).not.toContain("BLOCKED:");
+    expect(result.lintStarted).toBe(true);
+    expect(result.code, result.output).toBe(0);
   });
   it("still lints and accepts a clean staged change", () => {
     const result = runHook("none");

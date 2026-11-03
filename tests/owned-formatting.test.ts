@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import os from "node:os";
@@ -52,12 +52,47 @@ it("detects partially staged input before rewriting it", () => {
 });
 it("requires explicit file ownership scope for write mode", () =>
   expect(main(["--write"])).rejects.toThrow("exact owned paths"));
-it("refuses to format when an explicitly named sign-out log is missing", () => {
+// Q374: the branch or PR is the claim. A missing log means no peer holds, so ownership passes
+// and the run reaches the locked local Prettier check (absent in this bare fixture).
+it("formats own files without a claim when an explicitly named sign-out log is missing", () => {
   const { root } = fixture();
   const previous = process.env.WARD_SIGNOUT_FILE;
   process.env.WARD_SIGNOUT_FILE = path.join(root, "absent", "sign-out.md");
   return expect(main(["--write", "--files", "space name.md"], root))
-    .rejects.toThrow("sign-out log unavailable")
+    .rejects.toThrow("Locked local Prettier unavailable")
+    .finally(() => {
+      if (previous === undefined) delete process.env.WARD_SIGNOUT_FILE;
+      else process.env.WARD_SIGNOUT_FILE = previous;
+    });
+});
+it("still refuses to format a file another branch holds in the shared log", () => {
+  const { root } = fixture();
+  const previous = process.env.WARD_SIGNOUT_FILE;
+  const log = path.join(root, "logs", "sign-out.md");
+  mkdirSync(path.dirname(log));
+  writeFileSync(path.join(root, "notes.md"), "note\n");
+  writeFileSync(log, "## Active sign-outs\n- 2026-10-17 | Peer | ward/peer | /elsewhere/peer | notes.md\n");
+  process.env.WARD_SIGNOUT_FILE = log;
+  return expect(main(["--write", "--files", "notes.md"], root))
+    .rejects.toThrow("held by another branch")
+    .finally(() => {
+      if (previous === undefined) delete process.env.WARD_SIGNOUT_FILE;
+      else process.env.WARD_SIGNOUT_FILE = previous;
+    });
+});
+it("still refuses to format a file another branch holds in a claims/ file with no log", () => {
+  const { root } = fixture();
+  const previous = process.env.WARD_SIGNOUT_FILE;
+  const log = path.join(root, "logs", "sign-out.md");
+  mkdirSync(path.join(path.dirname(log), "claims"), { recursive: true });
+  writeFileSync(
+    path.join(path.dirname(log), "claims", "20261017T0100Z-peer.md"),
+    "- 2026-10-17T01:00Z | Peer | ward/peer | /elsewhere/peer | notes.md\n",
+  );
+  writeFileSync(path.join(root, "notes.md"), "note\n");
+  process.env.WARD_SIGNOUT_FILE = log;
+  return expect(main(["--write", "--files", "notes.md"], root))
+    .rejects.toThrow("held by another branch")
     .finally(() => {
       if (previous === undefined) delete process.env.WARD_SIGNOUT_FILE;
       else process.env.WARD_SIGNOUT_FILE = previous;
@@ -65,7 +100,7 @@ it("refuses to format when an explicitly named sign-out log is missing", () => {
 });
 // Skipped on Windows: the default sign-out log is fixed at D:/Repos/ward-flow-logs, so HOME cannot redirect it.
 it.skipIf(process.platform === "win32")(
-  "rejects named files when the default sign-out log is absent off Windows",
+  "formats named own files when the default sign-out log is absent off Windows",
   async () => {
     const { root } = fixture();
     const previous = { file: process.env.WARD_SIGNOUT_FILE, logs: process.env.WARD_FLOW_LOGS, home: process.env.HOME };
@@ -74,7 +109,9 @@ it.skipIf(process.platform === "win32")(
     // Off Windows the default log is ~/ward-flow-logs/sign-out.md, so point HOME at the fixture.
     process.env.HOME = root;
     try {
-      await expect(main(["--write", "--files", "space name.md"], root)).rejects.toThrow("sign-out log unavailable");
+      await expect(main(["--write", "--files", "space name.md"], root)).rejects.toThrow(
+        "Locked local Prettier unavailable",
+      );
     } finally {
       if (previous.file !== undefined) process.env.WARD_SIGNOUT_FILE = previous.file;
       if (previous.logs !== undefined) process.env.WARD_FLOW_LOGS = previous.logs;

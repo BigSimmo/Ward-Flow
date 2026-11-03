@@ -119,21 +119,18 @@ export async function main(args = process.argv.slice(2), root = projectRoot) {
   if (write) {
     const partial = partialStagedFiles(root, files);
     if (partial.length) throw new Error(`Refusing to rewrite partially staged files: ${partial.join(", ")}`);
-    const { unsignedWardFiles, signOutConflicts, withClaimFiles } = await import("./pre-commit-checks.mjs");
+    // Same admission as the commit hook (Q374): the branch or PR is the claim, so your own files
+    // need no sign-out line. An optional shared log only records peer holds; a missing log means
+    // none, while another branch's active hold (log or claims/ file) still refuses the rewrite.
+    const { signOutConflicts, withClaimFiles } = await import("./pre-commit-checks.mjs");
     const log = wardSignOutFile();
-    if (!existsSync(log)) {
-      // Same fail-closed admission as the commit hook on every host.
-      throw new Error("Formatting ownership cannot be established: sign-out log unavailable.");
-    } else {
-      const claims = withClaimFiles(log, readFileSync(log, "utf8"));
-      const branch = git(root, ["branch", "--show-current"]).trim();
-      const missing = unsignedWardFiles(files, claims, branch, root);
-      const clashes = signOutConflicts(files, claims, branch, root);
-      if (missing.length || clashes.length)
-        throw new Error(
-          `Formatting ownership not established: ${[...missing, ...clashes].map((value) => (typeof value === "string" ? value : JSON.stringify(value))).join("; ")}`,
-        );
-    }
+    const claims = withClaimFiles(log, existsSync(log) ? readFileSync(log, "utf8") : "## Active sign-outs\n");
+    const branch = git(root, ["branch", "--show-current"]).trim();
+    const clashes = signOutConflicts(files, claims, branch, root);
+    if (clashes.length)
+      throw new Error(
+        `Formatting refused: files held by another branch: ${clashes.map((clash) => JSON.stringify(clash)).join("; ")}`,
+      );
   }
   const prettierBin = path.join(root, "node_modules/prettier/bin/prettier.cjs");
   if (!existsSync(prettierBin)) throw new Error("Locked local Prettier unavailable; no network fallback.");
