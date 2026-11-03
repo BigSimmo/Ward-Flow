@@ -853,6 +853,7 @@ export function DelaysBoard({
         onOpenChange={setRailOpen}
       >
         <Registers
+          titled={false}
           escalated={escalated}
           attention={attention}
           closedToday={closedToday}
@@ -1304,6 +1305,7 @@ export function DelaysBoard({
                 height="tall"
               >
                 <Registers
+                  titled={false}
                   escalated={escalated}
                   attention={attention}
                   closedToday={closedToday}
