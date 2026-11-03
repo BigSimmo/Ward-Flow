@@ -106,6 +106,31 @@ const ROWS: { id: BedKindId; need: string; who: string }[] = [
   { id: "youth", need: "A youth bed", who: "Youth, locked or open — the age group is the need" },
 ];
 
+/**
+ * A journey still waiting for a bed: open, not admitted and holding no bed. A pulled bed is already
+ * out of allocatable supply, so counting its journey as demand again would show a shortfall for a
+ * person who already holds that bed (as in the forecast). Shared by `bedKindGaps` and
+ * `bedKindBreakdown`, so a Mismatch card and its pop-up always count the same people.
+ */
+function waitsForBed(movement: Movement): boolean {
+  return (
+    isOpen(movement) &&
+    movement.admissionId === undefined &&
+    movement.allocatedBed === undefined &&
+    (movement.stage === "placement_requested" ||
+      movement.stage === "destination_review" ||
+      movement.stage === "accepted_awaiting_bed")
+  );
+}
+
+/**
+ * Each ward's ready beds, reconciled once per ward as the network table and map do. This leaves the
+ * recorded observation untouched when a later confirmation includes an already-pulled bed.
+ */
+function readySupply(units: Unit[], admissions: readonly Admission[]): { unit: Unit; ready: number }[] {
+  return units.map((unit) => ({ unit, ready: bedStates(unit, admissions, [], []).ready }));
+}
+
 /** One row per bed kind, in the locked order above. */
 export function bedKindGaps(
   movements: Movement[],
@@ -120,18 +145,8 @@ export function bedKindGaps(
 
   // A pulled bed is already removed from allocatable supply. Counting its journey as demand
   // again would show a shortfall for a person who already holds that bed (as in the forecast).
-  const waitingForBed = movements.filter(
-    (movement) =>
-      isOpen(movement) &&
-      movement.admissionId === undefined &&
-      movement.allocatedBed === undefined &&
-      (movement.stage === "placement_requested" ||
-        movement.stage === "destination_review" ||
-        movement.stage === "accepted_awaiting_bed"),
-  );
-  // Reconcile reservations once per ward, as the network table and map do. This leaves the
-  // recorded observation untouched when a later confirmation includes an already-pulled bed.
-  const supply = units.map((unit) => ({ unit, ready: bedStates(unit, admissions, [], []).ready }));
+  const waitingForBed = movements.filter(waitsForBed);
+  const supply = readySupply(units, admissions);
 
   return ROWS.map(({ id, need, who }) => {
     const waiting = waitingForBed.filter(
@@ -154,19 +169,10 @@ export function bedKindBreakdown(
   admissions: readonly Admission[] = [],
 ): { waiting: Movement[]; wards: { unit: Unit; beds: number }[] } {
   const waiting = movements
-    .filter(
-      (movement) =>
-        isOpen(movement) &&
-        movement.admissionId === undefined &&
-        movement.allocatedBed === undefined &&
-        (movement.stage === "placement_requested" ||
-          movement.stage === "destination_review" ||
-          movement.stage === "accepted_awaiting_bed") &&
-        bedKindOfMovement(movement.cohort, movement.security) === kind,
-    )
+    .filter((movement) => waitsForBed(movement) && bedKindOfMovement(movement.cohort, movement.security) === kind)
     .sort((x, y) => x.openedAt - y.openedAt);
-  const wards = units
-    .map((unit) => ({ unit, beds: bedsOfKindAtUnit(unit, kind, bedStates(unit, admissions, [], []).ready) }))
+  const wards = readySupply(units, admissions)
+    .map(({ unit, ready }) => ({ unit, beds: bedsOfKindAtUnit(unit, kind, ready) }))
     .filter((entry) => entry.beds > 0)
     .sort((x, y) => y.beds - x.beds || x.unit.name.localeCompare(y.unit.name));
   return { waiting, wards };
@@ -524,17 +530,9 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
  */
 export function freeingCellText(freeing: number | undefined): string {
   /*
-   * 🔴 **`"none"` FOR A KNOWN ZERO — owner ruling 2026-09-06, closing census §8.**
-   *
-   * The three cells disagreed with each other on one line. After `ready === 0` began rendering the
-   * word, a row where all three counts were zero read **`none · 0 · 0`** — Kununurra Adult Open was
-   * the clean case. Three zero counts, one a word and two digits, with nothing on screen saying they
-   * mean the same thing; **the most natural reading of a deliberate difference is that there is
-   * one.** The owner took the option that makes the row internally consistent.
-   *
-   * ⚠️ **`"Not tracked here"` AND `"none"` ARE STILL DIFFERENT STATEMENTS AND MUST STAY SO.**
-   * `undefined` means *nobody told this screen*; `0` means *the ward told us, and the answer is
-   * none*. Collapsing them would be the fabrication this file's other comments exist to prevent.
+   * A known zero reads as the digit 0, like every other count on Capacity (Capacity issue 5, Josh,
+   * 3 Nov 2026, replacing the 6 September "none" ruling). "Not tracked here" and 0 must stay
+   * different statements: `undefined` means nobody told this screen, `0` means the ward told us.
    */
   return freeing === undefined ? "Not tracked here" : countCellText(freeing);
 }

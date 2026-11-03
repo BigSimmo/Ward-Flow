@@ -365,8 +365,11 @@ export function CapacityWardFoot({ row, now }: { row: NetworkWardRow; now: Insta
     recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
   const [closures, setClosures] = useState(false);
   const wardHref = `/ward-flow/ward/${row.unit.id}`;
+  // A ward desk may close beds only on its own ward, the same test as the closure panel's mayAct.
   const mayClose =
-    recordActor.role === "coordinator" || recordActor.role === "bed_manager" || recordActor.role === "ward";
+    recordActor.role === "coordinator" ||
+    recordActor.role === "bed_manager" ||
+    (recordActor.role === "ward" && recordActor.actingUnitId === row.unit.id);
   // Redesign (Josh, 30 Oct): each link shows only when this desk can open its page.
   if (!canOpen(wardHref) && !canOpen(DISCHARGES_HREF) && !mayClose) return null;
   return (
