@@ -1222,10 +1222,17 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // On a phone that corner card sits over the Flow card's "Show all N" buttons, and a click issued
     // after it appears waits on it until the test times out (main CI, 3 Nov 2026). Acknowledge it
     // the way a coordinator would, as the release-gate journey does, before using the queue below.
+    // The tip waits while anything obstructs Home (a sheet, a focused field), so it does not always
+    // appear: wait out its 1.5s delay, and acknowledge it only when it shows.
     const homeHelp = page.getByRole("complementary", { name: "Home help", exact: true });
-    await expect(homeHelp).toBeVisible();
-    await homeHelp.getByRole("button", { name: "Got it", exact: true }).click();
-    await expect(homeHelp).toHaveCount(0);
+    const offered = await homeHelp
+      .waitFor({ state: "visible", timeout: 5_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (offered) {
+      await homeHelp.getByRole("button", { name: "Got it", exact: true }).click();
+      await expect(homeHelp).toHaveCount(0);
+    }
 
     const queue = homeFlowCard(page);
     // Phone Home lists each Flow stage's oldest 5 with "Show all N"; WF-002 may sit further down.
