@@ -52,6 +52,14 @@ describe("front door switch and secret", () => {
     expect(frontDoorRequired({ WARD_FRONT_DOOR: " required " })).toBe(true);
   });
 
+  it("fails closed on Railway unless the switch says off", () => {
+    expect(frontDoorRequired({ RAILWAY_ENVIRONMENT_NAME: "production" })).toBe(true);
+    expect(frontDoorRequired({ RAILWAY_ENVIRONMENT_NAME: "production", WARD_FRONT_DOOR: "requried" })).toBe(true);
+    expect(frontDoorRequired({ RAILWAY_ENVIRONMENT: "production" })).toBe(true);
+    expect(frontDoorRequired({ RAILWAY_ENVIRONMENT_NAME: "production", WARD_FRONT_DOOR: "off" })).toBe(false);
+    expect(frontDoorRequired({ WARD_FRONT_DOOR: "off" })).toBe(false);
+  });
+
   it("refuses a short signing secret", () => {
     expect(frontDoorSecret({ WARD_PASS_SECRET: "short" })).toBeNull();
     expect(frontDoorSecret({ WARD_PASS_SECRET: SECRET })).toBe(SECRET);
@@ -125,8 +133,10 @@ describe("the pass", () => {
 
 describe("demo code", () => {
   it("matches ignoring case, spaces and dashes, and never when no code is set", async () => {
-    expect(await demoCodeMatches("ward 7q4k", { WARD_DEMO_CODE: "WARD-7Q4K" })).toBe(true);
-    expect(await demoCodeMatches("WARD-7Q4J", { WARD_DEMO_CODE: "WARD-7Q4K" })).toBe(false);
+    expect(await demoCodeMatches("ward 7q4k m2xp", { WARD_DEMO_CODE: "WARD-7Q4K-M2XP" })).toBe(true);
+    expect(await demoCodeMatches("WARD-7Q4K-M2XQ", { WARD_DEMO_CODE: "WARD-7Q4K-M2XP" })).toBe(false);
+    // A set code under 12 characters opens nothing, even when typed exactly.
+    expect(await demoCodeMatches("WARD-7Q4K", { WARD_DEMO_CODE: "WARD-7Q4K" })).toBe(false);
     expect(await demoCodeMatches("", {})).toBe(false);
   });
 });
@@ -221,24 +231,24 @@ describe("POST /api/session", () => {
   it("opens the public demo with the right code and pauses after too many wrong ones", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-M2XP");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
-    const right = await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.20"));
+    const right = await POST(post({ demoCode: "ward 7q4k m2xp" }, "192.0.2.20"));
     expect(right.status).toBe(204);
     expect(right.headers.getSetCookie().find((line) => line.startsWith(FRONT_DOOR_PASS_COOKIE))).toContain(
       `Max-Age=${8 * 3600}`,
     );
     for (let attempt = 0; attempt < 10; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.30"))).status).toBe(401);
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.30"))).status).toBe(429);
+    expect((await POST(post({ demoCode: "ward 7q4k m2xp" }, "192.0.2.30"))).status).toBe(429);
   });
 
   it("never opens the signed-in site with a demo code", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
-    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K-M2XP");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
-    expect((await POST(post({ demoCode: "WARD-7Q4K" }))).status).toBe(400);
+    expect((await POST(post({ demoCode: "WARD-7Q4K-M2XP" }))).status).toBe(400);
   });
 });
 
