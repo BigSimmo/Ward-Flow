@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-help-tabs",
-    "date": "2026-10-31",
-    "line": "Help has one search box and three tabs, shows each login only what it can use, and the tour starts when you choose."
-  },
-  {
     "id": "2026-10-31-handover-signoff-by-ward",
     "date": "2026-10-31",
     "line": "Handover sign-offs now belong to each ward, and a site bed manager can sign off its own site's handover."
@@ -93,6 +88,11 @@
     "id": "2026-11-03-waiting-and-all-eds",
     "date": "2026-11-03",
     "line": "Waiting shows Today's follow-up and a clearer daily check. All EDs filters hide other EDs, with a By ED view."
+  },
+  {
+    "id": "2026-11-03-integrity-save-confirmation",
+    "date": "2026-11-03",
+    "line": "Open forms stay with their record, and failed changes keep their answers until the save is confirmed."
   },
   {
     "id": "2026-11-03-one-alerts-switch",
