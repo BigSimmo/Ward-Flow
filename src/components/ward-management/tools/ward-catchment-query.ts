@@ -1,7 +1,7 @@
 /**
- * The suburb or postcode to catchment lookup, without any screen: the Tools sheet's resolver, the
- * Community and ward suburb lookups and the header search all read it (search and forms review,
- * 31 October 2026). Split out of `ward-catchment-resolver.tsx` so the header search loads no React.
+ * The suburb or postcode to catchment lookup, without any screen: the header search reads it
+ * (search and forms review, 31 October 2026). Split out of the old Tools resolver, retired with the
+ * Tools overhaul (#1316), so the header search loads no React.
  */
 import {
   S2015_CATCHMENT_ROWS,
@@ -43,8 +43,6 @@ export interface CatchmentQueryResult {
   readonly results: readonly ResolvedCatchment[];
   readonly notFoundMessage?: string;
 }
-
-export const QUICK_PICK_SUBURBS = ["Perth", "Morley", "Fremantle", "Armadale", "Joondalup", "Rockingham"] as const;
 
 /** Pre-indexed lookup sets for postcodes and suburbs */
 const ROWS_BY_POSTCODE: ReadonlyMap<string, readonly (typeof S2015_CATCHMENT_ROWS)[number][]> = (() => {

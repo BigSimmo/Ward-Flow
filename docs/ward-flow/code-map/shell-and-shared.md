@@ -115,7 +115,7 @@ The compact footer still identifies synthetic data. Bed, admission, decline and 
 continue to use the existing derivations, including unavailable values rather than invented history.
 
 `tools/ward-tools-sheet.tsx` is the shared Tools drawer (Tools review, 15 Oct 2026): one scrolling
-sheet with Change view at the top, then Do now, Look up (All figures from `ward-network-figures.tsx`
+sheet with Change view at the top, then Do now, Look up (All figures from `ward-tool-figures.tsx`
 first, then catchment, contacts from the On-call directory, Form times), Print and share, More pages,
 and one Demo panel (`ward-demo-panel.tsx`) at the foot. The header's Board time pill opens that Demo panel through
 `ward-tools-open.ts`. Appearance, Settings and the Digest are not in Tools: the rail and Settings carry

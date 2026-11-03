@@ -1445,6 +1445,20 @@
       "after": 2,
       "reason": "Drops the What's new (P102) case, which checked that the release-notes list still held the 27 Oct Stay tile line. The list is capped at 20 and rolls off its oldest line when a new one is added (git-publication.md); Josh approved rolling off the oldest line and updating this check on 2 Nov 2026. The Stay tile behaviour itself stays covered by the file's two remaining cases.",
       "approvedOn": "2026-11-02"
+    },
+    {
+      "path": "tests/ward-network-figures.dom.test.tsx",
+      "before": 5,
+      "after": 2,
+      "reason": "Retires the old NetworkFigures view's cases with the view itself (ward-network-figures.tsx), which the Tools overhaul (#1316, Josh 2 Nov 2026) replaced with Key figures (ward-tool-figures.tsx). Josh approved deleting the replaced pieces (Q353, and again on 3 Nov 2026). Re-pointed rather than lost: the occupancy rule (Tools prints the same occupancy as every other page, and no WF- movement reference) now renders ToolFigures in this file; the Ready-equals-readyBedsNow rule moved to ToolFigures in tests/ward-audit-24-4-counts.dom.test.tsx; the Statistics link access rule moved to ToolFigures in tests/ward-access-dead-ends.dom.test.tsx. Dropped because Key figures no longer shows the figure: the Total beds and figure-category filter, Longest wait, and the Deadline passed total that moved with the shared clock. Those figures live on Statistics, one link away. The statistics presentation case stays unchanged.",
+      "approvedOn": "2026-11-03"
+    },
+    {
+      "path": "tests/ward-catchment-resolver.dom.test.tsx",
+      "before": 26,
+      "after": 24,
+      "reason": "The seven cases that rendered the old WardCatchmentResolver view go with the view (ward-catchment-resolver.tsx), which the Tools overhaul (#1316, Josh 2 Nov 2026) replaced with the shared SuburbLookupCard (D-91). Josh approved deleting the replaced pieces (Q353, and again on 3 Nov 2026). Five re-pointed at SuburbLookupCard in this file: opens empty and a quick pick answers, a postcode lists every suburb with Show more, a contested suburb names no single team and draws no team actions, Not found and an unfiled postcode, and Clear. Two dropped because the card has no such feature: the resolver's own heading and the Copy summary button (formatCatchmentSummary keeps its two engine cases here). The engine cases now import ward-catchment-query.ts directly. Under the per-file ceiling, so this is a record rather than a gate condition.",
+      "approvedOn": "2026-11-03"
     }
   ]
 }

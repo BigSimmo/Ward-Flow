@@ -406,7 +406,7 @@ capacity figure anywhere in this group is real.
   production, one test) — A full WA Health Services colour key (EMHS green `#00825E`, NMHS red
   `#990057`, SMHS purple `#5A2476`, WACHS/CAHS blue, statewide, private), sourced from the real
   DOHWA corporate-identity stylesheets, with WCAG AA/AAA text-ink pairings and badge/dot style
-  helpers. Only used by `ward-catchment-resolver.tsx` in production. Key exports:
+  helpers. Used in production by the suburb lookup (`community/community-suburb-lookup-card.tsx`). Key exports:
   `WA_HEALTH_SERVICES_COLOR_KEY`, `getHealthServiceColorDefinition`, `getHealthServiceBadgeStyle`,
   `getHealthServiceDotStyle`.
 - **`src/components/ward-management/ward-modal-focus.ts`** (51 lines, 2 importers) — `"use client"`
