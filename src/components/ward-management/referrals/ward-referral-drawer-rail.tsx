@@ -122,6 +122,8 @@ export function ReferralSummaryRail({
                         <button
                           type="button"
                           className={styles.railJump}
+                          // Named for where it goes, so it never shares a name with the step buttons.
+                          aria-label={`Go to ${row.label}`}
                           onClick={() => (s.isPhone ? s.phOpenStep(step) : s.selectSection(step))}
                         >
                           {glyph}

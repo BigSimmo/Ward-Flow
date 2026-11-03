@@ -85,7 +85,8 @@ test.describe("native history and handover print @mockup", () => {
         .getByRole("dialog", { name: "Tools", exact: true })
         .getByRole("button", { name: /New referral/u })
         .click();
-      const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
+      // RF8 (3 Nov 2026): the drawer only sends, so it is named "New referral".
+      const referral = page.getByRole("dialog", { name: "New referral", exact: true });
       await referral
         .getByRole("group", { name: "Referral sections" })
         .getByRole("button", { name: "Referral", exact: true })
@@ -97,8 +98,8 @@ test.describe("native history and handover print @mockup", () => {
     await referral.getByRole("button", { name: "Close step", exact: true }).click();
     await page.keyboard.press("Escape");
     await page
-      .getByRole("alertdialog", { name: "Close without sending?" })
-      .getByRole("button", { name: "Keep draft", exact: true })
+      .getByRole("alertdialog", { name: "Keep this referral as a draft?" })
+      .getByRole("button", { name: "Keep draft and close", exact: true })
       .click();
     await expect(referral).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => window.history.state.__wfHistoryIndex)).toBe(originalIndex);
