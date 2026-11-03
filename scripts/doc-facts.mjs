@@ -256,7 +256,9 @@ export function applyMarkers(text, factsByName) {
     .split("\n")
     .map((line, index) => {
       for (const match of line.matchAll(fencePattern)) if (match[2] === "start") active.push(match[1]);
-      const fixedRevision = /(?:^|[\s_*])(?:checked|verified|observed|tested)\b.*`[a-f0-9]{7,40}`/iu.test(line);
+      // A commit SHA has at least one a-f letter, so an all-digit token such as `2026110` is not one.
+      const fixedRevision =
+        /(?:^|[\s_*])(?:checked|verified|observed|tested)\b.*`(?=[0-9]*[a-f])[a-f0-9]{7,40}`/iu.test(line);
       const result = line.replace(MARKER, (whole, name, current) => {
         if (active.length || fixedRevision) {
           frozen.push({ line: index + 1, name });

@@ -17,6 +17,16 @@ describe("immutable documentation evidence", () => {
     expect(result.frozen).toEqual([{ line: 2, name: "migration-count" }]);
     expect(result.stale).toHaveLength(1);
   });
+  it("freezes only a commit-SHA token, not an all-digit one such as a date", () => {
+    const dated = `Verified on \`2026110\`: ${marker} migrations.`;
+    const live = applyMarkers(dated, facts);
+    expect(live.frozen).toEqual([]);
+    expect(live.updated).toBe("Verified on `2026110`: <!-- fact:migration-count -->16<!-- /fact --> migrations.");
+    const pinned = `Verified at \`4f2e9a1\`: ${marker} migrations.`;
+    const frozen = applyMarkers(pinned, facts);
+    expect(frozen.frozen).toEqual([{ line: 1, name: "migration-count" }]);
+    expect(frozen.updated).toBe(pinned);
+  });
   it.each(["docs-script-refs:historical", "docs-facts:frozen"])(
     "preserves %s evidence and resumes live updates",
     (fence) => {

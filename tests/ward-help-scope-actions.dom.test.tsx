@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 
@@ -85,6 +85,31 @@ describe("Help action entry points honour current statewide scope", () => {
     expect(screen.queryByTestId("ward-show-me-spot")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Back to Help" }));
     expect(back).toHaveBeenCalledOnce();
+  });
+
+  it("moves focus into the restricted notice and traps Tab inside it", async () => {
+    const outside = document.createElement("button");
+    outside.textContent = "Outside";
+    document.body.append(outside);
+    outside.focus();
+    try {
+      render(<WardShowMe id="rules" onClose={vi.fn()} onBack={vi.fn()} />);
+      const dialog = screen.getByRole("dialog", { name: "Change the pull time limit or ED target" });
+      const back = within(dialog).getByRole("button", { name: "Back to Help" });
+      const close = within(dialog).getByRole("button", { name: "Close" });
+      // jsdom has no layout; the Tab trap only counts controls that have a box.
+      for (const button of [back, close])
+        button.getClientRects = () => [new DOMRect(0, 0, 80, 32)] as unknown as DOMRectList;
+      await waitFor(() => expect(document.activeElement).toBe(back));
+      close.focus();
+      fireEvent.keyDown(close, { key: "Tab" });
+      expect(dialog.contains(document.activeElement)).toBe(true);
+      expect(document.activeElement).toBe(back);
+      fireEvent.keyDown(back, { key: "Tab", shiftKey: true });
+      expect(document.activeElement).toBe(close);
+    } finally {
+      outside.remove();
+    }
   });
 
   it("retains routing and the walkthrough for the statewide coordinator", () => {
