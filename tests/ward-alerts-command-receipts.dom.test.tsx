@@ -108,7 +108,7 @@ function openComposer(role: "coordinator" | "bed_manager") {
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-  fireEvent.click(screen.getByRole("radio", { name: /Tell areas something/u }));
+  fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/u }));
   fireEvent.click(screen.getByRole("button", { name: "Blank" }));
   fireEvent.click(screen.getByRole("button", { name: /^ED desks/u }));
   fireEvent.change(screen.getByLabelText(/^Title$/u), { target: { value: "Synthetic title" } });
