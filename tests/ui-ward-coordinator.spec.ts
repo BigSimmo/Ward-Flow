@@ -22,7 +22,43 @@ async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator
   return row;
 }
 
+/**
+ * Page tips appear 1.5 s after a screen settles, and on a phone the Home tip sits over the Flow
+ * card's "Show all N" button, so a click there could wait out the whole test (3 Nov 2026, the
+ * phone referral journey below, intermittently). These journeys are about the screens under the
+ * tips, so every tip starts out seen. The release-gate journey still proves the Home tip appears.
+ */
+const EVERY_TIP_SEEN = [
+  "command",
+  "capacity",
+  "movements",
+  "referrals",
+  "handover",
+  "ward",
+  "ed",
+  "community",
+  "officer",
+  "statistics",
+  "governance",
+  "settings",
+  "legal-forms",
+  "downtime",
+  "patient",
+  "ed-board",
+  "community-team",
+  "bed-meeting-agenda",
+]
+  .map((topic) => `coordinator:${topic}`)
+  .join(",");
+
 async function gotoCoordinator(page: Page) {
+  await page.addInitScript((seen) => {
+    try {
+      window.localStorage.setItem("ward_flow_choice_help_hints_seen", seen);
+    } catch {
+      // Storage refused: the tip then fails closed and shows nothing anyway.
+    }
+  }, EVERY_TIP_SEEN);
   await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
   // A second same-URL navigation can leave a hidden duplicate of the screen
   // in the tree. Strict getByTestId then fails even though one copy is visible
