@@ -149,6 +149,19 @@ describe("desktop Home Flow: top 5 per stage, then Show all N", () => {
     );
     expect(screen.getByTestId(chosenId!)).toHaveAttribute("aria-pressed", "true");
   });
+
+  it("shows every row in each stage while a hero count highlights, so no highlighted row is hidden", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CoordinatorScreen />
+      </WardFlowProvider>,
+    );
+    const { section, total } = cappedStage();
+    fireEvent.click(screen.getAllByRole("button", { name: /Tier 1 open movements/u })[0]!);
+    expect(screen.getByText(/highlighted, all rows stay$/u)).toBeInTheDocument();
+    expect(within(section).getAllByTestId(/^ward-queue-row-/)).toHaveLength(total);
+    expect(within(section).queryByRole("button", { name: /^Show (all|top) \d+$/u })).toBeNull();
+  });
 });
 
 describe("Placement panel redesign", () => {

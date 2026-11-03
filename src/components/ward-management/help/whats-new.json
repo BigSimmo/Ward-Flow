@@ -1,30 +1,5 @@
 [
   {
-    "id": "2026-10-31-redesign-referrals",
-    "date": "2026-10-31",
-    "line": "Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot."
-  },
-  {
-    "id": "2026-10-31-redesign-records",
-    "date": "2026-10-31",
-    "line": "Waiting, Alerts, Legal forms, Patients, Movements and the patient record have a new look for each desk."
-  },
-  {
-    "id": "2026-10-31-redesign-ed-transport",
-    "date": "2026-10-31",
-    "line": "The ED board, All EDs, Transport and Out of area have a new look, with a simpler actions menu on the ED board."
-  },
-  {
-    "id": "2026-10-31-redesign-network",
-    "date": "2026-10-31",
-    "line": "Places, All wards, Community team, On-call and Seclusion are tidier, and names wrap in full."
-  },
-  {
-    "id": "2026-10-31-redesign-add-patient",
-    "date": "2026-10-31",
-    "line": "Add a patient checks for duplicates as you type, and its Add patient button says what is still needed."
-  },
-  {
     "id": "2026-10-31-settings-by-login",
     "date": "2026-10-31",
     "line": "Settings is one page shaped by your login, with a short Rules that affect you card. Glare is now Bright light."
@@ -90,13 +65,38 @@
     "line": "Unconfirmed saves retry safely, closed beds stop planned arrivals, and a missing legal form shows No form recorded."
   },
   {
-    "id": "2026-11-03-home-flow",
+    "id": "2026-11-03-reminders-in-alerts",
     "date": "2026-11-03",
-    "line": "Home now shows Needs you and Flow, with tabs for each stage, from needing a bed to moving."
+    "line": "Remind me reminders now show in Alerts when they are due. Tap Done to clear one."
   },
   {
     "id": "2026-11-03-one-page-scroll",
     "date": "2026-11-03",
     "line": "Pages scroll as one, with headings pinned under the top bar, and a click outside a drawer now closes it."
+  },
+  {
+    "id": "2026-11-03-home-flow",
+    "date": "2026-11-03",
+    "line": "Home now shows Needs you and Flow, with tabs for each stage, from needing a bed to moving."
+  },
+  {
+    "id": "2026-11-03-report-data-correctness",
+    "date": "2026-11-03",
+    "line": "ED journey totals, community origins and downtime departure lists now use consistent meanings."
+  },
+  {
+    "id": "2026-11-03-coordinator-quick-actions",
+    "date": "2026-11-03",
+    "line": "Tools has Quick actions for the bed coordinator, with Ward updates listing wards not confirmed this shift."
+  },
+  {
+    "id": "2026-11-03-dropdowns-tips-dots",
+    "date": "2026-11-03",
+    "line": "Neater drop-down lists, graph dots that stay put when pressed, and page tips once per device with Turn off tips."
+  },
+  {
+    "id": "2026-11-03-waiting-and-all-eds",
+    "date": "2026-11-03",
+    "line": "Waiting shows Today's follow-up and a clearer daily check. All EDs filters hide other EDs, with a By ED view."
   }
 ]

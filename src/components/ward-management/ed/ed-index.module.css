@@ -1179,3 +1179,60 @@
     inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 }
+
+/* Diagnosed issues E1 (3 Nov 2026): the shown line says what the filters keep and the order. */
+.showing {
+  white-space: normal;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--wf-s-3);
+  color: var(--wf-ink-2);
+}
+
+.showingOrder {
+  color: var(--wf-ink-3);
+}
+
+/* The card's place in the chosen order, so Order visibly reshuffles the grid. */
+.rank {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-right: var(--wf-s-2);
+  padding: 0 5px;
+  border-radius: var(--wf-r-pill, 999px);
+  background: var(--wf-surface-2, var(--wf-hover));
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  vertical-align: 1px;
+}
+
+/* Diagnosed issues E2: the snapshot rail's head and its By ED / By service switch. */
+.snapHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.snapTotal {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.snapSwitch {
+  align-self: flex-start;
+}
+
+.phoneShowing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+}

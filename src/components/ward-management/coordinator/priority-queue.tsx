@@ -532,8 +532,10 @@ export function PriorityQueue({
           const isReferral = stage.id === "referral";
           const all = isReferral ? referralQueue : groupRows(stage.id);
           const open = openGroups.has(stage.id);
+          // A hero highlight shows every row, as the old queue did, so no highlighted row hides below the cap.
+          const uncapped = open || highlight !== undefined;
           // Desktop keeps a chosen patient below the cap in view, in its own place (as the old queue did).
-          const shown = open
+          const shown = uncapped
             ? all
             : all.filter((row, index) => index < cap || (!isReferral && !phone && (row as Movement).id === selectedId));
           return (
@@ -573,7 +575,7 @@ export function PriorityQueue({
                 ) : (
                   (shown as Movement[]).map(movementRow)
                 )}
-                {all.length > cap && !isReferral ? (
+                {all.length > cap && !isReferral && highlight === undefined ? (
                   <button
                     type="button"
                     className={styles.queueMore}
@@ -747,5 +749,3 @@ export function PriorityQueue({
     </Card>
   );
 }
-
-/** A phone shows one stage at a time: the first with patients in it (referrals are listed under Needs you). */

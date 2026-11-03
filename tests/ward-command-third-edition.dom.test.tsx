@@ -119,35 +119,35 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // The exceptions drawer's default tab ("Exceptions") carries no `<h2>`, and its other three
     // tabs are `hidden` (not merely visually hidden — the native `hidden` attribute, which
     // Testing Library's accessibility-tree-aware `getByRole` already excludes) until a coordinator
-    // switches tabs. So a plain, unfiltered level-2-heading query is exactly the hero and the four
+    // switches tabs. So a plain, unfiltered level-2-heading query is exactly the hero and the three
     // headed panels this test is about, in DOM order — nothing here reaches into an inactive
     // tabpanel to manufacture that count.
     const headings = screen.getAllByRole("heading", { level: 2 });
-    expect(headings.length, "expected the hero and the four headed top-level panels, found a different count").toBe(5);
+    // Later today steps aside while Placement is open, so Placement keeps the whole right column.
+    expect(headings.length, "expected the hero and the three headed top-level panels, found a different count").toBe(4);
     expect(headings.map((heading) => heading.textContent)).toEqual([
       atRest[0],
       "ED pressure",
       "Beds that fit",
       "Placement",
-      "Later today",
     ]);
     expect(screen.queryByTestId("home-placement-prompt")).not.toBeInTheDocument();
   });
 
-  it("reads the queue, then the shortlist on the far right once a patient is selected", () => {
+  it("reads the queue, then opens Placement as a drawer once a patient is selected", () => {
     // Owner, 8 Oct 2026. Proven by real DOM order. Home v7 (Josh, 22 Oct 2026): State bedflow is
     // no longer on Home; it sits at the foot of Capacity.
     renderCoordinator();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     const body = screen.getByTestId("ward-coordinator-body");
     const queue = within(body).getByTestId("ward-queue-row-WF-001");
-    const shortlist = within(body).getByLabelText("Placement");
+    // H7 (Josh, 3 Nov 2026): Placement opens as the patient drawer over Home, like the Capacity
+    // pop-up, so the queue stays on the page behind it rather than sharing a column order.
+    const shortlist = screen.getByLabelText("Placement");
 
     expect(within(body).queryByLabelText("State Bedflow")).not.toBeInTheDocument();
-    expect(
-      queue.compareDocumentPosition(shortlist) & Node.DOCUMENT_POSITION_FOLLOWING,
-      "the shortlist panel must follow the priority queue",
-    ).toBeTruthy();
+    expect(queue).toBeInTheDocument();
+    expect(screen.getByTestId("home-placement-drawer")).toContainElement(shortlist);
   });
 
   it("keeps the registers closed until Registers opens them, above the columns", () => {
@@ -213,9 +213,10 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
       within(shortlist).getByText("Eligibility checks · Mental Health Unit", { selector: "summary" }),
     ).toBeInTheDocument();
 
-    fireEvent.click(within(shortlist).getByTestId("ward-shortlist-override-toggle"));
+    // H7 (Josh, 3 Nov 2026): Refer and Override sit in the drawer's pinned foot, outside its body.
+    fireEvent.click(screen.getByTestId("ward-shortlist-override-toggle"));
     expect(
-      within(shortlist).getByRole("combobox", {
+      screen.getByRole("combobox", {
         name: "Reason for overriding the shortlist for Mental Health Unit",
       }),
     ).toBeInTheDocument();

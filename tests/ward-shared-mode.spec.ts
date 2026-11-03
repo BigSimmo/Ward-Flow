@@ -78,8 +78,20 @@ function queueRow(page: Page, movement = MOVEMENT): Locator {
   return homeFlowCard(page).getByTestId(`ward-queue-row-${movement}`);
 }
 
+/**
+ * Placement is the patient drawer over Home on every screen size (H7, Josh 3 Nov 2026), so a drawer
+ * left open by an earlier step covers the queue. Close it, as a coordinator would, before choosing.
+ */
+async function closePlacement(page: Page) {
+  const close = page.getByRole("button", { name: "Close placement and clear selection" });
+  if ((await close.count()) === 0) return;
+  await close.click();
+  await expect(placement(page)).toHaveCount(0);
+}
+
 /** Show the movement's Flow row, opening each stage's "Show all N" when the row is past its first rows. */
 async function revealRow(page: Page, movement = MOVEMENT): Promise<Locator> {
+  await closePlacement(page);
   await showEveryoneWaitingOn(page);
   const queue = homeFlowCard(page);
   const row = queueRow(page, movement);
@@ -136,6 +148,7 @@ async function chooseOtherTier(page: Page, tier: Locator, avoid?: string, moveme
 
 /** A queued movement other than MOVEMENT, for a second record to change. */
 async function anotherMovement(page: Page): Promise<string> {
+  await closePlacement(page);
   await showEveryoneWaitingOn(page);
   const rows = homeFlowCard(page).locator('[data-testid^="ward-queue-row-"]');
   await expect(rows.first()).toBeVisible();

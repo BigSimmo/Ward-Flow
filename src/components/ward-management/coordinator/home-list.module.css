@@ -501,11 +501,13 @@
    empty space under them. Taller than the screen, the column scrolls itself. Not on phone (Home and
    Activity design, approved by Josh 31 Oct 2026). */
 @media (min-width: 64rem) {
+  /* Pinned just under the top bar and capped to the window below it; at 16px it slid behind the
+     bar (D-95, 3 Nov 2026). */
   .stickyCol {
     position: sticky;
-    top: var(--wf-s-4);
+    top: var(--ward-sticky-top, 4.5rem);
     align-self: start;
-    max-height: calc(100dvh - var(--wf-s-8, 32px) * 2);
+    max-height: var(--ward-rail-height, calc(100dvh - 6rem));
     overflow-y: auto;
   }
 }

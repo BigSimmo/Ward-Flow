@@ -118,6 +118,14 @@
   outline-offset: -1px;
 }
 
+/* Keyboard focus keeps the kit's 2px ring on the chosen stage too. */
+.stagePills.stagePills [aria-selected="true"]:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+
 /* One section per stage inside the Flow card. */
 .group + .group {
   border-top: 1px solid var(--wf-line);

@@ -1180,6 +1180,15 @@ label.todoMain:has(.todoTick:focus-visible) {
   }
 }
 
+/* Stacked full width (tablet and narrow desktop) there is no neighbouring card to match, so the
+   pane grows with the page instead of scrolling inside a 28rem box (D-95, 3 Nov 2026). */
+@media (min-width: 46.5rem) and (max-width: 70rem) {
+  .flowBody {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
 /* Phone: the board keeps its filter on its own line, tiles drop to four a row with the number,
    glyph and stay, the to do columns stack, and every control keeps a 48px target. Desktop is
    unchanged. */

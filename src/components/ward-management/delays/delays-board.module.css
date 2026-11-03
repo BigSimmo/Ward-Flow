@@ -1408,7 +1408,8 @@ button.stat:hover .statV {
 
 .gLane {
   display: grid;
-  grid-template-columns: 9.5rem minmax(0, 1fr);
+  /* Diagnosed issues W1 (3 Nov 2026): wide enough for "12 waiting · 3 over 8h" in one line. */
+  grid-template-columns: 11rem minmax(0, 1fr);
   align-items: stretch;
   border-bottom: 1px solid var(--wf-line);
 }
@@ -1437,9 +1438,20 @@ button.gLaneL:hover {
   background: var(--wf-hover);
 }
 
+/* W1: a pressed lane tints its whole row, never a box that overlaps the dots, and the other
+   lanes fade, so the chosen group reads at a glance. */
 .gLaneL[aria-pressed="true"] {
+  background: none;
+  box-shadow: none;
+  color: var(--wf-accent-ink);
+}
+
+.gLane:has(> .gLaneL[aria-pressed="true"]) {
   background: var(--wf-accent-tint);
-  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.gDots:has(.gLaneL[aria-pressed="true"]) > .gLane:not(.gAxis):not(:has(> .gLaneL[aria-pressed="true"])) > * {
+  opacity: 0.4;
 }
 
 .gLaneL b {
@@ -1452,7 +1464,7 @@ button.gLaneL:hover {
   gap: 5px;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
-  white-space: nowrap;
+  flex-wrap: wrap;
 }
 
 .gPlot {
@@ -1700,9 +1712,11 @@ button.gLaneL:hover {
   border-color: var(--wf-line-3);
 }
 
+/* W1: the chosen cell keeps inside its own edge, so it never covers its neighbours. */
 .mxOn {
-  outline: 2px solid var(--wf-accent);
-  outline-offset: 1px;
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
 }
 
 .mxZero {
