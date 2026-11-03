@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// Before you sign out files: who else is signed out on them, and which other unfolded branches
-// already change them? Light git only.
+// Before you edit files: who else holds them, and which other unfolded branches already change
+// them? Light git only.
 //
 //   node scripts/ward-flow/sign-out-check.mjs <file> [<file> ...]
 //
-// Lists, per file: sign-out.md entries from this repository, and every other local task branch
-// (not yet in main) whose changes since main touch the file. Exit 1 if any clash, so
-// you stop and tell the coordinator before editing.
+// Ownership (Q374): the branch or PR is the claim, so you need no sign-out line of your own. An
+// optional shared log (sign-out.md plus claims/ beside it) only records peer holds; a missing log
+// means none. Lists, per file: another branch's active hold in that log, and every other local task
+// branch (not yet in main) whose changes since main touch the file. Exit 1 if any clash, so you
+// stop and tell the coordinator before editing.
 import { execFile, execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -16,13 +18,9 @@ import os from "node:os";
 
 const git = (argv) => execFileSync("git", argv, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 const root = git(["rev-parse", "--show-toplevel"]);
-const {
-  approvedTakeoverFiles,
-  isPublicWardFlowCheckout,
-  scopedActiveSignOutLines,
-  signOutConflicts,
-  unsignedWardFiles,
-} = await import(pathToFileURL(path.join(root, "scripts/pre-commit-checks.mjs")).href);
+const { approvedTakeoverFiles, isPublicWardFlowCheckout, scopedActiveSignOutLines, signOutConflicts } = await import(
+  pathToFileURL(path.join(root, "scripts/pre-commit-checks.mjs")).href
+);
 const standaloneWardFlow = isPublicWardFlowCheckout(root);
 // The line that "folded" is measured against. The legacy integration branch is absent from a fresh
 // clone, so fall back to the local view of main rather than crashing; with no line at all, the
@@ -115,6 +113,9 @@ function readSignOutText({ reportMissing = false } = {}) {
       console.log(`sign-out-check: sign-out log missing at ${SIGN_OUT}; stale entries not checked.`);
       process.exit(0);
     }
+    // No log means no logged peer holds. Claim files beside where it would be still count, and an
+    // unreadable claims folder still throws (fails closed).
+    if (error.code === "ENOENT") return withClaimFiles(SIGN_OUT, "## Active sign-outs\n");
     console.error(
       `sign-out-check: sign-out log unavailable at ${SIGN_OUT} (${error.code ?? "read failed"}); ownership cannot be established.`,
     );
@@ -200,30 +201,8 @@ const history = git([
   "--",
   ...toCheck,
 ]);
-function formatSignOutHint(targetFiles) {
-  const unsigned =
-    typeof unsignedWardFiles === "function" ? unsignedWardFiles(targetFiles, signOutText, current, root) : [];
-  if (!unsigned || unsigned.length === 0) return;
-
-  const today = new Date().toISOString().slice(0, 10);
-  const normRoot = root.replace(/\\/g, "/");
-  const branchName = current || "<branch>";
-  const lineTemplate = `- ${today} | <Your Name> | ${branchName} | ${normRoot} | ${unsigned.join(", ")}. repo=BigSimmo/Ward-Flow.`;
-
-  console.log("");
-  console.log(`sign-out hint: ${unsigned.length} file(s) without your active claim in ${SIGN_OUT}:`);
-  for (const file of unsigned) {
-    console.log(`  MISSING SELF-CLAIM  ${file}`);
-  }
-  console.log("  For a single-user interactive session, bypass this check via 1-command:");
-  console.log('    SKIP_SIGNOUT_GUARD=1 git commit -m "..."');
-  console.log(`  Or add your sign-out claim to ${SIGN_OUT}:`);
-  console.log(`    ${lineTemplate}`);
-}
-
 if (!history) {
   console.log(`sign-out-check: no clash for ${toCheck.length} file(s); no unfolded task commit touches them.`);
-  formatSignOutHint(toCheck);
   process.exit(0);
 }
 
@@ -264,7 +243,6 @@ for (const [index, branch] of unfolded.entries()) {
 for (const { file, branch } of touching) console.log(`ALSO CHANGED  ${file}  on unfolded branch ${branch}`);
 if (touching.length === 0) {
   console.log(`sign-out-check: no clash for ${toCheck.length} file(s) across ${branches.length} task branches.`);
-  formatSignOutHint(toCheck);
   process.exit(0);
 }
 console.log("sign-out-check: clash found. Tell the coordinator before editing these files.");
