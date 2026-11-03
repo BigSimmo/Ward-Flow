@@ -85,6 +85,9 @@
   letter-spacing: -0.015em;
   color: var(--wf-hero-ink);
   overflow-wrap: break-word;
+  /* Design brief (Josh, 3 Nov 2026): a title that wraps breaks into two even lines, never one
+   * word left alone ("62 waiting across 10 / EDs"). */
+  text-wrap: balance;
   min-width: 0;
   max-width: 100%;
 }
