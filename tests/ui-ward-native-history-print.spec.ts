@@ -85,8 +85,7 @@ test.describe("native history and handover print @mockup", () => {
         .getByRole("dialog", { name: "Tools", exact: true })
         .getByRole("button", { name: /New referral/u })
         .click();
-      // RF8 (3 Nov 2026): the drawer only sends, so it is named "New referral".
-      const referral = page.getByRole("dialog", { name: "New referral", exact: true });
+      const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
       await referral
         .getByRole("group", { name: "Referral sections" })
         .getByRole("button", { name: "Referral", exact: true })
