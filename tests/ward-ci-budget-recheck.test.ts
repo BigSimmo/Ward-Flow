@@ -108,7 +108,7 @@ describe("budget recheck workflow", () => {
 
   it("runs on pushes to main and auto-merge arming only, with main's own script and no write access beyond re-running jobs", () => {
     expect(workflow).toMatch(
-      /^on:\n {2}push:\n {4}branches: \[main\]\n {2}pull_request_target:\n {4}types: \[auto_merge_enabled\]\n {4}branches: \[main\]\n\n/mu,
+      /^on:\n {2}push:\n {4}branches: \[main\]\n {4}paths:\n(?: {6}- "[^"\n]+"\n)+ {2}pull_request_target:\n {4}types: \[auto_merge_enabled\]\n {4}branches: \[main\]\n\n/mu,
     );
     // pull_request_target must only ever run main's script: no PR ref, head or repository checkout.
     expect(workflow).toMatch(/^ {10}ref: main$/mu);
@@ -117,6 +117,29 @@ describe("budget recheck workflow", () => {
     expect(workflow).not.toMatch(/contents: write|pull-requests: write|secrets\./u);
     expect(workflow).toContain("persist-credentials: false");
     expect(workflow).toContain("run: node scripts/ward-ci-public/budget-recheck.mjs");
+  });
+
+  it("re-measures on a main push only when it touched what the build or its budget reads", () => {
+    const paths = [
+      ...(/^ {4}paths:\n((?: {6}- "[^"\n]+"\n)+)/mu.exec(workflow)?.[1] ?? "").matchAll(/"([^"]+)"/gu),
+    ].map((match) => match[1]);
+    for (const required of [
+      "src/**",
+      "package.json",
+      "package-lock.json",
+      "next.config.ts",
+      "script-budget.json",
+      "scripts/check-script-budget.mjs",
+      "scripts/ward-ci-public/**",
+      ".github/workflows/ward-flow.yml",
+    ])
+      expect(paths).toContain(required);
+    // Docs-only merges must not re-run armed PRs' builds; no catch-all and no negation patterns.
+    expect(paths.some((entry) => entry.startsWith("docs") || entry.startsWith("!") || entry === "**")).toBe(false);
+    // The pull_request_target arming trigger stays unfiltered.
+    expect(workflow).toMatch(
+      / {2}pull_request_target:\n {4}types: \[auto_merge_enabled\]\n {4}branches: \[main\]\n\n/u,
+    );
   });
 
   it("never touches auto-merge state", () => {
@@ -169,5 +192,36 @@ describe("merge-latest-main", () => {
     const result = spawnSync(process.execPath, [script], { cwd: pr, encoding: "utf8" });
     expect(result.status).toBe(1);
     expect(result.stderr).toMatch(/::error::This pull request conflicts with main/u);
+  });
+});
+
+describe("conflicts fail in the scope plan job", () => {
+  const ci = readFileSync(new URL("../.github/workflows/ward-flow.yml", import.meta.url), "utf8");
+  const job = (name: string) => {
+    const start = ci.indexOf(`\n  ${name}:\n`);
+    const next = ci.slice(start + 1).search(/\n {2}[a-z][a-z0-9_-]*:\n/u);
+    return ci.slice(start, next < 0 ? undefined : start + 1 + next);
+  };
+
+  it("merges the current main as the plan job's last step on pull requests, before any other job starts", () => {
+    const plan = job("plan");
+    const steps = [...plan.matchAll(/^ {6}- (?:name|uses): ([^\n]+)$/gmu)].map((match) => match[1]);
+    expect(steps.at(-1)).toBe("Fail early when this pull request conflicts with main");
+    expect(plan).toContain(
+      "      - name: Fail early when this pull request conflicts with main\n        if: ${{ github.event_name == 'pull_request' }}\n        run: node scripts/ward-ci-public/merge-latest-main.mjs",
+    );
+    // Every other job needs the plan (directly or through it), so a conflict stops them all, and
+    // Ward Flow required fails because the plan did not succeed.
+    expect(job("required")).toContain('test "$PLAN_RESULT" = success');
+    for (const name of ["static", "backend", "unit", "browser-build", "release-gate", "build", "coverage"])
+      expect(job(name)).toMatch(/^ {4}needs: (?:plan|\[plan\b[^\n]*\])$/mu);
+  });
+
+  it("still measures the production build's script budget on the PR merged with the current main", () => {
+    const build = job("build");
+    const merge = build.indexOf("run: node scripts/ward-ci-public/merge-latest-main.mjs");
+    expect(merge).toBeGreaterThan(0);
+    // The budget step is budget-gate.mjs (it runs check-script-budget.mjs on the merged build).
+    expect(merge).toBeLessThan(build.indexOf("run: node scripts/ward-ci-public/budget-gate.mjs"));
   });
 });

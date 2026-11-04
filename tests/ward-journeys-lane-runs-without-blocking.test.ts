@@ -64,7 +64,7 @@ describe("the public Ward Flow browser journeys lane", () => {
     const required = job("required");
     expect(required).toContain("if: always()");
     expect(required).toContain(
-      "needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, secret-scan, build, coverage]",
+      "needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, coverage]",
     );
     expect(required).toContain("BROWSER_RESULT: ${{ needs.browser.result }}");
     expect(required).toContain("RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}");
