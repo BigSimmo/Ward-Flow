@@ -412,3 +412,54 @@
 .tool[data-open] .rowText strong {
   color: var(--wf-accent-ink);
 }
+
+/* Polish (3 Nov 2026): a quiet count beside each group title, and Show more for long groups. */
+.groupHeading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.groupCount {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--wf-ink-off);
+}
+
+.showMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.showMore:hover {
+  background: var(--wf-hover);
+}
+
+.showMore:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+
+.showMore svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 46.4375rem) {
+  .showMore {
+    min-height: 44px;
+  }
+}
