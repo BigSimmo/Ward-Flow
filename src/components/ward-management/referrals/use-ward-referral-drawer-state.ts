@@ -1086,7 +1086,13 @@ export function useWardReferralDrawerState({
     },
     {
       label: "Catchment",
-      value: catchmentNotKnown ? "Catchment not known" : catchmentConfirmed ? catchmentTeam : "To confirm",
+      value: catchmentNotKnown
+        ? "Catchment not known"
+        : catchmentConfirmed
+          ? catchmentTeam
+          : catchmentTeam.trim()
+            ? `${catchmentTeam.trim()}, suggested`
+            : "To confirm",
       state: catchmentAnswered ? "done" : "needed",
     },
     { label: "From", value: originLabel || "Needed", state: originValid ? "done" : "needed" },

@@ -229,11 +229,13 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await newPatient.getByLabel("Date of birth", { exact: true }).fill("02/01/1990");
     await newPatient.getByLabel("UMRN", { exact: true }).fill("UM990703");
     await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
-    await newPatient.getByRole("button", { name: "Add patient" }).click();
+    await newPatient.getByRole("button", { name: "Add and use for this referral" }).click();
     await expect(sheet).toContainText("Communityfield, Synthetic");
     await sheet.getByLabel("Age band", { exact: true }).selectOption("Adult");
+    // RF1 (3 Nov 2026): Albany points to one country team, so no region is suggested and the region
+    // field shows. Once a region is chosen the card offers the whole catchment as one suggestion.
     await sheet.getByLabel("Home region", { exact: true }).selectOption("Perth Metropolitan");
-    await sheet.getByRole("button", { name: "Confirm catchment" }).click();
+    await sheet.getByTestId("ward-referral-use-catchment").click();
 
     // The source this step is actually proving: a community team raising the referral, per this
     // file's own header comment on why "raises" (not "receives") is the real, wired mechanism.

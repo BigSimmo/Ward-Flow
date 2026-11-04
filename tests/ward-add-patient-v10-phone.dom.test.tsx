@@ -60,7 +60,14 @@ describe("Add a patient v10", () => {
       // Redesign (30 Oct 2026): the hero carries no figure; the Identity card's head holds the count.
       expect(screen.getByTestId("ward-add-patient-phone-hero")).not.toHaveTextContent("0/4");
       expect(screen.getByTestId("ward-add-patient-form")).toHaveTextContent("0 of 4 required");
-      expect(screen.getByText("Gender and Aboriginal status")).toBeInTheDocument();
+      // RF7 (Josh, 3 Nov 2026): the folded sections replace the "On a larger screen" row, so a
+      // phone can add every detail, and the head carries a plain Cancel.
+      expect(screen.queryByText("Gender and Aboriginal status")).not.toBeInTheDocument();
+      expect(screen.getByRole("radiogroup", { name: "Gender" })).toBeInTheDocument();
+      expect(screen.getByTestId("ward-add-patient-more-details")).toBeInTheDocument();
+      expect(screen.getByTestId("ward-add-patient-phone-hero")).toContainElement(
+        screen.getByRole("link", { name: "Cancel and go back to patient search" }),
+      );
       expect(screen.getByTestId("ward-add-patient-form").closest("main")).toHaveAttribute("data-phone-form", "true");
       expect(screen.getByTestId("ward-add-patient-submit")).toBeInTheDocument();
     } finally {

@@ -77,6 +77,7 @@ const LEGACY_ORDER = [
   "2026-11-03-integrity-save-confirmation",
   "2026-11-03-journey-recovery",
   "2026-11-03-one-alerts-switch",
+  "2026-11-03-simpler-new-referral",
 ];
 
 /**
