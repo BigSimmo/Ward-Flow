@@ -424,8 +424,7 @@ export function useWardReferralDrawerState({
   const [openingDraft] = useState(() => (kept ? "" : draftFingerprint(draftNow)));
   const draftJson = draftFingerprint(draftNow);
 
-  // The enclosing Sheet or standalone useWardModalFocus owns the shared scroll lock.
-  // A second per-drawer save/restore raced with stacked sheets and could leave body locked.
+  // The enclosing Sheet or useWardModalFocus owns the scroll lock: a second save/restore raced stacked sheets.
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
@@ -694,25 +693,25 @@ export function useWardReferralDrawerState({
     setRiskFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  const { newPatientError, setNewPatientError, pendingNewPatient, addNewPatient } = useReferralPatientRegistration({
-    patients,
-    generation: worldGeneration,
-    dispatch,
-    now,
-    dayZero,
-    role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
-    registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
-    requiresRegistrationScope: access.scope.kind === "ward",
-    allowed: addPatientGate.allowed,
-    reason: addPatientGate.reason,
-    patient: newPatient,
-    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
-    intentVersion: registrationDraft.intentVersion,
-    getIntentVersion: registrationDraft.getIntentVersion,
-  });
+  const { newPatientError, setNewPatientError, pendingNewPatient, newPatientPending, addNewPatient } =
+    useReferralPatientRegistration({
+      patients,
+      generation: worldGeneration,
+      dispatch,
+      now,
+      dayZero,
+      role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
+      registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
+      requiresRegistrationScope: access.scope.kind === "ward",
+      allowed: addPatientGate.allowed,
+      reason: addPatientGate.reason,
+      patient: newPatient,
+      onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
+      intentVersion: registrationDraft.intentVersion,
+      getIntentVersion: registrationDraft.getIntentVersion,
+    });
 
-  // Live capacity for the patient's cohort and the chosen bed security.
-  // Cheap enough to work out on each render, and the cohort can come from the record or the age band.
+  // Live capacity for the patient's cohort (from the record or age band) and chosen bed security.
   const realTimeMatch = (() => {
     const patientCohort = movementCohort ?? ageBand;
     // A ward never refers to itself (Qodo's review), so the sending ward is not offered.
@@ -1309,6 +1308,7 @@ export function useWardReferralDrawerState({
     newPatientError,
     setNewPatientError,
     pendingNewPatient,
+    newPatientPending,
     guardKeepRef,
     confirmationOpen,
     setConfirmationOpen,

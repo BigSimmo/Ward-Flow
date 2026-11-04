@@ -1,6 +1,7 @@
+import { updateExpectedDischargeDate } from "./ward-expected-discharge-update";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { type CountedFigure, nextUnchangedShifts } from "./capacity/shift-confirmations";
-import { DISCHARGE_ROLE_LABELS, isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
+import { isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { nextStepUndoSeq, withUndoRecord } from "./ward-undo";
 import { numberedBedKind } from "./ward-bed-designation";
@@ -237,31 +238,9 @@ export function reduceBedEvent(
       if (typeof event.expectedDischargeAt !== "number" || !Number.isFinite(event.expectedDischargeAt)) {
         return reject(state, event, `UPDATE_EXPECTED_DISCHARGE expectedDischargeAt must be a valid timestamp`);
       }
-      const isDateMove =
-        admission.expectedDischargeAt !== null && admission.expectedDischargeAt !== event.expectedDischargeAt;
-      const updated: Admission = {
-        ...admission,
-        expectedDischargeAt: event.expectedDischargeAt,
-        dischargeDateMoves: isDateMove ? admission.dischargeDateMoves + 1 : admission.dischargeDateMoves,
-        dischargeDateSetAt: event.now,
-        // Walkthrough D8 (25 Sept 2026): the ward's role only when a ward set it. A coordinator is not
-        // the ward, and the approved role list has no other label, so the role is not recorded. Q66
-        // (31 Oct 2026): new records save "Nurse in charge"; older ones keep "Ward manager".
-        dischargeDateSetBy: event.role === "ward" ? DISCHARGE_ROLE_LABELS[0] : null,
-      };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      const withDate = replaceAdmission(state, admission.id, updated);
-      // Pending linked releases follow the stay's expected discharge date. Completed releases
-      // retain their historical dates, and changing a plan does not restate confirmation.
-      return {
-        ...withDate,
-        bedReleases: withDate.bedReleases.map((release) =>
-          release.admissionId === admission.id && release.state !== "discharged"
-            ? { ...release, expectedAt: event.expectedDischargeAt }
-            : release,
-        ),
-      };
+      return updateExpectedDischargeDate(state, admission, event.expectedDischargeAt, event.now, event.role);
     }
 
     case "CLEAR_STAY_DISCHARGE_BLOCKER": {

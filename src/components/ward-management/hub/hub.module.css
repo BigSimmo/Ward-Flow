@@ -48,6 +48,12 @@
   min-width: 0;
 }
 
+/* The column is the shared sticky rail (data-wf-rail), capped at the window height. Its cards keep
+   their own height so the rail scrolls, rather than squashing the preview and hiding its actions. */
+.hubRight > * {
+  flex-shrink: 0;
+}
+
 .headMeta {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
@@ -519,10 +525,42 @@
   padding: var(--wf-s-3);
 }
 
-.statsAbsent {
+/* PL1 follow-up (4 Nov 2026): the people a place's panel names, each opening the person. */
+.listSection {
+  padding-top: var(--wf-s-3);
+}
+
+.peopleList {
+  display: grid;
+  gap: 2px;
   margin: 0;
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
+  padding: 0;
+  list-style: none;
+  color: var(--wf-ink-1);
+}
+
+.peopleList li {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.peopleList a {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.peopleList a:hover,
+.peopleList a:focus-visible {
+  text-decoration: underline;
+}
+
+/* A team's suburbs, as one wrapped line of names. */
+.suburbLine {
+  margin: 0;
+  color: var(--wf-ink-1);
+  line-height: 1.5;
 }
 
 .ctaActions {
@@ -1054,25 +1092,6 @@
 .heroSearch {
   flex: 1 1 auto;
   min-width: 0;
-}
-
-/* The preview's Beds row points to the two pages that carry beds. */
-.bedsElsewhere {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
-.bedsElsewhere > span {
-  min-width: 0;
-}
-
-.bedsElsewhere a {
-  color: var(--wf-accent-ink);
-  font-weight: 600;
 }
 
 /* Wards by service: a count of wards, not beds. Each row searches its service. */

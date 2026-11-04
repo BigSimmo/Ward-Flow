@@ -1,6 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { configure, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+configure({
+  getElementError: () => new Error("Referral compatibility query failed; record-bearing diagnostics suppressed."),
+});
 
 import { Button, ErrorSummary, Field, TextInput } from "@/components/wf";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";

@@ -1,5 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { useState } from "react";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 
 import { readFeedMessage } from "@/components/ward-management/integration/hospital-feed";
 import { feedSuggestion, simulatedFeedMessages } from "@/components/ward-management/integration/hospital-feed-sim";
@@ -142,6 +144,111 @@ function openDone() {
 }
 
 describe("feed inbox in Tools", () => {
+  it("never settles a replacement message when an old confirmation answers after an inbox reset", async () => {
+    let finish!: (outcome: WardCommandOutcome) => void;
+    heldRaise.raise = () =>
+      new Promise<WardCommandOutcome>((resolve) => {
+        finish = resolve;
+      });
+    function ResetInbox() {
+      const { worldGeneration } = useWardFlowSelect("worldGeneration");
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            resetFeedInboxForTests();
+            syncFeedInboxGeneration(worldGeneration);
+            receiveFeedMessage(messages[0]!);
+          }}
+        >
+          Replace inbox
+        </button>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Feed />
+        <ResetInbox />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-feed-receive"));
+    fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
+    fireEvent.click(screen.getByRole("button", { name: "Replace inbox" }));
+    await act(async () => finish({ commandId: "old", status: "accepted" }));
+    expect(within(waitingList()).getByTestId("ward-feed-item-1")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-feed-done")).toBeNull();
+  });
+
+  it("keeps a saving message locked across closing and reopening Tools", async () => {
+    let finish!: (outcome: WardCommandOutcome) => void;
+    const raise = vi.fn(
+      () =>
+        new Promise<WardCommandOutcome>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    heldRaise.raise = raise;
+    function ReopenFeed() {
+      const [open, setOpen] = useState(true);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen((value) => !value)}>
+            Toggle feed
+          </button>
+          <ReceiveNextFeedMessage />
+          {open ? <ToolFeed onNavigate={() => {}} /> : null}
+        </>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ReopenFeed />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-feed-receive"));
+    fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
+    fireEvent.click(screen.getByRole("button", { name: "Toggle feed" }));
+    fireEvent.click(screen.getByRole("button", { name: "Toggle feed" }));
+    expect(screen.getByTestId("ward-feed-confirm-1")).toHaveAttribute("aria-busy", "true");
+    fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
+    expect(raise).toHaveBeenCalledTimes(1);
+    await act(async () => finish({ commandId: "held", status: "accepted" }));
+    expect(within(openDone()).getByTestId("ward-feed-item-1")).toHaveTextContent("Confirmed");
+  });
+
+  it("waits for the same uncertain command's confirmation instead of sending a new command", async () => {
+    let confirm!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => {
+      confirm = resolve;
+    });
+    const raise = vi.fn(() => ({ commandId: "held", status: "failed", confirmation }));
+    heldRaise.raise = raise;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Feed />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-feed-receive"));
+    await act(async () => fireEvent.click(screen.getByTestId("ward-feed-confirm-1")));
+    expect(screen.getByTestId("ward-feed-confirm-1")).toHaveAttribute("aria-busy", "true");
+    fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
+    expect(raise).toHaveBeenCalledTimes(1);
+    await act(async () => confirm({ commandId: "held", status: "accepted" }));
+    expect(within(openDone()).getByTestId("ward-feed-item-1")).toHaveTextContent("Confirmed");
+  });
+
+  it("does not confirm a message from an accepted but no-longer-current command", async () => {
+    heldRaise.raise = () => ({ commandId: "stale", status: "accepted", isCurrent: () => false });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Feed />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-feed-receive"));
+    await act(async () => fireEvent.click(screen.getByTestId("ward-feed-confirm-1")));
+    expect(within(waitingList()).getByTestId("ward-feed-item-1")).toBeInTheDocument();
+  });
+
   it("confirms an arrival only when a person taps Confirm, and rejecting changes nothing", async () => {
     const first = readFeedMessage(messages[0]!);
     if (!first.ok) throw new Error("first simulated message should be readable");

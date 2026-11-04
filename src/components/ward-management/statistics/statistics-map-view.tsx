@@ -31,7 +31,7 @@ import {
   MINUTES_PER_DAY,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import type {
   BedRelease,
   EmergencyDepartment,
@@ -200,7 +200,7 @@ export function siteFigures({
       const onWard = admissions.filter((admission) => admission.unitId === unit.id);
       return {
         unit,
-        ready: unitCapacity(unit, bedReleases).available,
+        ready: readyBedsNow(unit, admissions, bedReleases),
         occupied,
         pct: unit.beds > 0 ? Math.round((occupied / unit.beds) * 100) : 0,
         dischargedToday: onWard.filter((admission) => leftToday(admission, now)).length,

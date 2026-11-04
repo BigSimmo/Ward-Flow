@@ -125,7 +125,7 @@ export function StatisticsOverviewScreen() {
     [units, bedReleases],
   );
   const refused = useMemo(() => refusedAndNothingPending(movements, units, now), [movements, units, now]);
-  const capacity = useMemo(() => networkCapacity(units, bedReleases), [units, bedReleases]);
+  const capacity = useMemo(() => networkCapacity(units, bedReleases, admissions), [units, bedReleases, admissions]);
   // Executive: the stage and decline parts add up to a total on the same card, so they hide together.
   const stagesShown = parts(stageTallies.map((stage) => stage.count));
   const declinesShown = declinesReadout.ok ? parts(declinesReadout.value.tallies.map((tally) => tally.count)) : [];

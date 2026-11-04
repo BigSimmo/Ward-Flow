@@ -230,10 +230,11 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   },
   hub: {
     title: "Places",
-    purpose: "Every ward, ED and community team in the network, with each one's beds and when they were confirmed.",
+    purpose:
+      "Every ward, ED and community team in the network. The band names the wards whose bed count needs a check.",
     actions: [
       "Use the search box above the list, or narrow the list to wards, EDs or teams.",
-      "Choose a place to preview it, then open it or view its statistics. Pin the places you use most.",
+      "Choose a place to see who is heading or waiting there, then refer or open it. Pin the places you use most.",
       "Choose Catchments on the band to find which community team covers a suburb.",
     ],
     questions: [CATCHMENT_QUESTION],

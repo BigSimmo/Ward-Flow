@@ -3,8 +3,8 @@
 // src/components/ward-management/forecast/forecast-brief-panel.tsx
 //
 // "Brief for this meeting" on the bed meeting screen (forecasting build, Josh, 23 Oct 2026,
-// screen 5). Four fixed sentences from `forecastBrief`, then how yesterday's forecast for today did.
-import type { Instant } from "@/components/ward-management/ward-clock";
+// screen 5). Four fixed sentences from `forecastBrief`, then the latest dated historical comparison.
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { kindRangeWord } from "./forecast-by-kind";
 import { forecastBrief } from "./forecast-brief";
 import { forecastEdName, useForecastHistory, useForecastModel } from "./use-forecast-model";
@@ -27,7 +27,7 @@ export function ForecastBriefPanel({ now }: { now: Instant }) {
       </dl>
       {latest ? (
         <p className={styles.caption}>
-          {`Yesterday's forecast for today was ${kindRangeWord(latest.forecast.likely)}, and it is now ${kindRangeWord(latest.actual)}.`}
+          {`Forecast recorded ${formatInstantWithDay(latest.forecastAt, now)}: ${kindRangeWord(latest.forecast.likely)} for the next day. Result recorded ${formatInstantWithDay(latest.actualAt, now)}: ${kindRangeWord(latest.actual)}.`}
         </p>
       ) : null}
     </div>

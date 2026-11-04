@@ -36,7 +36,7 @@ export function RecordedDischargeMilestones({
         {milestones.map((milestone) => (
           <li className={pageStyles.timelineItem} key={milestone.label} data-state={milestone.state}>
             <StatusGlyph
-              tone={milestone.state === "complete" ? "success" : milestone.state === "blocked" ? "danger" : "neutral"}
+              tone={milestone.state === "complete" ? "success" : milestone.state === "blocked" ? "warning" : "neutral"}
               size={10}
             />
             <span className={pageStyles.timelineText}>

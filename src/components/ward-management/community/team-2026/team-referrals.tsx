@@ -201,7 +201,7 @@ function DocViewer({ doc, onClose }: { doc: { name: string; meta: string; who: s
       title={doc?.name ?? "Document"}
       description={doc ? `${doc.who} · PDF · ${doc.meta}` : undefined}
       size="lg"
-      secondary={[{ label: "Download", onAction: () => undefined }]}
+      secondary={[{ label: "Download", onAction: () => undefined, disabledReason: "Not wired in this prototype." }]}
     >
       <div className={t.dvBody}>
         <div className={t.paper}>
