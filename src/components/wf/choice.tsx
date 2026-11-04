@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { cx } from "./cx";
 import { Icon } from "./icon";
 import { Count } from "./primitives";
-import { StatusGlyph, type WfTone } from "./status-glyph";
+import { controlTone, StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./choice.module.css";
 
 export type ChoiceItem<T extends string = string> = {
@@ -87,7 +87,7 @@ export function Tabs<T extends string>({ items, value, onChange, label, idPrefix
             className={styles.tab}
             onClick={() => onChange(item.id)}
           >
-            {item.tone ? <StatusGlyph tone={item.tone} size={9} /> : null}
+            {item.tone ? <StatusGlyph tone={controlTone(item.tone)} size={9} /> : null}
             {item.label}
             {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
           </button>
@@ -144,7 +144,7 @@ export function PillTabs<T extends string>({
             className={styles.ptItem}
             onClick={() => onChange(item.id)}
           >
-            {item.tone ? <StatusGlyph tone={item.tone} size={9} /> : null}
+            {item.tone ? <StatusGlyph tone={controlTone(item.tone)} size={9} /> : null}
             {item.label}
             {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
           </button>
@@ -220,7 +220,7 @@ export function Segmented<T extends string>({
   );
   const content = (item: ChoiceItem<T>) => (
     <>
-      {item.tone ? <StatusGlyph tone={item.tone} size={9} /> : null}
+      {item.tone ? <StatusGlyph tone={controlTone(item.tone)} size={9} /> : null}
       {item.label}
       {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
     </>
@@ -312,7 +312,7 @@ export function FilterChip({
       data-dim={!pressed && (count === 0 || count === "0") ? "true" : undefined}
       onClick={() => onPressedChange(!pressed)}
     >
-      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+      {tone ? <StatusGlyph tone={controlTone(tone)} size={9} /> : null}
       <span className={styles.chipLabel} data-text={typeof children === "string" ? children : undefined}>
         {children}
       </span>

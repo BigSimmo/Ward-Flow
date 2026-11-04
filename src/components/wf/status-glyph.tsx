@@ -45,6 +45,17 @@ export function StatusGlyph({ tone, size = 10, className }: { tone: WfTone; size
   );
 }
 
+/**
+ * Triangle guard (plan 2k, 3 Nov 2026, after the icon audit in PR #1357): the triangle means one
+ * act-now, overdue or safety state on the row that needs a person now. A chip, tab, segmented option
+ * or filter pill holds a count or a choice, never that row, so its glyph never takes the triangle:
+ * `danger` falls back to the neutral ring. Kit controls pass their `tone` through this.
+ * `tests/wf-triangle-guard.test.ts` holds the rule for page code.
+ */
+export function controlTone(tone: WfTone): WfTone {
+  return tone === "danger" ? "neutral" : tone;
+}
+
 /** An 8px status dot in the same shape language, for meters and legends. */
 export function Dot({ tone, className }: { tone: WfTone; className?: string }) {
   return <StatusGlyph tone={tone} size={8} className={cx(styles.dot, className)} />;
