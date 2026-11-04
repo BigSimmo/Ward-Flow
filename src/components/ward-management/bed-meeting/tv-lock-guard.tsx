@@ -26,14 +26,16 @@ export function readLock(): string | null {
   }
 }
 
-export function writeLock(href: string | null): void {
+export function writeLock(href: string | null): boolean {
   try {
     if (href === null) window.localStorage.removeItem(TV_LOCK_STORAGE_KEY);
     else window.localStorage.setItem(TV_LOCK_STORAGE_KEY, href);
+    if (window.localStorage.getItem(TV_LOCK_STORAGE_KEY) !== href) return false;
   } catch {
-    // Storage refused (a private window): the lock simply does not hold.
+    return false;
   }
   window.dispatchEvent(new Event(CHANGED));
+  return true;
 }
 
 function subscribe(onChange: () => void): () => void {
@@ -56,8 +58,8 @@ export function useTvLock(): string | null {
 }
 
 /** Lock this browser to the TV view now showing. */
-export function lockTv(href: string): void {
-  writeLock(href);
+export function lockTv(href: string): boolean {
+  return writeLock(href);
 }
 
 /** Mounted once in the layout: a locked browser goes back to its TV view from any other page. */

@@ -16,6 +16,8 @@ import { NAME_NOT_RECORDED, resolveSubjectPatient } from "@/components/ward-mana
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { leavingDestinationLabel } from "@/components/ward-management/community/community-derivations";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
+import { originName } from "@/components/ward-management/ward-movement-origin";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 
 export interface ResolvedPatientNow {
   record: PatientNowRecord;
@@ -167,6 +169,79 @@ export function isOwnStay(stay: { readonly patientId?: string | null }, subjectI
   return stay.patientId === subjectId;
 }
 
+function presentationOrigin(
+  movement: Movement,
+  referral: Referral | undefined,
+  admissions: readonly Admission[],
+  units: readonly Unit[],
+) {
+  const sourceUnitId = movement.sourceAdmissionId
+    ? admissions.find((stay) => stay.id === movement.sourceAdmissionId)?.unitId
+    : referral?.originUnitId;
+  if (movement.sourceAdmissionId || sourceUnitId)
+    return {
+      name: units.find((unit) => unit.id === sourceUnitId)?.name ?? "Origin not recorded",
+      kind: "admission" as const,
+    };
+  if (movement.originCommunity)
+    return { name: originName(movement) ?? "Origin not recorded", kind: "community" as const };
+  return {
+    name: movement.originEdId ? (edById(movement.originEdId)?.name ?? "Origin not recorded") : "Origin not recorded",
+    kind: movement.originEdId ? ("ed" as const) : undefined,
+  };
+}
+
+function presentationLength(movement: Movement, admission: Admission | undefined, now: Instant): string {
+  const end =
+    admission?.state === "departed"
+      ? (admission.leftAt ?? movement.closure?.at)
+      : movement.closure && (movement.closure.outcome === "did_not_proceed" || !admission)
+        ? movement.closure.at
+        : now;
+  return end === undefined ? "Not recorded" : dur(Math.max(0, end - movement.openedAt));
+}
+
+function presentationAnswers(
+  movement: Movement,
+  units: readonly Unit[],
+): PatientNowRecord["presentations"][number]["asked"] {
+  const ward = (id: string) => units.find((unit) => unit.id === id)?.name ?? id;
+  const history = movement.referralAnswerHistory ?? [];
+  const declineFor = (answer: { unitId: string; at: Instant }) =>
+    movement.declines.find((decline) => decline.unitId === answer.unitId && decline.at === answer.at);
+  // A "no suitable bed" or "bed pulled" answer also leaves a decline entry, but it waitlists and keeps
+  // the referral live: it is shown once, as Waitlisted, never as a refusal (Codex review of #1331).
+  const answers = movement.declines
+    .filter((d) => !history.some((a) => a.answer === "waitlisted" && a.unitId === d.unitId && a.at === d.at))
+    .map((decline) => ({
+      ward: ward(decline.unitId),
+      outcome: "Declined",
+      why: decline.reason ? DECLINE_REASON_LABELS[decline.reason] : "",
+    }));
+  for (const answer of history) {
+    const decline = declineFor(answer);
+    if (answer.answer === "declined" && decline) continue;
+    answers.push({
+      ward: ward(answer.unitId),
+      outcome: answer.answer === "waitlisted" ? "Waitlisted" : answer.answer === "declined" ? "Declined" : "Withdrawn",
+      why: answer.answer === "waitlisted" && decline?.reason ? DECLINE_REASON_LABELS[decline.reason] : "",
+    });
+  }
+  for (const withdrawn of movement.withdrawnReferrals) {
+    if (
+      !(movement.referralAnswerHistory ?? []).some(
+        (answer) => answer.unitId === withdrawn.unitId && answer.at === withdrawn.at && answer.answer === "withdrawn",
+      )
+    )
+      answers.push({ ward: ward(withdrawn.unitId), outcome: "Withdrawn", why: "" });
+  }
+  if (movement.acceptedUnitId) answers.push({ ward: ward(movement.acceptedUnitId), outcome: "Accepted", why: "" });
+  for (const id of movement.referredUnitIds)
+    if (id !== movement.acceptedUnitId && !movement.waitlistedUnitIds?.includes(id))
+      answers.push({ ward: ward(id), outcome: "Referred — awaiting response", why: "" });
+  return answers;
+}
+
 export function resolvePatientNowRecord(
   id: string,
   patients: readonly Patient[],
@@ -235,19 +310,21 @@ export function resolvePatientNowRecord(
 
     const referral = movement.referralId ? referrals.find((r) => r.id === movement.referralId) : undefined;
     const stageIdx = Math.max(0, MOVEMENT_STAGES.indexOf(movement.stage));
-    const waitedMins = Math.max(0, now - movement.openedAt);
-    const waitedStr = dur(waitedMins);
-    const originEd = edById(movement.originEdId);
-    const originEdName = originEd?.name ?? "Emergency Department";
+    const origin = presentationOrigin(movement, referral, admissions, units);
+    const originEdName = origin.name;
     const acceptedUnit = movement.acceptedUnitId ? liveUnit(movement.acceptedUnitId) : undefined;
 
     const linkedAdmission = [...admissions]
       .reverse()
       .find((admission) => admission.id === movement.admissionId || admission.movementId === movement.id);
     const departed = linkedAdmission?.state === "departed";
+    const waitedStr = presentationLength(movement, linkedAdmission, now);
     const departureLabel = departureEventLabel(linkedAdmission?.leavingDestination ?? null);
     const verdict = movementVerdict(movement, acceptedUnit, departed, admissions, departureLabel);
-    const historical = departed || movement.closure?.outcome === "did_not_proceed";
+    const historical =
+      departed ||
+      movement.closure?.outcome === "did_not_proceed" ||
+      (movement.closure !== undefined && linkedAdmission === undefined);
 
     const dynamicRecord: PatientNowRecord = {
       id: movement.id,
@@ -271,7 +348,12 @@ export function resolvePatientNowRecord(
       ring: [
         {
           who: originEdName,
-          role: "Referring Emergency Department",
+          role:
+            origin.kind === "ed"
+              ? "Referring Emergency Department"
+              : origin.kind === "admission"
+                ? "Sending ward"
+                : "Referring service",
           note: `Movement opened at ${clock(movement.openedAt)}`,
           tone: null,
         },
@@ -314,11 +396,12 @@ export function resolvePatientNowRecord(
           date: historical ? "Previous Presentation" : "Current Presentation",
           year: 2026.62,
           current: !historical,
+          kind: linkedAdmission ? "admission" : origin.kind,
           where: originEdName,
           to: acceptedUnit?.name ?? (historical ? "No admission recorded" : "Seeking bed"),
           los: waitedStr,
-          losFull: `${waitedStr} at ${originEdName}`,
-          source: "Emergency Department",
+          losFull: `${waitedStr} elapsed`,
+          source: originEdName,
           route: "Patient transport",
           tier: movement.urgency,
           legal: movement.legalForm ? legalFormName(movement.legalForm) : (movement.legalStatus ?? "Not recorded"),
@@ -334,11 +417,7 @@ export function resolvePatientNowRecord(
                 },
               ]
             : [],
-          asked: movement.referredUnitIds.map((uid) => ({
-            ward: liveUnit(uid)?.name ?? uid,
-            outcome: uid === movement.acceptedUnitId ? "Accepted" : "Referred — see movement for response",
-            why: "",
-          })),
+          asked: presentationAnswers(movement, units),
           outcome: historical
             ? verdict.title
             : acceptedUnit
@@ -450,10 +529,9 @@ export function resolvePatientNowRecord(
 
     if (activeMovement) {
       const stageIdx = Math.max(0, MOVEMENT_STAGES.indexOf(activeMovement.stage));
-      const waitedMins = Math.max(0, now - activeMovement.openedAt);
-      const waitedStr = dur(waitedMins);
-      const originEd = edById(activeMovement.originEdId);
-      const originEdName = originEd?.name ?? "Emergency Department";
+      const origin = presentationOrigin(activeMovement, linkedReferral, admissions, units);
+      const originEdName = origin.name;
+      const waitedStr = presentationLength(activeMovement, activeAdmission ?? departedAdmission, now);
       const acceptedUnit = activeMovement.acceptedUnitId
         ? liveUnit(activeMovement.acceptedUnitId)
         : activeAdmission
@@ -461,7 +539,10 @@ export function resolvePatientNowRecord(
           : undefined;
 
       const verdict = movementVerdict(activeMovement, acceptedUnit, latestDeparture, admissions, departureLabel);
-      const historical = latestDeparture || activeMovement.closure?.outcome === "did_not_proceed";
+      const historical =
+        latestDeparture ||
+        activeMovement.closure?.outcome === "did_not_proceed" ||
+        (activeMovement.closure !== undefined && activeAdmission === undefined);
 
       const dynamicRecord: PatientNowRecord = {
         id: patient.id,
@@ -485,7 +566,12 @@ export function resolvePatientNowRecord(
         ring: [
           {
             who: originEdName,
-            role: "Referring Emergency Department",
+            role:
+              origin.kind === "ed"
+                ? "Referring Emergency Department"
+                : origin.kind === "admission"
+                  ? "Sending ward"
+                  : "Referring service",
             note: `Movement opened at ${clock(activeMovement.openedAt)}`,
             tone: null,
           },
@@ -528,22 +614,19 @@ export function resolvePatientNowRecord(
             date: historical ? "Previous Presentation" : "Current Presentation",
             year: 2026.62,
             current: !historical,
+            kind: activeAdmission || departedAdmission ? "admission" : origin.kind,
             where: originEdName,
             to: acceptedUnit?.name ?? (historical ? "No admission recorded" : "Seeking bed"),
             los: waitedStr,
-            losFull: `${waitedStr} at ${originEdName}`,
-            source: "Emergency Department",
+            losFull: `${waitedStr} elapsed`,
+            source: originEdName,
             route: "Patient transport",
             tier: activeMovement.urgency,
             legal: activeMovement.legalForm
               ? legalFormName(activeMovement.legalForm)
               : (activeMovement.legalStatus ?? patient.legalStatus ?? "Not recorded"),
             forms: specialDocuments,
-            asked: activeMovement.referredUnitIds.map((uid) => ({
-              ward: liveUnit(uid)?.name ?? uid,
-              outcome: uid === activeMovement.acceptedUnitId ? "Accepted" : "Referred — see movement for response",
-              why: "",
-            })),
+            asked: presentationAnswers(activeMovement, units),
             outcome: historical
               ? verdict.title
               : acceptedUnit

@@ -73,6 +73,7 @@ interface NextStepItem {
 }
 
 interface HistoricalPresentation {
+  kind?: "admission" | "ed" | "community";
   date: string;
   year: number;
   where: string;

@@ -4,6 +4,7 @@
 // urgency, legal status, typed expiry and receipt correction, plus the transport popup. Split out
 // of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
+import { useWardFormSave } from "../use-ward-form-save";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Button, DateField, Dialog, DisabledReason, Radio } from "@/components/wf";
 import { edShortName } from "@/components/ward-management/ward-sites";
@@ -63,8 +64,6 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     edOutcomeBlocked,
     dischargeBlocked,
     cmhtBlocked,
-    recordedSuburb,
-    teamOptions,
     urgencyChangeOpen,
     legalStatusChangeOpen,
     legalFormExpiryOpen,
@@ -77,11 +76,6 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     raise,
     setWithdrawOpenFor,
     communityReferralOpenFor,
-    setCommunityReferralOpenFor,
-    communityTeamChoice,
-    setCommunityTeamChoice,
-    communityPurposeChoice,
-    setCommunityPurposeChoice,
     examinationOutcome,
     examinationFieldsDisabled,
     examinationSaveDisabled,
@@ -128,11 +122,6 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
   const urgencySave = recordSaveState("urgency", movement.id);
   const legalStatusSave = recordSaveState("legalStatus", movement.id);
   const receiptSave = recordSaveState("receipt", movement.id);
-  // D-74: the team and what the referral is for are both required before it can be sent.
-  const cmhtReady = communityTeamChoice !== "" && communityPurposeChoice !== "";
-  const cmhtMissing = !communityTeamChoice
-    ? "Choose a community team first."
-    : "Choose what the referral is for first.";
   // Why the legal status change cannot be recorded yet: the new status first, then the reason.
   const legalStatusBlocked =
     legalStatusDraft.legalStatus === undefined
@@ -183,96 +172,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
       ) : null}
 
       {communityReferralOpenFor === movement.id && !cmhtBlocked ? (
-        <div className={styles.declineForm} data-testid={`ward-ed-cmht-panel-${movement.id}`}>
-          <p className={styles.cardMeta}>Community team referral. No bed is requested.</p>
-          <p className={styles.cardMeta} data-testid={`ward-ed-cmht-legal-status-${movement.id}`}>
-            Legal status: {/* Never defaults to Voluntary (owner rule, 19 Oct 2026): nothing recorded says so. */}
-            {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
-          </p>
-          {recordedSuburb ? (
-            <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>
-              Team for the recorded home suburb ({recordedSuburb}) listed first.
-            </p>
-          ) : (
-            <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>
-              No home suburb recorded.
-            </p>
-          )}
-          <label className={styles.referralField} htmlFor={`ward-ed-cmht-select-${movement.id}`}>
-            Select community team
-            <select
-              id={`ward-ed-cmht-select-${movement.id}`}
-              data-testid={`ward-ed-cmht-select-${movement.id}`}
-              value={communityTeamChoice}
-              onChange={(e) => setCommunityTeamChoice(e.target.value)}
-              className={styles.capacityInput}
-            >
-              <option value="">Choose a community team</option>
-              {teamOptions.map((team) => (
-                <option key={team} value={team}>
-                  {team}
-                </option>
-              ))}
-            </select>
-          </label>
-          <fieldset className={styles.referralField} data-testid={`ward-ed-cmht-purpose-${movement.id}`}>
-            <legend>What is the referral for?</legend>
-            {COMMUNITY_REFERRAL_PURPOSES.map((purpose) => (
-              <label key={purpose}>
-                <input
-                  type="radio"
-                  name={`ward-ed-cmht-purpose-${movement.id}`}
-                  value={purpose}
-                  checked={communityPurposeChoice === purpose}
-                  onChange={() => setCommunityPurposeChoice(purpose)}
-                  data-testid={`ward-ed-cmht-purpose-${purpose}-${movement.id}`}
-                />{" "}
-                {communityReferralPurposeLabel(purpose)}
-              </label>
-            ))}
-          </fieldset>
-          <div className={styles.actionRow}>
-            <button
-              type="button"
-              aria-disabled={!cmhtReady ? "true" : undefined}
-              aria-describedby={!cmhtReady ? `ward-ed-cmht-reason-${movement.id}` : undefined}
-              title={!cmhtReady ? cmhtMissing : undefined}
-              data-testid={`ward-ed-cmht-confirm-${movement.id}`}
-              className={styles.declineButton}
-              onClick={(event) => {
-                if (!communityTeamChoice || !communityPurposeChoice) {
-                  ignoreUnavailableActivation(event);
-                  return;
-                }
-                raise("REFER_TO_COMMUNITY_TEAM", {
-                  movementId: movement.id,
-                  team: communityTeamChoice,
-                  purpose: communityPurposeChoice,
-                });
-                setCommunityReferralOpenFor(undefined);
-                setCommunityTeamChoice("");
-                setCommunityPurposeChoice("");
-              }}
-            >
-              Confirm CMHT referral
-            </button>
-            {!cmhtReady ? (
-              <DisabledReason id={`ward-ed-cmht-reason-${movement.id}`}>{cmhtMissing}</DisabledReason>
-            ) : null}
-            <button
-              type="button"
-              data-testid={`ward-ed-cmht-cancel-${movement.id}`}
-              className={styles.acceptButton}
-              onClick={() => {
-                setCommunityReferralOpenFor(undefined);
-                setCommunityTeamChoice("");
-                setCommunityPurposeChoice("");
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+        <EdCommunityReferralForm key={movement.id} row={row} ctx={ctx} />
       ) : null}
 
       {renderEdTransportDialog(row, ctx)}
@@ -724,5 +624,133 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
         </form>
       ) : null}
     </>
+  );
+}
+
+/** A mounted form owns its command until its outcome is known. */
+function EdCommunityReferralForm({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenContext }) {
+  const { movement, recordedSuburb, teamOptions } = row;
+  const {
+    raise,
+    communityTeamChoice,
+    setCommunityTeamChoice,
+    communityPurposeChoice,
+    setCommunityPurposeChoice,
+    setCommunityReferralOpenFor,
+  } = ctx;
+  const save = useWardFormSave(`ed-community-referral:${movement.id}`);
+  const cmhtReady = communityTeamChoice !== "" && communityPurposeChoice !== "" && !save.pending;
+  const cmhtMissing = save.pending
+    ? "Saving change…"
+    : !communityTeamChoice
+      ? "Choose a community team first."
+      : "Choose what the referral is for first.";
+  return (
+    <div className={styles.declineForm} data-testid={`ward-ed-cmht-panel-${movement.id}`}>
+      <p className={styles.cardMeta}>Community team referral. No bed is requested.</p>
+      <p className={styles.cardMeta} data-testid={`ward-ed-cmht-legal-status-${movement.id}`}>
+        Legal status: {/* Never defaults to Voluntary (owner rule, 19 Oct 2026): nothing recorded says so. */}
+        {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
+      </p>
+      {recordedSuburb ? (
+        <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>
+          Team for the recorded home suburb ({recordedSuburb}) listed first.
+        </p>
+      ) : (
+        <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>
+          No home suburb recorded.
+        </p>
+      )}
+      <label className={styles.referralField} htmlFor={`ward-ed-cmht-select-${movement.id}`}>
+        Select community team
+        <select
+          id={`ward-ed-cmht-select-${movement.id}`}
+          data-testid={`ward-ed-cmht-select-${movement.id}`}
+          disabled={save.pending}
+          value={communityTeamChoice}
+          onChange={(e) => setCommunityTeamChoice(e.target.value)}
+          className={styles.capacityInput}
+        >
+          <option value="">Choose a community team</option>
+          {teamOptions.map((team) => (
+            <option key={team} value={team}>
+              {team}
+            </option>
+          ))}
+        </select>
+      </label>
+      <fieldset
+        className={styles.referralField}
+        disabled={save.pending}
+        data-testid={`ward-ed-cmht-purpose-${movement.id}`}
+      >
+        <legend>What is the referral for?</legend>
+        {COMMUNITY_REFERRAL_PURPOSES.map((purpose) => (
+          <label key={purpose}>
+            <input
+              type="radio"
+              name={`ward-ed-cmht-purpose-${movement.id}`}
+              value={purpose}
+              checked={communityPurposeChoice === purpose}
+              onChange={() => setCommunityPurposeChoice(purpose)}
+              data-testid={`ward-ed-cmht-purpose-${purpose}-${movement.id}`}
+            />{" "}
+            {communityReferralPurposeLabel(purpose)}
+          </label>
+        ))}
+      </fieldset>
+      {save.error ? (
+        <p className={styles.cardMeta} role="alert">
+          {save.error}
+        </p>
+      ) : null}
+      <div className={styles.actionRow}>
+        <button
+          type="button"
+          aria-disabled={!cmhtReady ? "true" : undefined}
+          aria-describedby={!cmhtReady ? `ward-ed-cmht-reason-${movement.id}` : undefined}
+          title={!cmhtReady ? cmhtMissing : undefined}
+          data-testid={`ward-ed-cmht-confirm-${movement.id}`}
+          className={styles.declineButton}
+          onClick={(event) => {
+            if (!cmhtReady) {
+              ignoreUnavailableActivation(event);
+              return;
+            }
+            if (!communityPurposeChoice) return;
+            save.submit(
+              () =>
+                raise("REFER_TO_COMMUNITY_TEAM", {
+                  movementId: movement.id,
+                  team: communityTeamChoice,
+                  purpose: communityPurposeChoice,
+                }),
+              () => {
+                setCommunityReferralOpenFor(undefined);
+                setCommunityTeamChoice("");
+                setCommunityPurposeChoice("");
+              },
+            );
+          }}
+        >
+          Confirm CMHT referral
+        </button>
+        {!cmhtReady ? <DisabledReason id={`ward-ed-cmht-reason-${movement.id}`}>{cmhtMissing}</DisabledReason> : null}
+        <button
+          type="button"
+          aria-disabled={save.pending || undefined}
+          data-testid={`ward-ed-cmht-cancel-${movement.id}`}
+          className={styles.acceptButton}
+          onClick={() => {
+            if (save.pending) return;
+            setCommunityReferralOpenFor(undefined);
+            setCommunityTeamChoice("");
+            setCommunityPurposeChoice("");
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }

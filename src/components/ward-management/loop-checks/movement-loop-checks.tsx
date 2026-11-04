@@ -6,6 +6,7 @@ import { Badge, Button, DisabledReason, Field, Select, StatusGlyph } from "@/com
 
 import { useWardRecordActors } from "../shell/ward-access";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
+import { useWardFormSave } from "../use-ward-form-save";
 import { useWardRaise } from "../ward-flow-raise";
 import type { Movement, Unit } from "../ward-model";
 import {
@@ -166,21 +167,31 @@ export function AcceptanceConditionsPanel({ movement, now }: { movement: Movemen
   const [kind, setKind] = useState<AcceptanceConditionKind | "">("");
   const [agreedWith, setAgreedWith] = useState<AcceptanceConditionAgreedWith | "">("");
   const [afterHours, setAfterHours] = useState("");
+  const save = useWardFormSave(`acceptance-conditions:${movement.id}`);
+  const [draftFor, setDraftFor] = useState(movement.id);
+  if (draftFor !== movement.id) {
+    setDraftFor(movement.id);
+    setKind("");
+    setAgreedWith("");
+    setAfterHours("");
+  }
   const baseId = useId();
   if (movement.acceptedUnitId === undefined || movement.closure !== undefined) return null;
   const conditions = currentAcceptanceConditions(movement);
   const outstanding = conditions.filter((condition) => condition.met === undefined).length;
   const headline = acceptanceConditionsHeadline(conditions.length, outstanding);
   const unrecorded = ACCEPTANCE_CONDITION_KINDS.filter((entry) => !conditions.some((c) => c.kind === entry));
-  const addRefusal = !actor
-    ? NOT_YOURS
-    : kind === ""
-      ? "Choose a condition first."
-      : agreedWith === ""
-        ? "Choose who it was agreed with."
-        : kind === "bed_after_time" && afterHours === ""
-          ? "Choose when the bed is offered from."
-          : undefined;
+  const addRefusal = save.pending
+    ? "Waiting for confirmation"
+    : !actor
+      ? NOT_YOURS
+      : kind === ""
+        ? "Choose a condition first."
+        : agreedWith === ""
+          ? "Choose who it was agreed with."
+          : kind === "bed_after_time" && afterHours === ""
+            ? "Choose when the bed is offered from."
+            : undefined;
 
   return (
     <section
@@ -219,12 +230,16 @@ export function AcceptanceConditionsPanel({ movement, now }: { movement: Movemen
                     aria-describedby={actor ? undefined : `${baseId}-met-${condition.kind}`}
                     data-testid={`acceptance-condition-met-${condition.kind}`}
                     onClick={() => {
-                      if (!actor) return;
-                      raise("MARK_ACCEPTANCE_CONDITION_MET", {
-                        movementId: movement.id,
-                        ...(actor.actingUnitId ? { actingUnitId: actor.actingUnitId } : {}),
-                        condition: condition.kind,
-                      });
+                      if (!actor || save.pending) return;
+                      save.submit(
+                        () =>
+                          raise("MARK_ACCEPTANCE_CONDITION_MET", {
+                            movementId: movement.id,
+                            ...(actor.actingUnitId ? { actingUnitId: actor.actingUnitId } : {}),
+                            condition: condition.kind,
+                          }),
+                        () => {},
+                      );
                     }}
                   >
                     Mark met
@@ -236,10 +251,16 @@ export function AcceptanceConditionsPanel({ movement, now }: { movement: Movemen
           ))}
         </ul>
       ) : null}
+      {save.error ? (
+        <p className={styles.line} role="alert">
+          {save.error}
+        </p>
+      ) : null}
       {unrecorded.length > 0 && actor ? (
         <div className={styles.form}>
           <Field label="Add a condition">
             <Select
+              disabled={save.pending}
               value={kind}
               onChange={(event) => setKind(event.target.value as AcceptanceConditionKind | "")}
               data-testid="acceptance-condition-kind"
@@ -255,6 +276,7 @@ export function AcceptanceConditionsPanel({ movement, now }: { movement: Movemen
           {kind === "bed_after_time" ? (
             <Field label="Bed offered from">
               <Select
+                disabled={save.pending}
                 value={afterHours}
                 onChange={(event) => setAfterHours(event.target.value)}
                 data-testid="acceptance-condition-after"
@@ -270,6 +292,7 @@ export function AcceptanceConditionsPanel({ movement, now }: { movement: Movemen
           ) : null}
           <Field label="Agreed with">
             <Select
+              disabled={save.pending}
               value={agreedWith}
               onChange={(event) => setAgreedWith(event.target.value as AcceptanceConditionAgreedWith | "")}
               data-testid="acceptance-condition-agreed-with"
@@ -291,16 +314,21 @@ export function AcceptanceConditionsPanel({ movement, now }: { movement: Movemen
               data-testid="acceptance-condition-add"
               onClick={() => {
                 if (addRefusal || !actor || kind === "" || agreedWith === "") return;
-                raise("RECORD_ACCEPTANCE_CONDITION", {
-                  movementId: movement.id,
-                  ...(actor.actingUnitId ? { actingUnitId: actor.actingUnitId } : {}),
-                  condition: kind,
-                  agreedWith,
-                  ...(kind === "bed_after_time" ? { readyAt: now + Number(afterHours) * 60 } : {}),
-                });
-                setKind("");
-                setAgreedWith("");
-                setAfterHours("");
+                save.submit(
+                  () =>
+                    raise("RECORD_ACCEPTANCE_CONDITION", {
+                      movementId: movement.id,
+                      ...(actor.actingUnitId ? { actingUnitId: actor.actingUnitId } : {}),
+                      condition: kind,
+                      agreedWith,
+                      ...(kind === "bed_after_time" ? { readyAt: now + Number(afterHours) * 60 } : {}),
+                    }),
+                  () => {
+                    setKind("");
+                    setAgreedWith("");
+                    setAfterHours("");
+                  },
+                );
               }}
             >
               Record condition

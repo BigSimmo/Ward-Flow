@@ -37,6 +37,15 @@ export function TvLockControl({ href, className, shared }: { href: string; class
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const attempt = useRef(0);
+  const pending = useRef(false);
+  useEffect(
+    () => () => {
+      attempt.current++;
+      pending.current = false;
+    },
+    [reauthenticate, shared],
+  );
 
   // Follow this tab's picker, so a reload comes back to the screen last chosen. Only a change of this
   // tab's own address writes, so two TV tabs never keep overwriting each other's stored address.
@@ -48,6 +57,8 @@ export function TvLockControl({ href, className, shared }: { href: string; class
   }, [href]);
 
   const close = () => {
+    attempt.current++;
+    pending.current = false;
     setAsking(false);
     setPassword("");
     setError(null);
@@ -55,7 +66,9 @@ export function TvLockControl({ href, className, shared }: { href: string; class
   };
 
   const unlock = async () => {
-    if (busy) return;
+    if (pending.current) return;
+    pending.current = true;
+    const ticket = ++attempt.current;
     setBusy(true);
     setError(null);
     try {
@@ -65,20 +78,40 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         setPassword("");
         await reauthenticate(entered);
       }
-      writeLock(null);
+      if (ticket !== attempt.current) return;
+      if (!writeLock(null)) {
+        setError("This browser could not unlock the TV. Check storage access and try again.");
+        return;
+      }
       close();
     } catch {
-      setError("That password was not accepted. Try again.");
-      setBusy(false);
+      if (ticket === attempt.current) setError("That password was not accepted. Try again.");
+    } finally {
+      if (ticket === attempt.current) {
+        pending.current = false;
+        setBusy(false);
+      }
     }
   };
 
   if (locked === null) {
     return (
-      <button type="button" className={className} onClick={() => lockTv(href)} data-testid="tv-lock">
-        <Lock aria-hidden="true" />
-        Lock as TV
-      </button>
+      <>
+        <button
+          type="button"
+          className={className}
+          onClick={() =>
+            setError(
+              lockTv(href) ? null : "This browser could not save the TV lock. Check storage access and try again.",
+            )
+          }
+          data-testid="tv-lock"
+        >
+          <Lock aria-hidden="true" />
+          Lock as TV
+        </button>
+        {error ? <span role="status">{error}</span> : null}
+      </>
     );
   }
 
@@ -90,6 +123,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         onClick={() => {
           // The dialog opens outside the full-screen TV, so leave full screen first or it is hidden.
           if (document.fullscreenElement) document.exitFullscreen().catch(() => undefined);
+          close();
           setAsking(true);
         }}
         data-testid="tv-unlock"
@@ -117,6 +151,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         }}
         secondary={[{ label: "Cancel", onAction: close }]}
       >
+        {error && !needsPassword ? <p role="status">{error}</p> : null}
         {offline ? (
           <p>The password cannot be checked without a connection.</p>
         ) : needsPassword ? (

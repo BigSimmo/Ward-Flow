@@ -101,6 +101,35 @@ afterEach(() => {
 });
 
 describe("copy buttons announce their result", () => {
+  it.each([false, true])("never labels changed summary contents as copied (deferred=%s)", async (deferred) => {
+    let finish!: () => void;
+    const writeText = vi.fn(() =>
+      deferred
+        ? new Promise<void>((resolve) => {
+            finish = resolve;
+          })
+        : Promise.resolve(),
+    );
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    const sheet = (now: number) => (
+      <IsbarSheet
+        open
+        onClose={() => undefined}
+        referral={referral}
+        name="Synthetic"
+        umrn="UM999999"
+        demographics="Synthetic"
+        now={now}
+      />
+    );
+    const view = render(sheet(NOW_ANCHOR));
+    fireEvent.click(screen.getByRole("button", { name: "Copy summary" }));
+    if (!deferred) await waitFor(() => expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument());
+    view.rerender(sheet(NOW_ANCHOR + 60));
+    if (deferred) await act(async () => finish());
+    expect(screen.getByRole("button", { name: "Copy summary" })).toBeInTheDocument();
+  });
+
   it.each(sheets)("%s: a copy says Copied, on the button and aloud", async (_name, sheet, label) => {
     clipboard(true);
     render(<>{sheet()}</>);

@@ -56,8 +56,10 @@ describe("WCAG 2.5.3 labels, sequential heading hierarchy, and clinical input hy
       </WardFlowProvider>,
     );
 
+    // Appraisal (Josh Q8, 3 Nov 2026): EDs with nobody waiting fold into one "N EDs clear" tile.
     const buttons = screen.getAllByTestId(/^ward-ed-/);
-    expect(buttons).toHaveLength(10);
+    const folded = (screen.queryByTestId("ward-home-ed-clear")?.dataset.edIds ?? "").split(" ").filter(Boolean);
+    expect(buttons.length + folded.length).toBe(10);
 
     for (const button of buttons) {
       const ariaLabel = (button.getAttribute("aria-label") ?? "").toLowerCase();

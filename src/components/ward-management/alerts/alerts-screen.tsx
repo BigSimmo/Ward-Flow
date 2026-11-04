@@ -1,5 +1,7 @@
 "use client";
 
+import { useWardFormSave } from "../use-ward-form-save";
+
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
@@ -305,18 +307,15 @@ function AlertsWorkspace() {
   const [actionRequest, setActionRequest] = useState<ActionRequest | null>(null);
   const [broadcastRequest, setBroadcastRequest] = useState<{
     type: "DISPATCH_BROADCAST_ALERT" | "STAND_DOWN_BROADCAST_ALERT";
-    logSequence: number;
     title: string;
     scope: BroadcastTargetScope;
     scopeLabel: string;
   } | null>(null);
-  const broadcastResult = broadcastRequest
-    ? state.eventLog?.find(
-        (entry) => entry.sequence > broadcastRequest.logSequence && entry.type === broadcastRequest.type,
-      )
-    : undefined;
+  const broadcastSave = useWardFormSave("alerts-broadcast");
+  const { forget: forgetBroadcast } = broadcastSave;
+  const [broadcastResult, setBroadcastResult] = useState<{ accepted: boolean }>();
   const broadcastAccepted = broadcastResult?.accepted === true;
-  const broadcastRefused = broadcastResult?.accepted === false;
+  const broadcastRefused = !!broadcastSave.error;
   const isBroadcastModalOpen =
     broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
   const actionResult = actionRequest
@@ -380,23 +379,22 @@ function AlertsWorkspace() {
     }
   }, [broadcastAccepted, broadcastRequest, clearBroadcastDraft]);
   const broadcastFeedback =
-    broadcastRequest && broadcastResult
-      ? broadcastRefused
-        ? broadcastRequest.type === "DISPATCH_BROADCAST_ALERT"
-          ? "Broadcast was not accepted. Your draft has been kept."
-          : "Stand-down was not accepted. Review the directive."
-        : broadcastRequest.type === "STAND_DOWN_BROADCAST_ALERT"
-          ? broadcastRequest.scope === "all"
-            ? "Statewide broadcast directive stood down."
-            : `Broadcast directive stood down for ${broadcastRequest.scopeLabel}.`
-          : broadcastRequest.scope === "all"
-            ? `Broadcast Directive "${broadcastRequest.title}" shown in this prototype only; no external notifications are sent. Target: ${broadcastRequest.scopeLabel}.`
-            : `Broadcast Directive "${broadcastRequest.title}" shown in this prototype for ${broadcastRequest.scopeLabel} only; no external notifications are sent.`
-      : actionRequest && actionResult
-        ? actionResult.accepted
-          ? actionRequest.ok
-          : actionRequest.refused
-        : broadcastSuccessNotice;
+    broadcastSave.error?.startsWith("Not recorded:") && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT"
+      ? `Broadcast was not accepted. Your draft has been kept. ${broadcastSave.error}`
+      : (broadcastSave.error ??
+        (broadcastRequest && broadcastResult
+          ? broadcastRequest.type === "STAND_DOWN_BROADCAST_ALERT"
+            ? broadcastRequest.scope === "all"
+              ? "Statewide broadcast directive stood down."
+              : `Broadcast directive stood down for ${broadcastRequest.scopeLabel}.`
+            : broadcastRequest.scope === "all"
+              ? `Broadcast Directive "${broadcastRequest.title}" shown in this prototype only; no external notifications are sent. Target: ${broadcastRequest.scopeLabel}.`
+              : `Broadcast Directive "${broadcastRequest.title}" shown in this prototype for ${broadcastRequest.scopeLabel} only; no external notifications are sent.`
+          : actionRequest && actionResult
+            ? actionResult.accepted
+              ? actionRequest.ok
+              : actionRequest.refused
+            : broadcastSuccessNotice));
   const feedbackRefused =
     broadcastRefused || (actionResult !== undefined && !actionResult.accepted && !broadcastRequest);
 
@@ -422,8 +420,9 @@ function AlertsWorkspace() {
   const modalCloseRef = useRef<HTMLButtonElement | null>(null);
 
   const handleCloseBroadcastModal = useCallback(() => {
+    forgetBroadcast();
     setBroadcastModalOpen(false);
-  }, [setBroadcastModalOpen]);
+  }, [setBroadcastModalOpen, forgetBroadcast]);
 
   // The shared modal contract: the page behind is inert and held still, focus starts on the close
   // button, Tab wraps inside, Escape closes only this top layer, and focus returns to the trigger.
@@ -441,8 +440,6 @@ function AlertsWorkspace() {
       broadcastTriggerRef.current?.focus();
     }
   }, [broadcastAccepted, broadcastRequest]);
-
-  // ---- The queue: one entry per row, everything a row, card or panel reads ----
   const entryFor = useCallback(
     (item: InboxItem, snoozed: boolean): Omit<QueueEntry, "highlighted"> => {
       const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
@@ -609,8 +606,6 @@ function AlertsWorkspace() {
     const row = document.querySelector<HTMLElement>(`[data-alert-id="${CSS.escape(next.item.id)}"]`);
     row?.scrollIntoView?.({ block: "nearest" });
   };
-
-  // ---- Acts on a row, each read back from the event log ----
   // Notes where the event log stands before each dispatch, so the notice reads the reducer's verdict.
   const track = useCallback(
     (request: Omit<ActionRequest, "logSequence">) => {
@@ -710,10 +705,8 @@ function AlertsWorkspace() {
     onReturn: (entry) => detailHandlers.onReturn(entry.item),
   };
 
-  // ---- Checking: every condition this screen looks at, by name, with its count ----
   const checks = alertChecks({ allInbox, openMovements, referrals, movements, now });
 
-  // ---- History: what this session recorded, newest first ----
   const history = useMemo(
     () =>
       alertsHistory({
@@ -743,8 +736,6 @@ function AlertsWorkspace() {
       now,
     ],
   );
-
-  // ---- Broadcast ----
   const handleSelectTemplate = (tmplId: string) => {
     setSelectedTemplateId(tmplId);
     setBroadcastConfirmed(false);
@@ -774,7 +765,7 @@ function AlertsWorkspace() {
 
   const handleDispatchBroadcast = () => {
     if (!broadcastConfirmed || !broadcastTitle.trim() || !broadcastMessage.trim()) return;
-    if (broadcastRequest && !broadcastResult) return;
+    if (broadcastSave.pending) return;
     if (audienceState.recipients.length === 0) return;
     // Alerts redesign (1 Nov 2026): Everyone, the groups chosen or the units ticked.
     const { targetScope, targetScopeLabel } = audienceState.target;
@@ -783,50 +774,61 @@ function AlertsWorkspace() {
     setActionRequest(null);
     setBroadcastRequest({
       type: "DISPATCH_BROADCAST_ALERT",
-      logSequence: state.eventLog?.at(-1)?.sequence ?? -1,
       title: broadcastTitle.trim(),
       scope: targetScope,
       scopeLabel: targetScopeLabel,
     });
+    setBroadcastResult(undefined);
     // The new directive shows at the top of Now, where it can be stood down (Q181).
     openLiveBroadcast();
-    dispatch({
-      type: "DISPATCH_BROADCAST_ALERT",
-      role: deskRole,
-      now: clockNow,
-      title: broadcastTitle,
-      message: broadcastMessage,
-      severity: broadcastSeverity,
-      category: broadcastCategory,
-      ...audienceState.target,
-      durationMinutes: broadcastDurationMinutes,
-      dispatchedByName: coordDesk ? "State Mental Health Bed Desk Coordinator" : WARD_FLOW_ROLE_LABELS[deskRole],
-      kind: broadcastType === "bed_call" ? "bed_call" : "directive",
-    });
+    broadcastSave.submit(
+      () =>
+        dispatch({
+          type: "DISPATCH_BROADCAST_ALERT",
+          role: deskRole,
+          now: clockNow,
+          title: broadcastTitle,
+          message: broadcastMessage,
+          severity: broadcastSeverity,
+          category: broadcastCategory,
+          ...audienceState.target,
+          durationMinutes: broadcastDurationMinutes,
+          dispatchedByName: coordDesk ? "State Mental Health Bed Desk Coordinator" : WARD_FLOW_ROLE_LABELS[deskRole],
+          kind: broadcastType === "bed_call" ? "bed_call" : "directive",
+        }),
+      () => setBroadcastResult({ accepted: true }),
+    );
   };
 
   const handleStandDown = (alertId: string) => {
+    if (broadcastSave.pending) return;
     const alert = broadcastAlerts?.find((entry) => entry.id === alertId);
     setBroadcastSuccessNotice(null);
     setActionRequest(null);
     setBroadcastRequest({
       type: "STAND_DOWN_BROADCAST_ALERT",
-      logSequence: state.eventLog?.at(-1)?.sequence ?? -1,
       title: alert?.title ?? "Directive",
       scope: alert?.targetScope ?? "all",
       scopeLabel: alert?.targetScopeLabel ?? "the selected scope",
     });
-    dispatch({
-      type: "STAND_DOWN_BROADCAST_ALERT",
-      role: deskRole,
-      now: clockNow,
-      alertId,
-      stoodDownByRole: deskRole,
-    });
+    setBroadcastResult(undefined);
+    broadcastSave.submit(
+      () =>
+        dispatch({
+          type: "STAND_DOWN_BROADCAST_ALERT",
+          role: deskRole,
+          now: clockNow,
+          alertId,
+          stoodDownByRole: deskRole,
+        }),
+      () => setBroadcastResult({ accepted: true }),
+    );
   };
 
   const openComposer = (trigger: HTMLButtonElement) => {
     broadcastTriggerRef.current = trigger;
+    broadcastSave.forget();
+    setBroadcastResult(undefined);
     setBroadcastRequest(null);
     setActionRequest(null);
     setBroadcastSuccessNotice(null);
@@ -834,7 +836,6 @@ function AlertsWorkspace() {
     setBroadcastModalOpen(true);
   };
 
-  // ---- Hero tools ----
   const handleNotify = () => {
     setBroadcastRequest(null);
     setActionRequest(null);
@@ -891,8 +892,6 @@ function AlertsWorkspace() {
   const pastBroadcasts = (broadcastAlerts ?? []).filter(
     (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
   );
-
-  // ---- Queue views ----
   const rowFor = (entry: QueueEntry) =>
     isPhone ? (
       <AlertPhoneRow key={entry.item.id} entry={entry} now={now} handlers={queueHandlers} />
@@ -1476,7 +1475,7 @@ function AlertsWorkspace() {
             setMessage={setBroadcastMessage}
             confirmed={broadcastConfirmed}
             setConfirmed={setBroadcastConfirmed}
-            sending={Boolean(broadcastRequest && !broadcastResult)}
+            sending={broadcastSave.pending}
             liveBedCall={liveBedCallFor(activeBroadcast, audienceState.recipients, now)}
             onExtendLive={(alertId) => {
               track({

@@ -160,8 +160,8 @@ const ROLE_SCREENS: Record<string, WardChromeRole> = {
   "ed/ed-medical-placement-controls.tsx": "ed",
   "officer/officer-screen.tsx": "officer",
   "officer/officer-forms-pack.tsx": "officer",
-  // Split from officer-screen.tsx (18 Oct 2026): the job panel raises the diversion itself.
-  "officer/officer-job-detail.tsx": "officer",
+  // The diversion raise moved from officer-job-detail.tsx into its save hook (audit remediation, Nov 2026).
+  "officer/use-officer-diversion-save.ts": "officer",
   "community/community-screen.tsx": "community",
   "coordinator/shortlist-panel.tsx": "coordinator",
   "movements/movement-drawer.tsx": "coordinator",

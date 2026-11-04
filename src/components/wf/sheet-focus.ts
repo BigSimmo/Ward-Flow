@@ -73,7 +73,13 @@ const MAX_CONSECUTIVE_RECLAIMS = 12;
  */
 const NEVER_INERT_TAGS = new Set(["SCRIPT", "STYLE", "LINK", "TEMPLATE", "NOSCRIPT", "NEXT-ROUTE-ANNOUNCER"]);
 
-type SheetEntry = { id: string; root: HTMLElement | null };
+type SheetEntry = { id: string; root: HTMLElement | null; interactionRoots: readonly HTMLElement[] };
+
+function sheetContains(sheet: SheetEntry, element: Element) {
+  return (
+    sheet.root?.contains(element) || sheet.interactionRoots.some((root) => root.isConnected && root.contains(element))
+  );
+}
 
 const openSheets: SheetEntry[] = [];
 const inertedElements = new Set<HTMLElement>();
@@ -158,7 +164,7 @@ export function commandSheetHandles(): readonly object[] {
   // No held form, or no page to look at (a server or test runtime): every hold counts, as before.
   if (openForms.size === 0 || typeof document === "undefined") return [...openSheets, ...openForms.keys()];
   const origin = commandOrigin?.isConnected ? commandOrigin : null;
-  const inSheet = origin !== null && openSheets.some((sheet) => sheet.root?.contains(origin));
+  const inSheet = origin !== null && openSheets.some((sheet) => sheetContains(sheet, origin));
   const places = new Set<string>();
   for (let place = origin?.closest("[data-held-form]"); place; place = place.parentElement?.closest("[data-held-form]"))
     places.add(place.getAttribute("data-held-form") ?? "");
@@ -198,7 +204,7 @@ export function holdOpenForm(scope?: string): () => void {
  */
 function holdUsedForm(target: EventTarget | null) {
   const form = target instanceof Element ? target.closest("form") : null;
-  if (!form || usedForms.has(form) || openSheets.some((sheet) => sheet.root?.contains(form))) return;
+  if (!form || usedForms.has(form) || openSheets.some((sheet) => sheetContains(sheet, form))) return;
   const handle = {};
   usedForms.set(form, handle);
   openForms.set(handle, form);
@@ -278,9 +284,9 @@ export function overlayOpener(): HTMLElement | null {
 
 export function canRestoreFocusTo(target: HTMLElement | null) {
   if (target == null) return false;
-  const topRoot = openSheets[openSheets.length - 1]?.root ?? null;
-  if (topRoot == null) return true;
-  return topRoot.contains(target);
+  const top = openSheets[openSheets.length - 1];
+  if (top?.root == null) return true;
+  return sheetContains(top, target);
 }
 
 /**
@@ -338,9 +344,9 @@ export function lockPageScroll(): () => void {
 
 let releaseSheetPageScroll: (() => void) | null = null;
 
-export function pushSheet(id: string, root: HTMLElement | null = null) {
+export function pushSheet(id: string, root: HTMLElement | null = null, interactionRoots: readonly HTMLElement[] = []) {
   if (openSheets.length === 0 && !releaseSheetPageScroll) releaseSheetPageScroll = lockPageScroll();
-  openSheets.push({ id, root });
+  openSheets.push({ id, root, interactionRoots });
   syncBackgroundInert();
   notifyStackListeners();
 }
@@ -356,6 +362,19 @@ export function updateSheetRoot(id: string, root: HTMLElement | null) {
   }
   if (!entry || entry.root === root) return;
   entry.root = root;
+  syncBackgroundInert();
+  notifyStackListeners();
+}
+
+/** Retargets a guided interaction without moving its layer above a child modal. */
+export function updateSheetInteractionRoots(id: string, roots: readonly HTMLElement[]) {
+  const entry = openSheets.find((sheet) => sheet.id === id);
+  if (
+    !entry ||
+    (entry.interactionRoots.length === roots.length && entry.interactionRoots.every((root, at) => root === roots[at]))
+  )
+    return;
+  entry.interactionRoots = roots;
   syncBackgroundInert();
   notifyStackListeners();
 }
@@ -392,14 +411,20 @@ function canInert(element: Element): element is HTMLElement {
  * is inerted. A sheet that deliberately sits below the phone header uses this to keep the
  * header's Menu and Search live (Josh, 13 Oct 2026).
  */
-function pushBackgroundAround(element: Element, background: HTMLElement[]) {
+function pushBackgroundAround(
+  element: Element,
+  background: HTMLElement[],
+  interactionRoots: readonly HTMLElement[] = [],
+) {
+  if (interactionRoots.some((root) => root.contains(element))) return;
   if (
     element instanceof HTMLElement &&
     !element.hasAttribute(SHEET_INERT_SKIP_ATTRIBUTE) &&
     (!element.hasAttribute("inert") || inertedElements.has(element)) &&
-    element.querySelector(`[${SHEET_INERT_SKIP_ATTRIBUTE}]`) !== null
+    (element.querySelector(`[${SHEET_INERT_SKIP_ATTRIBUTE}]`) !== null ||
+      interactionRoots.some((root) => element.contains(root)))
   ) {
-    for (const child of Array.from(element.children)) pushBackgroundAround(child, background);
+    for (const child of Array.from(element.children)) pushBackgroundAround(child, background, interactionRoots);
     return;
   }
   if (canInert(element)) background.push(element);
@@ -410,7 +435,7 @@ function pushBackgroundAround(element: Element, background: HTMLElement[]) {
  * taking the siblings at each level covers both portaled sheets (a direct body
  * child) and inline sheets nested deep in the page tree.
  */
-function collectBackgroundElements(root: HTMLElement) {
+function collectBackgroundElements(root: HTMLElement, interactionRoots: readonly HTMLElement[]) {
   const background: HTMLElement[] = [];
   const lowerRoots = openSheets.slice(0, -1).map((entry) => entry.root);
   let node: HTMLElement = root;
@@ -422,14 +447,15 @@ function collectBackgroundElements(root: HTMLElement) {
     for (const sibling of Array.from(parent.children)) {
       if (sibling === node) continue;
       if (ownScrimLevel && sibling.hasAttribute(SHEET_SCRIM_ATTRIBUTE)) continue;
-      pushBackgroundAround(sibling, background);
+      pushBackgroundAround(sibling, background, interactionRoots);
       // OverlayPortal carries a meaningful layer/name on a display:contents
       // wrapper. Inert that logical wrapper and its direct surface so both the
       // platform containment and the Sheet's historical backdrop contract stay
       // observable for stacked modals.
       if (sibling instanceof HTMLElement && sibling.hasAttribute("data-overlay-layer")) {
         for (const surface of Array.from(sibling.children)) {
-          if (canInert(surface)) background.push(surface);
+          if (interactionRoots.length) pushBackgroundAround(surface, background, interactionRoots);
+          else if (canInert(surface)) background.push(surface);
         }
       }
     }
@@ -446,10 +472,16 @@ function collectBackgroundElements(root: HTMLElement) {
  */
 function syncBackgroundInert() {
   if (typeof document === "undefined") return;
-  const topRoot = openSheets[openSheets.length - 1]?.root ?? null;
+  const top = openSheets[openSheets.length - 1];
+  const topRoot = top?.root ?? null;
   const next =
     topRoot?.isConnected && document.body.contains(topRoot)
-      ? new Set(collectBackgroundElements(topRoot))
+      ? new Set(
+          collectBackgroundElements(
+            topRoot,
+            top.interactionRoots.filter((root) => root.isConnected),
+          ),
+        )
       : new Set<HTMLElement>();
 
   for (const element of Array.from(inertedElements)) {
