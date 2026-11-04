@@ -30,6 +30,8 @@ describe("the urgent flag is visible on the row it moved", () => {
         onClearFilter={() => {}}
       />,
     );
+    // Each Flow stage shows its oldest 5; open every stage so every row is on screen.
+    for (const more of screen.queryAllByRole("button", { name: /^Show all \d+$/u })) fireEvent.click(more);
   }
 
   it("labels the flagged row, in the queue, where the ordering is read", () => {
@@ -227,9 +229,9 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
   });
 });
 
-describe("the queue footer states the order of the tab on show", () => {
-  // Audit 1, Josh 20 Oct (CS-04): both tabs are longest wait first.
-  it("says longest wait first for patients and for referrals", () => {
+describe("the queue footer states its order", () => {
+  // Audit 1, Josh 20 Oct (CS-04): the queue is wait order; Home flow (Q340) keeps it within each stage.
+  it("says oldest first in each stage", () => {
     render(
       <PriorityQueue
         movements={wardMovements}
@@ -240,9 +242,7 @@ describe("the queue footer states the order of the tab on show", () => {
         onClearFilter={() => {}}
       />,
     );
-    expect(screen.getByText("Longest wait first")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: /^Referrals/ }));
-    expect(screen.getByText("Longest wait first")).toBeInTheDocument();
+    expect(screen.getByText("Oldest first in each stage")).toBeInTheDocument();
     expect(screen.queryByText(/Flagged and act now first/u)).toBeNull();
   });
 });

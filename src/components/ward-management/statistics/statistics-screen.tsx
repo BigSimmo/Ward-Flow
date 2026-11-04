@@ -954,7 +954,7 @@ function StatisticsSummaryView({
               ["Occupancy percent", occupiedPct],
               ["Being made ready", pendingPreparation],
               // Issue #618: counts of people follow the executive's small number rule; beds stay exact.
-              ["Admissions ended today", small(dischargesCount)],
+              ["Discharged today", small(dischargesCount)],
               ["Open ED movements", small(waitingCount)],
               ["Still open", small(stillOpenCount)],
             ],
@@ -970,7 +970,7 @@ function StatisticsSummaryView({
                   value={<span data-testid="ward-statistics-discharges-today-count">{small(dischargesCount)}</span>}
                   label={
                     <>
-                      Admissions ended today
+                      Discharged today
                       <span className={styles.srOnly} data-testid="ward-statistics-discharges-today-caption">
                         {reportDayCaption}
                       </span>
