@@ -50,7 +50,7 @@ lifecycle scripts disabled, verified 499 frontend package locations / 32,891 fil
 and 34 backend package locations / 1,134 files. Earlier exploratory runs using the
 old dependency tree are not current acceptance evidence.
 
-Fresh focused checks so far:
+Initial focused checks:
 
 - Tooling: 6 files / 89 tests passed.
 - Observation: 8 files / 68 tests passed.
@@ -76,9 +76,9 @@ dependencies, unused test variables and the validator line limit. These were rep
 without loosening gates. The exhaustive storage run predates the equivalent schema
 extraction; the 30-test integration run follows it.
 
-Not executed: full repository unit population, PostgreSQL integration, production
-build, browser journeys, hosted CI/artifact retrieval, physical-phone or installed-PWA
-checks. No publication, merge, database change or deployment was performed. Raw local output is retained outside Git in `/tmp/ward-flow-*` and
+At the initial focused checkpoint, the full unit population, PostgreSQL integration,
+production build, browser journeys, hosted CI/artifact retrieval and physical-device
+checks had not run. The extended results below supersede that initial boundary. No publication, merge, database change or deployment was performed. Raw local output is retained outside Git in `/tmp/ward-flow-*` and
 the ignored `.local/consolidated-audit-repairs/` checkpoint.
 
 ## Extended verification and privacy-boundary correction
@@ -99,8 +99,47 @@ Offline backend verification: 360 passed, zero failed, 42 skipped without a loca
 PostgreSQL target. The three full-unit skips were a historical diff-integrity check
 whose old commit is absent and two opt-in timing probes for inactive reporting.
 
-The production build and corrected-source full rerun are pending at this checkpoint.
+At this intermediate checkpoint the production build and corrected-source full rerun were pending; their completed results follow below.
 Pinned Chromium is absent. Approval was requested for its download and a disposable
-PostgreSQL 16 image; it has not yet been received. No live provider was contacted.
+PostgreSQL 16 image; it has not yet been received. No hosted runtime or database was contacted; the earlier authorised GitHub fetch and ownership reads remain separate.
 Earlier queued backend/build attempts timed out on the shared heavyweight lock and
 were not counted as execution evidence.
+
+## Final extended result
+
+The corrected product source is commit `d1cfd8f45`. The subsequent evidence update
+changes this report only; it does not claim a fresh code run on that documentation commit.
+
+- **Full offline gate:** 2,028 files; 20,106 collected assertions; **20,103 passed,
+  zero failed, three skipped**. All expected-red and execution floors passed.
+  Every one of the 21 batches executed afresh on the corrected source, including
+  all eight legal-provenance sweeps. `VITEST_MAX_WORKERS=4` was included in its
+  separate evidence identity. No failing checkpoint was reused as passing evidence.
+- **Production build:** passed webpack compilation, TypeScript and route generation
+  with the offline environment and telemetry disabled. A CSS optimiser warning about
+  `optgroup::label` was non-blocking; no unrelated styling was changed.
+- **Fresh exhaustive storage sweep:** `WARD_STORAGE_VERDICTS_FULL=1` on corrected
+  source passed all five tests in 83.42 seconds, with zero skips and no verdict
+  fixture changes.
+- **Offline backend:** 360 passed, zero failed, 42 skipped without a local PostgreSQL
+  target. These skips are not database integration evidence.
+- **Boundary repair:** the unchanged privacy guard and actual import/transfer controls
+  passed in both the focused 58-test run and the corrected full gate.
+- **Review and admission:** independent source review found no blocking issue;
+  formatting, owned lint, staged typechecks, safety and ownership admission passed.
+
+Full-gate receipt (retained locally):
+`.local/consolidated-audit-repairs/full-gate-corrected/receipt-1793818278379-33699.json`.
+SHA-256: `c264729ad699c32579ec5886e92fde14f265fa63a6610760c3cbf33e61186c0c`.
+The named-suite populations are retained in the adjacent batch JSON files.
+
+The three unit skips are explicit: the historical diff-integrity regression requires
+unavailable commit `d1485d6e8`; two inactive reporting timing probes are opt-in.
+They are not passes, and no current critical-suite all-skipped result was found.
+
+**Still unavailable:** native browser journeys, local PostgreSQL integration,
+physical-phone/installed-PWA checks, and hosted CI artifact/deployment observation.
+The pinned browser and a database image are absent; download approval remains
+pending under the repository's verification guidance. No download, live database,
+push, PR, merge or deployment was performed. No actionable source defect remains
+open after the repairs and the corrected full gate.
