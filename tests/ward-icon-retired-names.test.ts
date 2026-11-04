@@ -23,7 +23,6 @@ const RETIRED: Record<string, string> = {
 };
 
 const LEGACY_FILES = new Set<string>([
-  "src/components/ward-management/capacity/planned-admissions-panel.tsx",
   "src/components/ward-management/coordinator/coordinator-screen.tsx",
   "src/components/ward-management/coordinator/shortlist-panel.tsx",
   "src/components/ward-management/handover/handover-page.tsx",
