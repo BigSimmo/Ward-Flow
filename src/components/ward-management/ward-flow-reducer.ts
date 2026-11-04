@@ -45,7 +45,6 @@ import {
   type UndoRecord,
   diffForStepUndo,
   nextStepUndoSeq,
-  undoStepSubjectId,
   undoStepTypeFor,
   type StepUndo,
   type UndoStepType,
@@ -185,7 +184,7 @@ import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
 // Closing the loop, package D (24 Oct 2026).
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
-import { subjectId } from "./ward-flow-subject-id";
+import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
 import { nextBedReleaseId, withFreshIds } from "./ward-runtime-ids";
 export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
 
@@ -1508,7 +1507,7 @@ function withStepUndo(state: WardFlowState, next: WardFlowState, event: WardFlow
       kind: "step",
       undoType,
       action: event.type as StepUndo["action"],
-      subjectId: undoStepSubjectId(event),
+      subjectId: stepUndoSubjectId(event),
       at: event.now,
       seq: nextStepUndoSeq(next.undoRecords, state.auditSequence),
       role: event.role,

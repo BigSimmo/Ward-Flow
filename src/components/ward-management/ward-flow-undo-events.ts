@@ -1,4 +1,5 @@
 import { liveMovementForAdmission } from "./ward-admissions";
+import { stepUndoSubjectId } from "./ward-flow-subject-id";
 import type { AuditDecision } from "./ward-audit";
 import type {
   bedNumberRefusal,
@@ -21,7 +22,6 @@ import {
   stepChangedSince,
   stepUndoFor,
   undoRoleRefusal,
-  undoStepSubjectId,
   undoWindowRefusal,
   withoutUndoRecord,
 } from "./ward-undo";
@@ -262,7 +262,7 @@ export function reduceUndoEvent(
     case "UNDO_RELEASE_STEP":
     case "UNDO_PATIENT_RECORD": {
       // v10 pass 3: takes back the newest step of this kind on this subject, exactly (`ward-undo.ts`).
-      const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
+      const record = stepUndoFor(state.undoRecords, event.type, stepUndoSubjectId(event));
       if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);
       // An older toast's Undo must not take back a newer step that replaced its record.
       if (event.recordSeq !== undefined && record.seq !== event.recordSeq)

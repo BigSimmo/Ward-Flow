@@ -121,7 +121,8 @@ export function undoStepTypeFor(action: string): UndoStepType | undefined {
 }
 
 const BED_STEP_TYPES: ReadonlySet<string> = new Set(["SET_BED_CLOSED", "END_LEAVE_BED", "UNDO_BED_STEP"]);
-const PATIENT_RECORD_TYPES: ReadonlySet<string> = new Set([
+/** Steps filed against the patient record they change; see `stepUndoSubjectId` (D-14 allowlisted). */
+export const PATIENT_RECORD_UNDO_TYPES: ReadonlySet<string> = new Set([
   "RECORD_COMMUNITY_TREATMENT_ORDER",
   "END_COMMUNITY_TREATMENT_ORDER",
   "ARCHIVE_PATIENT",
@@ -142,10 +143,10 @@ export function undoStepSubjectId(event: object): string {
     leaveBedId?: unknown;
     bedNumber?: unknown;
     plannedAdmissionId?: unknown;
-    patientId?: unknown;
   };
-  // Tier 1 item 6 (4 Nov 2026): these steps are filed against the bed, leave record, booking or
-  // patient they change, so each one's Undo takes back only its own subject.
+  // Tier 1 item 6 (4 Nov 2026): these steps are filed against the bed, leave record or booking they
+  // change, so each one's Undo takes back only its own subject. Patient record steps are filed in
+  // `stepUndoSubjectId` (ward-flow-subject-id.ts), the D-14 allowlisted file that reads the link.
   const type = typeof fields.type === "string" ? fields.type : "";
   if (BED_STEP_TYPES.has(type)) {
     if (typeof fields.leaveBedId === "string" && fields.leaveBedId.length > 0) return `leave:${fields.leaveBedId}`;
@@ -158,8 +159,6 @@ export function undoStepSubjectId(event: object): string {
     fields.plannedAdmissionId.length > 0
   )
     return `planned:${fields.plannedAdmissionId}`;
-  if (PATIENT_RECORD_TYPES.has(type) && typeof fields.patientId === "string" && fields.patientId.length > 0)
-    return `patient:${fields.patientId}`;
   // Q61 (31 Oct 2026): a site handover sign-off is filed against its site, so one site's Undo never
   // takes back another site's sign-off, and never a ward's.
   if (

@@ -2,7 +2,6 @@
 
 import { Bell, Clock, FileText, MoreHorizontal, Printer, Send } from "lucide-react";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
-import { WardBedListPrint } from "./ward-bed-list-print";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import Link from "next/link";
@@ -124,7 +123,13 @@ import {
   WARD_BED_DRAWER_ENTRY,
   wardHandoverHref,
 } from "./ward-screen-helpers";
-import { WardAnswerFromLink, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
+import {
+  WardAnswerFromLink,
+  WardBedListPrint,
+  WardDailySheetDialog,
+  WardDischargeNotices,
+  WardReferralInbox,
+} from "./ward-screen-lazy";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";

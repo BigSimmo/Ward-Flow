@@ -1627,6 +1627,19 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       return { type: "ARCHIVE_PATIENT", patientId: patient?.id ?? MISSING_ID, reason: "test" };
     },
   ],
+  // Tier 1 item 6 (4 Nov 2026): take back the newest patient record step, so a sweep step always sends it.
+  [
+    1,
+    (state, random) => {
+      const record = (state.undoRecords ?? []).findLast(
+        (candidate) => candidate.kind === "step" && candidate.undoType === "UNDO_PATIENT_RECORD",
+      );
+      const patientId = record?.subjectId.startsWith("patient:")
+        ? record.subjectId.slice("patient:".length)
+        : (pick(random, state.patients)?.id ?? MISSING_ID);
+      return { type: "UNDO_PATIENT_RECORD", patientId, ...(record ? { role: record.role } : {}) };
+    },
+  ],
   // Movement facts: arrival details, flags, blockers, escalation, documents.
   [
     2,
