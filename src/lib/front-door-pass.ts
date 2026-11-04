@@ -173,13 +173,10 @@ function normaliseDemoCode(code: string): string {
   return code.toUpperCase().replace(/[\s-]+/g, "");
 }
 
-/** The shortest demo code that opens anything (Q371), counted after spaces and dashes are dropped. */
-const MIN_DEMO_CODE_LENGTH = 12;
-
-/** Whether an entered demo code matches `WARD_DEMO_CODE`. False when no code, or too short a code, is set. */
+/** Whether an entered demo code matches `WARD_DEMO_CODE`. False when no code is set. */
 export async function demoCodeMatches(entered: string, env: Env = process.env): Promise<boolean> {
   const expected = normaliseDemoCode(env.WARD_DEMO_CODE ?? "");
-  if (expected.length < MIN_DEMO_CODE_LENGTH) return false;
+  if (expected.length < 4) return false;
   // Hash both sides, so the comparison takes the same time whatever was typed.
   const digest = async (text: string) =>
     toBase64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(text))));

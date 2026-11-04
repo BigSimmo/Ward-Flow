@@ -54,8 +54,7 @@ so changing them needs a restart, not a rebuild:
   opens it. Off Railway, such as a local `next start`, anything but `required` leaves it open.
 - `WARD_PASS_SECRET` signs the pass cookie. Use 32 or more random characters. Without it the site
   stays shut and `/sign-in` says sign-in is not set up. Changing it signs everyone out.
-- `WARD_DEMO_CODE` (public demo only) is the code `/sign-in` asks for. It must be 12 or more
-  characters, not counting spaces and dashes (Q371); a shorter code opens nothing. Josh chose a demo code over
+- `WARD_DEMO_CODE` (public demo only) is the code `/sign-in` asks for. Josh chose a demo code over
   the open demo of 28 September 2026 ([D-88](decisions.md)). Share it only with people meant to
   see the demo.
 
