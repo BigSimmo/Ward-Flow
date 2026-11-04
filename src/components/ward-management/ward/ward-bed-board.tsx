@@ -10,11 +10,9 @@ import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhon
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import {
-  bestBed,
   boardReadyCounts,
   boardBedFits,
   bedNumberLabel,
-  fitCount,
   fitReason,
   placeQuestion,
   BOARD_RESTING_SAY,
@@ -304,8 +302,8 @@ function pickKey(pick: BoardPick): string {
  * pick up and place"). Controlled: the ward screen holds what is picked up and dispatches the
  * placement, so the bed panel's "Move to another bed" can pick up from outside the board.
  *
- * WH8 (Josh, 3 Nov 2026): choose the person, the beds that fit light up with a short reason and the
- * best one is marked, choose a bed, then one confirm sends it. On a desktop a waiting person can also
+ * WH8 (Josh, 3 Nov 2026): choose the person, the beds that fit light up with a short reason, choose a
+ * bed, then one confirm sends it. On a desktop a waiting person can also
  * be dragged onto a lit bed, which asks the same confirm.
  */
 export function WardBedBoard({
@@ -338,8 +336,6 @@ export function WardBedBoard({
       bed.status !== "closed" &&
       (bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0)),
   );
-  // A suggestion only helps when there is a choice: one lit bed needs no "Best fit".
-  const best = fitCount(beds, picked, isMixed) > 1 ? bestBed(beds, picked, isMixed) : null;
 
   // The one confirm (WH8): the bed chosen for the current pick, asked before anything is sent.
   const [confirm, setConfirm] = useState<{ key: string; bed: BedItem } | null>(null);
@@ -556,7 +552,6 @@ export function WardBedBoard({
                   const glyph = bedGlyphTone(bed);
                   const dim = picked ? !fits && !source : !matchesQuery(bed, query);
                   const label = cellLabel(bed, fits, nameFor);
-                  const isBest = fits && best === Number(bed.bedNumber);
                   const chosen = confirming !== null && Number(confirming.bedNumber) === Number(bed.bedNumber);
                   return (
                     <button
@@ -565,7 +560,6 @@ export function WardBedBoard({
                       className={styles.cell}
                       data-state={bed.heldFor ? "held" : bed.preparing ? "preparing" : String(bed.status)}
                       data-fits={fits ? "true" : undefined}
-                      data-best={isBest ? "true" : undefined}
                       data-chosen={chosen ? "true" : undefined}
                       data-act={glyph === "danger" ? "true" : undefined}
                       data-dim={dim ? "true" : undefined}
@@ -599,11 +593,7 @@ export function WardBedBoard({
                     >
                       <span className={styles.cellTop}>
                         <span className={styles.cellNo}>{bedNumberLabel(bed.bedNumber)}</span>
-                        {isBest ? (
-                          <span className={styles.bestTag} aria-hidden="true">
-                            Best fit
-                          </span>
-                        ) : bed.criteriaLedChip ? (
+                        {bed.criteriaLedChip ? (
                           <CriteriaLedTag chip={bed.criteriaLedChip} short />
                         ) : glyph ? (
                           <StatusGlyph tone={glyph} size={10} />
