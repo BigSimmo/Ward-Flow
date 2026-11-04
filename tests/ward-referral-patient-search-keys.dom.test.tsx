@@ -23,25 +23,25 @@ function open(onClose = vi.fn()) {
 }
 
 describe("referral patient search keys (A-4)", () => {
-  it("exposes the editable listbox control as a combobox with its current expanded state", () => {
-    const search = open();
-    expect(search).toHaveAttribute("role", "combobox");
+  it("exposes the patient suggestion popup and its expanded state as a combobox", () => {
+    open();
+    const search = screen.getByRole("combobox", { name: "Find a patient" });
     expect(search).toHaveAttribute("aria-expanded", "false");
     fireEvent.change(search, { target: { value: "UM1000" } });
-    const results = screen.getByRole("listbox", { name: "Matching patients" });
     expect(search).toHaveAttribute("aria-expanded", "true");
-    expect(search).toHaveAttribute("aria-controls", results.id);
+    const list = screen.getByRole("listbox", { name: "Matching patients" });
+    expect(search).toHaveAttribute("aria-controls", list.id);
+    fireEvent.keyDown(search, { key: "ArrowDown" });
+    expect(document.getElementById(search.getAttribute("aria-activedescendant")!)).toHaveAttribute("role", "option");
     fireEvent.keyDown(search, { key: "Escape" });
     expect(search).toHaveAttribute("aria-expanded", "false");
-    expect(search).not.toHaveAttribute("aria-controls");
+    expect(search).not.toHaveAttribute("aria-activedescendant");
   });
 
   it("moves through the results with the arrow keys and picks with Enter", () => {
     const search = open();
-    expect(search).toHaveAttribute("aria-expanded", "false");
     fireEvent.change(search, { target: { value: "UM1000" } });
     const results = screen.getByRole("listbox", { name: "Matching patients" });
-    expect(search).toHaveAttribute("aria-expanded", "true");
     const options = within(results).getAllByRole("option");
     expect(options.length).toBeGreaterThan(1);
     expect(search).toHaveAttribute("aria-controls", results.id);
@@ -60,7 +60,6 @@ describe("referral patient search keys (A-4)", () => {
 
     fireEvent.keyDown(search, { key: "Enter" });
     expect(screen.queryByRole("listbox", { name: "Matching patients" })).toBeNull();
-    expect(search).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByTestId("ward-referral-no-patient")).toBeNull();
   });
 

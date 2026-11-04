@@ -130,6 +130,7 @@ it.each(["cancel and reopen", "choose another patient", "edit the registration"]
       fireEvent.click(screen.getByRole("button", { name: /^Back to search$/ }));
       fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
     } else if (change === "choose another patient") {
+      vi.spyOn(window, "confirm").mockReturnValue(false);
       fireEvent.click(screen.getByRole("button", { name: /^Change patient$/ }));
       const next = h.baseline().patients.find((patient) => patient.id !== "PT-023" && patient.umrn)!;
       fireEvent.change(screen.getByRole("combobox", { name: "Find a patient" }), { target: { value: next.umrn } });

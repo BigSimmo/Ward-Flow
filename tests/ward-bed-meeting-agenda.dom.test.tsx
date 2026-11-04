@@ -203,6 +203,16 @@ describe("bed meeting agenda", () => {
 
     const list = screen.getByTestId("bed-meeting-action-list");
     const [first] = within(list).getAllByTestId("bed-meeting-action-done");
+    const doneButtons = within(list).getAllByTestId("bed-meeting-action-done");
+    const subjects = doneButtons.map((button) => {
+      const row = button.closest("li")!;
+      const actionAndSubject = within(row).getByText(/Book transport ·/u).textContent!;
+      const subject = actionAndSubject.split(" · ").slice(1).join(" · ");
+      expect(button).toHaveAccessibleName(`Done: Book transport for ${subject}`);
+      expect(button).toHaveTextContent(/^Done$/u);
+      return subject;
+    });
+    expect(new Set(subjects).size).toBe(2);
     fireEvent.click(first!, { detail: 1 });
     // The row has gone, so the second click of the pair lands on the next person's Done.
     fireEvent.click(within(list).getAllByTestId("bed-meeting-action-done")[0]!, { detail: 2 });

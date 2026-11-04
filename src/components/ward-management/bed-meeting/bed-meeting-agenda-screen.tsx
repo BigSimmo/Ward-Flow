@@ -555,6 +555,7 @@ function ActionRow({
         <Button
           size="sm"
           variant="sec"
+          aria-label={`Done: ${bedMeetingActionLabel(row.action.kind)} for ${name}`}
           onClick={(event) => {
             // The second click of a double click is never a fresh Done.
             if (event.detail > 1 || !claimDone()) return;

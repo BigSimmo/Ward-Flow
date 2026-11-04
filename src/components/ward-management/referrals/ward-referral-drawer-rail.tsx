@@ -485,6 +485,8 @@ export function ReferralCloseGuard({ s }: { s: WardReferralDrawerState }) {
     discardAndClose,
     keepAndClose,
     currentPatient,
+    newPatientDirty,
+    sentReferralId,
   } = s;
   return (
     <div ref={guardRootRef} className={styles.guard}>
@@ -500,17 +502,21 @@ export function ReferralCloseGuard({ s }: { s: WardReferralDrawerState }) {
         {/* RF6 (Current Issues, 3 Nov 2026): one clear question, who it is for, and the three choices
             with Discard set apart. Keep editing keeps the focus (design system, leaving unsaved work). */}
         <h3 className={styles.guardTitle} id={`${sectionId}-guard-title`}>
-          Keep this referral as a draft?
+          {sentReferralId ? "Discard unregistered patient details?" : "Keep this referral as a draft?"}
         </h3>
         {patientRecord ? (
           <p className={styles.guardWho}>
             <strong>{currentPatient.name}</strong>
-            <small>Not sent</small>
+            <small>{sentReferralId ? "Sent" : "Not sent"}</small>
           </p>
         ) : null}
         <p className={styles.bodyMeta} id={`${sectionId}-guard-text`}>
-          {patientRecord ? "" : "This referral is not sent. "}A kept draft reopens here the next time you start a
-          referral in this tab.
+          {sentReferralId
+            ? "The referral has been sent. "
+            : `${patientRecord ? "" : "This referral is not sent. "}A kept draft reopens here the next time you start a referral in this tab.`}
+          {newPatientDirty
+            ? " Unregistered patient details are not kept in a referral draft. Keep editing to finish registering the patient, or discard these details."
+            : null}
         </p>
         <div className={styles.guardActions}>
           <button
@@ -523,7 +529,13 @@ export function ReferralCloseGuard({ s }: { s: WardReferralDrawerState }) {
           <button type="button" ref={guardKeepRef} className={styles.btn} onClick={() => setGuardOpen(false)}>
             Keep editing
           </button>
-          <button type="button" className={styles.btnSendReferral} onClick={keepAndClose}>
+          <button
+            type="button"
+            className={styles.btnSendReferral}
+            aria-disabled={newPatientDirty ? "true" : undefined}
+            aria-describedby={newPatientDirty ? `${sectionId}-guard-text` : undefined}
+            onClick={keepAndClose}
+          >
             Keep draft and close
           </button>
         </div>
