@@ -197,6 +197,8 @@ export function MyListCard({
   decideHref,
   focus = "all",
   onShowAll,
+  hideWait = false,
+  referralCap,
 }: {
   act: QueueEntry[];
   /** WS-02: referrals a ward has accepted with no bed pulled yet. They sit in Act now. */
@@ -221,7 +223,13 @@ export function MyListCard({
   /** Hero counts narrow the list to one group; "all" shows every group. */
   focus?: "all" | "act" | "decide";
   onShowAll?: () => void;
+  /** Home flow mock-up (Q340): waiting alerts are marks on Flow rows, so the group is left out. */
+  hideWait?: boolean;
+  /** Home flow mock-up: show this many referral rows, then Show all (8 rows then Show more). */
+  referralCap?: number;
 }) {
+  const [allReferrals, setAllReferrals] = useState(false);
+  const shownReferrals = referralCap === undefined || allReferrals ? referrals : referrals.slice(0, referralCap);
   const [allWaiting, setAllWaiting] = useState(false);
   const [callSheetOpen, setCallSheetOpen] = useState(false);
   const pull = useAcceptedPull();
@@ -249,7 +257,7 @@ export function MyListCard({
   // A referral row leads with what is being decided (tier and ward asked), not a repeated label.
   const referralRows = (
     <ul className={phone ? alertStyles.phoneRows : styles.hrows}>
-      {referrals.map((referral) => {
+      {shownReferrals.map((referral) => {
         const who = patientOf(referral);
         const name = nameFor(who.formalName, who.umrn);
         const title = `Tier ${referral.urgency} · ${referralTo(referral, units)}`;
@@ -324,6 +332,16 @@ export function MyListCard({
     <section className={alertStyles.group} aria-label="Referrals to decide">
       <GroupHead tone="info" label="Referrals to decide" count={referrals.length} aside="oldest first" />
       {referrals.length > 0 ? referralRows : <CalmEmpty>No referral is waiting on a decision.</CalmEmpty>}
+      {referralCap !== undefined && referrals.length > referralCap ? (
+        <button
+          type="button"
+          className={styles.showMore}
+          aria-expanded={allReferrals}
+          onClick={() => setAllReferrals((open) => !open)}
+        >
+          {allReferrals ? "Show fewer" : `Show ${referrals.length - referralCap} more`}
+        </button>
+      ) : null}
     </section>
   );
   const waitGroup = (
@@ -363,12 +381,16 @@ export function MyListCard({
       )}
       {focus === "decide" ? null : actGroup}
       {focus === "act" ? null : decideGroup}
-      {focus === "all" ? waitGroup : null}
+      {focus === "all" && !hideWait ? waitGroup : null}
     </div>
   );
 
   return (
-    <Card className={styles.needsCard} data-testid="home-my-list" aria-label={`My list, ${total} items`}>
+    <Card
+      className={styles.needsCard}
+      data-testid="home-my-list"
+      aria-label={hideWait ? `Needs you, ${total - wait.length} items` : `My list, ${total} items`}
+    >
       {body}
       {pull.sheet}
       <div className={styles.needsFoot}>

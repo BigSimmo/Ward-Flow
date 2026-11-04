@@ -54,19 +54,15 @@ describe("Handover role branches", () => {
     expect(screen.queryByRole("tab", { name: /Beds/ })).toBeNull();
     expect(screen.getByTestId("ward-handover-sign-off-note")).toHaveTextContent("Coordinator or ward signs off");
     expect(screen.queryByTestId("ward-handover-sign-off")).toBeNull();
-    expect(screen.queryByTestId("ward-handover-sign-bar")).toBeNull();
     expect(screen.queryByTestId("ward-handover-hero-sign-off")).toBeNull();
     expect(screen.queryByText(/finding a ward$/)).toBeNull();
   });
 
   it("the coordinator keeps the scope picker, the bed meter and the sign-off", () => {
     renderAtDesk({ role: "coordinator", scope: { kind: "statewide" } });
-    expect(screen.getByRole("combobox", { name: "Filter the sheet" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Show:/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Beds/ })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-handover-sign-bar")).toBeInTheDocument();
-    fireEvent.click(
-      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
-    );
+    fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
     expect(screen.getByTestId("ward-handover-sign-off")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-handover-sign-off-note")).toBeNull();
   });

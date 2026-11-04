@@ -37,13 +37,56 @@
   outline: none;
 }
 
+/* B1 (Josh, 3 Nov 2026): a pinned head, the sheet's name on the left and its two buttons on the
+   right, so Print stays in reach on a long sheet and the title no longer sits under the buttons. */
 .toolbar {
-  position: absolute;
-  top: var(--wf-s-3);
-  right: var(--wf-s-4);
+  position: sticky;
+  /* Polish: pin to the overlay's true top edge, past its padding, so no sheet text shows above it. */
+  top: calc(-1 * var(--wf-s-4));
   z-index: 1;
   display: flex;
+  align-items: center;
   gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  background: var(--wf-surface);
+}
+
+.toolbarTitle {
+  margin-inline-end: auto;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+/* Columns for the ED and delay lists: name, then two right-aligned figures. */
+.tableHead,
+.tableRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem 5rem;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.tableHead {
+  padding-block: 2px 4px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+.tableHead > span + span,
+.cell {
+  text-align: right;
+}
+
+.cell {
+  font-family: var(--wf-mono);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
 }
 
 .openButton,
@@ -104,7 +147,6 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--wf-s-1) var(--wf-s-3);
-  padding-right: 220px;
 }
 
 .title {
@@ -257,14 +299,9 @@
   border-top: 1px solid var(--wf-line);
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 46.4375rem) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .titleRow {
-    padding-right: 0;
-    padding-top: 56px;
   }
 
   .openButton,
@@ -339,4 +376,44 @@
 /* Author button classes set display; keep the hidden launcher out of every screen layout. */
 .launcherHidden {
   display: none !important;
+}
+
+/* Polish (Josh, 3 Nov 2026): a person, where or why, then the wait, in columns that line up. */
+.personRow {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) 5rem;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+/* Where they wait over what holds them, so neither is cut off on paper. */
+.personRow > .rowNote {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rowCause {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Phone: the name and wait share the first line, where and why sit beneath. */
+@media (max-width: 30rem) {
+  .personRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name wait"
+      "note note";
+    row-gap: 2px;
+  }
+  .personRow > .rowLead {
+    grid-area: name;
+  }
+  .personRow > .rowNote {
+    grid-area: note;
+  }
+  .personRow > .cell {
+    grid-area: wait;
+  }
 }

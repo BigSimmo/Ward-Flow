@@ -41,10 +41,12 @@
   scroll-margin-top: calc(var(--wf-s-6) * 2);
 }
 
+/* Pins just under the top bar, as the shared side rail does; at 16px it slid behind the bar
+   (D-95, 3 Nov 2026). */
 @media (min-width: 1100px) {
   .record {
     position: sticky;
-    top: var(--wf-s-4);
+    top: var(--ward-sticky-top, 4.5rem);
   }
 }
 

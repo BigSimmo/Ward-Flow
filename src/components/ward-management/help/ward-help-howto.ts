@@ -645,20 +645,15 @@ const JOBS: readonly HowTo[] = [
     title: "Get alerts when I am on another screen",
     keywords: "notifications browser phone push alert notify lock screen",
     answer:
-      "Settings, Alerts: turn on Browser notifications for this computer, or Phone alerts for your phone. Both are for act-now and red alerts only.",
+      "Settings, Alerts: turn on Alerts on this device. It covers this browser, and your phone where it can. It is for act-now and red alerts only.",
     desks: EVERY_DESK,
     needs: "alerts",
     go: "settings#alerts",
     showMe: [
       {
-        target: setting("browser-notifications", "alerts"),
-        title: "Browser notifications",
-        body: "In Settings, Alerts. For this computer.",
-      },
-      {
-        target: setting("phone-alerts", "alerts"),
-        title: "Phone alerts",
-        body: "In Settings, Alerts. For your phone, including the lock screen.",
+        target: setting("device-alerts", "alerts"),
+        title: "Alerts on this device",
+        body: "In Settings, Alerts. One switch for this browser and, where it can, your phone.",
       },
     ],
   },

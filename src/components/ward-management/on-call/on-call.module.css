@@ -229,9 +229,15 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
 }
 
+/* OC3 (4 Nov 2026): the ring sits inside the card. The hero foot clips anything outside it, and
+   below 1280px the strip scrolls, which clips it too, so an outside ring lost its edges. */
 .key:focus-visible {
   outline: 2px solid var(--wf-hero-ink);
-  outline-offset: 2px;
+  outline-offset: -2px;
+}
+
+.key[aria-pressed="true"]:focus-visible {
+  outline-color: var(--wf-hero-2);
 }
 
 .key[aria-pressed="true"] {
@@ -313,9 +319,14 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
+/* OC2 (4 Nov 2026): the tab strip scrolls sideways, which also clips upright, so a focus ring on a
+   tab lost its top and bottom. 6px of room inside the strip, taken back by the margin, keeps the
+   tabs exactly where they were and the whole ring and halo in view. */
 .dirHead > [role="tablist"] {
   border-bottom: 0;
   flex: 0 0 auto;
+  padding: 6px;
+  margin: -6px;
 }
 
 .dirHead .search {
@@ -408,11 +419,19 @@
 }
 
 /* ---------- directory table ---------- */
+/* One scroll for the page (Josh, 3 Nov 2026): the directory grows with the page rather than sitting
+   in a 47rem box with its own scrollbar (design system v9 section 7). Below 1024px it scrolls only
+   sideways; from 1024px its columns fit, so nothing scrolls inside it and the head row and service
+   rows pin under the top bar. */
 .tableScroll {
-  max-height: 47rem;
-  overflow: auto;
+  overflow-x: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--wf-line-2) transparent;
+}
+
+/* A service jump lands its heading just under the pinned head row. */
+.serviceRow {
+  scroll-margin-top: 36px;
 }
 
 /* Device sweep (24 Oct 2026): 40rem was 24px wider than the directory beside the detail panel at
@@ -466,6 +485,25 @@
   letter-spacing: 0;
   font: inherit;
   color: inherit;
+}
+
+/* From 1024px (see .tableScroll): the head row and service rows pin under the top bar. */
+@media (min-width: 64rem) {
+  .directory {
+    overflow: clip;
+  }
+
+  .tableScroll {
+    overflow: visible;
+  }
+
+  .dirTable thead th {
+    top: var(--wf-header-height, 3.75rem);
+  }
+
+  .serviceRow th {
+    top: calc(var(--wf-header-height, 3.75rem) + 36px);
+  }
 }
 
 .serviceHead {
@@ -786,9 +824,11 @@
 }
 
 /* ---------- contact card ---------- */
+/* Pins just under the top bar (at 16px it slid behind the bar between 1024 and 1200px, below the
+   shared rail's own pin; D-95, 3 Nov 2026). */
 .panel {
   position: sticky;
-  top: var(--wf-s-4);
+  top: var(--ward-sticky-top, 4.5rem);
   display: flex;
   flex-direction: column;
   min-width: 0;

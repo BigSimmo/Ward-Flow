@@ -6,7 +6,7 @@ import { feedSuggestion, simulatedFeedMessages } from "@/components/ward-managem
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { WardFeedInbox } from "@/components/ward-management/tools/ward-feed-inbox";
+import { ReceiveNextFeedMessage, ToolFeed } from "@/components/ward-management/tools/ward-tool-feed";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { ToastProvider } from "@/components/wf/toast-provider";
 import {
@@ -116,6 +116,31 @@ describe("feed script", () => {
   });
 });
 
+/**
+ * The Tools Hospital feed (ward-tool-feed.tsx) and its Demo row's Receive message button. The old
+ * Tools inbox view went with the Tools overhaul (#1316); these cases are re-pointed at the new tool,
+ * which lists only what waits for a person and folds settled messages into one Done line.
+ */
+function Feed() {
+  return (
+    <>
+      <ReceiveNextFeedMessage />
+      <ToolFeed onNavigate={() => {}} />
+    </>
+  );
+}
+
+function waitingList() {
+  return screen.getByRole("list", { name: "Messages waiting" });
+}
+
+function openDone() {
+  if (screen.getByTestId("ward-feed-done").getAttribute("aria-expanded") !== "true") {
+    fireEvent.click(screen.getByTestId("ward-feed-done"));
+  }
+  return screen.getByRole("list", { name: "Messages done" });
+}
+
 describe("feed inbox in Tools", () => {
   it("confirms an arrival only when a person taps Confirm, and rejecting changes nothing", async () => {
     const first = readFeedMessage(messages[0]!);
@@ -124,7 +149,7 @@ describe("feed inbox in Tools", () => {
     if (suggestion.kind !== "arrival") throw new Error("first simulated message should be an arrival");
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFeedInbox />
+        <Feed />
         <MovementStage id={suggestion.movementId} />
         <InboxCount />
       </WardFlowProvider>,
@@ -136,11 +161,13 @@ describe("feed inbox in Tools", () => {
 
     fireEvent.click(screen.getByTestId("ward-feed-receive"));
     fireEvent.click(screen.getByTestId("ward-feed-reject-2"));
-    expect(screen.getByTestId("ward-feed-item-2")).toHaveTextContent("Rejected, nothing changed");
+    expect(screen.getByText("Message 2 rejected. Nothing changed.")).toBeInTheDocument();
+    expect(screen.getByTestId("probe-stage").textContent).toBe(before);
+    expect(within(openDone()).getByTestId("ward-feed-item-2")).toHaveTextContent("Rejected");
 
     fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
     await waitFor(() => expect(screen.getByTestId("probe-stage")).toHaveTextContent("arrived"));
-    expect(within(screen.getByTestId("ward-feed-item-1")).getByText("Confirmed")).toBeInTheDocument();
+    expect(within(within(openDone()).getByTestId("ward-feed-item-1")).getByText("Confirmed")).toBeInTheDocument();
   });
 
   it("names the person by name, record number and ward, says who it recorded, and offers Undo (audit CS3-06)", async () => {
@@ -153,7 +180,7 @@ describe("feed inbox in Tools", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ToastProvider>
-          <WardFeedInbox />
+          <Feed />
           <MovementStage id={suggestion.movementId} />
         </ToastProvider>
       </WardFlowProvider>,
@@ -163,6 +190,8 @@ describe("feed inbox in Tools", () => {
     const note = document.getElementById("ward-feed-note-1")!;
     expect(note).toHaveTextContent(person.formalName.trim());
     expect(note).toHaveTextContent(first.message.umrn);
+    const ward = seed.units.find((unit) => unit.id === suggestion.unitId)!;
+    expect(note).toHaveTextContent(ward.name);
 
     fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
     await waitFor(() => expect(screen.getByTestId("probe-stage")).toHaveTextContent("arrived"));
@@ -179,23 +208,22 @@ describe("feed inbox in Tools", () => {
     heldRaise.raise = raise;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFeedInbox />
+        <Feed />
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-feed-receive"));
     fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
-    expect(screen.getByTestId("ward-feed-pending-1")).toHaveTextContent("Saving this confirmation.");
     const reject = screen.getByTestId("ward-feed-reject-1");
     expect(reject).toHaveAttribute("aria-disabled", "true");
-    expect(reject).toHaveAttribute("aria-describedby", "ward-feed-pending-1");
+    expect(reject).toHaveAccessibleDescription(expect.stringContaining("Saving this confirmation."));
 
     fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
     fireEvent.click(reject);
     expect(raise).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId("ward-feed-item-1")).toHaveTextContent("Waiting for a person");
+    expect(within(waitingList()).getByTestId("ward-feed-item-1")).toBeInTheDocument();
 
     await act(async () => answer({ status: "accepted" }));
-    expect(within(screen.getByTestId("ward-feed-item-1")).getByText("Confirmed")).toBeInTheDocument();
+    expect(within(within(openDone()).getByTestId("ward-feed-item-1")).getByText("Confirmed")).toBeInTheDocument();
   });
 
   it("ties Record departure to its prompt until a destination is chosen", () => {
@@ -206,15 +234,19 @@ describe("feed inbox in Tools", () => {
     if (index < 0) throw new Error("the simulated feed should include a departure");
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFeedInbox />
+        <Feed />
       </WardFlowProvider>,
     );
     for (let count = 0; count <= index; count += 1) fireEvent.click(screen.getByTestId("ward-feed-receive"));
     const seq = index + 1;
     const confirm = screen.getByTestId(`ward-feed-confirm-${seq}`);
     expect(confirm).toHaveAttribute("aria-disabled", "true");
-    expect(confirm).toHaveAttribute("aria-describedby", `ward-feed-note-${seq}`);
-    expect(document.getElementById(`ward-feed-note-${seq}`)).toHaveTextContent("Choose where the person went.");
+    expect(confirm.getAttribute("aria-describedby")?.split(" ")).toContain(`ward-feed-note-${seq}`);
+    expect(confirm).toHaveAccessibleDescription(expect.stringContaining("Choose where they went first."));
+
+    fireEvent.click(screen.getByTestId(`ward-feed-leaving-${seq}`));
+    fireEvent.click(screen.getAllByRole("menuitemradio")[0]!);
+    expect(screen.getByTestId(`ward-feed-confirm-${seq}`)).not.toHaveAttribute("aria-disabled");
   });
 
   it("offers no confirmation a desk would be refused, and says why", () => {
@@ -226,25 +258,29 @@ describe("feed inbox in Tools", () => {
     route.pathname = `/ward-flow/ward/${otherWard.id}`;
     const { unmount } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFeedInbox />
+        <Feed />
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-feed-receive"));
-    expect(screen.getByTestId("ward-feed-confirm-1")).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByTestId("ward-feed-blocked-1")).toHaveTextContent("Open that ward to confirm it.");
-    fireEvent.click(screen.getByTestId("ward-feed-confirm-1"));
-    expect(screen.getByTestId("ward-feed-item-1")).toHaveAttribute("data-status", "waiting");
+    const confirm = screen.getByTestId("ward-feed-confirm-1");
+    expect(confirm).toHaveAttribute("aria-disabled", "true");
+    expect(confirm).toHaveAccessibleDescription(expect.stringContaining("Open that ward to confirm it."));
+    fireEvent.click(confirm);
+    expect(within(waitingList()).getByTestId("ward-feed-item-1")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-feed-done")).toBeNull();
     unmount();
     act(() => resetFeedInboxForTests());
 
     route.pathname = `/ward-flow/ed/${seed.movements[0]!.originEdId}`;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardFeedInbox />
+        <Feed />
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-feed-receive"));
     expect(screen.getByTestId("ward-feed-confirm-1")).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByTestId("ward-feed-blocked-1")).toHaveTextContent("This desk cannot record this.");
+    expect(screen.getByTestId("ward-feed-confirm-1")).toHaveAccessibleDescription(
+      expect.stringContaining("This desk cannot record this."),
+    );
   });
 });

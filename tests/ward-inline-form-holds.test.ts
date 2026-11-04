@@ -29,7 +29,6 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "community/community-screen.tsx": { cover: "held" },
   "community/use-community-screen-overlays.ts": { cover: "popup", why: "Transport booking is a modal sheet." },
   "coordinator/activity-panel.tsx": { cover: "popup", why: "Mark read is one tap inside the Activity drawer." },
-  "coordinator/coordinator-screen.tsx": { cover: "popup", why: "Exceptions open in a sheet." },
   "coordinator/shortlist-panel.tsx": { cover: "held" },
   "delays/daily-check-line.tsx": {
     cover: "no form",
@@ -98,6 +97,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "ward/ward-arrivals-corridor.tsx": { cover: "page form" },
   "ward/ward-bed-dossier-drawer.tsx": { cover: "popup", why: "The bed drawer is modal." },
   "ward/ward-bed-move-reason-form.tsx": { cover: "held" },
+  "restrictive-practice/seclusion-forms-view.tsx": {
+    cover: "popup",
+    why: "Start, end, room and incident each open in their own Dialog (FS3).",
+  },
   "ward/ward-discharge-criteria-card.tsx": { cover: "held" },
   "ward/ward-leave-paper-authority.tsx": { cover: "popup", why: "Opens only inside the bed drawer (WT-02)." },
   "ward/ward-drawer-discharge-date.tsx": { cover: "popup", why: "Opens only inside the bed drawer (WT-16)." },

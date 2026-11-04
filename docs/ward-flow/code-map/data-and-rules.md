@@ -402,11 +402,11 @@ capacity figure anywhere in this group is real.
   reducer accepts. Key exports: `canDispatch`, `dispatchPermission`, `roleLimitReason`,
   `rolesOnlyReason`, `CROSS_ROLE_ALLOWED`. Its hooks are in `ward-role-gate.tsx` (`useRouteRole`,
   `useRoleGate`), which renders the kit's `DisabledReason` beside a disabled button.
-- **`src/components/ward-management/ward-service-colors.ts`** (326 lines, 2 importers — one
-  production, one test) — A full WA Health Services colour key (EMHS green `#00825E`, NMHS red
+- **`src/components/ward-management/ward-service-colors.ts`** (326 lines, 1 importer, a test) —
+  A full WA Health Services colour key (EMHS green `#00825E`, NMHS red
   `#990057`, SMHS purple `#5A2476`, WACHS/CAHS blue, statewide, private), sourced from the real
   DOHWA corporate-identity stylesheets, with WCAG AA/AAA text-ink pairings and badge/dot style
-  helpers. Only used by `ward-catchment-resolver.tsx` in production. Key exports:
+  helpers. No production importer since the old catchment resolver was deleted (3 Nov 2026); only its test reads it. Key exports:
   `WA_HEALTH_SERVICES_COLOR_KEY`, `getHealthServiceColorDefinition`, `getHealthServiceBadgeStyle`,
   `getHealthServiceDotStyle`.
 - **`src/components/ward-management/ward-modal-focus.ts`** (51 lines, 2 importers) — `"use client"`

@@ -1,0 +1,64 @@
+/* TR4 (3 Nov 2026): the provider numbers double as the provider picker. */
+.row {
+  margin: 0 calc(-1 * var(--wf-s-2));
+  padding: 0 var(--wf-s-1) 0 0;
+  border-radius: var(--wf-r-md);
+  transition: background-color 120ms ease;
+}
+
+.row[data-chosen="true"] {
+  background: var(--wf-accent-tint);
+}
+
+.row[data-chosen="true"] b {
+  color: var(--wf-accent-ink);
+}
+
+.pick {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pick b {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.row:not([data-chosen="true"]) .pick:hover {
+  background: color-mix(in oklab, var(--wf-ink-1) 5%, transparent);
+}
+
+.pick:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.factNumber {
+  display: flex;
+  gap: var(--wf-s-2);
+  align-items: center;
+  margin-top: 2px;
+  color: var(--wf-ink-2);
+  font-weight: 400;
+}
+
+.synthetic {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-11) / 1.4 var(--wf-font);
+}

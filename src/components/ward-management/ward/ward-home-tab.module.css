@@ -1031,10 +1031,8 @@ label.todoMain:has(.todoTick:focus-visible) {
   color: var(--wf-ink-1);
 }
 
-/* Shift log */
+/* Shift log: no box of its own (D-95, 3 Nov 2026); the card's pane holds the height. */
 .logBody {
-  max-height: 20rem;
-  overflow: auto;
   padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
 }
 
@@ -1173,6 +1171,15 @@ label.todoMain:has(.todoTick:focus-visible) {
 
   .flowBody {
     max-height: 28rem;
+  }
+}
+
+/* Stacked full width (tablet and narrow desktop) there is no neighbouring card to match, so the
+   pane grows with the page instead of scrolling inside a 28rem box (D-95, 3 Nov 2026). */
+@media (min-width: 46.5rem) and (max-width: 70rem) {
+  .flowBody {
+    max-height: none;
+    overflow-y: visible;
   }
 }
 

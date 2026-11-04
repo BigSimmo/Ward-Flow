@@ -1,0 +1,169 @@
+/*
+ * The kit patient drawer (plan item 2c, 3 Nov 2026). Rules copied from the patient pop-up
+ * (`movements/movement-drawer.module.css`) and Home's Placement drawer (PR #1337), on v9 tokens.
+ * The head and foot stay fixed and only the body scrolls. Neutral borders, no side stripes (D-94);
+ * names wrap in full rather than ending in "…" (31 Oct 2026).
+ */
+
+.panel {
+  /* The patient pop-up's width on tablet and desktop. */
+  width: min(100%, 30rem);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+/* The Sheet's own body stops scrolling; the frame inside splits it into head, scroll and foot. */
+.body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.frame {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Head: eyebrow, title, subtitle, status tag, close. */
+.head {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-3);
+  background: var(--wf-surface);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.who {
+  flex: 1;
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 2px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--wf-fs-20);
+  font-weight: 650;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.subtitle {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  margin: 2px 0 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+/* Tabs inside the drawer, under the head and outside the scroll. */
+.tabs {
+  flex: none;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+/* The one scroll area. */
+.scroll {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* The foot: a light surface band pinned under the body, the main actions always in reach. */
+.foot {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) max(var(--wf-s-3), env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  box-shadow: 0 -10px 24px -18px color-mix(in srgb, var(--wf-ink-1) 40%, transparent);
+  color: var(--wf-ink-1);
+}
+
+.foot :is(a, button, select):focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.footRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.footRow > * {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+/* The fact grid: two columns, label over value. */
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+
+.grid > div {
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.grid > div:nth-child(-n + 2) {
+  border-top: 0;
+}
+
+.grid > div:nth-child(2n) {
+  border-left: 1px solid var(--wf-line);
+}
+
+.grid dt {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.grid dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+/* Phone: the title keeps the room. */
+@media (max-width: 46.4375rem) {
+  .head {
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+}

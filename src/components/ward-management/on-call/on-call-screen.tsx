@@ -849,13 +849,10 @@ function DirectoryTable({
   const byRole = tab === "hospitals" && groupBy === "role";
   const scroller = useRef<HTMLDivElement>(null);
   const services = blocks.flatMap((block) => (block.service ? [block.service] : []));
-  /* Jump inside the table's own scroller, so the page itself never moves. */
+  /* The directory grows with the page (3 Nov 2026), so a jump scrolls the page to the service. */
   function jumpTo(tone: string) {
-    const box = scroller.current;
-    const row = box?.querySelector<HTMLElement>(`#ward-on-call-svc-${tone}`);
-    if (!box || !row) return;
-    const head = box.querySelector("thead")?.getBoundingClientRect().height ?? 0;
-    box.scrollTo({ top: row.offsetTop - head, behavior: wardScrollBehavior() });
+    const row = scroller.current?.querySelector<HTMLElement>(`#ward-on-call-svc-${tone}`);
+    row?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
   }
   return (
     <div className={styles.tableScroll} ref={scroller}>

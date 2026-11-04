@@ -31,9 +31,10 @@ function renderForm() {
 }
 
 describe("Add a patient: time savers (search and forms review, 31 Oct 2026)", () => {
-  it("starts the cursor in the UMRN field on a larger screen", () => {
+  // RF7 (Josh, 3 Nov 2026): surname first, so the cursor starts in Family name.
+  it("starts the cursor in the first core field, Family name, on a larger screen", () => {
     renderForm();
-    expect(screen.getByTestId("ward-add-patient-umrn")).toHaveFocus();
+    expect(screen.getByTestId("ward-add-patient-family-name")).toHaveFocus();
   });
 
   it("writes a UMRN as one word in capitals, whatever was typed or pasted", () => {

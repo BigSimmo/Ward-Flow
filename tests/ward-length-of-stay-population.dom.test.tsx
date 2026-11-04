@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -16,6 +16,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
+import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 /**
  * ═══ THE AVERAGE STAY IS NOT A COMPLETED-STAY AVERAGE, AND THE SCREEN SAID IT WAS ══════════════
@@ -80,6 +81,12 @@ function renderWith(admissions: Admission[]) {
   );
 }
 
+/** The all-stays average sits in the Length of stay card's Data view (owner polish, 3 Nov 2026). */
+function openStayData() {
+  const card = screen.queryByTestId("statistics-ward-stays-chart");
+  if (card) fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
+}
+
 describe("the average-stay sentence names the population the figure measures", () => {
   it("the fixture really is arrived-and-not-left, or every assertion below is about nothing", () => {
     // THE FLOOR. If any of these had a `leftAt`, the case under test would not exist and the
@@ -98,13 +105,15 @@ describe("the average-stay sentence names the population the figure measures", (
     expect(derived.averageLengthOfStayDays, "a stay in progress must still be measurable").not.toBeNull();
 
     renderWith(ARRIVED_ONLY);
+    openStayData();
     const text = screen.getByTestId("ward-stat-length-of-stay").textContent ?? "";
     expect(text, "no figure rendered for a ward where people have arrived").toMatch(/\d/u);
   });
 
   it("never claims the average covers only admissions that have left", () => {
     renderWith(ARRIVED_ONLY);
-    const text = screen.getByTestId("ward-stat-length-of-stay").textContent ?? "";
+    openStayData();
+    const text = screen.getByTestId("ward-stat-length-of-stay").closest("p")?.textContent ?? "";
     expect(
       text,
       "the screen says the average is over admissions that have both arrived and left. It is not: " +
@@ -118,6 +127,44 @@ describe("the average-stay sentence names the population the figure measures", (
     // card or a fabricated zero would both misread as a measured stay. With no admissions there is
     // nobody arrived, so the length-of-stay panel is absent rather than worded.
     renderWith([]);
+    openStayData();
     expect(screen.queryByTestId("ward-stat-length-of-stay")).toBeNull();
+  });
+});
+
+describe("the Length of stay card covers the ward page's stay chart (owner polish, 3 Nov 2026)", () => {
+  const THREE = [...ARRIVED_ONLY, arrivedNotLeft(SEEDED, "AD-STAY-3", 30)];
+
+  it("says how many are in beds and their median, keeps the all-stays average in Data, and shows the day buckets", () => {
+    renderWith(THREE);
+    const card = screen.getByTestId("statistics-ward-stays-chart");
+    expect(card).toHaveAttribute("id", "ward-stay");
+    expect(within(card).getByTestId("ward-stat-stay-in-beds")).toHaveTextContent("3 in beds now");
+    expect(within(card).getByTestId("ward-stat-stay-median").closest("p")).toHaveTextContent(
+      "Median 4 days, people in beds now",
+    );
+    // Two different groups are never side by side: the all-stays average is only in the Data view.
+    expect(within(card).queryByTestId("ward-stat-length-of-stay")).toBeNull();
+    fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
+    expect(within(card).getByTestId("ward-stat-length-of-stay").closest("p")).toHaveTextContent(
+      "All stays on this ward, including people who have left",
+    );
+    fireEvent.click(within(card).getByRole("radio", { name: "Days" }));
+    const days = card;
+    expect(days).toHaveTextContent("0 to 3 days");
+    expect(days).toHaveTextContent("29 days or more");
+  });
+
+  it("is on the phone page too, so the ward page's #ward-stay link lands on it there", () => {
+    installMatchMediaStub(true);
+    try {
+      renderWith(THREE);
+      const phone = screen.getByTestId("ward-statistics-ward-phone");
+      const card = within(phone).getByTestId("statistics-ward-stays-chart");
+      expect(card).toHaveAttribute("id", "ward-stay");
+      expect(within(card).getByTestId("ward-stat-stay-median")).toHaveTextContent("4 days");
+    } finally {
+      installMatchMediaStub(false);
+    }
   });
 });

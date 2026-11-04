@@ -124,8 +124,10 @@ function recordOverride() {
  * harmless here either way — the tab is reachable and clickable regardless).
  */
 function openOverridesTab() {
-  // Desktop: the registers open from the hero's Exceptions count (owner, 8 Oct 2026).
-  fireEvent.click(screen.getByRole("button", { name: "Registers", expanded: false }));
+  // Home flow (Q340, Q345, 3 Nov 2026): Registers is an item in the "More for this list" menu at
+  // the end of Home's list tabs; on desktop it opens the registers strip.
+  fireEvent.click(screen.getByRole("button", { name: "More for this list", expanded: false }));
+  fireEvent.click(screen.getByRole("menuitem", { name: "Registers" }));
   fireEvent.click(screen.getByRole("tab", { name: /Overrides/ }));
 }
 

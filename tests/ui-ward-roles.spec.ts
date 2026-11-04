@@ -3,24 +3,17 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 import { clearToasts } from "./helpers/clear-toasts";
 import { openEdLists } from "./helpers/ward-ed-lists";
-import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
- * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
- * (N)" reveals the rest in place. Pick a row the way a coordinator would: open the whole queue
- * first when the row is further down.
+ * Home placement redesign (Josh, 19 Oct 2026), then Home flow (Q340, Q345, 3 Nov 2026): each Flow
+ * stage lists its oldest 5 and its own "Show all N" reveals the rest in place. Pick a row the way a
+ * coordinator would: open the stages first when the row is further down.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
   await showEveryoneWaitingOn(queue.page());
   const row = queue.getByTestId(`ward-queue-row-${movementId}`);
-  const showAll = queue.getByTestId("ward-queue-show-all");
-  if (
-    !(await row.isVisible()) &&
-    (await showAll.isVisible()) &&
-    (await showAll.getAttribute("aria-expanded")) !== "true"
-  ) {
-    await showAll.click();
-  }
+  if (!(await row.isVisible())) await showAllFlowRows(queue);
   await row.click();
   return row;
 }
@@ -738,8 +731,9 @@ test.describe("@mockup Emergency department screen", () => {
     const formExpiryLines = page.locator('[data-testid^="ward-ed-form-expiry-"]');
     expect(await formExpiryLines.count()).toBeGreaterThan(0);
 
-    // A department can raise a referral.
-    await expect(page.getByTestId("ward-ed-raise-referral-toggle")).toBeVisible();
+    // A department can raise a referral: off the phone from the app bar's New referral (deep audit, 4 Nov 2026).
+    await expect(page.getByTestId("ward-bar-primary-action")).toBeVisible();
+    await expect(page.getByTestId("ward-ed-raise-referral-toggle")).toHaveCount(0);
   });
 
   /**
@@ -980,8 +974,9 @@ test.describe("@mockup Emergency department screen", () => {
     await page.waitForLoadState("networkidle");
     await expect(page.getByTestId("ward-ed-governance")).toBeVisible();
     // Audit round 2 (option B, 13 Oct 2026): Raise referral opens the one shared referral slide-out
-    // rather than an inline ED form, so raising a referral is that slide-out here.
-    await page.getByTestId("ward-ed-raise-referral-toggle").click();
+    // rather than an inline ED form, so raising a referral is that slide-out here. Off the phone the
+    // app bar's New referral is the one button for it (deep audit, 4 Nov 2026).
+    await page.getByTestId("ward-bar-primary-action").click();
     const referralSheet = page.getByTestId("ward-bar-referral-sheet");
     await expect(referralSheet).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();
@@ -1253,7 +1248,7 @@ test.describe("@mockup Role switcher — the loop", () => {
      * `ensureToolsOpen`/`ensureToolsClosed` bracket the switch: the switcher lives inside
      * `WardBar`'s Tools drawer now (Task 8, 2026-09-11) — see those helpers' own header.
      */
-    async function switchTo(menuItemName: string) {
+    async function switchTo(menuItemName: string, afterNavigate?: () => Promise<void>) {
       await ensureToolsOpen(page);
       await switcherTrigger().click();
       const matches = page
@@ -1269,6 +1264,9 @@ test.describe("@mockup Role switcher — the loop", () => {
         const target = new URL(href, page.url()).pathname;
         await page.waitForURL((url) => url.pathname === target, { timeout: 15_000 });
       }
+      // A screen that opens a modal of its own on arrival (Home's placement drawer for the patient
+      // in focus) covers the Tools sheet, so the caller deals with it first.
+      await afterNavigate?.();
       await ensureToolsClosed(page);
       await expect(
         page.locator('div[hidden][id^="S:"]'),
@@ -1316,7 +1314,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await pickQueueRow(queue, "WF-315");
     await openShortlistSections(shortlist);
@@ -1347,6 +1345,10 @@ test.describe("@mockup Role switcher — the loop", () => {
     // (RPH, BTY, RGH Adult Secure) are real and resolve, so the correct reading is 3 and 0.
     await expect(shortlist.getByTestId("ward-shortlist-referred-badge")).toHaveCount(3);
     await expect(shortlist.getByTestId("ward-shortlist-unresolved-referred-badge")).toHaveCount(0);
+    // Placement is the patient drawer over the page on every screen size (H7, Josh 3 Nov 2026);
+    // close it, as a coordinator would, before changing view. The patient stays in focus.
+    await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+    await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
 
     // --- Step 3: Ward, reached via the picker (three live referrals — R52). ---
     await switchTo("Dabakarn");
@@ -1373,12 +1375,17 @@ test.describe("@mockup Role switcher — the loop", () => {
     // role. The shared `focusMovementId` (ward-flow-provider.tsx) re-selects WF-315 on this
     // remount without another click — proving the selection itself, not just the movement data,
     // survived the two role switches so far. ---
-    await switchTo("Bed coordinator");
-    await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
-    await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toContainText(
-      "Accepted destination: Dabakarn",
-    );
+    await switchTo("Bed coordinator", async () => {
+      await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
+      await page.waitForLoadState("networkidle");
+      await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toContainText(
+        "Accepted destination: Dabakarn",
+      );
+      // Placement is the patient drawer over the page on every screen size (H7, Josh 3 Nov 2026);
+      // close it, as a coordinator would, before changing view. The patient stays in focus.
+      await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+      await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
+    });
 
     // --- Step 6: ED — book transport, then mark handover ready. Without a booked transport job,
     // every officer action below would be refused (addendum R42).
@@ -1466,10 +1473,14 @@ test.describe("@mockup Role switcher — the loop", () => {
     // --- Step 10b: Ward — confirm arrival. Audit round 2 (A4-16, Josh 13 Oct 2026): the officer's
     // Arrived at ward ends the transport leg only and leaves the movement open; the receiving ward closes
     // it by confirming arrival. The Patient in focus ward chips show only from a coordinator page,
-    // so the switch goes through the coordinator, as step 4 did. ---
-    await switchTo("Bed coordinator");
-    await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
-    await page.waitForLoadState("networkidle");
+    // so the switch goes through the coordinator, as step 4 did. The coordinator reopens Placement
+    // for the patient in focus, so it is closed first, as in step 5. ---
+    await switchTo("Bed coordinator", async () => {
+      await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+      await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
+    });
     await switchTo("Dabakarn");
     await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
@@ -1484,9 +1495,9 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await showEveryoneWaitingOn(page);
-    await expect(page.getByRole("region", { name: "Priority queue" }).getByTestId("ward-queue-row-WF-315")).toHaveCount(
-      0,
-    );
+    // Open every Flow stage first, so a missing row means gone, not merely below a stage's top 5.
+    await showAllFlowRows(homeFlowCard(page));
+    await expect(homeFlowCard(page).getByTestId("ward-queue-row-WF-315")).toHaveCount(0);
   });
 });
 
@@ -1612,7 +1623,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
       .getByRole("link", { name: /^Home\b/u })
       .click();
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
-    await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), "WF-003");
+    await pickQueueRow(homeFlowCard(page), "WF-003");
     const placement = page.getByRole("complementary", { name: "Placement", exact: true });
     // L3 (12 Oct 2026): an accepted patient's card keeps the bed list behind "Find another bed".
     await placement.getByTestId("ward-shortlist-find-another-bed").click();
