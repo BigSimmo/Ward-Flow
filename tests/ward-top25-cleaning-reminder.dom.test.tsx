@@ -70,10 +70,17 @@ function setUp() {
   });
 }
 
-const reminderButtons = () =>
-  screen
+// WH2 (3 Nov 2026): This shift's To do list sits in a sheet opened from its summary on Ward home.
+const openThisShift = () => {
+  if (!screen.queryByTestId("ward-shift-sheet")) fireEvent.click(screen.getByTestId("ward-shift-summary"));
+};
+
+const reminderButtons = () => {
+  openThisShift();
+  return screen
     .queryAllByRole("button")
     .filter((button) => /^Check bed Bed \d+ still being made ready/.test(button.textContent ?? ""));
+};
 
 describe("cleaning reminder on the ward screen", () => {
   it("asks the ward to confirm the bed and opens it only on Ready", () => {

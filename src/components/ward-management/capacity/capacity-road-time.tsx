@@ -1,11 +1,11 @@
 "use client";
 
-import { ChevronDown, MapPin } from "lucide-react";
+import { ChevronDown, Route } from "lucide-react";
 import { SpelledCodes, codeName } from "@/components/ward-management/ward-abbreviations";
 import Link from "next/link";
 import { useId, useState } from "react";
 
-import { Card, CardHead, Icon, Select, cx, durMinutes } from "@/components/wf";
+import { Card, CardHead, Menu, cx, durMinutes } from "@/components/wf";
 import {
   REFERENCE_DISTANCE_CAVEAT,
   referenceDistance,
@@ -60,29 +60,28 @@ export function ReadyByRoadTime({
 
   return (
     <Card as="section" className={styles.card} aria-labelledby={`${baseId}-heading`} data-testid="capacity-road-time">
-      <CardHead icon={MapPin} id={`${baseId}-heading`} level={3} title="Nearest ready beds" />
+      <CardHead icon={Route} id={`${baseId}-heading`} level={3} title="Nearest ready beds" />
       <div className={styles.from}>
-        <label htmlFor={`${baseId}-from`}>From</label>
-        {/* Phone: the real select stays at 16px, so iPhone Safari does not zoom when it is tapped,
-            and sits invisible over a 13px copy of its value that matches the ward names below. */}
-        <span className={styles.picker}>
-          <Select
-            id={`${baseId}-from`}
-            boxClassName={styles.pickerBox}
-            value={ed?.id ?? ""}
-            onChange={(event) => setChosenEdId(event.currentTarget.value)}
-          >
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.siteCode} ED{codeName(d.siteCode) ? ` (${codeName(d.siteCode)})` : ""}
-              </option>
-            ))}
-          </Select>
-          <span className={styles.pickerValue} aria-hidden="true">
-            {ed === undefined ? null : <SpelledCodes text={`${ed.siteCode} ED`} />}
-            <Icon icon={ChevronDown} size={14} />
-          </span>
-        </span>
+        {/* Capacity stress test (3 Nov 2026): the kit menu the desktop card uses, in place of the
+            browser drop-down, so no native select is left on the page. */}
+        <Menu
+          label="Measure from"
+          items={departments.map((d) => ({
+            id: d.id,
+            label: codeName(d.siteCode) ?? d.siteCode,
+            meta: `${d.siteCode} ED`,
+            checked: d.id === ed?.id,
+            checkable: "radio" as const,
+            onSelect: () => setChosenEdId(d.id),
+          }))}
+          trigger={(props) => (
+            <button type="button" {...props} className={styles.picker}>
+              <span className={styles.pickerFrom}>From</span>
+              {ed === undefined ? "Choose ED" : <SpelledCodes text={`${ed.siteCode} ED`} />}
+              <ChevronDown strokeWidth={1.75} size={14} aria-hidden="true" />
+            </button>
+          )}
+        />
       </div>
       {/* Decision 6 (Audit 1, Josh 20 Oct): the order is road time alone, never a placement pick. */}
       <p className={styles.caveat} data-testid="capacity-road-time-caption">

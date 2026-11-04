@@ -39,7 +39,7 @@ import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/retu
 
 /** The Home tab section (Worth your attention), drawn from the ward screen's own state. */
 type WardScreenHomeSectionProps = {
-  activeTab: "attn" | "board" | "coming" | "out" | "beds" | "return";
+  activeTab: "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return";
   absencesOnOrder: ReturnType<typeof absentOnOrder>;
   isPhone: boolean;
   phonePanel: "shift" | "flow" | null;
@@ -90,7 +90,7 @@ type WardScreenHomeSectionProps = {
   lastActionRejection: Rejection | undefined;
   overrideReasonForm: (movementId: string) => ReactElement | null;
   liveFormAlerts: ReturnType<typeof wardLiveFormAlerts>["liveFormAlerts"];
-  selectActiveTab: (next: "attn" | "board" | "coming" | "out" | "beds" | "return") => void;
+  selectActiveTab: (next: "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return") => void;
   isRollupConfirmedToday: boolean;
   morningRollupTimeLabel: string;
   handleConfirmMorningRollup: () => void;
@@ -123,6 +123,8 @@ type WardScreenHomeSectionProps = {
   states: BedStateCounts;
   blockedReleases: BedRelease[];
   pendingPreparation: number;
+  /** WH4: the ward's own confirm, for the phone round's Confirm discharge. */
+  confirmBedRelease: (releaseId: string) => void;
 };
 
 /** The control that opened or closed placing hides with it, so focus follows to its partner. */
@@ -212,6 +214,7 @@ export function WardScreenHomeSection({
   states,
   blockedReleases,
   pendingPreparation,
+  confirmBedRelease,
 }: WardScreenHomeSectionProps) {
   // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
@@ -231,6 +234,8 @@ export function WardScreenHomeSection({
         absencesOnOrder={absencesOnOrder}
         phonePanel={isPhone ? phonePanel : undefined}
         onPhonePanelChange={setPhonePanel}
+        shiftSheetOpen={isPhone ? undefined : phonePanel === "shift"}
+        onShiftSheetOpenChange={(open) => setPhonePanel(open ? "shift" : null)}
         onWalkingChange={isPhone ? setPhoneWalking : undefined}
         onOpenBoard={() => {
           selectActiveTab("board");
@@ -312,6 +317,7 @@ export function WardScreenHomeSection({
         onOpenArrival={openArrival}
         onPullPatient={handlePullPatient}
         onOpenDischarges={openDischargesTab}
+        onConfirmRelease={(releaseId) => confirmBedRelease(releaseId)}
         bedsList={bedsList}
         onSelectBed={(bedNumber) => {
           setSelectedBed(bedNumber);
@@ -392,24 +398,13 @@ export function WardScreenHomeSection({
             <div className={styles.capacitySection}>
               <div className={styles.capacityTrackTitleRow}>
                 <span className={styles.capacityTrackLabel}>Capacity distribution</span>
-                <span className={styles.capacityTrackMeta}>
-                  {states.ready} {BED_STATE_LABELS.ready} · {states.pulled} {BED_STATE_LABELS.pulled} · {states.closed}{" "}
-                  {BED_STATE_LABELS.closed} · {states.occupied} {BED_STATE_LABELS.occupied}
-                </span>
               </div>
 
               <div className={`${styles.bedGrid} ${styles.breakdownStatsGrid}`} data-testid="ward-unit-beds">
                 {/* The ruled four (`ward-bed-states.ts`). No Blocked box: out-of-service beds are
-                        not recorded (owner ruling 2026-09-25) and are folded into Closed. */}
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="available"
-                  title={BED_STATE_DETAILS.ready}
-                >
-                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.ready}</span>{" "}
-                  <strong className={styles.statBoxVal}>{states.ready}</strong>
-                </span>
+                        not recorded (owner ruling 2026-09-25) and are folded into Closed. Integration
+                        QA (3 Nov 2026): Ready and Occupied sit once, in the hero, so only the other
+                        two of the four are here. */}
                 <span
                   className={`${styles.bedChip} ${styles.statBox}`}
                   data-ward-primitive="chip"
@@ -427,15 +422,6 @@ export function WardScreenHomeSection({
                 >
                   <span className={styles.statBoxLabel}>{BED_STATE_LABELS.closed}</span>{" "}
                   <strong className={styles.statBoxVal}>{states.closed}</strong>
-                </span>
-                <span
-                  className={`${styles.bedChip} ${styles.statBox}`}
-                  data-ward-primitive="chip"
-                  data-state="occupied"
-                  title={BED_STATE_DETAILS.occupied}
-                >
-                  <span className={styles.statBoxLabel}>{BED_STATE_LABELS.occupied}</span>{" "}
-                  <strong className={styles.statBoxVal}>{states.occupied}</strong>
                 </span>
                 <span
                   className={`${styles.bedChip} ${styles.statBox}`}
@@ -476,8 +462,8 @@ export function WardScreenHomeSection({
                   </svg>
                   <span>
                     <strong>
-                      {pendingPreparation} of the {capacity.available} ready {capacity.available === 1 ? "bed" : "beds"}{" "}
-                      at {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
+                      {pendingPreparation} ready {pendingPreparation === 1 ? "bed" : "beds"} at {unit.name}{" "}
+                      {pendingPreparation === 1 ? "is" : "are"} still being made ready.
                     </strong>{" "}
                     Not offered until marked Ready.
                   </span>
@@ -487,9 +473,10 @@ export function WardScreenHomeSection({
               <details className={styles.clinicalDisclosure}>
                 <summary>What these bed figures mean</summary>
                 <p className={styles.bedNote}>
-                  Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but not offered; pulled means
-                  allocated to a patient who has not arrived yet. Ready includes beds being made ready; Occupied
-                  includes beds held for leave. Discharge and leave counts are not added to the total.
+                  Ready and Occupied, at the top of the page, with pulled and closed here total {unit.beds}. Closed
+                  means empty but not offered; pulled means allocated to a patient who has not arrived yet. Ready
+                  includes beds being made ready; Occupied includes beds held for leave. Discharge and leave counts are
+                  not added to the total.
                 </p>
               </details>
             </div>

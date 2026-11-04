@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { Button, Checkbox, Dialog, Field, Select, Stepper } from "@/components/wf";
+import { Button, Checkbox, Dialog, Field, ListPicker, Stepper } from "@/components/wf";
 import { BED_KIND_LABEL } from "@/components/ward-management/forecast/forecast-by-kind";
 import {
   applyScenario,
@@ -22,7 +22,18 @@ type Toggle = "clearHeldUp" | "confirmDates" | "overdueGoAhead";
  * answer sits at the top and changes as each box is ticked, so the reader never scrolls to see
  * what a choice did. Nothing is saved: closing the dialog forgets the scenario.
  */
-export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClose: () => void; model: ForecastModel }) {
+export function ScenarioDialog({
+  open,
+  onClose,
+  model,
+  networkWide = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  model: ForecastModel;
+  /** A service is chosen but the scenario counts the whole network, so it says so. */
+  networkWide?: boolean;
+}) {
   const { tomorrow, units } = model;
   const [scenario, setScenario] = useState<ForecastScenario>(EMPTY_SCENARIO);
   const [unitId, setUnitId] = useState("");
@@ -48,7 +59,7 @@ export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClos
       open={open}
       onClose={close}
       title="Try a scenario"
-      description="Nothing here is saved."
+      description={networkWide ? "Network-wide. Nothing here is saved." : "Nothing here is saved."}
       size="md"
       primary={{ label: "Done", onAction: close }}
       secondary={[
@@ -108,16 +119,14 @@ export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClos
       <fieldset className={styles.scenarioSet}>
         <legend className={styles.kickerInline}>A ward opens or closes beds</legend>
         <div className={styles.scenarioRow}>
-          <Field label="Ward">
-            <Select value={unitId} onChange={(event) => setUnitId(event.target.value)}>
-              <option value="">Choose a ward</option>
-              {openUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          {/* A long list (every open ward), so the kit's searchable picker, not a browser drop-down. */}
+          <ListPicker
+            label="Ward"
+            value={unitId === "" ? null : unitId}
+            onChange={(next) => setUnitId(next ?? "")}
+            options={openUnits.map((unit) => ({ value: unit.id, label: unit.name }))}
+            placeholder="Choose a ward"
+          />
           <Field label="Beds">
             <Stepper
               value={delta}

@@ -73,7 +73,7 @@ const AROUND: readonly Around[] = [
       },
       {
         device: "desk",
-        target: starts("ward-diagram-unit-"),
+        target: starts("capacity-map-ward-"),
         title: "Every ward",
         body: "Each ward's beds, ready and being made ready. Choose a ward to open its panel.",
       },

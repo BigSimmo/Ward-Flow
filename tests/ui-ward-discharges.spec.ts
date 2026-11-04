@@ -190,7 +190,7 @@ async function boardReleaseStatus(page: Page, admissionId: string): Promise<stri
   await page.locator(`#capacity-bed-map button[aria-haspopup="dialog"][data-unit-id="${UNIT_ID}"]`).first().click();
   const panel = page.getByTestId("ward-capacity-ward-drawer");
   await expect(panel).toBeVisible();
-  await panel.getByRole("radio", { name: /^Discharges/u }).click();
+  await panel.getByRole("tab", { name: /^Discharges/u }).click();
   await panel.locator(`[id="capacity-discharge-discharge-${admissionId}"]`).click();
   const status = panel.locator("dt", { hasText: /^Status$/u }).locator("xpath=following-sibling::dd[1]");
   await expect(status).toBeVisible();
@@ -260,8 +260,12 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     expect(unitName, `fixture assumption: ${UNIT_ID} is a seeded unit`).toBeDefined();
     await clickRailLink(page, "/ward-flow/wards");
     await expect(page.getByTestId("ward-index")).toBeVisible({ timeout: 15_000 });
-    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
-    await page.getByRole("link", { name: "Bed board", exact: true }).click();
+    // The ward card's name opens its side panel, which links to the Bed board (#1360).
+    await page
+      .getByRole("button", { name: unitName!.split(" — ")[0], exact: true })
+      .first()
+      .click();
+    await page.getByRole("dialog").getByRole("link", { name: "Bed board", exact: true }).click();
     await page.waitForURL(`**/ward-flow/board/${UNIT_ID}`);
     await expect(
       page.locator('div[hidden][id^="S:"]'),
@@ -437,11 +441,13 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.locator("#tabBtn-attn").click();
       await page.getByRole("button", { name: "Full bed list", exact: true }).click();
       await page.locator(`[data-admission-id="${admission.id}"]`).click();
-      // The destination picker lives on the bed drawer's Plan to leave tab.
-      await page.getByTestId("bed-telemetry-drawer").getByRole("tab", { name: "Plan to leave" }).click();
-      const picker = page.locator("#drawer-leaving-dest");
-      await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length);
-      await picker.selectOption(destination.id);
+      // The destination chips live on the bed drawer's Leaving tab (WH1, Josh 3 Nov 2026).
+      const drawer = page.getByTestId("bed-telemetry-drawer");
+      await drawer.getByRole("tab", { name: "Leaving" }).click();
+      await drawer.getByRole("button", { name: /^All \d+ places$/ }).click();
+      const picker = drawer.getByRole("group", { name: "Where are they going?" });
+      await expect(picker.getByRole("button")).toHaveCount(LEAVING_DESTINATIONS.length);
+      await picker.getByRole("button", { name: destination.label, exact: true }).click();
       await page.getByRole("button", { name: /Record that they have left/ }).click();
       await page.getByRole("button", { name: "Record discharge", exact: true }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);

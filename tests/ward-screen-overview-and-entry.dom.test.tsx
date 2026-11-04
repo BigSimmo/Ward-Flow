@@ -169,7 +169,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     }
   });
 
-  it("filters ward cards by search query and opens ward profile modal", () => {
+  it("filters ward cards by search query and opens the ward's side panel", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardIndex />
@@ -189,14 +189,16 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     fireEvent.click(resetBtn);
     expect(searchInput).toHaveValue("");
 
-    // Clicking a ward's profile button opens its profile pop-out (v6: a dialog named "<ward> profile")
-    const profileBtns = screen.getAllByRole("button", { name: /Profile/i });
-    expect(profileBtns.length).toBeGreaterThan(0);
-    fireEvent.click(profileBtns[0]);
-
-    // Profile dialog is open
-    expect(screen.getByRole("dialog", { name: /profile/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/Profile/i).length).toBeGreaterThan(0);
+    // WS1 (Josh, 3 Nov 2026): a ward card's name opens the ward's side panel, which holds its core
+    // facts, its profile and the ways on to the ward and its bed board.
+    fireEvent.click(within(card("FSH Adult Secure")!).getByRole("button", { name: "FSH Adult Secure" }));
+    const drawer = screen.getByRole("dialog", { name: /^FSH Adult Secure/u });
+    expect(within(drawer).getByText(/ready of \d+ beds/u)).toBeInTheDocument();
+    expect(within(drawer).getByRole("region", { name: "Ward profile" })).toBeInTheDocument();
+    expect(within(drawer).getByRole("link", { name: "Bed board" })).toHaveAttribute(
+      "href",
+      "/ward-flow/board/fsh-adult-secure",
+    );
   });
 
   it("keeps a checked Highlight beds option when a hero pill sets a filter the group does not list", () => {
@@ -281,7 +283,13 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
      */
     const wardBeds = unitById("rph-adult-secure")?.beds;
     expect(wardBeds, "rph-adult-secure is not in the fixture — this assertion would prove nothing").toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: new RegExp(`^All beds ${wardBeds}$`, "i") })).toBeInTheDocument();
+    // WH6 (3 Nov 2026): the bed list counts became filter tiles. The All beds tile names the ward's
+    // bed count, then a note on who is in, so the match anchors on the count and the full stop.
+    expect(
+      within(screen.getByTestId("ward-beds-count-strip")).getByRole("button", {
+        name: new RegExp(`^All beds, ${wardBeds} beds\\.`, "i"),
+      }),
+    ).toBeInTheDocument();
     // Scoped to the Bed Board panel: the v6 ward home also draws Bed 01 as an Every bed tile.
     const bed01Card = within(document.getElementById("tab-beds")!).getByRole("button", { name: /Bed 01/i });
     expect(bed01Card).toBeInTheDocument();
@@ -308,6 +316,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(screen.queryByTestId("bed-telemetry-drawer")).not.toBeInTheDocument();
   });
 
+  // WH2 (3 Nov 2026): the shift log is the History view of the This shift sheet, opened from Home.
   it("keeps the shift log and awaiting answers on Home, neither behind a tab (Ward Hub)", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -317,7 +326,8 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
 
     const awaiting = screen.getByRole("region", { name: "Awaiting your answer" });
     expect(awaiting).not.toHaveAttribute("data-active");
-    expect(screen.getByRole("heading", { name: "Shift log" })).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("ward-shift-summary"));
+    expect(screen.getByRole("heading", { name: "Shift history" })).toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: /Awaiting your answer/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: "Shift log" })).not.toBeInTheDocument();
   });
