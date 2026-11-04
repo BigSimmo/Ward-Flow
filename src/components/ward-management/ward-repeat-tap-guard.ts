@@ -23,7 +23,7 @@ export function repeatTapKey(event: WardFlowEvent): string | null {
   }
 }
 
-export function createRepeatTapGuard(clock: () => number = Date.now) {
+export function createRepeatTapGuard(clock: () => number = () => Date.now()) {
   let last: { key: string; at: number; outcome: Outcome; refused: boolean } | undefined;
   return (event: WardFlowEvent, run: (event: WardFlowEvent) => Outcome): Outcome => {
     const key = repeatTapKey(event);
