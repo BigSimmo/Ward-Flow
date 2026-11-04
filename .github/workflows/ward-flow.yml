@@ -153,9 +153,18 @@ jobs:
       - name: Review dependency changes
         if: ${{ github.event_name == 'pull_request' && needs.plan.outputs.dependency_review == 'true' }}
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
+      - name: Restore installed packages
+        id: node-modules
+        if: ${{ !cancelled() && needs.plan.outputs.full == 'true' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
         if: ${{ !cancelled() && needs.plan.outputs.full == 'true' }}
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Check generated site map
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.doc_contracts == 'true' }}
@@ -237,8 +246,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Install locked Ward backend dependencies
         id: backend-install
@@ -308,8 +325,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Select reproducible nightly fuzz window
         if: ${{ github.event_name == 'schedule' && steps.install.outcome == 'success' }}
@@ -397,8 +422,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Restore Next build cache
         id: next-cache
@@ -452,8 +485,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Download the verified browser build
         if: ${{ !cancelled() && needs.browser-build.result == 'success' && steps.install.outcome == 'success' }}
@@ -551,8 +592,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Download the verified browser build
         if: ${{ !cancelled() && needs.browser-build.result == 'success' && steps.install.outcome == 'success' }}
@@ -676,9 +725,26 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
+      # The clean tree is saved straight after its attested install, from main only, before any step
+      # writes into node_modules; pull requests restore it and install-locked-dependencies.mjs reuses
+      # it only when its post-install stamp still matches the lock and the files.
+      - name: Save installed packages on main
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.install.outcome == 'success' && steps.node-modules.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ${{ steps.node-modules.outputs.cache-primary-key }}
       - name: Restore Next build cache
         id: production-cache
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -720,8 +786,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Download shard coverage blobs
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}

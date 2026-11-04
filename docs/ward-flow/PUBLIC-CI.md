@@ -40,6 +40,11 @@ The wrapper performs the locked install and verifies the installed runtime depen
 matching direct versions alone does not prove a usable installation. Jobs also record Node and npm.
 An installation failure cannot establish test evidence.
 
+Each job first restores `node_modules` from an exact cache key (OS, `.nvmrc`, `package.json` and
+`package-lock.json`, no fallback). Only the production build job on main saves it, straight after
+its attested install. On an exact hit the wrapper skips `npm ci` only when the restored tree's own
+post-install stamp still matches the lock and the files on disk; otherwise it runs a clean install.
+
 ## Scope by change
 
 `plan.mjs` narrows only positively recognised scopes. `full` controls root installation; independent

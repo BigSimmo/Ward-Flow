@@ -123,6 +123,44 @@ function requireWorkflow(source) {
     assert.equal(step(job, "Install locked dependencies").fields.get("id"), "install");
   }
   assert.equal(step("static", "Install locked dependencies").fields.get("id"), "install");
+  // Installed packages come from a cache saved on main only, straight after an attested install; the
+  // installer reuses an exact hit only when its own post-install stamp still matches (see
+  // install-locked-dependencies.mjs). Every install restores the same exact key with no fallback.
+  for (const [job] of jobs) {
+    if (!steps(job).some(({ fields }) => fields.get("name") === "Install locked dependencies")) continue;
+    const names = steps(job).map(({ fields }) => fields.get("name"));
+    const restore = step(job, "Restore installed packages");
+    assert.ok(
+      names.indexOf("Restore installed packages") === names.indexOf("Install locked dependencies") - 1,
+      `${job}: restore installed packages immediately before installing`,
+    );
+    assert.equal(restore.fields.get("uses"), "actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9");
+    assert.equal(restore.fields.get("id"), "node-modules");
+    assert.match(
+      restore.text,
+      /^ {10}key: ward-node-modules-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\('\.nvmrc', 'package\.json', 'package-lock\.json'\) \}\}$/mu,
+    );
+    assert.doesNotMatch(restore.text, /restore-keys/u, `${job}: installed packages restore an exact key only`);
+    assert.ok(
+      step(job, "Install locked dependencies").text.includes(
+        `          WARD_INSTALL_RESTORED: ${expression("steps.node-modules.outputs.cache-hit")}\n`,
+      ),
+    );
+  }
+  assert.deepEqual(
+    [...jobs.keys()].filter((job) =>
+      steps(job).some(({ fields }) => fields.get("name") === "Save installed packages on main"),
+    ),
+    ["build"],
+  );
+  {
+    const names = steps("build").map(({ fields }) => fields.get("name"));
+    assert.equal(
+      names.indexOf("Save installed packages on main"),
+      names.indexOf("Install locked dependencies") + 1,
+      "build: installed packages are saved straight after the attested install",
+    );
+  }
   exact(
     "static",
     "Install locked dependencies",
@@ -648,6 +686,14 @@ for (const [before, after] of [
   ["if: always()", "if: success()"],
   ["shard: [1, 2, 3, 4, 5, 6, 7, 8]", "shard: [1, 2, 3, 4, 5, 6, 7]"],
   ["group: [1, 2, 3]", "group: [1, 2]"],
+  [
+    "          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}",
+    "          WARD_INSTALL_RESTORED: true",
+  ],
+  [
+    "          path: node_modules\n          key: ward-node-modules-",
+    "          path: node_modules\n          restore-keys: ward-\n          key: ward-node-modules-",
+  ],
   ["| sha256sum -c -", "| cat"],
   ["--gitleaks-ignore-path .gitleaksignore", ""],
   ["branches: [main]", "branches: [other]"],
