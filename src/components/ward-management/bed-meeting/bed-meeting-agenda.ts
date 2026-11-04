@@ -3,6 +3,7 @@ import { durMinutes } from "@/components/wf";
 import type { Admission } from "../ward-admissions";
 import type { Instant } from "../ward-clock";
 import type { BedRelease, Movement, Unit } from "../ward-model";
+import { edById } from "../ward-sites";
 import { outOfAreaLedger } from "../ward-referrals-out-of-area";
 import { strandedFlags, strandedPromptText } from "../ward-stranded";
 import { isWaitingInEd } from "../ward-ed-presence";
@@ -13,7 +14,7 @@ import type { BedMeetingAction, BedMeetingSubject } from "./bed-meeting-actions"
  * already recorded, never typed: the longest ED waits, held beds soonest to run out, stranded
  * stays, people out of area, and the actions agreed last time. Read only.
  */
-const AGENDA_ITEMS_PER_SECTION = 5;
+const DEFAULT_ITEMS_PER_SECTION = 5;
 
 export type AgendaItem = {
   subject: BedMeetingSubject;
@@ -21,6 +22,10 @@ export type AgendaItem = {
   /** The ward a ward-owned action would go to, if one is known. */
   unitId?: string;
   detail: string;
+  /** The one figure the meeting reads first (the wait, the time left), shown at the row's end. */
+  value?: string;
+  /** A word under the figure saying what it counts ("waiting", "left"). */
+  caption?: string;
 };
 
 export type AgendaSection = { id: string; title: string; total: number; items: AgendaItem[] };
@@ -34,6 +39,11 @@ export type MeetingActionSummary = {
   open: MeetingActionRow[];
 };
 
+function edLine(edId: string | undefined): string {
+  const name = edById(edId)?.name;
+  return name ? `In ${name.replace(/ Emergency Department$/, " ED")}` : "In ED";
+}
+
 const movementSubject = (movement: Movement): BedMeetingSubject => ({ kind: "movement", id: movement.id });
 const admissionSubject = (admission: Admission): BedMeetingSubject => ({ kind: "admission", id: admission.id });
 
@@ -45,6 +55,8 @@ export function bedMeetingAgenda(
     units: readonly Unit[];
   },
   now: Instant,
+  /** How many people each list keeps. The agenda page keeps everyone and folds with Show more. */
+  limit: number = DEFAULT_ITEMS_PER_SECTION,
 ): AgendaSection[] {
   const { movements, admissions, bedReleases, units } = input;
   const open = movements.filter((movement) => !movement.closure && movement.stage !== "arrived");
@@ -56,7 +68,10 @@ export function bedMeetingAgenda(
       subject: movementSubject(movement),
       record: movement,
       ...(movement.acceptedUnitId !== undefined ? { unitId: movement.acceptedUnitId } : {}),
-      detail: `Waiting ${durMinutes(now - movement.openedAt)} in ED`,
+      // Polish (Josh, 3 Nov 2026): the wait is the row's figure, so the line names where they wait.
+      detail: edLine(movement.originEdId),
+      value: durMinutes(now - movement.openedAt),
+      caption: "waiting",
     }));
 
   const holds = open
@@ -69,7 +84,9 @@ export function bedMeetingAgenda(
         subject: movementSubject(movement),
         record: movement,
         ...(movement.acceptedUnitId !== undefined ? { unitId: movement.acceptedUnitId } : {}),
-        detail: left > 0 ? `Pull ${durMinutes(left)} left` : `Pull expired ${durMinutes(-left)} ago`,
+        detail: left > 0 ? "Pulled bed" : `Pull expired ${durMinutes(-left)} ago`,
+        value: left > 0 ? durMinutes(left) : "Expired",
+        caption: left > 0 ? "left" : `${durMinutes(-left)} ago`,
       };
     });
 
@@ -82,7 +99,9 @@ export function bedMeetingAgenda(
         subject: admissionSubject(admission),
         record: admission,
         unitId: admission.unitId,
-        detail: `${flag.days} days · ${strandedPromptText(flag)}`,
+        detail: strandedPromptText(flag),
+        value: `${flag.days}d`,
+        caption: "in hospital",
       },
     ];
   });
@@ -93,7 +112,9 @@ export function bedMeetingAgenda(
       subject: admissionSubject(entry.admission),
       record: entry.admission,
       unitId: entry.admission.unitId,
-      detail: `${entry.unit.name} · in for ${durMinutes(entry.sinceArrival)}`,
+      detail: entry.unit.name,
+      value: durMinutes(entry.sinceArrival),
+      caption: "away",
     }));
 
   return [
@@ -104,7 +125,7 @@ export function bedMeetingAgenda(
   ].map((section) => ({
     ...section,
     total: section.items.length,
-    items: section.items.slice(0, AGENDA_ITEMS_PER_SECTION),
+    items: section.items.slice(0, limit),
   }));
 }
 

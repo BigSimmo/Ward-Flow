@@ -43,3 +43,14 @@
 .table.table tr[data-overdue] td {
   box-shadow: none;
 }
+
+/* Stress test (3 Nov 2026): on phone the tier pill keeps "T3" on one line and the patient's
+   from-and-asking line wraps in full instead of cutting off. */
+.tier {
+  white-space: nowrap;
+}
+.who.who.who > span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
