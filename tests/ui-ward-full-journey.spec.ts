@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { unitById, wardSites } from "@/components/ward-management/ward-sites";
 import { clearToasts } from "./helpers/clear-toasts";
+import { chooseEdKitChoice } from "./helpers/ed-kit-choices";
 import { openEdLists } from "./helpers/ward-ed-lists";
 import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
@@ -334,15 +335,15 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
       .click();
     await page.getByTestId("ward-ed-inbox-raise-RF-009").click();
     await expect(page.getByRole("region", { name: "Ask for a bed" })).toBeVisible();
-    await page.getByTestId("ward-ed-referral-cohort").selectOption("Adult");
-    await page.getByTestId("ward-ed-referral-security").selectOption("Open");
-    await page.getByTestId("ward-ed-referral-sex").selectOption("Male");
+    await chooseEdKitChoice(page, "ward-ed-referral-cohort", "Adult");
+    await chooseEdKitChoice(page, "ward-ed-referral-security", "Open");
+    await chooseEdKitChoice(page, "ward-ed-referral-sex", "Male");
     // Gender ("decides which bed", T11/T10, owner answer 17 September 2026) is a separate required
     // question from Sex above it, added to this form after this spec was first written.
-    await page.getByTestId("ward-ed-referral-gender").selectOption("Male");
-    await page.getByTestId("ward-ed-referral-legal-status").selectOption("Voluntary");
-    await page.getByTestId("ward-ed-referral-urgency").selectOption("3");
-    await page.getByTestId("ward-ed-referral-observation").selectOption("general");
+    await chooseEdKitChoice(page, "ward-ed-referral-gender", "Male");
+    await chooseEdKitChoice(page, "ward-ed-referral-legal-status", "Voluntary");
+    await chooseEdKitChoice(page, "ward-ed-referral-urgency", "3");
+    await chooseEdKitChoice(page, "ward-ed-referral-observation", "general");
     await page.getByTestId("ward-ed-referral-high-acuity-not-required").click();
     await page.getByTestId("ward-ed-referral-submit").click();
 

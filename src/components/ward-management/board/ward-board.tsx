@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
@@ -1315,7 +1316,7 @@ export function WardBoard({
                   // token-reference guard (tests/ward-css-token-references-resolve.test.ts).
                   style={{ borderRadius: "var(--r0, 0.25rem)" }}
                 >
-                  ✕
+                  <X aria-hidden="true" size={16} strokeWidth={1.75} />
                 </button>
               </div>
 

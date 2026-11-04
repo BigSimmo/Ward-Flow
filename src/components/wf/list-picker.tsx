@@ -62,6 +62,8 @@ export type ListPickerProps = {
   name?: string;
   /** `data-testid` on the field button. */
   testId?: string;
+  /** Marks the field unanswered or wrong: `aria-invalid` and the kit's red edge. */
+  invalid?: boolean;
 };
 
 /** The search box appears above this many options. */
@@ -117,6 +119,7 @@ export function ListPicker({
   id: idProp,
   name,
   testId,
+  invalid = false,
 }: ListPickerProps): JSX.Element {
   const generated = useId();
   const id = idProp ?? `wf-list-picker-${generated.replace(/:/gu, "")}`;
@@ -278,6 +281,7 @@ export function ListPicker({
               id={rowId(index)}
               role="option"
               aria-selected={selected}
+              data-value={option.value}
               className={cx(styles.option, index === activeIndex && styles.active)}
               onPointerDown={(event) => event.preventDefault()}
               onMouseMove={() => setActive(index)}
@@ -354,7 +358,7 @@ export function ListPicker({
           {label}
         </span>
       </div>
-      <div className={cx(formStyles.in, disabled && styles.disabled)}>
+      <div className={cx(formStyles.in, invalid && formStyles.invalid, disabled && styles.disabled)}>
         <button
           ref={buttonRef}
           id={id}
@@ -367,6 +371,7 @@ export function ListPicker({
           aria-required={required || undefined}
           aria-activedescendant={!isPhone && !searchable ? activeId : undefined}
           disabled={disabled}
+          aria-invalid={invalid || undefined}
           data-testid={testId}
           className={cx(formStyles.control, formStyles.select, styles.trigger, !chosen && styles.placeholder)}
           onClick={() => (open ? close(false) : openList())}

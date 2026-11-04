@@ -1,7 +1,7 @@
 "use client";
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
-import { Activity, Ambulance, BedDouble, HeartHandshake, MapPin, Shield, Target } from "lucide-react";
+import { Activity, Ambulance, BedSingle, HeartHandshake, MapPin, Shield, Target } from "lucide-react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import {
   ATS_CATEGORIES,
@@ -511,7 +511,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
       </section>
       {destType === "ward" && (
         <section className={styles.refCard}>
-          <CardHead icon={BedDouble} title="Bed requirements" />
+          <CardHead icon={BedSingle} title="Bed requirements" />
           <div className={styles.cardBody}>
             <div className={styles.fieldGrid} data-layout="three">
               <Field label="Recorded sex" htmlFor={`${sectionId}-sex`}>

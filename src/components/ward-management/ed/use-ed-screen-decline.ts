@@ -30,7 +30,7 @@ export function useEdInboxDecline({
    * chose for a row they have since closed and moved on from.
    *
    * ⚠️ **THE DRAFT IS `undefined`, NOT `REFERRAL_DECLINE_REASONS[0]`** — see
-   * `NO_DECLINE_REASON_VALUE` above for why a pre-selected reason is a fabricated clinical fact
+   * the unchosen-reason note in `ed-screen-model.ts` for why a pre-selected reason is a fabricated clinical fact
    * here even though `referral-match.tsx` may safely seed one.
    */
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);

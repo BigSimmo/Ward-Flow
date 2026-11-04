@@ -1,6 +1,6 @@
 "use client";
 import { useId } from "react";
-import { BarChart3, OctagonAlert } from "lucide-react";
+import { ChartColumn, OctagonAlert } from "lucide-react";
 import { Button, Card } from "@/components/wf";
 import styles from "./discharge-flow-charts.module.css";
 
@@ -58,7 +58,7 @@ export function DischargeDayChart({
     <Card className={styles.card} aria-labelledby={headingId} data-testid="ward-discharge-day-chart">
       <header className={styles.head}>
         <h2 id={headingId} className={styles.title}>
-          <BarChart3 size={16} aria-hidden="true" />
+          <ChartColumn size={16} aria-hidden="true" />
           Expected discharges per day
         </h2>
         <ul className={styles.legend} aria-label="Chart key">

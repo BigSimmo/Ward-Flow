@@ -93,7 +93,8 @@ describe("alerts: ownership and snooze", () => {
     expect(within(row).getByText(expected.umrn)).toBeInTheDocument();
     // The row keeps its real severity glyph: a red row shows the triangle, not a neutral mark.
     expect(first.tone).toBe("danger");
-    expect(row.querySelector('svg path[d="M5 0.8 9.6 9.2H0.4Z"]')).not.toBeNull();
+    // The act-now triangle (soft corners since the icon audit, 3 Nov 2026).
+    expect(row.querySelector('svg path[d^="M4.13 1.4a1 1 0 0 1 1.74 0"]')).not.toBeNull();
     expect(within(row).getByRole("button", { name: /^Return .* now for / })).toBeInTheDocument();
 
     fireEvent.click(within(row).getByTestId("ward-alerts-open"));

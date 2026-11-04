@@ -15,7 +15,7 @@ import {
   type RefusedCorridorCount,
   type TransportLegRow,
 } from "./movements-derivations";
-import { ArrowRightLeft, ChevronRight, ListFilter, Truck } from "lucide-react";
+import { ArrowRightLeft, ChevronRight, ListFilter, Ambulance } from "lucide-react";
 import { PhoneSheet, buttonClass } from "@/components/wf";
 import { MovementHorizonGantt } from "./movement-horizon-gantt-lazy";
 import type { rankCorridorPairs } from "./movement-corridor-pairs";
@@ -101,7 +101,7 @@ export function MovementsPhoneNav({
         className={flow.phNavCard}
         onClick={() => startTransition(() => setPhoneSheet("transport"))}
       >
-        <Truck size={16} className={flow.phNavIcon} aria-hidden="true" />
+        <Ambulance size={16} className={flow.phNavIcon} aria-hidden="true" />
         <span className={flow.phNavText}>
           <strong>Transport now</strong>
           <span>
@@ -193,7 +193,7 @@ export function MovementsPhoneNav({
           href="/ward-flow/transport/officer"
           className={buttonClass({ variant: "pri", className: flow.phSheetAction })}
         >
-          <Truck size={16} aria-hidden="true" />
+          <Ambulance size={16} aria-hidden="true" />
           Open transport dispatch
         </Link>
       </PhoneSheet>
