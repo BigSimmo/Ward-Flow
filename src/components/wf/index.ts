@@ -61,6 +61,14 @@ export {
 } from "./choice";
 export { DataRow, TierTile, tableClasses } from "./table";
 export { Sheet, Drawer } from "./sheet";
+export {
+  PanelDrawer,
+  DrawerFacts,
+  DrawerFootRow,
+  type PanelDrawerProps,
+  type DrawerTab,
+  type DrawerFact,
+} from "./drawer";
 export { Menu, Popover, type MenuItem } from "./menu";
 export { ToastView } from "./toast";
 export { Dialog } from "./dialog";
@@ -113,6 +121,7 @@ export {
   parseTypedTime,
   type DateFieldProps,
 } from "./date-field";
+export { ListPicker, type ListPickerOption, type ListPickerProps } from "./list-picker";
 // Plan item 2j (Josh, 3 Nov 2026): a figure borrowed from its owning page links there, and one
 // that ignores the chosen service says "Network-wide" (scope from ward-figure-scope.ts, owners from ward-page-owners.ts).
 export { FigureLink, figureLinkName, wfNumClass, type FigureOwner } from "./figure-link";
