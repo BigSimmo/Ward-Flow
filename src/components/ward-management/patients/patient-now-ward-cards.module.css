@@ -1,0 +1,169 @@
+/* Patient Now for a stay (Josh, 3 Nov 2026): next step, stay progress, readiness, last 24 hours.
+   v9 tokens only. No side stripes; the state is said in words beside a kit status mark. */
+
+/* ---------- Next step ---------- */
+
+.next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3) var(--wf-s-4);
+  padding: var(--wf-s-4);
+}
+
+/* The kit card is a column; the next step reads across, its button at the end. */
+.next.next {
+  flex-direction: row;
+}
+
+.nextBody {
+  display: grid;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  flex: 1 1 280px;
+}
+
+.eyebrow {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.nextTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.nextDetail {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  color: var(--wf-ink-2);
+}
+
+.nextAction {
+  flex: none;
+}
+
+@media (max-width: 743px) {
+  .nextAction {
+    flex: 1 1 100%;
+  }
+
+  /* The pinned bar already carries this action on a phone; one button, not two. */
+  .next[data-in-bar] .nextAction {
+    display: none;
+  }
+
+  .nextAction > * {
+    width: 100%;
+  }
+}
+
+/* ---------- Stay progress (inside the On ward card) ---------- */
+
+.progress {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.progressLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-1) var(--wf-s-3);
+}
+
+.progressHead {
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+  color: var(--wf-ink-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.progressNote {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+
+.progressNote[data-past] {
+  color: var(--wf-warning-ink);
+}
+
+/* ---------- Lists (readiness, last 24 hours) ---------- */
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item,
+.event {
+  display: grid;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  min-height: 48px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.item {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.event {
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  color: var(--wf-ink-1);
+}
+
+.itemText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemText strong {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.itemText span {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+  overflow-wrap: anywhere;
+}
+
+.item[data-done="false"] .itemText strong {
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+
+.time {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-14);
+  color: var(--wf-ink-2);
+}
