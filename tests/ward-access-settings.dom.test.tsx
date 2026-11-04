@@ -120,17 +120,21 @@ function confirmStepUp() {
 }
 
 describe("the Access tab", () => {
-  // Settings by login (31 Oct 2026): one page of sections, so Access is a section and a jump button.
+  // Settings by role (Josh, 3 Nov 2026, ST1): a coordinator, ward or ED desk asks for cover from
+  // its You section; only the access admin has a separate Access section.
   it("is not offered with the role-access flag off", () => {
     settings();
     expect(screen.queryByTestId("ward-settings-jump-access")).not.toBeInTheDocument();
     expect(document.querySelector('[data-pane="access"]')).toBeNull();
     expect(screen.queryByTestId("ward-access-cover")).not.toBeInTheDocument();
-    // Anti-vacuity: the same desk with the flag on has it.
+    // Anti-vacuity: the same desk with the flag on has cover, inside You and with no Access section.
     cleanup();
     act(() => setWardFeatureFlagOnDevice("role-access", true));
     settings();
-    expect(screen.getByTestId("ward-settings-jump-access")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-settings-jump-access")).not.toBeInTheDocument();
+    expect(
+      within(document.getElementById("settings-section-you")!).getByTestId("ward-access-cover"),
+    ).toBeInTheDocument();
   });
 
   it("gives a statewide coordinator both cover and the roles lists", () => {
@@ -139,7 +143,7 @@ describe("the Access tab", () => {
       setWardAccess({ role: "coordinator", scope: { kind: "statewide" } });
     });
     settings();
-    fireEvent.click(screen.getByTestId("ward-settings-jump-access"));
+    fireEvent.click(screen.getByTestId("ward-settings-jump-you"));
     expect(screen.getByTestId("ward-access-cover")).toBeInTheDocument();
     expect(screen.getByTestId("ward-access-roles")).toBeInTheDocument();
     expect(screen.getByText(/As a statewide coordinator you also give and remove roles/u)).toBeInTheDocument();
@@ -228,7 +232,7 @@ describe("the Access tab", () => {
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } });
     });
     settings();
-    fireEvent.click(screen.getByTestId("ward-settings-jump-access"));
+    fireEvent.click(screen.getByTestId("ward-settings-jump-you"));
     // Nothing is chosen for the nurse in charge: the place, the colleague and the length start empty.
     expect(screen.getByTestId("ward-access-cover-submit")).toHaveAttribute("aria-disabled", "true");
     choose(screen.getByTestId("ward-access-cover"));
@@ -371,7 +375,7 @@ describe("the Access tab", () => {
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } });
     });
     settings();
-    fireEvent.click(screen.getByTestId("ward-settings-jump-access"));
+    fireEvent.click(screen.getByTestId("ward-settings-jump-you"));
     expect(screen.queryByTestId("ward-access-log")).not.toBeInTheDocument();
   });
 

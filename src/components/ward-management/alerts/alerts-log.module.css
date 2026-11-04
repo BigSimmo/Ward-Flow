@@ -1,0 +1,61 @@
+/* AL2 (Josh, 3 Nov 2026): the Open view's filter chips and their empty line. */
+.filterRow {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.filterChips {
+  row-gap: var(--wf-s-2);
+}
+
+.filteredEmpty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13, 1.4) var(--wf-font);
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--wf-accent-ink, var(--wf-ink-1));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.linkButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Lanes under a filter: the lanes left share the width rather than leaving empty columns. */
+.lanesFiltered {
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+/* Phone: one line of chips that scrolls inside its row, never the page. */
+@media (max-width: 46.4375rem) {
+  .filterRow {
+    padding: var(--wf-s-2) 0;
+  }
+
+  .filterChips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0 var(--wf-s-3);
+    scrollbar-width: none;
+  }
+
+  .filterChips > * {
+    flex-shrink: 0;
+  }
+
+  .filteredEmpty {
+    padding: var(--wf-s-3);
+  }
+}

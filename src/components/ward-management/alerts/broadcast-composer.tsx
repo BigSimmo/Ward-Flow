@@ -432,8 +432,8 @@ export function BroadcastComposer({
             </div>
             <p className={css.hint}>
               {ask
-                ? "You'll see each answer as it comes in, on the Broadcast tab."
-                : "You'll see who has acknowledged on the Broadcast tab."}
+                ? "You'll see each answer as it comes in, in Alerts, Broadcasts."
+                : "You'll see who has acknowledged in Alerts, Broadcasts."}
             </p>
           </aside>
         </div>
