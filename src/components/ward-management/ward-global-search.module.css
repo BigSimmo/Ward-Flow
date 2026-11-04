@@ -1209,6 +1209,11 @@ a.askChip {
   font-weight: 500;
 }
 
+/* Full strength on the pale glass chips: at 75% the counts fell just under 4.5:1. */
+.kind .kindCount {
+  opacity: 1;
+}
+
 .kind[aria-pressed="true"] {
   border-color: color-mix(in srgb, var(--wf-accent) 22%, transparent);
   background: var(--wf-accent-tint);
@@ -1324,7 +1329,9 @@ a.askChip {
   .popup {
     /* Centred under the search box (`--wgs-anchor-x`, measured by the component), kept on screen. */
     --wgs-w: min(52.5rem, calc(100vw - 2rem));
-    left: clamp(calc(1rem + var(--wgs-w) / 2), var(--wgs-anchor-x, 50%), calc(100vw - 1rem - var(--wgs-w) / 2));
+    /* The component overwrites this inline with the search box's measured centre. */
+    --wgs-anchor-x: 50%;
+    left: clamp(calc(1rem + var(--wgs-w) / 2), var(--wgs-anchor-x), calc(100vw - 1rem - var(--wgs-w) / 2));
     width: var(--wgs-w);
     border: 1px solid color-mix(in srgb, var(--wf-ink-1) 7%, transparent);
     border-radius: 20px;
