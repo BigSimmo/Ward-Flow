@@ -327,8 +327,11 @@ const SEEDED_QUEUED = 7;
  * shown count stays pinned at the cap (`Math.min(24, 10)` is still 10, exactly as it was at 18), so
  * only this constant needed to move — neither `SEEDED_DECIDED_SHOWN`'s derivation nor either
  * assertion below needed a separate edit.
+ *
+ * 2026-11-04: the demo example rows (plan 2d) raised it from 24 to 29. Still above the cap, so the
+ * shown count stays 10 and only this constant moves. The queued seed is unchanged at 7.
  */
-const SEEDED_DECIDED_STRUCTURAL = 24;
+const SEEDED_DECIDED_STRUCTURAL = 29;
 
 /**
  * What the board actually renders in its heading — `decided.length` on the CAPPED list. Derived
