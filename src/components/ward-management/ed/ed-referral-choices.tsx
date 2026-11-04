@@ -76,6 +76,8 @@ export function EdPickerField({
   name,
   missing = false,
   required = false,
+  disabled = false,
+  id,
   note,
 }: {
   label: string;
@@ -88,6 +90,9 @@ export function EdPickerField({
   name: string;
   missing?: boolean;
   required?: boolean;
+  disabled?: boolean;
+  /** The field button's id, for a screen that already names the control by it. */
+  id?: string;
   note?: ReactNode;
 }) {
   return (
@@ -101,6 +106,8 @@ export function EdPickerField({
         onChange={onChange}
         placeholder={placeholder}
         required={required}
+        disabled={disabled}
+        id={id}
         invalid={missing}
       />
       {note}

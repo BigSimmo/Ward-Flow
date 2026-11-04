@@ -783,7 +783,7 @@
   .tabBtn,
   .actionUnfoldToggle,
   .referralField select,
-  .referralField input[type="text"],
+  .referralField input[type="text"]:not([data-gramm]),
   .capacityInput,
   .tableActionGroup button,
   .tableActionGroup select {
@@ -2392,8 +2392,10 @@
   color: var(--ink);
 }
 
+/* A kit text box (DateField, EdTimeBox) draws its own box around a bare input; it carries
+ * data-gramm, so this older field look skips it rather than drawing a second box inside. */
 .referralField select,
-.referralField input[type="text"] {
+.referralField input[type="text"]:not([data-gramm]) {
   min-height: 44px;
   height: 44px;
   padding: 8px 12px;
@@ -2407,7 +2409,7 @@
 }
 
 .referralField select:focus-visible,
-.referralField input[type="text"]:focus-visible {
+.referralField input[type="text"]:not([data-gramm]):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -1px;
 }

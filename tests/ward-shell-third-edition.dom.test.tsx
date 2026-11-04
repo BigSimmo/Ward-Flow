@@ -158,19 +158,20 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     // 21 with the bed meeting TV view, which shows while its feature flag is on (the test default).
     // (22 until the Network screen was retired on 19 Oct 2026, and 22 again with Seclusion on 21 Oct 2026.)
     // P116 (Josh, 27 Oct 2026): 21, because the coordinator's Alerts lives in the header bell only.
-    expect(links).toHaveLength(21);
+    // 18 since Community, New referral and Seclusion left the sidebar (Josh, 3 Nov 2026).
+    expect(links).toHaveLength(18);
     const groups = [
       ["Today", ["Bed meeting TV"]],
-      ["Where", ["Places", "All wards", "Community", "Transport"]],
-      ["Work", ["Patients", "New referral", "Discharges"]],
-      ["Reports and reference", ["Governance", "Statistics", "Legal forms", "Out of area", "On-call", "Seclusion"]],
+      ["Where", ["Places", "All wards", "Transport"]],
+      ["Work", ["Patients", "Discharges"]],
+      ["Reports and reference", ["Governance", "Statistics", "Legal forms", "Out of area", "On-call"]],
     ] as const;
     for (const [name, labels] of groups) {
       const groupLinks = within(within(sheet).getByRole("region", { name })).getAllByRole("link");
       expect(groupLinks.map((link) => link.getAttribute("aria-label")?.split(",")[0])).toEqual(labels);
     }
     const destinations = links.map((link) => link.getAttribute("href"));
-    expect(new Set(destinations).size).toBe(21);
+    expect(new Set(destinations).size).toBe(18);
     // On-call is reachable from the rail; the coordinator reaches Alerts from the header bell (P116).
     expect(destinations).not.toContain("/ward-flow/alerts");
     expect(destinations).toContain("/ward-flow/on-call");
@@ -182,7 +183,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       renderShell();
       await openMorePages();
       const links = screen.getAllByTestId("ward-rail-link");
-      expect(links).toHaveLength(20);
+      expect(links).toHaveLength(17);
       expect(links.some((link) => link.getAttribute("href") === "/ward-flow/bed-meeting")).toBe(false);
     } finally {
       act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));
@@ -203,7 +204,9 @@ describe("assertion 1 — owner-selected rail destinations", () => {
   it.each([
     [movementHref("WF-001"), "/ward-flow/movements"],
     ["/ward-flow/statistics/ward/rph-adult-secure", "/ward-flow/statistics"],
-    ["/ward-flow/referrals/new", "/ward-flow/referrals/new"],
+    // PL1 (Josh, 3 Nov 2026): Community left the sidebar for Places, which its pages now light.
+    ["/ward-flow/community/north-metro-community", "/ward-flow/hub"],
+    ["/ward-flow/hub/catchments", "/ward-flow/hub"],
   ])("highlights only the owning destination for %s", async (pathname, href) => {
     route.pathname = pathname;
     renderShell();
