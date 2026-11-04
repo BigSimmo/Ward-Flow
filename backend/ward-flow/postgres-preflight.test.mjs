@@ -22,10 +22,11 @@ const sqlFiles = [
   "014-archived-records",
   "015-list-and-tv-views",
   "016-forecast-history",
+  "017-account-preferences",
 ].map((name) => readFileSync(new URL(`./migrations/${name}.sql`, import.meta.url), "utf8"));
 
 function column(name, definition) {
-  const type = /^(uuid|bigint|integer|jsonb|text|timestamptz)\b/.exec(definition)?.[1];
+  const type = /^(uuid|bigint|integer|jsonb|text\[\]|text|boolean|timestamptz)(?![\w[])/.exec(definition)?.[1];
   return {
     name,
     type: type === "timestamptz" ? "timestamp with time zone" : type,
@@ -50,7 +51,9 @@ function checkExpressions(sql) {
       sql
         .slice(start, end - 1)
         .replace(/(\w+) IN \(([^)]+)\)/g, "$1 = ANY (ARRAY[$2])")
-        .replace(/ LIKE /g, " ~~ "),
+        .replace(/ LIKE /g, " ~~ ")
+        // A literal text array needs no cast in the catalogue's deparse.
+        .replace(/::text\[\]/g, ""),
     );
   }
   return result;
@@ -122,7 +125,7 @@ function fixture(version = LATEST_MIGRATION) {
       const table = { name, kind: "r", owner, persistence: "p", rls: false, force_rls: false, columns: [] };
       catalog.objects.push(table);
       for (const line of body.split(/\r?\n/).map((line) => line.trim())) {
-        const match = /^(\w+) ((?:uuid|bigint|integer|jsonb|text|timestamptz)\b.*)/.exec(line);
+        const match = /^(\w+) ((?:uuid|bigint|integer|jsonb|text\[\]|text|boolean|timestamptz)(?![\w[]).*)/.exec(line);
         if (!match) continue;
         const [, colName, definition] = match;
         table.columns.push(column(colName, definition));

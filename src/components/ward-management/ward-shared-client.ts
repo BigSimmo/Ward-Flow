@@ -616,17 +616,14 @@ export class SharedWorkspaceClient {
     const held = this.view.snapshot;
     if (snapshot.revision >= (held?.revision ?? 0)) {
       if (held && snapshot.payload.state.worldGeneration !== held.payload.state.worldGeneration) this.worldEpoch++;
-      // Cached and in-flight archive rows belong to the access view that requested them, even
-      // when the live payload, revision and whole-workspace archive count did not change.
+      // Cached and in-flight archive rows belong to the access view that requested them.
       if (held && snapshot.accessContext !== held.accessContext) {
         this.archive = null;
         this.archiveAsked = null;
         this.archiveEpoch++;
       }
-      // Scoped polls also return full snapshots when only permissions may have changed. Keep the held
-      // object for every record, list and map whose content is unchanged (audit PS-06), so identical
-      // data stays stable for the provider and its field selectors, draft owners included, and a
-      // change re-renders only what reads the records that changed (`ward-shared-client-reuse.ts`).
+      // Keep the held object for every unchanged record, list and map (audit PS-06), so a change
+      // re-renders only what reads the changed records (`ward-shared-client-reuse.ts`).
       if (!unchanged) this.rawPayload = reuseUnchangedPayload(this.rawPayload, snapshot.payload);
       const raw = this.rawPayload!;
       const payload = reuseUnchangedPayload(held?.payload, this.withArchive(raw, snapshot.accessContext));
@@ -796,9 +793,8 @@ export class SharedWorkspaceClient {
     const answer = await send(workingAs);
     current();
     if (answer.noRole && workingAs) {
-      // The role this tab was working as has ended or been removed. Forget it, even when the external
-      // setter cannot persist that; never re-send a write under whichever remaining role the server
-      // would pick by default.
+      // The working role has ended or been removed. Forget it, even when the external setter cannot
+      // persist that; never re-send a write under a remaining role the server would pick by default.
       this.workingAsOverride = null;
       this.options.workingAs?.set(null);
       if (body) {
@@ -909,8 +905,7 @@ export class SharedWorkspaceClient {
       const { response, value } = await this.request(
         current ? `/v1/workspace?since=${current.revision}${context}` : "/v1/workspace",
       );
-      // The role ended or a grant landed while this read was out: drop its desk, and the follow-up
-      // read replaces it.
+      // The role ended or a grant landed while this read was out: drop it; the follow-up read replaces it.
       if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration || epoch !== this.roleEpoch)
         return;
       if (!response.ok) throw new Error("Workspace unavailable");
@@ -1097,8 +1092,7 @@ export class SharedWorkspaceClient {
         if (value.snapshot && epoch === this.roleEpoch) {
           if (grantGeneration === this.grantGeneration) this.adopt(value.snapshot);
           else {
-            // This command already has its definitive server answer. A permissions-only read
-            // must neither retry it nor reclassify its completion when sign-in or roles change.
+            // The command has its definitive answer; a permissions-only read must not retry or reclassify it.
             this.pending = null;
             this.publish({});
             this.settle(
@@ -1108,10 +1102,8 @@ export class SharedWorkspaceClient {
               response.ok ? value.snapshot.payload.state.undoRecords : undefined,
               response.ok ? value : undefined,
             );
-            // Keep the definitive command result, but read the newly granted view rather than
-            // replacing it with the command's earlier scope. Retry retains the same command ID.
-            // A concurrent grant can invalidate this reconciliation read. Retry the read with
-            // the new generation; the command response itself is already definitive.
+            // Keep the definitive result but read the newly granted view; a concurrent grant
+            // retries this read with the new generation (the command ID is retained).
             try {
               let latest: Awaited<ReturnType<typeof this.request>>;
               for (;;) {
@@ -1188,8 +1180,7 @@ export class SharedWorkspaceClient {
           if (scoped) this.cancelQueuedOn(command.event, value);
           else this.cancelQueued();
           if (response.status === 409) {
-            // The person has now been told. Popups still open are checked against the board from
-            // here on, so trying again after reviewing it works.
+            // The person has been told; open popups are checked against the board from here on.
             this.sheetSeen = conflict.keepBasis(scoped && this.queue, this.sheetSeen, command.expectedRevision);
             if (!value?.snapshot) this.needsRefresh = true;
             else this.noteOpenSheets();
@@ -1222,8 +1213,7 @@ export class SharedWorkspaceClient {
           this.worldEpoch++;
         const partly = value.outcome === "partly" && typeof value.error === "string" ? value.error : undefined;
         this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value, partly);
-        // Audit E-05: the board's message line tells the person which ward was not asked, as the
-        // local board's refusal note does, on whichever screen sent it.
+        // Audit E-05: the board's message line names the ward that was not asked, as the local refusal note does.
         this.publish({
           status: "ready",
           error: partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null,
@@ -1375,6 +1365,13 @@ export class SharedWorkspaceClient {
       throw new Error(typeof value?.error === "string" ? value.error : "The access log could not be read");
     return Array.isArray(value.views) ? value.views : [];
   }
+  /** Migration 17: this account's Help memory; with a body, saves first. */
+  async preferences(body?: Record<string, unknown>): Promise<unknown> {
+    const { response, value } = await this.request("/v1/workspace/preferences", body);
+    if (!response.ok) throw new Error("Saved Help memory could not be read");
+    return value;
+  }
+  /** Proposal 013: this desk's shared forecast history; with a body, records a snapshot or reason first. */
   async forecastHistory(body?: Record<string, unknown>): Promise<unknown> {
     const { response, value } = await this.request("/v1/workspace/forecast-history", body);
     if (!response.ok) throw forecastHistoryFailure(value);
