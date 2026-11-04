@@ -5,6 +5,7 @@ import loadNextConfig, { LIVE_BUILD_DEMO_DATA } from "../next.config";
 import * as standIn from "@/components/ward-management/live-build/ward-no-demo-data";
 import * as AdmissionsSeed from "@/components/ward-management/ward-admissions-seed";
 import * as DemoPlannedMoves from "@/components/ward-management/ward-demo-planned-moves";
+import * as DemoExampleLists from "@/components/ward-management/ward-demo-example-lists";
 import * as Movements from "@/components/ward-management/ward-movements";
 import * as PatientsSeed from "@/components/ward-management/ward-patients-seed";
 import * as RulingsDemo from "@/components/ward-management/ward-rulings-demo";
@@ -15,6 +16,7 @@ const DEMO_MODULES = [
   "ward-admissions-seed",
   "ward-rulings-demo",
   "ward-demo-planned-moves",
+  "ward-demo-example-lists",
 ];
 const root = path.resolve(__dirname, "../src");
 
@@ -73,6 +75,7 @@ describe("a live shared build carries no demo records", () => {
     expectTypeOf(standIn.applyRulingsDemoOverlay).toEqualTypeOf(RulingsDemo.applyRulingsDemoOverlay);
     expectTypeOf(standIn.rulingsDemoOverlay).toEqualTypeOf(RulingsDemo.rulingsDemoOverlay);
     expectTypeOf(standIn.withDemoPlannedMoveTimes).toEqualTypeOf(DemoPlannedMoves.withDemoPlannedMoveTimes);
+    expectTypeOf(standIn.applyExampleListsOverlay).toEqualTypeOf(DemoExampleLists.applyExampleListsOverlay);
   });
 
   it("swaps the modules in only when the build is a live shared one", async () => {

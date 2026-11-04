@@ -16,7 +16,7 @@ See [Health and monitor configuration](#health-and-monitor-configuration) for th
 The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005` and accepts later versions through <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->.
+to `005` and accepts later versions through <!-- fact:latest-migration -->017-account-preferences<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
 
 ## Health and monitor configuration
@@ -153,7 +153,7 @@ these source contracts; they do not establish the deployed token, database or al
   Use migration 11 or later when server-side sign-out and access-history guarantees are required;
   older schemas remain rollback compatibility, not evidence that those capabilities are present.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->017-account-preferences<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -242,7 +242,16 @@ these source contracts; they do not establish the deployed token, database or al
     through `GET` and `POST /v1/workspace/forecast-history`; before 16 that route answers
     `shared: false` and each browser keeps its own history. `infra/rollback-016-forecast-history.sql`
     drops both tables. Reapply runtime grants after 16.
-    The backend accepts versions 5 to 16.
+  - `017-account-preferences.sql`: Help remembered by account (Josh, 4 Nov 2026, eight
+    suggestions item 3). `account_preferences` keeps, per signed-in account, the desks whose tour
+    is done, the page tips already seen, whether tips are turned off and the What's new lines
+    already read. Desk role ids, static Help topic ids and What's new entry ids only, each checked
+    against a closed shape by the route and the table: no patient detail, no paths and no typed
+    text. Read and written through `GET` and `POST /v1/workspace/preferences`; a save adds to the
+    account's lists, so seen on any device counts as seen. Before 17 that route answers
+    `shared: false` and each browser keeps its own Help memory.
+    `infra/rollback-017-account-preferences.sql` drops the table. Reapply runtime grants after 17.
+    The backend accepts versions 5 to 17.
 - `WARD_COORDINATOR_UNTIL` (optional, `YYYY-MM-DD`, at most a year ahead) ends the
   `WARD_COORDINATOR_USER_IDS` bootstrap coordinators at the end of that Perth day, without a
   restart (H-0057). Unset, they keep working and the shared server warns at startup.

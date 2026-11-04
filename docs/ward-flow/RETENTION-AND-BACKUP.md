@@ -35,6 +35,7 @@ All tables are in the `ward_flow` schema of the Supabase database named in
 | `session_sign_outs`     | Signed-out sign-ins, kept until the token would have expired anyway                                                                                     | Staff ID only                                           |
 | `forecast_snapshots`    | From migration 16, one forecast snapshot a demo day per desk: today's gap and tomorrow's low, likely and high counts                                    | No. Counts only                                         |
 | `forecast_miss_reasons` | From migration 16, the reason chosen for a missed forecast day, from a closed list, with the role and staff ID that chose it                            | Staff ID only. No patient content                       |
+| `account_preferences`   | From migration 17, each account's Help memory: desks whose tour is done, page tips seen, tips off, and What's new lines read                            | Staff ID only. Closed ids, no patient content           |
 | `migrations`            | Which database changes have been applied                                                                                                                | No                                                      |
 | Supabase Auth           | Staff sign-in accounts (email, password hash), held by Supabase outside `ward_flow`                                                                     | Staff only. Supabase's own log retention is unconfirmed |
 
@@ -45,6 +46,9 @@ Neither adds a table. Migration 14 adds `archived_records`, which keeps the live
 Migration 16 adds `forecast_snapshots` and `forecast_miss_reasons`, the shared forecast track
 record (proposal 013). They hold counts and closed-list values only; nothing in them is deleted
 automatically, and rows of an earlier demonstration world are no longer shown.
+Migration 17 adds `account_preferences`, Help remembered by account. It holds desk role ids,
+static Help topic ids, What's new entry ids and one yes or no per staff ID; nothing in it is
+deleted automatically.
 `audit`, `record_access` and `break_glass` are append-only. The database refuses any change or
 removal, including by the backend itself.
 
@@ -304,7 +308,7 @@ Do these in the Ward Flow project only, after checking the project name and ID m
 7. **Migration 11 and its grants (items 8 and 9).** Run the supported runner,
    `npm --prefix backend/ward-flow run migrate:supabase` (see
    [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). It applies every pending
-   migration through <!-- fact:latest-migration -->016-forecast-history<!-- /fact --> in one
+   migration through <!-- fact:latest-migration -->017-account-preferences<!-- /fact --> in one
    transaction and then reinstalls the runtime grants itself, so there is no separate grants step.
    Before migration 11 the backend can work, but opening a record is not logged and a sign-out
    takes effect only when its token expires. Later capabilities depend on their own migrations. For separately authorised undo, use the canonical

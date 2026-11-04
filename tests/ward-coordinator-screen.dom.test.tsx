@@ -66,7 +66,9 @@ describe("CoordinatorScreen", () => {
     expect(screen.queryByRole("button", { name: /Declines/ })).not.toBeInTheDocument();
     // Home v7 (Josh, 22 Oct 2026): Act now replaced the hero's Alerts count. Home flow (Q340/Q345,
     // 3 Nov 2026): the registers open from Registers in the "More for this list" menu above the list.
-    expect(screen.getByRole("button", { name: /Act now/ })).toBeInTheDocument();
+    // Plan 2i (Josh, 4 Nov 2026, question 2): when the next step is Act now, its "Show act now"
+    // button stands in for the Act now chip, so either way the hero offers Act now.
+    expect(screen.getAllByRole("button", { name: /act now/i }).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /^\d+\s*Alerts$/ })).not.toBeInTheDocument();
     const homeLists = screen.getByRole("navigation", { name: "Home lists" });
     expect(within(homeLists).queryByRole("button", { name: "Registers" })).not.toBeInTheDocument();
@@ -87,6 +89,8 @@ describe("CoordinatorScreen", () => {
     );
 
     expect(screen.queryByRole("link", { name: "Start handover" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Act now/ })).toBeInTheDocument();
+    // Plan 2i (Josh, 4 Nov 2026, question 2): when the next step is Act now, its "Show act now"
+    // button stands in for the Act now chip, so either way the hero offers Act now.
+    expect(screen.getAllByRole("button", { name: /act now/i }).length).toBeGreaterThan(0);
   });
 });
