@@ -1495,7 +1495,7 @@ export const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
   UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
   UNDO_ABSENT_WITHOUT_LEAVE: "There is no absence on this stay to undo",
-  UNDO_BED_MEETING_ACTION: "There is no bed meeting action marked done here to undo",
+  UNDO_BED_MEETING_ACTION: "There is no bed meeting action recorded or marked done here to undo",
   UNDO_BED_STEP: "There is no bed closed, reopened or returned from leave here to undo",
   UNDO_RELEASE_STEP: "There is no release or cancellation here to undo",
   UNDO_PATIENT_RECORD: "There is no order or archive on this record to undo",

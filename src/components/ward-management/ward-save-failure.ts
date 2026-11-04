@@ -9,7 +9,7 @@
 export type SaveProblem = readonly [happened: string, doNow: string];
 
 const NOT_CONFIRMED = "Save is not confirmed.";
-const RETRY = "Press Retry when you are back online. It will not be saved twice.";
+const RETRY = "It sends again by itself when you are back online, or press Retry. It will not be saved twice.";
 const CHECK = "Check the board, then try again.";
 /** Not sent yet: definitely not saved. */
 const unsent = (why: string, doNow = CHECK): SaveProblem => [`${why}, so this action was not saved.`, doNow];
@@ -24,6 +24,11 @@ export const SAVE_PROBLEMS = {
   notConfirmed: [NOT_CONFIRMED, "Check the board. If your change is not there, make it again."],
   /** A shared save lost its connection part way. The status bar's Retry resends the same command. */
   connectionLost: [NOT_CONFIRMED, RETRY],
+  /** Offline: a save queued behind the lost one waits on this page and goes when the connection returns. */
+  heldOffline: [
+    "Offline, so this change is waiting on this page.",
+    "It sends by itself when you are back online. Keep this page open.",
+  ],
   /** The status bar's line for the same lost connection. */
   mayNotBeSaved: ["Your change may not have been saved.", RETRY],
   /** Another desk saved this record first (HTTP 409). */

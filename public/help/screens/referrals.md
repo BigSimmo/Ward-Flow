@@ -10,7 +10,7 @@ Referrals waiting for an answer, and those decided recently.
 2. Beds ready. Beds ready now, by kind, so you can see what is free before asking a ward.
 3. Awaiting decision. Longest wait first, never ranked by the app. Choose a name to open the referral.
 4. Offered to wards. Referrals waiting on a ward's answer, with who was asked.
-5. Bed meeting list. The referrals to talk through at the bed meeting.
+5. Bed meeting. Opens the bed meeting agenda at its referrals, the ones to talk through at the meeting.
 
 ## Jobs done here
 

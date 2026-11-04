@@ -265,18 +265,29 @@ describe("PR15 discharge and referral provenance", () => {
       leftAt: null,
       blockReason: null,
     };
+    // Discharges redesign (3 Nov 2026): Recorded (which replaced History) lists only departures from
+    // the last 7 days, so a record that has only an expected date is reached from its own bed
+    // release on Now, through the release panel's "Discharge record" button.
+    const release = {
+      ...seed.bedReleases[0],
+      admissionId: record.admissionId,
+      unitId: record.unitId,
+      state: "expected" as const,
+      blocker: null,
+      expectedAt: NOW_ANCHOR + 60,
+    };
     renderFlow(<DischargeBoard />, {
-      bedReleases: [],
+      bedReleases: [release],
       readDischargeRecords: () => ({ status: "allowed", value: [record] }),
       readDischargeRecord: () => ({ status: "allowed", value: record }),
     });
-    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
     fireEvent.click(
       within(worklist)
         .getAllByRole("row")
         .flatMap((row) => within(row).queryAllByRole("button"))[0],
     );
+    fireEvent.click(screen.getByRole("button", { name: "Discharge record" }));
     const detail = screen.getByRole("region", { name: "Selected discharge details" });
     expect(detail.textContent).toContain("Milestones");
     expect(detail.textContent).toContain("Expected discharge date");
