@@ -194,9 +194,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "pressure",
-          { sel: '[data-testid="wf-occupancy-ring"]' },
+          { sel: '[data-testid="ward-home-occupancy-link"]' },
           "How full the network is",
-          "The ring shows how many beds are in use against the at-risk line. The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients.",
+          "This figure is how many network beds are in use, and it says At risk once it passes the line. Open it for Capacity. The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients.",
         ),
         step(
           "Your daily work",
