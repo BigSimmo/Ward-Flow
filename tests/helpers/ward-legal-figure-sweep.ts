@@ -1636,6 +1636,11 @@ export function candidateEvents(
       return state.admissions
         .filter((admission) => admission.state !== "departed")
         .map((admission) => ({ type, role, now, admissionId: admission.id, step: "requested", homeHospital: "RPH" }));
+    // Out of area "Flag early" (3 Nov 2026): a record only, against a current stay.
+    case "FLAG_RETURN_EARLY":
+      return state.admissions
+        .filter((admission) => admission.state !== "departed")
+        .map((admission) => ({ type, role, now, admissionId: admission.id, homeHospital: "RPH" }));
     case "RECORD_DIRECTORY_CHECK":
       return buildOnCallDirectory()
         .slice(0, 3)
@@ -2124,7 +2129,9 @@ export function undoOf(
     ...(fields.referralId !== undefined ? { referralId: fields.referralId } : {}),
     ...(fields.admissionId !== undefined ? { admissionId: fields.admissionId } : {}),
     ...(actingUnitId !== undefined ? { actingUnitId } : {}),
-    ...(event.type === "COMPLETE_BED_MEETING_ACTION" ? { subject: event.subject, action: event.action } : {}),
+    ...(event.type === "COMPLETE_BED_MEETING_ACTION" || event.type === "RECORD_BED_MEETING_ACTION"
+      ? { subject: event.subject, action: event.action }
+      : {}),
     ...(event.type === "RECORD_SITE_HANDOVER_SIGN_OFF" ? { siteCode: event.siteCode } : {}),
   } as WardFlowEvent;
   const state = wardFlowReducer(applied, undo);

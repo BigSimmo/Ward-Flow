@@ -14,6 +14,7 @@ import {
 import { NETWORK_ON_CALL_ROLES, SERVICE_ON_CALL_ROLES } from "@/components/ward-management/on-call/on-call-roster";
 import { REFERENCE_TEAM_NAMES, referenceTeamDetail } from "@/components/ward-management/reference/ward-reference-teams";
 import { WardFlowClockContext } from "@/components/ward-management/ward-flow-provider";
+import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -21,7 +22,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  *
  * `ward-on-call-holds-no-people.test.ts` guards the source and the records. This file guards the
  * RENDER: the disclosure is visible text, every number on screen is a mock, nothing links to a
- * dialler or a mail client, highlights never hide a row, and the times shown come from the roster.
+ * dialler or a mail client, the Show pills filter rows and Show all brings them back (OC2, 4 Nov
+ * 2026), and the times shown come from the roster.
  *
  * ⚠️ **POPULATION.** jsdom at one viewport (the desktop tree; the phone tree renders under 48rem),
  * over the real site fixture with the board clock pinned at 10:42. Silent about paint and layout.
@@ -50,6 +52,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  resetServiceScopeForTests();
 });
 
 describe("the on-call screen", () => {
@@ -137,8 +140,21 @@ describe("the on-call screen", () => {
 
   it("keeps the key lines in the hero with the anchor other pages link to", () => {
     const { container } = renderOnCall();
-    const keys = within(screen.getByRole("group", { name: "Key lines" })).getAllByRole("button");
-    expect(keys).toHaveLength(7);
+    // OC3 (Josh, 4 Nov 2026): the strip groups its lines by job, each card with its own copy button.
+    const strip = within(screen.getByRole("group", { name: "Key lines" }));
+    const keys = strip.getAllByRole("button").filter((key) => key.dataset.testid?.startsWith("ward-on-call-key-"));
+    expect(keys.map((key) => key.dataset.testid?.replace("ward-on-call-key-", ""))).toEqual([
+      "sw-bfc",
+      "sw-gov",
+      "sw-mherl",
+      "nmhs-bfc",
+      "emhs-bfc",
+      "smhs-bfc",
+      "cahs-bfc",
+      "wachs-bfc",
+    ]);
+    expect(strip.getByRole("group", { name: "Statewide" })).toBeVisible();
+    expect(strip.getByRole("group", { name: "Bed flow" })).toBeVisible();
     expect(container.querySelector("#ward-reach-bed")).toBe(screen.getByTestId("ward-on-call-key-sw-bfc"));
     expect(container.querySelector("#ward-reach-switchboard")).toBe(screen.getByTestId("ward-on-call-directory"));
     fireEvent.click(screen.getByTestId("ward-on-call-key-sw-mherl"));
@@ -157,15 +173,40 @@ describe("the on-call screen", () => {
     expect(number).toMatch(MOCK_NUMBER);
   });
 
-  it("highlights rows and never hides one", () => {
+  it("Show filters the table to matching rows, and Show all brings every row back (OC2)", () => {
     renderOnCall();
     const table = screen.getByTestId("ward-on-call-dir-table");
     const before = table.querySelectorAll("tbody tr[data-testid]").length;
     fireEvent.click(screen.getByRole("button", { name: /^Has email/u }));
+    expect(table.querySelectorAll("tbody tr[data-testid]").length).toBeLessThan(before);
+    expect(row("nmhs-bfc")).toBeVisible();
+    expect(screen.queryByTestId("ward-on-call-row-nmhs-scon")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show all" }));
     expect(table.querySelectorAll("tbody tr[data-testid]").length).toBe(before);
-    expect(row("nmhs-bfc")).toHaveAttribute("data-highlighted", "true");
-    expect(row("nmhs-scon")).not.toHaveAttribute("data-highlighted");
-    expect(row("nmhs-scon")).toHaveAttribute("data-dim", "true");
+    expect(row("nmhs-scon")).toBeVisible();
+  });
+
+  it("follows the service chosen in the header, keeping Statewide lines (OC2, OC3)", () => {
+    setServiceScope("North Metro");
+    renderOnCall();
+    const strip = within(screen.getByRole("group", { name: "Key lines" }));
+    const service = within(strip.getByRole("group", { name: /service$/u }));
+    expect(service.getByTestId("ward-on-call-key-nmhs-bfc")).toBeVisible();
+    expect(service.getByTestId("ward-on-call-key-nmhs-scon")).toBeVisible();
+    expect(strip.queryByTestId("ward-on-call-key-emhs-bfc")).not.toBeInTheDocument();
+    expect(row("nmhs-bfc")).toBeVisible();
+    expect(screen.queryByTestId("ward-on-call-row-emhs-bfc")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /^State(?! bed)/u }));
+    expect(row("sw-mherl")).toBeVisible();
+  });
+
+  it("copies a key line's number from its card in one tap (OC3)", async () => {
+    renderOnCall();
+    fireEvent.click(screen.getByRole("button", { name: "Copy MHERL number" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    const [first, number] = writeText.mock.calls[0]![0].split("\n");
+    expect(first).toBe("Synthetic prototype.");
+    expect(number).toMatch(MOCK_NUMBER);
   });
 
   it("names the ending-soon state one way, and says the filter counts are this tab's", () => {
@@ -173,7 +214,7 @@ describe("the on-call screen", () => {
     const hud = within(screen.getByTestId("ward-on-call-hud-island"));
     expect(hud.getByRole("button", { name: /ending soon/u })).toBeVisible();
     expect(screen.getByRole("button", { name: /^Ending soon/u })).toBeVisible();
-    expect(screen.getByText("Highlight in Hospitals")).toBeVisible();
+    expect(screen.getByRole("group", { name: "Show and group rows" })).toHaveTextContent(/^Show/u);
     expect(screen.queryByText(/within the hour/iu)).not.toBeInTheDocument();
     expect(screen.queryByText("Prototype data, invented numbers")).not.toBeInTheDocument();
   });
@@ -268,6 +309,10 @@ describe("the on-call screen", () => {
       "sw-gov",
     ]);
     renderOnCall();
+    // OC1: the ladder is folded under who answers now, and opens in place.
+    const fold = panel().getByText("If no answer").closest("details")!;
+    expect(fold).not.toHaveAttribute("open");
+    fold.open = true;
     expect(panel().getByText("Preview order")).toBeVisible();
     expect(panel().getByText("State bed flow coordinator")).toBeVisible();
   });

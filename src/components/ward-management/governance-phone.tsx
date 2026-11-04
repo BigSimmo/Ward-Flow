@@ -32,6 +32,7 @@ import {
   type WfTone,
   phoneRows,
 } from "@/components/wf";
+import { GovernanceRestrictiveRegister } from "./governance-restrictive-register";
 import thirdEdition from "./governance-third-edition.module.css";
 import wardPin from "./ward-pinned-switch.module.css";
 import eventList from "./governance-event-list.module.css";
@@ -552,8 +553,11 @@ export function GovernancePhone({
                 </span>
               }
             />
-            <PhoneListRow as="li" name="Seclusion, restraint and incidents" meta="Preview" />
           </ul>
+        ) : null}
+        {phoneMore === "registers" ? (
+          // GV1 (Josh, 3 Nov 2026): finished seclusion and restraint, and ward incidents, in full.
+          <GovernanceRestrictiveRegister units={units} now={now} />
         ) : (
           <ul className={thirdEdition.phoneList}>
             <PhoneListRow

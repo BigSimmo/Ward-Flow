@@ -1,25 +1,28 @@
-// tests/ward-catchment-resolver.test.ts
+// tests/ward-catchment-resolver.dom.test.tsx
 //
-// Tests for the WA Suburb-to-Catchment Resolver:
+// Tests for the WA suburb-to-catchment lookup:
 // 1. Suburb search (exact and case-insensitive)
 // 2. Postcode search
 // 3. Health service and hospital mapping (NMHS, EMHS, SMHS, WACHS)
 // 4. Contested suburb handling
 // 5. Non-existent query handling
-// 6. UI component interactions, quick-picks, clear button, and clipboard formatting.
+// 6. The one Suburb lookup card (D-91): quick picks, postcodes, contested and not-found answers, Clear.
+//
+// The old Tools resolver view (`WardCatchmentResolver`) went with the Tools overhaul (#1316); Tools now
+// draws the shared SuburbLookupCard, so its UI cases are re-pointed at that card. The engine still
+// lives in ward-catchment-query.ts. Synthetic catchment data only.
 
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  WardCatchmentResolver,
   resolveCatchmentQuery,
   resolveSuburb,
   formatCatchmentSummary,
-  QUICK_PICK_SUBURBS,
-} from "@/components/ward-management/tools/ward-catchment-resolver";
+} from "@/components/ward-management/tools/ward-catchment-query";
 import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-mapping";
+import { SuburbLookupCard } from "@/components/ward-management/community/community-suburb-lookup-card";
 
 afterEach(() => {
   cleanup();
@@ -372,108 +375,68 @@ describe("formatCatchmentSummary", () => {
   });
 });
 
-describe("WardCatchmentResolver React Component UI", () => {
-  it("renders search input, empty state, and quick-pick buttons", () => {
-    render(React.createElement(WardCatchmentResolver));
+describe("Suburb lookup card (the Tools sheet's Suburb lookup, D-91)", () => {
+  function field() {
+    return screen.getByRole("searchbox", { name: "Suburb or postcode" }) as HTMLInputElement;
+  }
 
-    expect(screen.getByRole("heading", { name: "WA Suburb-to-Catchment Resolver" })).toBeDefined();
-    expect(screen.getByLabelText("Search by suburb or postcode")).toBeDefined();
-    expect(screen.getByTestId("catchment-empty-state")).toBeDefined();
+  it("opens empty, and a quick pick fills the box and answers with that suburb's team", () => {
+    render(<SuburbLookupCard picks={["Morley", "Fremantle"]} />);
+    expect(field().value).toBe("");
+    expect(screen.getByText("Type a suburb or a 4-digit postcode.")).toBeDefined();
+    const morley = screen.getByRole("button", { name: "Morley" });
+    expect(morley).toHaveAttribute("aria-pressed", "false");
 
-    for (const suburb of QUICK_PICK_SUBURBS) {
-      expect(screen.getByRole("button", { name: suburb })).toBeDefined();
+    fireEvent.click(morley);
+    expect(field().value).toBe("Morley");
+    expect(morley).toHaveAttribute("aria-pressed", "true");
+    const answer = screen.getByRole("region", { name: "Morley" });
+    expect(answer.textContent).toContain("6062");
+    expect(within(answer).getByText("Reviewed")).toBeDefined();
+    expect(within(answer).getAllByRole("listitem").length).toBeGreaterThan(0);
+  });
+
+  it("lists every suburb filed under a postcode, each answering on its own", () => {
+    render(<SuburbLookupCard />);
+    fireEvent.change(field(), { target: { value: "6064" } });
+    expect(screen.getByText(/suburbs filed under 6064/u).textContent).toMatch(/^4 suburbs/u);
+    // The first three answer, then Show more brings in the rest.
+    expect(screen.getByRole("region", { name: "Alexander Heights" })).toBeDefined();
+    expect(screen.getByRole("region", { name: "Girrawheen" }).textContent).toContain("Mirrabooka");
+    expect(screen.getAllByRole("region", { name: /Alexander Heights|Girrawheen|Koondoola|Marangaroo/u })).toHaveLength(
+      3,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Show 1 more suburbs/u }));
+    for (const suburb of ["Alexander Heights", "Girrawheen", "Koondoola", "Marangaroo"]) {
+      expect(screen.getByRole("region", { name: suburb })).toBeDefined();
     }
   });
 
-  it("clicking a quick-pick button immediately displays the result card", () => {
-    render(React.createElement(WardCatchmentResolver));
-
-    const morleyButton = screen.getByRole("button", { name: "Morley" });
-    fireEvent.click(morleyButton);
-
-    const input = screen.getByLabelText("Search by suburb or postcode") as HTMLInputElement;
-    expect(input.value).toBe("Morley");
-
-    expect(screen.getByTestId("catchment-result-card")).toBeDefined();
-    expect(screen.getByRole("heading", { name: "Morley" })).toBeDefined();
-    expect(screen.getByText(/Postcode: 6062/)).toBeDefined();
-    expect(screen.getByTestId("health-service-pill").textContent).toContain("EMHS");
-    expect(screen.getByTestId("primary-hospital-value").textContent).toContain("Royal Perth Hospital");
-    expect(screen.getByTestId("community-clinic-value").textContent).toContain("Inner City");
-    expect(screen.getByTestId("catchment-status-badge").textContent).toContain("Reviewed clinic match");
+  it("names no single team for a contested suburb, and shows its note and every reading", () => {
+    render(<SuburbLookupCard teamActions={() => <button type="button">Refer to this team</button>} />);
+    fireEvent.change(field(), { target: { value: "Halls Head" } });
+    const answer = screen.getByRole("region", { name: "Halls Head" });
+    expect(within(answer).getByText("Contested")).toBeDefined();
+    expect(answer.textContent).toContain("Peel versus Rockingham");
+    expect(within(answer).getByRole("list", { name: "Readings for Halls Head" })).toBeDefined();
+    // A team's own actions are never drawn for a contested suburb.
+    expect(within(answer).queryByRole("button", { name: "Refer to this team" })).toBeNull();
   });
 
-  it("searching by postcode displays multiple suburb tabs and updates active card", () => {
-    render(React.createElement(WardCatchmentResolver, { initialQuery: "6064" }));
-
-    expect(screen.getByText(/4 suburbs in postcode 6064/)).toBeDefined();
-    const group = screen.getByRole("group", { name: "Suburbs in postcode 6064" });
-    expect(group.querySelectorAll("button[aria-pressed]").length).toBeGreaterThanOrEqual(4);
-
-    // Initial card is Alexander Heights
-    expect(screen.getByRole("heading", { name: "Alexander Heights" })).toBeDefined();
-
-    // Click Girrawheen tab
-    const girrawheenTab = screen.getByRole("button", { name: "Girrawheen" });
-    fireEvent.click(girrawheenTab);
-    expect(girrawheenTab).toHaveAttribute("aria-pressed", "true");
-
-    // Now active card is Girrawheen
-    expect(screen.getByRole("heading", { name: "Girrawheen" })).toBeDefined();
-    expect(screen.getByTestId("community-clinic-value").textContent).toBe("Mirrabooka");
-    expect(screen.getByTestId("catchment-result-status").textContent).toMatch(/^Result: Girrawheen, /);
+  it("says Not found for a suburb with no catchment record, and an unfiled postcode in words", () => {
+    render(<SuburbLookupCard />);
+    fireEvent.change(field(), { target: { value: "Atlantis" } });
+    expect(within(screen.getByRole("region", { name: "Atlantis" })).getByText("Not found")).toBeDefined();
+    fireEvent.change(field(), { target: { value: "0001" } });
+    expect(screen.getByText("No suburb is filed under postcode 0001 in the catchment documents.")).toBeDefined();
   });
 
-  it("displays contested caveats when searching contested suburb", () => {
-    render(React.createElement(WardCatchmentResolver, { initialQuery: "Halls Head" }));
-
-    expect(screen.getByRole("heading", { name: "Halls Head" })).toBeDefined();
-    expect(screen.getByTestId("catchment-status-badge").textContent).toContain("Contested / split");
-    const caveats = screen.getByTestId("catchment-caveats-box");
-    expect(caveats.textContent).toContain("Peel versus Rockingham");
-  });
-
-  it("displays not-found state when query has no matches", () => {
-    render(React.createElement(WardCatchmentResolver, { initialQuery: "Atlantis" }));
-
-    expect(screen.getByTestId("catchment-not-found")).toBeDefined();
-    expect(screen.getByText(/No WA catchment records found matching "Atlantis"/)).toBeDefined();
-  });
-
-  it("clears search input and returns to empty state when clear button is clicked", () => {
-    render(React.createElement(WardCatchmentResolver, { initialQuery: "Fremantle" }));
-
-    expect(screen.getByRole("heading", { name: "Fremantle" })).toBeDefined();
-    const clearBtn = screen.getByRole("button", { name: "Clear search query" });
-    fireEvent.click(clearBtn);
-
-    const input = screen.getByLabelText("Search by suburb or postcode") as HTMLInputElement;
-    expect(input.value).toBe("");
-    expect(screen.getByTestId("catchment-empty-state")).toBeDefined();
-  });
-
-  it("copies summary to clipboard and shows visual feedback 'Copied!'", async () => {
-    const writeTextMock = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: writeTextMock,
-      },
-    });
-
-    render(React.createElement(WardCatchmentResolver, { initialQuery: "Armadale" }));
-
-    const copyBtn = screen.getByTestId("copy-summary-button");
-    expect(copyBtn.textContent).toContain("Copy summary");
-
-    fireEvent.click(copyBtn);
-
-    await waitFor(() => {
-      expect(writeTextMock).toHaveBeenCalledTimes(1);
-      expect(copyBtn.textContent).toContain("Copied!");
-    });
-
-    const copiedCall = writeTextMock.mock.calls[0][0];
-    expect(copiedCall).toContain("Suburb: Armadale");
-    expect(copiedCall).toContain("East Metropolitan Health Service (EMHS)");
+  it("clears the box with Clear and returns to the empty prompt", () => {
+    render(<SuburbLookupCard />);
+    fireEvent.change(field(), { target: { value: "Fremantle" } });
+    expect(screen.getByRole("region", { name: "Fremantle" })).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(field().value).toBe("");
+    expect(screen.getByText("Type a suburb or a 4-digit postcode.")).toBeDefined();
   });
 });

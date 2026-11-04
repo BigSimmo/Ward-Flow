@@ -54,6 +54,13 @@ const TV_QUESTION: HelpQuestion = {
     "On a desktop, choose Open on TV on Capacity, or On TV on a ward or an ED. The TV is read only, shows full names as the desks do and updates on its own. Use Change screen to pick another meeting, ward or ED, Full screen for the wall screen and Leave TV view to come back. On a TV that stays on the wall, Lock as TV keeps that browser on TV views, even after a reload, until someone presses Unlock.",
 };
 
+/** PL1 (3 Nov 2026): the suburb lookup moved from Community to the Catchments tab of Places. */
+const CATCHMENT_QUESTION: HelpQuestion = {
+  question: "How do I find which community team covers a suburb?",
+  answer:
+    "Open Places and choose Catchments on the band. Type the suburb or postcode in the lookup. It names the team that covers it.",
+};
+
 export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   command: {
     title: "Home",
@@ -112,6 +119,22 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Record the legal status and the tentative diagnosis block, if known.",
       "Send it. Each destination answers on its own.",
     ],
+    questions: [
+      {
+        question: "How do I use the suggested catchment?",
+        answer:
+          "Choose Use this catchment to accept the team, region and service area from the suburb, or Change to pick another.",
+      },
+      {
+        question: "How do I keep or discard a referral I have not sent?",
+        answer: "Close it and choose Keep draft and close or Discard. A kept draft reopens in this tab.",
+      },
+      {
+        question: "How do I add a new patient while making a referral?",
+        answer:
+          "In the Patient step choose Add patient, fill in the four starred fields, then Add and use for this referral.",
+      },
+    ],
   },
   handover: {
     title: "Handover",
@@ -168,8 +191,12 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   },
   community: {
     title: "Community",
-    purpose: "Every community team, each opening its own team page with its referrals.",
-    actions: ["Open your team to see referrals waiting for an answer.", "Raise a referral from the team page."],
+    purpose: "Every community team now sits in Places, on its Catchments tab. Each team still has its own page.",
+    actions: [
+      "Open Places, then choose Catchments on the band to find a team.",
+      "Open your team to see referrals waiting for an answer.",
+      "Raise a referral from the team page.",
+    ],
   },
   delays: {
     title: "Waiting",
@@ -194,24 +221,29 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   },
   search: {
     title: "Patients",
-    purpose: "Find an open movement or stay by record number, place, stage or owner.",
-    actions: ["Search by record number, place, stage or owner."],
+    purpose: "The register of everyone, found by record number, place, stage or owner.",
+    actions: [
+      "Use the switch on the band: Everyone, In ED, In placement, Inpatient, Community or Not active.",
+      "Search by record number, place, stage or owner.",
+      "To see who closed today, choose Today on the band. On a phone, use Closed today at the foot of the list.",
+    ],
   },
   hub: {
     title: "Places",
     purpose: "Every ward, ED and community team in the network, with each one's beds and when they were confirmed.",
     actions: [
-      "Search places, or narrow the list to wards, EDs or teams.",
-      "Choose a place to preview it, then open it or view its statistics.",
-      "Pin the places you use most.",
+      "Use the search box above the list, or narrow the list to wards, EDs or teams.",
+      "Choose a place to preview it, then open it or view its statistics. Pin the places you use most.",
+      "Choose Catchments on the band to find which community team covers a suburb.",
     ],
+    questions: [CATCHMENT_QUESTION],
   },
   "legal-forms": {
     title: "Legal forms",
     purpose: "Every open movement with a legal form, and the expiry time a person typed from that form.",
     actions: [
       "Times are as typed from the paper form. Ward Flow does not work out legal periods, and the times are not legally checked.",
-      "Switch between Clocks, Checklist and History. Choose a patient to see their form.",
+      "Switch between On a form, Checklist and History. Each row names its next step. Choose a patient to see their form.",
       "Use Record next form when a new form is written. Record and tell lists who to let know.",
     ],
   },
@@ -247,12 +279,11 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     purpose: "Who answers each on-call line now, for hospitals, teams and state lines.",
     actions: [
       "Search by role, hospital, ward, team or number.",
-      "Use Cover at to see who answers at a later time.",
-      "Star a line to keep it under Mine.",
+      "Pick a service in the header, or use Show, to narrow the list.",
+      "Star a line to keep it under Mine and at the top of the page.",
     ],
   },
 };
-
 /** One page the rail does not list, matched by its whole address. */
 type PageHelp = ScreenHelp & {
   id: string;
@@ -303,11 +334,11 @@ const PAGE_HELP: readonly PageHelp[] = [
     id: "add-patient",
     path: /^\/ward-flow\/people\/new$/u,
     title: "Add patient",
-    purpose: "Adds a new invented patient record with identity only. The referral or movement holds the rest.",
+    purpose: "Adds a new invented patient record. Only the core details are needed.",
     actions: [
-      "Fill in UMRN, date of birth, given name and family name.",
+      "Fill in family name, given name, date of birth and UMRN. Everything else is optional.",
       "Read the Duplicate check first, so one person does not get two records.",
-      "Choose Add patient to open the new record, or Register & start referral to go straight to a referral.",
+      "Choose Add patient to open the new record, or Add and start referral to go straight to a referral.",
     ],
   },
   {
@@ -355,6 +386,18 @@ const PAGE_HELP: readonly PageHelp[] = [
       "New referral starts a new one. Tap a figure in the header to highlight those patients.",
     ],
     questions: [TV_QUESTION],
+  },
+  {
+    id: "catchments",
+    path: /^\/ward-flow\/hub\/catchments$/u,
+    title: "Catchments",
+    purpose: "Which community team covers a suburb, every community team from A to Z, and team names that read alike.",
+    actions: [
+      "Type a suburb or postcode in the lookup to find the team that covers it.",
+      "Use the A to Z to open a team's own page with its referrals.",
+      "Read alike sets team names that look similar side by side. Choose Places on the band to go back.",
+    ],
+    questions: [CATCHMENT_QUESTION],
   },
   {
     id: "community-team",
@@ -528,6 +571,13 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
       "An ED performance target set in Settings, counted from when the patient's wait began. It is not a legal deadline.",
   },
   { term: "Fit to travel", meaning: "The ED doctor's recorded medical clearance. It is needed before transport." },
+  {
+    // The full road-distance caveat (ward-reference-distances.ts). The shortlist shows a short line
+    // and links here (Josh, 3 Nov 2026). A test keeps the two in step.
+    term: "Road distance",
+    meaning:
+      "Indicative road distance measured on public map data. Not live traffic, and not a clinical travel time. Ward lists are never sorted by it.",
+  },
 
   {
     term: "Catchment",

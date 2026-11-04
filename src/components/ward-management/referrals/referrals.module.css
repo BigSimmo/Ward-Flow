@@ -2601,13 +2601,11 @@
   padding: 0.75rem 0.875rem;
 }
 
+/* One scroll for the page (Josh, 3 Nov 2026): the queue grows with the page rather than sitting in
+   a box with its own scrollbar. */
 @media (min-width: 46.5rem) and (max-width: 63.999rem) {
   .screen[data-referral-view="register"] .registerQueue {
     grid-auto-rows: max-content;
-    max-height: 34rem;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-    scrollbar-color: var(--wf-line-2) transparent;
   }
 
   .screen[data-referral-view="register"] .registerQueue::-webkit-scrollbar {
@@ -2631,17 +2629,6 @@
 
   .screen[data-referral-view="register"] .registerLayout {
     grid-template-columns: minmax(26rem, 1.15fr) minmax(32rem, 1.45fr);
-  }
-
-  .screen[data-referral-view="register"] .registerQueue {
-    max-height: calc(100dvh - 7rem);
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-  }
-
-  .screen[data-referral-view="register"] .registerDetail {
-    max-height: calc(100dvh - 7rem);
-    overflow: hidden;
   }
 
   .screen[data-referral-view="register"][data-dense-view="true"] .tableScroll {
@@ -2739,31 +2726,23 @@
    remain boxed below. */
 
 /* Q003: the referral register becomes one matched wide workspace once both minimum columns fit.
- * Each queue section and the selected detail own their scrolling so the section heading remains visible.
- * Fixed structure: container height is fixed and only the longer side scrolls down, eliminating trailing gray areas. */
+ * One scroll for the page (Josh, 3 Nov 2026, replacing the fixed 52rem workspace that scrolled inside
+ * itself): the queue grows with the page and the selected referral is the side rail, pinned just
+ * under the top bar and capped at the window, so its actions stay in view. Only its body scrolls,
+ * and only when the referral is taller than the window. */
 @media (min-width: 62.5625rem) {
   .screen[data-referral-view="register"] .registerLayout {
     display: grid;
     grid-template-columns: minmax(26rem, 1.15fr) minmax(32rem, 1.45fr);
-    grid-template-rows: minmax(0, 1fr);
-    min-height: 48rem;
-    height: 52rem;
-    max-height: 56rem;
     gap: var(--ward-space-16);
-    align-items: stretch;
+    align-items: start;
   }
 
   .screen[data-referral-view="register"] .registerQueue {
     min-height: 0;
-    height: 100%;
-    max-height: 100%;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-gutter: stable;
+    overflow: clip;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r1, 10px);
@@ -2771,9 +2750,10 @@
   }
 
   .screen[data-referral-view="register"] .registerDetail {
+    position: sticky;
+    top: var(--ward-sticky-top, 4.5rem);
     min-height: 0;
-    height: 100%;
-    max-height: 100%;
+    max-height: var(--ward-rail-height, calc(100dvh - 6rem));
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -2828,14 +2808,10 @@
   }
 
   .screen[data-referral-view="register"] .registerDetail[data-has-selection="false"] {
-    height: 100%;
-    max-height: 100%;
     overflow-y: auto;
   }
 
   .screen[data-referral-view="register"] .registerDetail > .registerEmpty {
-    height: 100%;
-    min-height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2844,7 +2820,6 @@
     padding: var(--ward-space-24);
   }
 
-  .screen[data-referral-view="register"] .sectionHeading,
   .screen[data-referral-view="register"] .matchHeading {
     position: sticky;
     z-index: 2;

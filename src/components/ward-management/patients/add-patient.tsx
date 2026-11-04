@@ -1,15 +1,16 @@
 "use client";
 
 import {
-  ChevronLeft,
-  ChevronRight,
-  FileText,
+  FilePlusCorner,
   History,
+  ListPlus,
   Lock,
+  RotateCcw,
   ShieldCheck,
   UserPlus,
   UserRound,
   UsersRound,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,14 +19,11 @@ import { takeHandedOffPatientQuery } from "@/components/ward-management/search/p
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { calendarDateOf, perthIsoDay } from "@/components/ward-management/ward-clock";
 import { patientRegistrationScope } from "@/components/ward-management/ward-patient-registration";
-import {
-  ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES,
-  type AboriginalOrTorresStraitIslanderStatus,
-} from "@/components/ward-management/ward-patient-aboriginal-status";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
@@ -51,10 +49,7 @@ import {
   Icon,
   LiveChip,
   PhoneHero,
-  PhoneListRow,
-  PhoneSheet,
   Segmented,
-  Select,
   Sheet,
   StatusGlyph,
   TextInput,
@@ -62,6 +57,18 @@ import {
   useOptionalToast,
 } from "@/components/wf";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
+import {
+  AddPatientMoreDetails,
+  EMPTY_EXTRAS,
+  extrasEntered,
+  filledExtras,
+  INDIGENOUS_STATUS_UNANSWERED,
+  type IndigenousStatusChoice,
+  type PatientExtras,
+  SEX_ITEMS,
+  SEX_UNCHOSEN,
+  type SexChoice,
+} from "./add-patient-sections";
 
 import styles from "./add-patient.module.css";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -88,6 +95,12 @@ import {
  * Identity card, and runs as you type; before anything is typed it is one quiet line, not a panel.
  * Unavailable finish buttons are greyed, not dashed, with "Needed: ..." beside them. The right
  * column keeps Recently added. Names in the duplicate check read surname first (D-83).
+ *
+ * RF7 (Josh, 3 Nov 2026): an administrative page. Core details at the top (surname first, then
+ * given name, date of birth, UMRN, recorded sex, gender and suburb), with the duplicate check
+ * inside; folded sections underneath for everything else (`add-patient-sections.tsx`), so a phone
+ * can add every detail too. Only the four identity fields are required. The foot sticks on a larger
+ * screen, and the head carries a plain Cancel back to Patient search behind the leave confirm.
  */
 
 type PatientDraft = {
@@ -101,10 +114,10 @@ const REQUIRED_FIELDS: readonly {
   readonly key: keyof PatientDraft;
   readonly name: string;
 }[] = [
-  { key: "umrn", name: "Record number" },
-  { key: "givenName", name: "Given name" },
   { key: "familyName", name: "Family name" },
+  { key: "givenName", name: "Given name" },
   { key: "dateOfBirth", name: "Date of birth" },
+  { key: "umrn", name: "Record number" },
 ];
 
 /**
@@ -117,10 +130,10 @@ const REQUIRED_CONTROLS: readonly {
   readonly id: string;
   readonly missing: string;
 }[] = [
-  { key: "umrn", id: "ward-add-patient-umrn", missing: "Enter the UMRN." },
-  { key: "dateOfBirth", id: "ward-add-patient-date-of-birth", missing: "Enter the date of birth." },
-  { key: "givenName", id: "ward-add-patient-given-name", missing: "Enter the given name." },
   { key: "familyName", id: "ward-add-patient-family-name", missing: "Enter the family name." },
+  { key: "givenName", id: "ward-add-patient-given-name", missing: "Enter the given name." },
+  { key: "dateOfBirth", id: "ward-add-patient-date-of-birth", missing: "Enter the date of birth." },
+  { key: "umrn", id: "ward-add-patient-umrn", missing: "Enter the UMRN." },
 ];
 
 /** The refusal for a record number that is already on file, naming the existing record's UMRN. */
@@ -151,10 +164,6 @@ function answeredDraft(draft: PatientDraft): PatientDraft | undefined {
 }
 
 const UNAVAILABLE_REASON_ID = "ward-add-patient-unavailable-reason";
-/** The phone's "On a larger screen" sheet: what the short phone form leaves out. */
-const LARGER_SCREEN_ROWS: readonly (readonly [string, string])[] = [
-  ["Gender, Aboriginal or Torres Strait Islander", "Optional · bed matching"],
-];
 
 /** The words for each blank required field, in the order the fields appear. */
 const NEEDED_WORDS: Record<keyof PatientDraft, string> = {
@@ -164,13 +173,13 @@ const NEEDED_WORDS: Record<keyof PatientDraft, string> = {
   familyName: "family name",
 };
 
-/** "UMRN, date of birth, given and family name": what is still blank, in field order. */
+/** "Family and given name, date of birth, UMRN": what is still blank, in field order. */
 function neededLine(draft: PatientDraft): string {
   const blank = REQUIRED_CONTROLS.filter((control) => draft[control.key].trim() === "").map((control) => control.key);
   const bothNames = blank.includes("givenName") && blank.includes("familyName");
   return blank
-    .filter((key) => !(bothNames && key === "familyName"))
-    .map((key) => (bothNames && key === "givenName" ? "given and family name" : NEEDED_WORDS[key]))
+    .filter((key) => !(bothNames && key === "givenName"))
+    .map((key) => (bothNames && key === "familyName" ? "family and given name" : NEEDED_WORDS[key]))
     .join(", ");
 }
 const GENDER_NOT_RECORDED = "not-recorded" as const;
@@ -185,11 +194,6 @@ const GENDER_ITEMS: ChoiceItem<GenderChoice>[] = [
 
 const NEAR_MATCH_MINIMUM_TERM_LENGTH = 4;
 const RECENT_RECORDS_SHOWN = 7;
-
-/** Finding 51 (Josh, 27 Oct 2026): the answer is saved on the record. It opens blank and never blocks. */
-const INDIGENOUS_STATUS_OPTIONS = ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES;
-const INDIGENOUS_STATUS_UNANSWERED = "" as const;
-type IndigenousStatusChoice = AboriginalOrTorresStraitIslanderStatus | typeof INDIGENOUS_STATUS_UNANSWERED;
 
 type MatchKind = "record-number" | "same-name-same-dob" | "same-name" | "near";
 
@@ -227,9 +231,14 @@ export function AddPatientForm() {
   const [draft, setDraft] = useState<PatientDraft>(() =>
     initialDraft(handoff?.assignTo === "given-name" ? handoff.text : ""),
   );
+  // Keep unfinished typing in memory too: the normalised date is empty until it is a real day.
+  const [dateOfBirthText, setDateOfBirthText] = useState("");
 
   const [genderChoice, setGenderChoice] = useState<GenderChoice>(GENDER_UNCHOSEN);
   const [indigenousStatus, setIndigenousStatus] = useState<IndigenousStatusChoice>(INDIGENOUS_STATUS_UNANSWERED);
+  const [sexChoice, setSexChoice] = useState<SexChoice>(SEX_UNCHOSEN);
+  // RF7: suburb and the folded sections' typed details, all optional.
+  const [extras, setExtras] = useState<PatientExtras>(EMPTY_EXTRAS);
   // A reset also clears a half-typed birth date, which the draft (YYYY-MM-DD or "") cannot see.
   const [dateBoxGeneration, setDateBoxGeneration] = useState(0);
 
@@ -266,12 +275,11 @@ export function AddPatientForm() {
     [],
   );
   /*
-   * v10 Add a patient, Phone. shell-7 (Josh, 13 Oct 2026): the short identity form and its
-   * duplicate check show straight away; the "needs a larger screen" landing is gone. One quiet row
-   * says gender and Aboriginal status are on a larger screen. Desktop never reads any of this.
+   * v10 Add a patient, Phone. shell-7 (Josh, 13 Oct 2026): the identity form and its duplicate
+   * check show straight away; the "needs a larger screen" landing is gone. RF7 (3 Nov 2026): the
+   * folded sections replace the "On a larger screen" sheet, so a phone can add every detail too.
    */
   const isPhone = useIsPhone();
-  const [phoneSheet, setPhoneSheet] = useState<"larger" | null>(null);
   /*
    * Search and forms review (31 Oct 2026): on a larger screen the cursor starts in the first empty
    * identity field, so typing can begin at once. A phone keeps the page still, as the keyboard
@@ -281,7 +289,7 @@ export function AddPatientForm() {
     if (isPhone) return;
     const active = document.activeElement;
     if (active && active !== document.body) return;
-    const first = (["umrn", "date-of-birth", "given-name", "family-name"] as const).find((field) => {
+    const first = (["family-name", "given-name", "date-of-birth", "umrn"] as const).find((field) => {
       const input = document.getElementById(`ward-add-patient-${field}`);
       return input instanceof HTMLInputElement && input.value === "";
     });
@@ -297,6 +305,8 @@ export function AddPatientForm() {
     familyName: string;
     /** The command went to the shared workspace (it settled asynchronously). */
     shared?: boolean;
+    /** Retry must finish this same command before another registration can be sent. */
+    unconfirmed?: WardCommandOutcome;
     /** The form as submitted; edits made while waiting are kept when the save finishes. */
     form: ReturnType<typeof formSnapshot>;
     generation: number;
@@ -308,13 +318,24 @@ export function AddPatientForm() {
   const [savedOutsideView, setSavedOutsideView] = useState<string | null>(null);
   /** An accepted shared save finished without its record; a late snapshot can still open it. */
   const lateSubmissionRef = useRef<typeof priorSubmissionRef.current>(null);
-  if (acceptedSubmission && acceptedSubmission.generation !== worldGeneration) {
+  useEffect(
+    () => () => {
+      priorSubmissionRef.current = null;
+    },
+    [],
+  );
+  // Retire a submission from an earlier workspace in a committed effect, never during render: an
+  // abandoned render would keep the ref change but drop the state updates, leaving the form locked.
+  useEffect(() => {
+    const prior = priorSubmissionRef.current;
+    if (!prior || prior.generation === worldGeneration) return;
+    priorSubmissionRef.current = null;
     setAcceptedSubmission(null);
     setLastRejection(
       "The workspace changed before this patient was confirmed. Check the patient list. If they are not there, add them again.",
     );
     setIsSubmitting(false);
-  }
+  }, [worldGeneration]);
   const submitIntentRef = useRef<"profile" | "refer">("profile");
   const [submitIntent, setSubmitIntent] = useState<"profile" | "refer">("profile");
 
@@ -323,25 +344,36 @@ export function AddPatientForm() {
     draft.givenName.trim().length > 0 ||
     draft.familyName.trim().length > 0 ||
     draft.dateOfBirth.trim().length > 0 ||
+    dateOfBirthText.length > 0 ||
     genderChoice !== GENDER_UNCHOSEN ||
-    indigenousStatus !== INDIGENOUS_STATUS_UNANSWERED;
-  const isDirty = identityChanged;
-
-  useDirtyStateGuard({
-    isDirty: isDirty && !isSubmitting,
-    confirmMessage: "You have unsaved changes to this new admission. Are you sure you want to leave?",
-  });
+    sexChoice !== SEX_UNCHOSEN ||
+    extras.suburb.trim().length > 0;
+  const moreChanged = indigenousStatus !== INDIGENOUS_STATUS_UNANSWERED || extrasEntered({ ...extras, suburb: "" });
+  const isDirty = identityChanged || moreChanged;
 
   /** Everything Reset clears, so Undo can put every field back (v10 acceptance check). */
   const formSnapshot = () => ({
     draft,
+    dateOfBirthText,
     genderChoice,
+    sexChoice,
     indigenousStatus,
+    extras,
+  });
+  useDirtyStateGuard({
+    isDirty:
+      Boolean(priorSubmissionRef.current?.unconfirmed) ||
+      (isDirty &&
+        (!isSubmitting || JSON.stringify(formSnapshot()) !== JSON.stringify(priorSubmissionRef.current?.form))),
+    confirmMessage: "You have unsaved changes to this new admission. Are you sure you want to leave?",
   });
   const restoreSnapshot = (snap: ReturnType<typeof formSnapshot>) => {
     setDraft(snap.draft);
+    setDateOfBirthText(snap.dateOfBirthText);
     setGenderChoice(snap.genderChoice);
+    setSexChoice(snap.sexChoice);
     setIndigenousStatus(snap.indigenousStatus);
+    setExtras(snap.extras);
   };
 
   const performReset = () => {
@@ -383,7 +415,10 @@ export function AddPatientForm() {
     setSavedOutsideView(null);
     lateSubmissionRef.current = null;
     setDraft(initialDraft());
+    setDateOfBirthText("");
     setGenderChoice(GENDER_UNCHOSEN);
+    setSexChoice(SEX_UNCHOSEN);
+    setExtras(EMPTY_EXTRAS);
     setDateBoxGeneration((generation) => generation + 1);
     setIndigenousStatus(INDIGENOUS_STATUS_UNANSWERED);
     setAssignedSearch(null);
@@ -441,8 +476,9 @@ export function AddPatientForm() {
     if (!added) return;
     priorSubmissionRef.current = null;
     lateSubmissionRef.current = null;
-    if (late && isDirty) {
-      // The save already finished and the form holds new typing: say where the record is, stay here.
+    if (late ? isDirty : JSON.stringify(formSnapshot()) !== JSON.stringify(prior.form)) {
+      // New typing is outside the accepted command, including edits made before its record arrived.
+      finishSubmission();
       setSavedOutsideView(`${added.familyName}, ${added.givenName} added, ${added.umrn}. It is now in Recent records.`);
       return;
     }
@@ -548,7 +584,7 @@ export function AddPatientForm() {
     };
     priorSubmissionRef.current = submission;
     setAcceptedSubmission(null);
-    const refuse = () => {
+    const refuse = (message?: string) => {
       if (priorSubmissionRef.current !== submission) return;
       priorSubmissionRef.current = null;
       // DA-12: a refusal for a record number already on file names that record's UMRN, but only a
@@ -562,7 +598,7 @@ export function AddPatientForm() {
         setLastRejection(duplicateUmrnRefusal(existing.umrn.trim()));
         document.getElementById("ward-add-patient-umrn")?.focus();
       } else {
-        setLastRejection("Patient could not be added. Check the identity details and existing records.");
+        setLastRejection(message ?? "Patient could not be added. Check the identity details and existing records.");
       }
       setIsSubmitting(false);
     };
@@ -575,18 +611,46 @@ export function AddPatientForm() {
         dateOfBirth: answered.dateOfBirth,
         demoToday,
         ...(genderChoice === GENDER_NOT_RECORDED || genderChoice === GENDER_UNCHOSEN ? {} : { gender: genderChoice }),
+        ...(sexChoice === SEX_UNCHOSEN || sexChoice === "Not recorded" ? {} : { sex: sexChoice }),
+        ...filledExtras(extras),
         ...(indigenousStatus === INDIGENOUS_STATUS_UNANSWERED
           ? {}
           : { aboriginalOrTorresStraitIslanderStatus: indigenousStatus }),
       });
       const settle = (outcome: WardCommandOutcome | void) => {
         if (priorSubmissionRef.current !== submission) return;
-        if (outcome?.status !== "accepted" || outcome.isCurrent?.() === false) return refuse();
+        if (submission.unconfirmed?.isCurrent?.() === false || outcome?.isCurrent?.() === false) {
+          finishSubmission();
+          setLastRejection("The workspace changed. Check the patient list before trying again.");
+          return;
+        }
+        if (outcome?.status === "failed" && (outcome.confirmation || submission.unconfirmed)) {
+          setLastRejection(outcome.message ?? SAVE_NOT_CONFIRMED);
+          if (submission.unconfirmed || !outcome.confirmation) return;
+          submission.unconfirmed = outcome;
+          void outcome.confirmation.then(
+            (confirmed) => {
+              if (confirmed.commandId === outcome.commandId) settle(confirmed);
+            },
+            () => {
+              // A lost confirmation leaves the original command's outcome uncertain. Unlock the form
+              // (answers kept) and say so, rather than leaving it submitting with Reset disabled.
+              if (priorSubmissionRef.current !== submission) return;
+              finishSubmission();
+              setLastRejection(
+                "This patient could not be confirmed as added. Check the patient list. If they are not there, add them again.",
+              );
+            },
+          );
+          return;
+        }
+        if (outcome?.status !== "accepted") return refuse(outcome?.message);
+        setLastRejection(undefined);
         setAcceptedSubmission(submission);
       };
       if (completion && "then" in completion) {
         submission.shared = true;
-        void completion.then(settle, refuse);
+        void completion.then(settle, () => refuse());
       } else settle(completion);
     } catch {
       refuse();
@@ -595,7 +659,7 @@ export function AddPatientForm() {
 
   /**
    * Enter in a field is an implicit submit, and the browser answers it by clicking the FIRST submit
-   * button in the form, which is "Register & start referral". Enter should do the plain, primary
+   * button in the form, which is "Add and start referral". Enter should do the plain, primary
    * thing (Add patient), so it is routed there. The two buttons stay the only way to start a referral.
    */
   function submitPlainOnEnter(event: KeyboardEvent<HTMLFormElement>) {
@@ -637,13 +701,21 @@ export function AddPatientForm() {
 
   const setDraftField = (key: keyof PatientDraft) => (value: string) =>
     setDraft((current) => ({ ...current, [key]: value }));
+  const setExtra = (key: keyof PatientExtras) => (value: string) =>
+    setExtras((current) => ({ ...current, [key]: value }));
 
   const resetSummary = [
     {
       key: "identity",
       on: identityChanged,
-      label: "Identity",
-      meta: "Number, names, birth date, gender, Aboriginal status",
+      label: "Core details",
+      meta: "Names, birth date, UMRN, sex, gender, suburb",
+    },
+    {
+      key: "more",
+      on: moreChanged,
+      label: "More details",
+      meta: "Contact, care links, culture and language",
     },
   ];
 
@@ -761,26 +833,23 @@ export function AddPatientForm() {
             // F-08 (phone review, Oct 2026): the standard Demo pill, so a typed record reads as invented.
             chip={<LiveChip state="live" onHero />}
             title="Add patient"
-            sub="Identity only"
+            sub="Core details first, more below"
+            actions={
+              <Link
+                className={buttonClass({ variant: "onHero", size: "sm" })}
+                href="/ward-flow/search"
+                aria-label="Cancel and go back to patient search"
+                data-testid="ward-add-patient-cancel"
+              >
+                <Icon icon={X} size={14} />
+                Cancel
+              </Link>
+            }
             data-testid="ward-add-patient-phone-hero"
             // Redesign: the Identity card's head says "0 of 4 required" just below, so the hero shows
             // no figure of its own and the form starts higher.
           />
         ) : null}
-        <PhoneSheet
-          open={phoneSheet !== null}
-          onClose={() => setPhoneSheet(null)}
-          title="On a larger screen"
-          height="content"
-          secondary={{ label: "Done", onAction: () => setPhoneSheet(null) }}
-          data-testid="ward-add-patient-phone-sheet"
-        >
-          <ul className={styles.phList}>
-            {LARGER_SCREEN_ROWS.map(([name, meta]) => (
-              <PhoneListRow as="li" key={name} name={name} meta={meta} />
-            ))}
-          </ul>
-        </PhoneSheet>
         {isPhone ? null : (
           <Hero
             level={1}
@@ -795,13 +864,16 @@ export function AddPatientForm() {
             }
             aside={
               <span className={styles.heroActions}>
+                {/* RF3 (Josh, 3 Nov 2026): a plain way out. Unsaved typing gets the styled leave
+                    confirm from the dirty-state guard, never a browser box. */}
                 <Link
                   className={buttonClass({ variant: "onHero", size: "sm" })}
                   href="/ward-flow/search"
-                  aria-label="Back to patient search"
+                  aria-label="Cancel and go back to patient search"
+                  data-testid="ward-add-patient-cancel"
                 >
-                  <Icon icon={ChevronLeft} size={14} />
-                  Patient search
+                  <Icon icon={X} size={14} />
+                  Cancel
                 </Link>
               </span>
             }
@@ -873,7 +945,7 @@ export function AddPatientForm() {
                 id="apIdH"
                 className={styles.idHead}
                 icon={UserRound}
-                title="Identity"
+                title="Core details"
                 aside={
                   <Badge size="sm" tone={answered ? "success" : "neutral"}>
                     {answeredCount} of {REQUIRED_FIELDS.length} required
@@ -881,38 +953,21 @@ export function AddPatientForm() {
                 }
               />
               <CardBody className={styles.grid}>
-                <Field label={<Required>UMRN</Required>} id="ward-add-patient-umrn" error={fieldError("umrn")}>
+                <Field
+                  label={<Required>Family name</Required>}
+                  id="ward-add-patient-family-name"
+                  error={fieldError("familyName")}
+                >
                   <TextInput
-                    data-testid="ward-add-patient-umrn"
-                    aria-label="UMRN (Unit Medical Record Number)"
+                    data-testid="ward-add-patient-family-name"
                     aria-required="true"
                     autoComplete="off"
                     autoCorrect="off"
-                    autoCapitalize="characters"
+                    autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
-                    placeholder="UMRN"
-                    className={styles.mono}
-                    value={draft.umrn}
-                    // A UMRN is one word in capitals ("UM100001"): spaces typed or pasted in go, and
-                    // letters are capitalised as typed, so "um 100001" is saved as the record reads.
-                    onChange={(event) => setDraftField("umrn")(event.target.value.replace(/\s+/g, "").toUpperCase())}
-                  />
-                </Field>
-                <Field
-                  label={<Required>Date of birth</Required>}
-                  id="ward-add-patient-date-of-birth"
-                  error={fieldError("dateOfBirth")}
-                >
-                  {/* Typed as DD/MM/YYYY in the kit's date box, not the browser's picker (bug list row 25).
-                      The draft still holds YYYY-MM-DD; a day after the demo day is refused below. */}
-                  <DateField
-                    key={dateBoxGeneration}
-                    data-testid="ward-add-patient-date-of-birth"
-                    aria-required="true"
-                    className={styles.mono}
-                    value={draft.dateOfBirth}
-                    onValueChange={setDraftField("dateOfBirth")}
+                    value={draft.familyName}
+                    onChange={(event) => setDraftField("familyName")(event.target.value)}
                   />
                 </Field>
                 <Field
@@ -933,24 +988,58 @@ export function AddPatientForm() {
                   />
                 </Field>
                 <Field
-                  label={<Required>Family name</Required>}
-                  id="ward-add-patient-family-name"
-                  error={fieldError("familyName")}
+                  label={<Required>Date of birth</Required>}
+                  id="ward-add-patient-date-of-birth"
+                  error={fieldError("dateOfBirth")}
                 >
+                  {/* Typed as DD/MM/YYYY in the kit's date box, not the browser's picker (bug list row 25).
+                      The draft still holds YYYY-MM-DD; a day after the demo day is refused below. */}
+                  <DateField
+                    key={dateBoxGeneration}
+                    data-testid="ward-add-patient-date-of-birth"
+                    aria-required="true"
+                    className={styles.mono}
+                    value={draft.dateOfBirth}
+                    rawText={dateOfBirthText}
+                    onRawTextChange={setDateOfBirthText}
+                    onValueChange={setDraftField("dateOfBirth")}
+                  />
+                </Field>
+                <Field label={<Required>UMRN</Required>} id="ward-add-patient-umrn" error={fieldError("umrn")}>
                   <TextInput
-                    data-testid="ward-add-patient-family-name"
+                    data-testid="ward-add-patient-umrn"
+                    aria-label="UMRN (Unit Medical Record Number)"
                     aria-required="true"
                     autoComplete="off"
                     autoCorrect="off"
-                    autoCapitalize="words"
+                    autoCapitalize="characters"
                     spellCheck={false}
                     enterKeyHint="done"
-                    value={draft.familyName}
-                    onChange={(event) => setDraftField("familyName")(event.target.value)}
+                    placeholder="UMRN"
+                    className={styles.mono}
+                    value={draft.umrn}
+                    // A UMRN is one word in capitals ("UM100001"): spaces typed or pasted in go, and
+                    // letters are capitalised as typed, so "um 100001" is saved as the record reads.
+                    onChange={(event) => setDraftField("umrn")(event.target.value.replace(/\s+/g, "").toUpperCase())}
                   />
                 </Field>
 
-                <div className={cx(styles.spanAll, styles.choiceField, styles.phHide)}>
+                <div className={cx(styles.span2, styles.choiceField)}>
+                  <div className={styles.choiceLabelRow}>
+                    <span className={styles.choiceLabel}>Sex</span>
+                    <span className={styles.choiceHint}>optional, as recorded</span>
+                  </div>
+                  <div data-testid="ward-add-patient-sex">
+                    <Segmented
+                      label="Sex"
+                      items={SEX_ITEMS}
+                      value={sexChoice}
+                      onChange={setSexChoice}
+                      className={cx(styles.segmented, styles.segmentedWrap)}
+                    />
+                  </div>
+                </div>
+                <div className={cx(styles.span2, styles.choiceField)}>
                   <div className={styles.choiceLabelRow}>
                     <span className={styles.choiceLabel} id="apGenderL">
                       Gender
@@ -963,35 +1052,40 @@ export function AddPatientForm() {
                       items={GENDER_ITEMS}
                       value={genderChoice}
                       onChange={setGenderChoice}
-                      className={styles.segmented}
+                      className={cx(styles.segmented, styles.segmentedWrap)}
                     />
                   </div>
                 </div>
-                <Field
-                  label="Aboriginal or Torres Strait Islander"
-                  id="ward-add-patient-indigenous"
-                  className={cx(styles.spanAll, styles.phHide)}
-                >
-                  <Select
-                    value={indigenousStatus}
-                    onChange={(e) =>
-                      setIndigenousStatus(
-                        INDIGENOUS_STATUS_OPTIONS.find((status) => status === e.target.value) ??
-                          INDIGENOUS_STATUS_UNANSWERED,
-                      )
-                    }
-                  >
-                    <option value={INDIGENOUS_STATUS_UNANSWERED}>Choose an answer</option>
-                    {INDIGENOUS_STATUS_OPTIONS.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </Select>
+                <Field label="Suburb" id="ward-add-patient-suburb" className={styles.span2}>
+                  <TextInput
+                    data-testid="ward-add-patient-suburb"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="words"
+                    spellCheck={false}
+                    enterKeyHint="done"
+                    value={extras.suburb}
+                    onChange={(event) => setExtra("suburb")(event.target.value)}
+                  />
                 </Field>
               </CardBody>
               {/* Redesign: the duplicate check runs under the identity fields as they are typed. */}
               {duplicateCheck}
+            </Card>
+
+            <Card aria-labelledby="apMoreH">
+              <CardHead
+                id="apMoreH"
+                icon={ListPlus}
+                title="More details"
+                aside={<span className={styles.muted}>Optional · never needed to add</span>}
+              />
+              <AddPatientMoreDetails
+                extras={extras}
+                onExtra={setExtra}
+                indigenousStatus={indigenousStatus}
+                onIndigenousStatus={setIndigenousStatus}
+              />
             </Card>
 
             <Card className={styles.submitBar}>
@@ -1027,7 +1121,9 @@ export function AddPatientForm() {
               <div className={styles.submitActions}>
                 <Button
                   variant="ghost"
+                  icon={RotateCcw}
                   data-testid="ward-add-patient-reset"
+                  disabled={isSubmitting}
                   onClick={() => {
                     if (isDirty) setShowResetConfirm(true);
                     else performReset();
@@ -1038,7 +1134,7 @@ export function AddPatientForm() {
                 <Button
                   type="submit"
                   variant="sec"
-                  icon={FileText}
+                  icon={FilePlusCorner}
                   className={answered && !isSubmitting ? undefined : styles.submitOff}
                   data-testid="ward-add-patient-register-and-refer"
                   disabledReason={registrationUnavailable}
@@ -1053,7 +1149,7 @@ export function AddPatientForm() {
                     setSubmitIntent("refer");
                   }}
                 >
-                  {isSubmitting && submitIntent === "refer" ? "Starting referral..." : "Register & start referral →"}
+                  {isSubmitting && submitIntent === "refer" ? "Starting referral..." : "Add and start referral"}
                 </Button>
                 <Button
                   type="submit"
@@ -1110,15 +1206,6 @@ export function AddPatientForm() {
                 </ul>
               </CardBody>
             </Card>
-            {isPhone ? (
-              <PhoneListRow
-                className={styles.phCard}
-                name="Gender and Aboriginal status"
-                meta="On a larger screen · optional"
-                onSelect={() => setPhoneSheet("larger")}
-                value={<Icon icon={ChevronRight} size={16} />}
-              />
-            ) : null}
           </aside>
         </div>
 

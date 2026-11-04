@@ -1388,10 +1388,18 @@
   background: var(--line);
 }
 
+/* The timeline's StatusGlyph is the marker itself (icon audit, 3 Nov 2026), so it sits on the
+ * surface, not on a tone-filled dot of the same colour that would swallow its shape. */
 .tlMark .tick {
   position: relative;
-  margin-top: 4px;
-  box-shadow: 0 0 0 3px var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  margin-top: 2px;
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--surface);
 }
 
 .tlWhat {

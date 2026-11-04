@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * not offered it, and a desk that may open it still is. All data here is synthetic.
  *
  * 1. The New referral slide-out (Shift+R, a link click, arriving on its route) is referral intake.
- * 2. Find a bed's ward rows and All figures' Open statistics link to pages some desks cannot open.
+ * 2. Find a bed's ward rows and Key figures' See all on Statistics link to pages some desks cannot open.
  * 3. The broadcast banner speaks for the desk's own role, not the coordinator's desk a page implies.
  */
 
@@ -40,7 +40,7 @@ import {
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { resetServiceScopeForTests } from "@/components/ward-management/shell/ward-service-store";
 import { WardBedFinder } from "@/components/ward-management/tools/ward-bed-finder";
-import { NetworkFigures } from "@/components/ward-management/tools/ward-network-figures";
+import { ToolFigures } from "@/components/ward-management/tools/ward-tool-figures";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
@@ -170,7 +170,7 @@ describe("1. the New referral slide-out opens only for a desk that may open refe
   });
 });
 
-describe("2. Find a bed and All figures link only to pages the desk may open", () => {
+describe("2. Find a bed and Key figures link only to pages the desk may open", () => {
   /** Synthetic wards, so the list is the same whatever the seed holds. */
   const WARDS = ["Acacia ward", "Banksia ward", "Karri ward"] as const;
 
@@ -236,7 +236,7 @@ describe("2. Find a bed and All figures link only to pages the desk may open", (
   function renderFigures() {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <NetworkFigures onNavigate={vi.fn()} />
+        <ToolFigures onNavigate={vi.fn()} />
       </WardFlowProvider>,
     );
     return screen.getByTestId("ward-stats-drawer-content");
@@ -246,19 +246,19 @@ describe("2. Find a bed and All figures link only to pages the desk may open", (
     ["ED desk", edDesk],
     ["ward desk", { role: "ward", scope: { kind: "ward", unitIds: ["finder-1"] } } as WardAccess],
     ["officer", officer],
-  ])("offers the %s no Open statistics link, as it cannot open the statistics hub", (_name, access) => {
+  ])("offers the %s no See all on Statistics link, as it cannot open the statistics hub", (_name, access) => {
     useDesk(access);
     const figures = renderFigures();
-    expect(within(figures).queryByRole("link", { name: /Open statistics/u })).toBeNull();
+    expect(within(figures).queryByRole("link", { name: /See all on Statistics/u })).toBeNull();
   });
 
   it.each([
     ["bed manager", bedManager],
     ["coordinator", coordinator],
-  ])("still offers the %s Open statistics", (_name, access) => {
+  ])("still offers the %s See all on Statistics", (_name, access) => {
     useDesk(access);
     const figures = renderFigures();
-    expect(within(figures).getByRole("link", { name: /Open statistics/u })).toHaveAttribute(
+    expect(within(figures).getByRole("link", { name: /See all on Statistics/u })).toHaveAttribute(
       "href",
       "/ward-flow/statistics",
     );

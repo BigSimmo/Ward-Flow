@@ -70,13 +70,13 @@ describe("the referral slide-out opened from an entry point", () => {
       </WardFlowProvider>,
     );
     expect(stepState("Patient")).toBe("false");
-    expect(screen.getAllByText("Catchment confirmed").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Catchment confirmed/u).length).toBeGreaterThan(0);
     fireEvent.change(screen.getByLabelText("Home region"), { target: { value: "Perth Metropolitan" } });
     expect(stepState("Patient")).toBe("true");
-    expect(screen.getAllByText("Catchment confirmed").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Catchment confirmed/u).length).toBeGreaterThan(0);
     // The summary, not the search: the entry point already named the person.
-    expect(screen.queryByRole("searchbox", { name: "Find a patient" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Find a patient" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
-    expect(screen.getByRole("searchbox", { name: "Find a patient" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Find a patient" })).toBeInTheDocument();
   });
 });

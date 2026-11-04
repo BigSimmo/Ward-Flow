@@ -8,6 +8,7 @@ import type { ReleasedCount } from "./executive-statistics-contract";
 import { useExecutiveStatisticsControl } from "./executive-statistics-context";
 import { SMALL_NUMBER_NOT_SHOWN, smallNumberText } from "../ward-access-scope";
 import { CLINICAL_VALUES } from "../ward-clinical-values";
+import { useViewSwitchAction } from "./statistics-view-switch-slot";
 
 export type StatisticsCount = number | ReleasedCount;
 
@@ -49,17 +50,25 @@ export function sumStatisticsCounts(counts: readonly StatisticsCount[]): Statist
 
 export function ExecutiveStatisticsUnavailable({ loading }: { loading?: boolean } = {}) {
   const control = useExecutiveStatisticsControl();
+  // In place of a Summary view's first card, it keeps the view switch, so the desk can switch back.
+  const viewSwitch = useViewSwitchAction();
   // While the first report is on its way, a calm loading line, not "unavailable" (Josh, 31 Oct 2026).
   if (loading ?? control.loading)
     return (
-      <p role="status" data-testid="ward-statistics-loading">
-        Loading the executive view…
-      </p>
+      <>
+        {viewSwitch}
+        <p role="status" data-testid="ward-statistics-loading">
+          Loading the executive view…
+        </p>
+      </>
     );
   return (
-    <p role="status" data-testid="ward-statistics-unavailable">
-      Statistics are unavailable for this desk. Refresh the workspace to try again.
-    </p>
+    <>
+      {viewSwitch}
+      <p role="status" data-testid="ward-statistics-unavailable">
+        Statistics are unavailable for this desk. Refresh the workspace to try again.
+      </p>
+    </>
   );
 }
 

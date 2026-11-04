@@ -4,7 +4,7 @@
 // 2026) to keep that file under the line cap. The phone menu's search results draw the same icon.
 
 import {
-  AlertTriangle,
+  TriangleAlert,
   ArrowRightLeft,
   BarChart2,
   BedSingle,
@@ -82,7 +82,7 @@ export function SearchResultIcon({
         case "capacity":
           return <BedSingle className={className} aria-hidden="true" />;
         case "escalation":
-          return <AlertTriangle className={className} aria-hidden="true" />;
+          return <TriangleAlert className={className} aria-hidden="true" />;
         case "statistics":
           return <BarChart2 className={className} aria-hidden="true" />;
         case "on-call":

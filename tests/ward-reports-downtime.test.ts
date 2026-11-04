@@ -7,6 +7,7 @@ import {
   rememberDowntimePack,
 } from "@/components/ward-management/reports/downtime-pack";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { isEdOriginJourney } from "@/components/ward-management/ward-ed-presence";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
@@ -169,7 +170,9 @@ describe("downtime pack dates (device audit 11 Oct 2026)", () => {
 describe("downtime pack ED population (device audit 11 Oct 2026)", () => {
   it("says how the still-in-ED count relates to every open journey", () => {
     const { state, pack } = packFor();
-    expect(pack.edQueue.length + pack.leftEd).toBe(state.movements.filter(isOpen).length);
+    expect(pack.edQueue.length + pack.leftEd).toBe(
+      state.movements.filter((movement) => isOpen(movement) && isEdOriginJourney(movement)).length,
+    );
     for (const line of pack.edQueue) expect(line.ed).not.toMatch(/Emergency Department$/u);
   });
 });

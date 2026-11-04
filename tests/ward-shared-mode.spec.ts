@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Locator, type Page } from "playwright/test";
-import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * Shared mode end to end (audit F-16): two coordinator desks, each signed in in its own browser
@@ -75,17 +75,28 @@ function placement(page: Page): Locator {
 }
 
 function queueRow(page: Page, movement = MOVEMENT): Locator {
-  return page.getByRole("region", { name: "Priority queue" }).getByTestId(`ward-queue-row-${movement}`);
+  return homeFlowCard(page).getByTestId(`ward-queue-row-${movement}`);
 }
 
-/** Show the movement's queue row, opening the queue's "Show all" when the row is past the first rows. */
+/**
+ * Placement is the patient drawer over Home on every screen size (H7, Josh 3 Nov 2026), so a drawer
+ * left open by an earlier step covers the queue. Close it, as a coordinator would, before choosing.
+ */
+async function closePlacement(page: Page) {
+  const close = page.getByRole("button", { name: "Close placement and clear selection" });
+  if ((await close.count()) === 0) return;
+  await close.click();
+  await expect(placement(page)).toHaveCount(0);
+}
+
+/** Show the movement's Flow row, opening each stage's "Show all N" when the row is past its first rows. */
 async function revealRow(page: Page, movement = MOVEMENT): Promise<Locator> {
+  await closePlacement(page);
   await showEveryoneWaitingOn(page);
-  const queue = page.getByRole("region", { name: "Priority queue" });
+  const queue = homeFlowCard(page);
   const row = queueRow(page, movement);
-  const showAll = queue.getByRole("button", { name: /^Show all/u });
   await expect(queue.locator('[data-testid^="ward-queue-row-"]').first()).toBeVisible();
-  if (!(await row.isVisible()) && (await showAll.isVisible())) await showAll.click();
+  if (!(await row.isVisible())) await showAllFlowRows(queue);
   await expect(row).toBeVisible();
   return row;
 }
@@ -137,8 +148,9 @@ async function chooseOtherTier(page: Page, tier: Locator, avoid?: string, moveme
 
 /** A queued movement other than MOVEMENT, for a second record to change. */
 async function anotherMovement(page: Page): Promise<string> {
+  await closePlacement(page);
   await showEveryoneWaitingOn(page);
-  const rows = page.getByRole("region", { name: "Priority queue" }).locator('[data-testid^="ward-queue-row-"]');
+  const rows = homeFlowCard(page).locator('[data-testid^="ward-queue-row-"]');
   await expect(rows.first()).toBeVisible();
   const ids = await rows.evaluateAll((list) =>
     list.map((row) => row.getAttribute("data-testid")!.replace("ward-queue-row-", "")),

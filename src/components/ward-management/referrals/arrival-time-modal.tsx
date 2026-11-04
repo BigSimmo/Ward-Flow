@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { AlertCircle, Clock, ShieldCheck, X } from "lucide-react";
+import { CircleAlert, Clock, ShieldCheck, X } from "lucide-react";
 import {
   ARRIVAL_MODES,
   ARRIVAL_MODE_LABELS,
@@ -220,7 +220,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
 
           {late && movement.arrivalDetails ? (
             <div className={styles.late} role="status" data-testid="arrival-plan-late-state">
-              <AlertCircle size={18} className={styles.lateIcon} aria-hidden="true" />
+              <CircleAlert size={18} className={styles.lateIcon} aria-hidden="true" />
               <span>
                 Arrival is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time (
                 {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). They have not been marked

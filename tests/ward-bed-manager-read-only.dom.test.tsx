@@ -138,7 +138,8 @@ describe("the site bed manager's Discharges screen (D-80)", () => {
     deskAs(bedManagerAt(unitById(admission.unitId)!.siteCode));
     renderScoped(<DischargeBoard />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
+    // DC4 (3 Nov 2026): Recorded replaces History.
+    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
     const opener = within(worklist)
       .getAllByRole("row")

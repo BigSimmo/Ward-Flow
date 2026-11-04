@@ -1,16 +1,13 @@
 /* Statistics summary: the compact view switch, "Open a unit" and the one unit finder it opens. */
-.switchBlock {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
+
+/* The switch in its card's head (the action slot). The card head wraps it under the title when the
+   head is narrow, as at 834. */
+.switchControl {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
 }
-.switchRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2) var(--wf-s-3);
-}
+
 .finder {
   max-width: 40rem;
 }

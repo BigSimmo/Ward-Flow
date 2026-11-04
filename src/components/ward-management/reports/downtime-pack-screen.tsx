@@ -11,7 +11,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { Ambulance, BedDouble, Camera, FileText, Printer, Users } from "lucide-react";
+import { Ambulance, BedSingle, Camera, FileText, Printer, Users } from "lucide-react";
 
 import {
   Button,
@@ -51,6 +51,7 @@ import { useOnlineStatus } from "@/components/ward-management/use-online-status"
 
 import {
   lastDowntimePack,
+  leftEdNote,
   markDowntimePackHandled,
   subscribeDowntimePack,
   type DowntimePack,
@@ -370,10 +371,7 @@ export function DowntimePackScreen() {
   const movesEta = pack.pendingMoves.some((line) => line.transportEta !== null);
   const formsReceived = pack.legalForms.some((line) => line.receivedAt !== null);
   // The ED queue counts people still in the department; All EDs counts every open journey.
-  const edPopulation =
-    pack.leftEd > 0
-      ? `${pack.leftEd} more left their ED and are moving to a ward, listed under Pending movements.`
-      : null;
+  const edPopulation = leftEdNote(pack.leftEd);
   // The shell retakes the pack every hour and at each shift change (downtime-pack-schedule.ts).
   const nextPackAt = formatInstantWithDay(nextDowntimePackAt(pack.generatedAt), now);
   const takenLine = (
@@ -406,7 +404,7 @@ export function DowntimePackScreen() {
       >
         <CardHead
           id="downtime-beds-title"
-          icon={BedDouble}
+          icon={BedSingle}
           title="Beds by ward"
           aside={
             <span className={styles.headMeta}>

@@ -3,7 +3,7 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Star, Users } from "lucide-react";
+import { ChevronDown, Clock, Copy, Mail, MapPin, Ellipsis, Printer, Users } from "lucide-react";
 import { MINUTES_PER_DAY, dayOf, minuteOfDay } from "@/components/ward-management/ward-clock";
 import {
   useOptionalWardFlowSelect,
@@ -11,6 +11,7 @@ import {
   useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
 import { withRecordedChecks } from "./on-call-checks";
+import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
   Button,
@@ -51,6 +52,7 @@ import {
   windowText,
   groupRows,
   type DirectoryEntry,
+  type DirectoryService,
   type DirectorySection,
   type DirectoryTab,
 } from "./on-call-directory";
@@ -143,9 +145,16 @@ export function OnCallScreen() {
   // clock tick. The ids come from the base list (a check never adds or drops an entry), so the
   // favourites subscription below is not torn down and rebuilt each minute either.
   const boardDay = dayOf(boardNow);
-  const entries = useMemo(
+  const allEntries = useMemo(
     () => withRecordedChecks(baseEntries, directoryChecks, boardDay * MINUTES_PER_DAY),
     [baseEntries, directoryChecks, boardDay],
+  );
+  // OC2 mock-up (4 Nov 2026): the page follows the header's service, as every other page does. A
+  // chosen service shows its own lines plus the statewide ones; Statewide shows everyone.
+  const scope = useServiceScope();
+  const entries = useMemo(
+    () => (scope ? allEntries.filter((entry) => entry.service === scope || entry.service === "Statewide") : allEntries),
+    [allEntries, scope],
   );
   const ids = useMemo(() => new Set(baseEntries.map((entry) => entry.id)), [baseEntries]);
 
@@ -277,6 +286,42 @@ export function OnCallScreen() {
   const keyLines = KEY_LINE_IDS.map((id) => entries.find((entry) => entry.id === id)).filter(
     (entry): entry is DirectoryEntry => entry !== undefined,
   );
+  // OC3 mock-up (4 Nov 2026): the top strip is grouped by job. Statewide escalation first, then bed
+  // flow for the chosen service (or every service), then up to two starred lines from My list.
+  const scopeKey = scope ? SERVICE_META[scope].short.toLowerCase() : null;
+  const byIds = (ids: readonly string[]) =>
+    ids.map((id) => entries.find((entry) => entry.id === id)).filter((entry): entry is DirectoryEntry => !!entry);
+  const keyGroupsBase = [
+    { id: "state", label: "Statewide", rows: byIds(["sw-bfc", "sw-gov", "sw-mherl"]) },
+    {
+      id: "service",
+      label: scope ? `${SERVICE_META[scope].short} service` : "Bed flow",
+      rows: byIds(
+        scopeKey
+          ? [`${scopeKey}-bfc`, `${scopeKey}-scon`, `${scopeKey}-exec`]
+          : ["nmhs-bfc", "emhs-bfc", "smhs-bfc", "cahs-bfc", "wachs-bfc"],
+      ),
+    },
+  ];
+  const shownKeyIds = new Set(keyGroupsBase.flatMap((group) => group.rows.map((entry) => entry.id)));
+  const keyGroups = [
+    ...keyGroupsBase,
+    { id: "mine", label: "My list", rows: byIds(favourites.filter((id) => !shownKeyIds.has(id))).slice(0, 2) },
+  ].filter((group) => group.rows.length > 0);
+  const keyName = (entry: DirectoryEntry) =>
+    entry.id === "sw-gov"
+      ? "Governance"
+      : entry.id === "sw-mherl"
+        ? "MHERL"
+        : (KEY_LINE_IDS as readonly string[]).includes(entry.id)
+          ? entry.kind === "bedFlow" && entry.service !== "Statewide"
+            ? scope
+              ? "Bed coordinator"
+              : SERVICE_META[entry.service].short
+            : keyLineLabel(entry)
+          : entry.kind === "serviceConsultant"
+            ? "Service consultant"
+            : entry.name;
 
   function copyWhoIsOn() {
     const on = entries.filter((entry) => entry.rostered && isAnswering(entry, minute));
@@ -295,10 +340,12 @@ export function OnCallScreen() {
 
   const toggleHighlight = (id: Highlight) => setHighlight((current) => (current === id ? null : id));
   /** A highlight or search is on: rows it does not match recede by colour and stay in place. */
-  const dimming = highlight !== null || Boolean(query.trim());
+  // OC2 mock-up: a Show pill filters the rows (it used to only tint them); search still tints.
+  const dimming = Boolean(query.trim()) || (isPhone && highlight !== null);
   const isHighlighted = (entry: DirectoryEntry) =>
     matchesQuery(entry, query) ||
-    (highlight !== null && HIGHLIGHTS.find((item) => item.id === highlight)!.test(entry, minute));
+    (isPhone && highlight !== null && HIGHLIGHTS.find((item) => item.id === highlight)!.test(entry, minute));
+  const showTest = highlight ? HIGHLIGHTS.find((item) => item.id === highlight)!.test : null;
 
   const selected = entries.find((entry) => entry.id === selectedId) ?? entries[0]!;
   const slideEntry = slideId ? entries.find((entry) => entry.id === slideId) : undefined;
@@ -435,9 +482,6 @@ export function OnCallScreen() {
               <Button variant="light" size="sm" icon={Copy} onClick={copyWhoIsOn}>
                 Copy who is on
               </Button>
-              <Button variant="onHero" size="sm" icon={Star} count={favourites.length} onClick={() => setTab("mine")}>
-                My list
-              </Button>
               <Button
                 variant="onHero"
                 size="sm"
@@ -456,46 +500,71 @@ export function OnCallScreen() {
             <PhoneFocal entries={entries} actions={actions} onOpen={(id) => setSheetId(id)} />
           ) : (
             <div className={styles.keys} role="group" aria-label="Key lines">
-              {keyLines.map((entry) => {
-                const now = availability(entry, minute);
-                return (
-                  <button
-                    key={entry.id}
-                    id={entry.id === "sw-bfc" ? "ward-reach-bed" : undefined}
-                    type="button"
-                    className={styles.key}
-                    aria-pressed={selected.id === entry.id}
-                    data-testid={`ward-on-call-key-${entry.id}`}
-                    onClick={() => pick(entry.id)}
-                  >
-                    <span className={styles.keyLabel}>
-                      <ServiceTag service={entry.service} label="" />
-                      <span className={styles.truncate}>{keyLineLabel(entry)}</span>
-                    </span>
-                    <span className={styles.keyNumber}>{numberAt(entry, minute) ?? "Not recorded"}</span>
-                    <span className={styles.keyUntil}>
-                      {now.kind === "on" ? (
-                        now.allDay ? (
-                          <>
-                            <StatusGlyph tone="success" size={9} />
-                            24 hours
-                          </>
-                        ) : (
-                          <>
-                            <StatusGlyph tone={now.soon ? "warning" : "success"} size={9} />
-                            Until <span className={styles.mono}>{hhmm(now.until)}</span>
-                          </>
-                        )
-                      ) : now.kind === "off" ? (
-                        <>
-                          <StatusGlyph tone="neutral" size={9} />
-                          Opens <span className={styles.mono}>{hhmm(now.opens)}</span>
-                        </>
-                      ) : null}
-                    </span>
-                  </button>
-                );
-              })}
+              {keyGroups.map((group) => (
+                <div
+                  key={group.id}
+                  className={styles.keyGroup}
+                  role="group"
+                  aria-label={group.label}
+                  style={{ flexGrow: group.rows.length }}
+                >
+                  <span className={styles.keyGroupLabel}>{group.label}</span>
+                  <div className={styles.keyRow}>
+                    {group.rows.map((entry) => {
+                      const now = availability(entry, minute);
+                      const number = numberAt(entry, minute);
+                      return (
+                        <div key={entry.id} className={styles.keyCard}>
+                          <button
+                            id={entry.id === "sw-bfc" ? "ward-reach-bed" : undefined}
+                            type="button"
+                            className={styles.key}
+                            aria-pressed={selected.id === entry.id}
+                            data-testid={`ward-on-call-key-${entry.id}`}
+                            onClick={() => pick(entry.id)}
+                          >
+                            <span className={styles.keyLabel}>
+                              <ServiceTag service={entry.service} label="" />
+                              <span className={styles.truncate}>{keyName(entry)}</span>
+                            </span>
+                            <span className={styles.keyNumber}>{number ?? "Email only"}</span>
+                            <span className={styles.keyUntil}>
+                              {now.kind === "on" ? (
+                                now.allDay ? (
+                                  <>
+                                    <StatusGlyph tone="success" size={9} />
+                                    24 hours
+                                  </>
+                                ) : (
+                                  <>
+                                    <StatusGlyph tone={now.soon ? "warning" : "success"} size={9} />
+                                    Until <span className={styles.mono}>{hhmm(now.until)}</span>
+                                  </>
+                                )
+                              ) : now.kind === "off" ? (
+                                <>
+                                  <StatusGlyph tone="neutral" size={9} />
+                                  Opens <span className={styles.mono}>{hhmm(now.opens)}</span>
+                                </>
+                              ) : null}
+                            </span>
+                          </button>
+                          {number ? (
+                            <button
+                              type="button"
+                              className={styles.keyCopy}
+                              aria-label={`Copy ${keyName(entry)} number`}
+                              onClick={() => void copy(number, "Number copied")}
+                            >
+                              <Icon icon={Copy} size={14} />
+                            </button>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )
         }
@@ -554,6 +623,31 @@ export function OnCallScreen() {
       {item.label}
     </FilterChip>
   ));
+
+  // OC2 mock-up: one service index in the toolbar replaces the jump pills repeated on every service row.
+  const indexServices = [...new Set(tabRows.map((entry) => entry.service))].filter(
+    (service): service is Exclude<DirectoryService, "Statewide"> => service !== "Statewide",
+  );
+  const serviceIndex =
+    tab !== "mine" && indexServices.length > 1 ? (
+      <span className={styles.jump} role="group" aria-label="Jump to service">
+        {indexServices.map((service) => (
+          <button
+            key={service}
+            type="button"
+            className={styles.jumpButton}
+            aria-label={`Jump to ${SERVICE_META[service].name}`}
+            onClick={() =>
+              document
+                .getElementById(`ward-on-call-svc-${SERVICE_META[service].tone}`)
+                ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() })
+            }
+          >
+            <ServiceTag service={service} label={JUMP_LABEL[service]} />
+          </button>
+        ))}
+      </span>
+    ) : null;
 
   const groupByChip =
     tab === "hospitals" ? (
@@ -616,7 +710,7 @@ export function OnCallScreen() {
                     aria-label="More on-call tools"
                     data-testid="ward-on-call-phone-more"
                   >
-                    <Icon icon={MoreHorizontal} size={20} />
+                    <Icon icon={Ellipsis} size={20} />
                   </button>
                 )}
               />
@@ -679,12 +773,8 @@ export function OnCallScreen() {
               <span className={styles.spacer} />
               {search}
             </div>
-            <div className={styles.dirHead2} role="group" aria-label="Group and highlight rows. Nothing is hidden">
-              {groupByChip}
-              {groupByChip ? <span className={styles.divider} aria-hidden="true" /> : null}
-              {/* The chip counts are this tab's rows, so they name it: the hero counts the whole page. */}
-              {/* Redesign: says what the counts are, so they are not read against the hero's whole-page figures. */}
-              <span className={styles.chipScope}>Highlight in {tabItems.find((item) => item.id === tab)?.label}</span>
+            <div className={styles.dirHead2} role="group" aria-label="Show and group rows">
+              <span className={styles.chipScope}>Show</span>
               {highlightChips}
               {highlight || query ? (
                 <Button
@@ -695,13 +785,16 @@ export function OnCallScreen() {
                     setQuery("");
                   }}
                 >
-                  Clear
+                  Show all
                 </Button>
               ) : null}
+              <span className={styles.spacer} />
+              {serviceIndex}
+              {groupByChip}
             </div>
             <DirectoryTable
               entries={entries}
-              rows={tabRows}
+              rows={showTest ? tabRows.filter((entry) => showTest(entry, minute)) : tabRows}
               tab={tab}
               groupBy={tab === "hospitals" ? groupBy : "place"}
               actions={actions}
@@ -755,8 +848,20 @@ export function OnCallScreen() {
           )}
         </div>
         {isTabletPortrait && slideEntry ? (
-          <Drawer open onClose={() => setSlideId(null)} title={slideEntry.name} testId="ward-on-call-line-sheet">
-            <ContactCard entry={slideEntry} actions={actions} headingId={`${panelHeadingId}-slide`} />
+          <Drawer
+            open
+            onClose={() => setSlideId(null)}
+            title={slideEntry.name}
+            description={[
+              SERVICE_META[slideEntry.service].name,
+              slideEntry.place === SERVICE_META[slideEntry.service].short ? null : placeOf(slideEntry),
+            ]
+              .filter(Boolean)
+              .join(", ")}
+            testId="ward-on-call-line-sheet"
+          >
+            {/* OC1: the drawer title already names the contact, so the card drops its own head. */}
+            <ContactCard entry={slideEntry} actions={actions} showHead={false} showStar />
           </Drawer>
         ) : null}
         <WardPrototypeFooter
@@ -848,15 +953,6 @@ function DirectoryTable({
   const blocks = groupRows(entries, rows, tab, groupBy);
   const byRole = tab === "hospitals" && groupBy === "role";
   const scroller = useRef<HTMLDivElement>(null);
-  const services = blocks.flatMap((block) => (block.service ? [block.service] : []));
-  /* Jump inside the table's own scroller, so the page itself never moves. */
-  function jumpTo(tone: string) {
-    const box = scroller.current;
-    const row = box?.querySelector<HTMLElement>(`#ward-on-call-svc-${tone}`);
-    if (!box || !row) return;
-    const head = box.querySelector("thead")?.getBoundingClientRect().height ?? 0;
-    box.scrollTo({ top: row.offsetTop - head, behavior: wardScrollBehavior() });
-  }
   return (
     <div className={styles.tableScroll} ref={scroller}>
       <table className={cx(tableClasses.table, styles.dirTable)} data-testid="ward-on-call-dir-table">
@@ -905,22 +1001,6 @@ function DirectoryTable({
                         answering
                       </span>
                       <span className={styles.spacer} />
-                      {services.length > 1 ? (
-                        <span className={styles.jump} role="group" aria-label="Jump to service">
-                          {services.map((service) => (
-                            <button
-                              key={service}
-                              type="button"
-                              className={styles.jumpButton}
-                              aria-label={`Jump to ${SERVICE_META[service].name}`}
-                              aria-current={service === block.service ? "true" : undefined}
-                              onClick={() => jumpTo(SERVICE_META[service].tone)}
-                            >
-                              <ServiceTag service={service} label={JUMP_LABEL[service]} />
-                            </button>
-                          ))}
-                        </span>
-                      ) : null}
                     </span>
                   </th>
                 </tr>

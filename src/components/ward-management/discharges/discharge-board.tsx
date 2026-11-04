@@ -12,7 +12,7 @@ import {
   OctagonAlert,
   Printer,
   TrendingUp,
-  Truck,
+  Ambulance,
   X,
 } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
@@ -74,7 +74,6 @@ import {
   perthDay,
   stageTone,
 } from "./discharge-board-model";
-import { badge } from "./discharge-board-parts";
 import { DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
 import { DischargeRecordDetail, DischargeReleaseDetail, DischargeRestingDetail } from "./discharge-detail-panes";
 import { useDischargeDeskView } from "./discharge-desk-view";
@@ -83,6 +82,8 @@ import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
 // 31 Oct 2026) it is a compact notice ABOVE the list, so it loads with the board: loaded lazily, the
 // server's copy vanished on hydration and came back, and the whole list jumped (layout shift 0.21).
 import { DischargeWeekendPrep } from "./discharge-weekend-prep";
+import { followUpWithinWindowCheck } from "./discharge-follow-up-check";
+import { DischargeAskOverdueWards } from "./discharge-message-ward";
 
 /**
  * Task 6, spec D9: the discharge and egress board. A coordinator's whole reason to open this
@@ -102,6 +103,9 @@ import { DischargeWeekendPrep } from "./discharge-weekend-prep";
 
 /** Days the chart covers after today; the column before them gathers every date already passed. */
 const CHART_DAYS_AHEAD = 14;
+
+/** Recorded (DC4): the days of recorded discharges it lists. */
+const RECORDED_DAYS = 7;
 
 /** Moved to `./discharge-board-model` and `./discharge-board-parts`; re-exported so imports keep working. */
 export { groupDischarges } from "./discharge-board-model";
@@ -131,6 +135,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const { releaseGroups: groups } = base;
   const toWorkCount = groups.blocked.length + groups.confirmed.length + groups.expected.length;
   const openReleases = base.scopedReleases.filter((release) => release.state !== "discharged");
+  const overdueOpen = openReleases.filter((release) => release.expectedAt < base.now);
+  const overdueWards = new Set(overdueOpen.map((release) => release.unitId)).size;
   const highlightWithinView: typeof base.highlightOn = (next) => {
     if (!nowView) {
       base.highlightOn(next);
@@ -177,7 +183,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     // Confirm date's control ("New expected out") sits in the release's arrangements, beside its barriers.
     base.setDrawerTab(part === "date" ? "barriers" : part);
   };
-  // D-64: rows show where criteria led discharge stands, behind its flag (off in production).
+  // D-64: rows show where criteria led discharge stands, behind its flag (off in production). L21 dropped
+  // the Stage column, so the tag now sits in the Now list's Hold-up cell for a patient still in a bed.
   const criteriaLedOn = useWardFeatureFlag("top25-criteria-led-discharge");
   const {
     units,
@@ -213,9 +220,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     guarded,
     records,
     releaseGroups,
-    scopedRecords,
     counts,
-    recordLit,
     releaseLit,
     dimmed,
     statusHighlight,
@@ -255,8 +260,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const chartDays: DischargeDay[] = [
     {
       key: "past",
-      label: "Passed",
-      name: "Date already passed",
+      // DC5 (Josh, 3 Nov 2026): the expected dates already gone by read "Overdue", not "Passed".
+      label: "Overdue",
+      name: "Overdue, expected date already passed",
       expected: 0,
       blocked: 0,
       weekend: false,
@@ -297,7 +303,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     }
   }
   // A day two or more ahead also holds releases the list leaves out (due in 2+ days, not held up).
-  const notListedOnDay =
+  // DC5 (Josh, 3 Nov 2026): choosing that day's bar opens its people, so they join the Expected
+  // group, lit and first, while the day stays chosen.
+  const dayExtra =
     nowView && highlight?.kind === "day"
       ? openReleases.filter(
           (release) =>
@@ -305,9 +313,43 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             !releaseGroups.blocked.includes(release) &&
             !releaseGroups.confirmed.includes(release) &&
             !releaseGroups.expected.includes(release),
-        ).length
-      : 0;
-  // Now and History: in the hero on desktop and tablet, under it on a phone (v10).
+        )
+      : [];
+  const shownGroups: typeof releaseGroups =
+    dayExtra.length > 0 ? { ...releaseGroups, expected: [...releaseGroups.expected, ...dayExtra] } : releaseGroups;
+  const shownHighlighted = highlightedCount + dayExtra.length;
+  // A highlight shows every lit row of a group before its Show more row.
+  const groupCap = (key: (typeof GROUP_ORDER)[number]) =>
+    Math.max(GROUP_CAP, highlight === null ? 0 : shownGroups[key].filter(releaseLit).length);
+  /* DC4 (Josh, 3 Nov 2026): Recorded, which replaces History, lists only the discharges recorded in
+     the last 7 days, newest first, with where each person went and whether their 7 day follow-up is
+     booked. Held up and expected people stay on Now alone, so the two tabs never repeat each other. */
+  const recordedSince = now - RECORDED_DAYS * MINUTES_PER_DAY;
+  const recorded = visibleRecords
+    .filter((record) => recordStage(record) === "departed" && record.leftAt !== null && record.leftAt >= recordedSince)
+    .sort((a, b) => (b.leftAt ?? 0) - (a.leftAt ?? 0));
+  const followUpOf = (record: (typeof recorded)[number]) =>
+    followUpWithinWindowCheck({
+      followUp: record.followUp,
+      careJourney: record.careJourney,
+      leftAt: record.leftAt,
+      expectedDischargeAt: record.expectedDischargeAt,
+      now,
+      onCto: false,
+    });
+  const followUpToCheck = recorded.filter((record) => followUpOf(record).warning).length;
+  // Codex review (#1374): Recorded copies its own figures, the same ones its headline and list show.
+  const copyRecorded = () => {
+    const text =
+      `Recorded discharges, last ${RECORDED_DAYS} days, as of ${formatSheetMoment(now, dayZero)}. ` +
+      `${recorded.length} ${recorded.length === 1 ? "discharge" : "discharges"} recorded, ` +
+      `${followUpToCheck} ${followUpToCheck === 1 ? "follow-up" : "follow-ups"} to check.`;
+    copyTextToClipboard(text).then(
+      () => base.setCopyNote("Summary copied."),
+      () => base.setCopyNote("Copying is not available in this browser."),
+    );
+  };
+  // Now and Recorded: in the hero on desktop and tablet, under it on a phone (v10).
   const populationSwitch = <DischargePopulationSwitch s={s} />;
   const filterCard = <DischargeFilterCard s={s} />;
 
@@ -345,14 +387,14 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   ? `Discharges · ${service === "all" ? "statewide" : service}`
                   : "Discharges · all services"
               : ownWard
-                ? `History · ${ownWard.name}`
-                : "History · admission records"
+                ? `Recorded · ${ownWard.name} · last ${RECORDED_DAYS} days`
+                : `Recorded discharges · last ${RECORDED_DAYS} days`
           }
           // A4-22 (audit round 2): History counts admission records, not today's bed releases, so
           // its title says so rather than reading as the same figure jumping.
           title={
             population === "records"
-              ? `${openCount} admission ${openCount === 1 ? "record" : "records"} open`
+              ? `${recorded.length} ${recorded.length === 1 ? "discharge" : "discharges"} recorded`
               : // Redesign (point 20): the headline counts the rows listed below it; the wider total
                 // and what it adds sit beside it, so no two figures on the page disagree unexplained.
                 `${openCount} to work now`
@@ -364,15 +406,30 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             >
               {/* Josh, 30 Oct: "59 to work now · of 207 open". Open is every release not yet discharged;
                   the 148 due in 2+ days are said once, in the list's footer. */}
-              {population === "releases" ? `${isPhone ? "" : "· "}of ${openReleases.length} open · ` : null}
-              <strong>{bedDaysPast}</strong> bed {bedDaysPast === 1 ? "day" : "days"} past the ward&rsquo;s date
+              {population === "releases" ? (
+                <>
+                  {`${isPhone ? "" : "· "}of ${openReleases.length} open · `}
+                  <strong>{bedDaysPast}</strong> bed {bedDaysPast === 1 ? "day" : "days"} past the ward&rsquo;s date
+                </>
+              ) : (
+                <>
+                  {isPhone ? "" : "· "}
+                  <strong>{followUpToCheck}</strong> {followUpToCheck === 1 ? "follow-up" : "follow-ups"} to check
+                </>
+              )}
             </span>
           }
           aside={
             <div className={pageStyles.heroTools}>
               <LiveChip state="live" onHero />
               {isPhone ? null : (
-                <Button size="sm" variant="onHero" icon={Copy} onClick={copySummary} data-testid="ward-discharge-copy">
+                <Button
+                  size="sm"
+                  variant="onHero"
+                  icon={Copy}
+                  onClick={nowView ? copySummary : copyRecorded}
+                  data-testid="ward-discharge-copy"
+                >
                   Copy counts
                 </Button>
               )}
@@ -393,44 +450,65 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             </div>
           }
           bar={
-            <>
-              <div
-                className={pageStyles.kpiStrip}
-                data-testid="ward-discharge-kpi-strip"
-                role="region"
-                aria-label="Discharge pipeline highlights"
-              >
-                {WORK_ORDER.map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    data-testid={`ward-discharge-kpi-${key}`}
-                    className={pageStyles.kpi}
-                    aria-pressed={statusHighlight === key}
-                    // P082: the name starts with what the button shows (count, then label).
-                    aria-label={`${counts[key]} ${key === "blocked" ? `${HELD_UP} (${kpiCardLabel(key, population)})` : kpiCardLabel(key, population)}`}
-                    onClick={() => {
-                      setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
-                      setStatus("all");
-                    }}
-                  >
-                    <strong className={pageStyles.kpiValue}>{counts[key]}</strong>
-                    <span className={pageStyles.kpiLabel}>
-                      {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
-                      <span>
-                        {/* Josh, 30 Oct: one word for a release with a blocker, "Held up", at every width. */}
-                        {key === "blocked" ? HELD_UP : kpiCardLabel(key, population)}
+            population === "records" ? undefined : (
+              <>
+                <div
+                  className={pageStyles.kpiStrip}
+                  data-testid="ward-discharge-kpi-strip"
+                  role="region"
+                  aria-label="Discharge pipeline highlights"
+                >
+                  {WORK_ORDER.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      data-testid={`ward-discharge-kpi-${key}`}
+                      className={pageStyles.kpi}
+                      aria-pressed={statusHighlight === key}
+                      // P082: the name starts with what the button shows (count, then label).
+                      aria-label={`${counts[key]} ${key === "blocked" ? `${HELD_UP} (${kpiCardLabel(key, population)})` : kpiCardLabel(key, population)}`}
+                      onClick={() => {
+                        setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
+                        setStatus("all");
+                      }}
+                    >
+                      <strong className={pageStyles.kpiValue}>{counts[key]}</strong>
+                      <span className={pageStyles.kpiLabel}>
+                        {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
+                        <span>
+                          {/* Josh, 30 Oct: one word for a release with a blocker, "Held up", at every width. */}
+                          {key === "blocked" ? HELD_UP : kpiCardLabel(key, population)}
+                        </span>
                       </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-              {/* Device audit, 11 Oct 2026: no desk tools in the phone hero, so Copy summary
+                    </button>
+                  ))}
+                </div>
+                {/* Device audit, 11 Oct 2026: no desk tools in the phone hero, so Copy summary
                   is off phone (it stays in the tablet and desktop hero). */}
-            </>
+              </>
+            )
           }
           barAside={isPhone ? undefined : populationSwitch}
         />
+        {nowView && s.releaseActor.role === "coordinator" && overdueOpen.length > 0 ? (
+          /* DC1 round 2 (3 Nov 2026): the coordinator's most common chase is one tap. The line says
+             how many dates have passed on how many wards, and the button asks just those wards. */
+          <div className={releaseList.chase} data-testid="ward-discharge-chase">
+            <span className={releaseList.chaseText}>
+              <StatusGlyph tone="warning" size={9} />
+              <span>
+                <strong>{overdueOpen.length}</strong> overdue {overdueOpen.length === 1 ? "date" : "dates"} on{" "}
+                <strong>{overdueWards}</strong> {overdueWards === 1 ? "ward" : "wards"}
+              </span>
+            </span>
+            <DischargeAskOverdueWards
+              overdue={overdueOpen}
+              wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Ward"}
+              now={now}
+              dispatch={dispatch}
+            />
+          </div>
+        ) : null}
         {isPhone ? (
           <div className={`${pageStyles.phToolbar} ${wardPin.pinnedSwitch}`}>
             {populationSwitch}
@@ -457,27 +535,28 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             {filterCard}
           </PhoneSheet>
         ) : null}
-        {guarded.status === "allowed" && isPhone ? (
+        {guarded.status === "allowed" && isPhone && nowView ? (
           /* v10 phone: the two charts are one tap away as cards; each opens a sheet that scrolls
              sideways with 48px tap columns. A tap highlights rows and closes the sheet. */
           <div className={pageStyles.phChartCards} data-testid="ward-discharge-phone-chart-cards">
             <button
               type="button"
               className={pageStyles.phChartCard}
-              aria-label={`Expected discharges per day, passed and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
+              aria-label={`Expected discharges per day, overdue and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
               onClick={() => setPhoneChart("days")}
             >
               <TrendingUp size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
               <span className={pageStyles.phChartText}>
                 <span className={pageStyles.phChartTitle}>Per day</span>
                 <span className={pageStyles.phChartMeta}>
+                  <b>{chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0}</b> overdue ·{" "}
                   <b>
                     {(() => {
                       const day = chartDays.find((candidate) => candidate.key === 0);
                       return day ? day.expected + day.blocked : 0;
                     })()}
                   </b>{" "}
-                  today · <b>{chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0}</b> past
+                  today
                 </span>
               </span>
               <ChevronRight size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
@@ -535,7 +614,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             panel under about 60 rows. */}
         {guarded.status === "allowed" && population === "releases" ? (
           <DischargeWeekendPrep
-            releases={s.bedReleases.filter((release) => units.some((unit) => unit.id === release.unitId))}
+            // DC3 (Josh, 3 Nov 2026): the card follows the Service and Ward filters, as the list does.
+            releases={s.bedReleases.filter(
+              (release) =>
+                s.scopedUnits.some((unit) => unit.id === release.unitId) && (ward === "all" || release.unitId === ward),
+            )}
             units={units}
             nameFor={(release) => {
               const record = records.find((candidate) => candidate.admissionId === release.admissionId);
@@ -554,11 +637,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         <div
           className={`${pageStyles.workspace} ${releaseList.workspace}`}
           data-detail-open={Boolean(selected || releaseId) || undefined}
+          data-recorded={population === "records" || undefined}
         >
           <Card className={`${pageStyles.register} ${releaseList.list}`} aria-labelledby="discharge-register-heading">
             <header className={pageStyles.panelHeader}>
               <h2 id="discharge-register-heading" className={isPhone ? pageStyles.localTitle : pageStyles.listTitle}>
-                {population === "releases" ? "Discharges by bed" : "Admission discharge records"}
+                {population === "releases" ? "Discharges by bed" : "Recorded discharges"}
               </h2>
               {/* Redesign (Josh, 30 Oct): the List / Barriers switch is gone. Its Barriers view was a third
                   copy of the barrier counts; the one panel beside the list keeps that job. */}
@@ -568,8 +652,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               {highlight !== null ? (
                 <span className={pageStyles.highlightNote} data-testid="ward-discharge-highlight-note">
                   <StatusGlyph tone="info" size={9} />
-                  {highlightedCount} of {nowView ? toWorkCount : shown} highlighted, all rows stay
-                  {notListedOnDay > 0 ? ` · ${notListedOnDay} more that day not listed` : null}
+                  {shownHighlighted} of {nowView ? toWorkCount + dayExtra.length : shown} highlighted, all rows stay
                   <Button size="sm" variant="ghost" onClick={() => setHighlight(null)}>
                     Clear
                   </Button>
@@ -592,9 +675,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     list names both parts rather than a bare "57 shown". */}
                 {population === "records" && guarded.status === "denied"
                   ? "Unavailable"
-                  : population === "releases" && status === "all" && shown === total
-                    ? `${toWorkCount} to work${counts.departed > 0 ? ` · ${counts.departed} discharged` : ""}`
-                    : `${shown} shown`}
+                  : population === "records"
+                    ? `Last ${RECORDED_DAYS} days`
+                    : status === "all" && shown === total
+                      ? `${toWorkCount} to work${counts.departed > 0 ? ` · ${counts.departed} discharged` : ""}`
+                      : `${shown} shown`}
               </span>
             </header>
             {isPhone ? null : <DischargeFilterCard s={s} bare />}
@@ -607,6 +692,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             >
               {population === "records" && guarded.status === "denied" ? (
                 <p className={pageStyles.emptyState}>Discharge records are unavailable for this role.</p>
+              ) : population === "records" && recorded.length === 0 ? (
+                <p className={pageStyles.emptyState}>
+                  {filtersActive
+                    ? "No recorded discharges match these filters."
+                    : `No discharges recorded in the last ${RECORDED_DAYS} days.`}
+                </p>
               ) : shown === 0 ? (
                 <p className={pageStyles.emptyState}>
                   {/* Q277 (pre-launch review E5, 2 Nov 2026): with every filter on All, nothing is
@@ -623,7 +714,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   <caption className={pageStyles.localTitle}>
                     {population === "releases"
                       ? "Discharges by bed, held up first. Rows may include identifiers. Completed discharges cover the last 24 hours."
-                      : "Admission records, held up first. Expected dates do not imply confirmation."}
+                      : `Discharges recorded in the last ${RECORDED_DAYS} days, newest first. Rows may include identifiers.`}
                   </caption>
                   {population === "releases" && !isPhone ? (
                     <thead>
@@ -634,9 +725,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         <th scope="col" className={pageStyles.colOut}>
                           Expected out
                         </th>
-                        <th scope="col" className={pageStyles.colStage}>
-                          Stage
-                        </th>
+                        {/* DC2 (Josh, 3 Nov 2026): the group heading already names the stage, so the
+                            Stage column is gone; a held up row says its stage under the hold-up. */}
                         <th scope="col" className={pageStyles.colBlocker}>
                           Held up by
                         </th>
@@ -649,8 +739,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     <thead>
                       <tr>
                         <th scope="col">{ownWard ? "Patient" : "Patient / ward"}</th>
-                        <th scope="col">{population === "releases" ? "Timing" : "Expected / departed"}</th>
-                        <th scope="col">Stage / hold-up</th>
+                        <th scope="col">{population === "releases" ? "Timing" : "Left"}</th>
+                        <th scope="col">{population === "releases" ? "Stage / hold-up" : "Going to"}</th>
+                        {population === "records" ? <th scope="col">7 day follow-up</th> : null}
                         {population === "releases" ? (
                           <th scope="col" className={releaseList.actionHead}>
                             <span className="sr-only">Next</span>
@@ -661,24 +752,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   )}
                   {population === "records" ? (
                     <tbody>
-                      {visibleRecords.map((record) => {
+                      {recorded.map((record) => {
                         const unit = units.find((candidate) => candidate.id === record.unitId);
                         const isSelected = selected?.admissionId === record.admissionId;
-                        const criteriaChip =
-                          criteriaLedOn && recordStage(record) !== "departed"
-                            ? criteriaLedTileChip(
-                                dischargeCriteriaStatus(record.dischargeCriteria, record.criteriaEligibility, now),
-                              )
-                            : null;
+                        const check = followUpOf(record);
                         return (
                           <tr
                             key={record.id}
                             /* Return to your place: Back focuses the row that was opened. */
                             data-record-key={record.id}
                             data-selected={isSelected}
-                            data-highlighted={recordLit(record) || undefined}
-                            data-dim={dimmed(recordLit(record))}
-                            data-act={recordStatus(record) === "blocked" || undefined}
                             onClick={(e) => openRecord(record, e.currentTarget)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
@@ -708,44 +791,24 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 <span className={pageStyles.secondary}>{placeLine(unit, record.unitId)}</span>
                               )}
                             </td>
-                            <td
-                              data-label={recordStage(record) === "departed" ? "Discharged" : "Expected"}
-                              className={pageStyles.timingCell}
-                            >
-                              <strong className={pageStyles.due}>
-                                {recordedMoment(
-                                  recordStage(record) === "departed" ? record.leftAt : record.expectedDischargeAt,
-                                  dayZero,
-                                )}
-                              </strong>
+                            <td data-label="Left" className={pageStyles.timingCell}>
+                              <strong className={pageStyles.due}>{recordedMoment(record.leftAt, dayZero)}</strong>
                             </td>
-                            <td data-label="Stage / hold-up">
-                              <div className={pageStyles.stageCluster}>
-                                {badge(recordStage(record))}
-                                {recordStatus(record) === "blocked" && (
-                                  <>
-                                    {/* Q238: the phone line parts its items by a gap, not a "· ", so
-                                    this hidden comma keeps the stage and barrier apart when read. */}
-                                    <SrOnly>, </SrOnly>
-                                    <span className={pageStyles.blocker}>{record.blockReason}</span>
-                                  </>
-                                )}
-                                {criteriaChip ? (
-                                  <span data-testid="ward-discharge-criteria-led">
-                                    <CriteriaLedTag chip={criteriaChip} />
-                                    <SrOnly>{criteriaChip.phrase}</SrOnly>
-                                  </span>
-                                ) : null}
-                                {record.leavingDestination && (
-                                  <>
-                                    <SrOnly>, </SrOnly>
-                                    <span className={pageStyles.secondary}>
-                                      {LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)
-                                        ?.label ?? "Not recorded"}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
+                            <td data-label="Going to">
+                              {LEAVING_DESTINATIONS.find((item) => item.id === record.leavingDestination)?.label ??
+                                "Not recorded"}
+                            </td>
+                            <td data-label="7 day follow-up">
+                              <span className={releaseList.followUp} data-warning={check.warning || undefined}>
+                                <StatusGlyph tone={check.warning ? "warning" : "success"} size={9} />
+                                {check.status === "booked_within"
+                                  ? "Booked"
+                                  : check.status === "booked_outside"
+                                    ? "Booked late"
+                                    : check.status === "arranged_no_date"
+                                      ? "No time yet"
+                                      : "Not arranged"}
+                              </span>
                             </td>
                           </tr>
                         );
@@ -756,10 +819,10 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       <tbody
                         key={key}
                         data-testid={`ward-discharge-group-${key}`}
-                        data-has-items={releaseGroups[key].length > 0}
+                        data-has-items={shownGroups[key].length > 0}
                       >
                         <tr className={pageStyles.groupRow}>
-                          <th colSpan={isPhone ? 4 : 5} scope="rowgroup">
+                          <th colSpan={4} scope="rowgroup">
                             {isPhone ? (
                               <button
                                 type="button"
@@ -785,6 +848,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 <h3>
                                   {GROUP_TITLES[key]}{" "}
                                   <span className={pageStyles.groupCount}>{releaseGroups[key].length}</span>
+                                  {key === "expected" && dayExtra.length > 0 ? (
+                                    <span className={pageStyles.groupCount}>+{dayExtra.length} that day</span>
+                                  ) : null}
                                 </h3>
                                 {/* Josh, 30 Oct: the held-up and discharged groups lose their sentence. */}
                                 {GROUP_NOTES[key] ? (
@@ -794,21 +860,34 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             )}
                           </th>
                         </tr>
-                        {isPhone && phoneGroupsFolded[key] ? null : releaseGroups[key].length === 0 ? (
+                        {isPhone && phoneGroupsFolded[key] ? null : shownGroups[key].length === 0 ? (
                           <tr>
-                            <td colSpan={isPhone ? 4 : 5} className={pageStyles.emptyGroup}>
+                            <td colSpan={4} className={pageStyles.emptyGroup}>
                               None
                             </td>
                           </tr>
                         ) : (
                           // Josh, 30 Oct: every width shows a group's first rows, then Show more, as the phone did.
                           (!phoneGroupsOpen[key]
-                            ? litFirst(releaseGroups[key], releaseLit).slice(0, GROUP_CAP)
-                            : litFirst(releaseGroups[key], releaseLit)
+                            ? litFirst(shownGroups[key], releaseLit).slice(0, groupCap(key))
+                            : litFirst(shownGroups[key], releaseLit)
                           ).map((release, index) => {
                             const unit = units.find((candidate) => candidate.id === release.unitId);
                             const linked = records.find((candidate) => candidate.admissionId === release.admissionId);
                             const overdue = release.state !== "discharged" && release.expectedAt < now;
+                            const criteriaChip =
+                              criteriaLedOn && linked && release.state !== "discharged"
+                                ? criteriaLedTileChip(
+                                    dischargeCriteriaStatus(linked.dischargeCriteria, linked.criteriaEligibility, now),
+                                  )
+                                : null;
+                            const criteriaTag = criteriaChip ? (
+                              <span data-testid="ward-discharge-criteria-led">
+                                <SrOnly>, </SrOnly>
+                                <CriteriaLedTag chip={criteriaChip} />
+                                <SrOnly>{criteriaChip.phrase}</SrOnly>
+                              </span>
+                            ) : null;
                             return (
                               <tr
                                 key={release.id}
@@ -873,38 +952,34 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                             : recordedMoment(release.expectedAt, dayZero)}
                                       </span>
                                     </td>
-                                    <td className={pageStyles.colStage}>
-                                      <span className={pageStyles.stagePill} data-stage={release.state}>
-                                        {release.state === "discharged" ? null : (
-                                          <StatusGlyph
-                                            tone={release.state === "confirmed" ? "success" : "neutral"}
-                                            size={9}
-                                          />
-                                        )}
-                                        {release.state === "discharged"
-                                          ? "Discharged"
-                                          : WORK_STATUS_LABELS[release.state]}
-                                      </span>
-                                    </td>
                                     <td className={pageStyles.colBlocker}>
                                       {release.state !== "discharged" && release.blocker ? (
                                         <span className={pageStyles.blockerCell}>
                                           <span className={pageStyles.blockerTag}>
-                                            <StatusGlyph tone="danger" size={9} />
+                                            {/* Icon rules (3 Nov 2026): the tag carries no triangle (red tint only); the one act-now mark is the overdue date. */}
                                             {release.blocker.replace(/^Awaiting (\w)/, (_, first: string) =>
                                               first.toUpperCase(),
                                             )}
                                           </span>
-                                          {release.waitingOn ? (
-                                            <span className={pageStyles.personMeta}>
-                                              <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
-                                              {release.waitingOn}
-                                            </span>
-                                          ) : null}
+                                          <span className={pageStyles.personMeta}>
+                                            {release.waitingOn ? (
+                                              <>
+                                                <Ambulance
+                                                  size={12}
+                                                  className={pageStyles.inlineIcon}
+                                                  aria-hidden="true"
+                                                />{" "}
+                                                {release.waitingOn}
+                                                {" · "}
+                                              </>
+                                            ) : null}
+                                            {release.state === "confirmed" ? "Confirmed" : "Expected"}
+                                          </span>
                                         </span>
-                                      ) : (
-                                        <span className={pageStyles.noneText}>None</span>
+                                      ) : release.state === "discharged" ? null : (
+                                        <span className="sr-only">Not held up</span>
                                       )}
+                                      {criteriaTag}
                                     </td>
                                   </>
                                 )}
@@ -965,7 +1040,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                         </>
                                       )}
                                     </td>
-                                    <td data-label="Stage / hold-up">
+                                    <td data-label="Hold-up">
                                       <div className={pageStyles.stageCluster}>
                                         {/* A stuck release keeps its own stage word, so a blocked confirmation
                                         still reads apart from a blocked prediction, but never with the
@@ -974,12 +1049,20 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                           <span className={pageStyles.badge} data-status="blocked">
                                             {/* Phone audit (Josh, 1 Nov 2026): one warning mark per row; a
                                             row already marked past its date keeps that mark alone. */}
-                                            {overdue ? null : <StatusGlyph tone="danger" size={9} />}
                                             <span className="sr-only">Held up: </span>
                                             <span>{WORK_STATUS_LABELS[release.state]}</span>
                                           </span>
                                         ) : (
-                                          badge(release.state === "discharged" ? "departed" : release.state)
+                                          /* DC2 round 2 (3 Nov 2026): the group heading already says
+                                          Confirmed, Expected or Discharged, so a row without a hold-up
+                                          no longer repeats it as a badge. Screen readers still hear it. */
+                                          <SrOnly>
+                                            {
+                                              WORK_STATUS_LABELS[
+                                                release.state === "discharged" ? "departed" : release.state
+                                              ]
+                                            }
+                                          </SrOnly>
                                         )}
                                         {release.blocker && (
                                           <>
@@ -992,11 +1075,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                           <>
                                             <SrOnly>, </SrOnly>
                                             <span className={pageStyles.secondary}>
-                                              <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
+                                              <Ambulance
+                                                size={12}
+                                                className={pageStyles.inlineIcon}
+                                                aria-hidden="true"
+                                              />{" "}
                                               {release.waitingOn}
                                             </span>
                                           </>
                                         )}
+                                        {criteriaTag}
                                       </div>
                                     </td>
                                   </>
@@ -1024,16 +1112,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             );
                           })
                         )}
-                        {!(isPhone && phoneGroupsFolded[key]) && releaseGroups[key].length > GROUP_CAP ? (
+                        {!(isPhone && phoneGroupsFolded[key]) && shownGroups[key].length > groupCap(key) ? (
                           <tr className={releaseList.moreRow} data-testid={`ward-discharge-more-${key}`}>
-                            <td colSpan={isPhone ? 4 : 5}>
+                            <td colSpan={4}>
                               <ShowMoreRow
                                 expanded={Boolean(phoneGroupsOpen[key])}
                                 onClick={() => setPhoneGroupsOpen((open) => ({ ...open, [key]: !open[key] }))}
                               >
                                 {phoneGroupsOpen[key]
                                   ? "Show fewer"
-                                  : `Show ${releaseGroups[key].length - GROUP_CAP} more ${(key === "discharged-today" ? "discharged" : GROUP_TITLES[key]).toLowerCase()}`}
+                                  : `Show ${shownGroups[key].length - groupCap(key)} more ${(key === "discharged-today" ? "discharged" : GROUP_TITLES[key]).toLowerCase()}`}
                               </ShowMoreRow>
                             </td>
                           </tr>
@@ -1060,16 +1148,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               ) : (
                 <>
                   <span>
-                    {scopedRecords.filter((record) => record.identity.kind === "linked").length} patient linked
+                    {followUpToCheck} of {recorded.length} follow-ups to check
                   </span>
-                  <span>
-                    {scopedRecords.filter((record) => record.identity.kind !== "linked").length} link missing /
-                    unavailable
-                  </span>
-                  <span>
-                    {scopedRecords.filter((record) => record.expectedDischargeAt === null).length} expected date not
-                    recorded
-                  </span>
+                  <span className={pageStyles.footNote}>Held up and expected discharges are on Now</span>
                 </>
               )}
             </footer>
@@ -1077,7 +1158,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           {/* Redesign (Josh, 30 Oct): the one barrier panel, and under it the day chart, beside the list on a
               wide screen, so "Choose a day" sits beside the rows it highlights. On a tablet both keep their
               place under the list. The Barriers view is gone. */}
-          {guarded.status === "allowed" && !isPhone && !(selected || releaseId) ? (
+          {guarded.status === "allowed" && !isPhone && nowView && !(selected || releaseId) ? (
             <div className={releaseList.barrierSide}>
               <DischargeBarrierBars
                 barriers={barrierCounts}
@@ -1100,6 +1181,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               className={pageStyles.scrim}
               onClick={closeDrawer}
               aria-hidden="true"
+              data-sheet-scrim=""
               data-testid="ward-discharge-scrim"
             />
           )}
@@ -1291,7 +1373,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             </aside>
           </div>
         </div>
-        {guarded.status === "allowed" && !isPhone ? (
+        {guarded.status === "allowed" && !isPhone && nowView ? (
           /* Tablet: the day chart and the barrier panel under the list. A wide screen has both beside the
              list instead, so CSS hides this pair there (one barrier panel on screen at any width). */
           <div className={`${pageStyles.flowCharts} ${releaseList.chartsBottom}`}>

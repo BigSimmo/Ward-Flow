@@ -583,10 +583,10 @@ test.describe("@mockup Ward scroll geometry", () => {
 test.describe("@mockup phone navigation follows the stable header", () => {
   test.use({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
   const strips = [
-    ["Patients", "/search", "census_phoneSeg__", 0],
+    ["Patients", "/search", "census_phoneStates__", 0],
     ["Capacity", "/capacity", "capacity-page_phoneTabs__", 0],
-    ["Home", "", "home_queueTools__", 0],
-    ["Community", "/community", "community_phonePanes__", 0],
+    ["Home", "", "home-flow_nav__", 0],
+    ["Catchments", "/hub/catchments", "community_phonePanes__", 0],
     ["ED", "/ed/rph-ed", "ed_phonePanes__", 0],
     ["Ward statistics", "/statistics/ward/rph-adult-secure", "statistics-phone-body_stickySeg__", 0],
     ["Out-of-area", "/out-of-area", "out-of-area-board_phoneTabs__", 0],
@@ -597,7 +597,7 @@ test.describe("@mockup phone navigation follows the stable header", () => {
       await page.goto(`/ward-flow${route}`, { waitUntil: "networkidle" });
       const bar = page.getByTestId("ward-bar");
       await expect(bar).toHaveAttribute("data-band", /ink|light/);
-      // Home v7 (Josh, 22 Oct 2026): Home opens on My list; its queue tools sit behind Everyone waiting.
+      // Home flow (Josh, 3 Nov 2026): the "Home lists" nav pins under the header; check it on Flow.
       if (label === "Home") await showEveryoneWaitingOn(page);
       const strip = page.locator(`[class*="${classPrefix}"]`);
       await expect(strip).toBeVisible();
@@ -619,7 +619,7 @@ test.describe("@mockup phone navigation follows the stable header", () => {
       }
       if (collar) await expect(strip).not.toHaveCSS("box-shadow", "none");
       if (route === "/search") {
-        await expect(page.getByRole("tablist", { name: "Patients now or history" })).toBeVisible();
+        await expect(page.getByRole("radiogroup", { name: "Where people are now" })).toBeVisible();
         const bounds = await strip.boundingBox();
         const header = await bar.boundingBox();
         expect(bounds!.y).toBe(header!.y + header!.height);

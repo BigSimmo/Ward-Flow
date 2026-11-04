@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -71,6 +71,12 @@ function renderWard() {
   );
 }
 
+/** The all-stays average sits in the Length of stay card's Data view (owner polish, 3 Nov 2026). */
+function openStayData() {
+  const card = screen.queryByTestId("statistics-ward-stays-chart");
+  if (card) fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
+}
+
 describe("a ward statistics page never renders an unmeasurable average as a number", () => {
   /**
    * ⚠️ **THE ANTI-VACUITY FLOOR, AND IT IS THE FIRST ASSERTION ON PURPOSE.**
@@ -103,6 +109,7 @@ describe("a ward statistics page never renders an unmeasurable average as a numb
 
   it.each(NULLABLE)("hides %s (%s) instead of showing an empty card or a fabricated zero", (testId) => {
     renderWard();
+    openStayData();
     expect(screen.queryByTestId(testId)).toBeNull();
   });
 

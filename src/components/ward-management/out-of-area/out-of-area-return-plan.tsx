@@ -3,7 +3,7 @@
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BedDouble, Car, Check, Clock, House, Plane } from "lucide-react";
+import { BedSingle, Car, Check, Clock, Flag, House, Plane } from "lucide-react";
 
 import {
   Button,
@@ -21,8 +21,8 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
-  BOOKABLE_TRANSPORT_PROVIDERS,
   TRANSPORT_LEGAL_STATUSES,
   type TransportLegalStatus,
   type TravelMode,
@@ -40,10 +40,14 @@ import {
   type BedOption,
   type RepatDraft,
 } from "./out-of-area-model";
+import { ReturnTracker, returnStepsDone } from "./out-of-area-return-tracker";
 import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { HomeServiceReturnPanel } from "./home-service-return-panel-lazy";
+import type { ReturnEarlyFlagRecord } from "./return-early";
+import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-undo";
+import { OfficerBookingContacts } from "@/components/ward-management/officer/officer-booking-contacts";
 
 export function returnPlanMissingToSend(draft: RepatDraft, now: Instant = 0): string[] {
   return missingAnswers(draft, now).filter((answer) => answer !== "ward agreement");
@@ -77,6 +81,9 @@ const SERVICE_DISPLAY_NAMES: Record<string, string> = {
   CAHS: "Child and Adolescent Health Service (CAHS)",
   Private: "Authorised Private Services",
 };
+
+/** OA1: the bookable providers the Call a provider list has no number for. */
+const OTHER_PROVIDERS = ["Police escort", "Ward escort", "Family or carer"] as const satisfies readonly TravelMode[];
 
 const LEGAL_LABELS: Record<TransportLegalStatus, string> = { voluntary: "Voluntary", involuntary: "Involuntary" };
 
@@ -190,6 +197,11 @@ export type ReturnPlanProps = {
   onRecord: () => void;
   onSendToWard?: () => void;
   onMarkWardAgreed?: () => void;
+  /** Out of area "Flag early" (Josh, 3 Nov 2026): this stay's current flag, if any. */
+  earlyFlag?: ReturnEarlyFlagRecord;
+  /** Raises `FLAG_RETURN_EARLY` for the chosen home hospital. Only ever from the tap. */
+  onFlagEarly?: (homeHospital: string) => void;
+  onUndoFlagEarly?: () => void;
   /** The plan's own header (desktop card head, or nothing inside the phone sheet). */
   header?: ReactNode;
   /** Keeps radio group names unique if the plan is ever mounted twice. */
@@ -218,16 +230,25 @@ export function ReturnPlan({
   onRecord,
   onSendToWard,
   onMarkWardAgreed,
+  earlyFlag,
+  onFlagEarly,
+  onUndoFlagEarly,
   header,
   idPrefix,
   compactIdentity = false,
 }: ReturnPlanProps) {
+  const flagEarly = (hospital: string) => (
+    <FlagEarly flag={earlyFlag} hospital={hospital} now={now} onFlag={onFlagEarly} onUndo={onUndoFlagEarly} />
+  );
   const site = siteByCode(entry.unit.siteCode);
   const missing = missingAnswers(draft, now);
   // A typed CAD number the rule refuses is named beside the field; blank stays a plain "missing".
   const cadProblem = draft.cadNumber.trim() ? cadNumberProblem(draft.cadNumber) : undefined;
   const cadError = cadProblem ? `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}.` : undefined;
   const move = whoseMove(draft, record);
+  const returnMovement = useOptionalWardFlowSelect("movements")?.movements.find(
+    (movement) => movement.id === returnMovementId,
+  );
   const isAir = entry.band === "air_transport_only";
   const optionCodes = new Set(options.map((option) => option.siteCode));
   const groups = hospitalGroups();
@@ -236,11 +257,12 @@ export function ReturnPlan({
   return (
     <>
       {header}
-      <p className={styles.whoStrip} data-testid="ward-out-of-area-subject-caveat">
-        <StatusGlyph tone={record?.receivingWardAgreed || draft.homeHospital ? "neutral" : "closed"} size={9} />
-        <b>{move.who}</b>
-        <span>{move.what}</span>
-      </p>
+      <ReturnTracker
+        done={returnStepsDone(draft, record, returnMovement)}
+        who={move.who}
+        what={move.what}
+        testId="ward-out-of-area-subject-caveat"
+      />
       <div data-testid="ward-out-of-area-subject-facts" className={styles.planFacts}>
         <p className={cx(styles.planIdentity, compactIdentity ? undefined : "sr-only")}>
           <b>{patient.displayName}</b>
@@ -279,7 +301,7 @@ export function ReturnPlan({
         </dl>
         <dl className={styles.placeLine}>
           <dt>
-            <Icon icon={BedDouble} size={14} />
+            <Icon icon={BedSingle} size={14} />
             <SrOnly>Current placement</SrOnly>
           </dt>
           <dd className={styles.placeUnit} title={`${entry.unit.name}, ${site?.name ?? "site not recorded"}`}>
@@ -329,6 +351,7 @@ export function ReturnPlan({
           returnMovementId={returnMovementId}
           now={now}
           onMarkWardAgreed={onMarkWardAgreed}
+          flagEarly={flagEarly(record.homeHospital)}
         />
       ) : (
         <>
@@ -430,27 +453,26 @@ export function ReturnPlan({
                   The recorded band is air only for this trip
                 </p>
               ) : null}
-              <Field label="Provider" className={styles.formRow}>
-                <Select
-                  data-testid="ward-out-of-area-repat-provider"
-                  value={draft.provider ?? ""}
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    onDraft({
-                      provider: BOOKABLE_TRANSPORT_PROVIDERS.includes(next as TravelMode)
-                        ? (next as TravelMode)
-                        : undefined,
-                    });
-                  }}
-                >
-                  <option value="">Choose the provider</option>
-                  {BOOKABLE_TRANSPORT_PROVIDERS.map((provider) => (
-                    <option key={provider} value={provider}>
-                      {provider}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
+              {/* OA1 (4 Nov 2026): the providers' synthetic numbers are the picker, as on Log booking,
+                  so the coordinator calls and records the provider in one place. */}
+              <div className={styles.providerPick} data-testid="ward-out-of-area-repat-provider">
+                <OfficerBookingContacts
+                  className={styles.providerList}
+                  headingId={`${idPrefix}-contacts-heading`}
+                  selected={draft.provider}
+                  onPick={(provider) => onDraft({ provider })}
+                  note="Call the provider, then choose the one you booked."
+                />
+              </div>
+              {/* The providers with no number to call are still answers the plan accepts. */}
+              <ChoicePills
+                legend="Or"
+                name={`${idPrefix}-provider-other`}
+                testId="ward-out-of-area-repat-provider-other"
+                value={OTHER_PROVIDERS.find((provider) => provider === draft.provider)}
+                options={OTHER_PROVIDERS.map((provider) => ({ value: provider, label: provider }))}
+                onChange={(provider) => onDraft({ provider })}
+              />
               <ChoicePills
                 legend="Legal status"
                 name={`${idPrefix}-legal`}
@@ -558,6 +580,7 @@ export function ReturnPlan({
                 </>
               )}
             </span>
+            {flagEarly(draft.homeHospital)}
             <Button
               variant="sec"
               size="sm"
@@ -586,16 +609,69 @@ export function ReturnPlan({
   );
 }
 
+/**
+ * Out of area "Flag early" (Josh, 3 Nov 2026): a secondary action in the pinned foot. Once flagged it
+ * says when, with Undo while the engine still allows it (`UNDO_WINDOW_MINUTES`).
+ */
+function FlagEarly({
+  flag,
+  hospital,
+  now,
+  onFlag,
+  onUndo,
+}: {
+  flag: ReturnEarlyFlagRecord | undefined;
+  hospital: string;
+  now: Instant;
+  onFlag?: (homeHospital: string) => void;
+  onUndo?: () => void;
+}) {
+  if (flag) {
+    return (
+      <>
+        <span className={styles.flaggedEarly} data-testid="ward-out-of-area-flagged-early">
+          <Icon icon={Flag} size={16} />
+          Flagged early {formatInstantWithDay(flag.at, now)}
+        </span>
+        {onUndo && now - flag.at < UNDO_WINDOW_MINUTES ? (
+          <Button variant="ghost" size="sm" data-testid="ward-out-of-area-flag-early-undo" onClick={onUndo}>
+            Undo
+          </Button>
+        ) : null}
+      </>
+    );
+  }
+  const chosen = siteByCode(hospital) !== undefined;
+  return (
+    <Button
+      variant="sec"
+      size="sm"
+      icon={Flag}
+      data-testid="ward-out-of-area-flag-early"
+      disabledReason={chosen ? undefined : "Choose the receiving hospital first."}
+      reasonDisplay="tooltip"
+      title="May be ready to come home sooner than planned. Tells the receiving ward, the home team and Transport."
+      onClick={() => {
+        if (chosen) onFlag?.(hospital);
+      }}
+    >
+      Flag early
+    </Button>
+  );
+}
+
 function RecordedReturn({
   record,
   returnMovementId,
   now,
   onMarkWardAgreed,
+  flagEarly,
 }: {
   record: RepatriationRecord;
   returnMovementId: string | undefined;
   now: Instant;
   onMarkWardAgreed?: () => void;
+  flagEarly: ReactNode;
 }) {
   return (
     <div className={styles.doneBox} data-testid="ward-out-of-area-recorded">
@@ -642,6 +718,7 @@ function RecordedReturn({
         <dd className={styles.mono}>{formatInstantWithDay(record.estimatedAt, now)}</dd>
       </dl>
       <div className={styles.planFoot}>
+        {flagEarly}
         {record.receivingWardAgreed ? (
           <>
             <span className={styles.need}>

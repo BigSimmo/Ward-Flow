@@ -437,6 +437,11 @@
   white-space: nowrap;
 }
 
+/* A form still to upload that does not block the next step: said, not flagged. */
+.formsQuiet {
+  color: var(--wf-ink-3);
+}
+
 .etaCell b {
   font: 600 var(--wf-fs-14) / var(--wf-lh-13) var(--wf-mono);
 }
@@ -559,9 +564,9 @@
   min-width: 0;
 }
 
+/* The day's refused and cancelled lists grow with the page (D-95, 3 Nov 2026). */
 .panelBody {
-  max-height: 24rem;
-  overflow: auto;
+  min-width: 0;
 }
 
 .panelBody:focus-visible {
@@ -2344,6 +2349,13 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+.needGap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-warning-ink);
+}
+
 .needTier[data-tier="1"] {
   color: var(--wf-danger-ink);
   font-weight: 600;
@@ -2361,13 +2373,6 @@
 .needWait small {
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.needFoot {
-  display: flex;
-  justify-content: center;
-  padding: var(--wf-s-1);
-  border-top: 1px solid var(--wf-line);
 }
 
 /* The job and booking panel: the screen's height, its body scrolls, its foot stays. */
@@ -2447,6 +2452,123 @@
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+/* TR4 (3 Nov 2026): Log booking as a centred dialog, form left and provider numbers right. */
+.bookingDialog.bookingDialog {
+  width: min(880px, calc(100vw - 2 * var(--wf-s-6)));
+  max-width: none;
+}
+
+.bookingDialogBody {
+  padding-top: var(--wf-s-2);
+}
+
+.bookingGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: var(--wf-s-6);
+  align-items: start;
+}
+
+.bookingMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .bookingGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.contacts {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}
+
+.contactsHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.contactsTag {
+  padding: 2px var(--wf-s-2);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--wf-warning-ink) 14%, transparent);
+  color: var(--wf-warning-ink);
+  font: 600 var(--wf-fs-11) / 1.4 var(--wf-font);
+}
+
+.contactsList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contactRow {
+  display: flex;
+  gap: var(--wf-s-2);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--wf-s-2) 0;
+}
+
+.contactRow + .contactRow {
+  border-top: 1px solid var(--wf-line);
+}
+
+.contactText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / 1.4 var(--wf-font);
+}
+
+.contactText b {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.contactCopy {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.contactCopy:hover {
+  background: var(--wf-accent-tint);
+}
+
+.contactCopy:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 /* Route: two stops joined by a line. */

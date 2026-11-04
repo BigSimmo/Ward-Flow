@@ -99,21 +99,22 @@ describe("weekend and holiday preparation", () => {
         onOpen={onOpen}
       />,
     );
-    // One card per closed service: the heading names the service; the card's region carries when it closes and reopens.
-    const headings = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
-    expect(headings).toEqual(["Pharmacy", "Patient transport", "Community mental health team"]);
-    const cardNames = [
-      "Pharmacy closes Sat 24 Oct 12:00, reopens Mon 26 Oct 08:30 (Weekend)",
-      "Patient transport closes Sat 24 Oct 14:00, reopens Mon 26 Oct 07:00 (Weekend)",
-      "Community mental health team closes Fri 23 Oct 17:00, reopens Mon 26 Oct 08:30 (Weekend)",
-    ];
-    for (const name of cardNames) expect(screen.getByRole("region", { name })).toBeInTheDocument();
-    const transport = screen.getByRole("region", { name: cardNames[1]! });
+    // Desk: one pill per closed service, in a fixed order; each pill's name carries when it closes and reopens.
+    const pills = within(screen.getByRole("list", { name: "Closed services" })).getAllByRole("button");
+    expect(pills.map((pill) => pill.getAttribute("aria-label"))).toEqual([
+      "Pharmacy closes Sat 24 Oct 12:00, reopens Mon 26 Oct 08:30 (Weekend). 1 waiting",
+      "Patient transport closes Sat 24 Oct 14:00, reopens Mon 26 Oct 07:00 (Weekend). 3 waiting",
+      "Community mental health team closes Fri 23 Oct 17:00, reopens Mon 26 Oct 08:30 (Weekend). 1 waiting",
+    ]);
+    fireEvent.click(screen.getByTestId("ward-discharge-weekend-patient_transport"));
+    const transport = screen.getByRole("dialog", { name: "Patient transport, 3 waiting" });
     const rows = within(transport).getAllByRole("button");
     // Recorded (seed) order: SCGA-03, then RGHS-07, then BTYS-05 in the release list.
     expect(rows).toHaveLength(3);
     fireEvent.click(rows[0]!);
     expect(onOpen).toHaveBeenCalledWith("derived-expected-AD-SCGA-03", rows[0]);
+    // Choosing a row closes the popover.
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("names the reopening year when a holiday closure crosses New Year", () => {
@@ -127,9 +128,14 @@ describe("weekend and holiday preparation", () => {
         onOpen={() => {}}
       />,
     );
-    const service = screen.getByRole("region", {
-      name: "Community mental health team closes Thu 31 Dec 17:00, reopens 4 Jan 2027 08:30 (New Year's Day, Weekend)",
-    });
+    const pill = screen.getByTestId("ward-discharge-weekend-community_team");
+    expect(pill).toHaveAccessibleName(
+      expect.stringContaining(
+        "Community mental health team closes Thu 31 Dec 17:00, reopens 4 Jan 2027 08:30 (New Year's Day, Weekend).",
+      ),
+    );
+    fireEvent.click(pill);
+    const service = screen.getByRole("dialog", { name: /^Community mental health team, \d+ waiting$/ });
     expect(within(service).getByText("Closes Thu 31 Dec 17:00 · reopens 4 Jan 2027 08:30")).toBeVisible();
   });
 });

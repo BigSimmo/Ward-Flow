@@ -66,7 +66,27 @@ describe("Handover page", () => {
     // 1 Nov 2026 redesign: Print handover is the sheet bar's primary; Present sits in More.
     expect(screen.getByTestId("ward-handover-print")).toHaveTextContent("Print handover");
     expect(screen.getByRole("button", { name: "More handover actions" })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-handover-sign-bar")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-handover-hero-sign-off")).toBeInTheDocument();
+  });
+
+  it("keeps Sign off in the hero on every tab, carrying the same check count as the checklist", () => {
+    renderHandover();
+    // 3 Nov 2026: sign-off has one fixed place, the hero; nothing floats over or trails the rows.
+    expect(screen.queryByTestId("ward-handover-sign-bar")).toBeNull();
+    for (const tab of [/Patients/, /Beds/, /History/]) {
+      fireEvent.click(screen.getByRole("tab", { name: tab }));
+      expect(screen.getByRole("button", { name: /^Sign off, \d+ of \d+ checks clear$/ })).toBeInTheDocument();
+    }
+    const hero = screen.getByTestId("ward-handover-hero-sign-off");
+    const [, done, total] = /^Sign off, (\d+) of (\d+) checks clear$/.exec(hero.getAttribute("aria-label") ?? "")!;
+    expect(hero).toHaveTextContent(`${done}/${total}`);
+    fireEvent.click(hero);
+    expect(screen.getByRole("tab", { name: /Patients/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByTestId("ward-handover-sign-off")).toHaveTextContent(`${done} of ${total} clear`);
+    expect(screen.getAllByTestId("ward-handover-sign-off-checks")[0]!.querySelectorAll("li")).toHaveLength(
+      Number(total),
+    );
+    expect(screen.getByTestId("ward-handover-sign-off-button")).toBeInTheDocument();
   });
 
   it("groups every open patient in meeting order", () => {
@@ -83,7 +103,8 @@ describe("Handover page", () => {
     expect(rows).toHaveLength(openCount);
   });
 
-  it("holds the table to a set height so it scrolls inside its card", () => {
+  // Josh, 3 Nov 2026: one scroll for the page, replacing the 9 Oct set-height box.
+  it("lets the table grow with the page and scroll only sideways", () => {
     renderHandover();
     expect(screen.getByRole("region", { name: "Handover patients" })).toBeInTheDocument();
     const css = readFileSync(
@@ -91,8 +112,9 @@ describe("Handover page", () => {
       "utf8",
     );
     const block = css.slice(css.indexOf(".tableScroll {"), css.indexOf("}", css.indexOf(".tableScroll {")));
-    expect(block).toMatch(/max-height:/);
-    expect(block).toMatch(/overflow: auto/);
+    expect(block).not.toMatch(/max-height:/);
+    expect(block).toMatch(/overflow-x: auto/);
+    expect(block).not.toMatch(/overflow(-y)?: (auto|scroll)/);
   });
 
   it("names patients by name and UMRN and never shows a journey number", () => {
@@ -110,8 +132,8 @@ describe("Handover page", () => {
   it("shows the sign-off sheet until a patient is picked, then that patient's flow", async () => {
     const user = userEvent.setup();
     renderHandover();
-    // 1 Nov 2026 redesign: sign-off is the bar at the foot of the sheet; its checklist is a drawer.
-    expect(screen.getByTestId("ward-handover-sign-bar")).toBeInTheDocument();
+    // 3 Nov 2026: sign-off is the hero's Sign off; its checklist is a drawer.
+    expect(screen.getByTestId("ward-handover-hero-sign-off")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
 
     await user.click(firstPatientRow());
@@ -123,9 +145,7 @@ describe("Handover page", () => {
 
     await user.click(within(panel).getByRole("button", { name: "Close patient" }));
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
-    await user.click(
-      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
-    );
+    await user.click(screen.getByTestId("ward-handover-hero-sign-off"));
     expect(screen.getByTestId("ward-handover-sign-off")).toBeInTheDocument();
   });
 
@@ -201,10 +221,13 @@ describe("Handover page", () => {
 
   it("keeps letter shortcuts inactive while choosing a handover filter", () => {
     renderHandover();
-    const filter = screen.getByRole("combobox", { name: "Filter the sheet" });
-    filter.focus();
-    fireEvent.keyDown(filter, { key: "j" });
+    // 3 Nov 2026: the filter is the Show menu; a letter typed in it jumps to a choice, never a shortcut.
+    fireEvent.click(screen.getByRole("button", { name: /^Show:/ }));
+    const choice = within(screen.getByRole("menu", { name: "Show" })).getAllByRole("menuitemradio")[0]!;
+    fireEvent.keyDown(choice, { key: "j" });
+    fireEvent.keyDown(choice, { key: "p" });
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-handover-print-sheet")).not.toBeInTheDocument();
   });
 
   it("opens the patient drawer in presentation mode without revealing the background table row", () => {
@@ -226,15 +249,13 @@ describe("Handover page", () => {
   it("records the sign-off with role and time and lists it in History", async () => {
     const user = userEvent.setup();
     renderHandover();
-    await user.click(
-      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
-    );
+    await user.click(screen.getByTestId("ward-handover-hero-sign-off"));
     await user.click(screen.getByTestId("ward-handover-sign-off-button"));
     expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent(
       "Signed off at 10:42 as bed coordinator",
     );
-    // Approved redesign (31 Oct 2026): on the Patients tab the sign-off bar, not the hero, carries Sign off.
-    expect(screen.getByTestId("ward-handover-sign-bar")).toHaveTextContent("Signed 10:42");
+    // 3 Nov 2026: the hero's Sign off reads the signed time.
+    expect(screen.getByTestId("ward-handover-hero-sign-off")).toHaveTextContent("Signed 10:42");
     // A4-27 (audit round 2): once signed there is no second sign-off primary, only Undo.
     expect(screen.queryByTestId("ward-handover-sign-off-button")).toBeNull();
     expect(screen.getByTestId("ward-handover-sign-off-undo")).toHaveTextContent("Undo sign-off");
@@ -244,9 +265,7 @@ describe("Handover page", () => {
 
   it("offers no Handing to choice, because the engine records role and time only (D-72)", () => {
     renderHandover();
-    fireEvent.click(
-      within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }),
-    );
+    fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
     const signOff = screen.getByTestId("ward-handover-sign-off");
     expect(signOff).toHaveTextContent("Handed over by");
     expect(signOff).not.toHaveTextContent("Handing to");
