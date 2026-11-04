@@ -145,7 +145,7 @@ The repository runner exclusively builds and serves each Playwright production a
 When capturing Playwright output through a shell pipe (`cmd 2>&1 | tee …`), enable `set -o pipefail` (or avoid the pipe). Without it, bash reports the pipeline exit from `tee` (`0`) while the log still ends in `N failed` — a measurement artifact that previously looked like a green-when-broken gate (outstanding-issues #120). The Node runners themselves already propagate Playwright’s exit status.
 
 The active Ward CI prepares one isolated offline production browser build and fans the verified
-artifact out to three journey runners and the release gate. Consumers check checkout/toolchain,
+artifact out to two journey runners and the release gate. Consumers check checkout/toolchain,
 build flags, isolated path and payload digest. The separate production-build job still checks the
 normal application build. On verified main reuse the prepared-build job is skipped and release
 journeys build afresh. Next working-cache reuse is separate from this completed artifact; only main
@@ -239,7 +239,7 @@ remote hosts. The shared-mode browser proof uses production builds, loopback HTT
 authentication. It checks signed-in saves, another desk's view, reload persistence, conflicts,
 server refusals and keyboard focus. Backend/root tests cannot substitute for that browser proof.
 
-One prepared browser build feeds three journey groups; group 1 runs the separate Chromium CSRF
+One prepared browser build feeds two journey groups; group 1 runs the separate Chromium CSRF
 case on the same server. The release gate requires all eight named desktop/phone journey cases,
 zero retry recovery and no serious or critical axe WCAG violations, without a recovery rescan. The required job checks plan, static,
 backend, unit, prepared build, journeys, release, secret scan, build and coverage, and rejects

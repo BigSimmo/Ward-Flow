@@ -96,10 +96,13 @@ describe("ward changes from the Patient page", () => {
     expect(root).toHaveAttribute("data-patient-mode", "ward");
   });
 
-  it("sets an expected discharge date more than a week out from the status card", () => {
+  it("sets an expected discharge date more than a week out from the On ward card", () => {
     renderPatient();
-    const discharge = screen.getByTestId("ward-patient-gate-discharge");
-    fireEvent.click(within(discharge).getByRole("button", { name: /discharge date$/ }));
+    // Josh's approved list (3 Nov 2026): Discharge date is in the On ward card's one action row.
+    expect(
+      within(screen.getByTestId("ward-patient-status-card")).getByTestId("ward-patient-change-card"),
+    ).toBeVisible();
+    fireEvent.click(within(changeCard()).getByRole("button", { name: "Discharge date" }));
     fireEvent.change(within(changeCard()).getByLabelText("Day"), { target: { value: "9" } });
     fireEvent.change(within(changeCard()).getByLabelText("Expected discharge time"), { target: { value: "11:00" } });
     fireEvent.click(within(changeCard()).getByRole("button", { name: "Save date" }));

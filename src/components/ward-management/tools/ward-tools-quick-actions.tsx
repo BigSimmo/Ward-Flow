@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { ArrowUpRight, type LucideIcon } from "lucide-react";
 
-import { Button, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
+import { Button, Meter, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 import { useWardFlowSelect } from "../ward-flow-provider";
+import { useWardRaise } from "../ward-flow-raise";
+import { ASK_CONFIRM_BEDS, askWardsFields, askedLine, splitAsk } from "../alerts/ask-wards";
+import { ASK_WARDS_WINDOW_TEXT } from "../ward-operational-defaults";
 import { formatInstantWithDay } from "../ward-clock";
 import { shiftConfirmations } from "../capacity/shift-confirmations";
 import styles from "./ward-tools-quick-actions.module.css";
@@ -13,7 +16,7 @@ import styles from "./ward-tools-quick-actions.module.css";
 /**
  * COORDINATOR QUICK ACTIONS (Josh locked in the mock-up, 3 Nov 2026). One Tools row opens the
  * coordinator's most used actions. Ward updates lists the wards not confirmed since the shift
- * began (the Capacity check); sending the request is phase 2 and is not wired yet.
+ * began (the Capacity check). Ask sends one alert through the shared path in alerts/ask-wards.ts.
  */
 export type QuickTile = {
   key: string;
@@ -34,48 +37,56 @@ export type QuickTile = {
 export function QuickActionsPanel({ tiles, onNavigate }: { tiles: readonly QuickTile[]; onNavigate: () => void }) {
   const [chosen, setChosen] = useState<string | null>(tiles.find((tile) => tile.body)?.key ?? null);
   const active = tiles.find((tile) => tile.key === chosen && tile.body);
+  // Polish (3 Nov, design brief): actions that work here lead as tiles with their live figure;
+  // shortcuts that leave Tools sit apart as a quiet row, so it is clear which tap leaves the drawer.
+  const here = tiles.filter((tile) => !tile.href);
+  const away = tiles.filter((tile) => tile.href);
   return (
     <div className={styles.panel}>
-      <div className={styles.grid} role="group" aria-label="Quick actions">
-        {tiles.map((tile) => {
-          const Icon = tile.icon;
-          const inner = (
-            <>
-              <span className={styles.icon} aria-hidden="true">
-                <Icon aria-hidden="true" strokeWidth={1.75} />
-              </span>
-              <span className={styles.text}>
+      <div className={styles.set} role="group" aria-label="Quick actions">
+        <div className={styles.grid}>
+          {here.map((tile) => {
+            const Icon = tile.icon;
+            return (
+              <button
+                key={tile.key}
+                type="button"
+                className={styles.tile}
+                aria-pressed={chosen === tile.key}
+                onClick={() => setChosen(tile.key)}
+              >
+                <span className={styles.tileTop}>
+                  <span className={styles.icon} aria-hidden="true">
+                    <Icon aria-hidden="true" strokeWidth={1.75} />
+                  </span>
+                  {tile.count !== undefined ? (
+                    <b className={tile.key === "ward-updates" && tile.count > 0 ? styles.figureWarn : styles.figure}>
+                      {tile.count}
+                    </b>
+                  ) : null}
+                </span>
                 <strong>{tile.name}</strong>
-                <em>
-                  {tile.count !== undefined ? <b className={styles.n}>{tile.count}</b> : null}
-                  {tile.count !== undefined ? " " : null}
-                  {tile.detail}
-                </em>
-              </span>
-            </>
-          );
-          return tile.href ? (
-            <Link key={tile.key} href={tile.href} className={styles.tile} onClick={onNavigate}>
-              {inner}
-              <ArrowUpRight className={styles.end} aria-hidden="true" strokeWidth={1.75} />
-              <span className="sr-only">, opens its page</span>
-            </Link>
-          ) : (
-            <button
-              key={tile.key}
-              type="button"
-              className={styles.tile}
-              aria-pressed={chosen === tile.key}
-              onClick={() => setChosen(tile.key)}
-            >
-              {inner}
-            </button>
-          );
-        })}
+                <em>{tile.detail}</em>
+              </button>
+            );
+          })}
+        </div>
+        <div className={styles.away}>
+          {away.map((tile) => {
+            const Icon = tile.icon;
+            return (
+              <Link key={tile.key} href={tile.href!} className={styles.awayLink} onClick={onNavigate}>
+                <Icon aria-hidden="true" strokeWidth={1.75} />
+                <span>{tile.name}</span>
+                <ArrowUpRight className={styles.end} aria-hidden="true" strokeWidth={1.75} />
+                <span className="sr-only">, {tile.detail}, opens its page</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
       {active ? (
         <section className={styles.chosen} aria-label={active.title ?? active.name}>
-          <h4 className={styles.chosenTitle}>{active.title ?? active.name}</h4>
           {active.body}
         </section>
       ) : null}
@@ -91,9 +102,14 @@ export function useUnconfirmedWards() {
 /** Request ward updates: the wards not confirmed since this shift began. Nothing pre-selected. */
 export function WardUpdatesRequest() {
   const status = useUnconfirmedWards();
-  const { now } = useWardFlowSelect("now");
+  const { now, broadcastAlerts } = useWardFlowSelect("now", "broadcastAlerts");
   const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
   const [all, setAll] = useState(false);
+  const [sending, setSending] = useState(false);
+  // A second tap while the first is in flight must not send twice.
+  const inFlight = useRef(false);
+  const [sent, setSent] = useState<{ ok: boolean; text: string } | null>(null);
+  const raise = useWardRaise("coordinator");
   const toggle = (id: string) =>
     setChosen((current) => {
       const next = new Set(current);
@@ -104,21 +120,64 @@ export function WardUpdatesRequest() {
   if (status.waiting.length === 0) {
     return <p className={styles.quiet}>Every ward has confirmed its beds this shift.</p>;
   }
+  const picked = chosen.size > 0 ? [...chosen] : status.waiting.map((unit) => unit.id);
+  // One shared path with the Discharges chase (M6): skip wards asked in the last four hours.
+  const { send, skipped } = splitAsk(picked, broadcastAlerts, ASK_CONFIRM_BEDS, now);
+  const asking = send.length;
+  const askWards = async () => {
+    if (inFlight.current) return;
+    setSent(null);
+    if (send.length === 0) {
+      setSent({ ok: true, text: askedLine(0, skipped.length) });
+      return;
+    }
+    inFlight.current = true;
+    setSending(true);
+    try {
+      const outcome = await raise("DISPATCH_BROADCAST_ALERT", askWardsFields(ASK_CONFIRM_BEDS, send));
+      if (outcome && outcome.status !== "accepted") {
+        setSent({ ok: false, text: outcome.message || "Not sent. Try again." });
+      } else {
+        setSent({ ok: true, text: askedLine(send.length, skipped.length) });
+        setChosen(new Set());
+      }
+    } catch {
+      setSent({ ok: false, text: "Not sent. Check the connection and try again." });
+    } finally {
+      inFlight.current = false;
+      setSending(false);
+    }
+  };
   return (
     <div className={styles.request}>
-      <p className={styles.lead}>
-        {status.confirmed} of {status.total} wards confirmed since {formatInstantWithDay(status.since, now)}. Ask the
-        rest to confirm their beds.
-      </p>
+      <div className={styles.progress}>
+        <p className={styles.lead}>
+          <b>{status.confirmed}</b> of <b>{status.total}</b> wards confirmed since{" "}
+          {formatInstantWithDay(status.since, now)}
+        </p>
+        <Meter
+          value={status.confirmed}
+          max={status.total}
+          fill="ready"
+          label="Wards confirmed this shift"
+          valueText={null}
+        />
+      </div>
       <div className={styles.listHead}>
-        <span>Not confirmed this shift</span>
-        <button
-          type="button"
-          className={styles.link}
-          onClick={() => setChosen(new Set(status.waiting.map((unit) => unit.id)))}
-        >
-          Select all {status.waiting.length}
-        </button>
+        <span>Not confirmed</span>
+        {status.waiting.length > 1 ? (
+          <button
+            type="button"
+            className={styles.link}
+            onClick={() =>
+              setChosen((current) =>
+                current.size === status.waiting.length ? new Set() : new Set(status.waiting.map((unit) => unit.id)),
+              )
+            }
+          >
+            {chosen.size === status.waiting.length ? "Clear" : `Select all ${status.waiting.length}`}
+          </button>
+        ) : null}
       </div>
       <ul className={styles.list} id="ward-updates-list">
         {status.waiting.slice(0, all ? undefined : foldLimit(status.waiting.length, 8)).map((unit) => (
@@ -136,12 +195,34 @@ export function WardUpdatesRequest() {
           {all ? "Show fewer" : `Show ${foldHidden(status.waiting.length, 8)} more`}
         </ShowMoreRow>
       ) : null}
-      <p className={styles.quiet}>Wards answer with Beds still correct on their home page. Replies show here.</p>
       <div className={styles.actions}>
-        <Button variant="pri" disabledReason="Not wired in this prototype.">
-          {chosen.size > 0 ? `Send to ${chosen.size} ${chosen.size === 1 ? "ward" : "wards"}` : "Send request"}
+        <p className={styles.quiet}>Each ward sees it on screen and answers with Beds still correct.</p>
+        <Button
+          variant="pri"
+          onClick={askWards}
+          disabledReason={
+            sending ? "Sending…" : asking === 0 ? `Already asked in the last ${ASK_WARDS_WINDOW_TEXT}.` : undefined
+          }
+        >
+          {asking === 0
+            ? "Ask wards to confirm"
+            : chosen.size === 0 && asking > 1 && skipped.length === 0
+              ? `Ask all ${asking} wards to confirm`
+              : `Ask ${asking} ${asking === 1 ? "ward" : "wards"} to confirm`}
         </Button>
       </div>
+      <p role="status" className={sent && !sent.ok ? styles.sentBad : styles.sent}>
+        {sent ? (
+          <>
+            {sent.text}{" "}
+            {sent.ok ? (
+              <Link href="/ward-flow/alerts" className={styles.link}>
+                Open Alerts
+              </Link>
+            ) : null}
+          </>
+        ) : null}
+      </p>
     </div>
   );
 }

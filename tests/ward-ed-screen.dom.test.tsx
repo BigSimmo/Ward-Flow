@@ -449,11 +449,12 @@ describe("emergency department urgency pickers", () => {
     expect(toggles.length).toBeGreaterThan(0);
     fireEvent.click(toggles[0]);
 
-    const picker = screen.getByLabelText(/^Urgency tier for /) as HTMLSelectElement;
-    const optionText = [...picker.options].map((option) => option.textContent);
+    const id = toggles[0].getAttribute("data-testid")!.replace("ward-change-urgency-toggle-", "");
+    const offered = edChoiceOptions(`ward-change-urgency-tier-${id}`);
+    const optionText = offered.map((option) => option.label);
     expect(optionText).toEqual(URGENCY_LEVELS.map((level) => urgencyTierLabel(level)));
 
-    const optionValues = [...picker.options].map((option) => option.value);
+    const optionValues = offered.map((option) => option.value);
     expect(optionValues).toEqual(URGENCY_LEVELS.map((level) => String(level)));
 
     expect(optionText).toContain("Tier 1 · most urgent");
@@ -589,8 +590,8 @@ describe("emergency department cards carry the urgency tier", () => {
     if (boardPane) fireEvent.click(boardPane);
     fireEvent.click(within(screen.getByTestId(`ward-ed-patient-${subject}`)).getAllByRole("button")[0]!);
     fireEvent.click(screen.getByTestId(`ward-change-urgency-toggle-${subject}`));
-    fireEvent.change(screen.getByLabelText(`Urgency tier for ${seedPatientName(subject)}`), { target: { value: "3" } });
-    fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "reassessed" } });
+    chooseEdChoice(`ward-change-urgency-tier-${subject}`, "3");
+    chooseEdChoice(`ward-change-urgency-reason-${subject}`, "reassessed");
     fireEvent.click(screen.getByText("Record urgency change"));
 
     expect(urgencyInState(subject)).toBe(3);
@@ -735,21 +736,20 @@ describe("the legal-status change reason starts unchosen", () => {
     return id;
   }
 
-  it("offers a blank option and selects it, so no reason is filed that nobody picked", () => {
+  it("starts with no reason chosen and can be cleared, so no reason is filed that nobody picked", () => {
     const id = openFirstLegalStatusForm();
-    const select = screen
-      .getByTestId(`ward-change-legal-status-${id}`)
-      .querySelector(`#ward-change-legal-status-reason-${id}`) as HTMLSelectElement;
+    const reasonId = `ward-change-legal-status-reason-${id}`;
 
     expect(
-      select.value,
+      edChoiceValue(reasonId),
       "the legal-status reason arrives pre-selected, so a clinician correcting a typo who never " +
         "touches this control files the correction as a fresh report from the treating team — a " +
         "report that team never made",
     ).toBe("");
 
-    const options = [...select.options].map((option) => option.value);
-    expect(options, "no blank option, so the clinician cannot decline to state a provenance").toContain("");
+    chooseEdChoice(reasonId, "correcting_an_error");
+    chooseEdChoice(reasonId, "");
+    expect(edChoiceValue(reasonId), "a chosen provenance cannot be taken back to none").toBe("");
   });
 
   it("makes the submit unavailable, with the reason stated, until a provenance is chosen", () => {
@@ -766,15 +766,12 @@ describe("the legal-status change reason starts unchosen", () => {
     expect(submit.hasAttribute("disabled"), "native disabled would hide the stated reason").toBe(false);
     expect(submit.getAttribute("title") ?? "").toContain("None is chosen for you");
 
-    fireEvent.change(form.querySelector(`#ward-change-legal-status-reason-${id}`)!, {
-      target: { value: "correcting_an_error" },
-    });
+    chooseEdChoice(`ward-change-legal-status-reason-${id}`, "correcting_an_error");
     // The new status starts unchosen too (owner rule, 19 Oct 2026), so a reason alone is not enough.
-    const status = form.querySelector(`#ward-change-legal-status-value-${id}`) as HTMLSelectElement;
-    expect(status.value, "the new legal status arrives pre-selected").toBe("");
+    expect(edChoiceValue(`ward-change-legal-status-value-${id}`), "the new legal status arrives pre-selected").toBe("");
     expect(submit.getAttribute("aria-disabled"), "available with no new status chosen").toBe("true");
     expect(submit.getAttribute("title") ?? "").toContain("Choose the new legal status");
-    fireEvent.change(status, { target: { value: "Voluntary" } });
+    chooseEdChoice(`ward-change-legal-status-value-${id}`, "Voluntary");
     expect(submit.getAttribute("aria-disabled"), "still unavailable after a status and reason were chosen").toBeNull();
   });
 
@@ -804,16 +801,15 @@ describe("the urgency change reason starts unchosen", () => {
     const id = toggles[0].getAttribute("data-testid")!.replace("ward-change-urgency-toggle-", "");
     fireEvent.click(toggles[0]);
 
-    const select = document.getElementById(`ward-change-urgency-reason-${id}`) as HTMLSelectElement;
+    const reasonId = `ward-change-urgency-reason-${id}`;
     expect(
-      select.value,
+      edChoiceValue(reasonId),
       "the urgency reason arrives pre-selected as 'reassessed', so a clinician correcting a mistyped " +
         "urgency who never touches this control records a clinical reassessment that never happened",
     ).toBe("");
-    expect(
-      [...select.options].map((o) => o.value),
-      "no blank option to decline a reason",
-    ).toContain("");
+    chooseEdChoice(reasonId, "reassessed");
+    chooseEdChoice(reasonId, "");
+    expect(edChoiceValue(reasonId), "a chosen reason cannot be taken back to none").toBe("");
   });
 });
 
@@ -1157,16 +1153,16 @@ describe("direct CMHT referral pathway from ED screen", () => {
     expect(screen.getByTestId("ward-ed-cmht-legal-status-WF-001")).toHaveTextContent("Legal status:");
     expect(screen.getByTestId("ward-ed-cmht-catchment-note-WF-001")).toBeInTheDocument();
 
-    const teamSelect = screen.getByTestId("ward-ed-cmht-select-WF-001") as HTMLSelectElement;
     const confirmBtn = screen.getByTestId("ward-ed-cmht-confirm-WF-001");
     expect(confirmBtn).toHaveAttribute("aria-disabled", "true");
     // The reason is printed beside the greyed button, not only to a screen reader.
     expect(document.getElementById("ward-ed-cmht-reason-WF-001")).not.toHaveClass("sr-only");
 
     // Choose the first available team option
-    expect(teamSelect.options.length).toBeGreaterThan(1);
-    const chosenTeam = teamSelect.options[1].value;
-    fireEvent.change(teamSelect, { target: { value: chosenTeam } });
+    const offeredTeams = edChoiceOptions("ward-ed-cmht-select-WF-001");
+    expect(offeredTeams.length).toBeGreaterThan(0);
+    const chosenTeam = offeredTeams[0]!.value;
+    chooseEdChoice("ward-ed-cmht-select-WF-001", chosenTeam);
     // D-74: what the referral is for is required too.
     expect(confirmBtn).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(screen.getByTestId("ward-ed-cmht-purpose-follow_up-WF-001"));

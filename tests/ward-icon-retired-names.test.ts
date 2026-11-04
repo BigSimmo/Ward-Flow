@@ -25,27 +25,17 @@ const RETIRED: Record<string, string> = {
 const LEGACY_FILES = new Set<string>([
   "src/components/ward-management/capacity/planned-admissions-panel.tsx",
   "src/components/ward-management/coordinator/shortlist-panel.tsx",
-  "src/components/ward-management/handover/handover-page.tsx",
   "src/components/ward-management/help/ward-help-jobs.tsx",
-  "src/components/ward-management/movements/movement-horizon-gantt.tsx",
   "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
-  "src/components/ward-management/movements/movements-screen.tsx",
   "src/components/ward-management/patients/patient-history-tab.tsx",
-  "src/components/ward-management/patients/patient-now-panel.tsx",
-  "src/components/ward-management/patients/patient-status-card.tsx",
   "src/components/ward-management/referrals/upload-forms-modal.tsx",
   "src/components/ward-management/reports/patient-chronology-screen.tsx",
-  "src/components/ward-management/shell/ward-phone-menu.tsx",
   "src/components/ward-management/statistics/statistics-capacity-chart.tsx",
   "src/components/ward-management/statistics/statistics-journey-view.tsx",
   "src/components/ward-management/statistics/statistics-service-screen.tsx",
   "src/components/ward-management/statistics/statistics-ward-screen.tsx",
   "src/components/ward-management/tools/ward-tools-sheet.tsx",
-  "src/components/ward-management/ward-derivations.ts",
   "src/components/ward-management/ward-tasks-drawer.tsx",
-  "src/components/ward-redesign/ed-board/ed-arrival-time-modal.tsx",
-  "src/components/ward-redesign/pop-alerts/alerts-drawer.tsx",
-  "src/components/ward-redesign/shell/preview-phone-menu.tsx",
 ]);
 
 function sourceFiles(dir: string): string[] {

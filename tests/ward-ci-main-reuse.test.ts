@@ -5,10 +5,13 @@ import { describe, expect, it } from "vitest";
 
 import { gateBatchArgs, gateBatchBlobPath } from "../scripts/check-ward-expected-reds.mjs";
 import {
+  backendProved,
+  BUILT_TREE_TITLE,
   decideMainReuse,
   runEvidenceGap,
   TESTED_TREE_TITLE,
   testedTreeFromAnnotations,
+  treeAcrossAttempts,
   workflowCounts,
 } from "../scripts/ward-ci-public/main-reuse.mjs";
 
@@ -39,6 +42,9 @@ function greenJobs() {
     ),
     passedJob("Ward Flow coverage", "Merge shard coverage and enforce thresholds"),
     passedJob("Ward Flow production build", "Build for production (Railway build command)"),
+    passedJob("Ward Flow release gate release-gate-desktop journeys", "Run the release-gate journeys"),
+    passedJob("Ward Flow release gate release-gate-phone journeys", "Run the release-gate journeys"),
+    passedJob("Ward Flow backend and shared production proof", "Run Ward backend tests"),
     { name: "Ward Flow required", conclusion: "success", steps: [] },
   ];
 }
@@ -77,11 +83,12 @@ function evidence(overrides: Record<string, unknown> = {}) {
 describe("main-push reuse decision", () => {
   it("reads the shard and group counts the workflow declares", () => {
     expect(counts).toEqual({
-      "unit shard": 6,
-      "legal-figure sweep": 6,
-      "browser group": 3,
+      "unit shard": 4,
+      "legal-figure sweep": 4,
+      "browser group": 2,
       coverage: 1,
       "production build": 1,
+      "release gate": "at least one",
     });
   });
 
@@ -114,8 +121,17 @@ describe("main-push reuse decision", () => {
 
   it("reuses a head that was behind main when its run tested exactly this tree", () => {
     const behind = { headTree: "e".repeat(40), compare: { status: "diverged", behind_by: 2 } };
-    const run = { ...evidence().runs[0], testedTree: tree };
+    const run = { ...evidence().runs[0], testedTree: tree, builtTree: tree };
     expect(decideMainReuse(evidence({ ...behind, runs: [run] }))).toMatchObject({ verified: true, pr: 75 });
+    // The production build merges the then-current main; it must have built this same tree.
+    expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, builtTree: "f".repeat(40) }] }))).toMatchObject({
+      verified: false,
+      reason: expect.stringContaining("built a different tree"),
+    });
+    expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, builtTree: null }] }))).toMatchObject({
+      verified: false,
+      reason: expect.stringContaining("recorded no single built tree"),
+    });
     // Main moved after the run: its merge ref was a different tree, so the suite runs again.
     expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, testedTree: "f".repeat(40) }] }))).toMatchObject({
       verified: false,
@@ -126,6 +142,45 @@ describe("main-push reuse decision", () => {
     // The recorded tree never excuses missing job evidence.
     const jobs = greenJobs().filter((job) => job.name !== "Ward Flow coverage");
     expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, jobs }] })).verified).toBe(false);
+  });
+
+  it("reads a run's recorded tree across every attempt, so a re-run that wrote no notice still counts", () => {
+    const notice = { title: TESTED_TREE_TITLE, annotation_level: "notice", message: tree };
+    // 4 Nov 2026 (PR #1329): the budget recheck re-ran the run; attempt 2's plan job had no annotation.
+    expect(treeAcrossAttempts([[notice], []], TESTED_TREE_TITLE)).toBe(tree);
+    expect(treeAcrossAttempts([[], [notice]], TESTED_TREE_TITLE)).toBe(tree);
+    // Attempts that disagree, or any malformed record, refuse.
+    expect(treeAcrossAttempts([[notice], [{ ...notice, message: "e".repeat(40) }]], TESTED_TREE_TITLE)).toBeNull();
+    expect(treeAcrossAttempts([[notice], [{ ...notice, message: "nope" }]], TESTED_TREE_TITLE)).toBeNull();
+    expect(treeAcrossAttempts([[], []], TESTED_TREE_TITLE)).toBeNull();
+    expect(treeAcrossAttempts([[notice]], BUILT_TREE_TITLE)).toBeNull();
+    expect(treeAcrossAttempts([[{ ...notice, title: BUILT_TREE_TITLE }]], BUILT_TREE_TITLE)).toBe(tree);
+  });
+
+  it("reports backend reuse only when the PR run really ran the backend tests", () => {
+    expect(decideMainReuse(evidence())).toMatchObject({ verified: true, backendVerified: true });
+    const withoutBackend = greenJobs().filter((job) => job.name !== "Ward Flow backend and shared production proof");
+    const verdict = decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs: withoutBackend }] }));
+    expect(verdict).toMatchObject({ verified: true, backendVerified: false });
+    expect(
+      backendProved(
+        greenJobs().map((job) =>
+          job.name.startsWith("Ward Flow backend")
+            ? { ...job, steps: [{ name: "Run Ward backend tests", conclusion: "skipped" }] }
+            : job,
+        ),
+      ),
+    ).toBe(false);
+    expect(decideMainReuse(evidence({ runs: [] }))).not.toHaveProperty("backendVerified", true);
+  });
+
+  it("requires at least one release-gate leg that really ran", () => {
+    const noGate = greenJobs().filter((job) => !job.name.startsWith("Ward Flow release gate"));
+    expect(runEvidenceGap(noGate, counts)).toBe("no release gate job proved");
+    const failedGate = greenJobs().map((job) =>
+      job.name.startsWith("Ward Flow release gate") ? { ...job, conclusion: "failure" } : job,
+    );
+    expect(runEvidenceGap(failedGate, counts)).toMatch(/release gate .* did not succeed/u);
   });
 
   it("reads the tested tree only from one notice with the exact title", () => {
@@ -220,7 +275,7 @@ describe("main-push reuse decision", () => {
   it("refuses a run whose scope planner skipped any reusable job's real work", () => {
     for (const index of greenJobs().keys()) {
       const jobs = greenJobs();
-      if (jobs[index].name === "Ward Flow required") continue;
+      if (jobs[index].name === "Ward Flow required" || jobs[index].name.startsWith("Ward Flow backend")) continue;
       jobs[index] = { ...jobs[index], steps: [{ name: jobs[index].steps[0].name, conclusion: "skipped" }] };
       expect(runEvidenceGap(jobs, counts), jobs[index].name).toMatch(/did not run its checks/u);
     }
@@ -232,13 +287,25 @@ describe("main-push reuse decision", () => {
         greenJobs().filter((job) => job.name !== "Ward Flow unit shard 3"),
         counts,
       ),
-    ).toMatch(/5 of 6 unit shard/u);
+    ).toMatch(/3 of 4 unit shard/u);
     expect(
       runEvidenceGap(
         greenJobs().filter((job) => job.name !== "Ward Flow browser journeys 2"),
         counts,
       ),
-    ).toMatch(/2 of 3 browser group/u);
+    ).toMatch(/1 of 2 browser group/u);
+    // A run recorded under the old six-shard, three-group layout proves a different split: run fresh.
+    const oldLayout = [
+      ...greenJobs(),
+      ...[5, 6].map((shard) =>
+        passedJob(
+          `Ward Flow unit shard ${shard}`,
+          "Run reconciled unit suite shard",
+          "Confirm the legal-figure sweep ran",
+        ),
+      ),
+    ];
+    expect(runEvidenceGap(oldLayout, counts)).toMatch(/6 of 4 unit shard/u);
     const jobs = greenJobs().map((job) =>
       job.name === "Ward Flow required" ? { ...job, conclusion: "failure" } : job,
     );

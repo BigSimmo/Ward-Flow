@@ -7,6 +7,7 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { chooseEdChoice, edChoiceOptions, edChoiceValue } from "./helpers/ed-raise-into-movement";
 
 // A failed query must still fail, without copying a synthetic record's DOM into test logs.
 configure({ getElementError: () => new Error("CMHT save query failed; record-bearing diagnostics suppressed.") });
@@ -46,10 +47,10 @@ function openCommunityReferral() {
   fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
   fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
   fireEvent.click(screen.getByTestId(`ed-refer-cmht-${ID}`));
-  const team = screen.getByTestId(`ward-ed-cmht-select-${ID}`) as HTMLSelectElement;
-  const chosenTeam = team.options[1]?.value;
+  const team = screen.getByTestId(`ward-ed-cmht-select-${ID}`);
+  const chosenTeam = edChoiceOptions(`ward-ed-cmht-select-${ID}`)[0]?.value ?? "";
   expect(chosenTeam).toBeTruthy();
-  fireEvent.change(team, { target: { value: chosenTeam } });
+  chooseEdChoice(`ward-ed-cmht-select-${ID}`, chosenTeam);
   fireEvent.click(screen.getByTestId(`ward-ed-cmht-purpose-follow_up-${ID}`));
   return { chosenTeam, team };
 }
@@ -71,7 +72,7 @@ describe("ED CMHT referral confirmation", () => {
     fireEvent.click(screen.getByTestId(`ward-ed-cmht-confirm-${ID}`));
 
     expect(screen.queryByTestId(`ward-ed-cmht-panel-${ID}`)).not.toBeNull();
-    expect(screen.getByTestId(`ward-ed-cmht-select-${ID}`)).toHaveValue(chosenTeam);
+    expect(edChoiceValue(`ward-ed-cmht-select-${ID}`)).toBe(chosenTeam);
     expect(screen.getByTestId(`ward-ed-cmht-purpose-follow_up-${ID}`)).toBeChecked();
     expect(screen.getByTestId(`ward-ed-cmht-confirm-${ID}`)).toHaveAccessibleDescription("Saving change…");
 
@@ -79,7 +80,7 @@ describe("ED CMHT referral confirmation", () => {
       resolve({ commandId: "synthetic-cmht-save", status: "refused", message: "Synthetic refusal." });
     });
     expect(screen.queryByTestId(`ward-ed-cmht-panel-${ID}`)).not.toBeNull();
-    expect(screen.getByTestId(`ward-ed-cmht-select-${ID}`)).toHaveValue(chosenTeam);
+    expect(edChoiceValue(`ward-ed-cmht-select-${ID}`)).toBe(chosenTeam);
     expect(screen.getByTestId(`ward-ed-cmht-purpose-follow_up-${ID}`)).toBeChecked();
     expect(screen.getByTestId(`ward-ed-cmht-panel-${ID}`)).toHaveTextContent("Not recorded: Synthetic refusal.");
   });
@@ -126,7 +127,7 @@ describe("ED CMHT referral confirmation", () => {
     // Cancel cannot discard a referral whose outcome is still unknown.
     fireEvent.click(screen.getByTestId(`ward-ed-cmht-cancel-${ID}`));
     expect(screen.queryByTestId(`ward-ed-cmht-panel-${ID}`)).not.toBeNull();
-    expect(screen.getByTestId(`ward-ed-cmht-select-${ID}`)).toHaveValue(chosenTeam);
+    expect(edChoiceValue(`ward-ed-cmht-select-${ID}`)).toBe(chosenTeam);
     await act(async () => {
       resolve({ commandId: "synthetic-held-save", status: "accepted" });
     });
