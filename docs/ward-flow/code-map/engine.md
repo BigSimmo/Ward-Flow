@@ -21,6 +21,9 @@ counts below are unchanged.
   trim/case equivalence as registration. Deliberate device privacy placeholders and
   missing numbers remain compatible. The real import parser is covered in
   `tests/ward-retained-umrn.test.ts` (WF-DOM-003).
+  `backend/ward-flow/domain-undo-ordering.test.mjs` also exercises observation ordering
+  and both Undo boundaries through authenticated local HTTP, PostgreSQL transactions,
+  independent-store reloads and replayed refusal receipts.
 - Referral raising resolves any supplied or inherited patient ID against current
   records, including drafts retained after archive. Unidentified journeys remain
   supported (`tests/ward-referral-patient-identity.test.ts`, WF-DOM-H01).
