@@ -81,23 +81,6 @@ export function fitReason(bed: BoardBed, pick: BoardPick, isMixed: boolean): str
   return "Free now";
 }
 
-/**
- * The one fitting bed the board suggests first: for a move, a bed on the same side as the one the
- * person is in, then the lowest bed number. Null when nothing fits.
- */
-export function bestBed(beds: readonly BoardBed[], pick: BoardPick | null, isMixed: boolean): number | null {
-  if (pick === null) return null;
-  const fitting = beds.filter((bed) => boardBedFits(beds, bed, pick, isMixed));
-  if (fitting.length === 0) return null;
-  const fromSide =
-    pick.kind === "stay" ? beds.find((bed) => Number(bed.bedNumber) === pick.fromBed)?.designation : undefined;
-  const ranked = [...fitting].sort((left, right) => {
-    const sameSide = Number(right.designation === fromSide) - Number(left.designation === fromSide);
-    return sameSide !== 0 ? sameSide : Number(left.bedNumber) - Number(right.bedNumber);
-  });
-  return Number(ranked[0]!.bedNumber);
-}
-
 /** The question the board asks before a placement is sent, and the button that sends it. */
 export function placeQuestion(pick: BoardPick, bedNumber: number): { ask: string; send: string } {
   const bed = bedNumberLabel(bedNumber);

@@ -125,13 +125,11 @@ import {
 } from "./ward-screen-helpers";
 import { WardAnswerFromLink, WardDailySheetDialog, WardDischargeNotices } from "./ward-screen-lazy";
 import { WardScreenReferralsTab } from "./ward-screen-referrals-tab";
-import { WardScreenDecisionJobs } from "./ward-screen-decision-jobs";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
-import { WardConfirmBedsDialog } from "./ward-confirm-beds-dialog";
-import { WardAcceptDialog } from "./ward-answer-accept-dialog";
+import { WardAcceptDialog, WardConfirmBedsDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import { WardScreenBedDrawer } from "./ward-screen-overlays";
@@ -2444,26 +2442,28 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         />
 
         {/* ─── Confirmation Modal (Confirm Capacity Figures) ───────────── */}
-        <WardConfirmBedsDialog
-          open={confirmNumbersOpen}
-          onClose={closeCapacityModal}
-          unit={unit}
-          occupancy={occupancy}
-          capacity={capacity}
-          states={states}
-          capacityValue={capacityValue}
-          setCapacityValue={setCapacityValue}
-          staleRevision={capacityRevision !== (unit.allocatable.revision ?? 0)}
-          onStartFromCurrent={() => {
-            setCapacityValue(String(unit.allocatable.value));
-            setCapacityRevision(unit.allocatable.revision ?? 0);
-          }}
-          isRollupConfirmedToday={isRollupConfirmedToday}
-          morningRollupTimeLabel={morningRollupTimeLabel}
-          releasesTodayCount={releasesCountedToday.length}
-          onConfirmBeds={confirmBedsFromDialog}
-          onConfirmBedsAndRollup={handleConfirmBedsAndMorningRollup}
-        />
+        {confirmNumbersOpen ? (
+          <WardConfirmBedsDialog
+            open={confirmNumbersOpen}
+            onClose={closeCapacityModal}
+            unit={unit}
+            occupancy={occupancy}
+            capacity={capacity}
+            states={states}
+            capacityValue={capacityValue}
+            setCapacityValue={setCapacityValue}
+            staleRevision={capacityRevision !== (unit.allocatable.revision ?? 0)}
+            onStartFromCurrent={() => {
+              setCapacityValue(String(unit.allocatable.value));
+              setCapacityRevision(unit.allocatable.revision ?? 0);
+            }}
+            isRollupConfirmedToday={isRollupConfirmedToday}
+            morningRollupTimeLabel={morningRollupTimeLabel}
+            releasesTodayCount={releasesCountedToday.length}
+            onConfirmBeds={confirmBedsFromDialog}
+            onConfirmBedsAndRollup={handleConfirmBedsAndMorningRollup}
+          />
+        ) : null}
 
         {/* Q93: the Decisions cockpit's Accept names the person first, as the answer view does. */}
         {cockpitAcceptMovement ? (

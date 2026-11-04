@@ -329,19 +329,6 @@
   color: var(--wf-success-ink);
 }
 
-/* The one bed the board suggests first. */
-.bestTag {
-  display: inline-flex;
-  align-items: center;
-  height: 18px;
-  padding: 0 7px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--wf-success) 16%, transparent);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-  white-space: nowrap;
-  color: var(--wf-success-ink);
-}
-
 /* Surname, then the given name (D-83). The surname gives way first; the given name only takes an
    ellipsis once the surname is down to one letter. The box fills the free space so the cell can
    cut the surname to end at its ellipsis (ward-bed-board.tsx). */
@@ -660,10 +647,6 @@
   .cell {
     min-height: 88px;
     padding: var(--wf-s-2);
-  }
-
-  .bestTag {
-    padding: 0 5px;
   }
 
   .confirm {
