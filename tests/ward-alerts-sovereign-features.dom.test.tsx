@@ -37,18 +37,20 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     expect(screen.getByRole("region", { name: "ED mental health team" })).toBeInTheDocument();
   });
 
-  it("highlights rows from a hero figure without hiding any, with no owner menu on desktop", () => {
+  it("highlights rows from a checked condition without hiding any, with no owner menu on desktop", () => {
     const { container } = renderScreen();
     const total = container.querySelectorAll("li[data-alert-id]").length;
     expect(total).toBeGreaterThan(0);
 
-    const summary = screen.getByRole("group", { name: "Alert summary" });
-    const actNow = within(summary).getByRole("button", { name: /Act now/ });
-    fireEvent.click(actNow);
-    expect(actNow).toHaveAttribute("aria-pressed", "true");
+    // Alerts overhaul (4 Nov 2026): the hero no longer repeats the Act now and Waiting figures, which
+    // the Open view's chips already filter by. Highlighting stays on the checked conditions.
+    fireEvent.click(screen.getByRole("button", { name: /^Checking \d+ flagged · \d+ clear$/u }));
+    const checks = screen.getByRole("list", { name: "Conditions checked" });
+    const watch = within(checks).getByRole("button", { name: /No eligible bed/u });
+    fireEvent.click(watch);
+    expect(watch).toHaveAttribute("aria-pressed", "true");
     const highlighted = container.querySelectorAll("li[data-highlighted]");
     expect(highlighted.length).toBeGreaterThan(0);
-    for (const row of highlighted) expect(row).toHaveAttribute("data-tone", "danger");
     expect(container.querySelectorAll("li[data-alert-id]")).toHaveLength(total);
     const clear = screen.getByRole("button", { name: `Clear highlights, ${highlighted.length} highlighted` });
 
@@ -57,7 +59,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
 
     // Josh, 31 Oct 2026 (answer 17): the desktop's Owner view under Arrange by replaces the owner menu,
     // which only phones keep (tests/ward-alerts-screen.dom.test.tsx).
-    expect(screen.queryByRole("combobox", { name: "Highlight by owner" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Highlight by owner" })).not.toBeInTheDocument();
   });
 
   it("opens the most urgent alert in the side panel and moves with Next alert", () => {

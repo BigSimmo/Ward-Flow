@@ -18,9 +18,9 @@ import styles from "./alerts-today-band.module.css";
 const SPAN = 6 * 60;
 /** 24px marks with a 2px gap, so each mark meets the 24px target size and spacing (WCAG 2.5.8). */
 const ROW_HEIGHT = 26;
-/** The track's resting height: three rows above a 5px foot. Matches `.track` in the CSS. */
-const TRACK_HEIGHT = 84;
-const ROWS = 3;
+/** The track's resting height: two rows above a 5px foot (Josh, 4 Nov 2026: shorter). Matches `.track` in the CSS. */
+const TRACK_HEIGHT = 58;
+const ROWS = 2;
 /** Marks closer than this many minutes go on the next row. */
 const MIN_GAP = 10;
 /** A mark's 24px plus the 2px gap: the least distance between two marks on one row (WCAG 2.5.8). */
@@ -91,9 +91,9 @@ export function TodayBand({
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [trackWidth, setTrackWidth] = useState(0);
-  // Alerts overhaul (4 Nov 2026): the timeline folds to one line by default, so the list starts
-  // higher. The line names how many were raised today and opens the timeline in place.
-  const [open, setOpen] = useState(false);
+  // Josh review (4 Nov 2026): the dots stay in the band as a shorter strip, open by default. The
+  // glance line can still fold it away.
+  const [open, setOpen] = useState(true);
   useLayoutEffect(() => {
     const track = trackRef.current;
     if (!track) return;

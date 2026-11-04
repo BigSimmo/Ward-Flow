@@ -26,7 +26,6 @@ import type { QueueEntry } from "./alerts-queue";
 import styles from "./alerts.module.css";
 
 export type AlertsTab = "now" | "earlier";
-export type HeroPill = "act" | "wait" | "mine";
 
 // Alerts redesign (Q112, Josh 1 Nov 2026): the title is the Act now and Waiting figures, Home's
 // count included. "New to you" is gone: nothing on the page explained it.
@@ -281,7 +280,7 @@ export function AlertsHero({
                   disabledReason={broadcastDisabledReason}
                   onClick={(event) => openComposer(event.currentTarget)}
                 >
-                  Broadcast
+                  Broadcast alert
                 </Button>
               ) : null}
               <Menu

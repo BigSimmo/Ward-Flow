@@ -88,7 +88,7 @@ import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
 import { useAlertsHistory } from "./alerts-history";
-import { AlertsHero, type HeroPill } from "./alerts-hero";
+import { AlertsHero } from "./alerts-hero";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup } from "./alerts-queue-groups";
@@ -280,7 +280,6 @@ function AlertsWorkspace() {
   const [tab, setTab] = useState<AlertsTab>("now");
   useAlertsHashTab(setTab);
   const [arrangeBy, setArrangeBy] = useState<ArrangeBy>("urgency");
-  const [pill, setPill] = useState<HeroPill | null>(null);
   const [ownerHighlight, setOwnerHighlight] = useState<string | null>(null);
   const [watchHighlight, setWatchHighlight] = useState<AlertKind | null>(null);
   const [chosenId, setChosenId] = useState<string | undefined>(undefined);
@@ -502,14 +501,11 @@ function AlertsWorkspace() {
   );
   const isHighlighted = useCallback(
     (entry: Omit<QueueEntry, "highlighted">) =>
-      (pill === "act" && entry.group === "act") ||
-      (pill === "wait" && entry.group === "wait") ||
-      (pill === "mine" && entry.mine) ||
       (ownerHighlight !== null && entry.owner === ownerHighlight) ||
       (watchHighlight !== null && alertKindOf(entry.item.id) === watchHighlight),
-    [pill, ownerHighlight, watchHighlight],
+    [ownerHighlight, watchHighlight],
   );
-  const highlightOn = pill !== null || ownerHighlight !== null || watchHighlight !== null;
+  const highlightOn = ownerHighlight !== null || watchHighlight !== null;
   const toEntries = useCallback(
     (items: InboxItem[], snoozed: boolean): QueueEntry[] =>
       items
@@ -899,7 +895,6 @@ function AlertsWorkspace() {
   };
 
   const clearHighlights = () => {
-    setPill(null);
     setOwnerHighlight(null);
     setWatchHighlight(null);
   };
@@ -1209,15 +1204,10 @@ function AlertsWorkspace() {
   ];
   const shownTab: AlertsTab = tab === "broadcasts" && !showBroadcasts ? "now" : tab;
 
-  // Audit 1 (CS-15, Josh 20 Oct): an alert shown because it is first in line, not because somebody
-  // chose it, says so above its actions.
+  // Josh review (4 Nov 2026): the panel opens on the patient header. The CS-15 "First in line, not
+  // chosen yet" line above it is gone; the row stays marked in the list.
   const selectedPanel = selected ? (
     <>
-      {chosen ? null : (
-        <p className={styles.confirmNote} data-testid="ward-alerts-first-in-line">
-          First in line, not chosen yet. Check the name before you act.
-        </p>
-      )}
       <AlertDetail
         key={selected.item.id}
         item={selected.item}
