@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
-import { subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
+import { hasOpenSheet, subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
 import { PHONE_QUICK_SETTINGS } from "@/components/ward-management/settings/settings-screen-model";
 
 import { howToHref } from "./ward-help-href";
@@ -82,6 +82,19 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     admit();
     return subscribeToSheetStack(admit);
   }, [ownsFocus, howTo, step, element, targets, missing]);
+
+  // The card shows while it waits for its turn above any sheet, so Escape must still close it then.
+  // An open sheet keeps its own Escape; once the card owns focus, useModalFocus handles it.
+  useEffect(() => {
+    if (ownsFocus || !howTo || !step) return;
+    function onKey(event: globalThis.KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented || hasOpenSheet()) return;
+      event.preventDefault();
+      onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [ownsFocus, howTo, step, onClose]);
 
   const { rootRef } = useModalFocus({
     open: ownsFocus,

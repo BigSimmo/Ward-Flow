@@ -321,10 +321,12 @@ async function settledSweep(page: Page): Promise<Finding[]> {
  * Q295 (2 Nov 2026): small kit buttons are drawn at 40px on phones, so Capacity, Example ED and
  * Transport dropped to none, Alerts to 1 and Discharges to 2 (its Now/History switch, which keeps
  * the shared phone track's shorter options with a 48px hit area, as Home's queue switch does).
+ * 4 Nov 2026 (#1331): Home 12 to 11 and Waiting 3 to 2. Hosted CI measured Home at 10 and a cloud
+ * container at 11, so Home holds at 11 until both agree.
  */
 const PHONE_TARGET_BASELINE: Readonly<Record<string, number>> = {
-  "/ward-flow": 12,
-  "/ward-flow/waiting": 3,
+  "/ward-flow": 11,
+  "/ward-flow/waiting": 2,
   "/ward-flow/movements": 5,
   "/ward-flow/ward/rph-adult-secure": 1,
   "/ward-flow/board/rph-adult-secure": 2,
