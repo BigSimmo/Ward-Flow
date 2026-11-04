@@ -25,9 +25,19 @@ export function repeatTapKey(event: WardFlowEvent): string | null {
 
 export function createRepeatTapGuard(clock: () => number = () => Date.now()) {
   let last: { key: string; at: number; outcome: Outcome; refused: boolean } | undefined;
+  // Post-merge audit (4 Nov 2026): a save that failed but may still land (offline, it sends itself
+  // when the connection returns; or it waits on Retry) has a pending confirmation. Pressing the
+  // same action again before that settles gets the waiting save's answer, so the two cannot both
+  // reach the server as separate records.
+  const waiting = new Map<string, WardCommandOutcome>();
   return (event: WardFlowEvent, run: (event: WardFlowEvent) => Outcome): Outcome => {
     const key = repeatTapKey(event);
     const now = clock();
+    const held = key === null ? undefined : waiting.get(key);
+    if (key !== null && held) {
+      if (held.isCurrent?.() !== false) return Promise.resolve(held);
+      waiting.delete(key);
+    }
     if (key !== null && last && last.key === key && now - last.at < REPEAT_TAP_WINDOW_MS && !last.refused)
       return last.outcome;
     const outcome = run(event);
@@ -39,7 +49,15 @@ export function createRepeatTapGuard(clock: () => number = () => Date.now()) {
     last = entry;
     // A refused, cancelled or failed first tap does not block trying again.
     const note = (result: void | WardCommandOutcome) => {
-      if (result && result.status !== "accepted") entry.refused = true;
+      if (!result || result.status === "accepted") return;
+      entry.refused = true;
+      const confirmation = result.status === "failed" ? result.confirmation : undefined;
+      if (!confirmation) return;
+      waiting.set(key, result);
+      const settled = () => {
+        if (waiting.get(key) === result) waiting.delete(key);
+      };
+      void confirmation.then(settled, settled);
     };
     if (outcome instanceof Promise) void outcome.then(note, () => (entry.refused = true));
     else note(outcome);

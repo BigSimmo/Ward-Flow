@@ -340,7 +340,13 @@ export function GovernancePhone({
                   key={entry.id}
                   as="li"
                   name={entry.name}
-                  meta={entry.kind === "ed" ? "Emergency department" : "Ward"}
+                  meta={
+                    entry.kind === "ed"
+                      ? "Emergency department"
+                      : entry.kind === "community"
+                        ? "Community team"
+                        : "Ward"
+                  }
                   value={entry.gaps}
                   time={entry.gaps === 1 ? "gap" : "gaps"}
                   onSelect={() => setSiteId(entry.id)}
