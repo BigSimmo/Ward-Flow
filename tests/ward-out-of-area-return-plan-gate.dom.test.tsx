@@ -71,4 +71,17 @@ describe("out-of-area return plan — Send to ward gate and Mark ward agreed wir
     expect(screen.getByTestId("ward-out-of-area-recorded")).toHaveTextContent("Movement opened");
     expect(screen.getByRole("link", { name: "Open movement" })).toBeInTheDocument();
   });
+
+  it("still offers the providers with no number to call (Police escort, Ward escort, Family or carer)", () => {
+    renderBoard();
+    fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${entries[0]!.admission.id}`));
+    fireEvent.click(within(screen.getByTestId("ward-out-of-area-repat-provider-other")).getByLabelText("Ward escort"));
+    fireEvent.change(screen.getByTestId("ward-out-of-area-repat-home-hospital"), { target: { value: "RPH" } });
+    fireEvent.click(within(screen.getByTestId("ward-out-of-area-repat-mode")).getByLabelText("Road"));
+    fireEvent.change(screen.getByTestId("ward-out-of-area-repat-cad"), { target: { value: "CAD-7788" } });
+    fireEvent.click(screen.getByLabelText("Voluntary"));
+    fireEvent.change(screen.getByTestId("ward-out-of-area-repat-estimated-time"), { target: { value: "14:30" } });
+    fireEvent.click(screen.getByTestId("ward-out-of-area-repat-send"));
+    expect(screen.getByTestId("ward-out-of-area-recorded")).toHaveTextContent("Ward escort");
+  });
 });

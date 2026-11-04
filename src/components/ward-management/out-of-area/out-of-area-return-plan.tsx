@@ -22,7 +22,11 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { TRANSPORT_LEGAL_STATUSES, type TransportLegalStatus } from "@/components/ward-management/ward-model";
+import {
+  TRANSPORT_LEGAL_STATUSES,
+  type TransportLegalStatus,
+  type TravelMode,
+} from "@/components/ward-management/ward-model";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
@@ -75,6 +79,9 @@ const SERVICE_DISPLAY_NAMES: Record<string, string> = {
   CAHS: "Child and Adolescent Health Service (CAHS)",
   Private: "Authorised Private Services",
 };
+
+/** OA1: the bookable providers the Call a provider list has no number for. */
+const OTHER_PROVIDERS = ["Police escort", "Ward escort", "Family or carer"] as const satisfies readonly TravelMode[];
 
 const LEGAL_LABELS: Record<TransportLegalStatus, string> = { voluntary: "Voluntary", involuntary: "Involuntary" };
 
@@ -443,6 +450,15 @@ export function ReturnPlan({
                   note="Call the provider, then choose the one you booked."
                 />
               </div>
+              {/* The providers with no number to call are still answers the plan accepts. */}
+              <ChoicePills
+                legend="Or"
+                name={`${idPrefix}-provider-other`}
+                testId="ward-out-of-area-repat-provider-other"
+                value={OTHER_PROVIDERS.find((provider) => provider === draft.provider)}
+                options={OTHER_PROVIDERS.map((provider) => ({ value: provider, label: provider }))}
+                onChange={(provider) => onDraft({ provider })}
+              />
               <ChoicePills
                 legend="Legal status"
                 name={`${idPrefix}-legal`}
