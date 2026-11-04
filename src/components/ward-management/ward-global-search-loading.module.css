@@ -1,0 +1,32 @@
+/* The header collapses its search divs to a magnifier on phones. This separate status surface
+   stays readable below that control, without changing the loaded search or its stylesheet. */
+.feedback {
+  position: absolute;
+  top: calc(100% + var(--wf-s-2));
+  right: 0;
+  z-index: var(--z-popover, 70);
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  box-sizing: border-box;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  box-shadow: var(--wf-e1);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  text-align: left;
+  white-space: normal;
+}
+
+.feedback > span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.feedback > button {
+  flex: 0 0 auto;
+}

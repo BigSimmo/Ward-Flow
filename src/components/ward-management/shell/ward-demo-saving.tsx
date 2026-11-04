@@ -10,7 +10,7 @@ import { createContext, useContext } from "react";
  * "Typed text not kept on this device" after a reload. Saving stops only when that copy cannot be
  * made safely. Session draft recovery is separate.
  */
-export const WardDemoNotSavedContext = createContext<boolean | undefined>(undefined);
+export const WardDemoNotSavedContext = createContext<boolean | "pending" | undefined>(undefined);
 
 // The note's code (`ward-demo-saving-note.tsx`) loads only once there is something to say, which
 // keeps it off every page's first load (Josh, 21 Oct 2026: no phone script budget raises). `loading`

@@ -26,6 +26,7 @@ import { useOptionalToast } from "@/components/wf";
 
 import { PHONE_PUSH_SCOPE, PHONE_PUSH_WORKER_URL } from "./ward-phone-push";
 import { listenForInstallPrompt } from "./ward-pwa-install";
+import { confirmLeavingShell } from "./ward-leave-guard";
 
 /** Must match OPEN_MESSAGE in public/ward-flow-push-sw.js. */
 const WARD_PWA_OPEN_MESSAGE = "ward-flow-open";
@@ -103,7 +104,7 @@ export function WardPwaRegistration() {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
     const container = navigator.serviceWorker;
     let cancelled = false;
-    let reloadRequested = false;
+    let reloadRequested: ServiceWorker | null = null;
     let offered: ServiceWorker | null = null;
     let noticeId: string | null = null;
     const lifecycle = new AbortController();
@@ -115,6 +116,7 @@ export function WardPwaRegistration() {
       if (offered === worker || !notices) return;
       offered = worker;
       if (noticeId) notices.dismiss(noticeId);
+      let actionUsed = false;
       noticeId = notices.push({
         tone: "info",
         title: "New version of Ward Flow ready",
@@ -122,7 +124,14 @@ export function WardPwaRegistration() {
         action: {
           label: "Reload",
           onAction: () => {
-            reloadRequested = true;
+            if (cancelled || actionUsed) return;
+            actionUsed = true;
+            // Another tab may already have activated this exact update before this notice was tapped.
+            if (container.controller === worker || registration.active === worker) {
+              window.location.reload();
+              return;
+            }
+            reloadRequested = worker;
             worker.postMessage({ type: "SKIP_WAITING" });
           },
         },
@@ -130,11 +139,20 @@ export function WardPwaRegistration() {
     };
 
     const onControllerChange = () => {
-      if (reloadRequested) window.location.reload();
+      const requested = reloadRequested;
+      // Consume before attempting reload: a cancelled beforeunload must not arm a later update.
+      reloadRequested = null;
+      if (requested && container.controller === requested) window.location.reload();
     };
     const onMessage = (event: MessageEvent) => {
       const target = wardPwaOpenTarget(event.data, window.location.origin);
-      if (target) routerRef.current.push(target);
+      if (!target) return;
+      const navigate = () => {
+        if (cancelled) return;
+        if (target !== window.location.pathname && !confirmLeavingShell(navigate)) return;
+        routerRef.current.push(target);
+      };
+      navigate();
     };
     container.addEventListener("controllerchange", onControllerChange);
     container.addEventListener("message", onMessage);

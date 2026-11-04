@@ -217,6 +217,16 @@ describe("Add patient uncertain shared save", () => {
     expect(screen.queryByTestId("ward-add-patient-rejection")).toBeNull();
   });
 
+  it("protects the unchanged submitted form while its command is still pending", () => {
+    const reply = deferred();
+    open(() => reply.promise);
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(true);
+    expectDraft();
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
   it("warns before leaving when new typing is outside the command still awaiting an answer", () => {
     const reply = deferred();
     open(() => reply.promise);

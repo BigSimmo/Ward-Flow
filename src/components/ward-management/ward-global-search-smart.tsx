@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { MouseEvent, ReactNode } from "react";
+import { useCallback, useState, type MouseEvent, type ReactNode } from "react";
 
 import type { Census } from "@/components/ward-management/search/patient-census";
 import { answerQuestion } from "@/components/ward-management/search/search-answers";
@@ -182,4 +182,32 @@ export function EmptyTry({
       ))}
     </div>
   );
+}
+
+/** A preview belongs to a record and its world/access lifetime, not a transient result wrapper. */
+export function usePhonePreviewSelection(
+  isPhone: boolean,
+  options: readonly SearchResultItem[],
+  generation: number | undefined,
+  lifetime: string | null,
+): [SearchResultItem | undefined, (item: SearchResultItem | undefined) => void] {
+  const [selection, setSelection] = useState<{
+    kind: string;
+    id: string;
+    generation: number | undefined;
+    lifetime: string | null;
+  }>();
+  const current =
+    isPhone && selection && selection.generation === generation && selection.lifetime === lifetime
+      ? options.find((item) => item.kind === selection.kind && item.id === selection.id)
+      : undefined;
+  // Retire missing records at render so re-adding one later cannot revive a closed preview.
+  if (selection && !current) setSelection(undefined);
+  const select = useCallback(
+    (item: SearchResultItem | undefined) => {
+      setSelection(item ? { kind: item.kind, id: item.id, generation, lifetime } : undefined);
+    },
+    [generation, lifetime],
+  );
+  return [current, select];
 }

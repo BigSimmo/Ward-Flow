@@ -4,6 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 
+// Exercise Next's real loadable lifetime rather than the suite's eager dynamic stand-in.
+vi.unmock("next/dynamic");
+
 function Panel({ label }: { label: string }) {
   return <p>{label} loaded</p>;
 }
@@ -50,5 +53,32 @@ describe("withLoadRetry", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Referrals did not load");
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("updates a reopened fallback when an earlier open's retry succeeds, using the current props", async () => {
+    let complete!: (panel: typeof Panel) => void;
+    const pending = new Promise<typeof Panel>((resolve) => {
+      complete = resolve;
+    });
+    const load = vi
+      .fn<() => Promise<typeof Panel>>()
+      .mockRejectedValueOnce(new Error("ChunkLoadError"))
+      .mockReturnValue(pending);
+    const Lazy = dynamic(withLoadRetry(load, "Tasks did not load"), { loading: () => null });
+
+    const first = render(<Lazy label="Original" />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Tasks did not load");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    first.unmount();
+    const reopened = render(<Lazy label="Reopened" />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Tasks did not load");
+    // Repeated taps observe the existing load rather than starting competing requests.
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    reopened.rerender(<Lazy label="Current" />);
+    await act(async () => complete(Panel));
+    expect(await screen.findByText("Current loaded")).toBeInTheDocument();
+    expect(screen.queryByText("Original loaded")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(load).toHaveBeenCalledTimes(2);
   });
 });

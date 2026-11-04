@@ -8,7 +8,7 @@ import { WardDemoNotSavedContext } from "@/components/ward-management/shell/ward
 import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
 import { ToastDeviceSaveContext } from "@/components/wf";
 import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
-import { seedSafeSenderId, useOpenTabsDay } from "./ward-flow-open-tabs-day";
+import { useOpenTabsDay } from "./ward-flow-open-tabs-day";
 import { clearLegacySessionDrafts, setDraftScenarioScope } from "./ward-session-drafts";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { Admission, LeavingDestination } from "./ward-admissions";
@@ -65,17 +65,14 @@ import {
 import {
   clearWardFlowDemoState,
   buildScenarioFileLater,
-  deviceCopyOf,
-  deviceSaveUnchanged,
-  type DeviceSaveInputs,
-  loadTypedTextScrub,
   readDemoStateLater,
   readScenarioFileLater,
   STORAGE_UNAVAILABLE,
-  tryWriteDemoState,
   useDemoStateRead,
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
+import { useDemoDeviceSave } from "./use-demo-device-save";
+import { markDemoSaveCurrent } from "./ward-flow-demo-save-marker";
 import { BROUGHT_UP_TO_DATE_NOTICE, OPEN_ITEMS_CLOSED_NOTICE } from "./ward-flow-demo-storage-constants";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
 import * as closingLoop from "./ward-flow-closing-loop-context";
@@ -104,7 +101,6 @@ import { scenarioWardNetwork, type WardScenario } from "@/components/ward-manage
 import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import {
   WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
-  eventCarriesTypedTextPayload,
   WARD_FLOW_TYPED_TEXT_EVENT_TYPES,
   findWardFlowEventTypeCoverageGaps,
   type AssertNever,
@@ -254,8 +250,10 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
    *  presenter downloads, and a loader that replaces this world with one read back from a file.
    *  Optional so hand-built test contexts need not supply them. */
   saveScenarioFile?: () => Promise<ScenarioFileBuild>;
-  loadScenarioFile?: (text: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
-  /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
+  loadScenarioFile?: (
+    source: string | (() => Promise<string>),
+  ) => Promise<{ ok: true; isCurrent?: () => boolean } | { ok: false; reason: string; isCurrent?: () => boolean }>;
+  /** True only when the current local revision has a safely written device copy; false while pending or unavailable. */
   savingOnDevice?: boolean;
   /** Shared workspace status, error and receivedAt (device time of the last good read, 0 before one) for shared-save forms. */
   shared?: {
@@ -741,15 +739,15 @@ function WardFlowWorld({
       commandsRef.current.world.worldGeneration === generation &&
       accessLifetime.current.epoch === accessEpoch;
   }, []);
+  const importRequest = useRef(0);
   const savesOnDeviceRef = useRef(false);
   const savesOnDevice = useCallback(() => savesOnDeviceRef.current, []);
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
   const dispatchLocal = useCallback(
     (event: WardFlowEvent): WardCommandOutcome | Promise<WardCommandOutcome> => {
-      // A typed-text event stops saving on this device (the persistence effect below). Say so at once,
-      // so a toast pushed straight after this dispatch does not claim the action was saved.
-      if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
-        savesOnDeviceRef.current = false;
+      if (event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO") importRequest.current++;
+      markDemoSaveCurrent(false);
+      savesOnDeviceRef.current = false;
       ownsLocalDayRef.current = true;
       freshSeedRef.current = false;
       const commandId = `local-${++commandsRef.current.sequence}`;
@@ -980,31 +978,24 @@ function WardFlowWorld({
       return undefined;
     }
   }, [dayZero, mountedAtAbsolute, initialNow, shared.enabled]);
-  const [storageUnavailable, setStorageUnavailable] = useState(false);
-  // The world generation whose typed-text copy could not be made safely, or "loaded" to re-run the
-  // save once the copy's code arrives.
-  const [deviceCopyCheck, setDeviceCopyCheck] = useState<number | "loaded" | null>(null);
-  const typedTextLocked = container.typedTextSeen && deviceCopyCheck === state.worldGeneration;
-  // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
-  // copy cannot be made safely. Shared mode does not save actions on this device.
-  const savingOnDevice = !shared.enabled && initialNow === undefined && !typedTextLocked && !storageUnavailable;
+  const { storageUnavailable, setStorageUnavailable, savingOnDevice, saveStatus, lastDeviceSaveRef, typedTextLocked } =
+    useDemoDeviceSave({
+      shared: shared.enabled,
+      initialNow,
+      mountedAtAbsolute,
+      state,
+      container,
+      dayZero,
+      nowRef,
+      elapsedRef,
+      fixtureWorlds,
+      lastAdoptedBroadcastWorldRef,
+      freshSeedRef,
+      broadcastInstanceIdRef,
+      savesOnDeviceRef,
+    });
   useOpenTabsDay(savingOnDevice && container.sessionAdopted === true, freshSeedRef, broadcastInstanceIdRef);
   const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
-  useEffect(() => {
-    savesOnDeviceRef.current = savingOnDevice;
-  }, [savingOnDevice, state]);
-
-  // Item #17: when typed text is held and nothing is saving on this device (a refused copy or failed
-  // storage), warn before a refresh loses the day.
-  useEffect(() => {
-    if (shared.enabled || savingOnDevice || !container.typedTextSeen) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [shared.enabled, savingOnDevice, container.typedTextSeen]);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
@@ -1044,7 +1035,6 @@ function WardFlowWorld({
         openRequestSequence.current,
         nextOpenRequestSequence(saved.state.auditEvents),
       );
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage read
     if (recoveryNotice === STORAGE_UNAVAILABLE) setStorageUnavailable(true);
     const touched = touchedBeforeAdoption.current;
     dispatchContainer({
@@ -1089,66 +1079,9 @@ function WardFlowWorld({
     // downtime screen is told and takes a fresh pack from the restored world, whether or not the
     // tree is re-keyed below. A saved day identical to the seed only costs a retaken snapshot.
     if (saved) forgetDowntimePack();
-  }, [initialNow, mountedAtAbsolute, dayZero, shared.enabled, demoRead]);
+  }, [initialNow, mountedAtAbsolute, dayZero, shared.enabled, demoRead, setStorageUnavailable]);
 
   const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
-  const lastDeviceSaveRef = useRef<DeviceSaveInputs | undefined>(undefined);
-
-  useEffect(() => {
-    if (shared.enabled) return;
-    if (initialNow !== undefined || mountedAtAbsolute === null || !container.sessionAdopted) return;
-    if (storageUnavailable) return;
-    // Fresh audit P-1: a refused or empty action would store the same world again, so skip it.
-    const saveInputs = { state, held: container, locked: typedTextLocked, dayZero, mountedAtAbsolute };
-    const previousSave = lastDeviceSaveRef.current;
-    lastDeviceSaveRef.current = undefined;
-    if (deviceSaveUnchanged(previousSave, saveInputs)) {
-      lastDeviceSaveRef.current = previousSave;
-      return;
-    }
-    // D-18, option A (Josh, 21 Oct 2026): once typed text is DISPATCHED, accepted or refused, only a
-    // copy with every typed value replaced is written, or nothing until a reseed when no safe copy can
-    // be made (`deviceCopyOf`). Read from the COMMITTED container on every run, exactly as `state` is.
-    const deviceCopy = deviceCopyOf(state, container, typedTextLocked, fixtureWorlds);
-    if (deviceCopy === undefined) {
-      void loadTypedTextScrub().then(
-        () => setDeviceCopyCheck("loaded"),
-        () => setDeviceCopyCheck(state.worldGeneration),
-      );
-      return;
-    }
-    if (!deviceCopy) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage operation
-      setDeviceCopyCheck(state.worldGeneration);
-      if (!clearWardFlowDemoState()) setStorageUnavailable(true);
-      return;
-    }
-    const isFromRemoteBroadcast = lastAdoptedBroadcastWorldRef.current === state;
-    if (
-      !tryWriteDemoState(
-        deviceCopy,
-        dayZero,
-        nowRef.current,
-        mountedAtAbsolute + Math.max(0, elapsedRef.current),
-        seedSafeSenderId(isFromRemoteBroadcast || freshSeedRef.current, broadcastInstanceIdRef),
-      )
-    ) {
-      setStorageUnavailable(true);
-    } else {
-      lastDeviceSaveRef.current = saveInputs;
-    }
-  }, [
-    state,
-    container,
-    typedTextLocked,
-    deviceCopyCheck,
-    initialNow,
-    mountedAtAbsolute,
-    dayZero,
-    storageUnavailable,
-    shared.enabled,
-  ]);
-
   // Audit finding ISSUE-P1-83, defect 3e: `useCallback`, not a fresh function every render — this
   // sits in the `value` useMemo's own dependency array below, so an unstable reference defeated that
   // memo on every render regardless of whether anything the memo actually reads had changed.
@@ -1156,19 +1089,36 @@ function WardFlowWorld({
     if (!shared.enabled) clearWardFlowDemoState();
     lastDeviceSaveRef.current = undefined;
     dispatch({ type: "RESET_SCENARIO", role: "demo", now: nowRef.current });
-  }, [dispatch, shared.enabled]);
+  }, [dispatch, shared.enabled, lastDeviceSaveRef]);
 
   const saveScenarioFile = useCallback(() => buildScenarioFileLater(state, nowRef.current), [state]);
 
   const loadScenarioFile = useCallback(
-    async (text: string): Promise<{ ok: true } | { ok: false; reason: string }> => {
+    async (source: string | (() => Promise<string>)) => {
+      const request = ++importRequest.current;
+      const current = () => commandsRef.current.active && importRequest.current === request;
+      const retired = () => ({
+        ok: false as const,
+        reason: "A newer scenario action replaced this import.",
+        isCurrent: () => false,
+      });
       if (shared.enabled)
         return {
           ok: false,
           reason:
             "Scenario file replacement is available only in the local demonstration. Shared changes must use audited commands.",
         };
+      let text: string;
+      try {
+        text = typeof source === "string" ? source : await source();
+      } catch {
+        return current()
+          ? { ok: false as const, reason: "That file could not be read, so nothing was loaded." }
+          : retired();
+      }
+      if (!current()) return retired();
       const read = await readScenarioFileLater(text);
+      if (!current()) return retired();
       if (!read.ok) return read;
       if (read.now < NOW_ANCHOR + read.state.clockOffsetMinutes)
         return { ok: false, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };
@@ -1190,13 +1140,15 @@ function WardFlowWorld({
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
       clearReferralDraftSession();
       ownsLocalDayRef.current = true;
+      markDemoSaveCurrent(false);
+      savesOnDeviceRef.current = false;
       commandsRef.current.world = world;
       dispatchContainer({
         type: "LOAD_SCENARIO_FILE_INTERNAL",
         world,
         restoredElapsed: read.now - read.state.clockOffsetMinutes - base,
       });
-      return { ok: true };
+      return { ok: true as const };
     },
     [initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
   );
@@ -1341,7 +1293,7 @@ function WardFlowWorld({
       resetDemoState,
       saveScenarioFile,
       loadScenarioFile,
-      savingOnDevice: initialNow !== undefined ? !typedTextLocked && !storageUnavailable : savingOnDevice,
+      savingOnDevice: initialNow !== undefined ? !typedTextLocked && !storageUnavailable : saveStatus === true,
       shared: sharedStatus,
       demoControlsAvailable,
     }),
@@ -1373,7 +1325,7 @@ function WardFlowWorld({
       resetDemoState,
       saveScenarioFile,
       loadScenarioFile,
-      savingOnDevice,
+      saveStatus,
       storageUnavailable,
       initialNow,
       now,
@@ -1405,9 +1357,7 @@ function WardFlowWorld({
             }
           >
             <WardDemoNotSavedContext.Provider
-              value={
-                shared.enabled || initialNow !== undefined || !container.typedTextSeen ? undefined : savingOnDevice
-              }
+              value={shared.enabled || initialNow !== undefined || !container.typedTextSeen ? undefined : saveStatus}
             >
               <ToastDeviceSaveContext.Provider value={savesOnDevice}>
                 <WardFlowClockContext.Provider value={now}>

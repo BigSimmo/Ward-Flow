@@ -23,8 +23,9 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+import { NextBarMount } from "@/components/ward-management/shell-next/next-bar";
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
-import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
+import { openWardMenu, openWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -55,6 +56,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  delete (window as typeof window & { __wardFlowConfirmNavigation?: unknown }).__wardFlowConfirmNavigation;
   installMatchMediaStub(false);
   act(() => {
     setWardFeatureFlagOnDevice("role-access", null);
@@ -370,5 +372,47 @@ describe("the bar's Alerts button", () => {
     await act(() => new Promise((resolve) => requestAnimationFrame(() => resolve(undefined))));
     expect(document.activeElement).toBe(within(row).getByTestId("ward-alerts-open"));
     tabs.remove();
+  });
+});
+
+// WF-RUN-01: search and drawer requests reach the same phone-only route callback.
+describe.each([
+  ["current", NextBarMount],
+  ["legacy", WardBar],
+])("%s phone Alerts departure", (_name, Bar) => {
+  it("retains the page after refusal and navigates once after asynchronous leave approval", () => {
+    installMatchMediaStub(true);
+    let approve: (() => void) | undefined;
+    const guard = vi.fn((proceed?: () => void) => {
+      approve = proceed;
+      return false;
+    });
+    (window as typeof window & { __wardFlowConfirmNavigation?: typeof guard }).__wardFlowConfirmNavigation = guard;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Bar />
+      </WardFlowProvider>,
+    );
+    act(() => openWardDrawer("tasks"));
+    expect(guard).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(screen.getByTestId("ward-bar-tasks-trigger")).toBeInTheDocument();
+    act(() => approve?.());
+    expect(mockRouterPush).toHaveBeenCalledExactlyOnceWith(WARD_ALERTS_HREF);
+  });
+
+  it("keeps same-route queue focus free of leave prompts", () => {
+    installMatchMediaStub(true);
+    route.pathname = WARD_ALERTS_HREF;
+    const guard = vi.fn(() => false);
+    (window as typeof window & { __wardFlowConfirmNavigation?: typeof guard }).__wardFlowConfirmNavigation = guard;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Bar />
+      </WardFlowProvider>,
+    );
+    act(() => openWardDrawer("tasks"));
+    expect(guard).not.toHaveBeenCalled();
+    expect(mockRouterPush).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   SharedWorkspaceClient,
   type SharedSnapshot,
@@ -203,6 +203,118 @@ describe("shared workspace resilience (audit 4)", () => {
     expect(posts).toBe(1);
     client.dispose();
   });
+
+  it.each(["after", "during"] as const)(
+    "keeps a committed command idempotent after its response is lost and changes desk %s the resend",
+    async (switchWhen) => {
+      const membership = "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d";
+      let workingAs: string | null = "bootstrap";
+      let view: SharedView | undefined;
+      let commits = 0;
+      let releaseReplay!: (response: Response) => void;
+      let replaySignal: AbortSignal | null | undefined;
+      const receipts = new Map<string, SharedSnapshot>();
+      const sent: { body: string; desk: string | null }[] = [];
+      const committed = snapshot(2);
+      committed.payload = {
+        ...committed.payload,
+        state: { ...state, configuration: { ...state.configuration, pullHoldMinutes: 45 } },
+      };
+      const nextWorkspace = snapshot(8);
+      nextWorkspace.payload = {
+        ...nextWorkspace.payload,
+        state: { ...state, worldGeneration: state.worldGeneration + 1 },
+      };
+      const client = new SharedWorkspaceClient({
+        baseUrl: "https://example.test",
+        token: async () => "synthetic-token",
+        manageDrafts: false,
+        workingAs: {
+          get: () => workingAs,
+          set: (id) => {
+            workingAs = id;
+          },
+        },
+        changed: (next) => {
+          view = next;
+        },
+        fetch: async (_url, init) => {
+          const desk = new Headers(init?.headers).get("x-ward-working-as");
+          if (!init?.body)
+            return Response.json({
+              snapshot: desk === membership ? nextWorkspace : commits ? committed : snapshot(1),
+              workingAs: desk,
+            });
+          const body = String(init.body);
+          const { commandId } = JSON.parse(body) as { commandId: string };
+          sent.push({ body, desk });
+          // Mock the server's durable receipt: applying happens before the first reply is lost.
+          if (!receipts.has(commandId)) {
+            commits++;
+            receipts.set(commandId, committed);
+          }
+          if (sent.length === 1) throw new TypeError("Synthetic response lost after server commit");
+          if (switchWhen === "during") {
+            replaySignal = init.signal;
+            return new Promise<Response>((resolve) => {
+              releaseReplay = resolve;
+            });
+          }
+          return Response.json({ outcome: "accepted", replayed: true, snapshot: receipts.get(commandId) });
+        },
+      });
+      try {
+        await client.refresh();
+        const uncertain = await client.dispatch(event);
+        expect(uncertain.status).toBe("failed");
+        expect(commits).toBe(1);
+        expect(view?.snapshot?.revision).toBe(1);
+        expect(view?.unconfirmedSave).toBe(true);
+
+        if (switchWhen === "after") {
+          // A good read now automatically resends the held command, using its original identity.
+          await client.refresh();
+          const accepted = await uncertain.confirmation!;
+          expect(accepted.status).toBe("accepted");
+          expect(accepted.isCurrent?.()).toBe(true);
+          expect(view?.snapshot?.revision).toBe(2);
+          expect(view?.snapshot?.payload.state.configuration.pullHoldMinutes).toBe(45);
+          expect(view?.eventLog).toHaveLength(1);
+          client.chooseRole(membership);
+          await vi.waitFor(() => expect(view?.status).toBe("ready"));
+          expect(accepted.isCurrent?.()).toBe(false);
+        } else {
+          const retry = client.retry();
+          await vi.waitFor(() => expect(releaseReplay).toBeDefined());
+          // A queued edit belongs to the old desk too; it must not leak into the replacement view.
+          const queued = client.dispatch({ ...event, unitId: "ward-other" } as WardFlowEvent);
+          client.chooseRole(membership);
+          expect(replaySignal?.aborted).toBe(true);
+          releaseReplay(Response.json({ outcome: "accepted", replayed: true, snapshot: committed }));
+          await retry;
+          expect((await uncertain.confirmation)?.status).toBe("cancelled");
+          expect((await queued).status).toBe("cancelled");
+          await vi.waitFor(() => expect(view?.status).toBe("ready"));
+        }
+        expect(sent).toHaveLength(2);
+        expect(sent[0]).toEqual(sent[1]);
+        expect(sent[0].desk).toBe("bootstrap");
+        expect(JSON.parse(sent[0].body)).toMatchObject({ expectedRevision: 1, commandId: uncertain.commandId });
+        expect(commits).toBe(1);
+        expect(receipts.size).toBe(1);
+        expect(view?.workingAs).toBe(membership);
+        expect(view?.snapshot?.revision).toBe(8);
+        expect(view?.snapshot?.payload.state.worldGeneration).toBe(state.worldGeneration + 1);
+        expect(view?.eventLog).toEqual([]);
+        expect(view?.waiting).toBe(0);
+        expect(view?.unconfirmedSave).toBe(false);
+        await client.retry();
+        expect(sent).toHaveLength(2);
+      } finally {
+        client.dispose();
+      }
+    },
+  );
 
   it("says the server is busy after a 429, not to review the workflow (A4-08)", async () => {
     const { client, view } = setup(({ read }) =>

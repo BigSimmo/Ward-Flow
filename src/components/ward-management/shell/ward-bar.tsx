@@ -513,13 +513,15 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
       if (id === "tasks" && oneAlertsQueue && (isPhone || onAlertsScreen)) {
         if (onAlertsScreen) focusAlertsQueue(tasksActiveCount);
         else {
-          // The referral sheet can persist across routes; close it through the normal lifecycle
-          // before sending the person to Alerts.
-          if (openPanel !== null) {
-            navigationPendingRef.current = true;
-            closePopover(openPanel, false);
-          }
-          router.push(WARD_ALERTS_HREF);
+          const go = () => {
+            // Close a persistent sheet only after every mounted leave guard approves.
+            if (openPanel !== null) {
+              navigationPendingRef.current = true;
+              closePopover(openPanel, false);
+            }
+            router.push(WARD_ALERTS_HREF);
+          };
+          if (confirmLeavingShell(go)) go();
         }
         return;
       }

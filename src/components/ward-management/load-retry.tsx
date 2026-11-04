@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentType } from "react";
+import { useSyncExternalStore, type ComponentType } from "react";
 
 import { Button, StatusGlyph } from "@/components/wf";
 
@@ -21,10 +21,35 @@ export function withLoadRetry<P extends object>(
   title: string,
 ): () => Promise<ComponentType<P>> {
   let loaded: ComponentType<P> | undefined;
-  const loadOnce = () => load().then((panel) => (loaded = panel));
+  let pending: Promise<ComponentType<P>> | undefined;
+  const listeners = new Set<() => void>();
+  const subscribe = (listener: () => void) => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  };
+  const snapshot = () => loaded;
+  const loadOnce = () => {
+    if (loaded) return Promise.resolve(loaded);
+    if (pending) return pending;
+    pending = Promise.resolve()
+      .then(load)
+      .then((panel) => {
+        loaded = panel;
+        listeners.forEach((listener) => listener());
+        return panel;
+      })
+      .finally(() => {
+        pending = undefined;
+      });
+    return pending;
+  };
 
   function LoadRetry(props: P) {
-    const [Panel, setPanel] = useState(() => loaded);
+    // Each open observes the shared code cache, including a retry begun by an earlier open.
+    // Only the component is cached: the mounted panel always receives this open's current props.
+    const Panel = useSyncExternalStore(subscribe, snapshot, snapshot);
     if (Panel) return <Panel {...props} />;
     // A drawer that draws its own header (Referrals, Tasks) has no other close control on a phone.
     const { onClose } = props as { onClose?: () => void };
@@ -34,16 +59,7 @@ export function withLoadRetry<P extends object>(
           <StatusGlyph tone="danger" />
           <strong>{title}.</strong> <span>Check the connection, then try again.</span>
         </p>
-        <Button
-          variant="sec"
-          size="lg"
-          onClick={() =>
-            loadOnce().then(
-              (panel) => setPanel(() => panel),
-              () => {},
-            )
-          }
-        >
+        <Button variant="sec" size="lg" onClick={() => void loadOnce().catch(() => {})}>
           Try again
         </Button>
         {onClose ? (

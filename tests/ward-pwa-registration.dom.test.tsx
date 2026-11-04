@@ -14,6 +14,7 @@ import {
   wardPwaOpenTarget,
 } from "@/components/ward-management/shell/ward-pwa-registration";
 import { ToastProvider } from "@/components/wf";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 
 /** PWA plan items 5, 6 and 11 and F-11 (Oct 2026): one worker registration, the update notice, install. */
 
@@ -143,8 +144,72 @@ describe("WardPwaRegistration", () => {
     fireEvent.click(button);
     expect(waiting.postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
     expect(reload).not.toHaveBeenCalled();
+    browser.container.controller = waiting;
     act(() => browser.emit("controllerchange"));
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("reloads when another tab activated the offered worker before its older Reload notice was tapped", async () => {
+    const waiting = fakeWorker();
+    const browser = installServiceWorker({ waiting });
+    const reload = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, reload } as Location);
+    renderRegistration();
+    const button = await screen.findByRole("button", { name: "Reload" });
+
+    browser.container.controller = waiting;
+    browser.registration.active = waiting;
+    act(() => browser.emit("controllerchange"));
+    expect(reload).not.toHaveBeenCalled();
+    fireEvent.click(button);
+
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(waiting.postMessage).not.toHaveBeenCalled();
+  });
+
+  it("consumes a cancelled reload attempt before a separate later update changes the controller", async () => {
+    function DirtyForm() {
+      useDirtyStateGuard({ isDirty: true });
+      return <input aria-label="Synthetic unfinished work" defaultValue="Synthetic draft" />;
+    }
+    const waiting = fakeWorker();
+    const browser = installServiceWorker({ waiting });
+    const prevented: boolean[] = [];
+    const reload = vi.fn(() => {
+      const unload = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(unload);
+      prevented.push(unload.defaultPrevented);
+      // The browser retains the page when the person cancels its unload prompt.
+    });
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, reload } as Location);
+    render(
+      <ToastProvider>
+        <DirtyForm />
+        <WardPwaRegistration />
+      </ToastProvider>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Reload" }));
+    browser.container.controller = waiting;
+    act(() => browser.emit("controllerchange"));
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(prevented).toEqual([true]);
+    expect(screen.getByLabelText("Synthetic unfinished work")).toHaveValue("Synthetic draft");
+
+    browser.container.controller = fakeWorker("activated");
+    act(() => browser.emit("controllerchange"));
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reload for a controller different from the requested worker", async () => {
+    const waiting = fakeWorker();
+    const browser = installServiceWorker({ waiting });
+    const reload = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, reload } as Location);
+    renderRegistration();
+    fireEvent.click(await screen.findByRole("button", { name: "Reload" }));
+    browser.container.controller = fakeWorker("activated");
+    act(() => browser.emit("controllerchange"));
+    expect(reload).not.toHaveBeenCalled();
   });
 
   it("offers Reload when an update finishes installing while the page is open", async () => {
@@ -168,6 +233,56 @@ describe("WardPwaRegistration", () => {
     // A controllerchange with no tap does not reload either.
     act(() => browser.emit("controllerchange"));
     expect(screen.queryByRole("button", { name: "Reload" })).not.toBeInTheDocument();
+  });
+
+  it("asks the composed leave guard before a notification routes away, retaining text on decline", async () => {
+    function DirtyForm() {
+      useDirtyStateGuard({ isDirty: true });
+      return <input aria-label="Synthetic unfinished work" defaultValue="Synthetic draft" />;
+    }
+    const browser = installServiceWorker();
+    render(
+      <ToastProvider>
+        <DirtyForm />
+        <WardPwaRegistration />
+      </ToastProvider>,
+    );
+    await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
+    const openAlert = () => browser.emit("message", { data: { type: "ward-flow-open", url: "/ward-flow/alerts" } });
+    act(openAlert);
+    expect(await screen.findByRole("alertdialog", { name: "Leave this page?" })).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Keep editing" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Synthetic unfinished work")).toHaveValue("Synthetic draft");
+
+    act(openAlert);
+    fireEvent.click(await screen.findByRole("button", { name: "Leave without saving" }));
+    await waitFor(() => expect(push).toHaveBeenCalledExactlyOnceWith("/ward-flow/alerts"));
+  });
+
+  it("does not ask the leave guard for a notification targeting the current route", async () => {
+    function DirtyForm() {
+      useDirtyStateGuard({ isDirty: true });
+      return null;
+    }
+    const browser = installServiceWorker();
+    vi.spyOn(window, "location", "get").mockReturnValue({
+      ...window.location,
+      pathname: "/ward-flow/alerts",
+    } as Location);
+    const confirm = vi.spyOn(window, "confirm");
+    render(
+      <ToastProvider>
+        <DirtyForm />
+        <WardPwaRegistration />
+      </ToastProvider>,
+    );
+    await waitFor(() => expect(browser.container.register).toHaveBeenCalled());
+    act(() => browser.emit("message", { data: { type: "ward-flow-open", url: "/ward-flow/alerts" } }));
+    expect(push).toHaveBeenCalledExactlyOnceWith("/ward-flow/alerts");
+    expect(confirm).not.toHaveBeenCalled();
   });
 
   it("opens the Ward Flow page a tapped alert asks for, and nothing outside Ward Flow", async () => {

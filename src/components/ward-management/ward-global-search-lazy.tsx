@@ -14,7 +14,7 @@ import {
   useState,
 } from "react";
 
-import { useIsPhone } from "@/components/wf";
+import { Button, useIsPhone } from "@/components/wf";
 import { isGlobalSearchShortcut } from "./search/search-shortcut";
 import { useEffectiveWardAccess, useWardAccessSnapshot } from "./shell/ward-access-store";
 import { useWardPartialDisplayHost } from "./ward-partial-view";
@@ -22,6 +22,7 @@ import { useCanOpenHref } from "./shell/ward-access";
 import { canDispatch } from "./ward-role-permissions";
 import type { WardGlobalSearchProps } from "./ward-global-search";
 import styles from "./ward-global-search.module.css";
+import loadingStyles from "./ward-global-search-loading.module.css";
 // The palette's preview styles stay in the shell's own stylesheet, in the same order as before, so
 // the desktop page is drawn exactly as it was. Only the search's script is split out.
 import "./search/global-search-preview.module.css";
@@ -150,6 +151,12 @@ function DeskSearch(props: WardGlobalSearchProps) {
         label={props.label ?? "Search"}
         placeholder={props.placeholder ?? "Search people and movements…"}
         scope={props.scope}
+        failed={failed}
+        onRetry={() => {
+          // Keep focus in the field for the existing hand-off to the authorised search.
+          fieldRef.current?.focus();
+          retry();
+        }}
         onChange={(value) => {
           setDraft(value);
           retry();
@@ -173,6 +180,8 @@ function SearchField({
   label,
   placeholder,
   scope,
+  failed,
+  onRetry,
   onChange,
   onFocus,
   onPointerDown,
@@ -181,12 +190,14 @@ function SearchField({
   label: string;
   placeholder: string;
   scope: ReactNode;
+  failed: boolean;
+  onRetry: () => void;
   onChange: (value: string) => void;
   onFocus: () => void;
   onPointerDown: () => void;
 }) {
   const id = useId();
-  const hintId = `${id}-hint`;
+  const statusId = `${id}-status`;
   return (
     <div className={styles.root} data-testid="ward-global-search">
       {scope !== undefined ? (
@@ -209,7 +220,7 @@ function SearchField({
           autoCapitalize="none"
           enterKeyHint="search"
           spellCheck={false}
-          aria-describedby={hintId}
+          aria-describedby={statusId}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
@@ -227,9 +238,18 @@ function SearchField({
           /
         </kbd>
       </div>
-      <span className={styles.guidance} id={hintId}>
-        Press <kbd>/</kbd> or <kbd>Ctrl K</kbd> to search from anywhere. <kbd>Esc</kbd> clears.
-      </span>
+      <aside className={loadingStyles.feedback} id={statusId} role="status" aria-live="polite">
+        {failed ? (
+          <>
+            <span>Search did not load. Check the connection.</span>
+            <Button variant="sec" onClick={onRetry}>
+              Try again
+            </Button>
+          </>
+        ) : (
+          "Loading search…"
+        )}
+      </aside>
     </div>
   );
 }

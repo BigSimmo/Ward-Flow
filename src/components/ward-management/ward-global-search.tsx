@@ -50,6 +50,7 @@ import { ChevronRight, Search, X } from "lucide-react";
 import styles from "./ward-global-search.module.css";
 import {
   needsYouMeta,
+  recentViewItem,
   censusRowItem,
   smartSearchGroups,
   closingFirst,
@@ -72,6 +73,7 @@ import {
   TryAsking,
   quickPatientHref,
   withGoTo,
+  usePhonePreviewSelection,
 } from "./ward-global-search-smart";
 
 export {
@@ -450,6 +452,7 @@ export function WardGlobalSearch({
   const recents = useMemo(
     () =>
       (!open ? [] : recentRecords).flatMap((recent): SearchResultItem[] => {
+        if (recent.kind === "view") return recentViewItem(recent.id, canOpenHref);
         if (recent.kind === "task") {
           const task = tasks?.find((candidate) => candidate.id === recent.id);
           return task
@@ -502,6 +505,7 @@ export function WardGlobalSearch({
     [
       open,
       recentRecords,
+      canOpenHref,
       tasks,
       lookup,
       nameFor,
@@ -667,8 +671,12 @@ export function WardGlobalSearch({
    * movement, referral or task first shows the same preview as a sheet over the results, with its
    * own Open buttons. Screens, places and actions still open straight away.
    */
-  const [sheetItem, setSheetItem] = useState<SearchResultItem | undefined>(undefined);
-  const phoneSheetItem = isPhone && sheetItem && options.includes(sheetItem) ? sheetItem : undefined;
+  const [phoneSheetItem, setSheetSelection] = usePhonePreviewSelection(
+    isPhone,
+    options,
+    wardFlow?.worldGeneration,
+    accessLifetime,
+  );
 
   /*
    * D1-style fix, same reason `PatientTypeahead` carries it: the list clips with its own scrollbar,
@@ -757,12 +765,12 @@ export function WardGlobalSearch({
   // Set by Cancel when it hands focus back to the field, so that focus does not reopen the palette.
   const skipOpenOnFocusRef = useRef(false);
 
-  function close() {
-    setSheetItem(undefined);
+  const close = useCallback(() => {
+    setSheetSelection(undefined);
     setOpen(false);
     setActiveIndex(-1);
     setHoverIndex(-1);
-  }
+  }, [setSheetSelection]);
 
   useEffect(() => {
     if (!open) return;
@@ -773,7 +781,7 @@ export function WardGlobalSearch({
     }
     document.addEventListener("mousedown", onDocumentPointerDown);
     return () => document.removeEventListener("mousedown", onDocumentPointerDown);
-  }, [open]);
+  }, [open, close]);
 
   // "/" or Ctrl/Cmd K focuses this from anywhere (`search/search-shortcut.ts`).
   useEffect(() => {
@@ -1195,7 +1203,7 @@ export function WardGlobalSearch({
                                     }
                                     if (event.button === 0 && plain && isPhone && SHEET_KINDS.has(item.kind)) {
                                       event.preventDefault();
-                                      setSheetItem(item);
+                                      setSheetSelection(item);
                                       return;
                                     }
                                     onOptionClick(event, item.href);
@@ -1289,7 +1297,7 @@ export function WardGlobalSearch({
         </div>
 
         {phoneSheetItem ? (
-          <PhoneSheet title={phoneSheetItem.title} inert={!resultsCurrent} onClose={() => setSheetItem(undefined)}>
+          <PhoneSheet title={phoneSheetItem.title} inert={!resultsCurrent} onClose={() => setSheetSelection(undefined)}>
             <GlobalSearchPreview
               canOpenHref={canOpenHref}
               item={phoneSheetItem}

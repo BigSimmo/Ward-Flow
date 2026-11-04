@@ -362,6 +362,7 @@ export function AddPatientForm() {
   });
   useDirtyStateGuard({
     isDirty:
+      isSubmitting ||
       Boolean(priorSubmissionRef.current?.unconfirmed) ||
       (isDirty &&
         (!isSubmitting || JSON.stringify(formSnapshot()) !== JSON.stringify(priorSubmissionRef.current?.form))),

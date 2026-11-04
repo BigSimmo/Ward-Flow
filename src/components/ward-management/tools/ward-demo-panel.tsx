@@ -3,7 +3,7 @@
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { ChevronDown } from "lucide-react";
-import { type ChangeEvent, useId, useRef, useState } from "react";
+import { type ChangeEvent, useEffect, useId, useRef, useState } from "react";
 
 import { Dialog } from "@/components/wf";
 
@@ -123,6 +123,15 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
   const resetScenarios: readonly string[] = DEMO_RESET_SCENARIOS;
   const pickable = resetOn ? WARD_SCENARIOS.filter((candidate) => !resetScenarios.includes(candidate)) : WARD_SCENARIOS;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileRequest = useRef(0);
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      fileRequest.current += 1;
+    };
+  }, []);
 
   async function saveToFile() {
     if (!saveScenarioFile) return;
@@ -146,6 +155,7 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
     const pending = confirming;
     setConfirming(null);
     if (!pending) return;
+    fileRequest.current += 1;
     const from = worldGeneration;
     const label = scenarioLabels[pending.kind === "load" ? pending.scenario : scenario];
     const notConfirmed =
@@ -185,14 +195,11 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
     const file = input.files?.[0];
     input.value = "";
     if (!file || !loadScenarioFile) return;
-    let text: string;
-    try {
-      text = await file.text();
-    } catch {
-      setMessage("That file could not be read, so nothing was loaded.");
-      return;
-    }
-    const result = await loadScenarioFile(text);
+    const request = ++fileRequest.current;
+    // The provider owns intent before reading starts, so a slow old file cannot replace a newer
+    // import or reset. Keep only this mounted panel's latest result in its status line.
+    const result = await loadScenarioFile(() => file.text());
+    if (!mounted.current || request !== fileRequest.current || result.isCurrent?.() === false) return;
     setMessage(result.ok ? "Scenario loaded." : result.reason);
   }
 
