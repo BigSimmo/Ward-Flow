@@ -645,14 +645,23 @@ export function PatientNowScreen({
   // D-38 ward actions on the stay, raised under the viewer's own role (the coordinator may take every
   // action, Josh 10 Oct 2026) and scoped to the ward the stay is on.
   function recordReturn() {
-    if (stayLeaveBed && gate("END_LEAVE_BED").allowed)
-      dispatch({
-        type: "END_LEAVE_BED",
-        role: routeRole,
-        now,
-        leaveBedId: stayLeaveBed.id,
-        actingUnitId: stayLeaveBed.unitId,
-      });
+    if (!stayLeaveBed || !gate("END_LEAVE_BED").allowed) return;
+    const leaveBed = stayLeaveBed;
+    // Tier 1 item 6 (Josh, 4 Nov 2026): a return tapped by mistake comes back from its toast.
+    runStep(
+      { type: "END_LEAVE_BED", role: routeRole, now, leaveBedId: leaveBed.id, actingUnitId: leaveBed.unitId },
+      {
+        success: "Returned from leave",
+        undo: (at) => ({
+          type: "UNDO_BED_STEP",
+          role: routeRole,
+          now: at,
+          leaveBedId: leaveBed.id,
+          ...(routeRole === "ward" ? { actingUnitId: leaveBed.unitId } : {}),
+        }),
+        undone: "Undone. Back on leave.",
+      },
+    );
   }
   function markAbsent() {
     const stay = resolved?.liveAdmission;
@@ -850,13 +859,28 @@ export function PatientNowScreen({
         step,
       });
     },
+    // Tier 1 item 6 (Josh, 4 Nov 2026): recording or ending an order offers Undo on its toast.
     onRecordCto: () => {
-      if (livePatient && gate("RECORD_COMMUNITY_TREATMENT_ORDER").allowed)
-        dispatch({ type: "RECORD_COMMUNITY_TREATMENT_ORDER", role: routeRole, now, patientId: livePatient.id });
+      if (!livePatient || !gate("RECORD_COMMUNITY_TREATMENT_ORDER").allowed) return;
+      const patientId = livePatient.id;
+      runStep(
+        { type: "RECORD_COMMUNITY_TREATMENT_ORDER", role: routeRole, now, patientId },
+        {
+          success: "Community treatment order recorded",
+          undo: (at) => ({ type: "UNDO_PATIENT_RECORD", role: routeRole, now: at, patientId }),
+        },
+      );
     },
     onEndCto: () => {
-      if (livePatient && gate("END_COMMUNITY_TREATMENT_ORDER").allowed)
-        dispatch({ type: "END_COMMUNITY_TREATMENT_ORDER", role: routeRole, now, patientId: livePatient.id });
+      if (!livePatient || !gate("END_COMMUNITY_TREATMENT_ORDER").allowed) return;
+      const patientId = livePatient.id;
+      runStep(
+        { type: "END_COMMUNITY_TREATMENT_ORDER", role: routeRole, now, patientId },
+        {
+          success: "Community treatment order ended",
+          undo: (at) => ({ type: "UNDO_PATIENT_RECORD", role: routeRole, now: at, patientId }),
+        },
+      );
     },
     roleLimit: (eventType) => gate(eventType).reason,
     handoverRefusal:

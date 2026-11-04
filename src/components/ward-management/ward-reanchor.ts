@@ -152,6 +152,9 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "stoppedAt",
   "clearedAt",
   "leftDepartmentAt",
+  // LegalForm.reviewBy (4 Nov 2026): the review date typed from the paper form. It is a point on
+  // the day, so it moves with every other instant when the demo clock re-anchors.
+  "reviewBy",
   // 2026-09-17, with `CORRECT_LEGAL_FORM_RECEIPT`'s audit details on `ward-audit.ts`
   // (`AuditEvent["details"]["correctedReceivedAt"]`). It names the ORIGINAL receipt instant being
   // corrected away, so it must move with every other instant or the audit trail would show a

@@ -441,6 +441,7 @@ export function reduceReferralSendEvent(
       const updated: Movement = {
         ...movement,
         legalFormReceivedAt: undefined,
+        legalFormReceivedTyped: undefined,
         legalFormReceiptCorrections: [...(movement.legalFormReceiptCorrections ?? []), correction],
       };
       // Audited as "legal-form" (`classifyAuditEvent`); without this the stored change was

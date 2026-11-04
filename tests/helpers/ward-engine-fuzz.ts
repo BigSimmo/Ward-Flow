@@ -1038,7 +1038,14 @@ const inboxEvent =
   };
 
 /** The field an undo record's subject lives in: movement, referral or stay, else the network. */
-function undoSubjectField(state: WardFlowState, subjectId: string): Record<string, string> {
+function undoSubjectField(state: WardFlowState, subjectId: string): Record<string, string | number> {
+  // Tier 1 item 6 (4 Nov 2026): bed, leave, booking and patient subjects carry a prefix.
+  const [prefix, ...rest] = subjectId.split(":");
+  if (prefix === "leave") return { leaveBedId: rest.join(":") };
+  if (prefix === "planned") return { plannedAdmissionId: rest.join(":") };
+  if (prefix === "patient") return { patientId: rest.join(":") };
+  if (prefix === "bed" && rest.length >= 2)
+    return { unitId: rest.slice(0, -1).join(":"), bedNumber: Number(rest.at(-1)) };
   if (state.movements.some((movement) => movement.id === subjectId)) return { movementId: subjectId };
   if (state.referrals.some((referral) => referral.id === subjectId)) return { referralId: subjectId };
   if (state.admissions.some((stay) => stay.id === subjectId)) return { admissionId: subjectId };
@@ -1469,7 +1476,9 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     }),
   ],
   [
-    0.5,
+    // Raised from 0.5 on 4 Nov 2026: the gap list and Tier 1 undo builders thinned the draw so far
+    // that 1000 seeds no longer reached an accepted handover sign-off undo.
+    1.5,
     (state) => {
       const record = (state.undoRecords ?? []).findLast(
         (candidate) => candidate.kind === "step" && candidate.undoType === "UNDO_SITE_HANDOVER_SIGN_OFF",
@@ -1619,6 +1628,22 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     (state, random) => {
       const patient = prefer(random, state.patients, (candidate) => candidate.id.startsWith("PT-A"));
       return { type: "ARCHIVE_PATIENT", patientId: patient?.id ?? MISSING_ID, reason: "test" };
+    },
+  ],
+  // Tier 1 item 6 (4 Nov 2026): take back the newest patient record step, so a sweep step always sends it.
+  [
+    1,
+    (state, random) => {
+      const record = (state.undoRecords ?? [])
+        .flatMap((candidate) =>
+          candidate.kind === "step" && candidate.undoType === "UNDO_PATIENT_RECORD" ? [candidate] : [],
+        )
+        .at(-1);
+      const subject = record?.subjectId ?? "";
+      const patientId = subject.startsWith("patient:")
+        ? subject.slice("patient:".length)
+        : (pick(random, state.patients)?.id ?? MISSING_ID);
+      return { type: "UNDO_PATIENT_RECORD", patientId, ...(record ? { role: record.role } : {}) };
     },
   ],
   // Movement facts: arrival details, flags, blockers, escalation, documents.
@@ -1799,6 +1824,23 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         actingUnitId: id(unit),
         episodeId: episode?.id ?? MISSING_ID,
         endedAt: currentNow - pick(random, [0, 5, 3000])!,
+      };
+    },
+  ],
+  [
+    0.5,
+    (state, random) => {
+      const unit = prefer(random, state.units, (candidate) =>
+        (candidate.restrictivePractice?.episodes ?? []).some((episode) => episode.endedAt !== undefined),
+      );
+      const episode = pick(random, unit?.restrictivePractice?.episodes ?? []);
+      return {
+        type: "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        episodeId: episode?.id ?? MISSING_ID,
+        task: pick(random, ["post_release_exam", "sent_to_ocp", "patient_debrief", "staff_debrief"] as const),
+        done: chance(random, 0.8),
       };
     },
   ],
@@ -2220,6 +2262,15 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     1,
     movementEvent("RECORD_ED_PRESENTATION", undefined, (_state, random) => ({
       presentations: chance(random, 0.2) ? [] : [pick(random, ["Suicidal thoughts", "Psychosis", "Other"] as const)],
+    })),
+  ],
+  [
+    1,
+    // Gap list items 3 to 7: details on the current form, sometimes a stale code, sometimes a clear.
+    movementEvent("RECORD_LEGAL_FORM_DETAILS", undefined, (_state, random, movement) => ({
+      formCode: chance(random, 0.1) ? formCodeFor(random, movement) : (movement.legalForm?.code ?? "1A"),
+      madeBy: chance(random, 0.2) ? null : pick(random, ["psychiatrist", "medical_practitioner", "amhp"] as const),
+      copyGiven: pick(random, ["yes", "declined", "not_yet"] as const),
     })),
   ],
 ];

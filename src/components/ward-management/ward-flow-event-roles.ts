@@ -335,6 +335,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // view and the room status only (D-80).
   RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "coordinator"],
   RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "coordinator"],
+  // Gap list item 9 (Josh, 4 Nov 2026): the same desks that record the episode.
+  RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP: ["ward", "coordinator"],
   RECORD_WARD_INCIDENT: ["ward", "coordinator"],
   SET_SECLUSION_ROOM_STATUS: ["ward", "bed_manager", "coordinator"],
   // Closing the loop, package D (24 Oct 2026): records only. A ward for its own accepted move or
@@ -542,6 +544,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_LEGAL_FORM_CODE: ["ed", "coordinator", "ward"],
   // Q103 (Josh, 1 Nov 2026): the ED handover table's fixed presentation list.
   RECORD_ED_PRESENTATION: ["ed", "coordinator"],
+  // Gap list items 3 to 7 (Josh, 4 Nov 2026): the same desks that record the written form.
+  RECORD_LEGAL_FORM_DETAILS: ["ed", "coordinator", "ward"],
   RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
   RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
   EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],
@@ -626,4 +630,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
   // H-0150: whoever may mark a bed meeting action done may take that back.
   UNDO_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
+  // Tier 1 item 6 (Josh, 4 Nov 2026): whoever may take each listed step may take it back.
+  UNDO_BED_STEP: ["ward", "bed_manager", "coordinator"],
+  UNDO_RELEASE_STEP: ["coordinator", "ward", "ed", "community", "bed_manager"],
+  UNDO_PATIENT_RECORD: ["community", "coordinator"],
 };

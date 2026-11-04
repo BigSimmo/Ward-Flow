@@ -107,6 +107,45 @@
   color: var(--wf-ink-3);
 }
 
+/* Gap list item 9: follow-up marks under a finished episode, full width. */
+.followUp {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.followUpHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.followUpList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.followUpRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.followUpLabel {
+  font-size: var(--wf-fs-13);
+  line-height: 1.35;
+  color: var(--wf-ink-1);
+}
+
 /* Phone: times sit under the name, left aligned, so nothing is squeezed or scrolls sideways. */
 @media (max-width: 46.4375rem) {
   .row {

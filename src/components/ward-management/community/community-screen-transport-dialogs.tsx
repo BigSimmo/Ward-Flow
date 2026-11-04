@@ -212,7 +212,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
         ) : null}
         <div className={styles.actions}>
           <Button variant="ghost" onClick={closeUnlessSaving} disabled={saving}>
-            Keep booking
+            Keep as is
           </Button>
           <Button
             variant="pri"

@@ -46,6 +46,25 @@ export const SELECTABLE_LEGAL_FORMS: readonly LegalForm[] = [
   { code: "6A" },
 ];
 
+/**
+ * The forms the Forms page's Record a form sheet offers (gap list item 2, Josh 4 Nov 2026): the
+ * forms the engine records from the paper, in register order. Unlike the intake picker above, it
+ * holds the ward forms 3C, 3E, 6C and 6D, and none the engine would refuse (3B, 4A and 4C are
+ * recorded at intake or on the move). 5B stays a continuation.
+ */
+export const RECORDABLE_LEGAL_FORMS: readonly LegalForm[] = [
+  { code: "1A", kind: "examination" },
+  { code: "3A", kind: "detention" },
+  { code: "3C", kind: "detention" },
+  { code: "3D" },
+  { code: "3E" },
+  { code: "5A" },
+  { code: "6A" },
+  { code: "6B" },
+  { code: "6C" },
+  { code: "6D" },
+];
+
 /** Continuations have a separate vocabulary; 5B is not an initial intake form. */
 export const CONTINUATION_LEGAL_FORMS: readonly LegalForm[] = [...SELECTABLE_LEGAL_FORMS, { code: "5B" }];
 

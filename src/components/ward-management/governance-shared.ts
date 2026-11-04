@@ -120,6 +120,9 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   UNDO_DEPARTURE: "Undo departure",
   UNDO_ABSENT_WITHOUT_LEAVE: "Undo mark absent",
   UNDO_BED_MEETING_ACTION: "Undo bed meeting action done",
+  UNDO_BED_STEP: "Undo bed closed, reopened or returned from leave",
+  UNDO_RELEASE_STEP: "Undo release or cancellation",
+  UNDO_PATIENT_RECORD: "Undo order or archive",
   ARCHIVE_PATIENT: "Archive record added in error",
 };
 /** v10 pass 3: the step an undo took back, in words. */
@@ -129,6 +132,7 @@ export const UNDONE_STEP_LABELS: Partial<Record<string, string>> = {
   RECORD_LEGAL_FORM_WRITTEN: "Record form written",
   RECORD_LEGAL_FORM_CODE: "Record form, time not entered",
   RECORD_ED_PRESENTATION: "Record ED presentation",
+  RECORD_LEGAL_FORM_DETAILS: "Record form details",
   RECORD_LEGAL_FORM_RECEIVED: "Mark form received",
   RECORD_SUPPORT_NOTIFICATION: "Carer, PSP or MHAS record",
   RECORD_ABSENT_WITHOUT_LEAVE: "Mark absent",
