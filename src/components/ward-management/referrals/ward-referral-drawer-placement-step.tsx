@@ -1,7 +1,7 @@
 "use client";
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
-import { FileText, Stethoscope, Truck, Users } from "lucide-react";
+import { FileText, Stethoscope, Ambulance, Users } from "lucide-react";
 import { useState } from "react";
 import {
   arrivalEtaLabel,
@@ -556,7 +556,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
       </section>
       {destType === "ward" && selectedDestinations.length > 0 && (
         <section className={styles.refCard}>
-          <CardHead icon={Truck} title="Arrival plan">
+          <CardHead icon={Ambulance} title="Arrival plan">
             <span className={styles.chip}>Proposed</span>
           </CardHead>
           <div className={styles.cardBody}>

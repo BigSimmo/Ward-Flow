@@ -85,10 +85,11 @@ export function waitLine(minutes: number): string {
   return minutes % 60 === 0 ? `${minutes / 60}h` : splitDuration(minutes);
 }
 
-export function urgencyGlyph(urgency: 1 | 2 | 3): string {
-  if (urgency === 1) return "▲";
-  if (urgency === 2) return "■";
-  return "✓";
+/** The status mark for a referral's urgency, in the kit's one shape language (icon audit, 3 Nov 2026). */
+export function urgencyTone(urgency: 1 | 2 | 3): "danger" | "warning" | "success" {
+  if (urgency === 1) return "danger";
+  if (urgency === 2) return "warning";
+  return "success";
 }
 
 /**
