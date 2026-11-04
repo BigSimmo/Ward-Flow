@@ -8,6 +8,12 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
+// The hero's New referral shows only on a phone; off the phone the app bar's copy is the one button.
+const device = vi.hoisted(() => ({ phone: true }));
+vi.mock("@/components/wf", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/wf")>()),
+  useIsPhone: () => device.phone,
+}));
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>
@@ -54,18 +60,28 @@ const overview = (
 
 afterEach(() => {
   cleanup();
+  device.phone = true;
   act(() => setWardFeatureFlagOnDevice("role-access", null));
   resetWardAccessStoreForTests();
 });
 
 describe("P142: the ED home offers Add patient", () => {
-  it("shows Add patient beside Raise referral, going to /ward-flow/people/new", () => {
+  it("shows Add patient beside Raise referral on a phone, going to /ward-flow/people/new", () => {
     render(overview);
     const add = screen.getAllByTestId("ward-ed-add-patient")[0]!;
     expect(add).toHaveTextContent("Add patient");
     expect(add).toHaveAttribute("href", "/ward-flow/people/new");
     const raise = screen.getAllByTestId("ward-ed-raise-referral-toggle")[0]!;
     expect(raise.parentElement).toBe(add.parentElement);
+  });
+
+  // Deep audit (4 Nov 2026): off the phone the app bar's New referral is always there, so the hero
+  // does not repeat it.
+  it("leaves the hero's New referral to the app bar off the phone", () => {
+    device.phone = false;
+    render(overview);
+    expect(screen.getAllByTestId("ward-ed-add-patient")[0]).toHaveTextContent("Add patient");
+    expect(screen.queryByTestId("ward-ed-raise-referral-toggle")).toBeNull();
   });
 
   // ED desk redesign (Josh, 30 Oct 2026): the hero's Raise referral repeated the app bar's New

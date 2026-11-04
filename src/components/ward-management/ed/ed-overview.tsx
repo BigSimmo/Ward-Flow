@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Plus, Tv } from "lucide-react";
-import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
+import { bedMeetingTvHref, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -101,6 +101,9 @@ export function EdOverview({
   // left out for that desk (the title already gives its own count), and so is the hero's Raise
   // referral, which repeated the app bar's New referral. Every other desk keeps both.
   const edDesk = useEffectiveWardAccess().role === "ed";
+  // Deep audit (4 Nov 2026): off the phone the app bar always shows New referral to a desk that can
+  // open the intake, so the hero's copy is left out there too. The phone bar has none, so it stays.
+  const barHasReferral = !isPhone && canOpen(WARD_REFERRAL_INTAKE_HREF);
   const current = departments.find((department) => department.id === departmentId);
   if (!current) return null;
 
@@ -111,17 +114,22 @@ export function EdOverview({
   const boardSplit = onBoardParts.length > 1 ? onBoardParts.join(", ") : null;
   const checkValue = (id: string) => checks.find((check) => check.id === id)?.value;
   // Phone (Josh, 31 Oct 2026): the hero buttons are Home's 40px hero pills side by side (`phoneRows`).
-  const raiseButton = edDesk ? null : (
-    <button
-      type="button"
-      className={buttonClass({ variant: "light", size: "sm", className: cx(styles.raiseReferral, phoneRows.heroPill) })}
-      data-testid="ward-ed-raise-referral-toggle"
-      onClick={onRaiseReferral}
-    >
-      <Plus size={14} aria-hidden="true" />
-      New referral
-    </button>
-  );
+  const raiseButton =
+    edDesk || barHasReferral ? null : (
+      <button
+        type="button"
+        className={buttonClass({
+          variant: "light",
+          size: "sm",
+          className: cx(styles.raiseReferral, phoneRows.heroPill),
+        })}
+        data-testid="ward-ed-raise-referral-toggle"
+        onClick={onRaiseReferral}
+      >
+        <Plus size={14} aria-hidden="true" />
+        New referral
+      </button>
+    );
   // P142 (Josh, 27 Oct 2026, 10:12 PM AWST): Add patient sits beside the referral button.
   const addPatientHref = "/ward-flow/people/new";
   const actions = (

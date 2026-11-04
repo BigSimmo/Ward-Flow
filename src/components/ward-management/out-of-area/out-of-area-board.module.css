@@ -342,7 +342,8 @@
 .registerCard,
 .sideCard {
   min-width: 0;
-  overflow: hidden;
+  /* OA1: clip, not hidden, so the plan's foot can stay pinned as the page scrolls. */
+  overflow: clip;
 }
 
 @media (max-width: 62.5rem) {
@@ -902,7 +903,8 @@
 
 .facts {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.35fr);
+  /* OA1: two by two, so no fact is cut short in the side panel. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
   border-bottom: 1px solid var(--wf-line);
 }
@@ -916,9 +918,13 @@
   border-left: 1px solid var(--wf-line);
 }
 
-.facts > div:first-child {
+.facts > div:nth-child(odd) {
   padding-left: var(--wf-s-4);
   border-left: 0;
+}
+
+.facts > div:nth-child(n + 3) {
+  border-top: 1px solid var(--wf-line);
 }
 
 .facts dt {
@@ -1190,11 +1196,17 @@ fieldset.formRow {
 }
 
 .planFoot {
+  /* OA1: the plan's actions stay pinned at the foot while the plan scrolls past. */
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: var(--wf-s-2);
   padding: 10px var(--wf-s-4);
-  background: var(--wf-surface-2);
+  border-top: 1px solid var(--wf-line);
+  background: color-mix(in oklab, var(--wf-surface-2) 92%, transparent);
+  backdrop-filter: saturate(1.6) blur(14px);
 }
 
 .need {

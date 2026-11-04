@@ -3,15 +3,11 @@
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 
 import Link from "next/link";
-import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 import { useState } from "react";
 
 import {
   AppliedFilter,
   Card,
-  CardHead,
-  FilterChip,
-  Segmented,
   SrOnly,
   StatusGlyph,
   TierTile,
@@ -22,8 +18,6 @@ import {
   GroupHead,
 } from "@/components/wf";
 import {
-  clockState,
-  type DueSoonThresholds,
   formatInstantWithDay,
   type Instant,
   isClockBreached,
@@ -45,11 +39,9 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
-import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { liveTurnaroundPreference } from "@/components/ward-management/ward-turnaround-priority";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { referralState } from "@/components/ward-management/ward-referrals";
 
 import {
   inEdTierOverdue,
@@ -63,7 +55,6 @@ import styles from "./home.module.css";
 import flowStyles from "./home-flow.module.css";
 
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { TierKey } from "../tier-key";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 /** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
 export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
@@ -73,8 +64,6 @@ export function offeredToLabel(unitIds: readonly string[], units: readonly { id:
   }
   return `Offered to ${unitIds.length} wards`;
 }
-
-type QueueTab = "patients" | "referrals";
 
 /** What the hero's Overdue and Tier 1 counts highlight in the queue. */
 export type QueueHighlight = "overdue" | "tier1";
@@ -103,14 +92,6 @@ export const TIER_TARGETS_NOTE = `${tierOverdueRuleText()}, ${
     : "pending clinical sign-off"
 }`;
 
-/** "Soon": a recorded legal form due within the due-soon window, or already past it. */
-function isSoon(movement: Movement, now: Instant, thresholds: DueSoonThresholds) {
-  const dueAt = currentLegalDueAt(movement);
-  if (dueAt === undefined) return false;
-  const state = clockState(dueAt, now, thresholds);
-  return state === "due" || state === "critical" || state === "breached";
-}
-
 type PriorityQueueProps = {
   movements: Movement[];
   /** Live units, to name the ward an offer went to (audit A1-14). */
@@ -126,13 +107,8 @@ type PriorityQueueProps = {
   pullHoldMinutes?: number;
   selectedId: string | undefined;
   onSelect: (movementId: string) => void;
-  /** The shortlist's other possible subject, independent of `selectedId`. */
-  selectedReferralId?: string | undefined;
-  onSelectReferral?: (referralId: string) => void;
   filterEdId: string | undefined;
   onClearFilter: () => void;
-  /** Every open movement before the ED and service filters, for the "N of M" in the head. */
-  totalMovements?: number;
   /** Item 44 (build plan B1): the service scope bar, computed by the screen against the whole population. */
   serviceScope?: {
     service: HealthService;
@@ -146,19 +122,11 @@ type PriorityQueueProps = {
   /** Rows the hero asked to highlight. The others dim; none is hidden or reordered. */
   highlight?: QueueHighlight;
   onClearHighlight?: () => void;
-  /**
-   * Render the first `rowCap` patient rows with a "Show all" button for the rest, so nothing is
-   * lost and the cards below the queue stay reachable: 20 on a phone (v10 Home phone, direction
-   * A), 10 on desktop Home, where the page scrolls once (Home placement redesign, Josh 19 Oct 2026).
-   */
-  rowCap?: number;
-  /** Phone (v10 Home, direction A): the queue's phone layout. The switch reads "Patients" and "Referrals". */
+  /** Phone (v10 Home, direction A): the queue's phone layout. */
   phone?: boolean;
   /** Movements with an active act-now task: marked `data-pinned` and an "Act now" mark. They are not
    *  moved (Audit 1, Josh 20 Oct: the queue is wait order). */
   pinnedIds?: ReadonlySet<string>;
-  /** Home flow mock-up (Q340): group the queue by stage, with referrals as the first stage. */
-  flow?: boolean;
   /** Home flow mock-up: a waiting alert on a patient shows as a mark on their row, not a second row. */
   waitingMarks?: ReadonlyMap<string, string>;
   /** Home flow mock-up: the stage chosen from the stage tiles; none shows every stage (desktop). */
@@ -185,10 +153,12 @@ export function flowStageOf(movement: Movement): Exclude<FlowStageId, "referral"
 }
 
 /**
- * Home's priority queue card (v6 Home mockup). Patients and Referrals switch which list is on
- * screen and nothing else: the shortlist's subject is the screen's own state and a switch never
- * touches it. Rows keep their hooks (`ward-queue-row-<id>`, `aria-pressed`, `data-wait`) and every fact the old rows carried: the urgent flag and who set it, the tier, the
- * wait, cohort, security and origin, declines, the pull hold, transport and a passed legal form.
+ * Home's Flow card (Home flow, Q340; the one layout since Q376): the open movements grouped by
+ * stage, each stage showing its oldest 5 rows and its own "Show all N". Referrals are decided under
+ * Needs you, so the Referral stage only counts them. Rows keep their hooks (`ward-queue-row-<id>`,
+ * `aria-pressed`, `data-wait`) and every fact the old rows carried: the urgent flag and who set it,
+ * the tier, the wait, cohort, security and origin, declines, the pull hold, transport and a passed
+ * legal form.
  */
 export function PriorityQueue({
   movements,
@@ -196,21 +166,16 @@ export function PriorityQueue({
   now,
   selectedId,
   onSelect,
-  selectedReferralId,
-  onSelectReferral,
   filterEdId,
   onClearFilter,
-  totalMovements,
   serviceScope,
   pullHoldMinutes = defaultWardConfiguration().pullHoldMinutes,
   delaysHref = "/ward-flow/waiting",
   highlight,
   onClearHighlight,
-  rowCap,
   phone = false,
   pinnedIds,
   units = [],
-  flow = false,
   waitingMarks,
   flowStage,
 }: PriorityQueueProps) {
@@ -230,10 +195,7 @@ export function PriorityQueue({
       ? `Turnaround candidate: bed clearing via ${live.source === "cld" ? "criteria-led discharge" : "confirmed departure"}`
       : null;
   };
-  const [showAllRows, setShowAllRows] = useState(false);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
-  const [activeTab, setActiveTab] = useState<QueueTab>("patients");
-  const [soonOnly, setSoonOnly] = useState(false);
   const patientOf = usePatientOf();
   // A2-20: initials plus UMRN on a phone when Discreet names is on; the name everywhere else.
   const nameFor = usePatientNameDisplay();
@@ -241,26 +203,10 @@ export function PriorityQueue({
   const edsById = new Map(allEmergencyDepartments().map((ed) => [ed.id, ed]));
   const filterEd = filterEdId ? edsById.get(filterEdId) : undefined;
 
-  const soonCount = movements.filter((movement) => isSoon(movement, now, dueSoonThresholds)).length;
-  // Form due is offered on the phone too, so the count stays visible there (audit A1-16).
-  const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now, dueSoonThresholds)) : movements;
-  const total = totalMovements ?? movements.length;
   const matchesHighlight = (movement: Movement) =>
     // P002: the hero chips' own rules (`ward-shared-figures.ts`), so "N of M highlighted" matches the chip.
     highlight === "overdue" ? inEdTierOverdue(movement, now) : highlight === "tier1" ? isTierOneOpen(movement) : true;
-  const highlighted = highlight ? rows.filter(matchesHighlight).length : 0;
-  const capped = rowCap !== undefined && rows.length > rowCap;
-  // Desktop keeps the chosen patient's row in view even when it sits below the cap: it shows in its
-  // own place in the order, after the top rows, so nothing is re-sorted. The phone is unchanged.
-  const shownRows =
-    capped && !showAllRows
-      ? rows.filter((movement, index) => index < rowCap || (!phone && movement.id === selectedId))
-      : rows;
-
-  const headCount =
-    activeTab === "referrals"
-      ? `${referralQueue.length === 0 ? "none" : referralQueue.length} awaiting`
-      : `${rows.length} of ${total}`;
+  const highlighted = highlight ? movements.filter(matchesHighlight).length : 0;
 
   const movementRow = (movement: Movement) => {
     const selected = movement.id === selectedId;
@@ -445,221 +391,16 @@ export function PriorityQueue({
       </button>
     );
   };
-  const referralRow = (referral: Referral) => {
-    const selected = referral.id === selectedReferralId;
-    const turnaround =
-      referralState(referral) === "queued" &&
-      referral.destinations.some((arm) => arm.state === "queued" && arm.withdrawnAt === undefined) &&
-      !turnaroundState?.movements.some((movement) => movement.referralId === referral.id)
-        ? turnaroundLabel(referral.turnaroundPriority)
-        : null;
-    return (
-      <button
-        key={referral.id}
-        type="button"
-        data-testid={`ward-referral-row-${referral.id}`}
-        className={cx(styles.queueRow, selected && styles.queueRowSelected)}
-        aria-pressed={selected}
-        onClick={() => onSelectReferral?.(referral.id)}
-      >
-        <TierTile tier={referral.urgency} className={styles.queueTier} />
-        <span className={styles.queueMain}>
-          <span className={styles.queueName}>
-            <strong>
-              <FormalName name={nameFor(patientOf(referral).formalName, patientOf(referral).umrn)} />
-            </strong>
-          </span>
-          <span className={styles.queueSub}>
-            <span className={styles.queueSubText}>
-              {withSendingTeam(
-                `${referral.ageBand} · ${referral.homeRegion} · from ${referral.originSiteCode}`,
-                referral,
-              )}
-            </span>
-          </span>
-          <SrOnly>{urgencyTierLabel(referral.urgency)}.</SrOnly>
-          <span className={styles.queueMarks}>
-            {turnaround ? <span className={styles.queueMark}>{turnaround}</span> : null}
-            {/* Overall review, 20 Oct 2026: as on a patient row, the "ATS not recorded" filler is
-                        out of sight (screen readers still hear it); a recorded ATS shows. */}
-            {referral.atsCategory === undefined ? (
-              <SrOnly>ATS not recorded</SrOnly>
-            ) : (
-              <span className={styles.queueMark}>{`ATS ${referral.atsCategory}`}</span>
-            )}
-          </span>
-        </span>
-        <span className={styles.queueWait}>
-          <Timer
-            at={referral.raisedAt * MS_PER_MINUTE}
-            now={now * MS_PER_MINUTE}
-            direction="waiting"
-            hideDirection
-            className={styles.queueTimer}
-          />
-        </span>
-      </button>
-    );
-  };
-  if (flow) {
-    const groupRows = (id: FlowStageId) =>
-      id === "referral" ? [] : rows.filter((movement) => flowStageOf(movement) === id);
-    const chosen = flowStage;
-    const shownStages = chosen
-      ? FLOW_STAGES.filter((stage) => stage.id === chosen)
-      : FLOW_STAGES.filter((stage) => stage.id !== "referral");
-    const cap = 5;
-    return (
-      <Card className={styles.queueCard} aria-label="Flow">
-        {filterEdId ? (
-          <div className={styles.queueFilter}>
-            <AppliedFilter onRemove={onClearFilter} removeLabel="Clear filter">
-              {filterEd ? `Filtered to ${filterEd.siteCode}` : "Filtered to a department that is unavailable"}
-            </AppliedFilter>
-          </div>
-        ) : null}
-        {serviceScope ? (
-          <WardServiceScopeBar
-            service={serviceScope.service}
-            shown={serviceScope.shown}
-            total={serviceScope.total}
-            noun="movements"
-            noRecordedServiceCount={serviceScope.noRecordedServiceCount}
-            urgentOutside={serviceScope.urgentOutside}
-          />
-        ) : null}
-        {shownStages.map((stage) => {
-          const isReferral = stage.id === "referral";
-          const all = isReferral ? referralQueue : groupRows(stage.id);
-          const open = openGroups.has(stage.id);
-          // A hero highlight shows every row, as the old queue did, so no highlighted row hides below the cap.
-          const uncapped = open || highlight !== undefined;
-          // Desktop keeps a chosen patient below the cap in view, in its own place (as the old queue did).
-          const shown = uncapped
-            ? all
-            : all.filter((row, index) => index < cap || (!isReferral && !phone && (row as Movement).id === selectedId));
-          return (
-            <section key={stage.id} className={flowStyles.group} aria-label={stage.label}>
-              <GroupHead
-                title={stage.label}
-                count={all.length}
-                meta={`Next: ${stage.next.toLowerCase()}`}
-                aside={(() => {
-                  const late = isReferral
-                    ? 0
-                    : (all as Movement[]).filter(
-                        (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
-                      ).length;
-                  return late > 0 ? (
-                    <span className={flowStyles.late}>
-                      <StatusGlyph tone="danger" size={9} />
-                      {late} late
-                    </span>
-                  ) : null;
-                })()}
-              />
-              <div className={styles.queueList}>
-                {isReferral && all.length > 0 ? (
-                  <p className={styles.emptyLine}>
-                    <StatusGlyph tone="info" size={9} />
-                    {all.length === 1 ? "1 referral to decide" : `${all.length} referrals to decide`}, listed once under
-                    Needs you
-                  </p>
-                ) : all.length === 0 ? (
-                  <p className={styles.emptyLine}>
-                    <StatusGlyph tone="success" size={9} />
-                    {isReferral ? "No referral waiting on a decision" : "No one at this stage"}
-                  </p>
-                ) : isReferral ? (
-                  (shown as Referral[]).map(referralRow)
-                ) : (
-                  (shown as Movement[]).map(movementRow)
-                )}
-                {all.length > cap && !isReferral && highlight === undefined ? (
-                  <button
-                    type="button"
-                    className={styles.queueMore}
-                    aria-expanded={open}
-                    onClick={() =>
-                      setOpenGroups((current) => {
-                        const next = new Set(current);
-                        if (next.has(stage.id)) next.delete(stage.id);
-                        else next.add(stage.id);
-                        return next;
-                      })
-                    }
-                  >
-                    {open ? `Show top ${cap}` : `Show all ${all.length}`}
-                  </button>
-                ) : null}
-              </div>
-            </section>
-          );
-        })}
-        <div className={styles.cardFoot}>
-          {highlight ? (
-            <span className={styles.footMeta}>
-              <span className={styles.mono}>{highlighted}</span> {HIGHLIGHT_LABEL[highlight]} highlighted, all rows stay
-            </span>
-          ) : (
-            <span className={styles.footMeta} title={TIER_TARGETS_NOTE}>
-              Oldest first in each stage
-            </span>
-          )}
-          {highlight && onClearHighlight ? (
-            <button type="button" className={styles.footButton} onClick={onClearHighlight}>
-              Clear
-            </button>
-          ) : phone ? null : (
-            <Link href={delaysHref} className={styles.footLink}>
-              Open in Waiting
-            </Link>
-          )}
-        </div>
-      </Card>
-    );
-  }
-
+  const groupRows = (id: FlowStageId) =>
+    id === "referral" ? [] : movements.filter((movement) => flowStageOf(movement) === id);
+  const chosen = flowStage;
+  const shownStages = chosen
+    ? FLOW_STAGES.filter((stage) => stage.id === chosen)
+    : FLOW_STAGES.filter((stage) => stage.id !== "referral");
+  const cap = 5;
   return (
-    <Card className={styles.queueCard} aria-label="Priority queue">
-      <CardHead
-        className={styles.queueHead}
-        title="Priority queue"
-        aside={<span className={styles.headCount}>{headCount}</span>}
-      />
-      <div className={styles.queueTools}>
-        <Segmented
-          label="Queues"
-          className={styles.queueSeg}
-          items={[
-            {
-              id: "patients",
-              // Overall review, 20 Oct 2026: "ED 70" sat under "62 waiting in ED"; the list also holds
-              // people already in transit, so the phone names it Patients, as the desktop does.
-              label: "Patients",
-              count: movements.length === 0 ? "none" : movements.length,
-            },
-            { id: "referrals", label: "Referrals", count: referralQueue.length === 0 ? "none" : referralQueue.length },
-          ]}
-          value={activeTab}
-          onChange={setActiveTab}
-        />
-        {/* Shown on the phone as well so the form-due count is not lost there (audit A1-16). */}
-        {activeTab === "patients" ? (
-          <FilterChip
-            pressed={soonOnly}
-            onPressedChange={setSoonOnly}
-            tone="warning"
-            count={soonCount}
-            className={styles.noShrink}
-          >
-            {/* Names its noun: recorded legal forms due soon or past (device audit, 11 Oct 2026). Short
-                so "Referrals" is never cut off beside it (Home and Activity design, 31 Oct 2026). */}
-            Form due
-          </FilterChip>
-        ) : null}
-      </div>
-      {activeTab === "patients" && filterEdId ? (
+    <Card className={styles.queueCard} aria-label="Flow">
+      {filterEdId ? (
         <div className={styles.queueFilter}>
           <AppliedFilter onRemove={onClearFilter} removeLabel="Clear filter">
             {filterEd ? `Filtered to ${filterEd.siteCode}` : "Filtered to a department that is unavailable"}
@@ -676,72 +417,88 @@ export function PriorityQueue({
           urgentOutside={serviceScope.urgentOutside}
         />
       ) : null}
-
-      {activeTab === "patients" ? <TierKey compact /> : null}
-      <div
-        id="ward-queue-panel-patients"
-        role="group"
-        aria-label="Patients"
-        hidden={activeTab !== "patients"}
-        className={styles.queueList}
-      >
-        {rows.length === 0 ? (
-          <p className={styles.emptyLine}>
-            <StatusGlyph tone="success" size={9} />
-            {soonOnly ? "Nothing due soon" : "No open movements"}
-          </p>
-        ) : (
-          shownRows.map(movementRow)
-        )}
-        {capped ? (
-          <button
-            type="button"
-            className={styles.queueMore}
-            aria-expanded={showAllRows}
-            onClick={() => setShowAllRows((value) => !value)}
-            data-testid="ward-queue-show-all"
-          >
-            {showAllRows ? `Show top ${rowCap}` : phone ? `Show all ${rows.length}` : `Show all (${rows.length})`}
-          </button>
-        ) : null}
-      </div>
-
-      <div
-        id="ward-queue-panel-referrals"
-        role="group"
-        aria-label="Referrals"
-        hidden={activeTab !== "referrals"}
-        className={styles.queueList}
-      >
-        {referralQueue.length === 0 ? (
-          <p className={styles.emptyLine}>
-            <StatusGlyph tone="success" size={9} />
-            No referrals awaiting a decision
-          </p>
-        ) : (
-          referralQueue.map(referralRow)
-        )}
-      </div>
-
+      {shownStages.map((stage) => {
+        const isReferral = stage.id === "referral";
+        const all = isReferral ? referralQueue : groupRows(stage.id);
+        const open = openGroups.has(stage.id);
+        // A hero highlight shows every row, as the old queue did, so no highlighted row hides below the cap.
+        const uncapped = open || highlight !== undefined;
+        // Desktop keeps a chosen patient below the cap in view, in its own place (as the old queue did).
+        const shown = uncapped
+          ? all
+          : all.filter((row, index) => index < cap || (!isReferral && !phone && (row as Movement).id === selectedId));
+        return (
+          <section key={stage.id} className={flowStyles.group} aria-label={stage.label}>
+            <GroupHead
+              title={stage.label}
+              count={all.length}
+              meta={`Next: ${stage.next.toLowerCase()}`}
+              aside={(() => {
+                const late = isReferral
+                  ? 0
+                  : (all as Movement[]).filter(
+                      (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
+                    ).length;
+                return late > 0 ? (
+                  <span className={flowStyles.late}>
+                    <StatusGlyph tone="danger" size={9} />
+                    {late} late
+                  </span>
+                ) : null;
+              })()}
+            />
+            <div className={styles.queueList}>
+              {isReferral && all.length > 0 ? (
+                <p className={styles.emptyLine}>
+                  <StatusGlyph tone="info" size={9} />
+                  {all.length === 1 ? "1 referral to decide" : `${all.length} referrals to decide`}, listed once under
+                  Needs you
+                </p>
+              ) : all.length === 0 ? (
+                <p className={styles.emptyLine}>
+                  <StatusGlyph tone="success" size={9} />
+                  {isReferral ? "No referral waiting on a decision" : "No one at this stage"}
+                </p>
+              ) : (
+                (shown as Movement[]).map(movementRow)
+              )}
+              {all.length > cap && !isReferral && highlight === undefined ? (
+                <button
+                  type="button"
+                  className={styles.queueMore}
+                  aria-expanded={open}
+                  onClick={() =>
+                    setOpenGroups((current) => {
+                      const next = new Set(current);
+                      if (next.has(stage.id)) next.delete(stage.id);
+                      else next.add(stage.id);
+                      return next;
+                    })
+                  }
+                >
+                  {open ? `Show top ${cap}` : `Show all ${all.length}`}
+                </button>
+              ) : null}
+            </div>
+          </section>
+        );
+      })}
       <div className={styles.cardFoot}>
-        {activeTab === "patients" && highlight ? (
-          <span className={styles.footMeta} data-testid="ward-queue-highlight-foot">
-            <span className={styles.mono}>{highlighted}</span> of <span className={styles.mono}>{rows.length}</span>{" "}
-            {HIGHLIGHT_LABEL[highlight]} highlighted, all rows stay
+        {highlight ? (
+          <span className={styles.footMeta}>
+            <span className={styles.mono}>{highlighted}</span> {HIGHLIGHT_LABEL[highlight]} highlighted, all rows stay
           </span>
         ) : (
-          <span className={styles.footMeta} title={activeTab === "referrals" ? undefined : TIER_TARGETS_NOTE}>
-            Longest wait first
+          <span className={styles.footMeta} title={TIER_TARGETS_NOTE}>
+            Oldest first in each stage
           </span>
         )}
-        {activeTab === "patients" && highlight && onClearHighlight ? (
+        {highlight && onClearHighlight ? (
           <button type="button" className={styles.footButton} onClick={onClearHighlight}>
             Clear
           </button>
         ) : phone ? null : (
-          // Phone (v10 Home): the foot is the order line alone; Delays is in the Menu.
-          // B4: with Form due on, Delays opens on its own Form due view.
-          <Link href={soonOnly ? waitingHref("form") : delaysHref} className={styles.footLink}>
+          <Link href={delaysHref} className={styles.footLink}>
             Open in Waiting
           </Link>
         )}
