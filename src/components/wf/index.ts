@@ -22,7 +22,7 @@ export { FormalName } from "./formal-name";
 export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
-export { Hero, HeroStat } from "./hero";
+export { Hero, HeroStat, type HeroNextStep } from "./hero";
 export { useWfBandActive, useWfBandBleed, registerWfBandHero, WF_BAND_SCROLLED_PX } from "./band";
 export {
   CheckingFoot,
@@ -79,7 +79,15 @@ export { rememberOpener, returnFocusToOpener, type FocusOpener } from "./focus-o
 export { StateLine, type StateKind } from "./state";
 export { PanelBoundary } from "./panel-boundary";
 export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";
-export { LiveChip, Timer, publishLiveClock, publishLiveRefresh, useSharedRefreshLate } from "./live";
+export {
+  LiveChip,
+  Timer,
+  notUpdatingWords,
+  publishLiveClock,
+  publishLiveRefresh,
+  useLiveFreshness,
+  useSharedRefreshLate,
+} from "./live";
 export {
   Field,
   TextInput,

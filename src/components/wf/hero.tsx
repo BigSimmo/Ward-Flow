@@ -1,13 +1,76 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, type LucideIcon } from "lucide-react";
 import { useId, useRef, type ElementType, type ReactNode } from "react";
 import { useWfBandBleed } from "./band";
+import { Button } from "./button";
 import { cx } from "./cx";
 import { HeroCondensedLine } from "./phone-fold";
 import { SrOnly } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./hero.module.css";
+
+/**
+ * Plan item 2i (proposal, 3 Nov 2026): the hero's next step. One plain sentence that answers "what
+ * do I do now", the hero's one filled light button, optional owner or due words, and at most three
+ * facts the page shows nowhere else. Derive every word from state the page already holds; never an
+ * invented figure, and legal times only as typed (no countdowns).
+ */
+export type HeroNextStep = {
+  /** One plain sentence: "5 held-up releases need chasing". No figure the page cannot back. */
+  answer: ReactNode;
+  /** The hero's one primary. Leave it out when there is nothing to do ("Nothing held up"). */
+  action?: {
+    label: string;
+    onClick: () => void;
+    icon?: LucideIcon;
+    /** Pressed state when the action is a filter that is on. */
+    pressed?: boolean;
+    testId?: string;
+  };
+  /** Short owner or due words beside the answer ("Your move", "Ward teams"). */
+  owner?: ReactNode;
+  /** At most three label and value pairs not shown anywhere else on the page. Desktop and tablet only. */
+  facts?: readonly { id: string; label: ReactNode; value: ReactNode }[];
+};
+
+/** The next step row (plan item 2i). Rendered by `Hero` from its `next` prop. */
+function HeroNext({ next }: { next: HeroNextStep }) {
+  const facts = (next.facts ?? []).slice(0, 3);
+  const action = next.action;
+  return (
+    <div className={styles.next} data-wf-hero-next="">
+      <div className={styles.nextText}>
+        <p className={styles.nextAnswer} data-testid="hero-next-answer">
+          {next.answer}
+        </p>
+        {next.owner ? <span className={styles.nextOwner}>{next.owner}</span> : null}
+      </div>
+      {facts.length > 0 ? (
+        <dl className={styles.nextFacts}>
+          {facts.map((fact) => (
+            <div key={fact.id} className={styles.nextFact}>
+              <dt>{fact.label}</dt>
+              <dd>{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {action ? (
+        <Button
+          variant="light"
+          icon={action.icon}
+          className={styles.nextAction}
+          onClick={action.onClick}
+          aria-pressed={action.pressed}
+          data-testid={action.testId ?? "hero-next-action"}
+        >
+          {action.label}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
 
 export type HeroProps = {
   /**
@@ -69,6 +132,11 @@ export type HeroProps = {
    * changes above 48rem; leave it out to keep the hero as it was.
    */
   condensed?: ReactNode;
+  /**
+   * Plan item 2i (proposal): the next step under the title. On a phone the hero then folds to the
+   * title line plus this step: the figures, the second row, the foot and the lead are not drawn.
+   */
+  next?: HeroNextStep;
   className?: string;
 };
 
@@ -98,6 +166,7 @@ export function Hero({
   quiet = false,
   band = true,
   condensed,
+  next,
   className,
 }: HeroProps) {
   const titleId = useId();
@@ -113,6 +182,7 @@ export function Hero({
       // A band hero is server-rendered as the band (band.ts, site review B6); `card` opts out.
       data-wf-hero={quiet ? "quiet" : band ? "band" : "card"}
       data-phone-eyebrow={eyebrow ? phoneEyebrow : undefined}
+      data-next={next ? "" : undefined}
     >
       <div className={cx(styles.row, styles.firstRow)}>
         {lead ? (
@@ -132,6 +202,7 @@ export function Hero({
         {stats ? <div className={cx(styles.stats, statsAlign === "end" && styles.statsEnd)}>{stats}</div> : null}
         {aside ? <div className={styles.aside}>{aside}</div> : null}
       </div>
+      {next ? <HeroNext next={next} /> : null}
       {bar || barAside ? (
         <div className={cx(styles.row, styles.barRow)}>
           {bar ? <div className={styles.bar}>{bar}</div> : null}

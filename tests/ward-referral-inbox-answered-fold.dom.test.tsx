@@ -85,7 +85,12 @@ describe("the ward referral inbox folds answered referrals (H-0893)", () => {
       </WardFlowProvider>,
     );
     const inbox = () => within(screen.getByRole("region", { name: "Ward referral inbox" }));
-    expect(inbox().queryByRole("button", { name: /answered$/ })).toBeNull();
+    // S6 example data (3 Nov 2026): the ward may already hold an answered example referral.
+    const answeredBefore = Number(
+      inbox()
+        .queryByRole("button", { name: /answered$/ })
+        ?.textContent?.match(/\d+/)?.[0] ?? 0,
+    );
     const waitingBefore = inbox().getAllByTestId("ward-referral-inbox-story").length;
     fireEvent.click(screen.getByRole("button", { name: "Synthetic decline" }));
 
@@ -95,7 +100,7 @@ describe("the ward referral inbox folds answered referrals (H-0893)", () => {
     expect(inbox().getByText("Synthetic story still waiting.")).toBeInTheDocument();
     expect(inbox().queryByText("Synthetic story to be answered.")).toBeNull();
 
-    const toggle = inbox().getByRole("button", { name: /^Show \d+ answered$/ });
+    const toggle = inbox().getByRole("button", { name: `Show ${answeredBefore + 1} answered` });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
