@@ -66,6 +66,7 @@ import {
 import { useReferralPatientSelection, useReferralRegistrationWork } from "./use-referral-patient-selection";
 import { useReferralSectionNavigation } from "./use-referral-section-navigation";
 import { drawerFootStatus } from "./referral-drawer-foot-status";
+import { focusFirstInvalidField, referralInboxSummary } from "./referral-drawer-helpers";
 import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
 import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
@@ -466,14 +467,13 @@ export function useWardReferralDrawerState({
       stopDraftAutosave();
       discardReferralDraft(draftDiscardOwner);
       rememberReferrerContact(intake.referrer, draftOwnerVersion);
+      announceToWardShell("Referral saved. Check the Referrals board for its record before sending again.");
     },
     onAccepted(created) {
       setSentReferralId(created.id);
       setSentAt(now);
-      announceToWardShell("Referral sent to the selected locations.");
     },
   });
-
   const { approveNextHistoryNavigation } = useDirtyStateGuard({
     isDirty:
       newPatientDirty || (!sentReferralId && !submissionAwaitingRecord && (referralDirty || draftKeptAt !== null)),
@@ -494,7 +494,15 @@ export function useWardReferralDrawerState({
     if (newPatientDirty || (referralDirty && !submissionAwaitingRecord)) return setGuardOpen(true);
     approveNextHistoryNavigation();
     onClose();
-  }, [guardOpen, newPatientDirty, referralDirty, submissionAwaitingRecord, onClose, approveNextHistoryNavigation]);
+  }, [
+    guardOpen,
+    newPatientDirty,
+    referralDirty,
+    submissionAwaitingRecord,
+    onClose,
+    approveNextHistoryNavigation,
+    setGuardOpen,
+  ]);
   useEffect(() => {
     if (!closeRequestRef) return;
     closeRequestRef.current = requestClose;
@@ -678,8 +686,8 @@ export function useWardReferralDrawerState({
       onSelectPatient(key);
     }
     announceToWardShell(`Selected patient ${p.name} for clinical referral.`);
+    if (addedInForm) activateSection("patient");
   }
-
   function toggleRisk(key: string) {
     setRiskFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   }
@@ -935,6 +943,7 @@ export function useWardReferralDrawerState({
     if (validation) {
       setFlowError(validation);
       setAttempted((current) => ({ ...current, contact: true }));
+      focusFirstInvalidField(confirmationHeadingRef);
       return;
     }
     const needs = needsFor(destType, communityNeeds, edNeeds);
@@ -1000,17 +1009,8 @@ export function useWardReferralDrawerState({
       intake,
     });
   }
-
   // Recipient inboxes, read from the provider the ward screen already uses.
-  const inboxWards = capacityRecords
-    .map((unit) => {
-      const entries = wardReferralInbox?.(unit.unitId) ?? [];
-      const toDecide = entries.filter((entry) => entry.state === "queued" && entry.withdrawnAt === undefined).length;
-      return { unit, entries: entries.length, toDecide };
-    })
-    .filter((ward) => ward.entries > 0);
-  const inboxCount = inboxWards.reduce((sum, ward) => sum + ward.toDecide, 0);
-  const inboxWard = inboxWards.find((ward) => ward.unit.unitId === inboxUnitId) ?? inboxWards[0];
+  const { inboxWards, inboxCount, inboxWard } = referralInboxSummary(capacityRecords, wardReferralInbox, inboxUnitId);
 
   const tier = URGENCY_LEVELS.find((level) => String(level) === shownUrgency);
   const tierLabel = tier === undefined ? "Not recorded" : urgencyTierLabel(tier);

@@ -1,4 +1,16 @@
 /* Bed meeting actions due on a record, for their owner (overall review, 20 Oct 2026). Tokens only. */
+.region:focus {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.completion {
+  margin: 0;
+  padding: var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
 .list {
   display: flex;
   flex-direction: column;
