@@ -1,11 +1,14 @@
 "use client";
 
 import type { ReactNode, RefObject } from "react";
-import { Button } from "@/components/wf";
+import { Button, cx } from "@/components/wf";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import styles from "./ward-bed-dossier-drawer.module.css";
+import { ChoiceChips } from "./ward-bed-dossier-bits";
+
+const BLOCKER_CHOICES = BED_RELEASE_BLOCKERS.map((blocker) => ({ id: blocker, label: blocker }));
 
 /**
  * The bed drawer's discharge blocker save (live test, 26 Oct 2026: a bed manager's Save closed the
@@ -48,7 +51,7 @@ export function useBlockerSave(
 
 export type BlockerSave = ReturnType<typeof useBlockerSave>;
 
-/** Clear blocker, the reason list with Save blocker, and the save's answer, for both layouts. */
+/** Clear blocker, the reason chips with Save blocker, and the save's answer, for both layouts. */
 export function BlockerEditor({
   save,
   blockReason,
@@ -62,7 +65,8 @@ export function BlockerEditor({
   open: boolean;
   selected: BedReleaseBlocker | "";
   setSelected: (blocker: BedReleaseBlocker | "") => void;
-  selectRef: RefObject<HTMLSelectElement | null>;
+  /** The reason chips, focused when the editor opens. */
+  selectRef: RefObject<HTMLDivElement | null>;
 }): ReactNode {
   const submit = save.submit;
   if (!submit) return null;
@@ -77,21 +81,15 @@ export function BlockerEditor({
         </div>
       ) : null}
       {open ? (
-        <div className={styles.editor}>
-          <select
-            ref={selectRef}
-            className={styles.select}
+        <div className={cx(styles.editor, styles.editorStack)}>
+          <ChoiceChips
+            label="Held up by"
+            items={BLOCKER_CHOICES}
             value={selected}
-            aria-label="Held up by"
-            onChange={(e) => setSelected(e.target.value as BedReleaseBlocker | "")}
-          >
-            <option value="">Choose what is holding them up</option>
-            {BED_RELEASE_BLOCKERS.map((blocker) => (
-              <option key={blocker} value={blocker}>
-                {blocker}
-              </option>
-            ))}
-          </select>
+            onChange={setSelected}
+            groupRef={selectRef}
+            testId="ward-blocker-choice"
+          />
           <Button
             variant="sec"
             className={styles.pill}

@@ -436,11 +436,13 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.locator("#tabBtn-attn").click();
       await page.getByRole("button", { name: "Full bed list", exact: true }).click();
       await page.locator(`[data-admission-id="${admission.id}"]`).click();
-      // The destination picker lives on the bed drawer's Plan to leave tab.
-      await page.getByTestId("bed-telemetry-drawer").getByRole("tab", { name: "Plan to leave" }).click();
-      const picker = page.locator("#drawer-leaving-dest");
-      await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length);
-      await picker.selectOption(destination.id);
+      // The destination chips live on the bed drawer's Leaving tab (WH1, Josh 3 Nov 2026).
+      const drawer = page.getByTestId("bed-telemetry-drawer");
+      await drawer.getByRole("tab", { name: "Leaving" }).click();
+      await drawer.getByRole("button", { name: /^All \d+ places$/ }).click();
+      const picker = drawer.getByRole("group", { name: "Where are they going?" });
+      await expect(picker.getByRole("button")).toHaveCount(LEAVING_DESTINATIONS.length);
+      await picker.getByRole("button", { name: destination.label, exact: true }).click();
       await page.getByRole("button", { name: /Record that they have left/ }).click();
       await page.getByRole("button", { name: "Record discharge", exact: true }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);

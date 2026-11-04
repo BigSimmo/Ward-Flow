@@ -78,18 +78,21 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  font-size: var(--wf-fs-16, 16px);
+  font-size: var(--wf-fs-16);
   color: var(--wf-ink-1);
 }
 
 .position {
   font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
   color: var(--wf-ink-3);
 }
 
 .cardName {
   margin: 0;
-  font-size: var(--wf-fs-20, 20px);
+  font-size: var(--wf-fs-20);
   font-weight: 650;
   line-height: 1.2;
   color: var(--wf-ink-1);
@@ -108,7 +111,9 @@
 .cardDays {
   margin-left: auto;
   font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);
+  white-space: nowrap;
 }
 
 .cardFoot {
@@ -133,13 +138,18 @@
   margin: 0;
 }
 
+/* WH4 polish: soft pills at the 12px floor, as the rest of the kit draws status. */
 .changed,
 .done,
 .same {
-  padding: 1px 6px;
-  border-radius: var(--wf-r-tag);
-  font-size: var(--wf-fs-11, 11px);
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .changed {

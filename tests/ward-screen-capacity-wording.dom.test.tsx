@@ -121,9 +121,10 @@ describe("the ward screen's word for min(allocatable, empty)", () => {
     const capacity = unitCapacity(unit, []);
     renderWard(unit.id);
 
-    // The breakdown is the screen's own vocabulary for this exact value.
+    // The breakdown is the screen's own vocabulary. Integration QA (3 Nov 2026): Ready itself sits
+    // once, in the hero, so the breakdown no longer repeats it.
     const breakdown = screen.getByTestId("ward-unit-beds");
-    expect(breakdown).toHaveTextContent(`Ready ${capacity.available}`);
+    expect(breakdown).not.toHaveTextContent(`Ready ${capacity.available}`);
     // The empty bed the ward is not offering is "Closed" (2026-09-01 ruling 5), never "Held".
     const seed = seedWardFlowState();
     const closed = bedStates(unit, seed.admissions, seed.bedReleases, seed.leaveBeds).closed;
@@ -156,6 +157,8 @@ describe("the ward screen's word for min(allocatable, empty)", () => {
     const cta = screen.getByTestId("ward-hero-open-bed-list");
     expect(cta.textContent?.toLowerCase()).not.toContain("free");
     expect(cta).toHaveTextContent(`${unit.beds} beds`);
-    expect(cta).toHaveTextContent(`${capacity.available} ready`);
+    // Integration QA (3 Nov 2026): the ready figure is the hero's alone, never repeated here.
+    expect(cta.textContent?.toLowerCase()).not.toContain("ready");
+    expect(screen.getByTestId("ward-hero-ready")).toHaveTextContent(String(capacity.available));
   });
 });

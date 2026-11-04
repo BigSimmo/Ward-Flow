@@ -125,7 +125,12 @@ describe("the referral inbox answers as the route's role (B1)", () => {
     fireEvent.click(accept);
     expect(screen.getByTestId("decided")).toHaveTextContent("queued|");
     expect(inbox.getByText("Choose a placement reason and tick the ward check first.")).toBeInTheDocument();
-    fireEvent.change(inbox.getByLabelText("Placement reason"), { target: { value: GENDER_PLACEMENT_REASONS[0] } });
+    // WH10 (3 Nov 2026): the placement reason is a kit choice, not a browser drop-down.
+    fireEvent.click(
+      within(inbox.getByRole("group", { name: "Placement reason" })).getByRole("button", {
+        name: GENDER_PLACEMENT_REASONS[0],
+      }),
+    );
     fireEvent.click(inbox.getByLabelText("I have checked this placement with the ward"));
     fireEvent.click(accept);
     expect(screen.getByTestId("decided")).toHaveTextContent("accepted|Bed coordinator");

@@ -15,6 +15,17 @@ export type BoardPick =
 
 export type BoardBed = Pick<BedItem, "bedNumber" | "status" | "designation" | "heldFor" | "preparing">;
 
+/**
+ * The Bed board's ready figure, one rule for the header and each pod (integration QA, 3 Nov 2026):
+ * a Ready tile not held for a placed person. A bed still being made ready stays in Ready and is
+ * noted beside it (owner ruling 2026-09-05, never subtracted). Read from the tiles, so a placement
+ * lowers the figure as soon as the bed shows the person.
+ */
+export function boardReadyCounts(beds: readonly BoardBed[]): { ready: number; beingMadeReady: number } {
+  const ready = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined);
+  return { ready: ready.length, beingMadeReady: ready.filter((bed) => bed.preparing).length };
+}
+
 /** A free bed, not held for anyone, not still being made ready, and locked when the referral needs a secure bed on a mixed ward. */
 export function bedFits(bed: BoardBed, pick: BoardPick | null, isMixed: boolean): boolean {
   if (pick === null || bed.status !== "ready" || bed.heldFor !== undefined || bed.preparing) return false;
@@ -59,6 +70,52 @@ export function fitCount(beds: readonly BoardBed[], pick: BoardPick | null, isMi
   return beds.filter((bed) => boardBedFits(beds, bed, pick, isMixed)).length;
 }
 
+/**
+ * WH8 (Josh, 3 Nov 2026): the short reason a lit bed shows while someone is picked up. The engine's
+ * rules already chose which beds fit, so this only says which rule the bed met.
+ */
+export function fitReason(bed: BoardBed, pick: BoardPick, isMixed: boolean): string {
+  if (pick.kind !== "stay" && pick.secureBedNeeded && isMixed) return "Locked, as needed";
+  if (isMixed && bed.designation === "Open") return "Open bed";
+  if (isMixed && bed.designation === "Locked") return "Locked bed";
+  return "Free now";
+}
+
+/**
+ * The one fitting bed the board suggests first: for a move, a bed on the same side as the one the
+ * person is in, then the lowest bed number. Null when nothing fits.
+ */
+export function bestBed(beds: readonly BoardBed[], pick: BoardPick | null, isMixed: boolean): number | null {
+  if (pick === null) return null;
+  const fitting = beds.filter((bed) => boardBedFits(beds, bed, pick, isMixed));
+  if (fitting.length === 0) return null;
+  const fromSide =
+    pick.kind === "stay" ? beds.find((bed) => Number(bed.bedNumber) === pick.fromBed)?.designation : undefined;
+  const ranked = [...fitting].sort((left, right) => {
+    const sameSide = Number(right.designation === fromSide) - Number(left.designation === fromSide);
+    return sameSide !== 0 ? sameSide : Number(left.bedNumber) - Number(right.bedNumber);
+  });
+  return Number(ranked[0]!.bedNumber);
+}
+
+/** The question the board asks before a placement is sent, and the button that sends it. */
+export function placeQuestion(pick: BoardPick, bedNumber: number): { ask: string; send: string } {
+  const bed = bedNumberLabel(bedNumber);
+  if (pick.kind === "stay") {
+    return {
+      ask: `Move ${pick.name} from bed ${bedNumberLabel(pick.fromBed)} to bed ${bed}?`,
+      send: `Move to bed ${bed}`,
+    };
+  }
+  if (pick.kind === "referral" && pick.accepted) {
+    return { ask: `Pull bed ${bed} for ${pick.name}? Their acceptance stays as it is.`, send: `Pull bed ${bed}` };
+  }
+  if (pick.kind === "movement") {
+    return { ask: `Place ${pick.name} in bed ${bed}? This accepts them in principle.`, send: `Place in bed ${bed}` };
+  }
+  return { ask: `Place ${pick.name} in bed ${bed}? This accepts the referral.`, send: `Place in bed ${bed}` };
+}
+
 export function bedNumberLabel(bed: number | string): string {
   return String(bed).padStart(2, "0");
 }
@@ -67,7 +124,7 @@ export function bedNumberLabel(bed: number | string): string {
 export function pickedUpSay(pick: BoardPick, fits: number): string {
   const who = pick.kind === "stay" ? `${pick.name} from bed ${bedNumberLabel(pick.fromBed)}` : pick.name;
   if (fits === 0) return `Picked up ${who}. No free bed fits. Put down and answer from Ward flow.`;
-  return `Picked up ${who}. ${fits} ${fits === 1 ? "bed fits" : "beds fit"}. Press a bright bed to place, or Put down.`;
+  return `Picked up ${who}. ${fits} ${fits === 1 ? "bed fits" : "beds fit"}. Choose a lit bed, then confirm, or Put down.`;
 }
 
-export const BOARD_RESTING_SAY = "Pick up a waiting person, then press a bright bed. To move someone, open their bed.";
+export const BOARD_RESTING_SAY = "Choose who needs a bed, then a lit bed. To move someone, open their bed.";

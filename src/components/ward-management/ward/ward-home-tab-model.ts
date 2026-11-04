@@ -1,4 +1,6 @@
-import type { DeclineReason, Movement, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, DeclineReason, Movement, Unit } from "@/components/ward-management/ward-model";
+import { releaseBand } from "@/components/ward-management/ward-bed-availability";
+import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 
@@ -48,7 +50,7 @@ export function referralAnswerBlocked(movement: Movement, unit: Unit, who?: stri
 }
 
 export type WardFlowTab = "referrals" | "admissions" | "discharges";
-export type WardShiftView = "todo" | "log" | "stay";
+export type WardShiftView = "todo" | "log";
 
 /**
  * How many items sit in This shift's Act now column, so the hero's Act now pill and the column
@@ -84,4 +86,16 @@ export function wardActNowCount({
     (lapsedHolds > 0 ? 1 : 0) +
     (stoppedHolds > 0 ? 1 : 0)
   );
+}
+
+/**
+ * Which Ward flow Discharges group a release sits in: held up first, then a date before today
+ * ("Past date", the word the bed tiles use, integration QA 3 Nov 2026), then the same day bands the
+ * bed figures count (`releaseBand`), so "Today and tomorrow" holds the unblocked share of Confirmed
+ * and Expected there, then later.
+ */
+export function wardFlowReleaseGroup(release: BedRelease, now: Instant): "held" | "past" | "today" | "later" {
+  if (release.blocker) return "held";
+  if (dayOf(release.expectedAt) < dayOf(now)) return "past";
+  return releaseBand(release, now) !== "beyond-today" ? "today" : "later";
 }
