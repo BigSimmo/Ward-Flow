@@ -127,6 +127,22 @@ function ArchiveConfirm({
       undo: {
         durationMs: UNDO_TOAST_MS,
         onUndo: () => {
+          // The same fences as useUndoableStep: no Undo after a workspace or role change, or before the board is ready.
+          if (outcome.isCurrent && !outcome.isCurrent()) {
+            toast.push({
+              tone: "warning",
+              title: "Undo is unavailable because the workspace or working role changed. Review the current board.",
+            });
+            return undefined;
+          }
+          if (outcome.canUndo && !outcome.canUndo()) {
+            toast.push({
+              tone: "warning",
+              title:
+                "Undo is unavailable until the shared board is ready. Wait for it to reconnect, then check the board.",
+            });
+            return false;
+          }
           const said = (undone: WardCommandOutcome | void) =>
             toast.push(
               undone && undone.status !== "accepted"

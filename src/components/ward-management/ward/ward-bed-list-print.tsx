@@ -121,8 +121,10 @@ function bedNote(bed: WardScreenBed): string | undefined {
 
 /** The current form's end time as typed. A form the stay has moved on from shows nothing here. */
 function formEnd(bed: WardScreenBed, now: Instant, dayZero: Date): string {
-  const form = bed.legalForm as { code?: string; dueAt?: Instant } | undefined;
+  const form = bed.legalForm as { code?: string; dueAt?: Instant; endedBy?: unknown } | undefined;
   if (!bedHasPerson(bed) || !form?.code || typeof form.dueAt !== "number") return "";
+  // An explicitly ended form keeps its due time as history, not a current end.
+  if (form.endedBy !== undefined) return "";
   // The label names the form to record next when this one has ended, so its old time is history.
   if (!bed.legalStatusLabel?.startsWith(`Form ${form.code}`)) return "";
   // A dated time, never "tomorrow": the paper copy may be read days later.
