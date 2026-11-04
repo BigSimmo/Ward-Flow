@@ -57,8 +57,8 @@ describe("what's new note", () => {
 
   it("lists only the changes added since this device last closed it", () => {
     window.localStorage.setItem(TOUR_AUTO_DONE, "yes");
-    const before = WHATS_NEW.at(-2) as WhatsNewEntry;
-    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, before.id);
+    const seen = WHATS_NEW.slice(0, -1).map((entry) => entry.id);
+    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify(seen));
     render(<WardWhatsNew />);
     const items = screen.getAllByRole("listitem").map((item) => item.textContent);
     expect(items).toEqual([newest().line]);
@@ -82,6 +82,18 @@ describe("what's new note", () => {
     const seen = JSON.stringify(["2026-11-03-a", "2026-11-03-c"]);
     expect(unseenWhatsNew(seen, list).map((entry) => entry.id)).toEqual(["2026-11-03-b"]);
     expect(unseenWhatsNew("[not json", list)).toHaveLength(3);
+  });
+
+  it("reads an id stored before entry files against the old list order", () => {
+    const ids = (seen: string) => unseenWhatsNew(seen).map((entry) => entry.id);
+    // The newest id under the old order: nothing is unseen, though it no longer sorts last.
+    expect(ids("2026-11-03-one-alerts-switch")).toEqual([]);
+    // Three lines came after this one in the old order, though it now sorts last.
+    expect(ids("2026-11-03-waiting-and-all-eds")).toEqual([
+      "2026-11-03-one-alerts-switch",
+      "2026-11-03-journey-recovery",
+      "2026-11-03-integrity-save-confirmation",
+    ]);
   });
 
   it("opens Help at What's new from its button", () => {

@@ -52,14 +52,47 @@ function seenIds(seen: string | null): ReadonlySet<string> | null {
 }
 
 /**
+ * The one-file list's order before 4 Nov 2026, when a device stored only the newest id it had seen.
+ * Such a value marks that id and every one before it here seen, so moving to sorted entry files
+ * neither repeats a closed line nor hides an unread one.
+ */
+const LEGACY_ORDER = [
+  "2026-10-31-role-names-hidden-names",
+  "2026-11-01-ed-handover-table",
+  "2026-11-01-alerts-redesign",
+  "2026-11-01-design-audit-tidy",
+  "2026-11-02-one-page-per-clinic",
+  "2026-11-02-downtime-one-table",
+  "2026-11-02-prelaunch-wording",
+  "2026-11-02-help-show-me-around",
+  "2026-11-03-tools-overhaul",
+  "2026-11-03-save-and-safety-fixes",
+  "2026-11-03-reminders-in-alerts",
+  "2026-11-03-one-page-scroll",
+  "2026-11-03-home-flow",
+  "2026-11-03-report-data-correctness",
+  "2026-11-03-coordinator-quick-actions",
+  "2026-11-03-dropdowns-tips-dots",
+  "2026-11-03-waiting-and-all-eds",
+  "2026-11-03-integrity-save-confirmation",
+  "2026-11-03-journey-recovery",
+  "2026-11-03-one-alerts-switch",
+];
+
+/**
  * The changes a device has not seen, newest first. The stored value lists the ids seen, so a change
  * that sorts among older ones still shows. A value older devices stored is the newest id they saw:
- * everything after it is unseen, and a device that has seen none gets the newest few, as does one
- * whose stored id has since left the list.
+ * that id and everything before it in the old order (or, for an id not in it, in `list`) are seen. A
+ * device that has seen none gets the newest few, as does one whose stored id has since left the list.
  */
 export function unseenWhatsNew(seen: string | null, list: readonly WhatsNewEntry[] = WHATS_NEW): WhatsNewEntry[] {
-  const ids = seenIds(seen);
-  const at = ids !== null || seen === null ? -1 : list.findIndex((entry) => entry.id === seen);
+  let ids = seenIds(seen);
+  let at = -1;
+  if (ids === null && seen !== null) {
+    const legacy = LEGACY_ORDER.indexOf(seen);
+    if (legacy >= 0) ids = new Set(LEGACY_ORDER.slice(0, legacy + 1));
+    else at = list.findIndex((entry) => entry.id === seen);
+  }
   return list
     .slice(at + 1)
     .filter((entry) => !ids?.has(entry.id))
