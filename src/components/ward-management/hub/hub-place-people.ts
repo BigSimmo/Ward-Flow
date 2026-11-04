@@ -1,4 +1,5 @@
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { S2015_CATCHMENT_ROWS, parseFollowUpClinicSet } from "@/components/ward-management/ward-catchment";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
@@ -10,8 +11,9 @@ export type PlacePerson = { key: string; name: string; href?: string };
 
 /**
  * Who the Places panel names for one place (PL1 follow-up, Josh, 4 Nov 2026: names, not counts).
- * A ward lists the open movements it has accepted, so the people heading there. An ED lists the open
- * movements that began there and have not been collected yet, so the people still waiting there.
+ * A ward lists the open movements it has accepted, so the people heading there. An ED lists the people the ED
+ * screens count as still waiting there (`isWaitingInEd`), so a ward transfer that keeps an ED routing
+ * id, or anyone already collected, is left out.
  * A team holds no movements, so it lists nobody. Longest wait first, read off each movement's own
  * opening time, so the list never borrows another page's numbers.
  */
@@ -24,7 +26,7 @@ export function placePeople(
   const here = movements.filter((movement) => {
     if (!isOpen(movement)) return false;
     if (entry.kind === "ward") return movement.acceptedUnitId === entry.id;
-    return movement.originEdId === entry.id && movement.transport?.collectedAt === undefined;
+    return movement.originEdId === entry.id && isWaitingInEd(movement);
   });
   return [...here]
     .sort((left, right) => left.openedAt - right.openedAt || left.id.localeCompare(right.id))

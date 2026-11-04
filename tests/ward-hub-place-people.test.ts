@@ -19,9 +19,10 @@ describe("placePeople (PL1 follow-up: names, not counts)", () => {
     movement({ id: "WF-early", openedAt: 100, originEdId: "ed-a" }),
     movement({ id: "WF-collected", openedAt: 50, originEdId: "ed-a", transport: { collectedAt: 200 } as never }),
     movement({ id: "WF-arrived", openedAt: 10, originEdId: "ed-a", acceptedUnitId: "ward-a", stage: "arrived" }),
+    movement({ id: "WF-transfer", openedAt: 20, originEdId: "ed-a", sourceAdmissionId: "adm-1" as never }),
   ];
 
-  it("names who is still waiting at an ED, longest wait first, leaving out anyone collected", () => {
+  it("names who is still waiting at an ED, longest wait first, leaving out anyone collected or still on a ward", () => {
     expect(placePeople({ kind: "ed", id: "ed-a" }, movements, resolve).map((person) => person.key)).toEqual([
       "WF-early",
       "WF-late",
