@@ -10,7 +10,8 @@
  * separate worktree and fails only the routes this PR grew (`judgeAgainstMain`). Before 4 November
  * 2026 one over-budget merge to main failed every open PR's required build until someone raised the
  * budget by hand. A PR that pushes a route over, or grows an already-over route by more than
- * MAIN_TOLERANCE_KB, still fails. The extra build runs only when the merged result is over budget.
+ * MAIN_TOLERANCE_KB, still fails. The extra build runs only when the merged result is over budget,
+ * and never for a PR that changes package.json, package-lock.json or .nvmrc (judged strictly).
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, symlinkSync } from "node:fs";
@@ -65,7 +66,14 @@ export function gate({ root = process.cwd(), event = process.env.GITHUB_EVENT_NA
     encoding: "utf8",
   }).trim();
   console.log(`Over budget merged with main ${mainSha}. Measuring main alone to see whose growth it is.`);
-  const mainFile = measureMain(root, mainSha, dir);
+  // Main alone reuses this checkout's installed packages, which are only main's when the
+  // dependency inputs match. A PR that changes them is judged strictly, as before.
+  const sameDependencies =
+    spawnSync("git", ["diff", "--quiet", mainSha, "HEAD", "--", "package.json", "package-lock.json", ".nvmrc"], {
+      cwd: root,
+    }).status === 0;
+  if (!sameDependencies) console.error("This PR changes dependencies, so main alone cannot be measured fairly here.");
+  const mainFile = sameDependencies ? measureMain(root, mainSha, dir) : undefined;
   const args = [join(root, "scripts/check-script-budget.mjs"), "--judge", merged];
   if (mainFile) args.push(mainFile);
   return run(process.execPath, args, root);

@@ -79,9 +79,27 @@ async function main() {
   const tip = git("rev-parse", "HEAD");
   const branch = `${BRANCH_PREFIX}${tip.slice(0, 7)}`;
 
-  // One heal PR at a time: an older open one measured an older main, so it is superseded.
+  // A re-run for the same main leaves its heal PR (and that PR's commits, labels and auto-merge)
+  // alone rather than rewriting it.
   const open = await api(`/pulls?state=open&base=main&per_page=100`);
-  for (const pr of open.filter((item) => item.head?.ref?.startsWith(BRANCH_PREFIX) && item.head.ref !== branch)) {
+  if (open.some((item) => item.head?.ref === branch)) {
+    console.log(`Heal PR for main ${tip.slice(0, 7)} is already open on ${branch}. Leaving it as it is.`);
+    return;
+  }
+  if (runSha !== tip)
+    console.log(
+      `::warning::Measured main ${runSha.slice(0, 7)}; main is now ${tip.slice(0, 7)}. The heal PR's own build re-measures it.`,
+    );
+
+  // One heal PR at a time: an older open one measured an older main, so it is superseded, unless
+  // Josh has put it on hold, which leaves healing to him.
+  const older = open.filter((item) => item.head?.ref?.startsWith(BRANCH_PREFIX));
+  const held = older.find((item) => item.labels?.some((label) => label.name === "hold"));
+  if (held) {
+    console.log(`::warning::Heal PR #${held.number} is labelled hold, so no new heal is opened.`);
+    return;
+  }
+  for (const pr of older) {
     await post(`/issues/${pr.number}/comments`, {
       body: `Superseded by a newer budget heal for main ${tip.slice(0, 7)}.`,
     });
@@ -95,30 +113,28 @@ async function main() {
   writeFileSync(budgetFile, `${JSON.stringify({ ...config, budgets }, null, 2)}\n`);
   git("add", "script-budget.json");
   git("commit", "--quiet", "-m", `Raise phone script budget to main's measured size (budget heal)`);
+  // A branch of this name with no open PR is a closed heal's leftover, so replacing it loses nothing.
   git("push", "--force", "origin", `HEAD:refs/heads/${branch}`);
 
-  const existing = open.find((item) => item.head?.ref === branch);
-  const pr =
-    existing ??
-    (await post(`/pulls`, {
-      title: `Budget heal: raise phone script budget to main's measured size`,
-      head: branch,
-      base: "main",
-      body: [
-        `Main ${tip.slice(0, 7)} measured over its phone script budget in run of ${runSha.slice(0, 7)}, so every route below is raised to the measured size plus ${HEADROOM_KB} KB.`,
-        "",
-        ...raises.map(({ route, from, to, kb }) => `- \`${route}\`: ${from} KB to ${to} KB (measured ${kb} KB)`),
-        "",
-        canAutoMerge(raises)
-          ? `Every raise is within ${AUTO_MERGE_MAX_KB} KB, so auto-merge is armed and it merges once the required checks pass.`
-          : `A raise is over ${AUTO_MERGE_MAX_KB} KB, so this waits for Josh. Open PRs are not blocked meanwhile: their build fails only routes they grew.`,
-        "",
-        "Opened by `.github/workflows/ward-flow-budget-heal.yml`.",
-      ].join("\n"),
-    }));
+  const pr = await post(`/pulls`, {
+    title: `Budget heal: raise phone script budget to main's measured size`,
+    head: branch,
+    base: "main",
+    body: [
+      `Main ${runSha.slice(0, 7)} measured over its phone script budget, so every route below is raised to the measured size plus ${HEADROOM_KB} KB. This branch starts from main ${tip.slice(0, 7)}, and its own build re-measures it.`,
+      "",
+      ...raises.map(({ route, from, to, kb }) => `- \`${route}\`: ${from} KB to ${to} KB (measured ${kb} KB)`),
+      "",
+      canAutoMerge(raises)
+        ? `Every raise is within ${AUTO_MERGE_MAX_KB} KB, so auto-merge is armed and it merges once the required checks pass.`
+        : `A raise is over ${AUTO_MERGE_MAX_KB} KB, so this waits for Josh. Open PRs are not blocked meanwhile: their build fails only routes they grew.`,
+      "",
+      "Opened by `.github/workflows/ward-flow-budget-heal.yml`.",
+    ].join("\n"),
+  });
 
   const history = `docs/script-budget-history/${perthDate()}-pr${pr.number}-budget-heal.md`;
-  writeFileSync(history, historyEntry({ date: perthDate(), pr: pr.number, raises, sha: tip }));
+  writeFileSync(history, historyEntry({ date: perthDate(), pr: pr.number, raises, sha: runSha }));
   git("add", history);
   git("commit", "--quiet", "-m", `Record the budget heal in ${history}`);
   git("push", "origin", `HEAD:refs/heads/${branch}`);
