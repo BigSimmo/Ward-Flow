@@ -34,7 +34,7 @@ import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout
  */
 
 /** A tone a row or a fact carries on the wall: act now, watch, or nothing. */
-export type ClinicalTone = "danger" | "warning" | undefined;
+type ClinicalTone = "danger" | "warning" | undefined;
 
 export type ClinicalFact = { text: string; tone?: ClinicalTone };
 
@@ -70,7 +70,7 @@ export const HANDOVER_GROUPS = [
   { id: "going", title: "Going home today" },
   { id: "stuck", title: "Held up or past their date" },
 ] as const;
-export type HandoverGroup = (typeof HANDOVER_GROUPS)[number]["id"];
+type HandoverGroup = (typeof HANDOVER_GROUPS)[number]["id"];
 
 type RecordInputs = {
   movements: readonly Movement[];

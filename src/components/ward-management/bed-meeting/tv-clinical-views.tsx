@@ -21,7 +21,7 @@ import styles from "./tv-clinical.module.css";
  */
 
 /** How long a page stays up before the board turns it (Q5, 4 Nov 2026). */
-export const TV_PAGE_SECONDS = 20;
+const TV_PAGE_SECONDS = 20;
 
 /**
  * One page of rows that fits the screen. It starts at `most` rows and drops one at a time while the
