@@ -4183,7 +4183,7 @@
     margin-right: 0;
     color: var(--wf-ink-1);
     caret-color: var(--wf-accent);
-    font-size: 1.0625rem;
+    font-size: var(--wf-fs-16);
     font-weight: 450;
     letter-spacing: -0.01em;
   }

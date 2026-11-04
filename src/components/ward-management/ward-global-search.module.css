@@ -1426,10 +1426,6 @@ a.askChip {
     padding: 10px 12px;
     border-radius: 16px;
   }
-
-  .popup:not([data-start]) .groupItem[data-goto] .resultTitle {
-    font-size: var(--wf-fs-17, 17px);
-  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
