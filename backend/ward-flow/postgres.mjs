@@ -2013,7 +2013,10 @@ export function createWorkspaceStore(
       );
       const row = rows[0];
       return row
-        ? { outcome: row.status === 200 ? "accepted" : "refused", commandRevision: row.result.commandRevision }
+        ? {
+            outcome: row.status === 200 ? (row.result.outcome === "partly" ? "partly" : "accepted") : "refused",
+            commandRevision: row.result.commandRevision,
+          }
         : null;
     },
     /**

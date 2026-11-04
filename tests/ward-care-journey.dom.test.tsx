@@ -139,9 +139,24 @@ describe("D-30 transfer acceptance controls", () => {
       .getAllByRole("option")
       .map((o) => o.getAttribute("value"))
       .filter(Boolean);
-  it("offers the coordinator acceptance, handover and arrival", () => {
+  it("offers the coordinator acceptance, handover, arrival and cancellation", () => {
     start("coordinator");
-    expect(stepOptions()).toEqual(["accepted", "handover", "arrived"]);
+    expect(stepOptions()).toEqual(["accepted", "handover", "arrived", "cancelled"]);
+  });
+  it("says a linked placement record is needed, before and after an unplaced acceptance", () => {
+    start("coordinator");
+    const journey = screen.getByRole("region", { name: "Care journey" });
+    expect(journey).toHaveTextContent("A linked placement record is required before acceptance or handover.");
+    const ward = within(screen.getByRole("combobox", { name: "Receiving ward" }))
+      .getAllByRole("option")
+      .map((o) => o.getAttribute("value"))
+      .find(Boolean)!;
+    fireEvent.change(screen.getByRole("combobox", { name: "Receiving ward" }), { target: { value: ward } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Transfer step" }), { target: { value: "accepted" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record ward transfer" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Create a linked placement record through a ward referral or agreed repatriation before recording this transfer.",
+    );
   });
   it("does not offer a ward user transfer acceptance", () => {
     start("ward");
