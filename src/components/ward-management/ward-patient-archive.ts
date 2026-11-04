@@ -76,4 +76,5 @@ const REGISTRATION_FIELDS: ReadonlySet<string> = new Set([
   "interpreterLanguage",
   "addedAt",
   "registrationScope",
+  "aboriginalOrTorresStraitIslanderStatus",
 ]);
