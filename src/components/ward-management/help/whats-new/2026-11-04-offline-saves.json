@@ -1,0 +1,3 @@
+{
+  "line": "Changes made while offline now wait on the page and send by themselves when the connection returns."
+}

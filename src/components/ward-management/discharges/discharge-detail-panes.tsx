@@ -70,13 +70,14 @@ function DischargeDetailTabs({
   setDrawerTab: DischargeWorkspaceState["setDrawerTab"];
 }) {
   // Mock-up (1 Nov 2026): the kit's pill tabs, a rounded track with the chosen tab raised, as Home's
-  // Activity panel. Barriers carries a danger glyph while a blocker is recorded.
+  // Activity panel. Barriers carries the amber held-up glyph while a blocker is recorded
+  // (post-merge audit, 4 Nov 2026: held up is amber everywhere; red is only for past the date).
   return (
     <PillTabs
       items={DETAIL_TABS.map(([id, label]) => ({
         id,
         label,
-        tone: id === "barriers" && hasBlocker ? ("danger" as const) : undefined,
+        tone: id === "barriers" && hasBlocker ? ("warning" as const) : undefined,
       }))}
       value={drawerTab}
       onChange={setDrawerTab}
@@ -213,7 +214,7 @@ export function DischargeRecordDetail({
           <div className={pageStyles.barrierBox}>
             <div className={pageStyles.barrierText}>
               <span className={pageStyles.barrierCause}>
-                <StatusGlyph tone="danger" size={9} />
+                <StatusGlyph tone="warning" size={9} />
                 {activeRecord.blockReason}
               </span>
               <span className={pageStyles.secondary}>Recorded discharge blocker</span>
@@ -671,7 +672,7 @@ export function DischargeReleaseDetail({
             <div className={pageStyles.barrierBox}>
               <div className={pageStyles.barrierText}>
                 <span className={pageStyles.barrierCause}>
-                  <StatusGlyph tone="danger" size={9} />
+                  <StatusGlyph tone="warning" size={9} />
                   {detailRelease.blocker}
                 </span>
                 <span className={pageStyles.secondary}>Recorded discharge blocker</span>
@@ -790,7 +791,7 @@ export function DischargeRestingDetail({ s }: { s: DischargeWorkspaceState }) {
                     className={pageStyles.restingItem}
                     onClick={(e) => selectRelease(rel.id, e.currentTarget)}
                   >
-                    <StatusGlyph tone="danger" size={9} />
+                    <StatusGlyph tone="warning" size={9} />
                     <span className={pageStyles.restingItemText}>
                       <span className={pageStyles.restingItemTitle}>
                         {unitLabel(u, rel.unitId)} {l ? `· ${recordName(l)}` : ""}
