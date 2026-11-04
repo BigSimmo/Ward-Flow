@@ -1,7 +1,7 @@
 "use client";
 // One ward on a phone, split out of statistics-ward-screen.tsx to keep that file under the line cap.
 
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { Building2 } from "lucide-react";
 
 import { PhoneListRow, Segmented, ShowMoreRow, StatusGlyph, cx } from "@/components/wf";
@@ -37,7 +37,7 @@ export function stayDaysOf(admission: Admission, now: number): number | null {
 /**
  * One ward on a phone (v10 phone): the beds as a strip of boxes grouped by state (the model has no
  * bed numbers), then the roster, the discharges due in seven days and the blocked discharges as
- * one list behind a segmented control, and "Open the ward" pinned at the foot.
+ * one list behind a segmented control, the Length of stay card, and "Open the ward" pinned at the foot.
  */
 export function WardPhone({
   unit,
@@ -46,6 +46,7 @@ export function WardPhone({
   now,
   dayZero,
   leaveBeds,
+  stay,
 }: {
   unit: Unit;
   map: BedMap;
@@ -53,6 +54,8 @@ export function WardPhone({
   now: number;
   dayZero: Date;
   leaveBeds: readonly { admissionId: string }[];
+  /** The Length of stay card (`#ward-stay`), after the lists, so the ward page's link lands here too. */
+  stay?: ReactNode;
 }) {
   const [tab, setTab] = useState<"roster" | "discharges" | "blockers">("roster");
   const { countsOnly } = useStatisticsCounts();
@@ -162,6 +165,7 @@ export function WardPhone({
           ) : null}
         </>
       )}
+      {stay}
       <PhonePinnedAction icon={Building2} href={unitHref(unit.id)} testId="ward-statistics-ward-phone-open">
         Open the ward
       </PhonePinnedAction>

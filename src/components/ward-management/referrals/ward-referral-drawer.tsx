@@ -1,10 +1,10 @@
 "use client";
 
-import { Inbox } from "lucide-react";
+import { FileClock } from "lucide-react";
 import { useState } from "react";
+import { referralDraftAgeText } from "./referral-draft-store";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
 import styles from "./ward-referral-drawer.module.css";
-import { WardReferralInbox } from "./ward-referral-inbox";
 import { duplicateCaseHref, duplicateSentence } from "./referral-duplicate";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { StatusGlyph, Button } from "@/components/wf";
@@ -76,7 +76,6 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
     arrivalRole,
     drawerRef,
     requestClose,
-    inboxWard,
     phMode,
     phCloseSheet,
     patientRecord,
@@ -106,19 +105,34 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
         }}
       >
         <ReferralDrawerHead s={s} />
+        {/* RF6 (Current Issues, 3 Nov 2026): a kept draft reopens with a clear card naming it, and one
+            quiet way to start again instead. */}
         {s.draftRestored ? (
-          <p role="status">
-            Draft restored in this tab —{" "}
+          <div className={styles.draftNotice} role="status" data-testid="ward-referral-draft-restored">
+            <FileClock aria-hidden="true" />
+            <span className={styles.draftNoticeText}>
+              <strong>Carrying on with your unsent referral</strong>
+              <small>
+                {patientRecord ? `${s.currentPatient.name} · ` : ""}
+                {s.draftKeptAt === null
+                  ? "Kept in this tab"
+                  : `Kept in this tab · ${referralDraftAgeText(s.draftKeptAt, s.draftNowMs)}`}
+              </small>
+            </span>
             <Button variant="ghost" size="sm" onClick={s.clearRecoveredDraft}>
-              Clear
+              Start a new referral
             </Button>
-          </p>
+          </div>
         ) : null}
         {s.needsChartReattachment ? (
-          <p role="status">Attachments are not recovered. Reattach charts before sending.</p>
+          <p className={styles.draftNotice} role="status">
+            Attachments are not recovered. Reattach charts before sending.
+          </p>
         ) : null}
         {!s.draftSessionSaved ? (
-          <p role="status">Session recovery unavailable. This draft stays in memory in this tab.</p>
+          <p className={styles.draftNotice} role="status">
+            Session recovery unavailable. This draft stays in memory in this tab.
+          </p>
         ) : null}
 
         <div className={styles.sheetMain}>
@@ -127,20 +141,7 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
           ) : null}
           <div ref={bodyRef} className={styles.drawerBody}>
             {isPhone && phMode === "sheet" ? <ReferralDrawerPhoneSheetHead s={s} /> : null}
-            {view === "inbox" ? (
-              inboxWard ? (
-                <div className={styles.inboxPane}>
-                  <WardReferralInbox key={inboxWard.unit.unitId} unitId={inboxWard.unit.unitId} />
-                </div>
-              ) : (
-                <div className={styles.emptyCard}>
-                  <span className={styles.cardIcon} aria-hidden="true">
-                    <Inbox aria-hidden="true" />
-                  </span>
-                  <h3>No referrals waiting</h3>
-                </div>
-              )
-            ) : (
+            {view === "new" ? (
               <>
                 {previewOpen ? <ReferralLetterPreview s={s} /> : null}
                 {confirmationOpen && !previewOpen && <ReferralConfirmation s={s} />}
@@ -155,7 +156,7 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
 
                 <ReferralPlacementStep s={s} />
               </>
-            )}
+            ) : null}
           </div>
           {isPhone && phMode === "list" ? <ReferralPhoneChecklistToggle s={s} /> : null}
           {view === "new" ? (

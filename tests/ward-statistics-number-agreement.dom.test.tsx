@@ -1,5 +1,5 @@
 import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -204,6 +204,12 @@ function disagreements(text: string): string[] {
   return [...new Set(found)];
 }
 
+/** The all-stays average sits in the Length of stay card's Data view (owner polish, 3 Nov 2026). */
+function openStayData() {
+  const card = screen.queryByTestId("statistics-ward-stays-chart");
+  if (card) fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
+}
+
 describe("every ward statistic reads correctly when its count is one", () => {
   it.each(CASES)("$testId reads correctly at a count of one", ({ testId, admissions }) => {
     // `CASES` is `as const`, so `admissions` here is a readonly TUPLE — `readonly [Admission]` for
@@ -218,6 +224,7 @@ describe("every ward statistic reads correctly when its count is one", () => {
         <StatisticsWardScreen unitId={UNIT!.id} units={[UNIT!]} admissions={admissions as unknown as Admission[]} />
       </WardFlowProvider>,
     );
+    if (testId === "ward-stat-length-of-stay") openStayData();
     const text = (screen.getByTestId(testId).textContent ?? "").replace(/\s+/gu, " ").trim();
     view.unmount();
 
