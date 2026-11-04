@@ -544,6 +544,13 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
       "An ED performance target set in Settings, counted from when the patient's wait began. It is not a legal deadline.",
   },
   { term: "Fit to travel", meaning: "The ED doctor's recorded medical clearance. It is needed before transport." },
+  {
+    // The full road-distance caveat (ward-reference-distances.ts). The shortlist shows a short line
+    // and links here (Josh, 3 Nov 2026). A test keeps the two in step.
+    term: "Road distance",
+    meaning:
+      "Indicative road distance measured on public map data. Not live traffic, and not a clinical travel time. Ward lists are never sorted by it.",
+  },
 
   {
     term: "Catchment",
