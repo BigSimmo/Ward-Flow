@@ -39,6 +39,7 @@ jobs:
       organisation: ${{ steps.plan.outputs.organisation }}
       doc_contracts: ${{ steps.plan.outputs.doc_contracts }}
       legal_sweep: ${{ steps.plan.outputs.legal_sweep }}
+      secret_scan: ${{ steps.secret-scan.outcome }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -76,6 +77,29 @@ jobs:
       - name: Record the tested tree
         if: ${{ github.event_name == 'pull_request' }}
         run: echo "::notice title=Ward tested tree::$(git rev-parse 'HEAD^{tree}')"
+      # The full-history secret scan (formerly its own job, about 20 seconds of work on a fresh
+      # runner). A failed scan fails this job, so every later job is skipped and Ward Flow required
+      # fails; its outcome also reaches Ward Flow required as needs.plan.outputs.secret_scan.
+      - name: Install checksum-verified gitleaks
+        env:
+          GITLEAKS_VERSION: 8.28.0
+          GITLEAKS_SHA256: a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
+        run: |
+          archive="$RUNNER_TEMP/gitleaks.tar.gz"
+          curl -fsSL --retry 3 -o "$archive" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum -c -
+          tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" version
+      - name: Scan git history for secrets
+        id: secret-scan
+        run: |
+          "$RUNNER_TEMP/gitleaks" git . --redact --no-banner --exit-code 1 --gitleaks-ignore-path .gitleaksignore --log-opts="--full-history HEAD"
+      # Last, because it moves HEAD: a pull request that conflicts with the current main fails here,
+      # in the cheap plan job, before any other job starts. The production build still merges main
+      # again before measuring the script budget.
+      - name: Fail early when this pull request conflicts with main
+        if: ${{ github.event_name == 'pull_request' }}
+        run: node scripts/ward-ci-public/merge-latest-main.mjs
   reuse:
     name: Ward Flow main reuse check
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -88,6 +112,7 @@ jobs:
       checks: read
     outputs:
       verified: ${{ steps.check.outputs.verified }}
+      backend_verified: ${{ steps.check.outputs.backend_verified }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -226,8 +251,8 @@ jobs:
           retention-days: 3
   backend:
     name: Ward Flow backend and shared production proof
-    needs: plan
-    if: ${{ !cancelled() && needs.plan.outputs.backend == 'true' }}
+    needs: [plan, reuse]
+    if: ${{ !cancelled() && needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     services:
@@ -685,29 +710,7 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ward-release-browsers-${{ runner.os }}-chromium-webkit-${{ steps.release-version.outputs.version }}
     needs: [plan, browser-build]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && github.event.pull_request.draft != true }}
-  secret-scan:
-    name: Ward Flow secret scan
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Install checksum-verified gitleaks
-        env:
-          GITLEAKS_VERSION: 8.28.0
-          GITLEAKS_SHA256: a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
-        run: |
-          archive="$RUNNER_TEMP/gitleaks.tar.gz"
-          curl -fsSL --retry 3 -o "$archive" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum -c -
-          tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
-          "$RUNNER_TEMP/gitleaks" version
-      - name: Scan git history for secrets
-        run: |
-          "$RUNNER_TEMP/gitleaks" git . --redact --no-banner --exit-code 1 --gitleaks-ignore-path .gitleaksignore --log-opts="--full-history HEAD"
+    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && github.event.pull_request.draft != true && needs.browser-build.result != 'skipped' }}
   build:
     name: Ward Flow production build
     needs: [plan, reuse]
@@ -724,6 +727,10 @@ jobs:
       - name: Merge the latest main before measuring
         if: ${{ github.event_name == 'pull_request' }}
         run: node scripts/ward-ci-public/merge-latest-main.mjs
+      # Evidence for the main reuse check: the tree this build measured, after merging main.
+      - name: Record the built tree
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo "::notice title=Ward built tree::$(git rev-parse 'HEAD^{tree}')"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version-file: .nvmrc
@@ -840,17 +847,18 @@ jobs:
   required:
     name: Ward Flow required
     if: always()
-    needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, secret-scan, build, coverage]
+    needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, coverage]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require every Ward Flow job to succeed
         env:
           REUSE_VERIFIED: ${{ needs.reuse.outputs.verified }}
+          BACKEND_REUSED: ${{ needs.reuse.outputs.backend_verified }}
           STATIC_RESULT: ${{ needs.static.result }}
           UNIT_RESULT: ${{ needs.unit.result }}
           BROWSER_RESULT: ${{ needs.browser.result }}
-          SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
+          SECRET_SCAN_RESULT: ${{ needs.plan.outputs.secret_scan }}
           BUILD_RESULT: ${{ needs.build.result }}
           COVERAGE_RESULT: ${{ needs.coverage.result }}
           RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}
@@ -873,8 +881,8 @@ jobs:
           test "$PLAN_RESULT" = success
           test "$STATIC_RESULT" = success
           test "$SECRET_SCAN_RESULT" = success
-          require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
           if [ "$DRAFT" = true ]; then
+            require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
             test "$GITHUB_EVENT_NAME" = pull_request
             require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
             require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
@@ -885,7 +893,6 @@ jobs:
             echo "::error title=Draft fast lane::Quick checks passed. Browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
             exit 1
           fi
-          require_scope "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT"
           if [ "$REUSE_VERIFIED" = true ]; then
             test "$GITHUB_EVENT_NAME" = push
             test "$GITHUB_REF" = refs/heads/main
@@ -895,7 +902,13 @@ jobs:
             test "$BROWSER_RESULT" = skipped
             test "$BUILD_RESULT" = skipped
             test "$COVERAGE_RESULT" = skipped
+            test "$RELEASE_GATE_RESULT" = skipped
+            if [ "$BACKEND_REUSED" = true ]; then test "$BACKEND_RESULT" = skipped;
+            else require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"; fi
           else
+            test "$BACKEND_REUSED" != true
+            require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
+            require_scope "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT"
             require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
             require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
             require_scope "$BROWSER_SCOPE" "$BROWSER_BUILD_RESULT"
