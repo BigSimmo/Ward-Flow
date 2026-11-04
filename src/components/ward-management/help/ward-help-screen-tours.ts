@@ -142,8 +142,8 @@ const AROUND: readonly Around[] = [
       {
         device: "desk",
         target: id("ward-referral-meeting"),
-        title: "Bed meeting list",
-        body: "The referrals to talk through at the bed meeting.",
+        title: "Bed meeting",
+        body: "Opens the bed meeting agenda at its referrals, the ones to talk through at the meeting.",
       },
     ],
   },

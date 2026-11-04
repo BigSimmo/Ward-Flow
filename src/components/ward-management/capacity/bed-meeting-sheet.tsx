@@ -87,6 +87,11 @@ function BedMeetingSheetView({
         </p>
       </div>
       <p className={styles.disclosure}>Synthetic prototype · {stamp.dayNote}. Not approved for clinical use.</p>
+      {sheet.peopleFilter ? (
+        <p className={styles.disclosure} data-testid="bed-meeting-sheet-people-filter">
+          People lists show only {sheet.peopleFilter}. Bed and discharge figures are for the whole service.
+        </p>
+      ) : null}
 
       <div className={styles.grid}>
         <section className={styles.section} aria-labelledby="bed-meeting-capacity" data-testid="bed-meeting-capacity">

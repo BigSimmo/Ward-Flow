@@ -31,7 +31,8 @@ import { demographicLabel } from "./referral-board-model";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
-import { Button, buttonClass, cx, durMinutes } from "@/components/wf";
+import { Button, Count, Icon, buttonClass, cx, durMinutes } from "@/components/wf";
+import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 
 import s from "./referral-panel.module.css";
 
@@ -200,19 +201,19 @@ export function PanelNav({
 }
 
 /**
- * Fork of HeroTools (referral-board-parts.tsx). Changed: Bed meeting list carries the number of
- * people it will list, which follows the header's service and any highlight.
+ * Fork of HeroTools (referral-board-parts.tsx). Changed: the bed meeting button carries the number
+ * of referrals waiting in the header's service. R5 fold (Josh, 3 Nov 2026): it opens the bed
+ * meeting agenda at its Referrals list, where the meeting's referrals now live, in place of a
+ * separate sheet.
  */
 export function HeroTools({
   overdueCount,
   meetingCount,
   onNextOverdue,
-  onMeeting,
 }: {
   overdueCount: number;
   meetingCount: number;
   onNextOverdue: () => void;
-  onMeeting: () => void;
 }) {
   return (
     <div className={s.heroTools}>
@@ -228,17 +229,16 @@ export function HeroTools({
       >
         Next overdue
       </Button>
-      <Button
-        variant="onHero"
-        size="sm"
-        icon={ListOrdered}
-        count={meetingCount}
-        onClick={onMeeting}
-        title="Bed meeting list (M)"
+      <Link
+        href={BED_MEETING_REFERRALS_HREF}
+        className={buttonClass({ variant: "onHero", size: "sm" })}
+        title="Bed meeting agenda (M)"
         data-testid="ward-referral-meeting"
       >
-        Bed meeting list
-      </Button>
+        <Icon icon={ListOrdered} size={16} />
+        <span>Bed meeting</span>
+        <Count n={meetingCount} />
+      </Link>
     </div>
   );
 }
