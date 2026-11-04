@@ -7,6 +7,7 @@ import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-br
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { ASK_WARDS_MINUTES, ASK_WARDS_WINDOW_TEXT } from "@/components/ward-management/ward-operational-defaults";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 
 /**
@@ -17,14 +18,13 @@ import type { BedRelease } from "@/components/ward-management/ward-model";
  *
  * M6 (Josh, 3 Nov 2026): this and Quick actions' ask (#1339, `alerts/ask-wards.ts`) share one rule:
  * one advisory directive to the wards not yet asked, skipping a ward named in a live alert with the
- * same title, shown for 4 hours. Whichever lands second swaps its copy for the shared helper.
+ * same title, shown for ASK_WARDS_MINUTES (shared with #1339 in ward-operational-defaults). Whichever lands second swaps its copy for the shared helper.
  *
  * Round 2 (3 Nov 2026): a send waits for the store's answer and says when it was refused, an ask
  * that is still live for that ward cannot be sent twice, and one tap asks every ward with an
  * overdue date at once.
  */
 const SENDER = "State Mental Health Bed Desk Coordinator";
-const ASK_MINUTES = 240;
 
 const ASKS = [
   {
@@ -58,6 +58,7 @@ function listNames(names: readonly string[]): string {
 
 type DispatchOutcome = { status?: string; message?: string; isCurrent?: () => boolean } | undefined | void;
 type Dispatch = (event: WardFlowEvent) => unknown;
+type AskFields = Omit<Extract<WardFlowEvent, { type: "DISPATCH_BROADCAST_ALERT" }>, "type">;
 
 function liveAsk(alerts: readonly BroadcastAlert[], title: string, message: string, unitId: string, now: Instant) {
   return alerts.some(
@@ -70,24 +71,14 @@ function liveAsk(alerts: readonly BroadcastAlert[], title: string, message: stri
   );
 }
 
-async function sendAsk(
-  dispatch: Dispatch,
-  event: Extract<WardFlowEvent, { type: "DISPATCH_BROADCAST_ALERT" }>,
-): Promise<{ ok: boolean; message?: string }> {
-  const outcome = (await dispatch(event)) as DispatchOutcome;
+async function sendAsk(dispatch: Dispatch, fields: AskFields): Promise<{ ok: boolean; message?: string }> {
+  const outcome = (await dispatch({ type: "DISPATCH_BROADCAST_ALERT", ...fields })) as DispatchOutcome;
   if (outcome && outcome.status === "accepted" && outcome.isCurrent?.() !== false) return { ok: true };
   return { ok: false, message: outcome?.message };
 }
 
-function askEvent(
-  now: Instant,
-  title: string,
-  message: string,
-  scopeLabel: string,
-  unitIds: string[],
-): Extract<WardFlowEvent, { type: "DISPATCH_BROADCAST_ALERT" }> {
+function askEvent(now: Instant, title: string, message: string, scopeLabel: string, unitIds: string[]): AskFields {
   return {
-    type: "DISPATCH_BROADCAST_ALERT",
     role: "coordinator",
     now,
     title,
@@ -96,7 +87,7 @@ function askEvent(
     category: "capacity_gridlock",
     targetScope: "all",
     targetScopeLabel: scopeLabel,
-    durationMinutes: ASK_MINUTES,
+    durationMinutes: ASK_WARDS_MINUTES,
     dispatchedByName: SENDER,
     kind: "directive",
     targetUnitIds: unitIds,
@@ -164,7 +155,7 @@ export function DischargeMessageWard({
 
 /**
  * One tap for the coordinator's most common chase: every ward with an overdue expected date gets one
- * set ask, in a single alert to just those wards. Wards already asked in the last four hours are
+ * set ask, in a single alert to just those wards. Wards already asked in the ask window are
  * left out, so the button never nags twice. Confirmed first, because it reaches several desks.
  */
 export function DischargeAskOverdueWards({
@@ -199,7 +190,7 @@ export function DischargeAskOverdueWards({
     const names = pending.map(wardName);
     const confirmed = await requestConfirm({
       title: `Ask ${pending.length} ${pending.length === 1 ? "ward" : "wards"}?`,
-      message: `${listNames(names)} will each be asked to confirm their overdue discharge dates or record new ones. It shows on their screen for 4 hours.`,
+      message: `${listNames(names)} will each be asked to confirm their overdue discharge dates or record new ones. It shows on their screen for ${ASK_WARDS_WINDOW_TEXT}.`,
       confirmLabel: "Send",
       cancelLabel: "Not now",
     });
@@ -215,7 +206,7 @@ export function DischargeAskOverdueWards({
         ? {
             tone: "success",
             // M6 (Josh, 3 Nov 2026): the same words as Quick actions' ask (#1339, askedLine).
-            title: `Asked ${pending.length} ${pending.length === 1 ? "ward" : "wards"}. It shows on their screen for 4 hours.`,
+            title: `Asked ${pending.length} ${pending.length === 1 ? "ward" : "wards"}. It shows on their screen for ${ASK_WARDS_WINDOW_TEXT}.`,
             body: listNames(names),
           }
         : { tone: "warning", title: "Not sent", body: result.message ?? "Try again in a moment." },
@@ -231,7 +222,7 @@ export function DischargeAskOverdueWards({
       data-testid="ward-discharge-ask-overdue"
       aria-label={
         allAsked
-          ? "Every ward with an overdue date has been asked in the last 4 hours"
+          ? `Every ward with an overdue date has been asked in the last ${ASK_WARDS_WINDOW_TEXT}`
           : `Ask ${pending.length} ${pending.length === 1 ? "ward" : "wards"} to confirm their overdue discharge dates`
       }
     >

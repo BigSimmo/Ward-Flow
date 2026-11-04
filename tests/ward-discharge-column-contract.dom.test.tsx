@@ -133,7 +133,8 @@ describe("the discharges board's column contract", () => {
       } else {
         expect(blockerCell.querySelector('[class*="blockerTag"]')).toBeNull();
         if (key === "discharged-today") expect(blockerCell.textContent).toBe("");
-        else expect(blockerCell.textContent).toBe("Not held up");
+        // The criteria led tag (D-64, flag on in tests) may follow in the same cell.
+        else expect(blockerCell.textContent).toMatch(/^Not held up(, CLD|$)/);
       }
       fireEvent.click(within(row).getAllByRole("button")[0]);
       expect(details).toBeInTheDocument();

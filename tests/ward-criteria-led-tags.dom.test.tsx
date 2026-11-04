@@ -39,7 +39,7 @@ function renderDischarges() {
       <DischargeBoard />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: /^History/ }));
+  // L21 (3 Nov 2026): the tag moved from the old History list's Stage column to the Now list.
 }
 
 describe("criteria led discharge tags with the flag on", () => {

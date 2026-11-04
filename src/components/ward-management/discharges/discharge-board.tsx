@@ -35,6 +35,9 @@ import {
   StatusGlyph,
   buttonClass,
 } from "@/components/wf";
+import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
+import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { CriteriaLedTag } from "@/components/ward-management/ward/ward-criteria-led-tag";
 import { DischargeBarrierBars, DischargeDayChart, type DischargeDay } from "./discharge-flow-charts";
 import styles from "./discharges.module.css";
 import releaseList from "./discharge-release-list.module.css";
@@ -180,7 +183,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     // Confirm date's control ("New expected out") sits in the release's arrangements, beside its barriers.
     base.setDrawerTab(part === "date" ? "barriers" : part);
   };
-  // D-64: rows show where criteria led discharge stands, behind its flag (off in production).
+  // D-64: rows show where criteria led discharge stands, behind its flag (off in production). L21 dropped
+  // the Stage column, so the tag now sits in the Now list's Hold-up cell for a patient still in a bed.
+  const criteriaLedOn = useWardFeatureFlag("top25-criteria-led-discharge");
   const {
     units,
     dayZero,
@@ -870,6 +875,19 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             const unit = units.find((candidate) => candidate.id === release.unitId);
                             const linked = records.find((candidate) => candidate.admissionId === release.admissionId);
                             const overdue = release.state !== "discharged" && release.expectedAt < now;
+                            const criteriaChip =
+                              criteriaLedOn && linked && release.state !== "discharged"
+                                ? criteriaLedTileChip(
+                                    dischargeCriteriaStatus(linked.dischargeCriteria, linked.criteriaEligibility, now),
+                                  )
+                                : null;
+                            const criteriaTag = criteriaChip ? (
+                              <span data-testid="ward-discharge-criteria-led">
+                                <SrOnly>, </SrOnly>
+                                <CriteriaLedTag chip={criteriaChip} />
+                                <SrOnly>{criteriaChip.phrase}</SrOnly>
+                              </span>
+                            ) : null;
                             return (
                               <tr
                                 key={release.id}
@@ -961,6 +979,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                       ) : release.state === "discharged" ? null : (
                                         <span className="sr-only">Not held up</span>
                                       )}
+                                      {criteriaTag}
                                     </td>
                                   </>
                                 )}
@@ -1065,6 +1084,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                             </span>
                                           </>
                                         )}
+                                        {criteriaTag}
                                       </div>
                                     </td>
                                   </>

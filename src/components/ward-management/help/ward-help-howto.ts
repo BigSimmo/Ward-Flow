@@ -15,6 +15,7 @@
  */
 import type { WardScreenId } from "@/components/ward-management/ward-role-access";
 
+import { ASK_WARDS_WINDOW_TEXT } from "@/components/ward-management/ward-operational-defaults";
 import { deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
 import type { WardTourRole } from "./ward-help-store";
 import { MORE_JOBS, SCREEN_TOURS } from "./ward-help-screen-tours";
@@ -234,7 +235,7 @@ const JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-discharge-ask-overdue"]' },
         title: "Ask the wards",
-        body: "Asks only the wards with a date that has passed. A ward asked in the last 4 hours is not asked again.",
+        body: `Asks only the wards with a date that has passed. A ward asked in the last ${ASK_WARDS_WINDOW_TEXT} is not asked again.`,
       },
     ],
   },
