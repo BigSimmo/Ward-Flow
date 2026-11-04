@@ -97,7 +97,7 @@ import { useUndoableStep } from "../use-undoable-step";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
-import { type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
+import type { LeaveKind, WardChangeForm } from "./patient-ward-change-card";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 import {
@@ -118,13 +118,15 @@ import { movementHasBedHold } from "@/components/ward-management/ward-movement-b
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { PatientArchivePanel } from "./patient-archive-panel";
+import { PatientGlance, patientStateTag } from "./patient-glance";
+import { referralSafetyFacts } from "./patient-referral-safety";
+import { patientCareJourney } from "./patient-care-journey";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { Dialog, type JourneyStage, PhoneSheet, useIsPhone } from "@/components/wf";
+import { Dialog, PhoneSheet, useIsPhone } from "@/components/wf";
 import { PatientClearanceDialog, type ClearanceDraft } from "./patient-clearance-dialog";
-import { patientJourneyStages } from "./patient-journey";
 import { isOnOrder } from "../ward-stay-legal";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
@@ -605,7 +607,6 @@ export function PatientNowScreen({
       : undefined;
   const heroStay = stayCurrent ? resolved.liveAdmission : lastStay;
   const heroStayMovement = heroStay?.movementId ? movements.find((m) => m.id === heroStay.movementId) : undefined;
-  const heroStayUnitName = heroStay ? (units.find((u) => u.id === heroStay.unitId)?.name ?? "the ward") : undefined;
   const awaySince =
     mode === "leave"
       ? stayLeaveBed?.confirmedAt
@@ -614,33 +615,6 @@ export function PatientNowScreen({
         : mode === "ed"
           ? (resolved.liveAdmission?.awayAtEmergencyDepartmentSince ?? undefined)
           : undefined;
-  const phoneStayStages: JourneyStage[] | undefined = (() => {
-    if (!isPhone || isLiveBedflow || !heroStay || heroStay.arrivedAt === null) return undefined;
-    // Audit A3-12: a missing person is not "On ward"; the absence card and figures carry the story.
-    if (mode === "awol") return undefined;
-    const arrivedAt = heroStay.arrivedAt;
-    const before = heroStayMovement
-      ? patientJourneyStages(heroStayMovement, arrivedAt).map((stage) => ({ ...stage, now: undefined }))
-      : [];
-    const stayEnd = heroStay.leftAt ?? awaySince ?? now;
-    const stages: JourneyStage[] = [
-      ...before,
-      {
-        id: "stay",
-        label: `On ward, ${heroStayUnitName}`,
-        minutes: Math.max(0, stayEnd - arrivedAt),
-        now: heroStay.leftAt === null && awaySince === undefined ? true : undefined,
-      },
-    ];
-    if (heroStay.leftAt === null && awaySince !== undefined)
-      stages.push({
-        id: "away",
-        label: mode === "leave" ? "On leave" : "At ED",
-        minutes: Math.max(0, now - awaySince),
-        now: true,
-      });
-    return stages;
-  })();
   const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
   const ctoInForce = activeCommunityTreatmentOrder(livePatient);
   const movementTimeLeft =
@@ -929,7 +903,8 @@ export function PatientNowScreen({
   if (activeCommunity)
     contacts.push({
       name: activeCommunity.caseManager.name,
-      role: `Case manager, ${activeCommunity.team}`,
+      // PT1: the title WA community teams use for the person who holds the care.
+      role: `Care coordinator, ${activeCommunity.team}`,
       phone: activeCommunity.caseManager.phone,
     });
   if (livePatient?.catchmentCommunityTeam)
@@ -1025,6 +1000,58 @@ export function PatientNowScreen({
     setActiveTab(tab);
     requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
   };
+  // PT1 (Josh, 3 Nov 2026): the band leads with legal, observation and risk for every state.
+  // H10: risk flags and the working diagnosis come from the one referral the movement in focus
+  // names, and only when this desk's scoped workspace holds it (patient-referral-safety.ts).
+  const glanceMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : liveMovement;
+  const referralSafety = referralSafetyFacts(
+    glanceMovement,
+    glanceMovement?.referralId === undefined
+      ? undefined
+      : referrals.find((referral) => referral.id === glanceMovement.referralId),
+  );
+  const referralWhen =
+    referralSafety.kind === "shown" ? dayLabel(referralSafety.raisedAt, dayZero).replace(",", "") : undefined;
+  const activeCommunityEpisode = recordExtrasFor(livePatient?.id)?.community?.find(
+    (episode) => episode.status === "active",
+  );
+  const stateTag = patientStateTag({
+    mode,
+    movement: liveMovement,
+    communityActive: Boolean(ctoInForce || activeCommunityEpisode),
+  });
+  // PT1 round 3 (Josh, 3 Nov 22:29Z): the patient's journey in six plain steps, from the record.
+  const careSteps = patientCareJourney({
+    mode,
+    movement: glanceMovement,
+    stay: heroStay,
+    stayCurrent,
+    stayDay,
+    communityTeam: activeCommunityEpisode?.team,
+    ctoInForce: Boolean(ctoInForce),
+    day: (at) => dayLabel(at, dayZero).replace(",", ""),
+  });
+  // The band's typed expiry for the form in force, for a ward stay as well as a live placement. A form
+  // that ended at arrival or at the examination has no expiry in force (currentLegalDueAt).
+  const bandTimeLeft =
+    glanceMovement && !formProgression(glanceMovement) ? formTimeLeft(glanceMovement, now, thresholds) : undefined;
+  const glance = (
+    <PatientGlance
+      mode={mode}
+      patient={livePatient}
+      movement={glanceMovement}
+      admission={stayCurrent ? resolved.liveAdmission : undefined}
+      leaveBed={stayLeaveBed}
+      stayWithheld={statusContext.stayWithheld}
+      formTimeLeft={bandTimeLeft}
+      riskFlags={referralSafety.kind === "shown" ? referralSafety.riskFlags : undefined}
+      riskFlagsWhen={referralWhen}
+      riskNotShared={referralSafety.kind === "not_shared"}
+      healthAlerts={recordExtrasFor(livePatient?.id)?.alerts}
+      onOpenForms={() => openTab("documents")}
+      onOpenDetails={() => openTab("details")}
+    />
+  );
   const nowPanel = (
     <PatientNowPanel
       acceptingUnit={acceptingUnit}
@@ -1137,7 +1164,6 @@ export function PatientNowScreen({
           now={now}
           openOperations={openOperations}
           phoneMovement={phoneMovement}
-          phoneStayStages={phoneStayStages}
           preferredName={preferredName}
           record={record}
           recordTabs={recordTabs}
@@ -1154,6 +1180,18 @@ export function PatientNowScreen({
           voluntaryNow={voluntaryNow}
           waitedStr={waitedStr}
           where={where}
+          glance={glance}
+          stateTag={stateTag}
+          careSteps={careSteps}
+          onOpenHistory={() => openTab("history")}
+          recordCto={
+            livePatient
+              ? {
+                  onClick: statusContext.onRecordCto,
+                  reason: gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason,
+                }
+              : undefined
+          }
         />
         {/* Restricted record (27 Oct 2026): the notice sits under the hero, so the hero stays the first
             thing under the header and keeps its band join (wf/band.ts). */}
@@ -1277,6 +1315,8 @@ export function PatientNowScreen({
                 <PatientDetailsTab
                   patient={livePatient}
                   movement={liveMovement}
+                  referralSafety={referralSafety}
+                  referralWhen={referralWhen}
                   displayName={displayName}
                   preferredName={preferredName}
                 />

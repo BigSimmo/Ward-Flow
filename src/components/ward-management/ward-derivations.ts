@@ -13,7 +13,7 @@ import {
   STAGE_TRANSITION_BLOCKERS,
 } from "@/components/ward-management/ward-flow-reducer";
 import { DECLINE_REASON_LABELS, isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
-import { CalendarClock, CircleAlert, Truck, type LucideIcon } from "lucide-react";
+import { CalendarClock, CircleAlert, Ambulance, type LucideIcon } from "lucide-react";
 
 import {
   bedIsOccupied,
@@ -707,7 +707,7 @@ export function buildActionInbox(
       id: `${INBOX_CATEGORIES.transport_awaiting_departure.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.transport_awaiting_departure.kind,
       tone: "warning",
-      icon: Truck,
+      icon: Ambulance,
       title: stuck ? "Handover waiting too long" : "Transport awaiting departure",
       detail: stuck
         ? `${movement.id} · transport accepted ${formatInstantWithDay(acceptedAt, now)}, not left after ${splitDuration(waited)}. Target ${splitDuration(stuckAfter)}`
@@ -731,7 +731,7 @@ export function buildActionInbox(
       id: `${INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix}${movement.id}`,
       kind: INBOX_CATEGORIES.transport_booking_estimate_passed.kind,
       tone: "warning",
-      icon: Truck,
+      icon: Ambulance,
       title: `Booking estimate passed ${splitDuration(now - estimatedAt)} ago`,
       detail: `${movement.id} · to ${ward ?? "ward not recorded"}`,
       owner: movement.owner,
