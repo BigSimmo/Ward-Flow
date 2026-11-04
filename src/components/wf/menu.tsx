@@ -57,6 +57,36 @@ type MenuTriggerProps = {
   onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
 };
 
+const CLIPS = /^(hidden|clip|auto|scroll)$/;
+
+/**
+ * The part of the screen a panel inside `element` can actually be seen in: the window, cut down by
+ * every ancestor that clips (the page scroller stops at the rail, WS3, 4 Nov 2026) and by a scroller's
+ * own scroll-padding-top, which is where its pinned top bar sits, so a panel never opens under it.
+ */
+function visibleArea(element: HTMLElement) {
+  // When the window itself scrolls (no rail, tablet widths), the root's scroll padding is the
+  // pinned top bar, so the visible area starts below it.
+  const rootPad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+  const area = { top: rootPad, left: 0, right: document.documentElement.clientWidth, bottom: window.innerHeight };
+  for (let node = element.parentElement; node && node !== document.body; node = node.parentElement) {
+    const css = getComputedStyle(node);
+    const clipsX = CLIPS.test(css.overflowX);
+    const clipsY = CLIPS.test(css.overflowY);
+    if (!clipsX && !clipsY) continue;
+    const rect = node.getBoundingClientRect();
+    if (clipsX) {
+      area.left = Math.max(area.left, rect.left);
+      area.right = Math.min(area.right, rect.right);
+    }
+    if (clipsY) {
+      area.top = Math.max(area.top, rect.top + (parseFloat(css.scrollPaddingTop) || 0));
+      area.bottom = Math.min(area.bottom, rect.bottom);
+    }
+  }
+  return area;
+}
+
 /*
  * Keeps an open panel inside the window. It drops below its trigger, so a trigger low on the page or
  * a long list ran off the bottom with no way to reach the last items, and an anchor near the right
@@ -75,8 +105,9 @@ function usePanelFit(open: boolean, anchorRef: RefObject<HTMLElement | null>, pa
       const trigger = anchor!.getBoundingClientRect();
       const box = panel!.getBoundingClientRect();
       if (!box.width) return;
-      const below = window.innerHeight - trigger.bottom - 14;
-      const above = trigger.top - 14;
+      const area = visibleArea(anchor!);
+      const below = area.bottom - trigger.bottom - 14;
+      const above = trigger.top - area.top - 14;
       if (box.height > below) {
         if (above > below) {
           style.top = "auto";
@@ -88,9 +119,11 @@ function usePanelFit(open: boolean, anchorRef: RefObject<HTMLElement | null>, pa
           style.overflowY = "auto";
         }
       }
-      const right = document.documentElement.clientWidth - 8;
-      if (box.right > right) style.translate = `${Math.round(right - box.right)}px 0`;
-      else if (box.left < 8) style.translate = `${Math.round(8 - box.left)}px 0`;
+      const right = area.right - 8;
+      const left = area.left + 8;
+      if (box.left < left) style.translate = `${Math.round(left - box.left)}px 0`;
+      else if (box.right > right)
+        style.translate = `${Math.max(Math.round(right - box.right), Math.round(left - box.left))}px 0`;
     }
     fit();
     window.addEventListener("resize", fit);

@@ -332,7 +332,8 @@ describe("read-only report screens", () => {
     inProvider(<PatientChronologyScreen />);
     // The start list shows 6, then one Show more, then points to the search (Josh, 31 Oct 2026).
     expect(screen.getAllByTestId("ward-chronology-start-patient")).toHaveLength(6);
-    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more of \d+$/u }));
+    expect(screen.getByTestId("ward-chronology-start-count")).toHaveTextContent(/^\d+ patients, A to Z$/u);
+    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more$/u }));
     const people = screen.getAllByTestId("ward-chronology-start-patient").map((row) => ({
       name: row.children[0]!.textContent!,
       umrn: row.children[1]!.textContent!,
