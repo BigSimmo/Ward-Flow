@@ -171,11 +171,12 @@ describe("phone Menu account rows (DK1)", () => {
     renderPhoneMenu(signedIn);
     const row = await screen.findByTestId("ward-phone-menu-switch-workstation", {}, { timeout: 15_000 });
     expect(row).toHaveTextContent("Switch desk");
-    fireEvent.click(row);
-    expect(signedIn.switchRole).toHaveBeenCalledTimes(1);
     const signOut = screen.getByTestId("ward-phone-menu-sign-out");
     expect(signOut).toHaveTextContent("synthetic-coordinator@example.invalid");
     fireEvent.click(signOut);
     expect(signedIn.signOut).toHaveBeenCalledTimes(1);
+    // Switch desk closes the sheet first, so it is clicked last.
+    fireEvent.click(row);
+    expect(signedIn.switchRole).toHaveBeenCalledTimes(1);
   });
 });
