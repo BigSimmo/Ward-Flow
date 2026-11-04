@@ -95,8 +95,8 @@
     "line": "Open forms stay with their record, and failed changes keep their answers until the save is confirmed."
   },
   {
-    "id": "2026-11-03-workflow-input-recovery",
+    "id": "2026-11-03-journey-recovery",
     "date": "2026-11-03",
-    "line": "Referrals keep your work, patient saves explain retries, and transport bookings protect unfinished answers."
+    "line": "Cancel and reroute unfinished care transfers; clearer reload, partial-save and sign-in recovery."
   }
 ]
