@@ -1163,3 +1163,287 @@ a.askChip {
   max-width: 100%;
   white-space: normal;
 }
+
+/*
+ * ── Light frosted glass (Josh, 4 Nov 2026, search redesign thread) ──────────────────────────────
+ * One look on every size: a light glass layer over a softly frosted page, calm sentence-case
+ * headings, round chips, soft blue icon tiles, a soft Top hit card for the best match and Go to
+ * tiles before anything is typed. Phone takes the whole screen; tablet and desktop keep the floating
+ * panel, anchored under the search box. Mock-ups: /mnt/project-files/search-redesign.
+ */
+.group {
+  height: 30px;
+  padding: 0 8px;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--wf-ink-3);
+}
+
+.groupItem:not(:first-child),
+.quickCommands {
+  border-top: 0;
+}
+
+.askRow {
+  border-bottom: 0;
+}
+
+.commandBtn {
+  border-color: color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-surface) 62%, transparent);
+}
+
+.kinds {
+  border-bottom: 0;
+  background: transparent;
+}
+
+.kind,
+.askChip {
+  border: 1px solid color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-surface) 62%, transparent);
+  color: var(--wf-ink-2);
+  font-weight: 500;
+}
+
+.kind[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--wf-accent) 22%, transparent);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.itemIconBox {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--wf-accent-tint) 80%, transparent);
+  color: var(--wf-accent);
+}
+
+.option[data-previewed],
+.option[data-active] {
+  background: color-mix(in srgb, var(--wf-accent) 9%, transparent);
+}
+
+.option mark {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--wf-accent) 16%, transparent);
+  color: inherit;
+}
+
+.resultKind {
+  display: none;
+}
+
+.resultsFooter {
+  border-top: 0;
+  background: transparent;
+}
+
+/* The best match: a soft blue glass card with a white icon tile, not a bold block. */
+.popup:not([data-start]) .groupItem[data-goto] .option {
+  min-height: 60px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--wf-accent-tint) 72%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-accent) 16%, transparent);
+}
+
+.popup:not([data-start]) .groupItem[data-goto] .itemIconBox {
+  flex-basis: 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--wf-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+}
+
+.popup:not([data-start]) .groupItem[data-goto] .resultTitle {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16, 22px);
+  font-weight: 600;
+}
+
+/* Before typing, Go to is a row of tiles. */
+.popup[data-start] .groupItem[data-goto] .groupList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.25rem, 1fr));
+  gap: 8px;
+  padding: 2px 2px 8px;
+}
+
+.popup[data-start] .groupItem[data-goto] .option {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 76px;
+  padding: 10px 2px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--wf-surface) 58%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 7%, transparent);
+  text-align: center;
+}
+
+.popup[data-start] .groupItem[data-goto] :is(.resultMeta, .actionHint, .resultKind) {
+  display: none;
+}
+
+.popup[data-start] .groupItem[data-goto] .resultContent {
+  flex: none;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.popup[data-start] .groupItem[data-goto] .resultTitle {
+  max-width: 100%;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.popup[data-start] .groupItem[data-goto] .itemIconBox {
+  flex-basis: 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+}
+
+/* Tablet and desktop: a light glass panel under the search box, over a softly frosted page. */
+@media (min-width: 46.5rem) {
+  .scrim {
+    background: color-mix(in srgb, var(--wf-canvas) 45%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+  }
+
+  .popup {
+    /* Centred under the search box (`--wgs-anchor-x`, measured by the component), kept on screen. */
+    --wgs-w: min(52.5rem, calc(100vw - 2rem));
+    left: clamp(calc(1rem + var(--wgs-w) / 2), var(--wgs-anchor-x, 50%), calc(100vw - 1rem - var(--wgs-w) / 2));
+    width: var(--wgs-w);
+    border: 1px solid color-mix(in srgb, var(--wf-ink-1) 7%, transparent);
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--wf-surface) 82%, transparent);
+    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    backdrop-filter: blur(40px) saturate(1.8);
+    box-shadow:
+      0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent),
+      0 28px 60px -24px color-mix(in srgb, var(--wf-ink-1) 35%, transparent);
+  }
+
+  /* Before typing there is nothing to preview, so the panel is one narrower column. */
+  .popup[data-start] {
+    --wgs-w: min(37.5rem, calc(100vw - 2rem));
+  }
+
+  .popup[data-start] .previewPane {
+    display: none;
+  }
+
+  .popup[data-start] .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .previewPane {
+    border-left-color: color-mix(in srgb, var(--wf-ink-1) 7%, transparent);
+    background: transparent;
+  }
+}
+
+/* Phone: the whole screen frosts, and the results sit straight on the glass. */
+@media (max-width: 46.4375rem) {
+  .scrim {
+    display: block;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--wf-surface) 90%, transparent) 0%,
+      color-mix(in srgb, var(--wf-canvas) 92%, transparent) 100%
+    );
+    -webkit-backdrop-filter: blur(44px) saturate(1.7);
+    backdrop-filter: blur(44px) saturate(1.7);
+  }
+
+  .popup {
+    background: transparent;
+  }
+
+  .kinds {
+    gap: 6px;
+    padding: 2px 14px 8px;
+  }
+
+  .kind {
+    height: 32px;
+  }
+
+  .listPane {
+    padding: 0 12px 12px;
+  }
+
+  .group {
+    padding-left: 8px;
+  }
+
+  .itemIconBox {
+    flex-basis: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .resultTitle {
+    font-weight: 550;
+  }
+
+  /* Hairlines start at the text, not the edge. */
+  .optionItem + .optionItem .option {
+    position: relative;
+  }
+
+  .optionItem + .optionItem .option::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 52px;
+    right: 8px;
+    height: 1px;
+    background: color-mix(in srgb, var(--wf-ink-1) 7%, transparent);
+  }
+
+  .popup[data-start] .groupItem[data-goto] .option::after,
+  .popup:not([data-start]) .groupItem[data-goto] .option::after {
+    display: none;
+  }
+
+  .popup:not([data-start]) .groupItem[data-goto] .option {
+    min-height: 66px;
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+
+  .popup:not([data-start]) .groupItem[data-goto] .resultTitle {
+    font-size: var(--wf-fs-17, 17px);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .scrim {
+    background: var(--wf-surface-2);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .popup {
+    background: var(--wf-surface);
+  }
+}
+
+/* The close cross shows only on the phone capsule bar (ward-bar.module.css); elsewhere Cancel is text. */
+.cancelIcon {
+  display: none;
+  stroke-width: 1.75;
+}

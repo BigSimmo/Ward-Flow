@@ -4027,3 +4027,227 @@
   width: min(calc(100vw - 1.5rem), 50rem);
   max-width: min(calc(100vw - 1.5rem), 50rem);
 }
+
+/*
+ * ── Search redesign (Josh, 4 Nov 2026): light frosted glass ─────────────────────────────────────
+ * The field never draws the global focus line (an inset highlight on a 48px input inside a pill
+ * inset 6px floated a stray line above the pill). Mock-ups: /mnt/project-files/search-redesign.
+ */
+.bar .searchWrap :global([data-testid="ward-global-search-input"]),
+.bar .searchWrap :global([data-testid="ward-global-search-input"]):focus {
+  box-shadow: none;
+}
+
+/* Desktop: a quiet filled field on the band at rest that turns into the same light glass as the
+ * results panel once open, so the box and the panel read as one piece. */
+@media (min-width: 62.5625rem) {
+  @container ward-bar (min-width: 46.5rem) {
+    .bar.bar.bar.bar .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type::before {
+      border-radius: 12px;
+    }
+
+    .bar.bar.bar.bar
+      .searchWrap
+      :global([data-testid="ward-global-search"]:is(:focus-within, [data-open]))
+      > div:first-of-type::before {
+      border-color: transparent;
+      background: color-mix(in srgb, var(--wf-surface) 94%, transparent);
+      box-shadow:
+        0 1px 2px color-mix(in srgb, var(--wf-ink-1) 8%, transparent),
+        0 10px 24px -14px color-mix(in srgb, var(--wf-ink-1) 45%, transparent);
+    }
+
+    .bar.bar.bar.bar
+      .searchWrap
+      :global([data-testid="ward-global-search"]:is(:focus-within, [data-open]))
+      > div:first-of-type
+      > svg {
+      color: var(--wf-accent);
+    }
+
+    .bar.bar.bar.bar
+      .searchWrap
+      :global(
+        [data-testid="ward-global-search"]:is(:focus-within, [data-open]) [data-testid="ward-global-search-input"]
+      ) {
+      color: var(--wf-ink-1);
+      caret-color: var(--wf-accent);
+    }
+
+    .bar.bar.bar.bar
+      .searchWrap
+      :global(
+        [data-testid="ward-global-search"]:is(:focus-within, [data-open]) [data-testid="ward-global-search-input"]
+      )::placeholder {
+      color: var(--wf-ink-3);
+    }
+
+    .bar.bar.bar.bar
+      .searchWrap
+      :global([data-testid="ward-global-search"]:is(:focus-within, [data-open]) [data-ward-search-shortcut]) {
+      border-color: transparent;
+      background: color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+      color: var(--wf-ink-3);
+    }
+
+    .bar.bar.bar.bar .searchWrap :global([data-testid="ward-global-search-clear"]) {
+      border-color: transparent;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+      color: var(--wf-ink-2);
+      font-weight: 500;
+    }
+  }
+}
+
+/* Phone: the whole screen frosts (the scrim, ward-global-search.module.css). The bar steps back,
+ * and the field becomes a glass capsule 12px under the status bar with a round close button beside
+ * it and Clear inside it. The results start 72px down (PHONE_SHEET_TOP). */
+@media (max-width: 46.4375rem) {
+  .bar.bar.bar.bar:has(:global([data-testid="ward-global-search"][data-open])) {
+    z-index: calc(var(--z-modal, 100) + 3);
+    border-color: transparent;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  .bar.bar.bar.bar:has(:global([data-testid="ward-global-search"][data-open]))::before,
+  .bar.bar.bar.bar:has(:global([data-testid="ward-global-search"][data-open]))::after {
+    opacity: 0;
+  }
+
+  .bar.bar.bar.bar:has(:global([data-testid="ward-global-search"][data-open])) > :not(.centerGroup),
+  .bar.bar.bar.bar:has(:global([data-testid="ward-global-search"][data-open])) :global([data-wf-page-dock]) {
+    visibility: hidden;
+  }
+
+  .bar.bar.bar.bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+    --wgs-sheet-top: max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px));
+    top: calc(var(--wgs-sheet-top) + 12px);
+    left: 14px;
+    right: 14px;
+    height: 48px;
+    padding: 0 62px 0 16px;
+    gap: 10px;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .bar.bar.bar.bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type::before {
+    inset: 0 52px 0 0;
+    border: 0;
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--wf-surface) 80%, transparent);
+    -webkit-backdrop-filter: blur(24px) saturate(1.8);
+    backdrop-filter: blur(24px) saturate(1.8);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--wf-surface) 55%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 6%, transparent),
+      0 10px 30px -18px color-mix(in srgb, var(--wf-ink-1) 45%, transparent);
+  }
+
+  .bar.bar.bar.bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg {
+    width: 20px;
+    height: 20px;
+    color: var(--wf-accent);
+  }
+
+  .bar.bar.bar.bar
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]) {
+    margin-right: 0;
+    color: var(--wf-ink-1);
+    caret-color: var(--wf-accent);
+    font-size: 1.0625rem;
+    font-weight: 450;
+  }
+
+  .bar.bar.bar.bar
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"])::placeholder {
+    color: var(--wf-ink-3);
+  }
+
+  /* Clear: a small grey circle with a cross, inside the capsule, with a 40px tap cover. */
+  .bar.bar.bar.bar
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-clear"]) {
+    position: relative;
+    flex: 0 0 28px;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--wf-ink-1) 10%, transparent);
+    color: var(--wf-ink-2);
+    box-shadow: none;
+  }
+
+  .bar.bar.bar.bar
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-clear"])::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+
+  .bar.bar.bar.bar
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-clear"] > svg) {
+    width: 14px;
+    height: 14px;
+  }
+
+  .bar.bar.bar.bar
+    .searchWrap
+    :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-clear"] > span) {
+    display: none;
+  }
+
+  /* Close: a round glass button (40px, 48px tap cover) to the right of the capsule. */
+  .bar.bar.bar.bar .searchWrap :global([data-testid="ward-global-search-cancel"]) {
+    position: absolute;
+    top: 4px;
+    right: 0;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    min-height: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--wf-surface) 80%, transparent);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--wf-surface) 55%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 6%, transparent),
+      0 10px 30px -18px color-mix(in srgb, var(--wf-ink-1) 45%, transparent);
+    color: var(--wf-ink-2);
+  }
+
+  .bar.bar.bar.bar .searchWrap :global([data-testid="ward-global-search-cancel"])::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+  }
+
+  .bar.bar.bar.bar .searchWrap :global([data-testid="ward-global-search-cancel"] > svg) {
+    display: block;
+    width: 18px;
+    height: 18px;
+  }
+
+  .bar.bar.bar.bar .searchWrap :global([data-testid="ward-global-search-cancel"] > span) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
