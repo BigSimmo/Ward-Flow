@@ -97,7 +97,7 @@ import { useUndoableStep } from "../use-undoable-step";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
-import { type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
+import type { LeaveKind, WardChangeForm } from "./patient-ward-change-card";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 import {

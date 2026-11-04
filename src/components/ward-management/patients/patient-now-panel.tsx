@@ -11,7 +11,7 @@ import { callRows, type CallTarget } from "./patient-call-list";
 import { PatientNowLayout, PatientSheetRow, PatientSheetRows } from "./patient-now-layouts";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { absenceVoluntary, type PatientStatusContext } from "./patient-status-card";
-import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
+import type { LeaveKind, WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { requiredRoleForPermission, setDeskRole } from "@/components/ward-management/ward-role-gate";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
@@ -35,6 +35,8 @@ import { PatientNextStepButton } from "./patient-now-ward-button";
 
 // The ward cards load on their own: only a stay needs them (phone script budget).
 const loadWardCards = () => import("./patient-now-ward-cards");
+// The ward change row shows only for a patient on the ward, so it loads with that state.
+const PatientWardChangeCard = dynamic(() => import("./patient-ward-change-card").then((m) => m.PatientWardChangeCard));
 const PatientDischargeReadiness = dynamic(() => loadWardCards().then((m) => m.PatientDischargeReadiness));
 const PatientLastDay = dynamic(() => loadWardCards().then((m) => m.PatientLastDay));
 const PatientNextStepCard = dynamic(() => loadWardCards().then((m) => m.PatientNextStepCard));

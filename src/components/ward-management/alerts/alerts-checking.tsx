@@ -4,7 +4,7 @@
 // panel (Alerts redesign, approved by Josh 31 Oct 2026). Split from `alerts-screen.tsx` for the line cap.
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { Activity, Bell, CheckCircle2, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Activity, Bell, CircleCheck, ChevronDown, ChevronRight, X } from "lucide-react";
 
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -157,7 +157,7 @@ export function AlertsSidePanelEmpty({
   return (
     <section className={parts.deskClear} aria-label={`Checked for ${wardName}`}>
       <p className={parts.deskHead}>
-        <CheckCircle2 size={16} aria-hidden="true" />
+        <CircleCheck size={16} aria-hidden="true" />
         {/* The page title already says no alert is for the ward; this panel says what was checked. */}
         {`Checked for ${wardName}`}
       </p>

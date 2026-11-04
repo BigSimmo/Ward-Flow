@@ -19,7 +19,7 @@ function bedTypeChipText(security: Security | undefined): string {
   return security === undefined ? "Bed type not recorded" : `${securityWord(security)} bed`;
 }
 import Link from "next/link";
-import { BedSingle, Check, Clock, Copy, Eye, FileBadge, FileText } from "lucide-react";
+import { BedSingle, Check, Clock, Copy, Eye, FileText, Scale } from "lucide-react";
 import { PatientFlightHeader } from "./patient-flight-header";
 import { absenceStepsFor } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
@@ -483,7 +483,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 </span>
               ) : null}
               <span className={styles.v6HeroFact}>
-                <BedSingle size={14} strokeWidth={1.75} aria-hidden="true" />
+                <BedSingle size={14} aria-hidden="true" />
                 {bedTypeChipText(liveMovement.security)}
               </span>
               {movementTimeLeft ? (
@@ -491,7 +491,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                   {movementTimeLeft.standing !== "later" ? (
                     <StatusGlyph tone={movementTimeLeft.tone} size={9} />
                   ) : (
-                    <FileBadge size={14} strokeWidth={1.75} aria-hidden="true" />
+                    <Scale size={14} aria-hidden="true" />
                   )}
                   {movementTimeLeft.code} · <strong className={styles.v6HeroWait}>{movementTimeLeft.text}</strong>
                 </span>
@@ -501,7 +501,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             <span className={styles.v6HeroFacts}>
               {(mode === "leave" || mode === "awol" || mode === "ed") && (
                 <span className={styles.v6HeroFact}>
-                  <BedSingle size={14} strokeWidth={1.75} aria-hidden="true" />
+                  <BedSingle size={14} aria-hidden="true" />
                   Bed held
                 </span>
               )}
@@ -610,7 +610,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               <Button
                 variant="onHero"
                 size="sm"
-                icon={FileBadge}
+                icon={Scale}
                 onClick={recordCto.onClick}
                 disabledReason={recordCto.reason}
                 reasonDisplay="tooltip"
