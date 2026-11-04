@@ -510,10 +510,14 @@ test.describe("@mockup Movements — transport panel", () => {
    * is the reference" ruling this re-points to where the same facts now render.
    */
   function transportLegRows(page: Page) {
-    return page
-      .getByRole("region", { name: "Transport right now" })
-      .getByRole("region", { name: "Active transport legs" })
-      .getByRole("button");
+    return (
+      page
+        .getByRole("region", { name: "Transport right now" })
+        .getByRole("region", { name: "Active transport legs" })
+        // Movements M4 (3 Nov 2026): each leg row now has a Check in button beside it, so count the
+        // rows by their own name ("Inspect …"), not every button in the feed.
+        .getByRole("button", { name: /^Inspect / })
+    );
   }
 
   /**
@@ -560,7 +564,10 @@ test.describe("@mockup Movements — transport panel", () => {
     for (const row of await rows.all()) {
       await expect(row).toHaveAccessibleName(/, (Accepted|En route|Collected|Arrived|Cancelled) via /);
       // Movements redesign (1 Nov 2026): the row reads its leg and time since booked ("Collected 53m ago").
-      await expect(row).toContainText(/(Accepted|En route|Collected|Arrived|Cancelled) \d+(d|h|m)( \d+(h|m))? ago/);
+      // Movements M4 (3 Nov 2026): it reads "Collected, booked 53m ago".
+      await expect(row).toContainText(
+        /(Accepted|En route|Collected|Arrived|Cancelled), booked \d+(d|h|m)( \d+(h|m))? ago/,
+      );
     }
   });
 
@@ -603,18 +610,20 @@ test.describe("@mockup Movements — transport panel", () => {
     // the included one.
     // Movements redesign (1 Nov 2026): Transport now's tiles read each count under its words (dt/dd);
     // the hero's Open figure keeps its <strong>.
+    // Movements M4 (3 Nov 2026): each tile is a button with its figure first, then its words.
     const tile = (label: RegExp) =>
       page
         .getByRole("region", { name: "Transport right now" })
         .getByTestId("movements-day-metric")
         .filter({ hasText: label })
-        .locator("dd");
+        .locator("span")
+        .first();
     const dayMetric = (label: RegExp) =>
       page.getByTestId("movements-day-metric").filter({ hasText: label }).locator("strong");
     // Audit round 2, A4-18 (13 Oct 2026): "No transport leg" now counts only movements that need a
     // vehicle (pulled, handover ready or moving) and have none, so 57 became 8. Re-derived from the
     // seed with the screen's own `withoutTransport` filter, not adjusted by guesswork.
-    await expect(tile(/^No transport leg/)).toHaveText("8");
+    await expect(tile(/No transport leg$/)).toHaveText("8");
     await expect(dayMetric(/^Open movements/)).toHaveText("70");
   });
 });
