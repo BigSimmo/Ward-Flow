@@ -446,20 +446,21 @@ test.describe("@mockup WA disposition pathways", () => {
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
       await clickRailLink(page, "/ward-flow/discharges");
       await page.waitForURL((url) => url.pathname === "/ward-flow/discharges");
-      // Settle navigation and the saved workspace before selecting History. A click during the
-      // screen transition must not leave this journey searching the Now view for a History field.
+      // Settle navigation and the saved workspace before selecting Recorded (DC4, which replaced
+      // History). A click during the screen transition must not leave this journey on the Now view.
       await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
       await expect(page.getByTestId("ward-discharge-board")).toBeVisible();
-      await expect(page.getByRole("group", { name: "Now or history", exact: true })).toHaveAttribute(
+      await expect(page.getByRole("group", { name: "Now or recorded", exact: true })).toHaveAttribute(
         "aria-busy",
         "false",
       );
       const history = page.getByTestId("ward-discharge-history");
       await history.click();
       await expect(history).toHaveAttribute("aria-pressed", "true");
-      const destinationFilter = page.locator("#discharges-filter-destination");
-      await destinationFilter.selectOption(destination.id);
-      await expect(destinationFilter).toHaveValue(destination.id);
+      // DC2 (3 Nov 2026): the filters are menus, so Going to is picked from its own list.
+      await page.getByRole("button", { name: /^Going to: / }).click();
+      await page.getByRole("menuitemradio", { name: destination.label, exact: true }).click();
+      await expect(page.getByRole("button", { name: `Going to: ${destination.label}` })).toBeVisible();
       await page.getByRole("button", { name, exact: true }).click();
       const detail = page.getByRole("region", { name: "Selected discharge details" });
       await expect(detail).toContainText(destination.label);

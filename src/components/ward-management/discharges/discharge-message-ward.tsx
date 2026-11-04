@@ -7,6 +7,8 @@ import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-br
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import { ASK_WARDS_MINUTES, ASK_WARDS_WINDOW_TEXT } from "@/components/ward-management/ward-operational-defaults";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 
@@ -57,8 +59,8 @@ function listNames(names: readonly string[]): string {
 }
 
 type DispatchOutcome = { status?: string; message?: string; isCurrent?: () => boolean } | undefined | void;
-type Dispatch = (event: WardFlowEvent) => unknown;
-type AskFields = Omit<Extract<WardFlowEvent, { type: "DISPATCH_BROADCAST_ALERT" }>, "type">;
+type Dispatch = WardCommandDispatch;
+type AskFields = Omit<Extract<WardFlowEvent, { type: "DISPATCH_BROADCAST_ALERT" }>, "type" | "role" | "now">;
 
 function liveAsk(alerts: readonly BroadcastAlert[], title: string, message: string, unitId: string, now: Instant) {
   return alerts.some(
@@ -71,16 +73,20 @@ function liveAsk(alerts: readonly BroadcastAlert[], title: string, message: stri
   );
 }
 
-async function sendAsk(dispatch: Dispatch, fields: AskFields): Promise<{ ok: boolean; message?: string }> {
-  const outcome = (await dispatch({ type: "DISPATCH_BROADCAST_ALERT", ...fields })) as DispatchOutcome;
+async function sendAsk(
+  dispatch: Dispatch,
+  now: Instant,
+  fields: AskFields,
+): Promise<{ ok: boolean; message?: string }> {
+  // Fix list 1.5: raised by name as the coordinator's desk, never a raw dispatch.
+  const raise = wardRaise(dispatch, "coordinator", now);
+  const outcome = (await raise("DISPATCH_BROADCAST_ALERT", fields)) as DispatchOutcome;
   if (outcome && outcome.status === "accepted" && outcome.isCurrent?.() !== false) return { ok: true };
   return { ok: false, message: outcome?.message };
 }
 
-function askEvent(now: Instant, title: string, message: string, scopeLabel: string, unitIds: string[]): AskFields {
+function askEvent(title: string, message: string, scopeLabel: string, unitIds: string[]): AskFields {
   return {
-    role: "coordinator",
-    now,
     title,
     message,
     severity: "advisory",
@@ -115,7 +121,7 @@ export function DischargeMessageWard({
   const send = async (ask: (typeof ASKS)[number]) => {
     if (sending || sent(ask)) return;
     setSending(true);
-    const result = await sendAsk(dispatch, askEvent(now, title, ask.line(who), wardName, [release.unitId]));
+    const result = await sendAsk(dispatch, now, askEvent(title, ask.line(who), wardName, [release.unitId]));
     setSending(false);
     toast?.push(
       result.ok
@@ -199,7 +205,7 @@ export function DischargeAskOverdueWards({
     // Round 2 stress test: one alert to all the wards, not one each. Twenty-one separate alerts
     // filled the coordinator's own notice strip; one alert reads "0 of 21 acknowledged" and each
     // ward still sees only its own patients on its Discharges page.
-    const result = await sendAsk(dispatch, askEvent(now, OVERDUE_TITLE, OVERDUE_LINE, scopeLabel(names), pending));
+    const result = await sendAsk(dispatch, now, askEvent(OVERDUE_TITLE, OVERDUE_LINE, scopeLabel(names), pending));
     setSending(false);
     toast?.push(
       result.ok
