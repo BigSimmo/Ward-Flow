@@ -103,7 +103,7 @@ describe("community intake names its person", () => {
     vi.unstubAllGlobals();
     const person = seedWardFlowState().patients.find((patient) => patient.umrn !== "")!;
     renderIntake();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Find a patient" }), { target: { value: person.umrn } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Find a patient" }), { target: { value: person.umrn } });
     fireEvent.click(within(screen.getByRole("listbox", { name: "Matching patients" })).getAllByRole("option")[0]!);
     expect(screen.queryByTestId("ward-referral-no-patient")).not.toBeInTheDocument();
     expect(patientRow()).toHaveTextContent(person.familyName);
