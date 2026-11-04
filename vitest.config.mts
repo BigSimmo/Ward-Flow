@@ -103,6 +103,9 @@ const config = {
   },
   resolve: {
     alias: {
+      // The bundler reads What's new with `require.context`; tests read the same folder from disk.
+      "@/components/ward-management/help/whats-new-files": new URL("./tests/stubs/whats-new-files.ts", import.meta.url)
+        .pathname,
       "@": new URL("./src", import.meta.url).pathname,
       "server-only": new URL("./tests/stubs/server-only.ts", import.meta.url).pathname,
     },

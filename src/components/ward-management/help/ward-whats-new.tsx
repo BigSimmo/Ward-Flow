@@ -3,11 +3,12 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { OverlayPortal } from "@/components/wf";
+import { WHATS_NEW_FILES } from "@/components/ward-management/help/whats-new-files";
 
 import { openWardHelp } from "./ward-help-events";
 import { useCornerCardEscape } from "./use-corner-card-escape";
 import styles from "./ward-whats-new.module.css";
-import entries from "./whats-new.json";
+import { combineWhatsNew, type WhatsNewEntry } from "./whats-new-list";
 
 /**
  * WHAT'S NEW (Josh, 24 and 25 Oct 2026): a short note after each daily release, shown once per
@@ -15,16 +16,16 @@ import entries from "./whats-new.json";
  * device that has never had the tour gets the tour instead, and the tour's start marks every change
  * read (`TOUR_AUTO_STARTED_EVENT`), so nobody sees both on their first visit.
  *
- * `whats-new.json` is the one list. A pull request that changes something staff will see adds one
- * plain line at the end; the live site only moves at the daily release, so the note appears the
+ * `whats-new/` is the one list, one small file per line (see `whats-new-list.ts`). A pull request
+ * that changes something staff will see adds one new file; the live site only moves at the daily release, so the note appears the
  * morning after the merge, and the release workflow copies the same new lines into its GitHub
  * release notes. Lines describe merged, visible changes only. The stored value is the id of the
  * newest change this device has seen.
  */
-export type WhatsNewEntry = { readonly id: string; readonly date: string; readonly line: string };
+export type { WhatsNewEntry };
 
-/** Oldest first, as the file is written. */
-export const WHATS_NEW: readonly WhatsNewEntry[] = entries;
+/** Oldest first: the files in name order, newest 20 kept. */
+export const WHATS_NEW: readonly WhatsNewEntry[] = combineWhatsNew(WHATS_NEW_FILES);
 
 /** The most the corner card lists; Help lists the rest. */
 export const WHATS_NEW_CARD_LIMIT = 4;

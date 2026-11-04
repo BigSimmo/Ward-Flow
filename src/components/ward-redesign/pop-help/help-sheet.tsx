@@ -49,7 +49,7 @@ const VIEWS: { id: MockHelpView; label: string }[] = [
   { id: "new", label: "What's new" },
 ];
 
-/** What's new with the How do I… line on top (mock-up only; the real list is whats-new.json). */
+/** What's new with the How do I… line on top (mock-up only; the real list is the whats-new/ folder). */
 const NEWS = [...WHATS_NEW, HOW_DO_I_NEWS];
 
 type GoLink = { href: string; label: string };

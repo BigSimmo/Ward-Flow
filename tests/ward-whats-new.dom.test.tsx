@@ -19,6 +19,8 @@ import {
   unseenWhatsNew,
   type WhatsNewEntry,
 } from "@/components/ward-management/help/ward-whats-new";
+import { WHATS_NEW_FILES } from "@/components/ward-management/help/whats-new-files";
+import { combineWhatsNew } from "@/components/ward-management/help/whats-new-list";
 
 const TOUR_AUTO_DONE = "ward_flow_choice_tour_auto_done";
 const newest = () => WHATS_NEW.at(-1) as WhatsNewEntry;
@@ -121,5 +123,31 @@ describe("what's new list", () => {
 
   it("stays short enough to load with every page", () => {
     expect(WHATS_NEW.length).toBeLessThanOrEqual(20);
+  });
+
+  it("keeps one line per file, named by date and order, with unique ids", () => {
+    const ids = WHATS_NEW_FILES.map((file) => file.entry.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const { name, entry } of WHATS_NEW_FILES) {
+      expect(name).toMatch(/^\d{4}-\d{2}-\d{2}-\d{2}-[a-z0-9-]+\.json$/);
+      expect(name.startsWith(`${entry.date}-`), name).toBe(true);
+      expect(Object.keys(entry).toSorted(), name).toEqual(["date", "id", "line"]);
+    }
+    // Old files fall out of the list on their own; this only asks for an occasional tidy.
+    expect(WHATS_NEW_FILES.length).toBeLessThanOrEqual(40);
+  });
+
+  it("lists the files by date then order, keeping the newest 20", () => {
+    const file = (name: string) => ({ name, entry: { id: name, date: name.slice(0, 10), line: "A line." } });
+    const names = Array.from({ length: 22 }, (_, index) => `2026-11-${String(10 + index).padStart(2, "0")}-01-a.json`);
+    const listed = combineWhatsNew([
+      file("2026-11-09-02-b.json"),
+      file("2026-11-09-01-a.json"),
+      ...names.toReversed().map(file),
+    ]);
+    expect(listed.map((entry) => entry.id)).toEqual(names.slice(-20));
+    expect(
+      combineWhatsNew([file("2026-11-09-02-b.json"), file("2026-11-09-01-z.json")]).map((entry) => entry.id),
+    ).toEqual(["2026-11-09-01-z.json", "2026-11-09-02-b.json"]);
   });
 });

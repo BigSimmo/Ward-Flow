@@ -130,11 +130,25 @@ jobs:
             esac
           done < prs.txt
           # The plain lines staff see in the app's "What's new" note: entries of the app's list that
-          # this release adds. Read as data through the API, never run. A list missing at either end
-          # counts as empty, so the first release after the list began shows every line in it.
+          # this release adds. Read as data through the API, never run. The list is one file per line
+          # in `folder`, sorted by file name with the newest 20 kept, as the app reads it
+          # (whats-new-list.ts). A commit from before that folder has the older single `list` file. A
+          # list missing at either end counts as empty, so the first release after the list began
+          # shows every line in it.
+          folder="src/components/ward-management/help/whats-new"
           list="src/components/ward-management/help/whats-new.json"
           read_list() {
-            local raw
+            local raw names name entries next
+            if names="$(gh api "repos/$REPOSITORY/contents/$folder?ref=$1" --jq '[.[] | select(.type == "file" and (.name | endswith(".json"))) | .name] | sort | .[]' 2>/dev/null)"; then
+              entries="[]"
+              while read -r name; do
+                [ -n "$name" ] || continue
+                raw="$(gh api -H "Accept: application/vnd.github.raw" "repos/$REPOSITORY/contents/$folder/$name?ref=$1" 2>/dev/null)" || continue
+                next="$(printf '%s' "$raw" | jq -c --argjson list "$entries" 'if type == "object" then $list + [.] else $list end' 2>/dev/null)" && entries="$next"
+              done <<< "$names"
+              printf '%s' "$entries" | jq -c '.[-20:]'
+              return
+            fi
             raw="$(gh api -H "Accept: application/vnd.github.raw" "repos/$REPOSITORY/contents/$list?ref=$1" 2>/dev/null)" || raw="[]"
             printf '%s' "$raw" | jq -c 'if type == "array" then . else [] end' 2>/dev/null || echo "[]"
           }
