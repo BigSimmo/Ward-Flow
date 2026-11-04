@@ -1,4 +1,6 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -19,9 +21,11 @@ import {
   unseenWhatsNew,
   type WhatsNewEntry,
 } from "@/components/ward-management/help/ward-whats-new";
+import { readWhatsNewEntries, WHATS_NEW_DIR } from "../scripts/ward-flow/whats-new-list.mjs";
 
 const TOUR_AUTO_DONE = "ward_flow_choice_tour_auto_done";
 const newest = () => WHATS_NEW.at(-1) as WhatsNewEntry;
+const seenList = () => JSON.parse(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY) ?? "[]") as string[];
 
 beforeEach(() => window.localStorage.clear());
 afterEach(() => window.localStorage.clear());
@@ -38,7 +42,7 @@ describe("what's new note", () => {
     expect(screen.getByTestId("ward-whats-new").textContent).toContain(newest().line);
     fireEvent.click(screen.getByTestId("ward-whats-new-close"));
     expect(screen.queryByTestId("ward-whats-new")).toBeNull();
-    expect(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY)).toBe(newest().id);
+    expect(seenList()).toEqual(WHATS_NEW.map((entry) => entry.id));
     unmount();
     render(<WardWhatsNew />);
     expect(screen.queryByTestId("ward-whats-new")).toBeNull();
@@ -53,8 +57,8 @@ describe("what's new note", () => {
 
   it("lists only the changes added since this device last closed it", () => {
     window.localStorage.setItem(TOUR_AUTO_DONE, "yes");
-    const before = WHATS_NEW.at(-2) as WhatsNewEntry;
-    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, before.id);
+    const seen = WHATS_NEW.slice(0, -1).map((entry) => entry.id);
+    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify(seen));
     render(<WardWhatsNew />);
     const items = screen.getAllByRole("listitem").map((item) => item.textContent);
     expect(items).toEqual([newest().line]);
@@ -71,6 +75,28 @@ describe("what's new note", () => {
     expect(unseenWhatsNew("e6", list)).toEqual([]);
     expect(unseenWhatsNew("gone", list).map((entry) => entry.id)).toEqual(["e6", "e5", "e4", "e3"]);
     expect(unseenWhatsNew(null, list)).toHaveLength(WHATS_NEW_CARD_LIMIT);
+  });
+
+  it("still shows a change that sorts among ones this device has seen", () => {
+    const list = ["2026-11-03-a", "2026-11-03-b", "2026-11-03-c"].map((id) => ({ id, date: "2026-11-03", line: id }));
+    const seen = JSON.stringify(["2026-11-03-a", "2026-11-03-c"]);
+    expect(unseenWhatsNew(seen, list).map((entry) => entry.id)).toEqual(["2026-11-03-b"]);
+    expect(unseenWhatsNew("[not json", list)).toHaveLength(3);
+  });
+
+  it("reads an id stored before entry files against the old list order", () => {
+    // Only the lines that existed under the old order: entries added later are unseen too, by design.
+    const before = WHATS_NEW.filter((entry) => entry.id < "2026-11-04");
+    const ids = (seen: string) => unseenWhatsNew(seen, before).map((entry) => entry.id);
+    // Under the old order only the referral line came after this id, though it no longer sorts last.
+    expect(ids("2026-11-03-one-alerts-switch")).toEqual(["2026-11-03-simpler-new-referral"]);
+    // This id now sorts last, yet four lines came after it in the old order (the card shows four).
+    expect(ids("2026-11-03-waiting-and-all-eds")).toEqual([
+      "2026-11-03-simpler-new-referral",
+      "2026-11-03-one-alerts-switch",
+      "2026-11-03-journey-recovery",
+      "2026-11-03-integrity-save-confirmation",
+    ]);
   });
 
   it("opens Help at What's new from its button", () => {
@@ -90,7 +116,7 @@ describe("what's new note", () => {
     act(() => {
       window.dispatchEvent(new Event(TOUR_AUTO_STARTED_EVENT));
     });
-    expect(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY)).toBe(newest().id);
+    expect(seenList()).toEqual(WHATS_NEW.map((entry) => entry.id));
     // The tour sends the same event name, written out on its side to keep the files apart.
     const tourSource = readFileSync("src/components/ward-management/help/ward-tour-auto-start.tsx", "utf8");
     expect(tourSource).toContain(`"${TOUR_AUTO_STARTED_EVENT}"`);
@@ -121,5 +147,33 @@ describe("what's new list", () => {
 
   it("stays short enough to load with every page", () => {
     expect(WHATS_NEW.length).toBeLessThanOrEqual(20);
+  });
+
+  it("is the newest 20 entry files, one per change, so parallel pull requests never share lines", () => {
+    expect(WHATS_NEW).toEqual(readWhatsNewEntries());
+    expect(() => readFileSync("src/components/ward-management/help/whats-new.json")).toThrow();
+    const root = mkdtempSync(path.join(tmpdir(), "whats-new-"));
+    const folder = path.join(root, WHATS_NEW_DIR);
+    mkdirSync(folder, { recursive: true });
+    const add = (name: string, body: string) => writeFileSync(path.join(folder, name), body);
+    try {
+      add("2026-11-04-b.json", '{ "line": "B." }');
+      add("2026-11-03-z.json", '{ "line": "Z." }');
+      add("2026-11-04-a.json", '{ "line": "A." }');
+      add("notes.md", "ignored");
+      expect(readWhatsNewEntries(root).map((entry) => entry.id)).toEqual([
+        "2026-11-03-z",
+        "2026-11-04-a",
+        "2026-11-04-b",
+      ]);
+      expect(readWhatsNewEntries(root, 2).map((entry) => entry.id)).toEqual(["2026-11-04-a", "2026-11-04-b"]);
+      add("2026-11-04-c.json", '{ "line": "C.", "id": "x" }');
+      expect(() => readWhatsNewEntries(root)).toThrow(/exactly/);
+      rmSync(path.join(folder, "2026-11-04-c.json"));
+      add("Nov-4.json", '{ "line": "D." }');
+      expect(() => readWhatsNewEntries(root)).toThrow(/YYYY-MM-DD/);
+    } finally {
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
   });
 });
