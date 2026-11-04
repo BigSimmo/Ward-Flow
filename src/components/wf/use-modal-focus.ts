@@ -11,6 +11,7 @@ import {
   SHEET_AUTOFOCUS_SELECTOR,
   startSheetOpenFocus,
   updateSheetRoot,
+  updateSheetInteractionRoots,
   type SheetFocusController,
 } from "./sheet-focus";
 
@@ -45,6 +46,8 @@ export type UseModalFocusOptions = {
    * whose own window-level Escape shortcut does not consult the sheet stack.
    */
   keyPhase?: "bubble" | "capture";
+  /** Opt-in guided interaction: only these current target subtrees also stay available. */
+  interactionRoots?: readonly (HTMLElement | null)[];
 };
 
 export type UseModalFocusResult = {
@@ -78,12 +81,22 @@ export function useModalFocus({
   closeOnEscape = true,
   focusOnOpen = "deferred",
   keyPhase = "bubble",
+  interactionRoots,
 }: UseModalFocusOptions): UseModalFocusResult {
   const modalId = useId();
   const rootElementRef = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
   const closeOnEscapeRef = useRef(closeOnEscape);
   const openFocusRef = useRef<SheetFocusController | null>(null);
+  const interactionRootsRef = useRef(interactionRoots);
+
+  useEffect(() => {
+    interactionRootsRef.current = interactionRoots;
+    updateSheetInteractionRoots(
+      modalId,
+      interactionRoots?.filter((root): root is HTMLElement => Boolean(root?.isConnected)) ?? [],
+    );
+  }, [interactionRoots, modalId]);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -108,7 +121,11 @@ export function useModalFocus({
     const openPanel = panelRef.current;
     const capture = keyPhase === "capture";
 
-    pushSheet(modalId, rootElementRef.current ?? openPanel);
+    pushSheet(
+      modalId,
+      rootElementRef.current ?? openPanel,
+      interactionRootsRef.current?.filter((root): root is HTMLElement => Boolean(root?.isConnected)) ?? [],
+    );
     const resolveTarget = () => {
       const panel = panelRef.current;
       return (
@@ -154,7 +171,16 @@ export function useModalFocus({
       }
       if (event.key !== "Tab") return;
       const panel = panelRef.current;
-      const focusable = modalFocusTargets(panel, true);
+      const roots =
+        interactionRootsRef.current?.filter((root): root is HTMLElement => Boolean(root?.isConnected)) ?? [];
+      // A target may itself be the button. Its parent supplies the shared visibility/disabled
+      // filtering, then containment keeps every unrelated sibling out of the Tab cycle.
+      const focusable = [
+        ...new Set([
+          ...modalFocusTargets(panel, true),
+          ...roots.flatMap((root) => modalFocusTargets(root.parentElement).filter((element) => root.contains(element))),
+        ]),
+      ];
       // Move focus explicitly rather than trusting the platform's Tab order, which varies by
       // browser for programmatically focused buttons.
       event.preventDefault();

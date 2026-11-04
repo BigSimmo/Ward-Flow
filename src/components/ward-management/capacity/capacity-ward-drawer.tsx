@@ -3,6 +3,7 @@
 // The ward drawer on Capacity (October 2026 redesign): one ward's beds as a picture, whether its
 // count is fresh, its facts, closing the ward behind its own button, and its discharge records.
 
+import { useWardFormSave } from "../use-ward-form-save";
 import { capacityConfirmer } from "./capacity-confirmer";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -43,6 +44,7 @@ export function CapacityWardSidebar({
   showPlace?: boolean;
 }) {
   const canOpen = useCanOpenHref();
+  const refreshSave = useWardFormSave(`capacity-ward-refresh:${row.unit.id}`);
   const wardHref = `/ward-flow/ward/${row.unit.id}`;
   const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
     useWardFlowSelect(
@@ -177,13 +179,22 @@ export function CapacityWardSidebar({
                   size="sm"
                   variant="sec"
                   // One open request at a time, as before the redesign: the status above says it is sent.
-                  disabled={request !== undefined}
+                  disabled={request !== undefined || refreshSave.pending}
                   onClick={() =>
-                    dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id })
+                    refreshSave.submit(
+                      () =>
+                        dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id }),
+                      () => {},
+                    )
                   }
                 >
                   Ask the ward
                 </Button>
+              ) : null}
+              {refreshSave.error ? (
+                <p role="alert" className={local.mutedXs}>
+                  {refreshSave.error}
+                </p>
               ) : null}
             </section>
 

@@ -60,7 +60,14 @@ export function ForecastTrackRecordTiles({
   const model = useForecastModel(now);
   const { record } = useForecastHistory(model, now);
   const role = useRouteRole();
-  const { entries: reasonEntries, record: recordReason } = useForecastMissReasons();
+  const {
+    entries: reasonEntries,
+    record: recordReason,
+    disabledReason,
+    versionFor,
+    reviewLatest,
+    scopeKey,
+  } = useForecastMissReasons();
   const latestReasons = useMemo(() => latestMissReasons(reasonEntries), [reasonEntries]);
   const patientOf = usePatientOf();
   const describeAdmission = (admission: Admission) =>
@@ -148,7 +155,11 @@ export function ForecastTrackRecordTiles({
                         day={day.day}
                         entry={latestReasons.get(day.day)}
                         candidates={missCandidates(day, movements, admissions, describeAdmission)}
-                        onRecord={(reason) => recordReason({ day: day.day, reason, by: role, at: now })}
+                        expectedVersion={versionFor(day.day)}
+                        disabledReason={disabledReason}
+                        scopeKey={scopeKey}
+                        onRefresh={() => reviewLatest(day.day)}
+                        onRecord={(reason, basis) => recordReason({ day: day.day, reason, by: role, at: now }, basis)}
                       />
                     )}
                   </li>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useUndoableStep } from "../use-undoable-step";
+import { wardRaise } from "../ward-flow-raise";
+import type { WardCommandDispatch } from "../ward-shared-client";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import type { WardFlowRole } from "../ward-flow-events";
 import type { Instant } from "../ward-clock";
@@ -48,7 +50,7 @@ export type RecordBedMeetingAction = (step: {
   dueAt: Instant;
   /** The toast's title once the engine accepts the step. Defaults to "Recorded: <action>." */
   success?: string;
-}) => void;
+}) => ReturnType<WardCommandDispatch>;
 
 /**
  * Chase Undo (Josh, 3 Nov 2026): records a bed meeting action and offers Undo on the toast, so a
@@ -59,25 +61,30 @@ export type RecordBedMeetingAction = (step: {
 export function useBedMeetingRecord(role: WardFlowRole): RecordBedMeetingAction {
   const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
   const now = useWardFlowClock();
-  const { run } = useUndoableStep({ dispatch, rejections, now, routeRole: role });
+  const { runRecorded } = useUndoableStep({ dispatch, rejections, now, routeRole: role });
   return ({ subject, action, owner, unitId, dueAt, success }) => {
     const label = bedMeetingActionLabel(action);
-    run(
-      {
-        type: "RECORD_BED_MEETING_ACTION",
-        role,
-        now,
-        subject,
-        action,
-        owner,
-        ...(unitId !== undefined ? { unitId } : {}),
-        dueAt,
-      },
+    // runRecorded calls `record` at once: the form that asked waits on this same command's outcome.
+    let completion: ReturnType<WardCommandDispatch> = undefined;
+    runRecorded(
+      () =>
+        (completion = wardRaise(
+          dispatch,
+          role,
+          now,
+        )("RECORD_BED_MEETING_ACTION", {
+          subject,
+          action,
+          owner,
+          ...(unitId !== undefined ? { unitId } : {}),
+          dueAt,
+        })),
       {
         success: success ?? `Recorded: ${label}.`,
         undo: (at) => ({ type: "UNDO_BED_MEETING_ACTION", role, now: at, subject, action }),
         undone: `Undone. ${label} is taken back.`,
       },
     );
+    return completion;
   };
 }

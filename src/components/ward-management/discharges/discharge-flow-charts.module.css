@@ -81,7 +81,7 @@
 }
 
 .swatchBlocked {
-  background: var(--wf-danger);
+  background: var(--wf-warning);
 }
 
 .swatchWeekend {
@@ -224,7 +224,7 @@
 }
 
 .barBlocked {
-  background: var(--wf-danger);
+  background: var(--wf-warning);
 }
 
 /* Rounded ends on whichever segment sits at the top or bottom. */
@@ -317,7 +317,8 @@
   display: block;
   height: 100%;
   border-radius: var(--radius-pill);
-  background: var(--wf-danger);
+  /* Post-merge audit (Josh, 4 Nov 2026): a count of reasons, not an alarm, so the bars are neutral. */
+  background: var(--wf-ink-3);
 }
 
 .barValue {
@@ -432,7 +433,7 @@
   background: var(--wf-data-2);
 }
 .dayFillHeld {
-  background: var(--wf-danger);
+  background: var(--wf-warning);
 }
 .dayFillDue:first-child,
 .dayFillHeld:first-child {

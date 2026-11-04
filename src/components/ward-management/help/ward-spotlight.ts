@@ -195,8 +195,13 @@ export function useSpotlight(
   targets: readonly TourTarget[] | undefined,
   key: string,
   device: TourDevice = "desk",
-): { box: SpotBox | null; missing: boolean; held: boolean } {
-  const [spot, setSpot] = useState<{ key: string; box: SpotBox | null; missing: boolean } | null>(null);
+): { box: SpotBox | null; missing: boolean; held: boolean; element: HTMLElement | null } {
+  const [spot, setSpot] = useState<{
+    key: string;
+    box: SpotBox | null;
+    missing: boolean;
+    element: HTMLElement | null;
+  } | null>(null);
   useEffect(() => {
     // The last step's light is let go when this step has none, or its control is not found in time.
     const letGo = () => setSpot((last) => (last && last.key !== key ? null : last));
@@ -217,7 +222,7 @@ export function useSpotlight(
           if (found && found !== element) bringIntoView(found, device);
           element = found;
         }
-        setSpot({ key, box: element ? spotBox(element) : null, missing: !element && gaveUp });
+        setSpot({ key, box: element ? spotBox(element) : null, missing: !element && gaveUp, element });
       });
     };
     const started = Date.now();
@@ -249,11 +254,17 @@ export function useSpotlight(
       window.removeEventListener("resize", measure);
     };
   }, [targets, key, device]);
-  if (spot && spot.key === key) return { box: spot.box, missing: spot.missing, held: false };
+  if (spot && spot.key === key)
+    return {
+      box: spot.box,
+      missing: spot.missing,
+      held: false,
+      element: spot.element?.isConnected ? spot.element : null,
+    };
   // Still looking: the last step's light stays put until this step's control is found. It says so
   // (`held`), so a check that this step lit its control never counts the last step's light.
-  if (spot?.box && targets?.length) return { box: spot.box, missing: false, held: true };
-  return { box: null, missing: false, held: false };
+  if (spot?.box && targets?.length) return { box: spot.box, missing: false, held: true, element: null };
+  return { box: null, missing: false, held: false, element: null };
 }
 
 /**

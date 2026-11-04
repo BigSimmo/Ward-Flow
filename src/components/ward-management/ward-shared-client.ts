@@ -1,3 +1,4 @@
+import { forecastHistoryFailure } from "./forecast/forecast-history-response";
 import {
   anySignal,
   checkSharedSnapshot,
@@ -1374,10 +1375,9 @@ export class SharedWorkspaceClient {
       throw new Error(typeof value?.error === "string" ? value.error : "The access log could not be read");
     return Array.isArray(value.views) ? value.views : [];
   }
-  /** Proposal 013: this desk's shared forecast history; with a body, records a snapshot or reason first. */
   async forecastHistory(body?: Record<string, unknown>): Promise<unknown> {
     const { response, value } = await this.request("/v1/workspace/forecast-history", body);
-    if (!response.ok) throw new Error("Forecast history could not be read");
+    if (!response.ok) throw forecastHistoryFailure(value);
     return value;
   }
   /** Cover given or held by this account, and, for a coordinator, inside its place. */

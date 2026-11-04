@@ -20,6 +20,7 @@ import {
 
 type TrendsProps = {
   now: Instant;
+  eventLog?: readonly import("../ward-event-log").EventLogEntry[];
   hours?: number;
   showTotal?: boolean;
   /** As a tile of the Network page's Also recorded strip (redesign approved 1 Nov 2026, Q135). */
@@ -57,9 +58,9 @@ export function StatisticsSessionTrendsCard(props: TrendsProps) {
   return <OperationalSessionTrends {...props} />;
 }
 
-function OperationalSessionTrends({ now, hours, showTotal, tile }: TrendsProps) {
-  const { eventLog = [] } = useWardFlowSelect("eventLog");
-  const trends = sessionTrends(eventLog, now, hours);
+function OperationalSessionTrends({ now, hours, showTotal, tile, eventLog }: TrendsProps) {
+  const { eventLog: liveLog = [] } = useWardFlowSelect("eventLog");
+  const trends = sessionTrends(eventLog ?? liveLog, now, hours);
   return <SessionTrendsView now={now} hours={hours} showTotal={showTotal} tile={tile} trends={trends} />;
 }
 
