@@ -260,8 +260,12 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     expect(unitName, `fixture assumption: ${UNIT_ID} is a seeded unit`).toBeDefined();
     await clickRailLink(page, "/ward-flow/wards");
     await expect(page.getByTestId("ward-index")).toBeVisible({ timeout: 15_000 });
-    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
-    await page.getByRole("link", { name: "Bed board", exact: true }).click();
+    // The ward card's name opens its side panel, which links to the Bed board (#1360).
+    await page
+      .getByRole("button", { name: unitName!.split(" — ")[0], exact: true })
+      .first()
+      .click();
+    await page.getByRole("dialog").getByRole("link", { name: "Bed board", exact: true }).click();
     await page.waitForURL(`**/ward-flow/board/${UNIT_ID}`);
     await expect(
       page.locator('div[hidden][id^="S:"]'),

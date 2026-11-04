@@ -1589,7 +1589,8 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // --- Step 3: the ward's own screen must move. This is the exact proof the reviewer
     // performed and found failing: "typing 0 into Confirm allocatable beds ... beds: Ready 2
     // ... Currently confirmed 2" — the screen that raised the event never moved. ---
-    await expect(bedGrid).toContainText("Ready 0");
+    // Ready sits once, in the hero (#1360); the strip keeps Pulled and Closed.
+    await expect(wardScreen.getByTestId("ward-hero-ready").first()).toHaveText("0");
     await expect(bedGrid).toContainText("Closed 2"); // the physically-empty pool is unchanged; it is now not offered rather than ready
     await expect(confirmDialog.getByText(/Currently confirmed 0 at/)).toBeVisible();
     await confirmDialog.getByRole("button", { name: "Close capacity confirmation" }).click();

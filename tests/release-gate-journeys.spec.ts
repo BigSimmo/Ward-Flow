@@ -56,8 +56,12 @@ async function openBedBoardFromWards(page: Page, unitName: string, unitId: strin
       .click();
     await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
   } else {
-    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
-    await page.getByRole("link", { name: "Bed board", exact: true }).click();
+    // The ward card's name opens its side panel, which links to the Bed board (#1360).
+    await page
+      .getByRole("button", { name: unitName.split(" — ")[0], exact: true })
+      .first()
+      .click();
+    await page.getByRole("dialog").getByRole("link", { name: "Bed board", exact: true }).click();
   }
   await page.waitForURL(`**/ward-flow/board/${unitId}`);
   await waitForScreen(page, "ward-board");
