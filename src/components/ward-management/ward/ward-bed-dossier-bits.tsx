@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { ChevronDown } from "lucide-react";
 
 import type { BedItem } from "./ward-bed-tone";
-import { Button, Menu, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
+import { Button, ChipGroup, FilterChip, Menu, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
 
 import styles from "./ward-bed-dossier-drawer.module.css";
 import { useOptionalRouter } from "./ward-screen-helpers";
@@ -41,9 +41,75 @@ export function FactTile({ label, value, tone }: { label: string; value: string;
   );
 }
 
+/**
+ * WH1 (Josh, 3 Nov 2026): a pick one list drawn as kit chips in place of a browser drop-down. The
+ * chosen chip is pressed; pressing it again keeps it, so there is always one answer. The group is
+ * focused through `groupRef` when an editor opens on it.
+ */
+export function ChoiceChips<T extends string>({
+  label,
+  items,
+  value,
+  onChange,
+  testId,
+  groupRef,
+  className,
+}: {
+  label: string;
+  items: readonly { id: T; label: string }[];
+  value: T | "";
+  onChange: (id: T) => void;
+  testId?: string;
+  groupRef?: RefObject<HTMLDivElement | null>;
+  className?: string;
+}) {
+  return (
+    <div ref={groupRef} className={cx(styles.choice, className)} data-testid={testId} data-value={value}>
+      <ChipGroup label={label}>
+        {items.map((item) => (
+          <FilterChip
+            key={item.id}
+            pressed={item.id === value}
+            onPressedChange={() => {
+              if (item.id !== value) onChange(item.id);
+            }}
+          >
+            {item.label}
+          </FilterChip>
+        ))}
+      </ChipGroup>
+    </div>
+  );
+}
+
+/** Focuses the pressed chip in a `ChoiceChips` group, or its first chip when none is pressed. */
+export function focusChoice(group: HTMLDivElement | null) {
+  const target =
+    group?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]') ?? group?.querySelector("button");
+  target?.focus();
+}
+
+/** One stay, as the hero's step track reads it: on the ward, a date set, confirmed, left. */
+export function StaySteps({ steps, current }: { steps: readonly string[]; current: number }) {
+  return (
+    <ol className={styles.steps} aria-label="Plan to leave steps" data-testid="bed-record-steps">
+      {steps.map((label, index) => (
+        <li
+          key={label}
+          data-state={index < current ? "done" : index === current ? "now" : "next"}
+          aria-current={index === current ? "step" : undefined}
+        >
+          <span className={styles.stepDot} aria-hidden="true" />
+          <span className={styles.stepLabel}>{label}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 /** One step the bed record offers, in the order the More list shows them. */
 export type BedAction = {
-  id: "leave" | "blocker" | "ed" | "move" | "referral" | "full-referral";
+  id: "leave" | "plan" | "blocker" | "ed" | "move" | "referral" | "full-referral";
   label: string;
   onAction?: () => void;
   href?: string;
@@ -63,7 +129,14 @@ export function mainActionId(bedItem: BedItem | undefined, isOccupied: boolean):
   if (bedItem.blockReason) return "blocker";
   if (bedItem.awayAtEdHours != null) return "ed";
   const leaving = bedItem.dischargeConfirmed === true || (bedItem.expectedDays != null && bedItem.expectedDays <= 0);
-  return leaving || bedItem.pastDate ? "leave" : null;
+  if (leaving || bedItem.pastDate) return "leave";
+  // WH1 appraisal: a stay with no plan to leave has one obvious next step, setting the date.
+  return hasNoLeavingDate(bedItem) ? "plan" : null;
+}
+
+/** No expected discharge recorded for this stay. */
+export function hasNoLeavingDate(bedItem: BedItem): boolean {
+  return bedItem.expectedDays == null && !bedItem.expectedDischargeLabel;
 }
 
 /**
@@ -74,21 +147,26 @@ export function BedActions({
   actions,
   mainId,
   phone = false,
+  band = false,
 }: {
   actions: BedAction[];
   mainId: BedAction["id"] | null;
   phone?: boolean;
+  /** WH1: drawn on the drawer's dark footer band, the filled step full width above the others. */
+  band?: boolean;
 }) {
   const router = useOptionalRouter();
   const main = actions.find((action) => action.id === mainId);
   const rest = actions.filter((action) => action !== main);
   const second = rest.find((action) => !action.href);
   const more = rest.filter((action) => action !== second);
-  const draw = (action: BedAction, variant: "pri" | "sec") =>
+  const size = band ? "md" : "lg";
+  const plain = band ? "onHero" : "sec";
+  const draw = (action: BedAction, variant: "pri" | "sec" | "onHero", className?: string) =>
     action.href ? (
       <Link
         key={action.id}
-        className={buttonClass({ variant, size: "lg", className: styles.pill })}
+        className={buttonClass({ variant, size, className: cx(styles.pill, className) })}
         href={action.href}
         data-testid={action.testId}
       >
@@ -98,8 +176,8 @@ export function BedActions({
       <Button
         key={action.id}
         variant={variant}
-        size="lg"
-        className={styles.pill}
+        size={size}
+        className={cx(styles.pill, className)}
         disabledReason={action.disabledReason}
         aria-describedby={action.describedBy}
         aria-expanded={action.expanded}
@@ -109,41 +187,82 @@ export function BedActions({
         {action.label}
       </Button>
     );
+  const menu =
+    more.length > 0 ? (
+      <Menu
+        label="More bed steps"
+        align={phone || band ? "end" : "start"}
+        items={more.map((action) => ({
+          id: action.id,
+          label: action.label,
+          disabled: action.disabledReason !== undefined,
+          meta: action.disabledReason,
+          onSelect: () => {
+            if (action.href) {
+              if (router) router.push(action.href);
+              else window.location.assign(action.href);
+            } else action.onAction?.();
+          },
+        }))}
+        trigger={(props) => (
+          <Button {...props} variant={plain} size={size} iconEnd={ChevronDown} className={styles.pill}>
+            More
+          </Button>
+        )}
+      />
+    ) : null;
+  if (band) {
+    return (
+      <div className={styles.bandActions} data-testid="bed-record-actions">
+        {main ? draw(main, "pri", styles.bandMain) : null}
+        {second || menu ? (
+          <div className={styles.bandRow}>
+            {second ? draw(second, plain) : null}
+            {menu}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div className={cx(styles.actions, phone && styles.actionsPhone)} data-testid="bed-record-actions">
       {main ? draw(main, "pri") : null}
-      {second ? draw(second, "sec") : null}
-      {more.length > 0 ? (
-        <Menu
-          label="More bed steps"
-          align={phone ? "end" : "start"}
-          items={more.map((action) => ({
-            id: action.id,
-            label: action.label,
-            disabled: action.disabledReason !== undefined,
-            meta: action.disabledReason,
-            onSelect: () => {
-              if (action.href) {
-                if (router) router.push(action.href);
-                else window.location.assign(action.href);
-              } else action.onAction?.();
-            },
-          }))}
-          trigger={(props) => (
-            <Button {...props} variant="sec" size="lg" iconEnd={ChevronDown} className={styles.pill}>
-              More
-            </Button>
-          )}
-        />
-      ) : null}
+      {second ? draw(second, plain) : null}
+      {menu}
     </div>
   );
 }
 
 /**
- * Redesign (review notes): a notice that says why the person has not left yet, from what the ward
- * has recorded. Nothing here is worked out from a legal time.
+ * Redesign (review notes): why the person has not left yet, from what the ward has recorded, with
+ * one short word for the hero's pill. Nothing here is worked out from a legal time.
  */
+export function stayStatus(
+  bedItem: BedItem | undefined,
+  expectedPlan: string,
+): { tone: WfTone; word: string; text: string } | null {
+  if (!bedItem?.admissionId) return null;
+  if (bedItem.blockReason) return { tone: "danger", word: "Held up", text: `Held up: ${bedItem.blockReason}.` };
+  if (bedItem.awayAtEdHours != null)
+    return {
+      tone: "warning",
+      word: "At an ED",
+      text: `Away at an ED for ${bedItem.awayAtEdHours}h. The bed is held for them.`,
+    };
+  // Redesign: the date is on the Going out fact and in Leaving; the line gives the reason only.
+  if (bedItem.pastDate) return { tone: "warning", word: "Past date", text: "Nothing is recorded as holding them up." };
+  if (bedItem.dischargeBarrier)
+    return { tone: "warning", word: "Long stay", text: `Long-stay reason: ${bedItem.dischargeBarrier}.` };
+  if (bedItem.status === "incoming") return { tone: "neutral", word: "Arriving", text: "Not on the ward yet." };
+  if (bedItem.dischargeConfirmed === true || (bedItem.expectedDays != null && bedItem.expectedDays <= 0))
+    return { tone: "info", word: "Due out", text: `Due to leave. Expected: ${expectedPlan}.` };
+  // A stay with no plan to leave says what to do, not that nothing is known.
+  if (hasNoLeavingDate(bedItem))
+    return { tone: "neutral", word: "On the ward", text: "No leaving date yet. Set one under Leaving." };
+  return { tone: "neutral", word: "On the ward", text: `Not due to leave yet. Expected: ${expectedPlan}.` };
+}
+
+/** The phone sheet's notice: why the person has not left yet, as the desktop hero's line says it. */
 export function NotLeftNotice({
   bedItem,
   expectedPlan,
@@ -153,33 +272,14 @@ export function NotLeftNotice({
   expectedPlan: string;
   isOccupied: boolean;
 }) {
-  if (!isOccupied || !bedItem?.admissionId) return null;
-  let tone: WfTone = "neutral";
-  let text: string;
-  if (bedItem.blockReason) {
-    tone = "danger";
-    text = `Held up: ${bedItem.blockReason}.`;
-  } else if (bedItem.awayAtEdHours != null) {
-    tone = "warning";
-    text = `Away at an ED for ${bedItem.awayAtEdHours}h. The bed is held for them.`;
-  } else if (bedItem.pastDate) {
-    // Redesign: the date is on the Going out tile and in Plan to leave; the notice gives the reason only.
-    tone = "warning";
-    text = "Nothing is recorded as holding them up.";
-  } else if (bedItem.dischargeBarrier) {
-    tone = "warning";
-    text = `Long-stay reason: ${bedItem.dischargeBarrier}.`;
-  } else if (bedItem.status === "incoming") {
-    text = "Not on the ward yet.";
-  } else {
-    text = `Not due to leave yet. Expected: ${expectedPlan}.`;
-  }
+  const status = isOccupied ? stayStatus(bedItem, expectedPlan) : null;
+  if (!status) return null;
   return (
-    <p className={styles.notLeft} data-tone={tone} data-testid="bed-record-not-left">
-      <StatusGlyph tone={tone} />
+    <p className={styles.notLeft} data-tone={status.tone} data-testid="bed-record-not-left">
+      <StatusGlyph tone={status.tone} />
       <span>
         <b>Why they have not left. </b>
-        {text}
+        {status.text}
       </span>
     </p>
   );

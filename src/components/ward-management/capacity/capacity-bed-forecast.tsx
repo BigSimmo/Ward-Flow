@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, type KeyboardEvent } from "react";
 import { ChevronRight } from "lucide-react";
 
 import { Button, Card, CardHead, Segmented } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
-import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { BEDS_FORECAST_LIMITS } from "./beds-forecast";
 import type { ForecastLever } from "@/components/ward-management/forecast/forecast-levers";
 import type { HorizonDay } from "@/components/ward-management/forecast/forecast-horizon";
@@ -16,8 +14,11 @@ import { DayBars, type DayBar } from "./capacity-day-bars";
 import { HowWorkedOut, Legend } from "./capacity-how-worked-out";
 import { gapWords } from "./capacity-range-line";
 import { ShowMoreRow } from "@/components/wf";
-import { HELD_UP_HREF, tallyBarriers } from "./capacity-held-up";
+import { tallyBarriers } from "./capacity-held-up";
+import { isConfirmationFresh } from "./capacity-gap-words";
+import { LeverPopup, type HelpItem } from "./capacity-lever-popup";
 import type { CapacityModel } from "./capacity-model";
+import type { NetworkWardRow } from "./capacity-derivations";
 import styles from "./capacity-page.module.css";
 
 const WARD_ROWS = 8;
@@ -37,15 +38,25 @@ export function BedForecast({
   onTryScenario,
   stacked = false,
   siteName,
+  onWard,
+  onAskWard,
+  networkWide = false,
 }: {
   model: CapacityModel;
   onTryScenario: () => void;
+  /** A service is chosen, but the forecast is the whole network's, so the title row says so. */
+  networkWide?: boolean;
   stacked?: boolean;
+  /** Opens a ward's drawer from a "What would help tomorrow" pop-up. */
+  onWard: (unitId: string) => void;
+  /** The coordinator's "Ask the ward"; absent for a desk that may not ask. */
+  onAskWard?: (unitId: string) => void;
   /** Role view (site bed manager): the forecast covers this site's wards, so it is named for it. */
   siteName?: string;
 }) {
   const [view, setView] = useState<"network" | "ward">("network");
-  const { forecast, gapTotals, days, week, forecastModel, sourceSummary, now } = model;
+  const [openItem, setOpenItem] = useState<HelpItem | null>(null);
+  const { forecast, gapTotals, days, week, forecastModel, sourceSummary, now, networkRows } = model;
   const [tomorrow, twoDays] = forecast.horizons;
   const bars: DayBar[] = days.map((day, index) => ({
     key: day.offset,
@@ -54,7 +65,16 @@ export function BedForecast({
     value: week.total.out[index] ?? 0,
     firm: day.offset < 2,
     second: week.total.arriving[index] ?? 0,
+    // Capacity issue 3: the wards behind each bar, for the hover card.
+    tip: week.rows
+      .map((row) => ({ name: row.name, out: row.out[index] ?? 0 }))
+      .filter((row) => row.out > 0)
+      .sort((x, y) => y.out - x.out)
+      .slice(0, 4)
+      .map((row) => `${row.name} ${row.out}`),
   }));
+  const firmOut = bars.filter((bar) => bar.firm).reduce((sum, bar) => sum + bar.value, 0);
+  const items = helpItems(forecastModel.levers, networkRows, now);
   const weekOut = bars.reduce((sum, bar) => sum + bar.value, 0);
   const summary = `Recorded discharges by day for the next ${bars.length} days: ${bars
     .map((bar) => `${bar.label} ${bar.value}`)
@@ -90,38 +110,49 @@ export function BedForecast({
       {stacked ? (
         <div className={styles.fcToolbar}>{actions}</div>
       ) : (
-        <CardHead id="capacity-forecast-title" title="Bed forecast" action={actions} />
+        <CardHead
+          id="capacity-forecast-title"
+          title="Bed forecast"
+          meta={networkWide ? "Network-wide" : undefined}
+          action={actions}
+        />
       )}
-      <div className={styles.fcBody}>
-        {/* Polish (Josh, 31 Oct 2026): the left column is three figures, each with one short line. */}
-        <dl className={`${styles.fcKpis} ${styles.fcFigs}`}>
+      {/* Capacity issue 3 (Josh, 3 Nov 2026): the figures are one slim strip under the title, so the
+          chart and the help list get the width and the card is shorter. */}
+      <dl className={styles.fcStrip}>
+        <Kpi
+          label="Now"
+          value={gapWords(gapTotals.gap)}
+          tone={gapTotals.gap}
+          sub={`${gapTotals.waiting} waiting for ${gapTotals.bedsThatFit} beds that fit`}
+        />
+        {tomorrow ? (
           <Kpi
-            label="Now"
-            value={gapWords(gapTotals.gap)}
-            tone={gapTotals.gap}
-            sub={`${gapTotals.waiting} waiting · ${gapTotals.bedsThatFit} fit`}
+            label="Tomorrow"
+            srLabel={`, likely by ${formatInstantWithDay(tomorrow.until, now)}`}
+            value={gapWords(tomorrow.likely)}
+            tone={tomorrow.likely}
+            sub={`Could be ${gapWords(tomorrow.low)} to ${gapWords(tomorrow.high)}`}
           />
-          {tomorrow ? (
-            <Kpi
-              label="Tomorrow"
-              srLabel={`, likely by ${formatInstantWithDay(tomorrow.until, now)}`}
-              value={gapWords(tomorrow.likely)}
-              tone={tomorrow.likely}
-              sub={`${gapWords(tomorrow.low)} to ${gapWords(tomorrow.high)}`}
-            />
-          ) : null}
-          {twoDays ? (
-            // Redesign (Josh, 30 Oct): two days out rests on later, softer dates, so it leads with the
-            // range and reads muted, as the chart's "may move" bars do.
-            <Kpi
-              label="In 2 days"
-              value={`${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
-              tone={twoDays.likely}
-              soft
-              sub={`Likely ${gapWords(twoDays.likely)}`}
-            />
-          ) : null}
-        </dl>
+        ) : null}
+        {twoDays ? (
+          <Kpi
+            label="In 2 days"
+            value={`Likely ${gapWords(twoDays.likely)}`}
+            tone={twoDays.likely}
+            soft
+            sub={`${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
+          />
+        ) : null}
+        <Kpi
+          label={`Going out, ${bars.length} days`}
+          value={`${weekOut} beds`}
+          tone={0}
+          neutral
+          sub={`${firmOut} firm today and tomorrow`}
+        />
+      </dl>
+      <div className={styles.fcBody}>
         <div className={styles.fcChart}>
           <div className={styles.fcChartHead}>
             <span className={styles.strong}>{view === "network" ? "Beds going out" : "Beds going out by ward"}</span>
@@ -134,24 +165,46 @@ export function BedForecast({
               ]}
             />
           </div>
-          {view === "network" ? <DayBars days={bars} summary={summary} /> : <WardDays days={days} rows={week.rows} />}
+          {view === "network" ? (
+            <DayBars days={bars} summary={summary} compact />
+          ) : (
+            <WardDays days={days} rows={week.rows} />
+          )}
         </div>
-        {/* Polish (Josh, 31 Oct 2026): the right column is a short list, one line and one link each.
-            The numbered circles, the explanations and the sources block are gone; the sources and
-            what is not yet counted are in "How this is worked out". */}
         <div className={styles.fcSide}>
           <span className={styles.fcFigLabel}>What would help tomorrow</span>
-          {forecastModel.levers.length === 0 ? (
+          {items.length === 0 ? (
             <p className={styles.mutedXs}>Nothing on record would move tomorrow&apos;s figure.</p>
           ) : (
             <ul className={styles.helpList}>
-              {forecastModel.levers.slice(0, 3).map((lever) => (
-                <LeverItem key={lever.kind} lever={lever} />
+              {items.map((item) => (
+                <li key={item.kind}>
+                  <button
+                    type="button"
+                    className={styles.helpLink}
+                    aria-haspopup="dialog"
+                    onClick={() => setOpenItem(item)}
+                  >
+                    <span className={styles.helpTitle}>{item.title}</span>
+                    <span className={`${styles.tag} ${tagTone(item) ? styles.tagGood : ""}`}>{tagText(item)}</span>
+                    <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" className={styles.helpChevron} />
+                  </button>
+                </li>
               ))}
             </ul>
           )}
         </div>
       </div>
+      <LeverPopup
+        item={openItem}
+        now={now}
+        onClose={() => setOpenItem(null)}
+        onWard={(unitId) => {
+          setOpenItem(null);
+          onWard(unitId);
+        }}
+        onAskWard={onAskWard}
+      />
       <div className={styles.cardFoot}>
         {/* Polish (Josh, 31 Oct 2026): the foot is two words and the method; the caveat sentence
             leads "How this is worked out". */}
@@ -191,6 +244,7 @@ function Kpi({
   sub,
   tone,
   soft = false,
+  neutral = false,
 }: {
   label: string;
   /** Read after the label by a screen reader only, such as the exact time "Tomorrow" means. */
@@ -200,6 +254,8 @@ function Kpi({
   tone: number;
   /** Rests on dates that may move: muted, with the chart's hatched swatch beside the label. */
   soft?: boolean;
+  /** A plain count, not a gap: no short or spare colour. */
+  neutral?: boolean;
 }) {
   // Polish (Josh, 31 Oct 2026): a quiet sentence-case label, a 16 px figure and one muted line,
   // in place of capitals over a 20 px figure.
@@ -211,13 +267,37 @@ function Kpi({
         {srLabel ? <span className={styles.srOnly}>{srLabel}</span> : null}
       </dt>
       <dd className={styles.fcFigBody}>
-        <span className={`${styles.fcFigValue} ${soft ? styles.fcFigSoft : tone < 0 ? styles.warnInk : styles.okInk}`}>
+        <span
+          className={`${styles.fcFigValue} ${soft ? styles.fcFigSoft : neutral ? "" : tone < 0 ? styles.warnInk : styles.okInk}`}
+        >
           {value}
         </span>
         <span className={styles.fcFigSub}>{sub}</span>
       </dd>
     </div>
   );
+}
+
+/**
+ * One ward's next days as day bars: the same row the "By ward" view draws (C3, Josh, 4 Nov 2026),
+ * for the ward panel. A ward with nothing recorded draws zeros.
+ */
+export function wardDayBars(
+  days: readonly HorizonDay[],
+  row: { out: readonly number[]; arriving: readonly number[] } | undefined,
+): { bars: DayBar[]; summary: string } {
+  const bars = days.map((day, index) => ({
+    key: day.offset,
+    label: day.label,
+    sub: daySub(day),
+    value: row?.out[index] ?? 0,
+    firm: day.offset < 2,
+    second: row?.arriving[index] ?? 0,
+  }));
+  const summary = `This ward's recorded discharges by day for the next ${bars.length} days: ${bars
+    .map((bar) => `${bar.label} ${bar.value}${bar.second ? `, ${bar.second} planned in` : ""}`)
+    .join(", ")}. Days after tomorrow may move.`;
+  return { bars, summary };
 }
 
 function daySub(day: HorizonDay): string {
@@ -231,57 +311,91 @@ function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-function LeverItem({ lever }: { lever: ForecastLever }) {
-  const canOpen = useCanOpenHref();
-  const content =
+/**
+ * The rows of "What would help tomorrow": the forecast's levers, then two of the page's own
+ * (Capacity issue 3, Josh, 3 Nov 2026): ward counts past their threshold, and beds being made
+ * ready. Each opens its pop-up.
+ */
+function helpItems(levers: readonly ForecastLever[], rows: readonly NetworkWardRow[], now: number): HelpItem[] {
+  const items: HelpItem[] = levers.map((lever) =>
     lever.kind === "clear_held_up"
       ? {
-          // Redesign (Josh, 30 Oct): names its subset (due by this time tomorrow) and opens
-          // Discharges' held-up list. The barrier tally is on that list.
+          kind: lever.kind,
           title: `Chase ${plural(lever.beds, "held-up release", "held-up releases")}`,
-          action: { href: HELD_UP_HREF, label: "Open" },
+          uplift: lever.likelyUplift,
           detail: tallyBarriers(lever.reasons)
             .map((entry) => `${entry.label} ${entry.count}`)
             .join(", "),
-          uplift: lever.likelyUplift,
         }
       : lever.kind === "confirm_dates"
         ? {
-            title: `Confirm discharges on ${plural(lever.wards.length, "ward", "wards")}`,
-            action: { href: "/ward-flow/discharges", label: "Open" },
-            detail: lever.wards.join(", "),
+            kind: lever.kind,
+            title: `Confirm ${plural(lever.beds, "discharge", "discharges")} on ${plural(lever.wards.length, "ward", "wards")}`,
             uplift: lever.likelyUplift,
+            detail: lever.wards.join(", "),
           }
         : {
+            kind: lever.kind,
             title: `Review ${plural(lever.beds, "overdue release", "overdue releases")}`,
-            action: { href: "/ward-flow/discharges", label: "Open" },
-            detail: "Dates passed: they widen the range only",
             uplift: 0,
-          };
-  const inner = (
-    <>
-      <span className={styles.helpTitle}>{content.title}</span>
-      <span className={styles.srOnly}>. {content.detail}. </span>
-      <span className={`${styles.tag} ${content.uplift > 0 ? styles.tagGood : ""}`}>
-        {content.uplift > 0 ? `up to +${content.uplift}` : "range only"}
-      </span>
-    </>
+            detail: "Dates passed: they widen the range only",
+          },
   );
-  // Role view: a desk that cannot open Discharges (executive) reads the step without a link.
-  return (
-    <li>
-      {canOpen(content.action.href) ? (
-        <Link href={content.action.href} className={styles.helpLink} title={content.detail}>
-          {inner}
-          <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
-        </Link>
-      ) : (
-        <span className={`${styles.helpLink} ${styles.helpStatic}`} title={content.detail}>
-          {inner}
-        </span>
-      )}
-    </li>
-  );
+  const stale = rows.filter((row) => !isConfirmationFresh(row.unit, now));
+  if (stale.length > 0) {
+    items.push({
+      kind: "stale_counts",
+      title: `Refresh ${plural(stale.length, "ward count", "ward counts")}`,
+      rows: [...stale].sort((x, y) => x.confirmedAt - y.confirmedAt),
+    });
+  }
+  const preparing = rows.filter((row) => (row.pendingPreparation ?? 0) > 0);
+  if (preparing.length > 0) {
+    const beds = preparing.reduce((sum, row) => sum + (row.pendingPreparation ?? 0), 0);
+    items.push({
+      kind: "being_made_ready",
+      title: `Finish ${plural(beds, "bed", "beds")} being made ready`,
+      rows: preparing,
+    });
+  }
+  return items;
+}
+
+function tagText(item: HelpItem): string {
+  if (item.kind === "stale_counts") return "check";
+  // A bed being made ready already counts as ready (owner, 1 Sep 2026), so finishing it is a task,
+  // not an uplift to tomorrow's figure.
+  if (item.kind === "being_made_ready") return "task";
+  return item.uplift > 0 ? `up to +${item.uplift}` : "range only";
+}
+
+function tagTone(item: HelpItem): boolean {
+  if (item.kind === "stale_counts") return false;
+  if (item.kind === "being_made_ready") return false;
+  return item.uplift > 0;
+}
+
+/**
+ * Roving focus along one heat map row (Josh, 4 Nov 2026): the row's first cell is its only Tab stop,
+ * and Left, Right, Home and End move focus between that row's cells, so the cell's tip shows.
+ */
+function moveAlongRow(event: KeyboardEvent<HTMLTableRowElement>) {
+  const cells = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("[data-hm-cell]"));
+  const at = event.target instanceof HTMLElement ? cells.indexOf(event.target) : -1;
+  const last = cells.length - 1;
+  const next =
+    event.key === "ArrowRight"
+      ? Math.min(at + 1, last)
+      : event.key === "ArrowLeft"
+        ? Math.max(at - 1, 0)
+        : event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? last
+            : null;
+  if (next === null || at < 0) return;
+  event.preventDefault();
+  cells[next]?.focus();
 }
 
 function WardDays({
@@ -330,7 +444,7 @@ function WardDays({
           {shown.map((row) => {
             const total = row.out.reduce((sum, value) => sum + value, 0);
             return (
-              <tr key={row.unitId}>
+              <tr key={row.unitId} onKeyDown={moveAlongRow}>
                 <th scope="row" className={styles.hmWard}>
                   <SpelledCodes text={row.name} />
                 </th>
@@ -339,7 +453,12 @@ function WardDays({
                   const arriving = row.arriving[index] ?? 0;
                   return (
                     <td key={day.offset} className={styles.hmCellWrap}>
+                      {/* C3 (Josh, 4 Nov 2026): each cell takes focus, so its tip opens on a keyboard
+                          focus and on a tap as well as on hover. The cell's own words are read. Each
+                          ward row is one Tab stop: the arrows, Home and End move along it. */}
                       <span
+                        tabIndex={index === 0 ? 0 : -1}
+                        data-hm-cell=""
                         className={`${styles.hmCell} ${styles[`hm${Math.min(out, 3)}`] ?? ""}${
                           day.offset > 1 && out > 0 ? ` ${styles.hmLater}` : ""
                         }`}
@@ -352,15 +471,24 @@ function WardDays({
                         ) : (
                           <>
                             <span className={styles.hmNone} aria-hidden="true" />
-                            <span className={styles.srOnly}>none</span>
+                            <span className={styles.srOnly}>0 out</span>
                           </>
                         )}
                         {arriving ? (
-                          <span className={styles.hmIn} title={`${arriving} planned admission`}>
+                          <span className={styles.hmIn}>
                             +{arriving}
                             <span className={styles.srOnly}> in</span>
                           </span>
                         ) : null}
+                        {/* Capacity issue 3: pointing at or focusing a cell names its ward, day and figures. */}
+                        <span className={styles.hmTip} aria-hidden="true">
+                          <b>{row.name}</b>
+                          <span>{day.label}</span>
+                          <span>
+                            {out} going out{day.offset > 1 && out > 0 ? ", may move" : ""}
+                          </span>
+                          {arriving ? <span>{arriving} planned in</span> : null}
+                        </span>
                       </span>
                     </td>
                   );

@@ -68,10 +68,11 @@ describe("the ward sets the discharge date from the bed drawer (WT-16)", () => {
         />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("tab", { name: "Plan to leave" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Leaving" }));
     fireEvent.click(screen.getAllByTestId("ward-drawer-discharge-date-open")[0]);
     const form = screen.getByTestId("ward-drawer-discharge-date");
-    fireEvent.change(within(form).getByLabelText("Day"), { target: { value: "1" } });
+    // WH1: the day is a kit stepper, one press on from Today.
+    fireEvent.click(within(form).getByRole("button", { name: "Increase discharge day" }));
     fireEvent.change(within(form).getByLabelText("Expected discharge time"), { target: { value: "10:00" } });
     fireEvent.click(within(form).getByRole("button", { name: "Save date" }));
     const tomorrowTen = Math.floor(NOW_ANCHOR / MINUTES_PER_DAY) * MINUTES_PER_DAY + MINUTES_PER_DAY + 600;
@@ -82,7 +83,7 @@ describe("the ward sets the discharge date from the bed drawer (WT-16)", () => {
     // Form-friction 63: changing a recorded date opens on that day and time, and Save waits for a change.
     fireEvent.click(screen.getAllByTestId("ward-drawer-discharge-date-open")[0]);
     const again = screen.getByTestId("ward-drawer-discharge-date");
-    expect(within(again).getByLabelText("Day")).toHaveValue("1");
+    expect(within(again).getByRole("spinbutton", { name: "Discharge day" })).toHaveAttribute("aria-valuenow", "1");
     expect(within(again).getByLabelText("Expected discharge time")).toHaveValue("10:00");
     expect(within(again).getByRole("button", { name: "Save date" })).toBeDisabled();
     expect(again).toHaveTextContent("Change the day or time to save");

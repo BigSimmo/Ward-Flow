@@ -7,6 +7,7 @@ import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/wa
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { pickObservationLevel } from "./helpers/ward-choice-chips";
 
 /*
  * D-72 item 5, ward side: a ward changes an occupied bed's observation level from the bed drawer.
@@ -83,7 +84,7 @@ function selectOccupiedBoardBed() {
 function saveTwoStaff() {
   const drawer = within(screen.getByTestId("bed-telemetry-drawer"));
   fireEvent.click(drawer.getAllByTestId("ward-observation-change")[0]);
-  fireEvent.change(drawer.getByTestId("ward-observation-level"), { target: { value: "two_staff" } });
+  pickObservationLevel("two_staff", screen.getByTestId("bed-telemetry-drawer"));
   fireEvent.click(drawer.getByTestId("ward-observation-save"));
 }
 

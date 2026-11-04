@@ -206,6 +206,8 @@ describe("ward command feedback follows its own completion", () => {
     fireEvent.click(occupied);
     fireEvent.click(getBedStep("Move to another bed"));
     fireEvent.click(free);
+    // WH8: the lit bed asks one confirm, and the move is sent from it.
+    fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
     fireEvent.click(free);
     expect(record).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("ward-board-say")).not.toHaveTextContent(/^Moved/);

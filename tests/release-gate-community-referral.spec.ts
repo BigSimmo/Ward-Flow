@@ -275,10 +275,13 @@ test("Community referral: a community team refers from its own desk, the ward it
 
   // --- The ward answers from its own desk: accept into a held bed on its Bed board. ---
   await goToDesk(page, wardDesk(UNIT_ID, unitName), "ward-unit-screen");
+  // The ward's referral inbox is its Referrals tab (CRIT-07 reversed, #1360).
+  await page.getByTestId("ward-tab-referrals").click();
   const inbox = page.getByRole("region", { name: "Ward referral inbox" });
   const inboxEntry = inbox.locator("article").filter({ hasText: PERSON.umrn });
   await expect(inboxEntry).toContainText("Awaiting review");
   await expectAccessible(page, testInfo, "ward desk with the team's referral in its inbox");
+  await page.locator("#tabBtn-attn").click();
   await page.getByTestId("ward-open-bed-board").click();
   const pick = page.getByTestId(`ward-board-pick-${referralId}`);
   await expect(pick).toBeVisible();
@@ -289,9 +292,13 @@ test("Community referral: a community team refers from its own desk, the ward it
   const bedTestId = (await freeBed.getAttribute("data-testid"))!;
   await expectAccessible(page, testInfo, "ward Bed board with the referral picked up");
   await freeBed.click();
+  // WH8: the lit bed asks one confirm before the referral is accepted into it.
+  await page.getByTestId("ward-board-confirm-send").click();
   await expect(page.getByTestId("ward-board-say")).toContainText("Referral accepted.");
   await expect(page.getByTestId(bedTestId)).toHaveAttribute("data-state", "held");
-  // H-0893: an answered referral folds behind "Show N answered" below the waiting ones.
+  // H-0893: an answered referral folds behind "Show N answered" below the waiting ones, on the
+  // ward's Referrals tab.
+  await page.getByTestId("ward-tab-referrals").click();
   await inbox.getByRole("button", { name: /^Show \d+ answered$/ }).click();
   await expect(inboxEntry).toContainText("Accepted");
   await expectAccessible(page, testInfo, "ward Bed board after accepting into a held bed");

@@ -40,7 +40,7 @@ export function WardPlaceOrMove({
       data-testid="ward-open-bed-board"
       onClick={onOpen}
     >
-      <Hand size={14} aria-hidden="true" />
+      <Hand strokeWidth={1.75} size={14} aria-hidden="true" />
       Place or move
       {waiting > 0 ? (
         <span className={styles.placeCount} aria-hidden="true">

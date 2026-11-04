@@ -16,6 +16,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
 import { getBedStep } from "./helpers/ward-bed-steps";
+import { chooseChip } from "./helpers/ward-choice-chips";
 
 const RPH_ADULT_SECURE = "rph-adult-secure";
 
@@ -55,12 +56,11 @@ describe("WardScreen & WardIndex audit remediation", () => {
     fireEvent.click(occupiedTiles.at(-1)!);
 
     const drawer = await screen.findByTestId("bed-telemetry-drawer");
-    fireEvent.click(within(drawer).getByRole("tab", { name: "Plan to leave" }));
+    fireEvent.click(within(drawer).getByRole("tab", { name: "Leaving" }));
     expect(drawer).toHaveTextContent(/Today:\s*None recorded/i);
 
     fireEvent.click(getBedStep("Record hold-up", drawer));
-    const select = within(drawer).getByRole("combobox", { name: "Held up by" });
-    fireEvent.change(select, { target: { value: "Awaiting accommodation" } });
+    chooseChip("Held up by", "Awaiting accommodation", drawer);
     fireEvent.click(within(drawer).getByRole("button", { name: "Save hold-up" }));
 
     expect(drawer).toHaveTextContent(/Today:\s*Awaiting accommodation/i);

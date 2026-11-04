@@ -191,6 +191,8 @@ export function useCapacityModel() {
     oldestCount,
     roadTimeFromEdId,
     mapGroups,
+    /** Every bed release, for the bed map's squares by discharge state (C4, Josh, 4 Nov 2026). */
+    bedReleases,
     forecastModel,
     days,
     week,
@@ -203,6 +205,8 @@ export function useCapacityModel() {
     otherSiteRows,
     otherSiteGroups,
     plannedBooked: planned.filter((booking) => booking.state === "booked").length,
+    /** The wards the Mismatch figures count: the site's own for a site bed manager, else all. */
+    gapUnits: units,
   };
 }
 
