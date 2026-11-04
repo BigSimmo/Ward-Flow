@@ -129,18 +129,28 @@ jobs:
               *) echo "$line" >> new.txt ;;
             esac
           done < prs.txt
-          # The plain lines staff see in the app's "What's new" note: entries of the app's list that
-          # this release adds. Read as data through the API, never run. A list missing at either end
-          # counts as empty, so the first release after the list began shows every line in it.
-          list="src/components/ward-management/help/whats-new.json"
-          read_list() {
-            local raw
-            raw="$(gh api -H "Accept: application/vnd.github.raw" "repos/$REPOSITORY/contents/$list?ref=$1" 2>/dev/null)" || raw="[]"
-            printf '%s' "$raw" | jq -c 'if type == "array" then . else [] end' 2>/dev/null || echo "[]"
+          # The plain lines staff see in the app's "What's new" note: the entry files this release
+          # adds, one file per change in the app's folder. Read as data through the API, never run.
+          # A folder missing at either end counts as empty. Ids in the older one-file list at the
+          # base count as already shipped, so moving to one file per entry repeats no line.
+          dir="src/components/ward-management/help/whats-new"
+          list_ids() {
+            gh api "repos/$REPOSITORY/contents/$dir?ref=$1" \
+              --jq '.[] | select(.type == "file" and (.name | endswith(".json"))) | .name | rtrimstr(".json")' 2>/dev/null || true
           }
-          before="$(read_list "$current")"; after="$(read_list "$target")"
-          jq -rn --argjson before "${before:-[]}" --argjson after "${after:-[]}" \
-            '($before | map(.id)) as $old | $after[] | select((.id | IN($old[])) | not) | "- \(.line)"' > staff.txt || : > staff.txt
+          legacy_ids() {
+            gh api -H "Accept: application/vnd.github.raw" \
+              "repos/$REPOSITORY/contents/src/components/ward-management/help/whats-new.json?ref=$1" 2>/dev/null \
+              | jq -r 'if type == "array" then .[].id else empty end' 2>/dev/null || true
+          }
+          { list_ids "$current"; legacy_ids "$current"; } | sort -u > shipped-ids.txt
+          list_ids "$target" | sort -u > target-ids.txt
+          : > staff.txt
+          comm -13 shipped-ids.txt target-ids.txt | while read -r id; do
+            line="$(gh api -H "Accept: application/vnd.github.raw" "repos/$REPOSITORY/contents/$dir/$id.json?ref=$target" 2>/dev/null \
+              | jq -r 'if type == "object" and (.line | type) == "string" then .line else empty end' 2>/dev/null)" || line=""
+            if [ -n "$line" ]; then printf -- '- %s\n' "$line" >> staff.txt; fi
+          done
           {
             echo "What changed on the live site since the last release."
             if [ -s staff.txt ]; then printf '\n### For staff, shown in the app\n\n'; cat staff.txt; fi
