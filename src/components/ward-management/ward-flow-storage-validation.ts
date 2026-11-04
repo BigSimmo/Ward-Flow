@@ -1,3 +1,4 @@
+import { recordNumberKey } from "./ward-patients";
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
 import {
   RESTRICTIVE_PRACTICE_IDS,
@@ -1031,7 +1032,11 @@ const storedState = z.looseObject({
   leaveBeds: z.array(leaveBed).check(z.refine(distinctIds)),
   refreshRequests: z.array(refreshRequest).check(z.refine(distinctRefreshRequestIds)),
   referrals: z.array(referral).check(z.refine(distinctIds)),
-  patients: z.array(patient).check(z.refine(distinctIds)),
+  // Restored identities obey the same record-number equivalence as ADD_PATIENT.
+  patients: z.array(patient).check(
+    z.refine(distinctIds),
+    z.refine((rows) => new Set(rows.map((row) => recordNumberKey(row.umrn))).size === rows.length),
+  ),
   admissions: z.array(admission).check(z.refine(distinctIds)),
   notices: z.array(notice).check(z.refine(distinctIds)),
   // One record per admission, as the reducer keeps it.

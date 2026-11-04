@@ -654,7 +654,12 @@ export function duplicateCandidates(patients: readonly Patient[], draft: Patient
  * not count, the rule ADD_PATIENT's uniqueness check uses. Shared so every record-number match agrees.
  */
 export function sameRecordNumber(left: string, right: string): boolean {
-  return left.trim().toLowerCase() === right.trim().toLowerCase();
+  return recordNumberKey(left) === recordNumberKey(right);
+}
+
+/** Shared identity key for registration, matching and stored-state uniqueness. */
+export function recordNumberKey(value: string): string {
+  return value.trim().toLowerCase();
 }
 
 /** Fold text the way `findPatients` does before comparing needles and haystacks. */
