@@ -19,7 +19,6 @@ import {
   Activity,
   ArrowRight,
   BarChart2,
-  BedDouble,
   Building2,
   ChevronDown,
   ChevronRight,
@@ -64,7 +63,15 @@ import {
   type HubKind,
 } from "@/components/ward-management/hub/hub-derivations";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import {
+  edStatisticsHref,
+  raiseReferralHref,
+  wardStatisticsHref,
+} from "@/components/ward-management/shell/ward-facade";
+import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
+import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
+import { communityTeamSuburbs } from "@/components/ward-management/community/community-vocabulary";
+import { placePeople, type PlacePerson } from "./hub-place-people";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 
 import {
@@ -81,9 +88,7 @@ import { HubPlaceRow } from "./hub-place-row";
 import { PlacesTrack } from "./places-track";
 import { useHubDesk } from "./hub-desk";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
-import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 import {
-  ALL_WARDS_HREF,
   GROUP_ROWS,
   KIND_WORD_LONG,
   OPEN_SERVICES,
@@ -112,12 +117,27 @@ import {
 
 export function HubScreen() {
   usePrintableDisclosures();
-  const { units, bedReleases, admissions, leaveBeds, refreshRequests, dispatch } = useWardFlowSelect(
+  const {
+    units,
+    bedReleases,
+    admissions,
+    leaveBeds,
+    refreshRequests,
+    movements,
+    patients,
+    referrals,
+    plannedAdmissions,
+    dispatch,
+  } = useWardFlowSelect(
     "units",
     "bedReleases",
     "admissions",
     "leaveBeds",
     "refreshRequests",
+    "movements",
+    "patients",
+    "referrals",
+    "plannedAdmissions",
     "dispatch",
   );
   const { now, paused, togglePause } = usePageLive();
@@ -311,6 +331,77 @@ export function HubScreen() {
     selected.confirmedAt !== undefined &&
     selectedRequest === undefined;
 
+  // PL1 follow-up (Josh, 4 Nov 2026): the band's title is a task. A ward whose bed confirmation is
+  // stale needs a check; the coordinator asks it, and a site desk confirms its own on the ward's page.
+  const staleWards = (deskSite === undefined ? entries : ownEntries).filter(
+    (entry) => entry.kind === "ward" && entry.stale === true,
+  );
+  const unasked = staleWards.filter(
+    (entry) =>
+      !refreshRequests.some(
+        (request) =>
+          request.unitId === entry.id &&
+          capacityRequestIsOpen(request, units.find((unit) => unit.id === entry.id)?.allocatable),
+      ),
+  );
+  const wardsWord = (n: number) => `${n} ${n === 1 ? "ward" : "wards"}`;
+  const bandTask: { title: string; action?: ReactNode } = (() => {
+    if (deskSite !== undefined) {
+      const first = staleWards.find((entry) => canOpen(entry.href));
+      if (staleWards.length === 0) return { title: "Your site's bed counts are current" };
+      return {
+        title: `${wardsWord(staleWards.length)} at your site ${staleWards.length === 1 ? "needs" : "need"} a bed check`,
+        action:
+          first === undefined ? undefined : (
+            <Link className={buttonClass({ variant: "onHero", size: "sm" })} href={first.href}>
+              Confirm beds
+            </Link>
+          ),
+      };
+    }
+    if (unasked.length > 0) {
+      return {
+        title: `${wardsWord(unasked.length)} ${unasked.length === 1 ? "needs" : "need"} a bed check`,
+        action: (
+          <button
+            type="button"
+            className={buttonClass({ variant: "onHero", size: "sm" })}
+            onClick={() => {
+              for (const entry of unasked) {
+                dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: entry.id });
+              }
+            }}
+          >
+            {unasked.length === 1 ? `Ask ${unasked[0].name}` : `Ask all ${unasked.length}`}
+          </button>
+        ),
+      };
+    }
+    if (staleWards.length > 0) {
+      return { title: `${wardsWord(staleWards.length)} asked to confirm beds` };
+    }
+    return { title: "Every ward's bed count is current" };
+  })();
+
+  // PL1 follow-up (Josh, 4 Nov 2026): the people a place's panel names, and the suburbs a team covers.
+  const resolvePerson = useMemo(
+    () => createPatientResolver({ patients, referrals, movements, plannedAdmissions }),
+    [patients, referrals, movements, plannedAdmissions],
+  );
+  // Plain derivations: the React Compiler memoises them, and a manual memo on `selected` it cannot keep.
+  const selectedPeople = selected === undefined ? [] : placePeople(selected, movements, resolvePerson);
+  const selectedSuburbs = selected?.kind === "community" ? communityTeamSuburbs(selected.name) : [];
+  // One lead action per kind: Refer here for a ward, New referral from a team, Open for an ED.
+  const leadReferral = (() => {
+    if (selected === undefined || selected.kind === "ed") return undefined;
+    const href =
+      selected.kind === "ward"
+        ? raiseReferralHref({ refer: "ward", unitIds: [selected.id] })
+        : raiseReferralHref({ source: "community", teamId: selected.id });
+    if (!canOpen(href)) return undefined;
+    return { href, label: selected.kind === "ward" ? "Refer here" : "New referral" };
+  })();
+
   function select(id: string) {
     setSelectedId(id);
   }
@@ -463,6 +554,11 @@ export function HubScreen() {
             {isPinned(selected.id) ? "Unpin" : "Pin"}
           </button>
         )}
+        {leadReferral !== undefined && canOpen(selected.href) ? (
+          <Link href={selected.href} onClick={() => recordHubVisit(selected.id)}>
+            {selected.kind === "ward" ? "Open ward" : "Open team"}
+          </Link>
+        ) : null}
         {selected.kind === "ward" && canOpen(wardStatisticsHref(selected.id)) ? (
           <Link href={wardStatisticsHref(selected.id)}>View statistics</Link>
         ) : selected.kind === "ed" && canOpen(edStatisticsHref(selected.id)) ? (
@@ -473,7 +569,16 @@ export function HubScreen() {
   }
 
   function renderPreview(selected: HubEntry) {
-    const openLabel = selected.kind === "community" ? "Open community teams" : `Open ${selected.name}`;
+    // "Open ward" and "Open team" sit beside the lead action, so the name is read out, not shown.
+    const openLabel =
+      selected.kind === "ed" ? (
+        `Open ${selected.name}`
+      ) : (
+        <>
+          {selected.kind === "ward" ? "Open ward" : "Open team"}
+          <SrOnly>, {selected.name}</SrOnly>
+        </>
+      );
     return (
       <Card as="section" className={styles.previewCard} aria-label={`Preview, ${selected.name}`}>
         <div className={styles.previewHead}>
@@ -568,19 +673,18 @@ export function HubScreen() {
                   </dd>
                 </div>
               )}
-              {/* Review point 21: beds are read on Capacity's bed map and All wards, not here. */}
-              <div className={styles.factRow}>
-                <dt>Beds</dt>
-                <dd className={styles.bedsElsewhere}>
-                  <BedDouble size={14} aria-hidden="true" />
-                  <span>
-                    On <Link href={WARD_CAPACITY_HREF}>Capacity&rsquo;s bed map</Link> and{" "}
-                    <Link href={ALL_WARDS_HREF}>All wards</Link>
-                  </span>
-                </dd>
-              </div>
             </dl>
-          ) : selected.kind === "ed" ? (
+          ) : null}
+          {/* PL1 follow-up (Josh, 4 Nov 2026): names, not counts, so the panel never borrows another
+              page's numbers. Beds stay on Capacity and All wards (review point 21). */}
+          {selected.kind === "community" ? null : (
+            <PeopleList
+              heading={selected.kind === "ward" ? "Heading here" : "Waiting here"}
+              people={selectedPeople}
+              empty={selected.kind === "ward" ? "No one is heading here." : "No one is waiting here."}
+            />
+          )}
+          {selected.kind === "ed" ? (
             <div className={styles.detailSection}>
               <h3>On-site mental health wards</h3>
               {/* ⚠️ An empty list is a fact and is stated as one, never as "0 on-site beds". */}
@@ -593,23 +697,13 @@ export function HubScreen() {
                   ))}
                 </ul>
               )}
-              <p className={styles.absent}>Referral queue available on the department page.</p>
             </div>
-          ) : (
-            <div className={styles.detailSection}>
-              <h3>Notes</h3>
-              <ul className={styles.notesList}>
-                <li>Team name is a synthetic placeholder.</li>
-                <li>Holds no beds.</li>
-              </ul>
-            </div>
-          )}
+          ) : selected.kind === "community" ? (
+            <SuburbList suburbs={selectedSuburbs} />
+          ) : null}
         </div>
 
         <div className={styles.detailCta}>
-          {selected.kind === "community" ? (
-            <p className={styles.statsAbsent}>Statistics are unavailable for this regional entry.</p>
-          ) : null}
           {/* ROLE BRANCH (bed_manager): the closed page's sentence in full, wrapping (QA 31 Oct). The
               greyed button below carries it for a screen reader. */}
           {canOpen(selected.href) ? null : (
@@ -620,17 +714,45 @@ export function HubScreen() {
           <div className={styles.ctaActions}>
             {/* Ward and ED only: the statistics builders resolve against a real id this entry carries. */}
             {selected.kind === "ward" && canOpen(wardStatisticsHref(selected.id)) ? (
-              <Link className={buttonClass({ variant: "sec", size: "sm" })} href={wardStatisticsHref(selected.id)}>
+              <Link
+                className={buttonClass({ variant: "ghost", size: "sm" })}
+                href={wardStatisticsHref(selected.id)}
+                aria-label={`View statistics, ${selected.name}`}
+              >
                 <BarChart2 size={14} aria-hidden="true" />
-                View statistics
+                Statistics
               </Link>
             ) : selected.kind === "ed" && canOpen(edStatisticsHref(selected.id)) ? (
-              <Link className={buttonClass({ variant: "sec", size: "sm" })} href={edStatisticsHref(selected.id)}>
+              <Link
+                className={buttonClass({ variant: "ghost", size: "sm" })}
+                href={edStatisticsHref(selected.id)}
+                aria-label={`View statistics, ${selected.name}`}
+              >
                 <BarChart2 size={14} aria-hidden="true" />
-                View statistics
+                Statistics
               </Link>
             ) : null}
-            {canOpen(selected.href) ? (
+            {/* PL1 follow-up (Josh, 4 Nov 2026): one lead action per kind of place. A ward is referred
+                to, a team refers, and an ED is opened. Opening a ward or team stays one step away. */}
+            {leadReferral === undefined ? null : canOpen(selected.href) ? (
+              <Link
+                className={buttonClass({ variant: "sec", size: "sm" })}
+                href={selected.href}
+                onClick={() => recordHubVisit(selected.id)}
+              >
+                {openLabel}
+              </Link>
+            ) : (
+              <Button size="sm" variant="sec" disabledReason={closedSentence} reasonDisplay="tooltip">
+                {openLabel}
+              </Button>
+            )}
+            {leadReferral !== undefined ? (
+              <Link className={buttonClass({ variant: "pri", size: "sm" })} href={leadReferral.href}>
+                {leadReferral.label}
+                <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+            ) : canOpen(selected.href) ? (
               <Link
                 className={buttonClass({ variant: "pri", size: "sm" })}
                 href={selected.href}
@@ -685,22 +807,16 @@ export function HubScreen() {
         <Hero
           level={1}
           className={styles.hubHero}
-          eyebrow={
-            // ROLE BRANCH (bed_manager), polish r2: the network's totals are said once, on the switch.
-            deskSite !== undefined
-              ? `Places · ${deskSite.name}`
-              : isPhone
-                ? "Places · Statewide"
-                : `Places · Statewide · ${totals.ward} wards, ${totals.ed} EDs, ${totals.community} teams`
-          }
+          // PL1 follow-up (Josh, 4 Nov 2026): the counts are said once, on the Wards, EDs and Teams switch.
+          eyebrow={deskSite !== undefined ? `Places · ${deskSite.name}` : "Places · Statewide"}
+          // The title is the band's task: the wards whose bed count needs checking, with the action.
           title={
             <>
               <SrOnly>Places, </SrOnly>
-              {deskSite !== undefined
-                ? `${ownEntries.length} ${ownEntries.length === 1 ? "ward" : "wards"} at your site`
-                : `${totals.all} places`}
+              {bandTask.title}
             </>
           }
+          titleMeta={bandTask.action}
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
           // PL1 (Josh, 3 Nov 2026): the band holds the Places and Catchments switch; this page's own
           // search moved into the list card, so the band no longer holds a second search box beside
@@ -1082,20 +1198,26 @@ export function HubScreen() {
             primary={
               selected === undefined
                 ? undefined
-                : {
-                    label:
-                      selected.kind === "community"
-                        ? "Open community teams"
-                        : selected.kind === "ward"
-                          ? "Open ward"
-                          : "Open department",
-                    // ROLE BRANCH (bed_manager and every scoped desk): greyed, with the closed page's sentence.
-                    disabledReason: canOpen(selected.href) ? undefined : closedSentence,
-                    onAction: () => {
-                      recordHubVisit(selected.id);
-                      router.push(selected.href);
-                    },
-                  }
+                : leadReferral !== undefined
+                  ? {
+                      // PL1 follow-up (Josh, 4 Nov 2026): the kind's lead action; Open stays in the sheet.
+                      label: leadReferral.label,
+                      onAction: () => openReferralSheet(leadReferral.href),
+                    }
+                  : {
+                      label:
+                        selected.kind === "community"
+                          ? "Open team"
+                          : selected.kind === "ward"
+                            ? "Open ward"
+                            : "Open department",
+                      // ROLE BRANCH (bed_manager and every scoped desk): greyed, with the closed page's sentence.
+                      disabledReason: canOpen(selected.href) ? undefined : closedSentence,
+                      onAction: () => {
+                        recordHubVisit(selected.id);
+                        router.push(selected.href);
+                      },
+                    }
             }
           >
             {selected === undefined ? null : (
@@ -1156,5 +1278,64 @@ export function GroupList({
         </ShowMoreRow>
       ) : null}
     </>
+  );
+}
+
+/** How many names or suburbs a panel shows before "Show all" (the owner rule for long lists). */
+const PANEL_LIST_LIMIT = 6;
+
+/**
+ * The people a ward or ED panel names (PL1 follow-up, Josh, 4 Nov 2026). Each name opens the person
+ * when a record links them. Names are shown in full (D-83).
+ */
+function PeopleList({ heading, people, empty }: { heading: string; people: PlacePerson[]; empty: string }) {
+  const [open, setOpen] = useState(false);
+  const shown = open ? people : people.slice(0, foldLimit(people.length, PANEL_LIST_LIMIT));
+  return (
+    <section className={cx(styles.detailSection, styles.listSection)} aria-label={heading}>
+      <h3>{heading}</h3>
+      {people.length === 0 ? (
+        <p className={styles.absent}>{empty}</p>
+      ) : (
+        <>
+          <ul className={styles.peopleList}>
+            {shown.map((person) => (
+              <li key={person.key}>
+                {person.href === undefined ? person.name : <Link href={person.href}>{person.name}</Link>}
+              </li>
+            ))}
+          </ul>
+          {foldHidden(people.length, PANEL_LIST_LIMIT) > 0 ? (
+            <ShowMoreRow expanded={open} onClick={() => setOpen((value) => !value)}>
+              {open ? "Show fewer" : `Show ${foldHidden(people.length, PANEL_LIST_LIMIT)} more`}
+            </ShowMoreRow>
+          ) : null}
+        </>
+      )}
+    </section>
+  );
+}
+
+/** The suburbs a team covers, by name, from the catchment table (PL1 follow-up, Josh, 4 Nov 2026). */
+function SuburbList({ suburbs }: { suburbs: readonly string[] }) {
+  const [open, setOpen] = useState(false);
+  const hidden = foldHidden(suburbs.length, PANEL_LIST_LIMIT * 2);
+  const shown = open || hidden === 0 ? suburbs : suburbs.slice(0, foldLimit(suburbs.length, PANEL_LIST_LIMIT * 2));
+  return (
+    <section className={cx(styles.detailSection, styles.listSection)} aria-label="Suburbs it covers">
+      <h3>Suburbs it covers</h3>
+      {suburbs.length === 0 ? (
+        <p className={styles.absent}>No suburbs are on the catchment list for this team.</p>
+      ) : (
+        <>
+          <p className={styles.suburbLine}>{shown.join(", ")}</p>
+          {hidden > 0 ? (
+            <ShowMoreRow expanded={open} onClick={() => setOpen((value) => !value)}>
+              {open ? "Show fewer" : `Show ${hidden} more`}
+            </ShowMoreRow>
+          ) : null}
+        </>
+      )}
+    </section>
   );
 }
