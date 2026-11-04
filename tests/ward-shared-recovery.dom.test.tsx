@@ -91,6 +91,16 @@ describe("shared recovery within an open sheet", () => {
     expect(backgroundStatus).toHaveAttribute("aria-hidden", "true");
   });
 
+  it("moves a late refresh warning and Retry into the open sheet (Tier 1 item 4)", async () => {
+    const shared = { ...connection("ready", false), receivedAt: Date.now() - 60_000 };
+    render(<Harness shared={shared} />);
+    const dialog = await screen.findByRole("dialog", { name: "Synthetic record" });
+    const recovery = await within(dialog).findByTestId("ward-shared-recovery");
+    expect(recovery).toHaveTextContent(/Not updated since \d\d:\d\d\. Still checking every few seconds\./u);
+    fireEvent.click(within(recovery).getByRole("button", { name: "Retry" }));
+    expect(shared.retry).toHaveBeenCalledOnce();
+  });
+
   it("retains fields through retry and gives focus back to the same record after recovery", async () => {
     const shared = connection();
     const view = render(<Harness shared={shared} />);
