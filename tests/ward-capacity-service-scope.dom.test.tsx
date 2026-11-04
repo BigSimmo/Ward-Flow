@@ -13,6 +13,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { shiftConfirmations } from "@/components/ward-management/capacity/shift-confirmations";
 import { bedMapCards, bedMapGroup, bedMapRegion, wardCardName } from "./helpers/capacity-ward-table";
 
 /**
@@ -20,7 +21,8 @@ import { bedMapCards, bedMapGroup, bedMapRegion, wardCardName } from "./helpers/
  * service chooser, Capacity's own scoping), on the October 2026 redesign of Capacity
  * (`capacity-screen.tsx`).
  *
- * A chosen service narrows the bed map only. The hero, the mismatch band and the bed forecast stay
+ * A chosen service narrows the bed map and the other ward panels (nearest ready beds, This shift;
+ * scope audit, Josh, 3 Nov 2026). The hero, the mismatch band and the bed forecast stay
  * whole-network, and the hero's eyebrow says so ("Modelled network, not only South Metro"). The
  * redesign removed the old "Ready now" section (`ReadyNowSection`), the gap table, the network ward
  * table and the aside's Freeing today / Needs you panels, each of which carried its own
@@ -128,6 +130,28 @@ describe("with South Metro chosen, only the bed map is scoped", () => {
     }
   });
 
+  it("lists only South Metro's wards in Nearest ready beds, and counts only its wards in This shift", () => {
+    setServiceScope(SCOPED_SERVICE);
+    renderScreen();
+    // Ward names read with their codes spelled out ("FSH (Fiona Stanley Hospital) ..."), so both
+    // sides drop bracketed text before comparing.
+    const plain = (text: string) => text.replace(/ \([^)]*\)/gu, "");
+    const scopedNames = new Set(scopedRows.map((row) => plain(row.unit.name)));
+    const nearest = within(screen.getByTestId("capacity-road-time")).getByRole("list");
+    const listed = within(nearest).getAllByRole("button");
+    expect(listed.length).toBeGreaterThan(0);
+    for (const row of listed) {
+      const name = [...scopedNames].find((candidate) => plain(row.textContent ?? "").startsWith(candidate));
+      expect(name, row.textContent ?? "").toBeDefined();
+    }
+    const shift = shiftConfirmations(
+      scopedRows.map((row) => row.unit),
+      NOW,
+    );
+    const thisShift = screen.getByRole("region", { name: "This shift" });
+    expect(thisShift.textContent ?? "").toContain(`${shift.confirmed} of ${shift.total}`);
+  });
+
   it("keeps the hero headline and its ready chips at the whole network, never South Metro's own", () => {
     setServiceScope(SCOPED_SERVICE);
     renderScreen();
@@ -185,7 +209,12 @@ describe("safety property: the mismatch band and the forecast are identical with
       withService.unmount();
 
       expect(unscopedHtml.length).toBeGreaterThan(0);
-      expect(scopedHtml).toBe(unscopedHtml);
+      // Scope audit (Josh, 3 Nov 2026): the scoped card adds one quiet "Network-wide" label and
+      // nothing else; every figure is the same.
+      const label = /<span class="[^"]*">Network-wide<\/span>/u;
+      expect(unscopedHtml).not.toMatch(label);
+      expect(scopedHtml).toMatch(label);
+      expect(scopedHtml.replace(label, "")).toBe(unscopedHtml);
     });
   }
 });

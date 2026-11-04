@@ -21,6 +21,37 @@ export type ForecastLever =
   | { kind: "review_overdue"; beds: number };
 
 /**
+ * The records every lever counts, filtered once so `forecastLevers` and `forecastLeverRecords`
+ * cannot drift: open wards, stays due by tomorrow with no release flagged, releases due by tomorrow
+ * that are held up, and unblocked releases already past their day.
+ */
+function leverSources(
+  units: readonly Unit[],
+  releases: readonly BedRelease[],
+  admissions: readonly Admission[],
+  now: Instant,
+) {
+  const until = now + MINUTES_PER_DAY;
+  const open = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
+  const admissionsById = new Map(admissions.map((admission) => [admission.id, admission]));
+  const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionsById.get(release.admissionId));
+  const pending = releases.filter((release) => release.state !== "discharged" && open.has(release.unitId));
+  const flagged = new Set(pending.map((release) => release.admissionId));
+  const unflagged = admissions.filter(
+    (admission) =>
+      open.has(admission.unitId) &&
+      bedIsOccupied(admission) &&
+      admission.expectedDischargeAt !== null &&
+      admission.expectedDischargeAt <= until &&
+      !flagged.has(admission.id),
+  );
+  const due = pending.filter((release) => expectedAt(release) <= until);
+  const heldUp = due.filter((release) => release.blocker !== null);
+  const overdue = due.filter((release) => release.blocker === null && dayOf(expectedAt(release)) < dayOf(now));
+  return { open, admissionsById, expectedAt, unflagged, heldUp, overdue };
+}
+
+/**
  * The levers on tomorrow's figure, largest likely uplift first. Keep every operational record in
  * `beds`, but only dates from today onwards can lift likely (the forecast's on-time bucket).
  * Flagging requires an occupied stay and inherits its blocker. Neither action alone makes an
@@ -32,34 +63,24 @@ export function forecastLevers(
   admissions: readonly Admission[],
   now: Instant,
 ): ForecastLever[] {
-  const until = now + MINUTES_PER_DAY;
-  const open = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
-  const admissionsById = new Map(admissions.map((admission) => [admission.id, admission]));
-  const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionsById.get(release.admissionId));
-  const pending = releases.filter((release) => release.state !== "discharged" && open.has(release.unitId));
-  const flagged = new Set(pending.map((release) => release.admissionId));
-
-  const unflagged = admissions.filter(
-    (admission) =>
-      open.has(admission.unitId) &&
-      bedIsOccupied(admission) &&
-      admission.expectedDischargeAt !== null &&
-      admission.expectedDischargeAt <= until &&
-      !flagged.has(admission.id),
-  );
+  const {
+    open,
+    expectedAt,
+    unflagged,
+    heldUp,
+    overdue: overdueReleases,
+  } = leverSources(units, releases, admissions, now);
   const wardNames = [...new Set(unflagged.map((admission) => open.get(admission.unitId)!.name))].sort((a, b) =>
     a.localeCompare(b),
   );
 
-  const due = pending.filter((release) => expectedAt(release) <= until);
-  const heldUp = due.filter((release) => release.blocker !== null);
   const reasons = BED_RELEASE_BLOCKERS.map((reason) => ({
     reason,
     count: heldUp.filter((release) => release.blocker === reason).length,
   }))
     .filter((entry) => entry.count > 0)
     .sort((a, b) => b.count - a.count);
-  const overdue = due.filter((release) => release.blocker === null && dayOf(expectedAt(release)) < dayOf(now)).length;
+  const overdue = overdueReleases.length;
 
   const moving = [
     {
@@ -153,4 +174,41 @@ export function notYetCounted(
       repatriations.filter((record) => inBed.has(record.admissionId)).map((record) => record.admissionId),
     ).size,
   };
+}
+
+/** One stay behind a lever: the admission, its ward and the date or blocker that puts it there. */
+export type LeverRecord = { admission: Admission; unit: Unit; at: Instant | null; blocker: BedReleaseBlocker | null };
+
+/**
+ * Capacity issue 3 (Josh, 3 Nov 2026): the stays behind one lever, so its pop-up can list them.
+ * The same filters as `forecastLevers`, so the list always matches the lever's count. Soonest first.
+ */
+export function forecastLeverRecords(
+  kind: ForecastLever["kind"],
+  units: readonly Unit[],
+  releases: readonly BedRelease[],
+  admissions: readonly Admission[],
+  now: Instant,
+): LeverRecord[] {
+  const { open, admissionsById, expectedAt, unflagged, heldUp, overdue } = leverSources(
+    units,
+    releases,
+    admissions,
+    now,
+  );
+  const records: LeverRecord[] =
+    kind === "confirm_dates"
+      ? unflagged.map((admission) => ({
+          admission,
+          unit: open.get(admission.unitId)!,
+          at: admission.expectedDischargeAt,
+          blocker: admission.blockReason ?? null,
+        }))
+      : (kind === "clear_held_up" ? heldUp : overdue).flatMap((release) => {
+          const admission = admissionsById.get(release.admissionId);
+          return admission
+            ? [{ admission, unit: open.get(release.unitId)!, at: expectedAt(release), blocker: release.blocker }]
+            : [];
+        });
+  return records.sort((x, y) => (x.at ?? 0) - (y.at ?? 0));
 }

@@ -93,9 +93,11 @@ function show(state: WardFlowState, now = EDITED_AT) {
     overrideReasonForm: vi.fn(),
     liveFormAlerts: [],
     shiftView: "log",
+    // WH2 (3 Nov 2026): the log is the This shift sheet's History view, so the sheet is open here.
+    shiftSheetOpen: true,
   };
   render(<WardHomeTab {...props} />);
-  return screen.getByRole("heading", { name: "Shift log" }).parentElement!;
+  return screen.getByRole("heading", { name: "Shift history" }).parentElement!;
 }
 
 describe("shift log separates a release report from a later discharge plan", () => {

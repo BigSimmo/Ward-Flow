@@ -11,7 +11,7 @@ export function HowWorkedOut({ label = "How this is worked out", children }: { l
   return (
     <details className={styles.how}>
       <summary>
-        <ChevronRight size={14} aria-hidden="true" />
+        <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
         {label}
       </summary>
       <div className={styles.howBody}>{children}</div>

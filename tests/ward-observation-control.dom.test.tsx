@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { observationAt, type Observation } from "@/components/ward-management/ward-observation";
 import { WardObservationControl } from "@/components/ward-management/ward/ward-observation-control";
+import { pickObservationInterval, pickObservationLevel } from "./helpers/ward-choice-chips";
 
 const NOW = 2 * 24 * 60 + 9 * 60; // Day 2, 09:00.
 
@@ -17,7 +18,7 @@ describe("changing the observation level in the bed drawer", () => {
     const { onSave } = renderControl(observationAt("general", reviewAt));
     fireEvent.click(screen.getByTestId("ward-observation-change"));
     expect(screen.getByTestId("ward-observation-review-time")).toHaveValue("14:30");
-    fireEvent.change(screen.getByTestId("ward-observation-level"), { target: { value: "within_sight" } });
+    pickObservationLevel("within_sight");
     fireEvent.click(screen.getByTestId("ward-observation-save"));
     expect(onSave).toHaveBeenCalledWith({ level: "within_sight", intervalMinutes: null, reviewAt }, undefined);
   });
@@ -42,11 +43,11 @@ describe("changing the observation level in the bed drawer", () => {
   it("reopens on the recorded interval, not one left from a cancelled edit", () => {
     const { onSave } = renderControl({ level: "intermittent", intervalMinutes: 30, reviewAt: null });
     fireEvent.click(screen.getByTestId("ward-observation-change"));
-    expect(screen.getByTestId("ward-observation-interval")).toHaveValue("30");
-    fireEvent.change(screen.getByTestId("ward-observation-interval"), { target: { value: "15" } });
+    expect(screen.getByTestId("ward-observation-interval")).toHaveAttribute("data-value", "30");
+    pickObservationInterval(15);
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     fireEvent.click(screen.getByTestId("ward-observation-change"));
-    expect(screen.getByTestId("ward-observation-interval")).toHaveValue("30");
+    expect(screen.getByTestId("ward-observation-interval")).toHaveAttribute("data-value", "30");
     fireEvent.click(screen.getByTestId("ward-observation-save"));
     expect(onSave).toHaveBeenCalledWith({ level: "intermittent", intervalMinutes: 30, reviewAt: null }, undefined);
   });

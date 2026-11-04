@@ -117,11 +117,13 @@ describe("Capacity for a site bed manager", () => {
     renderCapacity();
     fireEvent.click(screen.getByRole("button", { name: "Try a scenario" }));
     const dialog = within(screen.getByRole("dialog"));
-    const offered = dialog
+    // The ward list is the kit's searchable picker (ListPicker): open it, then read its options.
+    fireEvent.click(dialog.getByRole("combobox", { name: "Ward" }));
+    const offered = screen
       .getAllByRole("option")
-      .map((option) => option.getAttribute("value"))
-      .filter((value) => value);
-    const own = seed.units.filter((unit) => unit.siteCode === siteCode && !unit.isClosed).map((unit) => unit.id);
+      .map((option) => option.textContent?.trim() ?? "")
+      .filter((label) => label !== "" && label !== "Clear");
+    const own = seed.units.filter((unit) => unit.siteCode === siteCode && !unit.isClosed).map((unit) => unit.name);
     expect(offered.length).toBeGreaterThan(0);
     expect([...offered].sort()).toEqual([...own].sort());
   });
