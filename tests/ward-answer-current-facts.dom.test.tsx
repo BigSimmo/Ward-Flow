@@ -32,6 +32,8 @@ import {
   wardSites,
 } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { identityAbsenceNote } from "@/components/ward-management/ward/ward-screen-derivations";
+import { NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import { namesRealPlace } from "./helpers/ward-place-names";
 
 const MOVEMENT = movementById("WF-002")!;
@@ -100,7 +102,8 @@ describe("Ward answer current facts", () => {
     ].filter((value): value is string => value !== undefined);
     expect(referralOnlyFacts).toHaveLength(3);
     referralOnlyFacts.forEach((fact) => expect(facts).not.toHaveTextContent(fact));
-    expect(screen.getByText("Patient name and age are not recorded for this movement.")).toBeInTheDocument();
+    // Bug B1: this movement's person is linked with a name and date of birth, so no absence note.
+    expect(screen.queryByText(/not recorded for this movement/)).not.toBeInTheDocument();
 
     const gates = screen.getByRole("region", { name: "This ward's own gates for this patient" });
     const rows = within(gates).getAllByRole("listitem");
@@ -272,5 +275,16 @@ describe("Ward answer current facts", () => {
     expect(screen.queryByRole("heading", { name: "Bed request" })).not.toBeInTheDocument();
     expect(screen.queryByText("Emergency department origin")).not.toBeInTheDocument();
     expect(screen.queryByText(/^Tier\b/)).not.toBeInTheDocument();
+  });
+
+  it("notes only the identity facts this movement does not record (bug B1)", () => {
+    const base = { displayName: "", formalName: "", umrn: "", initials: "UP" };
+    const unlinked = { ...base, formalName: NAME_NOT_RECORDED, umrn: "UMRN not recorded" };
+    expect(identityAbsenceNote(unlinked)).toBe("Patient name and age are not recorded for this movement.");
+    const person = seedWardFlowState().patients[0]!;
+    expect(identityAbsenceNote({ ...base, formalName: "Synthetic, Person", patient: person })).toBeUndefined();
+    expect(
+      identityAbsenceNote({ ...base, formalName: "Synthetic, Person", patient: { ...person, dateOfBirth: "" } }),
+    ).toBe("Age is not recorded for this movement.");
   });
 });

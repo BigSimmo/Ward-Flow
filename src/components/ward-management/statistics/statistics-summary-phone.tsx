@@ -303,14 +303,14 @@ function StatisticsSummaryPhoneView({
                     label: <ShortLabel short="Open movements" full="Open ED movements" />,
                   },
                 ]),
-            // The figure names its noun, as the desktop's "Admissions ended today" does.
+            // The figure names what happened, as the desktop's "Discharged today" does: stays that ended today.
             ...(held(endedToday)
               ? []
               : [
                   {
                     id: "ended",
                     value: statisticsCountText(endedToday),
-                    label: <ShortLabel short="Ended today" full="Stays ended today" />,
+                    label: <ShortLabel short="Discharged" full="Discharged today" />,
                   },
                 ]),
           ]}

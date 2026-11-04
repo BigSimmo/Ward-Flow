@@ -22,21 +22,13 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
+import { useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { acceptedPullReferralId, isAcceptedPullRow } from "@/components/ward-management/ward-alerts-figures";
 import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import {
-  StatusGlyph,
-  buttonClass,
-  durMinutes,
-  hasConfirmHost,
-  requestConfirm,
-  useIsPhone,
-  type WfTone,
-} from "@/components/wf";
+import { StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
 import { edHealthService } from "./ward-service-scope";
@@ -70,6 +62,7 @@ import {
 } from "./ward-inbox-snooze";
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-control";
 import { useDirtyStateGuard } from "./use-dirty-state-guard";
+import { DISCARD_ESCALATION, useEscalationDiscard } from "./use-escalation-discard";
 import { AcknowledgeVisibleButton } from "./tasks-acknowledge-visible";
 
 import styles from "./ward-tasks-drawer.module.css";
@@ -143,7 +136,6 @@ function ackFilterLabels(words: DrawerWords): Record<AckFilter, string> {
 
 /** Quick picks only fill the box; the person still records the escalation themselves. */
 const ESCALATION_PICKS = ["Duty consultant", "State bed desk", "Executive on call"] as const;
-const DISCARD_ESCALATION = "You have an unsaved escalation contact. Discard it?";
 // These links dismiss the drawer as well as navigating, including a link to the current page.
 const isTasksDrawerLink = (anchor: HTMLAnchorElement) => anchor.closest("[data-ward-tasks-drawer]") !== null;
 
@@ -344,64 +336,19 @@ export function WardTasksDrawer({
   const savedContact =
     records?.movements.find((movement) => movement.id === escalatingItem?.movementId)?.escalation?.contact ?? "";
   const hasUnsavedEscalation = escalating !== null && contact !== savedContact;
-  const dirtyEscalationRef = useRef(hasUnsavedEscalation);
-  useEffect(() => {
-    dirtyEscalationRef.current = hasUnsavedEscalation;
-  }, [hasUnsavedEscalation]);
   const { approveNextHistoryNavigation } = useDirtyStateGuard({
     isDirty: hasUnsavedEscalation,
     value: JSON.stringify([escalating, contact]),
     confirmMessage: DISCARD_ESCALATION,
     skipAnchor: isTasksDrawerLink,
   });
-
-  /**
-   * True when there is no unsaved escalation (or the person lets it go). With `retry` and the kit's
-   * styled confirm mounted, an unsaved escalation returns false at once, the question is asked in the
-   * styled dialog, and on Discard the draft is cleared and `retry` runs the step again. Without
-   * `retry` the browser's confirm box asks, as before.
-   */
-  const discardEscalation = useCallback((retry?: () => void) => {
-    const clear = () => {
-      // The shell can recheck within this event, before React commits the cleared draft below.
-      dirtyEscalationRef.current = false;
-      setEscalating(null);
-      setContact("");
-    };
-    if (dirtyEscalationRef.current && retry && hasConfirmHost()) {
-      void requestConfirm({
-        title: "Discard the escalation contact?",
-        message: DISCARD_ESCALATION,
-        confirmLabel: "Discard",
-        cancelLabel: "Keep editing",
-      }).then((confirmed) => {
-        if (!confirmed) return;
-        clear();
-        retry();
-      });
-      return false;
-    }
-    if (dirtyEscalationRef.current && !window.confirm(DISCARD_ESCALATION)) return false;
-    clear();
-    return true;
-  }, []);
-
-  const confirmDrawerDismissal = useCallback(
-    (retry?: () => void) => {
-      if (!discardEscalation(retry)) return false;
-      approveNextHistoryNavigation();
-      return true;
-    },
-    [discardEscalation, approveNextHistoryNavigation],
-  );
-
-  useEffect(() => {
-    if (!dismissalGuardRef) return;
-    dismissalGuardRef.current = confirmDrawerDismissal;
-    return () => {
-      if (dismissalGuardRef.current === confirmDrawerDismissal) dismissalGuardRef.current = null;
-    };
-  }, [dismissalGuardRef, confirmDrawerDismissal]);
+  const { discardEscalation, confirmDrawerDismissal } = useEscalationDiscard({
+    hasUnsavedEscalation,
+    setEscalating,
+    setContact,
+    approveNextHistoryNavigation,
+    dismissalGuardRef,
+  });
 
   function closeDrawer(): boolean {
     if (!confirmDrawerDismissal(closeDrawer)) return false;
