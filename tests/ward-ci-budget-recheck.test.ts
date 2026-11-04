@@ -221,6 +221,7 @@ describe("conflicts fail in the scope plan job", () => {
     const build = job("build");
     const merge = build.indexOf("run: node scripts/ward-ci-public/merge-latest-main.mjs");
     expect(merge).toBeGreaterThan(0);
-    expect(merge).toBeLessThan(build.indexOf("run: node scripts/check-script-budget.mjs"));
+    // The budget step is budget-gate.mjs (it runs check-script-budget.mjs on the merged build).
+    expect(merge).toBeLessThan(build.indexOf("run: node scripts/ward-ci-public/budget-gate.mjs"));
   });
 });

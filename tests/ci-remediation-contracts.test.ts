@@ -54,7 +54,7 @@ describe("CI remediation wiring", () => {
     ],
     [
       "phone script budget",
-      (source: string) => source.replace("run: node scripts/check-script-budget.mjs", "run: echo skipped"),
+      (source: string) => source.replace("run: node scripts/ward-ci-public/budget-gate.mjs", "run: echo skipped"),
     ],
     [
       "trusted cache writes",

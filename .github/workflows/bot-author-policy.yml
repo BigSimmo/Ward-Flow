@@ -16,13 +16,20 @@ on:
     branches: [main, "release/**"]
   merge_group:
     types: [checks_requested]
+  # Only for the budget heal bot's PR (ward-flow-budget-heal.yml): events made with the workflow token
+  # start no workflows, so it dispatches this on its branch. Any other dispatch fails closed below.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Budget heal pull request number
+        required: true
 
 permissions:
   contents: read
   pull-requests: read
 
 concurrency:
-  group: ward-bot-author-policy-${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
+  group: ward-bot-author-policy-${{ github.event.pull_request.number || github.event.merge_group.head_sha || inputs.pr }}
   cancel-in-progress: true
 
 jobs:
@@ -35,7 +42,7 @@ jobs:
       - name: Check out the base revision's policy script
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_ref }}
+          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_ref || 'main' }}
           persist-credentials: false
           sparse-checkout: scripts/ward-ci-public/bot-author-policy.mjs
           sparse-checkout-cone-mode: false
@@ -45,6 +52,18 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           WARD_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: node scripts/ward-ci-public/bot-author-policy.mjs
+      - name: Check bot-authored commits on the budget heal PR
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WARD_PR_NUMBER: ${{ inputs.pr }}
+          DISPATCH_REF: ${{ github.ref_name }}
+        run: |
+          case "$DISPATCH_REF" in
+            ward-flow-bot/script-budget-*) ;;
+            *) echo "::error::Manual runs are only for the budget heal bot's branch; failing closed."; exit 1 ;;
+          esac
+          node scripts/ward-ci-public/bot-author-policy.mjs
       - name: Check bot-authored commits on protected paths (every PR in the merge group)
         if: ${{ github.event_name == 'merge_group' }}
         env:

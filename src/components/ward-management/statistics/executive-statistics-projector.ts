@@ -1,5 +1,5 @@
 import { scopeWardFlowState } from "../ward-access-state";
-import { bedStates } from "../ward-bed-states";
+import { bedStates, readyBedsNow } from "../ward-bed-states";
 import { CLINICAL_VALUES } from "../ward-clinical-values";
 import { dayOf, type Instant } from "../ward-clock";
 import type { WardFlowState } from "../ward-flow-reducer";
@@ -37,7 +37,7 @@ import {
   type ExecutivePrivateInput,
 } from "./executive-statistics-derivations";
 import { ExecutiveCountRelease } from "./executive-statistics-release";
-import { isOpen, unitCapacity } from "../ward-derivations";
+import { isOpen } from "../ward-derivations";
 import { HEALTH_SERVICES } from "../ward-model";
 import { siteByCode } from "../ward-sites";
 import { wardStatistics } from "../ward-statistics";
@@ -746,7 +746,7 @@ export function projectExecutiveReportingFoundation(
     },
     settings: { pullHoldMinutes: input.pullHoldMinutes, parallelReferralCap: state.configuration.parallelReferralCap },
     capacity: {
-      ready: units.reduce((sum, unit) => sum + unitCapacity(unit, input.bedReleases).available, 0),
+      ready: units.reduce((sum, unit) => sum + readyBedsNow(unit, input.admissions, input.bedReleases), 0),
       empty: units.reduce((sum, unit) => sum + unit.empty.value, 0),
       allocatable: units.reduce((sum, unit) => sum + unit.allocatable.value, 0),
       openNow: units.reduce((sum, unit) => sum + openBedsNow(unit, input.bedReleases), 0),

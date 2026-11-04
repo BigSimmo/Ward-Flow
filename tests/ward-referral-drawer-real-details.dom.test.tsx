@@ -1,6 +1,9 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { configure, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
+configure({
+  getElementError: () => new Error("Referral details query failed; record-bearing diagnostics suppressed."),
+});
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (

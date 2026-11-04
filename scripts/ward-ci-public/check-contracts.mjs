@@ -64,9 +64,9 @@ function requireWorkflow(source) {
   assert.match(source, /^permissions:\n {2}contents: read$/mu);
   assert.match(
     source,
-    // Each PR and main share one queue whose running check is never cancelled (a newer push only
-    // replaces a waiting one); scheduled and manual runs stay separate.
-    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| github.event_name == 'push' && 'main' \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: false$/mu,
+    // Each PR and main have one queue. A newer PR push cancels that PR's older run; main runs always
+    // finish (a newer main push only replaces a waiting one); scheduled and manual runs stay separate.
+    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| github.event_name == 'push' && 'main' \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}$/mu,
   );
   assert.doesNotMatch(source, /^\s*(?:shell|defaults):/mu);
   for (const pattern of [
@@ -328,18 +328,59 @@ function requireWorkflow(source) {
     "npm run test:e2e:release-gate",
     expression("!cancelled() && steps.browsers.outcome == 'success'"),
   );
-  // Desktop and phone each run as three parallel parts: together exactly both device projects and
-  // all three parts (which partition the release-gate files), none dropped by fail-fast, and each job's
-  // runner narrowed only through WARD_RELEASE_GATE_PROJECT and WARD_RELEASE_GATE_PART.
-  assert.match(
-    jobs.get("release-gate"),
-    /^ {4}strategy:\n {6}fail-fast: false\n {6}matrix:\n {8}project: \[release-gate-desktop, release-gate-phone\]\n {8}part: \[journeys, referrals, checks\]\n {4}steps:\n/mu,
+  exact(
+    "release-gate",
+    "Run the second release-gate suite",
+    "npm run test:e2e:release-gate",
+    expression("!cancelled() && steps.browsers.outcome == 'success'"),
   );
+  // Desktop and phone each split the gate into three parts (which partition the release-gate files),
+  // run as three jobs of two suites: together exactly both device projects times all three parts,
+  // each suite once, none dropped by fail-fast, and each suite's runner narrowed only through
+  // WARD_RELEASE_GATE_PROJECT and WARD_RELEASE_GATE_PART.
+  const gateMatrix = jobs
+    .get("release-gate")
+    .match(
+      /^ {4}strategy:\n {6}fail-fast: false\n {6}matrix:\n {8}include:\n((?: {10}- [^\n]*\n(?: {12}[^\n]*\n)*)+) {4}steps:\n/mu,
+    );
+  assert.ok(gateMatrix, "release-gate: fail-fast false include matrix");
+  const gateEntries = gateMatrix[1]
+    .split(/^ {10}- /mu)
+    .slice(1)
+    .map((entry) => {
+      const fields = Object.fromEntries(
+        [...`  ${entry}`.matchAll(/^ {2,12}([a-z_]+): ([^\n]*)$/gmu)].map((match) => [match[1], match[2]]),
+      );
+      assert.deepEqual(Object.keys(fields).sort(), ["pair", "part", "project", "second_part", "second_project"]);
+      return fields;
+    });
+  assert.equal(gateEntries.length, 3, "release-gate: three paired jobs");
+  assert.equal(new Set(gateEntries.map(({ pair }) => pair)).size, 3, "release-gate: distinct job names");
+  const gateSuites = gateEntries
+    .flatMap(({ project, part, second_project, second_part }) => [
+      `${project}/${part}`,
+      `${second_project}/${second_part}`,
+    ])
+    .sort();
+  assert.deepEqual(
+    gateSuites,
+    ["release-gate-desktop", "release-gate-phone"]
+      .flatMap((project) => ["journeys", "referrals", "checks"].map((part) => `${project}/${part}`))
+      .sort(),
+    "release-gate: every device project and part exactly once",
+  );
+  assert.match(jobs.get("release-gate"), /^ {4}name: Ward Flow release gate \$\{\{ matrix\.pair \}\}$/mu);
   assert.ok(
     step("release-gate", "Run the release-gate journeys").text.includes(
       `          WARD_RELEASE_GATE_PROJECT: ${expression("matrix.project")}\n          WARD_RELEASE_GATE_PART: ${expression("matrix.part")}\n`,
     ),
   );
+  assert.ok(
+    step("release-gate", "Run the second release-gate suite").text.includes(
+      `          WARD_RELEASE_GATE_PROJECT: ${expression("matrix.second_project")}\n          WARD_RELEASE_GATE_PART: ${expression("matrix.second_part")}\n`,
+    ),
+  );
+  assert.equal(step("release-gate", "Run the second release-gate suite").fields.get("id"), "gate-second");
   assert.ok(
     jobs
       .get("release-gate")
@@ -347,6 +388,34 @@ function requireWorkflow(source) {
         `ward-release-gate-failures-${expression("github.run_id")}-${expression("matrix.project")}-${expression("matrix.part")}`,
       ),
   );
+  const secondReports = step("release-gate", "Upload successful second-suite reports");
+  assert.equal(secondReports.fields.get("if"), expression("!cancelled() && steps.gate-second.outcome == 'success'"));
+  assert.equal(secondReports.fields.get("uses"), "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9");
+  assert.ok(
+    secondReports.text.includes(
+      `ward-release-gate-reports-${expression("github.run_id")}-${expression("matrix.second_project")}-${expression("matrix.second_part")}`,
+    ),
+  );
+  assert.match(secondReports.text, /^ {10}path: test-results\/\*\*\/\*\.json$/mu);
+  assert.match(secondReports.text, /^ {10}if-no-files-found: error$/mu);
+  const secondEvidence = step("release-gate", "Upload failed second-suite evidence");
+  assert.equal(secondEvidence.fields.get("if"), expression("!cancelled() && steps.gate-second.outcome == 'failure'"));
+  assert.match(secondEvidence.text, /^ {10}path: test-results\/$/mu);
+  assert.ok(
+    secondEvidence.text.includes(
+      `ward-release-gate-failures-${expression("github.run_id")}-${expression("matrix.second_project")}-${expression("matrix.second_part")}`,
+    ),
+  );
+  {
+    const names = steps("release-gate").map(({ fields }) => fields.get("name"));
+    const aside = names.indexOf("Set aside the first suite's results");
+    assert.ok(
+      names.indexOf("Upload successful release-gate reports") < aside &&
+        names.indexOf("Upload failed release-gate evidence") < aside &&
+        aside < names.indexOf("Run the second release-gate suite"),
+      "release-gate: upload the first suite before setting it aside and running the second",
+    );
+  }
   const successfulReports = step("release-gate", "Upload successful release-gate reports");
   assert.equal(successfulReports.fields.get("if"), expression("!cancelled() && steps.gate.outcome == 'success'"));
   assert.equal(
@@ -370,7 +439,7 @@ function requireWorkflow(source) {
     "node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack",
     installed,
   );
-  exact("build", "Check the phone script budget", "node scripts/check-script-budget.mjs", installed);
+  exact("build", "Check the phone script budget", "node scripts/ward-ci-public/budget-gate.mjs", installed);
   exact(
     "build",
     "Scan the built client bundle for secrets",
@@ -526,8 +595,11 @@ function requireWorkflow(source) {
       if (install !== -1) assert.ok(install > provision, `${job}: provision pinned npm before installing dependencies`);
     }
   }
-  for (const job of ["browser", "release-gate"]) {
-    const name = job === "browser" ? "Run Ward browser journeys" : "Run the release-gate journeys";
+  for (const [job, name] of [
+    ["browser", "Run Ward browser journeys"],
+    ["release-gate", "Run the release-gate journeys"],
+    ["release-gate", "Run the second release-gate suite"],
+  ]) {
     assert.ok(
       step(job, name).text.includes(
         `          WARD_BROWSER_ARTIFACT_DIR: ${expression("needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || ''")}\n`,
@@ -745,7 +817,7 @@ for (let bits = 0; bits < 16; bits++)
 for (const [before, after] of [
   ["run: node scripts/ward-ci-public/plan.mjs", "run: echo omitted"],
   ["run: node scripts/ward-ci-public/verify-plan.mjs", "run: echo omitted"],
-  ["run: node scripts/check-script-budget.mjs", "run: echo omitted"],
+  ["run: node scripts/ward-ci-public/budget-gate.mjs", "run: echo omitted"],
   ["run: node scripts/ward-ci-public/merge-latest-main.mjs", "run: echo omitted"],
   [
     "if: ${{ github.event_name == 'pull_request' }}\n        run: node scripts/ward-ci-public/merge-latest-main.mjs",
@@ -784,7 +856,17 @@ for (const [before, after] of [
   ],
   ["shard: [1, 2, 3, 4, 5, 6]", "shard: [1, 2, 3, 4, 5]"],
   ["group: [1, 2, 3]", "group: [1, 2]"],
-  ["  cancel-in-progress: false\n", "  cancel-in-progress: true\n"],
+  ["            second_part: referrals\n", "            second_part: journeys\n"],
+  ["          - pair: phone journeys, desktop checks\n", "          - pair: phone referrals, desktop referrals\n"],
+  [
+    "          WARD_RELEASE_GATE_PART: ${{ matrix.second_part }}",
+    "          WARD_RELEASE_GATE_PART: ${{ matrix.part }}",
+  ],
+  [
+    "name: Upload successful second-suite reports\n        if: ${{ !cancelled() && steps.gate-second.outcome == 'success' }}",
+    "name: Upload successful second-suite reports\n        if: ${{ false }}",
+  ],
+  ["  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\n", "  cancel-in-progress: true\n"],
   [
     "          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}",
     "          WARD_INSTALL_RESTORED: true",

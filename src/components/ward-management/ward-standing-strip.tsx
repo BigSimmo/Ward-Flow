@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { currentLegalDueAt } from "./legal-forms/legal-form-progression";
 import { usePathname } from "next/navigation";
 
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
@@ -82,7 +83,7 @@ function legalCounts(movements: Movement[], now: Instant, thresholds: DueSoonThr
   let passed = 0;
   let withinHour = 0;
   for (const movement of movements) {
-    const dueAt = movement.legalForm?.dueAt;
+    const dueAt = currentLegalDueAt(movement);
     if (dueAt === undefined) continue;
     const state = clockState(dueAt, now, thresholds);
     if (state === "breached") passed += 1;
