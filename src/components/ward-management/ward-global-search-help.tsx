@@ -14,7 +14,7 @@
 import { useCallback, useMemo } from "react";
 import { useIsPhone } from "@/components/wf";
 
-import { useTourFacts } from "./help/ward-tour-facts";
+import { useTourHome } from "./help/ward-tour-home";
 import { useEffectiveWardAccess } from "./shell/ward-access-store";
 import type { WardAccessScope } from "./ward-role-access";
 import { howToFor } from "./help/ward-help-access";
@@ -134,8 +134,8 @@ export function useHeaderHelp() {
   const role = useTourRole();
   const phone = useIsPhone();
   const scope = useEffectiveWardAccess().scope;
-  const facts = useTourFacts(role);
-  const home = facts.deskHome ?? facts.home;
+  const homes = useTourHome(role);
+  const home = homes.deskHome ?? homes.home;
   const showMeOn = useWardFeatureFlag("help-ask");
   const findHelp = useCallback((query: string) => headerHelpRows(query, role, scope), [role, scope]);
   const onHelpResult = useCallback(
