@@ -1073,10 +1073,6 @@
  */
 @media (max-width: 46.4375rem) {
   /* pop-alerts: a group's lines stack on a narrow screen. */
-  .groupList {
-    padding-left: 0;
-  }
-
   .groupMember {
     grid-template-columns: minmax(0, 1fr);
     padding: var(--wf-s-2) 0;
@@ -1096,9 +1092,14 @@
     border-bottom: 1px solid var(--wf-line);
   }
 
-  .headerIcon,
-  .kbd {
+  .kbd,
+  .headerNoteTail {
     display: none;
+  }
+
+  .headerIcon {
+    width: 36px;
+    height: 36px;
   }
 
   .heading {
@@ -1222,38 +1223,35 @@
   }
 
   .drawerBody {
-    padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-4);
+    padding: var(--wf-s-1) var(--wf-s-3) var(--wf-s-4);
   }
 
+  /* Josh, 4 Nov 2026: the phone drawer is the desktop one, fitted to 390. Same switch, same grouped
+     cards, the same one next step and Open on every row; only the spacing and the button size change. */
   .row {
     gap: var(--wf-s-2);
-    min-height: 60px;
-    padding: var(--wf-s-2) var(--wf-s-3);
+    padding: var(--wf-s-3);
     box-sizing: border-box;
-  }
-
-  /* No stripe and no fill on the open row: its actions under it say it is open. */
-  .row[data-expanded="true"] {
-    background: transparent;
-    box-shadow: none;
   }
 
   .rowHead {
     gap: 10px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
   .rowIcon {
-    width: 20px;
-    height: 20px;
-    border: 0;
-    background: none;
-    box-shadow: none;
-    color: var(--wf-ink-3);
+    width: 32px;
+    height: 32px;
   }
 
   .rowTitle {
     font-size: var(--wf-fs-14);
     line-height: var(--wf-lh-14);
+  }
+
+  .rowMeta {
+    flex-wrap: wrap;
+    row-gap: 2px;
   }
 
   .rowValue {
@@ -1262,89 +1260,42 @@
 
   .rowDetail,
   .ackStatus,
-  .rowActions {
-    padding-left: 30px;
+  .rowActions,
+  .groupList {
+    padding-left: 42px;
   }
 
   .rowActions {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--wf-s-2);
   }
 
+  /* 40px controls with a 48px cover, as every phone control. */
   .btn {
-    height: 44px;
-    min-height: 44px;
+    position: relative;
+    height: 40px;
+    min-height: 40px;
     padding: 0 var(--wf-s-3);
     border-radius: var(--wf-r-ctl);
     font-size: var(--wf-fs-13);
-    box-shadow: none;
+  }
+
+  .btn::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
   }
 
   .btnIcon {
     width: auto;
   }
 
-  /* v10 Tasks sheet (phone): the title, one note line ("11 open · due first") and the rows. The
-     filter and sort controls and the count chip leave; the list is due first. Every action stays
-     on its row: tap a row to open it. */
-  .headingCount,
-  .controls,
-  .rowMeta[data-phone-hidden],
-  .rowWhen[data-phone-hidden] {
-    display: none;
-  }
-
-  .sectionHead[data-phone-quiet] {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .drawerBody {
-    padding-top: var(--wf-s-3);
-  }
-
-  .rowHead {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-
-  /* Site review (12 Oct 2026): the title was a 20px target. It spans the row's text column and
-     its 12px block padding is taken back by a negative margin, so the target is 44px tall and the
-     row keeps its layout. A press on the patient line under it opens the same row. */
-  .rowTitle {
-    justify-self: stretch;
-    min-height: 3rem;
-    margin-block: -12px;
-    padding-block: 12px;
-    font-size: var(--wf-fs-14);
-  }
-
-  .rowWho {
-    min-width: 0;
-  }
-
-  /* An acknowledged row says so while collapsed, so Acknowledge visible shows what it did. */
-  .rowSeen {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    gap: 4px;
-    color: var(--wf-ink-2);
-  }
-
-  .rowDue {
-    color: var(--wf-ink-2);
-    font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  .row {
-    cursor: pointer;
+  /* A grouped person: name and wait on one line, their two actions under it. */
+  .memberActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wf-s-2);
   }
 }
 
