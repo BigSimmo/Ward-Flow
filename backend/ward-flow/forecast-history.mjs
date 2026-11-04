@@ -14,7 +14,7 @@ const FORECAST_REASON_LIMIT = 200;
  * out explicitly so it never depends on the connection's TimeZone or DateStyle (a plain text cast
  * of the timestamp did), and used for both the read and the compare-and-set.
  */
-export const FORECAST_REASON_VERSION_SQL = `to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+const FORECAST_REASON_VERSION_SQL = `to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 
 /** The closed lists the browser offers (forecast-miss-reasons.ts) and the table checks. */
 const FORECAST_MISS_REASONS = Object.freeze([

@@ -11,9 +11,11 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-const { FORECAST_REASON_VERSION_SQL, forecastHistoryInput, forecastHistoryStore } = await import(
+const { forecastHistoryInput, forecastHistoryStore } = await import(
   pathToFileURL(resolve("backend/ward-flow/forecast-history.mjs")).href
 );
+// The row version the store reads and compares: updated_at as UTC text, microsecond precision.
+const FORECAST_REASON_VERSION_SQL = `to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 
 describe("audit remediation: statistics use recorded populations", () => {
   it("uses the canonical Ready count after a live pull exceeds the observation's held beds", () => {

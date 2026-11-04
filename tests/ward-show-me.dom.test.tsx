@@ -157,7 +157,7 @@ describe("Show me player", () => {
           <OverlayRoot />
           <WardShowMe id="notifications" onClose={onClose} onBack={() => {}} />
           <PhoneSheet open={ready} title="Alert settings" onClose={() => {}}>
-            <div data-setting="browser-notifications">
+            <div data-setting="device-alerts">
               <button type="button" onClick={() => setChild(true)}>
                 Review alerts
               </button>
@@ -181,7 +181,7 @@ describe("Show me player", () => {
     const settingsPortal = target.closest("[data-overlay-layer]")!;
     expect(settingsPortal.compareDocumentPosition(guidePortal) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await waitFor(() => expect(card.contains(document.activeElement)).toBe(true));
-    screen.getByTestId("ward-show-me-next").focus();
+    screen.getByTestId("ward-show-me-done").focus();
     fireEvent.keyDown(window, { key: "Tab" });
     expect(target).toHaveFocus();
     fireEvent.click(target);
