@@ -20,6 +20,7 @@ import {
   EdInboxReferralFixture,
   markNotYetIdentified,
   openRaiseIntoMovementForm,
+  chooseEdChoice,
 } from "./helpers/ed-raise-into-movement";
 import { typeDate } from "./helpers/type-date-time";
 
@@ -93,9 +94,9 @@ function fillRequiredFields() {
   // A2-1: the form starts from a person; these cases raise for one not yet identified.
   markNotYetIdentified();
   for (const field of REQUIRED) {
-    fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
+    chooseEdChoice(field.testId, field.value);
   }
-  fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
+  chooseEdChoice("ward-ed-referral-observation", "general");
   fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
 }
 
@@ -109,7 +110,7 @@ describe("intake: the typed expiry reaches the movement for any selected form", 
     renderEdScreen();
     openReferralForm();
     fillRequiredFields();
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "3D" } });
+    chooseEdChoice("ward-ed-referral-legal-form", "3D");
     typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "15:45" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
@@ -125,7 +126,7 @@ describe("intake: the typed expiry reaches the movement for any selected form", 
 
     openReferralForm();
     fillRequiredFields();
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "1A" } });
+    chooseEdChoice("ward-ed-referral-legal-form", "1A");
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "09:00" } });
     // The date field is left untouched — a real, half-typed pair.
 
@@ -150,7 +151,7 @@ describe("the actions block: recording a first expiry and an extension", () => {
     renderEdScreen();
     openReferralForm();
     fillRequiredFields();
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "1A" } });
+    chooseEdChoice("ward-ed-referral-legal-form", "1A");
     // No expiry typed at raise time — the clinician does not have the form's expiry yet.
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
     const { id } = lastMovementProbeParts();
@@ -182,7 +183,7 @@ describe("the actions block: recording a first expiry and an extension", () => {
     renderEdScreen();
     openReferralForm();
     fillRequiredFields();
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "1A" } });
+    chooseEdChoice("ward-ed-referral-legal-form", "1A");
     typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "10:00" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
@@ -226,7 +227,7 @@ describe("a past expiry only ever warns — it never blocks a clinical control",
     // Movement A: a legal form whose expiry is already well past NOW_ANCHOR (10:42 today).
     openReferralForm();
     fillRequiredFields();
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "1A" } });
+    chooseEdChoice("ward-ed-referral-legal-form", "1A");
     typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "09:00" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
@@ -272,11 +273,11 @@ describe("a stale typed value never lands on the wrong form", () => {
     renderEdScreen();
     openReferralForm();
     fillRequiredFields();
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "4A" } });
+    chooseEdChoice("ward-ed-referral-legal-form", "4A");
     typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "14:00" } });
 
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "1A" } });
+    chooseEdChoice("ward-ed-referral-legal-form", "1A");
     expect((screen.getByTestId("ward-ed-referral-legal-form-due-at-date") as HTMLInputElement).value).toBe("");
     expect((screen.getByTestId("ward-ed-referral-legal-form-due-at-time") as HTMLInputElement).value).toBe("");
 
@@ -291,11 +292,11 @@ describe("a stale typed value never lands on the wrong form", () => {
     renderEdScreen();
     openReferralForm();
     fillRequiredFields();
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "4A" } });
+    chooseEdChoice("ward-ed-referral-legal-form", "4A");
     typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "14:00" } });
 
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "1A" } });
+    chooseEdChoice("ward-ed-referral-legal-form", "1A");
     typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "16:00" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
