@@ -90,7 +90,7 @@ describe("shared commands protect their tab-memory recovery from reload", () => 
   });
 
   it.each([false, true])(
-    "keeps the warning after a lost response (server committed: %s), then clears after same-ID Retry",
+    "keeps the warning after a lost response (server committed: %s), then clears after the same-ID resend",
     async (committedBeforeLoss) => {
       const bodies: string[] = [];
       let commits = 0;
@@ -108,10 +108,9 @@ describe("shared commands protect their tab-memory recovery from reload", () => 
       await expect(client.dispatch(event)).resolves.toMatchObject({ status: "failed" });
       expect(view()?.unconfirmedSave).toBe(true);
       expect(reloadIsGuarded()).toBe(true);
+      // Tier 1 item 1 (Josh, 4 Nov 2026): the next good read sends the same command by itself.
       await client.refresh();
-      expect(view()?.status).toBe("unavailable");
-      expect(reloadIsGuarded()).toBe(true);
-      await client.retry();
+      await vi.waitFor(() => expect(view()?.unconfirmedSave).toBe(false));
       expect(bodies).toHaveLength(2);
       expect(bodies[1]).toBe(bodies[0]);
       expect(commits).toBe(1);
@@ -122,7 +121,7 @@ describe("shared commands protect their tab-memory recovery from reload", () => 
   );
 
   it.each([false, true])(
-    "keeps storage-enabled same-tab polling behind explicit Retry (server committed: %s)",
+    "resends a same-tab save by itself on the next good poll, without reading its receipt (server committed: %s)",
     async (committedBeforeLoss) => {
       const commandId = "11111111-1111-4111-8111-111111111111";
       const receiptScope = "opaque-session-role-binding";
@@ -183,26 +182,13 @@ describe("shared commands protect their tab-memory recovery from reload", () => 
       expect(JSON.parse(stored)).toEqual({ commandId, receiptScope, expiresAt });
       expect(stored).not.toMatch(/REQUEST_CAPACITY_REFRESH|synthetic-ward|event|payload/);
 
-      // These are ordinary same-tab polls, not a reloaded client without the original payload.
-      for (let poll = 0; poll < 2; poll++) {
-        await client.refresh();
-        expect(receiptReads).toBe(0);
-        expect(bodies).toHaveLength(1);
-        expect(view()).toMatchObject({
-          status: "unavailable",
-          boardCurrent: true,
-          recovering: false,
-          unconfirmedSave: true,
-        });
-        expect(storage.get(WARD_COMMAND_RECOVERY_KEY)).toBe(stored);
-        expect(confirmed).toBe(false);
-        expect(reloadIsGuarded()).toBe(true);
-      }
-      expect(boardReads).toBe(3);
-      await expect(client.dispatch(event)).resolves.toMatchObject({ status: "cancelled" });
-      expect(bodies).toHaveLength(1);
+      expect(confirmed).toBe(false);
+      expect(reloadIsGuarded()).toBe(true);
 
-      await client.retry();
+      // An ordinary same-tab poll, not a reloaded client without the original payload: once the
+      // board reads again, the held command goes by itself with the same ID (Tier 1 item 1).
+      await client.refresh();
+      expect(boardReads).toBe(2);
       await expect(original.confirmation).resolves.toMatchObject({ commandId, status: "accepted" });
       expect(bodies).toHaveLength(2);
       expect(bodies[1]).toBe(bodies[0]);

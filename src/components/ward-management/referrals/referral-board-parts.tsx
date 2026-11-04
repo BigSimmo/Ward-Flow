@@ -496,7 +496,7 @@ export const REFERRAL_SHORTCUTS: readonly (readonly [string, string])[] = [
   ["A", "Accept (at the chosen ward)"],
   ["D", "Decline (choose a reason)"],
   ["S", "Referral"],
-  ["M", "Bed meeting list"],
+  ["M", "Bed meeting agenda, at its referrals"],
   ["Esc", "Close the referral"],
   ["?", "These shortcuts"],
 ];

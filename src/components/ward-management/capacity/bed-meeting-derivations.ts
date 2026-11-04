@@ -109,6 +109,8 @@ type BedMeetingWaitingPerson = { id: string; name: string; department?: string; 
 
 export type BedMeetingSheet = {
   service: HealthService | null;
+  /** The agenda's group filter in words, when the people lists are narrowed to it. */
+  peopleFilter?: string;
   capacity: BedMeetingCapacity;
   discharges: BedMeetingDischarges;
   ed: BedMeetingEd;
@@ -138,6 +140,11 @@ export type BedMeetingInput = {
   /** Waiting referrals and the "Referral decision" time limit; both or neither. */
   referrals?: readonly Referral[];
   referralLimitMinutes?: number;
+  /**
+   * B1 extended (Josh, 4 Nov 2026): the agenda's group filter in words ("Tier 1, Involuntary"),
+   * when the caller has already narrowed `movements` and `referrals` to it. Bed figures stay whole.
+   */
+  peopleFilter?: string;
 };
 
 /** Longest first, then by id so two prints of the same picture never reshuffle. */
@@ -298,5 +305,14 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     morePeople: Math.max(0, waitingPeople.length - BED_MEETING_ROW_LIMIT),
   };
 
-  return { service, capacity, discharges, ed, delays, waitingLongest, ...(stuckReferrals ? { stuckReferrals } : {}) };
+  return {
+    service,
+    ...(input.peopleFilter ? { peopleFilter: input.peopleFilter } : {}),
+    capacity,
+    discharges,
+    ed,
+    delays,
+    waitingLongest,
+    ...(stuckReferrals ? { stuckReferrals } : {}),
+  };
 }
