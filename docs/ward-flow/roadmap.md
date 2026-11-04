@@ -1,14 +1,60 @@
 # Ward Flow — roadmap
 
-_Updated 2026-10-23 - qualify the dated AWOL pause against current source defaults; Documentation owns._
+_Updated 2026-11-03 - new current programme (Q380): role access (D-80) and pilot readiness; the 17 October programme is kept below as history; Documentation owns._
 
+## Current programme — 3 November 2026
+
+Read from source on `main` at `cd66be7a` (#1332) on 3 November 2026. This is a source reading only; no new browser, hosted CI or deployment check is claimed. The redesign of every approved screen is merged (see the [handover entry](../design/handover/README.md)). Josh chose the next feature on 3 November 2026 (Q380): finish role access, then get ready for a pilot.
+
+### 1. Finish role access (D-80)
+
+D-80 PRs 1 to 4 are merged. Reading the source on 3 November found PR 5 and the item 14 screens built, which is further on than [STATUS.md](STATUS.md#decision-status-d-numbers) says (it still lists PR 5 as "in part" and item 14 as pending):
+
+| D-80 item | What                                                                                    | Source on 3 November                                                                           |
+| --------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 7         | Officers see their own service's jobs, with risk flags                                  | Built (#637)                                                                                   |
+| 9         | Own-place Statistics as counts for wards, EDs and teams                                 | Built: `ward-role-access.ts`, the three Statistics screens                                     |
+| 10, 11    | Community Movements screen; phone alerts for officers and community teams               | Built (#666): `ward-role-alerts.ts`, push in `backend/ward-flow/engine.ts`                     |
+| 12        | Readmission flag only once the ward has accepted                                        | Built: `ward-readmission-copy.ts`                                                              |
+| 13        | ED sees the wards asked and the accepting ward, not other wards' decline reasons        | Built: `edMovementCopy` in `ward-access-scope.ts`                                              |
+| 14        | Record view and break glass review; Access log in Settings                              | Built: `governance-record-views.tsx`, `settings/access-log.tsx`                                |
+| 15        | Opening a record logged as a record view                                                | Built (#667 and later): referral, patient, movement, list and TV reads; migrations 013 and 015 |
+| 17        | Coordinator gives an "on behalf of the ward" reason when opening a clinical ward record | Not built; pilot item. D-86 dropped the two-person approval for role grants.                   |
+
+Next steps:
+
+1. Walk each desk (coordinator, bed manager, ward, ED, community, officer, executive, access admin) in the browser on synthetic data and check it sees only what D-80 allows. Fix what leaks.
+2. Correct the D-80 row and the "Waiting on Josh" list in STATUS.md with the PR numbers (Q379 owns the STATUS owner tasks).
+3. Build item 17 as part of pilot readiness below, not before.
+4. **Done when:** every desk's walk passes, STATUS shows D-80 built except item 17, and Josh has seen it.
+
+### 2. Pilot readiness
+
+No real patient data until the real-data gate in [D-87](decisions.md#d-87-d-36-and-d-37-are-replaced-by-the-real-data-gate-27-october-2026) is fully signed. The repository can prepare; the sign-offs belong to people outside it.
+
+1. **Go/no-go checklist (Q378).** [REAL-DATA-GO-NO-GO.md](governance/REAL-DATA-GO-NO-GO.md) is the one list of every real-data blocker, including session drafts kept in the browser, a Secure session cookie, the privacy impact assessment, a breach plan and the list of subprocessors.
+2. **Sign-in and front door (Q371, Q372).** Harden the demo-code rate limit and make production fail closed when the front door is off.
+3. **Hosting (D-84, Q370).** The app and backend are on Railway Singapore and the database in Sydney. Q370 (move to Sydney) is not answered; D-84 says to revisit with the health service's IT before real data.
+4. **Owner tasks (Q379).** Sign-in renewal test before about 16 November, database migration 13, invite-only sign-up, and naming the privacy officer and clinical safety owner. The list is in STATUS.md.
+5. **D-80 item 17.** The "on behalf of the ward" reason.
+6. **Outside reviews.** The six reviews in historical milestone 6 below still stand: TGA check, clinical safety officer, privacy, WA legal advice on the forms, approved catchment and reference data, and post-incident review. The two open pilot questions also stand: run beside the whiteboard first or switch straight away, and who sponsors it in EMHS.
+7. **Done when:** the real-data gate is signed and Josh approves a controlled pilot. A synthetic demonstration is a different milestone.
+
+### Alongside
+
+Design system clean-up (Q375 to Q377) and process changes (Q373, Q374) run in their own threads. They don't block the two steps above.
+
+---
+
+> **Historical programme — 17 October 2026.** Kept as dated history. The current source correction of 23 October follows.
+>
 > **Current source correction — 23 October 2026:** D-65's [20 October subsequent note](decisions.md#d-65-criteria-led-discharge-on-in-production-typed-patient-specific-criteria-and-the-awol-bed-hold-review-paused-17-october-2026)
 > ends the absent without leave bed hold review warning's pause. The `awol-bed-hold-review`
 > defaults in `src/components/ward-management/ward-feature-flags.ts` are now on in development,
 > demo and production. The 17 October summary below retains the earlier pause as dated history.
 > Source defaults do not establish current hosted configuration or observed deployment.
 
-## Current programme — 17 October 2026
+## Programme — 17 October 2026 (history)
 
 > **Not refreshed since 17 October — noted 24 October 2026.** Later owner decisions D-72 to D-80
 > (fix plan, community journeys, the ten bigger UX changes, one decline list, full referral first,

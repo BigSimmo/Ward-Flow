@@ -1,5 +1,6 @@
 "use client";
 
+import { useWardFormSave } from "../use-ward-form-save";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
@@ -209,18 +210,29 @@ export function PatientNowScreen({
   documentTitle = "Patient — Ward Flow",
 }: PatientNowScreenProps) {
   const thresholds = useDueSoonThresholds();
-  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } =
-    useWardFlowSelect(
-      "patients",
-      "movements",
-      "referrals",
-      "admissions",
-      "units",
-      "leaveBeds",
-      "dispatch",
-      "dayZero",
-      "rejections",
-    );
+  const {
+    patients,
+    movements,
+    referrals,
+    admissions,
+    units,
+    leaveBeds,
+    dispatch,
+    dayZero,
+    rejections,
+    worldGeneration,
+  } = useWardFlowSelect(
+    "patients",
+    "movements",
+    "referrals",
+    "admissions",
+    "units",
+    "leaveBeds",
+    "dispatch",
+    "dayZero",
+    "rejections",
+    "worldGeneration",
+  );
   const now = useWardFlowClock();
   // D-65: the held bed review warning is paused behind its own flag until the hold time is reviewed.
   const awolHoldReview = useWardFeatureFlag("awol-bed-hold-review");
@@ -289,8 +301,25 @@ export function PatientNowScreen({
   // and a status that differs from Legal now asks for a recorded reason.
   const [transportAnswers, setTransportAnswers] = useState<TransportBookingAnswers>(BLANK_TRANSPORT_BOOKING);
   const [transportLegalReason, setTransportLegalReason] = useState<TransportExceptionReason | "">("");
-  const transportSave = usePatientFormSave(selectedId);
-  const clearanceSave = usePatientFormSave(selectedId);
+  // Draft ownership follows the edited movement, not just its patient route.
+  const resolved = useMemo(() => {
+    return resolvePatientNowRecord(selectedId, patients, movements, referrals, admissions, units, now);
+  }, [selectedId, patients, movements, referrals, admissions, units, now]);
+  const liveMovement = resolved?.liveMovement ?? movements.find((m) => m.id === selectedId);
+  const movementScope = `${worldGeneration}:${selectedId}:${liveMovement?.id ?? ""}`;
+  const transportSave = usePatientFormSave(movementScope);
+  const clearanceSave = usePatientFormSave(movementScope);
+  const wardSave = useWardFormSave(`${worldGeneration}:${resolved?.liveAdmission?.id ?? selectedId}`);
+  const [previousMovementScope, setPreviousMovementScope] = useState(movementScope);
+  if (previousMovementScope !== movementScope) {
+    setPreviousMovementScope(movementScope);
+    setShowClearanceModal(false);
+    setClearanceDraft("");
+    setClearanceAttested(false);
+    setShowTransportForm(false);
+    setTransportAnswers(BLANK_TRANSPORT_BOOKING);
+    setTransportLegalReason("");
+  }
   const [bookingRejectionStart, setBookingRejectionStart] = useState<number>();
 
   const closeClearanceModal = useCallback(() => {
@@ -303,10 +332,6 @@ export function PatientNowScreen({
   }, [documentTitle]);
 
   const isDatesOnlyStay = useIsDatesOnlyStay();
-  // Dynamically resolve the patient record
-  const resolved = useMemo(() => {
-    return resolvePatientNowRecord(selectedId, patients, movements, referrals, admissions, units, now);
-  }, [selectedId, patients, movements, referrals, admissions, units, now]);
 
   // Current stage index for Journey
   const currentStageIndex = resolved?.currentStageIndex ?? 0;
@@ -334,7 +359,6 @@ export function PatientNowScreen({
   }
 
   const record: PatientNowRecord = resolved.record;
-  const liveMovement = resolved.liveMovement ?? movements.find((m) => m.id === selectedId);
   const livePatient = resolved.livePatient as (Patient & { confidential?: boolean }) | undefined;
 
   // Helper values
@@ -681,8 +705,15 @@ export function PatientNowScreen({
       );
   }
   const wardForm: WardChangeForm = wardFormFor.admissionId === resolved?.liveAdmission?.id ? wardFormFor.form : "none";
-  function setWardForm(form: WardChangeForm) {
+  function showWardForm(form: WardChangeForm) {
+    wardSave.forget();
     setWardFormFor({ admissionId: resolved?.liveAdmission?.id, form });
+  }
+  // Every opening path (the change card and the status card's discharge date) waits for an
+  // in-flight or held save: forgetting it would drop its refusal or leave an accepted form open.
+  function setWardForm(form: WardChangeForm) {
+    if (wardSave.pending) return;
+    showWardForm(form);
   }
   // Leave, gone to ED and the discharge date, from the change card. Each remembers where the
   // rejection list stood, so the card can say when the engine refused.
@@ -690,58 +721,72 @@ export function PatientNowScreen({
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("RECORD_LEAVE_BED").allowed) return;
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
-    dispatch({
-      type: "RECORD_LEAVE_BED",
-      role: routeRole,
-      now,
-      unitId: stay.unitId,
-      actingUnitId: stay.unitId,
-      admissionId: stay.id,
-      expectedReturn,
-      kind,
-      // #101 (Josh, 27 Oct 2026): the authority tick, asked only for a patient on an order.
-      ...(psychiatristAuthorised === undefined ? {} : { psychiatristAuthorised }),
-    });
-    setWardForm("none");
+    wardSave.submit(
+      () =>
+        dispatch({
+          type: "RECORD_LEAVE_BED",
+          role: routeRole,
+          now,
+          unitId: stay.unitId,
+          actingUnitId: stay.unitId,
+          admissionId: stay.id,
+          expectedReturn,
+          kind,
+          // #101 (Josh, 27 Oct 2026): the authority tick, asked only for a patient on an order.
+          ...(psychiatristAuthorised === undefined ? {} : { psychiatristAuthorised }),
+        }),
+      () => showWardForm("none"),
+    );
   }
   function goneToEd() {
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT").allowed) return;
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
-    dispatch({
-      type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
-      role: routeRole,
-      now,
-      admissionId: stay.id,
-      actingUnitId: stay.unitId,
-    });
-    setWardForm("none");
+    wardSave.submit(
+      () =>
+        dispatch({
+          type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+          role: routeRole,
+          now,
+          admissionId: stay.id,
+          actingUnitId: stay.unitId,
+        }),
+      () => showWardForm("none"),
+    );
   }
   function returnFromEd() {
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT").allowed) return;
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
-    dispatch({
-      type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
-      role: routeRole,
-      now,
-      admissionId: stay.id,
-      actingUnitId: stay.unitId,
-    });
+    // No form to close: the At ED card shows the save in flight and any failure on its Return cell.
+    wardSave.submit(
+      () =>
+        dispatch({
+          type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+          role: routeRole,
+          now,
+          admissionId: stay.id,
+          actingUnitId: stay.unitId,
+        }),
+      () => {},
+    );
   }
   function saveDischarge(expectedDischargeAt: number) {
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("UPDATE_EXPECTED_DISCHARGE").allowed) return;
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
-    dispatch({
-      type: "UPDATE_EXPECTED_DISCHARGE",
-      role: routeRole,
-      now,
-      admissionId: stay.id,
-      expectedDischargeAt,
-      actingUnitId: stay.unitId,
-    });
-    setWardForm("none");
+    wardSave.submit(
+      () =>
+        dispatch({
+          type: "UPDATE_EXPECTED_DISCHARGE",
+          role: routeRole,
+          now,
+          admissionId: stay.id,
+          expectedDischargeAt,
+          actingUnitId: stay.unitId,
+        }),
+      () => showWardForm("none"),
+    );
   }
   const wardAttemptStart =
     wardAttemptFor && wardAttemptFor.admissionId === resolved?.liveAdmission?.id ? wardAttemptFor.start : undefined;
@@ -817,6 +862,8 @@ export function PatientNowScreen({
     },
     onReturnFromEd: returnFromEd,
     edReturnRefusal,
+    edReturnPending: mode === "ed" && wardSave.pending,
+    edReturnSaveError: mode === "ed" ? wardSave.error : undefined,
     onAbsenceStep: (step) => {
       const stay = resolved.liveAdmission;
       if (!stay || !gate("RECORD_ABSENCE_STEP").allowed) return;
@@ -1019,7 +1066,9 @@ export function PatientNowScreen({
       tabs={tabs}
       voluntaryNow={voluntaryNow}
       wardForm={wardForm}
+      wardPending={wardSave.pending}
       wardRefusal={wardRefusal}
+      wardSaveError={wardSave.error}
     />
   );
 

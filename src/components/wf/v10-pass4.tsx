@@ -77,17 +77,21 @@ export function RowTrend({
   name,
   window,
   testId,
+  span,
 }: {
   values: readonly number[];
   name: string;
   window?: string;
   testId?: string;
+  /** Design brief (Josh, 3 Nov 2026): the change names its own window ("+19 in 12h"). */
+  span?: string;
 }) {
   return (
     <span className={styles.trend}>
       <RowSpark values={values} name={name} window={window} testId={testId} />
       <span className={styles.delta} aria-hidden="true">
         {trendDelta(values)}
+        {span ? <span className={styles.deltaSpan}> in {span}</span> : null}
       </span>
     </span>
   );
