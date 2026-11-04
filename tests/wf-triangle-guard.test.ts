@@ -181,7 +181,12 @@ export function triangleFindings(file: string, raw: string): Finding[] {
   });
   for (const match of source.matchAll(new RegExp(LIST_ICON.source, "gu"))) {
     if (controlLists.some(([from, to]) => match.index > from && match.index < to))
-      found.push({ file, kind: "raw", line: lineOf(match.index), site: source.split("\n")[lineOf(match.index) - 1] ?? "" });
+      found.push({
+        file,
+        kind: "raw",
+        line: lineOf(match.index),
+        site: source.split("\n")[lineOf(match.index) - 1] ?? "",
+      });
   }
   const lines = source.split("\n");
   let offset = 0;
