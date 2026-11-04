@@ -30,7 +30,7 @@ import type { RoleGate } from "@/components/ward-management/ward-role-gate";
 import { plural } from "@/components/ward-management/ward-plural";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { dischargeReadiness, patientNextStep, recentStayEvents } from "./patient-now-ward";
+import { patientNextStep } from "./patient-now-ward";
 import { PatientNextStepButton } from "./patient-now-ward-button";
 
 // The ward cards load on their own: only a stay needs them (phone script budget).
@@ -80,7 +80,9 @@ export type PatientNowPanelProps = {
   tabs: { key: TabKey; label: string; count?: number }[];
   voluntaryNow: boolean;
   wardForm: WardChangeForm;
+  wardPending: boolean;
   wardRefusal: string | undefined;
+  wardSaveError: string | undefined;
 };
 
 export function PatientNowPanel(props: PatientNowPanelProps) {
@@ -130,7 +132,9 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     tabs,
     voluntaryNow,
     wardForm,
+    wardPending,
     wardRefusal,
+    wardSaveError,
   } = props;
   const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
   // Community clinician (redesign, 31 Oct 2026): the team follows its person on the ward but records
@@ -192,17 +196,6 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
   const movements = useOptionalWardFlowSelect("movements")?.movements;
   const stayMovement =
     stay?.movementId != null ? movements?.find((movement) => movement.id === stay.movementId) : undefined;
-  const recent = stayMode
-    ? recentStayEvents({
-        admission: stay,
-        leaveBed: stayLeaveBed,
-        movement: stayMovement,
-        patient: livePatient,
-        now,
-        dayZero,
-        withholdObservation: statusContext.stayWithheld,
-      })
-    : [];
   const wardChangeRow =
     mode === "ward" && wardChangeOpen ? (
       <PatientWardChangeCard
@@ -211,6 +204,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         now={now}
         dayZero={dayZero}
         form={wardForm}
+        pending={wardPending}
         onFormChange={setWardForm}
         onRecordLeave={recordLeave}
         onGoneToEd={goneToEd}
@@ -219,6 +213,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         // Phone: when the bar's one button opens the discharge date form, the row leaves it out.
         dischargeInBar={wardStepInBar && nextStep?.key === "set-discharge"}
         refusal={wardRefusal}
+        saveError={wardSaveError}
         roleLimit={(eventType) => gate(eventType).reason}
         leaveLegal={leaveLegal}
       />
@@ -230,10 +225,25 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
       nextStep={nextStep ? <PatientNextStepCard step={nextStep} quiet={stepInBar} roleLimit={stepLimit} /> : null}
       readiness={
         mode === "ward" && stay ? (
-          <PatientDischargeReadiness rows={dischargeReadiness(stay, livePatient, dayZero)} />
+          <PatientDischargeReadiness admission={stay} patient={livePatient} dayZero={dayZero} />
         ) : null
       }
-      recent={stayMode && stay ? <PatientLastDay events={recent} onOpenHistory={() => openTab("history")} /> : null}
+      recent={
+        stayMode && stay ? (
+          <PatientLastDay
+            input={{
+              admission: stay,
+              leaveBed: stayLeaveBed,
+              movement: stayMovement,
+              patient: livePatient,
+              now,
+              dayZero,
+              withholdObservation: statusContext.stayWithheld,
+            }}
+            onOpenHistory={() => openTab("history")}
+          />
+        ) : null
+      }
       statusCardProps={{
         quietActions: nextStep !== null,
         children: wardChangeRow,

@@ -4,7 +4,10 @@ import { History, ListChecks } from "lucide-react";
 import { Button, Card, CardHead, Meter, StatusGlyph } from "@/components/wf";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
-import type { NextStep, ReadinessRow, RecentEvent, StayProgress } from "./patient-now-ward";
+import type { NextStep, StayProgress } from "./patient-now-ward";
+import { dischargeReadiness, recentStayEvents } from "./patient-now-ward-recent";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { Patient } from "@/components/ward-management/ward-patients";
 import styles from "./patient-now-ward-cards.module.css";
 import { PatientNextStepButton } from "./patient-now-ward-button";
 
@@ -75,7 +78,16 @@ export function PatientStayProgress({ progress }: { progress: StayProgress }) {
 }
 
 /** Discharge readiness: recorded facts as ticks, never a score. */
-export function PatientDischargeReadiness({ rows }: { rows: ReadinessRow[] }) {
+export function PatientDischargeReadiness({
+  admission,
+  patient,
+  dayZero,
+}: {
+  admission: Admission;
+  patient: Patient | undefined;
+  dayZero: Date;
+}) {
+  const rows = dischargeReadiness(admission, patient, dayZero);
   return (
     <Card data-testid="ward-patient-discharge-readiness">
       <CardHead level={2} icon={ListChecks} iconPlain title="Discharge readiness" meta="As recorded" />
@@ -95,7 +107,14 @@ export function PatientDischargeReadiness({ rows }: { rows: ReadinessRow[] }) {
 }
 
 /** Last 24 hours: the newest recorded events for this stay, newest first, with Full history. */
-export function PatientLastDay({ events, onOpenHistory }: { events: RecentEvent[]; onOpenHistory: () => void }) {
+export function PatientLastDay({
+  input,
+  onOpenHistory,
+}: {
+  input: Parameters<typeof recentStayEvents>[0];
+  onOpenHistory: () => void;
+}) {
+  const events = recentStayEvents(input);
   return (
     <Card data-testid="ward-patient-last-day">
       <CardHead

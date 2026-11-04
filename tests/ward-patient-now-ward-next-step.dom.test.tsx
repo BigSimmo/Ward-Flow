@@ -6,13 +6,8 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
-import {
-  dischargeReadiness,
-  patientNextStep,
-  recentStayEvents,
-  stayProgress,
-  telHref,
-} from "@/components/ward-management/patients/patient-now-ward";
+import { patientNextStep, stayProgress, telHref } from "@/components/ward-management/patients/patient-now-ward";
+import { dischargeReadiness, recentStayEvents } from "@/components/ward-management/patients/patient-now-ward-recent";
 import type { PatientStatusContext } from "@/components/ward-management/patients/patient-status-card";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
