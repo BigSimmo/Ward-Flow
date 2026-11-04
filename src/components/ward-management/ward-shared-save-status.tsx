@@ -83,17 +83,18 @@ export function WardSharedSaveStatus({
   // Compiler caches add download weight to this small shared recovery surface.
   "use no memo";
   const save = useWardSharedSave();
-  const showRecovery = connection.status === "saving" || connection.status === "unavailable";
+  // Tier 1 item 4 (Josh, 4 Nov 2026): a refresh that is late but not yet failed used to show only on
+  // pages with a Live chip. The strip now says when the board last updated, on every screen.
+  const late =
+    useSharedRefreshLate(connection.enabled && connection.status !== "unavailable") && connection.receivedAt > 0;
+  // Inside an open sheet the strip is inert, so a late refresh moves its words and Retry there too.
+  const showRecovery = connection.status === "saving" || connection.status === "unavailable" || late;
   const host = useRecoveryHost(showRecovery);
   const saving = connection.status === "saving";
   const recoveryRef = useRef<HTMLElement>(null);
   // Josh, 27 Oct 2026 ("it is pointless"): the strip shows only when something needs action, a lost
   // connection or a save not yet confirmed. Otherwise its words stay a screen-reader status, and
   // Sign out lives in the rail and the phone menu (`WardAccountActions`).
-  // Tier 1 item 4 (Josh, 4 Nov 2026): a refresh that is late but not yet failed used to show only on
-  // pages with a Live chip. The strip now says when the board last updated, on every screen.
-  const late =
-    useSharedRefreshLate(connection.enabled && connection.status !== "unavailable") && connection.receivedAt > 0;
   const problem = connection.status === "unavailable" || !!save?.unconfirmedSave || late;
   const barRef = useRef<HTMLDivElement>(null);
   useBarHeight(barRef, problem);

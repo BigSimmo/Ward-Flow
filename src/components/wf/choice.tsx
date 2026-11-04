@@ -177,8 +177,9 @@ export function TabPanel({
       hidden={hidden}
       className={className}
     >
-      {/* Tier 1 item 5: a failing tab shows an error line; the tabs and the page keep working. */}
-      <PanelBoundary resetKey={id}>{children}</PanelBoundary>
+      {/* Tier 1 item 5: a failing tab shows an error line; the tabs and the page keep working. A tab
+          kept mounted behind `hidden` tries again when it is shown again. */}
+      <PanelBoundary resetKey={`${id}:${hidden ? "hidden" : "shown"}`}>{children}</PanelBoundary>
     </div>
   );
 }

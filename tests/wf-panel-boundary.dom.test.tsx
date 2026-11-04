@@ -81,3 +81,25 @@ it("tries a failing tab again when another tab is chosen", () => {
   );
   expect(screen.getByText("Panel content")).toBeVisible();
 });
+
+it("tries a retained tab again when it is shown again", () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const { rerender } = render(
+    <TabPanel idPrefix="t" id="details">
+      <Fragile />
+    </TabPanel>,
+  );
+  expect(screen.getByTestId("wf-panel-error")).toBeInTheDocument();
+  broken = false;
+  rerender(
+    <TabPanel idPrefix="t" id="details" hidden>
+      <Fragile />
+    </TabPanel>,
+  );
+  rerender(
+    <TabPanel idPrefix="t" id="details">
+      <Fragile />
+    </TabPanel>,
+  );
+  expect(screen.getByText("Panel content")).toBeVisible();
+});
