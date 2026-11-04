@@ -7,7 +7,6 @@ import { OverlayPortal } from "@/components/wf";
 import { openWardHelp } from "./ward-help-events";
 import { useCornerCardEscape } from "./use-corner-card-escape";
 import styles from "./ward-whats-new.module.css";
-import entries from "./whats-new.json";
 
 /**
  * WHAT'S NEW (Josh, 24 and 25 Oct 2026): a short note after each daily release, shown once per
@@ -15,16 +14,23 @@ import entries from "./whats-new.json";
  * device that has never had the tour gets the tour instead, and the tour's start marks every change
  * read (`TOUR_AUTO_STARTED_EVENT`), so nobody sees both on their first visit.
  *
- * `whats-new.json` is the one list. A pull request that changes something staff will see adds one
- * plain line at the end; the live site only moves at the daily release, so the note appears the
- * morning after the merge, and the release workflow copies the same new lines into its GitHub
- * release notes. Lines describe merged, visible changes only. The stored value is the id of the
- * newest change this device has seen.
+ * Each change is its own file in `whats-new/`, so parallel pull requests never edit the same lines
+ * (Josh, 4 Nov 2026). A pull request that changes something staff will see adds one file,
+ * `whats-new/<YYYY-MM-DD-short-slug>.json`, holding `{ "line": "One plain sentence." }`.
+ * `scripts/ward-flow/whats-new-list.mjs` combines the files, newest 20 only, and the build inlines
+ * the result here as `__WARD_WHATS_NEW__`. The live site only moves at the daily release, so the note
+ * appears the morning after the merge, and the release workflow copies the new lines into its
+ * GitHub release notes. Lines describe merged, visible changes only. The stored value is the list of
+ * ids this device has seen (older devices stored only the newest id, still read below).
  */
 export type WhatsNewEntry = { readonly id: string; readonly date: string; readonly line: string };
 
-/** Oldest first, as the file is written. */
-export const WHATS_NEW: readonly WhatsNewEntry[] = entries;
+// Inlined by the build and the tests (`next.config.ts`, `vitest.config.mts`) as a JSON string.
+declare const __WARD_WHATS_NEW__: string | undefined;
+
+/** Oldest first: the newest 20 entry files, by date and then id. Empty where nothing inlined it. */
+export const WHATS_NEW: readonly WhatsNewEntry[] =
+  typeof __WARD_WHATS_NEW__ === "string" ? (JSON.parse(__WARD_WHATS_NEW__) as WhatsNewEntry[]) : [];
 
 /** The most the corner card lists; Help lists the rest. */
 export const WHATS_NEW_CARD_LIMIT = 4;
@@ -34,24 +40,38 @@ export const WHATS_NEW_STORAGE_KEY = "ward_flow_choice_whats_new_seen";
 const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
 export const TOUR_AUTO_STARTED_EVENT = "ward-flow-tour-auto-started";
 
+/** The ids a stored value marks seen: a JSON list, or null for a value older devices wrote. */
+function seenIds(seen: string | null): ReadonlySet<string> | null {
+  if (seen === null || !seen.startsWith("[")) return null;
+  try {
+    const ids: unknown = JSON.parse(seen);
+    return new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
 /**
- * The changes a device has not seen, newest first: those after the stored id. A device that has
- * seen none gets the newest few, as does one whose stored id has since left the list.
+ * The changes a device has not seen, newest first. The stored value lists the ids seen, so a change
+ * that sorts among older ones still shows. A value older devices stored is the newest id they saw:
+ * everything after it is unseen, and a device that has seen none gets the newest few, as does one
+ * whose stored id has since left the list.
  */
-export function unseenWhatsNew(seenId: string | null, list: readonly WhatsNewEntry[] = WHATS_NEW): WhatsNewEntry[] {
-  const at = seenId === null ? -1 : list.findIndex((entry) => entry.id === seenId);
+export function unseenWhatsNew(seen: string | null, list: readonly WhatsNewEntry[] = WHATS_NEW): WhatsNewEntry[] {
+  const ids = seenIds(seen);
+  const at = ids !== null || seen === null ? -1 : list.findIndex((entry) => entry.id === seen);
   return list
     .slice(at + 1)
+    .filter((entry) => !ids?.has(entry.id))
     .toReversed()
     .slice(0, WHATS_NEW_CARD_LIMIT);
 }
 
 /** Marks every current change read on this device. */
 export function markWhatsNewSeen(): void {
-  const newest = WHATS_NEW.at(-1);
-  if (!newest) return;
+  if (WHATS_NEW.length === 0) return;
   try {
-    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, newest.id);
+    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify(WHATS_NEW.map((entry) => entry.id)));
   } catch {
     // Without storage the note never shows (see `readUnseen`), so there is nothing to record.
   }
