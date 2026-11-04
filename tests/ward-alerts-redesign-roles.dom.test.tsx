@@ -16,6 +16,7 @@ import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-m
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { officerHref } from "@/components/ward-management/shell/ward-facade";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { addReminder } from "@/components/ward-management/tools/ward-tool-remind-store";
 
 /**
  * Alerts redesign (Josh, 31 Oct 2026 09:04 UTC, "Yes to all"), built from the mock-up's page and its
@@ -153,6 +154,23 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
     expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent("Nothing is late or blocked for Statewide.");
     expect(screen.getByText("Pick an alert to see it here")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Today" })).toBeInTheDocument();
+  });
+
+  it("does not say Nothing needs you above a reminder that is due", () => {
+    act(() => {
+      addReminder({
+        kind: "ward",
+        targetId: "w1",
+        targetLabel: "Ward 3B",
+        reason: "Call back",
+        dueAt: NOW_ANCHOR - 60,
+      });
+    });
+    renderAs({ role: "coordinator", scope: { kind: "statewide" } }, { quiet: true });
+    expect(screen.queryByTestId("ward-alerts-nothing")).not.toBeInTheDocument();
+    const reminders = screen.getByRole("region", { name: "Your reminders" });
+    fireEvent.click(within(reminders).getByRole("button", { name: /^Done: Call back, Ward 3B/u }));
+    expect(screen.getByTestId("ward-alerts-nothing")).toBeInTheDocument();
   });
 });
 

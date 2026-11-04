@@ -564,9 +564,9 @@
   min-width: 0;
 }
 
+/* The day's refused and cancelled lists grow with the page (D-95, 3 Nov 2026). */
 .panelBody {
-  max-height: 24rem;
-  overflow: auto;
+  min-width: 0;
 }
 
 .panelBody:focus-visible {

@@ -7,16 +7,9 @@
 }
 
 .registerBody .eventRow {
-  flex-shrink: 0; /* the list scrolls; wrapped rows keep their height instead of spilling into the next */
+  flex-shrink: 0; /* wrapped rows keep their height instead of spilling into the next */
   align-items: start;
   padding-block: var(--wf-s-2);
-}
-
-/* The list takes the height of the screen rather than stopping a third of the way down. */
-@media (min-width: 64rem) {
-  .list .registerBody {
-    max-height: max(23rem, calc(100dvh - 22rem));
-  }
 }
 
 /* Access admin with nothing waiting: the review panel is gone, so the list card takes the full width. */

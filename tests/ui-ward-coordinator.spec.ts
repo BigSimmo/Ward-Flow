@@ -5,28 +5,34 @@ import { buildActionInbox, eligibleCandidatesAmong, isOpen } from "@/components/
 import type { Movement } from "@/components/ward-management/ward-model";
 import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { HELP_TIPS_OFF_KEY } from "@/components/ward-management/help-content/ward-help-tips-off";
 import { movementById } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { homeFlowCard, openHomeRegisters, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
- * Home placement redesign (Josh, 19 Oct 2026): desktop Home lists the queue's top 10 and "Show all
- * (N)" reveals the rest in place. Pick a row the way a coordinator would: open the whole queue
- * first when the row is further down.
+ * Home placement redesign (Josh, 19 Oct 2026), then Home flow (Q340, Q345, 3 Nov 2026): each Flow
+ * stage lists its oldest 5 and its own "Show all N" reveals the rest in place. Pick a row the way a
+ * coordinator would: open the stages first when the row is further down.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
+  await closePlacement(queue.page());
   const row = queue.getByTestId(`ward-queue-row-${movementId}`);
-  const showAll = queue.getByTestId("ward-queue-show-all");
-  if (
-    !(await row.isVisible()) &&
-    (await showAll.isVisible()) &&
-    (await showAll.getAttribute("aria-expanded")) !== "true"
-  ) {
-    await showAll.click();
-  }
+  if (!(await row.isVisible())) await showAllFlowRows(queue);
   await row.click();
   return row;
+}
+
+/**
+ * Placement is the patient drawer over Home on every screen size (H7, Josh 3 Nov 2026), so an open
+ * drawer covers the queue and the list menu. Close it, as a coordinator would, before reaching them.
+ */
+async function closePlacement(page: Page) {
+  const close = page.getByRole("button", { name: "Close placement and clear selection" });
+  if ((await close.count()) === 0) return;
+  await close.click();
+  await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
 }
 
 async function gotoCoordinator(page: Page) {
@@ -48,7 +54,8 @@ async function gotoCoordinator(page: Page) {
   // for (Josh, 30-31 Oct 2026), so wait for the bar itself and for no Data mode bar above the app.
   await expect(page.getByTestId("ward-bar")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
-  // Home v7 (Josh, 22 Oct 2026): Home opens on My list; these journeys read the priority queue.
+  // Home v7 (Josh, 22 Oct 2026): Home opens on My list (Needs you since Q340); these journeys read
+  // the queue, now the Flow card.
   await showEveryoneWaitingOn(page);
 }
 
@@ -100,10 +107,7 @@ async function expectReferralSheetFromRefer(page: Page, movementId: string) {
   await sheet.getByRole("button", { name: "Close referral side drawer" }).first().click();
   await expect(sheet).toHaveCount(0);
   const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
-  await page
-    .getByRole("region", { name: "Priority queue" })
-    .locator(`[data-testid="ward-queue-row-${movementId}"]`)
-    .click();
+  await pickQueueRow(homeFlowCard(page), movementId);
   await openShortlistSections(shortlist);
   return shortlist;
 }
@@ -148,7 +152,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     await expect(page.getByRole("region", { name: "Emergency department pressure" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Priority queue" })).toBeVisible();
+    await expect(homeFlowCard(page)).toBeVisible();
     // Home v7 (Josh, 22 Oct 2026): State bedflow moved to the foot of Capacity; Beds that fit
     // takes its place on Home.
     await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toHaveCount(0);
@@ -169,10 +173,11 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // incidental step.
     await page.locator('[data-testid^="ward-queue-row-"]').first().click();
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toBeVisible();
+    await closePlacement(page);
     // Owner, 8 Oct 2026: the four registers start closed and open as a strip under the hero. Home
-    // v7 (Josh, 22 Oct 2026): the Registers link beside Alerts history opens them. Scrolled into
+    // v7 (Josh, 22 Oct 2026): Registers opens them, under "More for this list" since Q340. Scrolled into
     // view before the visibility check, as Playwright's `toBeVisible()` needs it in the viewport.
-    await page.getByTestId("ward-home-registers").click();
+    await openHomeRegisters(page);
     const registers = page.getByRole("region", { name: "Declines, overrides and exceptions" });
     await registers.scrollIntoViewIfNeeded();
     await expect(registers).toBeVisible();
@@ -195,7 +200,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     // Home v7 (Josh, 22 Oct 2026): nothing is pre-selected. Placement stays empty, with a prompt
     // to choose a patient, until a row is chosen.
@@ -209,9 +214,11 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(firstRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).toHaveAttribute("data-subject-movement", String(firstId));
 
-    // A second selection replaces the first rather than accumulating.
+    // A second selection replaces the first rather than accumulating. The drawer covers the queue,
+    // so the coordinator closes it first.
     const secondRow = rows.nth(1);
     const secondId = (await secondRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
+    await closePlacement(page);
     await secondRow.click();
     await expect(secondRow).toHaveAttribute("aria-pressed", "true");
     await expect(firstRow).toHaveAttribute("aria-pressed", "false");
@@ -241,8 +248,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // Opens on the Exceptions tab by default. At this width the registers start closed (owner,
     // 8 Oct 2026).
-    // Home v7 (Josh, 22 Oct 2026): the Registers link beside Alerts history opens them.
-    await page.getByTestId("ward-home-registers").click();
+    // Home flow (Q340, 3 Nov 2026): Registers, under "More for this list", opens them.
+    await openHomeRegisters(page);
     const drawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await drawer.scrollIntoViewIfNeeded();
     await expect(drawer).toBeVisible();
@@ -309,9 +316,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // covers the Registers toggle. A coordinator closes it first; so does this journey. Closing
     // clears the selection, so the last step below — selecting WF-005 again from the phone drawer
     // — now proves the drawer itself selects, rather than leaning on the leftover selection.
-    await page.getByRole("button", { name: "Close shortlist and clear selection" }).click();
+    await page.getByRole("button", { name: "Close placement and clear selection" }).click();
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
-    await expect(page.getByRole("region", { name: "Priority queue" })).toBeVisible();
+    await expect(homeFlowCard(page)).toBeVisible();
     // Task A: the toggle only exists below 48rem now — restored exactly at the width the diagram
     // disappears (`@media (max-width: 48rem)`, the same query in both places).
     // v10 phone Home (Josh, 10 Oct 2026, direction A queue first): the old "Today's answers"
@@ -324,27 +331,30 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // Review Important 3: once a movement is selected from the phone's Exceptions sheet, Confirm
     // is reachable without a long scroll.
-    // Home v7 (Josh, 22 Oct 2026): the Registers link opens them, as a sheet on a phone. Home and
-    // Activity design (Josh, 31 Oct 2026): on a phone the link is hidden and Registers sits under the
-    // "More for this list" menu beside the list tabs (`HomeListMoreMenu`), so open it from there.
-    await expect(page.getByTestId("ward-home-registers")).toBeHidden();
-    await page.getByRole("button", { name: "More for this list" }).click();
-    await page.getByRole("menu", { name: "More for this list" }).getByRole("menuitem", { name: "Registers" }).click();
+    // Home v7 (Josh, 22 Oct 2026): Registers opens them, as a sheet on a phone. Home flow (Q340, 3 Nov
+    // 2026): on every width Registers sits under the "More for this list" menu at the end of the list
+    // tabs (`HomeListMoreMenu`), so the phone reaches it there too.
+    await expect(page.getByRole("button", { name: "More for this list" })).toBeVisible();
+    await openHomeRegisters(page);
     await expect(page.getByTestId("ward-home-exceptions-sheet")).toBeVisible();
     const phoneDrawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await expect(phoneDrawer).toBeVisible();
     await phoneDrawer.locator('[data-testid*="-WF-005"]').first().click();
-    // L3: an accepted movement leads with its next step instead of Refer.
-    await expect(
-      page.getByTestId("ward-shortlist-refer").or(page.getByTestId("ward-shortlist-next-step")).first(),
-    ).toBeInViewport();
+    // L3: an accepted movement leads with its next step instead of Refer. In the drawer (H7) the
+    // next step is drawn into the pinned foot band, which lays it out (the section itself takes no
+    // box there), so the band is what must be on screen.
+    const foot = page.getByTestId("home-placement-foot");
+    await expect(foot.getByTestId("ward-shortlist-next-step")).toHaveCount(1);
+    await expect(foot).toBeInViewport();
   });
 
   test("orders by longest wait only and shows no score", async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
+    // Home flow (Q340, 3 Nov 2026): rows are grouped by stage, so open every stage and read them all.
+    await showAllFlowRows(queue);
     const rows = queue.locator('[data-testid^="ward-queue-row-"]');
     const rowCount = await rows.count();
 
@@ -359,12 +369,27 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(tiers).toHaveLength(rowCount);
 
     // Audit 1, Josh 20 Oct (CS-04), superseding D-32: every row is longest wait first. Flags,
-    // act-now marks and tiers are badges and do not move a row. No row carries a score.
-    const waits = await rows.evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute("data-wait"))));
-    expect(waits.length).toBeGreaterThan(1);
-    for (let i = 1; i < waits.length; i++) {
-      expect(waits[i], `row ${i} must not have waited longer than row ${i - 1}`).toBeLessThanOrEqual(waits[i - 1]);
+    // act-now marks and tiers are badges and do not move a row. No row carries a score. Home flow
+    // (Q340, 3 Nov 2026): the order holds within each stage ("Oldest first in each stage").
+    await expect(queue).toContainText("Oldest first in each stage");
+    const stages = queue.locator("section[aria-label]");
+    expect(await stages.count()).toBeGreaterThan(1);
+    let ordered = 0;
+    for (const stage of await stages.all()) {
+      const stageName = await stage.getAttribute("aria-label");
+      const waits = await stage
+        .locator('[data-testid^="ward-queue-row-"]')
+        .evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute("data-wait"))));
+      ordered += waits.length;
+      for (let i = 1; i < waits.length; i++) {
+        expect(waits[i], `${stageName} row ${i} must not have waited longer than row ${i - 1}`).toBeLessThanOrEqual(
+          waits[i - 1],
+        );
+      }
     }
+    // Every rendered row sits in a stage, so none escapes the order check.
+    expect(ordered).toBe(rowCount);
+    expect(rowCount).toBeGreaterThan(1);
     await expect(queue.locator("[data-score]")).toHaveCount(0);
 
     // The score must never read as clinical severity, and the "Operational" leftover is gone (U3).
@@ -449,10 +474,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // review Important 2).
     const worstEdId = (await worst.getAttribute("data-testid"))?.replace("ward-ed-", "");
     const worstWaiting = Number(await worst.getAttribute("data-waiting"));
-    const queue = page.getByRole("region", { name: "Priority queue" });
-    // Home shows the top 10 first; open the whole queue so the counts compare every row.
-    await queue.getByTestId("ward-queue-show-all").click();
-    await expect(queue.getByTestId("ward-queue-show-all")).toHaveAttribute("aria-expanded", "true");
+    const queue = homeFlowCard(page);
+    // Each Flow stage shows its oldest 5 first; open every stage so the counts compare every row.
+    await showAllFlowRows(queue);
+    await expect(queue.getByRole("button", { name: /^Show all \d+/u })).toHaveCount(0);
     const before = await queue.locator('[data-testid^="ward-queue-row-"]').count();
     // The tile counts people physically waiting in the department; the filtered queue lists every
     // queued movement that came from it, including one already moving on. So the queue is compared
@@ -488,7 +513,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-001 is an OPEN-status movement whose top candidate is a locked ward that passes every
@@ -563,7 +588,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     const wf301 = requireMovement("WF-301");
@@ -621,7 +646,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-017: selected explicitly by id, not by row position — it no longer ranks first in the
@@ -722,7 +747,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     const referButton = shortlist.getByTestId("ward-shortlist-refer");
     const overrideToggle = shortlist.getByTestId("ward-shortlist-override-toggle");
@@ -766,18 +791,22 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Option B (13 Oct 2026): Refer is never greyed for the coordinator. It no longer offers any
     // ward: it opens the referral slide-out, so it cannot refer against a default either. Its
     // reason with nothing chosen is still stated (screen-reader text).
+    //
+    // Home drawer polish (Josh, 3 Nov 2026): in the drawer Override is never greyed. With no ward
+    // chosen a tap takes the coordinator to the ward list instead, so the reason form still never
+    // opens against the default. The reason stays as the button's screen-reader description.
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
-    await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
+    await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
     await expect(shortlist).toContainText("Choose at least one candidate ward before referring");
     await expect(shortlist).toContainText("Choose at least one candidate ward before overriding");
 
-    // A forced activation of Override must not even open the reason form — if it opened, the
-    // textarea would be addressed to the default unit and one submission would record an override
-    // against a ward nobody picked. `force` because Playwright's actionability check already
-    // refuses an `aria-disabled` control.
-    await overrideToggle.click({ force: true });
+    // Override with nothing chosen must not open the reason form. If it opened, the textarea
+    // would be addressed to the default unit and one submission would record an override against
+    // a ward nobody picked. It moves focus to the first ward row instead.
+    await overrideToggle.click();
     await expect(overrideToggle).toHaveAttribute("aria-expanded", "false");
     await expect(shortlist.getByLabel(/Reason for overriding/)).toHaveCount(0);
+    await expect(shortlist.locator('[data-testid^="ward-shortlist-candidate-"]:focus')).toHaveCount(1);
     await expect(shortlist).not.toContainText("Overridden by a human coordinator");
 
     // Refer with nothing chosen opens the slide-out and records nothing against the default.
@@ -811,8 +840,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await pickQueueRow(queue, "WF-004");
     await openShortlistSections(shortlist);
     await expect(shortlist).toContainText("Accepted destination:");
-    await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
-    await overrideToggle.click({ force: true });
+    // Not greyed in the drawer: with no ward chosen it only goes to the ward list.
+    await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
+    await overrideToggle.click();
+    await expect(shortlist.getByLabel(/Reason for overriding/)).toHaveCount(0);
     await expect(shortlist).not.toContainText("Overridden by a human coordinator");
     // Option B: Refer is not greyed and opens the slide-out; it never records a second destination.
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
@@ -833,7 +864,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-009's default candidate (Dabakarn) fails exactly one of the eleven gates
@@ -869,7 +900,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     const movement = requireMovement("WF-009");
@@ -892,7 +923,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // The queue is server-rendered before its click handlers and hero geometry settle.
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-009: every one of its three candidates is ineligible, so there is no unit this
@@ -929,7 +960,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-009: every candidate is ineligible, so override is the only human path that can
@@ -942,8 +973,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Override, like Confirm, acts only on a candidate a human explicitly chose — never on the
     // panel's default (whole-branch review Critical 2, extended to the other half of the control
     // pair). Choosing Dabakarn is what a coordinator would really do before overriding into
-    // it, and it is the same unit the recorded override below must name.
-    await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
+    // it, and it is the same unit the recorded override below must name. In the drawer it is never
+    // greyed (3 Nov 2026), but with nothing chosen it opens no reason form.
+    await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
+    await expect(overrideToggle).toHaveAttribute("aria-expanded", "false");
     // Dabakarn takes WF-009 only with a recorded reason, so it is behind the override disclosure.
     await showOverrideWards(shortlist);
     await shortlist.locator('[data-testid="ward-shortlist-candidate-rph-adult-secure"]').click();
@@ -987,7 +1020,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     // Task 6A note: this used to click the queue's top row, which happened to always be WF-017
     // — not because WF-017 legitimately ranks first, but because its now-deleted fabricated
     // Form 3B deadline artificially inflated its operational score to the top. With that fixed,
@@ -1037,7 +1070,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       "fixture assumption: WF-004 still has a candidate on offer despite being non-referable",
     ).toBeTruthy();
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     await pickQueueRow(queue, "WF-004");
@@ -1074,7 +1107,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const wf004Default = eligibleCandidatesAmong(wf004, allUnits(), NOW_ANCHOR, PARALLEL_REFERRAL_CAP)[0];
     expect(wf004Default, "fixture assumption: WF-004 has a candidate to override into").toBeTruthy();
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // ⚠️ PRE-EXISTING, found running this deliberate spec for Task A (structured-wobbling-globe)
@@ -1124,8 +1157,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Task 5: refusals moved out of the Exceptions panel into their own "Refused actions" tab —
     // see `exception-drawer.tsx`'s own file comment on why the two were split. On desktop the
     // registers open from the hero's Exceptions count (owner, 8 Oct 2026), so open them first.
-    // Home v7 (Josh, 22 Oct 2026): the Registers link beside Alerts history opens them.
-    await page.getByTestId("ward-home-registers").click();
+    // Home flow (Q340, 3 Nov 2026): Registers, under "More for this list", opens them, once the
+    // placement drawer over the page is closed (H7).
+    await closePlacement(page);
+    await openHomeRegisters(page);
     const refusedTab = page.getByRole("tab", { name: /Refused/ });
     await refusedTab.scrollIntoViewIfNeeded();
     await refusedTab.click();
@@ -1183,11 +1218,18 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
    */
   test("keeps the referral control reachable on a phone, in the panel's natural flow", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    // Tours start out seen here, so Home can offer its page tip 1.5s after it settles, unless a
+    // toast holds it. On a phone that corner card sits over the Flow card's "Show all N" buttons,
+    // and a click issued after it appears waits on it until the test times out (main CI, 3 Nov
+    // 2026). Whether it appears depends on timing, so neither waiting for it nor ignoring it is
+    // reliable. Turn tips off for this device the way Settings does, so it never appears here. The
+    // release-gate journey still proves the Home tip appears and can be acknowledged.
+    await page.addInitScript((key) => window.localStorage.setItem(key, "yes"), HELP_TIPS_OFF_KEY);
     await gotoCoordinator(page);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
-    // v10 phone Home lists the first rows with "Show all"; WF-002 sits further down.
-    await queue.getByRole("button", { name: /^Show all/ }).click();
+    const queue = homeFlowCard(page);
+    // Phone Home lists each Flow stage's oldest 5 with "Show all N"; WF-002 may sit further down.
+    await showAllFlowRows(queue);
     await pickQueueRow(queue, "WF-002");
 
     // No longer pinned (see this test's own doc comment) — the control sits in normal document
@@ -1234,7 +1276,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(wf009.escalation, "fixture assumption: WF-009 already carries a pre-authored escalation").toBeDefined();
     expect(wf009.declines.length, "fixture assumption: WF-009 carries five declines").toBe(5);
 
-    const queue = page.getByRole("region", { name: "Priority queue" });
+    const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await pickQueueRow(queue, "WF-009");
 

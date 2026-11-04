@@ -1,7 +1,6 @@
 import type { WfTone } from "@/components/wf";
 import {
   type DueSoonThresholds,
-  formatInstantWithDay,
   type Instant,
   minuteOfDayFromClockText,
   minutesUntil,
@@ -251,7 +250,7 @@ export function formEvents(movement: Movement, edName: string): FormEventItem[] 
   return items.sort((a, b) => b.sortAt - a.sortAt);
 }
 
-/** The handover lines for expiries in the next eight hours, soonest first. */
+/** Passed typed expiries and those inside the next window, ordered by their recorded time. */
 export function handoverLines(
   movements: Movement[],
   now: Instant,
@@ -263,13 +262,13 @@ export function handoverLines(
       const dueAt = currentLegalDueAt(movement);
       if (dueAt === undefined) return false;
       const left = minutesUntil(dueAt, now);
-      return left >= 0 && left <= windowMinutes;
+      return left <= windowMinutes;
     })
     .sort((a, b) => (a.legalForm?.dueAt ?? 0) - (b.legalForm?.dueAt ?? 0))
-    .map(
-      (movement) =>
-        `${formatInstantWithDay(movement.legalForm!.dueAt!, now)} Form ${movement.legalForm!.code}, ${nameOf(movement)}`,
-    );
+    .map((movement) => {
+      const dueAt = currentLegalDueAt(movement)!;
+      return `${dueAt < now ? "Passed · " : ""}${typedTimeLine(dueAt, now)} Form ${movement.legalForm!.code}, ${nameOf(movement)}`;
+    });
 }
 
 /** Typed date and time to an Instant, counted from the provider's `dayZero`. No duration is added. */

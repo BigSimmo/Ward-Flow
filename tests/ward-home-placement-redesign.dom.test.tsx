@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
-import { TIER_TARGETS_NOTE } from "@/components/ward-management/coordinator/priority-queue";
+import { FLOW_STAGES, TIER_TARGETS_NOTE } from "@/components/ward-management/coordinator/priority-queue";
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { splitDuration } from "@/components/ward-management/ward-clock";
@@ -15,9 +15,10 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
- * Home placement redesign, Josh 19 Oct 2026. Desktop Home scrolls once: the queue shows its top 10
- * behind "Show all (N)", and the Placement panel leads with the next step, says times in plain
- * words, labels its checks, drops empty clutter and never contradicts an accepted destination.
+ * Home placement redesign, Josh 19 Oct 2026. Desktop Home scrolls once: each Flow stage shows its
+ * top 5 behind "Show all N" (Home flow, Q340/Q345, 3 Nov 2026; was the queue's top 10), and the
+ * Placement panel leads with the next step, says times in plain words, labels its checks, drops
+ * empty clutter and never contradicts an accepted destination.
  * Everything here runs on the synthetic fixture.
  */
 
@@ -79,50 +80,87 @@ function renderPanel(props: Parameters<typeof Harness>[0]) {
   return screen.getByTestId(`ward-shortlist-${props.movementId}`);
 }
 
-describe("desktop Home queue: top 10, then Show all (N)", () => {
-  it("shows the top 10 rows and reveals the rest in place", () => {
+/** Five rows per stage: the cap the Flow branch of PriorityQueue applies. */
+const FLOW_STAGE_CAP = 5;
+
+/** The Flow stage sections that list rows (Referral is listed under Needs you), with their counts. */
+const ROW_STAGES = FLOW_STAGES.filter((stage) => stage.id !== "referral");
+
+/** Switches to Flow and returns the first stage with more rows than the cap, and its count. */
+function cappedStage() {
+  showEveryoneWaiting();
+  const tabs = screen.getByRole("tablist", { name: "Flow stages" });
+  for (const stage of ROW_STAGES) {
+    const total = Number(
+      within(within(tabs).getByRole("tab", { name: new RegExp(`^${stage.label}`, "u") })).getByText(/^\d+$/u)
+        .textContent,
+    );
+    if (total > FLOW_STAGE_CAP) {
+      return { section: screen.getByRole("region", { name: stage.label }), total };
+    }
+  }
+  throw new Error(`the fixture must hold a Flow stage with more than ${FLOW_STAGE_CAP} rows for the cap to matter`);
+}
+
+// Home flow (Q340/Q345, 3 Nov 2026): the single top-10 queue became Flow, one section per stage,
+// each showing its oldest 5 rows behind its own "Show all N".
+describe("desktop Home Flow: top 5 per stage, then Show all N", () => {
+  it("shows each stage's top 5 rows and reveals the rest of that stage in place", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
-    showEveryoneWaiting();
-    const patients = screen.getByRole("group", { name: "Patients" });
-    const total = Number(within(screen.getByRole("radio", { name: /Patients/ })).getByText(/^\d+$/u).textContent);
-    expect(total, "the fixture must hold more than 10 open patients for the cap to matter").toBeGreaterThan(10);
-    expect(within(patients).getAllByTestId(/^ward-queue-row-/)).toHaveLength(10);
+    const { section, total } = cappedStage();
+    // Every stage is capped, not only the long one.
+    for (const stage of ROW_STAGES) {
+      const rows = within(screen.getByRole("region", { name: stage.label })).queryAllByTestId(/^ward-queue-row-/);
+      expect(rows.length).toBeLessThanOrEqual(FLOW_STAGE_CAP);
+    }
+    expect(within(section).getAllByTestId(/^ward-queue-row-/)).toHaveLength(FLOW_STAGE_CAP);
 
-    const showAll = screen.getByTestId("ward-queue-show-all");
-    expect(showAll).toHaveTextContent(`Show all (${total})`);
+    const showAll = within(section).getByRole("button", { name: `Show all ${total}` });
     expect(showAll).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(showAll);
-    expect(within(patients).getAllByTestId(/^ward-queue-row-/)).toHaveLength(total);
+    expect(within(section).getAllByTestId(/^ward-queue-row-/)).toHaveLength(total);
     expect(showAll).toHaveAttribute("aria-expanded", "true");
-    expect(showAll).toHaveTextContent("Show top 10");
+    expect(showAll).toHaveTextContent(`Show top ${FLOW_STAGE_CAP}`);
   });
 
-  it("keeps a chosen patient below the cap in view, in its own place, when the queue folds again", () => {
+  it("keeps a chosen patient below the cap in view, in its own place, when the stage folds again", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
-    showEveryoneWaiting();
-    const patients = screen.getByRole("group", { name: "Patients" });
-    fireEvent.click(screen.getByTestId("ward-queue-show-all"));
-    const rows = within(patients).getAllByTestId(/^ward-queue-row-/);
-    const chosen = rows[14]!;
+    const { section, total } = cappedStage();
+    fireEvent.click(within(section).getByRole("button", { name: `Show all ${total}` }));
+    const rows = within(section).getAllByTestId(/^ward-queue-row-/);
+    const chosen = rows[total - 1]!;
     const chosenId = chosen.getAttribute("data-testid");
     fireEvent.click(chosen);
-    fireEvent.click(screen.getByTestId("ward-queue-show-all"));
+    fireEvent.click(within(section).getByRole("button", { name: `Show top ${FLOW_STAGE_CAP}` }));
 
-    const folded = within(patients).getAllByTestId(/^ward-queue-row-/);
-    expect(folded).toHaveLength(11);
-    // Nothing is re-sorted: the chosen row follows the top 10 rather than jumping above them.
+    const folded = within(section).getAllByTestId(/^ward-queue-row-/);
+    expect(folded).toHaveLength(FLOW_STAGE_CAP + 1);
+    // Nothing is re-sorted: the chosen row follows the top 5 rather than jumping above them.
     expect(folded.map((row) => row.getAttribute("data-testid"))).toEqual(
-      [...rows.slice(0, 10), chosen].map((row) => row.getAttribute("data-testid")),
+      [...rows.slice(0, FLOW_STAGE_CAP), chosen].map((row) => row.getAttribute("data-testid")),
     );
     expect(screen.getByTestId(chosenId!)).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("shows every row in each stage while a hero count highlights, so no highlighted row is hidden", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CoordinatorScreen />
+      </WardFlowProvider>,
+    );
+    const { section, total } = cappedStage();
+    fireEvent.click(screen.getAllByRole("button", { name: /Tier 1 open movements/u })[0]!);
+    expect(screen.getByText(/highlighted, all rows stay$/u)).toBeInTheDocument();
+    expect(within(section).getAllByTestId(/^ward-queue-row-/)).toHaveLength(total);
+    expect(within(section).queryByRole("button", { name: /^Show (all|top) \d+$/u })).toBeNull();
   });
 });
 

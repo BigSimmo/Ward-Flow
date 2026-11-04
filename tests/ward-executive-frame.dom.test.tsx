@@ -162,7 +162,13 @@ describe("the executive chrome in the new frame", () => {
     expect(card).toHaveTextContent("Metro");
     expect(card.getAttribute("aria-label")).toMatch(/^Bed alerts: (None|\d+) over 85%\. Metro /);
     fireEvent.click(card);
-    expect(screen.getAllByTestId("ward-rail-bed-alert-row")).toHaveLength(report.services.length);
+    const rows = screen.getAllByTestId("ward-rail-bed-alert-row");
+    expect(rows).toHaveLength(report.services.length);
+    // The released ED figure is open ED journeys, not people physically waiting (3 Nov 2026).
+    for (const row of rows) {
+      expect(row).toHaveTextContent(/open ED journeys/);
+      expect(row).not.toHaveTextContent(/waiting/);
+    }
   });
 
   it("gives the phone a dock of Statistics, Capacity and Activity and opens the Menu on the capacity card", () => {
