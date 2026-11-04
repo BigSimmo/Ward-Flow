@@ -82,6 +82,7 @@ import {
 } from "@/components/ward-management/hub/hub-browser-memory";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
+import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./hub.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { HubPlaceRow } from "./hub-place-row";
@@ -323,6 +324,7 @@ export function HubScreen() {
           )
           .at(-1);
 
+  const refreshSave = useWardFormSave(`places-refresh:${selected?.id ?? "none"}`);
   // Phone sheet footer: Ask to confirm (coordinator, a ward with a confirmation and no open ask), else Pin.
   const phoneFooterAsks =
     selected !== undefined &&
@@ -655,13 +657,18 @@ export function HubScreen() {
                       <button
                         type="button"
                         className={buttonClass({ variant: "sec", size: "sm" })}
+                        disabled={refreshSave.pending}
                         onClick={() =>
-                          dispatch({
-                            type: "REQUEST_CAPACITY_REFRESH",
-                            role: "coordinator",
-                            now,
-                            unitId: selected.id,
-                          })
+                          refreshSave.submit(
+                            () =>
+                              dispatch({
+                                type: "REQUEST_CAPACITY_REFRESH",
+                                role: "coordinator",
+                                now,
+                                unitId: selected.id,
+                              }),
+                            () => {},
+                          )
                         }
                       >
                         Ask to confirm
@@ -1182,12 +1189,16 @@ export function HubScreen() {
                   ? {
                       label: "Ask to confirm",
                       onAction: () =>
-                        dispatch({
-                          type: "REQUEST_CAPACITY_REFRESH",
-                          role: "coordinator",
-                          now,
-                          unitId: selected.id,
-                        }),
+                        refreshSave.submit(
+                          () =>
+                            dispatch({
+                              type: "REQUEST_CAPACITY_REFRESH",
+                              role: "coordinator",
+                              now,
+                              unitId: selected.id,
+                            }),
+                          () => {},
+                        ),
                     }
                   : {
                       label: isPinned(selected.id) ? "Unpin" : "Pin",

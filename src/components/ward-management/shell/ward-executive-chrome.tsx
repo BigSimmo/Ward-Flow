@@ -79,6 +79,7 @@ import {
 } from "./ward-service-bed-alerts";
 import type { ExecutiveReportingFoundation } from "../statistics/executive-statistics-contract";
 import { publishLiveClock } from "@/components/wf";
+import { areCharacterShortcutsEnabled } from "./ward-character-shortcuts";
 import bar from "./ward-bar.module.css";
 import rail from "./ward-rail.module.css";
 import phone from "./ward-phone-menu.module.css";
@@ -452,7 +453,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
     const handle = (event: KeyboardEvent) => {
       if (event.key === "Escape") setPanel(null);
       else if (!isTypingTarget(event.target)) {
-        if (event.key === "[" && !event.ctrlKey && !event.metaKey && !event.altKey)
+        if (event.key === "[" && areCharacterShortcutsEnabled() && !event.ctrlKey && !event.metaKey && !event.altKey)
           setRailOpenPreference(!preferences.open);
         else openDrawerForShortcut(event, canRefer);
       }

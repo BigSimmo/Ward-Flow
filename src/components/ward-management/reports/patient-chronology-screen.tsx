@@ -200,7 +200,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const [seenInitialId, setSeenInitialId] = useState(initialPatientId);
   if (initialPatientId !== seenInitialId) {
     setSeenInitialId(initialPatientId);
-    if (initialPatientId && patients.some((patient) => patient.id === initialPatientId)) setPatientId(initialPatientId);
+    if (initialPatientId && patients.some((patient) => patient.id === initialPatientId))
+      choosePatient(initialPatientId);
   }
   const tableScroll = useRef<HTMLDivElement>(null);
 
@@ -251,11 +252,11 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     needle ? "Search applied" : "No search",
     ...(nurseView ? ["Ward manager view"] : []),
   ].join(" · ");
-  const clearFilters = () => {
+  function clearFilters() {
     setTab("all");
     setKind("all");
     setQuery("");
-  };
+  }
 
   const count = (source: ChronologySource) => rows.filter((row) => row.source === source).length;
   // Source tab counts read every event of that source, so an empty source shows 0 without a tap.

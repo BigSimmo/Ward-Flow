@@ -70,7 +70,7 @@ export type PhoneMoreFigures = {
   arrivals: { measured: StatisticsCount; average: number | null; shortest: number | null; longest: number | null };
 };
 
-type Sheet = { title: string; description?: string; body: ReactNode } | null;
+type Sheet = { kind: "hospital"; name: string } | { kind: "pressure" | "eds" | "more-figures" } | null;
 
 /** The phone list shows this many hospitals or wards before "Show all". */
 const LIST_SHOWN = 8;
@@ -236,7 +236,11 @@ function StatisticsSummaryPhoneView({
   const referralsHeld = [referrals.raised, referrals.accepted, referrals.declined, referrals.open].every(held);
   const [chosenGroup, setGroup] = useState<"hospital" | "ward">("hospital");
   const group = siteDesk ? "ward" : chosenGroup;
-  const [sheet, setSheet] = useState<Sheet>(null);
+  // Keyed by desk, not by board state: the executive view renders from the released report alone.
+  const owner = `${access.role}:${JSON.stringify(access.scope)}`;
+  const [selection, setSelection] = useState<(Exclude<Sheet, null> & { owner: string }) | null>(null);
+  const sheet = selection?.owner === owner ? selection : null;
+  const setSheet = (next: Sheet) => setSelection(next ? { ...next, owner } : null);
   const [showAll, setShowAll] = useState(false);
 
   const hospitals = [...new Set(wards.map((ward) => ward.hospital))]
@@ -278,6 +282,60 @@ function StatisticsSummaryPhoneView({
       href={canOpen(wardStatisticsHref(ward.id)) ? wardStatisticsHref(ward.id) : undefined}
     />
   );
+
+  const hospital = sheet?.kind === "hospital" ? hospitals.find((each) => each.name === sheet.name) : null;
+  if (
+    selection &&
+    (selection.owner !== owner ||
+      (selection.kind === "hospital" && !wards.some((ward) => ward.hospital === selection.name)))
+  )
+    setSelection(null);
+  let currentSheet: { title: string; description?: string; body: ReactNode } | null = null;
+  if (sheet?.kind === "hospital" && hospital)
+    currentSheet = { title: hospital.name, body: <ul className={styles.list}>{hospital.wards.map(wardRow)}</ul> };
+  if (sheet?.kind === "pressure")
+    currentSheet = {
+      title: "Where the pressure is",
+      description: `Wards at or over ${BED_ALERT_THRESHOLD_PERCENT}% of beds in use, fullest first.`,
+      body:
+        overCount === 0 ? (
+          <p className={styles.note}>{`No ward is at or over ${BED_ALERT_THRESHOLD_PERCENT}%.`}</p>
+        ) : (
+          <ul className={styles.list}>
+            {[...wards]
+              .filter((ward) => overLine(ward.percent))
+              .sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name))
+              .map(wardRow)}
+          </ul>
+        ),
+    };
+  if (sheet?.kind === "eds")
+    currentSheet = {
+      title: "Open ED movements",
+      body: (
+        <ul className={styles.list}>
+          {eds.map((ed) => (
+            <PhoneListRow
+              key={ed.id}
+              as="li"
+              name={ed.name}
+              meta={
+                ed.longest === null
+                  ? exactStatisticsCount(ed.waiting) === 0
+                    ? "No open ED movements"
+                    : "Longest not recorded"
+                  : `Longest ${durMinutes(ed.longest)}`
+              }
+              value={statisticsCountText(ed.waiting)}
+              time="open ED movements"
+              href={ed.openable === false || !canOpen(edStatisticsHref(ed.id)) ? undefined : edStatisticsHref(ed.id)}
+            />
+          ))}
+        </ul>
+      ),
+    };
+  if (sheet?.kind === "more-figures")
+    currentSheet = { title: "More figures", body: <MoreFigures figures={moreFigures} /> };
 
   return (
     <div className={styles.page} data-testid="ward-statistics-screen" data-ward-design="v10">
@@ -362,12 +420,7 @@ function StatisticsSummaryPhoneView({
                         {hospital.ready} <small className={styles.rowUnit}>ready</small>
                       </>
                     }
-                    onSelect={() =>
-                      setSheet({
-                        title: hospital.name,
-                        body: <ul className={styles.list}>{hospital.wards.map(wardRow)}</ul>,
-                      })
-                    }
+                    onSelect={() => setSheet({ kind: "hospital", name: hospital.name })}
                   />
                 ))
               : byReady.slice(0, showAll ? undefined : LIST_SHOWN).map(wardRow)}
@@ -433,23 +486,7 @@ function StatisticsSummaryPhoneView({
               type="button"
               className={styles.navRow}
               data-testid="ward-statistics-pressure-link"
-              onClick={() =>
-                setSheet({
-                  title: "Where the pressure is",
-                  description: `Wards at or over ${BED_ALERT_THRESHOLD_PERCENT}% of beds in use, fullest first.`,
-                  body:
-                    overCount === 0 ? (
-                      <p className={styles.note}>{`No ward is at or over ${BED_ALERT_THRESHOLD_PERCENT}%.`}</p>
-                    ) : (
-                      <ul className={styles.list}>
-                        {[...wards]
-                          .filter((ward) => overLine(ward.percent))
-                          .sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name))
-                          .map(wardRow)}
-                      </ul>
-                    ),
-                })
-              }
+              onClick={() => setSheet({ kind: "pressure" })}
             >
               <IconTile icon={Activity} />
               <span className={styles.navText}>
@@ -462,40 +499,7 @@ function StatisticsSummaryPhoneView({
               <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
             </button>
           )}
-          <button
-            type="button"
-            className={styles.navRow}
-            onClick={() =>
-              setSheet({
-                title: "Open ED movements",
-                body: (
-                  <ul className={styles.list}>
-                    {eds.map((ed) => (
-                      <PhoneListRow
-                        key={ed.id}
-                        as="li"
-                        name={ed.name}
-                        meta={
-                          ed.longest === null
-                            ? exactStatisticsCount(ed.waiting) === 0
-                              ? "No open ED movements"
-                              : "Longest not recorded"
-                            : `Longest ${durMinutes(ed.longest)}`
-                        }
-                        value={statisticsCountText(ed.waiting)}
-                        time="open ED movements"
-                        href={
-                          ed.openable === false || !canOpen(edStatisticsHref(ed.id))
-                            ? undefined
-                            : edStatisticsHref(ed.id)
-                        }
-                      />
-                    ))}
-                  </ul>
-                ),
-              })
-            }
-          >
+          <button type="button" className={styles.navRow} onClick={() => setSheet({ kind: "eds" })}>
             {/* The menu's ED icon; a clock is for time only. */}
             <IconTile icon={Siren} />
             <span className={styles.navText}>
@@ -526,7 +530,7 @@ function StatisticsSummaryPhoneView({
             type="button"
             className={styles.navRow}
             data-testid="ward-statistics-more-figures"
-            onClick={() => setSheet({ title: "More figures", body: <MoreFigures figures={moreFigures} /> })}
+            onClick={() => setSheet({ kind: "more-figures" })}
           >
             <IconTile icon={Layers} />
             <span className={styles.navText}>
@@ -549,12 +553,13 @@ function StatisticsSummaryPhoneView({
         </nav>
       </main>
       <PhoneSheet
-        open={sheet !== null}
+        open={currentSheet !== null}
         onClose={() => setSheet(null)}
-        title={sheet?.title ?? ""}
-        description={sheet?.description}
+        title={currentSheet?.title ?? ""}
+        description={currentSheet?.description}
+        bodyScrollLabel={sheet?.kind === "more-figures" ? "More figures" : undefined}
       >
-        <div className={styles.sheetBody}>{sheet?.body}</div>
+        <div className={styles.sheetBody}>{currentSheet?.body}</div>
       </PhoneSheet>
     </div>
   );

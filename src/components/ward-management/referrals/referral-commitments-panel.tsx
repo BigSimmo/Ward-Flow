@@ -7,6 +7,7 @@ import { Button, DisabledReason, Field, Select, StatusGlyph } from "@/components
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
+import { useWardFormSave } from "../use-ward-form-save";
 import type { Referral, Unit } from "../ward-model";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import {
@@ -44,16 +45,18 @@ export function CommitmentTimeSelect({
   onChange,
   now,
   testId,
+  disabled = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   now: Instant;
   testId?: string;
+  disabled?: boolean;
 }) {
   return (
     <Field label={label} className={styles.field}>
-      <Select value={value} onChange={(event) => onChange(event.target.value)} data-testid={testId}>
+      <Select value={value} onChange={(event) => onChange(event.target.value)} data-testid={testId} disabled={disabled}>
         <option value="">Not set</option>
         {REFERRAL_COMMITMENT_TIME_CHOICES.map((choice) => (
           <option key={choice.minutes} value={String(choice.minutes)}>
@@ -137,7 +140,7 @@ export function ReferralCommitments({
 }) {
   const flow = useOptionalWardFlowSelect("units");
   if (!flow) return null;
-  return <CommitmentsBody referral={referral} now={now} units={flow.units} readOnly={readOnly} />;
+  return <CommitmentsBody key={referral.id} referral={referral} now={now} units={flow.units} readOnly={readOnly} />;
 }
 
 function CommitmentsBody({
@@ -160,6 +163,7 @@ function CommitmentsBody({
   const [stepChoice, setStepChoice] = useState<ReferralCommitmentStep | "">("");
   const [promiseChoice, setPromiseChoice] = useState("");
   const [callbackChoice, setCallbackChoice] = useState("");
+  const save = useWardFormSave(`referral-commitment:${referral.id}`);
 
   // One line per ward with something recorded, in the order the copies were addressed.
   const rows = referral.destinations.flatMap((arm) => {
@@ -188,6 +192,7 @@ function CommitmentsBody({
     (commitmentStepRank(stepChoice) < commitmentStepRank(current.step?.step) ||
       (stepChoice === current.step?.step && stepChoice !== "response_requested" && stepChoice !== "promised"));
   const refusal =
+    (save.pending ? "Waiting for save confirmation" : undefined) ??
     closed ??
     recordGate.reason ??
     (choices.length === 0
@@ -225,7 +230,7 @@ function CommitmentsBody({
       )}
 
       {readOnly || closed ? null : (
-        <fieldset className={styles.form}>
+        <fieldset className={styles.form} disabled={save.pending}>
           <legend className={styles.heading}>Record a commitment</legend>
           <div className={styles.row}>
             {choices.length > 1 ? (
@@ -283,16 +288,21 @@ function CommitmentsBody({
               aria-describedby={refusal ? `${baseId}-why` : undefined}
               onClick={() => {
                 if (refusal) return;
-                raise("RECORD_REFERRAL_COMMITMENT", {
-                  referralId: referral.id,
-                  unitId,
-                  ...(stepChoice !== "" ? { step: stepChoice } : {}),
-                  ...(stepChoice === "promised" ? { promisedFor: now + Number(promiseChoice) } : {}),
-                  ...(callbackChoice !== "" ? { nextCallbackAt: now + Number(callbackChoice) } : {}),
-                });
-                setStepChoice("");
-                setPromiseChoice("");
-                setCallbackChoice("");
+                save.submit(
+                  () =>
+                    raise("RECORD_REFERRAL_COMMITMENT", {
+                      referralId: referral.id,
+                      unitId,
+                      ...(stepChoice !== "" ? { step: stepChoice } : {}),
+                      ...(stepChoice === "promised" ? { promisedFor: now + Number(promiseChoice) } : {}),
+                      ...(callbackChoice !== "" ? { nextCallbackAt: now + Number(callbackChoice) } : {}),
+                    }),
+                  () => {
+                    setStepChoice("");
+                    setPromiseChoice("");
+                    setCallbackChoice("");
+                  },
+                );
               }}
               data-testid={`ward-referral-commitment-record-${referral.id}`}
             >
@@ -300,6 +310,11 @@ function CommitmentsBody({
             </Button>
             {refusal ? <DisabledReason id={`${baseId}-why`}>{refusal}</DisabledReason> : null}
           </div>
+          {save.error ? (
+            <p className={styles.when} role="alert">
+              {save.error}
+            </p>
+          ) : null}
           <p className={styles.when}>A commitment does not answer the referral.</p>
         </fieldset>
       )}
@@ -326,12 +341,19 @@ export function WardCommitmentControls({
   const routeRole = useRouteRole();
   const raise = useWardRaise(routeRole);
   const baseId = useId();
+  const save = useWardFormSave(`ward-promise:${entry.id}:${unitId}`);
   const [promiseChoice, setPromiseChoice] = useState("");
   const status = commitmentStatus(commitmentEntriesFor(entry, unitId));
   if (status.step?.step === "resolved") return <CommitmentStatusLine status={status} now={now} />;
   const rank = commitmentStepRank(status.step?.step);
-  const ackRefusal = refusal ?? (rank >= commitmentStepRank("acknowledged") ? "Already acknowledged" : undefined);
-  const promiseRefusal = refusal ?? (promiseChoice === "" ? "Choose a time" : undefined);
+  const ackRefusal =
+    (save.pending ? "Waiting for save confirmation" : undefined) ??
+    refusal ??
+    (rank >= commitmentStepRank("acknowledged") ? "Already acknowledged" : undefined);
+  const promiseRefusal =
+    (save.pending ? "Waiting for save confirmation" : undefined) ??
+    refusal ??
+    (promiseChoice === "" ? "Choose a time" : undefined);
   const base = { referralId: entry.id, unitId, ...(actingUnitId ? { actingUnitId } : {}) };
   return (
     <div className={styles.panel} data-testid={`ward-referral-commitment-ward-${entry.id}`}>
@@ -344,7 +366,10 @@ export function WardCommitmentControls({
           aria-describedby={ackRefusal ? `${baseId}-ack` : undefined}
           onClick={() => {
             if (ackRefusal) return;
-            raise("RECORD_REFERRAL_COMMITMENT", { ...base, step: "acknowledged" });
+            save.submit(
+              () => raise("RECORD_REFERRAL_COMMITMENT", { ...base, step: "acknowledged" }),
+              () => {},
+            );
           }}
           data-testid={`ward-referral-acknowledge-${entry.id}`}
         >
@@ -354,6 +379,7 @@ export function WardCommitmentControls({
       </div>
       <div className={styles.row}>
         <CommitmentTimeSelect
+          disabled={save.pending}
           label="Answer promised by"
           value={promiseChoice}
           onChange={setPromiseChoice}
@@ -367,12 +393,15 @@ export function WardCommitmentControls({
           aria-describedby={promiseRefusal ? `${baseId}-promise` : undefined}
           onClick={() => {
             if (promiseRefusal) return;
-            raise("RECORD_REFERRAL_COMMITMENT", {
-              ...base,
-              step: "promised",
-              promisedFor: now + Number(promiseChoice),
-            });
-            setPromiseChoice("");
+            save.submit(
+              () =>
+                raise("RECORD_REFERRAL_COMMITMENT", {
+                  ...base,
+                  step: "promised",
+                  promisedFor: now + Number(promiseChoice),
+                }),
+              () => setPromiseChoice(""),
+            );
           }}
           data-testid={`ward-referral-promise-${entry.id}`}
         >
@@ -380,6 +409,11 @@ export function WardCommitmentControls({
         </Button>
         {promiseRefusal ? <DisabledReason id={`${baseId}-promise`}>{promiseRefusal}</DisabledReason> : null}
       </div>
+      {save.error ? (
+        <p className={styles.when} role="alert">
+          {save.error}
+        </p>
+      ) : null}
     </div>
   );
 }
