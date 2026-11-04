@@ -16,7 +16,7 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { EdInboxReferralFixture, openRaiseIntoMovementForm } from "./helpers/ed-raise-into-movement";
+import { EdInboxReferralFixture, openRaiseIntoMovementForm, chooseEdChoice } from "./helpers/ed-raise-into-movement";
 import { typeDate } from "./helpers/type-date-time";
 
 /**
@@ -55,7 +55,7 @@ function openReferralForm() {
 }
 
 function chooseForm(code: string) {
-  fireEvent.change(screen.getByTestId(PICKER), { target: { value: code } });
+  chooseEdChoice(PICKER, code);
 }
 
 describe("the expiry field is asked for whichever form is selected", () => {
@@ -87,7 +87,9 @@ describe("the expiry field is asked for whichever form is selected", () => {
       const timeField = screen.getByTestId(TIME_FIELD) as HTMLInputElement;
       expect(dateField.type, "the kit's typed DD/MM/YYYY box, not the browser's date picker").toBe("text");
       expect(dateField.placeholder, "the box says which order the day is typed in").toBe("DD/MM/YYYY");
-      expect(timeField.type, "a time field, so the browser does the parsing").toBe("time");
+      // L31: the kit's typed 24-hour box, not the browser's time picker (AM and PM on many phones).
+      expect(timeField.type, "the kit's typed HH:MM box, not the browser's time picker").toBe("text");
+      expect(timeField.placeholder, "the box says the time is typed as 24-hour HH:MM").toBe("HH:MM");
       expect(
         dateField.value,
         "it must open EMPTY — a prefilled deadline is a claim nobody made wearing the clothes of one somebody did",

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BedDouble, ChevronDown, ChevronRight } from "lucide-react";
+import { BedSingle, ChevronDown, ChevronRight } from "lucide-react";
 
 import { Card, CardHead, StatusGlyph } from "@/components/wf";
 import { bedKindGaps, bedKindTotals } from "@/components/ward-management/capacity/capacity-derivations";
@@ -61,7 +61,7 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
             ? `${gapRangeWord(totals.gap)} now · ${gapRangeWord(tomorrow.total.likely)} tomorrow`
             : `${bedsReady} ready · whole network`
         }
-        icon={BedDouble}
+        icon={BedSingle}
         iconPlain
         action={
           condensed ? (

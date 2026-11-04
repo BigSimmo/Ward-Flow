@@ -5,6 +5,7 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
+import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
 import { useTransportCommandFeedback } from "./use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock, Copy, ListChecks, Lock, MapPin, Plus, Search, ShieldCheck, X } from "lucide-react";
@@ -938,6 +939,7 @@ export function OfficerScreen() {
             </CardBody>
           </Card>
         ) : null}
+        <ReturnEarlyAlerts desk={{ role: "officer" }} now={now} />
 
         {isPhone ? needCard : null}
 

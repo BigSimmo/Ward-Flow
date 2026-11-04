@@ -1455,6 +1455,7 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
   [0.5, movementEvent("UNDO_LEGAL_FORM_RECORD")],
   [0.5, movementEvent("UNDO_SUPPORT_NOTIFICATION", ["arrived"])],
   [0.5, admissionEvent("UNDO_REPATRIATION", ["occupied"])],
+  [0.5, admissionEvent("UNDO_FLAG_RETURN_EARLY", ["occupied"])],
   [0.5, () => ({ type: "UNDO_HANDOVER_SIGN_OFF" })],
   [0.5, () => ({ type: "RECORD_HANDOVER_SIGN_OFF" })],
   // Q61 (31 Oct 2026): a site's handover sign-off, mostly for the next handover, and its Undo aimed
@@ -2119,6 +2120,15 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         ...(chance(random, 0.5) ? { nextReviewAt: currentNow + int(random, 0, 14) * 1440 } : {}),
       };
     },
+  ],
+  // Out of area "Flag early" (3 Nov 2026): a current stay and, mostly, a listed site.
+  [
+    0.5,
+    (state, random) => ({
+      type: "FLAG_RETURN_EARLY",
+      admissionId: id(stayFor(state, random, occupied)),
+      homeHospital: chance(random, 0.95) ? pick(random, SITE_CODES) : MISSING_ID,
+    }),
   ],
   [
     0.5,

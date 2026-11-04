@@ -678,6 +678,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_HOME_SERVICE_RETURN: false,
     // Closing-the-loop (package E): records that a directory entry was checked. Not a refusal.
     RECORD_DIRECTORY_CHECK: false,
+    // Out of area "Flag early" (3 Nov 2026): records that a return may come sooner. Not a refusal.
+    FLAG_RETURN_EARLY: false,
     SET_DISCHARGE_BARRIER: false,
     SET_DISCHARGE_CRITERIA: false,
     // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
@@ -746,6 +748,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     UNDO_LEGAL_FORM_RECORD: false,
     UNDO_SUPPORT_NOTIFICATION: false,
     UNDO_REPATRIATION: false,
+    UNDO_FLAG_RETURN_EARLY: false,
     UNDO_HANDOVER_SIGN_OFF: false,
     UNDO_ED_STEP: false,
     UNDO_TRANSPORT_STEP: false,

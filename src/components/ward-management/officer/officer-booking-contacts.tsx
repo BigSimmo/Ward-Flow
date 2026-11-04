@@ -63,9 +63,15 @@ export function ProviderNumber({ provider }: { provider: string | undefined }) {
 export function OfficerBookingContacts({
   selected,
   onPick,
+  note = "Choose the one you booked and it fills Who is collecting.",
+  headingId = "ward-officer-contacts-heading",
+  className,
 }: {
   selected?: TransportProvider;
   onPick?: (provider: TravelMode) => void;
+  note?: string;
+  headingId?: string;
+  className?: string;
 }) {
   const [copied, setCopied] = useState<string | null>(null);
   const copy = (number: string) => {
@@ -75,8 +81,8 @@ export function OfficerBookingContacts({
     );
   };
   return (
-    <section className={styles.contacts} aria-labelledby="ward-officer-contacts-heading">
-      <h3 id="ward-officer-contacts-heading" className={styles.contactsHead}>
+    <section className={className ? `${styles.contacts} ${className}` : styles.contacts} aria-labelledby={headingId}>
+      <h3 id={headingId} className={styles.contactsHead}>
         Call a provider
         <span className={styles.contactsTag}>Synthetic numbers</span>
       </h3>
@@ -122,7 +128,7 @@ export function OfficerBookingContacts({
           );
         })}
       </ul>
-      <p className={own.note}>Choose the one you booked and it fills Who is collecting.</p>
+      <p className={own.note}>{note}</p>
     </section>
   );
 }

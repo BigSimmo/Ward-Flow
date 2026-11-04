@@ -10,6 +10,7 @@ import { Dialog } from "@/components/wf";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import { TransportBookingForm } from "@/components/ward-management/transport/transport-booking-form";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
+import { useTransportBookingClose } from "@/components/ward-management/transport/use-transport-booking-close";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 
@@ -23,7 +24,8 @@ const ED_PART_NAMES = { cad: "transport-cad-number", legal: "transport-legal-sta
  * patient's sheet, which inerts everything outside the top layer.
  *
  * A stray tap on the backdrop does not close it (`closeOnScrim={false}`), because closing clears
- * every answer typed in (form friction audit, 27 Oct 2026). Cancel, Close and Escape still close it.
+ * every answer typed in (form friction audit, 27 Oct 2026). Cancel, Close and Escape ask before
+ * discarding edited answers and wait while the save is pending.
  *
  * ⚠️ **DELIBERATELY NOT A `<form>`.** A form submits on Enter from inside a field whatever its
  * submit button advertises, so an `aria-disabled` submit would let a half-answered booking
@@ -34,6 +36,16 @@ function EdTransportDialog({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenCo
   const { now, closeTransportDialog, transportDraft, setTransportDraft, submitBookTransport } = ctx;
   const [legalReason, setLegalReason] = useState<TransportExceptionReason | "">("");
   const save = useWardFormSave(movement.id);
+  // A command held offline stays pending. Once its error shows, the popup may close again (the
+  // discard question still guards unsaved answers); submission stays locked to that command.
+  const saving = save.pending && !save.error;
+  const requestClose = useTransportBookingClose({
+    scope: movement.id,
+    answers: transportDraft,
+    legalReason,
+    pending: saving,
+    onClose: closeTransportDialog,
+  });
   // Focus starts on the first question (who is collecting), as the popup did before the kit dialog.
   const firstQuestion = useMemo<RefObject<HTMLElement | null>>(
     () => ({
@@ -46,7 +58,8 @@ function EdTransportDialog({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenCo
   return (
     <Dialog
       open
-      onClose={closeTransportDialog}
+      onClose={requestClose}
+      closable={!saving}
       closeOnScrim={false}
       title="Log transport booking"
       // Surname first (D-83), named once under the one-line title.
@@ -67,7 +80,7 @@ function EdTransportDialog({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenCo
         pending={save.pending}
         error={save.error}
         onSubmit={(booking) => submitBookTransport(movement.id, booking, save.submit)}
-        onCancel={closeTransportDialog}
+        onCancel={requestClose}
       />
     </Dialog>
   );

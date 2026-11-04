@@ -1,10 +1,11 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ConfirmHost } from "@/components/wf";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -55,11 +56,12 @@ function RegisteredPatientSeeder() {
  * a patient chosen from the record. Synthetic people only.
  */
 describe("the pre-filled banner only claims what was pre-filled (WT-28)", () => {
-  it("is absent for a patient added in the form, and present for one chosen from the record", () => {
+  it("is absent for a patient added in the form, and present for one chosen from the record", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <RegisteredPatientSeeder />
         <WardReferralDrawer onClose={vi.fn()} />
+        <ConfirmHost />
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
@@ -77,9 +79,10 @@ describe("the pre-filled banner only claims what was pre-filled (WT-28)", () => 
     expect(screen.queryByTestId("ward-referral-fast-track")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Seed patient" }));
-    fireEvent.change(screen.getByRole("searchbox", { name: "Find a patient" }), { target: { value: "UM999001" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Find a patient" }), { target: { value: "UM999001" } });
     fireEvent.click(within(screen.getByRole("listbox", { name: "Matching patients" })).getAllByRole("option")[0]!);
-    expect(screen.getByText("Vance, Clara (35F)")).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "Discard and change patient" }));
+    await waitFor(() => expect(screen.getByText("Vance, Clara (35F)")).toBeInTheDocument());
     expect(screen.getByTestId("ward-referral-fast-track")).toBeInTheDocument();
   });
 });

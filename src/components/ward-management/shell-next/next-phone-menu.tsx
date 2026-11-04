@@ -15,7 +15,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedDouble, House, Bell, Plus } from "lucide-react";
+import { Activity, BedSingle, Bell, House, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { useFitDockLabels } from "@/components/ward-management/shell/use-fit-dock-labels";
@@ -474,7 +474,7 @@ function PhoneDock({
               announceToWardShell(`${item.label}.`);
             }}
           >
-            <DockFace icon={BedDouble} label={item.label} count={undefined} tail="" />
+            <DockFace icon={BedSingle} label={item.label} count={undefined} tail="" />
           </button>
         );
     }

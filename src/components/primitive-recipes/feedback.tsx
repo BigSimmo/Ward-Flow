@@ -1,4 +1,4 @@
-import { Loader2, type LucideIcon } from "lucide-react";
+import { LoaderCircle, type LucideIcon } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn, controlDisabled, textMuted } from "./recipes";
 
@@ -19,7 +19,7 @@ export type AsyncButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "ch
 export function AsyncButton({ busy, busyLabel, children, disabled, idleIcon, type, ...props }: AsyncButtonProps) {
   return (
     <button {...props} type={type ?? "button"} disabled={busy || disabled} aria-busy={busy || undefined}>
-      {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : idleIcon}
+      {busy ? <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" /> : idleIcon}
       <span>{busy ? busyLabel : children}</span>
     </button>
   );

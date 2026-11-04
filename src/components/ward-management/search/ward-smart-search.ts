@@ -149,10 +149,11 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
   },
   {
     key: "community",
-    title: "Community",
-    href: "/ward-flow/community",
-    keywords: ["community", "teams", "directory", "clinics"],
-    description: "Community teams",
+    // PL1 (3 Nov 2026): the community team list is Places' Catchments tab.
+    title: "Catchments",
+    href: "/ward-flow/hub/catchments",
+    keywords: ["community", "teams", "directory", "clinics", "catchment", "suburb"],
+    description: "Which community team covers a suburb",
   },
 ];
 

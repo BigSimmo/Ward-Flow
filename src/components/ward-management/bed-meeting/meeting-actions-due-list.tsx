@@ -27,11 +27,14 @@ export function DueActions({
   desk,
   actions,
   onMarkDone,
+  onBeforeDone,
 }: {
   subject: BedMeetingSubject;
   desk: BedMeetingActionOwner;
   actions: readonly BedMeetingAction[];
   onMarkDone: MarkBedMeetingActionDone;
+  /** The record's surviving focus owner; standalone lists retain their own row handover. */
+  onBeforeDone?: (index: number) => void;
 }) {
   const now = useWardFlowClock();
   // A double click must close one action only: the list shifts up as one closes, so a second click
@@ -70,7 +73,7 @@ export function DueActions({
                 onClick={(event) => {
                   // The second click of a double click is never a fresh Mark done.
                   if (event.detail > 1 || !claimDone()) return;
-                  markDone(index);
+                  (onBeforeDone ?? markDone)(index);
                   onMarkDone(subject, action.kind, desk === "ward" ? action.ownerUnitId : undefined);
                 }}
                 aria-label={`Mark done: ${bedMeetingActionLabel(action.kind)}`}

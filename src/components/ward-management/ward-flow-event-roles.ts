@@ -560,6 +560,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_REPATRIATION: ["coordinator"],
   // Closing-the-loop (package E): the out-of-area return plan, the coordinator's tool as above.
   RECORD_HOME_SERVICE_RETURN: ["coordinator"],
+  // Out of area "Flag early" (Josh, 3 Nov 2026): the return plan, the coordinator's tool as above.
+  FLAG_RETURN_EARLY: ["coordinator"],
   // Closing-the-loop (package E): any desk with the on-call directory open may record a check.
   RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
   // The handover sheet is signed by whoever is handing over: the coordinator or the ward. Not yet the
@@ -617,6 +619,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_LEGAL_FORM_RECORD: ["ed", "coordinator", "ward", "community"],
   UNDO_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
   UNDO_REPATRIATION: ["coordinator"],
+  UNDO_FLAG_RETURN_EARLY: ["coordinator"],
   UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
   // Q75 (Josh, 31 Oct 2026): the statewide coordinator may sign a site sign-off as cover but
   // never undo one, so only the site bed manager takes a site sign-off back.
