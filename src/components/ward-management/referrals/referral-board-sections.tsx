@@ -10,7 +10,7 @@ import { openInformationNeeds } from "./referral-information-needs";
 import { personLine } from "./referral-panel-parts";
 import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
@@ -863,7 +863,9 @@ function DecidedRowActions({
 }) {
   // The Undo confirmation can stay open while the clock moves; dispatch the time it resolves at.
   const nowRef = useRef(now);
-  nowRef.current = now;
+  useEffect(() => {
+    nowRef.current = now;
+  }, [now]);
   // Optional: a board drawn outside the provider (a test or the redesign preview) offers no Undo.
   const flow = useOptionalWardFlowSelect("undoRecords", "dispatch");
   const undoRecords = flow?.undoRecords;
