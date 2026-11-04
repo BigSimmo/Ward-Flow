@@ -78,6 +78,19 @@ export function installLockedDependencies({
       `Locked install requires npm ${expectedNpm}; detected ${actualNpm || "unavailable"}. Install not started.`,
     );
   log(`[locked-install] npm ${actualNpm} matches packageManager.`);
+  // CI restores node_modules from a cache saved on main only, keyed on the Node version and the lock,
+  // and sets WARD_INSTALL_RESTORED=true on an exact hit. The restored tree is reused only when its
+  // own post-install stamp still matches this lock and the tree on disk; anything else reinstalls.
+  if (env.WARD_INSTALL_RESTORED === "true") {
+    const restored = installedTreeParity(projectRoot);
+    if (restored.ok) {
+      log(
+        `[locked-install] reused the restored install: ${restored.packageLocations.length} package locations match the lock and its stamp.`,
+      );
+      return { ok: true, reused: true, verification: restored };
+    }
+    log(`[locked-install] restored install refused (${restored.reason}); running a clean install.`);
+  }
   const result = execute(command, args, {
     cwd: projectRoot,
     env,
