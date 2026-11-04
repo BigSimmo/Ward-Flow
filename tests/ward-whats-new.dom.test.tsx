@@ -85,9 +85,7 @@ describe("what's new note", () => {
   });
 
   it("reads an id stored before entry files against the old list order", () => {
-    // Only the lines that existed under the old order: entries added later are unseen too, by design.
-    const before = WHATS_NEW.filter((entry) => entry.id < "2026-11-04");
-    const ids = (seen: string) => unseenWhatsNew(seen, before).map((entry) => entry.id);
+    const ids = (seen: string) => unseenWhatsNew(seen).map((entry) => entry.id);
     // Under the old order only the referral line came after this id, though it no longer sorts last.
     expect(ids("2026-11-03-one-alerts-switch")).toEqual(["2026-11-03-simpler-new-referral"]);
     // This id now sorts last, yet four lines came after it in the old order (the card shows four).
