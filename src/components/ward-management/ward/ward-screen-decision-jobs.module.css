@@ -1,0 +1,90 @@
+/* WH9: the ward coordinator's other jobs, on a tinted strip of soft raised cards (as on Capacity). */
+.strip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding-inline: var(--wf-s-1);
+}
+
+.caps {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+
+.handover {
+  gap: var(--wf-s-1);
+}
+
+.jobs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.job {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 4%, transparent);
+}
+
+.jobText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.jobTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+}
+
+.jobLine {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.jobAction {
+  flex: none;
+  gap: var(--wf-s-1);
+}
+
+@media (max-width: 40rem) {
+  .jobs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .head > a {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}

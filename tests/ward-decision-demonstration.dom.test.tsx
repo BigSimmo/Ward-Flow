@@ -18,6 +18,8 @@ const props: ComponentProps<typeof WardHomeTab> = {
   withdrawn: [],
   overridesHere: [],
   now: NOW_ANCHOR,
+  // WH2 (3 Nov 2026): To do lives in the This shift sheet, open here.
+  shiftSheetOpen: true,
   presentation: "overview",
   activeAnswerIndex: 0,
   setAnswerIndex: vi.fn(),

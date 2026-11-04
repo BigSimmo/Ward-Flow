@@ -1,0 +1,69 @@
+/* The printed bed list. Paper only: the Every bed card covers the screen. */
+.sheet {
+  display: none;
+}
+
+@media print {
+  .sheet {
+    display: block;
+    break-after: page;
+    color: var(--wf-ink-1);
+    font: 400 9pt / 1.25 var(--wf-font);
+  }
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4pt 12pt;
+    margin-bottom: 6pt;
+  }
+
+  .title {
+    margin: 0;
+    font-size: 13pt;
+    font-weight: 700;
+  }
+
+  .meta {
+    margin: 0;
+    font-size: 8pt;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table th,
+  .table td {
+    padding: 2.5pt 4pt;
+    border-bottom: 0.5pt solid var(--wf-line);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .table thead th {
+    border-bottom: 1pt solid var(--wf-ink-1);
+    font-size: 8pt;
+    font-weight: 700;
+  }
+
+  .table tbody th {
+    font-family: var(--wf-mono);
+    font-weight: 700;
+  }
+
+  .table tr {
+    break-inside: avoid;
+  }
+
+  .num {
+    font-family: var(--wf-mono);
+  }
+
+  .sub {
+    display: block;
+    font-size: 7.5pt;
+  }
+}

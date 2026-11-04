@@ -387,19 +387,11 @@ export async function openWardHome(page: Page) {
 }
 
 /**
- * A ward's own occupied or ready figure, as its Home tab shows it. Desktop reads the bed grid's
- * chip; the phone header carries the same figures in its summary line and Ready now button.
+ * A ward's own occupied or ready figure, as its header shows it. Integration QA (3 Nov 2026): Ready
+ * and Occupied sit once, in the hero, so desktop and phone both read the header's figures.
  */
 export async function wardFigure(page: Page, figure: "occupied" | "ready"): Promise<number> {
   const wardScreen = page.getByTestId("ward-unit-screen");
-  const grid = wardScreen.getByTestId("ward-unit-beds");
-  if (await grid.isVisible()) {
-    // The grid's Ready chip carries data-state="available".
-    const state = figure === "occupied" ? "occupied" : "available";
-    return Number((await grid.locator(`[data-state="${state}"] strong`).first().innerText()).trim());
-  }
-  // Desktop's header carries the same figures as chips ("14 Occupied"), so a grid that has not
-  // painted yet after a tab switch still reads the right number here.
   const region = wardScreen.getByRole("region", { name: "This ward", exact: true });
   if (figure === "occupied") {
     const match = /(\d+)\s*occupied/iu.exec(await region.innerText());

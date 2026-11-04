@@ -203,9 +203,9 @@ describe("referral slide-out, option B", () => {
     fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
     const preview = screen.getByTestId("ward-referral-letter-preview");
     expect(preview).toHaveTextContent("Mental health referral to a ward");
-    fireEvent.click(within(preview).getByRole("button", { name: "Copy as text" }));
+    fireEvent.click(within(preview).getByRole("button", { name: "Copy text" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
-    expect(writeText.mock.calls[0]![0]).toContain("Mental health referral to a ward");
+    expect(writeText.mock.calls[0]![0]).toContain("MENTAL HEALTH REFERRAL TO A WARD");
     expect(await screen.findByRole("status")).toHaveTextContent("Letter copied");
   });
 
@@ -313,7 +313,7 @@ describe("needs cards and the clearance checklist", () => {
     expect(checklist).toHaveTextContent("1 of 6 done");
     fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
     expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent(
-      "Clearance checklist: Bloods to follow, ECG done",
+      /Clearance checklist\s*Bloods to follow, ECG done/,
     );
   });
 
@@ -330,7 +330,7 @@ describe("needs cards and the clearance checklist", () => {
     expect(screen.queryByTestId("ward-referral-clearance-checklist")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
     expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent(
-      "Needs: First contact within 72 hours, Interpreter needed",
+      /Needs\s*First contact within 72 hours, Interpreter needed/,
     );
   });
 
@@ -370,7 +370,7 @@ describe("needs cards and the clearance checklist", () => {
     fireEvent.click(within(firstContact).getByLabelText("24 hours"));
     expect(rail).toHaveTextContent("24 hours");
     fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
-    expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent("Urgency: Tier 1");
+    expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent(/Urgency\s*Tier 1/);
   });
 
   it("searches the community teams by team or suburb, showing six until asked for all", () => {
@@ -508,12 +508,14 @@ describe("referral letter text", () => {
     referrer: { name: "", role: "", phone: "" },
   };
 
-  it("says Not recorded for anything left blank rather than inventing it", () => {
+  it("names anything left blank once, at the top, rather than inventing it", () => {
     const text = referralLetterText(input, "10:46");
     // Audit 1 (CS-12): the synthetic line comes before the letter's heading.
     expect(text.split("\n")[0]).toBe("Synthetic prototype. Draft 10:46 AWST.");
-    expect(text).toContain("Reason: Not recorded");
-    expect(text).toContain("Referrer: Not recorded");
+    // RF2 (Josh, 4 Nov 2026): gaps are listed once and left out of the lines below.
+    expect(text).toContain("Still to confirm: Reason, history and referrer contact.");
+    expect(text).not.toContain("Reason:");
+    expect(text).toContain("REFERRER\nNot recorded");
     expect(text).toContain("Risks: None selected");
   });
 

@@ -17,6 +17,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { chooseChip } from "./helpers/ward-choice-chips";
 
 /** Top 25 item 5: a stay due out within the discharge prep window asks for its barrier. */
 let flow: ReturnType<typeof useWardFlow> | undefined;
@@ -76,34 +77,43 @@ function setUp() {
   return stay.id;
 }
 
+// WH2 (3 Nov 2026): This shift's To do list sits in a sheet opened from its summary on Ward home.
+const openThisShift = () => {
+  if (!screen.queryByTestId("ward-shift-sheet")) fireEvent.click(screen.getByTestId("ward-shift-summary"));
+};
+
 describe("discharge prep on the ward screen", () => {
   it("shows the stay due out with its barrier and sets the barrier from the bed drawer", () => {
     const admissionId = setUp();
-    const dueButtons = () =>
-      screen
+    const dueButtons = () => {
+      openThisShift();
+      return screen
         .queryAllByRole("button")
         .filter((button) => /^Open bed Bed \d+ discharge due /.test(button.textContent ?? ""));
+    };
     const labels = dueButtons().map((button) => button.textContent);
     expect(labels.length).toBeGreaterThan(0);
     // Open each due bed until the one this test moved shows its barrier picker.
     let select: HTMLElement | null = null;
     for (const label of labels) {
       fireEvent.click(dueButtons().find((button) => button.textContent === label)!);
-      fireEvent.click(screen.getByRole("tab", { name: "Plan to leave" }));
+      fireEvent.click(screen.getByRole("tab", { name: "Leaving" }));
       select = screen.queryByTestId("ward-drawer-barrier-select");
       if (select) break;
       fireEvent.click(screen.getByRole("button", { name: "Close bed drawer" }));
     }
     expect(select).not.toBeNull();
     expect(screen.getByTestId("ward-drawer-discharge-prep")).toHaveTextContent(/Discharge due within 24 hours/);
-    fireEvent.change(select!, { target: { value: "NDIS" } });
+    // WH1: the reasons are folded behind one quiet button until asked for.
+    fireEvent.click(within(select!).getByRole("button", { name: /long-stay reason$/ }));
+    chooseChip("Long-stay reason", "NDIS", select!);
     expect(flow!.admissions.find((admission) => admission.id === admissionId)?.dischargeBarrier).toBe("NDIS");
 
     // H-0981 / WS-17: recording a blocker is one choice. The barrier is plain text while that form is open.
     const drawer = within(select!.closest("aside, [role='dialog']") as HTMLElement);
     fireEvent.click(drawer.getByRole("button", { name: /^(Record|Update) hold-up$/ }));
     expect(screen.queryByTestId("ward-drawer-barrier-select")).toBeNull();
-    expect(drawer.getByRole("combobox", { name: /held up/i })).toBeInTheDocument();
-    expect(drawer.queryByRole("combobox", { name: /barrier/i })).toBeNull();
+    expect(drawer.getByRole("group", { name: /held up/i })).toBeInTheDocument();
+    expect(drawer.queryByRole("group", { name: /long-stay reason/i })).toBeNull();
   });
 });

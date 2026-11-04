@@ -72,7 +72,11 @@ export function OtherSitesCounts({ model, focusUnitId }: { model: CapacityModel;
                 aria-controls={panelId}
                 onClick={() => toggle(group.service)}
               >
-                {isOpen ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
+                {isOpen ? (
+                  <ChevronDown strokeWidth={1.75} size={14} aria-hidden="true" />
+                ) : (
+                  <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
+                )}
                 <span className={styles.name}>
                   <SpelledCodes text={group.service} />
                 </span>

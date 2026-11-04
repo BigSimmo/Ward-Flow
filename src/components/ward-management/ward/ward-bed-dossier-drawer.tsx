@@ -4,7 +4,7 @@ import type { WardCommandDispatch } from "../ward-shared-client";
 
 import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, History as HistoryIcon, MapPin, X } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
@@ -60,11 +60,14 @@ import { WardObservationControl, observationWithReview } from "./ward-observatio
 import { WardLeavePaperAuthority, useLeaveNeedsPaperAuthority } from "./ward-leave-paper-authority";
 import {
   BedActions,
-  FactTile,
-  NotLeftNotice,
+  ChoiceChips,
   Row,
+  StaySteps,
+  focusChoice,
   mainActionId,
   shortLegal,
+  hasNoLeavingDate,
+  stayStatus,
   type BedAction,
 } from "./ward-bed-dossier-bits";
 import { PhoneBedSheet } from "./ward-bed-dossier-phone";
@@ -117,13 +120,23 @@ interface WardBedDossierDrawerProps {
   onSetCriteria?: (admissionId: string, update: DischargeCriteriaUpdate) => ReturnType<WardCommandDispatch>;
 }
 
-type DrawerTab = "over" | "plan" | "time";
+// WH1 (Josh, 3 Nov 2026): two tabs, Now and Leaving. The stay's recorded events moved from a third
+// tab to History, a quiet button beside them.
+type DrawerTab = "now" | "leave";
 type TabButtons = Map<number, HTMLButtonElement | null>;
 const DRAWER_TABS: { id: DrawerTab; label: string }[] = [
-  { id: "over", label: "Overview" },
-  { id: "plan", label: "Plan to leave" },
-  { id: "time", label: "Timeline" },
+  { id: "now", label: "Now" },
+  { id: "leave", label: "Leaving" },
 ];
+const LEAVING_CHOICES = LEAVING_DESTINATIONS.map(({ id, label }) => ({ id, label }));
+/** WH1 appraisal: the first places in the list cover most departures; the rest fold behind one button. */
+const COMMON_DESTINATIONS = 3;
+const BARRIER_CHOICES = [
+  { id: "None" as const, label: "None recorded" },
+  ...DISCHARGE_BARRIERS.map((barrier) => ({ id: barrier, label: barrier })),
+];
+/** The hero's step track for a stay: each step is a fact the ward recorded, never a time worked out. */
+const STAY_STEPS = ["On the ward", "Date set", "Confirmed", "Left"] as const;
 const TAB_PREFIX = "bed-drawer";
 
 /** The recorded blocker, or blank so the list opens on "Choose what is holding them up". */
@@ -180,7 +193,11 @@ export function WardBedDossierDrawer({
     "movements",
   );
   const now = useWardFlowClock();
-  const [tab, setTab] = useState<DrawerTab>("over");
+  const [tab, setTab] = useState<DrawerTab>("now");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [barrierOpen, setBarrierOpen] = useState(false);
+  const [allDestinations, setAllDestinations] = useState(false);
+  const historyRef = useRef<HTMLElement | null>(null);
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker | "">(recordedBlocker(bedItem?.blockReason));
   const [shownBed, setShownBed] = useState(selectedBed);
@@ -188,7 +205,7 @@ export function WardBedDossierDrawer({
   const [confirmStep, setConfirmStep] = useState<"leave" | "ed" | null>(null);
   const tabRefs = useRef<TabButtons>(new Map());
   const isPhone = useIsPhone();
-  const blockerSelectRef = useRef<HTMLSelectElement | null>(null);
+  const blockerSelectRef = useRef<HTMLDivElement | null>(null);
   const blockerSave = useBlockerSave(
     bedItem?.stayAdmissionId ?? bedItem?.admissionId,
     bedItem?.admissionId,
@@ -209,6 +226,7 @@ export function WardBedDossierDrawer({
   if (shownBed !== selectedBed) {
     setShownBed(selectedBed);
     setQuickBlockerOpen(false);
+    setBarrierOpen(false);
     setConfirmStep(null);
     setSelectedBlocker(recordedBlocker(bedItem?.blockReason));
     setOpenedFor({ admissionId: personKey, alias: bedItem?.patientAlias });
@@ -353,34 +371,41 @@ export function WardBedDossierDrawer({
   const prepHours = Math.round(CLINICAL_VALUES.dischargePrepWindow.value / 60);
   const dueForPrep = admission?.state === "occupied" && deriveAfternoonDischarges([admission], now).length > 0;
   // H-0981 / WS-17: while the blocker form is open the barrier shows as plain text, so recording a
-  // blocker is one choice, not two dropdowns. Its dropdown comes back when the blocker form closes.
-  const barrierSelect =
+  // blocker is one choice, not two lists. Its chips come back when the blocker form closes.
+  // WH1 (Josh, 3 Nov 2026): kit chips in place of the browser drop-down.
+  // WH1 appraisal: eight reasons are folded behind one quiet button until asked for.
+  const barrierEditor =
     admission && bedItem?.admissionId && onSetBarrier && stayDays !== null && !quickBlockerOpen ? (
-      <select
-        className={styles.select}
-        aria-label="Held up by"
-        data-testid="ward-drawer-barrier-select"
-        value={admission.dischargeBarrier ?? "None"}
-        onChange={(e) => onSetBarrier(admission.id, isDischargeBarrier(e.target.value) ? e.target.value : null)}
-      >
-        <option value="None">None recorded</option>
-        {DISCHARGE_BARRIERS.map((barrier) => (
-          <option key={barrier} value={barrier}>
-            {barrier}
-          </option>
-        ))}
-      </select>
+      <div className={styles.choiceField} data-testid="ward-drawer-barrier-select">
+        {barrierOpen ? (
+          <>
+            <span className={styles.choiceLabel}>Long-stay reason</span>
+            <ChoiceChips
+              label="Long-stay reason"
+              items={BARRIER_CHOICES}
+              value={admission.dischargeBarrier ?? "None"}
+              onChange={(value) => {
+                onSetBarrier(admission.id, isDischargeBarrier(value) ? value : null);
+                setBarrierOpen(false);
+              }}
+            />
+          </>
+        ) : (
+          <Button variant="ghost" size="sm" className={styles.quiet} onClick={() => setBarrierOpen(true)}>
+            {admission.dischargeBarrier ? "Change long-stay reason" : "Record a long-stay reason"}
+          </Button>
+        )}
+      </div>
     ) : null;
   const barrierValue =
-    barrierSelect ?? (admission && bedItem?.admissionId ? (admission.dischargeBarrier ?? "None recorded") : null);
+    admission && bedItem?.admissionId ? (admission.dischargeBarrier ?? "None recorded") : bedItem?.dischargeBarrier;
   // Finding 61 (Josh, 27 Oct 2026): blocker (today) and barrier (long-stay reason) under one label.
+  // The chips below say the long-stay reason when they show, so the row does not say it twice.
   const holdUpRow = (
     <Row label="What is holding them up">
       <div data-testid="ward-drawer-hold-up-today">Today: {bedItem?.blockReason ?? "None recorded"}</div>
-      {(barrierValue ?? bedItem?.dischargeBarrier) ? (
-        <div data-testid="ward-drawer-hold-up-long-stay">
-          Long-stay reason: {barrierValue ?? bedItem?.dischargeBarrier}
-        </div>
+      {barrierValue && !barrierOpen ? (
+        <div data-testid="ward-drawer-hold-up-long-stay">Long-stay reason: {barrierValue}</div>
       ) : null}
     </Row>
   );
@@ -465,9 +490,24 @@ export function WardBedDossierDrawer({
     const opening = !quickBlockerOpen;
     setBlockerOpen(opening);
     if (opening) {
-      setTab("plan");
-      setTimeout(() => blockerSelectRef.current?.focus(), 0);
+      setTab("leave");
+      setTimeout(() => focusChoice(blockerSelectRef.current), 0);
     }
+  };
+  const showDateControl = () => {
+    setTab("leave");
+    setTimeout(() => {
+      const open = bedDrawerRef.current?.querySelector<HTMLButtonElement>(
+        '[data-testid="ward-drawer-discharge-date-open"]',
+      );
+      open?.scrollIntoView?.({ block: "center" });
+      open?.focus();
+    }, 0);
+  };
+  const toggleHistory = () => {
+    const opening = !historyOpen;
+    setHistoryOpen(opening);
+    if (opening) setTimeout(() => historyRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" }), 0);
   };
 
   const onTabKeyDown = (event: React.KeyboardEvent) => {
@@ -600,13 +640,17 @@ export function WardBedDossierDrawer({
           {
             id: "leave" as const,
             label: "Record that they have left",
-            disabledReason: leavePaper ? "Record the paper authority first." : undefined,
+            disabledReason: leavePaper ? "Record the paper authority first, under Leaving." : undefined,
             describedBy: criteriaDepartureNote
               ? "drawer-leaving-summary drawer-leaving-criteria"
               : "drawer-leaving-summary",
             onAction: () => setConfirmStep("leave"),
           },
         ]
+      : []),
+    // WH1 appraisal: no leaving date yet, so the filled step opens Leaving on the date control.
+    ...(dateEditor && bedItem && hasNoLeavingDate(bedItem)
+      ? [{ id: "plan" as const, label: "Set leaving date", onAction: showDateControl }]
       : []),
     ...(hasStay && saveBlocker
       ? [
@@ -703,7 +747,14 @@ export function WardBedDossierDrawer({
           bedDrawerRef={bedDrawerRef}
           onKeyDown={onKeyDown}
           planRows={holdUpRow}
-          planNote={prepNote}
+          planNote={
+            prepNote || barrierEditor ? (
+              <>
+                {prepNote}
+                {barrierEditor}
+              </>
+            ) : null
+          }
           planCriteria={criteriaCard}
           sentJourney={sentJourneyControls}
           leavingCriteriaNote={criteriaDepartureNote}
@@ -718,6 +769,89 @@ export function WardBedDossierDrawer({
       </>
     );
   }
+
+  // WH1 (Josh, 3 Nov 2026): a hero head in the Capacity drawer's style. One large figure (the stay
+  // day), a soft pill for where the stay is, the three facts a nurse checks first, the reason they
+  // have not left, and the plan to leave as recorded steps.
+  const status = isOccupied ? stayStatus(bedItem, expectedPlan) : null;
+  const stayFigure = stayDays === null ? "Not recorded" : `Day ${stayDayNumber(stayDays)}`;
+  const stepNow =
+    admission?.state === "occupied"
+      ? bedItem?.dischargeConfirmed === true
+        ? 2
+        : admission.expectedDischargeAt != null
+          ? 1
+          : 0
+      : null;
+  const hero = (
+    <section className={styles.hero} aria-label="This stay" data-testid="bed-record-hero">
+      <div className={styles.heroTop}>
+        <span className={styles.heroWhen}>
+          <span className={styles.heroFigure} title={stayFigure}>
+            {stayFigure}
+          </span>
+          <span className={styles.heroSub}>
+            {admittedAt != null ? `Admitted ${formatInstantWithDay(admittedAt, now)}` : "Stay day"}
+          </span>
+        </span>
+        {status ? (
+          <span className={styles.heroPill} data-tone={status.tone}>
+            {status.word}
+          </span>
+        ) : null}
+      </div>
+      {status ? (
+        <p className={styles.heroWhy} data-testid="bed-record-not-left">
+          <StatusGlyph tone={status.tone} />
+          <span>{status.text}</span>
+        </p>
+      ) : null}
+      <dl className={styles.heroFacts}>
+        <div>
+          <dt>Legal</dt>
+          <dd title={bedItem?.legalStatusLabel}>{shortLegal(bedItem?.legalStatusLabel)}</dd>
+        </div>
+        <div>
+          <dt>Going out</dt>
+          <dd>
+            {/* Red is act now only (DESIGN-SYSTEM): a past date is amber, as on the bed tile. */}
+            {bedItem?.pastDate ? <StatusGlyph tone="warning" /> : null}
+            {goingOut}
+          </dd>
+        </div>
+        <div>
+          <dt>Observation</dt>
+          <dd>{observationShort}</dd>
+        </div>
+      </dl>
+    </section>
+  );
+  const history = (
+    <section
+      ref={historyRef}
+      id={`${TAB_PREFIX}-history`}
+      className={styles.card}
+      aria-labelledby={`${TAB_PREFIX}-history-title`}
+      hidden={!historyOpen}
+    >
+      <h3 className={styles.cardTitle} id={`${TAB_PREFIX}-history-title`}>
+        History
+      </h3>
+      {timeline.length > 0 ? (
+        <ul className={styles.timeline}>
+          {timeline.map((event) => (
+            <li key={`${event.label}-${event.at}`}>
+              <StatusGlyph tone={event.tone} />
+              <span className={styles.timelineAt}>{formatInstantWithDay(event.at, now)}</span>
+              <span className={styles.ell}>{event.label}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className={styles.empty}>Nothing recorded for this stay yet.</p>
+      )}
+    </section>
+  );
 
   return (
     <>
@@ -799,34 +933,35 @@ export function WardBedDossierDrawer({
         </header>
 
         {isReady ? (
-          <>
-            <div className={styles.facts}>
-              <FactTile
-                label="State"
-                value={isPreparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
-                tone={isPreparing ? "neutral" : "success"}
-              />
-              <FactTile label="Pulled for" value="No one" />
-              {bedItem.designation ? <FactTile label="Bed" value={bedItem.designation} /> : null}
-            </div>
-            <div className={styles.drawerBody}>
-              <Section title="Placement review">
-                <dl className={styles.kv}>
-                  <Row label="Candidate">None recorded.</Row>
-                </dl>
-                {readyNote}
-              </Section>
-            </div>
-          </>
+          <div className={styles.drawerBody}>
+            <section className={styles.hero} aria-label="This bed" data-testid="bed-record-hero">
+              <div className={styles.heroTop}>
+                <span className={styles.heroWhen}>
+                  <span className={styles.heroFigure}>{isPreparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}</span>
+                  <span className={styles.heroSub}>
+                    {bedItem.designation ? `${bedItem.designation} bed` : "Empty bed"}
+                  </span>
+                </span>
+                <span className={styles.heroPill} data-tone={isPreparing ? "neutral" : "success"}>
+                  {isPreparing ? "Not offered yet" : "Offered"}
+                </span>
+              </div>
+              <dl className={styles.heroFacts}>
+                <div>
+                  <dt>Pulled for</dt>
+                  <dd>No one</dd>
+                </div>
+                <div>
+                  <dt>Candidate</dt>
+                  <dd>None recorded</dd>
+                </div>
+              </dl>
+              {readyNote}
+            </section>
+          </div>
         ) : (
-          <>
-            <div className={styles.facts}>
-              <FactTile label="Stay" value={stayDays === null ? "Not recorded" : `Day ${stayDayNumber(stayDays)}`} />
-              <FactTile label="Legal" value={shortLegal(bedItem?.legalStatusLabel)} />
-              <FactTile label="Going out" value={goingOut} tone={bedItem?.pastDate ? "danger" : null} />
-              <FactTile label="Observation" value={observationShort} />
-            </div>
-            <NotLeftNotice bedItem={bedItem} expectedPlan={expectedPlan} isOccupied={isOccupied} />
+          <div className={styles.drawerBody}>
+            {hero}
             <div className={styles.tabsWrap}>
               {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
               <div role="tablist" aria-label="Bed details" className={styles.tabs} onKeyDown={onTabKeyDown}>
@@ -854,206 +989,211 @@ export function WardBedDossierDrawer({
                   );
                 })}
               </div>
+              <button
+                type="button"
+                className={styles.historyButton}
+                aria-expanded={historyOpen}
+                aria-controls={`${TAB_PREFIX}-history`}
+                data-testid="bed-drawer-history-toggle"
+                onClick={toggleHistory}
+              >
+                <Icon icon={HistoryIcon} size={14} />
+                History
+                <span className={styles.historyCount}>{timeline.length}</span>
+              </button>
             </div>
-            <div className={styles.drawerBody}>
-              {panel(
-                "over",
-                <>
-                  <Section title="This person">
-                    <dl className={styles.kv}>
-                      {bedItem?.preferredName && bedItem.preferredName !== occupantAlias ? (
-                        <Row label="Known as">{bedItem.preferredName}</Row>
-                      ) : null}
-                      {bedItem?.umrn ? (
-                        <Row label="Record">
-                          <span className={styles.mono}>{bedItem.umrn}</span>
-                        </Row>
-                      ) : null}
-                      {/* Redesign: only when it differs from the sex the head already shows. */}
-                      {bedItem?.gender && bedItem.gender !== bedItem.sex ? (
-                        <Row label="Bed placement">{bedItem.gender}</Row>
-                      ) : null}
-                      {bedItem?.suburb || bedItem?.homeRegion ? (
-                        <Row label={bedItem.suburb ? "Suburb" : "Region"}>
-                          {[bedItem.suburb, bedItem.homeRegion].filter(Boolean).join(", ")}
-                        </Row>
-                      ) : null}
-                      {bedItem?.generalPractitioner ? <Row label="GP">{bedItem.generalPractitioner}</Row> : null}
-                      {bedItem?.catchmentCommunityTeam ? (
-                        <Row label="Community team">{bedItem.catchmentCommunityTeam}</Row>
-                      ) : null}
-                    </dl>
-                  </Section>
-                  <Section title="Why they are here">
-                    <dl className={styles.kv}>
-                      <Row label="Tentative diagnosis">{bedItem?.tentativeDiagnosis ?? "None recorded"}</Row>
-                      <Row label="Admitted">
-                        {/* Redesign: the stay length is the Stay tile; this row gives when. */}
-                        {admittedAt != null ? formatInstantWithDay(admittedAt, now) : "Not recorded"}
-                      </Row>
-                      {/* Redesign: only when the Legal tile shortens it ("Form 6A", "CTO"). */}
-                      {bedItem?.legalStatusLabel &&
-                      shortLegal(bedItem.legalStatusLabel) !== bedItem.legalStatusLabel ? (
-                        <Row label="Legal status">{bedItem.legalStatusLabel}</Row>
-                      ) : null}
-                    </dl>
-                  </Section>
-                  <Section title="This shift">
-                    <dl className={styles.kv}>
+            {panel(
+              "now",
+              <>
+                <Section title="This shift">
+                  <dl className={styles.kv}>
+                    {/* WH1 appraisal: only what differs from a settled shift. On the ward and no
+                        high acuity request are the usual case, so they are not said. */}
+                    {isAwayAtEd || bedItem?.status === "incoming" ? (
                       <Row label="Where">
                         {/* WT-31: an incoming patient is not on the ward yet, so one location state. */}
                         {isAwayAtEd
                           ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held`
-                          : bedItem?.status === "incoming"
-                            ? typeof bedItem?.deliveredAt === "number"
-                              ? "Arrived at ward, confirm arrival"
-                              : "Arriving"
-                            : "On the ward"}
+                          : typeof bedItem?.deliveredAt === "number"
+                            ? "Arrived at ward, confirm arrival"
+                            : "Arriving"}
                       </Row>
-                      <Row label="Observation level">{observation}</Row>
-                      <Row label="High acuity">{bedItem?.highAcuity ? "Requested" : "Not requested"}</Row>
-                    </dl>
-                    {bedItem?.observation && bedItem.admissionId ? (
-                      <WardObservationControl
-                        key={bedItem.admissionId}
-                        observation={bedItem.observation}
-                        now={now}
-                        showCurrent={false}
-                        editingToken={observationToken}
-                        onSave={
-                          onSetObservation
-                            ? (next, expected) => onSetObservation(bedItem.admissionId!, next, expected)
-                            : undefined
-                        }
-                      />
                     ) : null}
-                  </Section>
-                </>,
-              )}
-              {panel(
-                "plan",
-                <>
-                  <Section title="Plan to leave">
-                    <dl className={styles.kv}>
-                      <Row label="Expected">
-                        {expectedValue}
-                        {dateEditor}
-                      </Row>
-                      <Row label="Confirmed">{confirmation}</Row>
-                      {dateMoves ? <Row label="Date moves">{dateMoves}</Row> : null}
-                      {holdUpRow}
-                    </dl>
-                    {prepNote}
-                    <BlockerEditor
-                      save={blockerSave}
-                      blockReason={bedItem?.blockReason}
-                      open={quickBlockerOpen}
-                      selected={selectedBlocker}
-                      setSelected={setSelectedBlocker}
-                      selectRef={blockerSelectRef}
+                    <Row label="Observation level">{observation}</Row>
+                    {bedItem?.highAcuity ? <Row label="High acuity">Requested</Row> : null}
+                  </dl>
+                  {bedItem?.observation && bedItem.admissionId ? (
+                    <WardObservationControl
+                      key={bedItem.admissionId}
+                      observation={bedItem.observation}
+                      now={now}
+                      showCurrent={false}
+                      editingToken={observationToken}
+                      onSave={
+                        onSetObservation
+                          ? (next, expected) => onSetObservation(bedItem.admissionId!, next, expected)
+                          : undefined
+                      }
                     />
+                  ) : null}
+                </Section>
+                <Section title="Why they are here">
+                  <dl className={styles.kv}>
+                    {/* WH1: the legal status and its form in full, exactly as recorded, when the hero
+                        shortens it. When it was admitted is under the hero's stay day. */}
+                    {bedItem?.legalStatusLabel && shortLegal(bedItem.legalStatusLabel) !== bedItem.legalStatusLabel ? (
+                      <Row label="Legal status">{bedItem.legalStatusLabel}</Row>
+                    ) : null}
+                    <Row label="Tentative diagnosis">{bedItem?.tentativeDiagnosis ?? "None recorded"}</Row>
+                  </dl>
+                </Section>
+                <Section title="This person">
+                  <dl className={styles.kv}>
+                    {bedItem?.preferredName && bedItem.preferredName !== occupantAlias ? (
+                      <Row label="Known as">{bedItem.preferredName}</Row>
+                    ) : null}
+                    {bedItem?.umrn ? (
+                      <Row label="Record">
+                        <span className={styles.mono}>{bedItem.umrn}</span>
+                      </Row>
+                    ) : null}
+                    {/* Redesign: only when it differs from the sex the head already shows. */}
+                    {bedItem?.gender && bedItem.gender !== bedItem.sex ? (
+                      <Row label="Bed placement">{bedItem.gender}</Row>
+                    ) : null}
+                    {bedItem?.suburb || bedItem?.homeRegion ? (
+                      <Row label={bedItem.suburb ? "Suburb" : "Region"}>
+                        {[bedItem.suburb, bedItem.homeRegion].filter(Boolean).join(", ")}
+                      </Row>
+                    ) : null}
+                    {bedItem?.generalPractitioner ? <Row label="GP">{bedItem.generalPractitioner}</Row> : null}
+                    {bedItem?.catchmentCommunityTeam ? (
+                      <Row label="Community team">{bedItem.catchmentCommunityTeam}</Row>
+                    ) : null}
+                  </dl>
+                </Section>
+              </>,
+            )}
+            {panel(
+              "leave",
+              <>
+                <Section title="Plan to leave">
+                  {stepNow !== null ? (
+                    <div className={styles.cardInner}>
+                      <StaySteps steps={STAY_STEPS} current={stepNow} />
+                    </div>
+                  ) : null}
+                  <dl className={styles.kv}>
+                    <Row label="Expected">
+                      {expectedValue}
+                      {dateEditor}
+                    </Row>
+                    <Row label="Confirmed">{confirmation}</Row>
+                    {dateMoves ? <Row label="Date moves">{dateMoves}</Row> : null}
+                    {holdUpRow}
+                  </dl>
+                  {prepNote ? <div className={styles.cardInner}>{prepNote}</div> : null}
+                  {barrierEditor ? <div className={styles.cardInner}>{barrierEditor}</div> : null}
+                  <BlockerEditor
+                    save={blockerSave}
+                    blockReason={bedItem?.blockReason}
+                    open={quickBlockerOpen}
+                    selected={selectedBlocker}
+                    setSelected={setSelectedBlocker}
+                    selectRef={blockerSelectRef}
+                  />
+                </Section>
+                {isOccupied && bedItem?.admissionId ? (
+                  <Section title="Going to">
+                    <div className={styles.cardInner}>
+                      {/* WH1 (Josh, 3 Nov 2026): kit chips in place of the browser drop-down. */}
+                      <ChoiceChips
+                        label="Where are they going?"
+                        items={
+                          allDestinations
+                            ? LEAVING_CHOICES
+                            : LEAVING_CHOICES.filter(
+                                (choice, index) =>
+                                  index < COMMON_DESTINATIONS || choice.id === drawerLeavingDestination,
+                              )
+                        }
+                        value={drawerLeavingDestination}
+                        onChange={setDrawerLeavingDestination}
+                        testId="drawer-leaving-dest"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={styles.quiet}
+                        aria-expanded={allDestinations}
+                        onClick={() => setAllDestinations((all) => !all)}
+                      >
+                        {allDestinations ? "Fewer places" : `All ${LEAVING_CHOICES.length} places`}
+                      </Button>
+                      {bedItem.catchmentCommunityTeam ? (
+                        <p className={styles.meta}>
+                          <Icon icon={MapPin} size={14} />
+                          <span className={styles.ell}>
+                            Community team{bedItem.suburb ? ` for ${bedItem.suburb}` : ""}:{" "}
+                            {bedItem.catchmentCommunityTeam}
+                          </span>
+                        </p>
+                      ) : null}
+                      {leavePaper}
+                    </div>
                   </Section>
-                  {criteriaCard}
-                  {sentJourneyControls ? (
-                    <Section title="Movement this ward sent">
-                      <div className={styles.cardInner}>{sentJourneyControls}</div>
-                    </Section>
-                  ) : null}
-                  {isOccupied && bedItem?.admissionId ? (
-                    <Section title="Going to">
-                      <div className={styles.cardInner}>
-                        <select
-                          id="drawer-leaving-dest"
-                          aria-label="Where are they going?"
-                          className={styles.select}
-                          value={drawerLeavingDestination}
-                          onChange={(e) => {
-                            setDrawerLeavingDestination(e.target.value as LeavingDestination);
-                          }}
-                        >
-                          {LEAVING_DESTINATIONS.map((destination) => (
-                            <option key={destination.id} value={destination.id}>
-                              {destination.label}
-                            </option>
-                          ))}
-                        </select>
-                        {bedItem.catchmentCommunityTeam ? (
-                          <p className={styles.meta}>
-                            <Icon icon={MapPin} size={14} />
-                            <span className={styles.ell}>
-                              Community team{bedItem.suburb ? ` for ${bedItem.suburb}` : ""}:{" "}
-                              {bedItem.catchmentCommunityTeam}
-                            </span>
-                          </p>
-                        ) : null}
-                      </div>
-                    </Section>
-                  ) : null}
-                </>,
-              )}
-              {panel(
-                "time",
-                <Section title="Timeline">
-                  {timeline.length > 0 ? (
-                    <ul className={styles.timeline}>
-                      {timeline.map((event) => (
-                        <li key={`${event.label}-${event.at}`}>
-                          <StatusGlyph tone={event.tone} />
-                          <span className={styles.timelineAt}>{formatInstantWithDay(event.at, now)}</span>
-                          <span className={styles.ell}>{event.label}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className={styles.empty}>Nothing recorded for this stay yet.</p>
-                  )}
-                </Section>,
-              )}
-            </div>
-          </>
+                ) : null}
+                {criteriaCard}
+                {sentJourneyControls ? (
+                  <Section title="Movement this ward sent">
+                    <div className={styles.cardInner}>{sentJourneyControls}</div>
+                  </Section>
+                ) : null}
+              </>,
+            )}
+            {history}
+          </div>
         )}
 
-        <footer className={styles.drawerFoot}>
+        <footer className={cx(styles.drawerFoot, styles.footBand)}>
           {isReady ? (
-            <>
+            <div className={styles.bandActions}>
               {isPreparing && onMarkReady ? (
-                <Button variant="pri" size="lg" className={styles.pill} onClick={onMarkReady}>
+                <Button variant="pri" className={cx(styles.pill, styles.bandMain)} onClick={onMarkReady}>
                   Ready
                 </Button>
               ) : null}
-              <Link
-                className={buttonClass({
-                  variant: isPreparing && onMarkReady ? "sec" : "pri",
-                  size: "lg",
-                  className: styles.pill,
-                })}
-                href="/ward-flow/referrals"
-              >
-                Review current referrals
-              </Link>
-              {onOpenBoard && !isPreparing ? (
-                <Button variant="sec" size="lg" className={styles.pill} onClick={onOpenBoard}>
-                  Place someone here
-                </Button>
-              ) : null}
-            </>
+              <div className={styles.bandRow}>
+                <Link
+                  className={buttonClass({
+                    variant: isPreparing && onMarkReady ? "onHero" : "pri",
+                    className: cx(styles.pill, !(isPreparing && onMarkReady) && styles.bandMain),
+                  })}
+                  href="/ward-flow/referrals"
+                >
+                  Review current referrals
+                </Link>
+                {onOpenBoard && !isPreparing ? (
+                  <Button variant="onHero" className={styles.pill} onClick={onOpenBoard}>
+                    Place someone here
+                  </Button>
+                ) : null}
+              </div>
+            </div>
           ) : (
             <>
               {isOccupied && bedItem?.admissionId ? (
                 <>
-                  {/* The destination is chosen on Plan to leave, so the footer always says which one
+                  {/* The destination is chosen on Leaving, so the footer always says which one
                       "Record that they have left" will record. */}
                   <p className={styles.footDestination} id="drawer-leaving-summary">
-                    Going to{" "}
-                    <strong>
-                      {LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label}
-                    </strong>
-                    {tab !== "plan" ? (
+                    Going to <strong>{leavingLabel}</strong>
+                    {tab !== "leave" ? (
                       <button
                         type="button"
                         className={styles.footChange}
                         onClick={() => {
-                          setTab("plan");
+                          setTab("leave");
                         }}
                       >
                         Change
@@ -1069,14 +1209,13 @@ export function WardBedDossierDrawer({
                       {criteriaDepartureNote}
                     </p>
                   ) : null}
-                  {leavePaper}
                 </>
               ) : null}
-              <BedActions actions={bedActions} mainId={mainId} />
+              <BedActions band actions={bedActions} mainId={mainId} />
               {roleLockNote}
             </>
           )}
-          <BedClosureControls {...bedClosure} size="lg" />
+          <BedClosureControls {...bedClosure} />
         </footer>
       </aside>
       {confirmDialog}

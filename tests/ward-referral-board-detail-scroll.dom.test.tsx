@@ -51,7 +51,7 @@ describe("Referral board detail panel scroll (H-0369)", () => {
     const scroll = trackScroll(detail);
     scroll.scrollTo(240);
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Summary" })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Referral" })[0]!);
     expect(scroll.top).toBe(240);
     act(() => {
       fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });

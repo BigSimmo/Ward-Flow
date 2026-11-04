@@ -122,7 +122,7 @@ describe("referral letter and ISBAR copies", () => {
     expect(lines(text)[0]).toBe("Synthetic prototype. Draft 10:46 AWST.");
     expect(text).not.toMatch(UMRN);
     expect(text).not.toMatch(/^UMRN/m);
-    expect(text).toContain("Name: Alex Testperson");
+    expect(text).toContain("PATIENT\nAlex Testperson · 41, female · Midland");
   });
 
   it("copies the ISBAR note without the UMRN", () => {

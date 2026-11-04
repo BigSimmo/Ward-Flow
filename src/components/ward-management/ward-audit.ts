@@ -1,4 +1,5 @@
 import { communityTeamById } from "./community/community-derivations";
+import { stepUndoSubjectId } from "./ward-flow-subject-id";
 import { validCareChange, type CareChange } from "./ward-care-journey";
 import {
   ADMISSION_STATES,
@@ -48,7 +49,6 @@ import {
   bedPlacementUndoFor,
   referralDecisionUndoFor,
   stepUndoFor,
-  undoStepSubjectId,
   UNDO_STEP_TYPES,
   type UndoableStepAction,
   type UndoStepType,
@@ -376,6 +376,9 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
     case "UNDO_BED_MEETING_ACTION":
+    case "UNDO_BED_STEP":
+    case "UNDO_RELEASE_STEP":
+    case "UNDO_PATIENT_RECORD":
       return "undo";
     case "PLACE_IN_BED":
     case "UNDO_PLACE_IN_BED":
@@ -646,9 +649,12 @@ export function captureAuditEvent(
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
-    case "UNDO_BED_MEETING_ACTION": {
+    case "UNDO_BED_MEETING_ACTION":
+    case "UNDO_BED_STEP":
+    case "UNDO_RELEASE_STEP":
+    case "UNDO_PATIENT_RECORD": {
       const record = UNDO_STEP_TYPES.includes(event.type)
-        ? stepUndoFor(before.undoRecords, event.type, undoStepSubjectId(event))
+        ? stepUndoFor(before.undoRecords, event.type, stepUndoSubjectId(event))
         : undefined;
       captured = {
         ...base,

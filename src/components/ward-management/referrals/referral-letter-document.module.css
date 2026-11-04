@@ -1,0 +1,234 @@
+/* RF2 (4 Nov 2026): the referral letter as paper. Shell tokens follow the theme on screen and are
+ * forced light in print (ward-flow-shell-tokens.module.css), so the PDF is always ink on white. */
+.paper {
+  --letter-ink: var(--ink);
+  --letter-ink-2: var(--ink-soft);
+  --letter-ink-3: var(--muted);
+  --letter-line: var(--line);
+  --letter-tint: var(--surface-2);
+  display: grid;
+  gap: var(--wf-s-4);
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: var(--wf-s-6);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--surface);
+  box-shadow: var(--wf-e1);
+  color: var(--letter-ink);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: var(--wf-s-3);
+  border-bottom: 2px solid var(--letter-ink);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--letter-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  line-height: var(--wf-lh-11);
+  text-transform: uppercase;
+}
+
+.title {
+  margin: var(--wf-s-1) 0 0;
+  font-size: var(--wf-fs-20);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-20);
+  line-height: var(--wf-lh-20);
+}
+
+.stamp {
+  margin: 0;
+  color: var(--letter-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.toConfirm {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--wf-r-sm);
+  background: var(--warn-soft);
+  color: var(--letter-ink);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.toConfirm strong {
+  margin-right: var(--wf-s-1);
+}
+
+.patient {
+  display: grid;
+  gap: 2px;
+}
+
+.name {
+  margin: 0;
+  font-size: var(--wf-fs-16);
+  font-weight: 650;
+  line-height: var(--wf-lh-16);
+}
+
+.patientMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--wf-s-3);
+  margin: 0;
+  color: var(--letter-ink-2);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.keyStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--letter-line);
+  border-radius: var(--wf-r-md);
+  background: var(--letter-tint);
+}
+
+.keyStrip > div {
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.keyStrip > div + div {
+  border-left: 1px solid var(--letter-line);
+}
+
+.keyStrip dt,
+.details dt {
+  color: var(--letter-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  line-height: var(--wf-lh-11);
+  text-transform: uppercase;
+}
+
+.keyStrip dd,
+.details dd {
+  margin: 2px 0 0;
+  font-weight: 550;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-3) var(--wf-s-4);
+  margin: 0;
+}
+
+.missing {
+  color: var(--wf-warning-ink);
+  font-weight: 500;
+}
+
+.prose {
+  display: grid;
+  gap: var(--wf-s-1);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--letter-line);
+}
+
+.prose h4 {
+  margin: var(--wf-s-2) 0 0;
+  color: var(--letter-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  line-height: var(--wf-lh-11);
+  text-transform: uppercase;
+}
+
+.prose h4:first-child {
+  margin-top: 0;
+}
+
+.prose p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.signoff {
+  display: grid;
+  gap: var(--wf-s-1);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--letter-line);
+}
+
+.referrer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--wf-s-3);
+  margin: 0;
+  color: var(--letter-ink-2);
+}
+
+.referrer strong {
+  color: var(--letter-ink);
+}
+
+@media (max-width: 743px) {
+  .paper {
+    padding: var(--wf-s-4);
+    border-radius: var(--wf-r-md);
+  }
+
+  .keyStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .keyStrip > div:nth-child(3) {
+    border-left: 0;
+  }
+
+  .keyStrip > div:nth-child(n + 3) {
+    border-top: 1px solid var(--letter-line);
+  }
+
+  .details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media print {
+  .paper {
+    max-width: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    font-size: 10.5pt;
+  }
+
+  .keyStrip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-radius: 0;
+  }
+
+  .toConfirm {
+    border: 1px solid var(--letter-ink);
+    border-radius: 0;
+  }
+
+  .details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

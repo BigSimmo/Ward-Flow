@@ -131,7 +131,7 @@ describe.each<Surface>(["live card", "shell banner", "Pull now card"])(
       const dialog = await screen.findByRole("alertdialog", { name: "Stand down this alert?" });
       expect(dialog).toHaveTextContent(ALERT.title);
       expect(dialog).toHaveTextContent(ALERT.targetScopeLabel);
-      await waitFor(() => expect(within(dialog).getByRole("button", { name: "Keep active" })).toHaveFocus());
+      await waitFor(() => expect(within(dialog).getByRole("button", { name: "Keep as is" })).toHaveFocus());
       expect(onStandDown).not.toHaveBeenCalled();
       expect(nativeConfirm).not.toHaveBeenCalled();
     });
@@ -140,7 +140,7 @@ describe.each<Surface>(["live card", "shell banner", "Pull now card"])(
       const { trigger, onStandDown } = setup(surface);
       fireEvent.click(trigger);
       const dialog = await screen.findByRole("alertdialog");
-      fireEvent.click(within(dialog).getByRole("button", { name: "Keep active" }));
+      fireEvent.click(within(dialog).getByRole("button", { name: "Keep as is" }));
       await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
       expect(onStandDown).not.toHaveBeenCalled();
       expect(trigger).toHaveFocus();

@@ -102,6 +102,7 @@ import { publishedThresholds } from "@/components/ward-management/settings/setti
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
+import { SettingsDraftsCard } from "./settings-drafts-card";
 import { SettingsProfileCard } from "./settings-profile-card";
 import { SettingsSaveBar } from "./settings-save-bar";
 import {
@@ -982,6 +983,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const youContent = (
     <div className={rx.accessStack}>
       <SettingsProfileCard now={now} />
+      {role === "executive" ? null : <SettingsDraftsCard />}
       {role === "admin" ? null : accessPanels}
     </div>
   );

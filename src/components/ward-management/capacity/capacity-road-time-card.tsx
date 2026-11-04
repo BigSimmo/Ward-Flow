@@ -4,7 +4,7 @@
 // ward one row with its drive time on the right, and the two caveats together in one quiet foot.
 // The ranking, the five-row limit and both caveat sentences are unchanged.
 
-import { ChevronDown, MapPin } from "lucide-react";
+import { ChevronDown, Route } from "lucide-react";
 import { useState } from "react";
 
 import { Card, CardHead, Menu, cx, durMinutes } from "@/components/wf";
@@ -50,7 +50,7 @@ export function RoadTimeCard({
   return (
     <Card as="section" aria-labelledby="capacity-road-title" data-testid="capacity-road-time">
       <CardHead
-        icon={MapPin}
+        icon={Route}
         id="capacity-road-title"
         title="Nearest ready beds"
         action={
@@ -69,7 +69,7 @@ export function RoadTimeCard({
               <button type="button" {...props} className={styles.rtPicker}>
                 <span className={styles.rtPickerFrom}>From</span>
                 {ed === undefined ? "Choose ED" : <SpelledCodes text={`${ed.siteCode} ED`} />}
-                <ChevronDown size={14} aria-hidden="true" />
+                <ChevronDown strokeWidth={1.75} size={14} aria-hidden="true" />
               </button>
             )}
           />

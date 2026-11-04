@@ -1,5 +1,6 @@
 "use client";
 
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { edJourneySummaries } from "@/components/ward-management/ed/ed-home-derivations";
 
 import { useState, type ReactNode } from "react";
@@ -171,9 +172,10 @@ function OperationalStatisticsEdScreen({
     return {
       department: each,
       figures,
-      breached: figures.departmentMovements.filter(
-        (movement) => movement.legalForm?.dueAt !== undefined && isClockBreached(movement.legalForm.dueAt, now),
-      ).length,
+      breached: figures.departmentMovements.filter((movement) => {
+        const dueAt = currentLegalDueAt(movement);
+        return dueAt !== undefined && isClockBreached(dueAt, now);
+      }).length,
     };
   });
 

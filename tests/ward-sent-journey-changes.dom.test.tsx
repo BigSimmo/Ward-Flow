@@ -100,7 +100,7 @@ function renderDossier() {
       onKeyDown={() => {}}
     />,
   );
-  fireEvent.click(screen.getByRole("tab", { name: "Plan to leave" }));
+  fireEvent.click(screen.getByRole("tab", { name: "Leaving" }));
 }
 
 describe("the sending ward's own journey (D-80)", () => {

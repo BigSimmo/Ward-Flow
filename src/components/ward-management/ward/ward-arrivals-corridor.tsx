@@ -620,7 +620,7 @@ export function WardArrivalsCorridor({
         size="sm"
         title="Release pulled bed?"
         description={`The bed pulled for ${releaseHeldMovement ? resolvePatientIdentity(releaseHeldMovement).displayName : "this patient"} is offered again.`}
-        secondary={[{ label: "Cancel", onAction: () => setReleaseHeldId(null) }]}
+        secondary={[{ label: "Keep as is", onAction: () => setReleaseHeldId(null) }]}
         primary={{
           label: "Release pulled bed",
           onAction: () => {
@@ -652,7 +652,7 @@ export function WardArrivalsCorridor({
         size="sm"
         title="Release pulled bed?"
         description={`The bed pulled at ${unit.name} for ${releaseDivertedMovement ? resolvePatientIdentity(releaseDivertedMovement).displayName : "this patient"} is offered again and the diverted movement is closed. This cannot be undone.`}
-        secondary={[{ label: "Cancel", onAction: () => setReleaseDivertedId(null) }]}
+        secondary={[{ label: "Keep as is", onAction: () => setReleaseDivertedId(null) }]}
         primary={{
           label: "Release pulled bed",
           onAction: () => {

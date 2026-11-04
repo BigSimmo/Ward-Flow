@@ -8,6 +8,8 @@ import type { BedReleaseBlocker } from "@/components/ward-management/ward-change
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
+import { useUndoableStep } from "../use-undoable-step";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -42,7 +44,7 @@ type WardScreenBedDrawerProps = {
   bedDrawerRef: RefObject<HTMLElement | null>;
   handleBedDrawerKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
   moveStayOnBoard: (bedNumber: number) => void;
-  setActiveTab: Dispatch<SetStateAction<"attn" | "board" | "coming" | "out" | "beds" | "return">>;
+  setActiveTab: Dispatch<SetStateAction<"attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return">>;
   raiseReferralGate: RoleGate;
   handleRaiseWardReferral: (bedOverride?: unknown) => void;
   fullWardReferralHref: (patientId?: string | undefined) => string;
@@ -101,6 +103,13 @@ export function WardScreenBedDrawer({
   // The legal-status helpers read the arrived booking too (review: CodeRabbit).
   const legalRecords = useWardFlowSelect("movements", "patients", "plannedAdmissions");
   const completeCommand = useWardCommandCompletion();
+  const { rejections } = useWardFlowSelect("rejections");
+  const { run: runBedStep } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: !pathname || routeRole === "ward" ? "ward" : routeRole,
+  });
   function recordFeedback(record: () => ReturnType<WardCommandDispatch>, success: string) {
     completeCommand(`bed:${selectedBed}`, record, (outcome) => {
       // A refusal says what was refused and that nothing changed; a failed save stays unconfirmed.
@@ -122,11 +131,25 @@ export function WardScreenBedDrawer({
   // three the blocker handler names. A ward route (or no route) sends as the ward screen does.
   const bedClosureAllowed =
     !pathname || routeRole === "ward" || routeRole === "bed_manager" || routeRole === "coordinator";
-  const raiseBedClosure = !pathname || routeRole === "ward" ? raise : raiseAsRouteRole;
+  // Tier 1 item 6 (Josh, 4 Nov 2026): closing or reopening a bed offers Undo on its toast.
+  const bedClosureRole: WardFlowRole = !pathname || routeRole === "ward" ? "ward" : routeRole;
   const setBedClosed = (bedNumber: number, closed: boolean) =>
-    recordFeedback(
-      () => raiseBedClosure("SET_BED_CLOSED", { unitId: unit.id, actingUnitId: unitId, bedNumber, closed }),
-      closed ? `Bed ${bedNumber} closed. It is not offered until it is reopened.` : `Bed ${bedNumber} reopened.`,
+    runBedStep(
+      { type: "SET_BED_CLOSED", role: bedClosureRole, now, unitId: unit.id, actingUnitId: unitId, bedNumber, closed },
+      {
+        success: closed
+          ? `Bed ${bedNumber} closed. It is not offered until it is reopened.`
+          : `Bed ${bedNumber} reopened.`,
+        undo: (at) => ({
+          type: "UNDO_BED_STEP",
+          role: bedClosureRole,
+          now: at,
+          unitId: unit.id,
+          bedNumber,
+          ...(bedClosureRole === "ward" ? { actingUnitId: unitId } : {}),
+        }),
+        undone: closed ? `Undone. Bed ${bedNumber} is open again.` : `Undone. Bed ${bedNumber} is closed again.`,
+      },
     );
   return selectedBed !== null
     ? (() => {

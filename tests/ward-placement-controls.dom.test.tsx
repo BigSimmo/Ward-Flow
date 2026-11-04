@@ -258,7 +258,7 @@ describe("candidate placement documentation", () => {
 });
 
 describe("stopped transport: release pulled bed asks first (Audit 1, CS-07)", () => {
-  it("names the person and UMRN, and records nothing on Cancel", () => {
+  it("names the person and UMRN, and records nothing on Keep as is", () => {
     const state = seedWardFlowState();
     const movement = state.movements.find((m) => m.acceptedUnitId)!;
     const unit = state.units.find((u) => u.id === movement.acceptedUnitId)!;
@@ -293,7 +293,7 @@ describe("stopped transport: release pulled bed asks first (Audit 1, CS-07)", ()
     expect(screen.getByTestId("ward-release-stopped-identity")).toHaveTextContent(
       "Check: PATIENT, Synthetic · UM000001",
     );
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
     expect(dispatch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId(`ward-release-stopped-bed-${movement.id}`));
     fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));

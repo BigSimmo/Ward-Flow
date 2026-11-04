@@ -130,3 +130,10 @@
     width: min(36rem, calc(100vw - 2rem));
   }
 }
+
+/* A tip is screen help only. A fixed card prints on every page of the downtime pack and board. */
+@media print {
+  .hint {
+    display: none !important;
+  }
+}

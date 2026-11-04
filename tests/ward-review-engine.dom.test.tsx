@@ -156,6 +156,7 @@ describe("review caller regressions", () => {
     );
     expect(free).toBeDefined();
     fireEvent.click(free!);
+    fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
     const after = JSON.parse(screen.getByTestId("arm").textContent!);
     expect(after).toEqual({ ...before, heldBedNumber: Number(free!.dataset.testid!.replace("ward-board-bed-", "")) });
     expect(screen.getByTestId("accept-count")).toHaveTextContent("1");

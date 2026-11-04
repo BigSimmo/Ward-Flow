@@ -291,10 +291,13 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     // Closed · Occupied. The two seeded pulls on this ward are their own box, out of Occupied, and
     // the empty bed the ward is not offering is Closed — "Held" now means only a leave bed. No
     // Blocked chip: out of service is not recorded (owner ruling 2026-09-25) and folds into Closed.
-    expect(chipRow).toHaveTextContent("Ready 1");
+    // Integration QA (3 Nov 2026): Ready and Occupied sit once, in the hero, not in this row.
+    expect(screen.getByTestId("ward-hero-ready")).toHaveTextContent("1");
+    expect(screen.getByRole("region", { name: "Ward capacity" })).toHaveTextContent(/16\s*Occupied/u);
+    expect(chipRow).not.toHaveTextContent("Ready");
+    expect(chipRow).not.toHaveTextContent("Occupied");
     expect(chipRow).toHaveTextContent("Pulled 2");
     expect(chipRow).toHaveTextContent("Closed 1");
-    expect(chipRow).toHaveTextContent("Occupied 16");
     expect(chipRow).not.toHaveTextContent("Held");
     expect(chipRow).not.toHaveTextContent("Blocked Not recorded");
   });

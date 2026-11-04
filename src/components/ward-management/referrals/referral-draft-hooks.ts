@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { draftSessionVersion, readSessionDraft, sessionDraftKey } from "../ward-session-drafts";
+import { draftSessionVersion, readSessionDraft, removeSessionDraft, sessionDraftKey } from "../ward-session-drafts";
+import { useWardFlowSelect } from "../ward-flow-provider";
+import { resolveSubjectPatient } from "../ward-patient-resolver";
+import { PATIENT_KEY_PREFIX } from "./referral-patient-key";
 import {
   REFERRAL_DRAFT_AUTOSAVE_MS,
   referralDraftSessionVersion,
@@ -83,14 +86,14 @@ export function useReferralDraftAutosave<T>({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [ownerVersion] = useState(referralDraftSessionVersion);
   const [sessionOwner] = useState(draftSessionVersion);
-  const latest = useRef({ draft, draftJson, contentJson, enabled, dirty });
+  const latest = useRef({ draft, draftJson, contentJson, enabled, dirty, storageKey });
   const lastKeptJson = useRef<string | null>(initialKeptJson);
   const stoppedPermanently = useRef(false);
   const stoppedContentJson = useRef<string | null>(null);
   const reopened = initialKeptJson !== null;
 
   useEffect(() => {
-    latest.current = { draft, draftJson, contentJson, enabled, dirty };
+    latest.current = { draft, draftJson, contentJson, enabled, dirty, storageKey };
   });
 
   useEffect(() => {
@@ -163,8 +166,9 @@ export function useReferralDraftAutosave<T>({
         }
         return;
       }
+      // The key can move to the chosen person's own after mount, so settle under the current one.
       if (current.draftJson !== lastKeptJson.current) {
-        keepReferralDraft(current.draft, ownerVersion, storageKey);
+        keepReferralDraft(current.draft, ownerVersion, current.storageKey);
       }
     },
     // `reopened` is fixed for the sheet's life.
@@ -205,4 +209,37 @@ export function useReferralDraftAutosave<T>({
   }, [ownerVersion, sessionOwner, storageKey]);
 
   return { keptAt, nowMs, stop, keepNow, sessionSaved };
+}
+
+/**
+ * L12 (Josh, 4 Nov 2026): one kept draft per person. Once a person from the register is chosen the
+ * draft is kept under their own key, so starting another referral never replaces it. The previous
+ * key's copy from this sheet is retired when the person changes, as the single slot did before.
+ */
+export function useLiveReferralDraftKey(
+  activePatientKey: string,
+  openedKey: string,
+  keepsAnotherPersonsDraft: boolean,
+): string {
+  const { scenario, worldGeneration, movements, patients, referrals } = useWardFlowSelect(
+    "scenario",
+    "worldGeneration",
+    "movements",
+    "patients",
+    "referrals",
+  );
+  // A registered person with an open movement is chosen by the movement id, so resolve it to them.
+  const movement = movements.find((entry) => entry.id === activePatientKey);
+  const personId = activePatientKey.startsWith(PATIENT_KEY_PREFIX)
+    ? activePatientKey.slice(PATIENT_KEY_PREFIX.length)
+    : movement
+      ? resolveSubjectPatient(movement, { movements, patients, referrals }).patient?.id
+      : undefined;
+  const liveKey = personId ? sessionDraftKey(`${scenario}/${worldGeneration}`, "referral", personId) : openedKey;
+  const previousKey = useRef(liveKey);
+  useEffect(() => {
+    if (previousKey.current !== liveKey && !keepsAnotherPersonsDraft) removeSessionDraft(previousKey.current);
+    previousKey.current = liveKey;
+  }, [liveKey, keepsAnotherPersonsDraft]);
+  return liveKey;
 }
