@@ -3,7 +3,7 @@
 // The Alerts screen's hero: the phone hero with its directive card and Today sheet, or the desktop
 // hero with its figures, broadcast and tools. Moved out of `alerts-screen.tsx` for the line cap.
 import type { ReactNode, RefObject } from "react";
-import { Bell, BellRing, ChevronRight, Copy, MoreHorizontal, Pause, Play, Radio } from "lucide-react";
+import { Bell, BellRing, ChevronRight, Copy, Ellipsis, Pause, Play, Radio } from "lucide-react";
 
 import {
   Button,
@@ -233,7 +233,7 @@ export function AlertsHero({
                         }}
                         className={phoneRows.heroPill}
                         variant="onHero"
-                        icon={MoreHorizontal}
+                        icon={Ellipsis}
                         aria-label="More alert actions"
                       />
                     )}

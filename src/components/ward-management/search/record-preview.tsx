@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { formTitleForCode } from "@/lib/form-register";
@@ -624,7 +625,7 @@ export function RecordPreview({
                 onClick={() => setActionNotice(null)}
                 aria-label="Dismiss notice"
               >
-                ✕
+                <X aria-hidden="true" size={16} strokeWidth={1.75} />
               </button>
             </div>
           )}
@@ -1088,7 +1089,7 @@ export function RecordPreview({
               onClick={() => setActionNotice(null)}
               aria-label="Dismiss notice"
             >
-              ✕
+              <X aria-hidden="true" size={16} strokeWidth={1.75} />
             </button>
           </div>
         )}

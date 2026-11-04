@@ -3,7 +3,7 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Star, Users } from "lucide-react";
+import { ChevronDown, Clock, Copy, Mail, MapPin, Ellipsis, Printer, Star, Users } from "lucide-react";
 import { MINUTES_PER_DAY, dayOf, minuteOfDay } from "@/components/ward-management/ward-clock";
 import {
   useOptionalWardFlowSelect,
@@ -616,7 +616,7 @@ export function OnCallScreen() {
                     aria-label="More on-call tools"
                     data-testid="ward-on-call-phone-more"
                   >
-                    <Icon icon={MoreHorizontal} size={20} />
+                    <Icon icon={Ellipsis} size={20} />
                   </button>
                 )}
               />

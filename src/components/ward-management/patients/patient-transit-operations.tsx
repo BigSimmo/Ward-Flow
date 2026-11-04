@@ -5,7 +5,7 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowRight, BedDouble, Check, Hospital, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight, BedSingle, Check, Hospital, ShieldCheck, Ambulance } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { candidateReason, eligibility, gateMark } from "../ward-eligibility";
 import { stageCopy } from "../ward-derivations";
@@ -510,7 +510,7 @@ export function PatientTransitOperations({
               Placement &amp; dispatch deck
             </h3>
           </div>
-          <Truck size={21} aria-hidden="true" />
+          <Ambulance size={21} aria-hidden="true" />
         </div>
         <div className={styles.cardBody}>
           <div className={styles.destination}>
@@ -573,7 +573,7 @@ export function PatientTransitOperations({
                   );
                 }}
               >
-                <BedDouble size={16} aria-hidden="true" />
+                <BedSingle size={16} aria-hidden="true" />
                 Pull the bed
               </button>
               {holdGate.note}
@@ -1029,7 +1029,7 @@ export function PatientTransitOperations({
             <small>{movement.referredUnitIds.length} open ward referrals</small>
           </div>
           <div>
-            <BedDouble size={18} aria-hidden="true" />
+            <BedSingle size={18} aria-hidden="true" />
             <span>Bed reservation</span>
             <strong>{heldBed ? (heldBed.state === "occupied" ? "Occupied" : "Bed pulled") : "No bed pulled"}</strong>
             <small>
@@ -1051,7 +1051,7 @@ export function PatientTransitOperations({
             </small>
           </div>
           <div>
-            <Truck size={18} aria-hidden="true" />
+            <Ambulance size={18} aria-hidden="true" />
             <span>Transport</span>
             <strong>{activeJob ? job.provider : noTransport ? "Not required" : "Awaiting booking"}</strong>
             <small>
