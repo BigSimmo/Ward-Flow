@@ -326,6 +326,8 @@ describe("Add patient uncertain shared save", () => {
     );
     const view = open(dispatch);
     await screen.findByTestId("ward-add-patient-rejection");
+    // The leave guard learns the form is dirty in an effect after this render; Back must wait for it.
+    await act(async () => {});
     const navigate = vi.fn(() => view.unmount());
     window.addEventListener("popstate", navigate);
     try {
