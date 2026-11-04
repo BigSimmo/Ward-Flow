@@ -16,12 +16,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 /**
- * P109 (27 Oct 2026): phone Home dropped the hero's Checking strip, so a stale bed count or a ward
- * not reporting was invisible on a phone. It now shows as a collapsed strip whose summary carries
- * both counts; opening it shows the full Checking list.
+ * P109 (27 Oct 2026): a stale bed count or a ward not reporting must stay visible on a phone.
+ * Plan 2i (Josh, 4 Nov 2026, question 5): the phone hero folds to its title and next step, so the
+ * Checking line now sits under the step, and the hero foot is not drawn on a phone.
  */
-describe("phone Home Checking strip", () => {
-  it("shows the stale-count summary collapsed, with the full Checking list inside", () => {
+describe("phone Home Checking line", () => {
+  it("shows both stale counts under the next step, once", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ToastProvider>
@@ -29,12 +29,9 @@ describe("phone Home Checking strip", () => {
         </ToastProvider>
       </WardFlowProvider>,
     );
-    const summary = screen.getByText(/^Checking: \d+ stale bed counts?, \d+ wards? not reporting$/);
-    const details = summary.closest("details");
-    expect(details).not.toBeNull();
-    expect(details).not.toHaveAttribute("open");
-    // The hero foot does not wrap, so the summary carries the class that lets it wrap on a narrow phone.
-    expect(details?.className).toMatch(/checkingPhone/);
-    expect(details).toContainElement(screen.getByTestId("wf-checking-foot"));
+    const line = screen.getByText(/^Checking: \d+ stale bed counts?, \d+ wards? not reporting$/);
+    expect(line).toHaveAttribute("data-testid", "home-next-checking");
+    expect(line.closest("[data-wf-hero-next]")).not.toBeNull();
+    expect(screen.queryByTestId("wf-checking-foot")).not.toBeInTheDocument();
   });
 });

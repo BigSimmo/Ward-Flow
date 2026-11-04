@@ -1064,20 +1064,9 @@ export function CoordinatorScreen() {
                 <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
               )
             }
-            foot={
-              isPhone ? (
-                // P109 (27 Oct 2026): a phone keeps the Checking strip, collapsed, so stale counts still show.
-                <details className={styles.checkingPhone}>
-                  <summary>
-                    Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"},{" "}
-                    {wardsNotReporting} {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
-                  </summary>
-                  {checkingFoot}
-                </details>
-              ) : checksOpen ? (
-                checkingFoot
-              ) : undefined
-            }
+            // A phone folds the hero to its title and next step, so the foot is not drawn there; the
+            // stale counts stay visible as the Checking line under the step (2i question 5).
+            foot={!isPhone && checksOpen ? checkingFoot : undefined}
           />
 
           {heroPanel && !isPhone ? (
