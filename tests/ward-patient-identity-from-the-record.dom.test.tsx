@@ -120,7 +120,7 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    // Q181 (1 Nov 2026): notices sit in Now (unread) and Earlier today (read).
+    // Q181 (1 Nov 2026), AL2 (3 Nov 2026): notices sit in Open (unread) and Cleared (read).
     const feeds = () => [
       screen.queryByRole("region", { name: "Notices" }),
       screen.queryByRole("region", { name: "Notices read" }),
@@ -131,7 +131,7 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
         .join(" ");
     expect(text()).not.toMatch(/Luke Davies/);
     expect(text()).not.toMatch(/WF-0\d\d/);
-    fireEvent.click(screen.getByRole("tab", { name: /^Earlier today/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Cleared/ }));
     expect(text()).not.toMatch(/Luke Davies/);
     expect(text()).not.toMatch(/WF-0\d\d/);
   });
