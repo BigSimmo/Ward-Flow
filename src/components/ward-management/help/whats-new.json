@@ -95,8 +95,8 @@
     "line": "Cancel and reroute unfinished care transfers; clearer reload, partial-save and sign-in recovery."
   },
   {
-    "id": "2026-11-03-one-clock",
+    "id": "2026-11-03-one-alerts-switch",
     "date": "2026-11-03",
-    "line": "One clock in the top bar. When the board stops updating it says so in words, such as Not updating since 10:42."
+    "line": "Settings has one Alerts on this device switch, and Test alert shows a sample alert here in Ward Flow."
   }
 ]

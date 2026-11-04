@@ -76,7 +76,7 @@ export function PopAlerts({ page }: { page: ReactNode }) {
   });
 
   const [open, setOpen] = useState(true);
-  const dismissalGuardRef = useRef<(() => boolean) | null>(null);
+  const dismissalGuardRef = useRef<((retry?: () => void) => boolean) | null>(null);
   const initialFocusRef = useRef<HTMLElement | null>(null);
   const setBodyRef = useCallback((node: HTMLDivElement | null) => {
     initialFocusRef.current = node?.querySelector<HTMLElement>("[data-sheet-autofocus]") ?? null;
