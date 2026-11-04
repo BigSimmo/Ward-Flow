@@ -109,8 +109,9 @@ export function overBudget(measured, budgets) {
     .map(([route, limit]) => ({ route, kb: measured[route], limit }));
 }
 
-// Measurement noise allowed on top of an already-over main before the PR is blamed for the route.
-export const MAIN_TOLERANCE_KB = 0.5;
+// Build-to-build noise allowed on top of an already-over main before the PR is blamed for the route.
+// Two builds of the same main measured 572.7 and 573.7 KB in CI on 4 November 2026.
+export const MAIN_TOLERANCE_KB = 1.5;
 
 /**
  * Decides a pull request whose merged result is over budget, given what main alone measured.

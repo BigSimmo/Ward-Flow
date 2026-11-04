@@ -24,8 +24,12 @@ function run(command, args, cwd) {
   return spawnSync(command, args, { cwd, stdio: "inherit", env: process.env }).status ?? 1;
 }
 
+// Always this checkout's measuring script: main's own copy may predate `--write`. It reads
+// script-budget.json and starts the built app from `cwd`.
+const MEASURE = join(import.meta.dirname, "../check-script-budget.mjs");
+
 function measure(cwd, out) {
-  return run(process.execPath, [join(cwd, "scripts/check-script-budget.mjs"), "--write", out], cwd);
+  return run(process.execPath, [MEASURE, "--write", out], cwd);
 }
 
 /** Builds and measures `mainSha` in its own worktree. Returns the measurement file, or undefined. */
@@ -48,7 +52,7 @@ function measureMain(root, mainSha, outDir) {
     }
     const file = join(outDir, "main.json");
     const status = measure(tree, file);
-    return status === 0 || status === OVER_BUDGET ? file : undefined;
+    return (status === 0 || status === OVER_BUDGET) && existsSync(file) ? file : undefined;
   } catch (error) {
     console.error(`Main alone could not be measured: ${error.message}`);
     return undefined;

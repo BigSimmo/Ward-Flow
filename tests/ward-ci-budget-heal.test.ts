@@ -27,7 +27,7 @@ describe("budget gate: a PR is failed only for growth it caused", () => {
   });
 
   it("fails a PR that grows an already-over route past the tolerance", () => {
-    const { failing } = judgeAgainstMain({ "/a": 490, "/b": 574 }, { "/a": 490, "/b": 572.7 }, budgets);
+    const { failing } = judgeAgainstMain({ "/a": 490, "/b": 574.3 }, { "/a": 490, "/b": 572.7 }, budgets);
     expect(failing.map(({ route }) => route)).toEqual(["/b"]);
   });
 

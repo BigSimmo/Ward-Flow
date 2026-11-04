@@ -177,7 +177,7 @@ required production build red until someone raised the limit by hand. Three part
   `ward-flow-budget-recheck.yml` re-runs that build on armed PRs whenever main moves.
 - **Fair blame.** The budget step is `budget-gate.mjs`. When a PR's merged result is over budget, it
   builds and measures main alone in a separate worktree and fails only routes the PR pushed over,
-  or grew more than 0.5 KB past an already-over main. Inherited overage is a warning. This second
+  or grew more than 1.5 KB (build noise) past an already-over main. Inherited overage is a warning. This second
   build runs only when the merged result is over.
 - **Automatic heal.** Main's build saves its measurements as the `script-budget-measured` artifact.
   When a main run fails and those show a route over budget, `ward-flow-budget-heal.yml` opens one PR
