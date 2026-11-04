@@ -1,0 +1,66 @@
+/* The TV's board switch and live pulse (`tv-board-switch.tsx`), sized by the TV's own type scale. */
+
+.switch {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--wf-line);
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  font-size: var(--tv-least, var(--wf-fs-16));
+}
+
+.item {
+  padding: 0.3em 0.95em;
+  border-radius: 999px;
+  color: var(--wf-ink-2);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.item:hover {
+  color: var(--wf-ink-1);
+}
+
+.item[aria-current="page"] {
+  background: var(--wf-surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+  color: var(--wf-ink-1);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.live {
+  color: var(--wf-success-ink);
+  font-weight: 700;
+}
+
+.live i {
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-right: 0.4em;
+  border-radius: 50%;
+  background: var(--wf-success);
+  vertical-align: 0.08em;
+  animation: tv-live-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes tv-live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 55%, transparent);
+  }
+  60% {
+    box-shadow: 0 0 0 0.45em color-mix(in srgb, var(--wf-success) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live i {
+    animation: none;
+  }
+}

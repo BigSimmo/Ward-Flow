@@ -220,9 +220,11 @@ export const WARD_ED_HREF = "/ward-flow/ed";
 export const WARD_BED_MEETING_TV_HREF = "/ward-flow/bed-meeting";
 
 /** A TV screen: a bed meeting (`?service=` a health service or `all`), one ward (`?ward=`) or one ED (`?ed=`). */
-export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: string } = {}): string {
-  if (view.ward !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ward=${encodeURIComponent(view.ward)}`;
-  if (view.ed !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ed=${encodeURIComponent(view.ed)}`;
+export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: string; board?: string } = {}): string {
+  // A ward or ED screen's board (bed flow, clinical or handover) rides in the link, so a locked TV keeps it.
+  const board = view.board === undefined || view.board === "flow" ? "" : `&board=${encodeURIComponent(view.board)}`;
+  if (view.ward !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ward=${encodeURIComponent(view.ward)}${board}`;
+  if (view.ed !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ed=${encodeURIComponent(view.ed)}${board}`;
   if (view.service !== undefined) return `${WARD_BED_MEETING_TV_HREF}?service=${encodeURIComponent(view.service)}`;
   return WARD_BED_MEETING_TV_HREF;
 }

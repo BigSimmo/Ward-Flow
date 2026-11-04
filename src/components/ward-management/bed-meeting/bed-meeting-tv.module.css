@@ -23,6 +23,13 @@
   container-type: inline-size;
 }
 
+/* The clinical and handover boards (4 Nov 2026) are exactly one screen tall. Their lists page
+ * themselves (`tv-clinical-views.tsx`), so nothing ever scrolls or runs off the bottom. */
+.tv:is([data-board="clinical"], [data-board="handover"]) {
+  height: 100dvh;
+  overflow: hidden;
+}
+
 /* DA-22 (design audit; Josh 20 Oct 2026, "fewer rows"): every view's lists and labels reach 24 px
  * at 1080p, the usual minimum for reading across a room. The bed meeting and ED views show fewer
  * named rows so each still fits one screen; the rest are counted, not lost. */
