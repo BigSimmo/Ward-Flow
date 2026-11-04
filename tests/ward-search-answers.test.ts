@@ -137,7 +137,7 @@ describe("the questions the overall review found unanswered (20 Oct 2026)", () =
 
   it("filters to exactly the rows the census flags, and never reorders them", () => {
     for (const [query, flagged] of [
-      ["transport not booked", (row: (typeof census.rows)[number]) => row.next === "Book transport"],
+      ["transport not booked", (row: (typeof census.rows)[number]) => row.transportNotBooked === true],
       ["escort", (row: (typeof census.rows)[number]) => row.escort],
       ["today", (row: (typeof census.rows)[number]) => row.leavingToday === true],
     ] as const) {
