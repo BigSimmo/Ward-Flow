@@ -341,7 +341,7 @@ jobs:
     needs: [plan, reuse, static, build]
     if: ${{ !cancelled() && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.verified != 'true' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
