@@ -182,7 +182,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     setRepatNotice("Saving return plan. Waiting for confirmation.");
     repatSave.submit(
       () => {
-        const completion = dispatch({ ...event, type: "RECORD_REPATRIATION" });
+        const completion = dispatch(event);
         offerStep(step, { completion });
         return completion;
       },

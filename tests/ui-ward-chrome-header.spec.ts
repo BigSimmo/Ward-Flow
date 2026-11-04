@@ -896,7 +896,7 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   await sections.getByRole("button", { name: "Wards", exact: true }).click();
   await page.keyboard.press("/");
   await expect(sections.getByRole("button", { name: "Patient", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await expect(referral.getByRole("searchbox", { name: "Find a patient" })).toBeFocused();
+  await expect(referral.getByRole("combobox", { name: "Find a patient" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(referral).toBeVisible();
   // The typed reason makes this an unsent draft, so Escape asks before discarding it (8 Oct 2026)

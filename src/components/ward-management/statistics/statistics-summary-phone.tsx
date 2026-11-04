@@ -20,7 +20,7 @@ import {
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 
 import { StatisticsNav } from "./statistics-nav";
@@ -236,8 +236,8 @@ function StatisticsSummaryPhoneView({
   const referralsHeld = [referrals.raised, referrals.accepted, referrals.declined, referrals.open].every(held);
   const [chosenGroup, setGroup] = useState<"hospital" | "ward">("hospital");
   const group = siteDesk ? "ward" : chosenGroup;
-  const { worldGeneration } = useWardFlowSelect("worldGeneration");
-  const owner = `${worldGeneration}:${access.role}:${JSON.stringify(access.scope)}`;
+  // Keyed by desk, not by board state: the executive view renders from the released report alone.
+  const owner = `${access.role}:${JSON.stringify(access.scope)}`;
   const [selection, setSelection] = useState<(Exclude<Sheet, null> & { owner: string }) | null>(null);
   const sheet = selection?.owner === owner ? selection : null;
   const setSheet = (next: Sheet) => setSelection(next ? { ...next, owner } : null);
