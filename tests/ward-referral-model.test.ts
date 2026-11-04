@@ -687,6 +687,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_LEGAL_FORM_WRITTEN: false,
     RECORD_LEGAL_FORM_CODE: false,
     RECORD_ED_PRESENTATION: false,
+    // Gap list items 3 to 7: paper details of a form already recorded. Fixed choices and a typed
+    // date only; it cannot decline or close anything.
+    RECORD_LEGAL_FORM_DETAILS: false,
+    // Gap list item 9: a done mark on a finished seclusion or restraint episode. Refuses no one.
+    RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP: false,
     RECORD_COUNTRY_EXTENSION: false,
     RECORD_LEGAL_FORM_CONTINUATION: false,
     EVALUATE_ARRIVAL_LATENESS: false,

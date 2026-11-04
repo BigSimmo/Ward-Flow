@@ -1848,6 +1848,7 @@ export function reduceClinicalEvent(
     case "RECORD_LEGAL_FORM_WRITTEN":
     case "RECORD_LEGAL_FORM_CODE":
     case "RECORD_ED_PRESENTATION":
+    case "RECORD_LEGAL_FORM_DETAILS":
     case "RECORD_COUNTRY_EXTENSION":
     case "RECORD_LEGAL_FORM_CONTINUATION":
     case "RECORD_HANDOVER_SIGN_OFF":
@@ -1907,6 +1908,7 @@ export function reduceClinicalEvent(
       });
     case "RECORD_RESTRICTIVE_PRACTICE_START":
     case "RECORD_RESTRICTIVE_PRACTICE_END":
+    case "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP":
     case "RECORD_WARD_INCIDENT":
     case "SET_SECLUSION_ROOM_STATUS":
       return reducerSlices().reduceRestrictivePracticeEvent(state, event, decision, { findUnit, reject, replaceUnit });

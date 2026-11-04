@@ -478,6 +478,8 @@ describe("who may raise which event", () => {
     RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward"],
     RECORD_LEGAL_FORM_CODE: ["ed", "coordinator", "ward"],
     RECORD_ED_PRESENTATION: ["ed", "coordinator"],
+    RECORD_LEGAL_FORM_DETAILS: ["ed", "coordinator", "ward"],
+    RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP: ["ward", "coordinator"],
     RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
     RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
     EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],

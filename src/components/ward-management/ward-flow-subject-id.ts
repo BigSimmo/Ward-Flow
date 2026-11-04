@@ -105,6 +105,7 @@ export function subjectId(event: WardFlowEvent): string {
         : "none";
     case "RECORD_RESTRICTIVE_PRACTICE_START":
     case "RECORD_RESTRICTIVE_PRACTICE_END":
+    case "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP":
     case "RECORD_WARD_INCIDENT":
     case "SET_SECLUSION_ROOM_STATUS":
     // Closing the loop, package D (24 Oct 2026): ward-scoped records. The movement-scoped three

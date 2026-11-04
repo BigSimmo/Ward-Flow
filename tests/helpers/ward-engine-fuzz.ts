@@ -1804,6 +1804,23 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
   [
     0.5,
     (state, random) => {
+      const unit = prefer(random, state.units, (candidate) =>
+        (candidate.restrictivePractice?.episodes ?? []).some((episode) => episode.endedAt !== undefined),
+      );
+      const episode = pick(random, unit?.restrictivePractice?.episodes ?? []);
+      return {
+        type: "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        episodeId: episode?.id ?? MISSING_ID,
+        task: pick(random, ["post_release_exam", "sent_to_ocp", "patient_debrief", "staff_debrief"] as const),
+        done: chance(random, 0.8),
+      };
+    },
+  ],
+  [
+    0.5,
+    (state, random) => {
       const unit = pick(random, state.units);
       return {
         type: "RECORD_WARD_INCIDENT",
@@ -2210,6 +2227,15 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     1,
     movementEvent("RECORD_ED_PRESENTATION", undefined, (_state, random) => ({
       presentations: chance(random, 0.2) ? [] : [pick(random, ["Suicidal thoughts", "Psychosis", "Other"] as const)],
+    })),
+  ],
+  [
+    1,
+    // Gap list items 3 to 7: details on the current form, sometimes a stale code, sometimes a clear.
+    movementEvent("RECORD_LEGAL_FORM_DETAILS", undefined, (_state, random, movement) => ({
+      formCode: chance(random, 0.1) ? formCodeFor(random, movement) : (movement.legalForm?.code ?? "1A"),
+      madeBy: chance(random, 0.2) ? null : pick(random, ["psychiatrist", "medical_practitioner", "amhp"] as const),
+      copyGiven: pick(random, ["yes", "declined", "not_yet"] as const),
     })),
   ],
 ];

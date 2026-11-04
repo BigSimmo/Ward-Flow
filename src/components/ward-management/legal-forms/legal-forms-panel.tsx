@@ -21,9 +21,11 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 
 import { LegalFormNextStep, LegalFormSummary } from "./legal-form-card";
+import { LegalFormDetailsSection, type LegalFormDetailsSave } from "./legal-form-details";
 import { formEvents, isOwnedLegalFormCode, recordedFacts, type RecordGap } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
 import { nextStep } from "./legal-forms-next-step";
+import { parseWrittenInstant } from "./legal-forms-sheets";
 import p from "./legal-forms-panel.module.css";
 import {
   writtenDraftFor,
@@ -60,6 +62,8 @@ export function FocusPanel({
   onExtend,
   extendUnavailable,
   onRecordNext,
+  onSaveDetails,
+  detailsUnavailable,
   onRequirements,
   onCopy,
   copied,
@@ -79,13 +83,18 @@ export function FocusPanel({
   onSaveWritten: (draft: WrittenSave, onAccepted: () => void) => void;
   /** Feature 11: why this route's role may not record a form time, if it may not. */
   recordUnavailable?: string;
-  onMarkReceived: () => void;
+  /** Gap list item 1: the time typed from the paper, or undefined to mark it received now. */
+  onMarkReceived: (receivedAt?: Instant) => void;
   /** Feature 11: why this route's role may not mark a form received ("ED only"), if it may not. */
   markReceivedUnavailable?: string;
   onExtend: () => void;
   /** Feature 11: why this route's role may not extend a recorded form, if it may not. */
   extendUnavailable?: string;
   onRecordNext: () => void;
+  /** Gap list items 3 to 7: saves the details typed from the paper. */
+  onSaveDetails: (details: LegalFormDetailsSave, onAccepted: () => void) => void;
+  /** Why this desk may not record form details, if it may not. */
+  detailsUnavailable?: string;
   onRequirements: (code: string) => void;
   onCopy: () => void;
   copied: boolean;
@@ -125,6 +134,13 @@ export function FocusPanel({
   };
 
   const step = nextStep(movement, now);
+  // Gap list item 1: an optional typed receipt time. Blank means now; a time later than now is refused.
+  const [receivedText, setReceivedText] = useState("");
+  const receivedAt = receivedText.trim() === "" ? null : parseWrittenInstant(receivedText, now);
+  const receivedProblem =
+    receivedText.trim() !== "" && receivedAt === null
+      ? "Type the time received as HH:MM, not later than now"
+      : undefined;
 
   return (
     <section className={cx(styles.panel, p.panel)} aria-label={`Form for ${name}`} data-testid="ward-legal-selected">
@@ -266,7 +282,9 @@ export function FocusPanel({
                         {fact.at !== undefined
                           ? fact.gap === "written"
                             ? `Written ${formatInstantWithDay(fact.at, now)} on the form`
-                            : formatInstantWithDay(fact.at, now)
+                            : fact.gap === "received" && movement.legalFormReceivedTyped
+                              ? `${formatInstantWithDay(fact.at, now)}, as typed`
+                              : formatInstantWithDay(fact.at, now)
                           : fact.gap === "examination"
                             ? "Not recorded. Recorded on the ED screen"
                             : "Not recorded"}
@@ -285,16 +303,33 @@ export function FocusPanel({
                       </Button>
                     ) : null}
                     {fact.gap === "received" && fact.at === undefined ? (
-                      <Button
-                        ref={receivedRef}
-                        variant={step.action === "received" ? "pri" : "sec"}
-                        size="sm"
-                        data-testid={`ward-legal-forms-mark-received-${movement.id}`}
-                        onClick={onMarkReceived}
-                        disabledReason={markReceivedUnavailable}
-                      >
-                        Mark Form {legalForm?.code} received
-                      </Button>
+                      <span className={p.receivedControls}>
+                        {/* Gap list item 1: the time on the paper, typed. Blank marks it received now. */}
+                        <TextInput
+                          aria-label="Time received, as on the form. Leave blank for now"
+                          placeholder="Now"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          className={p.receivedTime}
+                          data-testid={`ward-legal-forms-received-time-${movement.id}`}
+                          value={receivedText}
+                          onChange={(event) => setReceivedText(event.target.value)}
+                        />
+                        <Button
+                          ref={receivedRef}
+                          variant={step.action === "received" ? "pri" : "sec"}
+                          size="sm"
+                          data-testid={`ward-legal-forms-mark-received-${movement.id}`}
+                          onClick={() => {
+                            if (receivedProblem) return;
+                            onMarkReceived(receivedAt ?? undefined);
+                          }}
+                          disabledReason={markReceivedUnavailable ?? receivedProblem}
+                          reasonDisplay="tooltip"
+                        >
+                          Mark Form {legalForm?.code} received
+                        </Button>
+                      </span>
                     ) : null}
                     {fact.gap === "examination" && fact.at === undefined && movement.originEdId !== undefined ? (
                       <Link
@@ -311,6 +346,13 @@ export function FocusPanel({
             </div>
           ) : null}
         </>
+
+        <LegalFormDetailsSection
+          movement={movement}
+          dayZero={dayZero}
+          unavailable={detailsUnavailable}
+          onSave={onSaveDetails}
+        />
 
         <div className={p.section}>
           <h3 className={p.eyebrow}>History</h3>

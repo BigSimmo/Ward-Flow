@@ -27,6 +27,15 @@ export type NextStep = {
 export function nextStep(movement: Movement, now: Instant): NextStep {
   const code = movement.legalForm?.code;
   const form = code ? `Form ${code}` : "The form";
+  // Gap list item 5: a form a person recorded as ended asks for nothing more on this page.
+  const endedBy = movement.legalForm?.endedBy;
+  if (endedBy) {
+    return {
+      action: "none",
+      title: "Form ended, as recorded",
+      detail: "Record the next form here when it is made.",
+    };
+  }
   const progression = formProgression(movement);
   if (progression) {
     return {

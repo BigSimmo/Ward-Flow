@@ -338,6 +338,19 @@ export function candidateEvents(
           endedAt: now,
         })),
       );
+    case "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP":
+      return state.units.flatMap((unit) =>
+        (unit.restrictivePractice?.episodes ?? []).map((episode) => ({
+          type,
+          role,
+          now,
+          unitId: unit.id,
+          actingUnitId: unit.id,
+          episodeId: episode.id,
+          task: "sent_to_ocp" as const,
+          done: true,
+        })),
+      );
     case "RECORD_WARD_INCIDENT":
       return unitIds.slice(-1).map((unitId) => ({
         type,
@@ -698,6 +711,20 @@ export function candidateEvents(
         movementId: m.id,
         presentations: ["Suicidal thoughts" as const],
       }));
+    case "RECORD_LEGAL_FORM_DETAILS":
+      // Gap list items 3 to 7: fixed choices and a typed review date on the current form only.
+      return state.movements
+        .filter((m) => m.legalForm !== undefined)
+        .map((m) => ({
+          type,
+          role,
+          now,
+          movementId: m.id,
+          formCode: m.legalForm!.code,
+          madeBy: "psychiatrist" as const,
+          copyGiven: "yes" as const,
+          reviewBy: now + 60,
+        }));
     case "RECORD_LEGAL_FORM_CONTINUATION":
       return state.movements.map((m) => ({
         type,

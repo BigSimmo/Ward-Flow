@@ -32,7 +32,7 @@ import {
   useIsPhone,
 } from "@/components/wf";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
@@ -101,6 +101,7 @@ import {
 import { TYPED_TIME_KEY } from "./legal-time-as-typed";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { PhoneChecklist } from "./legal-forms-phone-checklist";
+import type { LegalFormDetailsSave } from "./legal-form-details";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
@@ -334,11 +335,17 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const recordGate = routeRole === "ward" ? { allowed: false, reason: WARD_RECORDS_ADMITTED } : writtenGate;
   const sheetReason = routeRole === "ward" && admitted.length === 0 ? WARD_RECORDS_ADMITTED : writtenGate.reason;
   const extendGate = gate("RECORD_LEGAL_FORM_EXPIRY");
-  const markReceived = (movement: Movement) => {
+  const markReceived = (movement: Movement, receivedAt?: Instant) => {
     if (receivedUnavailable(movement) !== undefined) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
     runStep(
-      { type: "RECORD_LEGAL_FORM_RECEIVED", role: routeRole, now, movementId: movement.id },
+      {
+        type: "RECORD_LEGAL_FORM_RECEIVED",
+        role: routeRole,
+        now,
+        movementId: movement.id,
+        ...(receivedAt === undefined ? {} : { receivedAt }),
+      },
       {
         success: `Form marked received for ${nameOf(movement)}`,
         undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
@@ -523,6 +530,17 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       },
     );
   };
+  // Gap list items 3 to 7: details typed from the paper. The panel's edit closes once accepted.
+  const saveDetails = (target: Movement, details: LegalFormDetailsSave, onAccepted: () => void) => {
+    if (!recordGate.allowed) return;
+    const formCode = target.legalForm?.code;
+    if (!formCode) return;
+    const completion = raise("RECORD_LEGAL_FORM_DETAILS", { movementId: target.id, formCode, ...details });
+    const closeIfAccepted = (outcome: Awaited<typeof completion>) =>
+      outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true) && onAccepted();
+    if (completion && "then" in completion) void completion.then(closeIfAccepted, () => undefined);
+    else closeIfAccepted(completion);
+  };
   const addTimeTarget = rows.find((movement) => movement.id === addTimeId) ?? null;
   const addTimeRefusal = addTimeTarget
     ? rejections
@@ -545,11 +563,13 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       refusal={lastWrittenRefusal?.reason}
       onSaveWritten={(written, onAccepted) => saveWritten(selected, written, onAccepted)}
       recordUnavailable={recordGate.reason}
-      onMarkReceived={() => markReceived(selected)}
+      onMarkReceived={(receivedAt) => markReceived(selected, receivedAt)}
       markReceivedUnavailable={receivedUnavailable(selected)}
       onExtend={() => setExtendId(selected.id)}
       extendUnavailable={extendGate.reason}
       onRecordNext={() => openRecord(selected.id)}
+      onSaveDetails={(details, onAccepted) => saveDetails(selected, details, onAccepted)}
+      detailsUnavailable={recordGate.reason}
       onRequirements={(code) => setRequirementsCode(code)}
       onCopy={copySelectedSummary}
       copied={copied === "summary"}

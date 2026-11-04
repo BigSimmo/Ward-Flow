@@ -176,6 +176,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // D-72: ids, a choice from a fixed list and a typed time already read to an `Instant`. No typed text.
   "RECORD_RESTRICTIVE_PRACTICE_START",
   "RECORD_RESTRICTIVE_PRACTICE_END",
+  // Gap list item 9: a fixed task id and a done flag. No typed text.
+  "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP",
   "RECORD_WARD_INCIDENT",
   "SET_SECLUSION_ROOM_STATUS",
   // Closing the loop, package D (24 Oct 2026): record ids, choices from fixed lists and instants
@@ -321,6 +323,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_LEGAL_FORM_CODE",
   // Q103: presentations come from a fixed list; the reducer refuses anything off it. No typed text.
   "RECORD_ED_PRESENTATION",
+  // Gap list items 3 to 7: fixed choices and a typed date only. No typed text.
+  "RECORD_LEGAL_FORM_DETAILS",
   "RECORD_COUNTRY_EXTENSION",
   "RECORD_LEGAL_FORM_CONTINUATION",
   "EVALUATE_ARRIVAL_LATENESS",

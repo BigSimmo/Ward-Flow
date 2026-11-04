@@ -12,7 +12,14 @@ import type { ArchivePatientEvent } from "./ward-patient-archive";
 import type { InboxWardFlowEvent } from "./ward-inbox-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EdPresentation } from "./ed/ed-presentation";
-import type { LegalFormExpiryCorrectionReason, UploadedFileType } from "./ward-model-vocabulary";
+import type {
+  LegalFormConsentState,
+  LegalFormCopyState,
+  LegalFormEnding,
+  LegalFormExpiryCorrectionReason,
+  LegalFormMakerRole,
+  UploadedFileType,
+} from "./ward-model-vocabulary";
 import type { UndoBedMeetingActionEvent } from "./ward-bed-meeting-undo-event-type";
 import type { PatientCollectedEvent, RecordTransportCadEvent } from "./ward-transport-collection-events";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
@@ -497,6 +504,11 @@ export type WardFlowEvent =
        * Country extension of that window is a separate recorded act, not automatic.
        */
       region?: "metro" | "country";
+      /**
+       * Gap list item 1 (Josh, 4 Nov 2026): the time received, typed from the paper. Omitted, the
+       * receipt is marked now. Never later than now. Stored as typed and never used to work out a time.
+       */
+      receivedAt?: Instant;
     }
   | {
       /**
@@ -2155,6 +2167,23 @@ export type WardFlowEvent =
       ageBand?: "adult" | "under_18" | null;
       /** Optional expiry typed from the paper; no statutory maximum is computed. */
       paperExpiresAt?: Instant;
+    }
+  | {
+      /**
+       * Gap list items 3 to 7 (Josh, 4 Nov 2026): details typed from the current paper form. Each
+       * field is optional: omitted keeps what is recorded, `null` clears it. `formCode` must be the
+       * current form, so a stale screen never writes onto a newer form. Nothing is calculated.
+       */
+      type: "RECORD_LEGAL_FORM_DETAILS";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      formCode: string;
+      madeBy?: LegalFormMakerRole | null;
+      copyGiven?: LegalFormCopyState | null;
+      endedBy?: LegalFormEnding | null;
+      consent?: LegalFormConsentState | null;
+      reviewBy?: Instant | null;
     }
   | {
       /** Recorded country extension for Form 1A — never automatic. */

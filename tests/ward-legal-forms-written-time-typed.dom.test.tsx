@@ -50,6 +50,7 @@ describe("Record the time written takes a typed 24-hour time", () => {
           onMarkReceived={() => {}}
           onExtend={() => {}}
           onRecordNext={() => {}}
+          onSaveDetails={() => {}}
           onRequirements={() => {}}
           onCopy={() => {}}
           copied={false}
