@@ -1328,3 +1328,119 @@
 .hcGrid dd svg {
   display: inline;
 }
+
+/* M2 (3 Nov 2026): each accepted route has a "see these patients" pill beside it, and a whole
+   declined row opens the patients that ward declined today. */
+.routeItem {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+
+.routeItem .routePick {
+  flex: 1;
+  min-width: 0;
+}
+
+.routePeople {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  margin-right: var(--wf-s-2);
+  padding: 0 6px 0 8px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.routePeople:hover {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.routePeople:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.routePeopleChev {
+  color: var(--wf-ink-3);
+}
+
+.routePeople:hover .routePeopleChev {
+  color: inherit;
+}
+
+.declineRow {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  transition: background-color 120ms ease;
+}
+
+.declineRow:has(.declineOpen):hover,
+.declineRow:has(.declineOpen:focus-visible) {
+  background: var(--wf-hover);
+}
+
+.declineCount {
+  min-width: 1.5rem;
+  padding: 1px 7px;
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-warning) 14%, transparent);
+  color: var(--wf-warning-ink);
+  text-align: center;
+}
+
+.declineChev {
+  color: var(--wf-ink-3);
+  transition: transform 120ms ease;
+}
+
+.declineRow:hover .declineChev {
+  transform: translateX(2px);
+  color: var(--wf-ink-2);
+}
+
+.declineRow .declineFrom,
+.declineRow .declineReasons {
+  grid-column: 1 / -1;
+}
+
+.declineOpen {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.declineOpen:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.declineRow > :not(.declineOpen) {
+  position: relative;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .routePeople,
+  .declineRow,
+  .declineChev {
+    transition: none;
+  }
+}

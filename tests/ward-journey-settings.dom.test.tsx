@@ -62,10 +62,9 @@ function renderSettings(extra?: ReactNode) {
     </ToastProvider>,
   );
 }
-// Settings is one page of sections (31 Oct 2026): the rules file, reset and About sit in the closed
-// Demo tools section, so open it first.
-const selectData = () =>
-  fireEvent.click(within(screen.getByTestId("ward-settings-demo-tools")).getByText("Demo tools"));
+// Settings by role (Josh, 3 Nov 2026, ST1): on the demo site, reset and About sit open in Demo tools,
+// a plain section with no fold to open.
+const demoTools = () => screen.getByTestId("ward-settings-demo-tools");
 const edit = () => fireEvent.keyDown(screen.getByRole("spinbutton", { name: "ED access target" }), { key: "Home" });
 // Save opens a review first (Settings round 3); its own Save change button saves.
 const save = () => {
@@ -264,9 +263,8 @@ describe("settings audited journey recovery", () => {
     }
     window.sessionStorage.setItem("unrelated-application-preference", "kept");
     const page = renderSettings(<PendingDraft />);
-    selectData();
     // "Reset the demo in this tab" (31 Oct 2026) is the old Clear session.
-    fireEvent.click(screen.getByTestId("btn-clear-cache"));
+    fireEvent.click(within(demoTools()).getByTestId("btn-clear-cache"));
     act(() => vi.advanceTimersByTime(600));
     expect(readKeptReferralDraft(key)).toBeNull();
     expect(writeSessionDraft(key, "synthetic stale callback", owner)).toBe(false);
@@ -288,15 +286,14 @@ describe("settings audited journey recovery", () => {
   it("explains the development-only digest in production without offering a broken link", () => {
     vi.stubEnv("NODE_ENV", "production");
     renderSettings();
-    selectData();
     // Demo tools (31 Oct 2026): the design reference line shows only where the link works.
+    expect(within(demoTools()).getByText("About")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Ward Flow Digest" })).not.toBeInTheDocument();
     expect(screen.queryByText("Product design reference")).not.toBeInTheDocument();
     cleanup();
     vi.unstubAllEnvs();
     renderSettings();
-    selectData();
-    expect(screen.getByRole("link", { name: "Ward Flow Digest" })).toBeInTheDocument();
+    expect(within(demoTools()).getByRole("link", { name: "Ward Flow Digest" })).toBeInTheDocument();
   });
 
   it("explains coordinator-only rules while retaining personal settings for a ward desk", () => {
@@ -316,14 +313,20 @@ describe("settings audited journey recovery", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    // Settings by login (31 Oct 2026): a ward desk reads "Rules that affect you", with no rule control,
-    // and has no Demo tools.
-    const summary = screen.getByTestId("ward-settings-rules-summary");
-    expect(summary).toHaveTextContent("Rules that affect you");
-    expect(summary).toHaveTextContent("Set by the bed coordinator");
+    // Settings by role (Josh, 3 Nov 2026, ST1): a ward desk has Alerts, Display and You (and Demo tools
+    // on the demo site), with no Rules section, no "Rules that affect you" and no rule control.
+    expect(screen.getAllByTestId(/^ward-settings-jump-/).map((jump) => jump.getAttribute("data-testid"))).toEqual([
+      "ward-settings-jump-alerts",
+      "ward-settings-jump-display",
+      "ward-settings-jump-you",
+      "ward-settings-jump-demo",
+    ]);
+    expect(document.getElementById("settings-section-rules")).toBeNull();
+    expect(screen.queryByTestId("ward-settings-rules-summary")).toBeNull();
     expect(screen.queryAllByRole("spinbutton")).toHaveLength(0);
     expect(screen.queryByRole("button", { name: /^(Increase|Decrease) / })).toBeNull();
-    expect(screen.queryByTestId("ward-settings-demo-tools")).toBeNull();
+    expect(screen.queryByTestId("btn-export-config")).toBeNull();
+    expect(screen.queryByTestId("input-import-config")).toBeNull();
     // Its own settings stay: Restore puts back only this browser and never saves a rule.
     fireEvent.click(screen.getByTestId("btn-restore-baseline"));
     const dialog = screen.getByRole("dialog", { name: "Restore this browser's settings?" });
@@ -332,10 +335,13 @@ describe("settings audited journey recovery", () => {
     expect(screen.getByText("This browser's settings restored.")).toBeInTheDocument();
     expect(raised).not.toHaveBeenCalled();
   });
-  it("replays the tour from the first step, not the step it was left at", () => {
+  // Settings by role (Josh, 3 Nov 2026, ST1): the tour lives in the Help panel now, so Settings
+  // offers no Replay the tour and leaves the saved tour step alone.
+  it("offers no tour replay, so the saved tour step is left where it was", () => {
     saveTourStep("coordinator", 3);
     renderSettings();
-    fireEvent.click(screen.getByTestId("settings-replay-tour"));
-    expect(readTourStep("coordinator")).toBe(0);
+    expect(screen.queryByTestId("settings-replay-tour")).toBeNull();
+    expect(screen.queryByRole("button", { name: /tour/i })).toBeNull();
+    expect(readTourStep("coordinator")).toBe(3);
   });
 });

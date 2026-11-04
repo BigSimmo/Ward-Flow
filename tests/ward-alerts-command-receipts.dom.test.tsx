@@ -227,6 +227,8 @@ describe("Broadcast own-command confirmation", () => {
         fireEvent.click(within(dialog).getByRole("button", { name: "Stand down" }));
         await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
       };
+      // AL2 (3 Nov 2026): live broadcasts sit in the Broadcasts view, not on Open.
+      fireEvent.click(screen.getByRole("tab", { name: /^Broadcasts/u }));
       fireEvent.click(screen.getByRole("button", { name: "Stand down this alert" }));
       await confirmStandDown();
       await waitFor(() => expect(recordStandDown).toHaveBeenCalledTimes(1));

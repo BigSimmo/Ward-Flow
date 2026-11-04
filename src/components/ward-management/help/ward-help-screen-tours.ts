@@ -97,7 +97,8 @@ const AROUND: readonly Around[] = [
       },
       {
         device: "desk",
-        target: id("ward-movement-horizon"),
+        // M3: the timeline sits behind its switch, off by default; light the switch when it is hidden.
+        target: [id("ward-movement-horizon"), id("movements-timeline-switch")],
         title: "The timeline",
         body: "What is coming up for each receiving ward.",
       },

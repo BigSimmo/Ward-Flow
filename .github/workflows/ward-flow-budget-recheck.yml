@@ -7,9 +7,28 @@ name: Ward Flow budget recheck
 # check too, so the PR waits until the budget holds against the main it would land on. When a PR
 # arms auto-merge after main moved, it is rechecked then too. It runs main's own script only (a
 # sparse checkout of the base branch, never pull-request code) and never changes auto-merge state.
+# A push re-measures only when it touched something the production build or its budget reads: a
+# docs-only merge cannot move the phone script budget, so it leaves armed PRs' checks alone. GitHub
+# runs a push whose changed files it cannot list in full, so a large push still re-measures.
 on:
   push:
     branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "data/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".nvmrc"
+      - "next.config.ts"
+      - "tsconfig.json"
+      - "postcss.config.mjs"
+      - "script-budget.json"
+      - "scripts/check-script-budget.mjs"
+      - "scripts/install-locked-dependencies.mjs"
+      - "scripts/ward-ci-public/**"
+      - ".github/workflows/ward-flow.yml"
+      - ".github/workflows/ward-flow-budget-recheck.yml"
   pull_request_target:
     types: [auto_merge_enabled]
     branches: [main]

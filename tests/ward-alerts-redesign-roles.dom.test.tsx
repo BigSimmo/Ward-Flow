@@ -185,11 +185,11 @@ describe("Alerts redesign: transport officer (ROLE BRANCH officer)", () => {
     expect(within(detail).getAllByText("Only the coordinator can change alerts.")).toHaveLength(1);
   });
 
-  it("shows Now and Earlier today, no Owner arrangement and no owner menu", () => {
+  it("shows Open and Cleared, no Broadcasts, no Owner arrangement and no owner menu", () => {
     renderAs({ role: "officer", scope: { kind: "jobs" } });
-    // Q181 (1 Nov 2026): every desk has the same two views.
+    // AL2 (3 Nov 2026): Broadcasts shows only on a desk with a broadcast or that can send one.
     const tabs = within(screen.getByRole("tablist", { name: "Alerts views" })).getAllByRole("tab");
-    expect(tabs.map((tab) => (tab.textContent ?? "").replace(/\d+/gu, "").trim())).toEqual(["Now", "Earlier today"]);
+    expect(tabs.map((tab) => (tab.textContent ?? "").replace(/\d+/gu, "").trim())).toEqual(["Open", "Cleared"]);
     expect(
       within(screen.getByRole("radiogroup", { name: "Arrange by" })).queryByRole("radio", { name: /Owner/u }),
     ).toBeNull();
