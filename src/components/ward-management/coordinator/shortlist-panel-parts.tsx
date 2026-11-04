@@ -72,6 +72,13 @@ export const URGENCY_OPTIONS = URGENCY_LEVELS;
 export const PULLED_EXPLANATION = "Pulled means a bed kept for one named, accepted incoming patient, for a set time.";
 export const GLOSSARY_LINK_TEXT = "Help glossary";
 
+/**
+ * Home drawer polish (Josh, 3 Nov 2026): the shortlist keeps the road-distance caveat visible
+ * (`ward-reference-distances.ts`: shown wherever a distance is) in one short line, and the full
+ * wording moves to the Help glossary's "Road distance" entry beside Pulled.
+ */
+export const ROAD_DISTANCE_SHORT_CAVEAT = "Road distance only, not a clinical travel time.";
+
 export function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: readonly Admission[]) {
   const states = bedStates(unit, admissions, bedReleases, []);
   const pendingPreparation = states.beingMadeReady;
