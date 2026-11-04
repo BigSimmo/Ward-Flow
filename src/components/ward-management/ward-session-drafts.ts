@@ -216,6 +216,35 @@ export function readSessionDraft(key: string): string | null {
   }
 }
 
+/** One kept draft as the Profile list shows it (L12): what and who, never the typed text. */
+export type SessionDraftSummary = {
+  readonly key: string;
+  readonly kind: string;
+  /** A patient id, or "new" for a referral started before a patient was chosen. */
+  readonly subject: string;
+  readonly savedAt: number;
+};
+
+/** The newest kept drafts in this tab, read by key and save time only (L12, Josh 3 Nov 2026). */
+export function listSessionDrafts(limit = 20): SessionDraftSummary[] {
+  if (typeof window === "undefined" || !draftStorageAllowed()) return [];
+  const scope = PREFIX + [account, sessionScope(sessionDetails().id)].map(encodeURIComponent).join(":") + ":";
+  const found: SessionDraftSummary[] = [];
+  try {
+    const storage = window.sessionStorage;
+    const keys = Array.from({ length: storage.length }, (_, i) => storage.key(i));
+    for (const key of keys) {
+      if (!key?.startsWith(scope) || readSessionDraft(key) === null) continue;
+      const [, kind, subject] = key.slice(scope.length).split(":").map(decodeURIComponent);
+      const savedAt: unknown = JSON.parse(storage.getItem(key) ?? "null")?.savedAt;
+      if (kind && subject && typeof savedAt === "number") found.push({ key, kind, subject, savedAt });
+    }
+  } catch {
+    return [];
+  }
+  return found.sort((a, b) => b.savedAt - a.savedAt).slice(0, limit);
+}
+
 export function writeSessionDraft(key: string, value: string, owner: number): boolean {
   if (typeof window === "undefined" || !draftStorageAllowed()) return false;
   const session = sessionDetails();

@@ -60,6 +60,8 @@ import {
   readKeptReferralDraftAt,
   readLastReferrerContact,
   rememberReferrerContact,
+  restartReferralDraft,
+  useLiveReferralDraftKey,
   useReferralDraftAutosave,
   useReferralDraftRecovery,
 } from "./referral-draft-store";
@@ -151,8 +153,7 @@ export function useWardReferralDrawerState({
   // No sign-in: the route gives the role, and the role gives the profile (or why there is none).
   const pathname = usePathname() ?? "";
   const myProfile = profileForChromeRole(wardChromeRole(pathname));
-  // Feature 11: the sheet dispatches as the referral's source. A ward page sends in its own ward's
-  // name (role access plan item 8, Josh 15 Oct 2026), so it never borrows the ED or community role.
+  // Feature 11: sent as the referral's source; a ward page as its own ward (access plan 8, Josh 15 Oct 2026).
   const gate = useRoleGate();
   const access = useEffectiveWardAccess();
   const addPatientGate = gate("ADD_PATIENT");
@@ -219,6 +220,7 @@ export function useWardReferralDrawerState({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const noPatientChosen = activePatientKey === NO_PATIENT_KEY;
+  const liveDraftKey = useLiveReferralDraftKey(activePatientKey, draftStorageKey, keepsAnotherPersonsDraft);
   const [addedInFormKey, setAddedInFormKey] = useState<string | null>(null); // WT-28
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
@@ -297,8 +299,7 @@ export function useWardReferralDrawerState({
         fromRecord.catchmentFromRecord(patientRecord, catchmentTeam, recordedRegion)),
   );
   const [catchmentEditing, setCatchmentEditing] = useState(false);
-  // Finding 40 (Josh, 27 Oct 2026): "Catchment not known" answers the catchment for a ward or ED
-  // referral (the team stays blank and the letter says so). A community team referral still needs it.
+  // Finding 40 (Josh, 27 Oct 2026): "Catchment not known" answers it for ward/ED; community still needs it.
   const [catchmentNotKnown, setCatchmentNotKnown] = useState(kept?.catchmentNotKnown ?? false);
   const catchmentAnswered = catchmentNotKnown || (catchmentConfirmed && !!catchmentTeam.trim());
   const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? recordedRegion ?? "");
@@ -308,8 +309,7 @@ export function useWardReferralDrawerState({
   );
   const [unidentified, setUnidentified] = useState<string | null>(kept?.unidentified ?? null);
   const liveOriginSite = liveMovement ? edById(liveMovement.originEdId)?.siteCode : undefined;
-  // Smart features idea 9 (19 Oct 2026): an ED or community desk refers from its own place unless
-  // the opener, a kept draft or the record says otherwise. Shown in the picker, so it can be changed.
+  // Smart idea 9 (19 Oct 2026): ED/community refer from their own place unless opener, draft or record differ.
   const deskScope = useEffectiveWardAccess().scope;
   const deskOriginSite = deskScope.kind === "ed" ? edById(deskScope.edId)?.siteCode : undefined;
   const deskSendingTeam = deskScope.kind === "team" ? deskScope.teamName : undefined;
@@ -340,8 +340,7 @@ export function useWardReferralDrawerState({
   const [legalStatus, setLegalStatus] = useState(
     kept?.legalStatus ??
       urlPrefill?.legal ??
-      // The record's status, or "Not recorded": never a default (owner rule, 19 Oct 2026). A
-      // community referral used to start at "Voluntary" when nothing was recorded.
+      // The record's status, or "Not recorded": never a default (owner rule, 19 Oct 2026).
       (defaultPatient.legalStatus.startsWith("Form")
         ? defaultPatient.legalStatus.split(" ").slice(0, 2).join(" ")
         : defaultPatient.legalStatus),
@@ -446,7 +445,7 @@ export function useWardReferralDrawerState({
     stop: stopDraftAutosave,
   } = useReferralDraftAutosave({
     draft: draftNow,
-    storageKey: draftStorageKey,
+    storageKey: liveDraftKey,
     draftJson,
     contentJson: draftFingerprint({ ...draftNow, activeSection: undefined }),
     enabled: !keepsAnotherPersonsDraft,
@@ -481,7 +480,7 @@ export function useWardReferralDrawerState({
     // An unfinished Add patient form is not kept, so it always counts as unsaved.
     unloadSafe: () =>
       !newPatientDirty &&
-      referralDraftKeptOnScreen(draftStorageKey, draftNow, {
+      referralDraftKeptOnScreen(liveDraftKey, draftNow, {
         destType: initialDestination,
         sourceKind: openerSourceKind,
         originSiteCode: effectiveInitialOriginSiteCode,
@@ -509,9 +508,8 @@ export function useWardReferralDrawerState({
       closeRequestRef.current = null;
     };
   }, [closeRequestRef, requestClose]);
-  // The close guard is a modal over the drawer on the shared contract: drawer inert, focus on Keep editing,
-  // Tab wraps, Escape closes only the guard, focus returns to the closing control. Declared before the
-  // drawer's own modal hook so it leaves the stack first when both close together.
+  // Close guard: a modal over the drawer (shared contract). Declared before the drawer's own modal hook
+  // so it leaves the stack first when both close together.
   const guardBoxRef = useRef<HTMLDivElement | null>(null);
   const { rootRef: guardRootRef } = useModalFocus({
     open: guardOpen,
@@ -542,7 +540,7 @@ export function useWardReferralDrawerState({
       setGuardOpen(true);
       return;
     }
-    const kept = keepReferralDraft(draftNow, draftOwnerVersion, draftStorageKey);
+    const kept = keepReferralDraft(draftNow, draftOwnerVersion, liveDraftKey);
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
@@ -760,8 +758,7 @@ export function useWardReferralDrawerState({
         ? [singleRecipientLabel(destType === "community", selectedRecipient, communityPurpose)]
         : [];
 
-  // A ward refers its own inpatients, the stay the transfer moves (`movementSourceAdmission` in the
-  // reducer). Anyone else warns and asks why (Josh, 16 Oct 2026), then goes as a new admission.
+  // A ward refers its own inpatients (`movementSourceAdmission`); others warn and ask why (Josh, 16 Oct 2026).
   const patientOnSendingWard =
     !!sendingWard && !!patientRecord && patientInBedOnUnit(admissions, patientRecord.id, sendingWard.id);
   const notOnSendingWard = !!sendingWard && !patientOnSendingWard;
@@ -847,10 +844,8 @@ export function useWardReferralDrawerState({
     placement: (community ? selectedRecipient : selectedDestinations.length) ? 0 : 1,
   };
   const totalNeeded = needed.patient + needed.referral + needed.documentation + needed.placement;
-  // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed" count the
-  // same items, so the steps add up and four Complete steps read as all ready. Rows below are labels only.
-  // A2-9 (audit 13 Oct 2026): the contact details asked at Send are items too, so the hero never
-  // reads "0 items left" while Confirm refuses for an empty contact field (`itemsLeft` below).
+  // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed" add up.
+  // A2-9 (audit 13 Oct 2026): Send's contact details are items too, so the hero never reads "0 items left".
   const itemsTotal =
     4 +
     (needsSendingTeam ? 3 : 2) +
@@ -1122,6 +1117,11 @@ export function useWardReferralDrawerState({
     umrn: patientRecord ? currentPatient.umrn : "",
     ageSex: patientRecord ? ageSexLabel(currentPatient) : "",
     suburb: catchmentSuburb,
+    catchment: catchmentNotKnown
+      ? "Catchment not known"
+      : catchmentConfirmed && catchmentTeam.trim()
+        ? catchmentTeam.trim()
+        : undefined,
     from: originLabel,
     recipients: recipientLabels,
     urgency: tier === undefined ? "" : tierLabel,
@@ -1414,7 +1414,7 @@ export function useWardReferralDrawerState({
     needsChartReattachment: draftNow.needsChartReattachment,
     clearRecoveredDraft: () => {
       stopDraftAutosave();
-      discardReferralDraft(draftDiscardOwner);
+      restartReferralDraft(draftDiscardOwner, draftStorageKey);
       onRestart();
     },
     openingDraft,
