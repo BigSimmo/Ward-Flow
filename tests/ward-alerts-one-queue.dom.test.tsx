@@ -254,10 +254,12 @@ describe("the phone dock with one Alerts queue", () => {
   }
 
   // Q268 (Josh, 2 Nov 2026): the coordinator's dock says Alerts, as the header and Menu do.
-  it("has an Alerts tab that links to the coordinator's queue on the Alerts screen", () => {
+  // Josh, 4 Nov 2026: the phone's Alerts tab opens the same drawer as the desktop bell, not the screen.
+  it("has an Alerts tab that opens the Alerts drawer", () => {
     renderDock();
     const tab = screen.getByTestId("ward-phone-menu-tasks");
-    expect(tab).toHaveAttribute("href", WARD_ALERTS_HREF);
+    expect(tab.tagName).toBe("BUTTON");
+    expect(tab).toHaveAttribute("aria-haspopup", "dialog");
     expect(tab).toHaveAccessibleName("Alerts, 12 outstanding");
     expect(tab).not.toHaveAttribute("aria-current");
     expect(screen.queryByTestId("ward-phone-menu-alerts")).toBeNull();
@@ -318,12 +320,13 @@ describe("the bar's Alerts button", () => {
     expect(mockRouterPush).not.toHaveBeenCalled();
   });
 
-  it("opens the Alerts screen on a phone instead of a drawer", () => {
+  // Josh, 4 Nov 2026: a phone opens the same Alerts drawer as the desktop, with Open Alerts in its foot.
+  it("opens the Alerts drawer on a phone, as on the desktop", async () => {
     installMatchMediaStub(true);
     const trigger = renderBar();
     fireEvent.click(trigger);
-    expect(mockRouterPush).toHaveBeenCalledWith(WARD_ALERTS_HREF);
-    expect(screen.queryByRole("dialog", { name: "Alerts" })).toBeNull();
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(await screen.findByRole("dialog", { name: "Alerts" })).toBeInTheDocument();
   });
 
   // The new frame (Josh, 31 Oct 2026): one name and one icon on every desk, the bell and "Alerts".

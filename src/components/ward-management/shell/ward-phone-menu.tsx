@@ -397,29 +397,15 @@ function PhoneDock({
       case "queue":
         // Q268 (Josh, 2 Nov 2026): the coordinator's dock says Alerts, with the bell, as the header and
         // Menu do (one name and one icon on every desk, 31 Oct). It replaces Q177's "Tasks".
-        return oneAlertsQueue ? (
-          <Link
-            key="tasks"
-            href={WARD_ALERTS_HREF}
-            prefetch={true}
-            className={styles.dockItem}
-            aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
-            data-testid="ward-phone-menu-tasks"
-            onClick={() => announceToWardShell("Alerts.")}
-          >
-            <DockFace
-              icon={Bell}
-              label="Alerts"
-              count={tasksCount}
-              tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
-            />
-          </Link>
-        ) : (
+        // Josh, 4 Nov 2026: Alerts opens the same drawer as the desktop bell on a phone too. The
+        // drawer's foot still opens the full Alerts screen.
+        return (
           <button
             key="tasks"
             type="button"
             className={styles.dockItem}
             aria-haspopup="dialog"
+            aria-current={oneAlertsQueue && pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
             data-testid="ward-phone-menu-tasks"
             onClick={() => onDrawer("tasks")}
           >
