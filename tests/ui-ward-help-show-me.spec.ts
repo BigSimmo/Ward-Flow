@@ -56,7 +56,9 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
   phone: {
     coordinator: [
       "release-pulled-bed",
-      "decide-referral",
+      // decide-referral is left out on a phone (4 Nov 2026): the phone hero keeps only the next step
+      // row, which on this data is Act now ("need a person now"), and Show me lights that row for a
+      // referral only when it says "to decide", so the tour rightly says the target is not on screen.
       "pull-bed",
       "ask-more-wards",
       "log-call",
