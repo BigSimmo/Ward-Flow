@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, renderHook, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { referralLetterModel } from "@/components/ward-management/referrals/referral-letter";
 import { ReferralLetterDocument } from "@/components/ward-management/referrals/referral-letter-document";
@@ -6,6 +6,7 @@ import {
   clearSessionDrafts,
   draftSessionVersion,
   listSessionDrafts,
+  readSessionDraft,
   sessionDraftKey,
   writeSessionDraft,
 } from "@/components/ward-management/ward-session-drafts";
@@ -34,6 +35,10 @@ vi.mock("@/components/ward-management/ward-patients", () => ({
 
 import { SettingsDraftsCard } from "@/components/ward-management/settings/settings-drafts-card";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import {
+  discardReferralDraft,
+  useReferralDraftAutosave,
+} from "@/components/ward-management/referrals/referral-draft-store";
 
 const input = {
   destinationPhrase: "a ward",
@@ -121,5 +126,38 @@ describe("Profile drafts list", () => {
   it("says so when nothing is kept", () => {
     render(<SettingsDraftsCard />);
     expect(screen.getByText("No drafts kept")).toBeVisible();
+  });
+});
+
+describe("per-person draft key", () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    clearSessionDrafts();
+  });
+  afterEach(() => {
+    discardReferralDraft();
+    clearSessionDrafts();
+  });
+
+  it("settles a pending change under the key of the person chosen after the sheet opened", () => {
+    const opened = sessionDraftKey("standard/0", "referral", "new");
+    const chosen = sessionDraftKey("standard/0", "referral", "p-1");
+    const { rerender, unmount } = renderHook(
+      ({ storageKey, revision }) =>
+        useReferralDraftAutosave({
+          draft: { revision },
+          storageKey,
+          draftJson: JSON.stringify({ revision }),
+          enabled: true,
+          dirty: true,
+          initialKeptAt: null,
+          initialKeptJson: null,
+        }),
+      { initialProps: { storageKey: opened, revision: 1 } },
+    );
+    rerender({ storageKey: chosen, revision: 2 });
+    unmount();
+    expect(readSessionDraft(chosen)).toContain('"revision":2');
+    expect(readSessionDraft(opened)).toBeNull();
   });
 });
