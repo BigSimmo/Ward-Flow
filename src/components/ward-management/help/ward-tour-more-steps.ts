@@ -53,7 +53,8 @@ const SERVICE = id("ward-bar-service-trigger");
 const BOARD_TIME = id("ward-bar-demo-clock");
 const RAIL_HELP = id("ward-rail-help");
 const RAIL_MORE = id("ward-rail-more");
-const RAIL_SETTINGS = id("ward-rail-settings-link");
+// DK1 (3 Nov 2026): Settings is in the account menu, which the person at the foot of the menu opens.
+const RAIL_SETTINGS = id("ward-rail-persona-trigger");
 const PHONE_MENU = id("ward-bar-phone-menu");
 
 function more(
@@ -280,7 +281,7 @@ function deskMore(role: TourRole): MoreStep[] {
           "settings",
           RAIL_SETTINGS,
           "Settings",
-          "Settings, at the foot of the menu, opens on Access. That is where you give, check and remove roles.",
+          "Your name at the foot of the menu opens your account menu. Choose Settings there. It starts on Access, where you give, check and remove roles.",
           "review",
         ),
         BOARD_TIME_STEP,

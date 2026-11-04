@@ -252,7 +252,9 @@ describe("Alerts v10 pass (10 Oct 2026)", () => {
     for (const row of document.querySelectorAll('[data-alert-id][data-act="true"]')) {
       expect(row.getAttribute("data-tone")).not.toBeNull();
     }
-    fireEvent.click(screen.getByRole("button", { name: /Act now/ }));
+    // The hero's Act now highlight, not the Open view's Act now filter chip (AL2).
+    const hero = screen.getAllByRole("button", { name: /Act now/ });
+    fireEvent.click(hero.find((button) => !button.closest('[data-testid="ward-alerts-filters"]'))!);
     expect(rows().length).toBe(before);
     const dimmed = document.querySelectorAll('[data-alert-id][data-dim="true"]').length;
     const lit = document.querySelectorAll('[data-alert-id][data-highlighted="true"]').length;
@@ -325,7 +327,7 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
 });
 
 describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () => {
-  it("the Now tab's open count is and the Tasks list, running targets included", () => {
+  it("the Open tab's open count is and the Tasks list, running targets included", () => {
     const lapsed = taskItems(seedWardFlowState(), NOW).find((item) => alertKindOf(item.id) === "hold");
     expect(lapsed?.movementId, "the seed has a lapsed bed pull").toBeTruthy();
     let world: ReturnType<typeof useWardFlow> | undefined;
@@ -351,8 +353,8 @@ describe("Alerts counts agree (remaining-pages audit ops-3, 13 Oct 2026)", () =>
     });
     const active = activeTaskItems(world!, NOW);
     expect(active.some((item) => alertKindOf(item.id) === "running")).toBe(true);
-    // Alerts redesign (1 Nov 2026): the band's meta reads "oldest … · n yours", so the Now tab carries the open count.
-    expect(screen.getByRole("tab", { name: /^Now/u }).textContent?.replace(/\s+/gu, "")).toBe(`Now${active.length}`);
+    // Alerts redesign (1 Nov 2026): the band's meta reads "oldest … · n yours", so the Open tab (AL2) carries the open count.
+    expect(screen.getByRole("tab", { name: /^Open/u }).textContent?.replace(/\s+/gu, "")).toBe(`Open${active.length}`);
   });
 });
 

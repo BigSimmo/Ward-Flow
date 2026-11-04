@@ -367,7 +367,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
-  scroll-margin-top: var(--wf-s-6);
+  /* Clears the bar and the section tabs that stay in view above it. */
+  scroll-margin-top: calc(var(--wf-header-height, 3.5rem) + 4.5rem);
 }
 
 /* The section jumps in the band: a row of buttons that wraps, never a tab track. */
@@ -465,4 +466,75 @@
   .ruleRow .effectLine {
     justify-content: flex-start;
   }
+}
+
+/* ST1 (Josh, 3 Nov 2026): a compact top band, then the section tabs, which stay in view while a
+   long section (the rule editor) scrolls. The strip carries the page's own surface so rows slide
+   under it cleanly. */
+.bandCompact {
+  padding-bottom: var(--wf-s-4);
+}
+
+/* The strip sits on a full-width canvas band, so cards scroll under solid ground, not beside the pill. */
+.sectionBand {
+  position: sticky;
+  top: var(--wf-header-height, 3.5rem);
+  z-index: 6;
+  margin-block: 0 var(--wf-s-1);
+  padding-block: var(--wf-s-2);
+  background: var(--wf-canvas);
+  box-shadow:
+    var(--wf-s-4) 0 0 var(--wf-canvas),
+    calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
+}
+
+.sectionTabs {
+  display: flex;
+  gap: var(--wf-s-1);
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  box-shadow: 0 0 0 1px var(--wf-line);
+}
+
+.sectionTab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  height: 30px;
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: inherit;
+  font-size: var(--wf-fs-13, 13px);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sectionTab:hover {
+  color: var(--wf-ink-1);
+}
+
+.sectionTab[aria-current="true"] {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  box-shadow:
+    0 1px 2px var(--wf-shadow-black-06),
+    0 0 0 1px var(--wf-line);
+}
+
+.sectionTab:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+/* Every section but the rule editor: one column at a comfortable reading width. */
+.sectionNarrow {
+  max-width: 54rem;
 }

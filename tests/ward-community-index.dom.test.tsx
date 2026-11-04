@@ -17,6 +17,7 @@ import { CommunityIndex } from "@/components/ward-management/community/community
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { railEntries, roleMenu } from "@/components/ward-management/shell/ward-rail-entries";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -113,8 +114,14 @@ describe("The community index's OWN reachability — the assertion that outranks
    * required and is worth keeping: the rail is rendered at collection above, so a rail that throws
    * fails this file loudly rather than passing here for the wrong reason.
    */
-  it("is linked from the ward-flow root rail", () => {
-    expect(railHrefs, "the root rail does not link the community team index").toContain(INDEX_ROUTE);
+  // PL1 (Josh, 3 Nov 2026): Community left the sidebar. Places, on the root rail, lists every
+  // community team, and the community desk's own menu keeps the index as "My team".
+  it("is reachable from the ward-flow root rail through Places, and stays in the community desk's menu", () => {
+    expect(railHrefs, "the root rail does not link Places").toContain("/ward-flow/hub");
+    expect(
+      roleMenu(railEntries(), "community").main.map((item) => ("href" in item ? item.href : "")),
+      "the community desk's own menu does not link the community team index",
+    ).toContain(INDEX_ROUTE);
   });
 });
 
