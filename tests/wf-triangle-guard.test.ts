@@ -37,12 +37,6 @@ const KNOWN: readonly Known[] = [
     reason: "phone alert detail head: an 'Act now' chip carries the triangle",
   },
   {
-    file: "src/components/ward-management/coordinator/coordinator-screen.tsx",
-    kind: "control",
-    sites: ['label="Home list"', 'label="Flow stages"'],
-    reason: "Home: Needs you segment and the Flow stage pill tabs ask for danger on a count",
-  },
-  {
     file: "src/components/ward-management/delays/delays-board-panels.tsx",
     kind: "wait",
     sites: ["<Glyph tone={waitTone(row.waited)} />"],
