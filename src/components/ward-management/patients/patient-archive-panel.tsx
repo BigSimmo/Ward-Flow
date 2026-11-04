@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { Button, Card, CardBody, CardHead } from "@/components/wf";
+import { Button, Card, CardBody, CardHead, useToast } from "@/components/wf";
+import { UNDO_TOAST_MS, UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -15,6 +16,15 @@ import {
 } from "@/components/ward-management/ward-patient-archive";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import type { PatientId } from "@/components/ward-management/ward-patients";
+
+/** The layout's toast, or null where the panel renders without a `ToastProvider` (a test). */
+function useOptionalToast() {
+  try {
+    return useToast();
+  } catch {
+    return null;
+  }
+}
 
 /**
  * #816 (Josh, 26 Oct 2026: archive only, coordinator only): a record added in error can leave every
@@ -104,9 +114,57 @@ function ArchiveConfirm({
 }) {
   const raise = useWardRaise(useRouteRole());
   const router = useRouter();
+  const toast = useOptionalToast();
+  // Tier 1 item 6 (Josh, 4 Nov 2026): a record archived by mistake comes back from the toast's Undo.
+  // The toast is the layout's, so it outlives this page as the coordinator lands on Search.
+  const offerUndo = (outcome: WardCommandOutcome) => {
+    if (!toast) return;
+    const seq = outcome.undoStep?.undoType === "UNDO_PATIENT_RECORD" ? outcome.undoStep.seq : undefined;
+    toast.push({
+      tone: "success",
+      title: `${displayName}'s record archived.`,
+      body: `Undo within ${UNDO_WINDOW_MINUTES} min.`,
+      undo: {
+        durationMs: UNDO_TOAST_MS,
+        onUndo: () => {
+          // The same fences as useUndoableStep: no Undo after a workspace or role change, or before the board is ready.
+          if (outcome.isCurrent && !outcome.isCurrent()) {
+            toast.push({
+              tone: "warning",
+              title: "Undo is unavailable because the workspace or working role changed. Review the current board.",
+            });
+            return undefined;
+          }
+          if (outcome.canUndo && !outcome.canUndo()) {
+            toast.push({
+              tone: "warning",
+              title:
+                "Undo is unavailable until the shared board is ready. Wait for it to reconnect, then check the board.",
+            });
+            return false;
+          }
+          const said = (undone: WardCommandOutcome | void) =>
+            toast.push(
+              undone && undone.status !== "accepted"
+                ? { tone: "warning", title: `Not recorded: ${undone.message ?? "The Undo was refused."}` }
+                : { tone: "info", title: `Undone. ${displayName}'s record is back.` },
+            );
+          const completion = raise("UNDO_PATIENT_RECORD", {
+            patientId,
+            ...(seq === undefined ? {} : { recordSeq: seq }),
+          });
+          if (completion && "then" in completion) void completion.then(said, () => said());
+          else said(completion);
+          return undefined;
+        },
+      },
+    });
+  };
   const settle = (outcome: WardCommandOutcome | void) => {
-    if (outcome?.status === "accepted") router.replace("/ward-flow/search");
-    else onRefused();
+    if (outcome?.status === "accepted") {
+      offerUndo(outcome);
+      router.replace("/ward-flow/search");
+    } else onRefused();
   };
   const archive = () => {
     const completion = raise("ARCHIVE_PATIENT", { patientId, reason });
@@ -120,7 +178,7 @@ function ArchiveConfirm({
         Archive record
       </Button>{" "}
       <Button variant="sec" onClick={onKeep}>
-        Keep record
+        Keep as is
       </Button>
     </div>
   );

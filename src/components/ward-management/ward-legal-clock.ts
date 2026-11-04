@@ -73,7 +73,9 @@ export const GENDER_MISMATCH_DECLINE_REASON = "sex_designation_unavailable" as c
 export const WAITLIST_INSTEAD_OF_DECLINE_REASONS = ["no_suitable_bed", "bed_pulled_for_earlier_referral"] as const;
 
 /** Legal form codes the engine recognises. */
-export const LEGAL_CLOCK_FORM_CODES = ["1A", "3A", "3C", "3D", "5A", "5B", "6A", "6B", "6C"] as const;
+// Gap list item 2 (Josh, 4 Nov 2026): 3E and 6D are recorded from the paper too. Codes only; no
+// period is attached to either.
+export const LEGAL_CLOCK_FORM_CODES = ["1A", "3A", "3C", "3D", "3E", "5A", "5B", "6A", "6B", "6C", "6D"] as const;
 
 export type LegalClockFormCode = (typeof LEGAL_CLOCK_FORM_CODES)[number];
 

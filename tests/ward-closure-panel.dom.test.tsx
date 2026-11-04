@@ -90,7 +90,7 @@ describe("ward closure panel", () => {
     fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
     fireEvent.click(screen.getByTestId("ward-closure-close"));
     expect(screen.getByRole("dialog", { name: `Close ${UNIT.name} to admissions?` })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: `Close ${UNIT.name} to admissions` })).toBeInTheDocument();
   });

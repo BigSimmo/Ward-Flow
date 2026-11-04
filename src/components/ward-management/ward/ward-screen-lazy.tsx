@@ -30,6 +30,10 @@ export const WardDailySheetDialog = dynamic(
   () => import("@/components/ward-management/board/ward-daily-sheet").then((m) => m.WardDailySheetDialog),
   { ssr: false },
 );
+// Paper only (Tier 1 item 9): the printed bed list loads after the page, off the phone budget.
+export const WardBedListPrint = dynamic(() => import("./ward-bed-list-print").then((m) => m.WardBedListPrint), {
+  ssr: false,
+});
 export const WardBedDossierDrawer = dynamic(
   () => import("./ward-bed-dossier-drawer").then((m) => m.WardBedDossierDrawer),
   {

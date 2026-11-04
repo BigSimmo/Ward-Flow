@@ -46,7 +46,6 @@ import {
   type UndoRecord,
   diffForStepUndo,
   nextStepUndoSeq,
-  undoStepSubjectId,
   undoStepTypeFor,
   type StepUndo,
   type UndoStepType,
@@ -188,7 +187,7 @@ import { type SupportNotificationRecord } from "@/components/ward-management/war
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
 // S6 example data (3 Nov 2026): no demo list opens empty. A live shared build swaps in a no-op.
 import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo-example-lists";
-import { subjectId } from "./ward-flow-subject-id";
+import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
 import { nextBedReleaseId, withFreshIds } from "./ward-runtime-ids";
 export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
 
@@ -1502,6 +1501,9 @@ export const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
   UNDO_ABSENT_WITHOUT_LEAVE: "There is no absence on this stay to undo",
   UNDO_BED_MEETING_ACTION: "There is no bed meeting action recorded or marked done here to undo",
+  UNDO_BED_STEP: "There is no bed closed, reopened or returned from leave here to undo",
+  UNDO_RELEASE_STEP: "There is no release or cancellation here to undo",
+  UNDO_PATIENT_RECORD: "There is no order or archive on this record to undo",
 };
 
 /**
@@ -1522,7 +1524,7 @@ function withStepUndo(state: WardFlowState, next: WardFlowState, event: WardFlow
       kind: "step",
       undoType,
       action: event.type as StepUndo["action"],
-      subjectId: undoStepSubjectId(event),
+      subjectId: stepUndoSubjectId(event),
       at: event.now,
       seq: nextStepUndoSeq(next.undoRecords, state.auditSequence),
       role: event.role,
@@ -1745,6 +1747,9 @@ export function reduceClinicalEvent(
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
     case "UNDO_BED_MEETING_ACTION":
+    case "UNDO_BED_STEP":
+    case "UNDO_RELEASE_STEP":
+    case "UNDO_PATIENT_RECORD":
       return reducerSlices().reduceUndoEvent(state, event, decision, UNDO_EVENT_HELPERS);
     case "PLACE_IN_BED":
     case "UPDATE_EXPECTED_DISCHARGE":
@@ -1866,6 +1871,7 @@ export function reduceClinicalEvent(
     case "RECORD_LEGAL_FORM_WRITTEN":
     case "RECORD_LEGAL_FORM_CODE":
     case "RECORD_ED_PRESENTATION":
+    case "RECORD_LEGAL_FORM_DETAILS":
     case "RECORD_COUNTRY_EXTENSION":
     case "RECORD_LEGAL_FORM_CONTINUATION":
     case "RECORD_HANDOVER_SIGN_OFF":
@@ -1925,6 +1931,7 @@ export function reduceClinicalEvent(
       });
     case "RECORD_RESTRICTIVE_PRACTICE_START":
     case "RECORD_RESTRICTIVE_PRACTICE_END":
+    case "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP":
     case "RECORD_WARD_INCIDENT":
     case "SET_SECLUSION_ROOM_STATUS":
       return reducerSlices().reduceRestrictivePracticeEvent(state, event, decision, { findUnit, reject, replaceUnit });

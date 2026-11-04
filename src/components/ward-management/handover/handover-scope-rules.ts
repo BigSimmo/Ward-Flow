@@ -1,6 +1,7 @@
 // Pure handover scope rules: the scope's name, which open movements belong to a scope, urgency for
 // the "outside this filter" footer, patient resolution and the sign-off dispatch. Split out of
 // handover-page.tsx to keep that file under the line cap; handover-page.tsx re-exports the public ones.
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { type Dispatch } from "react";
 import { communityTeamById, namesTeam } from "@/components/ward-management/community/community-derivations";
 import { type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
@@ -109,7 +110,8 @@ export function handoverSignOffUnitId(scope: HandoverScope): string | undefined 
 /** URGENT, FOR THE PURPOSE OF THE "OUTSIDE THIS FILTER" FOOTER */
 export function movementIsUrgent(movement: Movement, now: Instant): boolean {
   if (movement.flaggedUrgent) return true;
-  const dueAt = movement.legalForm?.dueAt;
+  // A form a person recorded as ended has no current expiry (gap list item 5).
+  const dueAt = currentLegalDueAt(movement);
   return dueAt !== undefined && isClockBreached(dueAt, now);
 }
 

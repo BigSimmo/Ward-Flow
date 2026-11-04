@@ -5,6 +5,7 @@ import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import type { Unit } from "./ward-model";
 import {
   EMPTY_WARD_RESTRICTIVE_PRACTICE,
+  RESTRICTIVE_PRACTICE_FOLLOW_UP_TASK_IDS,
   RESTRICTIVE_PRACTICE_IDS,
   SECLUSION_ROOM_STATUS_IDS,
   WARD_INCIDENT_CATEGORY_IDS,
@@ -25,6 +26,7 @@ export type RestrictivePracticeEvent = Extract<
     type:
       | "RECORD_RESTRICTIVE_PRACTICE_START"
       | "RECORD_RESTRICTIVE_PRACTICE_END"
+      | "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP"
       | "RECORD_WARD_INCIDENT"
       | "SET_SECLUSION_ROOM_STATUS";
   }
@@ -101,6 +103,28 @@ export function reduceRestrictivePracticeEvent(
         episodes: record.episodes.map((candidate) =>
           candidate === episode ? { ...candidate, endedAt: event.endedAt } : candidate,
         ),
+      };
+      break;
+    }
+    case "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP": {
+      const episode = record.episodes.find((candidate) => candidate.id === event.episodeId);
+      if (!episode) return reject(state, event, `no episode ${event.episodeId} on ${unit.name}`);
+      if (episode.endedAt === undefined) return reject(state, event, "Record when it ended before marking follow-up");
+      if (!RESTRICTIVE_PRACTICE_FOLLOW_UP_TASK_IDS.includes(event.task) || typeof event.done !== "boolean") {
+        return reject(state, event, `${event.type} task must be chosen from RESTRICTIVE_PRACTICE_FOLLOW_UP_TASKS`);
+      }
+      const followUp = { ...episode.followUp };
+      if (event.done) followUp[event.task] = true;
+      else delete followUp[event.task];
+      next = {
+        ...record,
+        episodes: record.episodes.map((candidate) => {
+          if (candidate !== episode) return candidate;
+          if (Object.keys(followUp).length > 0) return { ...candidate, followUp };
+          const rest = { ...candidate };
+          delete rest.followUp;
+          return rest;
+        }),
       };
       break;
     }

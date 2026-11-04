@@ -66,7 +66,12 @@ export function HomeReleaseSheet({ entry, onClose }: { entry: QueueEntry | undef
           if (disabledReason !== undefined || reason === "" || !movementId) return;
           run(
             { type: "RELEASE_PULL", role: "coordinator", now, movementId, reason },
-            { success: `Bed released for ${subject.displayName}.` },
+            {
+              success: `Bed released for ${subject.displayName}.`,
+              // Tier 1 item 6 (Josh, 4 Nov 2026): the release and the ward's notice come back from Undo.
+              undo: (at) => ({ type: "UNDO_RELEASE_STEP", role: "coordinator", now: at, movementId }),
+              undone: "Undone. The bed is pulled again.",
+            },
           );
           close();
         }}

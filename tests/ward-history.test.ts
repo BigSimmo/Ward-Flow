@@ -56,7 +56,9 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Q61 (31 Oct 2026) adds RECORD_SITE_HANDOVER_SIGN_OFF and UNDO_SITE_HANDOVER_SIGN_OFF.
       // Q149 (1 Nov 2026) adds ADD_BROADCAST_ALERT_UNITS.
       // OA1 Flag early (Josh, 3 Nov 2026) adds FLAG_RETURN_EARLY and UNDO_FLAG_RETURN_EARLY.
-      expect(allEventTypes.length).toBe(173);
+      // Gap list (Josh, 4 Nov 2026) adds RECORD_LEGAL_FORM_DETAILS and RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP.
+      // Tier 1 item 6 (4 Nov 2026) adds UNDO_BED_STEP, UNDO_RELEASE_STEP and UNDO_PATIENT_RECORD.
+      expect(allEventTypes.length).toBe(178);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
