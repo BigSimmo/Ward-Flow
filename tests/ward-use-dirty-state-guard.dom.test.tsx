@@ -460,7 +460,7 @@ describe("useDirtyStateGuard", () => {
     unmount();
     window.removeEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, cancelled);
   });
-  it.each(["Discard", "Keep draft"])(
+  it.each(["Discard", "Keep draft and close"])(
     "honours the referral's explicit %s before a synchronous history close",
     (choice) => {
       const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
@@ -498,7 +498,7 @@ describe("useDirtyStateGuard", () => {
     const other = renderHook(() => useDirtyStateGuard({ isDirty: true, confirmMessage: "Other form is dirty" }));
     openTypedReferral();
     const sourceIndex = window.history.state.__wfHistoryIndex as number;
-    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft and close" }));
     expect(confirmSpy).toHaveBeenCalledWith("Other form is dirty");
     expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Synthetic referral draft");
     // Settle the mocked reverse traversal before interacting with the retained drawer again.

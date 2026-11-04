@@ -180,6 +180,100 @@
   margin-left: auto;
 }
 
+/* RF7 (Josh, 3 Nov 2026): the folded sections under Core details. Each is a hairline row with a
+   title, one line saying what it holds or what has been added, and a chevron; open, its fields sit
+   in the same grid as the core fields. Tone is a glyph beside a word, never an edge. */
+.folds {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fold {
+  min-width: 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.foldHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-row-default);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  color: var(--wf-ink-1);
+  list-style: none;
+  cursor: pointer;
+}
+
+.foldHead::-webkit-details-marker {
+  display: none;
+}
+
+.foldHead:hover {
+  background: var(--wf-hover);
+}
+
+.foldHead:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.fold:last-child,
+.fold:last-child .foldHead {
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
+}
+
+.fold[open] .foldHead {
+  border-radius: 0;
+}
+
+.foldLines {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.foldTitle {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.foldSummary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.foldChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-t-enter) var(--wf-ease-out);
+}
+
+.fold[open] .foldChevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foldChevron {
+    transition: none;
+  }
+}
+
+.foldBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-3) var(--wf-s-4);
+  padding: var(--wf-s-1) var(--wf-s-3) var(--wf-s-4);
+}
+
 /* Duplicate check. Redesign: a section under the identity fields, inside the Identity card. */
 .dupInline {
   border-top: 1px solid var(--wf-line);
@@ -388,16 +482,18 @@
   gap: var(--wf-s-2);
 }
 
-@media (max-width: 46.4375rem) {
-  .screen button,
-  .screen a[href] {
-    min-height: 3rem;
-  }
-}
-
 @media (min-width: 46.5rem) {
-  .grid {
+  .grid,
+  .foldBody {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* RF7: on a larger screen the foot stays in view at the bottom of the form while it scrolls. */
+  .submitBar.submitBar {
+    position: sticky;
+    bottom: var(--wf-s-3);
+    z-index: 2;
+    box-shadow: var(--wf-e2);
   }
 }
 
@@ -514,11 +610,21 @@
   white-space: nowrap;
 }
 
+/* RF7: long answers (Aboriginal or Torres Strait Islander status) size to their words and wrap,
+   rather than sharing equal widths. */
+.segmented.segmented.segmentedWrap > button {
+  flex: 0 1 auto;
+}
+
 /* With the label floor, a zero basis lets the row wrap only when the floors themselves do not fit.
    Without `calc-size()` the floor is 0, so the row keeps sizing from each label instead. */
 @supports (min-width: calc-size(max-content, size)) {
   .segmented.segmented > button {
     flex-basis: 0;
+  }
+
+  .segmented.segmented.segmentedWrap > button {
+    flex-basis: auto;
   }
 }
 
@@ -588,6 +694,16 @@
     position: absolute;
     inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
+
+  .segmented.segmented.segmentedWrap {
+    flex-wrap: wrap;
+    row-gap: calc(2 * var(--wf-phone-pill-hit));
+    overflow-x: visible;
+  }
+
+  .segmented.segmented.segmentedWrap > button {
+    max-width: 100%;
+  }
 }
 
 .layout[hidden] {
@@ -651,30 +767,6 @@
     margin: var(--wf-s-1) 0 0;
     color: var(--wf-ink-1);
     font: 600 var(--wf-fs-14) / 1.4 var(--wf-font);
-  }
-
-  .phList {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    overflow: hidden;
-    border: 1px solid var(--wf-line);
-    border-radius: 16px;
-    background: var(--wf-surface);
-    box-shadow: var(--wf-e1);
-  }
-
-  .phList > li + li {
-    border-top: 1px solid var(--wf-line);
-  }
-
-  .phCard.phCard {
-    border: 1px solid var(--wf-line);
-    border-radius: 16px;
-    background: var(--wf-surface);
-    box-shadow: var(--wf-e1);
   }
 
   .phUmrn {

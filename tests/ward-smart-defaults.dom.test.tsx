@@ -107,7 +107,7 @@ describe("adding a patient at an ED desk", () => {
     fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Testable" } });
     fireEvent.change(screen.getByLabelText("Family name"), { target: { value: "Deskfirst" } });
     fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "01/01/1990" } });
-    fireEvent.click(screen.getByRole("button", { name: /Register & start referral/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Add and start referral/ }));
     await waitFor(() => expect(router.push).toHaveBeenCalled());
     const params = new URLSearchParams(String(router.push.mock.calls.at(-1)?.[0]).split("?")[1]);
     expect(params.get("site")).toBe(siteCode);

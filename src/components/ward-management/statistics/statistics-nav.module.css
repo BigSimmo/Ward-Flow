@@ -16,7 +16,7 @@
   align-items: center;
 }
 
-.mobileSelect {
+.navBar .mobileSelect {
   display: none;
 }
 
@@ -25,31 +25,40 @@
     display: none;
   }
 
-  .mobileSelect {
+  .navBar .mobileSelect {
     display: flex;
     flex: 1 1 auto;
     min-width: 0;
-    align-items: center;
-    gap: var(--wf-s-2);
-    color: var(--wf-hero-ink-2);
-    font-size: var(--wf-fs-13);
   }
 
-  .mobileSelect > span {
-    display: none;
-  }
-
-  .mobileSelect select {
-    flex: 1;
+  /* 40px on a phone, the floor for its controls, in the hero's own ink. */
+  .mobileTrigger {
+    display: inline-flex;
+    flex: 1 1 auto;
     min-width: 0;
-    height: var(--wf-h-lg);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wf-s-2);
+    height: 40px;
     padding: 0 var(--wf-s-3);
-    font: inherit;
-    font-size: max(1rem, 16px);
-    color: var(--wf-hero-ink);
-    background: color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
     border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 24%, transparent);
-    border-radius: var(--wf-r-md);
+    border-radius: var(--wf-r-ctl);
+    background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+    color: var(--wf-hero-ink);
+    font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+    cursor: pointer;
+  }
+
+  .mobileTrigger:focus-visible {
+    outline: 2px solid var(--wf-hero-ink);
+    outline-offset: 2px;
+  }
+
+  .mobileTriggerLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
