@@ -34,7 +34,9 @@ function recordTwoActions() {
   for (const index of [0, 1]) {
     const toggle = within(waits).getAllByTestId("bed-meeting-add-action")[index]!;
     press(toggle);
-    fireEvent.change(screen.getByTestId("bed-meeting-action-kind"), { target: { value: "book_transport" } });
+    fireEvent.click(
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+    );
     press(screen.getByTestId("bed-meeting-action-record"));
     // The form closes with its Record button; focus goes back to the row's Add action.
     expect(document.activeElement).toBe(within(waits).getAllByTestId("bed-meeting-add-action")[index]);

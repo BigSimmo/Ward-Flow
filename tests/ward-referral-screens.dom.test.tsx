@@ -2057,7 +2057,7 @@ describe("ReferralMatchView — the optional local-bed step is never owed", () =
     expect(region.textContent ?? "").not.toMatch(/\d/);
     // What IS there is the offer, and only the offer.
     expect(screen.getByTestId("ward-referral-match-local-bed-sought")).toHaveTextContent(
-      "Record that a local bed was sought and none was suitable",
+      "Local bed sought, none suitable",
     );
     expect(screen.queryByTestId("ward-referral-match-local-bed-sought-record")).not.toBeInTheDocument();
   });
@@ -2070,7 +2070,7 @@ describe("ReferralMatchView — the optional local-bed step is never owed", () =
       expect(
         screen.getByTestId("ward-referral-match-local-bed-sought"),
         `the local-bed control is missing for a ${homeRegion} referral`,
-      ).toHaveTextContent("Record that a local bed was sought and none was suitable");
+      ).toHaveTextContent("Local bed sought, none suitable");
       unmount();
     }
   });
@@ -2084,7 +2084,7 @@ describe("ReferralMatchView — the optional local-bed step is never owed", () =
 
     // The record now exists and the screen says so; the offer is gone because it is a one-shot.
     expect(screen.getByTestId("ward-referral-match-local-bed-sought-record")).toHaveTextContent(
-      /^A local bed was sought and none was suitable, at \d{2}:\d{2}\.$/,
+      /^Local bed sought, none suitable · \d{2}:\d{2}$/,
     );
     expect(screen.queryByTestId("ward-referral-match-local-bed-sought")).not.toBeInTheDocument();
     // Nothing was refused, and the referral is still queued — this step is not a decision.
