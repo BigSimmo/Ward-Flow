@@ -67,7 +67,10 @@ export function ReferralPatientStep({
     setGuardOpen,
     newPatientOpen,
     setNewPatientOpen,
+    resetNewPatient,
     newPatient,
+    newPatientDateText,
+    setNewPatientDateText,
     setNewPatient,
     newPatientError,
     setNewPatientError,
@@ -245,7 +248,11 @@ export function ReferralPatientStep({
                   type="button"
                   className={styles.newPatientClose}
                   aria-label="Close new patient"
-                  onClick={() => setNewPatientOpen(false)}
+                  onClick={() => {
+                    // Closing gives up the new patient too, like Back to search, so no guard asks later.
+                    resetNewPatient();
+                    setNewPatientOpen(false);
+                  }}
                 >
                   <X aria-hidden="true" />
                 </button>
@@ -285,6 +292,8 @@ export function ReferralPatientStep({
                   <DateField
                     id={`${sectionId}-np-dob`}
                     value={newPatient.dateOfBirth}
+                    rawText={newPatientDateText}
+                    onRawTextChange={setNewPatientDateText}
                     onValueChange={(dateOfBirth) => setNewPatient((p) => ({ ...p, dateOfBirth }))}
                   />
                 </Field>
@@ -357,7 +366,15 @@ export function ReferralPatientStep({
                   Add and use for this referral
                 </button>
                 {addPatientGate.note}
-                <button type="button" className={styles.btn} onClick={() => setNewPatientOpen(false)}>
+                <button
+                  type="button"
+                  className={styles.btn}
+                  onClick={() => {
+                    // Back to search discards what was typed, so no guard later asks about details already given up.
+                    resetNewPatient();
+                    setNewPatientOpen(false);
+                  }}
+                >
                   Back to search
                 </button>
               </div>
@@ -369,11 +386,13 @@ export function ReferralPatientStep({
               <input
                 ref={searchInputRef}
                 type="search"
+                role="combobox"
                 id={searchId}
                 className={styles.patientSearchInput}
                 aria-label="Find a patient"
                 aria-invalid={patientShowErrors && !patientRecord && unidentified === null ? true : undefined}
                 aria-haspopup="listbox"
+                aria-expanded={showResults}
                 aria-autocomplete="list"
                 aria-controls={showResults ? resultsId : undefined}
                 aria-activedescendant={showResults && highlight >= 0 ? `${searchId}-opt-${highlight}` : undefined}

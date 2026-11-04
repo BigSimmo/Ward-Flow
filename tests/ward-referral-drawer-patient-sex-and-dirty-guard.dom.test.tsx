@@ -115,7 +115,7 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
 
     // 2. Also verify selecting an existing registered patient (patient:<id>) retains Female
     fireEvent.click(screen.getByTestId("seed-registered-patient"));
-    fireEvent.change(screen.getByRole("searchbox", { name: "Find a patient" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Find a patient" }), {
       target: { value: "UM999001" },
     });
     const results = screen.getByRole("listbox", { name: "Matching patients" });

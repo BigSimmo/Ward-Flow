@@ -86,6 +86,6 @@ export function searchSuburbs(query: string): SuburbSearchResult[] {
     status: entry.status,
     clinic: entry.communityClinic,
     service: entry.healthService.displayName,
-    href: "/ward-flow/community",
+    href: "/ward-flow/hub/catchments",
   }));
 }

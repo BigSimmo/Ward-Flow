@@ -48,7 +48,7 @@ describe("the referral drawer shows only what the record holds", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
-    const search = screen.getByRole("searchbox", { name: "Find a patient" });
+    const search = screen.getByRole("combobox", { name: "Find a patient" });
     fireEvent.keyDown(search, { key: "Escape" });
     expect(close).not.toHaveBeenCalled();
     // Opened from a person (option B), closing the search shows that person's summary again, so the
@@ -94,9 +94,9 @@ describe("the referral drawer shows only what the record holds", () => {
   it("starts the free-text fields empty and offers one patient search", () => {
     renderDrawer();
     // Opened naming the person (option B), the person shows as a summary; Change opens the one search.
-    expect(screen.queryByRole("searchbox", { name: "Find a patient" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Find a patient" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
-    expect(screen.getAllByRole("searchbox", { name: "Find a patient" })).toHaveLength(1);
+    expect(screen.getAllByRole("combobox", { name: "Find a patient" })).toHaveLength(1);
     expect(screen.queryByText("Live Database Search")).not.toBeInTheDocument();
     // v6: the clinical acuity cell reads "Diagnosis not recorded".
     expect(document.body.textContent).toMatch(/Diagnosis not recorded/);
