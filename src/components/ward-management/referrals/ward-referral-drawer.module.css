@@ -1336,6 +1336,14 @@
   cursor: pointer;
 }
 
+/* Phone (Q377, 3 Nov 2026): the risk check chips are drawn at 40px like every phone control
+   (DESIGN-SYSTEM.md); touch screens keep the larger --wf-h-sm. */
+@media (max-width: 46.4375rem) {
+  .checkChip {
+    height: max(var(--wf-h-sm), 40px);
+  }
+}
+
 .checkChip[data-checked="true"] {
   border-color: var(--wf-line-3);
   background: var(--wf-selected);
@@ -1523,6 +1531,13 @@
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
   cursor: pointer;
+}
+
+/* Phone (Q377): the "To follow" checkbox row reaches the 40px phone control height. */
+@media (max-width: 46.4375rem) {
+  .toFollow {
+    min-height: max(var(--wf-h-sm), 40px);
+  }
 }
 
 .fileInput {
@@ -2958,6 +2973,11 @@ details.refCard > summary {
     font-weight: 500;
     appearance: none;
     -webkit-appearance: none;
+  }
+
+  /* The app's own caret (the ::after above) stands in for the built-in one (H5). */
+  .drawerWide[data-ph-mode] .inboxPicker > select::picker-icon {
+    display: none;
   }
 
   .drawerWide[data-ph-mode] .inboxPane article.refCard {

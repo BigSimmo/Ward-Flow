@@ -341,7 +341,8 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
                       .join(" · ")}
                   </span>
                   <span className={rail.alertBeds}>
-                    {service.beds.ready} of {service.beds.total} ready · ED {releasedCountText(service.waiting)} waiting
+                    {service.beds.ready} of {service.beds.total} ready · {releasedCountText(service.waiting)} open ED
+                    journeys
                   </span>
                 </span>
               </div>
@@ -689,7 +690,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                   </button>
                   {isPhone && (
                     <span className={bar.scopeLive}>
-                      {releasedCountText(displayedWaiting)} waiting · {displayedScope}
+                      {releasedCountText(displayedWaiting)} open ED journeys · {displayedScope}
                     </span>
                   )}
                 </div>
@@ -969,7 +970,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               close();
             }}
           >
-            All services · {releasedCountText(report.network.people.waitingInEd)} waiting
+            All services · {releasedCountText(report.network.people.waitingInEd)} open ED journeys
           </button>
         )}
         {services.map((service) => (
@@ -983,7 +984,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               close();
             }}
           >
-            {service.service}: {service.beds.ready} beds ready · {releasedCountText(service.waiting)} waiting
+            {service.service}: {service.beds.ready} beds ready · {releasedCountText(service.waiting)} open ED journeys
           </button>
         ))}
       </Sheet>

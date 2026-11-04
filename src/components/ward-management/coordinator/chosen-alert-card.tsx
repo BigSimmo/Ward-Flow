@@ -1,56 +1,37 @@
 "use client";
 
-// The alert chosen in Home's "My list" (approved Home mock-up v7, 22 Oct 2026), shown
-// above Placement so the coordinator keeps the reason in view while acting on the patient.
+// The alert chosen in Home's My list, shown inside the placement drawer under the patient's name
+// (H8, approved by Josh 3 Nov 2026). It replaced the separate "Chosen alert" card above Placement:
+// one tinted block with the reason, the detail, how long ago and who owns it when that is not you.
 
-import Link from "next/link";
-import { X } from "lucide-react";
-
-import {
-  alertDetail,
-  alertKindLabel,
-  legalTypedEnd,
-  minutesText,
-} from "@/components/ward-management/alerts/alerts-model";
-import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { alertDetail, legalTypedEnd, minutesText } from "@/components/ward-management/alerts/alerts-model";
 import { ownerShort, type QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
-import type { Instant } from "@/components/ward-management/ward-clock";
-import { Button, buttonClass, Card, CardHead, StatusGlyph } from "@/components/wf";
-
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import styles from "./home-list.module.css";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import { StatusGlyph } from "@/components/wf";
 
-/** `onClear` is left out inside a sheet, which has its own Close. */
-export function ChosenAlertCard({ entry, now, onClear }: { entry: QueueEntry; now: Instant; onClear?: () => void }) {
-  const kindLabel = alertKindLabel(entry.item.id);
-  const inPlacement = Boolean(entry.movement);
+import p from "./home-placement-drawer.module.css";
+
+export function ChosenAlertCard({ entry, now }: { entry: QueueEntry; now: Instant }) {
   // A passed legal form shows its typed time, never an age since it (legal times only as typed).
   const legalEnded = legalTypedEnd(entry.item);
   const age =
     legalEnded !== undefined
       ? typedTimeLine(legalEnded, now)
       : entry.raised === undefined
-        ? "time not recorded"
+        ? "Time not recorded"
         : `${minutesText(Math.max(0, now - entry.raised))} ago`;
+  const owner = entry.mine || entry.owner === "Bed coordinator" ? undefined : `Owned by ${ownerShort(entry.owner)}`;
+  const tone = entry.group === "act" ? "danger" : "warning";
   return (
-    <Card className={styles.alertCard} data-testid="home-chosen-alert" aria-label="Chosen alert">
-      <CardHead
-        title="Chosen alert"
-        meta={kindLabel ? `${kindLabel} · ${age}` : age}
-        action={
-          onClear ? (
-            <Button size="sm" variant="ghost" icon={X} onClick={onClear} aria-label="Clear the chosen alert">
-              Clear
-            </Button>
-          ) : undefined
-        }
-      />
-      <div className={styles.alertBody}>
-        <p className={styles.alertTitle}>
-          <StatusGlyph tone={entry.group === "act" ? "danger" : "warning"} />
-          {entry.item.title}
-        </p>
-        <p className={styles.alertDetail}>
+    <section className={p.alert} data-tone={tone} aria-label="Chosen alert" data-testid="home-chosen-alert">
+      <StatusGlyph tone={tone} size={9} />
+      <div className={p.alertText}>
+        <p className={p.alertTitle}>{entry.item.title}</p>
+        {/* Appraisal, 3 Nov 2026: two lines, not three. The kind label only restated the title, so the
+            detail, how long ago and the owner share one line. */}
+        <p className={p.alertDetail}>
           {alertDetail(entry.item)}
           {/* A passed legal form's detail is its typed time; the tag says no legal limit was checked. */}
           {legalEnded !== undefined ? (
@@ -59,49 +40,9 @@ export function ChosenAlertCard({ entry, now, onClear }: { entry: QueueEntry; no
               <LegalLimitsNotChecked variant="tag" />
             </>
           ) : null}
+          <span className={p.alertMeta}>{[age, owner].filter(Boolean).map((part) => ` · ${part}`)}</span>
         </p>
-        {/* With a patient open in Placement below, the patient, origin and destination are already
-            there, so the card keeps only the reason, who owns it when that is not you, and what to do. */}
-        {inPlacement ? (
-          entry.mine || entry.owner === "Bed coordinator" ? null : (
-            <p className={styles.alertDetail}>{`Owned by ${ownerShort(entry.owner)}`}</p>
-          )
-        ) : (
-          <dl className={styles.alertFacts}>
-            <div>
-              <dt>Patient</dt>
-              <dd>
-                {entry.subject.displayName} <span className={styles.mono}>{entry.subject.umrn}</span>
-              </dd>
-            </div>
-            <div>
-              <dt>Owner</dt>
-              <dd>{ownerShort(entry.owner)}</dd>
-            </div>
-            <div>
-              <dt>From</dt>
-              <dd>{entry.subject.from}</dd>
-            </div>
-            <div>
-              <dt>To</dt>
-              <dd>{entry.subject.to ?? "No destination yet"}</dd>
-            </div>
-          </dl>
-        )}
-        {inPlacement ? (
-          <p className={styles.alertNext}>
-            {entry.action.kind === "release"
-              ? `${entry.action.label}: use Move or release in Placement below.`
-              : `${entry.subject.displayName} is open in Placement below.`}
-          </p>
-        ) : entry.action.kind === "link" ? (
-          <div className={styles.alertActs}>
-            <Link href={entry.action.href} className={buttonClass({ size: "sm", variant: "pri" })}>
-              {entry.action.label}
-            </Link>
-          </div>
-        ) : null}
       </div>
-    </Card>
+    </section>
   );
 }

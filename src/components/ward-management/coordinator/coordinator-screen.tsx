@@ -68,7 +68,6 @@ import {
   StatusGlyph,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { useHomeChanges } from "./activity-changes";
 import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import activity from "./home-activity.module.css";
@@ -82,10 +81,11 @@ import {
   type ActivityPanelTab,
 } from "@/components/ward-management/shell/ward-activity-panel-store";
 import { useHomeLayout } from "./home-layout";
-import { BedsGapCard, ChosenAlertCard, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
+import { BedsGapCard, HomePlacementDrawer, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
 import flowStyles from "./home-flow.module.css";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
+import type { PlacementSubject } from "./home-placement-drawer";
 import { PlacementPrompt } from "./placement-prompt";
 import { usePlannedRows } from "./planned-rows";
 import {
@@ -96,8 +96,6 @@ import {
   type QueueHighlight,
   queueWaitThresholds,
 } from "./priority-queue";
-import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel-lazy";
-import shortlistStyles from "./shortlist-panel.module.css";
 
 /*
  * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
@@ -232,7 +230,6 @@ export function CoordinatorScreen() {
     admissions,
     rejections,
     referrals,
-    dispatch,
     focusMovementId,
     setFocusMovementId,
     configuration,
@@ -250,7 +247,6 @@ export function CoordinatorScreen() {
     "admissions",
     "rejections",
     "referrals",
-    "dispatch",
     "focusMovementId",
     "setFocusMovementId",
     "configuration",
@@ -457,23 +453,14 @@ export function CoordinatorScreen() {
   }
   function closeShortlist() {
     setSelectedAlertId(undefined);
-    selectMovement(undefined);
+    // Closing clears the drawer's subject but keeps the patient in focus, so Change view still
+    // offers that patient's wards and ED. The drawer is modal on every width (H7), so closing it is
+    // the only way to reach Change view from Placement, as the side column used to allow.
+    setSelectedMovementId(undefined);
+    setSelectedUnitId(undefined);
+    setSelectedReferralId(undefined);
     focusQueue(queueFocusRef.current);
   }
-
-  // Placement as a sheet (phone, tablet portrait): Esc closes it, like the scrim.
-  const sheetPlacementOpen = hasPanelSubject && sheetPlacement;
-  useEffect(() => {
-    if (!sheetPlacementOpen) return;
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "Escape" || event.defaultPrevented || hasOpenSheet()) return;
-      setSelectedMovementId(undefined);
-      setSelectedReferralId(undefined);
-      setFocusMovementId(undefined);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [sheetPlacementOpen, setFocusMovementId]);
 
   const patientOf = usePatientOf();
 
@@ -776,66 +763,27 @@ export function CoordinatorScreen() {
   // the queue selection and `data-subject-movement` name. A deferred copy could act for the previous patient.
   const deferredPanelMovement = panelMovement;
 
-  // Placement: the right column from tablet landscape up, a side sheet over a scrim on tablet
-  // portrait and the patient sheet on a phone (CSS by `data-layout`).
-  const placementNode = hasPanelSubject ? (
-    <div className={`${styles.side} ${styles.placementCol}`}>
-      <div
-        className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
-        onClick={closeShortlist}
-        aria-hidden="true"
-        data-sheet-scrim=""
-        data-testid="ward-coordinator-shortlist-backdrop"
-      />
-      <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>
-        <aside
-          className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
-          aria-label={selectedReferral ? "Referral placement" : "Placement"}
-          data-testid="ward-home-placement"
-          // Journeys prove which movement the panel is for by this attribute.
-          data-subject-movement={selectedReferral ? undefined : panelMovement?.id}
-        >
-          <div className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`} aria-hidden="true" />
-          <header className={styles.shortlistHeader}>
-            <h2>{selectedReferral ? "Referral placement" : "Placement"}</h2>
-            <button
-              type="button"
-              className={buttonClass({ variant: "ghost", size: "sm" })}
-              onClick={closeShortlist}
-              aria-label="Close shortlist and clear selection"
-            >
-              Close
-            </button>
-          </header>
-          {service ? (
-            <p className={styles.cardNote} data-testid="ward-shortlist-not-scoped">
-              Every ward in the network is considered.
-            </p>
-          ) : null}
-          {/* In the Placement sheet (phone, tablet portrait) the alert's reason leads, as it does on desktop. */}
-          {sheetPlacement && chosenAlert ? <ChosenAlertCard entry={chosenAlert} now={now} /> : null}
-          {selectedReferral ? (
-            <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
-          ) : (
-            <ShortlistPanel
-              movement={deferredPanelMovement}
-              now={liveNow}
-              units={units}
-              bedReleases={bedReleases}
-              leaveBeds={leaveBeds}
-              admissions={admissions}
-              referrals={referrals}
-              selectedUnitId={selectedUnitId}
-              onSelectUnit={setSelectedUnitId}
-              dispatch={dispatch}
-              parallelReferralCap={configuration.parallelReferralCap}
-              pullHoldMinutes={configuration.pullHoldMinutes}
-              onRefer={deferredPanelMovement ? (unitIds) => referFromSheet(deferredPanelMovement, unitIds) : undefined}
-            />
-          )}
-        </aside>
-      </div>
-    </div>
+  // Placement (H7 to H10, Josh 3 Nov 2026): the patient drawer on every screen size, like the
+  // Capacity pop-up, for the chosen alert, the chosen patient or the chosen referral.
+  const placementSubject: PlacementSubject | undefined = chosenAlert
+    ? { kind: "alert", entry: chosenAlert }
+    : selectedReferral
+      ? { kind: "referral", referral: selectedReferral }
+      : deferredPanelMovement
+        ? { kind: "movement", movement: deferredPanelMovement }
+        : undefined;
+  const placementNode = placementSubject ? (
+    <HomePlacementDrawer
+      // A new subject is a new drawer, so its foot slot and scroll start fresh.
+      key={chosenAlert?.item.id ?? selectedReferral?.id ?? deferredPanelMovement?.id}
+      subject={placementSubject}
+      now={liveNow}
+      onClose={closeShortlist}
+      selectedUnitId={selectedUnitId}
+      onSelectUnit={setSelectedUnitId}
+      onRefer={referFromSheet}
+      networkNote={service ? "Every ward in the network is considered." : undefined}
+    />
   ) : null;
 
   return (
@@ -1125,7 +1073,6 @@ export function CoordinatorScreen() {
                 <PlannedList now={now} rows={plannedRows} title="Later today" />
               ) : shownView === "queue" ? (
                 <PriorityQueue
-                  flow
                   flowStage={flowStage}
                   waitingMarks={waitingMarks}
                   movements={queue}
@@ -1137,14 +1084,8 @@ export function CoordinatorScreen() {
                     setSelectedAlertId(undefined);
                     selectMovement(movementId);
                   }}
-                  selectedReferralId={selectedReferralId}
-                  onSelectReferral={(referralId) => {
-                    setSelectedAlertId(undefined);
-                    selectReferral(referralId);
-                  }}
                   filterEdId={activeEdId}
                   onClearFilter={() => setSelectedEdId(undefined)}
-                  totalMovements={openMovements.length}
                   serviceScope={queueServiceScope}
                   pullHoldMinutes={configuration.pullHoldMinutes}
                   delaysHref={DELAYS_HREF}
@@ -1181,14 +1122,9 @@ export function CoordinatorScreen() {
               )}
             </div>
             <div className={`${list.rightCol} ${list.stickyCol}`}>
-              {chosenAlert && !sheetPlacement ? (
-                <ChosenAlertCard entry={chosenAlert} now={now} onClear={closeShortlist} />
-              ) : null}
               {isPhone || chosenAlert ? null : (
                 <BedsGapCard now={now} bedsReady={bedsReady} condensed={hasPanelSubject} />
               )}
-              {/* An alert with no patient journey (a booking, a notification) has nothing to place. */}
-              {chosenAlert && !chosenAlert.movement ? null : placementNode}
               {!sheetPlacement && !hasPanelSubject && !chosenAlert ? (
                 <PlacementPrompt next={actEntries.find((entry) => entry.movement)} onOpen={alertHandlers.onSelect} />
               ) : null}
@@ -1199,18 +1135,7 @@ export function CoordinatorScreen() {
             </div>
           </div>
 
-          {sheetPlacement && chosenAlert && !chosenAlert.movement ? (
-            // On a phone or tablet portrait an alert with no patient journey opens in its own sheet.
-            <Sheet
-              open
-              onClose={() => setSelectedAlertId(undefined)}
-              title="Chosen alert"
-              mobilePlacement="bottom"
-              testId="home-alert-sheet"
-            >
-              <ChosenAlertCard entry={chosenAlert} now={now} />
-            </Sheet>
-          ) : null}
+          {placementNode}
           {releaseSheetUsed ? (
             <HomeReleaseSheet entry={releaseAlert} onClose={() => setReleaseAlertId(undefined)} />
           ) : null}

@@ -41,6 +41,7 @@
     "scratch/**",
     "worktrees/**",
     "tmp/**",
+    "mockup-backup-????-??-??/**",
     ".worktrees/**",
     ".claude/**",
     ".next-playwright/**",

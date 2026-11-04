@@ -1,0 +1,100 @@
+/* OA1 (3 Nov 2026): the return tracker at the top of the plan. */
+.tracker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+/* The track between dots: a hairline that fills as steps complete. */
+.step + .step::before {
+  position: absolute;
+  top: 9px;
+  right: 50%;
+  left: -50%;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--wf-track);
+  content: "";
+}
+
+.step[data-state="done"]::before,
+.step[data-state="now"]::before {
+  background: var(--wf-accent);
+}
+
+.dot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--wf-track);
+  border-radius: 50%;
+  background: var(--wf-surface);
+  color: var(--wf-on-accent);
+}
+
+.step[data-state="done"] .dot {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent);
+}
+
+.step[data-state="now"] .dot {
+  border-color: var(--wf-accent);
+  box-shadow:
+    inset 0 0 0 3px var(--wf-surface),
+    inset 0 0 0 10px var(--wf-accent);
+}
+
+.label {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-11) / 1.3 var(--wf-font);
+}
+
+.step[data-state="done"] .label {
+  color: var(--wf-ink-2);
+}
+
+.step[data-state="now"] .label {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.next {
+  display: flex;
+  gap: var(--wf-s-2);
+  align-items: baseline;
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-accent-tint);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.next b {
+  flex: none;
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}

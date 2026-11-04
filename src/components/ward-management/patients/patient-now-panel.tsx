@@ -72,6 +72,7 @@ export type PatientNowPanelProps = {
   wardForm: WardChangeForm;
   wardPending: boolean;
   wardRefusal: string | undefined;
+  wardSaveError: string | undefined;
 };
 
 export function PatientNowPanel(props: PatientNowPanelProps) {
@@ -123,6 +124,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     wardForm,
     wardPending,
     wardRefusal,
+    wardSaveError,
   } = props;
   const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
   // Community clinician (redesign, 31 Oct 2026): the team follows its person on the ward but records
@@ -232,13 +234,14 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
                 now={now}
                 dayZero={dayZero}
                 form={wardForm}
+                pending={wardPending}
                 onFormChange={setWardForm}
                 onRecordLeave={recordLeave}
                 onGoneToEd={goneToEd}
                 onSaveDischarge={saveDischarge}
                 dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
-                pending={wardPending}
                 refusal={wardRefusal}
+                saveError={wardSaveError}
                 roleLimit={(eventType) => gate(eventType).reason}
                 leaveLegal={leaveLegal}
               />

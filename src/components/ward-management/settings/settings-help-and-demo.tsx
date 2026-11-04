@@ -5,14 +5,19 @@
 // coordinator and the access admin see. Restore defaults moved to This device, where every desk has it.
 
 import Link from "next/link";
-import type { ChangeEvent, ReactNode } from "react";
+import { useSyncExternalStore, type ChangeEvent, type ReactNode } from "react";
 import { BookOpen, CircleHelp, Copy, Database, Download, Info, ShieldCheck, Upload, Wrench } from "lucide-react";
 
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
 import { saveTourStep, useTourRole } from "@/components/ward-management/help/ward-help-store";
+import {
+  helpTipsOff,
+  setHelpTipsOff,
+  subscribeHelpTipsOff,
+} from "@/components/ward-management/help-content/ward-help-tips-off";
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { FeatureFlagsCard } from "@/components/ward-management/settings/feature-flags-card";
-import { Button, Card, CardHead, Kbd, buttonClass } from "@/components/wf";
+import { Button, Card, CardHead, Kbd, SrOnly, Switch, buttonClass } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
@@ -28,6 +33,8 @@ const SHORTCUTS: readonly { readonly label: string; readonly keys: readonly stri
 /** Help and the tour, on every desk. */
 export function SettingsHelpCard() {
   const tourRole = useTourRole();
+  // G3: the page tips' on/off choice for this device. The server reads tips as on.
+  const tipsOff = useSyncExternalStore(subscribeHelpTipsOff, helpTipsOff, () => false);
   return (
     <Card aria-labelledby="help-title" data-setting="help">
       <CardHead iconPlain id="help-title" icon={CircleHelp} title="Help" />
@@ -48,6 +55,13 @@ export function SettingsHelpCard() {
         >
           Replay the tour
         </Button>
+      </SettingRow>
+      <SettingRow
+        setting="help-tips"
+        title="Page tips"
+        sub="A short tip the first time you open each page, on this device"
+      >
+        <Switch checked={!tipsOff} onCheckedChange={(on) => setHelpTipsOff(!on)} label={<SrOnly>Page tips</SrOnly>} />
       </SettingRow>
       <ul className={styles.shortcuts} aria-label="Keyboard shortcuts" data-setting="shortcuts">
         {SHORTCUTS.map((shortcut) => (

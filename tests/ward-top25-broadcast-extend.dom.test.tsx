@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_BROADCAST_EXTENSION_MINUTES } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
@@ -80,6 +80,7 @@ function Grab() {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   window.sessionStorage.clear();
   flow = undefined;
 });
@@ -98,12 +99,14 @@ function setUp() {
 }
 
 describe("the coordinator banner", () => {
-  it("extends and then stands down the live alert", () => {
+  it("extends and then stands down the live alert", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const alert = setUp();
     fireEvent.click(screen.getByTestId("ward-broadcast-extend"));
     const current = () => flow!.broadcastAlerts.find((entry) => entry.id === alert.id)!;
     expect(current().expiresAt).toBe(alert.expiresAt + DEFAULT_BROADCAST_EXTENSION_MINUTES);
     fireEvent.click(screen.getByTestId("ward-broadcast-stand-down"));
-    expect(current().status).toBe("stood_down");
+    await waitFor(() => expect(current().status).toBe("stood_down"));
+    expect(confirm).toHaveBeenCalledOnce();
   });
 });

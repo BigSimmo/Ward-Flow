@@ -34,6 +34,7 @@ import {
 import { FormsPack, PACK_SLOTS, packCount, packRequired } from "./officer-forms-pack";
 import { HowWorkedOut } from "@/components/ward-management/capacity/capacity-how-worked-out";
 import { OfficerOnly } from "./officer-crew-only";
+import { ProviderNumber } from "./officer-booking-contacts";
 import styles from "./officer.module.css";
 import {
   holdEndsBeforeEta,
@@ -475,7 +476,11 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           <dl className={styles.factList}>
             <div>
               <dt>Provider</dt>
-              <dd>{transport.provider}</dd>
+              <dd>
+                {transport.provider}
+                {/* TR2 (3 Nov 2026): the number sits with the provider, one tap to copy. */}
+                <ProviderNumber provider={transport.provider} />
+              </dd>
             </div>
             <div data-testid={`ward-officer-cad-number-${movement.id}`}>
               <dt>CAD number</dt>

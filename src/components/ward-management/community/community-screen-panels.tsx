@@ -390,14 +390,14 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
                 <span className={styles.clinicRoomTitle}>Room 1 · consultant clinic</span>
-                <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 1pm</span>
+                <span className={`${styles.statusPillBadge} ${styles.good}`}>09:00 – 13:00</span>
               </div>
               <span className={styles.roomDetail}>Dr K. Rao · urgent intakes &amp; medication reviews</span>
             </div>
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
                 <span className={styles.clinicRoomTitle}>Room 2 · Depot &amp; Physical Health</span>
-                <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 4:30pm</span>
+                <span className={`${styles.statusPillBadge} ${styles.good}`}>09:00 – 16:30</span>
               </div>
               <span className={styles.roomDetail}>RN C. Davis · Long-acting injections, ECG, metabolic monitoring</span>
             </div>
@@ -438,7 +438,7 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
                 <span className={styles.clinicRoomTitle}>Morning MDT huddle log</span>
-                <span className={`${styles.statusPillBadge} ${styles.neutral}`}>10am completed</span>
+                <span className={`${styles.statusPillBadge} ${styles.neutral}`}>10:00 completed</span>
               </div>
               <span className={styles.roomDetail}>14 catchment cases reviewed · 2 inpatient transfers coordinated</span>
             </div>

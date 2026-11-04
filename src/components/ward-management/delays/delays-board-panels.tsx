@@ -15,7 +15,7 @@ import {
   Hospital,
   LayoutDashboard,
   MoonStar,
-  ServerCog,
+  ChevronRight,
   Stethoscope,
   TriangleAlert,
   X,
@@ -550,11 +550,13 @@ function RegisterItem({
         data-testid={testId}
       >
         {children}
+        <ChevronRight size={15} aria-hidden="true" className={polish.regGo} />
       </button>
     );
   return (
     <Link className={styles.brow} href={movementHref(movement.id)} data-testid={testId}>
       {children}
+      <ChevronRight size={15} aria-hidden="true" className={polish.regGo} />
     </Link>
   );
 }
@@ -572,9 +574,12 @@ export function Registers({
   onSilent,
   onPick,
   part = "all",
+  titled = true,
 }: {
   /** v10 phone: the registers and the longest quiet list each open in their own sheet. */
   part?: "all" | "registers" | "quiet";
+  /** Design brief (Josh, 3 Nov 2026): a sheet that already names "Today's follow-up" drops the inner title. */
+  titled?: boolean;
   escalated: Movement[];
   attention: { movement: Movement; title: string | undefined }[];
   closedToday: Movement[];
@@ -590,15 +595,40 @@ export function Registers({
   const patientOf = usePatientOf();
   // Role views (`waiting-desk-words.ts`): "on you" is said from the desk's side.
   const desk = useWaitingDeskWords();
-  const [tab, setTab] = useState<"escalated" | "attention" | "resolved" | "system">("escalated");
+  // Diagnosed issues W3 (Josh, 3 Nov 2026): "Today's follow-up" opens on whatever needs acting on
+  // first: the urgent list when it has anyone, else today's escalations.
+  const [tab, setTab] = useState<"escalated" | "attention" | "resolved">(
+    attention.length > 0 ? "attention" : "escalated",
+  );
   const onBoard = (id: string) => rows.some((row) => row.movement.id === id);
   // Round 4 (Josh, 31 Oct 2026): four register tabs, each an icon, its count and its name in one
   // column, so the choice reads at a glance; the open one is lifted with its colour underneath.
   const tabs = [
-    { id: "escalated", label: "Escalated", count: escalated.length, tone: "info", Icon: Flag },
-    { id: "attention", label: "Attention", count: attention.length, tone: "danger", Icon: TriangleAlert },
-    { id: "resolved", label: "Resolved", count: closedToday.length, tone: "success", Icon: CircleCheck },
-    { id: "system", label: "System", count: 0, tone: "neutral", Icon: ServerCog },
+    {
+      id: "attention",
+      // Q-12 (owner ruling): the "Attention" tab is never dropped or renamed.
+      label: "Attention",
+      count: attention.length,
+      tone: "danger",
+      Icon: TriangleAlert,
+      note: "Form due soon or no suitable bed. Open a person to act.",
+    },
+    {
+      id: "escalated",
+      label: "Escalated",
+      count: escalated.length,
+      tone: "info",
+      Icon: Flag,
+      note: "Raised to another desk today. Open to see the reply.",
+    },
+    {
+      id: "resolved",
+      label: "Done today",
+      count: closedToday.length,
+      tone: "success",
+      Icon: CircleCheck,
+      note: "Placed or not proceeding today.",
+    },
   ] as const;
   // Device audit (11 Oct 2026): the "Waiting on you" group already lists its own people beside this
   // rail, so Longest quiet names the quiet people under every other blocker instead of repeating them.
@@ -636,9 +666,9 @@ export function Registers({
       data-part={part === "all" ? undefined : part}
     >
       <div className={`${styles.sideB} ${polish.regBody}`} hidden={part === "quiet"}>
-        <h3 className={polish.regTitle}>Today&apos;s registers</h3>
+        {titled ? <h3 className={polish.regTitle}>Today&apos;s follow-up</h3> : null}
         {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
-        <div className={polish.regTabs} role="tablist" aria-label="Registers" onKeyDown={onTabKey}>
+        <div className={polish.regTabs} role="tablist" aria-label="Today's follow-up" onKeyDown={onTabKey}>
           {tabs.map((entry) => (
             <button
               key={entry.id}
@@ -663,6 +693,7 @@ export function Registers({
             </button>
           ))}
         </div>
+        <p className={polish.regNote}>{tabs.find((entry) => entry.id === tab)?.note}</p>
         <div
           role="tabpanel"
           id="delays-pane-escalated"
@@ -785,17 +816,10 @@ export function Registers({
             </>
           )}
         </div>
-        <div
-          role="tabpanel"
-          id="delays-pane-system"
-          aria-labelledby="delays-tab-system"
-          hidden={tab !== "system"}
-          className={styles.regList}
-        >
-          <section aria-label="Delays with no named person" className={styles.system} data-ward-primitive="panel">
-            <NoStatewideDelays />
-          </section>
-        </div>
+        {/* W3: the old System tab was nearly always 0, so it is one quiet line under the lists. */}
+        <section aria-label="Delays with no named person" className={polish.regSystem}>
+          <NoStatewideDelays />
+        </section>
       </div>
       <div className={`${styles.sideB} ${styles.sideSplit} ${polish.regBody}`} hidden={part === "registers"}>
         <div className={styles.sec}>

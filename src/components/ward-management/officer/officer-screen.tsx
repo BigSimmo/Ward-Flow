@@ -56,7 +56,15 @@ import { changeReasonLabels } from "@/components/ward-management/ward-change-rea
 
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
-import { PACK_SLOTS, packCount, packForm, packNeedsForms, packOutstanding, packRequired } from "./officer-forms-pack";
+import {
+  OfficerFormsCell,
+  PACK_SLOTS,
+  jobIsInvoluntary,
+  packCount,
+  packNeedsForms,
+  packOutstanding,
+  packRequired,
+} from "./officer-forms-pack";
 import styles from "./officer.module.css";
 import { OfficerFormCheckDialog } from "./officer-form-check-dialog";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
@@ -89,6 +97,7 @@ import { renderArrivalsCard } from "./officer-arrivals-card";
 import { OfficerOrderNote } from "./officer-order-note";
 import { type OfficerDetailTab, type OfficerJobDetailContext } from "./officer-job-detail";
 import { OfficerJobPanel, formsMissingNote } from "./officer-job-panel";
+import { OfficerDeliveredRow } from "./officer-history-row";
 import {
   NeedsTransportCard,
   OfficerBookingPanel,
@@ -99,6 +108,7 @@ import {
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
+import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
 export {
   acceptedBlockedReason,
   enRouteBlockedReason,
@@ -254,7 +264,7 @@ export function OfficerScreen() {
     (pill !== null && matchesPill(movement, pill)) ||
     (providerHighlight !== null && movement.transport?.provider === providerHighlight) ||
     (escortHighlight && movement.transport?.escortRequired === true) ||
-    (involuntaryHighlight && movement.transport?.transportLegalStatus === "involuntary") ||
+    (involuntaryHighlight && jobIsInvoluntary(movement)) ||
     matchesSearch(movement);
   const anyHighlight =
     pill !== null || providerHighlight !== null || escortHighlight || involuntaryHighlight || query !== "";
@@ -288,7 +298,15 @@ export function OfficerScreen() {
   });
 
   // The panel opens only when a patient is chosen (Josh, 9 Oct 2026); until then the table is full width.
-  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  // M3 (Josh, 3 Nov 2026): Movements' "Check in" links here with ?job=<movement id> and that job
+  // opens. The first choice made on this page clears the link, so Close and Back behave as usual.
+  const [pickedId, setPickedId] = useState<string | undefined>(undefined);
+  const linkedJob = new URLSearchParams(useLocationSearch()).get("job") ?? undefined;
+  const selectedId = pickedId ?? linkedJob;
+  const setSelectedId = (next: string | undefined) => {
+    if (linkedJob !== undefined) replaceSearchParams({ job: null });
+    setPickedId(next);
+  };
   const selectedJob = selectedId === undefined ? undefined : jobs.find((job) => job.id === selectedId);
   // ROLE BRANCH (officer): the officer's own desk (as-officer-home, Josh 31 Oct 2026). A long list opens on
   // its first rows, then "Show all"; a highlight, search or chosen job past the cut shows every row.
@@ -336,7 +354,7 @@ export function OfficerScreen() {
     diversion.cancelDiversion();
     setDetailTab("details");
     setBookingId(undefined);
-    setSelectedId((current) => (current === id ? undefined : id));
+    setSelectedId(selectedId === id ? undefined : id);
   };
   const openJob = (id: string) => {
     if (id !== selectedId) {
@@ -433,7 +451,8 @@ export function OfficerScreen() {
           setFormModalJob(null);
           lastTriggerRef.current?.focus();
         } else if (selectedId !== undefined && !document.querySelector('[role="dialog"][aria-modal="true"]')) {
-          setSelectedId(undefined);
+          replaceSearchParams({ job: null });
+          setPickedId(undefined);
         }
       } else if (
         e.key === "/" &&
@@ -827,7 +846,7 @@ export function OfficerScreen() {
     </div>
   );
 
-  const panelOpen = (selectedJob !== undefined && selectedJob.transport !== undefined) || bookingMovement !== undefined;
+  const panelOpen = selectedJob?.transport !== undefined || (isPhone && bookingMovement !== undefined);
   const anyJobEta = jobs.some((movement) => expectedArrival(movement) !== undefined);
   // Site review 12 Oct 2026: a column that says the same thing on every row ("0 of 3" thirteen
   // times) says nothing; the hero's "Jobs need forms" and the job sheet still carry the count.
@@ -1047,7 +1066,7 @@ export function OfficerScreen() {
                   <FilterChip
                     pressed={involuntaryHighlight}
                     onPressedChange={setInvoluntaryHighlight}
-                    count={jobs.filter((job) => job.transport?.transportLegalStatus === "involuntary").length}
+                    count={jobs.filter(jobIsInvoluntary).length}
                   >
                     Involuntary
                   </FilterChip>
@@ -1218,33 +1237,7 @@ export function OfficerScreen() {
                                 )}
                               </td>
                               <td className={formsVary && !panelOpen ? undefined : styles.etaOff}>
-                                {!packRequired(movement) ? (
-                                  <span className={styles.muted}>Not needed</span>
-                                ) : (
-                                  <span
-                                    className={styles.formsCell}
-                                    title={`${forms} of ${PACK_SLOTS.length} forms recorded`}
-                                  >
-                                    <span className={styles.formDots} aria-hidden="true">
-                                      {PACK_SLOTS.map((slot) => (
-                                        <StatusGlyph
-                                          key={slot.key}
-                                          tone={packForm(movement, slot.key) ? "success" : "neutral"}
-                                          size={9}
-                                        />
-                                      ))}
-                                    </span>
-                                    {/* Redesign: one text beside the dots, naming its noun; "of 4" is in the title. */}
-                                    {forms === PACK_SLOTS.length ? (
-                                      <span data-complete="true">All forms</span>
-                                    ) : (
-                                      <span className={styles.formsMissing}>
-                                        {PACK_SLOTS.length - forms} {PACK_SLOTS.length - forms === 1 ? "form" : "forms"}{" "}
-                                        missing
-                                      </span>
-                                    )}
-                                  </span>
-                                )}
+                                <OfficerFormsCell movement={movement} />
                               </td>
                               <td className={anyJobEta ? undefined : styles.etaOff}>
                                 {expected ? (
@@ -1297,17 +1290,15 @@ export function OfficerScreen() {
                   {deliveredToday.length > 0 ? (
                     <ul className={styles.plainList} data-testid="ward-officer-delivered">
                       {deliveredToday.map((movement) => (
-                        <li key={movement.id} className={styles.plainItem}>
-                          <StatusGlyph tone="success" size={9} />
-                          <span>
-                            <span className={styles.mono}>
-                              {formatInstantWithDay(movement.transport!.arrivedAt!, now)}
-                            </span>{" "}
-                            <strong>{officerListPatientName(movement)}</strong>{" "}
-                            <span className={styles.mono}>{umrnFor(movement)}</span> · {destinationLabelFor(movement)}{" "}
-                            <span className={styles.muted}>({movement.transport!.provider})</span>
-                          </span>
-                        </li>
+                        <OfficerDeliveredRow
+                          key={movement.id}
+                          movementId={movement.id}
+                          time={formatInstantWithDay(movement.transport!.arrivedAt!, now)}
+                          name={officerListPatientName(movement)}
+                          umrn={umrnFor(movement)}
+                          destination={destinationLabelFor(movement)}
+                          provider={movement.transport!.provider}
+                        />
                       ))}
                     </ul>
                   ) : (
