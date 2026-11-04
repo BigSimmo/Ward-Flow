@@ -469,6 +469,10 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
     "sendStepsInOrder(): forwards the urgency and legal status steps built as literals in the panel's two submit handlers",
   "src/components/ward-management/ed/use-ed-record-save.ts :: event":
     "useEdRecordSave(): forwards only CHANGE_URGENCY, CHANGE_LEGAL_STATUS or CORRECT_LEGAL_FORM_RECEIPT literals built in this file's three submit handlers",
+  // #1331 (4 Nov 2026): the return plan's three saves share saveReturn(), whose one dispatch(event)
+  // forwards the RECORD_REPATRIATION event each caller builds as a literal in this file.
+  "src/components/ward-management/out-of-area/out-of-area-board.tsx :: event":
+    "saveReturn(): forwards the RECORD_REPATRIATION event each return-plan save builds as a literal",
   "src/components/ward-management/use-undoable-step.ts :: event":
     "useUndoableStep's submit(): dispatches the caller-built step or Undo with a literal type",
   // P053 (27 Oct 2026): the referral inbox's three answer buttons share answer(), whose one
@@ -704,7 +708,8 @@ describe("ward override-surface guard", () => {
     // 3 -> 4, M2 (24 Oct 2026): the correction controller forwards its three literal-typed events.
     // 4 -> 5, P053 (27 Oct 2026): the referral inbox's answer() forwards its three literal-typed events.
     // 5 -> 6, clinical-safety audit (1 Nov 2026): Home's sendStepsInOrder() forwards its literal-typed steps.
-    expect(nonLiteralDispatchCalls.length).toBe(6);
+    // 6 -> 7, #1331 (4 Nov 2026): the return plan's saveReturn() forwards its literal-typed RECORD_REPATRIATION.
+    expect(nonLiteralDispatchCalls.length).toBe(7);
   });
 
   /**
