@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { PAGE_OWNERS } from "@/components/ward-management/shell/ward-page-owners";
+import { PAGE_OWNERS } from "@/components/ward-management/ward-page-owners";
 
 describe("PAGE_OWNERS (kit rule a, 3 Nov 2026)", () => {
   it("names the eight owning pages", () => {

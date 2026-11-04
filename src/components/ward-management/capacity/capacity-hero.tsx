@@ -22,7 +22,7 @@ import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import { PAGE_OWNERS } from "@/components/ward-management/shell/ward-page-owners";
+import { PAGE_OWNERS } from "@/components/ward-management/ward-page-owners";
 
 import type { Highlight } from "./capacity-bed-map-cards";
 import { isConfirmationFresh } from "./capacity-gap-words";

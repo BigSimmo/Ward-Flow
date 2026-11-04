@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
-import { PAGE_OWNERS } from "@/components/ward-management/shell/ward-page-owners";
+import { PAGE_OWNERS } from "@/components/ward-management/ward-page-owners";
 import { figureScope, useFigureScope } from "@/components/ward-management/shell/ward-figure-scope";
 import { FigureLink, NETWORK_WIDE, ScopeNote, figureLinkName } from "@/components/wf";
 

@@ -7,7 +7,7 @@ import styles from "./figure.module.css";
 /** Kit rule (Josh, 3 Nov 2026): Geist Mono, tabular, for a figure in a column, strip or time. */
 export const wfNumClass = styles.wfNum;
 
-/** The page that owns a figure. Ward Flow's list is `PAGE_OWNERS` in `ward-management/shell/ward-page-owners.ts`. */
+/** The page that owns a figure. Ward Flow's list is `PAGE_OWNERS` in `ward-management/ward-page-owners.ts`. */
 export type FigureOwner = {
   /** The owning page's route. */
   route: string;
