@@ -248,7 +248,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/bed-meeting/agenda`                                                                    | `BedMeetingAgendaScreen` (bed-meeting)                                    |
 | `/board/[unitId]`                                                                        | `WardBoard` (board)                                                       |
 | `/capacity`                                                                              | `CapacityScreen` (capacity)                                               |
-| `/community`                                                                             | `CommunityIndex` (community)                                              |
+| `/community`                                                                             | redirect to `/hub/catchments` (PL1)                                       |
 | `/community/[teamId]`                                                                    | `CommunityScreen` (community)                                             |
 | `/discharges`                                                                            | `DischargeBoard` (discharges)                                             |
 | `/ed`                                                                                    | `EdIndex` (`ed/ed-index.tsx`)                                             |
@@ -256,6 +256,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/governance`                                                                            | `WardModeWorkspace` mode "governance" (root `ward-management-modes.tsx`)  |
 | `/handover`                                                                              | `HandoverPage` (handover)                                                 |
 | `/hub`                                                                                   | `HubScreen` (hub) — "Search hub"                                          |
+| `/hub/catchments`                                                                        | `CommunityIndex` (community) — Places Catchments tab                      |
 | `/legal-forms`                                                                           | `LegalFormsScreen` (legal-forms)                                          |
 | `/movements`                                                                             | `MovementsScreen` (movements) — absorbed the transport tracker            |
 | `/movements/[movementId]`                                                                | `WardPatientWorkspace` (root `ward-management-console.tsx`, 3,287 lines)  |
