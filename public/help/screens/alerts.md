@@ -12,7 +12,7 @@ What is addressed to this desk right now, across every movement and referral.
 
 ## Jobs done here
 
-- Find an alert I already cleared. Open the Alerts page. Open is what still needs someone, with chips to show one kind at a time. Cleared lists what this desk acted on, newest first. Broadcasts holds bed calls, live and past.
+- Find an alert I already cleared. Open the Alerts page. Open is what still needs someone, with chips to show one kind at a time. Cleared lists what was acted on this session, newest first. Broadcasts holds bed calls, live and past.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 

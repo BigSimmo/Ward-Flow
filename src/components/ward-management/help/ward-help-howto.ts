@@ -593,7 +593,7 @@ const JOBS: readonly HowTo[] = [
     title: "Find an alert I already cleared",
     keywords: "alerts log history cleared earlier past broadcast filter acknowledged",
     answer:
-      "Open the Alerts page. Open is what still needs someone, with chips to show one kind at a time. Cleared lists what this desk acted on, newest first. Broadcasts holds bed calls, live and past.",
+      "Open the Alerts page. Open is what still needs someone, with chips to show one kind at a time. Cleared lists what was acted on this session, newest first. Broadcasts holds bed calls, live and past.",
     desks: EVERY_DESK,
     needs: "alerts",
     go: "alerts",
@@ -604,7 +604,7 @@ const JOBS: readonly HowTo[] = [
           { sel: '[role="tablist"][aria-label="Alerts views"]' },
         ],
         title: "Open, Cleared and Broadcasts",
-        body: "Chips show one kind of open alert at a time. Cleared, beside Open, lists what this desk already acted on.",
+        body: "Chips show one kind of open alert at a time. Cleared, beside Open, lists what was acted on this session.",
       },
     ],
   },

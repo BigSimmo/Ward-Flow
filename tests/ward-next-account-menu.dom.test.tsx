@@ -4,6 +4,7 @@
 // the person and the same account actions are plain rows. All data here is synthetic.
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createRef, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -158,25 +159,27 @@ describe("phone Menu account rows (DK1)", () => {
   });
 
   it("offers Try another desk (demo) in the local demo, which opens the desk drawer", async () => {
+    const user = userEvent.setup();
     renderPhoneMenu();
-    const row = await screen.findByTestId("ward-phone-menu-switch-workstation", {}, { timeout: 15_000 });
+    const row = await screen.findByRole("button", { name: /Try another desk \(demo\)/u }, { timeout: 15_000 });
     expect(row).toHaveTextContent("Try another desk (demo)");
     expect(screen.queryByTestId("ward-phone-menu-sign-out")).toBeNull();
-    fireEvent.click(row);
+    await user.click(row);
     expect(await screen.findByRole("dialog", { name: "Go to a desk" }, { timeout: 15_000 })).toBeInTheDocument();
   });
 
   it("signed in: Switch desk and Sign out rows call the session", async () => {
     const signedIn = session({ switchRole: vi.fn() });
+    const user = userEvent.setup();
     renderPhoneMenu(signedIn);
-    const row = await screen.findByTestId("ward-phone-menu-switch-workstation", {}, { timeout: 15_000 });
+    const row = await screen.findByRole("button", { name: /Switch desk/u }, { timeout: 15_000 });
     expect(row).toHaveTextContent("Switch desk");
     const signOut = screen.getByTestId("ward-phone-menu-sign-out");
     expect(signOut).toHaveTextContent("synthetic-coordinator@example.invalid");
-    fireEvent.click(signOut);
+    await user.click(signOut);
     expect(signedIn.signOut).toHaveBeenCalledTimes(1);
     // Switch desk closes the sheet first, so it is clicked last.
-    fireEvent.click(row);
+    await user.click(row);
     expect(signedIn.switchRole).toHaveBeenCalledTimes(1);
   });
 });

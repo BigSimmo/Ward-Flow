@@ -580,7 +580,8 @@ function AlertsWorkspace() {
     reminders: dueReminders,
     notices: unreadNotices.length,
     snoozed: snoozedEntries.length,
-    yours: coordDesk ? yoursCount : undefined,
+    // The Yours chip counts every row its filter shows: running and snoozed rows and beds to pull too.
+    yours: coordDesk ? allEntries.filter((entry) => entry.mine).length + toPull.length : undefined,
   });
 
   // "Next alert": act now before waiting, yours first, unacknowledged only, oldest first.
