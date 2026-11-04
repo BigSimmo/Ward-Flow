@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { subscribeReferralRecord } from "@/components/ward-management/referrals/referral-sheet-bus";
+import { ReferralRecordButton } from "@/components/ward-management/referrals/referral-sheet-button";
 import { referralSentToVisible } from "@/components/ward-management/referrals/referral-sheet-access";
 import { latestReferralForPerson } from "@/components/ward-management/referrals/referral-sheet-latest";
 import { ReferralSummarySheet } from "@/components/ward-management/referrals/referral-summary-sheet";
@@ -71,5 +73,22 @@ describe("Referral sheet tabs (RQ9)", () => {
   it("finds a person's latest referral and nothing for an unlinked person", () => {
     expect(latestReferralForPerson(undefined, state.referrals)).toBeUndefined();
     expect(latestReferralForPerson("PT-none", state.referrals)).toBeUndefined();
+  });
+
+  it("opens the named referral from the shared Referral button, on the tab asked for, and draws nothing for an unknown one", () => {
+    const opened: { referralId: string; tab?: string }[] = [];
+    const stop = subscribeReferralRecord((request) => opened.push(request));
+    const { unmount } = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ReferralRecordButton referralId={referral.id} tab="sent" />
+        <ReferralRecordButton referralId="RF-none" />
+      </WardFlowProvider>,
+    );
+    const buttons = screen.getAllByTestId("ward-referral-record-button");
+    expect(buttons).toHaveLength(1);
+    fireEvent.click(buttons[0]!);
+    expect(opened).toEqual([{ referralId: referral.id, tab: "sent" }]);
+    stop();
+    unmount();
   });
 });
