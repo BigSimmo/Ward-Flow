@@ -13,12 +13,13 @@ on:
     - cron: 0 18 * * *
 permissions:
   contents: read
-# A newer PR push cancels its older run. Main pushes share one queue: the running main check
-# finishes, and a newer merge replaces any main run still waiting, so a burst of merges checks
-# the newest main once instead of every commit (daily-release takes the newest CI-passed main).
+# Each PR and main have one queue: a running check always finishes, and a newer push replaces any
+# run still waiting, so a burst of pushes checks the newest commit once. Cancelling running PR
+# checks threw away 47 to 66% of PR runner time (4 Nov audit, docs/ward-flow/PUBLIC-CI.md).
+# Daily-release takes the newest CI-passed main.
 concurrency:
   group: ward-flow-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.event_name == 'push' && 'main' || format('{0}-{1}', github.event_name, github.run_id) }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false
 jobs:
   plan:
     name: Ward Flow scope plan
@@ -315,7 +316,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -365,7 +366,7 @@ jobs:
         id: shard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
-          WARD_GATE_SHARD: ${{ matrix.shard }}/8
+          WARD_GATE_SHARD: ${{ matrix.shard }}/6
           # A pull request that changes nothing the legal-figure sweep runs leaves it out (Josh,
           # 27 October 2026); only an explicit "false" from the plan does, so main always runs it.
           WARD_GATE_SKIP_LEGAL_SWEEP: ${{ needs.plan.outputs.legal_sweep == 'false' && '1' || '0' }}
@@ -812,7 +813,7 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
           WARD_SHARD_BLOBS: ${{ runner.temp }}/ward-shard-blobs
-          WARD_SHARD_COUNT: "8"
+          WARD_SHARD_COUNT: "6"
         run: |
           for shard in $(seq 1 "$WARD_SHARD_COUNT"); do
             ls "$WARD_SHARD_BLOBS"/blob-shard-"$shard"-of-"$WARD_SHARD_COUNT"-batch-*.json

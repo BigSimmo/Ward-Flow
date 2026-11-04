@@ -94,7 +94,11 @@ export const CHECKLISTS: readonly Checklist[] = [
         showMe: "around-capacity",
       },
       { text: "Open Bed meeting, or Open on TV for the meeting room screen (read only).", showMe: "tv" },
-      { text: "On Referrals, use the Bed meeting list.", go: "referrals", showMe: "around-referrals" },
+      {
+        text: "On Referrals, press Bed meeting to open the agenda at its referrals.",
+        go: "referrals",
+        showMe: "around-referrals",
+      },
       { text: "On Out of area, copy the bed meeting summary from the header.", go: "out-of-area" },
     ],
   },

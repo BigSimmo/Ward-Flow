@@ -59,6 +59,10 @@ import { useForecastModel } from "@/components/ward-management/forecast/use-fore
 import { TvLockControl, useTvLock } from "./tv-lock";
 import { TvFooterText, TvLeaveLink } from "./tv-leave-link";
 import { bedCountText } from "./tv-bed-count-text";
+import { edClinicalRows, wardClinicalRows } from "./tv-clinical-derivations";
+import { EdClinicalTvView, WardClinicalTvView, WardHandoverTvView } from "./tv-clinical-views";
+import { BoardSwitch, LivePulse, tvBoardOf, tvBoardTitle, type TvBoard } from "./tv-board-switch";
+import { EdBedSearchTvView, WardLegalTvView, WardObsLeaveTvView, WardTodayTvView } from "./tv-function-views";
 import styles from "./bed-meeting-tv.module.css";
 
 const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
@@ -1107,11 +1111,28 @@ export type BedMeetingTvScreenProps = {
   ward?: string;
   /** `?ed=` an emergency department id: that department's screen. */
   ed?: string;
+  /** `?board=` on a ward or ED screen: one of the boards in `tv-board-switch.tsx`. Bed flow without it. */
+  board?: string;
 };
 
-export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeetingTvScreenProps = {}) {
+export function BedMeetingTvScreen({
+  service: serviceParam,
+  ward,
+  ed,
+  board: boardParam,
+}: BedMeetingTvScreenProps = {}) {
   const thresholds = useDueSoonThresholds();
-  const liveRecords = useWardFlowSelect("units", "movements", "bedReleases", "admissions", "leaveBeds", "referrals");
+  const liveRecords = useWardFlowSelect(
+    "units",
+    "movements",
+    "bedReleases",
+    "admissions",
+    "leaveBeds",
+    "referrals",
+    "patients",
+    "plannedAdmissions",
+  );
+  const board: TvBoard = tvBoardOf(boardParam, ward !== undefined ? "ward" : ed !== undefined ? "ed" : "meeting");
   const { scenario, configuration, shared } = useWardFlowSelect("scenario", "configuration", "shared");
   const now = useWardFlowClock();
   const deviceService = useServiceScope();
@@ -1133,9 +1154,9 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   // A11: the address of this TV view, for the lock to come back to.
   const selfHref =
     ward !== undefined
-      ? bedMeetingTvHref({ ward })
+      ? bedMeetingTvHref({ ward, board })
       : ed !== undefined
-        ? bedMeetingTvHref({ ed })
+        ? bedMeetingTvHref({ ed, board })
         : serviceParam !== undefined
           ? bedMeetingTvHref({ service: serviceParam })
           : WARD_BED_MEETING_TV_HREF;
@@ -1156,7 +1177,9 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     (Object.keys(liveRecords) as (keyof typeof liveRecords)[]).some((key) => liveRecords[key] !== lastLiveRecords[key])
   )
     setLastLiveRecords(liveRecords);
-  const { units, movements, bedReleases, admissions, leaveBeds, referrals } = live ? liveRecords : lastLiveRecords;
+  const { units, movements, bedReleases, admissions, leaveBeds, referrals, patients, plannedAdmissions } = live
+    ? liveRecords
+    : lastLiveRecords;
   const staleMinutes = live ? 0 : Math.max(0, Math.round(now - lastLive));
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);
@@ -1169,9 +1192,36 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     // Full names, as on every other screen (Josh, 26 Oct 2026), surname first (D-83, core pages redesign).
     const nameOf = (movement: Parameters<typeof patientOf>[0]) => patientOf(movement).formalName;
     const inputs = { units, movements, bedReleases, admissions, leaveBeds, now: shownNow, nameOf };
+    const records = { movements, referrals, patients, plannedAdmissions };
     if (ward !== undefined) {
       if (!unit) return { kind: "missing" as const, what: "ward" };
+      if (board !== "flow") {
+        const rows = wardClinicalRows({
+          ...records,
+          unit,
+          admissions,
+          leaveBeds,
+          bedReleases,
+          now: shownNow,
+          nameOf: (subject) => patientOf(subject).formalName,
+        });
+        return { kind: "ward-clinical" as const, unit, rows };
+      }
       return { kind: "ward" as const, sheet: wardTvSheet({ ...inputs, unit, thresholds }) };
+    }
+    if (ed !== undefined && board !== "flow") {
+      const rows = department
+        ? edClinicalRows({
+            ...records,
+            edId: department.id,
+            units,
+            now: shownNow,
+            accessTargetMinutes: accessTarget,
+            nameOf,
+          })
+        : undefined;
+      if (!department || !rows) return { kind: "missing" as const, what: "emergency department" };
+      return { kind: "ed-clinical" as const, department, rows };
     }
     if (ed !== undefined) {
       const sheet = department
@@ -1199,6 +1249,9 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
     admissions,
     leaveBeds,
     referrals,
+    patients,
+    plannedAdmissions,
+    board,
     configuration.referralDecisionTargetMinutes,
     shownNow,
     service,
@@ -1236,16 +1289,20 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   const title =
     view.kind === "ward"
       ? view.sheet.unit.name
-      : view.kind === "ed"
-        ? edName(view.sheet.summary.ed.name)
-        : view.kind === "network"
-          ? `Bed meeting · ${view.sheet.service === null ? "All services" : view.sheet.service}`
-          : "Screen not found";
+      : view.kind === "ward-clinical"
+        ? view.unit.name
+        : view.kind === "ed-clinical"
+          ? edName(view.department.name)
+          : view.kind === "ed"
+            ? edName(view.sheet.summary.ed.name)
+            : view.kind === "network"
+              ? `Bed meeting · ${view.sheet.service === null ? "All services" : view.sheet.service}`
+              : "Screen not found";
   const eyebrow =
-    view.kind === "ward"
-      ? "Ward"
-      : view.kind === "ed"
-        ? "Emergency department"
+    view.kind === "ward" || view.kind === "ward-clinical"
+      ? (tvBoardTitle(board, "ward") ?? "Ward")
+      : view.kind === "ed" || view.kind === "ed-clinical"
+        ? (tvBoardTitle(board, "ed") ?? "Emergency department")
         : view.kind === "network"
           ? view.sheet.service === null
             ? "State"
@@ -1266,6 +1323,7 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
       className={styles.tv}
       data-testid="bed-meeting-tv"
       data-view={view.kind}
+      data-board={board}
       // DA-23 (design audit, Josh, 19 Oct 2026): the TV opens clean. While this screen is shown the
       // layout hides the rail, the top bar and the phone dock (`ward-flow-layout.module.css`), so a
       // wall screen needs no Full screen tap first. Leave TV view below is the way back to the app.
@@ -1282,7 +1340,12 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
             {title}
           </h1>
           <p className={styles.sub} data-testid="bed-meeting-tv-as-at">
-            {stamp.time === null ? "Time not recorded" : live ? `As at ${stamp.time}` : `Last updated ${stamp.time}`} ·{" "}
+            {live && stamp.time !== null ? <LivePulse /> : null}
+            {stamp.time === null
+              ? "Time not recorded"
+              : live
+                ? `As at ${stamp.time}`
+                : `Last updated ${stamp.time}`} ·{" "}
             {live ? (
               // TV-07: the local demo shares nothing, so "updates on its own" must not hide that.
               shared?.enabled === true ? (
@@ -1307,6 +1370,15 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
           </p>
         </div>
         <div className={styles.actions}>
+          {ward !== undefined || ed !== undefined ? (
+            <BoardSwitch
+              current={board}
+              kind={ward !== undefined ? "ward" : "ed"}
+              hrefOf={(next) =>
+                ward !== undefined ? bedMeetingTvHref({ ward, board: next }) : bedMeetingTvHref({ ed, board: next })
+              }
+            />
+          ) : null}
           <ScreenPicker current={current} />
           {fullscreen.supported ? (
             <button
@@ -1327,6 +1399,27 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
         <BedMeetingTvView sheet={view.sheet} extras={view.extras} now={shownNow} scenario={scenarioLabel} />
       ) : view.kind === "ward" ? (
         <WardTvView sheet={view.sheet} now={shownNow} scenario={scenarioLabel} nameOfStay={nameOfStay} />
+      ) : view.kind === "ward-clinical" ? (
+        (() => {
+          const footer = <Footer scope={view.unit.name} scenario={scenarioLabel} now={shownNow} />;
+          if (board === "handover") return <WardHandoverTvView rows={view.rows} footer={footer} />;
+          if (board === "obs") return <WardObsLeaveTvView rows={view.rows} footer={footer} />;
+          if (board === "legal") return <WardLegalTvView rows={view.rows} footer={footer} />;
+          if (board === "today") return <WardTodayTvView rows={view.rows} footer={footer} />;
+          return <WardClinicalTvView rows={view.rows} footer={footer} />;
+        })()
+      ) : view.kind === "ed-clinical" && board === "beds" ? (
+        <EdBedSearchTvView
+          rows={view.rows}
+          accessTargetMinutes={accessTarget}
+          footer={<Footer scope={view.department.name} scenario={scenarioLabel} now={shownNow} />}
+        />
+      ) : view.kind === "ed-clinical" ? (
+        <EdClinicalTvView
+          rows={view.rows}
+          accessTargetMinutes={accessTarget}
+          footer={<Footer scope={view.department.name} scenario={scenarioLabel} now={shownNow} />}
+        />
       ) : view.kind === "ed" ? (
         <EdTvView sheet={view.sheet} now={shownNow} scenario={scenarioLabel} />
       ) : (
