@@ -550,14 +550,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
       // fixed sentences names an announcement for CHOOSING or CLEARING a service, never for opening
       // the selector itself.
     },
-    [
-      onAlertsScreen,
-      oneAlertsQueue,
-      openPanel,
-      scopedNotices.length,
-      setOpenPanel,
-      tasksActiveCount,
-    ],
+    [onAlertsScreen, oneAlertsQueue, openPanel, scopedNotices.length, setOpenPanel, tasksActiveCount],
   );
   useEffect(() => {
     popoverStepsRef.current = { close: closePopover, open: openPopover };
