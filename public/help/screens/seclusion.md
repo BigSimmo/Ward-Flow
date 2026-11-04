@@ -7,10 +7,10 @@ An operational view of seclusion rooms, seclusion and restraint in use, and inci
 ## What is on the screen
 
 1. An operational view. Times are as typed, and nothing works out a legal limit.
-2. Ward by ward. Each ward's seclusion room, what is in use now and its incidents. Choose a ward.
-3. The seclusion room. Mark available or Mark out of service for the chosen ward's room.
-4. Record start and end. Choose the patient and what is in use, type the time, then Record start. Record end when it finishes.
-5. Record incident. Choose the kind, type the time, then Record incident.
+2. In use now. Everyone in seclusion or restraint now, longest first, with Record end on each row.
+3. Start seclusion or restraint. Find the patient, choose what is in use, type the time or press Now, then Record start.
+4. The seclusion rooms. Each secure ward's room. Change marks it available or out of service.
+5. Record incident. Choose the ward and the kind, type the time, then Record incident.
 
 ## Jobs done here
 
