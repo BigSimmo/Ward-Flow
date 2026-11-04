@@ -15,7 +15,7 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { Button, Count, StatusGlyph, cx, durMinutes } from "@/components/wf";
 import { openMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { useBedMeetingRecord } from "@/components/ward-management/bed-meeting/use-bed-meeting-done";
 
 import styles from "./referral-page.module.css";
 
@@ -63,7 +63,8 @@ export function WardOffersTable({
   // Polish (Josh, 3 Nov 2026): the whole row opens the movement (the name is the link), so Chase is
   // the row's one button.
   const coordinatorDesk = role === "coordinator";
-  const raise = useWardRaise("coordinator");
+  // Chase Undo (Josh, 3 Nov 2026): the toast offers Undo, so a Chase tapped by mistake comes back.
+  const recordAction = useBedMeetingRecord("coordinator");
   const chasedFocus = useRef<string | null>(null);
   if (offers.length === 0) return null;
   const wardName = (unitId: string) => (units.find((unit) => unit.id === unitId)?.name ?? unitId).split(" — ")[0];
@@ -145,12 +146,13 @@ export function WardOffersTable({
                           onClick={() => {
                             if (toAnswer === undefined) return;
                             chasedFocus.current = movement.id;
-                            raise("RECORD_BED_MEETING_ACTION", {
+                            recordAction({
                               subject: { kind: "movement", id: movement.id },
                               action: "chase_ward",
                               owner: "ward",
                               unitId: toAnswer,
                               dueAt: now + 120,
+                              success: `Chased ${wardName(toAnswer)}.`,
                             });
                           }}
                           data-testid={`ward-offer-chase-${movement.id}`}

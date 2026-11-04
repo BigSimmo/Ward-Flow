@@ -54,6 +54,13 @@ const TV_QUESTION: HelpQuestion = {
     "On a desktop, choose Open on TV on Capacity, or On TV on a ward or an ED. The TV is read only, shows full names as the desks do and updates on its own. Use Change screen to pick another meeting, ward or ED, Full screen for the wall screen and Leave TV view to come back. On a TV that stays on the wall, Lock as TV keeps that browser on TV views, even after a reload, until someone presses Unlock.",
 };
 
+/** PL1 (3 Nov 2026): the suburb lookup moved from Community to the Catchments tab of Places. */
+const CATCHMENT_QUESTION: HelpQuestion = {
+  question: "How do I find which community team covers a suburb?",
+  answer:
+    "Open Places and choose Catchments on the band. Type the suburb or postcode in the lookup. It names the team that covers it.",
+};
+
 export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   command: {
     title: "Home",
@@ -184,8 +191,12 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   },
   community: {
     title: "Community",
-    purpose: "Every community team, each opening its own team page with its referrals.",
-    actions: ["Open your team to see referrals waiting for an answer.", "Raise a referral from the team page."],
+    purpose: "Every community team now sits in Places, on its Catchments tab. Each team still has its own page.",
+    actions: [
+      "Open Places, then choose Catchments on the band to find a team.",
+      "Open your team to see referrals waiting for an answer.",
+      "Raise a referral from the team page.",
+    ],
   },
   delays: {
     title: "Waiting",
@@ -210,17 +221,22 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   },
   search: {
     title: "Patients",
-    purpose: "Find an open movement or stay by record number, place, stage or owner.",
-    actions: ["Search by record number, place, stage or owner."],
+    purpose: "The register of everyone, found by record number, place, stage or owner.",
+    actions: [
+      "Use the switch on the band: Everyone, In ED, In placement, Inpatient, Community or Not active.",
+      "Search by record number, place, stage or owner.",
+      "To see who closed today, choose Today on the band. On a phone, use Closed today at the foot of the list.",
+    ],
   },
   hub: {
     title: "Places",
     purpose: "Every ward, ED and community team in the network, with each one's beds and when they were confirmed.",
     actions: [
-      "Search places, or narrow the list to wards, EDs or teams.",
-      "Choose a place to preview it, then open it or view its statistics.",
-      "Pin the places you use most.",
+      "Use the search box above the list, or narrow the list to wards, EDs or teams.",
+      "Choose a place to preview it, then open it or view its statistics. Pin the places you use most.",
+      "Choose Catchments on the band to find which community team covers a suburb.",
     ],
+    questions: [CATCHMENT_QUESTION],
   },
   "legal-forms": {
     title: "Legal forms",
@@ -263,12 +279,11 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     purpose: "Who answers each on-call line now, for hospitals, teams and state lines.",
     actions: [
       "Search by role, hospital, ward, team or number.",
-      "Use Cover at to see who answers at a later time.",
-      "Star a line to keep it under Mine.",
+      "Pick a service in the header, or use Show, to narrow the list.",
+      "Star a line to keep it under Mine and at the top of the page.",
     ],
   },
 };
-
 /** One page the rail does not list, matched by its whole address. */
 type PageHelp = ScreenHelp & {
   id: string;
@@ -371,6 +386,18 @@ const PAGE_HELP: readonly PageHelp[] = [
       "New referral starts a new one. Tap a figure in the header to highlight those patients.",
     ],
     questions: [TV_QUESTION],
+  },
+  {
+    id: "catchments",
+    path: /^\/ward-flow\/hub\/catchments$/u,
+    title: "Catchments",
+    purpose: "Which community team covers a suburb, every community team from A to Z, and team names that read alike.",
+    actions: [
+      "Type a suburb or postcode in the lookup to find the team that covers it.",
+      "Use the A to Z to open a team's own page with its referrals.",
+      "Read alike sets team names that look similar side by side. Choose Places on the band to go back.",
+    ],
+    questions: [CATCHMENT_QUESTION],
   },
   {
     id: "community-team",

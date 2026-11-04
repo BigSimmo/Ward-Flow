@@ -46,6 +46,8 @@ import {
   EdInboxReferralFixture,
   markNotYetIdentified,
   openRaiseIntoMovementForm,
+  chooseEdChoice,
+  edChoiceValue,
 } from "./helpers/ed-raise-into-movement";
 
 function readyForm() {
@@ -66,7 +68,7 @@ function readyForm() {
     ["urgency", "3"],
     ["observation", "general"],
   ]) {
-    fireEvent.change(screen.getByTestId(`ward-ed-referral-${field}`), { target: { value } });
+    chooseEdChoice(`ward-ed-referral-${field}`, value);
   }
   fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
 }
@@ -88,8 +90,8 @@ describe("ED raise referral confirmation", () => {
     expect(screen.queryByTestId("ward-ed-referral-form") !== null).toBe(true);
     await act(async () => finish({ commandId: "synthetic-command", status: "failed" }));
     expect(screen.queryByTestId("ward-ed-referral-form") !== null).toBe(true);
-    expect(screen.getByTestId("ward-ed-referral-cohort")).toHaveValue("Adult");
-    expect(screen.getByTestId("ward-ed-referral-sex")).toHaveValue("Female");
+    expect(edChoiceValue("ward-ed-referral-cohort")).toBe("Adult");
+    expect(edChoiceValue("ward-ed-referral-sex")).toBe("Female");
   });
 });
 

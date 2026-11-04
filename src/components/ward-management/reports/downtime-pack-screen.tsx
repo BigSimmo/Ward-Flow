@@ -11,7 +11,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { Ambulance, BedDouble, Camera, FileText, Printer, Users } from "lucide-react";
+import { Ambulance, BedSingle, Camera, FileText, Printer, Users } from "lucide-react";
 
 import {
   Button,
@@ -404,7 +404,7 @@ export function DowntimePackScreen() {
       >
         <CardHead
           id="downtime-beds-title"
-          icon={BedDouble}
+          icon={BedSingle}
           title="Beds by ward"
           aside={
             <span className={styles.headMeta}>

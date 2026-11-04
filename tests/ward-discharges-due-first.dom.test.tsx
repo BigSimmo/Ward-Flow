@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -37,19 +37,24 @@ function renderedIds(group: string): string[] {
 describe("discharges: due first sort", () => {
   it("defaults to the board's own order and offers Due first", () => {
     renderBoard();
-    const sort = screen.getByRole("combobox", { name: "Sort" });
-    expect(sort).toHaveValue("default");
-    expect([...(sort as HTMLSelectElement).options].map((option) => option.textContent)).toEqual([
-      "Default",
-      "Due first",
-    ]);
+    // Discharges redesign (3 Nov 2026): Sort is a kit Menu of radio items, not a browser <select>.
+    const sort = screen.getByTestId("ward-discharges-sort");
+    expect(sort).toHaveAccessibleName("Sort: Default");
+    fireEvent.click(sort);
+    const menu = screen.getByRole("menu");
+    const items = within(menu).getAllByRole("menuitemradio");
+    expect(items.map((item) => item.textContent)).toEqual(["Default", "Due first"]);
+    expect(within(menu).getByRole("menuitemradio", { name: "Default" })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(sort);
     const groups = groupDischarges(bedReleases, NOW_ANCHOR, { heldUpAnyDate: true });
     expect(renderedIds("expected")).toEqual(groups.expected.map((release) => release.id));
   });
 
   it("orders each open release group by expected time, earliest first", () => {
     renderBoard();
-    fireEvent.change(screen.getByRole("combobox", { name: "Sort" }), { target: { value: "due-first" } });
+    fireEvent.click(screen.getByTestId("ward-discharges-sort"));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Due first" }));
+    expect(screen.getByTestId("ward-discharges-sort")).toHaveAccessibleName("Sort: Due first");
     const groups = groupDischarges(bedReleases, NOW_ANCHOR, { heldUpAnyDate: true });
     const byId = new Map(bedReleases.map((release) => [release.id, release.expectedAt]));
     let compared = 0;
