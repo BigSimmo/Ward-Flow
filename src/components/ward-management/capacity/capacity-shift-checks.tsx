@@ -52,7 +52,6 @@ export function ShiftChecks({
               size="sm"
               variant="ghost"
               onClick={() => onAskWard(first.id)}
-              aria-haspopup="dialog"
               aria-label={`Ask ${first.name} to confirm its beds`}
             >
               Ask

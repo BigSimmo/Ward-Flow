@@ -374,20 +374,21 @@ export function CapacityWardFoot({ row, now }: { row: NetworkWardRow; now: Insta
   if (!canOpen(wardHref) && !canOpen(DISCHARGES_HREF) && !mayClose) return null;
   return (
     <div className={local.wdFoot}>
+      {/* One filled action, as every Capacity pop-up foot: Open ward, or the Discharge board when this
+          desk cannot open the ward. Closures is never the filled one. */}
       {canOpen(wardHref) ? (
-        <Link href={wardHref} className={buttonClass({ variant: "sec", size: "sm" })}>
+        <Link href={wardHref} className={buttonClass({ variant: "pri" })}>
           Open ward
         </Link>
       ) : null}
       {canOpen(DISCHARGES_HREF) ? (
-        <Link href={DISCHARGES_HREF} className={buttonClass({ variant: "ghost", size: "sm" })}>
+        <Link href={DISCHARGES_HREF} className={buttonClass({ variant: canOpen(wardHref) ? "ghost" : "pri" })}>
           Discharge board
         </Link>
       ) : null}
       {mayClose ? (
         <>
           <Button
-            size="sm"
             variant="ghost"
             className={local.wdFootQuiet}
             aria-haspopup="dialog"

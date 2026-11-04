@@ -65,7 +65,7 @@ export function LeverPopup({
       footer={
         !wardLevel && canOpen(pageHref) ? (
           <div className={styles.popFoot}>
-            <Link href={pageHref} className={buttonClass({ variant: "sec", size: "sm" })}>
+            <Link href={pageHref} className={buttonClass({ variant: "pri" })}>
               Open Discharges
             </Link>
           </div>

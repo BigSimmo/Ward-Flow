@@ -47,18 +47,45 @@ const CLOSE_CONFLICT_DRAFT_WORDING = {
  * listed reason, see what still points at it, and reopen it. Reopening is always a person's tap;
  * the expected time only prompts. Behind the `ward-closure-mode` switch.
  */
-export function WardClosurePanel({ unit, now, actor }: { unit: Unit; now: Instant; actor: WardRecordActor }) {
+export function WardClosurePanel({
+  unit,
+  now,
+  actor,
+  onFootAction,
+}: {
+  unit: Unit;
+  now: Instant;
+  actor: WardRecordActor;
+  /**
+   * Hands the "Close <ward> to admissions" step to a host dialog, which shows it as its one primary
+   * action in the foot (Capacity stress test, 3 Nov 2026). Without it the button stays inline.
+   */
+  onFootAction?: (action: FootAction | null) => void;
+}) {
   const enabled = useWardFeatureFlag("ward-closure-mode");
   if (!enabled) return null;
   return (
     <>
-      <WardClosureControls unit={unit} now={now} actor={actor} />
+      <WardClosureControls unit={unit} now={now} actor={actor} onFootAction={onFootAction} />
       <WardRestrictionReviews unit={unit} now={now} actor={actor} />
     </>
   );
 }
 
-function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; actor: WardRecordActor }) {
+/** The close step as a host dialog's primary action (the shape of the kit Dialog's `primary`). */
+export type FootAction = { label: string; onAction: () => void; disabledReason?: string };
+
+function WardClosureControls({
+  unit,
+  now,
+  actor,
+  onFootAction,
+}: {
+  unit: Unit;
+  now: Instant;
+  actor: WardRecordActor;
+  onFootAction?: (action: FootAction | null) => void;
+}) {
   const [reason, setReason] = useState<WardClosureReason | "">("");
   const [reopenAfter, setReopenAfter] = useState("");
   // DR-07 (design re-score, 24 Oct 2026): closing a ward asks once before it is recorded.
@@ -144,8 +171,26 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
     }
   }, [hasChoices, clearDraft]);
 
+  const closeRefusal = refusal ?? (reason === "" ? "Choose a reason first." : undefined);
+  // The host dialog's foot shows the close step while the ward is open, and nothing once it is closed.
+  useEffect(() => {
+    if (!onFootAction) return;
+    if (unit.isClosed) {
+      onFootAction(null);
+      return;
+    }
+    onFootAction({
+      label: `Close ${unit.name} to admissions`,
+      disabledReason: closeRefusal,
+      onAction: () => {
+        if (closeRefusal || reason === "") return;
+        setConfirming(true);
+      },
+    });
+  }, [onFootAction, unit.isClosed, unit.name, closeRefusal, reason]);
+  useEffect(() => () => onFootAction?.(null), [onFootAction]);
+
   if (!unit.isClosed) {
-    const closeRefusal = refusal ?? (reason === "" ? "Choose a reason first." : undefined);
     return (
       <section
         className={styles.panel}
@@ -182,21 +227,25 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
             ))}
           </Select>
         </Field>
-        <Button
-          size="sm"
-          variant="sec"
-          aria-disabled={closeRefusal !== undefined ? "true" : undefined}
-          aria-describedby={closeRefusal ? `${reasonId}-close` : undefined}
-          onClick={() => {
-            if (closeRefusal || reason === "") return;
-            setConfirming(true);
-          }}
-          data-testid="ward-closure-close"
-        >
-          Close {unit.name} to admissions
-        </Button>
-        {/* Beneath the button, not beside it: the ward panel is too narrow for both on one line. */}
-        {closeRefusal ? <DisabledReason id={`${reasonId}-close`}>{closeRefusal}</DisabledReason> : null}
+        {onFootAction ? null : (
+          <>
+            <Button
+              size="sm"
+              variant="sec"
+              aria-disabled={closeRefusal !== undefined ? "true" : undefined}
+              aria-describedby={closeRefusal ? `${reasonId}-close` : undefined}
+              onClick={() => {
+                if (closeRefusal || reason === "") return;
+                setConfirming(true);
+              }}
+              data-testid="ward-closure-close"
+            >
+              Close {unit.name} to admissions
+            </Button>
+            {/* Beneath the button, not beside it: the ward panel is too narrow for both on one line. */}
+            {closeRefusal ? <DisabledReason id={`${reasonId}-close`}>{closeRefusal}</DisabledReason> : null}
+          </>
+        )}
         {refusedWords !== null ? (
           <ClosureAlert
             words={CLOSE_CONFLICT_DRAFT_WORDING.refused(refusedWords)}

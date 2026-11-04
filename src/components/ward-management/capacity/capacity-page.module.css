@@ -922,6 +922,27 @@
   gap: 2px;
   min-width: 0;
 }
+/* A phone Mismatch row is a button that opens the same pop-up as the desktop card. */
+.phoneRowItem + .phoneRowItem {
+  border-top: 1px solid var(--wf-line);
+}
+.phoneRowButton {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.phoneRowButton:hover {
+  background: var(--wf-surface-2);
+}
+.phoneRowButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+  box-shadow: none;
+}
 .phoneRow > span {
   flex: none;
   display: inline-flex;
@@ -1817,6 +1838,13 @@
   font-size: var(--wf-fs-12);
   font-weight: 600;
   color: var(--wf-accent-ink);
+}
+
+/* Chips in a pop-up wrap onto more lines; the kit's phone chip row scrolls sideways and ran its
+   longer reasons off the dialog's edge (stress test, 3 Nov 2026). */
+.popChips.popChips {
+  flex-wrap: wrap;
+  overflow-x: visible;
 }
 
 /* Shared pop-up body for the Capacity pop-ups (Mismatch, forecast levers). */
@@ -2739,26 +2767,15 @@ button.helpLink {
   flex-direction: column;
   gap: var(--wf-s-2);
 }
-.pmFootWrap.pmFootWrap {
-  padding: 0;
-  border-top: 0;
-}
+/* The move sheets sit in the kit's light drawer foot like every Capacity pop-up (no dark dock);
+   these rules are layout only. */
 .pmFoot {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
-  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
-  color: var(--wf-hero-ink);
-}
-.pmFoot :is(a, button):focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: 2px;
-  box-shadow: none;
 }
 .pmFootWide.pmFootWide {
   width: 100%;
-  min-height: 40px;
   justify-content: center;
 }
 .pmFootNext {
@@ -2766,10 +2783,6 @@ button.helpLink {
   align-items: center;
   gap: var(--wf-s-2);
   margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-hero-edge);
-  border-radius: var(--wf-r-md);
-  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
   font-size: var(--wf-fs-13);
 }
 .pmFootRow {
@@ -2780,14 +2793,6 @@ button.helpLink {
 .pmFootRow > * {
   flex: 1 1 auto;
   justify-content: center;
-}
-.pmFootRow :is(a, button) {
-  border-color: var(--wf-hero-edge);
-  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-  color: var(--wf-hero-ink);
-}
-.pmFootRow :is(a, button):hover {
-  background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
 }
 .popLabel {
   margin-top: var(--wf-s-1);
@@ -2834,6 +2839,9 @@ button.helpLink {
 }
 .mmTileOpen:focus-visible {
   outline: none;
+  /* The tile draws the ring inside its own radius; the shell's focus halo on the button itself
+     spilled past the tile's corner (stress test, 3 Nov 2026). */
+  box-shadow: none;
 }
 .pmLaneName,
 .pmLaneNote {
