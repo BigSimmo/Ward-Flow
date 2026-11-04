@@ -21,6 +21,7 @@ vi.mock("next/navigation", () => ({
 
 import type { BedMeetingSubject } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
+import { useBedMeetingRecord } from "@/components/ward-management/bed-meeting/use-bed-meeting-done";
 import { ToastProvider } from "@/components/wf";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import {
@@ -72,6 +73,24 @@ function RecordAtMeeting({
             ...(owner === "ward" ? { unitId: ownerWard } : {}),
             dueAt: NOW_ANCHOR + 240,
           })
+        }
+      />
+      <span data-testid="refusals">{rejections.length}</span>
+    </>
+  );
+}
+
+/** Records through the shared hook, as Chase and the agenda's Record do, so the toast offers Undo. */
+function RecordWithUndo({ subject }: { subject: BedMeetingSubject }) {
+  const record = useBedMeetingRecord("coordinator");
+  const { rejections } = useWardFlowSelect("rejections");
+  return (
+    <>
+      <button
+        type="button"
+        data-testid="record-with-undo"
+        onClick={() =>
+          record({ subject, action: "book_transport", owner: "ed", dueAt: NOW_ANCHOR + 240, success: "Chased." })
         }
       />
       <span data-testid="refusals">{rejections.length}</span>
@@ -175,6 +194,27 @@ describe("bed meeting actions due on a record", () => {
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
     expect(await screen.findByTestId("meeting-actions-due")).toHaveTextContent("Book transport");
     expect(await screen.findByText("Undone. Book transport is open again.")).toBeInTheDocument();
+  });
+
+  it("offers Undo on the toast after recording, and Undo takes the action back (Chase Undo, 3 Nov 2026)", async () => {
+    asDesk({ role: "coordinator", scope: { kind: "statewide" } });
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <RecordWithUndo subject={ADMISSION} />
+          <MeetingActionsDue subject={ADMISSION} />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByTestId("record-with-undo"));
+    expect(screen.getByTestId("refusals")).toHaveTextContent("0");
+    expect(await screen.findByTestId("meeting-actions-due")).toHaveTextContent("Book transport");
+    expect(await screen.findByText("Chased.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Undo/u }));
+    expect(screen.getByTestId("refusals")).toHaveTextContent("0");
+    expect(await screen.findByText("Undone. Book transport is taken back.")).toBeInTheDocument();
+    expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
   });
 
   it("closes only the tapped action on a double click (Audit 7 NB-02)", () => {
