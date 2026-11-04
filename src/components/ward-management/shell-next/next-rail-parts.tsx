@@ -59,18 +59,15 @@ export function deskCapacityRows(
   };
   const scope = access.scope;
   if (scope.kind !== "site" && scope.kind !== "ward" && scope.kind !== "service") {
-    const hottest = byOccupancy[0];
-    return hottest
-      ? [
-          metro,
-          {
-            key: hottest.id,
-            name: hottest.shortName,
-            counts: `${hottest.shortName}, the fullest health service`,
-            percent: hottest.occupancyPercent,
-          },
-        ]
-      : [metro];
+    // H2 (Josh, 3 Nov 2026): a network desk reads the three fullest health services, fullest first,
+    // so the order is the ranking. Metro as a whole moves to the card's foot line.
+    const ranked = byOccupancy.slice(0, 3).map((row, index) => ({
+      key: row.id,
+      name: row.shortName,
+      counts: index === 0 ? `${row.shortName}, the fullest health service` : `${row.shortName}'s wards`,
+      percent: row.occupancyPercent,
+    }));
+    return ranked.length > 0 ? ranked : [metro];
   }
   const places = wardPlaceLookup(units);
   const own = units.filter((unit) => unitInScope(scope, unit.id, places));
@@ -224,3 +221,38 @@ export function PinButton({ id, label, pinned }: { id: string; label: string; pi
 
 // DK1: the account menu lives in its own file so the executive chrome can share it without the rest.
 export { RailAccountMenu } from "@/components/ward-management/shell-next/next-account-menu";
+
+/** H2 (Josh, 3 Nov 2026): the bed alerts foot line, Metro as a whole (when the rows above rank
+ *  services) and the beds ready now. */
+export function RailReadyLine({ metro, ready }: { metro: number | null; ready: number }) {
+  return (
+    <>
+      {metro !== null ? (
+        <>
+          Metro <b>{formatOccupancyPercent(metro)}</b>
+          <span aria-hidden="true"> · </span>
+        </>
+      ) : null}
+      <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
+    </>
+  );
+}
+
+export function RailLiveClock({
+  clock,
+  shift,
+  classes,
+}: {
+  clock: string;
+  shift: string;
+  /** The rail sheet's own classes: its title line and the quieter word beside the time. */
+  classes: Readonly<Record<string, string>>;
+}) {
+  return (
+    <span className={`${classes.shiftTitle} ${parts.liveClock}`} data-testid="ward-rail-live-clock">
+      <span className={parts.liveDot} aria-hidden="true" />
+      <span className={parts.liveTime}>{clock}</span>
+      <span className={classes.shiftHours}>{shift}</span>
+    </span>
+  );
+}

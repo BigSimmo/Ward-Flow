@@ -330,9 +330,10 @@
   text-overflow: ellipsis;
 }
 
-/* From 1024px the columns fit the card, so nothing scrolls inside it and the head row pins under
-   the top bar while the page scrolls. */
-@media (min-width: 64rem) {
+/* Once the 970px table fits its card beside the open sidebar (272px rail plus page and card
+   gutters), nothing scrolls inside it and the head row pins under the top bar while the page
+   scrolls. Narrower than that the card keeps its sideways scroll, so no column is cut off. */
+@media (min-width: 82rem) {
   .tableWrap {
     overflow: visible;
   }

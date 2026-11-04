@@ -199,3 +199,46 @@
   color: var(--wf-ink-3);
   overflow-wrap: anywhere;
 }
+
+/* H3 (Josh, 3 Nov 2026): the shift card leads with the live time, and the shift and its handover
+   sit together underneath with how far through the shift it is. */
+.liveClock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.liveTime {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.liveDot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-success);
+  animation: railLivePulse 2.4s ease-out infinite;
+}
+
+@keyframes railLivePulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveDot {
+    animation: none;
+  }
+}
