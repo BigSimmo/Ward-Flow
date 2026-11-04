@@ -11,9 +11,6 @@ export const OPEN_SERVICES = 2;
 /** Rows a group shows before "Show more". */
 export const GROUP_ROWS = 8;
 
-/** All wards, the second page that carries beds (Capacity's bed map is the first). */
-export const ALL_WARDS_HREF = "/ward-flow/wards";
-
 /** needsAttention's own words for a stale ward, used alone so no bed figure is quoted here. */
 export const STALE_REASON = "The last bed confirmation is stale — check with the ward.";
 
