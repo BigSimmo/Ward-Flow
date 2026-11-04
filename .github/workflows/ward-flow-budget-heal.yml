@@ -1,0 +1,51 @@
+name: Ward Flow budget heal
+
+# When "Ward Flow CI" fails on a push to main and main's own production build measured a route over
+# its phone script budget, this opens one PR raising only those routes (budget-heal.mjs), with its
+# own docs/script-budget-history entry. The PR goes through the normal required checks, which this
+# dispatches on the PR branch because events made with the workflow token start no workflows.
+# Meanwhile open PRs are not blocked: their build fails only routes they grew (budget-gate.mjs).
+# It runs main's own scripts only, never pull-request code, and uses free GitHub-hosted runners.
+on:
+  workflow_run:
+    workflows: [Ward Flow CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: ward-flow-budget-heal
+  cancel-in-progress: false
+
+jobs:
+  heal:
+    name: Ward Flow budget heal
+    if: ${{ github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Fetch main's phone script measurements
+        id: measured
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: script-budget-measured
+          path: ${{ runner.temp }}/script-budget
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Check out main
+        if: ${{ steps.measured.outcome == 'success' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - name: Open or refresh the budget heal PR
+        if: ${{ steps.measured.outcome == 'success' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WARD_MEASURED: ${{ runner.temp }}/script-budget/measured.json
+          WARD_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/ward-ci-public/budget-heal.mjs

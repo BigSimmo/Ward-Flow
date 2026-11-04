@@ -62,8 +62,11 @@ import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/com
 
 const A_REAL_TEAM = COMMUNITY_TEAM_PAGES[0].name;
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
-import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
-import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
+import {
+  edStatisticsHref,
+  raiseReferralHref,
+  wardStatisticsHref,
+} from "@/components/ward-management/shell/ward-facade";
 
 function renderHub() {
   render(
@@ -273,7 +276,7 @@ describe("Ward Flow Master Search Hub — search and the type filter", () => {
  * map and All wards). This case replaced the one that read Ready and Closed out of this preview.
  */
 describe("Ward Flow Master Search Hub — a directory with no bed figures of its own (review point 21)", () => {
-  it("a ward's row and preview carry no bed figure, and the preview points to Capacity's bed map and All wards", () => {
+  it("a ward's row and preview carry no bed figure, and the preview leads with Refer here", () => {
     renderHub();
     clickRow("Mental Health Unit");
 
@@ -283,8 +286,18 @@ describe("Ward Flow Master Search Hub — a directory with no bed figures of its
     const preview = within(screen.getByRole("region", { name: /^preview, mental health unit$/iu }));
     expect(preview.queryByText(/^ready to admit$/iu)).not.toBeInTheDocument();
     expect(preview.queryByText(/^Closed, not offered$/iu)).not.toBeInTheDocument();
-    expect(preview.getByRole("link", { name: /capacity.s bed map/iu })).toHaveAttribute("href", WARD_CAPACITY_HREF);
-    expect(preview.getByRole("link", { name: /^all wards$/iu })).toHaveAttribute("href", "/ward-flow/wards");
+    // PL1 follow-up (Josh, 4 Nov 2026): the Beds line came out; beds stay on Capacity and All wards.
+    expect(preview.queryByText(/^beds$/iu)).not.toBeInTheDocument();
+    expect(preview.queryByRole("link", { name: /capacity.s bed map/iu })).not.toBeInTheDocument();
+    const unitId =
+      hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites }).find(
+        (entry) => entry.name === "Mental Health Unit",
+      )?.id ?? "";
+    expect(preview.getByRole("link", { name: /^refer here$/iu })).toHaveAttribute(
+      "href",
+      raiseReferralHref({ refer: "ward", unitIds: [unitId] }),
+    );
+    expect(preview.getByText(/^heading here$/iu)).toBeInTheDocument();
   });
 });
 
@@ -425,15 +438,15 @@ describe("Ward Flow Master Search Hub — every flagged state carries a word, no
  * content is network-wide must not disagree with itself about how big the network is.
  */
 describe("Ward Flow Master Search Hub — a search must not change what the screen says the network is", () => {
-  it("the glance pane states one ward count, not one filtered and one not, while a query is narrowing the list", () => {
+  it("the band states the same task, not a query-filtered one, while a query is narrowing the list", () => {
     renderHub();
-    // v6: the network sentence moved from the glance pane's subtitle to the hero. v10: the title
-    // is the count plus noun ("96 places") and the kinds sit in the hero eyebrow.
-    const networkSentence = () => document.querySelector<HTMLElement>("[data-wf-hero]")!;
+    // PL1 follow-up (Josh, 4 Nov 2026): the band's title is a task (the wards needing a bed check)
+    // and the kind counts are said once, on the Wards, EDs and Teams switch.
+    const band = () => document.querySelector<HTMLElement>("[data-wf-hero] h1")!;
 
-    const initialSubtitle = networkSentence().textContent ?? "";
-    expect(initialSubtitle).toMatch(/wards,.*EDs,.*teams/i);
-    const initialWards = Number(/(\d+)\s+wards/i.exec(initialSubtitle)?.[1]);
+    const initial = band().textContent ?? "";
+    expect(initial).toMatch(/bed check|bed count is current|asked to confirm/iu);
+    expect(initial).not.toMatch(/\d+\s+places/iu);
 
     // Before any query the two are trivially equal, so this is measured only after narrowing —
     // and the narrowing is proven to have happened before anything is compared.
@@ -444,16 +457,7 @@ describe("Ward Flow Master Search Hub — a search must not change what the scre
       'the query "fremantle" no longer narrows the list — this case can no longer tell a filtered figure from an unfiltered one',
     ).toBeLessThan(10);
 
-    const subtitle = networkSentence().textContent ?? "";
-    const subtitleWards = Number(/(\d+)\s+wards/i.exec(subtitle)?.[1]);
-
-    expect(Number.isNaN(subtitleWards), `could not read a ward count from the glance subtitle: "${subtitle}"`).toBe(
-      false,
-    );
-    expect(
-      subtitleWards,
-      "the glance pane gives a query-filtered count instead of network totals while a search is active",
-    ).toBe(initialWards);
+    expect(band().textContent, "the band's task changes with a search, so it is no longer the network's").toBe(initial);
   });
 });
 
@@ -860,7 +864,7 @@ describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and 
     }
   });
 
-  it("gives no community row a statistics link, and states the absence in words instead", () => {
+  it("gives no community row a statistics link, and names the suburbs it covers instead", () => {
     expect(COMMUNITY_ENTRIES.length).toBeGreaterThan(0);
     renderHub();
     fireEvent.click(categoryRadio("community"));
@@ -882,11 +886,8 @@ describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and 
           `communityTeamById — see the block comment above communityHref in hub-derivations.ts`,
       ).not.toBeInTheDocument();
 
-      // And the absence is IN WORDS, never a blank or a dash.
-      expect(
-        glance().getByText(/statistics are unavailable for this regional entry/i),
-        `${entry.name} does not state the statistics absence in words`,
-      ).toBeInTheDocument();
+      // PL1 follow-up (Josh, 4 Nov 2026): the panel names the suburbs, in words even when there are none.
+      expect(glance().getByText(/^suburbs it covers$/i), `${entry.name} does not name its suburbs`).toBeInTheDocument();
     }
   });
 });

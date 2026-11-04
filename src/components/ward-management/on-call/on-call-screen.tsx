@@ -19,8 +19,6 @@ import {
   CardFoot,
   FilterChip,
   Hero,
-  HeroChip,
-  HeroChips,
   HeroTrack,
   Icon,
   LiveChip,
@@ -370,34 +368,6 @@ export function OnCallScreen() {
     }))
     .filter((item) => item.count > 0);
 
-  const heroStats = (
-    <HeroChips label="Lines by state, press to highlight">
-      <HeroChip
-        value={answering.length}
-        label="answering"
-        tone="success"
-        pressed={highlight === "now"}
-        onPress={() => toggleHighlight("now")}
-      />
-      <HeroChip
-        value={endingSoon.length}
-        // Redesign: one wording for this state at every width, the phone's "ending soon" (within the hour).
-        label="ending soon"
-        tone="warning"
-        pressed={highlight === "soon"}
-        onPress={() => toggleHighlight("soon")}
-      />
-      <HeroChip value={closed.length} label="closed" tone="neutral" />
-      <HeroChip
-        value={checkDue.length}
-        label="check due"
-        tone="warning"
-        pressed={highlight === "due"}
-        onPress={() => toggleHighlight("due")}
-      />
-    </HeroChips>
-  );
-
   const clock = (
     <span className={styles.heroClock}>
       <Icon icon={Clock} size={14} />
@@ -448,9 +418,9 @@ export function OnCallScreen() {
                 <b>{checkDue.length}</b> check due
               </button>
             </span>
-          ) : (
-            heroStats
-          )
+          ) : // Post-merge audit (Josh, 4 Nov 2026): a lighter desktop hero. The title is its one figure;
+          // the Show chips under the tabs already count and filter answering, ending soon and check due.
+          undefined
         }
         aside={isPhone ? <LiveChip state="live" onHero /> : clock}
         bar={

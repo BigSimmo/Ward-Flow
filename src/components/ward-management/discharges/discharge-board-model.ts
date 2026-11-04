@@ -25,7 +25,7 @@ export type GroupKey = keyof typeof GROUP_LABELS;
 
 /** v10 phone group headers: one glyph and a short label per group. */
 export const PHONE_GROUP_TONES: Record<GroupKey, WfTone> = {
-  blocked: "danger",
+  blocked: "warning",
   confirmed: "success",
   expected: "neutral",
   "discharged-today": "closed",
@@ -344,4 +344,4 @@ export function perthDay(instant: Instant, dayZero: Date, options: Intl.DateTime
 }
 
 export const stageTone = (stage: WorkStatus): WfTone =>
-  stage === "blocked" ? "danger" : stage === "expected" ? "neutral" : "success";
+  stage === "blocked" ? "warning" : stage === "expected" ? "neutral" : "success";
