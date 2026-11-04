@@ -4140,13 +4140,11 @@
     inset: 0 52px 0 0;
     border: 0;
     border-radius: 24px;
-    background: color-mix(in srgb, var(--wf-surface) 80%, transparent);
-    -webkit-backdrop-filter: blur(24px) saturate(1.8);
-    backdrop-filter: blur(24px) saturate(1.8);
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--wf-surface) 55%, transparent),
-      0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 6%, transparent),
-      0 10px 30px -18px color-mix(in srgb, var(--wf-ink-1) 45%, transparent);
+    /* Part of the glass, not a card on it: a soft tint of the same frost, no edge and no shadow. */
+    background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
   }
 
   .bar.bar.bar.bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg {
@@ -4220,13 +4218,8 @@
     height: 40px;
     min-height: 0;
     border-radius: 50%;
-    background: color-mix(in srgb, var(--wf-surface) 80%, transparent);
-    -webkit-backdrop-filter: blur(24px);
-    backdrop-filter: blur(24px);
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--wf-surface) 55%, transparent),
-      0 0 0 1px color-mix(in srgb, var(--wf-ink-1) 6%, transparent),
-      0 10px 30px -18px color-mix(in srgb, var(--wf-ink-1) 45%, transparent);
+    background: color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+    box-shadow: none;
     color: var(--wf-ink-2);
   }
 
