@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Check, ChevronDown, Inbox } from "lucide-react";
 
@@ -21,6 +21,9 @@ import {
 import { previewFeedMessage, type FeedMessage } from "@/components/ward-management/integration/hospital-feed";
 import {
   receiveFeedMessage,
+  beginFeedConfirmation,
+  endFeedConfirmation,
+  isCurrentFeedItem,
   settleFeedItem,
   startFeedScript,
   syncFeedInboxGeneration,
@@ -128,15 +131,13 @@ export function ToolFeed({ onNavigate }: { onNavigate: () => void }) {
   const routeUnitId = wardRouteUnitId(usePathname() ?? "");
   const [status, setStatus] = useState("");
   const [showDone, setShowDone] = useState(false);
-  // Messages whose confirmation is still saving: a second tap in the gap would raise it twice.
-  const [pending, setPending] = useState<ReadonlySet<number>>(() => new Set());
-  const setItemPending = (seq: number, on: boolean) =>
-    setPending((was) => {
-      const next = new Set(was);
-      if (on) next.add(seq);
-      else next.delete(seq);
-      return next;
-    });
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const unitName = (id: string) => units.find((unit) => unit.id === id)?.name ?? "this ward";
   // Audit CS3-06: who a message would change, by name, record number and bed, never the number alone.
@@ -161,60 +162,68 @@ export function ToolFeed({ onNavigate }: { onNavigate: () => void }) {
   const done = items.filter((item) => item.status !== "waiting").reverse();
 
   function confirm(item: FeedItem, suggestion: Confirmable, leaving?: LeavingDestination) {
-    if (pending.has(item.seq)) return;
-    setItemPending(item.seq, true);
-    const outcome =
-      suggestion.kind === "arrival"
-        ? raise("PATIENT_ARRIVED", { movementId: suggestion.movementId, actingUnitId: suggestion.unitId })
-        : raise("RECORD_LEAVING", {
-            admissionId: suggestion.admissionId,
-            actingUnitId: suggestion.unitId,
-            leavingDestination: leaving!,
-          });
+    if (!beginFeedConfirmation(item)) return;
     const who = personOf(suggestion)?.who ?? "this person";
     const doneText =
       suggestion.kind === "arrival"
         ? `Arrival confirmed: ${who} on ${unitName(suggestion.unitId)}.`
         : `Discharge recorded: ${who} from ${unitName(suggestion.unitId)}.`;
-    offerUndo(
-      {
-        success: doneText,
-        undo: (at) =>
-          suggestion.kind === "arrival"
-            ? {
-                type: "UNDO_TRANSPORT_STEP",
-                role,
-                now: at,
-                movementId: suggestion.movementId,
-                actingUnitId: suggestion.unitId,
-              }
-            : {
-                type: "UNDO_DEPARTURE",
-                role,
-                now: at,
-                admissionId: suggestion.admissionId,
-                actingUnitId: suggestion.unitId,
-              },
-        undone: `Undone: ${who} is back as before.`,
-        refusalShownInline: true,
-      },
-      { completion: outcome },
-    );
-    void Promise.resolve(outcome).then(
-      (result: WardCommandOutcome | void) => {
-        setItemPending(item.seq, false);
-        if (result && result.status !== "accepted") {
-          setStatus(`Not recorded: ${result.message ?? "the action was refused"}. The message still waits.`);
-          return;
+    const step = {
+      success: doneText,
+      undo: (at: number) =>
+        suggestion.kind === "arrival"
+          ? {
+              type: "UNDO_TRANSPORT_STEP" as const,
+              role,
+              now: at,
+              movementId: suggestion.movementId,
+              actingUnitId: suggestion.unitId,
+            }
+          : {
+              type: "UNDO_DEPARTURE" as const,
+              role,
+              now: at,
+              admissionId: suggestion.admissionId,
+              actingUnitId: suggestion.unitId,
+            },
+      undone: `Undone: ${who} is back as before.`,
+      refusalShownInline: true,
+    };
+    const notConfirmed = () => {
+      endFeedConfirmation(item);
+      if (mounted.current && isCurrentFeedItem(item)) setStatus("Not confirmed. Check the board before trying again.");
+    };
+    const answer = (result: WardCommandOutcome | void, awaitConfirmation = true) => {
+      if (!isCurrentFeedItem(item)) return;
+      if (result?.status === "accepted" && result.isCurrent?.() !== false) {
+        if (settleFeedItem(item, "confirmed", doneText) && mounted.current) {
+          offerUndo(step, { completion: result });
+          setStatus(`Message ${item.seq}: ${doneText}`);
         }
-        settleFeedItem(item.seq, "confirmed", doneText);
-        setStatus(`Message ${item.seq}: ${doneText}`);
-      },
-      () => {
-        setItemPending(item.seq, false);
-        setStatus("Not confirmed. Check the board before trying again.");
-      },
-    );
+        return;
+      }
+      if (mounted.current)
+        setStatus(`Not recorded: ${result?.message ?? "the save is not confirmed"}. The message still waits.`);
+      if (awaitConfirmation && result?.status === "failed" && result.confirmation) {
+        void result.confirmation.then(
+          (confirmed) => (confirmed.commandId === result.commandId ? answer(confirmed, false) : notConfirmed()),
+          notConfirmed,
+        );
+      } else endFeedConfirmation(item);
+    };
+    try {
+      const outcome =
+        suggestion.kind === "arrival"
+          ? raise("PATIENT_ARRIVED", { movementId: suggestion.movementId, actingUnitId: suggestion.unitId })
+          : raise("RECORD_LEAVING", {
+              admissionId: suggestion.admissionId,
+              actingUnitId: suggestion.unitId,
+              leavingDestination: leaving!,
+            });
+      void Promise.resolve(outcome).then((result) => answer(result), notConfirmed);
+    } catch {
+      notConfirmed();
+    }
   }
 
   return (
@@ -232,12 +241,11 @@ export function ToolFeed({ onNavigate }: { onNavigate: () => void }) {
               differences={item.message ? differencesFrom(item.message, patients) : []}
               unitName={unitName}
               blockedReason={(suggestion) => confirmBlockedReason(suggestion, role, routeUnitId, unitName)}
-              pending={pending.has(item.seq)}
+              pending={inbox.pending.includes(item)}
               onConfirm={(suggestion, leaving) => confirm(item, suggestion, leaving)}
               onReject={() => {
-                if (pending.has(item.seq)) return;
-                settleFeedItem(item.seq, "rejected");
-                setStatus(`Message ${item.seq} rejected. Nothing changed.`);
+                if (inbox.pending.includes(item)) return;
+                if (settleFeedItem(item, "rejected")) setStatus(`Message ${item.seq} rejected. Nothing changed.`);
               }}
             />
           ))}

@@ -5,8 +5,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 /**
  * Help's Show me names a Settings section through the address (#display). Settings reads the address
  * when it opens, and also when only the hash changes while it is already open (review on #826).
- * Settings by login (31 Oct 2026): one page of sections, so the named section scrolls into view; an
- * old tab name (#display) lands on its new section (This device).
+ * Settings by role (Josh, 3 Nov 2026, ST1): one page of sections, so the named section scrolls into
+ * view and its jump button is marked current; an old name (#device, #profile) lands on its new section
+ * (Display, You).
  */
 
 vi.mock("next/link", () => ({
@@ -46,14 +47,22 @@ describe("Settings and the address hash", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    const device = screen.getByTestId("ward-settings-screen").querySelector<HTMLElement>('[data-pane="device"]');
-    expect(device).not.toBeNull();
-    expect(scrolled).not.toContain("settings-section-device");
+    const display = screen.getByTestId("ward-settings-screen").querySelector<HTMLElement>('[data-pane="display"]');
+    expect(display).not.toBeNull();
+    expect(scrolled).not.toContain("settings-section-display");
     act(() => {
-      window.location.hash = "display";
+      window.location.hash = "device";
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
-    expect(scrolled).toContain("settings-section-device");
+    expect(scrolled).toContain("settings-section-display");
+    expect(screen.getByTestId("ward-settings-jump-display")).toHaveAttribute("aria-current", "true");
+    act(() => {
+      window.location.hash = "profile";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+    expect(scrolled).toContain("settings-section-you");
+    expect(screen.getByTestId("ward-settings-jump-you")).toHaveAttribute("aria-current", "true");
+    expect(screen.getByTestId("ward-settings-jump-display")).not.toHaveAttribute("aria-current");
     HTMLElement.prototype.scrollIntoView = original;
     vi.restoreAllMocks();
   });

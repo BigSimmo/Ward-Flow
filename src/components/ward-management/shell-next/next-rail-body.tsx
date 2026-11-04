@@ -7,7 +7,6 @@ import { WardRailFrame } from "@/components/ward-management/shell/ward-chrome-fr
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
-  ArrowLeftRight,
   ArrowRight,
   ChevronDown,
   ChevronLeft,
@@ -16,7 +15,6 @@ import {
   LayoutGrid,
   Menu,
   PanelLeftOpen,
-  Settings,
   SunMoon,
 } from "lucide-react";
 import Link from "next/link";
@@ -28,6 +26,7 @@ import { Tooltip } from "@/components/wf/tooltip";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
+import { useSettingsDeskProfile } from "@/components/ward-management/settings/settings-desk-profile";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { useNextNavCounts } from "@/components/ward-management/shell-next/next-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
@@ -49,10 +48,9 @@ import {
   isPhoneViewport,
   subscribeWardMenu,
 } from "@/components/ward-management/shell/ward-drawer-bus";
-import { handoverHref, settingsHref } from "@/components/ward-management/shell/ward-facade";
+import { handoverHref } from "@/components/ward-management/shell/ward-facade";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardMyWards } from "@/components/ward-management/shell/ward-my-wards";
-import { WardAccountActions } from "@/components/ward-management/shell/ward-account-actions";
 import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
 import styles from "@/components/ward-management/shell/ward-rail.module.css";
 import { readWardRailEarlyShape } from "@/components/ward-management/shell/ward-rail-early";
@@ -72,6 +70,7 @@ import {
 import { nextRoleMenu } from "@/components/ward-management/shell-next/next-role-menu";
 import {
   PinButton,
+  RailAccountMenu,
   countScopeNote,
   countTitle,
   deskCapacityRows,
@@ -79,6 +78,8 @@ import {
   capacityRowsSpoken,
   cardScopeNote,
   overLineLabel,
+  RailLiveClock,
+  RailReadyLine,
   usePinnedPages,
 } from "@/components/ward-management/shell-next/next-rail-parts";
 import railParts from "@/components/ward-management/shell-next/next-rail.module.css";
@@ -371,6 +372,9 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const currentPersona = deskAccess.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
   // Q226 (2 Nov 2026): one spelling of the signed-in name, the master's ("Dr S. Chen").
   const personaName = currentPersona.name;
+  // DK1: the account menu names the desk's place when the desk is this person's own.
+  const deskProfile = useSettingsDeskProfile();
+  const deskPlace = deskProfile.name === personaName ? deskProfile.location : null;
   // The access admin is named for itself, not the executive chrome it borrows (as the phone menu does).
   const deskRoleLabel = useDeskRoleLabel(role);
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
@@ -396,6 +400,14 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // Every figure below comes from the derivation. Over-the-line words count places, never Alerts (#793).
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
+  // H2: with the services ranked above it, the foot line carries Metro as a whole and the ready beds.
+  const metroShown = capacityRows.some((row) => row.key === "metro" || row.key === "own");
+  const readyLine = <RailReadyLine metro={metroShown ? null : bedAlerts.metroOccupancyPercent} ready={readyBeds} />;
+  const metroSpoken =
+    metroShown || bedAlerts.metroOccupancyPercent === null
+      ? ""
+      : ` Metro ${formatOccupancyPercent(bedAlerts.metroOccupancyPercent)} full.`;
+  const capacityCardLabel = `Bed alerts: ${overLine.label}. ${capacityRowsLabel}.${metroSpoken} ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.`;
   const handoverText = shiftProgress.handoverDue ? null : durMinutes(shiftProgress.remainingMinutes);
 
   const setOpen = useCallback((next: boolean) => {
@@ -822,10 +834,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               {currentPersona.initials}
             </span>
             <span className={styles.shiftMeta}>
-              <span className={styles.shiftTitle}>
-                {shiftProgress.shiftName}
-                <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
-              </span>
+              <RailLiveClock clock={boardClock} shift={shiftProgress.shiftName} classes={styles} />
               <span className={`${styles.shiftSub} ${railParts.shiftSubWrap}`}>
                 {personaName} · {currentPersona.role}
               </span>
@@ -881,7 +890,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               className={styles.compactAlertPip}
               data-alert={overLine.over > 0 ? "true" : undefined}
               data-testid="ward-rail-compact-alert-pip"
-              aria-label={`Bed alerts: ${overLine.label}. ${capacityRowsLabel}. ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.`}
+              aria-label={capacityCardLabel}
               aria-expanded={alertsOpen}
               aria-haspopup="dialog"
               onClick={(event) => {
@@ -908,7 +917,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             data-open={alertsOpen ? "true" : undefined}
             data-alert={overLine.over > 0 ? "true" : undefined}
             data-testid="ward-rail-capacity-alerts-trigger"
-            aria-label={`Bed alerts: ${overLine.label}. ${capacityRowsLabel}. ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.`}
+            aria-label={capacityCardLabel}
             aria-expanded={alertsOpen}
             aria-haspopup="dialog"
             onClick={(event) => {
@@ -939,7 +948,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               ))}
             </span>
             <span className={railParts.capacityReady} aria-hidden="true">
-              <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
+              {readyLine}
             </span>
           </button>
 
@@ -1169,33 +1178,18 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             </button>
           </div>
 
-          <Link
-            href={settingsHref()}
-            className={styles.utilityLink}
-            aria-label="Settings"
-            title="Settings"
-            aria-current={pathname.replace(/\/+$/u, "") === settingsHref() ? "page" : undefined}
-            data-testid="ward-rail-settings-link"
-          >
-            <Settings aria-hidden="true" strokeWidth={1.75} />
-            <span>Settings</span>
-          </Link>
+          {/* Josh, 3 Nov 2026 (DK1, "yes to all"): Settings lives in the account menu only. */}
         </div>
-        {/* Sign out (shared board only) has its own row: Josh, 27 Oct 2026, the strip above the app
-            that held it is hidden. */}
-        <WardAccountActions className={styles.utilityLink} wrapClassName={styles.utilityLinks} />
-
         <div className={styles.userCardWrap}>
-          {/* B6 (Josh, 19 Oct 2026): one switcher. The person opens Go to a desk, which sets both the
-              person and the place and goes to that desk's home. The separate persona list (and its
-              listbox of buttons, the DA-05 pattern) is gone, so the rail cannot show one person
-              while the menu belongs to another. */}
-          <button
-            type="button"
-            ref={personaTriggerRef}
-            data-testid="ward-rail-persona-trigger"
-            className={`${styles.userProfileCard} ${styles.userProfileCardBtn}`}
-            onClick={() => {
+          {/* DK1 (Josh, 3 Nov 2026): the person opens the account menu. Sign out and Switch desk
+              moved into it from their own rows; the demo's desk drawer is "Try another desk (demo)". */}
+          <RailAccountMenu
+            variant="rail"
+            persona={{ ...currentPersona, name: personaName }}
+            place={deskPlace}
+            viewing={viewing}
+            triggerRef={personaTriggerRef}
+            onTryAnotherDesk={() => {
               if (onOpenOperatorModal) {
                 onOpenOperatorModal();
                 return;
@@ -1204,20 +1198,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               deskReturnRef.current = personaTriggerRef.current;
               setDeskModalOpen(true);
             }}
-            aria-expanded={deskModalOpen}
-            aria-haspopup="dialog"
-            aria-label={`${personaName}, ${currentPersona.role}.${viewing ? ` ${viewing}.` : ""} Go to a desk.`}
-            title={`${personaName} · ${currentPersona.role}. Go to a desk`}
-          >
-            <span className={styles.userAvatar} aria-hidden="true">
-              {currentPersona.initials}
-            </span>
-            <span className={styles.userMeta}>
-              <span className={styles.userName}>{personaName}</span>
-              <span className={styles.userRole}>{currentPersona.role}</span>
-            </span>
-            <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
-          </button>
+          />
           {deskModalOpen ? (
             <OperatorSwitcherModal
               isOpen
@@ -1252,14 +1233,14 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
           // Device audit (11 Oct 2026): the list scrolls above a pinned foot that keeps the person,
           // Settings and Appearance in reach on iPad, where the sheet used to cut off at Governance.
           <>
-            {/* WT-39 (walk-through, 26 Oct 2026): on iPad portrait there is no rail, so the menu's
-                person opens Go to a desk, as the rail's person does. */}
-            <button
-              type="button"
-              className={`${styles.moreFootPerson} ${styles.moreFootPersonBtn}`}
-              data-testid="ward-rail-sheet-persona-trigger"
-              onClick={() => {
-                setMoreOpen(false);
+            {/* WT-39: on iPad portrait there is no rail, so the menu's person opens the account
+                menu (DK1), as the rail's person does. */}
+            <RailAccountMenu
+              variant="sheet"
+              persona={{ ...currentPersona, name: personaName }}
+              place={deskPlace}
+              onLeave={() => setMoreOpen(false)}
+              onTryAnotherDesk={() => {
                 if (onOpenOperatorModal) {
                   onOpenOperatorModal();
                   return;
@@ -1267,29 +1248,8 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 deskReturnRef.current = moreTriggerRef.current;
                 setDeskModalOpen(true);
               }}
-              aria-haspopup="dialog"
-              aria-label={`${personaName}, ${currentPersona.role}. Go to a desk.`}
-              title={`${personaName} · ${currentPersona.role}. Go to a desk`}
-            >
-              <span className={styles.userAvatar} aria-hidden="true">
-                {currentPersona.initials}
-              </span>
-              <span className={styles.userMeta}>
-                <span className={styles.userName}>{personaName}</span>
-                <span className={styles.userRole}>{currentPersona.role}</span>
-              </span>
-              <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
-            </button>
+            />
             <div className={styles.moreFootActions}>
-              <Link
-                href={settingsHref()}
-                className={styles.sheetUtilityLink}
-                data-testid="ward-rail-sheet-settings-link"
-                onClick={() => setMoreOpen(false)}
-              >
-                <Settings aria-hidden="true" strokeWidth={1.75} />
-                <span>Settings</span>
-              </Link>
               <button
                 type="button"
                 className={styles.sheetUtilityLink}
@@ -1366,9 +1326,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 </span>
               </span>
               {renderBedAlertRows()}
-              <span className={railParts.capacityReady}>
-                <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
-              </span>
+              <span className={railParts.capacityReady}>{readyLine}</span>
             </Link>
           ) : (
             <div className={sheetAlertsClass}>
@@ -1380,9 +1338,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 </span>
               </span>
               {renderBedAlertRows()}
-              <span className={railParts.capacityReady}>
-                <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
-              </span>
+              <span className={railParts.capacityReady}>{readyLine}</span>
             </div>
           )
         ) : null}

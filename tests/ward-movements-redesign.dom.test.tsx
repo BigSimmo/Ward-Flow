@@ -80,7 +80,8 @@ describe("Movements: the phone eyebrow names a placed desk's own place (Q84)", (
 });
 
 describe("Movements redesign: the coordinator's board", () => {
-  it("draws one stage pipeline whose stages highlight the worklist, in place of the hero's stage chips", () => {
+  // M1 (3 Nov 2026): a stage opens its patients in the list pop-up; "Show in worklist" keeps the highlight.
+  it("draws one stage pipeline whose stages open their patients, in place of the hero's stage chips", () => {
     renderScreen();
     const pipeline = screen.getByRole("navigation", { name: "Stages" });
     const stages = within(pipeline).getAllByRole("button");
@@ -90,9 +91,11 @@ describe("Movements redesign: the coordinator's board", () => {
       expect(stage.textContent).toMatch(/none waiting|longest /);
     }
     fireEvent.click(stages[0]!);
+    const sheet = screen.getByTestId("movement-people-sheet");
+    expect(within(sheet).getAllByRole("listitem").length).toBeGreaterThan(0);
+    fireEvent.click(within(sheet).getByRole("button", { name: "Show in worklist" }));
+    expect(screen.queryByTestId("movement-people-sheet")).not.toBeInTheDocument();
     expect(stages[0]).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(stages[0]!);
-    expect(stages[0]).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("group", { name: "Highlight a stage" })).not.toBeInTheDocument();
   });
 
@@ -106,7 +109,11 @@ describe("Movements redesign: the coordinator's board", () => {
     const figures = screen.getByRole("group", { name: "Highlight movements" });
     const tierOne = within(figures).getByRole("button", { name: /Tier 1$/u });
     fireEvent.click(tierOne);
-    expect(tierOne).toHaveAttribute("aria-pressed", "true");
+    // M1 (3 Nov 2026): the figure opens its patients rather than marking rows.
+    expect(tierOne).toHaveAttribute("aria-haspopup", "dialog");
+    expect(
+      within(screen.getByTestId("movement-people-sheet")).getByRole("heading", { name: "Urgency tier 1" }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/resolved today · \d+ active corridors/).textContent).not.toMatch(/moving/);
   });
 

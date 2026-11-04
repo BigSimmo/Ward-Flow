@@ -1,11 +1,17 @@
 "use client";
-// Settings by login (Josh, 31 Oct 2026): the Display card of "This device", beside the alerts. Help,
-// the tour and Shortcuts are their own Help section. The round 3 "New for this browser" proposals
+// Settings by role (Josh, 3 Nov 2026, ST1): the Display section. Help, the tour and the shortcut list
+// live in Help; the Page tips switch, a display choice for this device, sits here. The round 3 "New for this browser" proposals
 // (Open Ward Flow on, Text size) are not built: nothing in the app reads them yet (D-72).
 // On a phone, Theme and Row density sit on the page itself, so the sheet leaves them out.
 
+import { useSyncExternalStore } from "react";
 import { Palette } from "lucide-react";
 
+import {
+  helpTipsOff,
+  setHelpTipsOff,
+  subscribeHelpTipsOff,
+} from "@/components/ward-management/help-content/ward-help-tips-off";
 import type { RowDensity } from "@/components/ward-management/settings/row-density";
 import { THEME_CHOICES, type ThemeChoice } from "@/components/ward-management/settings/settings-panes";
 import { Button, Card, CardHead, Segmented, SrOnly, Switch } from "@/components/wf";
@@ -60,6 +66,8 @@ export function SettingsDisplayPane({
   onRestore: () => void;
   restoresRules: boolean;
 }) {
+  // G3: the page tips' on/off choice for this device. The server reads tips as on.
+  const tipsOff = useSyncExternalStore(subscribeHelpTipsOff, helpTipsOff, () => false);
   return (
     <Card aria-labelledby="display-title">
       <CardHead iconPlain id="display-title" icon={Palette} title="Display" />
@@ -106,19 +114,25 @@ export function SettingsDisplayPane({
           />
         </SettingRow>
       )}
-      {/* Round 3: the sub line was a sentence; the keys still on are said once, in the Shortcuts list. */}
-      <SettingRow setting="character-shortcuts" title="Single-key shortcuts" sub="Esc and Ctrl+K always work">
-        <RowSwitch
-          name="Single-key shortcuts"
-          checked={characterShortcuts}
-          onCheckedChange={onCharacterShortcutsChange}
-        />
-      </SettingRow>
+      {/* Round 3: the sub line was a sentence; the keys still on are said once, in the Shortcuts list.
+          ST1 (3 Nov 2026): a phone has no keyboard to use them, so the row stays on a computer. */}
+      {phoneQuick ? null : (
+        <SettingRow setting="character-shortcuts" title="Single-key shortcuts" sub="Esc and Ctrl+K always work">
+          <RowSwitch
+            name="Single-key shortcuts"
+            checked={characterShortcuts}
+            onCheckedChange={onCharacterShortcutsChange}
+          />
+        </SettingRow>
+      )}
       <SettingRow setting="reduce-motion" title="Reduce motion" sub="Stops slides and pulses">
         <RowSwitch name="Reduce motion" checked={reducedMotion} onCheckedChange={onReducedMotionChange} />
       </SettingRow>
       <SettingRow setting="high-contrast" title="High contrast" sub="Stronger edges and ink">
         <RowSwitch name="High contrast" checked={highContrast} onCheckedChange={onHighContrastChange} />
+      </SettingRow>
+      <SettingRow setting="help-tips" title="Page tips" sub="A short tip the first time you open each page">
+        <RowSwitch name="Page tips" checked={!tipsOff} onCheckedChange={(on) => setHelpTipsOff(!on)} />
       </SettingRow>
       {/* Audit (31 Oct 2026): one restore, which puts back every setting this card and the alerts
                 card keep in this browser, so no preference is left behind. */}

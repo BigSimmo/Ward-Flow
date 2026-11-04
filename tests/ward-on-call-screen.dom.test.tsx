@@ -211,20 +211,20 @@ describe("the on-call screen", () => {
 
   it("names the ending-soon state one way, and says the filter counts are this tab's", () => {
     renderOnCall();
+    // Post-merge audit (4 Nov 2026): the desktop hero no longer repeats the Show chips' states.
     const hud = within(screen.getByTestId("ward-on-call-hud-island"));
-    expect(hud.getByRole("button", { name: /ending soon/u })).toBeVisible();
+    expect(hud.queryByRole("button", { name: /ending soon|check due|answering/iu })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Ending soon/u })).toBeVisible();
     expect(screen.getByRole("group", { name: "Show and group rows" })).toHaveTextContent(/^Show/u);
     expect(screen.queryByText(/within the hour/iu)).not.toBeInTheDocument();
     expect(screen.queryByText("Prototype data, invented numbers")).not.toBeInTheDocument();
   });
 
-  it("v10: the title count equals the hero answering chip, and Downtime card is a dashed Preview", () => {
+  it("v10: the title is the hero's one figure, and Downtime card is a dashed Preview", () => {
     renderOnCall();
     const hud = screen.getByTestId("ward-on-call-hud-island");
     const title = within(hud).getByRole("heading", { level: 1 }).textContent ?? "";
-    const chip = within(hud).getByRole("button", { name: /answering/u }).textContent ?? "";
-    expect(title.match(/\d+/u)?.[0]).toBe(chip.match(/\d+/u)?.[0]);
+    expect(title).toMatch(/^On-call: \d+ lines? answering$/u);
     expect(within(hud).getByRole("button", { name: /Downtime card/u })).toHaveAttribute(
       "title",
       "Preview until the Downtime page exists",

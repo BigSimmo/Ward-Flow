@@ -37,7 +37,12 @@ import {
 } from "@/components/ward-management/shell/ward-shared-access-context";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
-import { ROLE_MENUS, railEntries, roleMenu } from "@/components/ward-management/shell/ward-rail-entries";
+import {
+  OUT_OF_SIDEBAR_IDS,
+  ROLE_MENUS,
+  railEntries,
+  roleMenu,
+} from "@/components/ward-management/shell/ward-rail-entries";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -97,7 +102,13 @@ describe("role menus split every page into the menu or More, never both or neith
       ];
       expect(new Set(ids).size, role).toBe(ids.length);
       // P116 (Josh, 27 Oct 2026): on the coordinator desk Alerts lives in the header bell only.
-      const expected = entries.map((entry) => entry.id).filter((id) => role !== "coordinator" || id !== "alerts");
+      // Josh, 3 Nov 2026: Community, New referral and Seclusion left the sidebar, except where a
+      // desk's own menu names one (the community desk's My team).
+      const ownMain = new Set(main.map((item) => item.id));
+      const expected = entries
+        .map((entry) => entry.id)
+        .filter((id) => role !== "coordinator" || id !== "alerts")
+        .filter((id) => !OUT_OF_SIDEBAR_IDS.has(id) || ownMain.has(id));
       expect(ids.toSorted(), role).toEqual(expected.toSorted());
     }
   });
@@ -161,18 +172,17 @@ describe("the rail shows the desk's own menu (B1)", () => {
     ]);
   });
 
-  it("gives the ED desk its board, its referrals, New referral and Find a bed", () => {
+  it("gives the ED desk its board, its referrals and Find a bed (New referral is the top bar button)", () => {
     atDesk(ED_DESK);
     render(wrap(<WardRail />));
     expect(railMenu()).toEqual([
       expect.stringMatching(/^My ED board/u),
       expect.stringMatching(/^My referrals/u),
-      expect.stringMatching(/^New referral/u),
       "Find a bed",
     ]);
     expect(screen.getByTestId("ward-rail-bed-finder")).toHaveAttribute("type", "button");
-    // The narrow strip keeps the first three items; Find a bed, the fourth, waits in its Menu.
-    expect(screen.getByTestId("ward-rail-bed-finder").closest("li")?.className).toMatch(/compactExtra/u);
+    // The narrow strip keeps the first three items, so Find a bed, now the third, stays in it.
+    expect(screen.getByTestId("ward-rail-bed-finder").closest("li")?.className ?? "").not.toMatch(/compactExtra/u);
     expect(screen.getByRole("link", { name: /^My ED board/u }).closest("li")?.className ?? "").not.toMatch(
       /compactExtra/u,
     );

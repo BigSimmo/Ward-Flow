@@ -248,13 +248,16 @@ describe("D-d — a jump link to a movement outside the worklist opens its drawe
       within(heat).getByTitle(new RegExp(`^${target!.label}, ${WAIT_BANDS[target!.band].toLowerCase()}: \\d+$`, "u")),
     );
 
-    // The drawer opened on THAT movement — `Sheet`'s own `role="dialog"`, named from its title
-    // `"{id} — what is recorded"`.
+    // M3 (3 Nov 2026): the square opens its patients in the list pop-up; choosing one opens
+    // THAT movement's drawer — `Sheet`'s own `role="dialog"`, named by the patient.
     // Owner, 26 Sept 2026: named by the patient, resolved from the seed register, never the WF number.
     const seed = seedWardFlowState();
     const person = resolveSubjectPatient(
       seed.movements.find((movement) => movement.id === movementId),
       seed,
+    );
+    fireEvent.click(
+      within(screen.getByTestId("movement-people-sheet")).getByRole("button", { name: `Open ${person.formalName}` }),
     );
     expect(screen.getByRole("dialog", { name: new RegExp(`^${person.formalName}`) })).toBeInTheDocument();
     expect(screen.getByTestId("ward-live-region")).toHaveTextContent(

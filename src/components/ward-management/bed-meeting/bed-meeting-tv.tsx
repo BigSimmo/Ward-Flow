@@ -1279,9 +1279,13 @@ export function BedMeetingTvScreen({
             ? "Turn them on in Settings, under Data and about, Feature flags."
             : "They are switched off on this site."}
         </p>
-        <Link href={WARD_CAPACITY_HREF} className={styles.offLink}>
-          Open Capacity
-        </Link>
+        {tvLocked ? (
+          <TvLockControl href={selfHref} className={styles.offLink} shared={shared?.enabled === true} />
+        ) : (
+          <Link href={WARD_CAPACITY_HREF} className={styles.offLink}>
+            Open Capacity
+          </Link>
+        )}
       </main>
     );
   }

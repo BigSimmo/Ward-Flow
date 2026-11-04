@@ -6,7 +6,7 @@
 // Home, Capacity, ED, the bed meeting, Alerts and Statistics all call this hook with their own clock,
 // so the same records give the same figure on every screen. Pure engine calls only; nothing here
 // writes a record.
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 import {
@@ -47,7 +47,11 @@ import {
   recordForecastMissReason,
   type ForecastMissReasonEntry,
 } from "./forecast-miss-reasons";
-import { useSharedForecastHistory } from "./forecast-shared-history";
+import {
+  type ForecastReasonSaveOutcome,
+  type ForecastReasonRefreshOutcome,
+  useSharedForecastHistory,
+} from "./forecast-shared-history";
 
 /** "Peel ED" style name for an emergency department id; never a different department. */
 export function forecastEdName(edId: string): string {
@@ -367,36 +371,51 @@ export function useForecastMissReasons() {
   const key = `${FORECAST_MISS_REASONS_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}:${scenario}:${worldGeneration}`;
   const stored = useSyncExternalStore(subscribeMissReasons, () => readLocal(key), serverLook);
   const local = useMemo(() => parseForecastMissReasons(stored), [stored]);
-  const { state: shared, send } = useSharedForecastHistory(worldGeneration);
-  // A reason chosen here shows at once and stays shown until the desk's shared record has it. A
-  // save that fails is tried again whenever the shared history is read again, never dropped.
-  const [unsaved, setUnsaved] = useState<{ key: string; entries: ForecastMissReasonEntry[] }>({ key, entries: [] });
-  const pending = useMemo(() => (unsaved.key === key ? unsaved.entries : []), [unsaved, key]);
-  const entries = useMemo(
-    () => (shared.status === "shared" ? [...shared.reasons, ...pending] : local),
-    [shared, pending, local],
-  );
-  useEffect(() => {
-    if (shared.status !== "shared") return;
-    for (const entry of pending)
-      void send({ reason: entry }).then((saved) => {
-        if (saved)
-          setUnsaved((held) => (held.key === key ? { key, entries: held.entries.filter((e) => e !== entry) } : held));
-      });
-  }, [shared, pending, send, key]);
+  const { state: shared, sendReason, refresh } = useSharedForecastHistory(worldGeneration);
+  const entries = shared.status === "shared" ? shared.reasons : local;
+  const disabledReason = !account
+    ? undefined
+    : shared.status === "shared" && shared.reasonWriteVersion === 1
+      ? undefined
+      : "Read the shared forecast record. Protected reason editing is not available yet.";
+  const versionFor = (day: number) => (shared.status === "shared" ? (shared.reasonVersions?.[day] ?? null) : null);
   const record = useCallback(
-    (entry: ForecastMissReasonEntry) => {
-      setUnsaved((held) => ({ key, entries: [...(held.key === key ? held.entries : []), entry] }));
+    async (
+      entry: ForecastMissReasonEntry,
+      expectedVersion: string | null = null,
+    ): Promise<ForecastReasonSaveOutcome> => {
+      if (account) {
+        if (shared.status !== "shared" || shared.reasonWriteVersion !== 1)
+          return {
+            status: "unavailable",
+            message: "Protected reason editing is not available for this shared workspace.",
+          };
+        return sendReason(entry, expectedVersion);
+      }
       const next = recordForecastMissReason(parseForecastMissReasons(readLocal(key)), entry);
       dropEarlierWorlds(key);
       try {
         window.localStorage.setItem(key, JSON.stringify(next));
       } catch {
-        // Private windows and full storage keep no reasons, the same as the snapshots.
+        return { status: "unavailable", message: "This browser could not save the reason. Your choice is still here." };
       }
       window.dispatchEvent(new Event(MISS_REASONS_EVENT));
+      return { status: "accepted" };
     },
-    [key],
+    [account, shared, sendReason, key],
   );
-  return { entries, record };
+  const reviewLatest = useCallback(
+    async (day: number): Promise<ForecastReasonRefreshOutcome> => {
+      if (!account) return { status: "ready", version: null };
+      const latest = await refresh();
+      return latest.status === "shared" && latest.reasonWriteVersion === 1
+        ? { status: "ready", version: latest.reasonVersions?.[day] ?? null }
+        : {
+            status: "unavailable",
+            message: "The latest shared reason could not be checked. Your choice is still here.",
+          };
+    },
+    [account, refresh],
+  );
+  return { entries, record, disabledReason, versionFor, reviewLatest, scopeKey: key };
 }

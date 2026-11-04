@@ -15,7 +15,19 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { BedSingle, CircleHelp, Inbox, Clock3, LogOut, Plus, Search, Settings, UserPlus, Wrench } from "lucide-react";
+import {
+  BedSingle,
+  CircleHelp,
+  Inbox,
+  Clock3,
+  LogOut,
+  Plus,
+  Repeat,
+  Search,
+  Settings,
+  UserPlus,
+  Wrench,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/wf/sheet";
@@ -52,7 +64,9 @@ import {
 } from "@/components/ward-management/shell/ward-phone-menu-parts";
 import { WardMyWards } from "@/components/ward-management/shell/ward-my-wards";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
-import { useDeskRoleLabel } from "@/components/ward-management/shell/ward-access-store";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "@/components/ward-management/shell/ward-phone-menu";
 import styles from "@/components/ward-management/shell/ward-phone-menu.module.css";
 import actNowStyles from "@/components/ward-management/shell/ward-phone-menu-act-now.module.css";
@@ -223,7 +237,15 @@ function ActionRow({ action, onClose }: { action: RoleMenuAction; onClose: () =>
   );
 }
 
-function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; onClose: () => void }) {
+function MoreSection({
+  onDrawer,
+  onClose,
+  onSwitch,
+}: {
+  onDrawer: (id: DrawerId) => void;
+  onClose: () => void;
+  onSwitch: () => void;
+}) {
   return (
     <section aria-label="More" className={styles.section}>
       <p className={styles.heading}>More</p>
@@ -246,8 +268,9 @@ function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; 
           </Link>
         </li>
         <HelpRow onClose={onClose} />
-        <DataModeRow onClose={onClose} />
+        <DeskRow onSwitch={onSwitch} onClose={onClose} />
         <SignOutRow />
+        <DataModeRow onClose={onClose} />
       </ul>
       <p className={styles.note}>
         <Dot tone="neutral" />
@@ -327,36 +350,53 @@ function SignOutRow() {
 }
 
 /**
- * Audit round 2 (S-34): the who-you-are row opens the Go to a desk drawer itself. It used to
- * go to Settings, where a second button opened the same drawer.
+ * DK1 (Josh, 3 Nov 2026): Switch desk for an account with more than one membership; in the local
+ * demo, "Try another desk (demo)" opens the desk drawer the who row used to open. Nothing for a
+ * signed-in account with one membership.
  */
-function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => void }) {
-  const roleLabel = useDeskRoleLabel(role);
+function DeskRow({ onSwitch, onClose }: { onSwitch: () => void; onClose: () => void }) {
+  const session = useContext(SharedSessionContext);
+  const switchRole = session?.switchRole;
+  if (session && !switchRole) return null;
   return (
-    <button
-      type="button"
-      className={styles.who}
-      onClick={onSwitch}
-      aria-haspopup="dialog"
-      aria-label={`${roleLabel}. Go to a desk`}
-      data-testid="ward-phone-menu-switch-workstation"
-    >
-      {/* v10 Menu sheet: an initials avatar. The prototype has no signed-in person, so the
-          initials are the workstation's ("BC" for Bed coordinator), never an invented name. */}
+    <li>
+      <button
+        type="button"
+        className={styles.row}
+        aria-haspopup={switchRole ? undefined : "dialog"}
+        data-testid="ward-phone-menu-switch-workstation"
+        onClick={() => {
+          if (!switchRole) return onSwitch();
+          // Close the sheet first, as the executive phone menu does, before the desk changes.
+          onClose();
+          switchRole();
+        }}
+      >
+        <RowBody icon={Repeat} label={switchRole ? "Switch desk" : "Try another desk (demo)"} />
+        <Chevron />
+      </button>
+    </li>
+  );
+}
+
+/**
+ * Who the menu is for: the desk's person and role, as the rail's person card names them. DK1 (Josh,
+ * 3 Nov 2026): it no longer opens "Go to a desk"; the account rows sit under Tools and settings.
+ */
+function WhoLink() {
+  const personaRole = useShellPersonaRole();
+  const access = useEffectiveWardAccess();
+  const persona = access.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
+  return (
+    <div className={styles.who} data-testid="ward-phone-menu-who">
       <span className={`${styles.avatar} ${styles.avatarInitials}`} aria-hidden="true">
-        {roleLabel
-          .split(/\s+/u)
-          .slice(0, 2)
-          .map((word) => word[0]?.toUpperCase() ?? "")
-          .join("")}
+        {persona.initials}
       </span>
       <span className={styles.whoText}>
-        <span className={styles.whoName}>{roleLabel}</span>
-        {/* shell-2 (Josh, 13 Oct 2026): "Go to a desk", not "Switch workstation". Opening a desk
-            goes to that desk's page; the Menu, Needs you and Tasks stay this workstation's own. */}
-        <span className={styles.whoMeta}>Go to a desk</span>
+        <span className={styles.whoName}>{persona.name}</span>
+        <span className={styles.whoMeta}>{persona.role}</span>
       </span>
-    </button>
+    </div>
   );
 }
 
@@ -519,7 +559,9 @@ function MenuPages({
   onResult,
   onDrawer,
   onClose,
+  onSwitch,
 }: {
+  onSwitch: () => void;
   query: string;
   entries: RailEntry[];
   /** Act-now and overdue rows only (device audit option A). */
@@ -551,7 +593,7 @@ function MenuPages({
         </Section>
       ))}
       <WardMyWards variant="sheet" onNavigate={onClose} />
-      <MoreSection onDrawer={onDrawer} onClose={onClose} />
+      <MoreSection onDrawer={onDrawer} onClose={onClose} onSwitch={onSwitch} />
     </>
   );
 }
@@ -566,7 +608,6 @@ export function PhoneMenuSheets({
   query,
   onQuery,
   returnFocusRef,
-  shellRole,
   pathname,
   counts,
   entries,
@@ -591,6 +632,7 @@ export function PhoneMenuSheets({
   query: string;
   onQuery: (value: string) => void;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
+  /** The shell's role. The who row now names the desk's person instead (DK1). */
   shellRole: WardChromeRole;
   pathname: string;
   counts: CountMap;
@@ -630,7 +672,7 @@ export function PhoneMenuSheets({
         mobileSize="viewport"
         mobileBreakpoint="phone"
         returnFocusRef={returnFocusRef}
-        headerLeading={<WhoLink role={shellRole} onSwitch={onSwitch} />}
+        headerLeading={<WhoLink />}
         contentClassName={styles.sheet}
         headerClassName={styles.head}
         titleClassName="sr-only"
@@ -651,6 +693,7 @@ export function PhoneMenuSheets({
           }}
           onDrawer={onDrawer}
           onClose={onClose}
+          onSwitch={onSwitch}
         />
       </Sheet>
 

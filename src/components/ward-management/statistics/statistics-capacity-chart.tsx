@@ -18,9 +18,8 @@ import {
   type MenuItem,
 } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "../shell/ward-service-bed-alerts";
-import { unitCapacity } from "../ward-derivations";
 import { bedsPendingPreparation } from "../ward-bed-availability";
-import { BED_STATE_LABELS, bedStates } from "../ward-bed-states";
+import { BED_STATE_LABELS, bedStates, readyBedsNow } from "../ward-bed-states";
 import type { Admission } from "../ward-admissions";
 import { siteByCode } from "../ward-sites";
 import type { BedRelease, HealthService, LeaveBed, Unit } from "../ward-model";
@@ -135,7 +134,7 @@ export function StatisticsCapacityChart(props: CapacityInput) {
               onLeave: ward.beds.onLeave,
             },
             pending: ward.pendingPreparation,
-            available: ward.capacityReady,
+            available: ward.beds.ready,
           }))
       : props.units!.map((unit) => ({
           id: unit.id,
@@ -146,7 +145,7 @@ export function StatisticsCapacityChart(props: CapacityInput) {
           beds: unit.beds,
           states: bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? []),
           pending: bedsPendingPreparation(unit.id, props.bedReleases!),
-          available: unitCapacity(unit, props.bedReleases!).available,
+          available: readyBedsNow(unit, props.admissions ?? [], props.bedReleases!),
         }));
   return (
     <CapacityChartView

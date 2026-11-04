@@ -1,6 +1,7 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
+import Link from "next/link";
+import { Ellipsis } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   admissionIdOfInboxId,
@@ -60,7 +61,6 @@ import {
   HeroStat,
   LiveChip,
   Menu,
-  OccupancyRing,
   PillTabs,
   Segmented,
   Sheet,
@@ -88,14 +88,7 @@ import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen
 import type { PlacementSubject } from "./home-placement-drawer";
 import { PlacementPrompt } from "./placement-prompt";
 import { usePlannedRows } from "./planned-rows";
-import {
-  FLOW_STAGES,
-  flowStageOf,
-  type FlowStageId,
-  PriorityQueue,
-  type QueueHighlight,
-  queueWaitThresholds,
-} from "./priority-queue";
+import { FLOW_STAGES, flowStageOf, type FlowStageId, PriorityQueue, type QueueHighlight } from "./priority-queue";
 
 /*
  * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
@@ -209,8 +202,16 @@ function HomeListMoreMenu({ onRegisters }: { onRegisters: () => void }) {
         { id: "alerts", label: "Alerts history", onSelect: () => router?.push("/ward-flow/alerts") },
       ]}
       trigger={(props) => (
-        <button type="button" {...props} className={buttonClass({ variant: "ghost", size: "sm" })}>
-          <MoreHorizontal size={16} aria-hidden="true" />
+        <button
+          type="button"
+          {...props}
+          className={buttonClass({ variant: "ghost", size: "sm" })}
+          data-testid="ward-home-more"
+        >
+          <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
+          <span className={flowStyles.moreText} aria-hidden="true">
+            More
+          </span>
           <span className="sr-only">More for this list</span>
         </button>
       )}
@@ -580,14 +581,25 @@ export function CoordinatorScreen() {
       })
       .sort((a, b) => byOldest({ at: a.raised }, { at: b.raised }));
   }, [actionInbox, movements, admissions, umrnLookup, units, inboxOwnership, inboxAcknowledgements]);
-  const actEntries = alertEntries.filter((entry) => entry.group === "act");
+  // Josh, 3 Nov 2026 (stress test): with a service chosen, Act now lists only that service's
+  // patients, like the queue below it. A task with no movement is never hidden.
+  const actEntries = alertEntries.filter(
+    (entry) => entry.group === "act" && (!isInServiceScope || !entry.movement || isInServiceScope(entry.movement)),
+  );
   // WS-02: accepted referrals with no bed pulled sit in Act now beside the alerts, in the same scope.
   const toPull = useMemo(() => {
     const all = acceptedReferralsAwaitingPull(referrals, units, movements);
     return isReferralInServiceScope ? all.filter((entry) => isReferralInServiceScope(entry.referral)) : all;
   }, [referrals, units, movements, isReferralInServiceScope]);
   // Q260: the Act now figure the phone Menu, the bell and Alerts read (`ward-alerts-figures.ts`).
-  const actNowCount = alertsNowFigures(actionInbox, toPull.length).actNow;
+  const scopedActionInbox = useMemo(() => {
+    if (!isInServiceScope) return actionInbox;
+    return actionInbox.filter((item) => {
+      const movement = item.movementId ? movements.find((candidate) => candidate.id === item.movementId) : undefined;
+      return !movement || isInServiceScope(movement);
+    });
+  }, [actionInbox, movements, isInServiceScope]);
+  const actNowCount = alertsNowFigures(scopedActionInbox, toPull.length).actNow;
   const chosenAlert = selectedAlertId ? alertEntries.find((entry) => entry.item.id === selectedAlertId) : undefined;
   const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
@@ -664,7 +676,11 @@ export function CoordinatorScreen() {
     [movements, units, referrals, bedReleases, leaveBeds, admissions, now, thresholds, network],
   );
   // Journey accountability continues through transit; the ED strip keeps physical inpatient waits.
-  const edJourneys = useMemo(() => openEdJourneys(movements, now), [now, movements]);
+  // With a service chosen, the hero's ED figures count that service's journeys (stress test, 3 Nov 2026).
+  const edJourneys = useMemo(
+    () => openEdJourneys(isInServiceScope ? movements.filter(isInServiceScope) : movements, now),
+    [now, movements, isInServiceScope],
+  );
   // The queue may also contain ward/community origins, so its population is broader than ED journeys.
   const notWaitingMeta = (
     <span data-testid="ward-home-ed-population">
@@ -696,6 +712,18 @@ export function CoordinatorScreen() {
     () => wardOccupancy(units, admissions, bedReleases).percent,
     [units, admissions, bedReleases],
   );
+  // Josh, 3 Nov 2026 (appraisal 4): Capacity owns the gauge, so Home says the figure in words
+  // and links there instead of drawing a second ring.
+  const occupancyLink =
+    statewideOccupancy === null ? null : (
+      <>
+        {" · "}
+        <Link href="/ward-flow/capacity" className={styles.heroOccupancyLink} data-testid="ward-home-occupancy-link">
+          {statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "At risk " : ""}
+          {statewideOccupancy.toFixed(1)}%{statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "" : " beds in use"}
+        </Link>
+      </>
+    );
   // Checking foot: what this page watched, as counts. Never "All clear".
   const staleBedCounts = units.filter((unit) => now - unit.allocatable.confirmedAt > BED_COUNT_FRESH_MINUTES).length;
   const wardsNotReporting = units.filter(
@@ -746,6 +774,17 @@ export function CoordinatorScreen() {
         tab={placement === "band" ? registerTab : undefined}
         onTabChange={placement === "band" ? setRegisterTab : undefined}
         onToggle={() => setExceptionsOpen((open) => !open)}
+        onClose={
+          placement === "band"
+            ? () => {
+                setHeroPanel(undefined);
+                // The band opened from More, so closing it hands focus back there, not to the page.
+                requestAnimationFrame(() =>
+                  document.querySelector<HTMLButtonElement>('[data-testid="ward-home-more"]')?.focus(),
+                );
+              }
+            : undefined
+        }
         // On a phone the open registers stand between a coordinator and Confirm, so choosing a
         // row closes them in the same tap.
         onSelectMovement={(movementId) => {
@@ -808,10 +847,13 @@ export function CoordinatorScreen() {
               isPhone ? (
                 <span data-testid="ward-home-ed-population">
                   {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit
-                  {statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% beds in use` : ""}
+                  {occupancyLink}
                 </span>
               ) : (
-                notWaitingMeta
+                <>
+                  {notWaitingMeta}
+                  {occupancyLink}
+                </>
               )
             }
             stats={
@@ -846,12 +888,6 @@ export function CoordinatorScreen() {
                   />
                 </>
               ) : undefined
-            }
-            // The one ring on the page leads the hero on desktop and tablet (shared Hero lead slot).
-            lead={
-              isPhone ? undefined : (
-                <OccupancyRing percent={statewideOccupancy} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope="Statewide" />
-              )
             }
             bar={
               isPhone ? (
@@ -1017,7 +1053,6 @@ export function CoordinatorScreen() {
                 {
                   id: "needs",
                   label: "Needs you",
-                  tone: actNowCount > 0 ? "danger" : undefined,
                   count: actNowCount + referralQueue.length,
                 },
                 { id: "queue", label: "Flow", count: queue.length },
@@ -1040,18 +1075,12 @@ export function CoordinatorScreen() {
                   }}
                   items={[
                     { id: "all", label: "All", count: queue.length },
-                    ...FLOW_STAGES.filter((stage) => stage.id !== "referral").map((stage) => {
-                      const inStage = queue.filter((movement) => flowStageOf(movement) === stage.id);
-                      const late = inStage.filter(
-                        (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
-                      ).length;
-                      return {
-                        id: stage.id,
-                        label: stage.label,
-                        count: inStage.length,
-                        tone: late > 0 ? ("danger" as const) : undefined,
-                      };
-                    }),
+                    // Icon design (Josh, 3 Nov 2026): no act-now triangle on the tabs; the late rows carry it.
+                    ...FLOW_STAGES.filter((stage) => stage.id !== "referral").map((stage) => ({
+                      id: stage.id,
+                      label: stage.label,
+                      count: queue.filter((movement) => flowStageOf(movement) === stage.id).length,
+                    })),
                   ]}
                 />
               </div>

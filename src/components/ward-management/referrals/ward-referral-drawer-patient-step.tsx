@@ -73,6 +73,7 @@ export function ReferralPatientStep({
     setNewPatientDateText,
     setNewPatient,
     newPatientError,
+    newPatientPending,
     setNewPatientError,
     confirmationOpen,
     isPhone,
@@ -361,9 +362,15 @@ export function ReferralPatientStep({
                 </p>
               ) : null}
               <div className={styles.confirmRow}>
-                <button type="submit" className={`${styles.btn} ${styles.btnTint}`} {...addPatientGate.buttonProps}>
+                <button
+                  type="submit"
+                  className={`${styles.btn} ${styles.btnTint}`}
+                  {...addPatientGate.buttonProps}
+                  disabled={newPatientPending || addPatientGate.buttonProps.disabled}
+                  aria-busy={newPatientPending || undefined}
+                >
                   <UserPlus aria-hidden="true" />
-                  Add and use for this referral
+                  {newPatientPending ? "Adding patient…" : "Add and use for this referral"}
                 </button>
                 {addPatientGate.note}
                 <button

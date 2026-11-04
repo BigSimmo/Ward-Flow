@@ -22,12 +22,22 @@ const reason = { day: 3, reason: "discharge_postponed", by: "coordinator", at: 3
 
 test("a forecast history body is checked: whole numbers, an ordered range and the closed lists", () => {
   assert.deepEqual(forecastHistoryInput({ generation: 0, snapshot }), { generation: 0, snapshot });
-  assert.deepEqual(forecastHistoryInput({ generation: 2, reason }), { generation: 2, reason });
-  // Extra fields are dropped, never stored.
-  assert.deepEqual(forecastHistoryInput({ generation: 1, reason: { ...reason, note: "typed text" } }), {
-    generation: 1,
+  assert.deepEqual(forecastHistoryInput({ generation: 2, reason, expectedVersion: null }), {
+    generation: 2,
     reason,
+    expectedVersion: null,
   });
+  // A browser from before versioned reasons sends no basis: read as none, so a first reason only.
+  assert.deepEqual(forecastHistoryInput({ generation: 2, reason }), { generation: 2, reason, expectedVersion: null });
+  // Extra fields are dropped, never stored.
+  assert.deepEqual(
+    forecastHistoryInput({ generation: 1, reason: { ...reason, note: "typed text" }, expectedVersion: null }),
+    {
+      generation: 1,
+      reason,
+      expectedVersion: null,
+    },
+  );
   for (const body of [
     null,
     {},
@@ -137,10 +147,13 @@ test("a missed-day reason is recorded under the desk's own role, whatever the bo
     });
   const seen = [];
   const claimed = { ...reason, by: "coordinator" };
-  assert.equal((await handler(ward, seen)(post({ generation: 0, reason: claimed }))).status, 200);
-  assert.deepEqual(seen, [{ generation: 0, reason: { ...claimed, by: "ward" } }]);
+  assert.equal(
+    (await handler(ward, seen)(post({ generation: 0, reason: claimed, expectedVersion: null }))).status,
+    200,
+  );
+  assert.deepEqual(seen, [{ generation: 0, reason: { ...claimed, by: "ward" }, expectedVersion: null }]);
   const adminSeen = [];
-  assert.equal((await handler(admin, adminSeen)(post({ generation: 0, reason }))).status, 403);
+  assert.equal((await handler(admin, adminSeen)(post({ generation: 0, reason, expectedVersion: null }))).status, 403);
   assert.deepEqual(adminSeen, [], "the access admin records no reason");
 });
 
@@ -173,6 +186,7 @@ test(
 
       assert.deepEqual(await store.forecastHistory(coordinator), {
         shared: true,
+        reasonWriteVersion: 1,
         generation,
         snapshots: [],
         reasons: [],
@@ -188,11 +202,28 @@ test(
       await store.recordForecast(colleague, { generation, snapshot: nextDay });
       assert.deepEqual((await store.forecastHistory(coordinator)).snapshots, [snapshot, nextDay]);
 
-      // A later reason for the same day replaces the earlier one, whoever chose it.
-      await store.recordForecast(coordinator, { generation, reason });
+      // A colleague can change a reason only from the version they actually read.
+      const firstReason = await store.recordForecast(coordinator, { generation, reason, expectedVersion: null });
+      const firstVersion = firstReason.body.reasons[0].version;
       const changed = { ...reason, reason: "capacity_changed", by: "bed_manager", at: reason.at + 30 };
-      await store.recordForecast(colleague, { generation, reason: changed });
-      assert.deepEqual((await store.forecastHistory(coordinator)).reasons, [changed]);
+      const updated = await store.recordForecast(colleague, {
+        generation,
+        reason: changed,
+        expectedVersion: firstVersion,
+      });
+      assert.equal(updated.status, 200);
+      assert.notEqual(updated.body.reasons[0].version, firstVersion);
+      const conflict = await store.recordForecast(coordinator, { generation, reason, expectedVersion: firstVersion });
+      assert.equal(conflict.status, 409);
+      assert.equal(conflict.body.code, "reason-conflict");
+      assert.deepEqual((await store.forecastHistory(coordinator)).reasons, updated.body.reasons);
+      // The version is fixed UTC text, whatever the connection's TimeZone or DateStyle.
+      assert.match(updated.body.reasons[0].version, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/);
+      // A browser from before versioned reasons sends no basis and cannot replace the reason.
+      const legacy = await store.recordForecast(colleague, { generation, reason: { ...reason, by: "bed_manager" } });
+      assert.equal(legacy.status, 409);
+      assert.equal(legacy.body.code, "reason-conflict");
+      assert.deepEqual((await store.forecastHistory(coordinator)).reasons, updated.body.reasons);
 
       // A ward desk counts only its own records, so it keeps its own history.
       assert.deepEqual((await store.forecastHistory(ward)).snapshots, []);

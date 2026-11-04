@@ -35,9 +35,18 @@ export function StagePipeline({
   highlight: string | null;
   onToggle: (stageId: JourneyStage["id"]) => void;
 }) {
+  const longest = (stage: (typeof stages)[number]) =>
+    stage.movements[0] ? Math.max(0, now - stage.movements[0].openedAt) : -1;
+  const worst = stages.reduce<(typeof stages)[number] | undefined>(
+    (best, stage) => (best === undefined || longest(stage) > longest(best) ? stage : best),
+    undefined,
+  );
+  const worstStageId = worst !== undefined && longest(worst) >= accessTarget ? worst.id : undefined;
   return (
     <nav className={styles.pipeline} aria-label="Stages">
       <ol>
+        {/* Stress test (3 Nov 2026): at most one act-now triangle a row, so only the stage whose
+            longest wait is the worst past target keeps it. The others still say "N past target". */}
         {stages.map((stage, index) => {
           const oldest = stage.movements[0];
           const waits = stage.movements.map((movement) => Math.max(0, now - movement.openedAt));
@@ -46,7 +55,9 @@ export function StagePipeline({
             wait === undefined
               ? undefined
               : wait >= accessTarget
-                ? "danger"
+                ? stage.id === worstStageId
+                  ? "danger"
+                  : undefined
                 : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES
                   ? "warning"
                   : undefined;
