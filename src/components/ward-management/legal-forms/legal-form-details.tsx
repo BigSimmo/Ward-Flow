@@ -25,7 +25,7 @@ import p from "./legal-forms-panel.module.css";
  * from it (D-72, D-93): the review date is the one written on the form.
  */
 
-export const MAKER_LABEL: Record<LegalFormMakerRole, string> = {
+const MAKER_LABEL: Record<LegalFormMakerRole, string> = {
   medical_practitioner: "Medical practitioner",
   amhp: "Authorised mental health practitioner",
   psychiatrist: "Psychiatrist",
@@ -33,7 +33,7 @@ export const MAKER_LABEL: Record<LegalFormMakerRole, string> = {
   person_in_charge: "Person in charge of the ward",
 };
 const COPY_LABEL: Record<LegalFormCopyState, string> = { yes: "Given", declined: "Declined", not_yet: "Not yet" };
-export const ENDING_LABEL: Record<LegalFormEnding, string> = {
+const ENDING_LABEL: Record<LegalFormEnding, string> = {
   revoked: "Revoked",
   form_3e: "Form 3E made",
   replaced: "Replaced by a new form",

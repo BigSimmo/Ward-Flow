@@ -513,7 +513,7 @@ function formHistoryAfter(
 }
 
 /** The paper details recorded on a form (gap list items 3 to 7), and nothing else. */
-export function legalFormDetailsOf(form: LegalFormDetails): LegalFormDetails {
+function legalFormDetailsOf(form: LegalFormDetails): LegalFormDetails {
   const { madeBy, copyGiven, endedBy, consent, reviewBy } = form;
   return {
     ...(madeBy ? { madeBy } : {}),
