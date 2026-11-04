@@ -403,11 +403,11 @@ function requireWorkflow(source) {
     jobs.get("coverage"),
     /node node_modules\/vitest\/vitest.mjs run --merge-reports="\$WARD_SHARD_BLOBS" --coverage\n/u,
   );
-  assert.match(jobs.get("coverage"), /WARD_SHARD_COUNT: "8"/u);
+  assert.match(jobs.get("coverage"), /WARD_SHARD_COUNT: "6"/u);
   assert.match(jobs.get("unit"), /WARD_COVERAGE_BLOB_DIR: \$\{\{ runner.temp \}\}\/ward-coverage-blobs/u);
   assert.match(jobs.get("unit"), /if-no-files-found: error/u);
   for (const [job, key, variable, count] of [
-    ["unit", "shard", "WARD_GATE_SHARD", 8],
+    ["unit", "shard", "WARD_GATE_SHARD", 6],
     ["browser", "group", "WARD_JOURNEY_GROUP", 3],
   ]) {
     assert.match(jobs.get(job), /fail-fast: false/u);
@@ -728,7 +728,7 @@ for (const [before, after] of [
     "needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true }}",
     "needs.reuse.outputs.verified != 'true' }}",
   ],
-  ["shard: [1, 2, 3, 4, 5, 6, 7, 8]", "shard: [1, 2, 3, 4, 5, 6, 7]"],
+  ["shard: [1, 2, 3, 4, 5, 6]", "shard: [1, 2, 3, 4, 5]"],
   ["group: [1, 2, 3]", "group: [1, 2]"],
   ["  cancel-in-progress: false\n", "  cancel-in-progress: true\n"],
   [
