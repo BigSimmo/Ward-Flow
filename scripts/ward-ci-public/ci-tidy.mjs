@@ -5,8 +5,8 @@
  * - any pull-request run whose branch no longer has an open pull request (merged or closed), and
  * - a run for an older head of an open pull request, but only while none of its jobs is running.
  *
- * Running work on the current head is never cancelled (4 Nov 2026 audit: cancelling running PR
- * checks threw away 47 to 66% of runner time). Runs on main, scheduled and manual runs, and the
+ * Running work on the current head is never cancelled. Ward Flow CI's own superseded PR runs are
+ * cancelled by its concurrency group (cancel-in-progress on pull requests, 4 Nov 2026). Runs on main, scheduled and manual runs, and the
  * budget heal bot's dispatched runs are never touched. It reads and cancels runs through the API only.
  */
 import { pathToFileURL } from "node:url";

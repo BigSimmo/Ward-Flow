@@ -15,10 +15,12 @@ unit or browser matrices can be allocated. Static checks and scoped backend work
 The main reuse proof runs separately. Missing history, unknown files, deletions and renames select
 all executable work. `Ward Flow required` rejects missing plans, unexpected skips and failed jobs.
 
-Each pull request, and main, has one queue. The run in progress always finishes, and a newer push
-replaces any run still waiting, so a burst of pushes or merges is checked once, on the newest
-commit. On 4 Nov 2026, cancelling running PR checks threw away 47 to 66% of PR runner time, so
-running PR checks are no longer cancelled. The daily release takes the newest CI-passed main.
+Each pull request, and main, has one queue. A newer push to a pull request cancels that PR's older
+run, even mid-run: a superseded head's result is never used, and letting it finish held the PR's new
+run behind it while Ward Flow filled the account's 40 concurrent job slots (Josh, 4 Nov 2026
+08:20Z, reversing that morning's never-cancel rule; "push less" keeps the churn down). Main runs
+always finish, and a newer main push replaces any main run still waiting. The daily release takes
+the newest CI-passed main.
 Unit shards run four Vitest workers, one per hosted-runner vCPU.
 
 | Job                                             | Work                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -190,8 +192,9 @@ required production build red until someone raised the limit by hand. Three part
   no main run, so main is re-measured on the next merge.
 
 `ward-flow-ci-tidy.yml` frees runner slots on PR close, on each PR push and every 15 minutes. It
-cancels runs for merged or closed PRs, and runs for an older head of an open PR while none of their
-jobs is running. Running checks on a current head are never cancelled.
+cancels runs for merged or closed PRs, and other workflows' runs for an older head of an open PR
+while none of their jobs is running. Ward Flow CI's own superseded PR runs are cancelled by its
+concurrency group. Running checks on a current head are never cancelled.
 
 ## Main pushes and nightly runs
 
