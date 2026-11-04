@@ -12,6 +12,7 @@ import {
   safeNextPath,
   verifyPass,
 } from "@/lib/front-door-pass";
+import { edgeAddress, resetWrongTriesForTests } from "@/lib/demo-code-tries";
 import { frontDoorVerdict } from "../src/proxy";
 
 // Synthetic secrets only: these values exist for this test file.
@@ -25,10 +26,14 @@ function page(path: string, pass?: string): NextRequest {
   return request;
 }
 
-function post(body: unknown, forwardedFor = "192.0.2.10"): NextRequest {
+function post(body: unknown, realIp = "192.0.2.10", forwardedFor?: string): NextRequest {
   return new NextRequest(new URL("https://ward.example.test/api/session"), {
     method: "POST",
-    headers: { "content-type": "application/json", "x-forwarded-for": forwardedFor },
+    headers: {
+      "content-type": "application/json",
+      "x-real-ip": realIp,
+      ...(forwardedFor ? { "x-forwarded-for": forwardedFor } : {}),
+    },
     body: JSON.stringify(body),
   });
 }
@@ -40,6 +45,7 @@ function token(firstSignInSeconds: number): string {
 }
 
 afterEach(() => {
+  resetWrongTriesForTests();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.useRealTimers();
@@ -233,6 +239,31 @@ describe("POST /api/session", () => {
     expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.30"))).status).toBe(429);
   });
 
+  it("counts wrong tries by the edge's address, not a caller-written forwarded-for", async () => {
+    expect(edgeAddress(new Headers({ "x-real-ip": "192.0.2.40", "x-forwarded-for": "198.51.100.1" }))).toBe(
+      "192.0.2.40",
+    );
+    expect(edgeAddress(new Headers({ "x-forwarded-for": "198.51.100.1, 192.0.2.41" }))).toBe("192.0.2.41");
+    expect(edgeAddress(new Headers())).toBe("unknown");
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.50", `198.51.100.${attempt}`))).status).toBe(401);
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.50", "198.51.100.99"))).status).toBe(429);
+  });
+
+  it("pauses every address once wrong tries across all addresses reach the cap", async () => {
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    for (let attempt = 0; attempt < 200; attempt += 1)
+      expect((await POST(post({ demoCode: "WRONG" }, `10.0.${attempt >> 8}.${attempt & 255}`))).status).toBe(401);
+    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.60"))).status).toBe(429);
+  });
+
   it("never opens the signed-in site with a demo code", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
@@ -247,5 +278,11 @@ describe("DELETE /api/session", () => {
     const response = DELETE(new NextRequest(new URL("https://ward.example.test/api/session"), { method: "DELETE" }));
     expect(response.status).toBe(204);
     expect(response.headers.get("set-cookie")).toMatch(/^wf_pass=; Path=\/; Max-Age=0;.*HttpOnly; Secure$/);
+  });
+
+  it("marks the cookie Secure in production even when the app sees plain http behind the edge", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const response = DELETE(new NextRequest(new URL("http://ward.example.test/api/session"), { method: "DELETE" }));
+    expect(response.headers.get("set-cookie")).toMatch(/HttpOnly; Secure$/);
   });
 });
