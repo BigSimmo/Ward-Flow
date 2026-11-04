@@ -96,6 +96,37 @@ describe("ED page — clearance and review stay readable on a laptop (overall re
     }
   });
 
+  // Owner polish (3 Nov 2026): one compact status per row that opens the list of checks.
+  it("folds the checks into one status that opens a list of each check and the record", () => {
+    renderEd();
+    const row = rows()[0]!;
+    const checks = within(row).getByTestId(/^ward-ed-row-checks-/u);
+    const trigger = within(checks).getByRole("button", {
+      name: /^Checks for .+: (\d checks? open|Checks done|Exam revoked)$/u,
+    });
+    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+    expect(trigger).toHaveAccessibleDescription(/(Clearance pending|Med cleared|Not cleared)\. /u);
+    fireEvent.click(trigger);
+    const panel = within(checks).getByRole("dialog", { name: /^Checks for / });
+    expect(within(panel).getAllByRole("listitem")).toHaveLength(2);
+    fireEvent.click(within(panel).getByRole("button", { name: "Open record" }));
+    expect(screen.getByTestId("ward-ed-person-journey")).toBeInTheDocument();
+  });
+
+  it("keeps the Presentation and Form choices as kit buttons that open a menu, never a browser select", () => {
+    renderEd();
+    const row = rows()[0]!;
+    expect(row.querySelector("select")).toBeNull();
+    const presentation = within(row).getByTestId(/^ward-ed-presentation-/u);
+    const form = within(row).getByTestId(/^ward-ed-form-pick-/u);
+    for (const trigger of [presentation, form]) {
+      expect(trigger.tagName).toBe("BUTTON");
+      expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+    }
+    fireEvent.click(form);
+    expect(screen.getAllByRole("menuitemradio").length).toBeGreaterThan(0);
+  });
+
   it("warns, never says Reviewed, when the examination was revoked and a bed is still held", () => {
     function Revoked({ children }: { children: ReactNode }) {
       const value = useWardFlow();
