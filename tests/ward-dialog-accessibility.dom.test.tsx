@@ -38,7 +38,7 @@ describe("Ward Flow Dialog & Modal Accessibility Semantics", () => {
     });
   });
 
-  describe("WardBoard — Blocker and Return Date Dialogs", () => {
+  describe("WardBoard — current dialog semantics and retired actions", () => {
     it("Blocker Dialog: has accessible dialog semantics, closes on Escape, and restores focus", async () => {
       render(
         <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
@@ -47,60 +47,39 @@ describe("Ward Flow Dialog & Modal Accessibility Semantics", () => {
       );
 
       const blockerButtons = screen.queryAllByRole("button", { name: "Record hold-up" });
-      if (blockerButtons.length > 0) {
-        const trigger = blockerButtons[0];
-        trigger.focus();
-        fireEvent.click(trigger);
+      expect(blockerButtons.length).toBeGreaterThan(0);
+      const trigger = blockerButtons[0];
+      trigger.focus();
+      fireEvent.click(trigger);
 
-        // Redesign (31 Oct 2026): the kit Dialog, titled like the tile's button, with the person and
-        // the tile's label as its description.
-        const dialog = screen.getByRole("dialog", { name: "Record hold-up" });
-        expect(dialog).toBeInTheDocument();
-        expect(dialog).toHaveAttribute("aria-modal", "true");
-        expect(document.getElementById(dialog.getAttribute("aria-labelledby") ?? "")).toHaveTextContent(
-          "Record hold-up",
-        );
-        expect(document.getElementById(dialog.getAttribute("aria-describedby") ?? "")).not.toBeNull();
+      // Redesign (31 Oct 2026): the kit Dialog, titled like the tile's button, with the person and
+      // the tile's label as its description.
+      const dialog = screen.getByRole("dialog", { name: "Record hold-up" });
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveAttribute("aria-modal", "true");
+      expect(document.getElementById(dialog.getAttribute("aria-labelledby") ?? "")).toHaveTextContent("Record hold-up");
+      expect(document.getElementById(dialog.getAttribute("aria-describedby") ?? "")).not.toBeNull();
 
-        // Close on Escape
-        fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
-        expect(screen.queryByRole("dialog", { name: "Record hold-up" })).not.toBeInTheDocument();
+      // Close on Escape
+      fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+      expect(screen.queryByRole("dialog", { name: "Record hold-up" })).not.toBeInTheDocument();
 
-        // Focus restoration
-        await waitFor(() => {
-          expect(document.activeElement).toBe(trigger);
-        });
-      }
+      // Focus restoration
+      await waitFor(() => {
+        expect(document.activeElement).toBe(trigger);
+      });
     });
 
-    it("Return Date Dialog: has accessible dialog semantics, closes on Escape, and restores focus", async () => {
+    it("does not offer the retired return-date action that would create the wrong leave-bed record", () => {
       render(
         <WardFlowProvider initialNow={WARD_ADMISSIONS_ANCHOR}>
           <WardBoard unitId="fsh-adult-secure" />
         </WardFlowProvider>,
       );
 
-      const returnButtons = screen.queryAllByRole("button", { name: "Set a return date" });
-      if (returnButtons.length > 0) {
-        const trigger = returnButtons[0];
-        trigger.focus();
-        fireEvent.click(trigger);
-
-        const dialog = screen.getByRole("dialog", { name: /Set return date for/i });
-        expect(dialog).toBeInTheDocument();
-        expect(dialog).toHaveAttribute("aria-modal", "true");
-        expect(dialog).toHaveAttribute("aria-labelledby", "return-date-dialog-title");
-        expect(dialog).toHaveAttribute("aria-describedby", "return-date-dialog-description");
-
-        // Close on Escape
-        fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
-        expect(screen.queryByRole("dialog", { name: /Set return date for/i })).not.toBeInTheDocument();
-
-        // Focus restoration
-        await waitFor(() => {
-          expect(document.activeElement).toBe(trigger);
-        });
-      }
+      expect(screen.getByTestId("ward-board")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Set a return date" })).toBeNull();
+      expect(screen.queryByRole("dialog", { name: /Set return date for/i })).toBeNull();
     });
   });
 });

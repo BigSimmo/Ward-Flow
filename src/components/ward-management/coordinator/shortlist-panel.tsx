@@ -93,6 +93,7 @@ import {
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { sendStepsInOrder } from "@/components/ward-management/coordinator/send-steps-in-order";
+import { useWardFormSave } from "../use-ward-form-save";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -468,19 +469,6 @@ export function ShortlistPanel({
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
 
-  const isOverrideDirty = overrideReason.trim().length > 0;
-  const handleRestoreOverride = useCallback((cached: string) => {
-    setOverrideReason(cached);
-    setOverrideOpen(true);
-  }, []);
-
-  const { clearDraft: clearOverrideDraft } = useDirtyStateGuard({
-    key: movement?.id ? `shortlist-override-${movement.id}` : undefined,
-    isDirty: isOverrideDirty,
-    value: overrideReason,
-    onRestore: handleRestoreOverride,
-    confirmMessage: "You have an unsaved clinical override reason. Are you sure you want to leave?",
-  });
   /**
    * T12 (item 9, owner answer 9, 17 September 2026): the coordinator's own "checked with the
    * ward" pair for a `Non-binary` placement — two separate facts, neither standing in for the
@@ -490,25 +478,38 @@ export function ShortlistPanel({
   const [genderPlacementReason, setGenderPlacementReason] = useState("");
   const [genderPlacementChecked, setGenderPlacementChecked] = useState(false);
   const [confirmationMovementId, setConfirmationMovementId] = useState(movement?.id);
-  // Task 5: which candidate wards a human has explicitly picked to refer to, capped at
-  // `PARALLEL_REFERRAL_CAP`. This is a separate, multi-select truth from `selectedUnitId` (which
-  // stays single-valued and shared with the diagram, driving only which candidate's gates are
-  // shown) — a coordinator can refer to up to three wards at once, but the diagram and the gate
-  // list can only ever explain one at a time.
-  //
-  // ⚠️ RA1 (item 18): HOLDS ONLY NEWLY-PICKED, NOT-YET-LIVE WARDS. A ward already carrying a live
-  // referral (`movement.referredUnitIds`) is shown pre-selected and locked without ever entering
-  // this state — see `toggleReferTarget` and the candidate list below. `REFER_TO_UNITS` now unions
-  // whatever this dispatches with the movement's own live list, so re-referring can only ever ADD.
+  // Task 5/RA1: new referral picks are separate from selectedUnitId (the inspected ward); live requests stay
+  // locked and REFER_TO_UNITS adds to them. Finding 188: the parallel cap warns but does not block.
   const [referTargets, setReferTargets] = useState<string[]>([]);
-  // RA1 (item 18): which live ward's "Withdraw this request" form is open, and the reason chosen
-  // in it. Mirrors `releasePullOpen`/`releasePullReason` above — the form only ever renders for a
-  // ward that is genuinely live, so it can never advertise an action the reducer would refuse.
+  // RA1: the withdrawal opening and reason belong to one genuinely live ward request.
   const [withdrawUnitId, setWithdrawUnitId] = useState<string | undefined>(undefined);
   // L3: after an acceptance the next step leads; the bed list stays one tap away ("Find another bed"),
   // so the coordinator can still change the destination or override. Keyed by movement.
   const [otherBedsFor, setOtherBedsFor] = useState<string | undefined>(undefined);
   const [withdrawReason, setWithdrawReason] = useState<WardRequestWithdrawalReason | "">("");
+  const targetScope = JSON.stringify([movement?.id, [...referTargets].sort()]);
+  const genderSave = useWardFormSave(`shortlist-gender:${targetScope}`);
+  const overrideSave = useWardFormSave(`shortlist-override:${targetScope}`);
+  const withdrawSave = useWardFormSave(`shortlist-withdraw:${JSON.stringify([movement?.id, withdrawUnitId])}`);
+  const actionPending = genderSave.pending || overrideSave.pending || withdrawSave.pending;
+  const actionError = genderSave.error ?? overrideSave.error ?? withdrawSave.error;
+  const forgetOverride = overrideSave.forget;
+  const handleRestoreOverride = useCallback(
+    (cached: string) => {
+      forgetOverride();
+      setOverrideReason(cached);
+      setOverrideOpen(true);
+    },
+    [forgetOverride],
+  );
+
+  const { clearDraft: clearOverrideDraft } = useDirtyStateGuard({
+    key: movement?.id ? `shortlist-override-${movement.id}` : undefined,
+    isDirty: overrideReason.trim().length > 0,
+    value: overrideReason,
+    onRestore: handleRestoreOverride,
+    confirmMessage: "You have an unsaved clinical override reason. Are you sure you want to leave?",
+  });
   // Whole-branch review I2 (spec §11): the escalation form's own open/typed-contact state — never
   // the recorded fact itself, which lives on `movement.escalation` and is read fresh on every
   // render, the same discipline `overrideSucceeded` already holds to for the override record.
@@ -824,11 +825,13 @@ export function ShortlistPanel({
   function handleRefer() {
     if (onRefer) {
       onRefer([...referTargets], referTargetNames);
+      overrideSave.forget();
       setOverrideOpen(false);
       return;
     }
     if (!canRefer) return;
     dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
+    overrideSave.forget();
     setOverrideOpen(false);
   }
 
@@ -836,55 +839,51 @@ export function ShortlistPanel({
     handleRefer();
   }
 
-  /**
-   * T12 (item 9): dispatches the SAME `REFER_TO_UNITS` event `handleRefer` does, plus the two
-   * fields the reducer requires for a `Non-binary` placement it has not already cleared for these
-   * units. Guarded on both fields being present here too, not only by the submit button's own
-   * `disabled` — the same double-guard `submitWithdrawWardRequest` above holds to — so a form
-   * submitted by Enter with the button not yet reachable still cannot dispatch a half-answered
-   * event.
-   */
+  // A non-binary placement needs its explicit reason and confirmation, including Enter submission.
   function submitGenderPlacement(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!needsGenderPlacement) return;
     const reason = genderPlacementReason.trim();
     if (reason.length === 0 || !genderPlacementChecked) return;
-    // Membership-checked here as well as in the reducer, the same discipline `handleOverrideSubmit`
-    // holds to for `OVERRIDE_REASONS` — the reducer's check is the one that matters; this one keeps
-    // a malformed value from being reported on screen as recorded.
+    // Keep the UI and reducer on the same closed reason list.
     if (!GENDER_PLACEMENT_REASONS.includes(reason as GenderPlacementReason)) return;
-    dispatch({
-      type: "REFER_TO_UNITS",
-      role: "coordinator",
-      now,
-      movementId,
-      unitIds: [...referTargets],
-      genderPlacementReason: reason as GenderPlacementReason,
-      genderPlacementChecked: true,
-    });
-    setGenderPlacementReason("");
-    setGenderPlacementChecked(false);
+    genderSave.submit(
+      () =>
+        dispatch({
+          type: "REFER_TO_UNITS",
+          role: "coordinator",
+          now,
+          movementId,
+          unitIds: [...referTargets],
+          genderPlacementReason: reason as GenderPlacementReason,
+          genderPlacementChecked: true,
+        }),
+      () => {
+        setGenderPlacementReason("");
+        setGenderPlacementChecked(false);
+      },
+    );
   }
 
-  /**
-   * RA1 (item 18): withdraws exactly ONE live ward's request — never `WITHDRAW_REFERRAL`, which
-   * takes back every live referral at once and closes the movement. Only reachable once a reason is
-   * chosen from `WARD_REQUEST_WITHDRAWAL_REASONS` — the submit button below stays `aria-disabled`
-   * until then, the same discipline `submitUrgencyChange`'s own reason picker holds to.
-   */
+  // Withdraw one ward request, preserving the movement and other live ward requests.
   function submitWithdrawWardRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (withdrawUnitId === undefined || withdrawReason === "") return;
-    dispatch({
-      type: "WITHDRAW_WARD_REQUEST",
-      role: "coordinator",
-      now,
-      movementId,
-      unitId: withdrawUnitId,
-      reason: withdrawReason,
-    });
-    setWithdrawUnitId(undefined);
-    setWithdrawReason("");
+    withdrawSave.submit(
+      () =>
+        dispatch({
+          type: "WITHDRAW_WARD_REQUEST",
+          role: "coordinator",
+          now,
+          movementId,
+          unitId: withdrawUnitId,
+          reason: withdrawReason,
+        }),
+      () => {
+        setWithdrawUnitId(undefined);
+        setWithdrawReason("");
+      },
+    );
   }
 
   function handleOverrideSubmit(event: FormEvent<HTMLFormElement>) {
@@ -894,25 +893,26 @@ export function ShortlistPanel({
     if (reason.length === 0) return;
     // D-86 (findings 111 and 113, Josh, 27 Oct 2026): no second approvers. The reason is the only
     // thing an override needs, the same standard as the Referrals board and the patient page.
-    // Membership-checked here as well as in the reducer. The reducer's check is the one that
-    // matters; this one keeps a malformed value from being reported on screen as recorded.
+    // Validate the same closed reason list as the reducer.
     if (!OVERRIDE_REASONS.includes(reason as OverrideReason)) return;
-    // OD-3: the reason travels WITH the event now. It used to go only into `overrideRecord`
-    // below -- this component's own state, cleared on the next patient selection -- while the
-    // governance page said override reasons were recorded. The reducer keeps it on
-    // `Movement.overrides`; `overrideRecord` is now only the on-screen confirmation.
-    dispatch({
-      type: "REFER_TO_UNITS",
-      role: "coordinator",
-      now,
-      movementId,
-      unitIds: [...referTargets],
-      overrideReason: reason as OverrideReason,
-    });
-    setOverrideRecord({ unitIds: [...referTargets], at: now, reason });
-    setOverrideOpen(false);
-    setOverrideReason("");
-    clearOverrideDraft();
+    // OD-3: the reducer records the reason; the local record is only accepted-save feedback.
+    overrideSave.submit(
+      () =>
+        dispatch({
+          type: "REFER_TO_UNITS",
+          role: "coordinator",
+          now,
+          movementId,
+          unitIds: [...referTargets],
+          overrideReason: reason as OverrideReason,
+        }),
+      () => {
+        setOverrideRecord({ unitIds: [...referTargets], at: now, reason });
+        setOverrideOpen(false);
+        setOverrideReason("");
+        clearOverrideDraft();
+      },
+    );
   }
 
   /**
@@ -1337,6 +1337,8 @@ export function ShortlistPanel({
 
   return (
     <div className={`${styles.shortlistBody} ${shortlistStyles.body}`} data-testid={`ward-shortlist-${movement.id}`}>
+      {actionPending ? <p role="status">Saving. Waiting for confirmation.</p> : null}
+      {actionError ? <p role="alert">{actionError}</p> : null}
       {outcomeMessage ? <p role="status">{outcomeMessage}</p> : null}
       <header className={`${styles.shortlistHeader} ${shortlistStyles.subjectHeader}`}>
         {/* PlacementPanel (v10 Home): the patient as "Given Surname" with UMRN and where they are,
@@ -1494,6 +1496,7 @@ export function ShortlistPanel({
                   className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
                   aria-expanded={withdrawUnitId === id}
                   onClick={() => {
+                    withdrawSave.forget();
                     setWithdrawUnitId((current) => (current === id ? undefined : id));
                     setWithdrawReason("");
                   }}
@@ -1560,6 +1563,7 @@ export function ShortlistPanel({
                       className={styles.shortlistOverrideSelect}
                       data-testid={`ward-shortlist-withdraw-reason-${id}`}
                       value={withdrawReason}
+                      disabled={actionPending}
                       onChange={(event) => setWithdrawReason(event.target.value as WardRequestWithdrawalReason | "")}
                     >
                       <option value="">Choose a reason</option>
@@ -1861,7 +1865,10 @@ export function ShortlistPanel({
                   className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
                   onClick={
                     canOverride
-                      ? () => setOverrideOpen((open) => !open)
+                      ? () => {
+                          overrideSave.forget();
+                          setOverrideOpen((open) => !open);
+                        }
                       : isPhone || variant === "drawer"
                         ? // Phone and Home's drawer: never greyed; with no ward picked it goes to the list.
                           (event) => chooseWard(event.currentTarget)
@@ -1882,10 +1889,8 @@ export function ShortlistPanel({
                 </span>
               ) : null}
               {!canOverride && !isPhone && variant !== "drawer" ? (
-                // Usability review, Josh approved 24 Oct 2026: a greyed action names its blocker in short
-                // visible words, with the one fix beside it when the fix is on this screen. Screen readers
-                // keep the full sentence above (the button's description); the short words are visual.
-                // The fix is the same jump to the ward list the phone's Override already makes.
+                // Usability review (Josh, 24 Oct 2026): short visible blocker words plus the on-screen fix (the
+                // ward-list jump phone Override makes); screen readers keep the full description above.
                 <span className={shortlistStyles.unavailableLine} data-testid="ward-placement-override-why">
                   <span aria-hidden="true">
                     <DisabledReason id="ward-placement-override-words">
@@ -1982,6 +1987,7 @@ export function ShortlistPanel({
                     required
                     className={styles.shortlistOverrideSelect}
                     value={overrideReason}
+                    disabled={actionPending}
                     onChange={(event) => setOverrideReason(event.target.value)}
                   >
                     <option value="">Choose a reason</option>
@@ -2041,6 +2047,7 @@ export function ShortlistPanel({
                       className={styles.shortlistOverrideSelect}
                       data-testid="ward-shortlist-gender-placement-reason"
                       value={genderPlacementReason}
+                      disabled={actionPending}
                       onChange={(event) => setGenderPlacementReason(event.target.value)}
                     >
                       <option value="">Choose a reason</option>
@@ -2054,6 +2061,7 @@ export function ShortlistPanel({
                       <input
                         type="checkbox"
                         checked={genderPlacementChecked}
+                        disabled={actionPending}
                         onChange={(event) => setGenderPlacementChecked(event.target.checked)}
                         data-testid="ward-shortlist-gender-placement-checked"
                       />

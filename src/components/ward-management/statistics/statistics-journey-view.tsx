@@ -9,6 +9,7 @@ import { Button, CardBody, Legend, SrOnly, StatusGlyph, cx, type WfTone } from "
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
+import { isEdOriginJourney } from "@/components/ward-management/ward-ed-presence";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, LeaveBed, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -143,7 +144,7 @@ export function journeyStages({
       breakdown: [
         { label: `Past ${LONG_WAIT_HOURS}h`, value: pastADay(waiting), tone: warnIf(pastADay(waiting)) },
         { label: "Urgent", value: urgent(waiting) },
-        { label: "EDs", value: new Set(waiting.map((movement) => movement.originEdId)).size },
+        { label: "EDs", value: new Set(waiting.filter(isEdOriginJourney).map((movement) => movement.originEdId)).size },
       ],
     },
     {

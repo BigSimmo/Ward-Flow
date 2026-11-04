@@ -1,5 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { configure, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+configure({
+  getElementError: () => new Error("Referral compatibility query failed; record-bearing diagnostics suppressed."),
+});
 import { navigateContextuallyBack } from "@/components/contextual-back-link";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
