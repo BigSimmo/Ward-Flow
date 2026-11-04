@@ -2,8 +2,8 @@
 
 // Handover page pieces outside the main component: the History tab, the scope filter control and
 // the sign-off status icon. Split out of handover-page.tsx to keep that file under the line cap.
-import { useId, useMemo } from "react";
-import { Check, CircleCheck } from "lucide-react";
+import { useMemo } from "react";
+import { Check, ChevronDown, CircleCheck } from "lucide-react";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -12,7 +12,7 @@ import { HEALTH_SERVICES, type Unit } from "@/components/ward-management/ward-mo
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { accessIsWholeNetwork, edInScope, unitInScope } from "@/components/ward-management/ward-role-access";
 import { useOptionalWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
-import { Card, Select, SrOnly, StatusGlyph } from "@/components/wf";
+import { Button, Card, Menu, StatusGlyph, type MenuItem } from "@/components/wf";
 import { HANDOVER_SHIFTS, handoverAt, handoverSignOffPlace, handoverSignedAt } from "./handover-model";
 import styles from "./handover-refined.module.css";
 import { NETWORK_SCOPE_VALUE, handoverScopeValue } from "./handover-scope";
@@ -93,7 +93,70 @@ export function HandoverHistory({
   );
 }
 
-/** THE ONE CONTROL — `<select aria-label="Filter the sheet">` */
+/** One choice in a choice menu, or the heading that starts a group of them. */
+export type HandoverChoice =
+  { kind: "heading"; id: string; label: string } | { kind?: undefined; id: string; label: string };
+
+/**
+ * A kit Menu of radio choices behind one quiet button that names the current choice (it replaced
+ * the browser drop-downs, Josh, 3 Nov 2026). `context` is a short muted word before the choice
+ * ("Show"); the accessible name is `label: choice`. The menu fits the window and scrolls inside it.
+ */
+export function HandoverChoiceMenu({
+  label,
+  context,
+  value,
+  choices,
+  onChange,
+  align,
+  testId,
+}: {
+  label: string;
+  context?: string;
+  value: string;
+  choices: readonly HandoverChoice[];
+  onChange: (value: string) => void;
+  align?: "start" | "end";
+  testId?: string;
+}) {
+  const current = choices.find((choice) => choice.kind === undefined && choice.id === value)?.label ?? "";
+  const items: MenuItem[] = choices.map((choice) =>
+    choice.kind === "heading"
+      ? choice
+      : {
+          id: choice.id,
+          label: choice.label,
+          checkable: "radio" as const,
+          checked: choice.id === value,
+          onSelect: () => onChange(choice.id),
+        },
+  );
+  return (
+    <Menu
+      label={label}
+      align={align}
+      items={items}
+      trigger={(props) => (
+        <Button
+          {...props}
+          variant="sec"
+          size="sm"
+          iconEnd={ChevronDown}
+          aria-label={`${label}: ${current}`}
+          className={styles.choiceTrigger}
+          data-testid={testId}
+          data-value={value}
+          data-print-hide
+        >
+          {context ? <span className={styles.choiceContext}>{context}</span> : null}
+          <span className={styles.choiceValue}>{current}</span>
+        </Button>
+      )}
+    />
+  );
+}
+
+/** THE ONE CONTROL: the Show menu that filters the sheet to the places this desk may read. */
 export function HandoverScopeControl({
   value,
   onChange,
@@ -137,49 +200,42 @@ export function HandoverScopeControl({
       ).sort((a, b) => a.name.localeCompare(b.name)),
     [whole, access.scope],
   );
-  const scopeId = useId();
+
+  // A group with nothing this desk may read is left out, heading and all.
+  const group = (id: string, heading: string, entries: HandoverChoice[]): HandoverChoice[] =>
+    entries.length === 0 ? [] : [{ kind: "heading", id: `scope-head-${id}`, label: heading }, ...entries];
+  const choices: HandoverChoice[] = [
+    { id: NETWORK_SCOPE_VALUE, label: allRecordsScopeLabel(access) },
+    ...group(
+      "service",
+      "Service",
+      services.map((service) => ({ id: handoverScopeValue({ kind: "service", id: service }), label: service })),
+    ),
+    ...group(
+      "ward",
+      "Ward",
+      sortedUnits.map((unit) => ({ id: handoverScopeValue({ kind: "ward", id: unit.id }), label: unit.name })),
+    ),
+    ...group(
+      "ed",
+      "Emergency department",
+      sortedEds.map((ed) => ({ id: handoverScopeValue({ kind: "ed", id: ed.id }), label: ed.name })),
+    ),
+    ...group(
+      "team",
+      "Community team",
+      sortedTeams.map((team) => ({ id: handoverScopeValue({ kind: "team", id: team.id }), label: team.name })),
+    ),
+  ];
 
   return (
-    <label htmlFor={scopeId} className={styles.barSelect} data-print-hide>
-      <SrOnly>Filter the sheet</SrOnly>
-      <Select
-        id={scopeId}
-        aria-label="Filter the sheet"
-        data-testid="ward-handover-scope-select"
-        boxClassName={styles.barSelect}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value={NETWORK_SCOPE_VALUE}>{allRecordsScopeLabel(access)}</option>
-        <optgroup label="Service">
-          {services.map((service) => (
-            <option key={service} value={handoverScopeValue({ kind: "service", id: service })}>
-              {service}
-            </option>
-          ))}
-        </optgroup>
-        <optgroup label="Ward">
-          {sortedUnits.map((unit) => (
-            <option key={unit.id} value={handoverScopeValue({ kind: "ward", id: unit.id })}>
-              {unit.name}
-            </option>
-          ))}
-        </optgroup>
-        <optgroup label="Emergency department">
-          {sortedEds.map((ed) => (
-            <option key={ed.id} value={handoverScopeValue({ kind: "ed", id: ed.id })}>
-              {ed.name}
-            </option>
-          ))}
-        </optgroup>
-        <optgroup label="Community team">
-          {sortedTeams.map((team) => (
-            <option key={team.id} value={handoverScopeValue({ kind: "team", id: team.id })}>
-              {team.name}
-            </option>
-          ))}
-        </optgroup>
-      </Select>
-    </label>
+    <HandoverChoiceMenu
+      label="Show"
+      context="Show"
+      value={value}
+      choices={choices}
+      onChange={onChange}
+      testId="ward-handover-scope-select"
+    />
   );
 }

@@ -1,4 +1,4 @@
-import { render, screen, cleanup, within } from "@testing-library/react";
+import { fireEvent, render, screen, cleanup, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -55,7 +55,6 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
-import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { WF_TABLET_PORTRAIT_QUERY } from "@/components/wf/use-is-phone";
 const NOW = NOW_ANCHOR;
@@ -238,22 +237,31 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     render(<EdScreen edId="arm-ed" />);
     // Legal times as typed (Josh, 31 Oct 2026): "Past form expiry" became the typed time, "ended …
     // as typed", with the not-legally-checked tag word for word; never a count of time passed.
+    // H11 (Josh, 3 Nov 2026): the row carries the short line, the time exactly as typed and "not
+    // checked" still in view; the full wording, word for word, is the Form button's description
+    // and heads the menu it opens.
     const passed = screen.getByTestId(`ward-ed-form-passed-${PAST_DUE_ID}`);
-    expect(passed).toHaveTextContent(/^ended \d{2}:\d{2}( yesterday)? as typed \(limits not legally checked\)$/u);
+    expect(passed).toHaveTextContent(/^ended \d{2}:\d{2}( yesterday)?, not checked$/u);
     expect(passed).not.toHaveTextContent(/ago|left|overdue|\dh|\dm/u);
-    expect(within(passed).getByTestId("legal-limits-not-checked")).toHaveAttribute(
-      "title",
-      LEGAL_LIMITS_NOT_CHECKED_NOTICE,
-    );
+    const full = /^ended \d{2}:\d{2}( yesterday)? as typed \(limits not legally checked\)$/u;
+    expect(passed.getAttribute("title")).toMatch(full);
+    const pick = screen.getByTestId(`ward-ed-form-pick-${PAST_DUE_ID}`);
+    expect(pick).toHaveAccessibleDescription(full);
+    fireEvent.click(pick);
+    expect(within(screen.getByRole("menu")).getByText(full)).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
     // The danger triangle, never the amber dot that "close" uses.
     const formCell = screen.getByTestId(`ward-ed-patient-${PAST_DUE_ID}`).querySelectorAll("td")[4];
     expect(formCell.querySelector("svg path")).not.toBeNull();
     expect(formCell.querySelector("svg circle")).toBeNull();
     expect(screen.queryByTestId(`ward-ed-form-passed-${CLOSE_DUE_ID}`)).toBeNull();
     expect(screen.queryByTestId(`ward-ed-form-passed-${CLEAR_DUE_ID}`)).toBeNull();
-    // A time not yet reached reads "ends … as typed" under the form, with the same tag.
-    const clearCell = screen.getByTestId(`ward-ed-patient-${CLEAR_DUE_ID}`).querySelectorAll("td")[4];
-    expect(clearCell).toHaveTextContent(/ends \d{2}:\d{2}( tomorrow)? as typed \(limits not legally checked\)/u);
+    // A time not yet reached reads "ends …, not checked" under the form, with the full words behind it.
+    const ends = screen.getByTestId(`ward-ed-form-ends-${CLEAR_DUE_ID}`);
+    expect(ends).toHaveTextContent(/^ends \d{2}:\d{2}( tomorrow)?, not checked$/u);
+    expect(screen.getByTestId(`ward-ed-form-pick-${CLEAR_DUE_ID}`)).toHaveAccessibleDescription(
+      /^ends \d{2}:\d{2}( tomorrow)? as typed \(limits not legally checked\)$/u,
+    );
   });
 
   it("no form recorded reads 'Not recorded' unless the person is voluntary (CS-14)", () => {

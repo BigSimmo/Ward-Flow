@@ -8,8 +8,8 @@ A point-in-time handover sheet for the next shift, ready to print.
 
 1. What to hand over. Act now, flagged urgent and due before the handover. Read Act now first.
 2. Ward promises to chase. Times a ward said it would ring back. Chase the overdue ones first.
-3. The handover sheet. Filter the sheet to a service, then use Print handover for the paper copy.
-4. Sign off. Work through the Before you sign checks, then choose Sign off.
+3. The handover sheet. Use Show to filter the sheet to a service, then use Print handover for the paper copy.
+4. Sign off. Sign off shows how many checks are clear. Open it, work through the Before you sign checks, then choose Sign off.
 
 ## Jobs done here
 

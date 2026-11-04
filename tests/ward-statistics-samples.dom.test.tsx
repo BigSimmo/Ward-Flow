@@ -4,7 +4,10 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { StatisticsSampleFigures } from "@/components/ward-management/statistics/statistics-sample-figures";
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
-import { setStatisticsSamples } from "@/components/ward-management/statistics/statistics-samples";
+import {
+  setStatisticsSamples,
+  statisticsSamplesDefault,
+} from "@/components/ward-management/statistics/statistics-samples";
 
 const route = vi.hoisted(() => ({ pathname: "/ward-flow/statistics/ward/rph-adult-secure" }));
 vi.mock("next/navigation", () => ({ usePathname: () => route.pathname, useRouter: () => ({ push: vi.fn() }) }));
@@ -31,7 +34,7 @@ afterEach(() => {
 describe("optional sample statistics", () => {
   it("defaults to off, hides unavailable history, and preserves recorded figures when switched on and off", () => {
     render(<Workspace />);
-    const toggle = screen.getByRole("switch", { name: "Samples" });
+    const toggle = screen.getByRole("switch", { name: "Show example history" });
     expect(toggle).toHaveAttribute("aria-checked", "false");
     expect(screen.queryByTestId("statistics-sample-figures")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-ward-occupancy-trajectory")).toBeNull();
@@ -59,11 +62,11 @@ describe("optional sample statistics", () => {
 
   it("persists across page mounts and switches to the appropriate metrics for the selected mode", () => {
     const view = render(<Workspace />);
-    fireEvent.click(screen.getByRole("switch", { name: "Samples" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Show example history" }));
     view.unmount();
     route.pathname = "/ward-flow/statistics/ed/rph-ed";
     render(<Workspace />);
-    expect(screen.getByRole("switch", { name: "Samples" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "Show example history" })).toHaveAttribute("aria-checked", "true");
     const samples = screen.getByTestId("statistics-sample-figures");
     expect(within(samples).getByRole("heading", { name: /Median wait/ })).toBeTruthy();
     expect(samples).toHaveTextContent("Royal Perth");
@@ -96,5 +99,22 @@ describe("optional sample statistics", () => {
     expect(screen.getByRole("heading", { name: "Dabakarn", level: 1 }).parentElement).not.toHaveTextContent(
       "Synthetic prototype",
     );
+  });
+});
+
+describe("example history default (owner polish, 3 Nov 2026)", () => {
+  it("is on in the demo, which the live site runs as, and off in production and local builds", () => {
+    expect(statisticsSamplesDefault("demo")).toBe(true);
+    expect(statisticsSamplesDefault("production")).toBe(false);
+    expect(statisticsSamplesDefault("development")).toBe(false);
+  });
+
+  it("follows the build's default until this device makes a choice, then keeps the choice", () => {
+    window.localStorage.removeItem("ward-flow-statistics-samples");
+    render(<Workspace />);
+    const toggle = screen.getByRole("switch", { name: "Show example history" });
+    expect(toggle).toHaveAttribute("aria-checked", String(statisticsSamplesDefault()));
+    fireEvent.click(toggle);
+    expect(window.localStorage.getItem("ward-flow-statistics-samples")).toBe(statisticsSamplesDefault() ? "off" : "on");
   });
 });

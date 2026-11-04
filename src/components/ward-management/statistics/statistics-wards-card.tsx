@@ -20,6 +20,7 @@ import { STATISTICS_COMPARE_HREF } from "./statistics-sections";
 import type { SummaryWard } from "./statistics-network-cards";
 import { exactStatisticsCount, type StatisticsCount } from "./statistics-small-numbers";
 import { PRESSURE_ROWS, SortTh, type WardSortKey } from "./statistics-screen-parts";
+import { useViewSwitchAction } from "./statistics-view-switch-slot";
 import styles from "./statistics-v6.module.css";
 
 /**
@@ -101,6 +102,8 @@ export function StatisticsWardsCard({
   const overLineCount = allPressureWards.filter(
     (w) => Math.round(w.occupancyRate * 100) >= BED_ALERT_THRESHOLD_PERCENT,
   ).length;
+  // A bed manager's board leads with this card, so it carries Bed board, Journey and Map.
+  const viewSwitch = useViewSwitchAction();
   const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
   // Compare is linked only for a desk that may open it (access audit, 31 Oct 2026).
   const canCompare = useCanOpenHref()(STATISTICS_COMPARE_HREF);
@@ -160,7 +163,9 @@ export function StatisticsWardsCard({
           : `${overLineCount} ${overLineCount === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
       }
       aside={
-        siteName ? undefined : (
+        siteName ? (
+          viewSwitch
+        ) : (
           <Segmented
             size="sm"
             label="Group by"

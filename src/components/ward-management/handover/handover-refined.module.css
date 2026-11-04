@@ -226,17 +226,6 @@
   min-width: 0;
 }
 
-.barSelect {
-  width: auto;
-  min-width: 0;
-  flex: none;
-}
-
-.barSelect select {
-  height: 32px;
-  font-size: var(--wf-fs-12);
-}
-
 .spacer {
   flex: 1;
 }
@@ -1209,8 +1198,10 @@
   padding: 8px;
 }
 
-.viewPanel select {
-  height: 40px;
+.viewChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .viewHead {
@@ -1416,11 +1407,6 @@
   row-gap: 8px;
 }
 
-.step select {
-  width: 200px;
-  min-width: 0;
-}
-
 .bar > .step:first-child {
   max-width: none;
 }
@@ -1438,7 +1424,7 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* iPad portrait: the bottom bar opens sign-off, so the rail's own trigger stays hidden. */
+/* iPad portrait: the hero's Sign off opens sign-off, so the rail's own trigger stays hidden. */
 .portraitRailHost {
   display: contents;
 }
@@ -1576,4 +1562,34 @@ button.gl:hover .glValue {
   .glance .gapBar {
     display: none;
   }
+}
+
+/* The choice menus (Show, Group, Sort) replaced the browser drop-downs (Josh, 3 Nov 2026): one
+   quiet button, a muted context word, the current choice and a chevron. A long ward name stops at
+   an ellipsis; the menu itself lists it in full. */
+.choiceTrigger {
+  max-width: 100%;
+  min-width: 0;
+}
+.choiceContext {
+  margin-inline-end: 6px;
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+.choiceValue {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+/* The hero Sign off carries its check count ("1/5") as quiet meta behind a hairline. */
+.heroSignCount {
+  margin-inline-start: 2px;
+  background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
+  color: var(--wf-hero-2);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }

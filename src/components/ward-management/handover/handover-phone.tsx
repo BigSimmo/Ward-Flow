@@ -646,10 +646,7 @@ export function HandoverPhone({
                   className={cx(styles.chip, phoneRows.chip, chip.count === 0 && phoneRows.zero)}
                 >
                   <b className={styles.chipCount}>{chip.count}</b>
-                  {/* Home-style touch: the one urgent highlight carries the danger dot before its words. */}
-                  {chip.id === "esc" && chip.count > 0 ? (
-                    <StatusGlyph tone="danger" size={9} className={parts.chipGlyph} />
-                  ) : null}
+                  {/* Triangle guard (3 Nov 2026): no act-now triangle on a filter chip; the rows carry it. */}
                   {chip.label}
                 </FilterChip>
               ))}
