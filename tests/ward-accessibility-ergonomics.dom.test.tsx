@@ -67,7 +67,9 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
         </WardFlowProvider>,
       );
 
-      const bedButtons = screen.getAllByRole("button", { name: /^Census square \d+: (READY|Pulled|Closed|Inpatient)$/ });
+      const bedButtons = screen.getAllByRole("button", {
+        name: /^Census square \d+: (READY|Pulled|Closed|Inpatient)$/,
+      });
       expect(bedButtons.length).toBe(unit.beds);
 
       for (const btn of bedButtons) {
