@@ -1064,6 +1064,15 @@
   white-space: nowrap;
 }
 
+.providerPick {
+  margin: var(--wf-s-2) 0 0;
+  min-width: 0;
+}
+
+.providerList.providerList {
+  position: static;
+}
+
 fieldset.formRow {
   display: flex;
 }

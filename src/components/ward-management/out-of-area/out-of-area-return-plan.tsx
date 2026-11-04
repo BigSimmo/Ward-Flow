@@ -22,12 +22,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import {
-  BOOKABLE_TRANSPORT_PROVIDERS,
-  TRANSPORT_LEGAL_STATUSES,
-  type TransportLegalStatus,
-  type TravelMode,
-} from "@/components/ward-management/ward-model";
+import { TRANSPORT_LEGAL_STATUSES, type TransportLegalStatus } from "@/components/ward-management/ward-model";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 
@@ -46,6 +41,7 @@ import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { HomeServiceReturnPanel } from "./home-service-return-panel-lazy";
+import { OfficerBookingContacts } from "@/components/ward-management/officer/officer-booking-contacts";
 
 export function returnPlanMissingToSend(draft: RepatDraft, now: Instant = 0): string[] {
   return missingAnswers(draft, now).filter((answer) => answer !== "ward agreement");
@@ -436,27 +432,17 @@ export function ReturnPlan({
                   The recorded band is air only for this trip
                 </p>
               ) : null}
-              <Field label="Provider" className={styles.formRow}>
-                <Select
-                  data-testid="ward-out-of-area-repat-provider"
-                  value={draft.provider ?? ""}
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    onDraft({
-                      provider: BOOKABLE_TRANSPORT_PROVIDERS.includes(next as TravelMode)
-                        ? (next as TravelMode)
-                        : undefined,
-                    });
-                  }}
-                >
-                  <option value="">Choose the provider</option>
-                  {BOOKABLE_TRANSPORT_PROVIDERS.map((provider) => (
-                    <option key={provider} value={provider}>
-                      {provider}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
+              {/* OA1 (4 Nov 2026): the providers' synthetic numbers are the picker, as on Log booking,
+                  so the coordinator calls and records the provider in one place. */}
+              <div className={styles.providerPick} data-testid="ward-out-of-area-repat-provider">
+                <OfficerBookingContacts
+                  className={styles.providerList}
+                  headingId={`${idPrefix}-contacts-heading`}
+                  selected={draft.provider}
+                  onPick={(provider) => onDraft({ provider })}
+                  note="Call the provider, then choose the one you booked."
+                />
+              </div>
               <ChoicePills
                 legend="Legal status"
                 name={`${idPrefix}-legal`}
