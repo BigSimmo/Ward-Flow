@@ -2295,6 +2295,7 @@ export function nextEvent(
   // The same for a site's handover sign-off (Q61): its Undo is only within the undo window, so
   // sometimes take it back at once, as the bed manager who signed it.
   if (
+    !sweep &&
     justTold?.kind === "step" &&
     justTold.undoType === "UNDO_SITE_HANDOVER_SIGN_OFF" &&
     currentNow - justTold.at <= UNDO_WINDOW_MINUTES &&

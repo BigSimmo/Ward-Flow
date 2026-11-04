@@ -844,7 +844,8 @@ export function CoordinatorScreen() {
     showView("queue");
     setFlowStage(undefined);
     chooseNeedsFocus("all");
-    toggleHighlight("overdue");
+    // CodeRabbit (#1380): set from what is shown, so a retained highlight from Needs you is not cleared.
+    setHighlight(overduePressed ? undefined : "overdue");
   };
   // Scope: with a service chosen, the step counts only that service's work, never statewide: the
   // hero's own scoped Act now (`heroActNow`), and the scoped referral queue and flow queue Home shows.

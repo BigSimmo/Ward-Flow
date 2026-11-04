@@ -375,8 +375,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         : nextKey === "confirmed"
           ? `Nothing held up${nextPlace} · ${counts.confirmed} confirmed ${noun(counts.confirmed)} to see out`
           : `Nothing held up${nextPlace}`,
+    // CodeRabbit (#1380): the status counts are open records, not Recorded's list, so no action there.
     action:
-      nextKey === null
+      nextKey === null || !nowView
         ? undefined
         : {
             label:
