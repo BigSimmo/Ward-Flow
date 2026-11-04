@@ -1,4 +1,5 @@
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { S2015_CATCHMENT_ROWS, parseFollowUpClinicSet } from "@/components/ward-management/ward-catchment";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
@@ -32,4 +33,29 @@ export function placePeople(
       const id = info.patient?.id;
       return { key: movement.id, name: info.formalName, ...(id === undefined ? {} : { href: patientHref(id) }) };
     });
+}
+
+/** The fold `communityTeamSuburbCounts` keys teams by: case, whitespace and punctuation. */
+function teamKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, " ")
+    .trim();
+}
+
+/**
+ * The suburbs the catchment table routes to one team, alphabetically, for the Places panel (PL1
+ * follow-up, Josh, 4 Nov 2026: the suburbs a team covers, as names). Kept here, with the only
+ * screen that reads it, so the Ward page's shared bundle does not carry it.
+ */
+export function communityTeamSuburbs(teamName: string): readonly string[] {
+  const key = teamKey(teamName);
+  if (key === "") return [];
+  const suburbs = new Set<string>();
+  for (const row of S2015_CATCHMENT_ROWS) {
+    if (parseFollowUpClinicSet(row.followUpClinicVerbatim).some((clinic) => teamKey(clinic) === key)) {
+      suburbs.add(row.suburb);
+    }
+  }
+  return [...suburbs].sort((left, right) => left.localeCompare(right));
 }

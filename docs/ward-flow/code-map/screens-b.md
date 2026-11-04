@@ -377,7 +377,7 @@ search/preview screen, apart from the coordinator's Ask to confirm. **Reads:** i
 - **`src/components/ward-management/hub/hub-place-people.ts`** — `placePeople`, the names a place's
   panel lists (PL1 follow-up, 4 Nov 2026): open movements a ward has accepted (heading there), or
   open movements still at an ED (waiting there), longest wait first. A team lists its suburbs
-  instead, from `communityTeamSuburbs` in `community/community-vocabulary.ts`.
+  instead, from `communityTeamSuburbs` in the same file.
 - **`src/components/ward-management/hub/hub-provenance.ts`** (87 lines) — `hubReconciliationLine`,
   the hub's "Invented figures, reconciled/do not reconcile, no event feed" sentence, copied
   verbatim from the mockup's own wording rather than composed. Handles a `problems: number | null`

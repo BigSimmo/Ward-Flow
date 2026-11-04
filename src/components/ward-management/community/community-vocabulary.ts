@@ -77,23 +77,6 @@ export function communityTeamSuburbCounts(): ReadonlyMap<string, number> {
 }
 
 /**
- * The suburbs the catchment table routes to one team, alphabetically, for the Places panel (PL1
- * follow-up, Josh, 4 Nov 2026: the suburbs a team covers, as names). Matched on the same folded key
- * as `communityTeamSuburbCounts`, so every spelling of the team counts.
- */
-export function communityTeamSuburbs(teamName: string): readonly string[] {
-  const key = communityTeamKey(teamName);
-  if (key === "") return [];
-  const suburbs = new Set<string>();
-  for (const row of S2015_CATCHMENT_ROWS) {
-    if (parseFollowUpClinicSet(row.followUpClinicVerbatim).some((clinic) => communityTeamKey(clinic) === key)) {
-      suburbs.add(row.suburb);
-    }
-  }
-  return [...suburbs].sort((left, right) => left.localeCompare(right));
-}
-
-/**
  * A second, harder key that additionally folds the health-service suffixes and the `Nth`/`North.`
  * abbreviations the 2015 document uses inconsistently.
  *

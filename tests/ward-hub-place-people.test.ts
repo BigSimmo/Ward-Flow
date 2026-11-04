@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { placePeople } from "@/components/ward-management/hub/hub-place-people";
-import { communityTeamSuburbs } from "@/components/ward-management/community/community-vocabulary";
+import { communityTeamSuburbs, placePeople } from "@/components/ward-management/hub/hub-place-people";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";

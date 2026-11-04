@@ -70,8 +70,7 @@ import {
 } from "@/components/ward-management/shell/ward-facade";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import { communityTeamSuburbs } from "@/components/ward-management/community/community-vocabulary";
-import { placePeople, type PlacePerson } from "./hub-place-people";
+import { communityTeamSuburbs, placePeople, type PlacePerson } from "./hub-place-people";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 
 import {
