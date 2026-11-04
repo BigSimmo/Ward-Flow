@@ -14,7 +14,7 @@ import { edBayAssignments, movementMedicalClearance } from "@/components/ward-ma
 import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
-import { dayOf, formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { admissionLegalStatus } from "@/components/ward-management/ward-flow-reducer";
 import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -168,20 +168,20 @@ export function wardClinicalRows(input: WardClinicalInputs): WardClinicalRow[] {
         whereabouts = {
           text:
             movement?.transport?.collectedAt !== undefined
-              ? `On the way${eta === undefined ? "" : `, due ${formatInstant(eta)}`}`
+              ? `On the way${eta === undefined ? "" : `, due ${formatInstantWithDay(eta, now)}`}`
               : "Bed pulled, not yet arrived",
         };
       } else if (leave?.absentWithoutLeave) {
         where = "awol";
         whereabouts = {
-          text: `Absent without leave since ${formatInstant(leave.absentWithoutLeave.since)}`,
+          text: `Absent without leave since ${formatInstantWithDay(leave.absentWithoutLeave.since, now)}`,
           tone: "danger",
         };
       } else if (leave) {
         where = "leave";
         const late = leave.expectedReturn <= now;
         whereabouts = {
-          text: `${leave.kind === "medical_trip" ? "Medical trip" : "On leave"}, ${late ? "was due back" : "due back"} ${formatInstant(leave.expectedReturn)}`,
+          text: `${leave.kind === "medical_trip" ? "Medical trip" : "On leave"}, ${late ? "was due back" : "due back"} ${formatInstantWithDay(leave.expectedReturn, now)}`,
           tone: late ? "danger" : undefined,
         };
       } else if (admission.awayAtEmergencyDepartmentSince != null) {
@@ -197,7 +197,11 @@ export function wardClinicalRows(input: WardClinicalInputs): WardClinicalRow[] {
         : pastDate
           ? { text: "Past expected date", tone: "warning" }
           : expected !== null && expected !== undefined && !pulled
-            ? { text: goingToday ? `Home today ${formatInstant(expected)}` : `Expected ${dayLabel(expected, now)}` }
+            ? {
+                text: goingToday
+                  ? `Home today ${formatInstantWithDay(expected, now)}`
+                  : `Expected ${dayLabel(expected, now)}`,
+              }
             : pulled
               ? null
               : { text: "No date set" };
@@ -320,7 +324,7 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
         movement.transport?.collectedAt !== undefined
           ? { text: "Leaving now" }
           : movement.transport && movement.transport.cancelledAt === undefined
-            ? { text: eta === undefined ? "Transport booked" : `Transport due ${formatInstant(eta)}` }
+            ? { text: eta === undefined ? "Transport booked" : `Transport due ${formatInstantWithDay(eta, now)}` }
             : accepted
               ? { text: "Book transport", tone: "warning" }
               : !movement.examination
