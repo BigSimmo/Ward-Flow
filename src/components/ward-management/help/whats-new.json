@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-handover-signoff-by-ward",
-    "date": "2026-10-31",
-    "line": "Handover sign-offs now belong to each ward, and a site bed manager can sign off its own site's handover."
-  },
-  {
     "id": "2026-10-31-role-names-hidden-names",
     "date": "2026-10-31",
     "line": "Roles read Nurse in charge, Community team and Site bed manager; hidden names say \"Name not shown on this desk\"."
@@ -93,6 +88,11 @@
     "id": "2026-11-03-integrity-save-confirmation",
     "date": "2026-11-03",
     "line": "Open forms stay with their record, and failed changes keep their answers until the save is confirmed."
+  },
+  {
+    "id": "2026-11-03-journey-recovery",
+    "date": "2026-11-03",
+    "line": "Cancel and reroute unfinished care transfers; clearer reload, partial-save and sign-in recovery."
   },
   {
     "id": "2026-11-03-one-clock",
