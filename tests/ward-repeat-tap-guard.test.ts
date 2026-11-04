@@ -56,6 +56,56 @@ describe("repeat tap guard", () => {
     expect(calls).toBe(2);
   });
 
+  it("joins a press of the same action to a save still waiting offline, until that save settles (4 Nov audit)", async () => {
+    let clock = 0;
+    const guard = createRepeatTapGuard(() => clock);
+    let confirm: (outcome: WardCommandOutcome) => void = () => undefined;
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => (confirm = resolve));
+    let calls = 0;
+    const run = () => {
+      calls += 1;
+      return Promise.resolve({
+        commandId: `c-${calls}`,
+        status: "failed",
+        message: "Offline, so this change is waiting on this page.",
+        confirmation,
+      } as WardCommandOutcome);
+    };
+    const first = await guard(book(0), run);
+    clock = 60_000;
+    const again = await guard(book(clock), run);
+    expect(calls).toBe(1);
+    expect(again?.commandId).toBe(first?.commandId);
+    // A different action is not held back.
+    await guard({ ...book(clock), movementId: "mv-2" } as WardFlowEvent, run);
+    expect(calls).toBe(2);
+    confirm({ commandId: "c-1", status: "accepted" });
+    await confirmation;
+    await Promise.resolve();
+    clock = 120_000;
+    await guard(book(clock), run);
+    expect(calls).toBe(3);
+  });
+
+  it("lets the same action go again once its waiting save is from an earlier workspace", async () => {
+    const guard = createRepeatTapGuard(() => 0);
+    let current = true;
+    let calls = 0;
+    const run = () => {
+      calls += 1;
+      return Promise.resolve({
+        commandId: `c-${calls}`,
+        status: "failed",
+        confirmation: new Promise<WardCommandOutcome>(() => undefined),
+        isCurrent: () => current,
+      } as WardCommandOutcome);
+    };
+    await guard(book(0), run);
+    current = false;
+    await guard(book(0), run);
+    expect(calls).toBe(2);
+  });
+
   it("never holds back the demo clock's step forward", () => {
     const event = { type: "ADVANCE_CLOCK", role: "demo", now: 0, minutes: 15 } as WardFlowEvent;
     expect(repeatTapKey(event)).toBeNull();
