@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { SeclusionScreen } from "@/components/ward-management/restrictive-practice/seclusion-screen";
+import { SeclusionRoute } from "@/components/ward-management/restrictive-practice/seclusion-route";
 
 export const metadata: Metadata = {
   title: "Seclusion and restraint — Ward Flow",
@@ -9,5 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default function WardSeclusionPage() {
-  return <SeclusionScreen />;
+  // FS3: desks that open Forms are sent to its Seclusion and restraint view.
+  return <SeclusionRoute />;
 }
