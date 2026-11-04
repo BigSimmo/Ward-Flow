@@ -77,7 +77,8 @@ describe("screens link into a view", () => {
     );
   });
 
-  it("Home's queue opens Form due while Form due is on", () => {
+  // Q376: the Flow card is the queue's one layout; it has no Form due filter, so it always opens Waiting.
+  it("Home's queue opens Waiting", () => {
     const state = seedWardFlowState();
     render(
       <PriorityQueue
@@ -91,11 +92,9 @@ describe("screens link into a view", () => {
     );
     const link = () => screen.getByRole("link", { name: "Open in Waiting" });
     expect(link()).toHaveAttribute("href", "/ward-flow/waiting");
-    fireEvent.click(screen.getByRole("button", { name: /Form due/u }));
-    expect(link()).toHaveAttribute("href", "/ward-flow/waiting?view=form");
   });
 
-  it("Home's Form due reads the current due time, as the Delays view does", () => {
+  it("Home's passed-form mark reads the current due time, as the Delays view does", () => {
     const base = seedWardFlowState().movements.find(
       (movement) => movement.legalForm !== undefined && movement.legalStatus !== "Voluntary",
     )!;
@@ -103,7 +102,7 @@ describe("screens link into a view", () => {
       ...base,
       closure: undefined,
       examination: undefined,
-      legalForm: { ...base.legalForm!, code: "1A", dueAt: NOW_ANCHOR + 30 },
+      legalForm: { ...base.legalForm!, code: "1A", dueAt: NOW_ANCHOR - 30 },
     };
     // The form ended at the examination, so its old due time no longer counts (as on Delays).
     const ended: Movement = { ...due, examination: { ...base.examination, outcome: "inpatient_order" } as never };
@@ -119,12 +118,10 @@ describe("screens link into a view", () => {
         />,
       );
     queue(due);
-    fireEvent.click(screen.getByRole("button", { name: /Form due/u }));
-    expect(screen.queryByText("Nothing due soon")).toBeNull();
+    expect(screen.getByTestId(`ward-queue-row-${due.id}`)).toHaveTextContent(/Form 1A/u);
     cleanup();
     queue(ended);
-    fireEvent.click(screen.getByRole("button", { name: /Form due/u }));
-    expect(screen.getByText("Nothing due soon")).toBeInTheDocument();
+    expect(screen.getByTestId(`ward-queue-row-${ended.id}`)).not.toHaveTextContent(/Form 1A/u);
   });
 
   it("the Patients shift panel opens the whole list", () => {

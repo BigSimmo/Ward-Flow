@@ -36,20 +36,20 @@ function renderHandover() {
 }
 
 async function selectScope(user: ReturnType<typeof userEvent.setup>, label: string) {
-  await user.selectOptions(
-    screen.getByRole("combobox", { name: "Filter the sheet" }),
-    screen.getByRole("option", { name: label }),
-  );
+  await user.click(screen.getByRole("button", { name: /^Show:/ }));
+  await user.click(screen.getByRole("menuitemradio", { name: label }));
 }
 
 describe("Handover scope control", () => {
-  it("defaults to Whole network, grouped by service, ward, emergency department and community team", () => {
+  it("defaults to Whole network, grouped by service, ward, emergency department and community team", async () => {
+    const user = userEvent.setup();
     renderHandover();
-    const select = screen.getByRole("combobox", { name: "Filter the sheet" });
-    expect(select).toHaveValue("network");
-    const groups = within(select)
-      .getAllByRole("group")
-      .map((group) => group.getAttribute("label"));
+    const trigger = screen.getByRole("button", { name: "Show: Whole network" });
+    expect(trigger).toHaveAttribute("data-value", "network");
+    await user.click(trigger);
+    const menu = screen.getByRole("menu", { name: "Show" });
+    expect(within(menu).getByRole("menuitemradio", { name: "Whole network" })).toHaveAttribute("aria-checked", "true");
+    const groups = Array.from(menu.querySelectorAll('[role="presentation"]')).map((node) => node.textContent);
     expect(groups).toEqual(["Service", "Ward", "Emergency department", "Community team"]);
   });
 
@@ -58,8 +58,7 @@ describe("Handover scope control", () => {
     // 1 Nov 2026 redesign: the whole network needs no scope line; the control and the Patients tab
     // name the scope and its real open count.
     expect(screen.queryByTestId("ward-handover-scope-summary")).toBeNull();
-    const select = screen.getByTestId("ward-handover-scope-select") as HTMLSelectElement;
-    expect(select.selectedOptions[0]?.textContent).toBe("Whole network");
+    expect(screen.getByTestId("ward-handover-scope-select")).toHaveAccessibleName("Show: Whole network");
     expect(screen.getByRole("tab", { name: /Patients/ })).toHaveTextContent(String(realOpen.length));
   });
 

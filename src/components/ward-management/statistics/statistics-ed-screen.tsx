@@ -4,7 +4,7 @@ import { edJourneySummaries } from "@/components/ward-management/ed/ed-home-deri
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, AlertTriangle, ChevronDown, Clock, Hospital, ListOrdered, Scale, Users, X } from "lucide-react";
+import { Activity, ChevronDown, Clock, Hospital, ListOrdered, Scale, Timer, Users, X } from "lucide-react";
 
 import {
   Card,
@@ -701,7 +701,7 @@ function EdPresentation({
               )}
             </Follow>
             <FlushStack>
-              <StatCard icon={AlertTriangle} title={`Next to cross ${longHours}h`} aside="Count down" id="ed-next">
+              <StatCard icon={Timer} title={`Next to cross ${longHours}h`} aside="Count down" id="ed-next">
                 <CardBody className={styles.bodyStack}>
                   {personNext ?? <PeopleNotListed testId="ward-statistics-ed-next-not-listed" />}
                 </CardBody>

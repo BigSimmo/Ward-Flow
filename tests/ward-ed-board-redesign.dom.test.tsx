@@ -53,10 +53,12 @@ afterEach(() => {
 });
 
 describe("ED board redesign", () => {
-  it("keeps the access card, Raise referral and the department strip for the coordinator", () => {
+  it("keeps the access card and the department strip for the coordinator", () => {
     renderEd();
     expect(screen.getByTestId("ed-access-risk-card-stand-in")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-ed-raise-referral-toggle")).toBeInTheDocument();
+    // Deep audit (4 Nov 2026): off the phone the app bar's New referral is the one button, so the
+    // hero no longer repeats it. The phone keeps it (tests/ward-ed-add-patient-p142.dom.test.tsx).
+    expect(screen.queryByTestId("ward-ed-raise-referral-toggle")).toBeNull();
     expect(screen.getByRole("navigation", { name: "Emergency departments" })).toBeInTheDocument();
   });
 
