@@ -3879,3 +3879,12 @@ details.refCard > summary {
 .guardActions > button {
   min-height: var(--spacing-tap, 3rem);
 }
+
+/* Design sweep (4 Nov 2026): on a phone the inbox's buttons, such as Show answered, meet the 40px
+ * tap floor. The demo now seeds answered referrals, so a ward's phone shows that toggle. */
+@media (max-width: 46.4375rem) {
+  .patientChipBtn {
+    height: auto;
+    min-height: 40px;
+  }
+}

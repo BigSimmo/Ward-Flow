@@ -150,6 +150,8 @@ const JOBS: readonly HowTo[] = [
           { sel: "#main-content button", text: "Release pulled bed" },
           // A phone's list opens each row in a sheet; the hero's Act now count stands in.
           { sel: "#main-content button", text: "Act now" },
+          // A phone's hero folds its counts away and keeps the next step row (plan item 2i).
+          { sel: "#main-content [data-wf-hero-next]" },
         ],
         title: "Pulls past their limit are in Act now",
         body: "Release pulled bed opens the movement at the release step. You decide whether to release it or keep it.",
@@ -183,6 +185,8 @@ const JOBS: readonly HowTo[] = [
           { sel: "#main-content button", text: "To decide" },
           // A ward's phone keeps its referrals under the Decisions tab.
           { sel: "#main-content button", text: "Decisions" },
+          // A phone's hero folds its counts away and keeps the next step row (plan item 2i).
+          { sel: "#main-content [data-wf-hero-next]" },
         ],
         title: "Referrals to decide",
         body: "They stay in wait order, oldest first. Press Decide to open one.",

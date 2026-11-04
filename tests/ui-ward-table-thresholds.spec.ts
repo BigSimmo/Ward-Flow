@@ -714,8 +714,11 @@ test("@mockup the Delays hidden-count note keeps Show everyone reachable at ever
     await page.goto("/ward-flow/waiting", { waitUntil: "networkidle" });
     const count = page.getByTestId("delays-shown-count");
     const everyone = await count.textContent();
-    await page.getByTestId("delays-stat-over8").click();
-    await expect(count, `${width}px: the Over 8h count did not narrow the table`).not.toHaveText(everyone ?? "");
+    // Plan item 2i: a phone's hero folds its figures away and keeps the next step, which narrows the
+    // table to the desk's own people. Desktop still narrows by the Over 8h figure.
+    const narrow = width < 744 ? page.getByTestId("delays-next-action") : page.getByTestId("delays-stat-over8");
+    await narrow.click();
+    await expect(count, `${width}px: narrowing did not narrow the table`).not.toHaveText(everyone ?? "");
     const note = page.getByTestId("delays-hidden-note");
     await expect(note).toContainText(/hidden by the filters above/u);
     await note.getByRole("button", { name: "Show everyone" }).click({ timeout: 5_000 });
