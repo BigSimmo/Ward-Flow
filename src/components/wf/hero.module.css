@@ -919,7 +919,8 @@
   .stats .statToggle {
     align-items: center;
   }
-  .hero .foot:not([data-foot="actions"]) {
+  /* Only a foot of words goes; a foot with controls (Confirm numbers, Ward alerts) stays. */
+  .hero .foot:not([data-foot="actions"]):not(:has(button, a)) {
     display: none;
   }
 }

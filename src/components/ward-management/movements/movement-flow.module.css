@@ -1553,3 +1553,24 @@
   background: var(--wf-ink-1);
   color: var(--wf-surface);
 }
+
+/* Josh review (4 Nov 2026): on phone the search comes first and the Filter button sits after it on
+ * the same line, so the toolbar is one row instead of two. A highlight note keeps its own line. */
+@media (max-width: 46.4375rem) {
+  .toolbar {
+    flex-wrap: wrap;
+    gap: var(--wf-s-2);
+  }
+  .toolbar > .search {
+    order: -1;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .toolbar > .toolbarSpacer {
+    display: none;
+  }
+  .toolbar > .highlightNote {
+    order: 1;
+    flex: 1 1 100%;
+  }
+}

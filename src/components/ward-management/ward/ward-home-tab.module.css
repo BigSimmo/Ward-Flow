@@ -1644,8 +1644,18 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 .phoneBedsHead {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--wf-s-2);
+}
+
+/* Josh review (4 Nov 2026): the find field opens in the heading's place. */
+.phoneBedsHead:has([data-open]) > h2 {
+  display: none;
+}
+
+.phoneBedsHead > :last-child[data-open] {
+  flex: 1 1 auto;
 }
 
 .phoneFigures {

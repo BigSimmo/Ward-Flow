@@ -1227,3 +1227,52 @@
   margin-top: var(--wf-s-2);
   text-align: left;
 }
+
+/* Josh review (4 Nov 2026): on phone the list card's own white box no longer shows behind the
+ * pinned kind switch (the kit card outranked the phone rule, so its square top corners showed
+ * round the switch). Search and the order button are one 40px row with matching corners. */
+@media (max-width: 46.4375rem) {
+  .hubLeft.hubLeft {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+  .phoneKindBar {
+    margin-bottom: 0;
+  }
+  .phoneControls {
+    gap: var(--wf-s-2);
+  }
+  .phoneSearchRow {
+    gap: var(--wf-s-2);
+  }
+  .phoneSearchBox.phoneSearchBox {
+    height: 40px;
+    min-height: 40px;
+    border-radius: var(--wf-r-ctl);
+  }
+  .phoneSortButton {
+    position: relative;
+    min-height: 40px;
+    height: 40px;
+    padding: 0 var(--wf-s-3);
+    box-shadow: none;
+  }
+  .phoneSortButton::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+/* The band's Places and Catchments switch takes the phone's 40px control height, not 56px. */
+@media (max-width: 46.4375rem) {
+  .hubHero [aria-label="Places views"] {
+    padding: 3px;
+  }
+  .hubHero [aria-label="Places views"] > :is(a, button) {
+    min-height: 34px;
+    padding-block: 0;
+  }
+}

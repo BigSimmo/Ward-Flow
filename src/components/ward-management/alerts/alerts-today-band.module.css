@@ -201,3 +201,32 @@
   border-radius: var(--wf-r-md);
   background: var(--wf-hero-2);
 }
+
+/* Alerts overhaul (4 Nov 2026): folded by default to the one glance line. */
+.band:not([data-open]) .glance {
+  margin-top: 0;
+  padding-top: var(--wf-s-1);
+}
+.glance .toggle {
+  position: relative;
+  min-height: 28px;
+  color: var(--wf-hero-ink);
+  font-weight: 600;
+}
+.glance .toggle::after {
+  content: "";
+  position: absolute;
+  inset: -6px -4px;
+}
+.toggleIcon {
+  transition: transform 0.16s ease;
+  transform: rotate(-90deg);
+}
+.band[data-open] .toggleIcon {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toggleIcon {
+    transition: none;
+  }
+}

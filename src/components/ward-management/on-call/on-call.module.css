@@ -2170,3 +2170,62 @@
     text-overflow: clip;
   }
 }
+
+/* Josh review (4 Nov 2026): a calmer phone On-call. The Cover at track is one 40px row with no
+ * caps label (the track names itself), and the focal card puts the number and its Copy and
+ * Details on one line, so the first directory line sits higher. */
+@media (max-width: 46.4375rem) {
+  [data-testid="ward-on-call-hud-island"] .heroLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .coverTrack > * {
+    min-height: 34px;
+  }
+  .focalSeg button {
+    height: 36px;
+  }
+  .focal {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--wf-s-2);
+    row-gap: 4px;
+  }
+  .focal > .focalSeg {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .focal > .focalLabel {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .focal > .focalUntil {
+    grid-column: 1 / -1;
+    grid-row: 4;
+  }
+  .focal > .focalNumber {
+    grid-column: 1;
+    grid-row: 3;
+    font-size: 24px;
+    line-height: 30px;
+  }
+  .focal > .focalActions {
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: 0;
+  }
+  .focalActions > * {
+    min-height: 40px;
+  }
+  .focalMini {
+    min-height: 44px;
+  }
+  .phoneChips {
+    flex-wrap: wrap;
+  }
+}
